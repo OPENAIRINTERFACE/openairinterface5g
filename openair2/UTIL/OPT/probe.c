@@ -90,6 +90,7 @@ what about the implementation
 
 #include <pthread.h>
 #include <stdint.h>
+#include <sys/time.h>
 #include "common/config/config_userapi.h"
 #include "opt.h"
 #include "common/utils/system.h"
@@ -99,8 +100,6 @@ int opt_enabled=0;
 //static unsigned char g_PDUBuffer[1600];
 //static unsigned int g_PDUOffset;
 
-static char in_ip[128]={0};
-static char in_path[128]={0};
 FILE *file_fd = NULL;
 pcap_hdr_t file_header = {
   0xa1b2c3d4,   /* magic number */
@@ -108,10 +107,14 @@ pcap_hdr_t file_header = {
   0,            /* timezone */
   0,            /* sigfigs - apparently all tools do this */
   65535,        /* snaplen - this should be long enough */
-  MAC_LTE_DLT   /* Data Link Type (DLT).  Set as unused value 147 for now */
+  DLT_IPV4
+  //MAC_LTE_DLT   /* Data Link Type (DLT).  Set as unused value 147 for now */
 };
 
 trace_mode_t opt_type = OPT_NONE;
+static char *in_type=NULL;
+static char *in_path=NULL;
+static char *in_ip=NULL;
 static unsigned int subframesSinceCaptureStart;
 
 static int g_socksd = -1;/* UDP socket used for sending frames */
@@ -125,14 +128,80 @@ typedef struct {
 
 opt_listener_t opt_listener;
 
-static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
-                      guint16 rnti, guint16 ueid, guint16 sysframeNumber,
-                      guint8 isPredefinedData, guint8 retx, guint8 crcStatus,
-                      guint8 oob_event, guint8 oob_event_value,
-                      uint8_t *pdu_buffer, unsigned int pdu_buffer_size);
+unsigned short checksum(unsigned short *ptr, int length) {
+  int sum = 0;
+  u_short answer = 0;
+  unsigned short *w = ptr;
+  int nleft = length;
 
-static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
-                                 const unsigned char *PDU, unsigned int length);
+  while(nleft > 1) {
+    sum += *w++;
+    nleft -= 2;
+  }
+
+  sum = (sum >> 16) + (sum & 0xFFFF);
+  sum += (sum >> 16);
+  answer = ~sum;
+  return(answer);
+}
+
+/* Write an individual PDU (PCAP packet header + mac-context + mac-pdu) */
+static int PCAP_WritePDU(const uint8_t *PDU,
+                                 unsigned int length) {
+  pcaprec_hdr_t packet_header;
+  // IPv4 header
+  typedef struct ip_hdr {
+    unsigned char  ip_verlen;        // 4-bit IPv4 version 4-bit header length (in 32-bit words)
+    unsigned char  ip_tos;           // IP type of service
+    unsigned short ip_totallength;   // Total length
+    unsigned short ip_id;            // Unique identifier
+    unsigned short ip_offset;        // Fragment offset field
+    unsigned char  ip_ttl;           // Time to live
+    unsigned char  ip_protocol;      // Protocol(TCP,UDP etc)
+    unsigned short ip_checksum;      // IP checksum
+    unsigned int   ip_srcaddr;       // Source address
+    unsigned int   ip_destaddr;      // Source address
+  } IPV4_HDR;
+  // Define the UDP header
+  typedef struct udp_hdr {
+    unsigned short src_portno;       // Source port no.
+    unsigned short dst_portno;       // Dest. port no.
+    unsigned short udp_length;       // Udp packet length
+    unsigned short udp_checksum;     // Udp checksum (optional)
+  } UDP_HDR;
+  IPV4_HDR IPheader= {0};
+  IPheader.ip_verlen = (4 << 4) | (sizeof(IPV4_HDR) / sizeof(uint32_t));
+  IPheader.ip_totallength = htons(sizeof(IPV4_HDR) + sizeof(UDP_HDR) + length);
+  IPheader.ip_ttl    = 8;    // Time-to-live is eight
+  IPheader.ip_protocol = IPPROTO_UDP;
+  IPheader.ip_srcaddr  = inet_addr(in_ip);
+  IPheader.ip_destaddr = inet_addr(in_ip);
+  IPheader.ip_checksum = checksum((unsigned short *)&IPheader, sizeof(IPV4_HDR));
+  // Initialize the UDP header
+  UDP_HDR UDPheader;
+  UDPheader.src_portno = htons( PACKET_MAC_LTE_DEFAULT_UDP_PORT);
+  UDPheader.dst_portno = htons( PACKET_MAC_LTE_DEFAULT_UDP_PORT);
+  UDPheader.udp_length = htons(sizeof(UDP_HDR) + length);
+  UDPheader.udp_checksum = 0;
+  /****************************************************************/
+  /* PCAP Header                                                  */
+  /* TODO: Timestamp might want to be relative to a more sensible
+     base time... */
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  packet_header.ts_sec = tv.tv_sec;
+  packet_header.ts_usec = tv.tv_usec;
+  packet_header.incl_len =sizeof(IPV4_HDR) + sizeof(UDP_HDR) + length;
+  packet_header.orig_len =sizeof(IPV4_HDR) + sizeof(UDP_HDR) + length;
+  /***************************************************************/
+  /* Now write everything to the file                            */
+  fwrite(&packet_header, sizeof(pcaprec_hdr_t), 1, file_fd);
+  fwrite(&IPheader, sizeof(IPV4_HDR), 1, file_fd);
+  fwrite(&UDPheader, sizeof(UDP_HDR), 1, file_fd);
+  fwrite(PDU, 1, length, file_fd);
+  fflush(file_fd);
+  return length;
+}
 
 static void *opt_listener_thread(void *arg) {
   ssize_t ret;
@@ -198,7 +267,6 @@ int opt_create_listener_socket(char *ip_address, uint16_t port) {
   }
 
   threadCreate(&opt_listener.thread, opt_listener_thread, NULL, "flexran", -1, OAI_PRIORITY_RT_LOW);
-
   return 0;
 }
 
@@ -214,7 +282,7 @@ int opt_create_listener_socket(char *ip_address, uint16_t port) {
  */
 /* Add framing header to MAC PDU and send. */
 static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
-                      guint16 rnti, guint16 ueid, guint16 sfnSf,
+                      guint16 rnti, guint16 ueid, guint16 frame, guint16 subframe,
                       guint8 isPredefinedData, guint8 retx, guint8 crcStatus,
                       guint8 oob_event, guint8 oob_event_value,
                       uint8_t *pdu_buffer, unsigned int pdu_buffer_size) {
@@ -243,9 +311,9 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
   tmp16 = htons(ueid);
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
-  /* Subframe number */
+  /* Subframe number */ 
   frameBuffer[frameOffset++] = MAC_LTE_FRAME_SUBFRAME_TAG;
-  tmp16 = htons(sfnSf); // frame counter : this will give an expert info as wireshark expects SF and not F
+  tmp16 = htons((frame<<4)+subframe); // frame counter : this will give an expert info as wireshark expects SF and not F
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
   frameBuffer[frameOffset++] = MAC_LTE_CRC_STATUS_TAG;
@@ -321,137 +389,157 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
     frameOffset += pdu_buffer_size;
   }
 
-  /* Send out the data over the UDP socket */
-  bytesSent = sendto(g_socksd, frameBuffer, frameOffset, 0,
-                     (const struct sockaddr *)&g_serv_addr, sizeof(g_serv_addr));
+  if ( opt_type ==  OPT_WIRESHARK )
+    /* Send out the data over the UDP socket */
+    bytesSent = sendto(g_socksd, frameBuffer, frameOffset, 0,
+                       (const struct sockaddr *)&g_serv_addr, sizeof(g_serv_addr));
+  else
+    bytesSent = PCAP_WritePDU(frameBuffer, frameOffset);
 
   if (bytesSent != frameOffset) {
-    LOG_W(OPT, "sendto() failed (not a thread-safe func)- expected %d bytes, got %ld (errno=%d)\n",
+    LOG_W(OPT, "trace_pdu expected %d bytes, got %ld (errno=%d)\n",
           frameOffset, bytesSent, errno);
     //exit(1);
   }
 }
 
-/* Write an individual PDU (PCAP packet header + mac-context + mac-pdu) */
-static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
-                                 const uint8_t *PDU,
-                                 unsigned int length)
-{
-  pcaprec_hdr_t packet_header;
-  uint8_t context_header[256];
-  int offset = 0;
-  unsigned short tmp16;
-  /*****************************************************************/
-  /* Context information (same as written by UDP heuristic clients */
-  context_header[offset++] = context->radioType;
-  context_header[offset++] = context->direction;
-  context_header[offset++] = context->rntiType;
+static void SendFrameNR(guint8 radioType, guint8 direction, guint8 rntiType,
+			guint16 rnti, guint16 ueid,  guint16 frame, guint16 subframe,
+			guint8 isPredefinedData, guint8 retx, guint8 crcStatus,
+			guint8 oob_event, guint8 oob_event_value,
+			uint8_t *pdu_buffer, unsigned int pdu_buffer_size) {
+  unsigned char frameBuffer[9000];
+  unsigned int frameOffset;
+  ssize_t bytesSent;
+  frameOffset = 0;
+  uint16_t tmp16;
+  memcpy(frameBuffer+frameOffset, MAC_NR_START_STRING,
+         strlen(MAC_NR_START_STRING));
+  frameOffset += strlen(MAC_NR_START_STRING);
+  /******************************************************************************/
+  /* Now write out fixed fields (the mandatory elements of struct mac_lte_info) */
+  frameBuffer[frameOffset++] = radioType;
+  frameBuffer[frameOffset++] = direction;
+  frameBuffer[frameOffset++] = rntiType;
+  /*************************************/
+  /* Now optional fields               */
   /* RNTI */
-  context_header[offset++] = MAC_LTE_RNTI_TAG;
-  tmp16 = htons(context->rnti);
-  memcpy(context_header+offset, &tmp16, 2);
-  offset += 2;
+  frameBuffer[frameOffset++] = MAC_NR_RNTI_TAG;
+  tmp16 = htons(rnti);
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
   /* UEId */
-  context_header[offset++] = MAC_LTE_UEID_TAG;
-  tmp16 = htons(context->ueid);
-  memcpy(context_header+offset, &tmp16, 2);
-  offset += 2;
+  frameBuffer[frameOffset++] = MAC_NR_UEID_TAG;
+  tmp16 = htons(ueid);
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
   /* Subframe number */
-  context_header[offset++] = MAC_LTE_FRAME_SUBFRAME_TAG;
-  tmp16 = htons(context->subFrameNumber);
-  memcpy(context_header+offset, &tmp16, 2);
-  offset += 2;
-  /* CRC Status */
-  context_header[offset++] = MAC_LTE_CRC_STATUS_TAG;
-  context_header[offset++] = context->crcStatusOK;
-  /* Data tag immediately preceding PDU */
-  context_header[offset++] = MAC_LTE_PAYLOAD_TAG;
-  /****************************************************************/
-  /* PCAP Header                                                  */
-  /* TODO: Timestamp might want to be relative to a more sensible
-     base time... */
-  packet_header.ts_sec = context->subframesSinceCaptureStart / 1000;
-  packet_header.ts_usec = (context->subframesSinceCaptureStart % 1000) * 1000;
-  packet_header.incl_len = offset + length;
-  packet_header.orig_len = offset + length;
-  /***************************************************************/
-  /* Now write everything to the file                            */
-  fwrite(&packet_header, sizeof(pcaprec_hdr_t), 1, file_fd);
-  fwrite(context_header, 1, offset, file_fd);
-  fwrite(PDU, 1, length, file_fd);
-  return 1;
+  frameBuffer[frameOffset++] = MAC_NR_FRAME_SLOT_TAG;
+  tmp16 = htons(frame); // frame counter : this will give an expert info as wireshark expects SF and not F
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
+  tmp16 = htons(subframe); // frame counter : this will give an expert info as wireshark expects SF and not F
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
+  if (direction == 0 ) { //ulink
+    frameBuffer[frameOffset++] = MAC_NR_PHR_TYPE2_OTHERCELL_TAG;
+    frameBuffer[frameOffset++] = 0;
+  }
+  
+  /***************************************/
+  /* Now write the MAC PDU               */
+  frameBuffer[frameOffset++] = MAC_NR_PAYLOAD_TAG;
+
+  /* Append actual PDU  */
+  //memcpy(frameBuffer+frameOffset, g_PDUBuffer, g_PDUOffset);
+  //frameOffset += g_PDUOffset;
+  if (pdu_buffer != NULL) {
+    memcpy(frameBuffer+frameOffset, (void *)pdu_buffer, pdu_buffer_size);
+    frameOffset += pdu_buffer_size;
+  }
+
+  if ( opt_type ==  OPT_WIRESHARK )
+    /* Send out the data over the UDP socket */
+    bytesSent = sendto(g_socksd, frameBuffer, frameOffset, 0,
+                       (const struct sockaddr *)&g_serv_addr, sizeof(g_serv_addr));
+  else
+    bytesSent = PCAP_WritePDU(frameBuffer, frameOffset);
+
+  if (bytesSent != frameOffset) {
+    LOG_W(OPT, "trace_pdu expected %d bytes, got %ld (errno=%d)\n",
+          frameOffset, bytesSent, errno);
+    //exit(1);
+  }
 }
 
 #include <common/ran_context.h>
 extern RAN_CONTEXT_t RC;
 #include <openair1/PHY/phy_extern_ue.h>
 /* Remote serveraddress (where Wireshark is running) */
-void trace_pdu_implementation(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+void trace_pdu_implementation(int nr, int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
                               int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
                               int oob_event_value) {
-  MAC_Context_Info_t pdu_context;
   int radioType=FDD_RADIO;
   LOG_D(OPT,"sending packet to wireshark: direction=%s, size: %d, ueid: %d, rnti: %x, frame/sf: %d.%d\n",
         direction?"DL":"UL", pdu_buffer_size, ueid, rnti, sysFrameNumber,subFrameNumber);
 
-  if (RC.eNB && RC.eNB[0][0]!=NULL)
-    radioType=RC.eNB[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
-  else if (PHY_vars_UE_g && PHY_vars_UE_g[0][0] != NULL)
-    radioType=PHY_vars_UE_g[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
-  else {
-    LOG_E(OPT,"not a eNB neither a UE!!! \n");
-    return;
+  if (nr) {
+    radioType=TDD_RADIO;
+  } else {
+    if (RC.eNB && RC.eNB[0][0]!=NULL) 
+      radioType=RC.eNB[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
+    else if (PHY_vars_UE_g && PHY_vars_UE_g[0][0] != NULL)
+      radioType=PHY_vars_UE_g[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
+    else {
+      LOG_E(OPT,"not a 4G eNB neither a 4G UE!!! \n");
+    }
   }
 
   switch (opt_type) {
     case OPT_WIRESHARK :
-      if (g_socksd == -1) {
+      if (g_socksd == -1)
         return;
-      }
 
-      SendFrame( radioType,
-                 (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
-                 rntiType, rnti, ueid, (sysFrameNumber<<4) + subFrameNumber,
-                 1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
-                 oob_event,oob_event_value,
-                 pdu_buffer, pdu_buffer_size);
       break;
 
     case OPT_PCAP:
-      if (file_fd == NULL) {
+      if (file_fd == NULL)
         return;
-      }
 
-      pdu_context.radioType =  radioType;
-      pdu_context.direction = (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK
-                              : DIRECTION_UPLINK;
-      pdu_context.rntiType = rntiType;
-      pdu_context.rnti = rnti;
-      pdu_context.ueid = ueid;
-      pdu_context.isRetx = 0;
-      pdu_context.crcStatusOK =1;
-      pdu_context.sysFrameNumber = sysFrameNumber;
-      pdu_context.subFrameNumber = subFrameNumber;
-      pdu_context.subframesSinceCaptureStart = subframesSinceCaptureStart++;
-      MAC_LTE_PCAP_WritePDU( &pdu_context, pdu_buffer, pdu_buffer_size);
       break;
 
     case OPT_TSHARK:
     default:
+      return;
       break;
   }
+
+  if (nr)
+  SendFrameNR( radioType,
+             (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
+	       rntiType, rnti, ueid, sysFrameNumber, subFrameNumber,
+             1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
+             oob_event,oob_event_value,
+             pdu_buffer, pdu_buffer_size);
+  else 
+  SendFrame( radioType,
+             (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
+             rntiType, rnti, ueid, sysFrameNumber, subFrameNumber,
+             1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
+             oob_event,oob_event_value,
+             pdu_buffer, pdu_buffer_size);
 }
+
 /*---------------------------------------------------*/
-int init_opt(void)
-{
-  char *in_type=NULL;
+int init_opt(void) { 
+  in_type=malloc(200);
+  in_ip=malloc(200);
+  in_path=malloc(200);
   paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
   checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
-  uint16_t in_port=0;
   config_set_checkfunctions(opt_params, opt_checkParams,
                             sizeof(opt_params)/sizeof(paramdef_t));
   config_get( opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
-
   subframesSinceCaptureStart = 0;
   int tmptype = config_get_processedint( &(opt_params[OPTTYPE_IDX]));
 
@@ -462,25 +550,21 @@ int init_opt(void)
   } else if (tmptype == OPT_PCAP && strlen(in_path) > 0) {
     opt_type = OPT_PCAP;
     opt_enabled=1;
-    LOG_I(OPT,"Enabling OPT for PCAP  with the following file %s \n",in_path);
   } else if (tmptype == OPT_WIRESHARK && strlen(in_ip) > 0) {
     opt_enabled=1;
     opt_type = OPT_WIRESHARK;
-    LOG_I(OPT,"Enabling OPT for wireshark for local interface %s\n",in_ip);
   } else {
     LOG_E(OPT,"Invalid OPT configuration\n");
     config_printhelp(opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
   }
 
-  in_port = PACKET_MAC_LTE_DEFAULT_UDP_PORT;
-
   // trace_mode
   switch (opt_type) {
     case OPT_WIRESHARK:
-
+      LOG_I(OPT,"mode Wireshark: ip %s port %d\n", in_ip, PACKET_MAC_LTE_DEFAULT_UDP_PORT);
       /* Create local server socket only if using localhost address */
-      if (strcmp(in_ip, "127.0.0.1") == 0) {
-        opt_create_listener_socket(in_ip, in_port);
+      if (strncmp(in_ip, "127.0.0.1", 4) == 0) {
+        opt_create_listener_socket(in_ip, PACKET_MAC_LTE_DEFAULT_UDP_PORT);
       }
 
       g_socksd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -493,11 +577,12 @@ int init_opt(void)
 
       /* Get remote IP address from the function argument */
       g_serv_addr.sin_family = AF_INET;
-      g_serv_addr.sin_port = htons(in_port);
+      g_serv_addr.sin_port = htons(PACKET_MAC_LTE_DEFAULT_UDP_PORT);
       g_serv_addr.sin_addr.s_addr = inet_addr(in_ip);
       break;
 
     case OPT_PCAP:
+      LOG_I(OPT,"mode PCAB : path is %s \n",in_path);
       file_fd = fopen(in_path, "w");
 
       if (file_fd == NULL) {
@@ -516,19 +601,9 @@ int init_opt(void)
 
     default:
       opt_type = OPT_NONE;
-      LOG_W(OPT, "supported Option\n");
+       LOG_E(OPT,"Unsupported or unknown mode %d \n", opt_type);
       break;
   }
-
-  if ( opt_type == OPT_WIRESHARK )
-    LOG_E(OPT,"mode Wireshark: ip %s port %d\n", in_ip, in_port);
-  else if (opt_type == OPT_PCAP)
-    LOG_E(OPT,"mode PCAB : path is %s \n",in_path);
-  else
-    LOG_E(OPT,"Unsupported or unknown mode %d \n", opt_type);
-
-  //  mac_info = (mac_info*)malloc16(sizeof(mac_lte_info));
-  // memset(mac_info, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);
   return (1);
 }
 

@@ -309,14 +309,14 @@ function report_test {
                     NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
                     NB_UE_GOT_SYNC=`egrep -c "got sync" $UE_LOG`
                     NB_ENB_SYNCED_WITH_UE=`egrep -c "got UE capabilities for UE" $ENB_LOG`
-                    if [ $NB_ENB_GOT_SYNC -eq 1 ] && [ $NB_UE_GOT_SYNC -eq 2 ] && [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -eq 2 ] && [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
                     then
                         echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
                     else
                         echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
                     fi
                     echo "        <td><pre>" >> ./test_simulator_results.html
-                    if [ $NB_ENB_GOT_SYNC -eq 1 ]
+                    if [ $NB_ENB_GOT_SYNC -gt 0 ]
                     then
                         echo "<font color = \"blue\">- eNB --> got sync</font>" >> ./test_simulator_results.html
                     else
@@ -470,7 +470,7 @@ function report_test {
                     then
                         NB_UE_TUNNEL_UP=`egrep -c "Interface oaitun_ue1 successfully configured" $UE_LOG`
                     else
-                        NB_UE_TUNNEL_UP=`egrep -c "executing ifconfig oaitun_ue1" $UE_LOG`
+                        NB_UE_TUNNEL_UP=`egrep -c "ip link set oaitun_ue1 up" $UE_LOG`
                     fi
                     if [ $NB_ENB_GOT_SYNC -gt 0 ] && [ $NB_UE_GOT_SYNC -gt 0 ] && [ $NB_ENB_SYNCED_WITH_UE -gt 0 ]
                     then
@@ -717,7 +717,11 @@ function report_test {
         done
         echo "   </table>" >> ./test_simulator_results.html
         echo "   </div>" >> ./test_simulator_results.html
+    fi
 
+    ARCHIVES_LOC=archives/rf5g_sim/test
+    if [ -d $ARCHIVES_LOC ]
+    then
         echo "   <h3>5G NR RF Simulator Check</h3>" >> ./test_simulator_results.html
 
         if [ -f $ARCHIVES_LOC/test_final_status.log ]
@@ -748,8 +752,10 @@ function report_test {
         echo "        <th>Statistics</th>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
 
+        #SA
         EPC_CONFIGS=("noS1")
         TRANS_MODES=("tdd")
+        FR_MODE=("SA")
         BW_CASES=(106)
         for CN_CONFIG in ${EPC_CONFIGS[@]}
         do
@@ -760,11 +766,203 @@ function report_test {
                 echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
                 if [[ $CN_CONFIG =~ .*wS1.* ]]
                 then
-                    echo "          <td align = \"center\" colspan = 4 >Test with EPC (aka withS1): ${TMODE} -- ${BW}PRB </td>" >> ./test_simulator_results.html
+                    echo "          <td align = \"center\" colspan = 4 >Test with CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
                 else
-                    echo "          <td align = \"center\" colspan = 4 >Test without EPC (aka noS1): ${TMODE} -- ${BW}PRB </td>" >> ./test_simulator_results.html
+                    echo "          <td align = \"center\" colspan = 4 >Test without CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
                 fi
                 echo "      </tr>" >> ./test_simulator_results.html
+
+
+                #SA test (--sa option)
+
+                SA_ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb_sa_test.log
+                SA_UE_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_ue_sa_test.log
+                if [ -f $RA_ENB_LOG ] && [ -f $RA_UE_LOG ]
+                then
+                    #get rid of full path
+                    NAME_ENB=`echo $SA_ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    NAME_UE=`echo $SA_UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    echo "      <tr>" >> ./test_simulator_results.html
+                    echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
+                    echo "        <td>Check if SA proc succeeded</td>" >> ./test_simulator_results.html
+
+
+                    RRC_CHECK=`egrep -c "Received rrcSetupComplete" $SA_ENB_LOG`
+                    CBRA_CHECK=`egrep -c "Received Ack of RA-Msg4\. CBRA procedure succeeded" $SA_ENB_LOG`
+                    SIB1_CHECK=`egrep -c "SIB1 decoded" $SA_UE_LOG`
+
+
+                    if [ $RRC_CHECK -gt 0 ] && [ $CBRA_CHECK -gt 0 ] && [ $SIB1_CHECK -gt 0 ]
+                    then
+                        echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                    else
+                        echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                    fi
+
+                    echo "        <td><pre>" >> ./test_simulator_results.html
+                    if [ $RRC_CHECK -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- Received rrcSetupComplete OK</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- Received rrcSetupComplete KO</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $CBRA_CHECK -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- CBRA procedure succeeded OK</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- CBRA procedure succeeded KO</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $SIB1_CHECK -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- SIB1 decoded OK</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- SIB1 decoded KO</b></font>" >> ./test_simulator_results.html
+                    fi
+
+                    echo "        </pre></td>" >> ./test_simulator_results.html
+                    echo "      </tr>" >> ./test_simulator_results.html
+                fi
+
+            done
+          done
+        done
+
+        
+        EPC_CONFIGS=("noS1")
+        TRANS_MODES=("tdd")
+        FR_MODE=("FR2")
+        BW_CASES=(32)
+        for CN_CONFIG in ${EPC_CONFIGS[@]}
+        do
+          for TMODE in ${TRANS_MODES[@]}
+          do
+            for BW in ${BW_CASES[@]}
+            do
+                echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
+                if [[ $CN_CONFIG =~ .*wS1.* ]]
+                then
+                    echo "          <td align = \"center\" colspan = 4 >Test with CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                else
+                    echo "          <td align = \"center\" colspan = 4 >Test without CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                fi
+                echo "      </tr>" >> ./test_simulator_results.html
+
+
+                #FR2 RA test (--do-ra option)
+
+                #build log files names tdd_${PRB}prb_${CN_CONFIG}_gnb_ra_fr2_test.log
+
+                RA_ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb_ra_fr2_test.log
+                RA_UE_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_ue_ra_fr2_test.log
+                if [ -f $RA_ENB_LOG ] && [ -f $RA_UE_LOG ]
+                then
+                    #get rid of full path
+                    NAME_ENB=`echo $RA_ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    NAME_UE=`echo $RA_UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    echo "      <tr>" >> ./test_simulator_results.html
+                    echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
+                    echo "        <td>Check if FR2 RA proc succeeded</td>" >> ./test_simulator_results.html
+
+                    #gNB RA check
+                    GNB_RECEIVED=`egrep -c "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $RA_ENB_LOG`
+                    #UE RA check
+                    UE_RA_PROC_OK=`egrep -c "\[RAPROC\] RA procedure succeeded" $RA_UE_LOG`
+
+
+                    if [ $GNB_RECEIVED -gt 0 ] && [ $UE_RA_PROC_OK -gt 0 ]
+                    then
+                        echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                    else
+                        echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                    fi
+
+                    echo "        <td><pre>" >> ./test_simulator_results.html
+                    if [ $GNB_RECEIVED -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- gNB --> RA received</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- gNB RA NOT RECEIVED</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $UE_RA_PROC_OK -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- NR UE  --> RA procedure succeded</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- NR UE RA procedure failed</b></font>" >> ./test_simulator_results.html
+                    fi
+                    echo "        </pre></td>" >> ./test_simulator_results.html
+                    echo "      </tr>" >> ./test_simulator_results.html
+                fi
+
+            done
+          done
+        done
+    
+
+        EPC_CONFIGS=("noS1")
+        FR_MODE=("FR1")
+        TRANS_MODES=("fdd" "tdd")
+        BW_CASES=(106)
+        for CN_CONFIG in ${EPC_CONFIGS[@]}
+        do
+          for TMODE in ${TRANS_MODES[@]}
+          do
+            for BW in ${BW_CASES[@]}
+            do
+                echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
+                if [[ $CN_CONFIG =~ .*wS1.* ]]
+                then
+                    echo "          <td align = \"center\" colspan = 4 >Test with CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                else
+                    echo "          <td align = \"center\" colspan = 4 >Test without CN5G : ${TMODE} -- ${BW}PRB -- ${FR_MODE}</td>" >> ./test_simulator_results.html
+                fi
+                echo "      </tr>" >> ./test_simulator_results.html
+
+
+                #FR1 RA test (--do-ra option)
+
+                #build log files names
+                RA_ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb_ra_test.log
+                RA_UE_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_ue_ra_test.log
+                if [ -f $RA_ENB_LOG ] && [ -f $RA_UE_LOG ]
+                then
+                    #get rid of full path
+                    NAME_ENB=`echo $RA_ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    NAME_UE=`echo $RA_UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    echo "      <tr>" >> ./test_simulator_results.html
+                    echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
+                    echo "        <td>Check if FR1 RA proc succeeded</td>" >> ./test_simulator_results.html
+
+                    #gNB RA check
+                    GNB_RECEIVED=`egrep -c "\[RAPROC\] PUSCH with TC_RNTI (.+) received correctly" $RA_ENB_LOG`
+                    #UE RA check
+                    UE_RA_PROC_OK=`egrep -c "\[RAPROC\] RA procedure succeeded" $RA_UE_LOG`
+
+
+                    if [ $GNB_RECEIVED -gt 0 ] && [ $UE_RA_PROC_OK -gt 0 ]
+                    then
+                        echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                    else
+                        echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                    fi
+
+                    echo "        <td><pre>" >> ./test_simulator_results.html
+                    if [ $GNB_RECEIVED -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- gNB --> RA received</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- gNB RA NOT RECEIVED</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $UE_RA_PROC_OK -gt 0 ]
+                    then
+                        echo "<font color = \"blue\">- NR UE  --> RA procedure succeded</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- NR UE RA procedure failed</b></font>" >> ./test_simulator_results.html
+                    fi
+                    echo "        </pre></td>" >> ./test_simulator_results.html
+                    echo "      </tr>" >> ./test_simulator_results.html
+                fi
+
+                #SYNC test
                 ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}prb_${CN_CONFIG}_gnb.log
                 UE_LOG=`echo $ENB_LOG | sed -e "s#gnb#ue#"`
                 if [ -f $ENB_LOG ] && [ -f $UE_LOG ]

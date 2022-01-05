@@ -36,6 +36,8 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include "common/config/config_paramdesc.h"
 #include "common/utils/T/T.h"
 #define CONFIG_MAX_OOPT_PARAMS    10     // maximum number of parameters in the -O option (-O <cfgmode>:P1:P2...
@@ -74,15 +76,18 @@ typedef struct configmodule_interface {
   uint32_t numptrs;
   uint32_t rtflags;
   char     *ptrs[CONFIG_MAX_ALLOCATEDPTRS];
+  bool ptrsAllocated[CONFIG_MAX_ALLOCATEDPTRS];
 } configmodule_interface_t;
 
 #ifdef CONFIG_LOADCONFIG_MAIN
 configmodule_interface_t *cfgptr=NULL;
 
-static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugflags]> \n \
-          debugflags can also be defined in the config_libconfig section of the config file\n \
+static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugflags]><:incp[path]>\n \
+          debugflags can also be defined in the config section of the config file\n \
           debugflags: mask,    1->print parameters, 2->print memory allocations debug messages\n \
-                               4->print command line processing debug messages\n ";
+                               4->print command line processing debug messages\n \
+          incp parameter can be used to define the include path used for config files (@include directive)\n \
+                         defaults is set to the path of the main config file.\n";
 
 #define CONFIG_SECTIONNAME "config"
 #define CONFIGPARAM_DEBUGFLAGS_IDX        0

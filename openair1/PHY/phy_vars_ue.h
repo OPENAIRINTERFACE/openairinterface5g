@@ -33,9 +33,6 @@ char *namepointer_log2;
 
 
 #include "PHY/LTE_REFSIG/primary_synch.h"
-int16_t *primary_synch0_time;
-int16_t *primary_synch1_time;
-int16_t *primary_synch2_time;
 
 PHY_VARS_UE ***PHY_vars_UE_g;
 
@@ -48,14 +45,6 @@ const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
-
-
-#ifndef OPENAIR2
-  unsigned char NB_eNB_INST=0;
-  uint16_t NB_UE_INST=0;
-  unsigned char NB_RN_INST=0;
-  unsigned char NB_INST=0;
-#endif
 
 
 int number_of_cards;

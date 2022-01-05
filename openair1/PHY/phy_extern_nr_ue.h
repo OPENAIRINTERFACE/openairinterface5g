@@ -25,6 +25,11 @@
 #include "PHY/defs_nr_UE.h"
 //#include "common/ran_context.h"
 
+#ifdef XFORMS
+  #include "PHY/TOOLS/nr_phy_scope.h"
+  extern char do_forms;
+#endif
+
 extern char* namepointer_chMag ;
 extern char* namepointer_log2;
 extern char  fmageren_name2[512];
@@ -32,7 +37,8 @@ extern char  fmageren_name2[512];
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
-//#include "PHY/LTE_TRANSPORT/transport_extern.h"
+extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
+extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 extern const short conjugate[8],conjugate2[8];
 extern int number_of_cards;
@@ -49,9 +55,6 @@ extern unsigned char primary_synch2_tab[72];
 extern int16_t *primary_synch0_time; //!< index: [0..ofdm_symbol_size*2[
 extern int16_t *primary_synch1_time; //!< index: [0..ofdm_symbol_size*2[
 extern int16_t *primary_synch2_time; //!< index: [0..ofdm_symbol_size*2[
-extern int *sync_corr_ue0; //!< index [0..10*samples_per_tti[
-extern int *sync_corr_ue1; //!< index [0..10*samples_per_tti[
-extern int *sync_corr_ue2; //!< index [0..10*samples_per_tti[
 
 extern int flagMag;
 //extern short **txdataF_rep_tmp;
@@ -59,12 +62,6 @@ extern int flagMag;
 extern char mode_string[4][20];
 
 extern unsigned char NB_RU;
-
-#ifndef OPENAIR2
-extern unsigned char NB_eNB_INST;
-extern uint16_t NB_UE_INST;
-extern unsigned char NB_RN_INST;
-#endif
 
 extern int flag_LA;
 extern double sinr_bler_map[MCS_COUNT][2][MCS_TABLE_LENGTH_MAX];
@@ -108,5 +105,8 @@ extern unsigned short Nb_81_110[8][4];
 extern uint16_t hundred_times_log10_NPRB[100];
 extern uint8_t alpha_lut[8];
 extern uint8_t max_turbo_iterations;
+
+extern double cpuf;
+
 #endif /*__PHY_EXTERN_H__ */
 

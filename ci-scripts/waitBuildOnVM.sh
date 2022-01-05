@@ -47,6 +47,12 @@ function wait_on_vm_build {
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
     echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]]
+    then
+        echo "This VM type is no longer supported in the pipeline framework"
+        return
+    fi
+
     IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
 
     if [ $IS_VM_ALIVE -eq 0 ]
@@ -67,6 +73,9 @@ function wait_on_vm_build {
     echo "############################################################"
     echo "Waiting build process to end on VM ($VM_NAME)"
     echo "############################################################"
+    # Since the last VM was cppcheck and is removed
+    # we are going too fast in wait and the build_oai is not yet started
+    sleep 120
 
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then
@@ -84,6 +93,12 @@ function wait_on_vm_build {
 }
 
 function check_on_vm_build {
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]]
+    then
+        echo "This VM type is no longer supported in the pipeline framework"
+        return
+    fi
+
     echo "############################################################"
     echo "Creating a tmp folder to store results and artifacts"
     echo "############################################################"

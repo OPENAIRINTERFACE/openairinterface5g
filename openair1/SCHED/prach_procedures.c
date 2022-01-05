@@ -31,8 +31,6 @@
  */
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
-#include "SCHED/sched_eNB.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 #include "nfapi_pnf.h"
@@ -46,7 +44,6 @@
 
 #include <time.h>
 
-#include "intertask_interface.h"
 
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
@@ -80,7 +77,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     ru=eNB->RU_list[i];
 
     for (ru_aa=0,aa=0; ru_aa<ru->nb_rx; ru_aa++,aa++) {
-      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
+      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[0][ru_aa];
       int ce_level;
 
       if (br_flag==1)
@@ -188,7 +185,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,
     else {
       eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((avg_preamble_energy[0]*124)>>10);
 
-      if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
+      if (frame==0) LOG_D(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
 
       if (eNB->prach_energy_counter < 100) eNB->prach_energy_counter++;
     }

@@ -101,7 +101,6 @@ function main()
   local -i run_gdb=0
   local -i show_stdout=0
   local    exe_arguments=""
-  local    itti_dump_file=""
   
   until [ -z "$1" ]
     do
@@ -153,18 +152,6 @@ function main()
             echo "setting  --rf-config-file to $rf_config_file"
             exe_arguments="$exe_arguments --rf-config-file=$rf_config_file"
 	fi 
-        ;;      
-     -K | --itti-dump-file)
-        itti_dump_file=$2
-        # can omit file name if last arg on the line
-        if [ "x$itti_dump_file" = "x" ]; then
-          itti_dump_file="/tmp/enb_s1_usrp_itti.log"
-          shift 1;
-        else
-          shift 2;
-        fi
-        echo "setting ITTI dump file to: $itti_dump_file"
-        exe_arguments="$exe_arguments -K $itti_dump_file"
         ;;      
       -m | --mscgen)
         g_msc_dir=$2

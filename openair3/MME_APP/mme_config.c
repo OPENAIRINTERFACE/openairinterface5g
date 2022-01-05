@@ -94,7 +94,7 @@ int RCconfig_MME(void ) {
 
   if (address) {
     MessageDef *message;
-    AssertFatal((message = itti_alloc_new_message(TASK_MME_APP, M3AP_MME_SCTP_REQ))!=NULL,"");
+    AssertFatal((message = itti_alloc_new_message(TASK_MME_APP, 0, M3AP_MME_SCTP_REQ))!=NULL,"");
     M3AP_MME_SCTP_REQ (message).mme_m3_ip_address.ipv6 = 0;
     M3AP_MME_SCTP_REQ (message).mme_m3_ip_address.ipv4 = 1;
     strcpy( M3AP_MME_SCTP_REQ (message).mme_m3_ip_address.ipv4_address, address);

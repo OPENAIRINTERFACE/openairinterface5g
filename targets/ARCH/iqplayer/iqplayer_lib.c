@@ -25,7 +25,6 @@
  */
 #define _LARGEFILE_SOURCE
 #define _FILE_OFFSET_BITS 64
-#define NB_ANTENNAS_RX  2
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -40,18 +39,15 @@
 #include "assertions.h"
 #include "common/utils/LOG/log.h"
 
-
-
-
-
-
 static void parse_iqfile_header(openair0_device *device, iqfile_header_t *iq_fh) {
-  AssertFatal((memcmp(iq_fh->oaiid,OAIIQFILE_ID,sizeof(OAIIQFILE_ID)) == 0),
-  	           "iqfile doesn't seem to be compatible with oai (invalid id %.4s in header)\n",
-  	           iq_fh->oaiid);
+  char tmp[4]=OAIIQFILE_ID;
+  AssertFatal((memcmp(iq_fh->oaiid,tmp,sizeof(iq_fh->oaiid)) == 0),
+              "iqfile doesn't seem to be compatible with oai (invalid id %.4s in header)\n",
+              iq_fh->oaiid);
   device->type = iq_fh->devtype;
   device->openair0_cfg[0].tx_sample_advance=iq_fh->tx_sample_advance;
   device->openair0_cfg[0].tx_bw =  device->openair0_cfg[0].rx_bw = iq_fh->bw;
+  device->recplay_state->nbSamplesBlocks=iq_fh->nbSamplesBlocks;
   LOG_UI(HW,"Replay iqs from %s device, bandwidth %e\n",get_devname(iq_fh->devtype),iq_fh->bw);
 }
 
@@ -63,89 +59,73 @@ static int iqplayer_loadfile(openair0_device *device, openair0_config_t *openair
   recplay_state_t *s = device->recplay_state;
   recplay_conf_t  *c = openair0_cfg->recplay_conf;
 
+  struct stat sb;
+  s->fd = open(c->u_sf_filename, O_RDONLY );
+  if (s->fd >= 0 ) {
+    fstat(s->fd, &sb);
+  } else {
+    LOG_E( HW,"Cannot open %s exiting.\n", c->u_sf_filename );
+    exit(-1);
+  }
+  
   if (s->use_mmap) {
     // use mmap
-    s->mmapfd = open(c->u_sf_filename, O_RDONLY );
-
-    if (s->mmapfd != 0) {
-      struct stat sb;
-      fstat(s->mmapfd, &sb);
       s->mapsize=sb.st_size;
       LOG_I(HW,"Loading subframes using mmap() from %s size=%lu bytes ...\n",c->u_sf_filename, (uint64_t)sb.st_size );
-      void *mptr = mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, s->mmapfd, 0) ;
-      s->ms_sample = (iqrec_t *) ( mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, s->mmapfd, 0) + sizeof(iqfile_header_t));
+      void *mptr = mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, s->fd, 0) ;
+      s->ms_sample = (iqrec_t *) ( mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, s->fd, 0) + sizeof(iqfile_header_t));
 
       if (mptr != MAP_FAILED) {
         parse_iqfile_header(device, (iqfile_header_t *)mptr);
         s->ms_sample = (iqrec_t *)((char *)mptr + sizeof(iqfile_header_t));
-        s->nb_samples = ((sb.st_size-sizeof(iqfile_header_t)) / sizeof(iqrec_t));
-        int aligned = (((unsigned long)s->ms_sample & 31) == 0)? 1:0;
-        LOG_I(HW,"Loaded %u subframes.\n",s->nb_samples );
-
-        if (aligned == 0) {
-          LOG_E(HW, "mmap address is not 32 bytes aligned, exiting.\n" );
-          close(s->mmapfd);
-          exit(-1);
-        }
+        LOG_I(HW,"Loaded %u subframes.\n",s->nbSamplesBlocks );
       } else {
         LOG_E(HW,"Cannot mmap file, exiting.\n");
-        close(s->mmapfd);
+        close(s->fd);
         exit(-1);
       }
-    } else {
-      LOG_E( HW,"Cannot open %s exiting.\n", c->u_sf_filename );
-      exit(-1);
-    }
   } else {
-    s->iqfd = open(c->u_sf_filename, O_RDONLY);
+    iqfile_header_t fh;
+    size_t hs = read(s->fd,&fh,sizeof(fh));
 
-    if (s->iqfd != 0) {
-      struct stat sb;
-      iqfile_header_t fh;
-      size_t hs = read(s->iqfd,&fh,sizeof(fh));
-
-      if (hs == sizeof(fh)) {
-        parse_iqfile_header(device, &fh);
-        fstat(s->iqfd, &sb);
+    if (hs == sizeof(fh)) {
+      parse_iqfile_header(device, &fh);
+        fstat(s->fd, &sb);
         s->mapsize=sb.st_size;
-        s->nb_samples = ((sb.st_size-sizeof(iqfile_header_t))/ sizeof(iqrec_t));
-        LOG_I(HW, "Loading %u subframes from %s,size=%lu bytes ...\n",s->nb_samples, c->u_sf_filename,(uint64_t)sb.st_size);
+        LOG_I(HW, "Loading %u subframes from %s,size=%lu bytes ...\n",s->nbSamplesBlocks, c->u_sf_filename,(uint64_t)sb.st_size);
         // allocate buffer for 1 sample at a time
-        s->ms_sample = (iqrec_t *) malloc(sizeof(iqrec_t));
+        s->ms_sample = (iqrec_t *) malloc(sizeof(iqrec_t)+MAX_BELL_LABS_IQ_BYTES_PER_SF*4);
 
         if (s->ms_sample == NULL) {
           LOG_E(HW,"Memory allocation failed for individual subframe replay mode.\n" );
-          close(s->iqfd);
+          close(s->fd);
           exit(-1);
         }
 
         memset(s->ms_sample, 0, sizeof(iqrec_t));
 
         // point at beginning of iqs in file
-        if (lseek(s->iqfd,sizeof(iqfile_header_t), SEEK_SET) == 0) {
+        if (lseek(s->fd,sizeof(iqfile_header_t), SEEK_SET) == 0) {
           LOG_I(HW,"Initial seek at beginning of the file\n" );
         } else {
           LOG_I(HW,"Problem initial seek at beginning of the file\n");
         }
       } else {
         LOG_E(HW,"Cannot read header in %s exiting.\n",c->u_sf_filename );
-        close(s->iqfd);
+        close(s->fd);
         exit(-1);
       }
-    } else {
-      LOG_E(HW,"Cannot open %s exiting.\n",c->u_sf_filename );
-      exit(-1);
-    }
   }
 
+  s->currentPtr=(uint8_t *)s->ms_sample;
   return 0;
 }
 
 /*! \brief start the oai iq player
  * \param device, the hardware used
  */
-static int trx_iqplayer_start(openair0_device *device){
-	return 0;
+static int trx_iqplayer_start(openair0_device *device) {
+  return 0;
 }
 
 /*! \brief Terminate operation of the oai iq player
@@ -157,28 +137,22 @@ static void trx_iqplayer_end(openair0_device *device) {
 
   if (device->recplay_state == NULL)
     return;
-
+  
   if (device->recplay_state->use_mmap) {
     if (device->recplay_state->ms_sample != MAP_FAILED) {
       munmap(device->recplay_state->ms_sample, device->recplay_state->mapsize);
-      device->recplay_state->ms_sample = NULL;
-    }
-
-    if (device->recplay_state->mmapfd != 0) {
-      close(device->recplay_state->mmapfd);
-      device->recplay_state->mmapfd = 0;
-    }
+      }
   } else {
     if (device->recplay_state->ms_sample != NULL) {
       free(device->recplay_state->ms_sample);
-      device->recplay_state->ms_sample = NULL;
-    }
-
-    if (device->recplay_state->iqfd != 0) {
-      close(device->recplay_state->iqfd);
-      device->recplay_state->iqfd = 0;
-    }
+    } 
   }
+  device->recplay_state->ms_sample = NULL;
+  if (device->recplay_state->fd >= 0) {
+    close(device->recplay_state->fd);
+    device->recplay_state->fd = -1;
+  }
+
 }
 /*! \brief Write iqs function when in replay mode, just introduce a delay, as configured at init time,
       @param device pointer to the device structure specific to the RF hardware target
@@ -208,92 +182,67 @@ static int trx_iqplayer_write(openair0_device *device, openair0_timestamp timest
  * \returns the number of sample read
 */
 static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-  int samples_received=0;
-  static unsigned int    cur_samples;
-  static int64_t         wrap_count;
-  static int64_t  wrap_ts;
   recplay_state_t *s = device->recplay_state;
 
-  if (cur_samples == s->nb_samples) {
-    cur_samples = 0;
-    wrap_count++;
+  if (s->curSamplesBlock==0 && s->wrap_count==0 ) 
+    s->currentTs=s->ms_sample->ts;
+  
+  if (s->curSamplesBlock == s->nbSamplesBlocks) {
+    LOG_I(HW, "wrapping on iq file (%ld)\n", s->wrap_count);
+    s->curSamplesBlock = 0;
+    s->wrap_count++;
 
-    if (wrap_count == device->openair0_cfg->recplay_conf->u_sf_loops) {
-      LOG_W(HW, "iqplayer device terminating subframes replay  after %u iteration\n",device->openair0_cfg->recplay_conf->u_sf_loops);
+    if (s->wrap_count == device->openair0_cfg->recplay_conf->u_sf_loops) {
+      LOG_W(HW, "iqplayer device terminating subframes replay  after %u iteration\n",
+            device->openair0_cfg->recplay_conf->u_sf_loops);
       exit_function(__FILE__, __FUNCTION__, __LINE__,"replay ended, triggering process termination\n");
     }
 
-    wrap_ts = wrap_count * (s->nb_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000));
+    LOG_I(HW,"go back at the beginning of IQ file");
+    device->recplay_state->currentPtr=(uint8_t *)device->recplay_state->ms_sample;
 
-    if (!device->recplay_state->use_mmap) {
-      if (lseek(device->recplay_state->iqfd, 0, SEEK_SET) == 0) {
-        LOG_I(HW,"Seeking at the beginning of IQ file");
-      } else {
-        LOG_I(HW, "Problem seeking at the beginning of IQ file");
+    if (!s->use_mmap) {
+      if (lseek(device->recplay_state->fd, 0, SEEK_SET) != 0) {
+        LOG_E(HW, "Problem seeking at the beginning of IQ file");
       }
     }
   }
 
-  if (s->use_mmap) {
-    if (cur_samples < s->nb_samples) {
-      *ptimestamp = (s->ms_sample[0].ts + (cur_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000))) + wrap_ts;
-
-      if (cur_samples == 0) {
-        LOG_I(HW,"starting subframes file with wrap_count=%lu wrap_ts=%lu ts=%lu\n", wrap_count,wrap_ts,*ptimestamp);
-      }
-
-      memcpy(buff[0], &s->ms_sample[cur_samples].samples[0], nsamps*4);
-      cur_samples++;
-    }
-  } else {
+  if (!s->use_mmap) {
     // read sample from file
-    if (read(s->iqfd, s->ms_sample, sizeof(iqrec_t)) != sizeof(iqrec_t)) {
-      LOG_E(HW,"pb reading iqfile at index %lu\n",sizeof(iqrec_t)*cur_samples );
-      close(s->iqfd);
-      free(s->ms_sample);
-      s->ms_sample = NULL;
-      s->iqfd = 0;
+    if (read(s->fd, s->ms_sample, sizeof(iqrec_t)) != sizeof(iqrec_t)) {
+      LOG_E(HW,"pb reading iqfile at index %lu\n",sizeof(iqrec_t)*s->curSamplesBlock );
       exit(-1);
-    }
-
-    if (cur_samples < s->nb_samples) {
-      static int64_t ts0 = 0;
-
-      if ((cur_samples == 0) && (wrap_count == 0)) {
-        ts0 = s->ms_sample->ts;
-      }
-
-      *ptimestamp = ts0 + (cur_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000)) + wrap_ts;
-
-      if (cur_samples == 0) {
-        LOG_I(HW, "starting subframes file with wrap_count=%lu wrap_ts=%lu ts=%lu ",wrap_count,wrap_ts, *ptimestamp);
-      }
-
-      memcpy(buff[0], &s->ms_sample->samples[0], nsamps*4);
-      cur_samples++;
-      // Prepare for next read
-      off_t where = lseek(s->iqfd, cur_samples * sizeof(iqrec_t), SEEK_SET);
-
-      if (where < 0) {
-        LOG_E(HW,"Cannot lseek in iqfile: %s\n",strerror(errno));
+    } else {
+      if (read(s->fd, s->ms_sample+1, s->ms_sample->nbBytes) !=  s->ms_sample->nbBytes) {
+        LOG_E(HW,"pb reading iqfile at index %lu\n",sizeof(iqrec_t)*s->curSamplesBlock );
         exit(-1);
       }
     }
   }
 
+  iqrec_t *curHeader=(iqrec_t *)s->currentPtr;
+  AssertFatal(curHeader->header==BELL_LABS_IQ_HEADER,"" );
+  // the current timestamp is the stored timestamp until we wrap on input
+  // USRP shifts 1 sample time to time
+  AssertFatal(s->wrap_count !=0 || abs(curHeader->ts-s->currentTs) < 5 ,"");
+  AssertFatal(nsamps*4==curHeader->nbBytes,"");
+  *ptimestamp = s->currentTs;
+  memcpy(buff[0], curHeader+1, nsamps*4);
+  s->curSamplesBlock++;
+  // Prepare for next read
+  s->currentTs+=nsamps;
+
+  if (s->use_mmap)
+    s->currentPtr+=sizeof(iqrec_t)+s->ms_sample->nbBytes;
+
   struct timespec req;
-
   req.tv_sec = 0;
-
   req.tv_nsec = (device->openair0_cfg[0].recplay_conf->u_sf_read_delay) * 1000;
-
   nanosleep(&req, NULL);
-
+  LOG_D(HW, "returning %d samples at ts %lu\n", nsamps, *ptimestamp);
   return nsamps;
-
-  return samples_received;
 }
-
 
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->openair0_cfg = openair0_cfg;
@@ -313,5 +262,4 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   LOG_UI(HW,"iqplayer device initialized, replay %s  for %i iterations",openair0_cfg->recplay_conf->u_sf_filename,openair0_cfg->recplay_conf->u_sf_loops);
   return 0;
 }
-
 /*@}*/

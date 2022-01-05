@@ -798,11 +798,11 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
       n is the size in bits of the coded block, with the tail */
   int n2;
   llr_t y8[3*(n+16)] __attribute__((aligned(16)));
-  llr_t systematic0[n+16] __attribute__ ((aligned(16)));
-  llr_t systematic1[n+16] __attribute__ ((aligned(16)));
-  llr_t systematic2[n+16] __attribute__ ((aligned(16)));
-  llr_t yparity1[n+16] __attribute__ ((aligned(16)));
-  llr_t yparity2[n+16] __attribute__ ((aligned(16)));
+  llr_t systematic0[n+32] __attribute__ ((aligned(16)));
+  llr_t systematic1[n+32] __attribute__ ((aligned(16)));
+  llr_t systematic2[n+32] __attribute__ ((aligned(16)));
+  llr_t yparity1[n+32] __attribute__ ((aligned(16)));
+  llr_t yparity2[n+32] __attribute__ ((aligned(16)));
   llr_t ext[n+128] __attribute__((aligned(16)));
   llr_t ext2[n+128] __attribute__((aligned(16)));
   llr_t alpha[(n+16)*8] __attribute__ ((aligned(16)));
@@ -811,7 +811,7 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
   llr_t m10[n+16] __attribute__ ((aligned(16)));
   //  int *pi2_p,*pi4_p,*pi5_p,*pi6_p;
   int *pi4_p,*pi5_p,*pi6_p;
-  llr_t *s,*s1,*s2,*yp1,*yp2,*yp;
+  llr_t *s1,*s2,*yp1,*yp2,*yp;
   unsigned int i,j,iind;//,pi;
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
@@ -819,7 +819,7 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *yp128;
   __m128i tmp128[(n+8)>>3];
-  __m128i tmp, zeros=_mm_setzero_si128();
+  __m128i tmp={0}, zeros=_mm_setzero_si128();
 #elif defined(__arm__)
   int8x16_t *yp128;
   int8x16_t tmp128[(n+8)>>3];
@@ -927,7 +927,6 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 
   yp128 = (int8x16_t *)y8;
 #endif
-  s = systematic0;
   s1 = systematic1;
   s2 = systematic2;
   yp1 = yparity1;
@@ -938,7 +937,7 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
   for (i=0; i<16 ; i++ )
     for (j=0; j<n2; j+=16) {
       int k=i+j;
-      s[k]=*yp++;
+      systematic0[k]=*yp++;
       yp1[k]=*yp++;
       yp2[k]=*yp++;
     }
@@ -948,8 +947,8 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 
   if (n2>n) {
     /*
-    s[n]=0;s[n+1]=0;s[n+2]=0;s[n+3]=0;
-    s[n+4]=0;s[n+5]=0;s[n+6]=0;s[n+7]=0;
+    systematic0[n]=0;systematic0[n+1]=0;systematic0[n+2]=0;systematic0[n+3]=0;
+    systematic0[n+4]=0;s[n+5]=0;s[n+6]=0;s[n+7]=0;
     s1[n]=0;s1[n+1]=0;s1[n+2]=0;s1[n+3]=0;
     s1[n+4]=0;s1[n+5]=0;s1[n+6]=0;s1[n+7]=0;
     s2[n]=0;s2[n+1]=0;s2[n+2]=0;s2[n+3]=0;
@@ -961,26 +960,26 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
 
   // Termination
   for (i=n2; i<n2+3; i++) {
-    s[i]= *yp;
-    s1[i] = s[i] ;
-    s2[i] = s[i];
+    systematic0[i]= *yp;
+    s1[i] = systematic0[i] ;
+    s2[i] = systematic0[i];
     yp++;
     yp1[i] = *yp;
     yp++;
 #ifdef DEBUG_LOGMAP
-    printf("Term 1 (%u): %d %d\n",i,s[i],yp1[i]);
+    printf("Term 1 (%u): %d %d\n",i,systematic0[i],yp1[i]);
 #endif //DEBUG_LOGMAP
   }
 
   for (i=n2+16; i<n2+19; i++) {
-    s[i]= *yp;
-    s1[i] = s[i] ;
-    s2[i] = s[i];
+    systematic0[i]= *yp;
+    s1[i] = systematic0[i] ;
+    s2[i] = systematic0[i];
     yp++;
     yp2[i-16] = *yp;
     yp++;
 #ifdef DEBUG_LOGMAP
-    printf("Term 2 (%u): %d %d\n",i-16,s[i],yp2[i-16]);
+    printf("Term 2 (%u): %d %d\n",i-16,systematic0[i],yp2[i-16]);
 #endif //DEBUG_LOGMAP
   }
 

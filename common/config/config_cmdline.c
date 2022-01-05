@@ -211,7 +211,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
 
   while (c > 0 ) {
     char *oneargv = strdup(config_get_if()->argv[i]);          /* we use strtok_r which modifies its string paramater, and we don't want argv to be modified */
-
+    if(!oneargv) abort();
     /* first check help options, either --help, -h or --help_<section> */
     if (strncmp(oneargv, "-h",2) == 0 || strncmp(oneargv, "--help",6) == 0 ) {
       char *tokctx = NULL;
@@ -255,7 +255,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
         if ( ((strlen(oneargv) == 2) && (strcmp(oneargv + 1,cfgpath) == 0))  || /* short option, one "-" */
              ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 )) || /* long option beginning with "--" */
              ((strlen(oneargv) == 2) && (strcmp(oneargv + 1,cfgoptions[n].optname) == 0) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ||
-             ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 ) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ) {
+             ((strlen(oneargv) > 2) && (strcmp(oneargv + 2, cfgoptions[n].optname) == 0 ) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ) {
           char *valptr=NULL;
           int ret;
           config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;

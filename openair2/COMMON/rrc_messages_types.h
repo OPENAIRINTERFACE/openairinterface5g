@@ -42,6 +42,7 @@
 #include "LTE_SL-DiscResourcePool-r12.h"
 #include "NR_RACH-ConfigCommon.h"
 #include "NR_ServingCellConfigCommon.h"
+#include "NR_ServingCellConfig.h"
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
 #if defined(DISABLE_ITTI_XER_PRINT)
@@ -323,6 +324,8 @@ typedef struct RrcConfigurationReq_s {
   char                          *discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
+  //Nr secondary cell group SSB central frequency (for ENDC NSA)
+  int                            nr_scg_ssb_freq;
 } RrcConfigurationReq;
 
 #define MAX_NUM_NBIOT_CELEVELS    3
@@ -397,14 +400,22 @@ typedef struct NbIoTRrcConfigurationReq_s {
 
 // gNB: GNB_APP -> RRC messages
 typedef struct NRRrcConfigurationReq_s {
-  uint32_t                cell_identity;
-  uint16_t                tac;
+  uint64_t                cell_identity;
+  uint32_t                tac;
   uint16_t                mcc[PLMN_LIST_MAX_SIZE];
   uint16_t                mnc[PLMN_LIST_MAX_SIZE];
   uint8_t                 mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  uint8_t                 num_plmn;
   NR_ServingCellConfigCommon_t *scc;
-  int                          ssb_SubcarrierOffset;
-  int                          pdsch_AntennaPorts;
+  NR_ServingCellConfig_t  *scd;
+  int                     ssb_SubcarrierOffset;
+  int                     sib1_tda;
+  int                     pdsch_AntennaPorts;
+  int                     pusch_AntennaPorts;
+  int                     minRXTXTIME;
+  int                     do_CSIRS;
+  int                     pusch_TargetSNRx10;
+  int                     pucch_TargetSNRx10;
 } gNB_RrcConfigurationReq;
 
 

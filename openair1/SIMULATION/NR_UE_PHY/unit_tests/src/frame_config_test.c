@@ -51,16 +51,16 @@
 
 void display_frame_configuration(NR_DL_FRAME_PARMS *frame_parms) {
 
-  printf("\nTdd configuration tti %d downlink %d uplink %d period %d \n", frame_parms->ttis_per_subframe, frame_parms->p_tdd_UL_DL_Configuration->nrofDownlinkSlots,
+  printf("\nTdd configuration tti %d downlink %d uplink %d period %d \n", frame_parms->slots_per_subframe, frame_parms->p_tdd_UL_DL_Configuration->nrofDownlinkSlots,
       frame_parms->p_tdd_UL_DL_Configuration->nrofUplinkSlots, frame_parms->p_tdd_UL_DL_Configuration->dl_UL_TransmissionPeriodicity);
 
   int k = (TDD_CONFIG_NB_FRAMES * NR_NUMBER_OF_SUBFRAMES_PER_FRAME) - 1; //19;
   int tti = 0;
-  for (int j = 0; j < TDD_CONFIG_NB_FRAMES * frame_parms->ttis_per_subframe * NR_NUMBER_OF_SUBFRAMES_PER_FRAME; j++) {
+  for (int j = 0; j < TDD_CONFIG_NB_FRAMES * frame_parms->slots_per_frame; j++) {
     int frame = 0;
     if (j != 0) {
-      frame = (frame_parms->ttis_per_subframe * NR_NUMBER_OF_SUBFRAMES_PER_FRAME)/j;
-      tti = (j)%(frame_parms->ttis_per_subframe * NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
+      frame = j / frame_parms->slots_per_frame;
+      tti = j % frame_parms->slots_per_frame;
     }
     else {
       frame = 0;
@@ -99,9 +99,10 @@ void display_frame_configuration(NR_DL_FRAME_PARMS *frame_parms) {
 *
 *********************************************************************/
 
-void set_tti_test(NR_DL_FRAME_PARMS *frame_parms, int ttis_per_subframe)
+void set_tti_test(NR_DL_FRAME_PARMS *frame_parms, int slots_per_subframe)
 {
-  frame_parms->ttis_per_subframe = ttis_per_subframe;
+  frame_parms->slots_per_subframe = slots_per_subframe;
+  frame_parms->slots_per_frame    = slots_per_subframe * NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
 }
 
 /*******************************************************************

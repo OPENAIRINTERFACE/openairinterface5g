@@ -283,7 +283,6 @@ int main(int argc, char **argv) {
   }
 
   logInit();
-  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
   g_log->log_component[PHY].level = LOG_DEBUG;
   g_log->log_component[PHY].flag = LOG_HIGH;
 
@@ -324,7 +323,7 @@ int main(int argc, char **argv) {
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
                                 0.0,
                                 0,
-                                0);
+                                0, 0);
 
   if (UE2eNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");

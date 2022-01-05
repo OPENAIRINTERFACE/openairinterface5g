@@ -32,6 +32,9 @@
 #include "s1ap_eNB_management_procedures.h"
 #include "openair2/LAYER2/MAC/slicing/slicing.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 static inline int phy_is_present(mid_t mod_id, uint8_t cc_id) {
   return RC.eNB && RC.eNB[mod_id] && RC.eNB[mod_id][cc_id];
 }
@@ -885,7 +888,7 @@ uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti) {
 
   if (!ue_context_p) return RRC_INACTIVE;
 
-  return ue_context_p->ue_context.Status;
+  return ue_context_p->ue_context.StatusRrc;
 }
 
 uint64_t flexran_get_ue_aggregated_max_bitrate_dl(mid_t mod_id, mid_t ue_id) {
@@ -3092,12 +3095,13 @@ int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id) {
   return slices->s[idx]->id;
 }
 
-void flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
-  if (!mac_is_present(mod_id)) return;
+int flexran_set_ue_dl_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
+  if (!mac_is_present(mod_id)) return 0;
   int idx = flexran_find_dl_slice(mod_id, slice_id);
-  if (idx < 0) return;
+  if (idx < 0) return 0;
   pp_impl_param_t *dl = &RC.mac[mod_id]->pre_processor_dl;
   dl->move_UE(dl->slices, ue_id, idx);
+  return 1;
 }
 
 int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
@@ -3108,15 +3112,16 @@ int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id) {
   return slices->s[idx]->id;
 }
 
-void flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
-  if (!mac_is_present(mod_id)) return;
+int flexran_set_ue_ul_slice_id(mid_t mod_id, mid_t ue_id, slice_id_t slice_id) {
+  if (!mac_is_present(mod_id)) return 0;
   int idx = flexran_find_ul_slice(mod_id, slice_id);
-  if (idx < 0) return;
+  if (idx < 0) return 0;
   pp_impl_param_t *ul = &RC.mac[mod_id]->pre_processor_ul;
   ul->move_UE(ul->slices, ue_id, idx);
+  return 1;
 }
 
-int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s) {
+int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s, void *object) {
   if (!mac_is_present(mod_id)) return 0;
   void *params = NULL;
   switch (s->params_case) {
@@ -3133,7 +3138,7 @@ int flexran_create_dl_slice(mid_t mod_id, const Protocol__FlexSlice *s) {
   char *l = s->label ? strdup(s->label) : NULL;
   void *algo = &dl->dl_algo; // default scheduler
   if (s->scheduler) {
-    algo = dlsym(NULL, s->scheduler);
+    algo = dlsym(object, s->scheduler);
     if (!algo) {
       free(params);
       LOG_E(FLEXRAN_AGENT, "cannot locate scheduler '%s'\n", s->scheduler);
@@ -3193,7 +3198,7 @@ int flexran_get_num_dl_slices(mid_t mod_id) {
   return RC.mac[mod_id]->pre_processor_dl.slices->num;
 }
 
-int flexran_create_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s) {
+int flexran_create_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s, void *object) {
   if (!mac_is_present(mod_id)) return -1;
   void *params = NULL;
   switch (s->params_case) {
@@ -3210,7 +3215,7 @@ int flexran_create_ul_slice(mid_t mod_id, const Protocol__FlexSlice *s) {
   char *l = s->label ? strdup(s->label) : NULL;
   void *algo = &ul->ul_algo; // default scheduler
   if (s->scheduler) {
-    algo = dlsym(NULL, s->scheduler);
+    algo = dlsym(object, s->scheduler);
     if (!algo) {
       free(params);
       LOG_E(FLEXRAN_AGENT, "cannot locate scheduler '%s'\n", s->scheduler);
@@ -3276,9 +3281,9 @@ char *flexran_get_dl_scheduler_name(mid_t mod_id) {
   return RC.mac[mod_id]->pre_processor_dl.dl_algo.name;
 }
 
-int flexran_set_dl_scheduler(mid_t mod_id, char *sched) {
+int flexran_set_dl_scheduler(mid_t mod_id, char *sched, void *object) {
   if (!mac_is_present(mod_id)) return -1;
-  void *d = dlsym(NULL, sched);
+  void *d = dlsym(object, sched);
   if (!d) return -2;
   pp_impl_param_t *dl_pp = &RC.mac[mod_id]->pre_processor_dl;
   dl_pp->dl_algo.unset(&dl_pp->dl_algo.data);
@@ -3292,9 +3297,9 @@ char *flexran_get_ul_scheduler_name(mid_t mod_id) {
   return RC.mac[mod_id]->pre_processor_ul.ul_algo.name;
 }
 
-int flexran_set_ul_scheduler(mid_t mod_id, char *sched) {
+int flexran_set_ul_scheduler(mid_t mod_id, char *sched, void *object) {
   if (!mac_is_present(mod_id)) return -1;
-  void *d = dlsym(NULL, sched);
+  void *d = dlsym(object, sched);
   if (!d) return -2;
   pp_impl_param_t *ul_pp = &RC.mac[mod_id]->pre_processor_ul;
   ul_pp->ul_algo.unset(&ul_pp->ul_algo.data);
@@ -3463,7 +3468,7 @@ int flexran_add_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4) {
   if (!rrc_is_present(mod_id)) return -2;
 
   /* Reconstruct S1AP_REGISTER_ENB_REQ */
-  MessageDef *m = itti_alloc_new_message(TASK_FLEXRAN_AGENT, S1AP_REGISTER_ENB_REQ);
+  MessageDef *m = itti_alloc_new_message(TASK_FLEXRAN_AGENT, 0, S1AP_REGISTER_ENB_REQ);
   RCconfig_S1(m, mod_id);
 
   const int CC_id = 0;
@@ -3489,22 +3494,22 @@ int flexran_add_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4) {
     S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_num[n] = mme->broadcast_plmn_num;
     for (int i = 0; i < mme->broadcast_plmn_num; ++i)
       S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_index[n][i] = mme->broadcast_plmn_index[i];
+    S1AP_REGISTER_ENB_REQ(m).mme_port[n] = mme->mme_port;
     S1AP_REGISTER_ENB_REQ(m).nb_mme += 1;
   }
 
   if (S1AP_REGISTER_ENB_REQ(m).nb_mme + n_mme > S1AP_MAX_NB_MME_IP_ADDRESS)
     return -1;
 
-  for (int i = 0; i < n_mme; ++i) {
-    const int n = S1AP_REGISTER_ENB_REQ(m).nb_mme;
-    strcpy(S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv4_address, mme_ipv4[0]);
-    S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv4 = 1;
-    S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv6 = 0;
-    S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_num[n] = S1AP_REGISTER_ENB_REQ(m).num_plmn;
-    for (int i = 0; i < S1AP_REGISTER_ENB_REQ(m).num_plmn; ++i)
-      S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_index[n][i] = i;
-    S1AP_REGISTER_ENB_REQ(m).nb_mme += 1;
-  }
+  const int n = S1AP_REGISTER_ENB_REQ(m).nb_mme;
+  strcpy(S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv4_address, mme_ipv4[0]);
+  S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv4 = 1;
+  S1AP_REGISTER_ENB_REQ(m).mme_ip_address[n].ipv6 = 0;
+  S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_num[n] = S1AP_REGISTER_ENB_REQ(m).num_plmn;
+  for (int i = 0; i < S1AP_REGISTER_ENB_REQ(m).num_plmn; ++i)
+    S1AP_REGISTER_ENB_REQ(m).broadcast_plmn_index[n][i] = i;
+  S1AP_REGISTER_ENB_REQ(m).mme_port[n] = S1AP_PORT_NUMBER;
+  S1AP_REGISTER_ENB_REQ(m).nb_mme += 1;
 
   itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(mod_id), m);
 
@@ -3523,7 +3528,7 @@ int flexran_remove_s1ap_mme(mid_t mod_id, size_t n_mme, char **mme_ipv4) {
   if (!mme)
     return -2;
 
-  MessageDef *m = itti_alloc_new_message(TASK_FLEXRAN_AGENT, SCTP_CLOSE_ASSOCIATION);
+  MessageDef *m = itti_alloc_new_message(TASK_FLEXRAN_AGENT, 0, SCTP_CLOSE_ASSOCIATION);
   SCTP_CLOSE_ASSOCIATION(m).assoc_id = mme->assoc_id;
   itti_send_msg_to_task (TASK_SCTP, ENB_MODULE_ID_TO_INSTANCE(mod_id), m);
 

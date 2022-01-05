@@ -2231,7 +2231,8 @@ static const plmn_data_t plmn_data[] = {
   /*
   310   900     Mid-Rivers Communications   Mid-Rivers Wireless   Operational
   */
-  {310,   910,    "Verizon Wireless",   "Verizon USA"}
+  {310,   910,    "Verizon Wireless",   "Verizon USA"},
+  {0,0,"",""}
   /*
   310   920     Get Mobile    Inactive
   310   930     Copper Valley Wireless    Inactive

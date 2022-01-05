@@ -867,8 +867,10 @@ typedef enum {
   NOT_SYNCHED=0,
   PRACH=1,
   RA_RESPONSE=2,
-  PUSCH=3,
-  RESYNCH=4
+  RA_WAIT_CR=3,
+  PUSCH=4,
+  RESYNCH=5,
+  NUM_UE_MODE=6
 } UE_MODE_t;
 
 #define FOREACH_PARALLEL(GEN)   \
@@ -941,6 +943,23 @@ extern int sync_var;
 #define ENCODE_C_FPTRIDX             11
 #define ENCODE_INIT_SSE_FPTRIDX      12
 #define DECODE_NUM_FPTR              13
+
+
+// Mask for identifying subframe for MBMS
+#define MBSFN_TDD_SF3 0x80// for TDD
+#define MBSFN_TDD_SF4 0x40
+#define MBSFN_TDD_SF7 0x20
+#define MBSFN_TDD_SF8 0x10
+#define MBSFN_TDD_SF9 0x08
+
+
+
+#define MBSFN_FDD_SF1 0x80// for FDD
+#define MBSFN_FDD_SF2 0x40
+#define MBSFN_FDD_SF3 0x20
+#define MBSFN_FDD_SF6 0x10
+#define MBSFN_FDD_SF7 0x08
+#define MBSFN_FDD_SF8 0x04
 
 
 typedef uint8_t(decoder_if_t)(int16_t *y,
@@ -1093,6 +1112,5 @@ static inline int release_thread(pthread_mutex_t *mutex,
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] release_thread(): error unlocking mutex return %d for %s\n", rc, name);
   return(0);
 }
-
 
 #endif //  __PHY_DEFS_COMMON_H__

@@ -25,7 +25,6 @@
 # include "targets/RT/USER/lte-softmodem.h"
 # include "common/ran_context.h"
 
-#ifdef OPENAIR2
     #include "sctp_eNB_task.h"
     #include "x2ap_eNB.h"
     #include "s1ap_eNB.h"
@@ -40,13 +39,13 @@
     #include "lteRALenb.h"
   #endif
   #include "RRC/LTE/rrc_defs.h"
-#endif
 # include "f1ap_cu_task.h"
 # include "f1ap_du_task.h"
 # include "enb_app.h"
 # include "mce_app.h"
 # include "mme_app.h"
 
+#include <openair3/ocp-gtpu/gtp_itf.h>
 //extern RAN_CONTEXT_t RC;
 
 int create_tasks_mbms(uint32_t enb_nb) {

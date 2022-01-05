@@ -29,6 +29,7 @@
 
 #define shift 4
 //#define shift_DC 0
+#define SHRT_MIN -32768
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef LOCALIZATION
@@ -67,52 +68,39 @@ int32_t subcarrier_energy(int32_t *input,uint32_t length, int32_t *subcarrier_en
 }
 #endif
 
+//-----------------------------------------------------------------
+// Average Power calculation with DC removing
+//-----------------------------------------------------------------
 int32_t signal_energy(int32_t *input,uint32_t length)
 {
+  uint32_t i;
+  int32_t temp;
+  __m128i in, in_clp, i16_min, coe1;
+  __m128 num0, num1, num2, num3, recp1;
 
-  int32_t i;
-  int32_t temp,temp2;
-  register __m64 mm0,mm1,mm2,mm3;
-  __m64 *in = (__m64 *)input;
+  //init
+  num0 = _mm_setzero_ps();
+  num1 = _mm_setzero_ps();
+  i16_min = _mm_set1_epi16(SHRT_MIN);
+  coe1 = _mm_set1_epi16(1);
+  recp1 = _mm_rcp_ps(_mm_cvtepi32_ps(_mm_set1_epi32(length)));
 
-
-  mm0 = _mm_setzero_si64();//pxor(mm0,mm0);
-  mm3 = _mm_setzero_si64();//pxor(mm3,mm3);
-
-  for (i=0; i<length>>1; i++) {
-
-    mm1 = in[i];
-    mm2 = mm1;
-    mm1 = _m_pmaddwd(mm1,mm1);
-    mm1 = _m_psradi(mm1,shift);// shift any 32 bits blocs of the word by the value shift
-    mm0 = _m_paddd(mm0,mm1);// add the two 64 bits words 4 bytes by 4 bytes
-    //    mm2 = _m_psrawi(mm2,shift_DC);
-    mm3 = _m_paddw(mm3,mm2);// add the two 64 bits words 2 bytes by 2 bytes
+  //Acc
+  for (i = 0; i < (length >> 2); i++) {
+    in = _mm_loadu_si128((__m128i *)input);
+    in_clp = _mm_subs_epi16(in, _mm_cmpeq_epi16(in, i16_min));//if in=SHRT_MIN in+1, else in
+    num0 = _mm_add_ps(num0, _mm_cvtepi32_ps(_mm_madd_epi16(in_clp, in_clp)));
+    num1 = _mm_add_ps(num1, _mm_cvtepi32_ps(_mm_madd_epi16(in, coe1)));//DC
+    input += 4;
   }
+  //Ave
+  num2 = _mm_dp_ps(num0, recp1, 0xFF);//AC power
+  num3 = _mm_dp_ps(num1, recp1, 0xFF);//DC
+  num3 = _mm_mul_ps(num3, num3);      //DC power
+  //remove DC
+  temp = _mm_cvtsi128_si32(_mm_cvttps_epi32(_mm_sub_ps(num2, num3)));
 
-  mm1 = mm0;
-  mm0 = _m_psrlqi(mm0,32);
-  mm0 = _m_paddd(mm0,mm1);
-  temp = _m_to_int(mm0);
-  temp/=length;
-  temp<<=shift;   // this is the average of x^2
-
-
-  // now remove the DC component
-
-
-  mm2 = _m_psrlqi(mm3,32);
-  mm2 = _m_paddw(mm2,mm3);
-  mm2 = _m_pmaddwd(mm2,mm2);
-  temp2 = _m_to_int(mm2);
-  temp2/=(length*length);
-  //  temp2<<=(2*shift_DC);
-  temp -= temp2;
-
-  _mm_empty();
-  _m_empty();
-
-  return((temp>0)?temp:1);
+  return temp;
 }
 
 int32_t signal_energy_amp_shift(int32_t *input,uint32_t length)
@@ -163,61 +151,27 @@ int32_t signal_energy_amp_shift(int32_t *input,uint32_t length)
 
 int32_t signal_energy_nodc(int32_t *input,uint32_t length)
 {
-
   int32_t i;
   int32_t temp;
-  register __m64 mm0,mm1;//,mm2,mm3;
-  __m64 *in = (__m64 *)input;
 
-#ifdef MAIN
-  int16_t *printb;
-#endif
+  __m128i in;
+  __m128  mm0;
 
-  mm0 = _mm_setzero_si64();//_pxor(mm0,mm0);
-  //  mm3 = _mm_setzero_si64();//pxor(mm3,mm3);
-
-  for (i=0; i<length>>1; i++) {
-
-    mm1 = in[i];
-    mm1 = _m_pmaddwd(mm1,mm1);// SIMD complex multiplication
-    mm1 = _m_psradi(mm1,shift);
-    mm0 = _m_paddd(mm0,mm1);
-    //    temp2 = mm0;
-    //    printf("%d %d\n",((int *)&in[i])[0],((int *)&in[i])[1]);
-
-
-    //    printb = (int16_t *)&mm2;
-    //    printf("mm2 %d : %d %d %d %d\n",i,printb[0],printb[1],printb[2],printb[3]);
-
-
+//init
+  mm0 = _mm_setzero_ps();
+//Acc
+  for (i=0; i<(length>>2); i++) {
+    in = _mm_loadu_si128((__m128i *)input);
+    mm0 = _mm_add_ps(mm0,_mm_cvtepi32_ps(_mm_madd_epi16(in,in)));
+    input += 4;
   }
+  //Ave
+  temp = (int)((((float*)&mm0)[0] +
+                 ((float*)&mm0)[1] +
+                 ((float*)&mm0)[2] +
+                 ((float*)&mm0)[3])/(float)length);
 
-  /*
-  #ifdef MAIN
-  printb = (int16_t *)&mm3;
-  printf("%d %d %d %d\n",printb[0],printb[1],printb[2],printb[3]);
-  #endif
-  */
-  mm1 = mm0;
-
-  mm0 = _m_psrlqi(mm0,32);
-
-  mm0 = _m_paddd(mm0,mm1);
-
-  temp = _m_to_int(mm0);
-
-  temp/=length;
-  temp<<=shift;   // this is the average of x^2
-
-#ifdef MAIN
-  printf("E x^2 = %d\n",temp);
-#endif
-  _mm_empty();
-  _m_empty();
-
-
-
-  return((temp>0)?temp:1);
+  return temp;
 }
 
 #elif defined(__arm__)
@@ -310,7 +264,7 @@ double signal_energy_fp(double *s_re[2],double *s_im[2],uint32_t nb_antennas,uin
   return(V/length/nb_antennas);
 }
 
-double signal_energy_fp2(struct complex *s,uint32_t length)
+double signal_energy_fp2(struct complexd *s,uint32_t length)
 {
 
   int32_t i;
@@ -319,7 +273,7 @@ double signal_energy_fp2(struct complex *s,uint32_t length)
   for (i=0; i<length; i++) {
     //    printf("signal_energy_fp2 : %f,%f => %f\n",s[i].x,s[i].y,V);
     //      V= V + (s[i].y*s[i].x) + (s[i].y*s[i].x);
-    V= V + (s[i].x*s[i].x) + (s[i].y*s[i].y);
+    V= V + (s[i].r*s[i].r) + (s[i].i*s[i].i);
   }
 
   return(V/length);
@@ -363,4 +317,67 @@ main(int argc,char **argv)
   printf("dc = (%d,%d)\n",dc_r,dc_i);
 }
 #endif
+
+#define SHRT_MIN -32768
+int32_t signal_power(int32_t *input, uint32_t length)
+{
+
+  uint32_t i;
+  int32_t temp;
+
+  __m128i in, in_clp, i16_min;
+  __m128  num0, num1;
+  __m128  recp1;
+
+  //init
+  num0 = _mm_setzero_ps();
+  i16_min = _mm_set1_epi16(SHRT_MIN);
+  recp1 = _mm_rcp_ps(_mm_cvtepi32_ps(_mm_set1_epi32(length)));
+  //Acc
+  for (i = 0; i < (length >> 2); i++) {
+    in = _mm_loadu_si128((__m128i *)input);
+    in_clp = _mm_subs_epi16(in, _mm_cmpeq_epi16(in, i16_min));//if in=SHRT_MIN in+1, else in
+    num0 = _mm_add_ps(num0, _mm_cvtepi32_ps(_mm_madd_epi16(in_clp, in_clp)));
+    input += 4;
+  }
+  //Ave
+  num1 = _mm_dp_ps(num0, recp1, 0xFF);
+  temp = _mm_cvtsi128_si32(_mm_cvttps_epi32(num1));
+
+  return temp;
+}
+
+int32_t interference_power(int32_t *input, uint32_t length)
+{
+
+  uint32_t i;
+  int32_t temp;
+
+  __m128i in, in_clp, i16_min;
+  __m128i num0, num1, num2, num3;
+  __m128  num4, num5, num6;
+  __m128  recp1;
+
+  //init
+  i16_min = _mm_set1_epi16(SHRT_MIN);
+  num5 = _mm_setzero_ps();
+  recp1 = _mm_rcp_ps(_mm_cvtepi32_ps(_mm_set1_epi32(length>>2)));// 1/n, n= length/4
+  //Acc
+  for (i = 0; i < (length >> 2); i++) {
+    in = _mm_loadu_si128((__m128i *)input);
+    in_clp = _mm_subs_epi16(in, _mm_cmpeq_epi16(in, i16_min));           //if in=SHRT_MIN, in+1, else in
+    num0 = _mm_cvtepi16_epi32(in_clp);                                   //lower 2 complex [0], [1]
+    num1 = _mm_cvtepi16_epi32(_mm_shuffle_epi32(in_clp, 0x4E));          //upper 2 complex [2], [3]
+    num2 = _mm_srai_epi32(_mm_add_epi32(num0, num1), 0x01);              //average A=complex( [0] + [2] ) / 2, B=complex( [1] + [3] ) / 2 
+    num3 = _mm_sub_epi32(num2, _mm_shuffle_epi32(num2, 0x4E));           //complexA-complexB, B-A
+    num4 = _mm_dp_ps(_mm_cvtepi32_ps(num3), _mm_cvtepi32_ps(num3), 0x3F);//C = num3 lower complex power, C, C, C
+    num5 = _mm_add_ps(num5, num4);                                       //Acc Cn, Cn, Cn, Cn, 
+    input += 4;
+  }
+  //Interference ve
+  num6 = _mm_mul_ps(num5, recp1); //Cn / n
+  temp = _mm_cvtsi128_si32(_mm_cvttps_epi32(num6));
+
+  return temp;
+}
 

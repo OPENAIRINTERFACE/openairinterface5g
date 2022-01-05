@@ -1,0 +1,126 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for RHEL8 in the OpenShift context (v4.4)
+#
+#---------------------------------------------------------------------
+
+FROM image-registry.openshift-image-registry.svc:5000/oai/oai-ran:rhel8-latest AS enb-build 
+
+
+WORKDIR /oai-ran
+
+#run build_oai to build the target image
+RUN /bin/sh oaienv && \ 
+    cd cmake_targets && \
+    rm -Rf log && \
+    mkdir -p log && \
+    ./build_oai --eNB --ninja -w USRP
+
+# debug
+#RUN ldconfig -v && ldd /oai-ran/targets/bin/lte-softmodem.Rel15
+#RUN ls -ls /oai-ran/targets/bin
+#RUN ls -ls /oai-ran/cmake_targets/ran_build/build/*.so
+
+#start from scratch for target executable
+FROM registry.access.redhat.com/ubi8/ubi:latest as oai-enb
+
+RUN yum update -y && \
+    yum install -y --enablerepo="ubi-8-codeready-builder" \
+        lksctp-tools \
+        nettle \
+        atlas \
+        net-tools \
+        iproute \
+        iputils \
+        libyaml && \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
+
+WORKDIR /opt/oai-enb/bin
+COPY --from=enb-build /oai-ran/targets/bin/lte-softmodem.Rel15 .
+
+WORKDIR /usr/local/lib/
+COPY --from=enb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
+COPY --from=enb-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
+COPY --from=enb-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
+COPY --from=enb-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
+COPY --from=enb-build /oai-ran/targets/bin/libcoding.so .
+COPY --from=enb-build /oai-ran/targets/bin/libparams_libconfig.so .
+COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
+COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
+RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
+
+COPY --from=enb-build /usr/local/lib/libprotobuf-c.so.1 .
+
+COPY --from=enb-build /lib64/libconfig.so.9 /lib64
+COPY --from=enb-build /lib64/libblas.so.3 /lib64
+COPY --from=enb-build /lib64/liblapack.so.3 /lib64
+COPY --from=enb-build /lib64/liblapacke.so.3 /lib64
+COPY --from=enb-build /lib64/libboost_chrono.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_date_time.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_filesystem.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_program_options.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_serialization.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_thread.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_system.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_unit_test_framework.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_atomic.so.1.66.0 /lib64
+COPY --from=enb-build /lib64/libboost_timer.so.1.66.0 /lib64
+COPY --from=enb-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
+
+RUN ldconfig
+
+#debug
+RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
+RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
+RUN ldd /usr/local/lib/librfsimulator.so.Rel15
+RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
+RUN ldd /usr/local/lib/libcoding.so
+RUN ldd /usr/local/lib/libparams_libconfig.so
+RUN ldd /usr/local/lib/libdfts.so
+RUN ldd /usr/local/lib/liboai_iqplayer.so
+RUN ldd /opt/oai-enb/bin/lte-softmodem.Rel15
+
+# Copy the relevant configuration files for eNB
+WORKDIR /opt/oai-enb/etc
+COPY --from=enb-build /oai-ran/ci-scripts/conf_files/enb.* .
+COPY --from=enb-build /oai-ran/ci-scripts/conf_files/rcc.* .
+COPY --from=enb-build /oai-ran/ci-scripts/conf_files/cu.* .
+COPY --from=enb-build /oai-ran/ci-scripts/conf_files/du.* .
+COPY --from=enb-build /oai-ran/ci-scripts/conf_files/rru.* .
+
+WORKDIR /opt/oai-enb
+
+#EXPOSE 2152/udp  # S1U, GTP/UDP
+#EXPOSE 22100/tcp # ?
+#EXPOSE 36412/udp # S1C, SCTP/UDP
+#EXPOSE 36422/udp # X2C, SCTP/UDP
+#EXPOSE 50000/udp # IF5 / ORI (control)
+#EXPOSE 50001/udp # IF5 / ECPRI (data)
+
+#CMD ["/opt/oai-enb/bin/lte-softmodem", "-O", "/opt/oai-enb/etc/enb.conf"]
+#ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+CMD ["sleep", "infinity"]

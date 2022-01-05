@@ -38,6 +38,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB);
  */
 void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
 void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
+void nr_init_csi_rs(PHY_VARS_gNB* gNB, uint32_t Nid);
 
 void nr_gold_pusch(PHY_VARS_gNB* gNB, uint32_t *Nid);
 
@@ -52,10 +53,24 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      uint8_t dmrs_type);
 
 void init_scrambling_luts(void);
-
 void nr_generate_modulation_table(void);
 
 extern __m64 byte2m64_re[256];
 extern __m64 byte2m64_im[256];
+extern __m128i byte2m128i[256];
+
+
+
+int nr_pusch_lowpaprtype1_dmrs_rx(PHY_VARS_gNB *gNB,
+                     unsigned int Ns,
+                     int16_t *dmrs_seq,
+                     int32_t *output,
+                     unsigned short p,
+                     unsigned char lp,
+                     unsigned short nb_pusch_rb,
+                     uint32_t re_offset,
+                     uint8_t dmrs_type);
+
+
 
 #endif

@@ -16,12 +16,12 @@
 #include "NwEvt.h"
 #include "NwLog.h"
 
+#ifndef __NW_MINI_LOG_MGR_H__
+#define __NW_MINI_LOG_MGR_H__
+
 #ifndef NW_ASSERT
 #define NW_ASSERT assert
 #endif
-
-#ifndef __NW_MINI_LOG_MGR_H__
-#define __NW_MINI_LOG_MGR_H__
 
 extern uint32_t g_log_level;
 

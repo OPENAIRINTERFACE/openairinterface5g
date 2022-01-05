@@ -34,13 +34,13 @@
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "phy_frame_config_nr.h"
 
-
+void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp);
-void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB, int frame_tx, int slot_tx, int do_meas);
+void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx, int frame_tx, int slot_tx, int do_meas);
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
-void phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
-void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_prach_pdu_t *prach_pdu);
-void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot);
+int  phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx);
+void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot);
+void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu);
 void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx);
 void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx);
 void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa);

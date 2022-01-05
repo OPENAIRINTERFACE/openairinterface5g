@@ -27,6 +27,7 @@
 This section deals with basic functions for OFDM Modulation.
 
 
+
 */
 
 #include "PHY/defs_eNB.h"
@@ -47,6 +48,7 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
   PHY_ofdm_mod(txdataF,        // input
 	       txdata,         // output
 	       frame_parms->ofdm_symbol_size,                
+
 	       1,                 // number of symbols
 	       frame_parms->nb_prefix_samples0,               // number of prefix samples
 	       CYCLIC_PREFIX);
@@ -61,20 +63,62 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
   
 }
 
-void nr_normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,NR_DL_FRAME_PARMS *frame_parms)
+void nr_normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,NR_DL_FRAME_PARMS *frame_parms, uint32_t slot)
 {
-  PHY_ofdm_mod(txdataF,        // input
-	       txdata,         // output
-	       frame_parms->ofdm_symbol_size,                
-	       1,                 // number of symbols
-	       frame_parms->nb_prefix_samples0,               // number of prefix samples
-	       CYCLIC_PREFIX);
-  PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,        // input
-	       txdata + frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples0,         // output
-	       frame_parms->ofdm_symbol_size,                
-	       nsymb - 1,
-	       frame_parms->nb_prefix_samples,               // number of prefix samples
-	       CYCLIC_PREFIX);  
+  // This function works only slot wise. For more generic symbol generation refer nr_feptx0()
+  if (frame_parms->numerology_index != 0) { // case where numerology != 0
+    if (!(slot%(frame_parms->slots_per_subframe/2))) {
+      PHY_ofdm_mod(txdataF,
+             txdata,
+             frame_parms->ofdm_symbol_size,
+             1,
+             frame_parms->nb_prefix_samples0,
+             CYCLIC_PREFIX);
+      PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,
+             txdata + frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples0,
+             frame_parms->ofdm_symbol_size,
+             nsymb - 1,
+             frame_parms->nb_prefix_samples,
+             CYCLIC_PREFIX);
+    }
+    else {
+      PHY_ofdm_mod(txdataF,
+             txdata,
+             frame_parms->ofdm_symbol_size,
+             nsymb,
+             frame_parms->nb_prefix_samples,
+             CYCLIC_PREFIX);
+    }
+  }
+  else { // numerology = 0, longer CP for every 7th symbol
+      PHY_ofdm_mod(txdataF,
+             txdata,
+             frame_parms->ofdm_symbol_size,
+             1,
+             frame_parms->nb_prefix_samples0,
+             CYCLIC_PREFIX);
+      PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,
+             txdata + frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples0,
+             frame_parms->ofdm_symbol_size,
+             6,
+             frame_parms->nb_prefix_samples,
+             CYCLIC_PREFIX);
+      PHY_ofdm_mod(txdataF + 7*frame_parms->ofdm_symbol_size,
+             txdata + 6*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples) +
+                    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples0,
+             frame_parms->ofdm_symbol_size,
+             1,
+             frame_parms->nb_prefix_samples0,
+             CYCLIC_PREFIX);
+      PHY_ofdm_mod(txdataF + 8*frame_parms->ofdm_symbol_size,
+             txdata + 6*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples) +
+                    2*(frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples0),
+             frame_parms->ofdm_symbol_size,
+             6,
+             frame_parms->nb_prefix_samples,
+             CYCLIC_PREFIX);
+  }
+
 }
 
 void PHY_ofdm_mod(int *input,                       /// pointer to complex input
@@ -88,9 +132,8 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
   if(nb_symbols == 0) return;
 
-  short temp[2*2*6144*4] __attribute__((aligned(32)));
-  unsigned short i,j;
-  short k;
+  int16_t temp[2*2*6144*4] __attribute__((aligned(32)));
+  int i,j;
 
   volatile int *output_ptr=(int*)0;
 
@@ -188,18 +231,9 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
       if (fftsize==128) 
 #endif
       {
-        /*for (j=0; j<fftsize ; j++) {
-          output_ptr[j] = temp_ptr[j];
-        }*/
         memcpy((void*)output_ptr,(void*)temp_ptr,fftsize<<2);
       }
-
-      j=fftsize;
-
-      for (k=-1; k>=-nb_prefix_samples; k--) {
-        output_ptr[k] = output_ptr[--j];
-      }
-
+      memcpy((void*)&output_ptr[-nb_prefix_samples],(void*)&output_ptr[fftsize-nb_prefix_samples],nb_prefix_samples<<2);
       break;
 
     case CYCLIC_SUFFIX:
@@ -306,60 +340,31 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
 
 }
 
-/*
-// OFDM modulation for each symbol
-void do_OFDM_mod_symbol(LTE_eNB_COMMON *eNB_common_vars, RU_COMMON *common, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms,int do_precoding)
-{
+void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
+		       int16_t* trxdata,
+		       int slot,
+		       int first_symbol,
+		       int nsymb,
+		       int length) {
+  int symb_offset = (slot%fp->slots_per_subframe)*fp->symbols_per_slot;
 
-  int aa, l, slot_offset, slot_offsetF;
-  int32_t **txdataF    = eNB_common_vars->txdataF;
-  int32_t **txdataF_BF = common->txdataF_BF;
-  int32_t **txdata     = common->txdata;
+  int16_t *symbol_rotation = fp->symbol_rotation[0];
 
-  slot_offset  = (next_slot)*(frame_parms->samples_per_tti>>1);
-  slot_offsetF = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==EXTENDED) ? 6 : 7);
-  //printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
-  for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
-  
-    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+  for (int sidx=0;sidx<nsymb;sidx++) {
 
-      //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,1);
-      if (do_precoding==1) beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights,next_slot,l,aa);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_BEAM_PRECODING,0);
+    LOG_D(PHY,"Rotating symbol %d, slot %d, symbol_subframe_index %d, length %d (%d,%d)\n",
+      first_symbol + sidx,
+      slot,
+      sidx + first_symbol + symb_offset,
+      length,
+      symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
+      symbol_rotation[1 + 2 * (sidx + first_symbol + symb_offset)]);
 
-      //PMCH case not implemented... 
-
-      if (frame_parms->Ncp == EXTENDED)
-        PHY_ofdm_mod((do_precoding == 1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],         // input
-                     &txdata[aa][slot_offset+l*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],            // output
-                     frame_parms->ofdm_symbol_size,       
-                     1,                                   // number of symbols
-                     frame_parms->nb_prefix_samples,      // number of prefix samples
-                     CYCLIC_PREFIX);
-      else {
-        if (l==0) {
-          PHY_ofdm_mod((do_precoding==1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],        // input
-                       &txdata[aa][slot_offset],           // output
-                       frame_parms->ofdm_symbol_size,      
-                       1,                                  // number of symbols
-                       frame_parms->nb_prefix_samples0,    // number of prefix samples
-                       CYCLIC_PREFIX);
-           
-        } else {
-	  PHY_ofdm_mod((do_precoding==1)?txdataF_BF[aa]:&txdataF[aa][slot_offsetF+l*frame_parms->ofdm_symbol_size],        // input
-                       &txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],           // output
-                       frame_parms->ofdm_symbol_size,      
-                       1,                                  // number of symbols
-                       frame_parms->nb_prefix_samples,     // number of prefix samples
-                       CYCLIC_PREFIX);
-
-          //printf("txdata[%d][%d]=%d\n",aa,slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES]);
- 
-        }
-      }
-    }
+    rotate_cpx_vector(trxdata + (sidx * length * 2),
+                      &symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
+                      trxdata + (sidx * length * 2),
+                      length,
+                      15);
   }
-
 }
-*/
+		       

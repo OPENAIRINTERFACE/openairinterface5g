@@ -52,7 +52,7 @@
         <testCase id="090102">
                 <class>Initialize_OAI_UE</class>
                 <desc>Initialize NR UE USRP</desc>
-		<Initialize_OAI_UE_args>--phy-test --usrp-args "addr=192.168.30.2,second_addr=192.168.50.2,clock_source=external,time_source=external" --threadoffset 16 --rrc_config_path .</Initialize_OAI_UE_args>
+		<Initialize_OAI_UE_args>--phy-test --usrp-args "addr=192.168.30.2,second_addr=192.168.50.2,clock_source=external,time_source=external" --ue-rxgain 50  --rrc_config_path . --dlsch-parallel 4 </Initialize_OAI_UE_args>
 		<air_interface>NR</air_interface>
         </testCase>
 

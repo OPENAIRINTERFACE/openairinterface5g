@@ -75,10 +75,6 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
-#ifndef OPENAIR2
-  #include "UTIL/OTG/otg_vars.h"
-#endif
-
 #include "create_tasks.h"
 #include "system.h"
 
@@ -95,9 +91,6 @@ pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 
-#ifdef UESIM_EXPANSION
-  uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
 uint16_t sf_ahead=2;
 int tddflag;
 char *emul_iface;
@@ -171,7 +164,6 @@ extern void get_uethreads_params(void);
 
 int transmission_mode=1;
 
-int usrp_tx_thread = 0;
 
 
 char *usrp_args=NULL;
@@ -195,6 +187,9 @@ int oaisim_flag=0;
  * this is very hackish - find a proper solution
  */
 uint8_t abstraction_flag=0;
+
+// needed for pdcp.c
+RAN_CONTEXT_t RC;
 
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -289,7 +284,6 @@ static void get_options(void) {
   int dumpframe=0;
   int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
-  int simL1flag =0;
 
   set_default_frame_parms(frame_parms);
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
@@ -303,8 +297,6 @@ static void get_options(void) {
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   nfapi_setmode(nfapi_mode);
 
-  if (simL1flag)
-    set_softmodem_optmask(SOFTMODEM_SIML1_BIT);
 
   if (loopfile != NULL) {
     printf("Input file for hardware emulation: %s",loopfile);
@@ -503,7 +495,7 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(ENB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
@@ -543,12 +535,15 @@ void init_pdcp(void) {
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
 }
 
+// Stupid function addition because UE itti messages queues definition is common with eNB
+void *rrc_enb_process_msg(void *notUsed) {
+AssertFatal(false,"");
+	return NULL;
+}
+
 int main( int argc, char **argv ) {
   int CC_id;
   uint8_t  abstraction_flag=0;
-#ifdef UESIM_EXPANSION
-  memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
-#endif
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
   NB_UE_INST=1;
@@ -574,11 +569,6 @@ int main( int argc, char **argv ) {
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
 
-  if (NB_UE_INST > 1 && (!IS_SOFTMODEM_SIML1)  && NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
-    printf("Running with more than 1 UE instance and simL1 is not active, this will result in undefined behaviour for now, exiting.\n");
-    abort();
-  }
-
   // Checking option of nums_ue_thread.
   if(NB_THREAD_INST < 1) {
     printf("Running with 0 UE rxtx thread, exiting.\n");
@@ -601,14 +591,14 @@ int main( int argc, char **argv ) {
   pthread_mutex_init(&sync_mutex, NULL);
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  itti_init(TASK_MAX, tasks_info);
 
   // initialize mscgen log after ITTI
   if (get_softmodem_params()->start_msc) {
     load_module_shlib("msc",NULL,0,&msc_interface);
   }
 
-  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
+  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   init_pdcp();
   //TTN for D2D
@@ -649,9 +639,6 @@ int main( int argc, char **argv ) {
     }
   } else init_openair0(frame_parms[0],(int)rx_gain[0][0]);
 
-  if (IS_SOFTMODEM_SIML1 ) {
-    RCConfig_sim();
-  }
 
   cpuf=get_cpu_freq_GHz();
   
@@ -753,12 +740,8 @@ int main( int argc, char **argv ) {
 
   //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
 
-  if (IS_SOFTMODEM_SIML1 )  {
-    init_ocm();
-    PHY_vars_UE_g[0][0]->no_timing_correction = 1;
-  }
 
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     load_softscope("ue",NULL);
 
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
@@ -770,6 +753,7 @@ int main( int argc, char **argv ) {
   printf("sync sent\n");
   /*
     printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
+    We have to set properly PARAMFLAG_NOFREE
     end_configmodule();
     printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   */
@@ -783,7 +767,7 @@ int main( int argc, char **argv ) {
   printf("oai_exit=%d\n",oai_exit);
 
   // stop threads
-  if(IS_SOFTMODEM_DOFORMS)
+  if(IS_SOFTMODEM_DOSCOPE)
     end_forms();
 
   printf("stopping MODEM threads\n");

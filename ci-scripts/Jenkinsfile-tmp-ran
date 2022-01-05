@@ -241,6 +241,10 @@ pipeline {
         stage ("Terminate") {
             parallel {
                 stage('Terminate UE') {
+                    // Bypassing this stage if there are no abd server defined
+                    when {
+                      expression { params.ADB_IPAddress != "none" }
+                    }
                     steps {
                         echo '\u2705 \u001B[32mTerminate UE\u001B[0m'
                         withCredentials([
@@ -275,6 +279,10 @@ pipeline {
                     }
                 }
                 stage('Terminate SPGW') {
+                    // Bypassing this stage if EPC server is not defined
+                    when {
+                      expression { params.EPC_IPAddress != "none" }
+                    }
                     steps {
                         echo '\u2705 \u001B[32mTerminate SPGW\u001B[0m'
                         withCredentials([
@@ -292,6 +300,10 @@ pipeline {
                     }
                 }
                 stage('Terminate MME') {
+                    // Bypassing this stage if EPC server is not defined
+                    when {
+                      expression { params.EPC_IPAddress != "none" }
+                    }
                     steps {
                         echo '\u2705 \u001B[32mTerminate MME\u001B[0m'
                         withCredentials([
@@ -309,6 +321,10 @@ pipeline {
                     }
                 }
                 stage('Terminate HSS') {
+                    // Bypassing this stage if EPC server is not defined
+                    when {
+                      expression { params.EPC_IPAddress != "none" }
+                    }
                     steps {
                         echo '\u2705 \u001B[32mTerminate HSS\u001B[0m'
                         withCredentials([
@@ -353,7 +369,7 @@ pipeline {
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
                         ]) {
                             echo '\u2705 \u001B[32mLog Collection (eNB - Run)\u001B[0m'
-                            sh "python3 ci-scripts/main.py --mode=LogCollecteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+                            sh "python3 ci-scripts/main.py --mode=LogCollecteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --BuildId=${env.BUILD_ID}"
 
                             echo '\u2705 \u001B[32mLog Transfer (eNB - Run)\u001B[0m'
                             sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/enb.log.zip ./enb.log.${env.BUILD_ID}.zip || true"
@@ -371,6 +387,10 @@ pipeline {
                     }
                 }
                 stage('Log Collection (SPGW)') {
+                    // Bypassing this stage if EPC server is not defined
+                    when {
+                      expression { params.EPC_IPAddress != "none" }
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -389,6 +409,10 @@ pipeline {
                     }
                 }
                 stage('Log Collection (MME)') {
+                    // Bypassing this stage if EPC server is not defined
+                    when {
+                      expression { params.EPC_IPAddress != "none" }
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -407,6 +431,10 @@ pipeline {
                     }
                 }
                 stage('Log Collection (HSS)') {
+                    // Bypassing this stage if EPC server is not defined
+                    when {
+                      expression { params.EPC_IPAddress != "none" }
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -425,6 +453,10 @@ pipeline {
                     }
                 }
                 stage('Log Collection (Ping)') {
+                    // Bypassing this stage if EPC server is not defined
+                    when {
+                      expression { params.EPC_IPAddress != "none" }
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -443,6 +475,10 @@ pipeline {
                     }
                 }
                 stage('Log Collection (Iperf)') {
+                    // Bypassing this stage if EPC server is not defined
+                    when {
+                      expression { params.EPC_IPAddress != "none" }
+                    }
                     steps {
                         withCredentials([
                              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
@@ -482,7 +518,7 @@ pipeline {
         // Making sure that we really shutdown every thing before leaving
         failure {
             script {
-                if (!termStatusArray[termUE]) {
+                if ((!termStatusArray[termUE]) && (params.ADB_IPAddress != "none")) {
                     withCredentials([
                         [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
                     ]) {
@@ -496,21 +532,21 @@ pipeline {
                         sh "python3 ci-scripts/main.py --mode=TerminateeNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
                     }
                 }
-                if (!termStatusArray[termSPGW]) {
+                if ((!termStatusArray[termSPGW]) && (params.EPC_IPAddress != "none")) {
                     withCredentials([
                         [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
                     ]) {
                         sh "python3 ci-scripts/main.py --mode=TerminateSPGW --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCType=${params.EPC_Type} --EPCSourceCodePath=${params.EPC_SourceCodePath}"
                     }
                 }
-                if (!termStatusArray[termMME]) {
+                if ((!termStatusArray[termMME]) && (params.EPC_IPAddress != "none")) {
                     withCredentials([
                         [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
                     ]) {
                         sh "python3 ci-scripts/main.py --mode=TerminateMME --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCType=${params.EPC_Type} --EPCSourceCodePath=${params.EPC_SourceCodePath}"
                     }
                 }
-                if (!termStatusArray[termHSS]) {
+                if ((!termStatusArray[termHSS]) && (params.EPC_IPAddress != "none")) {
                     withCredentials([
                         [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
                     ]) {

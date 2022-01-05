@@ -33,8 +33,9 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+ #include <libgen.h>
 
-#include <arpa/inet.h>
 
 #include "config_libconfig.h"
 #include "config_libconfig_private.h"
@@ -346,17 +347,36 @@ int config_libconfig_init(char *cfgP[], int numP) {
   libconfig_privdata.configfile = strdup((char *)cfgP[0]);
   config_get_if()->numptrs=0;
   memset(config_get_if()->ptrs,0,sizeof(void *) * CONFIG_MAX_ALLOCATEDPTRS);
-
+  memset(config_get_if()->ptrsAllocated, 0, sizeof(config_get_if()->ptrsAllocated));
+  /* search for include path parameter and set config file include path accordingly */
+  for (int i=0; i<numP; i++) {
+  	  if (strncmp(cfgP[i],"incp",4) == 0) {
+  	  	  config_set_include_dir (&(libconfig_privdata.cfg),cfgP[i]+4);
+  	  break;
+  	  }
+  }
+  /* dirname may modify the input path and returned ptr may points to part of input path */
+  char *tmppath = strdup(libconfig_privdata.configfile);
+  if ( config_get_include_dir (&(libconfig_privdata.cfg)) == NULL) {
+  	 config_set_include_dir (&(libconfig_privdata.cfg),dirname( tmppath )); 	 
+  }
+  
+  const char *incp = config_get_include_dir (&(libconfig_privdata.cfg)) ;
+ 
+  printf("[LIBCONFIG] Path for include directive set to: %s\n", (incp!=NULL)?incp:"libconfig defaults");
+  /* set convertion option to allow integer to float conversion*/
+   config_set_auto_convert (&(libconfig_privdata.cfg), CONFIG_TRUE);
   /* Read the file. If there is an error, report it and exit. */
-  if(! config_read_file(&(libconfig_privdata.cfg), libconfig_privdata.configfile)) {
-    fprintf(stderr,"[LIBCONFIG] %s %d file %s - %d - %s\n",__FILE__, __LINE__,
+  if( config_read_file(&(libconfig_privdata.cfg), libconfig_privdata.configfile) == CONFIG_FALSE) {
+    fprintf(stderr,"[LIBCONFIG] %s %d file %s - line %d: %s\n",__FILE__, __LINE__,
             libconfig_privdata.configfile, config_error_line(&(libconfig_privdata.cfg)),
             config_error_text(&(libconfig_privdata.cfg)));
     config_destroy(&(libconfig_privdata.cfg));
     printf( "\n");
+    free(tmppath);
     return -1;
   }
-
+  free(tmppath);
   return 0;
 }
 

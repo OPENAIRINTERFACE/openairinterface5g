@@ -746,7 +746,7 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
       amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
 
 
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,2,subframe,symbol);
+    pbch_pss_sss_adjust=adjust_G2(frame_parms->Ncp,frame_parms->frame_type, frame_parms->N_RB_DL ,&rb_alloc,2,subframe,symbol);
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       if (frame_parms->nb_antenna_ports_eNB!=1)
@@ -981,7 +981,7 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
 
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,4,subframe,symbol);
+    pbch_pss_sss_adjust=adjust_G2(frame_parms->Ncp,frame_parms->frame_type, frame_parms->N_RB_DL,&rb_alloc,4,subframe,symbol);
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       amp_tmp=0x1fff;//dlsch0->sqrt_rho_b; already taken into account
@@ -1281,7 +1281,7 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,6,subframe,symbol);
+    pbch_pss_sss_adjust=adjust_G2(frame_parms->Ncp,frame_parms->frame_type, frame_parms->N_RB_DL,&rb_alloc,6,subframe,symbol);
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       amp_tmp = 0x1fff;//dlsch0->sqrt_rho_b; already taken into account

@@ -44,8 +44,6 @@
 
 //#define DEBUG_TURBO_ENCODER 1
 //#define CALLGRIND 1
-unsigned short threegpplte_interleaver_output;
-unsigned long long threegpplte_interleaver_tmp;
 
 #if defined(__x86_64__) || defined(__i386__)
 struct treillis {
@@ -375,10 +373,10 @@ char interleave_compact_byte(short *base_interleaver,unsigned char *input, unsig
   short *ptr_intl=base_interleaver;
 #if defined(__x86_64) || defined(__i386__)
 #ifndef __AVX2__
-  __m128i tmp;
+  __m128i tmp={0};
   uint16_t *systematic2_ptr=(uint16_t *) output;
 #else
-  __m256i tmp;
+  __m256i tmp={0};
   uint32_t *systematic2_ptr=(uint32_t *) output;
 #endif
 #elif defined(__arm__)

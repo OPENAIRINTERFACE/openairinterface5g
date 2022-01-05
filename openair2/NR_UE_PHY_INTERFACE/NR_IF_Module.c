@@ -42,10 +42,16 @@
 
 #define MAX_IF_MODULES 100
 
+const char *dl_indication_type[] = {"MIB", "SIB", "DLSCH", "DCI", "RAR"};
+
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 
 //  L2 Abstraction Layer
-int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
+int handle_bcch_bch(module_id_t module_id, int cc_id,
+                    unsigned int gNB_index, uint8_t *pduP,
+                    unsigned int additional_bits,
+                    uint32_t ssb_index, uint32_t ssb_length,
+                    uint16_t ssb_start_subcarrier, uint16_t cell_id){
 
   return nr_ue_decode_mib(module_id,
 			  cc_id,
@@ -53,53 +59,53 @@ int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, ui
 			  additional_bits,
 			  ssb_length,  //  Lssb = 64 is not support    
 			  ssb_index,
-			  pduP, 
+			  pduP,
+			  ssb_start_subcarrier,
 			  cell_id);
 
 }
 
 //  L2 Abstraction Layer
-int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
-
-  return 0;
+int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t ack_nack, uint8_t *pduP, uint32_t pdu_len){
+  return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, ack_nack, pduP, pdu_len);
 }
+
 //  L2 Abstraction Layer
-int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_indication_pdu_t *dci){
+int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci){
 
-  //printf("handle_dci: rnti %x,dci_type %d\n",rnti,dci_type);
-  return nr_ue_process_dci_indication_pdu(module_id, cc_id, gNB_index, dci);
+  return nr_ue_process_dci_indication_pdu(module_id, cc_id, gNB_index, frame, slot, dci);
 
 }
-//  L2 Abstraction Layer
-int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len, frame_t frame, int slot, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
-  LOG_D(MAC, "handle_dlsch at MAC layer \n");
-  //if (IS_SOFTMODEM_NOS1 || IS_SOFTMODEM_RFSIM)
-  // sdu should be processed even when is S1 mode because data and timing advance updates are transmitted by the UE
-  nr_ue_send_sdu(module_id, cc_id, frame, slot,
-                 pduP,
-                 pdu_len,
-                 gNB_index,
-                 ul_time_alignment);
+// L2 Abstraction Layer
+// Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
+int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
+
+  update_harq_status(dl_info->module_id,
+                     dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid,
+                     dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack);
+  if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack)
+    nr_ue_send_sdu(dl_info, ul_time_alignment, pdu_id);
 
   return 0;
-  /*
-  return nr_ue_process_dlsch(module_id,
-                             cc_id,
-                             gNB_index,
-                             dci_ind,
-                             pduP,
-                             pdu_len);
-  */
 }
 
-int8_t handle_rar (nr_downlink_indication_t *dl_info){
+void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nack) {
 
-  LOG_D(MAC, "handling RAR at MAC layer \n");
-  nr_process_rar (dl_info);
-  return 0;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  NR_UE_HARQ_STATUS_t *current_harq = &mac->dl_harq_info[harq_pid];
 
+  if (current_harq->active) {
+    current_harq->ack = ack_nack;
+    current_harq->ack_received = true;
+    LOG_D(PHY,"Updating harq_status for harq_id %d,ack/nak %d\n",harq_pid,current_harq->ack);
+  }
+  else {
+    //shouldn't get here
+    LOG_E(MAC, "Trying to process acknack for an inactive harq process (%d)\n", harq_pid);
+  }
 }
+
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
@@ -107,17 +113,20 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  // clean previous FAPI messages
-  mac->tx_request.number_of_pdus = 0;
-  mac->ul_config_request.number_pdus = 0;
-  mac->dl_config_request.number_pdus = 0;
-  // clean previous FAPI messages
-
-  ret = nr_ue_scheduler(NULL, ul_info);
-
-  if (is_nr_UL_slot(mac->scc, ul_info->slot_tx) && get_softmodem_params()->do_ra){
-    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
+  if (ul_info->ue_sched_mode == ONLY_PUSCH) {
+    ret = nr_ue_scheduler(NULL, ul_info);
+    return 0;
   }
+  else if (ul_info->ue_sched_mode == SCHED_ALL)
+    ret = nr_ue_scheduler(NULL, ul_info);
+
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
+
+  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
+    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
+
+  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
+    nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){
   case UE_CONNECTION_OK:
@@ -132,8 +141,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
     break;
   }
 
-  mac->if_module->scheduled_response(&mac->scheduled_response);
-
   return 0;
 }
 
@@ -144,91 +151,70 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
-
+  
   if (!dl_info->dci_ind && !dl_info->rx_ind) {
     // UL indication to schedule DCI reception
     nr_ue_scheduler(dl_info, NULL);
   } else {
     // UL indication after reception of DCI or DL PDU
-    dl_config->number_pdus = 0;
-    ul_config->number_pdus = 0;
-    //hook up pointers
-    mac->scheduled_response.dl_config = dl_config;
-    mac->scheduled_response.ul_config = ul_config;
-    mac->scheduled_response.tx_request = &mac->tx_request;
-    mac->scheduled_response.module_id = dl_info->module_id;
-    mac->scheduled_response.CC_id = dl_info->cc_id;
-    mac->scheduled_response.frame = dl_info->frame;
-    mac->scheduled_response.slot = dl_info->slot;
-
     if(dl_info->dci_ind != NULL){
       LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
       for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
         LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
-
-        ret_mask |= (handle_dci(dl_info->module_id,
+        nr_scheduled_response_t scheduled_response;
+        int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
-                                dl_info->dci_ind->dci_list+i)<< FAPI_NR_DCI_IND);
+                                dl_info->frame,
+                                dl_info->slot,
+                                dl_info->dci_ind->dci_list+i);
 
-        AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
-        nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
+        ret_mask |= (ret << FAPI_NR_DCI_IND);
+        if (ret >= 0) {
+          AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
+          AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
+          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id);
+          nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
+        }
       }
     }
 
     if(dl_info->rx_ind != NULL){
 
-      LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
-
       for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
 
+        LOG_D(MAC, "In %s sending DL indication to MAC. 1 PDU type %s of %d total number of PDUs \n",
+          __FUNCTION__,
+          dl_indication_type[dl_info->rx_ind->rx_indication_body[i].pdu_type - 1],
+          dl_info->rx_ind->number_pdus);
+
         switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
+          case FAPI_NR_RX_PDU_TYPE_SSB:
+            mac->ssb_rsrp_dBm = (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm;
+            ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
+                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
 
-        case FAPI_NR_RX_PDU_TYPE_MIB:
-          ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_length,
-                      (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_MIB;
-
-          LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], MIB case Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_SIB:
-
-          ret_mask |= (handle_bcch_dlsch(dl_info->module_id,
-                       dl_info->cc_id, dl_info->gNB_index,
-                      (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.sibs_mask,
-                      (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
-                      (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_DLSCH:
-
-          ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                       dl_info->dci_ind,
-                      (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
-                      (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length,
-                       dl_info->frame,
-                       dl_info->slot,
-                       ul_time_alignment)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
-
-          LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][RX_IND], DLSCH case Number of PDUs: %d \n", dl_info->rx_ind->number_pdus);
-
-          break;
-
-        case FAPI_NR_RX_PDU_TYPE_RAR:
-
-          ret_mask |= (handle_rar(dl_info)) << FAPI_NR_RX_PDU_TYPE_RAR;
-
-          break;
-
-        default:
-        break;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_SIB:
+            ret_mask |= (handle_bcch_dlsch(dl_info->module_id,
+                                           dl_info->cc_id, dl_info->gNB_index,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.ack_nack,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
+                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_DLSCH:
+            ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+            break;
+          case FAPI_NR_RX_PDU_TYPE_RAR:
+            ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_RAR;
+            break;
+          default:
+            break;
         }
       }
     }
@@ -263,20 +249,16 @@ int nr_ue_if_module_kill(uint32_t module_id) {
 
   if (nr_ue_if_module_inst[module_id] != NULL){
     free(nr_ue_if_module_inst[module_id]);
-  } 
+  }
   return 0;
 }
 
 int nr_ue_dcireq(nr_dcireq_t *dcireq) {
-  
-  fapi_nr_dl_config_request_t *dl_config=&dcireq->dl_config_req;
+
+  fapi_nr_dl_config_request_t *dl_config = &dcireq->dl_config_req;
   NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
-
-  dl_config->sfn=UE_mac->dl_config_request.sfn;
-  dl_config->slot=UE_mac->dl_config_request.slot;
-  dl_config->number_pdus=0;
-
-  //printf(" UE_mac->dl_config_request.slot %d VS dcireq->slot %d \n", UE_mac->dl_config_request.slot, dcireq->slot);
+  dl_config->sfn = UE_mac->dl_config_request.sfn;
+  dl_config->slot = UE_mac->dl_config_request.slot;
 
   LOG_D(PHY, "Entering UE DCI configuration frame %d slot %d \n", dcireq->frame, dcireq->slot);
 

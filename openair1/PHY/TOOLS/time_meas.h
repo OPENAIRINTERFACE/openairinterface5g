@@ -29,32 +29,54 @@
 #include <errno.h>
 #include <stdio.h>
 #include <pthread.h>
-//#include <linux/kernel.h>
-//#include <linux/types.h>
+#include <linux/kernel.h>
+#include <linux/types.h>
+#include "common/utils/threadPool/thread-pool.h"
 // global var to enable openair performance profiler
 extern int opp_enabled;
-double cpu_freq_GHz  __attribute__ ((aligned(32)));;
-
+extern double cpu_freq_GHz  __attribute__ ((aligned(32)));;
+// structure to store data to compute cpu measurment
 #if defined(__x86_64__) || defined(__i386__)
-typedef struct {
-  long long in;
-  long long diff;
-  long long p_time; /*!< \brief absolute process duration */
-  long long diff_square; /*!< \brief process duration square */
-  long long max;
-  int trials;
-  int meas_flag;
-} time_stats_t;
+  #define OAI_CPUTIME_TYPE long long
 #elif defined(__arm__)
-typedef struct {
-  uint32_t in;
-  uint32_t diff;
-  uint32_t p_time; /*!< \brief absolute process duration */
-  uint32_t diff_square; /*!< \brief process duration square */
-  uint32_t max;
-  int trials;
-} time_stats_t;
+  #define OAI_CPUTIME_TYPE uint32_t
+#else
+  #error "building on unsupported CPU architecture"
 #endif
+
+#define TIMESTAT_MSGID_START       0     /*!< \brief send time at measure starting point */
+#define TIMESTAT_MSGID_STOP        1     /*!< \brief send time at measure end  point */
+#define TIMESTAT_MSGID_ENABLE      2     /*!< \brief enable measure point */
+#define TIMESTAT_MSGID_DISABLE     3     /*!< \brief disable measure point */
+#define TIMESTAT_MSGID_DISPLAY     10    /*!< \brief display measure */
+#define TIMESTAT_MSGID_END         11    /*!< \brief stops the measure threads and free assocated resources */
+typedef void(*meas_printfunc_t)(const char* format, ...);
+typedef struct {
+  int               msgid;                  /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
+  int               timestat_id;            /*!< \brief points to the time_stats_t entry in cpumeas table */
+  OAI_CPUTIME_TYPE  ts;                     /*!< \brief time stamp */
+  meas_printfunc_t  displayFunc;            /*!< \brief function to call when DISPLAY message is received*/
+} time_stats_msg_t;
+
+
+typedef struct {
+  OAI_CPUTIME_TYPE in;      /*!< \brief time at measure starting point */
+  OAI_CPUTIME_TYPE diff;     /*!< \brief average difference between time at starting point and time at endpoint*/
+  OAI_CPUTIME_TYPE p_time; /*!< \brief absolute process duration */
+  OAI_CPUTIME_TYPE diff_square; /*!< \brief process duration square */
+  OAI_CPUTIME_TYPE max;      /*!< \brief maximum difference between time at starting point and time at endpoint*/
+  int trials;                /*!< \brief number of start point - end point iterations */
+  int meas_flag;             /*!< \brief 1: stop_meas not called (consecutive calls of start_meas) */
+  char *meas_name;           /*!< \brief name to use when printing the measure (not used for PHY simulators)*/
+  int meas_index;            /*!< \brief index of this measure in the measure array (not used for PHY simulators)*/
+  int meas_enabled;         /*!< \brief per measure enablement flag. send_meas tests this flag, unused today in start_meas and stop_meas*/
+  notifiedFIFO_elt_t *tpoolmsg; /*!< \brief message pushed to the cpu measurment queue to report a measure START or STOP */
+  time_stats_msg_t *tstatptr;   /*!< \brief pointer to the time_stats_msg_t data in the tpoolmsg, stored here for perf considerations*/
+} time_stats_t;
+#define MEASURE_ENABLED(X)       (X->meas_enabled)
+
+
+
 
 static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
 static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
@@ -62,6 +84,7 @@ static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
 
 void print_meas_now(time_stats_t *ts, const char *name, FILE *file_name);
 void print_meas(time_stats_t *ts, const char *name, time_stats_t *total_exec_time, time_stats_t *sf_exec_time);
+int print_meas_log(time_stats_t *ts, const char *name, time_stats_t *total_exec_time, time_stats_t *sf_exec_time, char *output);
 double get_time_meas_us(time_stats_t *ts);
 double get_cpu_freq_GHz(void);
 
@@ -137,4 +160,26 @@ static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts) {
     dst_ts->max=src_ts->max;
   }
 }
+
+extern notifiedFIFO_t measur_fifo;
+#define CPUMEASUR_SECTION "cpumeasur"
+
+#define CPUMEASUR_PARAMS_DESC { \
+    {"max_cpumeasur",     "Max number of cpu measur entries",      0,       uptr:&max_cpumeasur,           defintval:100,         TYPE_UINT,   0},\
+  }
+
+  void init_meas(void);
+  time_stats_t *register_meas(char *name);
+  #define START_MEAS(X) send_meas(X, TIMESTAT_MSGID_START)
+  #define STOP_MEAS(X)  send_meas(X, TIMESTAT_MSGID_STOP)
+  static inline void send_meas(time_stats_t *ts, int msgid) {
+    if (MEASURE_ENABLED(ts) ) {
+      ts->tstatptr->timestat_id=ts->meas_index;
+      ts->tstatptr->msgid = msgid ;
+      ts->tstatptr->ts = rdtsc_oai();
+      pushNotifiedFIFO(&measur_fifo, ts->tpoolmsg);
+    }
+  }
+  void end_meas(void);
+
 #endif

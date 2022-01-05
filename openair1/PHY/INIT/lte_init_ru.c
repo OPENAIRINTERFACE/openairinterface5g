@@ -21,9 +21,8 @@
 
 #include "phy_init.h"
 #include "SCHED/sched_eNB.h"
-#include "PHY/phy_extern.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
-#include "SIMULATION/TOOLS/sim.h"
+//#include "SIMULATION/TOOLS/sim.h"
 #include "LTE_RadioResourceConfigCommonSIB.h"
 #include "LTE_RadioResourceConfigDedicated.h"
 #include "LTE_TDD-Config.h"
@@ -33,6 +32,8 @@
 #include <math.h>
 
 void init_7_5KHz(void);
+
+extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 
 int phy_init_RU(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
@@ -44,6 +45,7 @@ int phy_init_RU(RU_t *ru) {
   if (ru->is_slave == 1) {
     generate_ul_ref_sigs_rx();
   }
+  else generate_ul_ref_sigs();
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so allocate memory for time-domain signals
     // Time-domain signals
@@ -121,13 +123,13 @@ int phy_init_RU(RU_t *ru) {
     /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
     //AssertFatal(ru->nb_rx <= sizeof(ru->prach_rxsigF) / sizeof(ru->prach_rxsigF[0]),
     //"nb_antennas_rx too large");
-    ru->prach_rxsigF = (int16_t **)malloc(ru->nb_rx * sizeof(int16_t *));
+    ru->prach_rxsigF[0] = (int16_t **)malloc(ru->nb_rx * sizeof(int16_t *));
 
     for (j=0; j<4; j++) ru->prach_rxsigF_br[j] = (int16_t **)malloc(ru->nb_rx * sizeof(int16_t *));
 
     for (i=0; i<ru->nb_rx; i++) {
-      ru->prach_rxsigF[i] = (int16_t *)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
-      LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[i]);
+      ru->prach_rxsigF[0][i] = (int16_t *)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
+      LOG_D(PHY,"[INIT] prach_vars->rxsigF[%d] = %p\n",i,ru->prach_rxsigF[0][i]);
 
       for (j=0; j<4; j++) {
         ru->prach_rxsigF_br[j][i] = (int16_t *)malloc16_clear( fp->ofdm_symbol_size*12*2*sizeof(int16_t) );
@@ -135,14 +137,14 @@ int phy_init_RU(RU_t *ru) {
       }
     }
 
-    AssertFatal(RC.nb_L1_inst <= NUMBER_OF_eNB_MAX,"eNB instances %d > %d\n",
-                RC.nb_L1_inst,NUMBER_OF_eNB_MAX);
-    LOG_D(PHY,"[INIT] %s() RC.nb_L1_inst:%d \n", __FUNCTION__, RC.nb_L1_inst);
+    AssertFatal(ru->num_eNB <= NUMBER_OF_eNB_MAX,"eNB instances %d > %d\n",
+                ru->num_eNB,NUMBER_OF_eNB_MAX);
+    LOG_D(PHY,"[INIT] %s() ru->num_eNB:%d \n", __FUNCTION__, ru->num_eNB);
     int starting_antenna_index=0;
 
     for (i=0; i<ru->idx; i++) starting_antenna_index+=ru->nb_tx;
 
-    for (i=0; i<RC.nb_L1_inst; i++) {
+    for (i=0; i<ru->num_eNB; i++) {
       for (p=0; p<15; p++) {
         LOG_D(PHY,"[INIT] %s() nb_antenna_ports_eNB:%d \n", __FUNCTION__, ru->eNB_list[i]->frame_parms.nb_antenna_ports_eNB);
 
@@ -230,17 +232,17 @@ void phy_free_RU(RU_t *ru) {
     }
 
     for (i = 0; i < ru->nb_rx; i++) {
-      free_and_zero(ru->prach_rxsigF[i]);
+      free_and_zero(ru->prach_rxsigF[0][i]);
 
       for (j = 0; j < 4; j++) free_and_zero(ru->prach_rxsigF_br[j][i]);
     }
 
     for (j = 0; j < 4; j++) free_and_zero(ru->prach_rxsigF_br[j]);
 
-    free_and_zero(ru->prach_rxsigF);
+    free_and_zero(ru->prach_rxsigF[0]);
     /* ru->prach_rxsigF_br is not allocated -> don't free */
 
-    for (i = 0; i < RC.nb_L1_inst; i++) {
+    for (i = 0; i < ru->num_eNB; i++) {
       for (p = 0; p < 15; p++) {
         if (p < ru->eNB_list[i]->frame_parms.nb_antenna_ports_eNB || p == 5) {
           for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);

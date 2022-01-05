@@ -9,11 +9,9 @@
  */
 #ifndef __LAYER2_MAC_DEFS_NB_IOT_H__
 #define __LAYER2_MAC_DEFS_NB_IOT_H__
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#endif
 //#include "COMMON/openair_defs.h"
 #include "COMMON/platform_constants.h"
 #include "COMMON/mac_rrc_primitives.h"
@@ -537,9 +535,6 @@ typedef  struct {
 
 // global variables
 
-nprach_parameters_NB_IoT_t nprach_list[3];
 
-//DLSF Table
-DLSF_INFO_t DLSF_information;
 
 #endif /*__LAYER2_MAC_DEFS_NB_IoT_H__ */

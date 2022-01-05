@@ -83,6 +83,16 @@ nullPointer:common/utils/T/tracer/multi.c:265
 // the tests
 arrayIndexOutOfBounds:openair2/LAYER2/rlc_v2/tests/test.c:401
 //
+//-----------------------------------------------------------------------------
+// this file is used for testing the NR RLC implementation, this error is
+// not a problem, the programmer has to know what she does when writing
+// the tests
+arrayIndexOutOfBounds:openair2/LAYER2/nr_rlc/tests/test.c:451
+//
+//-----------------------------------------------------------------------------
+// cppcheck does not understand the different lengths of arrays
+arrayIndexOutOfBounds:openair1/SIMULATION/TOOLS/random_channel.c:705
+arrayIndexOutOfBounds:openair1/SIMULATION/TOOLS/random_channel.c:706
 //*****************************************************************************
 //
 // True problems we don't know how to fix, Suppression is commented out,

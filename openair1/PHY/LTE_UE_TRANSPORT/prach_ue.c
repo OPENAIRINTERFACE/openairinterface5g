@@ -41,6 +41,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "../LTE_TRANSPORT/prach_extern.h"
+#include "common/utils/lte/prach_utils.h"
 
 //#define PRACH_DEBUG 1
 
@@ -115,7 +116,9 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
     NCS = NCS_restricted[Ncs_config];
   }
 
-  n_ra_prb = get_prach_prb_offset(&(ue->frame_parms),
+  n_ra_prb = get_prach_prb_offset(ue->frame_parms.frame_type,
+				  ue->frame_parms.tdd_config,
+				  ue->frame_parms.N_RB_UL,
                                   ue->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
                                   ue->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset,
                                   tdd_mapindex, Nf);

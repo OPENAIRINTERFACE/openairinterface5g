@@ -1,4 +1,3 @@
-  - COTS_UE_Airplane
   - Build_PhySim
   - Run_PhySim
   - Build_eNB
@@ -20,12 +19,16 @@
   - Reboot_UE
   - Initialize_FlexranCtrl
   - Terminate_FlexranCtrl
+  - Deploy_EPC
+  - Undeploy_EPC
   - Initialize_HSS
   - Terminate_HSS
   - Initialize_MME
   - Terminate_MME
   - Initialize_SPGW
   - Terminate_SPGW
+  - Initialize_5GCN
+  - Terminate_5GCN
   - Initialize_CatM_module
   - Terminate_CatM_module
   - Attach_CatM_module
@@ -33,3 +36,13 @@
   - Ping_CatM_module
   - IdleSleep
   - Perform_X2_Handover
+  - Build_Image
+  - Copy_Image_to_Test
+  - Deploy_Object
+  - Undeploy_Object
+  - Cppcheck_Analysis
+  - Deploy_Run_PhySim
+  - DeployGenObject
+  - UndeployGenObject
+  - PingFromContainer
+  - IperfFromContainer

@@ -28,6 +28,7 @@
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h" 
+#include "common/utils/nr/nr_common.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -35,6 +36,7 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
@@ -45,7 +47,8 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
-
+#include "openair1/PHY/MODULATION/nr_modulation.h"
+#include <executables/softmodem-common.h>
 //#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
@@ -54,14 +57,44 @@ RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
-uint8_t nfapi_mode = 0;
+//uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
+
+uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+
 uint64_t get_softmodem_optmask(void) {return 0;}
+softmodem_params_t *get_softmodem_params(void) {return 0;}
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+
+int nr_ue_pdcch_procedures(uint8_t gNB_id,
+			   PHY_VARS_NR_UE *ue,
+			   UE_nr_rxtx_proc_t *proc,
+                           int n_ss) {
+  return 0;
+}
+
+int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
+                           UE_nr_rxtx_proc_t *proc,
+                           int eNB_id, PDSCH_t pdsch,
+                           NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
+  return 0;
+}
+
+bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
+                            UE_nr_rxtx_proc_t *proc,
+                            int gNB_id,
+                            PDSCH_t pdsch,
+                            NR_UE_DLSCH_t *dlsch0,
+                            NR_UE_DLSCH_t *dlsch1,
+                            int *dlsch_errors,
+                            uint8_t dlsch_parallel) {
+  return false;
+}
 
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
                                int N_RB_DL,
@@ -95,22 +128,27 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
   //gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
 
   gNB->mac_enabled   = 1;
-  fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
-  fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  fp->dl_CarrierFreq = 3600000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
+  fp->ul_CarrierFreq = 3600000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   if (mu>2) fp->nr_band = 257;
   else fp->nr_band = 78;
   fp->threequarter_fs= 0;
 
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
+  fp->ofdm_offset_divisor = UINT_MAX;
   nr_init_frame_parms(gNB_config, fp);
+  init_timeshift_rotation(fp);
+
+  init_symbol_rotation(fp);
+
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
 }
 int main(int argc, char **argv)
 {
   char c;
-  int i,aa;//,l;
+  int i,aa,start_symbol;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   double cfo=0;
   uint8_t snr1set=0;
@@ -396,6 +434,7 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
+  gNB->ofdm_offset_divisor = UINT_MAX;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
@@ -405,7 +444,7 @@ int main(int argc, char **argv)
   frame_parms->ssb_type = nr_ssb_type_C;
 
   nr_phy_config_request_sim_pbchsim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
-  phy_init_nr_gNB(gNB,0,0);
+  phy_init_nr_gNB(gNB,0,1);
   nr_set_ssb_first_subcarrier(&gNB->gNB_config,frame_parms);
 
   uint8_t n_hf = 0;
@@ -417,29 +456,28 @@ int main(int argc, char **argv)
   
   switch (mu) {
     case 1:
-	scs = 30000;
-	if (N_RB_DL == 217) { 
-	    fs = 122.88e6;
-	    bw = 80e6;
-	    
-	}					       
-	else if (N_RB_DL == 245) {
-	    fs = 122.88e6;
-	    bw = 90e6;
-	}
-	else if (N_RB_DL == 273) {
-	    fs = 122.88e6;
-	    bw = 100e6;
-	}
-	else if (N_RB_DL == 106) { 
-	    fs = 61.44e6;
-	    bw = 40e6;
-	}
-	else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
-	break;
-  
-
+      scs = 30000;
+      frame_parms->Lmax = 8;
+      if (N_RB_DL == 217) {
+        fs = 122.88e6;
+        bw = 80e6;
+      }
+      else if (N_RB_DL == 245) {
+        fs = 122.88e6;
+        bw = 90e6;
+      }
+      else if (N_RB_DL == 273) {
+        fs = 122.88e6;
+        bw = 100e6;
+      }
+      else if (N_RB_DL == 106) {
+        fs = 61.44e6;
+        bw = 40e6;
+      }
+      else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
+      break;
     case 3:
+      frame_parms->Lmax = 64;
       scs = 120000;
       if (N_RB_DL == 66) {
         fs = 122.88e6;
@@ -448,6 +486,7 @@ int main(int argc, char **argv)
       else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
       break;
   }
+
   // cfo with respect to sub-carrier spacing
   eps = cfo/scs;
 
@@ -467,9 +506,10 @@ int main(int argc, char **argv)
                                 channel_model,
  				fs, 
 				bw, 
+				300e-9,
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (gNB2UE==NULL) {
 	printf("Problem generating channel model. Exiting.\n");
@@ -500,7 +540,6 @@ int main(int argc, char **argv)
     printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
     txdata[i] = malloc(frame_length_complex_samples*sizeof(int));
     bzero(r_re[i],frame_length_complex_samples*sizeof(int));
-  
   }
 
   if (pbch_file_fd!=NULL) {
@@ -526,35 +565,69 @@ int main(int argc, char **argv)
   }
 
   nr_gold_pbch(UE);
+
+  processingData_L1tx_t msgDataTx;
   // generate signal
   if (input_fd==NULL) {
-    gNB->pbch_configured = 1;
- 
-    gNB->ssb_pdu.ssb_pdu_rel15.bchPayload = 0;
 
-    for (int slot=0;slot<frame_parms->slots_per_frame;slot++) {
-    	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
-    		memset(gNB->common_vars.txdataF[aa],0,frame_parms->samples_per_slot_wCP*sizeof(int32_t));
-      
-    	nr_common_signal_procedures (gNB,frame,slot);
+    for (i=0; i<frame_parms->Lmax; i++) {
+      if((SSB_positions >> i) & 0x01) {
 
-    	for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-    		if (cyclic_prefix_type == 1) {
-    			PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-    			             &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
-				     frame_parms->ofdm_symbol_size,
-				     12,
-				     frame_parms->nb_prefix_samples,
-				     CYCLIC_PREFIX);
-    		} else {
-    			nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-    			                     &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
-			                     14,
-			                     frame_parms);
-    		}
-    	}
+        msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.bchPayload = 0x55dd33;
+        msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = i;
+
+        start_symbol = nr_get_ssb_start_symbol(frame_parms,i);
+        int slot = start_symbol/14;
+
+        for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
+          memset(gNB->common_vars.txdataF[aa],0,frame_parms->samples_per_slot_wCP*sizeof(int32_t));
+
+        nr_common_signal_procedures (gNB,frame,slot,msgDataTx.ssb[i].ssb_pdu);
+
+        for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
+          if (cyclic_prefix_type == 1) {
+            PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+            &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+            frame_parms->ofdm_symbol_size,
+            12,
+            frame_parms->nb_prefix_samples,
+            CYCLIC_PREFIX);
+          } else {
+            /*nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+              &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+              14,
+              frame_parms);*/
+            PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+                         (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+                         frame_parms->ofdm_symbol_size,
+                         1,
+                         frame_parms->nb_prefix_samples0,
+                         CYCLIC_PREFIX);
+
+            apply_nr_rotation(frame_parms,
+                              (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+                              slot,
+                              0,
+                              1,
+                              frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
+
+            PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
+                         (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+                         frame_parms->ofdm_symbol_size,
+                         13,
+                         frame_parms->nb_prefix_samples,
+                         CYCLIC_PREFIX);
+
+            apply_nr_rotation(frame_parms,
+                              (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
+                              slot,
+                              1,
+                              13,
+                              frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+          }
+        }
+      }
     }
-
     LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
     if (gNB->frame_parms.nb_antennas_tx>1)
       LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
@@ -563,9 +636,9 @@ int main(int argc, char **argv)
     printf("Reading %d samples from file to antenna buffer %d\n",frame_length_complex_samples,0);
     UE->UE_fo_compensation = 1; // perform fo compensation when samples from file are used
     if (fread(txdata[0],
-	      sizeof(int32_t),
-	      frame_length_complex_samples,
-	      input_fd) != frame_length_complex_samples) {
+        sizeof(int32_t),
+        frame_length_complex_samples,
+        input_fd) != frame_length_complex_samples) {
       printf("error reading from file\n");
       //exit(-1);
     }
@@ -640,38 +713,35 @@ int main(int argc, char **argv)
       }
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, normal_txrx,1);
+	ret = nr_initial_sync(&proc, UE, 1, 0, 0);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }
       else {
+	UE_nr_rxtx_proc_t proc={0};
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
-        frame_parms->ssb_index = ssb_index;
-	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms);
+	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms,ssb_index);
 
-        int ssb_slot = (ssb_index>>1)+(n_hf*frame_parms->slots_per_frame);
+        int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
 	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
-	  nr_slot_fep(UE,
-	  	      i%frame_parms->symbols_per_slot,
-		      ssb_slot,
-		      0,
-		      0);
+          nr_slot_fep(UE,
+                      &proc,
+                      i%frame_parms->symbols_per_slot,
+                      ssb_slot);
 
-          nr_pbch_channel_estimation(UE,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+          nr_pbch_channel_estimation(UE,&proc,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
 
         }
-	UE_nr_rxtx_proc_t proc={0};
 
         ret = nr_rx_pbch(UE,
-	                 &proc,
-		         UE->pbch_vars[0],
-		         frame_parms,
-		         0,
-		         ssb_index%8,
-                         SISO,
-                         UE->high_speed_flag);
+                         &proc,
+                         UE->pbch_vars[0],
+                         frame_parms,
+                         0,
+                         ssb_index%8,
+                         SISO);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
@@ -682,9 +752,9 @@ int main(int argc, char **argv)
  
 	  payload_ret = (UE->pbch_vars[0]->xtra_byte == gNB_xtra_byte);
 	  for (i=0;i<3;i++){
-	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == (gNB->ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)));
+	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == ((msgDataTx.ssb[ssb_index].ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)) & 0xff));
 	  } 
-	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
+	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->pbch_vars[0]->xtra_byte);
 	  //printf("ret %d\n", payload_ret);
 	  if (payload_ret!=4) 
 	    n_errors_payload++;

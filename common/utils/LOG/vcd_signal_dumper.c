@@ -302,6 +302,9 @@ const char* eurecomFunctionsNames[] = {
   /* PHY signals  */
   "ue_synch",
   "ue_slot_fep",
+  "ue_slot_fep_pdcch",
+  "ue_slot_fep_pbch",
+  "ue_slot_fep_pdsch",
   "ue_slot_fep_mbsfn",
   "ue_slot_fep_mbsfn_khz_1dot25",
   "ue_rrc_measurements",
@@ -390,6 +393,8 @@ const char* eurecomFunctionsNames[] = {
   "rx_pmch",
   "rx_pmch_khz_1dot25",
   "pdsch_procedures",
+  "pdsch_procedures_crnti",
+  //"dlsch_procedures_crnti",
   "pdsch_procedures_si",
   "pdsch_procedures_p",
   "pdsch_procedures_ra",
@@ -814,6 +819,7 @@ static inline unsigned long long int vcd_get_time(void)
   return (long long unsigned int)((time.tv_nsec - g_time_start.tv_nsec)) +
          ((long long unsigned int)time.tv_sec - (long long unsigned int)g_time_start.tv_sec) * 1000000000UL;
 #endif
+  return 0;
 }
 
 void vcd_signal_dumper_create_header(void)

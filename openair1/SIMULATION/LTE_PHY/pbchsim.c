@@ -386,7 +386,7 @@ int main(int argc, char **argv) {
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (interf1>-20)
     eNB2UE1 = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
@@ -396,7 +396,7 @@ int main(int argc, char **argv) {
                                    N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                    0,
                                    4,
-                                   0);
+                                   0, 0);
 
   if (interf2>-20)
     eNB2UE2 = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
@@ -406,7 +406,7 @@ int main(int argc, char **argv) {
                                    N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                    0,
                                    8,
-                                   0);
+                                   0, 0);
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");

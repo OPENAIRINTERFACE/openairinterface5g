@@ -20,7 +20,7 @@
  */
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
+//#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 //#define DEBUG_CH
 #include "common/utils/LOG/log.h"
@@ -34,12 +34,17 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 
 #define SCALE 0x3FFF
 
+static const short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+
+extern unsigned short dftsizes[34];
+extern int16_t *ul_ref_sigs_rx[30][2][34];
+
 int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                   L1_rxtx_proc_t *proc,
-				  LTE_eNB_ULSCH_t * ulsch,
-				  int32_t **ul_ch_estimates,
-				  int32_t **ul_ch_estimates_time,
-				  int32_t **rxdataF_ext,
+                        				  LTE_eNB_ULSCH_t * ulsch,
+				                          int32_t **ul_ch_estimates,
+				                          int32_t **ul_ch_estimates_time,
+				                          int32_t **rxdataF_ext,
                                   module_id_t UE_id,
                                   unsigned char l,
                                   unsigned char Ns) {
@@ -786,33 +791,38 @@ int16_t lte_ul_freq_offset_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   Ravg[0]=0;
   Ravg[1]=0;
   int16_t iv, rv, phase_idx = 0;
-  __m128i avg128U1, avg128U2, R[3], mmtmpD0, mmtmpD1, mmtmpD2, mmtmpD3;
+  __m128i R[3], mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
+  __m128 avg128U1, avg128U2;
 
   // round(tan((pi/4)*[1:1:N]/N)*pow2(15))
   int16_t alpha[128] = {201, 402, 603, 804, 1006, 1207, 1408, 1610, 1811, 2013, 2215, 2417, 2619, 2822, 3024, 3227, 3431, 3634, 3838, 4042, 4246, 4450, 4655, 4861, 5066, 5272, 5479, 5686, 5893, 6101, 6309, 6518, 6727, 6937, 7147, 7358, 7570, 7782, 7995, 8208, 8422, 8637, 8852, 9068, 9285, 9503, 9721, 9940, 10160, 10381, 10603, 10825, 11049, 11273, 11498, 11725, 11952, 12180, 12410, 12640, 12872, 13104, 13338, 13573, 13809, 14046, 14285, 14525, 14766, 15009, 15253, 15498, 15745, 15993, 16243, 16494, 16747, 17001, 17257, 17515, 17774, 18035, 18298, 18563, 18829, 19098, 19368, 19640, 19915, 20191, 20470, 20750, 21033, 21318, 21605, 21895, 22187, 22481, 22778, 23078, 23380, 23685, 23992, 24302, 24615, 24931, 25250, 25572, 25897, 26226, 26557, 26892, 27230, 27572, 27917, 28266, 28618, 28975, 29335, 29699, 30067, 30440, 30817, 31198, 31583, 31973, 32368, 32767};
   // compute log2_maxh (output_shift)
-  avg128U1 = _mm_setzero_si128();
-  avg128U2 = _mm_setzero_si128();
+  avg128U1 = _mm_setzero_ps();
+  avg128U2 = _mm_setzero_ps();
 
   for (rb=0; rb<nb_rb; rb++) {
-    avg128U1 = _mm_add_epi32(avg128U1,_mm_madd_epi16(ul_ch1[0],ul_ch1[0]));
-    avg128U1 = _mm_add_epi32(avg128U1,_mm_madd_epi16(ul_ch1[1],ul_ch1[1]));
-    avg128U1 = _mm_add_epi32(avg128U1,_mm_madd_epi16(ul_ch1[2],ul_ch1[2]));
-    avg128U2 = _mm_add_epi32(avg128U2,_mm_madd_epi16(ul_ch2[0],ul_ch2[0]));
-    avg128U2 = _mm_add_epi32(avg128U2,_mm_madd_epi16(ul_ch2[1],ul_ch2[1]));
-    avg128U2 = _mm_add_epi32(avg128U2,_mm_madd_epi16(ul_ch2[2],ul_ch2[2]));
+    avg128U1 = _mm_add_ps(avg128U1,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch1[0],ul_ch1[0])));
+    avg128U1 = _mm_add_ps(avg128U1,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch1[1],ul_ch1[1])));
+    avg128U1 = _mm_add_ps(avg128U1,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch1[2],ul_ch1[2])));
+
+    avg128U2 = _mm_add_ps(avg128U2,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch2[0],ul_ch2[0])));
+    avg128U2 = _mm_add_ps(avg128U2,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch2[1],ul_ch2[1])));
+    avg128U2 = _mm_add_ps(avg128U2,_mm_cvtepi32_ps(_mm_madd_epi16(ul_ch2[2],ul_ch2[2])));
+
     ul_ch1+=3;
     ul_ch2+=3;
   }
 
-  avg[0] = (((int *)&avg128U1)[0] +
-            ((int *)&avg128U1)[1] +
-            ((int *)&avg128U1)[2] +
-            ((int *)&avg128U1)[3])/(nb_rb*12);
-  avg[1] = (((int *)&avg128U2)[0] +
-            ((int *)&avg128U2)[1] +
-            ((int *)&avg128U2)[2] +
-            ((int *)&avg128U2)[3])/(nb_rb*12);
+  avg[0] = (int)( (((float*)&avg128U1)[0] +
+                   ((float*)&avg128U1)[1] +
+                   ((float*)&avg128U1)[2] +
+                   ((float*)&avg128U1)[3])/(float)(nb_rb*12) );
+
+  avg[1] = (int)( (((float*)&avg128U2)[0] +
+                   ((float*)&avg128U2)[1] +
+                   ((float*)&avg128U2)[2] +
+                   ((float*)&avg128U2)[3])/(float)(nb_rb*12) );
+
   //    msg("avg0 = %d, avg1 = %d\n",avg[0],avg[1]);
   avg[0] = cmax(avg[0],avg[1]);
   avg[1] = log2_approx(avg[0]);

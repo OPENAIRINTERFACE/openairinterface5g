@@ -25,7 +25,6 @@
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
-#include "common/ran_context.h"
 
 char* namepointer_chMag ;
 char fmageren_name2[512];
@@ -33,17 +32,15 @@ char* namepointer_log2;
 
 
 #include "PHY/LTE_REFSIG/primary_synch.h"
-int16_t *primary_synch0_time;
-int16_t *primary_synch1_time;
-int16_t *primary_synch2_time;
 
 
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "PHY/MODULATION/modulation_vars.h"
 
+#include "nfapi/oai_integration/vendor_ext.h"
+
 
 PHY_VARS_UE ***PHY_vars_UE_g;
-RAN_CONTEXT_t RC;
 UL_RCC_IND_t UL_RCC_INFO;
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
@@ -57,13 +54,6 @@ const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
 
 unsigned char NB_RU=0;
-
-#ifndef OPENAIR2
-//unsigned char NB_eNB_INST=0;
-//uint16_t NB_UE_INST=0;
-//unsigned char NB_RN_INST=0;
-//unsigned char NB_INST=0;
-#endif
 
 int number_of_cards;
 

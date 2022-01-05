@@ -40,7 +40,8 @@
 #include "assertions.h"
 #include "common/utils/load_module_shlib.h"
 #include "common/utils/LOG/log.h"
-#include "targets/RT/USER/lte-softmodem.h"
+//#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/softmodem-common.h"
 
 char *get_devname(int devtype) {
 char *devnames[MAX_RF_DEV_TYPE]=DEVTYPE_NAMES;
@@ -112,6 +113,9 @@ int load_lib(openair0_device *device,
 	  else
           deflibname=OAI_RF_LIBNAME;
       shlib_fdesc[0].fname="device_init";
+  } else if (flag == RAU_REMOTE_THIRDPARTY_RADIO_HEAD) {
+    deflibname=OAI_THIRDPARTY_TP_LIBNAME;
+    shlib_fdesc[0].fname="transport_init";
   } else {
 	  deflibname=OAI_TP_LIBNAME;
 	  shlib_fdesc[0].fname="transport_init";

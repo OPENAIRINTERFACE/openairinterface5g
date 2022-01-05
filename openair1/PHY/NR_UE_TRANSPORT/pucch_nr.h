@@ -37,7 +37,6 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 //#include "PHY/extern.h"
-//#include "LAYER2/MAC/extern.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -49,61 +48,30 @@
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
-                        long pucch_GroupHopping,
-                        long hoppingId,
                         int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,
-			uint8_t mcs,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB);
+                        int nr_slot_tx,
+                        fapi_nr_ul_config_pucch_pdu *pucch_pdu);
+
 void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                        uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB,
-                        uint16_t startingPRB_intraSlotHopping,
-                        uint8_t timeDomainOCC,
-                        uint8_t nr_bit);
+                        int nr_slot_tx,
+                        fapi_nr_ul_config_pucch_pdu *pucch_pdu);
+
 void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
-                        uint16_t crnti,
-			uint32_t dmrs_scrambling_id,
-			uint32_t data_scrambling_id,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
-                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                        uint64_t payload,
                         int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint8_t nrofPRB,
-                        uint16_t startingPRB,
-                        uint8_t nr_bit);
+                        int nr_slot_tx,
+                        fapi_nr_ul_config_pucch_pdu *pucch_pdu);
+
 void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
-                          uint16_t crnti,
                           int32_t **txdataF,
                           NR_DL_FRAME_PARMS *frame_parms,
-                          pucch_format_nr_t fmt,
-                          PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                          uint64_t payload,
                           int16_t amp,
-                          int nr_tti_tx,
-                          uint8_t nrofSymbols,
-                          uint8_t startingSymbolIndex,
-                          uint8_t nrofPRB,
-                          uint16_t startingPRB,
-                          uint16_t startingPRB_intraSlotHopping,
-                          uint8_t nr_bit,
-                          uint8_t occ_length_format4,
-                          uint8_t occ_index_format4);
+                          int nr_slot_tx,
+                          fapi_nr_ul_config_pucch_pdu *pucch_pdu);
 
 // tables for mcs values for different payloads 
  static const uint8_t table1_mcs[]={0,6,3,9};

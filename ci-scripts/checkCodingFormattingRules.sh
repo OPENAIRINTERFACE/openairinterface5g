@@ -59,7 +59,7 @@ if [ $# -eq 0 ]
 then
     echo " ---- Checking the whole repository ----"
     echo ""
-    NB_FILES_TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt --recursive *.c *.h | grep -c Formatted `
+    NB_FILES_TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt --recursive *.c *.h | grep -c Formatted || true`
     echo "Nb Files that do NOT follow OAI rules: $NB_FILES_TO_FORMAT"
     echo $NB_FILES_TO_FORMAT > ./oai_rules_result.txt
 
@@ -67,17 +67,17 @@ then
     awk '/#[ \t]*ifndef/ { gsub("^.*ifndef *",""); if (names[$1]!="") print "files with same {define ", FILENAME, names[$1]; names[$1]=FILENAME } /#[ \t]*define/ { gsub("^.*define *",""); if(names[$1]!=FILENAME) print "error in declaration", FILENAME, $1, names[$1]; nextfile }' `find openair* common targets executables -name *.h |grep -v LFDS` > header-files-w-incorrect-define.txt
 
     # Testing if explicit GNU GPL license banner
-    egrep -irl --exclude-dir=.git --include=*.cpp --include=*.c --include=*.h "General Public License" . > files-w-gnu-gpl-license-banner.txt
+    egrep -irl --exclude-dir=.git --include=*.cpp --include=*.c --include=*.h "General Public License" . | egrep -v "openair3/NAS/COMMON/milenage.h" > files-w-gnu-gpl-license-banner.txt
 
     # Looking at exotic/suspect banner
     LIST_OF_FILES_W_BANNER=`egrep -irl --exclude-dir=.git --include=*.cpp --include=*.c --include=*.h "Copyright|copyleft" .`
     if [ -f ./files-w-suspect-banner.txt ]; then rm -f ./files-w-suspect-banner.txt; fi
     for FILE in $LIST_OF_FILES_W_BANNER
     do
-       IS_NFAPI=`echo $FILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext"`
-       IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FILE`
-       IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence" $FILE`
-       IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h"`
+       IS_NFAPI=`echo $FILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext" || true`
+       IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FILE || true`
+       IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence|License-Identifier: BSD-2-Clause" $FILE || true`
+       IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_|openair2/UTIL/OPT/packet-rohc.h|openair3/NAS/COMMON/milenage.h|openair1/PHY/CODING/crc|openair1/PHY/CODING/types.h" || true`
        if [ $IS_OAI_LICENCE_PRESENT -eq 0 ] && [ $IS_BSD_LICENCE_PRESENT -eq 0 ]
        then
            if [ $IS_NFAPI -eq 0 ] && [ $IS_EXCEPTION -eq 0 ]
@@ -178,7 +178,7 @@ do
     EXT="${filename##*.}"
     if [ $EXT = "c" ] || [ $EXT = "h" ] || [ $EXT = "cpp" ] || [ $EXT = "hpp" ]
     then
-        TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt $FULLFILE | grep -c Formatted `
+        TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt $FULLFILE | grep -c Formatted || true`
         NB_TO_FORMAT=$((NB_TO_FORMAT + TO_FORMAT))
         if [ $TO_FORMAT -ne 0 ]
         then
@@ -186,20 +186,24 @@ do
             echo $FULLFILE >> ./oai_rules_result_list.txt
         fi
         # Testing if explicit GNU GPL license banner
-        egrep -i "General Public License" $FULLFILE >> files-w-gnu-gpl-license-banner.txt
+        GNU_EXCEPTION=`echo $FULLFILE | egrep -c "openair3/NAS/COMMON/milenage.h" || true`
+        if [ $GNU_EXCEPTION -eq 0 ]
+        then
+            egrep -il "General Public License" $FULLFILE >> files-w-gnu-gpl-license-banner.txt
+        fi
         # Looking at exotic/suspect banner
-        IS_BANNER=`egrep -i -c "Copyright|copyleft" $FULLFILE`
+        IS_BANNER=`egrep -i -c "Copyright|copyleft" $FULLFILE || true`
         if [ $IS_BANNER -ne 0 ]
         then
-            IS_NFAPI=`echo $FULLFILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext"`
-            IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FULLFILE`
-            IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence" $FULLFILE`
-            IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h"`
+            IS_NFAPI=`echo $FULLFILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext" || true`
+            IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FULLFILE || true`
+            IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence|License-Identifier: BSD-2-Clause" $FULLFILE || true`
+            IS_EXCEPTION=`echo $FULLFILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_|openair2/UTIL/OPT/packet-rohc.h|openair3/NAS/COMMON/milenage.h|openair1/PHY/CODING/crc|openair1/PHY/CODING/types.h" || true`
             if [ $IS_OAI_LICENCE_PRESENT -eq 0 ] && [ $IS_BSD_LICENCE_PRESENT -eq 0 ]
             then
                 if [ $IS_NFAPI -eq 0 ] && [ $IS_EXCEPTION -eq 0 ]
                 then
-                    echo $FILE >> ./files-w-suspect-banner.txt
+                    echo $FULLFILE >> ./files-w-suspect-banner.txt
                 fi
             fi
         fi

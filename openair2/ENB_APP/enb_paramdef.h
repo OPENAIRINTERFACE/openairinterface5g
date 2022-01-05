@@ -34,6 +34,7 @@
 #define ENB_PARAMDEF_H_
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
+#include "s1ap_eNB_default_values.h"
 
 #define ENB_CONFIG_STRING_CC_NODE_FUNCTION  "node_function"
 #define ENB_CONFIG_STRING_CC_NODE_TIMING    "node_timing"
@@ -96,6 +97,8 @@ typedef enum {
 #define CONFIG_STRING_RU_OTA_SYNC_ENABLE          "ota_sync_enabled"
 #define CONFIG_STRING_RU_BF_WEIGHTS_LIST          "bf_weights"
 #define CONFIG_STRING_RU_IF_FREQUENCY             "if_freq"
+#define CONFIG_STRING_RU_IF_FREQ_OFFSET           "if_offset"
+#define CONFIG_STRING_RU_DO_PRECODING             "do_precoding"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -124,7 +127,8 @@ typedef enum {
 #define RU_OTA_SYNC_ENABLE_IDX        24
 #define RU_BF_WEIGHTS_LIST_IDX        25
 #define RU_IF_FREQUENCY               26
-
+#define RU_IF_FREQ_OFFSET             27
+#define RU_DO_PRECODING               28
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
@@ -152,11 +156,13 @@ typedef enum {
     {CONFIG_STRING_RU_SDR_ADDRS,                   NULL,       0,       strptr:NULL,     defstrval:"type=b200",   TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_SDR_CLK_SRC,                 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_SDR_TME_SRC,                 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
-    {CONFIG_STRING_RU_SF_EXTENSION,                NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
+    {CONFIG_STRING_RU_SF_EXTENSION,                NULL,       0,       uptr:NULL,       defuintval:320,          TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_END_OF_BURST_DELAY,          NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,        0}, \
     {CONFIG_STRING_RU_OTA_SYNC_ENABLE,             NULL,       0,       strptr:NULL,     defstrval:"no",          TYPE_STRING,      0}, \
     {CONFIG_STRING_RU_BF_WEIGHTS_LIST,             NULL,       0,       iptr:NULL,       defintarrayval:DEFBFW,   TYPE_INTARRAY,    0}, \
     {CONFIG_STRING_RU_IF_FREQUENCY,                NULL,       0,       u64ptr:NULL,     defuintval:0,            TYPE_UINT64,      0}, \
+    {CONFIG_STRING_RU_IF_FREQ_OFFSET,              NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_DO_PRECODING,                NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -210,6 +216,11 @@ typedef enum {
 #define ENB_CONFIG_STRING_X2                            "enable_x2"
 #define ENB_CONFIG_STRING_ENB_M2                        "enable_enb_m2"
 #define ENB_CONFIG_STRING_MCE_M2                        "enable_mce_m2"
+#define ENB_CONFIG_STRING_S1SETUP_RSP_TIMER             "s1setup_rsp_timer"
+#define ENB_CONFIG_STRING_S1SETUP_REQ_TIMER             "s1setup_req_timer"
+#define ENB_CONFIG_STRING_S1SETUP_REQ_COUNT             "s1setup_req_count"
+#define ENB_CONFIG_STRING_SCTP_REQ_TIMER                "sctp_req_timer"
+#define ENB_CONFIG_STRING_SCTP_REQ_COUNT                "sctp_req_count"
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
@@ -235,6 +246,11 @@ typedef enum {
     {ENB_CONFIG_STRING_X2,                           NULL,   0,            strptr:NULL, defstrval:NULL,              TYPE_STRING,    0},  \
     {ENB_CONFIG_STRING_ENB_M2,                       NULL,   0,            strptr:NULL, defstrval:"no",              TYPE_STRING,    0},  \
     {ENB_CONFIG_STRING_MCE_M2,                       NULL,   0,            strptr:NULL, defstrval:"no",              TYPE_STRING,    0},  \
+    {ENB_CONFIG_STRING_S1SETUP_RSP_TIMER,            NULL,   0,            uptr:NULL,   defuintval:5,                TYPE_UINT,      0},  \
+    {ENB_CONFIG_STRING_S1SETUP_REQ_TIMER,            NULL,   0,            uptr:NULL,   defuintval:5,                TYPE_UINT,      0},  \
+    {ENB_CONFIG_STRING_S1SETUP_REQ_COUNT,            NULL,   0,            uptr:NULL,   defuintval:65535,            TYPE_UINT,      0},  \
+    {ENB_CONFIG_STRING_SCTP_REQ_TIMER,               NULL,   0,            uptr:NULL,   defuintval:180,              TYPE_UINT,      0},  \
+    {ENB_CONFIG_STRING_SCTP_REQ_COUNT,               NULL,   0,            uptr:NULL,   defuintval:65535,            TYPE_UINT,      0},  \
   }
 
 #define ENB_ENB_ID_IDX                  0
@@ -257,6 +273,11 @@ typedef enum {
 #define ENB_ENABLE_X2                   17
 #define ENB_ENABLE_ENB_M2               18
 #define ENB_ENABLE_MCE_M2               19
+#define ENB_S1SETUP_RSP_TIMER_IDX       20
+#define ENB_S1SETUP_REQ_TIMER_IDX       21
+#define ENB_S1SETUP_REQ_COUNT_IDX       22
+#define ENB_SCTP_REQ_TIMER_IDX          23
+#define ENB_SCTP_REQ_COUNT_IDX          24
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define ENBPARAMS_CHECK {                                           \
@@ -429,6 +450,9 @@ typedef enum {
 //SIB1-MBMS
 #define ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL       "mbms_dedicated_serving_cell"
 
+//NSA NR Cell SSB Absolute Frequency
+#define ENB_CONFIG_STRING_NR_SCG_SSB_FREQ                         "nr_scg_ssb_freq"
+
 
 
 #define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13        "pdsch_maxNumRepetitionCEmodeA_r13"
@@ -577,6 +601,7 @@ typedef struct ccparams_lte_s {
   int32_t           srb1_poll_pdu;
   int32_t           srb1_poll_byte;
   int32_t           srb1_max_retx_threshold;
+  int32_t           nr_scg_ssb_freq;
 } ccparams_lte_t;
 
 #define CCPARAMS_CHECK {                             \
@@ -780,7 +805,8 @@ typedef struct ccparams_lte_s {
   {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
   {ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ccparams.ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0},  \
   {ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ccparams.ue_multiple_max,                          defintval:4,               TYPE_UINT,       0},  \
-  {ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL,                  NULL,   0,           strptr:&ccparams.mbms_dedicated_serving_cell,  defstrval:"DISABLE",       TYPE_STRING,       0}  \
+  {ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL,                  NULL,   0,           strptr:&ccparams.mbms_dedicated_serving_cell,            defstrval:"DISABLE",       TYPE_STRING,     0},  \
+  {ENB_CONFIG_STRING_NR_SCG_SSB_FREQ,                              NULL,   0,           iptr:&ccparams.nr_scg_ssb_freq,                        defintval:641272,          TYPE_INT,        0}   \
 }
 
 
@@ -902,6 +928,7 @@ typedef struct srb1_params_s {
 
 #define ENB_CONFIG_STRING_MME_IPV4_ADDRESS              "ipv4"
 #define ENB_CONFIG_STRING_MME_IPV6_ADDRESS              "ipv6"
+#define ENB_CONFIG_STRING_MME_PORT                      "port"
 #define ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE         "active"
 #define ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE     "preference"
 #define ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX      "broadcast_plmn_index"
@@ -916,14 +943,20 @@ typedef struct srb1_params_s {
   {ENB_CONFIG_STRING_MME_IPV6_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
   {ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE,              NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
   {ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE,          NULL,      0,         uptr:NULL,   defstrval:NULL,      TYPE_STRING,    0},    \
-  {ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX,           NULL,      0,         uptr:NULL,   defintarrayval:NULL, TYPE_UINTARRAY, 6}     \
+  {ENB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX,           NULL,      0,         uptr:NULL,   defintarrayval:NULL, TYPE_UINTARRAY, 6},    \
+  {ENB_CONFIG_STRING_MME_PORT,                           NULL,      0,         u16ptr:NULL, defuintval:S1AP_PORT_NUMBER, TYPE_UINT16, 0},    \
 }
+
+
+
+
 
 #define ENB_MME_IPV4_ADDRESS_IDX          0
 #define ENB_MME_IPV6_ADDRESS_IDX          1
 #define ENB_MME_IP_ADDRESS_ACTIVE_IDX     2
 #define ENB_MME_IP_ADDRESS_PREFERENCE_IDX 3
 #define ENB_MME_BROADCAST_PLMN_INDEX      4
+#define ENB_MME_PORT_IDX                  5
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* X2 configuration parameters section name */

@@ -65,17 +65,8 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
   // Fixme: not sure when it is "volts" so dB is 20*log10(...) or "power", so dB is 10*log10(...)
   const double pathLossLinear = pow(10,channelDesc->path_loss_dB/20.0);
   // Energy in one sample to calibrate input noise
-  //Fixme: modified the N0W computation, not understand the origin value
-  const double KT=1.38e-23*290; //Boltzman*temperature
-  // sampling rate is linked to acquisition band (the input pass band filter)
-  const double noise_figure_watt = KT*channelDesc->sampling_rate;
-  // Fixme: how to convert a noise in Watt into a 12 bits value out of the RF ADC ?
-  // the parameter "-s" is declared as SNR, but the input power is not well defined
-  // −132.24 dBm is a LTE subcarrier noise, that was used in origin code (15KHz BW thermal noise)
-  const double rxGain= 132.24 - channelmod_get_snr_dB();
-  // sqrt(4*noise_figure_watt) is the thermal noise factor (volts)
-  // fixme: the last constant is pure trial results to make decent noise
-  const double noise_per_sample = sqrt(4*noise_figure_watt) * pow(10,rxGain/20) *10;
+  // the normalized OAI value seems to be 256 as average amplitude (numerical amplification = 1)
+  const double noise_per_sample = pow(10,channelDesc->noise_power_dB/10.0) * 256;
   // Fixme: we don't fill the offset length samples at begining ?
   // anyway, in today code, channel_offset=0
   const int dd = abs(channelDesc->channel_offset);
@@ -83,10 +74,10 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
 
   for (int i=0; i<((int)nbSamples-dd); i++) {
     struct complex16 *out_ptr=after_channel_sig+dd+i;
-    struct complex rx_tmp= {0};
+    struct complexd rx_tmp= {0};
 
     for (int txAnt=0; txAnt < nbTx; txAnt++) {
-      const struct complex *channelModel= channelDesc->ch[rxAnt+(txAnt*channelDesc->nb_rx)];
+      const struct complexd *channelModel= channelDesc->ch[rxAnt+(txAnt*channelDesc->nb_rx)];
 
       //const struct complex *channelModelEnd=channelModel+channelDesc->channel_length;
       for (int l = 0; l<(int)channelDesc->channel_length; l++) {
@@ -97,13 +88,14 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
         // it would be better to split out each antenna in a separate flow
         // that will allow to mix ru antennas freely
         struct complex16 tx16=input_sig[((TS+i-l)*nbTx+txAnt)%CirSize];
-        rx_tmp.x += tx16.r * channelModel[l].x - tx16.i * channelModel[l].y;
-        rx_tmp.y += tx16.i * channelModel[l].x + tx16.r * channelModel[l].y;
+        rx_tmp.r += tx16.r * channelModel[l].r - tx16.i * channelModel[l].i;
+        rx_tmp.i += tx16.i * channelModel[l].r + tx16.r * channelModel[l].i;
       } //l
     }
 
-    out_ptr->r += round(rx_tmp.x*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
-    out_ptr->i += round(rx_tmp.y*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
+    // Fixme: lround(), rount(), ... is detected by valgrind as error, not found why
+    out_ptr->r += lround(rx_tmp.r*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
+    out_ptr->i += lround(rx_tmp.i*pathLossLinear + noise_per_sample*gaussZiggurat(0.0,1.0));
     out_ptr++;
   }
 

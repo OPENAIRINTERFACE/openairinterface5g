@@ -330,7 +330,7 @@ void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index ) {
   preconfigpool->data_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12    = 0;
   // 40 ms SL Period
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.present              = LTE_SubframeBitmapSL_r12_PR_bs40_r12;
-  preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf         = CALLOC(1,5);
+  preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf         = CALLOC(5,1);
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size        = 5;
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = 0;
   // last 36 subframes for PSCCH
@@ -338,7 +338,7 @@ void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index ) {
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[1]      = 0xFF;
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[2]      = 0xFF;
   preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[3]      = 0xFF;
-  preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[5]      = 0xFF;
+  preconfigpool->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf[4]      = 0xFF;
   preconfigpool->dataHoppingConfig_r12.hoppingParameter_r12                         = 0;
   preconfigpool->dataHoppingConfig_r12.numSubbands_r12                              = LTE_SL_HoppingConfigComm_r12__numSubbands_r12_ns1;
   preconfigpool->dataHoppingConfig_r12.rb_Offset_r12                                = 0;
@@ -393,15 +393,7 @@ char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_
   init_SI_UE(&ctxt,eNB_index);
   LOG_D(RRC,PROTOCOL_RRC_CTXT_FMT"  INIT: phy_sync_2_ch_ind\n",
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
-#ifndef NO_RRM
-  send_msg(&S_rrc,msg_rrc_phy_synch_to_CH_ind(ctxt.module_id,eNB_index,UE_rrc_inst[ctxt.module_id].Mac_id));
-#endif
-#ifndef NO_RRM
-  send_msg(&S_rrc,msg_rrc_phy_synch_to_CH_ind(ctxt.module_id,eNB_index,UE_rrc_inst[ctxt.module_id].Mac_id));
-#endif
-#ifdef NO_RRM //init ch SRB0, SRB1 & BDTCH
   openair_rrc_on_ue(&ctxt);
-#endif
   return 0;
 }
 
@@ -492,7 +484,7 @@ rrc_t310_expiration(
                           UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Srb_info.Srb_id,
                           Rlc_info_um);
       UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Active = 0;
-      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Status = IDLE;
+      UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].StatusSrb = IDLE;
       UE_rrc_inst[ctxt_pP->module_id].Srb2[eNB_index].Next_check_frame = 0;
     }
   } else { // Restablishment procedure
@@ -671,7 +663,7 @@ rrc_ue_establish_srb1(
 {
   // add descriptor from RRC PDU
   UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Active = 1;
-  UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].StatusSrb = RADIO_CONFIG_OK;//RADIO CFG
   UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Srb_id = 1;
   // copy default configuration for now
   //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
@@ -695,7 +687,7 @@ rrc_ue_establish_srb2(
 {
   // add descriptor from RRC PDU
   UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Active = 1;
-  UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
+  UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].StatusSrb = RADIO_CONFIG_OK;//RADIO CFG
   UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Srb_id = 2;
   // copy default configuration for now
   //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Lchan_desc[0],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
@@ -1796,7 +1788,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
         for (list_count = 0; list_count < rrcConnectionReconfiguration_r8->dedicatedInfoNASList->list.count; list_count++) {
           pdu_length = rrcConnectionReconfiguration_r8->dedicatedInfoNASList->list.array[list_count]->size;
           pdu_buffer = rrcConnectionReconfiguration_r8->dedicatedInfoNASList->list.array[list_count]->buf;
-          msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_ESTABLI_CNF);
+          msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, NAS_CONN_ESTABLI_CNF);
           NAS_CONN_ESTABLI_CNF(msg_p).errCode = AS_SUCCESS;
           NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length = pdu_length;
           NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.data = pdu_buffer;
@@ -1811,7 +1803,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
         MessageDef                                 *message_ral_p = NULL;
         rrc_ral_connection_reestablishment_ind_t    connection_reestablishment_ind;
         int                                         i;
-        message_ral_p = itti_alloc_new_message (TASK_RRC_UE, RRC_RAL_CONNECTION_REESTABLISHMENT_IND);
+        message_ral_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_RAL_CONNECTION_REESTABLISHMENT_IND);
         memset(&connection_reestablishment_ind, 0, sizeof(rrc_ral_connection_reestablishment_ind_t));
         // TO DO ral_si_ind.plmn_id        = 0;
         connection_reestablishment_ind.ue_id            = ctxt_pP->rnti;
@@ -2007,7 +1999,7 @@ rrc_ue_decode_dcch(
             MessageDef *msg_p;
             pdu_length = dedicatedInfoType->choice.dedicatedInfoNAS.size;
             pdu_buffer = dedicatedInfoType->choice.dedicatedInfoNAS.buf;
-            msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_DOWNLINK_DATA_IND);
+            msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, NAS_DOWNLINK_DATA_IND);
             NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
             NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = pdu_length;
             NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = pdu_buffer;
@@ -2073,7 +2065,7 @@ rrc_ue_decode_dcch(
               MessageDef                                 *message_ral_p = NULL;
               rrc_ral_connection_reconfiguration_ho_ind_t connection_reconfiguration_ho_ind;
               int                                         i;
-              message_ral_p = itti_alloc_new_message (TASK_RRC_UE, RRC_RAL_CONNECTION_RECONFIGURATION_HO_IND);
+              message_ral_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_RAL_CONNECTION_RECONFIGURATION_HO_IND);
               memset(&connection_reconfiguration_ho_ind, 0, sizeof(rrc_ral_connection_reconfiguration_ho_ind_t));
               connection_reconfiguration_ho_ind.ue_id = ctxt_pP->module_id;
 
@@ -2127,7 +2119,7 @@ rrc_ue_decode_dcch(
               MessageDef                                 *message_ral_p = NULL;
               rrc_ral_connection_reconfiguration_ind_t    connection_reconfiguration_ind;
               int                                         i;
-              message_ral_p = itti_alloc_new_message (TASK_RRC_UE, RRC_RAL_CONNECTION_RECONFIGURATION_IND);
+              message_ral_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_RAL_CONNECTION_RECONFIGURATION_IND);
               memset(&connection_reconfiguration_ind, 0, sizeof(rrc_ral_connection_reconfiguration_ind_t));
               connection_reconfiguration_ind.ue_id = ctxt_pP->module_id;
 
@@ -2189,7 +2181,7 @@ rrc_ue_decode_dcch(
           break;
 
         case LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
-          msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_RELEASE_IND);
+          msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, NAS_CONN_RELEASE_IND);
 
           if ((dl_dcch_msg->message.choice.c1.choice.rrcConnectionRelease.criticalExtensions.present
                == LTE_RRCConnectionRelease__criticalExtensions_PR_c1)
@@ -2201,7 +2193,7 @@ rrc_ue_decode_dcch(
 
           itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
 #if ENABLE_RAL
-          msg_p = itti_alloc_new_message(TASK_RRC_UE, RRC_RAL_CONNECTION_RELEASE_IND);
+          msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, RRC_RAL_CONNECTION_RELEASE_IND);
           RRC_RAL_CONNECTION_RELEASE_IND(msg_p).ue_id = ctxt_pP->module_id;
           itti_send_msg_to_task(TASK_RAL_UE, ctxt_pP->instance, msg_p);
 #endif
@@ -2249,9 +2241,6 @@ rrc_ue_decode_dcch(
     }
   }
 
-#ifndef NO_RRM
-  send_msg(&S_rrc,msg_rrc_end_scan_req(ctxt_pP->module_id,eNB_indexP));
-#endif
 }
 
 const char siWindowLength[9][5] = {"1ms","2ms","5ms","10ms","15ms","20ms","40ms","80ms","ERR"};
@@ -2529,14 +2518,6 @@ int decode_BCCH_MBMS_DLSCH_Message(
       default:
         break;
     }
-  }*/
-  /*if ((rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE)
-  #if defined(ENABLE_USE_MME)
-      && (UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL)
-  #endif
-     ) {
-    rrc_ue_generate_RRCConnectionRequest(ctxt_pP, 0);
-    rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
   }*/
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
   return 0;
@@ -2837,7 +2818,7 @@ int decode_SIB1_MBMS( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_in
             )
           ) {
             MessageDef  *msg_p;
-            msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CELL_SELECTION_CNF);
+            msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, NAS_CELL_SELECTION_CNF);
             NAS_CELL_SELECTION_CNF (msg_p).errCode = AS_SUCCESS;
             NAS_CELL_SELECTION_CNF (msg_p).cellID = BIT_STRING_to_uint32(&sib1->cellAccessRelatedInfo.cellIdentity);
             NAS_CELL_SELECTION_CNF (msg_p).tac = BIT_STRING_to_uint16(&sib1->cellAccessRelatedInfo.trackingAreaCode);
@@ -2853,7 +2834,7 @@ int decode_SIB1_MBMS( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_in
 
       if (cell_valid == 0) {
         MessageDef  *msg_p;
-        msg_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_NEXT_CELL_REQ);
+        msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, PHY_FIND_NEXT_CELL_REQ);
         itti_send_msg_to_task(TASK_PHY_UE, ctxt_pP->instance, msg_p);
         LOG_E(RRC, "Synched with a cell, but PLMN doesn't match our SIM, the message PHY_FIND_NEXT_CELL_REQ is sent but lost in current UE implementation! \n");
       }
@@ -2969,6 +2950,12 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize = siWindowLength_int[sib1->si_WindowLength];
   LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
          ctxt_pP->module_id, eNB_index, ctxt_pP->module_id );
+  /* pointers to  SIperiod inthe Info struct points to a packed structure
+ * Using these possibly unaligned pointers in a function call may trigger alignment errors at run time and
+ * gcc, from v9,  now warns about it. fix these warnings by removing the indirection on data
+ * Not sure if SiPeriod can be modified, reassign after function call for security
+ */
+  uint16_t Aligned_SIperiod = UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod;
   rrc_mac_config_req_ue(ctxt_pP->module_id, 0, eNB_index,
                         (LTE_RadioResourceConfigCommonSIB_t *)NULL,
                         (struct LTE_PhysicalConfigDedicated *)NULL,
@@ -2981,7 +2968,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
                         UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->tdd_Config,
                         (LTE_MobilityControlInfo_t *) NULL,
                         &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize,
-                        &UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod,
+                        &Aligned_SIperiod,
                         NULL,
                         NULL,
                         NULL,
@@ -2995,6 +2982,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
                         (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL,
                         (LTE_MBSFN_AreaInfoList_r9_t *)NULL
                        );
+  UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod=Aligned_SIperiod;
   LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus = 1;
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;
@@ -3036,7 +3024,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
         ) {
           /* PLMN match, send a confirmation to NAS */
           MessageDef  *msg_p;
-          msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CELL_SELECTION_CNF);
+          msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, NAS_CELL_SELECTION_CNF);
           NAS_CELL_SELECTION_CNF (msg_p).errCode = AS_SUCCESS;
           NAS_CELL_SELECTION_CNF (msg_p).cellID = BIT_STRING_to_uint32(&sib1->cellAccessRelatedInfo.cellIdentity);
           NAS_CELL_SELECTION_CNF (msg_p).tac = BIT_STRING_to_uint16(&sib1->cellAccessRelatedInfo.trackingAreaCode);
@@ -3054,7 +3042,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
     if (cell_valid == 0) {
       /* Cell can not be used, ask PHY to try the next one */
       MessageDef  *msg_p;
-      msg_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_NEXT_CELL_REQ);
+      msg_p = itti_alloc_new_message(TASK_RRC_UE, 0, PHY_FIND_NEXT_CELL_REQ);
       itti_send_msg_to_task(TASK_PHY_UE, ctxt_pP->instance, msg_p);
       LOG_E(RRC,
             "Synched with a cell, but PLMN doesn't match our SIM "
@@ -3672,7 +3660,7 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
             {
               MessageDef                            *message_ral_p = NULL;
               rrc_ral_system_information_ind_t       ral_si_ind;
-              message_ral_p = itti_alloc_new_message (TASK_RRC_UE, RRC_RAL_SYSTEM_INFORMATION_IND);
+              message_ral_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_RAL_SYSTEM_INFORMATION_IND);
               memset(&ral_si_ind, 0, sizeof(rrc_ral_system_information_ind_t));
               ral_si_ind.plmn_id.MCCdigit2 = '0';
               ral_si_ind.plmn_id.MCCdigit1 = '2';
@@ -4456,7 +4444,7 @@ void *rrc_ue_task( void *args_p ) {
   while(1) {
     // Wait for a message
     itti_receive_msg (TASK_RRC_UE, &msg_p);
-    instance = ITTI_MSG_INSTANCE (msg_p);
+    instance = ITTI_MSG_DESTINATION_INSTANCE (msg_p);
     ue_mod_id = UE_INSTANCE_TO_MODULE_ID(instance);
 
     switch (ITTI_MSG_ID(msg_p)) {
@@ -4645,7 +4633,7 @@ void *rrc_ue_task( void *args_p ) {
           case RRC_STATE_IDLE: {
             /* Ask to layer 1 to find a cell matching the criterion */
             MessageDef *message_p;
-            message_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_CELL_REQ);
+            message_p = itti_alloc_new_message(TASK_RRC_UE, 0, PHY_FIND_CELL_REQ);
             PHY_FIND_CELL_REQ (message_p).earfcn_start = 1;
             PHY_FIND_CELL_REQ (message_p).earfcn_end = 1;
             itti_send_msg_to_task(TASK_PHY_UE, UE_MODULE_ID_TO_INSTANCE(ue_mod_id), message_p);
@@ -4748,7 +4736,7 @@ void *rrc_ue_task( void *args_p ) {
             if (rrc_get_sub_state(ue_mod_id) != RRC_SUB_STATE_IDLE_SEARCHING) {
               /* Ask to layer 1 to find a cell matching the criterion */
               MessageDef *message_p;
-              message_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_CELL_REQ);
+              message_p = itti_alloc_new_message(TASK_RRC_UE, 0, PHY_FIND_CELL_REQ);
               rrc_set_sub_state (ue_mod_id, RRC_SUB_STATE_IDLE_SEARCHING);
               PHY_FIND_CELL_REQ (message_p).transaction_id = RRC_RAL_SCAN_REQ (msg_p).transaction_id;
               PHY_FIND_CELL_REQ (message_p).earfcn_start   = 1;
@@ -4780,7 +4768,7 @@ void *rrc_ue_task( void *args_p ) {
               case RRC_SUB_STATE_IDLE_SEARCHING: {
                 MessageDef *message_p;
                 int         i;
-                message_p = itti_alloc_new_message(TASK_RRC_UE, RRC_RAL_SCAN_CONF);
+                message_p = itti_alloc_new_message(TASK_RRC_UE, 0, RRC_RAL_SCAN_CONF);
                 RRC_RAL_SCAN_CONF (message_p).transaction_id = PHY_FIND_CELL_IND(msg_p).transaction_id;
                 RRC_RAL_SCAN_CONF (message_p).num_scan_resp  = PHY_FIND_CELL_IND(msg_p).cell_nb;
 
@@ -4823,7 +4811,7 @@ void *rrc_ue_task( void *args_p ) {
       case PHY_MEAS_REPORT_IND: {
         LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         MessageDef *message_p;
-        message_p = itti_alloc_new_message(TASK_RRC_UE, RRC_RAL_MEASUREMENT_REPORT_IND);
+        message_p = itti_alloc_new_message(TASK_RRC_UE, 0, RRC_RAL_MEASUREMENT_REPORT_IND);
         memcpy(&RRC_RAL_MEASUREMENT_REPORT_IND (message_p).threshold,
                &PHY_MEAS_REPORT_IND(msg_p).threshold,
                sizeof(RRC_RAL_MEASUREMENT_REPORT_IND (message_p).threshold));

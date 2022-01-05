@@ -57,6 +57,7 @@
 #include "LTE_PMCH-InfoList-r9.h"
 
 
+#include <openair2/LAYER2/MAC/mac_proto.h>
 extern void mac_init_cell_params(int Mod_idP,int CC_idP);
 extern void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
 
@@ -84,10 +85,6 @@ void ue_mac_reset(module_id_t module_idP, uint8_t eNB_index) {
   UE_mac_inst[module_idP].RA_prach_resources.ra_RACH_MaskIndex = 0;
   ue_init_mac(module_idP);  //This will hopefully do the rest of the MAC reset procedure
 }
-
-int32_t **rxdata;
-int32_t **txdata;
-
 
 int
 rrc_mac_config_req_ue(module_id_t Mod_idP,

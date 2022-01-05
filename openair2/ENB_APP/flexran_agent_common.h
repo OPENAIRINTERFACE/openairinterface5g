@@ -70,7 +70,6 @@ typedef struct {
   pthread_mutex_t *mutex;
 } stats_updates_context_t;
 
-stats_updates_context_t stats_context[NUM_MAX_ENB];
 
 /**********************************
  * FlexRAN protocol messages helper 
@@ -131,10 +130,19 @@ int flexran_agent_destroy_lc_config_request(Protocol__FlexranMessage *msg);
 /* Control delegation message constructor and destructor */
 int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_control_delegation(Protocol__FlexranMessage *msg);
+/* Map a name from a control_delegation message to a file name. The function
+ * stat()s the file to check existence and returns the complete path name in
+ * path. The length in path needs to be maxlen, the maximum length the path may
+ * have. */
+int flexran_agent_map_name_to_delegated_object(mid_t mod_id, const char *name,
+    char *path, int maxlen);
 
 /* Policy reconfiguration message constructor and destructor */
 int flexran_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int flexran_agent_destroy_agent_reconfiguration(Protocol__FlexranMessage *msg);
+
+/* Policy reconfiguration request message destructor */
+int flexran_agent_destroy_control_delegation_request(Protocol__FlexranMessage *msg);
 
 /* rrc triggering measurement message constructor and destructor */
 int flexran_agent_rrc_reconfiguration(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);

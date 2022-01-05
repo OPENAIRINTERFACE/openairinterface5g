@@ -97,35 +97,6 @@ rrc_init_global_param(
 //-----------------------------------------------------------------------------
 {
 
-  //#ifdef USER_MODE
-  //  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
-  //#endif //USRE_MODE
-
-  //  Rrc_xface->openair_rrc_top_init = openair_rrc_top_init;
-  //  Rrc_xface->openair_rrc_eNB_init = openair_rrc_eNB_init;
-  //  Rrc_xface->openair_rrc_UE_init  = openair_rrc_ue_init;
-  //  Rrc_xface->mac_rrc_data_ind     = mac_rrc_data_ind;
-  //Rrc_xface->mac_rrc_data_req     = mac_rrc_data_req;
-  // Rrc_xface->rrc_data_indP        = (void *)rlcrrc_data_ind;
-  //  Rrc_xface->rrc_rx_tx            = rrc_rx_tx;
-  //  Rrc_xface->mac_rrc_meas_ind     = mac_rrc_meas_ind;
-  //  Rrc_xface->get_rrc_status       = get_rrc_status;
-
-  //Rrc_xface->rrc_get_status = ...
-
-  //  Mac_rlc_xface->mac_out_of_sync_ind=mac_out_of_sync_ind;
-
-#ifndef NO_RRM
-  //  Rrc_xface->fn_rrc=fn_rrc;
-#endif
-  //  LOG_D(RRC, "[RRC]INIT_GLOBAL_PARAM: Mac_rlc_xface %p, rrc_rlc_register %p,rlcrrc_data_ind%p\n",Mac_rlc_xface,Mac_rlc_xface->rrc_rlc_register_rrc,rlcrrc_data_ind);
-  /*
-   if((Mac_rlc_xface==NULL) || (Mac_rlc_xface->rrc_rlc_register_rrc==NULL) ||
-   (rlcrrc_data_ind==NULL)) {
-   LOG_E(RRC,"Data structured is not initialized \n");
-   return -1;
-   }
-   */
   rrc_rlc_register_rrc (rrc_data_ind, NULL); //register with rlc
 
   DCCH_LCHAN_DESC.transport_block_size = 4;
@@ -392,7 +363,7 @@ rrc_rx_tx(
               current_timestamp_ms,
               ctxt_pP->frame,
               estimated_distance);
-        LOG_D(LOCALIZE, " RRC status %d\n", ue_context_p->ue_context.Status);
+        LOG_D(LOCALIZE, " RRC status %d\n", ue_context_p->ue_context.StatusRrc);
         push_front(&RC.rrc[ctxt_pP->module_id]->loc_list,
                    estimated_distance);
         RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;

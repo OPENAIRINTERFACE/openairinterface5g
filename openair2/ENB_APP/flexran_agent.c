@@ -33,6 +33,9 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 int agent_task_created = 0;
 /* 
  * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
@@ -114,7 +117,6 @@ error:
      LOG_E(FLEXRAN_AGENT,"receive_thread: error %d occured\n",err_code);
   return NULL;
 }
-
 
 int channel_container_init = 0;
 int flexran_agent_start(mid_t mod_id)
@@ -233,6 +235,9 @@ int flexran_agent_start(mid_t mod_id)
     agent_task_created = 1;
   }
 
+  /* Init the app sublayer */
+  flexran_agent_app_init(mod_id);
+
   pthread_mutex_init(&flexran->mutex_node_ctrl, NULL);
   pthread_cond_init(&flexran->cond_node_ctrl, NULL);
 
@@ -249,7 +254,7 @@ int flexran_agent_start(mid_t mod_id)
     pthread_mutex_unlock(&flexran->mutex_node_ctrl);
 
     /* reconfigure RRC again, the agent might have changed the configuration */
-    MessageDef *msg_p = itti_alloc_new_message(TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+    MessageDef *msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
     RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[mod_id]->configuration;
     itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg_p);
   }

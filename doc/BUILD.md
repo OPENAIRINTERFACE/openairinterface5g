@@ -16,6 +16,7 @@ This page is valid on tags starting from **`2019.w09`**.
 
 # Soft Modem Build Script
 
+The OAI EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-epc-fed/wiki) , it is not described here.
 
 OAI softmodem sources, which aim to implement 3GPP compliant UEs, eNodeB and gNodeB can be downloaded from the Eurecom [gitlab repository](./GET_SOURCES.md).
 
@@ -33,7 +34,7 @@ The main oai binaries, which are tested by the Continuous Integration process ar
 
 Running the  [build_oai](../cmake_targets/build_oai) script also generates some utilities required to build and/or run the oai softmodem binaries:
 
-- `con2uedata`: a binary used to build the UE data from a configuration file. The created file emulates the sim card  of a 3GPP compliant phone.
+- `conf2uedata`: a binary used to build the UE data from a configuration file. The created file emulates the sim card  of a 3GPP compliant phone.
 - `nvram`: a binary used to build UE (IMEI...) and EMM (IMSI, registered PLMN) non volatile data. 
 - `rb_tool`: radio bearer utility 
 - `genids` T Tracer utility, used at build time to generate T_IDs.h include file. This binary is located in the [T Tracer source file directory](../common/utils/T) .
@@ -50,6 +51,19 @@ Calling the `build_oai` script with the -h option gives the list of all availabl
 
 # Building PHY Simulators
 
+The PHY layer simulators (LTE and NR) can be built as follows:  
+
+```
+cd <your oai installation directory>/openairinterface5g/
+source oaienv
+cd cmake_targets/
+./build_oai -I --phy_simulators
+```
+
+After completing the build, the binaries are available in the cmake_targets/phy_simulators/build directory.  
+A copy is also available in the target/bin directory, with all binaries suffixed by the 3GPP release number, today **.Rel15**.  
+
+
 Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
 
 # Building UEs, eNodeB and gNodeB Executables
@@ -63,7 +77,7 @@ cd cmake_targets/
 ./build_oai -I -w USRP --eNB --UE --nrUE --gNB
 ```
 
-- The `-I` option is to install pre-requisites, you only need it the first time you build the softmodem or when some oai dependencies have changed. 
+- The `-I` option is to install pre-requisites, you only need it the first time you build the softmodem or when some oai dependencies have changed. Note: for Ubuntu 20 use cmake_targets/install_external_packages.ubuntu20 instead!
 - The `-w` option is to select the radio head support you want to include in your build. Radio head support is provided via a shared library, which is called the "oai device" The build script creates a soft link from `liboai_device.so` to the true device which will be used at run-time (here the USRP one,`liboai_usrpdevif.so` . USRP is the only hardware tested today in the Continuous Integration process. The RF simulator[RF simulator](../targets/ARCH/rfsimulator/README.md) is implemented as a specific device replacing RF hardware, it can be specifically built using `-w SIMU` option, but is also built during any softmodem build.
 - `--eNB` is to build the `lte-softmodem` executable and all required shared libraries
 - `--gNB` is to build the `nr-softmodem` executable and all required shared libraries
@@ -73,6 +87,21 @@ cd cmake_targets/
 You can build any oai softmodem executable separately, you may not need all of them depending on your oai usage.
 
 After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel15.
+
+When installing the pre-requisites, especially the `UHD` driver, you can now specify if you want to install from source or not.
+
+- For `fedora`-based OS, it was already the case all the time. But now you can specify which version to install.
+- For `ubuntu` OS, the Ettus PPA currently installs the following versions:
+  * `Ubuntu16.04`: --> version `3.15.0.0`
+  * `Ubuntu18.04`: --> version `4.1.0.0`
+
+```bash
+export BUILD_UHD_FROM_SOURCE=True
+export UHD_VERSION=3.15.0.0
+./build_oai -I -w USRP
+```
+
+The `UHD_VERSION` env variable `SHALL` be a valid tag (minus `v`) from the `https://github.com/EttusResearch/uhd.git` repository.
 
 ## Issue when building `nasmeh` module ##
 

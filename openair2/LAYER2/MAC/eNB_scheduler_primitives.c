@@ -1985,10 +1985,13 @@ find_UE_id(module_id_t mod_idP,
 {
   int UE_id;
   UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
+  if(!UE_info)
+    return -1;
 
   for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
     if (UE_info->active[UE_id] == TRUE) {
-      if (UE_info->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti == rntiP) {
+      int CC_id = UE_PCCID(mod_idP, UE_id);
+      if (CC_id>=0 && CC_id<NFAPI_CC_MAX && UE_info->UE_template[CC_id][UE_id].rnti == rntiP) {
         return UE_id;
       }
     }
@@ -2173,6 +2176,7 @@ add_new_ue(module_id_t mod_idP,
           )
 //------------------------------------------------------------------------------
 {
+  eNB_MAC_INST *eNB     = RC.mac[mod_idP];
   int UE_id;
   int i, j;
   UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
@@ -2215,7 +2219,19 @@ add_new_ue(module_id_t mod_idP,
            0,
            sizeof(eNB_UE_STATS));
     UE_info->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
+    UE_info->UE_sched_ctrl[UE_id].ta_update_f = 31.0;
     UE_info->UE_sched_ctrl[UE_id].ta_update = 31;
+    UE_info->UE_sched_ctrl[UE_id].pusch_snr[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_cqi_f[cc_idP]     = (eNB->puSch10xSnr+640)/5;
+    UE_info->UE_sched_ctrl[UE_id].pusch_cqi[cc_idP]     = (eNB->puSch10xSnr+640)/5;
+    UE_info->UE_sched_ctrl[UE_id].pusch_snr_avg[cc_idP] = eNB->puSch10xSnr/10;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_num[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_num_old[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num_old[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].pusch_bler[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].ret_cnt[cc_idP] = 0;
+    UE_info->UE_sched_ctrl[UE_id].first_cnt[cc_idP] = 0;
 
     for (j = 0; j < 8; j++) {
       UE_info->UE_template[cc_idP][UE_id].oldNDI[j] = 0;
@@ -4934,6 +4950,7 @@ cqi_indication(module_id_t mod_idP,
 {
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
+  uint64_t pdu_val = *(uint64_t *) pdu;
 
   if (UE_id == -1) {
     LOG_W(MAC, "cqi_indication: UE %x not found\n", rntiP);
@@ -4973,10 +4990,10 @@ cqi_indication(module_id_t mod_idP,
                         subframeP,
                         pdu,
                         rel9->length);
-      LOG_D(MAC,"Frame %d Subframe %d update CQI:%d\n",
+      LOG_D(MAC,"Frame %d Subframe %d update CQI:%d pdu 0x%016"PRIx64"\n",
             frameP,
             subframeP,
-            sched_ctl->dl_cqi[CC_idP]);
+            sched_ctl->dl_cqi[CC_idP],pdu_val);
       sched_ctl->cqi_req_flag &= (~(1 << subframeP));
       sched_ctl->cqi_received = 1;
     }
@@ -5164,7 +5181,7 @@ harq_indication(module_id_t mod_idP,
   /* don't care about cqi reporting if NACK/DTX is there */
   if (channel == 0 && !nack_or_dtx_reported(cc,
       harq_pdu)) {
-    sched_ctl->pucch1_snr[CC_idP] = ul_cqi;
+    sched_ctl->pucch1_snr[CC_idP] = (5 * ul_cqi - 640) / 10;
     sched_ctl->pucch1_cqi_update[CC_idP] = 1;
   }
 

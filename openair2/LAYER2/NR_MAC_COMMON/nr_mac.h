@@ -20,7 +20,7 @@
  */
 
 /* \file       nr_mac.h
- * \brief      common MAC data structures, constant, and function prototype
+ * \brief      common MAC data structures and constants
  * \author     R. Knopp, K.H. HSU, G. Casati
  * \date       2019
  * \version    0.1
@@ -36,14 +36,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
+#include "NR_SubcarrierSpacing.h"
+
+#define NR_SHORT_BSR_TABLE_SIZE 32
+#define NR_LONG_BSR_TABLE_SIZE 256
+
+#define TABLE_38213_13_1_NUM_INDEXES 15
+#define TABLE_38213_13_2_NUM_INDEXES 14
+#define TABLE_38213_13_3_NUM_INDEXES 9
+#define TABLE_38213_13_4_NUM_INDEXES 16
+#define TABLE_38213_13_5_NUM_INDEXES 9
+#define TABLE_38213_13_6_NUM_INDEXES 10
+#define TABLE_38213_13_7_NUM_INDEXES 12
+#define TABLE_38213_13_8_NUM_INDEXES 8
+#define TABLE_38213_13_9_NUM_INDEXES 4
+#define TABLE_38213_13_10_NUM_INDEXES 8
+#define TABLE_38213_13_11_NUM_INDEXES 16
+#define TABLE_38213_13_12_NUM_INDEXES 14
+
+// Definitions for MAC control and data
 #define NR_BCCH_DL_SCH 3 // SI
-
 #define NR_BCCH_BCH 5    // MIB
-
-#define CCCH_PAYLOAD_SIZE_MAX 128
-
+#define CCCH_PAYLOAD_SIZE_MAX 512 
 #define RAR_PAYLOAD_SIZE_MAX  128
+#define MAX_BWP_SIZE          275
+
+typedef enum frequency_range_e {
+  FR1 = 0,
+  FR2
+} frequency_range_t;
+
+#define NR_BSR_TRIGGER_NONE      (0) /* No BSR Trigger */
+#define NR_BSR_TRIGGER_REGULAR   (1) /* For Regular and ReTxBSR Expiry Triggers */
+#define NR_BSR_TRIGGER_PERIODIC  (2) /* For BSR Periodic Timer Expiry Trigger */
+#define NR_BSR_TRIGGER_PADDING   (4) /* For Padding BSR Trigger */
 
 //  For both DL/UL-SCH
 //  Except:
@@ -102,22 +130,22 @@ typedef NR_BSR_SHORT NR_BSR_SHORT_TRUNCATED;
 
 // Long BSR for all logical channel group ID
 typedef struct {
-  uint8_t Buffer_size7: 8;
-  uint8_t Buffer_size6: 8;
-  uint8_t Buffer_size5: 8;
-  uint8_t Buffer_size4: 8;
-  uint8_t Buffer_size3: 8;
-  uint8_t Buffer_size2: 8;
-  uint8_t Buffer_size1: 8;
-  uint8_t Buffer_size0: 8;
-  uint8_t LcgID0: 1;
-  uint8_t LcgID1: 1;
-  uint8_t LcgID2: 1;
-  uint8_t LcgID3: 1;
-  uint8_t LcgID4: 1;
-  uint8_t LcgID5: 1;
-  uint8_t LcgID6: 1;
-  uint8_t LcgID7: 1;
+  uint8_t LcgID0: 1;        // octet 1 [0]
+  uint8_t LcgID1: 1;        // octet 1 [1]
+  uint8_t LcgID2: 1;        // octet 1 [2]
+  uint8_t LcgID3: 1;        // octet 1 [3]
+  uint8_t LcgID4: 1;        // octet 1 [4]
+  uint8_t LcgID5: 1;        // octet 1 [5]
+  uint8_t LcgID6: 1;        // octet 1 [6]
+  uint8_t LcgID7: 1;        // octet 1 [7]
+  uint8_t Buffer_size0: 8;  // octet 2 [7:0]
+  uint8_t Buffer_size1: 8;  // octet 3 [7:0]
+  uint8_t Buffer_size2: 8;  // octet 4 [7:0]
+  uint8_t Buffer_size3: 8;  // octet 5 [7:0]
+  uint8_t Buffer_size4: 8;  // octet 6 [7:0]
+  uint8_t Buffer_size5: 8;  // octet 7 [7:0]
+  uint8_t Buffer_size6: 8;  // octet 8 [7:0]
+  uint8_t Buffer_size7: 8;  // octet 9 [7:0]
 } __attribute__ ((__packed__)) NR_BSR_LONG;
 
 typedef NR_BSR_LONG NR_BSR_LONG_TRUNCATED;
@@ -131,10 +159,10 @@ typedef struct {
 // single Entry PHR MAC CE
 // TS 38.321 ch. 6.1.3.8
 typedef struct {
-  uint8_t PH: 6;
-  uint8_t R1: 2;
-  uint8_t PCMAX: 6;
-  uint8_t R2: 6;
+  uint8_t PH: 6;    // octet 1 [5:0]
+  uint8_t R1: 2;    // octet 1 [7:6]
+  uint8_t PCMAX: 6; // octet 2 [5:0]
+  uint8_t R2: 2;    // octet 2 [7:6]
 } __attribute__ ((__packed__)) NR_SINGLE_ENTRY_PHR_MAC_CE;
 
 
@@ -317,12 +345,12 @@ typedef struct {
 #define DL_SCH_LCID_CON_RES_ID                     0x3E
 #define DL_SCH_LCID_PADDING                        0x3F
 
-#define UL_SCH_LCID_CCCH                           0x00
+#define UL_SCH_LCID_CCCH1                          0x00
 #define UL_SCH_LCID_SRB1                           0x01
 #define UL_SCH_LCID_SRB2                           0x02
 #define UL_SCH_LCID_SRB3                           0x03
 #define UL_SCH_LCID_DTCH                           0x04
-#define UL_SCH_LCID_CCCH_MSG3                      0x21
+#define UL_SCH_LCID_CCCH                           0x34
 #define UL_SCH_LCID_RECOMMENDED_BITRATE_QUERY      0x35
 #define UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT          0x36
 #define UL_SCH_LCID_CONFIGURED_GRANT_CONFIRMATION  0x37
@@ -339,6 +367,108 @@ typedef struct {
 #define NR_MAX_NUM_LCGID              8
 #define MAX_RLC_SDU_SUBHEADER_SIZE          3
 
+//===========
+// PRACH defs
+//===========
+
+// ===============================================
+// SSB to RO mapping public defines and structures
+// ===============================================
+#define MAX_SSB_PER_RO (16) // Maximum number of SSBs that can be mapped to a single RO
+#define MAX_TDM (7) // Maximum nb of PRACH occasions TDMed in a slot
+#define MAX_FDM (8) // Maximum nb of PRACH occasions FDMed in a slot
+
+// PRACH occasion details
+typedef struct prach_occasion_info {
+  uint8_t start_symbol; // 0 - 13 (14 symbols in a slot)
+  uint8_t fdm; // 0-7 (possible values of msg1-FDM: 1, 2, 4 or 8)
+  uint8_t slot; // 0 - 159 (maximum number of slots in a 10ms frame - @ 240kHz)
+  uint8_t frame; // 0 - 15 (maximum number of frames in a 160ms association pattern)
+  uint8_t mapped_ssb_idx[MAX_SSB_PER_RO]; // List of mapped SSBs
+  uint8_t nb_mapped_ssb;
+  uint16_t format; // RO preamble format
+} prach_occasion_info_t;
+
+// PRACH occasion slot details
+// A PRACH occasion slot is a series of PRACH occasions in time (symbols) and frequency
+typedef struct prach_occasion_slot {
+  prach_occasion_info_t prach_occasion[MAX_TDM][MAX_FDM]; // Starting symbol of each PRACH occasions in a slot
+  uint8_t nb_of_prach_occasion_in_time;
+  uint8_t nb_of_prach_occasion_in_freq;
+} prach_occasion_slot_t;
+
+//=========
+// DCI defs
+//=========
+
+typedef enum {
+  NR_DL_DCI_FORMAT_1_0 = 0,
+  NR_DL_DCI_FORMAT_1_1,
+  NR_DL_DCI_FORMAT_2_0,
+  NR_DL_DCI_FORMAT_2_1,
+  NR_DL_DCI_FORMAT_2_2,
+  NR_DL_DCI_FORMAT_2_3,
+  NR_UL_DCI_FORMAT_0_0,
+  NR_UL_DCI_FORMAT_0_1
+} nr_dci_format_t;
+
+typedef enum {
+  NR_RNTI_new = 0,
+  NR_RNTI_C,
+  NR_RNTI_RA,
+  NR_RNTI_P,
+  NR_RNTI_CS,
+  NR_RNTI_TC,
+  NR_RNTI_SP_CSI,
+  NR_RNTI_SI,
+  NR_RNTI_SFI,
+  NR_RNTI_INT,
+  NR_RNTI_TPC_PUSCH,
+  NR_RNTI_TPC_PUCCH,
+  NR_RNTI_TPC_SRS,
+  NR_RNTI_MCS_C,
+} nr_rnti_type_t;
+
+typedef enum channel_bandwidth_e {
+  bw_5MHz   = 0x1,
+  bw_10MHz  = 0x2,
+  bw_20MHz  = 0x4,
+  bw_40MHz  = 0x8,
+  bw_80MHz  = 0x16,
+  bw_100MHz = 0x32
+} channel_bandwidth_t;
+
+typedef enum nr_ssb_and_cset_mux_pattern_type_e {
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=1,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
+  NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
+} nr_ssb_and_cset_mux_pattern_type_t;
+
+typedef enum {
+  SFN_C_MOD_2_EQ_0,
+  SFN_C_MOD_2_EQ_1,
+  SFN_C_IMPOSSIBLE
+} SFN_C_TYPE;
+
+typedef struct Type0_PDCCH_CSS_config_s {
+  int32_t num_rbs;
+  int32_t num_symbols;
+  int32_t rb_offset; // Offset from SSB RB0
+  uint32_t type0_pdcch_ss_mux_pattern;
+  uint16_t frame;
+  SFN_C_TYPE sfn_c;
+  uint32_t n_c;
+  uint32_t n_0;
+  uint32_t number_of_search_space_per_slot;
+  uint32_t first_symbol_index;
+  uint32_t search_space_duration;
+  uint32_t search_space_frame_period;  // in slots
+  uint32_t ssb_length;
+  uint32_t ssb_index;
+  uint32_t cset_start_rb;
+  NR_SubcarrierSpacing_t scs_pdcch;
+  bool active;
+} NR_Type0_PDCCH_CSS_config_t;
 
 #endif /*__LAYER2_MAC_H__ */
 

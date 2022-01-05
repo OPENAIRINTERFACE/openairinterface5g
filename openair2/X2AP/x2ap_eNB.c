@@ -115,10 +115,13 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
     if (x2ap_enb_data_p != NULL) {
       /* some sanity check - to be refined at some point */
       if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-        X2AP_ERROR("x2ap_enb_data_p not NULL and sctp state not SCTP_STATE_ESTABLISHED, what to do?\n");
-        // Allow for a gracious exit when we kill first the gNB, then the eNB
-        //abort();
-        return;
+        X2AP_ERROR("x2ap_enb_data_p not NULL and sctp state not SCTP_STATE_ESTABLISHED?\n");
+        if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN){
+          RB_REMOVE(x2ap_enb_map, &instance_p->x2ap_enb_head, x2ap_enb_data_p);
+          return;
+        }
+
+        exit(1);
       }
 
       x2ap_enb_data_p->in_streams  = sctp_new_association_resp->in_streams;
@@ -132,8 +135,20 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
   DevAssert(x2ap_enb_data_p != NULL);
   dump_trees();
 
+  /* gNB: exit if connection to eNB failed - to be modified if needed.
+   * We may want to try to connect over and over again until we succeed
+   * but the modifications to the code to get this behavior are complex.
+   * Exit on error is a simple solution that can be caught by a script
+   * for example.
+   */
+  if (instance_p->cell_type == CELL_MACRO_GNB
+      && sctp_new_association_resp->sctp_state == SCTP_STATE_UNREACHABLE) {
+    X2AP_ERROR("association with eNB failed, is it running? If no, run it first. If yes, check IP addresses in your configuration file.\n");
+    exit(1);
+  }
+
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-    X2AP_WARN("Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
+    X2AP_WARN("Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
               sctp_new_association_resp->sctp_state,
               instance,
               sctp_new_association_resp->ulp_cnx_id);
@@ -159,7 +174,7 @@ static
 void x2ap_eNB_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind) {
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t *x2ap_enb_data_p;
-  printf("x2ap_eNB_handle_sctp_association_ind at 1 (called for instance %d)\n", instance);
+  printf("x2ap_eNB_handle_sctp_association_ind at 1 (called for instance %ld)\n", instance);
   dump_trees();
   DevAssert(sctp_new_association_ind != NULL);
   instance_p = x2ap_eNB_get_instance(instance);
@@ -207,7 +222,7 @@ int x2ap_eNB_init_sctp (x2ap_eNB_instance_t *instance_p,
   sctp_init_t                            *sctp_init  = NULL;
   DevAssert(instance_p != NULL);
   DevAssert(local_ip_addr != NULL);
-  message = itti_alloc_new_message (TASK_X2AP, SCTP_INIT_MSG_MULTI_REQ);
+  message = itti_alloc_new_message (TASK_X2AP, 0, SCTP_INIT_MSG_MULTI_REQ);
   sctp_init = &message->ittiMsg.sctp_init_multi;
   sctp_init->port = enb_port_for_X2C;
   sctp_init->ppid = X2AP_SCTP_PPID;
@@ -241,7 +256,7 @@ static void x2ap_eNB_register_eNB(x2ap_eNB_instance_t *instance_p,
   x2ap_eNB_data_t                  *x2ap_enb_data             = NULL;
   DevAssert(instance_p != NULL);
   DevAssert(target_eNB_ip_address != NULL);
-  message = itti_alloc_new_message(TASK_X2AP, SCTP_NEW_ASSOCIATION_REQ_MULTI);
+  message = itti_alloc_new_message(TASK_X2AP, 0, SCTP_NEW_ASSOCIATION_REQ_MULTI);
   sctp_new_association_req = &message->ittiMsg.sctp_new_association_req_multi;
   sctp_new_association_req->port = enb_port_for_X2C;
   sctp_new_association_req->ppid = X2AP_SCTP_PPID;
@@ -286,7 +301,7 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
     DevCheck(new_instance->tac == x2ap_register_eNB->tac, new_instance->tac, x2ap_register_eNB->tac, 0);
     DevCheck(new_instance->mcc == x2ap_register_eNB->mcc, new_instance->mcc, x2ap_register_eNB->mcc, 0);
     DevCheck(new_instance->mnc == x2ap_register_eNB->mnc, new_instance->mnc, x2ap_register_eNB->mnc, 0);
-    X2AP_WARN("eNB[%d] already registered\n", instance);
+    X2AP_WARN("eNB[%ld] already registered\n", instance);
   } else {
     new_instance = calloc(1, sizeof(x2ap_eNB_instance_t));
     DevAssert(new_instance != NULL);
@@ -305,17 +320,26 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
     x2ap_id_manager_init(&new_instance->id_manager);
     x2ap_timers_init(&new_instance->timers,
                      x2ap_register_eNB->t_reloc_prep,
-                     x2ap_register_eNB->tx2_reloc_overall);
+                     x2ap_register_eNB->tx2_reloc_overall,
+                     x2ap_register_eNB->t_dc_prep,
+                     x2ap_register_eNB->t_dc_overall);
 
     for (int i = 0; i< x2ap_register_eNB->num_cc; i++) {
-      new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
-      new_instance->downlink_frequency[i]      = x2ap_register_eNB->downlink_frequency[i];
+      if(new_instance->cell_type == CELL_MACRO_GNB){
+        new_instance->nr_band[i]              = x2ap_register_eNB->nr_band[i];
+        new_instance->tdd_nRARFCN[i]             = x2ap_register_eNB->nrARFCN[i];
+      }
+      else{
+        new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
+        new_instance->downlink_frequency[i]      = x2ap_register_eNB->downlink_frequency[i];
+        new_instance->fdd_earfcn_DL[i]           = x2ap_register_eNB->fdd_earfcn_DL[i];
+        new_instance->fdd_earfcn_UL[i]           = x2ap_register_eNB->fdd_earfcn_UL[i];
+      }
+
       new_instance->uplink_frequency_offset[i] = x2ap_register_eNB->uplink_frequency_offset[i];
       new_instance->Nid_cell[i]                = x2ap_register_eNB->Nid_cell[i];
       new_instance->N_RB_DL[i]                 = x2ap_register_eNB->N_RB_DL[i];
       new_instance->frame_type[i]              = x2ap_register_eNB->frame_type[i];
-      new_instance->fdd_earfcn_DL[i]           = x2ap_register_eNB->fdd_earfcn_DL[i];
-      new_instance->fdd_earfcn_UL[i]           = x2ap_register_eNB->fdd_earfcn_UL[i];
     }
 
     DevCheck(x2ap_register_eNB->nb_x2 <= X2AP_MAX_NB_ENB_IP_ADDRESS,
@@ -330,7 +354,7 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
     new_instance->enb_port_for_X2C  = x2ap_register_eNB->enb_port_for_X2C;
     /* Add the new instance to the list of eNB (meaningfull in virtual mode) */
     x2ap_eNB_insert_new_instance(new_instance);
-    X2AP_INFO("Registered new eNB[%d] and %s eNB id %u\n",
+    X2AP_INFO("Registered new eNB[%ld] and %s eNB id %u\n",
               instance,
               x2ap_register_eNB->cell_type == CELL_MACRO_ENB ? "macro" : "home",
               x2ap_register_eNB->eNB_id);
@@ -341,7 +365,7 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
       return;
     }
 
-    X2AP_INFO("eNB[%d] eNB id %u acting as a listner (server)\n",
+    X2AP_INFO("eNB[%ld] eNB id %u acting as a listner (server)\n",
               instance, x2ap_register_eNB->eNB_id);
   }
 }
@@ -368,7 +392,7 @@ void x2ap_eNB_handle_sctp_init_msg_multi_cnf(
   /* Trying to connect to the provided list of eNB ip address */
 
   for (index = 0; index < instance->nb_x2; index++) {
-    X2AP_INFO("eNB[%d] eNB id %u acting as an initiator (client)\n",
+    X2AP_INFO("eNB[%ld] eNB id %u acting as an initiator (client)\n",
               instance_id, instance->eNB_id);
     x2ap_eNB_register_eNB(instance,
                           &instance->target_enb_x2_ip_address[index],
@@ -476,7 +500,10 @@ void x2ap_eNB_handle_sgNB_add_req(instance_t instance,
   }
   /* id_source is ue_id, id_target is unknown yet */
   x2ap_set_ids(id_manager, ue_id, x2ap_ENDC_sgnb_addition_req->rnti, ue_id, -1);
-  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_NSA_PREPARE);
+  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_NSA_ENB_PREPARE);
+  x2ap_set_dc_prep_timer(id_manager, ue_id,
+                         x2ap_timer_get_tti(&instance_p->timers));
+  x2ap_id_set_target(id_manager, ue_id, x2ap_eNB_data);
 
   x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(instance_p, x2ap_ENDC_sgnb_addition_req,
       x2ap_eNB_data, ue_id);
@@ -498,9 +525,6 @@ void x2ap_gNB_trigger_sgNB_add_req_ack(instance_t instance,
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t     *target;
   int                 ue_id;
-  /*int source_assoc_id = x2ap_ENDC_sgnb_addition_req_ACK->source_assoc_id;
-  int                 id_source;
-  int                 id_target;*/
 
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
@@ -514,22 +538,15 @@ void x2ap_gNB_trigger_sgNB_add_req_ack(instance_t instance,
     X2AP_ERROR("could not allocate a new X2AP UE ID\n");
     exit(1);
   }
-  /* id_source is ue_id, id_target is unknown yet */
-  x2ap_set_ids(id_manager, ue_id, x2ap_ENDC_sgnb_addition_req_ACK->rnti, ue_id,
-      x2ap_ENDC_sgnb_addition_req_ACK->MeNB_ue_x2_id);
-  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_SOURCE_OVERALL);
-	
-
-  /*target = x2ap_get_eNB(NULL, source_assoc_id, 0);
-  DevAssert(target != NULL);*/
-
-  // rnti is a new information, save it
-
-  /*ue_id     = x2ap_handover_req_ack->x2_id_target;
-  id_source = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
-  id_target = ue_id;
-  x2ap_set_ids(&instance_p->id_manager, ue_id, x2ap_handover_req_ack->rnti, id_source, id_target);*/
-
+  /* id_Source is MeNB_ue_x2_id, id_target is rnti (rnti is SgNB_ue_x2_id) */
+  x2ap_set_ids(id_manager, ue_id,
+      x2ap_ENDC_sgnb_addition_req_ACK->SgNB_ue_x2_id,
+      x2ap_ENDC_sgnb_addition_req_ACK->MeNB_ue_x2_id,
+      x2ap_ENDC_sgnb_addition_req_ACK->SgNB_ue_x2_id);
+  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_NSA_GNB_OVERALL);
+  x2ap_set_dc_overall_timer(id_manager, ue_id,
+                            x2ap_timer_get_tti(&instance_p->timers));
+  x2ap_id_set_target(id_manager, ue_id, target);
 
   x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK(instance_p, target,
       x2ap_ENDC_sgnb_addition_req_ACK, ue_id);
@@ -540,27 +557,24 @@ void x2ap_gNB_trigger_sgNB_add_req_ack(instance_t instance,
  * @param	: IN instance, IN x2ap_reconf_complete
 **/ 
 static
-void x2ap_eNB_trigger_sgnb_reconfiguration_complete(instance_t instance, 
-    x2ap_ENDC_reconf_complete_t *x2ap_reconf_complete) 
+void x2ap_eNB_trigger_sgnb_reconfiguration_complete(instance_t instance,
+    x2ap_ENDC_reconf_complete_t *x2ap_reconf_complete)
 {
-  x2ap_eNB_instance_t *instance_p = NULL;
-  x2ap_eNB_data_t     *target = NULL;
-  int id_source = -1;
-  int id_target = -1;
-  LTE_PhysCellId_t target_pci;
-	
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  int                 id_source;
+  int                 id_target;
+
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
   DevAssert(x2ap_reconf_complete != NULL);
-  
-  target_pci = x2ap_reconf_complete->target_physCellId;
-  target = x2ap_is_eNB_pci_in_list(target_pci);
+
+  target = x2ap_get_eNB(NULL,x2ap_reconf_complete->gnb_x2_assoc_id, 0);
   DevAssert(target != NULL);
-	
+
   id_source = x2ap_reconf_complete->MeNB_ue_x2_id;
   id_target = x2ap_reconf_complete->SgNB_ue_x2_id;
   x2ap_eNB_generate_ENDC_x2_SgNB_reconfiguration_complete(instance_p, target, id_source, id_target);
-
 }
 
 
@@ -589,6 +603,34 @@ void x2ap_eNB_ue_context_release(instance_t instance,
   x2ap_release_id(&instance_p->id_manager, ue_id);
 }
 
+static
+void x2ap_eNB_handle_sgNB_release_request(instance_t instance,
+    x2ap_ENDC_sgnb_release_request_t *x2ap_release_req)
+{
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_release_req != NULL);
+
+  if (x2ap_release_req->rnti == -1 ||
+      x2ap_release_req->assoc_id == -1) {
+    X2AP_WARN("x2ap_eNB_handle_sgNB_release_request: bad rnti or assoc_id, do not send release request to gNB\n");
+    return;
+  }
+
+  target = x2ap_get_eNB(NULL, x2ap_release_req->assoc_id, 0);
+  DevAssert(target != NULL);
+
+  /* id_source is not used by oai's gNB so it's not big deal. For
+   * interoperability with other gNBs things may need to be refined.
+   */
+  x2ap_eNB_generate_ENDC_x2_SgNB_release_request(instance_p, target,
+                                                 0, x2ap_release_req->rnti,
+                                                 x2ap_release_req->cause);
+}
+
 void *x2ap_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
@@ -606,61 +648,67 @@ void *x2ap_task(void *arg) {
         break;
 
       case X2AP_SUBFRAME_PROCESS:
-        x2ap_check_timers(ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        x2ap_check_timers(ITTI_MSG_DESTINATION_INSTANCE(received_msg));
         break;
 
       case X2AP_REGISTER_ENB_REQ:
-        x2ap_eNB_handle_register_eNB(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_handle_register_eNB(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                      &X2AP_REGISTER_ENB_REQ(received_msg));
         break;
 
       case X2AP_HANDOVER_REQ:
-        x2ap_eNB_handle_handover_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_handle_handover_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                      &X2AP_HANDOVER_REQ(received_msg));
         break;
 
       case X2AP_HANDOVER_REQ_ACK:
-        x2ap_eNB_handle_handover_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_handle_handover_req_ack(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                          &X2AP_HANDOVER_REQ_ACK(received_msg));
         break;
 
       case X2AP_UE_CONTEXT_RELEASE:
-        x2ap_eNB_ue_context_release(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_ue_context_release(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                                 &X2AP_UE_CONTEXT_RELEASE(received_msg));
         break;
 
       case X2AP_ENDC_SGNB_ADDITION_REQ:
-        x2ap_eNB_handle_sgNB_add_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_handle_sgNB_add_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                      &X2AP_ENDC_SGNB_ADDITION_REQ(received_msg));
         break;
 
       case X2AP_ENDC_SGNB_ADDITION_REQ_ACK:
-    	  x2ap_gNB_trigger_sgNB_add_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+    	  x2ap_gNB_trigger_sgNB_add_req_ack(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
     			  &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(received_msg));
     	LOG_I(X2AP, "Received elements for X2AP_ENDC_SGNB_ADDITION_REQ_ACK \n");
     	break;
 
-	  case X2AP_ENDC_SGNB_RECONF_COMPLETE:
-		x2ap_eNB_trigger_sgnb_reconfiguration_complete(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-		    &X2AP_ENDC_SGNB_RECONF_COMPLETE(received_msg));
-		break;
+      case X2AP_ENDC_SGNB_RECONF_COMPLETE:
+        x2ap_eNB_trigger_sgnb_reconfiguration_complete(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+                          &X2AP_ENDC_SGNB_RECONF_COMPLETE(received_msg));
+        break;
+
+      case X2AP_ENDC_SGNB_RELEASE_REQUEST:
+        x2ap_eNB_handle_sgNB_release_request(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+                          &X2AP_ENDC_SGNB_RELEASE_REQUEST(received_msg));
+        break;
+
       case SCTP_INIT_MSG_MULTI_CNF:
-        x2ap_eNB_handle_sctp_init_msg_multi_cnf(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_handle_sctp_init_msg_multi_cnf(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                                 &received_msg->ittiMsg.sctp_init_msg_multi_cnf);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
-        x2ap_eNB_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_handle_sctp_association_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                               &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_NEW_ASSOCIATION_IND:
-        x2ap_eNB_handle_sctp_association_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_handle_sctp_association_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                              &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 
       case SCTP_DATA_IND:
-        x2ap_eNB_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_handle_sctp_data_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                       &received_msg->ittiMsg.sctp_data_ind);
         break;
 

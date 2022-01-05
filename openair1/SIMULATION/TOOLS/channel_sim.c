@@ -70,16 +70,16 @@ void do_DL_sig(sim_t *sim,
 
   double s_re0[30720];
   double s_re1[30720];
-  double *s_re[2];
+  double *s_re[RC.nb_RU];
   double s_im0[30720];
   double s_im1[30720];
-  double *s_im[2];
+  double *s_im[RC.nb_RU];
   double r_re00[30720];
   double r_re01[30720];
-  double *r_re0[2];
+  double *r_re0[RC.nb_RU];
   double r_im00[30720];
   double r_im01[30720];
-  double *r_im0[2];
+  double *r_im0[RC.nb_RU];
   LTE_DL_FRAME_PARMS *frame_parms;
 
   s_re[0] = s_re0;
@@ -180,7 +180,7 @@ void do_DL_sig(sim_t *sim,
     
     //RU2UE[eNB_id][UE_id]->path_loss_dB = 0;
     multipath_channel(sim->RU2UE[ru_id][UE_id][CC_id],s_re,s_im,r_re0,r_im0,
-		      length,hold_channel);
+		      length,hold_channel,0);
 #ifdef DEBUG_SIM
     rx_pwr = signal_energy_fp2(sim->RU2UE[ru_id][UE_id][CC_id]->ch[0],
 			       sim->RU2UE[ru_id][UE_id][CC_id]->channel_length)*sim->RU2UE[ru_id][UE_id][CC_id]->channel_length;
@@ -320,16 +320,16 @@ void do_UL_sig(sim_t *sim,
 
   double s_re0[30720];
   double s_re1[30720];
-  double *s_re[2];
+  double *s_re[NB_UE_INST];
   double s_im0[30720];
   double s_im1[30720];
-  double *s_im[2];
+  double *s_im[NB_UE_INST];
   double r_re00[30720];
   double r_re01[30720];
-  double *r_re0[2];
+  double *r_re0[NB_UE_INST];
   double r_im00[30720];
   double r_im01[30720];
-  double *r_im0[2];
+  double *r_im0[NB_UE_INST];
 
   s_re[0] = s_re0;
   s_im[0] = s_im0;
@@ -394,7 +394,7 @@ void do_UL_sig(sim_t *sim,
       
       
       multipath_channel(sim->UE2RU[UE_id][ru_id][CC_id],s_re,s_im,r_re0,r_im0,
-			frame_parms->samples_per_tti,hold_channel);
+			frame_parms->samples_per_tti,hold_channel,0);
       
       
       rx_pwr = signal_energy_fp2(sim->UE2RU[UE_id][ru_id][CC_id]->ch[0],

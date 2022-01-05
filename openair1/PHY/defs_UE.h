@@ -87,7 +87,6 @@
   #define LOG_W(x, ...) mexPrintf(__VA_ARGS__)
   #define LOG_M(x, ...) mexPrintf(__VA_ARGS__)
 #else
-  #ifdef OPENAIR2
     #if ENABLE_RAL
       #include "collection/hashtable/hashtable.h"
       #include "COMMON/ral_messages_types.h"
@@ -95,9 +94,6 @@
     #endif
     #include "common/utils/LOG/log.h"
     #define msg(aRGS...) LOG_D(PHY, ##aRGS)
-  #else
-    #define msg printf
-  #endif
 #endif
 
 
@@ -453,55 +449,6 @@ typedef struct {
 } LTE_UE_PDSCH;
 
 typedef struct {
-  /// \brief Received frequency-domain signal after extraction.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  int32_t **rxdataF_ext;
-  /// \brief Received frequency-domain signal after extraction and channel compensation.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  double **rxdataF_comp;
-  /// \brief Downlink channel estimates extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  int32_t **dl_ch_estimates_ext;
-  ///  \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  double **dl_ch_rho_ext;
-  /// \brief Downlink PMIs extracted in PRBS and grouped in subbands.
-  /// - first index: ressource block [0..N_RB_DL[
-  uint8_t *pmi_ext;
-  /// \brief Magnitude of Downlink Channel (16QAM level/First 64QAM level).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  double **dl_ch_mag;
-  /// \brief Magnitude of Downlink Channel (2nd 64QAM level).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..]
-  double **dl_ch_magb;
-  /// \brief Cross-correlation of two eNB signals.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..]
-  double **rho;
-  /// never used... always send dl_ch_rho_ext instead...
-  double **rho_i;
-  /// \brief Pointers to llr vectors (2 TBs).
-  /// - first index: ? [0..1] (hard coded)
-  /// - second index: ? [0..1179743] (hard coded)
-  int16_t *llr[2];
-  /// \f$\log_2(\max|H_i|^2)\f$
-  uint8_t log2_maxh;
-  /// \brief Pointers to llr vectors (128-bit alignment).
-  /// - first index: ? [0..0] (hard coded)
-  /// - second index: ? [0..]
-  int16_t **llr128;
-  //uint32_t *rb_alloc;
-  //uint8_t Qm[2];
-  //MIMO_mode_t mimo_mode;
-} LTE_UE_PDSCH_FLP;
-
-typedef struct {
   /// \brief Pointers to extracted PDCCH symbols in frequency-domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -667,7 +614,6 @@ typedef struct {
   uint8_t current_thread_id[10];
 
   LTE_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX+1]; // two RxTx Threads
-  LTE_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
   LTE_UE_PDSCH     *pdsch_vars_p[NUMBER_OF_CONNECTED_eNB_MAX+1];

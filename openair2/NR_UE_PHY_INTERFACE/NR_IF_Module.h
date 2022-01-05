@@ -39,6 +39,12 @@
 
 typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
 
+typedef enum {
+  ONLY_PUSCH,
+  NOT_PUSCH,
+  SCHED_ALL,
+} NR_UE_SCHED_MODE_t;
+
 typedef struct {
     /// module id
   module_id_t module_id;
@@ -66,8 +72,8 @@ typedef struct {
     frame_t frame;
     /// slot
     int slot;
-    /// proc is needed to signal back decoded frame number to PHY. However, this is not really FAPI procedure and should be done differently
-    UE_nr_rxtx_proc_t * proc;
+    /// index of the current UE RX/TX thread
+    int thread_id;
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
@@ -95,8 +101,14 @@ typedef struct {
     frame_t frame_tx;
     /// slot tx
     uint32_t slot_tx;
+    /// index of the current UE RX/TX thread
+    int thread_id;
+
     /// dci reception indication structure
     fapi_nr_dci_indication_t *dci_ind;
+
+    NR_UE_SCHED_MODE_t ue_sched_mode;
+
 } nr_uplink_indication_t;
 
 // Downlink subframe P7
@@ -111,6 +123,8 @@ typedef struct {
     frame_t frame;
     /// slot
     int slot;
+    /// index of the current UE RX/TX thread
+    int thread_id;
 
     /// NR UE FAPI-like P7 message, direction: L2 to L1
     /// downlink transmission configuration request structure
@@ -216,15 +230,23 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq);
    \param ssb_index       SSB index within 0 - (L_ssb-1) corresponding to 38.331 ch.13 parameter i
    \param ssb_length      corresponding to L1 parameter L_ssb 
    \param cell_id         cell id */
-int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id);
+int handle_bcch_bch(module_id_t module_id,
+                    int cc_id,
+                    unsigned int gNB_index,
+                    uint8_t *pduP,
+                    unsigned int additional_bits,
+                    uint32_t ssb_index,
+                    uint32_t ssb_length,
+                    uint16_t ssb_start_subcarrier,
+                    uint16_t cell_id);
 
 //  TODO check
 /**\brief handle BCCH-DL-SCH message from dl_indication
    \param pdu_len   length(bytes) of pdu
    \param pduP      pointer to pdu*/
-int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len);
+int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t ack_nack, uint8_t *pduP, uint32_t pdu_len);
 
-int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_indication_pdu_t *dci);
+int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
 #endif
 

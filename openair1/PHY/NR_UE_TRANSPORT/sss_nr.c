@@ -314,10 +314,11 @@ int pss_ch_est_nr(PHY_VARS_NR_UE *ue,
 *********************************************************************/
 
 int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
+                          UE_nr_rxtx_proc_t *proc,
                           int32_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR],
                           int32_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR],
                           uint8_t doPss, uint8_t doSss,
-					      uint8_t subframe) // add flag to indicate extracting only PSS, only SSS, or both
+                          uint8_t subframe) // add flag to indicate extracting only PSS, only SSS, or both
 {
   uint8_t aarx;
   int32_t *pss_rxF,*pss_rxF_ext;
@@ -328,10 +329,10 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-  pss_symbol = 0;
-  sss_symbol = SSS_SYMBOL_NB-PSS_SYMBOL_NB;
+    pss_symbol = 0;
+    sss_symbol = SSS_SYMBOL_NB-PSS_SYMBOL_NB;
 
-    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
+    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
     unsigned int ofdm_symbol_size = frame_parms->ofdm_symbol_size;
 
@@ -342,6 +343,7 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
     sss_rxF_ext = &sss_ext[aarx][0];
 
     unsigned int k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56;
+
     if (k>= frame_parms->ofdm_symbol_size) k-=frame_parms->ofdm_symbol_size;
 
     for (int i=0; i < LENGTH_PSS_NR; i++) {
@@ -386,7 +388,7 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
 
 /*******************************************************************
 *
-* NAME :         rx_sss_nr
+* NAME :         pss_sss_extract_nr
 *
 * PARAMETERS :   none
 *
@@ -397,11 +399,12 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
 *********************************************************************/
 
 int pss_sss_extract_nr(PHY_VARS_NR_UE *phy_vars_ue,
+                       UE_nr_rxtx_proc_t *proc,
                        int32_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR],
                        int32_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR],
-					   uint8_t subframe)
+                       uint8_t subframe)
 {
-  return do_pss_sss_extract_nr(phy_vars_ue, pss_ext, sss_ext, 1 /* doPss */, 1 /* doSss */, subframe);
+  return do_pss_sss_extract_nr(phy_vars_ue, proc, pss_ext, sss_ext, 1 /* doPss */, 1 /* doSss */, subframe);
 }
 
 /*******************************************************************
@@ -417,7 +420,7 @@ int pss_sss_extract_nr(PHY_VARS_NR_UE *phy_vars_ue,
 *
 *********************************************************************/
 
-int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
+int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, uint8_t *phase_max)
 {
   uint8_t i;
   int32_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR];
@@ -433,6 +436,7 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
 
   // pss sss extraction
   pss_sss_extract_nr(ue,
+                     proc,
                      pss_ext,
                      sss_ext,
                      0);          /* subframe */
@@ -440,8 +444,8 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
 #ifdef DEBUG_PLOT_SSS
 
   write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_subframe,1,1);
-  write_output("rxdataF0_pss.m","rxF0_pss",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[0]].rxdataF[0][0],frame_parms->ofdm_symbol_size,1,1);
-  write_output("rxdataF0_sss.m","rxF0_sss",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[0]].rxdataF[0][(SSS_SYMBOL_NB-PSS_SYMBOL_NB)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
+  write_output("rxdataF0_pss.m","rxF0_pss",&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][0],frame_parms->ofdm_symbol_size,1,1);
+  write_output("rxdataF0_sss.m","rxF0_sss",&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][(SSS_SYMBOL_NB-PSS_SYMBOL_NB)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
   write_output("pss_ext.m","pss_ext",pss_ext,LENGTH_PSS_NR,1,1);
 
 #endif

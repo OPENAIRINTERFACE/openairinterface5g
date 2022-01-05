@@ -55,9 +55,11 @@
 #include "executables/thread-common.h"
 #include "targets/RT/USER/lte-softmodem.h"
 #include "executables/split_headers.h"
+#include "common/ran_context.h"
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
 double cpuf;
-#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+#define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
 #include <openair1/SIMULATION/LTE_PHY/common_sim.h>
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
@@ -70,6 +72,9 @@ node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 extern uint16_t beta_ack[16],beta_ri[16],beta_cqi[16];
 //extern  char* namepointer_chMag ;
 int xforms=0;
+THREAD_STRUCT thread_struct;
+nfapi_ue_release_request_body_t release_rntis;
+
 FD_lte_phy_scope_enb *form_enb;
 char title[255];
 
@@ -80,8 +85,11 @@ double t_tx_min = 1000000000; /*!< \brief initial min process time for tx */
 double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
+static int cmpdouble(const void *p1, const void *p2) {
+  return *(double *)p1 > *(double *)p2;
+}
 
-
+RAN_CONTEXT_t RC;
 int split73=0;
 void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
   AssertFatal(false, "Must not be called in this context\n");
@@ -339,13 +347,12 @@ int main(int argc, char **argv) {
   int UE_id = 0;
   static int nb_rb=25,first_rb=0,mcs=0,round=0;
   //unsigned char l;
-  static int awgn_flag = 0 ;
   SCM_t channel_model=Rice1;
   unsigned char *input_buffer=0,harq_pid;
   unsigned short input_buffer_length;
   unsigned int ret;
   unsigned int coded_bits_per_codeword,nsymb;
-  unsigned int tx_lev=0,tx_lev_dB,trials,errs[4]= {0,0,0,0},round_trials[4]= {0,0,0,0};
+  unsigned int tx_lev=0,tx_lev_dB,trials,errs[5]= {0,0,0,0,0},round_trials[4]= {0,0,0,0};
   FILE *bler_fd=NULL;
   char bler_fname[512];
   FILE *time_meas_fd=NULL;
@@ -401,12 +408,11 @@ int main(int argc, char **argv) {
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
   AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL, "Cannot load configuration module, exiting\n");
   logInit();
-  set_glog(OAILOG_WARNING);
+  set_glog(OAILOG_INFO);
   T_stdout = 1;
   // enable these lines if you need debug info
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
-  //  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
   //  set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
   //  set_glog(LOG_DEBUG,LOG_HIGH);
   //hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF
@@ -729,9 +735,10 @@ int main(int argc, char **argv) {
                                 channel_model,
                                 N_RB2sampling_rate(eNB->frame_parms.N_RB_UL),
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
+                                30e-9,
                                 forgetting_factor,
                                 delay,
-                                0);
+                                0, 0);
   // set Doppler
   UE2eNB->max_Doppler = maxDoppler;
 
@@ -1083,21 +1090,19 @@ int main(int argc, char **argv) {
             }
           }
 
-          if (awgn_flag == 0) {
-            if (UE2eNB->max_Doppler == 0) {
-              multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                eNB->frame_parms.samples_per_tti,hold_channel);
-            } else {
-              multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
-                                   2*eNB->frame_parms.samples_per_tti,hold_channel);
-            }
+          if (UE2eNB->max_Doppler == 0) {
+            multipath_channel(UE2eNB,s_re,s_im,r_re,r_im,
+                              eNB->frame_parms.samples_per_tti,hold_channel,0);
+          } else {
+            multipath_tv_channel(UE2eNB,s_re,s_im,r_re,r_im,
+                                 2*eNB->frame_parms.samples_per_tti,hold_channel);
           }
 
           if(abstx) {
             if(saving_bler==0)
               if (trials==0 && round==0) {
                 // calculate freq domain representation to compute SINR
-                freq_channel(UE2eNB, N_RB_DL,12*N_RB_DL + 1);
+                freq_channel(UE2eNB, N_RB_DL,12*N_RB_DL + 1, 15);
                 // snr=pow(10.0,.1*SNR);
                 fprintf(csv_fdUL,"%f,%u,%u,%f,%f,%f,",SNR,tx_lev,tx_lev_dB,sigma2_dB,tx_gain,SNR2);
 
@@ -1106,8 +1111,8 @@ int main(int argc, char **argv) {
                   for (aarx=0; aarx<UE2eNB->nb_rx; aarx++) {
                     for (aatx=0; aatx<UE2eNB->nb_tx; aatx++) {
                       // abs_channel = (eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].x + eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y*eNB2UE->chF[aarx+(aatx*eNB2UE->nb_rx)][u].y);
-                      channelx = UE2eNB->chF[aarx+(aatx*UE2eNB->nb_rx)][u].x;
-                      channely = UE2eNB->chF[aarx+(aatx*UE2eNB->nb_rx)][u].y;
+                      channelx = UE2eNB->chF[aarx+(aatx*UE2eNB->nb_rx)][u].r;
+                      channely = UE2eNB->chF[aarx+(aatx*UE2eNB->nb_rx)][u].i;
                       // if(transmission_m==5){
                       fprintf(csv_fdUL,"%e+i*(%e),",channelx,channely);
                       // }
@@ -1133,6 +1138,15 @@ int main(int argc, char **argv) {
                          sqrt(sigma2/2)*gaussdouble(0.0,1.0));
             }
           }
+          if (n_frames==1)
+            for (i=0; i<eNB->frame_parms.samples_per_tti; i++) {
+              for (aa=0; aa<eNB->frame_parms.nb_antennas_rx; aa++) {
+                ((short *) &ru->common.rxdata[aa][eNB->frame_parms.samples_per_tti*(subframe+1)%10])[2*i] =
+                  (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+                ((short *) &ru->common.rxdata[aa][eNB->frame_parms.samples_per_tti*(subframe+1)%10])[2*i+1] =
+                  (short) (sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+              }
+            }
 
           if (n_frames<=10) {
             printf("rx_level Null symbol %f\n",10*log10((double)signal_energy((int *)
@@ -1158,9 +1172,10 @@ int main(int argc, char **argv) {
           start_meas(&eNB->phy_proc_rx);
           ru->feprx = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread        : fep_full;
           ru->feprx(ru,subframe);
+          if (n_frames==1) lte_eNB_I0_measurements(eNB,(subframe+1)%10,0,1);
+
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
           stop_meas(&eNB->phy_proc_rx);
-
           if (cqi_flag > 0) {
             cqi_error = 0;
 
@@ -1200,6 +1215,9 @@ int main(int argc, char **argv) {
                           eNB->ulsch[0]->harq_processes[harq_pid]->uci_format,0,eNB->frame_parms.N_RB_DL);
 
               dump_ulsch(eNB,eNB->proc.frame_rx,subframe,0,round);
+              dump_I0_stats(stdout,eNB);
+              dump_ulsch_stats(stdout,eNB,0);
+
               exit(-1);
             }
 
@@ -1260,14 +1278,16 @@ int main(int argc, char **argv) {
         if (t_rx > 2000 )
           n_rx_dropped++;
 
-        appendVarArray(table_tx, &t_tx);
-        appendVarArray(table_tx_ifft, &t_tx_ifft);
-        appendVarArray(table_tx_mod, &t_tx_mod );
-        appendVarArray(table_tx_enc, &t_tx_enc );
-        appendVarArray(table_rx, &t_rx );
-        appendVarArray(table_rx_fft, &t_rx_fft );
-        appendVarArray(table_rx_demod, &t_rx_demod );
-        appendVarArray(table_rx_dec, &t_rx_dec );
+        if (trials < 1000) {
+         appendVarArray(table_tx, &t_tx);
+         appendVarArray(table_tx_ifft, &t_tx_ifft);
+         appendVarArray(table_tx_mod, &t_tx_mod );
+         appendVarArray(table_tx_enc, &t_tx_enc );
+         appendVarArray(table_rx, &t_rx );
+         appendVarArray(table_rx_fft, &t_rx_fft );
+         appendVarArray(table_rx_demod, &t_rx_demod );
+         appendVarArray(table_rx_dec, &t_rx_dec );
+       }
       }   //trials
 
       // sort table
@@ -1286,6 +1306,7 @@ int main(int argc, char **argv) {
         LOG_UDUMPMSG(SIM,dataArray(table_rx),table_rx->size,LOG_DUMP_DOUBLE,"The receiver raw data: \n");
       }
 
+      dump_ulsch_stats(stdout,eNB,0);
       printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %u dB (gain %f dB), N0W %f dB, I0 %u dB, delta_IF %d [ (%d,%d) dB / (%u,%u) dB ]**************************\n",
              nb_rb,mcs,SNR,SNR2,
              tx_lev_dB,

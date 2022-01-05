@@ -84,7 +84,7 @@ get_mbsfn_sf_alloction(module_id_t module_idP, uint8_t CC_id,
 
 static uint32_t bytes_in_buffer=0;
 static uint32_t msi_pmch_stop=0;
-uint16_t mbms_rab_id=2047;//[8] = {2047,2047,2047,2047,2047,2047,2047,2047};
+rb_id_t mbms_rab_id=2047;//[8] = {2047,2047,2047,2047,2047,2047,2047,2047};
 static uint32_t msi_sfs=0;
 
 
@@ -211,7 +211,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			msi_pos++;
 		   while((non_mbsfn_SubframeConfig & (0x100 >> msi_pos)) == (0x100>>msi_pos))
 			msi_pos++;
-		   	mbms_mch_i=0;
+		   mbms_mch_i=0;
 
 		   if((subframeP==0)){
 		   	x=0;

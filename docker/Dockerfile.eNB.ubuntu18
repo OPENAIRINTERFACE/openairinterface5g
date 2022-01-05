@@ -1,0 +1,116 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for Ubuntu 18.04
+#
+#---------------------------------------------------------------------
+
+FROM ran-base:latest as enb-base
+
+FROM ran-build:latest AS enb-build
+
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
+    cp /oai-ran/docker/scripts/enb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+
+#start from scratch for target executable
+FROM ubuntu:bionic as oai-enb
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Paris
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        software-properties-common \
+        tzdata \
+        procps \
+        libsctp1 \
+        libnettle6 \
+        libblas3 \
+        libatlas3-base \
+        libconfig9 \
+        openssl \
+        net-tools \
+        iputils-ping \
+        iproute2 \
+        iperf \
+        python \
+        python3 \
+        python3-six \
+        python3-requests \
+        libusb-1.0-0 \
+        libyaml-0-2 && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/oai-enb/bin
+COPY --from=enb-build \
+    /oai-ran/targets/bin/lte-softmodem.Rel15 \
+    /oai-ran/docker/scripts/entrypoint.sh \
+    ./
+
+COPY --from=enb-build \
+     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
+     /oai-ran/cmake_targets/ran_build/build/libtcp_bridge_oai.so \
+     /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
+     /oai-ran/cmake_targets/ran_build/build/liboai_usrpdevif.so \
+     /oai-ran/cmake_targets/ran_build/build/libcoding.so \
+     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+     /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so \
+     /usr/local/lib/
+
+# Now we are copying from builder-image the UHD files.
+COPY --from=enb-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=enb-base \
+     /usr/local/lib/libuhd.so.3.15.0 \
+     /usr/local/lib/libprotobuf-c.so.1 \
+     /usr/local/lib/
+COPY --from=enb-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
+COPY --from=enb-base \
+     /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/
+
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
+    ldconfig
+
+# Copy the relevant configuration files for eNB
+WORKDIR /opt/oai-enb/etc
+COPY --from=enb-build /oai-ran/docker/etc .
+
+WORKDIR /opt/oai-enb
+
+# 2152 --> S1U, GTP/UDP
+# 36412 --> S1C, SCTP/UDP
+# 36422 --> X2C, SCTP/UDP
+EXPOSE 2152/udp 36412/udp 36422/udp
+#EXPOSE 22100/tcp # ?
+#EXPOSE 50000/udp # IF5 / ORI (control)
+#EXPOSE 50001/udp # IF5 / ECPRI (data)
+
+ENTRYPOINT ["/opt/oai-enb/bin/entrypoint.sh"]
+CMD ["/opt/oai-enb/bin/lte-softmodem.Rel15", "-O", "/opt/oai-enb/etc/enb.conf"]

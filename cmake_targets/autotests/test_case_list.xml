@@ -1095,7 +1095,15 @@
                                  (Test10: 106 PRBs 50 PDSCH-PRBs MCS Index 16),
                                  (Test11: HARQ test 25% TP (4 rounds),
                                  (Test12: HARQ test 33% TP (3 rounds),
-                                 (Test13: HARQ test 50% TP (2 rounds)</desc>
+                                 (Test13: HARQ test 50% TP (2 rounds),
+                                 (Test14: 3 PTRS, 8 Interpolated Symbols),
+                                 (Test15: 6 PTRS, 5 Interpolated Symbols),
+                                 (Test16: 11 PTRS, 0 Interpolated Symbols),
+                                 (Test17: Mapping type A, 2 DMRS Symbols),
+                                 (Test18: Mapping type A, 3 DMRS Symbols),
+                                 (Test19: Mapping type B, 4 DMRS Symbols),
+                                 (Test20: 4x4 MIMO, 1 Layer),
+                                 (Test21: 4x4 MIMO, 2 Layers)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1114,8 +1122,16 @@
                   -n100 -e16 -s10 
                   -n100 -s1 -t25
                   -n100 -s1 -t33
-                  -n100 -s1 -t50</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13</tags>
+                  -n100 -s1 -t50
+                  -n100 -s5 -T 2 2 2
+                  -n100 -s5 -T 2 1 2
+                  -n100 -s5 -T 2 0 4
+                  -n100 -s2 -U 2 0 1
+                  -n100 -s2 -U 2 0 2
+                  -n100 -s2 -U 2 1 3
+                  -n10 -s20 -U 3 0 0 2 -gR -x1 -y4 -z4
+                  -n10 -s20 -U 3 0 0 2 -gR -x2 -y4 -z4</main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14 nr_dlsim.test15 nr_dlsim.test16 nr_dlsim.test17 nr_dlsim.test18 nr_dlsim.test19 nr_dlsim.test20 nr_dlsim.test21</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1276,7 +1292,17 @@
                                  (Test2: MCS 16 50 PRBs),
                                  (Test3: MCS 28 50 PRBs),
                                  (Test4: MCS 9 217 PRBs),
-                                 (Test5: MCS 9 273 PRBs)</desc>
+                                 (Test5: MCS 9 273 PRBs),
+                                 (Test6: DMRS Type A, 2 DMRS Symbols),
+                                 (Test7: DMRS Type A, 3 DMRS, 4 PTRS, 5 Interpolated Symbols),
+                                 (Test8: DMRS Type B, 3 DMRS, 2 PTRS, 7 Interpolated Symbols),
+                                 (Test9: DMRS Type B, 3 DMRS, 2 PTRS, 3 Interpolated Symbols),
+                                 (Test10: SC-FDMA, 50 PRBs),
+                                 (Test11: SC-FDMA, 75 PRBs),
+                                 (Test12: SC-FDMA, 216 PRBs),
+                                 (Test13: SC-FDMA, 273 PRBs),
+                                 (Test14: SC-FDMA, 3 DMRS),
+                                 (Test15: MCS 16 50 PRBs 2 RX_Antenna)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1287,8 +1313,19 @@
                       -n100 -m16 -s10
                       -n100 -m28 -s20
                       -n100 -m9 -R217 -r217 -s5
-                      -n100 -m9 -R273 -r273 -s5</main_exec_args>
-      <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5</tags>
+                      -n100 -m9 -R273 -r273 -s5
+                      -n100 -s5 -U 2 0 1
+                      -n100 -s5 -T 2 1 2 -U 2 0 2
+                      -n100 -s5 -T 2 2 2 -U 2 1 2
+                      -n100 -s5 -a4 -b8 -T 2 1 2 -U 2 1 3
+                      -n100 -s5 -Z
+                      -n100 -s5 -Z -r75
+                      -n50 -s5 -Z -r216 -R217
+                      -n50 -s5 -Z -r270 -R273
+                      -n100 -s5 -Z -U 2 0 2
+                      -n100 -m16 -s10 -z2</main_exec_args>
+
+      <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13 nr_ulsim.test14 nr_ulsim.test15</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -1296,10 +1333,13 @@
 
     <testCase id="015112">
       <class>execution</class>
-      <desc>nr_prachsim Test cases. (Test1: 106 PRBs - Prach format A2),
-                                    (Test2: 217 PRBs - Prach format A2),
-                                    (Test3: 273 PRBs - Prach format A2),
-				    (Test4: 106 PRBs - Prach format 0)</desc>
+      <desc>nr_prachsim Test cases. (Test1: 30kHz SCS, 106 PRBs, Prach format A2),
+                                    (Test2: 30kHz SCS, 217 PRBs, Prach format A2),
+                                    (Test3: 30kHz SCS, 273 PRBs, Prach format A2),
+				    (Test4: 30kHz SCS, 106 PRBs, Prach format 0),
+                                    (Test5: 120kHz SCS, 32 PRBs, Prach format A2),
+                                    (Test6: 120kHz SCS, 66 PRBs, Prach format A2),
+                                    (Test7: 120kHz SCS, 66 PRBs, High Speed Enabled)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators -c </compile_prog_args>
@@ -1309,8 +1349,11 @@
       <main_exec_args>-a -s -30 -n 100 -p 63 -R 106
                       -a -s -30 -n 100 -p 63 -R 217
                       -a -s -30 -n 100 -p 63 -R 273
-		      -a -s -30 -n 100 -p 63 -R 106 -c 4</main_exec_args>
-      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3 nr_prachsim.test4</tags>
+		      -a -s -30 -n 100 -p 63 -R 106 -c 4
+		      -a -s -30 -n 100 -p 32 -R 32 -m 3 -c52 
+		      -a -s -30 -n 100 -p 32 -R 66 -m 3 -c52
+          -a -s -30 -n 100 -R 66 -m 3 -c52 -H</main_exec_args>
+      <tags>nr_prachsim.test1 nr_prachsim.test2 nr_prachsim.test3 nr_prachsim.test4 nr_prachsim.test5 nr_prachsim.test6 nr_prachsim.test7</tags>
       <search_expr_true>PRACH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

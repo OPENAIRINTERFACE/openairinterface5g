@@ -20,7 +20,7 @@
  */
 
 /* \file mac_defs.h
- * \brief MAC data structures, constant, and function prototype
+ * \brief MAC data structures and constants
  * \author R. Knopp, K.H. HSU
  * \date 2018
  * \version 0.1
@@ -63,21 +63,112 @@
 #include "NR_PhysicalCellGroupConfig.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfig.h"
+#include "NR_MeasConfig.h"
+#include "fapi_nr_ue_interface.h"
+#include "NR_IF_Module.h"
+#include "PHY/defs_nr_common.h"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
 
+// ==========
+// NR UE defs
+// ==========
 
 #define NB_NR_UE_MAC_INST 1
-/*!\brief Maximum number of logical channl group IDs */
-
+#define MAX_NUM_BWP       2
+#define NUM_SLOT_FRAME    10
 
 /*!\brief value for indicating BSR Timer is not running */
 #define NR_MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
+// ================================================
+// SSB to RO mapping private defines and structures
+// ================================================
 
+#define MAX_NB_PRACH_CONF_PERIOD_IN_ASSOCIATION_PERIOD (16) // Maximum association period is 16
+#define MAX_NB_PRACH_CONF_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD (16) // Max association pattern period is 160ms and minimum PRACH configuration period is 10ms
+#define MAX_NB_ASSOCIATION_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD (16) // Max nb of association periods in an association pattern period of 160ms
+#define MAX_NB_FRAME_IN_PRACH_CONF_PERIOD (16) // Max PRACH configuration period is 160ms and frame is 10ms
+#define MAX_NB_SLOT_IN_FRAME (160) // Max number of slots in a frame (@ SCS 240kHz = 160)
+#define MAX_NB_FRAME_IN_ASSOCIATION_PATTERN_PERIOD (16) // Maximum number of frames in the maximum association pattern period
+#define MAX_NB_SSB (64) // Maximum number of possible SSB indexes
+#define MAX_RO_PER_SSB (8) // Maximum number of consecutive ROs that can be mapped to an SSB according to the ssb_per_RACH config
+
+// Maximum number of ROs that can be mapped to an SSB in an association pattern
+// This is to reserve enough elements in the SSBs list for each mapped ROs for a single SSB
+// An arbitrary maximum number is chosen to be safe: maximum number of slots in an association pattern * maximum number of ROs in a slot
+#define MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN (MAX_TDM*MAX_FDM*MAX_NB_SLOT_IN_FRAME*MAX_NB_FRAME_IN_ASSOCIATION_PATTERN_PERIOD)
+
+// ===============
+// DCI fields defs
+// ===============
+
+#define NBR_NR_FORMATS                   8     // The number of formats is 8 (0_0, 0_1, 1_0, 1_1, 2_0, 2_1, 2_2, 2_3)
+#define NBR_NR_DCI_FIELDS               56    // The number of different dci fields defined in TS 38.212 subclause 7.3.1
+
+#define IDENTIFIER_DCI_FORMATS           0
+#define CARRIER_IND                      1
+#define SUL_IND_0_1                      2
+#define SLOT_FORMAT_IND                  3
+#define PRE_EMPTION_IND                  4
+#define BLOCK_NUMBER                     5
+#define CLOSE_LOOP_IND                   6
+#define BANDWIDTH_PART_IND               7
+#define SHORT_MESSAGE_IND                8
+#define SHORT_MESSAGES                   9
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL 10
+#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL 11
+#define TIME_DOM_RESOURCE_ASSIGNMENT    12
+#define VRB_TO_PRB_MAPPING              13
+#define PRB_BUNDLING_SIZE_IND           14
+#define RATE_MATCHING_IND               15
+#define ZP_CSI_RS_TRIGGER               16
+#define FREQ_HOPPING_FLAG               17
+#define TB1_MCS                         18
+#define TB1_NDI                         19
+#define TB1_RV                          20
+#define TB2_MCS                         21
+#define TB2_NDI                         22
+#define TB2_RV                          23
+#define MCS                             24
+#define NDI                             25
+#define RV                              26
+#define HARQ_PROCESS_NUMBER             27
+#define DAI_                            28
+#define FIRST_DAI                       29
+#define SECOND_DAI                      30
+#define TB_SCALING                      31
+#define TPC_PUSCH                       32
+#define TPC_PUCCH                       33
+#define PUCCH_RESOURCE_IND              34
+#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 35
+#define SRS_RESOURCE_IND                36
+#define PRECOD_NBR_LAYERS               37
+#define ANTENNA_PORTS                   38
+#define TCI                             39
+#define SRS_REQUEST                     40
+#define TPC_CMD                         41
+#define CSI_REQUEST                     42
+#define CBGTI                           43
+#define CBGFI                           44
+#define PTRS_DMRS                       45
+#define BETA_OFFSET_IND                 46
+#define DMRS_SEQ_INI                    47
+#define UL_SCH_IND                      48
+#define PADDING_NR_DCI                  49
+#define SUL_IND_0_0                     50
+#define RA_PREAMBLE_INDEX               51
+#define SUL_IND_1_0                     52
+#define SS_PBCH_INDEX                   53
+#define PRACH_MASK_INDEX                54
+#define RESERVED_NR_DCI                 55
+
+/*!\brief UE layer 2 status */
 typedef enum {
-    SFN_C_MOD_2_EQ_0, 
-    SFN_C_MOD_2_EQ_1,
-    SFN_C_IMPOSSIBLE
-} SFN_C_TYPE;
+    UE_CONNECTION_OK = 0,
+    UE_CONNECTION_LOST,
+    UE_PHY_RESYNCH,
+    UE_PHY_HO_PRACH
+} NR_UE_L2_STATE_t;
 
 // LTE structure, might need to be adapted for NR
 typedef struct {
@@ -91,9 +182,9 @@ typedef struct {
   uint16_t  All_lcid_buffer_size_lastTTI;
   /// buffer status for each lcid
   uint8_t  LCID_status[NR_MAX_NUM_LCID];
-  /// SR pending as defined in 36.321
+  /// SR pending as defined in 38.321
   uint8_t  SR_pending;
-  /// SR_COUNTER as defined in 36.321
+  /// SR_COUNTER as defined in 38.321
   uint16_t SR_COUNTER;
   /// logical channel group ide for each LCID
   uint8_t  LCGID[NR_MAX_NUM_LCID];
@@ -141,36 +232,150 @@ typedef struct {
   int16_t bucket_size[NR_MAX_NUM_LCID];
 } NR_UE_SCHEDULING_INFO;
 
-
-#define MAX_NUM_BWP 2
-
 typedef enum {
   RA_UE_IDLE = 0,
-  WAIT_RAR = 1,
-  WAIT_CONTENTION_RESOLUTION = 2,
-  RA_SUCCEEDED = 3
+  GENERATE_IDLE = 0,
+  GENERATE_PREAMBLE = 1,
+  WAIT_RAR = 2,
+  WAIT_CONTENTION_RESOLUTION = 3,
+  RA_SUCCEEDED = 4,
+  RA_FAILED = 5
 } RA_state_t;
+
+typedef struct {
+
+  // pointer to RACH config dedicated
+  NR_RACH_ConfigDedicated_t *rach_ConfigDedicated;
+  /// state of RA procedure
+  RA_state_t ra_state;
+  /// RA contention type
+  uint8_t cfra;
+  /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.
+  uint8_t RA_offset;
+  /// RA-rnti
+  uint16_t ra_rnti;
+  /// Temporary CRNTI
+  uint16_t t_crnti;
+  /// number of attempt for rach
+  uint8_t RA_attempt_number;
+  /// Random-access procedure flag
+  uint8_t RA_active;
+  /// Random-access preamble index
+  int ra_PreambleIndex;
+  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
+  RA_state_t generate_nr_prach;
+
+  /// Random-access window counter
+  int16_t RA_window_cnt;
+  /// Flag to monitor if matching RAPID was received in RAR
+  uint8_t RA_RAPID_found;
+  /// Flag to monitor if BI was received in RAR
+  uint8_t RA_BI_found;
+  /// Random-access backoff counter
+  int16_t RA_backoff_indicator;
+  /// Flag to indicate whether preambles Group A was used
+  uint8_t RA_usedGroupA;
+  /// RA backoff counter
+  int16_t RA_backoff_cnt;
+  /// RA max number of preamble transmissions
+  int preambleTransMax;
+  /// Nb of preambles per SSB
+  long cb_preambles_per_ssb;
+  int starting_preamble_nb;
+
+  /// Received TPC command (in dB) from RAR
+  int8_t Msg3_TPC;
+  /// Flag to indicate whether it is the first Msg3 to be transmitted
+  uint8_t first_Msg3;
+  /// RA Msg3 size in bytes
+  uint8_t Msg3_size;
+
+  /// Random-access Contention Resolution Timer active flag
+  uint8_t RA_contention_resolution_timer_active;
+  int RA_contention_resolution_target_frame;
+  int RA_contention_resolution_target_slot;
+  /// Transmitted UE Contention Resolution Identifier
+  uint8_t cont_res_id[6];
+
+  /// BeamfailurerecoveryConfig
+  NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
+
+  /// RA SearchSpace
+  NR_SearchSpace_t *ss;
+} RA_config_t;
+
+typedef struct {
+  bool active;
+  bool ack_received;
+  uint8_t  pucch_resource_indicator;
+  uint16_t feedback_to_ul;
+  int is_common;
+  frame_t dl_frame;
+  int dl_slot;
+  uint8_t ack;
+  uint8_t dai;
+  int n_CCE;
+  int N_CCE;
+  int8_t delta_pucch;
+} NR_UE_HARQ_STATUS_t;
+
+typedef struct {
+
+  uint8_t freq_hopping;
+  uint8_t mcs;
+  uint8_t Msg3_t_alloc;
+  uint16_t Msg3_f_alloc;
+
+} RAR_grant_t;
+
+typedef struct {
+  int n_HARQ_ACK;
+  uint32_t ack_payload;
+  uint8_t sr_payload;
+  uint32_t csi_part1_payload;
+  uint32_t csi_part2_payload;
+  int resource_indicator;
+  int resource_set_id;
+  int is_common;
+  int initial_pucch_id;
+  NR_PUCCH_Resource_t *pucch_resource;
+  int n_CCE;
+  int N_CCE;
+  int8_t delta_pucch;
+} PUCCH_sched_t;
+
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
 
   NR_ServingCellConfigCommon_t    *scc;
-  NR_CellGroupConfig_t            *scg;
-  NR_RACH_ConfigDedicated_t       *rach_ConfigDedicated;
+  NR_ServingCellConfigCommonSIB_t *scc_SIB;
+  NR_CellGroupConfig_t            *cg;
   int                             servCellIndex;
+  NR_CSI_ReportConfig_t           *csirc;
+  long                            physCellId;
   ////  MAC config
+  int                             common_configuration_complete;
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
   NR_BSR_Config_t                 *bsr_Config;
   NR_TAG_Config_t                 *tag_Config;
   NR_PHR_Config_t                 *phr_Config;
   NR_RNTI_Value_t                 *cs_RNTI;
-  NR_MIB_t                         *mib;
+  NR_MIB_t                        *mib;
 
   NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP];
   NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP];
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP];
-  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP][FAPI_NR_MAX_SS_PER_CORESET];
+  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_SS];
+
+  lte_frame_type_t frame_type;
+
+  /*BWP*/
+  // dedicated active DL BWP
+  NR_BWP_Id_t DL_BWP_Id;
+  // dedicated active UL BWP
+  NR_BWP_Id_t UL_BWP_Id;
 
   ///     Type0-PDCCH seach space
   fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
@@ -184,80 +389,49 @@ typedef struct {
   CCCH_PDU CCCH_pdu;
   ULSCH_PDU ulsch_pdu;
 
-  /* Random Access parameters */
-  /// state of RA procedure
-  RA_state_t ra_state;
-  /// RA rx frame offset: compensate RA rx offset introduced by OAI gNB.
-  uint8_t RA_offset;
-  /// RA-rnti
-  uint16_t ra_rnti;
-  /// Temporary CRNTI
-  uint16_t t_crnti;
+  /* Random Access */
   /// CRNTI
   uint16_t crnti;
-  /// number of attempt for rach
-  uint8_t RA_attempt_number;
-  /// Random-access procedure flag
-  uint8_t RA_active;
-  /// Random-access window counter
-  int8_t RA_window_cnt;
-  /// Random-access Msg3 size in bytes
-  uint8_t RA_Msg3_size;
-  /// Random-access prachMaskIndex
-  uint8_t RA_prachMaskIndex;
-  /// Flag indicating Preamble set (A,B) used for first Msg3 transmission
-  uint8_t RA_usedGroupA;
-  /// BeamfailurerecoveryConfig
-  NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
-  /// Preamble Tx Counter
-  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
-  /// Preamble Power Ramping Counter
-  uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
-  /// Random-access backoff counter
-  int16_t RA_backoff_indicator;
-  /// Random-access backoff counter
-  int16_t RA_backoff_cnt;
-  /// Random-access variable for window calculation (frame of last change in window counter)
-  uint32_t RA_tx_frame;
-  /// Random-access variable for window calculation (subframe of last change in window counter)
-  uint8_t RA_tx_subframe;
-  /// Random-access variable for backoff (frame of last change in backoff counter)
-  uint32_t RA_backoff_frame;
-  /// Random-access variable for backoff (subframe of last change in backoff counter)
-  uint8_t RA_backoff_subframe;
-  /// Random-access Group B maximum path-loss
-  uint16_t RA_maxPL;
-  /// Random-access Contention Resolution Timer active flag
-  uint8_t RA_contention_resolution_timer_active;
-  /// Random-access Contention Resolution Timer count value
-  uint8_t RA_contention_resolution_cnt;
-  /// Msg3 Delta Preamble
-  int8_t deltaPreamble_Msg3;
-  /// Received TPC command (in dB) from RAR
-  int8_t Msg3_TPC;
-  /// Flag to monitor if matching RAPID was received in RAR
-  uint8_t RA_RAPID_found;
-  /// Flag to monitor if BI was received in RAR
-  uint8_t RA_BI_found;
-  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
-  uint8_t generate_nr_prach;
+  /// RA configuration
+  RA_config_t ra;
+  /// SSB index from MIB decoding
+  uint8_t mib_ssb;
+  /// measured SSB RSRP in dBm
+  short ssb_rsrp_dBm;
 
+  /// Last NDI of UL HARQ processes
+  uint8_t UL_ndi[NR_MAX_HARQ_PROCESSES];
+  /// first ULTX of UL HARQ processes
+  int first_ul_tx[NR_MAX_HARQ_PROCESSES];
   ////	FAPI-like interface message
-  fapi_nr_tx_request_t tx_request;
-  fapi_nr_ul_config_request_t ul_config_request;
+  fapi_nr_ul_config_request_t *ul_config_request;
   fapi_nr_dl_config_request_t dl_config_request;
 
   ///     Interface module instances
   nr_ue_if_module_t       *if_module;
-  nr_scheduled_response_t scheduled_response;
   nr_phy_config_t         phy_config;
 
   /// BSR report flag management
   uint8_t BSR_reporting_active;
+
+  /// LogicalChannelConfig has bearer.
+  boolean_t logicalChannelBearer_exist[NR_MAX_NUM_LCID];
   NR_UE_SCHEDULING_INFO   scheduling_info;
 
   /// PHR
   uint8_t PHR_reporting_active;
+
+  NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
+  NR_SearchSpace_t *search_space_zero;
+  NR_ControlResourceSet_t *coreset0;
+  frequency_range_t frequency_range;
+  uint16_t nr_band;
+  uint8_t ssb_subcarrier_offset;
+
+  dci_pdu_rel15_t def_dci_pdu_rel15[8];
+
+  NR_UE_HARQ_STATUS_t dl_harq_info[16];
+
 } NR_UE_MAC_INST_t;
 
 typedef enum seach_space_mask_e {
@@ -267,28 +441,6 @@ typedef enum seach_space_mask_e {
     type2_pdcch  = 0x8,
     type3_pdcch  = 0x10
 } search_space_mask_t;
-
-typedef enum subcarrier_spacing_e {
-    scs_15kHz  = 0x1,
-    scs_30kHz  = 0x2,
-    scs_60kHz  = 0x4,
-    scs_120kHz = 0x8,
-    scs_240kHz = 0x16
-} subcarrier_spacing_t;
-
-typedef enum channel_bandwidth_e {
-    bw_5MHz   = 0x1,
-    bw_10MHz  = 0x2,
-    bw_20MHz  = 0x4,
-    bw_40MHz  = 0x8,
-    bw_80MHz  = 0x16,
-    bw_100MHz = 0x32
-} channel_bandwidth_t;
-
-typedef enum frequency_range_e {
-    FR1 = 0, 
-    FR2
-} frequency_range_t;
 
 typedef struct {
   uint8_t identifier_dci_formats          ; // 0  IDENTIFIER_DCI_FORMATS:
@@ -362,67 +514,45 @@ typedef struct {
   uint8_t reserved_nr_dci                 ; // 55 RESERVED_NR_DCI
 } nr_dci_pdu_rel15_t;
 
-#define NUM_SLOT_FRAME 10
+// The PRACH Config period is a series of selected slots in one or multiple frames
+typedef struct prach_conf_period {
+  prach_occasion_slot_t prach_occasion_slot_map[MAX_NB_FRAME_IN_PRACH_CONF_PERIOD][MAX_NB_SLOT_IN_FRAME];
+  uint16_t nb_of_prach_occasion; // Total number of PRACH occasions in the PRACH Config period
+  uint8_t nb_of_frame; // Size of the PRACH Config period in number of 10ms frames
+  uint8_t nb_of_slot; // Nb of slots in each frame
+} prach_conf_period_t;
 
-#define NBR_NR_FORMATS              8     // The number of formats is 8 (0_0, 0_1, 1_0, 1_1, 2_0, 2_1, 2_2, 2_3)
-#define NBR_NR_DCI_FIELDS           56    // The number of different dci fields defined in TS 38.212 subclause 7.3.1
+// The association period is a series of PRACH Config periods
+typedef struct prach_association_period {
+  prach_conf_period_t *prach_conf_period_list[MAX_NB_PRACH_CONF_PERIOD_IN_ASSOCIATION_PERIOD];
+  uint8_t nb_of_prach_conf_period; // Nb of PRACH configuration periods within the association period
+  uint8_t nb_of_frame; // Total number of frames included in the association period
+} prach_association_period_t;
 
-#define IDENTIFIER_DCI_FORMATS           0
-#define CARRIER_IND                      1
-#define SUL_IND_0_1                      2
-#define SLOT_FORMAT_IND                  3
-#define PRE_EMPTION_IND                  4
-#define BLOCK_NUMBER                     5
-#define CLOSE_LOOP_IND                   6
-#define BANDWIDTH_PART_IND               7
-#define SHORT_MESSAGE_IND                8
-#define SHORT_MESSAGES                   9
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_UL 10
-#define FREQ_DOM_RESOURCE_ASSIGNMENT_DL 11
-#define TIME_DOM_RESOURCE_ASSIGNMENT    12
-#define VRB_TO_PRB_MAPPING              13
-#define PRB_BUNDLING_SIZE_IND           14
-#define RATE_MATCHING_IND               15
-#define ZP_CSI_RS_TRIGGER               16
-#define FREQ_HOPPING_FLAG               17
-#define TB1_MCS                         18
-#define TB1_NDI                         19
-#define TB1_RV                          20
-#define TB2_MCS                         21
-#define TB2_NDI                         22
-#define TB2_RV                          23
-#define MCS                             24
-#define NDI                             25
-#define RV                              26
-#define HARQ_PROCESS_NUMBER             27
-#define DAI_                            28
-#define FIRST_DAI                       29
-#define SECOND_DAI                      30
-#define TB_SCALING                      31
-#define TPC_PUSCH                       32
-#define TPC_PUCCH                       33
-#define PUCCH_RESOURCE_IND              34
-#define PDSCH_TO_HARQ_FEEDBACK_TIME_IND 35
-#define SRS_RESOURCE_IND                36
-#define PRECOD_NBR_LAYERS               37
-#define ANTENNA_PORTS                   38
-#define TCI                             39
-#define SRS_REQUEST                     40
-#define TPC_CMD                         41
-#define CSI_REQUEST                     42
-#define CBGTI                           43
-#define CBGFI                           44
-#define PTRS_DMRS                       45
-#define BETA_OFFSET_IND                 46
-#define DMRS_SEQ_INI                    47
-#define UL_SCH_IND                      48
-#define PADDING_NR_DCI                  49
-#define SUL_IND_0_0                     50
-#define RA_PREAMBLE_INDEX               51
-#define SUL_IND_1_0                     52
-#define SS_PBCH_INDEX                   53
-#define PRACH_MASK_INDEX                54
-#define RESERVED_NR_DCI                 55
+// The association pattern is a series of Association periods
+typedef struct prach_association_pattern {
+  prach_association_period_t prach_association_period_list[MAX_NB_ASSOCIATION_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD];
+  prach_conf_period_t prach_conf_period_list[MAX_NB_PRACH_CONF_PERIOD_IN_ASSOCIATION_PATTERN_PERIOD];
+  uint8_t nb_of_assoc_period; // Nb of association periods within the association pattern
+  uint8_t nb_of_prach_conf_period_in_max_period; // Nb of PRACH configuration periods within the maximum association pattern period (according to the size of the configured PRACH
+  uint8_t nb_of_frame; // Total number of frames included in the association pattern period (after mapping the SSBs and determining the real association pattern length)
+} prach_association_pattern_t;
+
+// SSB details
+typedef struct ssb_info {
+  boolean_t transmitted; // True if the SSB index is transmitted according to the SSB positions map configuration
+  prach_occasion_info_t *mapped_ro[MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN]; // List of mapped RACH Occasions to this SSB index
+  uint16_t nb_mapped_ro; // Total number of mapped ROs to this SSB index
+} ssb_info_t;
+
+// List of all the possible SSBs and their details
+typedef struct ssb_list_info {
+  ssb_info_t tx_ssb[MAX_NB_SSB];
+  uint8_t   nb_tx_ssb;
+} ssb_list_info_t;
+
+void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
+void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

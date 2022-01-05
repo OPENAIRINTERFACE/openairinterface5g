@@ -1,0 +1,510 @@
+#!/bin/bash
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
+# brief
+# authors Laurent Thomas
+#
+#######################################
+if [ ! -f /etc/os-release ]; then
+    echo "No /etc/os-release file found. You're likely on an unsupported distro."
+    exit 1
+fi
+OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
+OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
+case "$OS_DISTRO" in
+    ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt"; CMAKE="cmake" ;;
+esac
+
+SUDO='sudo -E'
+
+###############################
+## echo and  family
+###############################
+black='\E[30m'
+red='\E[31m'
+green='\E[32m'
+yellow='\E[33m'
+blue='\E[1;34m'
+magenta='\E[35m'
+cyan='\E[36m'
+white='\E[37m'
+reset_color='\E[00m'
+COLORIZE=1
+
+cecho()  {
+    # Color-echo
+    # arg1 = message
+    # arg2 = color
+    local default_msg="No Message."
+    message=${1:-$default_msg}
+    color=${2:-$green}
+    [ "$COLORIZE" = "1" ] && message="$color$message$reset_color"
+    echo -e "$message"
+    return
+}
+
+echo_error()   { cecho "$* $red"          ;}
+echo_fatal()   { cecho "$* $red"; exit 1  ;}
+echo_warning() { cecho "$* $yellow"       ;}
+echo_success() { cecho "$* $green"        ;}
+echo_info()    { cecho "$* $blue"         ;}
+
+########################
+# distribution helpers #
+########################
+
+# This function return a string to identify the distribution we are running
+# Examples:
+#   ubuntu16.04
+#   debian8.5
+get_distribution_release() {
+    echo "$OS_DISTRO$OS_RELEASE"
+}
+
+check_supported_distribution() {
+    case $(get_distribution_release) in
+        "ubuntu20.04") return 0 ;;
+        "ubuntu20.10") return 0 ;;
+        "ubuntu21.04") return 0 ;;
+    esac
+    return 1
+}
+
+##################
+# Error handlers #
+##################
+
+handler_EXIT() {
+    local exit_code=$?
+    [ "$exit_code" -eq 0 ] || echo_error "build have failed"
+    exit $exit_code
+}
+
+trap handler_EXIT EXIT
+
+###########################
+# Cleaners
+###########################
+
+clean_kernel() {
+    $SUDO modprobe ip_tables
+    $SUDO modprobe x_tables
+    $SUDO iptables -P INPUT ACCEPT
+    $SUDO iptables -F INPUT
+    $SUDO iptables -P OUTPUT ACCEPT
+    $SUDO iptables -F OUTPUT
+    $SUDO iptables -P FORWARD ACCEPT
+    $SUDO iptables -F FORWARD
+    $SUDO iptables -t nat -F
+    $SUDO iptables -t mangle -F
+    $SUDO iptables -t filter -F
+    $SUDO iptables -t raw -F
+    echo_info "Flushed iptables"
+    $SUDO rmmod nasmesh > /dev/null 2>&1
+    $SUDO rmmod oai_nw_drv  > /dev/null 2>&1
+    $SUDO rmmod openair_rf > /dev/null 2>&1
+    $SUDO rmmod ue_ip > /dev/null 2>&1
+    echo_info "removed drivers from kernel"
+}
+
+clean_all_files() {
+    set_openair_env
+    rm -rf "$OPENAIR_DIR"/targets/bin/*
+    dir="$OPENAIR_DIR/cmake_targets"
+    rm -rf "$dir"/log/*
+    rm -rf "$dir"/ran_build/build
+    rm -rf "$dir"/ran_build_noLOG/build
+    rm -rf "$dir"/lte-simulators/build 
+    rm -rf "$dir"/phy_simulators/build
+    rm -rf "$dir"/nas_sim_tools/build 
+    rm -rf "$dir"/oaisim_build_oai/build
+    rm -rf "$dir"/oaisim_build_oai/CMakeLists.txt
+    rm -rf "$dir"/autotests/bin
+    rm -rf "$dir"/autotests/log
+    rm -rf "$dir"/autotests/*/build
+}
+
+############################################
+# External packages installers
+############################################
+
+install_protobuf_from_source(){
+    protobuf_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_install_log.txt
+    echo_info "\nInstalling Google Protobuf from sources. The log file for Protobuf installation is here: $protobuf_install_log "
+    (
+	cd /tmp || exit
+	echo "Downloading protobuf"
+	#rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
+	#wget https://github.com/protocolbuffers/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+	#tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
+	#cd protobuf-2.6.1/
+	rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
+	wget --tries=3 --retry-connrefused https://github.com/protocolbuffers/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
+	tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner "$USER" --group "$(groups | cut -d" " -f1)" --no-same-owner
+	cd protobuf-3.3.0/ || exit
+	./configure
+	echo "Compiling protobuf"
+	make -j"$(nproc)"
+	$SUDO make install
+	$SUDO ldconfig
+    ) >& "$protobuf_install_log"
+}
+
+install_protobuf_c_from_source(){
+    protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
+    echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
+    (
+	if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+            export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+	fi
+	cd /tmp || exit
+	echo "Downloading protobuf-c"
+	rm -rf /tmp/protobuf-c
+	git clone https://github.com/protobuf-c/protobuf-c.git
+	cd protobuf-c || exit
+	git checkout 2a46af42784abf86804d536f6e0122d47cfeea45
+	./autogen.sh
+	./configure
+	echo "Compiling protobuf-c"
+	make -j"$(nproc)"
+	$SUDO make install
+	$SUDO ldconfig
+    ) >& "$protobuf_c_install_log"
+}
+
+install_usrp_uhd_driver_from_source(){
+    uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
+    echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "
+    (
+	cd /tmp || exit
+	echo "Downloading UHD driver"
+	rm -rf /tmp/uhd
+	git clone https://github.com/EttusResearch/uhd.git
+	cd uhd || exit
+	git checkout UHD-3.15.LTS
+	mkdir -p host/build
+	cd host/build || exit
+	$CMAKE ../ -GNinja
+	echo "Compiling UHD"
+	ninja
+	$SUDO ninja install
+	$SUDO ldconfig
+        $SUDO /usr/lib/uhd/utils/uhd_images_downloader.py
+    ) >& "$uhd_install_log"
+}
+
+install_bladerf_driver_from_source(){
+    bladerf_install_log=$OPENAIR_DIR/cmake_targets/log/bladerf_install_log.txt
+    echo_info "\nInstalling BladeRF driver from sources. The log file for BladeRF driver installation is here: $bladerf_install_log "
+    (
+	cd /tmp || exit
+	echo "Downloading BladeRF driver"
+	rm -rf /tmp/bladeRF
+	git clone https://github.com/Nuand/bladeRF.git
+	cd bladeRF || exit
+	git checkout tags/2016.06
+	mkdir -p build
+	cd build || exit
+	$CMAKE ../
+	echo "Compiling BladeRF driver"
+	make -j"$(nproc)"
+	$SUDO make install
+	$SUDO ldconfig
+	echo "Downloading FPGA and firmware images"
+	cd /tmp/bladeRF || exit
+	wget --tries=3 --retry-connrefused https://www.nuand.com/fx3/bladeRF_fw_latest.img
+	wget --tries=3 --retry-connrefused https://www.nuand.com/fpga/hostedx40-latest.rbf
+	sudo mkdir -p /usr/share/Nuand/bladeRF
+	sudo mv bladeRF_fw_latest.img /usr/share/Nuand/bladeRF/bladeRF_fw.img
+	sudo mv hostedx40-latest.rbf /usr/share/Nuand/bladeRF/hostedx40.rbf
+    ) >& "$bladerf_install_log"
+}
+
+check_install_bladerf_driver(){
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+        $SUDO apt-get install -y  bladerf libbladerf-dev
+        $SUDO apt-get install -y bladerf-firmware-fx3
+        $SUDO apt-get install -y bladerf-fpga-hostedx40
+    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+        install_bladerf_driver_from_source
+    else
+        echo_error "BladeRF Installer for OAI does not support automatic build. Install BladeRF compiling sources manually from BladeRF website"
+    fi
+}
+
+flash_firmware_bladerf() {
+    $SUDO bladeRF-cli --flash-firmware /usr/share/Nuand/bladeRF/bladeRF_fw.img
+}
+
+install_soapy_from_source(){
+    soapy_install_log=$OPENAIR_DIR/cmake_targets/log/soapy_install_log.txt
+    echo_info "\nInstalling Soapy EcoSystem from source. The log file for Soapy installation is here: $soapy_install_log "
+    (
+	cd /tmp || exit
+	echo "Downloading SoapySDR"
+	rm -rf /tmp/soapysdr
+	git clone -b soapy-sdr-0.7.0 --single-branch https://github.com/pothosware/SoapySDR.git
+	cd SoapySDR || exit
+	#git checkout tags/release_003_010_001_001
+	mkdir -p build
+	cd build || exit
+	$CMAKE ../
+	echo "Compiling SoapySDR"
+	make -j"$(nproc)"
+	$SUDO make install
+	$SUDO ldconfig
+	cd /tmp || exit
+	echo "Downloading SoapyRemote"
+	rm -rf /tmp/soapyremote
+	git clone -b soapy-remote-0.5.0 --single-branch https://github.com/pothosware/SoapyRemote.git
+	cd SoapyRemote || exit
+	#git checkout tags/release_003_010_001_001
+	mkdir -p build
+	cd build || exit
+	cmake ../
+	echo "Compiling SoapyRemote"
+	make -j"$(nproc)"
+	$SUDO make install
+	$SUDO ldconfig
+    ) >& "$soapy_install_log"
+}
+
+install_soapy_iris_from_source(){
+    iris_install_log=$OPENAIR_DIR/cmake_targets/log/iris_install_log.txt
+    echo_info "\nInstalling Iris driver from source. The log file for Iris driver installation is here: $iris_install_log "
+    (
+	cd /tmp || exit
+	echo "Downloading SoapyIris"
+	rm -rf /tmp/sklk-soapyiris
+	git clone -b soapy-iris-2018.08.0.1 --single-branch https://github.com/skylarkwireless/sklk-soapyiris.git
+	cd sklk-soapyiris || exit
+	mkdir -p build
+	cd build ||exit
+	cmake ../
+	echo "Compiling SoapyIris"
+	make -j"$(nproc)"
+	$SUDO make install
+	$SUDO ldconfig
+    ) >& "$iris_install_log"
+}
+
+check_install_soapy () {
+    #if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    #first we remove old installation
+    $SUDO apt-get remove -y soapysdr soapysdr-server libsoapysdr-dev python-soapysdr python3-soapysdr soapysdr-module-remote || true
+    #$SUDO add-apt-repository -y ppa:myriadrf/drivers
+    #$SUDO apt-get update
+    #$SUDO apt-get install -y soapysdr soapysdr-server libsoapysdr-dev python-soapysdr python3-soapysdr soapysdr-module-remote
+
+    #elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+    #    $SUDO $INSTALLER -y install software-properties-common python3-software-properties python-software-properties subversion git python3 python-numpy python3-numpy cmake swig python-dev
+    install_soapy_from_source
+    #fi
+    install_soapy_iris_from_source
+    
+}
+
+check_install_ubuntu_packages() {
+    $SUDO $INSTALLER update -y
+    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+	local LAPACK_LIBNAME="liblapack.so"
+	local LAPACK_TARGET="/usr/lib/atlas-base/atlas/liblapack.so"
+	$SUDO apt install -y software-properties-common
+	case "$(get_distribution_release)" in
+            "ubuntu20.04")
+		specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
+		LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+		LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+		;;
+            "ubuntu21.04")
+		specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
+		LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+		LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+		;;
+	esac
+	$SUDO $INSTALLER install -y \
+	      $specific_packages \
+	      check  \
+              dialog \
+              dkms \
+              gawk \
+              libboost-all-dev \
+              libpthread-stubs0-dev \
+              openvpn \
+              pkg-config \
+              python3-dev  \
+              sshfs \
+              swig  \
+              tshark \
+              uml-utilities \
+              unzip  \
+              valgrind  \
+              vlan      \
+              exuberant-ctags \
+              ntpdate \
+              iperf3 \
+              android-tools-adb \
+              wvdial \
+              sshpass \
+              nscd \
+              bc \
+              ntp \
+              python3-scipy \
+              python3-matplotlib \
+	      bison  \
+	      build-essential \
+	      cmake \
+	      cmake-curses-gui  \
+              ninja-build \
+	      doxygen \
+	      doxygen-gui \
+	      texlive-latex-base \
+	      ethtool \
+	      flex  \
+	      gdb  \
+	      git \
+	      graphviz \
+	      gtkwave \
+	      iperf \
+	      iptables \
+	      libxtables-dev \
+	      libatlas-base-dev \
+	      libblas-dev \
+	      liblapack-dev\
+	      liblapacke-dev\
+	      libffi-dev \
+	      libforms-bin \
+	      libforms-dev \
+	      libgcrypt20-dev \
+	      libgmp-dev \
+	      libgtk-3-dev \
+	      libidn2-0-dev  \
+	      libidn11-dev \
+	      libmysqlclient-dev  \
+	      libpython2.7-dev \
+	      libsctp1  \
+	      libsctp-dev  \
+	      libssl-dev  \
+	      libtool  \
+	      libusb-1.0-0-dev \
+	      libxml2 \
+	      libxml2-dev  \
+	      libxslt1-dev \
+	      mscgen  \
+	      octave-signal \
+	      openssh-client \
+	      openssh-server \
+	      openssl \
+	      python3  \
+	      subversion \
+	      xmlstarlet \
+	      python3-pip \
+	      libyaml-dev \
+	      wget \
+	      libxpm-dev \
+              libboost-all-dev \
+	      nettle-dev \
+	      nettle-bin \
+              libreadline-dev
+    fi
+    
+    $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
+    
+}
+
+install_asn1c_from_source(){
+    asn1_install_log=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
+    echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
+    (
+	$SUDO rm -rf /tmp/asn1c
+	# GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+	git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+	cd /tmp/asn1c || exit
+	# better to use a given commit than a branch in case the branch
+	# is updated and requires modifications in the source of OAI
+	#git checkout velichkov_s1ap_plus_option_group
+	git checkout f12568d617dbf48497588f8e227d70388fa217c9
+	autoreconf -iv
+	./configure
+	make -j"$(nproc)"
+	$SUDO make install
+	cd - || exit
+	$SUDO ldconfig
+    ) > "$asn1_install_log" 2>&1
+}
+
+#################################################
+# 2. compile
+################################################
+
+install_nas_tools() {
+    echo_success "generate .ue_emm.nvram .ue.nvram"
+    ./nvram --gen -c "$1" -o "$2"
+    ./usim --gen -c "$1" -o "$2"
+}
+
+
+################################
+# set_openair_env
+###############################
+set_openair_env(){
+    fullpath=$(readlink -f "${BASH_SOURCE[0]}")
+    [ -f "/.$fullpath" ] || fullpath=$(readlink -f "$PWD/$fullpath")
+    openair_path=${fullpath%/cmake_targets/*}
+    openair_path=${openair_path%/targets/*}
+    openair_path=${openair_path%/openair[123]/*}
+    export OPENAIR_DIR=$openair_path
+    export OPENAIR1_DIR=$openair_path/openair1
+    export OPENAIR2_DIR=$openair_path/openair2
+    export OPENAIR3_DIR=$openair_path/openair3
+    export OPENAIR_TARGETS=$openair_path/targets
+}
+
+if ! check_supported_distribution; then
+    echo_error "Your distribution $(get_distribution_release) is not supported by oai !"
+    exit 1
+fi
+
+echo_info "Installing packages"
+check_install_ubuntu_packages
+
+echo_info "installing ASN.1 compiler"
+install_asn1c_from_source
+
+echo_info "installing protobuf/protobuf-c for flexran agent support"
+install_protobuf_from_source
+install_protobuf_c_from_source
+
+if [ "$1" == "USRP" ] ; then
+    echo_info "installing packages for USRP support"
+    install_usrp_uhd_driver
+fi
+if [ "$1" == "BLADERF" ] ; then
+    echo_info "installing packages for BLADERF support"
+    check_install_bladerf_driver
+    flash_firmware_bladerf
+fi
+if [ "$1" == "IRIS" ] ; then
+    echo_info "installing packages for IRIS support"
+    check_install_soapy
+    #  flash_firmware_iris
+fi

@@ -92,7 +92,7 @@ void *one_thread(void *arg) {
   } while (true);
 }
 
-void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
+void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name) {
   memset(pool,0,sizeof(*pool));
   char *measr=getenv("threadPoolMeasurements");
   pool->measurePerf=performanceMeas;
@@ -116,6 +116,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
   pool->restrictRNTI=false;
   curptr=strtok_r(parms_cpy,",",&saveptr);
   struct one_thread * ptr;
+  char *tname = (name == NULL ? "Tpool" : name);
   while ( curptr!=NULL ) {
     int c=toupper(curptr[0]);
 
@@ -129,7 +130,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
         break;
 
       default:
-	ptr=pool->allthreads;
+        ptr=pool->allthreads;
         pool->allthreads=(struct one_thread *)malloc(sizeof(struct one_thread));
         pool->allthreads->next=ptr;
         printf("create a thread for core %d\n", atoi(curptr));
@@ -138,7 +139,7 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
         pool->allthreads->pool=pool;
         //Configure the thread scheduler policy for Linux
         // set the thread name for debugging
-        sprintf(pool->allthreads->name,"Tpool_%d",pool->allthreads->coreID);
+        sprintf(pool->allthreads->name,"%s%d_%d",tname,pool->nbThreads,pool->allthreads->coreID);
         threadCreate(&pool->allthreads->threadID, one_thread, (void *)pool->allthreads,
                      pool->allthreads->name, pool->allthreads->coreID, OAI_PRIORITY_RT);
         pool->nbThreads++;
@@ -154,21 +155,24 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
 }
 
 #ifdef TEST_THREAD_POOL
+volatile int oai_exit=0;
 
 void exit_function(const char *file, const char *function, const int line, const char *s) {
 }
 
 struct testData {
   int id;
+  int sleepTime;
   char txt[30];
 };
 
 void processing(void *arg) {
   struct testData *in=(struct testData *)arg;
-  printf("doing: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
+  //printf("doing: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
   sprintf(in->txt,"Done by %ld, job %d", pthread_self(), in->id);
-  usleep(rand()%100);
-  printf("done: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
+  in->sleepTime=rand()%1000;
+  usleep(in->sleepTime);
+  //printf("done: %d, %s, in thr %ld\n",in->id, in->txt,pthread_self() );
 }
 
 int main() {
@@ -207,11 +211,43 @@ int main() {
   } while(tmp);
 
   tpool_t  pool;
-  char params[]="1,2,3,u";
+  char params[]="1,2,3,4,5";
   initTpool(params,&pool, true);
   notifiedFIFO_t worker_back;
   initNotifiedFIFO(&worker_back);
 
+  sleep(1);
+  int cumulProcessTime=0, cumulTime=0;
+  struct timespec st,end;
+  clock_gettime(CLOCK_MONOTONIC, &st);
+  int nb_jobs=4;
+  for (int i=0; i <1000 ; i++) {
+    int parall=nb_jobs;
+    for (int j=0; j <parall ; j++) {
+      notifiedFIFO_elt_t *work=newNotifiedFIFO_elt(sizeof(struct testData), i, &worker_back, processing);
+      struct testData *x=(struct testData *)NotifiedFifoData(work);
+      x->id=i;
+      pushTpool(&pool, work);
+    }
+    int sleepmax=0;
+    while (parall) {
+      tmp=pullTpool(&worker_back,&pool);
+      if (tmp) {
+	parall--;
+	struct testData *dd=NotifiedFifoData(tmp);
+	if (dd->sleepTime > sleepmax)
+	  sleepmax=dd->sleepTime;
+	delNotifiedFIFO_elt(tmp);
+      }
+    }
+    cumulProcessTime+=sleepmax;
+  }
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  long long dur=(end.tv_sec-st.tv_sec)*1000*1000+(end.tv_nsec-st.tv_nsec)/1000;
+  printf("In µs, Total time per group of %d job:%lld, work time per job %d, overhead per job %lld\n",
+	 nb_jobs, dur/1000, cumulProcessTime/1000, (dur-cumulProcessTime)/(1000*nb_jobs));
+
+	/*	
   for (int i=0; i <1000 ; i++) {
     notifiedFIFO_elt_t *work=newNotifiedFIFO_elt(sizeof(struct testData), i, &worker_back, processing);
     struct testData *x=(struct testData *)NotifiedFifoData(work);
@@ -231,7 +267,7 @@ int main() {
 
     abortTpool(&pool,510);
   } while(tmp);
-
+	*/
   return 0;
 }
 #endif

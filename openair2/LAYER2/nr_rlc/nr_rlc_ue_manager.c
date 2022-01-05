@@ -85,7 +85,7 @@ nr_rlc_ue_t *nr_rlc_manager_get_ue(nr_rlc_ue_manager_t *_m, int rnti)
     if (m->ue_list[i]->rnti == rnti)
       return m->ue_list[i];
 
-  LOG_D(RLC, "%s:%d:%s: new UE %d\n", __FILE__, __LINE__, __FUNCTION__, rnti);
+  LOG_D(RLC, "%s:%d:%s: new UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, rnti);
 
   m->ue_count++;
   m->ue_list = realloc(m->ue_list, sizeof(nr_rlc_ue_t *) * m->ue_count);
@@ -117,7 +117,7 @@ void nr_rlc_manager_remove_ue(nr_rlc_ue_manager_t *_m, int rnti)
       break;
 
   if (i == m->ue_count) {
-    LOG_D(RLC, "%s:%d:%s: warning: ue %d not found\n",
+    LOG_W(RLC, "%s:%d:%s: warning: ue %d not found\n",
           __FILE__, __LINE__, __FUNCTION__,
           rnti);
     return;

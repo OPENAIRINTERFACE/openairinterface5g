@@ -42,11 +42,6 @@
 #define nr_subframe_t lte_subframe_t
 #define nr_slot_t lte_subframe_t
 
-// [hna] This enables SC-FDMA transmission in Uplink. If disabled, then OFDMA is used in UPLINK.
-#ifndef NR_SC_FDMA
-// #define NR_SC_FDMA
-#endif
-
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
 #define NR_MAX_NB_RB 275
@@ -82,6 +77,9 @@
 #define NR_MAX_PDSCH_DMRS_LENGTH 3300      //275*6(k)*2(QPSK real+imag) 
 #define NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD 104  // ceil(NR_MAX_PDSCH_DMRS_LENGTH/32)
 
+#define NR_MAX_CSI_RS_LENGTH 4400 //275*8(max allocation per RB)*2(QPSK)
+#define NR_MAX_CSI_RS_INIT_LENGTH_DWORD 138  // ceil(NR_MAX_CSI_RS_LENGTH/32)
+
 #define NR_MAX_PUSCH_DMRS_LENGTH NR_MAX_PDSCH_DMRS_LENGTH 
 #define NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD
 
@@ -91,25 +89,31 @@
 
 #define NR_MAX_NUM_BWP 4
 
-#define NR_MAX_PDCCH_AGG_LEVEL 16
+#define NR_MAX_PDCCH_AGG_LEVEL 16 // 3GPP TS 38.211 V15.8 Section 7.3.2 Table 7.3.2.1-1: Supported PDCCH aggregation levels
 #define NR_MAX_CSET_DURATION 3
 
 #define NR_MAX_NB_RBG 18
-#define NR_MAX_NB_LAYERS 8 // SU-MIMO (3GPP TS 38.211 V15.4.0 section 7.3.1.3)
+#define NR_MAX_NB_LAYERS 2 // 8 // SU-MIMO (3GPP TS 38.211 V15.4.0 section 7.3.1.3)
 #define NR_MAX_NB_CODEWORDS 2
 #define NR_MAX_NB_HARQ_PROCESSES 16
-#define NR_MAX_PDSCH_ENCODED_LENGTH NR_MAX_NB_RB*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS // 8 is the maximum modulation order (it was 950984 before !!) 
+#define NR_MAX_PDSCH_ENCODED_LENGTH (NR_MAX_NB_RB*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS) // 8 is the maximum modulation order (it was 950984 before !!)
 #define NR_MAX_PUSCH_ENCODED_LENGTH NR_MAX_PDSCH_ENCODED_LENGTH
 #define NR_MAX_PDSCH_TBS 3824
+#define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.
 
-#define MAX_NUM_NR_DLSCH_SEGMENTS 34
+#define MAX_NUM_NR_DLSCH_SEGMENTS (NR_MAX_NB_LAYERS*34)
 #define MAX_NR_DLSCH_PAYLOAD_BYTES (MAX_NUM_NR_DLSCH_SEGMENTS*1056)
 
-#define MAX_NUM_NR_ULSCH_SEGMENTS MAX_NUM_NR_DLSCH_SEGMENTS
+#define MAX_NUM_NR_ULSCH_SEGMENTS 34
 #define MAX_NR_ULSCH_PAYLOAD_BYTES (MAX_NUM_NR_ULSCH_SEGMENTS*1056)
 
 #define MAX_NUM_NR_CHANNEL_BITS (14*273*12*8)  // 14 symbols, 273 RB
 #define MAX_NUM_NR_RE (14*273*12)
+#define NR_RX_NB_TH 1
+#define NR_NB_TH_SLOT 2
+
+extern const uint8_t nr_rv_round_map[4]; 
+extern const uint8_t nr_rv_round_map_ue[4]; 
 
 typedef enum {
   NR_MU_0=0,
@@ -147,6 +151,11 @@ typedef enum {
   MOD_QAM64,
   MOD_QAM256
 }nr_mod_t;
+
+typedef enum {
+  RA_2STEP = 0,
+  RA_4STEP
+} nr_ra_type_e;
 
 typedef struct {
   /// Size of first RBG
@@ -203,8 +212,12 @@ typedef struct {
   uint16_t prach_format;
   /// Preamble index for PRACH (0-63)
   uint8_t ra_PreambleIndex;
-  /// RACH MaskIndex
-  uint8_t ra_RACH_MaskIndex;
+  /// Preamble Tx Counter
+  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
+  /// Preamble Power Ramping Counter
+  uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
+  /// 2-step RA power offset
+  int POWER_OFFSET_2STEP_RA;
   /// Target received power at gNB. Baseline is range -202..-60 dBm. Depends on delta preamble, power ramping counter and step.
   int ra_PREAMBLE_RECEIVED_TARGET_POWER;
   /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
@@ -215,14 +228,14 @@ typedef struct {
   uint8_t RA_PREAMBLE_BACKOFF;
   ///
   uint8_t RA_SCALING_FACTOR_BI;
-  ///
-  uint8_t RA_PCMAX;
+  /// Indicating whether it is 2-step or 4-step RA
+  nr_ra_type_e RA_TYPE;
+  /// UE configured maximum output power
+  int RA_PCMAX;
   /// Corresponding RA-RNTI for UL-grant
   uint16_t ra_RNTI;
-  /// Pointer to Msg3 payload for UL-grant
-  uint8_t *Msg3;
   /// Frame of last completed synch
-  uint8_t sync_frame;
+  uint16_t sync_frame;
   /// Flag to indicate that prach is ready to start: it is enabled with an initial delay after the sync
   uint8_t init_msg1;
 } NR_PRACH_RESOURCES_t;
@@ -230,6 +243,7 @@ typedef struct {
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
 typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);
+typedef uint32_t (*get_slot_from_timestamp_t)(openair0_timestamp timestamp_rx, NR_DL_FRAME_PARMS* fp);
 
 typedef uint32_t (*get_samples_slot_timestamp_t)(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead);
 
@@ -286,14 +300,14 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_subframe;
   /// Number of samples in current slot
   get_samples_per_slot_t get_samples_per_slot;
+  /// slot calculation from timestamp
+  get_slot_from_timestamp_t get_slot_from_timestamp;
   /// Number of samples before slot
   get_samples_slot_timestamp_t get_samples_slot_timestamp;
   /// Number of samples in 0th and center slot of a subframe
   uint32_t samples_per_slot0;
   /// Number of samples in other slots of the subframe
   uint32_t samples_per_slotN0;
-  /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
-  uint16_t symbols_per_tti;
   /// Number of samples in a radio frame
   uint32_t samples_per_frame;
   /// Number of samples in a subframe without CP
@@ -302,15 +316,8 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_slot_wCP;
   /// Number of samples in a radio frame without CP
   uint32_t samples_per_frame_wCP;
-  /// Number of samples in a tti (same as subrame in LTE, slot in NR)
-  uint32_t samples_per_tti;
   /// NR numerology index [0..5] as specified in 38.211 Section 4 (mu). 0=15khZ SCS, 1=30khZ, 2=60kHz, etc
   uint8_t numerology_index;
-  /// NR number of ttis per subframe deduced from numerology (cf 38.211): 1, 2, 4, 8(not supported),16(not supported),32(not supported)
-  uint8_t ttis_per_subframe;
-  /// NR number of slots per tti . Assumption only 2 Slot per TTI is supported (Slot Config 1 in 38.211)
-  uint8_t slots_per_tti;
-//#endif
   /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
@@ -319,6 +326,12 @@ struct NR_DL_FRAME_PARMS {
   uint8_t nb_antenna_ports_gNB;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
+  /// sequence which is computed based on carrier frequency and numerology to rotate/derotate each OFDM symbol according to Section 5.3 in 38.211
+  /// First dimension is for the direction of the link (0 DL, 1 UL)
+  int16_t symbol_rotation[2][224*2];
+  /// sequence used to compensate the phase rotation due to timeshifted OFDM symbols
+  /// First dimenstion is for different CP lengths
+  int16_t timeshift_symbol_rotation[4096*2] __attribute__ ((aligned (16)));
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC
@@ -352,27 +365,13 @@ struct NR_DL_FRAME_PARMS {
   uint8_t ssb_index;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
+  /// OFDM symbol offset divisor for UL
+  uint32_t ofdm_offset_divisor;
 };
 
 
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)
-
-typedef struct nr_bandentry_s {
-  int16_t band;
-  uint64_t ul_min;
-  uint64_t ul_max;
-  uint64_t dl_min;
-  uint64_t dl_max;
-  uint64_t step_size;
-  uint64_t N_OFFs_DL;
-  uint8_t deltaf_raster;
-} nr_bandentry_t;
-
-typedef struct nr_band_info_s {
-  int nbands;
-  nr_bandentry_t band_info[100];
-} nr_band_info_t;
 
 #endif

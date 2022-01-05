@@ -212,13 +212,6 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t *ra, frame_t frameP,
       hi_dci0_req->sfn_sf                                     = sfnsf_add_subframe(frameP, subframeP, sf_ahead_dl);
       hi_dci0_req->header.message_id                          = NFAPI_HI_DCI0_REQUEST;
 
-      if (NFAPI_MODE != NFAPI_MONOLITHIC) {
-        oai_nfapi_hi_dci0_req(hi_dci0_req);
-        hi_dci0_req_body->number_of_hi=0;
-      }
-
-      LOG_D(MAC, "MSG3: HI_DCI0 SFN/SF:%d number_of_dci:%d number_of_hi:%d\n", NFAPI_SFNSF2DEC(hi_dci0_req->sfn_sf), hi_dci0_req_body->number_of_dci, hi_dci0_req_body->number_of_hi);
-
       // save UL scheduling information for preprocessor
       for (j = 0; j < ra->msg3_nb_rb; j++)
         cc->vrb_map_UL[ra->msg3_first_rb + j] = 1;
@@ -483,8 +476,8 @@ void generate_Msg2(module_id_t module_idP,
       first_rb = 0;
       vrb_map[first_rb] = 1;
       vrb_map[first_rb + 1] = 1;
-      vrb_map[first_rb + 2] = 1;
-      vrb_map[first_rb + 3] = 1;
+      //vrb_map[first_rb + 2] = 1;
+      //vrb_map[first_rb + 3] = 1;
       memset((void *) dl_config_pdu, 0, sizeof(nfapi_dl_config_request_pdu_t));
       dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
       dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
@@ -495,12 +488,12 @@ void generate_Msg2(module_id_t module_idP,
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 2;  // RA-RNTI : see Table 4-10 from SCF082 - nFAPI specifications
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000;  // equal to RS power
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = 0;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = 1;  // no TPC
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = 0;  // no TPC
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = 1;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = 0;
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = 1;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = 0;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(N_RB_DL, first_rb, 4);
+      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(N_RB_DL, first_rb, 2);
 
       // This checks if the above DCI allocation is feasible in current subframe
       if (!CCE_allocation_infeasible(module_idP, CC_idP, 0, subframeP,
@@ -519,7 +512,7 @@ void generate_Msg2(module_id_t module_idP,
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti                                   = ra->RA_rnti;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type               = 2; // format 1A/1B/1D
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0; // localized
-        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL, first_rb, 4);
+        dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_block_coding                  = getRIV(N_RB_DL, first_rb, 2);
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.modulation                             = 2; //QPSK
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.redundancy_version                     = 0;
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transport_blocks                       = 1; // first block
@@ -908,7 +901,7 @@ generate_Msg4(module_id_t module_idP,
   }                             // rach_resource_type > 0
   else {
     // This is normal LTE case
-    LOG_I(MAC, "generate_Msg4 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
+    LOG_D(MAC, "generate_Msg4 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
 
     if ((ra->Msg4_frame == frameP) && (ra->Msg4_subframe == subframeP)) {
       // Get RRCConnectionSetup for Piggyback
@@ -925,7 +918,7 @@ generate_Msg4(module_id_t module_idP,
               module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);
         //          AssertFatal(rrc_sdu_length > 0,
         //          "[MAC][eNB Scheduler] CCCH not allocated, rrc_sdu_length: %d\n", rrc_sdu_length);
-        LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
+        LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
               module_idP, CC_idP, frameP, subframeP, ra->rnti);
         /// Choose first 4 RBs for Msg4, should really check that these are free!
         first_rb = 0;
@@ -1093,7 +1086,7 @@ generate_Msg4(module_id_t module_idP,
           }
         }     // CCE Allocation feasible
       } else {
-        LOG_I(MAC,
+        LOG_D(MAC,
               "eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Delaying Msg4 for RRC Piggyback (RNTI %x)\n",
               module_idP, CC_idP, frameP, subframeP, ra->rnti);
         ra->Msg4_subframe ++;
@@ -1296,8 +1289,8 @@ initiate_ra_proc(module_id_t module_idP,
   }
 
   LOG_D(MAC,
-        "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d\n",
-        module_idP, CC_id, frameP, subframeP, preamble_index);
+        "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  Initiating RA procedure for preamble index %d, timing offset %d\n",
+        module_idP, CC_id, frameP, subframeP, preamble_index, timing_offset);
   LOG_D(MAC,
         "[eNB %d][RAPROC] CC_id %d Frame %d, Subframe %d  PRACH resource type %d\n",
         module_idP, CC_id, frameP, subframeP, rach_resource_type);
@@ -1339,6 +1332,9 @@ initiate_ra_proc(module_id_t module_idP,
             abort();
 
           case 1 :
+	  case 3 :
+	  case 4 :
+          case 5 :
             offset = 6;
             break;
         }

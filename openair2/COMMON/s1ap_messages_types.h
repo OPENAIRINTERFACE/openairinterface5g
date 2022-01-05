@@ -155,6 +155,11 @@ typedef struct security_capabilities_s {
   uint16_t integrity_algorithms;
 } security_capabilities_t;
 
+typedef struct nr_security_capabilities_s {
+  uint16_t encryption_algorithms;
+  uint16_t integrity_algorithms;
+} nr_security_capabilities_t;
+
 /* Provides the establishment cause for the RRC connection request as provided
  * by the upper layers. W.r.t. the cause value names: highPriorityAccess
  * concerns AC11..AC15, ‘mt’ stands for ‘Mobile Terminating’ and ‘mo’ for
@@ -386,12 +391,18 @@ typedef struct s1ap_register_enb_req_s {
   uint8_t          nb_mme;
   /* List of MME to connect to */
   net_ip_address_t mme_ip_address[S1AP_MAX_NB_MME_IP_ADDRESS];
+  uint16_t         mme_port[S1AP_MAX_NB_MME_IP_ADDRESS];
   uint8_t          broadcast_plmn_num[S1AP_MAX_NB_MME_IP_ADDRESS];
   uint8_t          broadcast_plmn_index[S1AP_MAX_NB_MME_IP_ADDRESS][PLMN_LIST_MAX_SIZE];
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
+  uint16_t s1_setuprsp_wait_timer;
+  uint16_t s1_setupreq_wait_timer;
+  uint16_t s1_setupreq_count;
+  uint16_t sctp_req_timer;
+  uint16_t sctp_req_count;
 } s1ap_register_enb_req_t;
 
 //-------------------------------------------------------------------------------------------//
@@ -537,6 +548,9 @@ typedef struct s1ap_initial_context_setup_req_s {
   uint8_t  nb_of_e_rabs;
   /* list of e_rab to be setup by RRC layers */
   e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
+
+  /* NR Security algorithms (if any, set to 0 if not present) */
+  nr_security_capabilities_t nr_security_capabilities;
 } s1ap_initial_context_setup_req_t;
 
 typedef struct tai_plmn_identity_s {

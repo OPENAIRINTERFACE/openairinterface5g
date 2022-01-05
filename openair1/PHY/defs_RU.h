@@ -92,17 +92,17 @@ typedef enum {
 
 
 typedef struct {
-  /// \brief Holds the transmit data in the frequency domain.
+  /// \brief Holds the transmit data in the frequency domain (1 frame).
   /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
+  /// - second index: ? [0..samples_per_frame[
   int32_t **txdata;
-  /// \brief holds the transmit data after beamforming in the frequency domain.
+  /// \brief holds the transmit data after beamforming in the frequency domain (1 slot).
   /// - first index: tx antenna [0..nb_antennas_tx[
-  /// - second index: sample [0..]
+  /// - second index: sample [0..samples_per_slot_woCP]
   int32_t **txdataF_BF;
-  /// \brief holds the transmit data before beamforming in the frequency domain.
-  /// - first index: tx antenna [0..nb_antennas_tx[
-  /// - second index: sample [0..]
+  /// \brief holds the transmit data before beamforming in the frequency domain (1 frame).
+  /// - first index: tx antenna [0..nb_antenna_ports[
+  /// - second index: sample [0..samples_per_frame_woCP]
   int32_t **txdataF;
   /// \brief holds the transmit data before beamforming for epdcch/mpdcch
   /// - first index : tx antenna [0..nb_epdcch_antenna_ports[
@@ -128,6 +128,10 @@ typedef struct {
   /// - second index: tx antenna [0..nb_antennas_tx[
   /// - third index: frequency [0..]
   int32_t **tdd_calib_coeffs;
+  /// \brief Anaglogue beam ID for each OFDM symbol (used when beamforming not done in RU)
+  /// - first index: antenna port
+  /// - second index: beam_id [0.. symbols_per_frame[
+  uint8_t **beam_id;
 } RU_COMMON;
 
 
@@ -191,9 +195,11 @@ typedef struct {
   int fmt;
   int numRA;
   int prachStartSymbol;
+  int num_prach_ocas;
 } RU_PRACH_list_t;
 
 #define NUMBER_OF_NR_RU_PRACH_MAX 8
+#define NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX 12
 
 typedef struct RU_proc_t_s {
   /// Pointer to associated RU descriptor
@@ -430,6 +436,14 @@ typedef enum {
 typedef struct RU_t_s {
   /// index of this ru
   uint32_t idx;
+  /// pointer to first RU
+  struct RU_t_s *ru0;
+  /// pointer to ru_mask
+  uint64_t *ru_mask;
+  /// pointer to ru_mutex
+  pthread_mutex_t *ru_mutex;
+  /// pointer to ru_cond
+  pthread_cond_t *ru_cond;
   /// Pointer to configuration file
   char *rf_config_file;
   /// southbound interface
@@ -440,6 +454,12 @@ typedef struct RU_t_s {
   node_function_t function;
   /// Ethernet parameters for fronthaul interface
   eth_params_t eth_params;
+  /// flag to indicate RF emulation mode
+  int emulate_rf;
+  /// numerology index
+  int numerology;
+  /// flag to indicate basicsim operation
+  int basicsim;
   /// flag to indicate the RU is in sync with a master reference
   int in_synch;
   /// timing offset
@@ -594,8 +614,8 @@ typedef struct RU_t_s {
   RU_PRACH_list_t prach_list[NUMBER_OF_NR_RU_PRACH_MAX];
   /// mutex for prach_list access
   pthread_mutex_t prach_list_mutex;
-  /// received frequency-domain signal for PRACH (IF4p5 RRU)
-  int16_t **prach_rxsigF;
+  /// received frequency-domain signal for PRACH (IF4p5 RRU) 
+  int16_t **prach_rxsigF[NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX];
   /// received frequency-domain signal for PRACH BR (IF4p5 RRU)
   int16_t **prach_rxsigF_br[4];
   /// sequence number for IF5
@@ -622,6 +642,8 @@ typedef struct RU_t_s {
   int wakeup_L1_sleep_cnt_max;
   /// DL IF frequency in Hz
   uint64_t if_frequency;
+  /// UL IF frequency offset to DL IF frequency in Hz
+  int if_freq_offset;
 } RU_t;
 
 
@@ -737,4 +759,11 @@ typedef struct RRU_config_s {
   MBSFN_config_t MBSFN_config[8];
 } RRU_config_t;
 
+typedef struct processingData_RU {
+  int frame_tx;
+  int slot_tx;
+  int next_slot;
+  openair0_timestamp timestamp_tx;
+  RU_t *ru;
+} processingData_RU_t;
 #endif //__PHY_DEFS_RU__H__

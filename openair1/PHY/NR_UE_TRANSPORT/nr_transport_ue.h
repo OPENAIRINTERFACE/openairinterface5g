@@ -38,10 +38,10 @@
 
 //#include "PHY/defs_nr_UE.h"
 #include "../NR_TRANSPORT/nr_transport_common_proto.h"
-#ifndef STANDALONE_COMPILE
+/*#ifndef STANDALONE_COMPILE
 #include "UTIL/LISTS/list.h"
 #endif
-
+*/
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 
@@ -55,34 +55,6 @@ typedef enum {
  NEW_TRANSMISSION_HARQ,
  RETRANSMISSION_HARQ
 } harq_result_t;
-
-//#if defined(UPGRADE_RAT_NR)
-#if 1
-typedef struct {
-  /// HARQ process id
-  uint8_t harq_id;
-  /// HARQ rx status
-  harq_result_t rx_status;
-  /// ACK bits (after decoding) 0:NACK / 1:ACK / 2:DTX
-  uint8_t ack;
-  /// send status (for PUCCH)
-  uint8_t send_harq_status;
-  /// nCCE (for PUCCH)
-  uint8_t nCCE;
-  /// DAI value detected from DCI1/1a/1b/1d/2/2a/2b/2c. 0xff indicates not touched
-  uint8_t vDAI_DL;
-  /// DAI value detected from DCI0/4. 0xff indicates not touched
-  uint8_t vDAI_UL;
-  /// allow to define pucch parameters TS 38.213 9.2.3 UE procedure for reporting HARQ-ACK
-  uint8_t  pucch_resource_indicator;
-  /// slot on which feedback ack should be send to network
-  uint16_t slot_for_feedback_ack;
-  /// index of a first CCE for the PDCCH reception
-  uint8_t  n_CCE;
-  /// number of CCEs in a control resource set of a PDCCH reception conveying DCI format 1_0
-  uint8_t  N_CCE;
-} NR_UE_HARQ_STATUS_t;
-#endif
 
 typedef struct {
   /// NDAPI struct for UE
@@ -105,6 +77,8 @@ typedef struct {
   uint8_t O_ACK;
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
+  /// Last Ndi for this harq process
+  uint8_t ndi;
   /// pointer to pdu from MAC interface (TS 36.212 V15.4.0, Sec 5.1 p. 8)
   unsigned char *a;
   /// Pointer to the payload + CRC 
@@ -139,6 +113,10 @@ typedef struct {
   uint32_t num_of_mod_symbols;
   // decode phich
   uint8_t decode_phich;
+  // Encoder BG
+  uint8_t BG;
+  // LDPC lifting size
+  uint32_t Z;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
@@ -177,9 +155,9 @@ typedef struct {
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_NR_CHANNEL_BITS];
   /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  uint32_t d_mod[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
+  int32_t d_mod[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
   /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
-  uint32_t y[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
+  int32_t y[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
   /*
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   uint8_t q[MAX_CQI_PAYLOAD];
@@ -228,8 +206,8 @@ typedef struct {
 } NR_UE_ULSCH_t;
 
 typedef struct {
-  /// Indicator of first transmission
-  uint8_t first_tx;
+  /// Indicator of first reception
+  uint8_t first_rx;
   /// Last Ndi received for this process on DCI (used for C-RNTI only)
   uint8_t DCINdi;
   /// DLSCH status flag indicating
@@ -313,7 +291,20 @@ typedef struct {
   /// codeword this transport block is mapped to
   uint8_t codeword;
   /// HARQ-ACKs
-  NR_UE_HARQ_STATUS_t harq_ack;
+  uint8_t ack;
+  /// PTRS Frequency Density
+  uint8_t PTRSFreqDensity;
+  /// PTRS Time Density
+  uint8_t PTRSTimeDensity;
+  uint8_t PTRSPortIndex ;
+  uint8_t nEpreRatioOfPDSCHToPTRS;
+  uint8_t PTRSReOffset;
+  /// bit mask of PT-RS ofdm symbol indicies
+  uint16_t ptrs_symbols;
+  // PTRS symbol index, to be updated every PTRS symbol within a slot.
+  uint8_t ptrs_symbol_index;
+  /// PDU BITMAP 
+  uint16_t pduBitmap;
 } NR_DL_UE_HARQ_t;
 
 typedef struct {

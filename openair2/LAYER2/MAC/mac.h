@@ -83,7 +83,7 @@
 
 #define MAX_MAC_INST 16
 #define BCCH_PAYLOAD_SIZE_MAX 128
-#define CCCH_PAYLOAD_SIZE_MAX 128
+#define CCCH_PAYLOAD_SIZE_MAX 512 
 #define PCCH_PAYLOAD_SIZE_MAX 128
 #define RAR_PAYLOAD_SIZE_MAX 128
 
@@ -143,7 +143,10 @@
 #define MAX_SUPPORTED_BW  4
 /*!\brief CQI values range from 1 to 15 (4 bits) */
 #define CQI_VALUE_RANGE 16
-
+/*!\brief Hysteresis of PUSCH power control loop */
+#define PUSCH_PCHYST 1
+/*!\brief Hysteresis of PUCCH power control loop */
+#define PUCCH_PCHYST 1
 /*!\brief value for indicating BSR Timer is not running */
 #define MAC_UE_BSR_TIMER_NOT_RUNNING   (0xFFFF)
 
@@ -469,6 +472,7 @@ typedef struct {
 #define BSR_TRIGGER_PADDING   (4) /* For Padding BSR Trigger */
 
 
+
 /*! \brief Downlink SCH PDU Structure */
 typedef struct {
   uint8_t payload[8][SCH_PAYLOAD_SIZE_MAX];
@@ -489,7 +493,7 @@ typedef struct {
 
 /*! \brief Uplink SCH PDU Structure */
 typedef struct {
-  int8_t payload[SCH_PAYLOAD_SIZE_MAX]; /*!< \brief SACH payload */
+  uint8_t payload[SCH_PAYLOAD_SIZE_MAX]; /*!< \brief SACH payload */
   uint16_t Pdu_size;
 } __attribute__ ((__packed__)) ULSCH_PDU;
 
@@ -614,6 +618,8 @@ typedef struct {
 
   // here for RX
   //
+
+  uint32_t ulsch_rounds[4];
   uint32_t ulsch_bitrate;
   //
   uint32_t ulsch_bytes_rx;
@@ -682,6 +688,17 @@ typedef struct {
   unsigned char lcid_sdu[NB_RB_MAX];
   // Length of SDU Got from LC DL
   uint32_t sdu_length_tx[NB_RB_MAX];
+
+  int lc_bytes_tx[64];
+  int dlsch_rounds[8];
+  int dlsch_errors;
+  int dlsch_total_bytes;
+
+  int lc_bytes_rx[64];
+  int ulsch_rounds[8];
+  int ulsch_errors;
+  int ulsch_total_bytes_scheduled;
+  int ulsch_total_bytes_rx;
 
 
   /// overall
@@ -775,7 +792,6 @@ typedef struct {
   uint32_t num_mac_sdu_rx;
   // Length of SDU Got from LC UL - Size array can be refined
   uint32_t      sdu_length_rx[NB_RB_MAX];
-
 } eNB_UE_STATS;
 /*! \brief eNB template for UE context information  */
 
@@ -906,6 +922,11 @@ typedef struct {
   uint32_t pucch_tpc_tx_frame;
   uint32_t pucch_tpc_tx_subframe;
 
+  /// stores the frame where the last bler was calculated
+  uint32_t pusch_bler_calc_frame;
+  uint32_t pusch_bler_calc_subframe;
+
+
   uint8_t rach_resource_type;
   uint16_t mpdcch_repetition_cnt;
   frame_t Msg2_frame;
@@ -928,6 +949,8 @@ typedef struct {
 
   /// Current DL harq round per harq_pid on each CC
   uint8_t round[NFAPI_CC_MAX][10];
+  uint32_t ret_cnt[NFAPI_CC_MAX];
+  uint32_t first_cnt[NFAPI_CC_MAX];
   /// Current Active TBs per harq_pid on each CC
   uint8_t tbcnt[NFAPI_CC_MAX][10];
   /// Current UL harq round per harq_pid on each CC
@@ -937,6 +960,7 @@ typedef struct {
   unsigned char rballoc_sub_UE[NFAPI_CC_MAX][N_RBG_MAX];
   int pre_dci_dl_pdu_idx;
   uint16_t ta_timer;
+  double ta_update_f;
   int16_t ta_update;
   uint16_t ul_consecutive_errors;
   int32_t context_active_timer;
@@ -954,17 +978,27 @@ typedef struct {
   int32_t phr_received;
   uint8_t periodic_ri_received[NFAPI_CC_MAX];
   uint8_t aperiodic_ri_received[NFAPI_CC_MAX];
-  uint8_t pucch1_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch1_snr[NFAPI_CC_MAX];
-  uint8_t pucch2_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch2_snr[NFAPI_CC_MAX];
-  uint8_t pucch3_cqi_update[NFAPI_CC_MAX];
-  uint8_t pucch3_snr[NFAPI_CC_MAX];
-  uint8_t pusch_snr[NFAPI_CC_MAX];
+  int16_t pucch1_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch1_snr[NFAPI_CC_MAX];
+  int16_t pucch2_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch2_snr[NFAPI_CC_MAX];
+  int16_t pucch3_cqi_update[NFAPI_CC_MAX];
+  int16_t pucch3_snr[NFAPI_CC_MAX];
+  double  pusch_cqi_f[NFAPI_CC_MAX];
+  int16_t pusch_cqi[NFAPI_CC_MAX];
+  int16_t pusch_snr[NFAPI_CC_MAX];
+  int16_t pusch_snr_avg[NFAPI_CC_MAX];
+  uint64_t pusch_rx_num[NFAPI_CC_MAX];
+  uint64_t pusch_rx_num_old[NFAPI_CC_MAX];
+  uint64_t pusch_rx_error_num[NFAPI_CC_MAX];
+  uint64_t pusch_rx_error_num_old[NFAPI_CC_MAX];
+  double  pusch_bler[NFAPI_CC_MAX];
+  uint8_t  mcs_offset[NFAPI_CC_MAX];
   uint16_t feedback_cnt[NFAPI_CC_MAX];
   uint16_t timing_advance;
   uint16_t timing_advance_r9;
-  uint8_t tpc_accumulated[NFAPI_CC_MAX];
+  int8_t pusch_tpc_accumulated[NFAPI_CC_MAX];
+  int8_t pucch_tpc_accumulated[NFAPI_CC_MAX];
   uint8_t periodic_wideband_cqi[NFAPI_CC_MAX];
   uint8_t periodic_wideband_spatial_diffcqi[NFAPI_CC_MAX];
   uint8_t periodic_wideband_pmi[NFAPI_CC_MAX];
@@ -1039,6 +1073,7 @@ typedef struct {
   /// DRX UL retransmission timer, one per UL HARQ process
   /* Not implemented yet */
   /* End of C-DRX related timers */
+  uint32_t rlc_out_of_resources_cnt;
 } UE_sched_ctrl_t;
 
 /*! \brief eNB template for the Random access information */
@@ -1157,6 +1192,8 @@ typedef struct {
   rnti_t rnti;
   ///remove UE context flag
   boolean_t removeContextFlg;
+  ///remove RA flag
+  boolean_t raFlag;
 } UE_free_ctrl_t;
 /*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
 typedef struct {
@@ -1323,6 +1360,7 @@ typedef struct {
   uint8_t FeMBMS_flag;
 } COMMON_channels_t;
 /*! \brief top level eNB MAC structure */
+
 typedef struct eNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
   eth_params_t eth_params_n;
@@ -1416,6 +1454,17 @@ typedef struct eNB_MAC_INST_s {
 
   int32_t puSch10xSnr;
   int32_t puCch10xSnr;
+
+  int max_ul_rb_index;
+
+  int ue_multiple_max;
+
+  int use_mcs_offset;
+
+  double bler_lower;
+
+  double bler_upper;
+  pthread_t mac_stats_thread;
 } eNB_MAC_INST;
 
 /*

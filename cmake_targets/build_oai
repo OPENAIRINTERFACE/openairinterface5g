@@ -27,9 +27,8 @@
 set -e
 
 # Include helper functions
-ORIGIN_PATH=$PWD
-THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
-source $THIS_SCRIPT_PATH/tools/build_helper
+THIS_SCRIPT_PATH=$(dirname $(readlink -f "$0"))
+source "$THIS_SCRIPT_PATH"/tools/build_helper
 
 # Set environment variables (OPENAIR_HOME, ...)
 set_openair_env
@@ -38,19 +37,18 @@ set_openair_env
 gen_nvram_path=$OPENAIR_DIR/targets/bin
 conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
-MSC_GEN=0
 XFORMS="True"
 SKIP_SHARED_LIB_FLAG="False"
 UE_EXPANSION="False"
-UESIM_EXPANSION="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="False" #Only valid when low-latency flag is set to False
 REL="Rel15"
 HW="None"
-TP="None"
+TP="Ethernet"
 EPC=0
+VERBOSE_CI=0
 VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
@@ -64,10 +62,14 @@ CMAKE_CMD="$CMAKE"
 UE_AUTOTEST_TRACE="False"
 UE_DEBUG_TRACE="False"
 UE_TIMING_TRACE="False"
+NOAVX512="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
+ITTI_SIM="False"
+SANITIZE_ADDRESS="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
+RU=0
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -102,6 +104,8 @@ Options
   Makes the NR softmodem
 --nrUE
   Makes the NR UE softmodem
+--RU
+  Makes the OAI RRU
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --UE-conf-nvram [configuration file]
@@ -113,7 +117,7 @@ Options
 -a | --agent
    Enables agent for software-defined control of the eNB
 -w | --hardware
-   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, None (Default)
+   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, AW2SORI, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -P | --phy_simulators
    Makes the unitary tests Layer 1 simulators
@@ -158,8 +162,12 @@ Options
    Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
+--noavx512
+   Build without AVX512 if it is present on CPU
 -k | --skip-shared-libraries
    Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
+--ittiSIM
+  Makes the itti simulator
 -h | --help
    Print this help
 
@@ -201,28 +209,24 @@ function main() {
        -g | --run-with-gdb)
             case "$2" in
                 "Release")
-                    GDB=0
                     CMAKE_BUILD_TYPE="Release"
                     echo_info "Will Compile without gdb symbols and with compiler optimization"
                     CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Release"
                     shift
                     ;;
                 "RelWithDebInfo")
-                    GDB=0
                     CMAKE_BUILD_TYPE="RelWithDebInfo"
                     echo_info "Will Compile with gdb symbols"
-                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+                    CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1"
                     shift
                     ;;
                 "MinSizeRel")
-                    GDB=0
                     CMAKE_BUILD_TYPE="MinSizeRel"
                     echo_info "Will Compile for minimal exec size"
                     CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=MinSizeRel"
                     shift
                     ;;
                 "Debug" | *)
-                    GDB=1
                     CMAKE_BUILD_TYPE="Debug"
                     echo_info "Will Compile with gdb symbols and disable compiler optimization"
                     CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
@@ -245,9 +249,12 @@ function main() {
             shift;;
       --gNB)
             gNB=1
-            NR="True"
             echo_info "Will compile gNB"
             shift;;
+       --RU)
+            RU=1
+            echo_info "Will compile RRU"
+	    shift;;
        -a | --agent)
             echo_info "FlexRAN support is always compiled into the eNB"
             shift;;
@@ -257,22 +264,18 @@ function main() {
             shift;;
        --nrUE)
             nrUE=1
-            NR="True"
+            rfsimNas=1
             echo_info "Will compile NR UE"
             shift;;
        --mu)
             UE_EXPANSION="True"
             echo_info "Will compile with UE_EXPANSION"
             shift;;
-       --musim)
-            UESIM_EXPANSION="True"
-            echo_info "Will compile with UESIM_EXPANSION"
-            shift;;
        --UE-conf-nvram)
-            conf_nvram_path=$(readlink -f $2)
+            conf_nvram_path=$(readlink -f "$2")
             shift 2;;
        --UE-gen-nvram)
-            gen_nvram_path=$(readlink -f $2)
+            gen_nvram_path=$(readlink -f "$2")
             shift 2;;
        -w | --hardware)
             # Use OAI_USRP as the key word USRP is used inside UHD driver           
@@ -280,7 +283,7 @@ function main() {
                 "EXMIMO")
                     HW="EXMIMO"
                     ;;
-                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU")
+                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU" | "AW2SORI")
                     HW="OAI_"$2
                     ;;
                 "None")
@@ -290,6 +293,9 @@ function main() {
                     echo_fatal "Unknown HW type $HW: exit..."
             esac
 			echo_info "Setting hardware to: $HW"
+            shift 2;;
+       -t | --transport)
+	    TP=$2
             shift 2;;
        -P | --phy_simulators)
             SIMUS_PHY=1
@@ -326,8 +332,12 @@ function main() {
             HWLAT_TEST=1
             echo_info "Will compile hw latency test program"
             shift;;
+       --verbose-ci)
+            VERBOSE_CI=1
+            echo_info "Will compile with verbose instructions in CI Docker env"
+            shift;;
        --verbose-compile)
-	        VERBOSE_COMPILE=1
+            VERBOSE_COMPILE=1
             echo_info "Will compile with verbose instructions"
             shift;;
        --cflags_processor)
@@ -410,6 +420,10 @@ function main() {
             USRP_REC_PLAY="True"
             echo_info "Enabling USRP record playback mode"
             shift 1;;
+        --noavx512)
+            NOAVX512="True"
+            echo_info "Disabling AVX512"
+            shift 1;;
         -k | --skip-shared-libraries)
             SKIP_SHARED_LIB_FLAG="True"
             echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
@@ -418,6 +432,14 @@ function main() {
         CMAKE_CMD="$CMAKE_CMD -GNinja"
 	MAKE_CMD=ninja
 	shift;;
+    --sanitize-address | -fsanitize=address)
+        SANITIZE_ADDRESS=True
+        shift;;
+      --ittiSIM)
+            ittiSIM=1
+            ITTI_SIM="True"
+            echo_info "Will compile itti simulator"
+            shift;;
         -h | --help)
             print_help
             exit 1;;
@@ -488,11 +510,6 @@ function main() {
   echo_info "Flags for Deadline scheduler: $DEADLINE_SCHEDULER_FLAG_USER"
   echo_info "Flags for CPU Affinity: $CPU_AFFINITY_FLAG_USER"
 
-  if [ -n "$UHD_IMAGES_DIR" ] && [ -z "$INSTALL_EXTERNAL" ]; then
-    echo_error "UHD images download settings will not be applied without -I present"
-    exit
-  fi
-  
   #######################################################
   # Setting and printing OAI envs, we should check here #
   #######################################################
@@ -527,7 +544,7 @@ function main() {
     if [ "$HW" == "OAI_USRP" ] ; then
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
-      if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
+      if [ ! -v BUILD_UHD_FROM_SOURCE ] && [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
         install_usrp_uhd_driver $UHD_IMAGES_DIR
       fi
     fi 
@@ -549,9 +566,10 @@ function main() {
       #  flash_firmware_iris
       #fi
     fi
-    echo_info "installing protobuf/protobuf-c for flexran agent support"
+    echo_info "Installing protobuf/protobuf-c for flexran agent support"
     install_protobuf_from_source
     install_protobuf_c_from_source
+    echo_success "protobuf/protobuf-c installation successful"
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then
@@ -580,7 +598,7 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" -o "$rfsimNas" = "1" ] ; then
 
     # softmodem compilation
 
@@ -592,7 +610,6 @@ function main() {
     echo "set ( UE_EXPANSION $UE_EXPANSION )"                             >> $cmake_file
 #    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"                            >> $cmake_file
     echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"                           >> $cmake_file
-    echo "set ( UESIM_EXPANSION $UESIM_EXPANSION )"                       >> $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"                            >> $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"                                      >> $cmake_file
     echo "set ( TRANSP_PRO \"${TP}\")"                                    >> $cmake_file
@@ -604,7 +621,10 @@ function main() {
     echo "set ( UE_DEBUG_TRACE $UE_DEBUG_TRACE )"                         >> $cmake_file
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
+    echo "set ( NOAVX512 $NOAVX512 )"                                     >> $cmake_file
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
+    echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
+    echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
     cd  $DIR/$build_dir/build
     eval $CMAKE_CMD
@@ -619,11 +639,18 @@ function main() {
     if [ "$gNB" = "1" ] ; then
       execlist="$execlist nr-softmodem"
     fi
+    if [ "$RU" = "1" ] ; then
+      execlist="$execlist oairu"
+    fi
     if [ "$UE" = 1 ] ; then
       execlist="$execlist lte-uesoftmodem"
     fi
     if [ "$nrUE" = 1 ] ; then
       execlist="$execlist nr-uesoftmodem"
+    fi
+
+    if [ "$ittiSIM" = "1" ] ; then
+      execlist="$execlist nr-ittisim"
     fi
 
     for f in $execlist ; do
@@ -643,28 +670,26 @@ function main() {
         $build_dir $config_libconfig_shlib \
         lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
 
-      compilations \
-        $build_dir coding \
-        libcoding.so $dbin/libcoding.so
+        compilations \
+          $build_dir coding \
+          libcoding.so $dbin/libcoding.so
 
-      compilations \
-        $build_dir nasmesh \
-        CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-
-      compilations \
-        $build_dir rb_tool \
-        rb_tool $dbin/rb_tool
-      cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
     fi
-
   fi
 
   if [ "$UE" = 1 ] ; then
 
     echo_info "Compiling UE specific part"
-    compilations \
-      $build_dir ue_ip \
-      CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+
+    if [ $IS_CONTAINER -eq 0 ]
+    then
+      echo_info "Building ue_ip module"
+      compilations \
+        $build_dir ue_ip \
+        CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+    else
+      echo_info "Bypassing ue_ip build"
+    fi #IS_CONTAINER
 
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build
@@ -831,7 +856,7 @@ function main() {
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1"  -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
@@ -895,6 +920,14 @@ function main() {
                   echo_error "== FAILED == Unexpected Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
               fi
               echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library for Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
+          elif [ "$HW" == "OAI_AW2SORI" ] ; then
+	      compilations \
+		  $build_dir aw2sori_transpro \
+                  libaw2sori_transpro.so $dbin/libaw2sori_transpro.so.$REL 
+
+              ln -sf libaw2sori_transpro.so libthirdparty_transpro.so
+              ln -sf $dbin/libaw2sori_transpro.so.$REL $dbin/libaw2sori_transpro.so
+              echo_info "build libthirdparty_transpro.so for AW2SORI fronthaul"
           else
               echo_info "liboai_device.so is not linked to any device library"
           fi
@@ -918,12 +951,30 @@ function main() {
           echo_info "Building transport protocol libraries"
           rm -f liboai_transpro.so
           rm -f $dbin/liboai_transpro.so
-          compilations \
-              $build_dir oai_eth_transpro \
-              liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-          ln -sf liboai_eth_transpro.so liboai_transpro.so
-          ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
-          echo_info "liboai_transpro.so is linked to ETHERNET transport"
+	  if [ "$TP" == "Ethernet" ]; then
+              compilations \
+		  $build_dir oai_eth_transpro \
+		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+              ln -sf liboai_eth_transpro.so liboai_transpro.so
+              ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+              echo_info "liboai_transpro.so is linked to ETHERNET transport"
+	  fi
+	  if [ "$TP" == "benetel4g" ]; then
+              compilations \
+		  $build_dir benetel_4g \
+		  libbenetel_4g.so $dbin/libbenetel_4g.$REL
+              ln -sf libbenetel_4g.so liboai_transpro.so
+              ln -sf $dbin/libbenetel_4g.so.$REL $dbin/liboai_transpro.so
+              echo_info "liboai_transpro.so is linked to BENETEL4G transport"
+	  fi
+	  if [ "$TP" == "benetel5g" ]; then
+              compilations \
+		  $build_dir benetel_5g \
+		  libbenetel_5g.so $dbin/libbenetel_5g.$REL
+              ln -sf libbenetel_5g.so liboai_transpro.so
+              ln -sf $dbin/libbenetel_5g.so.$REL $dbin/liboai_transpro.so
+              echo_info "liboai_transpro.so is linked to BENETEL4G transport"
+	  fi
       fi
   fi
 

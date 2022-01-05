@@ -1,8 +1,4 @@
 
-static int cmpdouble(const void *p1, const void *p2) {
-  return *(double *)p1 > *(double *)p2;
-}
-
 double median(varArray_t *input) {
   return *(double *)((uint8_t *)(input+1)+(input->size/2)*input->atomSize);
 }
@@ -50,13 +46,13 @@ void sumUpStatsSlot(time_stats_t *res, time_stats_t src[RX_NB_TH][2], int lastAc
 }
 
 double squareRoot(time_stats_t *ptr) {
-  double timeBase=1/(1000*cpu_freq_GHz);
+  double timeBase=1/(1000*get_cpu_freq_GHz());
   return sqrt((double)ptr->diff_square*pow(timeBase,2)/ptr->trials -
               pow((double)ptr->diff/ptr->trials*timeBase,2));
 }
 
 void printDistribution(time_stats_t *ptr, varArray_t *sortedList, char *txt) {
-  double timeBase=1/(1000*cpu_freq_GHz);
+  double timeBase=1/(1000*get_cpu_freq_GHz());
   printf("%-43s %6.2f us (%d trials)\n",
          txt,
          (double)ptr->diff/ptr->trials*timeBase,
@@ -73,7 +69,7 @@ void printStatIndent(time_stats_t *ptr, char *txt) {
 }
 
 void printStatIndent2(time_stats_t *ptr, char *txt) {
-  double timeBase=1/(1000*cpu_freq_GHz);
+  double timeBase=1/(1000*get_cpu_freq_GHz());
   printf("    |__ %-34s %6.2f us (%3d trials)\n",
          txt,
          ptr->trials?((double)ptr->diff)/ptr->trials*timeBase:0,
@@ -81,7 +77,7 @@ void printStatIndent2(time_stats_t *ptr, char *txt) {
 }
 
 void printStatIndent3(time_stats_t *ptr, char *txt) {
-  double timeBase=1/(1000*cpu_freq_GHz);
+  double timeBase=1/(1000*get_cpu_freq_GHz());
   printf("        |__ %-30s %6.2f us (%3d trials)\n",
          txt,
          ptr->trials?((double)ptr->diff)/ptr->trials*timeBase:0,

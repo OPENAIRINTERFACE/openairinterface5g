@@ -32,6 +32,7 @@
 #include "lte-softmodem.h"
 
 #include "rt_wrapper.h"
+#include "system.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "RRC/LTE/rrc_extern.h"
@@ -95,6 +96,7 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
 
 
+int	tx_req_num_elems;
 extern uint16_t sf_ahead;
 //extern int tx_req_UE_MAC1();
 
@@ -181,9 +183,8 @@ PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t abstraction_flag)
 
 {
-  PHY_VARS_UE *ue = (PHY_VARS_UE *)malloc(sizeof(PHY_VARS_UE));
-  memset(ue,0,sizeof(PHY_VARS_UE));
-
+  PHY_VARS_UE *ue = (PHY_VARS_UE *)calloc(1,sizeof(PHY_VARS_UE));
+  AssertFatal(ue,"");
   if (frame_parms!=(LTE_DL_FRAME_PARMS *)NULL) { // if we want to give initial frame parms, allocate the PHY_VARS_UE structure and put them in
     memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   }
@@ -230,14 +231,23 @@ void init_thread(int sched_runtime,
   }
 
 #else
+  int settingPriority = 1;
 
-  if (CPU_COUNT(cpuset) > 0)
-    AssertFatal( 0 == pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), cpuset), "");
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        settingPriority = 0;
 
-  struct sched_param sp;
-  sp.sched_priority = sched_fifo;
-  AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO,&sp)==0,
-              "Can't set thread priority, Are you root?\n");
+  if (settingPriority) {
+    if (CPU_COUNT(cpuset) > 0)
+      AssertFatal( 0 == pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), cpuset), "");
+
+    struct sched_param sp;
+    sp.sched_priority = sched_fifo;
+    AssertFatal(pthread_setschedparam(pthread_self(),SCHED_FIFO,&sp)==0,
+                "Can't set thread priority, Are you root?\n");
+  }
+
   /* Check the actual affinity mask assigned to the thread */
   cpu_set_t *cset=CPU_ALLOC(CPU_SETSIZE);
 
@@ -283,13 +293,7 @@ void init_UE(int nb_inst,
 
     LOG_I(PHY,"Allocating UE context %d\n",inst);
 
-    if ( !IS_SOFTMODEM_SIML1 ) PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
-    else {
-      // needed for memcopy below. these are not used in the RU, but needed for UE
-      RC.ru[0]->frame_parms->nb_antennas_rx = fp0->nb_antennas_rx;
-      RC.ru[0]->frame_parms->nb_antennas_tx = fp0->nb_antennas_tx;
-      PHY_vars_UE_g[inst][0]  = init_ue_vars(RC.ru[0]->frame_parms,inst,0);
-    }
+    PHY_vars_UE_g[inst][0] = init_ue_vars(fp0,inst,0);
 
     // turn off timing control loop in UE
     PHY_vars_UE_g[inst][0]->no_timing_correction = timing_correction;
@@ -371,17 +375,13 @@ void init_UE(int nb_inst,
        */
       UE->N_TA_offset = 0;
 
-    if (IS_SOFTMODEM_SIML1 ) init_ue_devices(UE);
-
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);
 
-    if (!IS_SOFTMODEM_SIML1 ) {
-      ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
+    ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
 
-      if (ret !=0) {
-        exit_fun("Error loading device library");
-      }
+    if (ret !=0) {
+      exit_fun("Error loading device library");
     }
 
     UE->rfdevice.host_type = RAU_HOST;
@@ -787,10 +787,10 @@ static void *UE_thread_rxn_txnp4(void *arg)
   if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.one != -1 )
     CPU_SET(threads.one, &cpuset);
 
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
+  if ( RX_NB_TH > 1 && (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
     CPU_SET(threads.two, &cpuset);
 
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
+  if ( RX_NB_TH > 2 && (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
     CPU_SET(threads.three, &cpuset);
 
   //CPU_SET(threads.three, &cpuset);
@@ -1596,7 +1596,7 @@ void *UE_thread(void *arg)
   wait_sync("UE thread");
 #ifdef NAS_UE
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+  message_p = itti_alloc_new_message(TASK_NAS_UE, 0, INITIALIZE_MESSAGE);
   itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
   int sub_frame=-1;
@@ -1976,7 +1976,7 @@ void init_UE_single_thread_stub(int nb_inst)
     if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
 #ifdef NAS_UE
       MessageDef *message_p;
-      message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+      message_p = itti_alloc_new_message(TASK_NAS_UE, 0, INITIALIZE_MESSAGE);
       itti_send_msg_to_task (TASK_NAS_UE, i + NB_eNB_INST, message_p);
 #endif
     }
@@ -2067,7 +2067,6 @@ void init_UE_threads_stub(int inst)
 }
 
 
-#ifdef OPENAIR2
 void fill_ue_band_info(void)
 {
   LTE_UE_EUTRA_Capability_t *UE_EUTRA_Capability = UE_rrc_inst[0].UECap->UE_EUTRA_Capability;
@@ -2092,7 +2091,6 @@ void fill_ue_band_info(void)
       }
   }
 }
-#endif
 
 int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
                      openair0_config_t *openair0_cfg)

@@ -164,8 +164,10 @@ typedef struct {
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **ul_ch_magb;
-  /// measured RX power based on DRS
-  int ulsch_power[2];
+  /// measured RX power based on DMRS
+  int ulsch_power[4];
+  /// measured RX power of noise
+  int ulsch_noise_power[4];
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
@@ -214,6 +216,58 @@ typedef struct {
   int llr8_flag;
   int ret;
 } td_params;
+
+/// Context data structure for RX/TX portion of subframe processing
+typedef struct {
+  /// Component Carrier index
+  uint8_t              CC_id;
+  /// timestamp transmitted to HW
+  openair0_timestamp timestamp_tx;
+  openair0_timestamp timestamp_rx;
+  /// subframe to act upon for transmission
+  int subframe_tx;
+  /// subframe to act upon for reception
+  int subframe_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame to act upon for reception
+  int frame_rx;
+  int frame_prach;
+  int subframe_prach;
+  int frame_prach_br;
+  int subframe_prach_br;
+  /// \brief Instance count for RXn-TXnp4 processing thread.
+  /// \internal This variable is protected by \ref mutex_rxtx.
+  int instance_cnt;
+  /// pthread structure for RXn-TXnp4 processing thread
+  pthread_t pthread;
+  /// pthread attributes for RXn-TXnp4 processing thread
+  pthread_attr_t attr;
+  /// condition variable for tx processing thread
+  pthread_cond_t cond;
+  /// mutex for RXn-TXnp4 processing thread
+  pthread_mutex_t mutex;
+  /// scheduling parameters for RXn-TXnp4 thread
+  struct sched_param sched_param_rxtx;
+
+  /// \internal This variable is protected by \ref mutex_RUs.
+  int instance_cnt_RUs;
+  /// condition variable for tx processing thread
+  pthread_cond_t cond_RUs;
+  /// mutex for RXn-TXnp4 processing thread
+  pthread_mutex_t mutex_RUs;
+  tpool_t *threadPool;
+  int nbEncode;
+  int nbDecode;
+  notifiedFIFO_t *respEncode;
+  notifiedFIFO_t *respDecode;
+    pthread_mutex_t mutex_emulateRF;
+  int instance_cnt_emulateRF;
+  pthread_t pthread_emulateRF;
+  pthread_attr_t attr_emulateRF;
+  pthread_cond_t cond_emulateRF;
+  int first_rx;
+} L1_rxtx_proc_t;
 
 typedef struct {
   struct PHY_VARS_eNB_s *eNB;
@@ -360,8 +414,11 @@ typedef struct L1_proc_t_s {
   L1_rxtx_proc_t L1_proc,L1_proc_tx;
   /// stats thread pthread descriptor
   pthread_t process_stats_thread;
+  /// L1 stats pthread descriptor
+  pthread_t L1_stats_thread;
   /// for waking up tx procedure
   RU_proc_t *ru_proc;
+  struct PHY_VARS_eNB_s *eNB;
 } L1_proc_t;
 
 
@@ -389,36 +446,77 @@ typedef struct {
   short n0_subband_power_tot_dB[100];
   //! estimated avg noise power per RB (dBm)
   short n0_subband_power_tot_dBm[100];
+  //! etimated avg noise power over all RB (dB)
+  short n0_subband_power_avg_dB;
   // eNB measurements (per user)
   //! estimated received spatial signal power (linear)
-  unsigned int   rx_spatial_power[NUMBER_OF_UE_MAX][2][2];
+  unsigned int   rx_spatial_power[NUMBER_OF_SRS_MAX][2][2];
   //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_UE_MAX][2][2];
+  unsigned short rx_spatial_power_dB[NUMBER_OF_SRS_MAX][2][2];
   //! estimated rssi (dBm)
-  short          rx_rssi_dBm[NUMBER_OF_UE_MAX];
+  short          rx_rssi_dBm[NUMBER_OF_SRS_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_UE_MAX][2];
+  int            rx_correlation[NUMBER_OF_SRS_MAX][2];
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation_dB[NUMBER_OF_UE_MAX][2];
+  int            rx_correlation_dB[NUMBER_OF_SRS_MAX][2];
 
   /// Wideband CQI (= SINR)
-  int            wideband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  int            wideband_cqi[NUMBER_OF_SRS_MAX][MAX_NUM_RU_PER_eNB];
   /// Wideband CQI in dB (= SINR dB)
-  int            wideband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB];
+  int            wideband_cqi_dB[NUMBER_OF_SRS_MAX][MAX_NUM_RU_PER_eNB];
   /// Wideband CQI (sum of all RX antennas, in dB)
-  char           wideband_cqi_tot[NUMBER_OF_UE_MAX];
+  char           wideband_cqi_tot[NUMBER_OF_SRS_MAX];
   /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  int            subband_cqi[NUMBER_OF_SRS_MAX][MAX_NUM_RU_PER_eNB][100];
   /// Total Subband CQI and RB (= SINR)
   int            subband_cqi_tot[NUMBER_OF_UE_MAX][100];
   /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_UE_MAX][MAX_NUM_RU_PER_eNB][100];
+  int            subband_cqi_dB[NUMBER_OF_SRS_MAX][MAX_NUM_RU_PER_eNB][100];
   /// Total Subband CQI and RB
-  int            subband_cqi_tot_dB[NUMBER_OF_UE_MAX][100];
+  int            subband_cqi_tot_dB[NUMBER_OF_SRS_MAX][100];
   /// PRACH background noise level
   int            prach_I0;
+  /// PUCCH background noise level
+  int            n0_pucch_dB;
 } PHY_MEASUREMENTS_eNB;
 
+typedef struct {
+  uint16_t rnti;
+  int frame;
+  int round_trials[8];
+  int total_bytes_tx;
+  int total_bytes_rx;
+  int current_G;
+  int current_TBS;
+  int current_Qm;
+  int current_mcs;
+  int current_RI;
+  int timing_offset;
+  int ulsch_power[4];
+  int ulsch_noise_power[4];
+} eNB_SCH_STATS_t;
+
+typedef struct {
+  uint16_t rnti;
+  int frame;
+  int pucch1_trials;
+  int pucch1_thres;
+  int current_pucch1_stat_pos;
+  int current_pucch1_stat_neg;
+  int pucch1_positive_SR;
+  int pucch1_low_stat[4];
+  int pucch1_high_stat[4];
+  int pucch1_phase;
+  int pucch1a_trials;
+  int current_pucch1a_stat_re;
+  int current_pucch1a_stat_im;
+  int pucch1ab_DTX;
+  int pucch1b_trials;
+  int current_pucch1b_stat_re;
+  int current_pucch1b_stat_im;
+  int pucch3_trials;
+  int current_pucch3_stat;
+} eNB_UCI_STATS_t;
 
 /// Top-level PHY Data Structure for eNB
 typedef struct PHY_VARS_eNB_s {
@@ -466,13 +564,13 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_MPDCCH       mpdcch_vars[2];
   LTE_eNB_PRACH        prach_vars_br;
   LTE_eNB_COMMON       common_vars;
-  LTE_eNB_UCI          uci_vars[NUMBER_OF_UCI_VARS_MAX];
-  LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_UCI          uci_vars[NUMBER_OF_UCI_MAX];
+  LTE_eNB_SRS          srs_vars[NUMBER_OF_SRS_MAX];
   LTE_eNB_PBCH         pbch;
-  LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_ULSCH_MAX];
   LTE_eNB_PRACH        prach_vars;
-  LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
-  LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
+  LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_DLSCH_MAX][2];   // Num active DLSCH contexts times two spatial streams
+  LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_ULSCH_MAX];      // Num active ULSCH contexts
   LTE_eNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   LTE_eNB_DLSCH_t     *dlsch_MCH;
   LTE_eNB_DLSCH_t     *dlsch_PCH;
@@ -483,7 +581,7 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t         lte_gold_table[20][2][14];
 
   /// UE-specific reference symbols (p=5), TM 7
-  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_UE_MAX][20][38];
+  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_DLSCH_MAX][20][38];
 
   /// UE-specific reference symbols (p=7...14), TM 8/9/10
   uint32_t         lte_gold_uespec_table[2][20][2][21];
@@ -515,6 +613,9 @@ typedef struct PHY_VARS_eNB_s {
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
   char eNB_generate_rar;
 
+  /// indicator that eNB signal generation uses DTX (i.e. signal is cleared in each subframe
+  int use_DTX;
+  int32_t **subframe_mask;
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_UE_MAX];
 
@@ -586,7 +687,12 @@ typedef struct PHY_VARS_eNB_s {
   /// Information regarding TM5
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
 
-
+  /// statistics for DLSCH measurement collection
+  eNB_SCH_STATS_t dlsch_stats[NUMBER_OF_SCH_STATS_MAX];
+  /// statistics for ULSCH measurement collection
+  eNB_SCH_STATS_t ulsch_stats[NUMBER_OF_SCH_STATS_MAX];
+  /// statis for UCI (PUCCH) measurement collection
+  eNB_UCI_STATS_t uci_stats[NUMBER_OF_SCH_STATS_MAX];
   /// target_ue_dl_mcs : only for debug purposes
   uint32_t target_ue_dl_mcs;
   /// target_ue_ul_mcs : only for debug purposes
@@ -665,6 +771,7 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
   uint8_t *FS6bufferZone;
+  int32_t pusch_signal_threshold;
 } PHY_VARS_eNB;
 
 

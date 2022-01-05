@@ -100,14 +100,110 @@ Some other useful paramters of the UE are
  - --clock-source: sets the clock-source (internal or external). 
  - --time-source: sets the time-source (internal or external). 
 
-
 ## noS1 setup with OAI UE
 
 Instead of randomly generated payload, in the phy-test mode we can also inject/receive user-plane traffic over a TUN interface. This is the so-called noS1 mode. 
 
 This setup is described in the [rfsimulator page](../targets/ARCH/rfsimulator/README.md#5g-case). In theory this should also work with the real hardware target although this has yet to be tested.
 
+## do-ra setup with OAI
 
+The do-ra flag is used to ran the NR Random Access procedures in contention-free mode. Currently OAI implements the RACH process from Msg1 to Msg3. 
+
+In order to run the RA, the following flag is needed for both the gNB and the UE:
+
+`--do-ra`
+
+### Run OAI in do-ra mode
+
+From the `cmake_targets/ran_build/build` folder:
+
+gNB on machine 1:
+
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra`
+
+UE on machine 2:
+
+`sudo ./nr-uesoftmodem --do-ra`
+
+With the RF simulator (on the same machine):
+
+`sudo RFSIMULATOR=gnb ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
+
+`sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
+
+## SA setup with OAI
+
+The sa flag is used to run gNB in standalone mode.
+
+In order to run gNB and UE in standalone mode, the following flag is needed:
+
+`--sa`
+
+At the gNB the --sa flag does the following:
+- The RRC encodes SIB1 according to the configuration file and transmits it through NR-BCCH-DL-SCH.
+
+At the UE the --sa flag will:
+- Decode SIB1 and starts the 5G NR Initial Access Procedure for SA:
+  1) 5G-NR RRC Connection Setup
+  2) NAS Authentication and Security
+  3) 5G-NR AS Security Procedure
+  4) 5G-NR RRC Reconfiguration
+  5) Start Downlink and Uplink Data Transfer
+
+### Run OAI in SA mode
+
+From the `cmake_targets/ran_build/build` folder:
+
+gNB on machine 1:
+
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --sa`
+
+UE on machine 2:
+
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --sa`
+
+With the RF simulator (on the same machine):
+
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa`
+
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa`
+
+## IF setup with OAI
+
+The -C and --CO flags can be used together at UE side to set custom downlink and uplink FR1 arbitrary frequencies for the IF equipment.
+
+In order to run this setup, the following flags are needed at the UE side:
+
+`-C` 
+
+`--CO`
+
+and the following parameters must be configured in the RUs section of the gNB configuration file:
+
+`if_freq`
+
+`if_offset`
+
+The values must be given in Hz.
+
+### Run OAI with custom DL/UL arbitrary frequencies
+
+The following example uses DL frequency 2169.080 MHz and UL frequency offset -400 MHz, with a configuration file for band 66 (FDD) at gNB side.
+
+From the `cmake_targets/ran_build/build` folder:
+
+gNB on machine 1:
+
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band66.tm1.106PRB.usrpx300.conf`
+
+UE on machine 2:
+
+`sudo ./nr-uesoftmodem -C 2169080000 --CO -400000000`
+
+
+
+[Selecting an alternative ldpc implementation at run time](../openair1/PHY/CODING/DOC/LDPCImplementation.md)
 
 [oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
 

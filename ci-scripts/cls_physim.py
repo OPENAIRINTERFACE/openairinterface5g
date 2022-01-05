@@ -123,10 +123,10 @@ class PhySim:
 #-----------------$
 
 	def Build_PhySim(self,htmlObj,constObj):
-		mySSH = sshconnection.SSHConnection()    
+		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
 
-		#create working dir    
+		#create working dir
 		mySSH.command('mkdir -p ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 
@@ -135,9 +135,9 @@ class PhySim:
 
 		#git clone
 		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone '  + self.ranRepository + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		#git config 
+		#git config
 		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5) 
+		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
 
 		#git clean depending on self.forced_workspace_cleanup captured in xml
 		if self.forced_workspace_cleanup==True:
@@ -148,8 +148,8 @@ class PhySim:
 
 		# if the commit ID is provided, use it to point to it
 		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 5)
-		# if the branch is not develop, then it is a merge request and we need to do 
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
+		# if the branch is not develop, then it is a merge request and we need to do
 		# the potential merge. Note that merge conflicts should have already been checked earlier
 		if (self.ranAllowMerge):
 			if self.ranTargetBranch == '':
@@ -164,7 +164,7 @@ class PhySim:
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p log', '\$', 5)
 		mySSH.command('chmod 777 log', '\$', 5)
-		mySSH.command('stdbuf -o0 ./build_oai ' + self.buildargs + ' 2>&1 | stdbuf -o0 tee ' + self.__buildLogFile, 'Bypassing the Tests|build have failed', 1500) 
+		mySSH.command('stdbuf -o0 ./build_oai ' + self.buildargs + ' 2>&1 | stdbuf -o0 tee ' + self.__buildLogFile, 'Bypassing the Tests|build have failed', 1500)
 
 		mySSH.close()
 		#check build status and update HTML object
@@ -183,7 +183,7 @@ class PhySim:
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
 		mySSH.command('cd '+self.__workSpacePath,'\$',5)
 		#run and redirect the results to a log file
-		mySSH.command(self.__workSpacePath+'phy_simulators/build/ldpctest ' + self.runargs + ' >> '+self.__runLogFile, '\$', 30)   
+		mySSH.command(self.__workSpacePath+'phy_simulators/build/ldpctest ' + self.runargs + ' >> '+self.__runLogFile, '\$', 30)
 		mySSH.close()
 		#return updated HTML to main
 		lHTML = html.HTMLManagement()

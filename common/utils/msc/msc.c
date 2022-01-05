@@ -52,6 +52,7 @@
 FILE    *g_msc_fd;
 char     g_msc_proto2str[MAX_MSC_PROTOS][MSC_MAX_PROTO_NAME_LENGTH];
 
+msc_interface_t msc_interface;
 
 typedef unsigned long msc_message_number_t;
 typedef struct msc_queue_item_s {
@@ -88,7 +89,7 @@ void *msc_task(void *args_p)
 
     if (received_message_p != NULL) {
       //      msg_name = ITTI_MSG_NAME (received_message_p);
-      //      instance = ITTI_MSG_INSTANCE (received_message_p);
+      //      instance = ITTI_MSG_DESTINATION_INSTANCE (received_message_p);
       switch (ITTI_MSG_ID(received_message_p)) {
         case TIMER_HAS_EXPIRED: {
           msc_flush_messages();

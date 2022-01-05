@@ -37,6 +37,7 @@
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -45,9 +46,18 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "nr_unitary_defs.h"
 #include "OCG_vars.h"
+#include <openair2/LAYER2/MAC/mac_vars.h>
+#include <openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h>
+#include <openair2/RRC/LTE/rrc_vars.h>
+#include <executables/softmodem-common.h>
+#include <openair2/RRC/NR_UE/rrc_defs.h>
+//#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
 #define NR_PRACH_DEBUG 1
 #define PRACH_WRITE_OUTPUT_DEBUG 1
+
+LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
+rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -55,43 +65,178 @@ RAN_CONTEXT_t RC;
 RU_t *ru;
 double cpuf;
 extern uint16_t prach_root_sequence_map0_3[838];
-uint16_t NB_UE_INST=1;
 openair0_config_t openair0_cfg[MAX_CARDS];
-uint8_t nfapi_mode=0;
-int sl_ahead = 0;
+//uint8_t nfapi_mode=0;
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
+int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+uint16_t sl_ahead = 0;
+msc_interface_t msc_interface;
+uint32_t N_RB_DL = 106;
 
 //void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 /* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
+msc_interface_t msc_interface;
 uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
+int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
+int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
+int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
+int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
+int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
+int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
-void pdcp_run (const protocol_ctxt_t *const  ctxt_pP) { return;}
+void
+rrc_data_ind(
+  const protocol_ctxt_t *const ctxt_pP,
+  const rb_id_t                Srb_id,
+  const sdu_size_t             sdu_sizeP,
+  const uint8_t   *const       buffer_pP
+)
+{
+}
 
-boolean_t pdcp_data_ind(const protocol_ctxt_t *const ctxt_pP,
-                        const srb_flag_t   srb_flagP,
-                        const MBMS_flag_t  MBMS_flagP,
-                        const rb_id_t      rb_idP,
-                        const sdu_size_t   sdu_buffer_sizeP,
-                        mem_block_t *const sdu_buffer_pP) {return(false);}
+int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
+                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
+                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+    return 0;
+}
 
-void nr_ip_over_LTE_DRB_preconfiguration(void){}
-void pdcp_layer_init(void) {}
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id, const int CC_id, const uint8_t gNB_index, const int8_t channel, const uint8_t* pduP, const sdu_size_t pdu_len) {return 0;}
+int
+gtpv1u_create_s1u_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_enb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP
+) {
+  return 0;
+}
+
+int
+rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
+) {
+  return 0;
+}
+
+int
+gtpv1u_create_ngu_tunnel(
+  const instance_t instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
+        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP){
+  return 0;
+}
+
+int
+gtpv1u_update_ngu_tunnel(
+  const instance_t                              instanceP,
+  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  const rnti_t                                  prior_rnti
+){
+  return 0;
+}
+
+int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
+int
+nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t *const ctxt_pP,
+  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+  uint8_t                         *inde_list
+){
+  return 0;
+}
+
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const sub_frame_t sub_frame,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len)
+{
+  return 0;
+}
+
+void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
+{
+  return;
+}
+
+int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
+                              const int         CC_id,
+                              const uint8_t     gNB_id,
+                              const frame_t     frameP,
+                              const rb_id_t     Srb_id,
+                              uint8_t           *buffer_pP)
+{
+  return 0;
+}
+
+// Dummy function to avoid linking error at compilation of nr-prachsim
+int is_x2ap_enabled(void)
+{
+  return 0;
+}
+
+int nr_derive_key(int alg_type, uint8_t alg_id,
+               const uint8_t key[32], uint8_t **out)
+{
+  return 0;
+}
+
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                            int             CC_idP,
+                                            int             UE_id,
+                                            rnti_t          rntiP,
+                                            const uint8_t   *sduP,
+                                            sdu_size_t      sdu_lenP,
+                                            const uint8_t   *sdu2P,
+                                            sdu_size_t      sdu2_lenP) {
+  return 0;
+}
+
+typedef struct {
+  uint64_t       optmask;   //mask to store boolean config options
+  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  tpool_t        Tpool;             // thread pool
+} nrUE_params_t;
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
+void processSlotTX(void *arg) {}
 
 int main(int argc, char **argv){
 
   char c;
 
   double sigma2, sigma2_dB = 0, SNR, snr0 = -2.0, snr1 = 0.0, ue_speed0 = 0.0, ue_speed1 = 0.0;
-  double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs, bw;
-  int i, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
+  double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs=-1, bw;
+  int i, l, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
   int N_RB_UL = 106, delay = 0, NCS_config = 13, rootSequenceIndex = 1, threequarter_fs = 0, mu = 1, fd_occasion = 0, loglvl = OAILOG_INFO, numRA = 0, prachStartSymbol = 0;
   uint8_t snr1set = 0, ue_speed1set = 0, transmission_mode = 1, n_tx = 1, n_rx = 1, awgn_flag = 0, msg1_frequencystart = 0, num_prach_fd_occasions = 1, prach_format=0;
-  uint8_t frame = 1, subframe = 9, slot=19, slot_gNB=19, config_index = 98, prach_sequence_length = 1, num_root_sequences = 16, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
+  uint8_t frame = 1, slot=19, slot_gNB=19, config_index = 98, prach_sequence_length = 1, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
   uint16_t Nid_cell = 0, preamble_tx = 0, preamble_delay, format, format0, format1;
-  uint32_t tx_lev = 10000, prach_errors = 0, samp_count; //,tx_lev_dB;
-  uint64_t SSB_positions = 0x01, absoluteFrequencyPointA = 640000;
+  uint32_t tx_lev = 10000, prach_errors = 0; //,tx_lev_dB;
+  uint64_t SSB_positions = 0x01;
+  uint16_t RA_sfn_index;
+  uint8_t N_RA_slot;
+  uint8_t config_period;
+  int prachOccasion = 0;
+  double DS_TDL = .03;
+  NB_UE_INST=1;
 
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;
@@ -119,7 +264,7 @@ int main(int argc, char **argv){
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "hHaA:Cc:r:p:g:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
+  while ((c = getopt (argc, argv, "hHaA:Cc:l:r:p:g:m:n:s:S:t:x:y:v:V:z:N:F:d:Z:L:R:E")) != -1) {
     switch (c) {
     case 'a':
       printf("Running AWGN simulation\n");
@@ -130,6 +275,10 @@ int main(int argc, char **argv){
 
     case 'c':
       config_index = atoi(optarg);
+      break;
+
+    case 'l':
+      loglvl = atoi(optarg);
       break;
 
     case 'r':
@@ -207,6 +356,10 @@ int main(int argc, char **argv){
 
     case 'E':
       threequarter_fs=1;
+      break;
+
+    case 'm':
+      mu = atoi(optarg);
       break;
 
     case 'n':
@@ -336,13 +489,6 @@ int main(int argc, char **argv){
     }
   }
 
-  
-  if (config_index<67)  { prach_sequence_length=0; slot = subframe*2; slot_gNB = 1+(subframe*2); }
-  uint16_t N_ZC;
-  N_ZC = prach_sequence_length == 0 ? 839 : 139;
-
-  printf("Config_index %d, prach_sequence_length %d\n",config_index,prach_sequence_length);
-
   // Configure log
   logInit();
   set_glog(loglvl);
@@ -377,12 +523,23 @@ int main(int argc, char **argv){
   frame_parms->N_RB_UL          = N_RB_UL;
   frame_parms->threequarter_fs  = threequarter_fs;
   frame_parms->frame_type       = TDD;
-  frame_parms->freq_range       = nr_FR1;
+  frame_parms->freq_range       = (mu==1 ? nr_FR1 : nr_FR2);
   frame_parms->numerology_index = mu;
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
-  //nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
+  uint64_t absoluteFrequencyPointA = to_nrarfcn(frame_parms->nr_band,
+				       frame_parms->dl_CarrierFreq,
+				       frame_parms->numerology_index,
+				       frame_parms->N_RB_UL*(180e3)*(1 << frame_parms->numerology_index));
+
+  uint8_t subframe = slot/frame_parms->slots_per_subframe;
+  
+  if (config_index<67 && mu==1)  { prach_sequence_length=0; slot = subframe*2; slot_gNB = 1+(subframe*2); }
+  uint16_t N_ZC = prach_sequence_length == 0 ? 839 : 139;
+
+  printf("Config_index %d, prach_sequence_length %d\n",config_index,prach_sequence_length);
+
 
   printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Frame type %s, Frequency Range %s\n",
          NUMBER_OF_OFDM_CARRIERS,
@@ -395,10 +552,18 @@ int main(int argc, char **argv){
   ru->if_south       = LOCAL_RF;
   ru->nb_tx          = n_tx;
   ru->nb_rx          = n_rx;
-
+  ru->num_gNB        = 1;
+  ru->gNB_list[0]    = gNB;
   gNB->gNB_config.carrier_config.num_tx_ant.value = 1;
   gNB->gNB_config.carrier_config.num_rx_ant.value = 1;
-  gNB->gNB_config.tdd_table.tdd_period.value = 6;
+  if (mu==1)
+    gNB->gNB_config.tdd_table.tdd_period.value = 6;
+  else if (mu==3)
+    gNB->gNB_config.tdd_table.tdd_period.value = 3;
+  else {
+    printf("unsupported numerology %d\n",mu);
+    exit(-1);
+  }
 
   gNB->gNB_config.prach_config.num_prach_fd_occasions.value = num_prach_fd_occasions;
   gNB->gNB_config.prach_config.num_prach_fd_occasions_list = (nfapi_nr_num_prach_fd_occasions_t *) malloc(num_prach_fd_occasions*sizeof(nfapi_nr_num_prach_fd_occasions_t));
@@ -406,15 +571,18 @@ int main(int argc, char **argv){
   gNB->proc.slot_rx       = slot;
 
   int ret = get_nr_prach_info_from_index(config_index,
-                               (int)frame,
-                               (int)slot_gNB,
-                               absoluteFrequencyPointA,
-                               mu,
-                               frame_parms->frame_type,
-                               &format,
-                               &start_symbol,
-                               &N_t_slot,
-                               &N_dur);
+					 (int)frame,
+					 (int)slot_gNB,
+					 absoluteFrequencyPointA,
+					 mu,
+					 frame_parms->frame_type,
+					 &format,
+					 &start_symbol,
+					 &N_t_slot,
+					 &N_dur,
+					 &RA_sfn_index,
+					 &N_RA_slot,
+					 &config_period);
 
   if (ret == 0) {printf("No prach in %d.%d, mu %d, config_index %d\n",frame,slot,mu,config_index); exit(-1);}
   format0 = format&0xff;      // first column of format from table
@@ -423,60 +591,54 @@ int main(int argc, char **argv){
   if (format1 != 0xff) {
     switch(format0) {
     case 0xa1:
-      prach_format = 9;
+      prach_format = 11;
       break;
     case 0xa2:
-      prach_format = 10;
+      prach_format = 12;
       break;
     case 0xa3:
-      prach_format = 11;
+      prach_format = 13;
       break;
     default:
       AssertFatal(1==0, "Only formats A1/B1 A2/B2 A3/B3 are valid for dual format");
     }
   } else {
-    switch(format0) {
-      case 0xa1:
-        prach_format = 0;
-        break;
-      case 0xa2:
-        prach_format = 1;
-        break;
-      case 0xa3:
-        prach_format = 2;
-        break;
-      case 0xb1:
-        prach_format = 3;
-        break;
-      case 0xb2:
-        prach_format = 4;
-        break;
-      case 0xb3:
-        prach_format = 5;
-        break;
-      case 0xb4:
-        prach_format = 6;
-        break;
-      case 0xc0:
-        prach_format = 7;
-        break;
-      case 0xc2:
-        prach_format = 8;
-        break;
-      case 0:
-        // long formats are handled @ PHY
-        break;
-      case 1:
-        // long formats are handled @ PHY
-        break;
-      case 2:
-        // long formats are handled @ PHY
-        break;
-      case 3:
-        // long formats are handled @ PHY
-        break;
+    switch(format0) { // single PRACH format
+    case 0:
+      prach_format = 0;
+      break;
+    case 1:
+      prach_format = 1;
+      break;
+    case 2:
+      prach_format = 2;
+      break;
+    case 3:
+      prach_format = 3;
+      break;
+    case 0xa1:
+      prach_format = 4;
+      break;
+    case 0xa2:
+      prach_format = 5;
+      break;
+    case 0xa3:
+      prach_format = 6;
+      break;
+    case 0xb1:
+      prach_format = 7;
+      break;
+    case 0xb4:
+      prach_format = 8;
+      break;
+    case 0xc0:
+      prach_format = 9;
+      break;
+    case 0xc2:
+      prach_format = 10;
+      break;
     default:
-      AssertFatal(1==0, "Invalid PRACH format");
+      AssertFatal(1 == 0, "Invalid PRACH format");
     }
   }
 
@@ -492,7 +654,7 @@ int main(int argc, char **argv){
 
   memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
   RC.nb_nr_L1_inst=1;
-  phy_init_nr_gNB(gNB,0,0);
+  phy_init_nr_gNB(gNB,0,1); //lowmem
   nr_phy_init_RU(ru);
   gNB->common_vars.rxdata = ru->common.rxdata;
   set_tdd_config_nr(&gNB->gNB_config, mu, 7, 6, 2, 4);
@@ -557,9 +719,10 @@ int main(int argc, char **argv){
                                 channel_model,
                                 fs,
                                 bw,
+                                DS_TDL,
                                 0.0,
                                 delay,
-                                0);
+                                0, 0);
 
   if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");
@@ -595,14 +758,14 @@ int main(int argc, char **argv){
 			     subframe); */ //commented for testing purpose
 
   UE_nr_rxtx_proc_t proc={0};
-  proc.frame_tx  = frame;
-  proc.nr_tti_tx = slot;
-  nr_ue_prach_procedures(UE,&proc,0,0);
+  proc.frame_tx   = frame;
+  proc.nr_slot_tx = slot;
+  nr_ue_prach_procedures(UE, &proc, 0);
 
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-  prach_start = subframe*frame_parms->samples_per_subframe-UE->N_TA_offset;
+  prach_start = subframe*frame_parms->samples_per_subframe;
 
   #ifdef NR_PRACH_DEBUG
   LOG_M("txsig0.m", "txs0", &txdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
@@ -673,7 +836,7 @@ int main(int argc, char **argv){
         //  printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 
         if (awgn_flag == 0) {
-          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, frame_parms->samples_per_tti<<1, 0);
+          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, frame_parms->samples_per_frame, 0);
         }
 
         if (n_frames==1) {
@@ -697,12 +860,22 @@ int main(int argc, char **argv){
 	  }
 	}
 
+	for (l = 0; l < frame_parms->symbols_per_slot; l++) {
+	  for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
+	    nr_slot_fep_ul(frame_parms,
+			   ru->common.rxdata[aa],
+			   ru->common.rxdataF[aa],
+			   l,
+			   slot,
+			   ru->N_TA_offset);
+	  }
+	}
+	
+        rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, prachOccasion, frame, slot);
 
-        rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, frame, slot);
-
-        gNB->prach_vars.rxsigF = ru->prach_rxsigF;
+        gNB->prach_vars.rxsigF = ru->prach_rxsigF[prachOccasion];
 	if (n_frames == 1) printf("ncs %d,num_seq %d\n",prach_pdu->num_cs,  prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value);
-        rx_nr_prach(gNB, prach_pdu, frame, subframe, &preamble_rx, &preamble_energy, &preamble_delay);
+        rx_nr_prach(gNB, prach_pdu, prachOccasion, frame, subframe, &preamble_rx, &preamble_energy, &preamble_delay);
 
 	//        printf(" preamble_energy %d preamble_rx %d preamble_tx %d \n", preamble_energy, preamble_rx, preamble_tx);
 
@@ -720,7 +893,8 @@ int main(int argc, char **argv){
             LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0], N_ZC, 1, 1);
             LOG_M("rxsig0.m","rxs0", &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
-            LOG_M("rxsigF0.m","rxsF0", gNB->prach_vars.rxsigF[0], N_ZC, 1, 1);
+            LOG_M("ru_rxsigF0.m","rxsF0", ru->common.rxdataF[0], frame_parms->ofdm_symbol_size*frame_parms->symbols_per_slot, 1, 1);
+            LOG_M("ru_prach_rxsigF0.m","rxsF0", ru->prach_rxsigF[0][0], N_ZC, 1, 1);
             LOG_M("prach_preamble.m","prachp", &gNB->X_u[0], N_ZC, 1, 1);
             LOG_M("ue_prach_preamble.m","prachp", &UE->X_u[0], N_ZC, 1, 1);
           #endif

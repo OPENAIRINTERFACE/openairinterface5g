@@ -113,15 +113,12 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
     x2 = ((Ns>>1)<<9) + frame_parms->Nid_cell_mbsfn; //this is c_init in 36.211 Sec 6.3.1 for PMCH
   }
 
-#ifdef DEBUG_SCRAMBLING
-  printf("scrambling: i0 %d rnti %x, q %d, Ns %d, Nid_cell %d, G %d x2 %x\n",dlsch->i0,dlsch->rnti,q,Ns,frame_parms->Nid_cell, G, x2);
-#endif
   s = lte_gold_generic(&x1, &x2, 1);
 
   for (n=0; n<(1+(G>>5)); n++) {
 #ifdef DEBUG_SCRAMBLING
 
-    for (int k=0; k<32; k++) printf("scrambling %d : %d xor %d = %d\n",k+(n<<5),e[k],(s>>k)&1,e[k]^((s>>k)&1));
+    for (int k=0; k<32; k++) printf("scrambling %d : %x xor %x = %d\n",k+(n<<5),e[k],(s>>k)&1,e[k]^((s>>k)&1));
 
 #endif
     e[0] = (e[0]) ^ (s&1);

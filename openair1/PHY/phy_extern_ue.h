@@ -23,7 +23,6 @@
 #define __PHY_EXTERN_UE__H__
 
 #include "PHY/defs_UE.h"
-#include "common/ran_context.h"
 
 extern  char* namepointer_chMag ;
 extern char* namepointer_log2;
@@ -47,24 +46,12 @@ extern short primary_synch2[144];
 extern unsigned char primary_synch0_tab[72];
 extern unsigned char primary_synch1_tab[72];
 extern unsigned char primary_synch2_tab[72];
-extern int16_t *primary_synch0_time; //!< index: [0..ofdm_symbol_size*2[
-extern int16_t *primary_synch1_time; //!< index: [0..ofdm_symbol_size*2[
-extern int16_t *primary_synch2_time; //!< index: [0..ofdm_symbol_size*2[
-extern int *sync_corr_ue0; //!< index [0..10*samples_per_tti[
-extern int *sync_corr_ue1; //!< index [0..10*samples_per_tti[
-extern int *sync_corr_ue2; //!< index [0..10*samples_per_tti[
 
 extern int flagMag;
 //extern short **txdataF_rep_tmp;
 
 extern char mode_string[4][20];
 
-
-#ifndef OPENAIR2
-extern unsigned char NB_eNB_INST;
-extern uint16_t NB_UE_INST;
-extern unsigned char NB_RN_INST;
-#endif
 
 extern int flag_LA;
 extern double sinr_bler_map[MCS_COUNT][2][MCS_TABLE_LENGTH_MAX];

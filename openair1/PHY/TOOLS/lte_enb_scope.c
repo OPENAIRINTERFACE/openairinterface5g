@@ -44,7 +44,6 @@ FD_stats_form        *form_stats=NULL,*form_stats_l2=NULL;
 char                 title[255];
 unsigned char        scope_enb_num_ue = 2;
 static pthread_t     forms_thread; //xforms
-int                  otg_enabled=0;
 
 void reset_stats(FL_OBJECT *button, long arg) {
   int i,j,k;
@@ -70,18 +69,12 @@ void reset_stats(FL_OBJECT *button, long arg) {
 
 
 static void *scope_thread_eNB(void *arg) {
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  FILE *eNB_stats;
-# endif
   struct sched_param sched_param;
   int UE_id, CC_id;
   int ue_cnt=0;
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
   sched_setscheduler(0, SCHED_FIFO,&sched_param);
   printf("Scope thread has priority %d\n",sched_param.sched_priority);
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  eNB_stats = fopen("eNB_stats.txt", "w");
-#endif
 
   while (!oai_exit) {
     ue_cnt=0;
@@ -97,19 +90,9 @@ static void *scope_thread_eNB(void *arg) {
       }
     }
 
-    sleep(1);
+    usleep(100*1000);
   }
 
-  //  printf("%s",stats_buffer);
-# ifdef ENABLE_XFORMS_WRITE_STATS
-
-  if (eNB_stats) {
-    rewind (eNB_stats);
-    fwrite (stats_buffer, 1, len, eNB_stats);
-    fclose (eNB_stats);
-  }
-
-# endif
   pthread_exit((void *)arg);
 }
 
@@ -131,7 +114,7 @@ int enbscope_autoinit(void) {
       sprintf (title, "LTE UL SCOPE eNB for CC_id %d, UE %d",CC_id,UE_id);
       fl_show_form (form_enb[CC_id][UE_id]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-      if (otg_enabled) {
+      if (0) {
         fl_set_button(form_enb[CC_id][UE_id]->button_0,1);
         fl_set_object_label(form_enb[CC_id][UE_id]->button_0,"DL Traffic ON");
       } else {

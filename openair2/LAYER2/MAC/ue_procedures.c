@@ -72,17 +72,10 @@ extern UL_IND_t *UL_INFO;
 extern int next_ra_frame;
 extern module_id_t next_Mod_id;
 
-int mbms_rab_id=2047;//[8] = {2047,2047,2047,2047,2047,2047,2047,2047};
+rb_id_t mbms_rab_id=2047;//[8] = {2047,2047,2047,2047,2047,2047,2047,2047};
 static int mbms_mch_i=0;
 //static int num_msi_per_CSA[28];
 
-
-/*
- *
-#ifndef USER_MODE
-#define msg debug_msg
-#endif
- */
 
 mapping BSR_names[] = {
   {"NONE", 0},
@@ -1251,65 +1244,6 @@ int ue_query_mch_fembms(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, 
   }
 
 
-
-  
-#ifdef OLD
-          // Acount for sf_allocable in CSA
-        int num_sf_alloc = 0;
-
-        for (l = 0; l < 8; l++) {
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l] == NULL)
-            continue;
-
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.present != LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame)
-            continue;
-
-          uint32_t common_mbsfn_SubframeConfig = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.choice.oneFrame.buf[0];
-
-
-          for (j = 0; j < 6; j++)
-            num_sf_alloc += ((common_mbsfn_SubframeConfig & (0x80 >> j)) == (0x80 >> j));
-            //num_sf_alloc=1;
-        }
-	
-	num_sf_alloc = 10;
-
-        num_non_mbsfn_SubframeConfig = (UE_mac_inst[module_idP].non_mbsfn_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | UE_mac_inst[module_idP].non_mbsfn_SubframeConfig->subframeAllocation_r14.buf[0]>>7);
-	int ones=0;
-	for(j=0; j < 16; j++){
-		if(num_non_mbsfn_SubframeConfig & 1)
-			ones++;
-		num_non_mbsfn_SubframeConfig>>=1;
-	}
-
-        for (l = 0; l < 28; l++) {
-          if (UE_mac_inst[module_idP].pmch_stop_mtch[l] >= 1/*num_sf_alloc*/) {
-            if (UE_mac_inst[module_idP].pmch_stop_mtch[l] != 2047) {
-              if (UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch] != NULL){
-                mtch_mcs = UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch]->dataMCS_r9;
-    	       //int common_mbsfn_alloc_offset = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[0]->radioframeAllocationOffset;
-               long common_mbsfn_period  = 1 << UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[0]->radioframeAllocationPeriod;
-               long commonSF_AllocPeriod = 4 << UE_mac_inst[module_idP].commonSF_AllocPeriod_r9;
-               if(UE_mac_inst[module_idP].common_num_sf_alloc >= UE_mac_inst[module_idP].pmch_stop_mtch[l]){
-                       //LOG_E(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);
-
-                       mtch_mcs = -1;
-               }/*else
-                       OG_W(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);*/
-                       LOG_D(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d num_sf_alloc %d commonSF_AllocPeriod %ld, common_mbsfn_period %ld num_non_mbsfn_SubframeConfig %x ones %d\n",UE_mac_inst[module_idP].common_num_sf_alloc,num_sf_alloc, commonSF_AllocPeriod,common_mbsfn_period,num_non_mbsfn_SubframeConfig,ones);
-                UE_mac_inst[module_idP].common_num_sf_alloc++;
-                UE_mac_inst[module_idP].common_num_sf_alloc = UE_mac_inst[module_idP].common_num_sf_alloc % (num_sf_alloc * commonSF_AllocPeriod / common_mbsfn_period-(1+ones)*(commonSF_AllocPeriod/4)); //TODO
-              }
-              else
-                mtch_mcs = -1;
-
-              mch_lcid = (uint8_t)l;
-              break;
-            }
-          }
-        }
-#endif
-
 {
  	 // Acount for sf_allocable in Common SF Allocation
  	 int num_sf_alloc = 0;
@@ -1869,49 +1803,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
 	//}
   }
 
-#ifdef OLD
-        // Acount for sf_allocable in CSA
-        int num_sf_alloc = 0;
 
-        for (l = 0; l < 8; l++) {
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l] == NULL)
-            continue;
-
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.present != LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame)
-            continue;
-
-          uint32_t common_mbsfn_SubframeConfig = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.choice.oneFrame.buf[0];
-
-          for (j = 0; j < 6; j++)
-            num_sf_alloc += ((common_mbsfn_SubframeConfig & (0x80 >> j)) == (0x80 >> j));
-	    //num_sf_alloc=1;
-        }
-
-        for (l = 0; l < 28; l++) {
-          if (UE_mac_inst[module_idP].pmch_stop_mtch[l] >= 1/*num_sf_alloc*/) {
-            if (UE_mac_inst[module_idP].pmch_stop_mtch[l] != 2047) {
-              if (UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch] != NULL){
-                mtch_mcs = UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch]->dataMCS_r9;
-               long common_mbsfn_period  = 1 << UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[0]->radioframeAllocationPeriod;
-               long commonSF_AllocPeriod = 4 << UE_mac_inst[module_idP].commonSF_AllocPeriod_r9;
-               if(UE_mac_inst[module_idP].common_num_sf_alloc >= UE_mac_inst[module_idP].pmch_stop_mtch[l]){
-		       //LOG_E(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);
-
-                       mtch_mcs = -1;
-	       }/*else
-		       LOG_W(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);*/
-               	UE_mac_inst[module_idP].common_num_sf_alloc++;
-           	UE_mac_inst[module_idP].common_num_sf_alloc = UE_mac_inst[module_idP].common_num_sf_alloc % (num_sf_alloc * commonSF_AllocPeriod / common_mbsfn_period);
-	      }
-              else
-                mtch_mcs = -1;
-
-              mch_lcid = (uint8_t)l;
-              break;
-            }
-          }
-        }
-#endif
 
 {
  	 // Acount for sf_allocable in Common SF Allocation
@@ -3064,8 +2956,8 @@ ue_scheduler(const module_id_t module_idP,
         switch (ITTI_MSG_ID(msg_p)) {
           case RRC_MAC_CCCH_DATA_REQ:
             LOG_I(MAC,
-                  "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
-                  ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
+                  "Received %s from %s: instance %ld, frameP %d, eNB_index %d\n",
+                  ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_DESTINATION_INSTANCE(msg_p),
                   RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
                   RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
             // TODO process CCCH data req.
@@ -3098,6 +2990,9 @@ ue_scheduler(const module_id_t module_idP,
       pdcp_run(&ctxt);
     }
   }
+
+  void rlc_tick(int, int);
+  rlc_tick(rxFrameP % 1024, rxSubframeP);
 
   //#endif
   UE_mac_inst[module_idP].txFrame = txFrameP;
