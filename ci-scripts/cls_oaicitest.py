@@ -112,14 +112,18 @@ def GetPingTimeAnalysis(RAN,ping_log_file,ping_rttavg_threshold):
 		else:
 			y_max=YMAX+1
 		plt.ylim(0,y_max)
-		th_label="AVG Ping Fail Threshold="+ping_rttavg_threshold
-		plt.axhline(y=float(ping_rttavg_threshold), color='r', linestyle='-',label=th_label)
-		axis.legend()
+		if ping_rttavg_threshold != '':
+			th_label="AVG Ping Fail Threshold="+ping_rttavg_threshold
+			plt.axhline(y=float(ping_rttavg_threshold), color='r', linestyle='-',label=th_label)
+			axis.legend()
 		plt.savefig(ping_log_file+'.png')
 
 		#copy the png file already to enb to move it move it later into the artifacts
-		mySSH = sshconnection.SSHConnection()
-		mySSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, ping_log_file+'.png', RAN.eNBSourceCodePath + '/cmake_targets/')
+		try:
+			mySSH = sshconnection.SSHConnection()
+			mySSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, ping_log_file+'.png', RAN.eNBSourceCodePath + '/cmake_targets/')
+		except:
+			logging.debug('\u001B[1;37;41m Ping PNG SCP to eNB FAILED\u001B[0m')
 
 		return ping_stat
 
