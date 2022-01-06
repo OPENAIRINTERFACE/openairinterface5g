@@ -1069,13 +1069,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
-       <main_exec_args>-s-11 -S-8 -n10 -R106
-         -s-11 -S-8 -n10 -o8000 -I -R106
-         -s-11 -S-8 -n10 -R217
-         -s-11 -S-8 -n10 -o8000 -I -R217
-         -s-11 -S-8 -n10 -R273
-         -s-11 -S-8 -n10 -o8000 -I -R273
-       </main_exec_args>
+      <main_exec_args>-s-11 -S-8 -n10 -R106
+                      -s-11 -S-8 -n10 -o8000 -I -R106
+                      -s-11 -S-8 -n10 -R217
+                      -s-11 -S-8 -n10 -o8000 -I -R217
+                      -s-11 -S-8 -n10 -R273
+                      -s-11 -S-8 -n10 -o8000 -I -R273</main_exec_args>
       <tags>nr_pbchsim.test1 nr_pbchsim.test2 nr_pbchsim.test3 nr_pbchsim.test4 nr_pbchsim.test5 nr_pbchsim.test6</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
