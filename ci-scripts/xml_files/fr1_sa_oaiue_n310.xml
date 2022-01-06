@@ -42,7 +42,7 @@
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE (N310)</desc>
 		<air_interface>nr</air_interface>
-		<Initialize_OAI_UE_args>--sa -O ../../../ci-scripts/conf_files/ue.sa.conf --usrp-args "mgmt_addr=192.168.18.16,second_addr=192.168.10.2"  --numerology 1 -r 106 --band 78 -C 3319680000 --nokrnmod 1 --ue-txgain 0 --ue-rxgain 70 --ue-fo-compensation --log_config.global_log_options level,nocolor,time</Initialize_OAI_UE_args>
+		<Initialize_OAI_UE_args>--sa -O ../../../ci-scripts/conf_files/ue.sa.conf --usrp-args "mgmt_addr=192.168.18.241,second_addr=192.168.10.2"  --numerology 1 -r 106 --band 78 -C 3319680000 --nokrnmod 1 --ue-txgain 0 --ue-rxgain 70 --ue-fo-compensation --log_config.global_log_options level,nocolor,time</Initialize_OAI_UE_args>
 	</testCase>
 
 	<testCase id="010002">
