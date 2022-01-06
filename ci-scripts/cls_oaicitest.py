@@ -128,7 +128,7 @@ def GetPingTimeAnalysis(RAN,ping_log_file,ping_rttavg_threshold):
 		return ping_stat
 
 	else:
-		logging.error("Ping log file does not exist")
+		logging.error("GetPingTimeAnalysis : Ping log file does not exist")
 		return -1
 
 	
@@ -1592,6 +1592,7 @@ class OaiCiTest():
 					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)				
 				else:
 					ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+				ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
 				#copy the ping log file to have it locally for analysis (ping stats)
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')				
 			else:
@@ -1611,7 +1612,7 @@ class OaiCiTest():
 					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 					#cat is executed on EPC
 					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-					ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
+					ping_log_file='/scripts/ping_' + self.testCase_id + '_' + device_id + '.log'
 				else: #launch from Module
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 					#target address is different depending on EPC type
