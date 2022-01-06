@@ -1120,7 +1120,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       time_domain_assignment = 1;
     else
       time_domain_assignment = 0;
-    uint8_t mcsIndex = 0;
+    int mcsIndex = -1;  // initialization value
     int rbStart = 0;
     int rbSize = 8;
 
@@ -1269,9 +1269,6 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->SubcarrierSpacing = genericParameters->subcarrierSpacing;
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
-    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
-    pdsch_pdu_rel15->qamModOrder[0] = 2;
-    pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
     pdsch_pdu_rel15->rvIndex[0] = 0;
     pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
@@ -1295,9 +1292,38 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                                     startSymbolIndex,
                                                     mappingtype);
 
-    int x_Overhead = 0;
     uint8_t tb_scaling = 0;
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
+    int R, Qm;
+    uint8_t N_PRB_DMRS;
+    uint32_t TBS=0;
+    if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+      // if no data in dmrs cdm group is 1 only even REs have no data
+      // if no data in dmrs cdm group is 2 both odd and even REs have no data
+      N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData*6;
+    }
+    else {
+      N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData*4;
+    }
+    uint16_t dmrs_length = get_num_dmrs(pdsch_pdu_rel15->dlDmrsSymbPos);
+
+    while(TBS<9) {  // min TBS for RAR is 9 bytes
+      mcsIndex++;
+      R = nr_get_code_rate_dl(mcsIndex, mcsTableIdx);
+      Qm = nr_get_Qm_dl(mcsIndex, mcsTableIdx);
+      TBS = nr_compute_tbs(Qm,
+                           R,
+                           rbSize,
+                           nrOfSymbols,
+                           N_PRB_DMRS*dmrs_length,
+                           0, // overhead
+                           tb_scaling,  // tb scaling
+		           1)>>3;  // layers
+
+      pdsch_pdu_rel15->targetCodeRate[0] = R;
+      pdsch_pdu_rel15->qamModOrder[0] = Qm;
+      pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
+      pdsch_pdu_rel15->TBSize[0] = TBS;
+    }
 
     // Fill PDCCH DL DCI PDU
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
