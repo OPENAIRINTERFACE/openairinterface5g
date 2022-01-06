@@ -213,7 +213,7 @@ void ldpc8blocks( void *p) {
   for (int rr=impp->macro_num*8; rr < impp->n_segments && rr < (impp->macro_num+1)*8; rr++ ) {
     if (impp->F>0) {
       // writing into positions d[r][k-2Zc] as in clause 5.3.2 step 2) in 38.212
-      memset(&impp->d[rr][Kr-impp->F-2*(*impp->Zc)], impp->F, NR_NULL);
+      memset(&impp->d[rr][Kr-impp->F-2*(*impp->Zc)], NR_NULL, impp->F);
     }
 
 #ifdef DEBUG_DLSCH_CODING
