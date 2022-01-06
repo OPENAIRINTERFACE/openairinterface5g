@@ -203,15 +203,15 @@ int main(int argc, char **argv)
 
   float target_error_rate = 0.01;
 
+  int seed = 0;
+
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_PBCHSIM] Error, configuration module init failed\n");
   }
 
-  randominit(0);
-
-  while ((c = getopt (argc, argv, "F:g:hIL:m:M:n:N:o:P:R:s:S:x:y:z:")) != -1) {
+  while ((c = getopt (argc, argv, "F:g:hIL:m:M:n:N:o:P:r:R:s:S:x:y:z:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -336,6 +336,10 @@ int main(int argc, char **argv)
       break;
     */
 
+    case 'r':
+      seed = atoi(optarg);
+      break;
+
     case 'R':
       N_RB_DL = atoi(optarg);
       break;
@@ -389,7 +393,7 @@ int main(int argc, char **argv)
 
     default:
     case 'h':
-      printf("%s -F input_filename -g channel_mod -h(elp) -I(nitial sync) -L log_lvl -n n_frames -M SSBs -n frames -N cell_id -o FO -P phase -R RBs -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant\n",
+      printf("%s -F input_filename -g channel_mod -h(elp) -I(nitial sync) -L log_lvl -n n_frames -M SSBs -n frames -N cell_id -o FO -P phase -r seed -R RBs -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant\n",
              argv[0]);
       //printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
@@ -410,6 +414,7 @@ int main(int argc, char **argv)
       //printf("-O oversampling factor (1,2,4,8,16)\n");
       //printf("-p Use extended prefix mode\n");
       printf("-P PBCH phase, allowed values 0-3\n");
+      printf("-r set the random number generator seed (default: 0 = current time)\n");
       printf("-R N_RB_DL\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if not -S given. If -n 1, then just SNR is simulated\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
@@ -421,6 +426,8 @@ int main(int argc, char **argv)
       break;
     }
   }
+
+  randominit(seed);
 
   logInit();
   set_glog(loglvl);
