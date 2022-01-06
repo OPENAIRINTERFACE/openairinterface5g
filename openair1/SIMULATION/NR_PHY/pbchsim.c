@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:o:s:S:t:x:y:z:M:N:F:GR:dP:IL:m:")) != -1) {
+  while ((c = getopt (argc, argv, "F:g:hIL:m:M:n:N:o:P:R:s:S:x:y:z:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -227,6 +227,14 @@ int main(int argc, char **argv)
     /*case 'd':
       frame_type = 1;
       break;*/
+
+    case 'F':
+      input_fd = fopen(optarg,"r");
+      if (input_fd==NULL) {
+        printf("Problem with filename %s. Exiting.\n", optarg);
+        exit(-1);
+      }
+      break;
 
     case 'g':
       switch((char)*optarg) {
@@ -265,16 +273,40 @@ int main(int argc, char **argv)
 
       break;
 
-    /*case 'i':
+    /*
+    case 'i':
       interf1=atoi(optarg);
       break;
+    */
 
+    case 'I':
+      run_initial_sync=1;
+      target_error_rate=0.1;
+      break;
+
+    /*
     case 'j':
       interf2=atoi(optarg);
       break;*/
 
+    case 'L':
+      loglvl = atoi(optarg);
+      break;
+
+    case 'm':
+      mu = atoi(optarg);
+      break;
+
+    case 'M':
+      SSB_positions = atoi(optarg);
+      break;
+
     case 'n':
       n_trials = atoi(optarg);
+      break;
+
+    case 'N':
+      Nid_cell = atoi(optarg);
       break;
 
     case 'o':
@@ -282,6 +314,30 @@ int main(int argc, char **argv)
 #ifdef DEBUG_NR_PBCHSIM
       printf("Setting CFO to %f Hz\n",cfo);
 #endif
+      break;
+
+    /*case 'p':
+      extended_prefix_flag=1;
+      break;*/
+
+    case 'P':
+      pbch_phase = atoi(optarg);
+      if (pbch_phase>3)
+        printf("Illegal PBCH phase (0-3) got %d\n",pbch_phase);
+      break;
+
+    /*
+    case 'r':
+      ricean_factor = pow(10,-.1*atof(optarg));
+      if (ricean_factor>1) {
+        printf("Ricean factor must be between 0 and 1\n");
+        exit(-1);
+      }
+      break;
+    */
+
+    case 'R':
+      N_RB_DL = atoi(optarg);
       break;
 
     case 's':
@@ -304,19 +360,7 @@ int main(int argc, char **argv)
       Td= atof(optarg);
       break;
       */
-    /*case 'p':
-      extended_prefix_flag=1;
-      break;*/
 
-      /*
-      case 'r':
-      ricean_factor = pow(10,-.1*atof(optarg));
-      if (ricean_factor>1) {
-        printf("Ricean factor must be between 0 and 1\n");
-        exit(-1);
-      }
-      break;
-      */
     case 'x':
       transmission_mode=atoi(optarg);
 
@@ -329,94 +373,50 @@ int main(int argc, char **argv)
 
     case 'y':
       n_tx=atoi(optarg);
-
       if ((n_tx==0) || (n_tx>2)) {
-    	printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
+        printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
         exit(-1);
       }
-
       break;
 
     case 'z':
       n_rx=atoi(optarg);
-
       if ((n_rx==0) || (n_rx>2)) {
-    	printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
+        printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
         exit(-1);
       }
-
-      break;
-
-    case 'M':
-      SSB_positions = atoi(optarg);
-      break;
-
-    case 'N':
-      Nid_cell = atoi(optarg);
-      break;
-
-    case 'R':
-      N_RB_DL = atoi(optarg);
-      break;
-
-    case 'F':
-      input_fd = fopen(optarg,"r");
-
-      if (input_fd==NULL) {
-        printf("Problem with filename %s. Exiting.\n", optarg);
-        exit(-1);
-      }
-
-      break;
-
-    case 'P':
-      pbch_phase = atoi(optarg);
-
-      if (pbch_phase>3)
-        printf("Illegal PBCH phase (0-3) got %d\n",pbch_phase);
-
-      break;
-      
-    case 'I':
-      run_initial_sync=1;
-      target_error_rate=0.1;
-      break;
-
-    case 'L':
-      loglvl = atoi(optarg);
-      break;
-
-    case 'm':
-      mu = atoi(optarg);
       break;
 
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
+      printf("%s -F input_filename -g channel_mod -h(elp) -I(nitial sync) -L log_lvl -n n_frames -M SSBs -n frames -N cell_id -o FO -P phase -R RBs -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant\n",
              argv[0]);
-      printf("-h This message\n");
-      //printf("-p Use extended prefix mode\n");
+      //printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
+      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       //printf("-d Use TDD\n");
-      printf("-n Number of frames to simulate\n");
-      printf("-m Numerology index\n");
-      printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
-      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
-      printf("-t Delay spread for multipath channel\n");
+      //printf("-f Output filename (.txt format) for Pe/SNR results\n");
+      printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
+      printf("-h This message\n");
+      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      printf("-I run initial sync with target error rate 0.1\n");
+      //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      printf("-L set the log level (-1 disable, 0 error, 1 warning, 2 info, 3 debug, 4 trace)\n");
+      printf("-m Numerology index\n");
+      printf("-M Multiple SSB positions in burst\n");
+      printf("-n Number of frames to simulate\n");
+      printf("-N Nid_cell\n");
+      printf("-o Carrier frequency offset in Hz\n");
+      //printf("-O oversampling factor (1,2,4,8,16)\n");
+      //printf("-p Use extended prefix mode\n");
+      printf("-P PBCH phase, allowed values 0-3\n");
+      printf("-R N_RB_DL\n");
+      printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if not -S given. If -n 1, then just SNR is simulated\n");
+      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
+      //printf("-t Delay spread for multipath channel\n");
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-      //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
-      printf("-o Carrier frequency offset in Hz\n");
-      printf("-M Multiple SSB positions in burst\n");
-      printf("-N Nid_cell\n");
-      printf("-R N_RB_DL\n");
-      printf("-O oversampling factor (1,2,4,8,16)\n");
-      printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
-      //printf("-f Output filename (.txt format) for Pe/SNR results\n");
-      printf("-F Input filename (.txt format) for RX conformance testing\n");
       exit (-1);
       break;
     }
