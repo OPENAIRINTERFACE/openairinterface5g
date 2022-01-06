@@ -37,10 +37,10 @@ rx_func_implem[rx_func]
       handle_nr_ulsch --> gNB_dlsch_ulsch_scheduler
       subgraph NR_Schedule_response
          L1_tx_free3>L1_tx_free]
-         --> handle_dl_fapi
+         --> handle_nr_nfapi_xxx_pdu
          --> sendTxFilled((L1_tx_filled))
-         --> handle_ul_nfapi
-       
+         --> nr_fill_ul_xxx
+         --> nr_fill_prach
       end
       gNB_dlsch_ulsch_scheduler --> NR_Schedule_response
     end 

@@ -123,7 +123,6 @@ void tx_func(void *param) {
 }
 
 void rx_func(void *param) {
-
   processingData_L1_t *info = (processingData_L1_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
   int frame_rx = info->frame_rx;
@@ -303,7 +302,7 @@ void rx_func(void *param) {
 static void dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output) {
   int stroff = 0;
   stroff += print_meas_log(gNB->phy_proc_tx[0], "L1 Tx processing thread 0", NULL, NULL, output);
-  stroff += print_meas_log(gNB->phy_proc_tx[1], "L1 Tx processing thread 1", NULL, NULL, output+stroff);
+  //stroff += print_meas_log(gNB->phy_proc_tx[1], "L1 Tx processing thread 1", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output+stroff);
@@ -339,7 +338,7 @@ void *nrL1_stats_thread(void *param) {
   AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
 
   reset_meas(gNB->phy_proc_tx[0]);
-  reset_meas(gNB->phy_proc_tx[1]);
+  //reset_meas(gNB->phy_proc_tx[1]);
   reset_meas(&gNB->dlsch_encoding_stats);
   reset_meas(&gNB->phy_proc_rx);
   reset_meas(&gNB->ul_indication_stats);
@@ -445,7 +444,7 @@ void init_gNB_Tpool(int inst) {
   initNotifiedFIFO(gNB->L1_tx_out);
   
   // we create 2 threads for L1 tx processing
-  for (int i=0; i < 2; i++) {
+  for (int i=0; i < 1; i++) {
     notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
     processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
     init_DLSCH_struct(gNB, msgDataTx);
