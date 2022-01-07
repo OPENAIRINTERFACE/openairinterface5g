@@ -45,6 +45,7 @@
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include <openair2/UTIL/OPT/opt.h>
 
 //#define DEBUG_PUSCH_MAPPING
 //#define DEBUG_MAC_PDU
@@ -163,8 +164,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
     
 
+    trace_NRpdu(DIRECTION_UPLINK,
+		ulsch_ue->harq_processes[harq_pid]->a,
+		ulsch_ue->harq_processes[harq_pid]->pusch_pdu.pusch_data.tb_size,
+		0, WS_C_RNTI, rnti, frame, slot, 0, 0);
+
     if (nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G) == -1)
       return;
+
 
     ///////////
     ////////////////////////////////////////////////////////////////////

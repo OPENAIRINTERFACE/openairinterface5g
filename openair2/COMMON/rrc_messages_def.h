@@ -65,6 +65,8 @@ MESSAGE_DEF(NAS_UPLINK_DATA_REQ,        MESSAGE_PRIORITY_MED,       NasUlDataReq
 
 MESSAGE_DEF(NAS_RAB_ESTABLI_RSP,        MESSAGE_PRIORITY_MED,       NasRabEstRsp,               nas_rab_est_rsp)
 
+MESSAGE_DEF(NAS_OAI_TUN_NSA,            MESSAGE_PRIORITY_MED,       NasOaiTunNsa,               nas_oai_tun_nsa)
+
 // UE: RRC -> NAS messages
 MESSAGE_DEF(NAS_CELL_SELECTION_CNF,     MESSAGE_PRIORITY_MED,       NasCellSelectionCnf,        nas_cell_selection_cnf)
 MESSAGE_DEF(NAS_CELL_SELECTION_IND,     MESSAGE_PRIORITY_MED,       NasCellSelectionInd,        nas_cell_selection_ind)
@@ -79,3 +81,5 @@ MESSAGE_DEF(RRC_SUBFRAME_PROCESS,       MESSAGE_PRIORITY_MED,       RrcSubframeP
 
 // eNB: RLC -> RRC messages
 MESSAGE_DEF(RLC_SDU_INDICATION,         MESSAGE_PRIORITY_MED,       RlcSduIndication,           rlc_sdu_indication)
+
+MESSAGE_DEF(NR_DU_RRC_DL_INDICATION,    MESSAGE_PRIORITY_MED,       NRDuDlReq_t,                nr_du_dl_req)

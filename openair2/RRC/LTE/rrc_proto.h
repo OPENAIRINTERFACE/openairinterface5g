@@ -31,6 +31,8 @@
  *  @{
  */
 
+#pragma once
+
 #include "RRC/LTE/rrc_defs.h"
 #include "x2ap_messages_types.h"
 #include "flexran_agent_extern.h"
@@ -103,6 +105,7 @@ rrc_ue_decode_dcch(
   const protocol_ctxt_t *const ctxt_pP,
   const rb_id_t                Srb_id,
   const uint8_t         *const Buffer,
+  const uint32_t               Buffer_size,
   const uint8_t                eNB_indexP
 );
 
@@ -310,6 +313,7 @@ void
 rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     rrc_eNB_ue_context_t  *const ue_context_pP,
     uint8_t               *buffer,
+    size_t                 buffer_size,
     int                    *_size
     //const uint8_t        ho_state
                                                 );
@@ -353,6 +357,12 @@ void *rrc_enb_task(void *args_p);
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_ue_task(void *args_p);
+
+/**\brief RRC NSA UE task.
+   \param void *args_p Pointer on arguments to start the task. */
+void *recv_msgs_from_nr_ue(void *args_p);
+
+void init_connections_with_nr_ue(void);
 
 void rrc_eNB_process_x2_setup_request(int mod_id, x2ap_setup_req_t *m);
 
