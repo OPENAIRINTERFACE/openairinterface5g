@@ -133,7 +133,7 @@ class EPCManagement():
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 MME in Docker')
-			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup tshark -i eth0 -i lo:s10 -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup tshark -i eth0 -i lo:s10 -f "not port 2152" -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
 			time.sleep(5)
 			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup ./bin/oai_mme -c ./etc/' + self.mmeConfFile + ' > mme_check_run.log 2>&1"', '\$', 5)
 		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
@@ -198,8 +198,8 @@ class EPCManagement():
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 SPGW-CUPS in Docker')
-			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "nohup tshark -i eth0 -i lo:p5c -i lo:s5c -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
-			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "nohup tshark -i eth0 -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "nohup tshark -i eth0 -i lo:p5c -i lo:s5c -f "not port 2152" -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "nohup tshark -i eth0 -f "not port 2152" -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
 			time.sleep(5)
 			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "nohup ./bin/oai_spgwc -o -c ./etc/spgw_c.conf > spgwc_check_run.log 2>&1"', '\$', 5)
 			time.sleep(5)
