@@ -141,8 +141,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        int *eNB_id,
 		       int *f_off);
 
-int nr_adjust_pss_synch(PHY_VARS_NR_UE *ue);
-
 #endif
 #undef EXTERN
 
