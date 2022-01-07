@@ -970,6 +970,7 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
 
   int start_symbol_index,nr_of_symbols;
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
+  int mcsindex = -1; // init value
 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = rnti;
@@ -978,10 +979,7 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->bwp_size = bwp_size;
   pusch_pdu->subcarrier_spacing = scs;
   pusch_pdu->cyclic_prefix = 0;
-  pusch_pdu->mcs_index = 1;
   pusch_pdu->mcs_table = 0;
-  pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
-  pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
     pusch_pdu->transform_precoding = 1;
   else
@@ -1018,15 +1016,24 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   int num_dmrs_symb = 0;
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
     num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
-  pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
-                                                 pusch_pdu->target_code_rate,
-                                                 pusch_pdu->rb_size,
-                                                 pusch_pdu->nr_of_symbols,
-                                                 num_dmrs_symb*12, // nb dmrs set for no data in dmrs symbol
-                                                 0, //nb_rb_oh
-                                                 0, // to verify tb scaling
-                                                 pusch_pdu->nrOfLayers)>>3;
 
+  int TBS = 0;
+  while(TBS<7) {  // TBS for msg3 is 7 bytes (except for RRCResumeRequest1 currently not implemented)
+    mcsindex++;
+    pusch_pdu->target_code_rate = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
+    pusch_pdu->qam_mod_order = nr_get_Qm_ul(mcsindex,pusch_pdu->mcs_table);
+    TBS = nr_compute_tbs(pusch_pdu->qam_mod_order,
+                         pusch_pdu->target_code_rate,
+                         pusch_pdu->rb_size,
+                         pusch_pdu->nr_of_symbols,
+                         num_dmrs_symb*12, // nb dmrs set for no data in dmrs symbol
+                         0, //nb_rb_oh
+                         0, // to verify tb scaling
+                         pusch_pdu->nrOfLayers)>>3;
+
+    pusch_pdu->mcs_index = mcsindex;
+    pusch_pdu->pusch_data.tb_size = TBS;
+  }
 }
 
 void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra, uint8_t *RAR_pdu)
