@@ -106,7 +106,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   prs_data.PRSResourceSetPeriod[1]=0;  // resource slot offset
   prs_data.SymbolStart=5;		
   prs_data.NumPRSSymbols=6;
-  prs_data.NumRB=106;
+  prs_data.NumRB=273;
   prs_data.RBOffset=0;
   prs_data.CombSize=6;
   prs_data.REOffset=0;
@@ -237,7 +237,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   prs_data.PRSResourceSetPeriod[1]=0;  // resource slot offset
   prs_data.SymbolStart=5;		
   prs_data.NumPRSSymbols=6;
-  prs_data.NumRB=106;
+  prs_data.NumRB=273;
   prs_data.RBOffset=0;
   prs_data.CombSize=6;
   prs_data.REOffset=0;
