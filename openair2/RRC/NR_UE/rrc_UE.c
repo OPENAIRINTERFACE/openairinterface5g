@@ -2644,8 +2644,9 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
   NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
 
-  FILE *f = NULL;
   char *file_path = NR_UE_rrc_inst[ctxt_pP->module_id].uecap_file;
+
+  FILE *f = NULL;
   if (file_path) {
     sprintf(UE_NR_Capability_xer_fname,"%s",file_path);
     f = fopen(UE_NR_Capability_xer_fname, "r");

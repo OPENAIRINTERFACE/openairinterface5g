@@ -38,6 +38,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
+#include "executables/nr-softmodem.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "UTIL/OSA/osa_defs.h"
@@ -148,8 +149,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
     NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
     char UE_NR_Capability_xer_fname[1024];
     char UE_NR_Capability_xer[65536];
-    sprintf(UE_NR_Capability_xer_fname,"../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml");
-    FILE *f = fopen(UE_NR_Capability_xer_fname, "r");
+    FILE *f = NULL;
+    if (uecap_file) {
+      sprintf(UE_NR_Capability_xer_fname,"%s",uecap_file);
+      f = fopen(UE_NR_Capability_xer_fname, "r");
+    }
     if(f){
       size_t size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
       if (size == 0 || size == sizeof UE_NR_Capability_xer)
