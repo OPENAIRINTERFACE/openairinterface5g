@@ -339,14 +339,12 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
   int nb_re_pusch2 = nb_re_pusch;
 #endif
 
-  for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) 
-  {
+  for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
 
     rxF       = (int16_t *)&rxdataF[aarx][soffset+(symbol * frame_parms->ofdm_symbol_size)];
     rxF_ext   = (int16_t *)&pusch_vars->rxdataF_ext[aarx][symbol * nb_re_pusch2]; // [hna] rxdataF_ext isn't contiguous in order to solve an alignment problem ib llr computation in case of mod_order = 4, 6
     
-    if (is_dmrs_symbol == 0) 
-    {
+    if (is_dmrs_symbol == 0) {
       //
       //rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
       if (start_re + nb_re_pusch < frame_parms->ofdm_symbol_size) 
@@ -466,14 +464,10 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
   int off = 0;
 #endif
 
-for (aatx = 0; aatx < nrOfLayers; aatx++)
-{
-  for (aarx=0; aarx < frame_parms->nb_antennas_rx; aarx++) 
-  {
+  for (aatx = 0; aatx < nrOfLayers; aatx++) {
+    for (aarx=0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       ul_ch128 = (__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*NR_NB_SC_PER_RB))];
-
-      for (rb=0;rb < nb_rb_0;rb++) 
-      {
+      for (rb=0;rb < nb_rb_0;rb++) {
         ul_ch128[0] = _mm_mulhi_epi16(ul_ch128[0], ch_amp128);
         ul_ch128[0] = _mm_slli_epi16(ul_ch128[0], 3);
 
@@ -484,8 +478,8 @@ for (aatx = 0; aatx < nrOfLayers; aatx++)
         ul_ch128[2] = _mm_slli_epi16(ul_ch128[2], 3);
         ul_ch128+=3;
       }
+    }
   }
-}
 #endif
 }
 

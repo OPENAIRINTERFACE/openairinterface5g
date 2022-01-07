@@ -145,25 +145,20 @@ void nr_ulsch_layer_demapping(int16_t *llr_cw,
 {
 
   switch (Nl) {
-
     case 1:
       memcpy((void*)llr_cw, (void*)llr_layers[0], (length)*sizeof(int16_t));
-    break;
-
+      break;
     case 2:
     case 3:
     case 4:
-      for (int i=0; i<(length/Nl/mod_order); i++)
-      {
-        for (int l=0; l<Nl; l++) 
-        {
-        	for (int m=0; m<mod_order; m++){
-        		llr_cw[i*Nl*mod_order+l*mod_order+m] = llr_layers[l][i*mod_order+m];
-        	}
+      for (int i=0; i<(length/Nl/mod_order); i++) {
+        for (int l=0; l<Nl; l++) {
+          for (int m=0; m<mod_order; m++) {
+            llr_cw[i*Nl*mod_order+l*mod_order+m] = llr_layers[l][i*mod_order+m];
+          }
         }
-  	  }
-    break;
-
+      }
+      break;
   default:
   AssertFatal(0, "Not supported number of layers %d\n", Nl);
   }

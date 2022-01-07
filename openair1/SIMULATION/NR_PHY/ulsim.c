@@ -488,32 +488,26 @@ int main(int argc, char **argv)
       
     case 'y':
       n_tx = atoi(optarg);
-      
       if ((n_tx == 0) || (n_tx > 4)) {
-          printf("Unsupported number of tx antennas %d\n", n_tx);
-          exit(-1);
+        printf("Unsupported number of tx antennas %d\n", n_tx);
+        exit(-1);
       }
-      
       break;
       
     case 'z':
       n_rx = atoi(optarg);
-      
       if ((n_rx == 0) || (n_rx > 8)) {
-          printf("Unsupported number of rx antennas %d\n", n_rx);
-          exit(-1);
+        printf("Unsupported number of rx antennas %d\n", n_rx);
+        exit(-1);
       }
-      
       break;
       
     case 'F':
       input_fd = fopen(optarg, "r");
-      
       if (input_fd == NULL) {
-          printf("Problem with filename %s\n", optarg);
-          exit(-1);
+        printf("Problem with filename %s\n", optarg);
+        exit(-1);
       }
-      
       break;
 
     case 'G':
@@ -571,13 +565,10 @@ int main(int argc, char **argv)
       break;
 
     case 'Z':
-
       transformPrecoder = transformPrecoder_enabled; 
       num_dmrs_cdm_grps_no_data = 2;
       mcs_table = 3;
-      
       printf("NOTE: TRANSFORM PRECODING (SC-FDMA) is ENABLED in UPLINK (0 - ENABLE, 1 - DISABLE) : %d \n",  transformPrecoder);
-
       break;
 
     default:
@@ -1300,15 +1291,6 @@ int main(int argc, char **argv)
             ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)   + (delay*2)] = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
             ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)] = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
             
-            #if 0
-            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)   + (delay*2)] = (int16_t)((r_re[ap][i])); // convert to fixed point
-            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)] = (int16_t)((r_im[ap][i]));
-
-            
-            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i) ] = ((int16_t*) &UE->common_vars.txdata[ap][slot_offset])[(2*i) ]; // convert to fixed point
-            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1] = ((int16_t*) &UE->common_vars.txdata[ap][slot_offset])[(2*i)+1 ];
-            #endif
-
             /* Add phase noise if enabled */
             if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
               phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
@@ -1451,56 +1433,6 @@ int main(int argc, char **argv)
         &gNB->pusch_vars[0]->llr_layers[3][0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
     }
 		
-    #if 0		
-	if (n_rx == 2) {
-      LOG_MM("rxsigF0_comp.m","rxsF1_comp",
-      &gNB->pusch_vars[0]->rxdataF_comp[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("rxsigF0_ext.m","rxsF1_ext",
-      &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chestF0_ext.m","chF1_ext",
-      &gNB->pusch_vars[0]->ul_ch_estimates_ext[1][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-      (nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chmagF0.m","chmF1",
-      &gNB->pusch_vars[0]->ul_ch_mag[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chmagbF0.m","chmbF1",
-      &gNB->pusch_vars[0]->ul_ch_magb[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-    } else if (n_rx == 4) {
-      LOG_MM("rxsigF0_comp.m","rxsF1_comp",
-      &gNB->pusch_vars[0]->rxdataF_comp[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("rxsigF0_comp.m","rxsF2_comp",
-      &gNB->pusch_vars[0]->rxdataF_comp[2][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("rxsigF0_comp.m","rxsF3_comp",
-      &gNB->pusch_vars[0]->rxdataF_comp[3][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("rxsigF0_ext.m","rxsF1_ext",
-      &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("rxsigF0_ext.m","rxsF2_ext",
-      &gNB->pusch_vars[0]->rxdataF_ext[2][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("rxsigF0_ext.m","rxsF3_ext",
-      &gNB->pusch_vars[0]->rxdataF_ext[3][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chestF0_ext.m","chF1_ext",
-      &gNB->pusch_vars[0]->ul_ch_estimates_ext[1][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-      (nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chestF0_ext.m","chF2_ext",
-      &gNB->pusch_vars[0]->ul_ch_estimates_ext[2][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-      (nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chestF0_ext.m","chF3_ext",
-      &gNB->pusch_vars[0]->ul_ch_estimates_ext[3][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
-      (nb_symb_sch-1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chmagF0.m","chmF1",
-      &gNB->pusch_vars[0]->ul_ch_mag[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chmagF0.m","chmF2",
-      &gNB->pusch_vars[0]->ul_ch_mag[2][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chmagF0.m","chmF3",
-      &gNB->pusch_vars[0]->ul_ch_mag[3][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chmagbF0.m","chmbF1",
-      &gNB->pusch_vars[0]->ul_ch_magb[1][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chmagbF0.m","chmbF2",
-      &gNB->pusch_vars[0]->ul_ch_magb[2][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-      LOG_MM("chmagbF0.m","chmbF3",
-      &gNB->pusch_vars[0]->ul_ch_magb[3][start_symbol*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
-    }
-	#endif
-
 	  LOG_M("rxsigF0_llr.m","rxsF0_llr",
 		&gNB->pusch_vars[0]->llr[0],precod_nbr_layers*(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 	}
