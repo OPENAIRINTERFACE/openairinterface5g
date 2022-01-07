@@ -308,7 +308,7 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ""
 		else:
 			CiTestObj.ue_id = ue_id
-		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only	
+		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only
 		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
 		CiTestObj.iperf_profile = test.findtext('iperf_profile')
 		if (CiTestObj.iperf_profile is None):
