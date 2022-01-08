@@ -18,3 +18,8 @@ GPATH
 GRTAGS
 GTAGS
 tags
+
+# others
+nfapi_nr_interface_scf
+*.log
+*.out

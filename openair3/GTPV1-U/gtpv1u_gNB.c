@@ -191,9 +191,6 @@ NwGtpv1uRcT gtpv1u_gNB_process_stack_req(
                  );
 
         if ( result == FALSE ) {
-          if (ctxt.configured == FALSE )
-            LOG_W(GTPU, "gNB node PDCP data request failed, cause: [UE:%x]RB is not configured!\n", ctxt.rnti) ;
-          else
             LOG_W(GTPU, "PDCP data request failed\n");
 
           return NW_GTPV1U_FAILURE;
@@ -390,9 +387,6 @@ NwGtpv1uRcT nr_gtpv1u_gNB_process_stack_req(
                  );
 
         if ( result == FALSE ) {
-          if (ctxt.configured == FALSE )
-            LOG_W(GTPU, "gNB node PDCP data request failed, cause: [UE:%x]RB is not configured!\n", ctxt.rnti) ;
-          else
             LOG_W(GTPU, "PDCP data request failed\n");
 
           return NW_GTPV1U_FAILURE;
@@ -528,7 +522,7 @@ gtpv1u_create_ngu_tunnel(
     MSC_AS_TIME_FMT" CREATE_TUNNEL_REQ RNTI %"PRIx16" inst %u ntuns %u psid %u upf-ngu teid %u",
     0,0,create_tunnel_req_pP->rnti, instanceP,
     create_tunnel_req_pP->num_tunnels, create_tunnel_req_pP->pdusession_id[0],
-    create_tunnel_req_pP->upf_NGu_teid[0]);
+    create_tunnel_req_pP->outgoing_teid[0]);
   create_tunnel_resp_pP->rnti        = create_tunnel_req_pP->rnti;
   create_tunnel_resp_pP->status      = 0;
   create_tunnel_resp_pP->num_tunnels = 0;
@@ -579,16 +573,16 @@ gtpv1u_create_ngu_tunnel(
      
       LOG_I(GTPU,"Configured GTPu address : %x\n",RC.nr_gtpv1u_data_g->gnb_ip_address_for_NGu_up);
       create_tunnel_resp_pP->gnb_addr.length = sizeof (in_addr_t);
-      addrs_length_in_bytes = create_tunnel_req_pP->upf_addr[i].length / 8;
+      addrs_length_in_bytes = create_tunnel_req_pP->dst_addr[i].length / 8;
       AssertFatal((addrs_length_in_bytes == 4) ||
                   (addrs_length_in_bytes == 16) ||
                   (addrs_length_in_bytes == 20),
                   "Bad transport layer address length %d (bits) %d (bytes)",
-                  create_tunnel_req_pP->upf_addr[i].length, addrs_length_in_bytes);
+                  create_tunnel_req_pP->dst_addr[i].length, addrs_length_in_bytes);
 
       if ((addrs_length_in_bytes == 4) ||
           (addrs_length_in_bytes == 20)) {
-        in_addr = *((in_addr_t *)create_tunnel_req_pP->upf_addr[i].buffer);
+        in_addr = *((in_addr_t *)create_tunnel_req_pP->dst_addr[i].buffer);
         ip_offset = 4;
         gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].upf_ip_addr = in_addr;
       }
@@ -596,14 +590,14 @@ gtpv1u_create_ngu_tunnel(
       if ((addrs_length_in_bytes == 16) ||
           (addrs_length_in_bytes == 20)) {
         memcpy(gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].upf_ip6_addr.s6_addr,
-               &create_tunnel_req_pP->upf_addr[i].buffer[ip_offset],
+               &create_tunnel_req_pP->dst_addr[i].buffer[ip_offset],
                16);
       }
 
       gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].state                  = BEARER_IN_CONFIG;
       gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].teid_gNB               = ngu_teid;
       gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].teid_gNB_stack_session = stack_req.apiInfo.createTunnelEndPointInfo.hStackSession;
-      gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].teid_upf               = create_tunnel_req_pP->upf_NGu_teid[i];
+      gtpv1u_ue_data_p->bearers[pdusession_id - GTPV1U_BEARER_OFFSET].teid_upf               = create_tunnel_req_pP->outgoing_teid[i];
       gtpv1u_ue_data_p->num_bearers++;
       create_tunnel_resp_pP->gnb_NGu_teid[i] = ngu_teid;
 
@@ -861,7 +855,7 @@ static int gtpv1u_gnb_tunnel_data_req(gtpv1u_gnb_tunnel_data_req_t *gnb_tunnel_d
   hashtable_rc_t                hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
   nr_gtpv1u_ue_data_t          *gtpv1u_ue_data_p     = NULL;
   teid_t                        gnb_ngu_teid         = 0;
-  teid_t                        upf_ngu_teid         = 0;
+  teid_t                        outgoing_teid         = 0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_TUNNEL_DATA_REQ, VCD_FUNCTION_IN);
   data_req_p = gnb_tunnel_data_req;
 
@@ -873,13 +867,13 @@ static int gtpv1u_gnb_tunnel_data_req(gtpv1u_gnb_tunnel_data_req_t *gnb_tunnel_d
   } else {
     if ((data_req_p->pdusession_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->pdusession_id < max_val_NR_DRB_Identity)) {
       gnb_ngu_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->pdusession_id - GTPV1U_BEARER_OFFSET].teid_gNB;
-      upf_ngu_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->pdusession_id - GTPV1U_BEARER_OFFSET].teid_upf;
+      outgoing_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->pdusession_id - GTPV1U_BEARER_OFFSET].teid_upf;
       stack_req.apiType                   = NW_GTPV1U_ULP_API_SEND_TPDU;
-      stack_req.apiInfo.sendtoInfo.teid   = upf_ngu_teid;
+      stack_req.apiInfo.sendtoInfo.teid   = outgoing_teid;
       stack_req.apiInfo.sendtoInfo.ipAddr = gtpv1u_ue_data_p->bearers[data_req_p->pdusession_id - GTPV1U_BEARER_OFFSET].upf_ip_addr;
       rc = nwGtpv1uGpduMsgNew(
               RC.nr_gtpv1u_data_g->gtpv1u_stack,
-              upf_ngu_teid,
+              outgoing_teid,
               NW_FALSE,
               RC.nr_gtpv1u_data_g->seq_num++,
               data_req_p->buffer,
@@ -890,7 +884,7 @@ static int gtpv1u_gnb_tunnel_data_req(gtpv1u_gnb_tunnel_data_req_t *gnb_tunnel_d
       if (rc != NW_GTPV1U_OK) {
         LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
         MSC_LOG_EVENT(MSC_GTPU_GNB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                      gnb_ngu_teid,upf_ngu_teid,data_req_p->length);
+                      gnb_ngu_teid,outgoing_teid,data_req_p->length);
         (void)gnb_ngu_teid; /* avoid gcc warning "set but not used" */
       } else {
         rc = nwGtpv1uProcessUlpReq(RC.nr_gtpv1u_data_g->gtpv1u_stack, &stack_req);
@@ -898,7 +892,7 @@ static int gtpv1u_gnb_tunnel_data_req(gtpv1u_gnb_tunnel_data_req_t *gnb_tunnel_d
         if (rc != NW_GTPV1U_OK) {
           LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
           MSC_LOG_EVENT(MSC_GTPU_GNB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                        gnb_ngu_teid,upf_ngu_teid,data_req_p->length);
+                        gnb_ngu_teid,outgoing_teid,data_req_p->length);
         } else {
           MSC_LOG_TX_MESSAGE(
             MSC_GTPU_GNB,
@@ -908,7 +902,7 @@ static int gtpv1u_gnb_tunnel_data_req(gtpv1u_gnb_tunnel_data_req_t *gnb_tunnel_d
             MSC_AS_TIME_FMT" G-PDU ltid %u rtid %u size %u",
             0,0,
             gnb_ngu_teid,
-            upf_ngu_teid,
+            outgoing_teid,
             data_req_p->length);
         }
 

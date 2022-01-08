@@ -553,7 +553,11 @@ void fill_rx_indication_from_split(uint8_t *bufferZone, PHY_VARS_eNB *eNB,int UE
   pdu->rx_indication_rel8.tl.tag         = NFAPI_RX_INDICATION_REL8_TAG;
   pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
   pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-  pdu->data                              = eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes;
+  AssertFatal(pdu->rx_indication_rel8.length <= NFAPI_RX_IND_DATA_MAX, "Invalid PDU len %d\n",
+              pdu->rx_indication_rel8.length);
+  memcpy(pdu->rx_ind_data,
+         eNB->ulsch[UE_id]->harq_processes[harq_pid]->decodedBytes,
+         pdu->rx_indication_rel8.length);
   // estimate timing advance for MAC
   timing_advance_update                  = ul_propa[UE_id].ta;
 

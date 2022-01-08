@@ -10,6 +10,7 @@ extern "C" {
 #define sizeofArray(a) (sizeof(a)/sizeof(*(a)))
 void *calloc_or_fail(size_t size);
 void *malloc_or_fail(size_t size);
+const char *hexdump(const void *data, size_t data_len, char *out, size_t out_len);
 
 // Converts an hexadecimal ASCII coded digit into its value. **
 int hex_char_to_hex_value (char c);
@@ -18,6 +19,7 @@ int hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int siz
 
 void *memcpy1(void *dst,const void *src,size_t n);
 
+void set_priority(int priority);
 
 char *itoa(int i);
 

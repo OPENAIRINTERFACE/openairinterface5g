@@ -1,5 +1,6 @@
 #ifndef __GTPUNEW_ITF_H__
 #define __GTPUNEW_ITF_H__
+
 #define GTPNOK -1
 
 # define GTPU_HEADER_OVERHEAD_MAX 64
@@ -31,7 +32,7 @@ typedef boolean_t (*gtpCallback)(
   const pdcp_transmission_mode_t modeP,
   const uint32_t *sourceL2Id,
   const uint32_t *destinationL2Id);
-
+  
 typedef struct openAddr_s {
   char originHost[HOST_NAME_MAX];
   char originService[HOST_NAME_MAX];
@@ -62,6 +63,7 @@ int ocp_gtpv1u_create_x2u_tunnel(
 // New API
 teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_rb_id, teid_t teid,
                            transport_layer_addr_t remoteAddr, int port, gtpCallback callBack);
+void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer_id, teid_t newOutgoingTeid);
 instance_t ocp_gtpv1Init(openAddr_t context);
 void *ocp_gtpv1uTask(void *args);
 

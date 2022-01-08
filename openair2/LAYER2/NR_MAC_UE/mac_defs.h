@@ -430,7 +430,13 @@ typedef struct {
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
 
+  // Defined for abstracted mode
+  nr_downlink_indication_t dl_info;
   NR_UE_HARQ_STATUS_t dl_harq_info[16];
+
+  nr_emulated_l1_t nr_ue_emul_l1;
+
+  pthread_mutex_t mutex_dl_info;
 
 } NR_UE_MAC_INST_t;
 

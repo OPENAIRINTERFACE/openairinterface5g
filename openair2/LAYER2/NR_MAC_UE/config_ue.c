@@ -627,7 +627,8 @@ int nr_rrc_mac_config_req_ue(
         pthread_mutex_init(&(mac->ul_config_request[i].mutex_ul_config), NULL);
       // Setup the SSB to Rach Occasions mapping according to the config
       build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
-      mac->if_module->phy_config_request(&mac->phy_config);
+      if (!get_softmodem_params()->emulate_l1)
+        mac->if_module->phy_config_request(&mac->phy_config);
       mac->common_configuration_complete = 1;
     }
     if(scell_group_config != NULL ){
@@ -654,7 +655,16 @@ int nr_rrc_mac_config_req_ue(
     else if (cell_group_config != NULL ){
       LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
       mac->cg = cell_group_config;
-      mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+      if (cell_group_config->spCellConfig) {
+        mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+        mac->DL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id : 0;
+        mac->UL_BWP_Id=mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id : 0;
+      }
+      else {
+        mac->servCellIndex = 0;
+        mac->DL_BWP_Id = 0;
+        mac->UL_BWP_Id = 0;
+      }
 
       mac->scheduling_info.periodicBSR_SF =
         MAC_UE_BSR_TIMER_NOT_RUNNING;
@@ -667,7 +677,26 @@ int nr_rrc_mac_config_req_ue(
             mac->scheduling_info.retxBSR_SF);
 
       config_control_ue(mac);
-      //config_common_ue(mac,module_id,cc_idP);
+      if (get_softmodem_params()->nsa) {
+        if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
+          if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
+            ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+          }
+          mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+          int num_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+          if (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
+            num_slots++;
+          }
+          mac->ul_config_request = calloc(num_slots, sizeof(*mac->ul_config_request));
+          config_common_ue(mac,module_id,cc_idP);
+          mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
+          LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
+        }
+
+        // Setup the SSB to Rach Occasions mapping according to the config
+        build_ssb_to_ro_map(mac);
+      }
+
       /*      
       if(mac_cell_group_configP != NULL){
 	if(mac_cell_group_configP->drx_Config != NULL ){

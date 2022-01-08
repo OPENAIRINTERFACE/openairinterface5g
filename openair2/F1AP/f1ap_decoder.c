@@ -35,15 +35,13 @@
 
 int asn1_decoder_xer_print = 0;
 
-static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
-{
+static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu) {
   //MessageDef *message_p;
   //MessagesIds message_id;
   //asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.initiatingMessage->procedureCode) {
-    
     case F1AP_ProcedureCode_id_F1Setup:
       //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_F1Setup\n", __func__);
@@ -68,15 +66,19 @@ static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
       //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_ULRRCMessageTransfer\n", __func__);
       break;
+
     case F1AP_ProcedureCode_id_UEContextRelease:
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextRelease\n", __func__);
       break;
+
     case F1AP_ProcedureCode_id_UEContextReleaseRequest:
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextReleaseRequest\n", __func__);
       break;
+
     case F1AP_ProcedureCode_id_UEContextSetup:
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextSetup\n", __func__);
       break;
+
     // case F1AP_ProcedureCode_id_InitialContextSetup:
     //   res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
     //   message_id = F1AP_INITIAL_CONTEXT_SETUP_LOG;
@@ -92,7 +94,7 @@ static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
       // F1AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
       //            (int)pdu->choice.initiatingMessage->procedureCode);
       LOG_E(F1AP, "Unknown procedure ID (%d) for initiating message\n",
-                  (int)pdu->choice.initiatingMessage->procedureCode);
+            (int)pdu->choice.initiatingMessage->procedureCode);
       AssertFatal( 0, "Unknown procedure ID (%d) for initiating message\n",
                    (int)pdu->choice.initiatingMessage->procedureCode);
       return -1;
@@ -101,8 +103,7 @@ static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
   return 0;
 }
 
-static int f1ap_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu)
-{
+static int f1ap_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu) {
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.successfulOutcome->procedureCode) {
@@ -118,41 +119,41 @@ static int f1ap_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu)
       LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextRelease\n", __func__);
       break;
 
+    case F1AP_ProcedureCode_id_UEContextSetup:
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextSetup\n", __func__);
+      break;
+
     default:
       LOG_E(F1AP,"Unknown procedure ID (%d) for successfull outcome message\n",
-                 (int)pdu->choice.successfulOutcome->procedureCode);
+            (int)pdu->choice.successfulOutcome->procedureCode);
       return -1;
   }
 
   return 0;
 }
 
-static int f1ap_decode_unsuccessful_outcome(F1AP_F1AP_PDU_t *pdu)
-{
+static int f1ap_decode_unsuccessful_outcome(F1AP_F1AP_PDU_t *pdu) {
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.unsuccessfulOutcome->procedureCode) {
     case F1AP_ProcedureCode_id_F1Setup:
-    LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_F1Setup\n", __func__);
-    break;
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_F1Setup\n", __func__);
+      break;
 
     default:
       // F1AP_ERROR("Unknown procedure ID (%d) for unsuccessfull outcome message\n",
       //            (int)pdu->choice.unsuccessfulOutcome->procedureCode);
       LOG_E(F1AP, "Unknown procedure ID (%d) for unsuccessfull outcome message\n",
-                 (int)pdu->choice.unsuccessfulOutcome->procedureCode);
+            (int)pdu->choice.unsuccessfulOutcome->procedureCode);
       return -1;
   }
 
   return 0;
 }
 
-int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length)
-{
+int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length) {
   asn_dec_rval_t dec_ret;
-
   DevAssert(buffer != NULL);
-
   dec_ret = aper_decode(NULL,
                         &asn_DEF_F1AP_F1AP_PDU,
                         (void **)&pdu,
@@ -166,6 +167,7 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
     xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
     LOG_E(F1AP, "----------------- ASN1 DECODER PRINT END ----------------- \n");
   }
+
   //LOG_I(F1AP, "f1ap_decode_pdu.dec_ret.code = %d\n", dec_ret.code);
 
   if (dec_ret.code != RC_OK) {
@@ -187,7 +189,6 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
       LOG_E(F1AP, "Unknown presence (%d) or not implemented\n", (int)pdu->present);
       break;
   }
-
 
   return -1;
 }
