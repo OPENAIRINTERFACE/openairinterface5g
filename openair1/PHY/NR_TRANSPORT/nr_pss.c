@@ -24,8 +24,7 @@
 
 //#define NR_PSS_DEBUG
 
-int nr_generate_pss(  int16_t *d_pss,
-                      int32_t *txdataF,
+int nr_generate_pss(  int32_t *txdataF,
                       int16_t amp,
                       uint8_t ssb_start_symbol,
                       nfapi_nr_config_request_scf_t* config,
@@ -33,6 +32,7 @@ int nr_generate_pss(  int16_t *d_pss,
 {
   int i,k,l,m;
   int16_t a;
+  int16_t d_pss[NR_PSS_LENGTH];
   int16_t x[NR_PSS_LENGTH];
   const int x_initial[7] = {0, 1, 1 , 0, 1, 1, 1};
 

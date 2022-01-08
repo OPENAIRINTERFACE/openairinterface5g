@@ -23,8 +23,7 @@
 
 //#define NR_SSS_DEBUG
 
-int nr_generate_sss(  int16_t *d_sss,
-                      int32_t *txdataF,
+int nr_generate_sss(  int32_t *txdataF,
                       int16_t amp,
                       uint8_t ssb_start_symbol,
                       nfapi_nr_config_request_scf_t* config,
@@ -34,6 +33,7 @@ int nr_generate_sss(  int16_t *d_sss,
   int m0, m1;
   int Nid, Nid1, Nid2;
   //int16_t a;
+  int16_t d_sss[NR_SSS_LENGTH];
   int16_t x0[NR_SSS_LENGTH], x1[NR_SSS_LENGTH];
   const int x0_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
   const int x1_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
