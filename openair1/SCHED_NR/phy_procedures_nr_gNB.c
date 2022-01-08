@@ -35,6 +35,7 @@
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
 #include "T.h"
+#include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 
 #include "assertions.h"
