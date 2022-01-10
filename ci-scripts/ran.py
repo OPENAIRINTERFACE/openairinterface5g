@@ -1021,12 +1021,9 @@ class RANManagement():
 			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
 		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
 
-		if (os.path.isfile('./nrL1_stats.log')) and (os.path.isfile('./nrL1_stats.log')):
-			stat_files_present=True
-		else:
-			stat_files_present=False
-			logging.debug("NR Stats files for RT analysis not found")
-		if stat_files_present:
+		if os.path.isfile('./nrL1_stats.log') and os.path.isfile('./nrMAC_stats.log'):
+			# don't use CI-nrL1_stats.log, as this will increase the processing time for
+			# no reason, we just need the last occurence
 			nrL1_stats = open('./nrL1_stats.log', 'r')
 			nrMAC_stats = open('./nrMAC_stats.log', 'r')
 			for line in nrL1_stats.readlines():
@@ -1047,6 +1044,8 @@ class RANManagement():
 							real_time_stats[k]=tmp.group(1)
 			nrL1_stats.close()
 			nrMAC_stats.close()
+		else:
+			logging.debug("NR Stats files for RT analysis not found")
 
 		#stdout log file and stat log files analysis completed
 		logging.debug('   File analysis (stdout, stats) completed')
