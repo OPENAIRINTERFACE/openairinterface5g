@@ -1061,6 +1061,48 @@ ID = LEGACY_NFAPI_PNF_TRACE
     DESC = NFAPI_PNF legacy logs - trace level
     GROUP = ALL:LEGACY_NFAPI_PNF:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
+
+ID = LEGACY_ITTI_INFO
+    DESC = ITTI legacy logs - info level
+    GROUP = ALL:LEGACY_ITTI:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ITTI_ERROR
+    DESC = ITTI legacy logs - error level
+    GROUP = ALL:LEGACY_ITTI:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ITTI_WARNING
+    DESC = ITTI legacy logs - warning level
+    GROUP = ALL:LEGACY_ITTI:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ITTI_DEBUG
+    DESC = ITTI legacy logs - debug level
+    GROUP = ALL:LEGACY_ITTI:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ITTI_TRACE
+    DESC = ITTI legacy logs - trace level
+    GROUP = ALL:LEGACY_ITTI:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+
+ID = LEGACY_UTIL_INFO
+    DESC = UTIL legacy logs - info level
+    GROUP = ALL:LEGACY_UTIL:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_UTIL_ERROR
+    DESC = UTIL legacy logs - error level
+    GROUP = ALL:LEGACY_UTIL:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_UTIL_WARNING
+    DESC = UTIL legacy logs - warning level
+    GROUP = ALL:LEGACY_UTIL:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_UTIL_DEBUG
+    DESC = UTIL legacy logs - debug level
+    GROUP = ALL:LEGACY_UTIL:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_UTIL_TRACE
+    DESC = UTIL legacy logs - trace level
+    GROUP = ALL:LEGACY_UTIL:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
 # this is a bad hack but I won't fix (function util_print_hex_octets
 # in openairinterface5g/openair2/LAYER2/PDCP_v10.1.0/pdcp_util.c
 # does funky things with the LOG_x macros but we work on the C pre-processor

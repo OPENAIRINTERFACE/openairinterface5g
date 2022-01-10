@@ -548,7 +548,7 @@ void phy_config_dedicated_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
     phy_vars_ue->decode_MIB = 0;
   }
 
-  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
     //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
     if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
       phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;

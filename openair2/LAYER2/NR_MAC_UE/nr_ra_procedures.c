@@ -595,7 +595,9 @@ void nr_get_prach_resources(module_id_t mod_id,
       LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure for SSB with Id %d\n", __FUNCTION__, prach_resources->ra_PreambleIndex, cfra_ssb_resource_idx);
     }
   } else {
-    int16_t dl_pathloss = get_nr_PL(mod_id, CC_id, gNB_id);
+    /* TODO: This controls the tx_power of UE and the ramping procedure of RA of UE. Later we
+             can abstract this, perhaps in the proxy. But for the time being lets leave it as below. */
+    int16_t dl_pathloss = !get_softmodem_params()->emulate_l1 ? get_nr_PL(mod_id, CC_id, gNB_id) : 0;
     ssb_rach_config(ra, prach_resources, nr_rach_ConfigCommon, prach_pdu);
     ra_preambles_config(prach_resources, mac, dl_pathloss);
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", prach_resources->ra_PreambleIndex);
@@ -674,7 +676,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (!prach_resources->init_msg1) {
-    if ( (mac->common_configuration_complete>0 || get_softmodem_params()->do_ra==1) && ((MAX_FRAME_NUMBER+frame-prach_resources->sync_frame)%MAX_FRAME_NUMBER)>150 ){
+    if ((mac->common_configuration_complete > 0 || get_softmodem_params()->do_ra || get_softmodem_params()->nsa) &&
+       ((MAX_FRAME_NUMBER + frame - prach_resources->sync_frame) % MAX_FRAME_NUMBER) > 150) {
       prach_resources->init_msg1 = 1;
     } else {
       LOG_D(NR_MAC,"PRACH Condition not met: frame %d, prach_resources->sync_frame %d\n",frame,prach_resources->sync_frame);
@@ -738,6 +741,30 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
           pdu -= sh_size;
         }
 
+      } else if (get_softmodem_params()->nsa) {
+
+        uint8_t mac_sdus[MAX_NR_ULSCH_PAYLOAD_BYTES];
+        uint16_t sdu_lengths[NB_RB_MAX] = {0};
+        int TBS_bytes = 848;
+        int mac_ce_len = 0;
+        int header_length_total=0;
+        unsigned short post_padding = 1;
+
+        // fill ulsch_buffer with random data
+        for (int i = 0; i < TBS_bytes; i++){
+          mac_sdus[i] = (unsigned char) (lrand48()&0xff);
+        }
+        //Sending SDUs with size 1
+        //Initialize elements of sdu_lengths
+        sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
+        header_length_total += 2 + (sdu_lengths[0] >= 128);
+        size_sdu += sdu_lengths[0];
+
+        if (size_sdu > 0) {
+          memcpy(ra->cont_res_id, mac_sdus, sizeof(uint8_t) * 6);
+          ra->Msg3_size = size_sdu + sizeof(NR_MAC_SUBHEADER_SHORT) + sizeof(NR_MAC_SUBHEADER_SHORT);
+        }
+
       } else {
 
         size_sdu = nr_write_ce_ulsch_pdu(pdu, mac, 0,  &(mac->crnti), NULL, NULL, NULL);
@@ -746,19 +773,20 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       }
 
-      if (size_sdu > 0 && ra->generate_nr_prach == GENERATE_PREAMBLE) {
+      if (size_sdu > 0 && (ra->generate_nr_prach == GENERATE_PREAMBLE || get_softmodem_params()->nsa)) {
 
         LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", __FUNCTION__, mod_id, frame, nr_slot_tx);
-        AssertFatal(TBS_max > ra->Msg3_size, "In %s: allocated resources are not enough for Msg3!\n", __FUNCTION__);
 
         // Init RA procedure
         init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
         nr_get_RA_window(mac);
         // Fill in preamble and PRACH resources
-        nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
+        if (ra->generate_nr_prach == GENERATE_PREAMBLE)
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         // Padding: fill remainder with 0
         if (TBS_max - ra->Msg3_size > 0) {
+          AssertFatal(TBS_max > ra->Msg3_size, "In %s: allocated resources are not enough for Msg3!\n", __FUNCTION__);
           LOG_D(NR_MAC, "In %s: remaining %d bytes, filling with padding\n", __FUNCTION__, TBS_max - ra->Msg3_size);
           ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
           ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
@@ -777,8 +805,10 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
         // Msg3 was initialized with TBS_max bytes because the RA_Msg3_size will only be known after
         // receiving Msg2 (which contains the Msg3 resource reserve).
         // Msg3 will be transmitted with RA_Msg3_size bytes, removing unnecessary 0s.
-        mac->ulsch_pdu.Pdu_size = TBS_max;
-        memcpy(mac->ulsch_pdu.payload, payload, TBS_max);
+        if (!get_softmodem_params()->nsa) {
+          mac->ulsch_pdu.Pdu_size = TBS_max;
+          memcpy(mac->ulsch_pdu.payload, payload, TBS_max);
+        }
 
       } else {
         return 0;
@@ -936,7 +966,7 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
   } else {
 
-    LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
+    LOG_A(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
 
     ra->RA_contention_resolution_timer_active = 0;
     mac->crnti = ra->t_crnti;

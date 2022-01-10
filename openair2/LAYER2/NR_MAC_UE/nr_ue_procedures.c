@@ -608,7 +608,6 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
     def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
   }
   int8_t ret_proc = nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci);
-  memset(def_dci_pdu_rel15, 0, sizeof(dci_pdu_rel15_t));
   return ret_proc;
 }
 
@@ -728,6 +727,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
         return -1;
       }
+      ul_config->number_pdus = 0;
 
       pthread_mutex_lock(&ul_config->mutex_ul_config);
       AssertFatal(ul_config->number_pdus<FAPI_NR_UL_CONFIG_LIST_NUM, "ul_config->number_pdus %d out of bounds\n",ul_config->number_pdus);
@@ -868,7 +868,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
-                                                         mac->mib->dmrs_TypeA_Position,
+                                                         (get_softmodem_params()->nsa) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_0->number_symbols,
                                                          dlsch_config_pdu_1_0->start_symbol,
                                                          mappingtype);
@@ -1255,6 +1255,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* TODO same calculation for MCS table as done in UL */
     dlsch_config_pdu_1_1->mcs_table = (pdsch_Config->mcs_Table) ? (*pdsch_Config->mcs_Table + 1) : 0;
     /*PTRS configuration */
+    dlsch_config_pdu_1_1->pduBitmap = 0;
     if(pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
       valid_ptrs_setup = set_dl_ptrs_values(pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup,
                                             dlsch_config_pdu_1_1->number_rbs, dlsch_config_pdu_1_1->mcs, dlsch_config_pdu_1_1->mcs_table,
@@ -1333,8 +1334,10 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   // FIXME k0 != 0 currently not taken into consideration
   current_harq->dl_frame = frame;
   current_harq->dl_slot = slot;
+  mac->nr_ue_emul_l1.active_harq_sfn_slot = NFAPI_SFNSLOT2HEX(frame, (slot + data_toul_fb));
 
-  LOG_D(PHY,"Setting harq_status for harq_id %d, dl %d.%d\n",harq_id,frame,slot);
+  LOG_D(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d\n",
+        harq_id, frame, slot, frame, (slot + data_toul_fb));
 }
 
 
@@ -2837,7 +2840,7 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       // check BWP id
       if (mac->DLbwp[0]) N_RB=NRRIV2BW(mac->DLbwp[0]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       else         N_RB=mac->type0_PDCCH_CSS_config.num_rbs;
-;
+
 
       // indicating a DL DCI format 1bit
       pos++;
@@ -3331,6 +3334,9 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
           mac_subheader_len = 2;
         }
 
+        AssertFatal(pdu_len > mac_sdu_len, "The mac_sdu_len (%d) has an invalid size. PDU len = %d! \n",
+                    mac_sdu_len, pdu_len);
+
         // Check if it is a valid CCCH message, we get all 00's messages very often
         int i = 0;
         for(i=0; i<(mac_subheader_len+mac_sdu_len); i++) {
@@ -3496,47 +3502,56 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
       case DL_SCH_LCID_DCCH1:
         //  check if LCID is valid at current time.
       default:
-        //  check if LCID is valid at current time.
-        if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
-          //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
-          mac_subheader_len = 3;
-          mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
-                        | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
+            {
+                //  check if LCID is valid at current time.
+                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                  return;
+                NR_MAC_SUBHEADER_SHORT *shs = (NR_MAC_SUBHEADER_SHORT *)pduP;
+                if (shs->F) {
+                    //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
+                    mac_subheader_len = 3;
+                    if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                      return;
+                    NR_MAC_SUBHEADER_LONG *shl = (NR_MAC_SUBHEADER_LONG *)pduP;
+                    mac_sdu_len = ((uint16_t)(shl->L1 & 0x7f) << 8) | (uint16_t)(shl->L2 & 0xff);
+                } else {
+                  if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                    return;
+                  mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+                  mac_subheader_len = 2;
+                }
 
-        } else {
-          mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
-          mac_subheader_len = 2;
-        }
+                LOG_D(NR_MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
 
-        LOG_D(MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_sdu_len);
+                #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
+                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
 
-        #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-          LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
+                    for (i = 0; i < 32; i++)
+                      LOG_T(MAC, "%x.", (pduP + mac_subheader_len)[i]);
 
-          for (i = 0; i < 32; i++)
-            LOG_T(MAC, "%x.", (pduP + mac_subheader_len)[i]);
+                    LOG_T(MAC, "\n");
+                #endif
 
-          LOG_T(MAC, "\n");
-        #endif
+                if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
 
-        if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
+                mac_rlc_data_ind(module_idP,
+                                mac->crnti,
+                                gNB_index,
+                                frameP,
+                                ENB_FLAG_NO,
+                                MBMS_FLAG_NO,
+                                rx_lcid,
+                                (char *) (pduP + mac_subheader_len),
+                                mac_sdu_len,
+                                1,
+                                NULL);
+                } else {
+                  LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
+                }
 
-          mac_rlc_data_ind(module_idP,
-                           mac->crnti,
-                           gNB_index,
-                           frameP,
-                           ENB_FLAG_NO,
-                           MBMS_FLAG_NO,
-                           rx_lcid,
-                           (char *) (pduP + mac_subheader_len),
-                           mac_sdu_len,
-                           1,
-                           NULL);
-        } else {
-          LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
-        }
 
-        break;
+            break;
+            }
       }
       pduP += ( mac_subheader_len + mac_ce_len + mac_sdu_len );
       pdu_len -= ( mac_subheader_len + mac_ce_len + mac_sdu_len );
@@ -3791,7 +3806,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       }
     }
     if (rarh->RAPID == preamble_index) {
-      LOG_I(NR_MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
+      LOG_A(NR_MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
       ra->RA_RAPID_found = 1;
       break;
@@ -3908,6 +3923,8 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
         return -1;
       }
+      AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
+                  "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
 
       // Upon successful reception, set the T-CRNTI to the RAR value if the RA preamble is selected among the contention-based RA Preambles
       if (!ra->cfra) {
