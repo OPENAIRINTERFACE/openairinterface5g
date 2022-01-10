@@ -235,7 +235,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   prs_data_t prs_data;
   prs_data.PRSResourceSetPeriod[0]=40; // PRS resource slot period
   prs_data.PRSResourceSetPeriod[1]=0;  // resource slot offset
-  prs_data.SymbolStart=5;		
+  prs_data.SymbolStart=7;		
   prs_data.NumPRSSymbols=6;
   prs_data.NumRB=273;
   prs_data.RBOffset=0;

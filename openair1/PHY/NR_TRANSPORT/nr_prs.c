@@ -35,7 +35,7 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
 
   for (int l = prs_data->SymbolStart; l < prs_data->SymbolStart + prs_data->NumPRSSymbols; l++) {
 
-    int symInd = l-5;
+    int symInd = l-prs_data->SymbolStart;
     if (prs_data->CombSize == 2) {
       k_prime = k_prime_table[0][symInd];
     }
@@ -49,7 +49,9 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
       k_prime = k_prime_table[3][symInd];
     }
     
-    k = (prs_data->REOffset+k_prime) % prs_data->CombSize + frame_parms->ssb_start_subcarrier;
+    k = (prs_data->REOffset+k_prime) % prs_data->CombSize ;
+    //+ frame_parms->ssb_start_subcarrier;
+    
     
     // QPSK modulation
     
