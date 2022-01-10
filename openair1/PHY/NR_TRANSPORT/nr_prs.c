@@ -50,7 +50,7 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
     }
     
     k = (prs_data->REOffset+k_prime) % prs_data->CombSize + frame_parms->first_carrier_offset ;
-    //+ frame_parms->ssb_start_subcarrier;
+
     
     
     // QPSK modulation
