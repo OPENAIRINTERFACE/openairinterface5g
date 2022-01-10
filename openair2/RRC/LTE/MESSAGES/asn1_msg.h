@@ -41,6 +41,7 @@
 
 #include "RRC/LTE/rrc_defs.h"
 #include "LTE_SL-DestinationInfoList-r12.h"
+#include "OctetString.h"
 
 /*
  * The variant of the above function which dumps the BASIC-XER (XER_F_BASIC)
@@ -51,6 +52,14 @@
  * WARNING: No sensible errno value is returned.
  */
 int xer_sprint(char *string, size_t string_size, struct asn_TYPE_descriptor_s *td, void *sptr);
+
+#define asn1cCallocOne(VaR, VaLue) \
+  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue;
+#define asn1cCalloc(VaR, lOcPtr) \
+  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR));
+#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
+  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
+  ASN_SEQUENCE_ADD(&VaR,lOcPtr);
 
 uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index);
 
@@ -129,7 +138,7 @@ routine only generates an mo-data establishment cause.
 @param rv 5 byte random string or S-TMSI
 @returns Size of encoded bit stream in bytes*/
 
-uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv);
+uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv);
 
 /**
 \brief Generate an SidelinkUEInformation UL-DCCH-Message (UE).
@@ -156,7 +165,9 @@ uint8_t
 do_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *buffer,
-  const uint8_t Transaction_id
+  size_t buffer_size,
+  const uint8_t Transaction_id,
+  OCTET_STRING_t *str
 );
 
 /**
@@ -204,6 +215,7 @@ uint16_t
 do_RRCConnectionReconfiguration_BR(
   const protocol_ctxt_t        *const ctxt_pP,
   uint8_t                            *buffer,
+  size_t                              buffer_size,
   uint8_t                             Transaction_id,
   LTE_SRB_ToAddModList_t                 *SRB_list,
   LTE_DRB_ToAddModList_t                 *DRB_list,
@@ -249,6 +261,7 @@ uint16_t
 do_RRCConnectionReconfiguration(
   const protocol_ctxt_t                  *const ctxt_pP,
   uint8_t                                *buffer,
+  size_t                                 buffer_size,
   uint8_t                                Transaction_id,
   LTE_SRB_ToAddModList_t                 *SRB_list,
   LTE_DRB_ToAddModList_t                 *DRB_list,
@@ -322,14 +335,8 @@ routine only generates an mo-data establishment cause.
 @param transaction_id Transaction index
 @returns Size of encoded bit stream in bytes*/
 
-uint8_t do_RRCConnectionRelease(uint8_t Mod_id, uint8_t *buffer,int Transaction_id);
+uint8_t do_RRCConnectionRelease(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, int Transaction_id);
 
-/***
- * \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
- * @param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU
- * @returns Size of encoded bit stream in bytes
-*/
-uint8_t do_MCCHMessage(uint8_t *buffer);
 /***
  * \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
  * @param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU
@@ -338,14 +345,28 @@ uint8_t do_MCCHMessage(uint8_t *buffer);
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                            uint8_t sync_area,
                            uint8_t *buffer,
+                           size_t buffer_size,
                            LTE_MCCH_Message_t *mcch_message,
                            LTE_MBSFNAreaConfiguration_r9_t **mbsfnAreaConfiguration);
 
-uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t);
+ssize_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                             int measid, int phy_id,
+                             long rsrp_s, long rsrq_s,
+                             long rsrp_t, long rsrq_t);
+
+ssize_t do_nrMeasurementReport(uint8_t *buffer,
+                               size_t bufsize,
+                               LTE_MeasId_t measid,
+                               LTE_PhysCellIdNR_r15_t phy_id,
+                               long rsrp_s,
+                               long rsrq_s,
+                               long rsrp_tar,
+                               long rsrq_tar);
 
 uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t transaction_id, uint32_t pdu_length, uint8_t *pdu_buffer);
 
-uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain);
+uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                  ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain);
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
 
@@ -353,12 +374,17 @@ int do_HandoverPreparation(char *ho_buf, int ho_size, LTE_UE_EUTRA_Capability_t 
 
 int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size);
 
-OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer);
+OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer, bool received_nr_msg);
+
+int is_en_dc_supported(LTE_UE_EUTRA_Capability_t *c);
+
+void allocate_en_DC_r15(LTE_UE_EUTRA_Capability_t *cap);
 
 uint8_t
 do_UECapabilityEnquiry(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t               *const buffer,
+  size_t                       buffer_size,
   const uint8_t                Transaction_id,
   int16_t              eutra_band,
   uint32_t              nr_band);
@@ -367,6 +393,7 @@ uint8_t
 do_NR_UECapabilityEnquiry(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t               *const buffer,
+  size_t                       buffer_size,
   const uint8_t                Transaction_id,
   int16_t              eutra_band,
   uint32_t             nr_band);
@@ -374,6 +401,7 @@ do_NR_UECapabilityEnquiry(
 uint8_t do_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *const buffer,
+  size_t buffer_size,
   const uint8_t Transaction_id,
   const uint8_t cipheringAlgorithm,
   const uint8_t integrityProtAlgorithm);

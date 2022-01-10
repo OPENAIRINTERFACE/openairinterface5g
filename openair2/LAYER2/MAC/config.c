@@ -799,7 +799,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     RC.mac[Mod_idP]->common_channels[CC_idP].Ncp = Ncp;
     RC.mac[Mod_idP]->common_channels[CC_idP].eutra_band = eutra_band;
     RC.mac[Mod_idP]->common_channels[CC_idP].dl_CarrierFreq = dl_CarrierFreq;
-    LOG_I(MAC,
+    LOG_A(MAC,
           "Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d,Nid_cell %d,p %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
           Mod_idP,
           CC_idP,
@@ -1067,7 +1067,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     while(RC.mac[Mod_idP]->if_inst->PHY_config_req == NULL) {
       // DJP AssertFatal(RC.mac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
       usleep(100 * 1000);
-      printf("Waiting for PHY_config_req\n");
+      LOG_I(MAC, "Waiting for PHY_config_req\n");
     }
   }
 

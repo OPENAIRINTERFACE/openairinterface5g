@@ -240,7 +240,6 @@ void rx_func(void *param) {
   // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
-
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
@@ -453,7 +452,9 @@ void init_gNB_Tpool(int inst) {
   msgData->next_slot = get_next_downlink_slot(gNB, &gNB->gNB_config, 0, first_tx_slot-1);
   pushNotifiedFIFO(gNB->resp_RU_tx,msgRUTx); // to unblock the process in the beginning
 
-  threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
+  if (!get_softmodem_params()->emulate_l1) {
+    threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
+  }
 
 }
 

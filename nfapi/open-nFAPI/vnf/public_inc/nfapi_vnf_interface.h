@@ -20,6 +20,7 @@
 #include "nfapi_interface.h"
 #include "nfapi_nr_interface_scf.h"
 #include "nfapi_nr_interface.h"
+#include "openair2/PHY_INTERFACE/queue_t.h"
 
 #include "debug.h"
 
@@ -86,8 +87,6 @@ typedef struct nfapi_vnf_config
 	void* (*malloc)(size_t size);
 	/*! A user define callback to override the default memory deallocation */
 	void (*free)(void*);
-	/*! A user define callback to handle trace from the pnf */
-	void (*trace)(nfapi_trace_level_t level, const char* message, ...);
 
 	/*! The port the VNF P5 SCTP connection listens on
 	 *
@@ -662,12 +661,6 @@ typedef struct nfapi_vnf_p7_config
 	 * If not set the vnf p7 library will use free
 	 */
 	void (*free)(void*);
-	
-	/*! A user define callback to handle trace from the pnf
-	 * \param level The trace level 
-	 * \param message The trace string
-	 */
-	void (*trace)(nfapi_trace_level_t level, const char* message, ...);
 
 	/*! The port the vnf p7 will receive on */
 	int port;
@@ -908,7 +901,7 @@ void nfapi_vnf_p7_config_destory(nfapi_vnf_p7_config_t* config);
  * This function is blocking and will not return until the nfapi_vnf_p7_stop
  * function is called. 
  */
- 
+extern queue_t gnb_slot_ind_queue;
 int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config);
 int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config);
 

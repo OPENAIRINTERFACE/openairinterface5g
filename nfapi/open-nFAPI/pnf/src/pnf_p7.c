@@ -1060,6 +1060,23 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 				(pnf_p7->_public.ul_dci_req_fn)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.ul_dci_req);
 			}
 		}
+		if(tx_slot_buffer->ul_tti_req != 0)
+		{
+			if(pnf_p7->_public.ul_tti_req_fn)
+			{ 
+				(pnf_p7->_public.ul_tti_req_fn)(NULL, &(pnf_p7->_public), tx_slot_buffer->ul_tti_req);
+			}
+		}
+		else
+		{
+			// send dummy
+			if(pnf_p7->_public.ul_tti_req_fn && pnf_p7->_public.dummy_slot.ul_tti_req)
+			{
+				pnf_p7->_public.dummy_slot.ul_tti_req->SFN = sfn_tx;
+				pnf_p7->_public.dummy_slot.ul_tti_req->Slot = slot_tx;
+				(pnf_p7->_public.ul_tti_req_fn)(NULL, &(pnf_p7->_public), pnf_p7->_public.dummy_slot.ul_tti_req);
+			}
+		}
 
 		//deallocate slot buffers after passing down the PDUs to PHY processing
 
@@ -1585,7 +1602,7 @@ void pnf_handle_dl_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_dl_tti_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_dl_tti_request structure\n");
 		return;
 	}
 	int unpack_result = nfapi_nr_p7_message_unpack(pRecvMsg, recvMsgLen, req, sizeof(nfapi_nr_dl_tti_request_t), &(pnf_p7->_public.codec_config));
@@ -1659,7 +1676,7 @@ void pnf_handle_dl_config_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_dl_config_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_dl_config_request structure\n");
 		return;
 	}
 
@@ -1750,7 +1767,7 @@ void pnf_handle_ul_tti_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_ul_tti_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_ul_tti_request structure\n");
 		return;
 	}
 
@@ -1825,7 +1842,7 @@ void pnf_handle_ul_config_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_ul_config_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_ul_config_request structure\n");
 		return;
 	}
 
@@ -1898,7 +1915,7 @@ void pnf_handle_ul_dci_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to allocate nfapi_ul_dci_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_ul_dci_request structure\n");
 		return;
 	}
 
@@ -1969,7 +1986,7 @@ void pnf_handle_hi_dci0_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_hi_dci0_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_hi_dci0_request structure\n");
 		return;
 	}
 
@@ -2038,7 +2055,7 @@ void pnf_handle_tx_data_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_tx_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_tx_request structure\n");
 		return;
 	}
 
@@ -2118,7 +2135,7 @@ void pnf_handle_tx_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7)
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_tx_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_tx_request structure\n");
 		return;
 	}
 
@@ -2192,7 +2209,7 @@ void pnf_handle_lbt_dl_config_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* 
 
 	if(req == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to alloced nfapi_lbt_dl_config_request structure\n");
+		NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate nfapi_lbt_dl_config_request structure\n");
 		return;
 	}
 
@@ -2255,7 +2272,7 @@ void pnf_handle_p7_vendor_extension(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pn
 
 		if(msg == 0)
 		{
-			NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to allocate vendor extention structure\n");
+			NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate vendor extention structure\n");
 			return;
 		}
 
@@ -2279,7 +2296,7 @@ void pnf_handle_ue_release_request(void* pRecvMsg, int recvMsgLen, pnf_p7_t* pnf
     nfapi_ue_release_request_t* req = allocate_nfapi_ue_release_request(pnf_p7);
     if(req == NULL)
     {
-        NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to alloced nfapi_ue_release_request structure\n");
+        NFAPI_TRACE(NFAPI_TRACE_ERROR, "failed to allocate nfapi_ue_release_request structure\n");
         return;
     }
 
@@ -2381,7 +2398,7 @@ uint32_t calculate_nr_t2(uint32_t now_time_hr, uint16_t sfn,uint16_t slot, uint3
         {
           static uint32_t prev_t2 = 0;
 
-          NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s(now_time_hr:%u sfn:%d slot:%d slot_start_time_Hr:%u) slot_time_us:%u t2:%u prev_t2:%u diff:%u\n",
+          NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s(now_time_hr:%u sfn to slot:%d slot_start_time_Hr:%u) slot_time_us:%u t2:%u prev_t2:%u diff:%u\n",
               __FUNCTION__,
               now_time_hr, NFAPI_SFNSLOT2DEC(sfn, slot), slot_start_time_hr,
               slot_time_us,
@@ -2656,7 +2673,7 @@ void pnf_handle_p7_message(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7,  ui
 	// validate the input params
 	if(pRecvMsg == NULL || recvMsgLen < 4 || pnf_p7 == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "pnf_handle_p7_message: invalid input params (%d %d %d)\n", pRecvMsg, recvMsgLen, pnf_p7);
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "pnf_handle_p7_message: invalid input params (%p %d %p)\n", pRecvMsg, recvMsgLen, pnf_p7);
 		return;
 	}
 
@@ -2762,7 +2779,7 @@ void pnf_nr_handle_p7_message(void *pRecvMsg, int recvMsgLen, pnf_p7_t* pnf_p7, 
 	// validate the input params
 	if(pRecvMsg == NULL || recvMsgLen < 4 || pnf_p7 == NULL)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "pnf_handle_p7_message: invalid input params (%d %d %d)\n", pRecvMsg, recvMsgLen, pnf_p7);
+		NFAPI_TRACE(NFAPI_TRACE_ERROR, "pnf_handle_p7_message: invalid input params (%p %d %p)\n", pRecvMsg, recvMsgLen, pnf_p7);
 		return;
 	}
 
@@ -2889,12 +2906,19 @@ void pnf_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_time)
 			}
 
 			// read the segment
-			recvfrom_result = recvfrom(pnf_p7->p7_sock, pnf_p7->rx_message_buffer, header.message_length, MSG_DONTWAIT, (struct sockaddr*)&remote_addr, &remote_addr_size);
+			recvfrom_result = recvfrom(pnf_p7->p7_sock, pnf_p7->rx_message_buffer, pnf_p7->rx_message_buffer_size,
+                                                   MSG_DONTWAIT | MSG_TRUNC, (struct sockaddr*)&remote_addr, &remote_addr_size);
 
 		now_hr_time = pnf_get_current_time_hr(); //DJP - moved to here - get closer timestamp???
 
 			if(recvfrom_result > 0)
 			{
+				if (recvfrom_result != header.message_length)
+				{
+					NFAPI_TRACE(NFAPI_TRACE_ERROR, "(%d) Received unexpected number of bytes. %d != %d",
+                                                    __LINE__, recvfrom_result, header.message_length);
+					break;
+				}
 				pnf_handle_p7_message(pnf_p7->rx_message_buffer, recvfrom_result, pnf_p7, now_hr_time);
 				//printf("\npnf_handle_p7_message sfn=%d,slot=%d\n",pnf_p7->sfn,pnf_p7->slot);
 			}
@@ -3126,6 +3150,38 @@ int pnf_p7_message_pump(pnf_p7_t* pnf_p7)
 	return 0;
 }
 
+struct timespec pnf_timespec_add(struct timespec lhs, struct timespec rhs)
+{
+	struct timespec result;
+
+	result.tv_sec = lhs.tv_sec + rhs.tv_sec;
+	result.tv_nsec = lhs.tv_nsec + rhs.tv_nsec;
+
+	if(result.tv_nsec > 1e9)
+	{
+		result.tv_sec++;
+		result.tv_nsec-= 1e9;
+	}
+
+	return result;
+}
+
+struct timespec pnf_timespec_sub(struct timespec lhs, struct timespec rhs)
+{
+	struct timespec result;
+	if ((lhs.tv_nsec-rhs.tv_nsec)<0) 
+	{
+		result.tv_sec = lhs.tv_sec-rhs.tv_sec-1;
+		result.tv_nsec = 1000000000+lhs.tv_nsec-rhs.tv_nsec;
+	} 
+	else 
+	{
+		result.tv_sec = lhs.tv_sec-rhs.tv_sec;
+		result.tv_nsec = lhs.tv_nsec-rhs.tv_nsec;
+	}
+	return result;
+}
+
 int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 {
 
@@ -3201,6 +3257,19 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 	}
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "PNF P7 bind succeeded...\n");
 
+	//Initializaing timing structures needed for slot ticking 
+
+	struct timespec slot_start;
+	clock_gettime(CLOCK_MONOTONIC, &slot_start);
+
+	struct timespec pselect_start;
+
+	struct timespec slot_duration;
+	slot_duration.tv_sec = 0;
+	slot_duration.tv_nsec = 0.5e6;
+
+	//Infinite loop 
+
 	while(pnf_p7->terminate == 0)
 	{
 		fd_set rfds;
@@ -3210,11 +3279,29 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 		FD_ZERO(&rfds);
 		FD_SET(pnf_p7->p7_sock, &rfds);
 
-		struct timeval timeout;
+		struct timespec timeout;
 		timeout.tv_sec = 100;
-		timeout.tv_usec = 0;
+		timeout.tv_nsec = 0;
+		clock_gettime(CLOCK_MONOTONIC, &pselect_start);
 
-		selectRetval = select(pnf_p7->p7_sock+1, &rfds, NULL, NULL, &timeout);
+		//setting the timeout
+
+		if((pselect_start.tv_sec > slot_start.tv_sec) || ((pselect_start.tv_sec == slot_start.tv_sec) && (pselect_start.tv_nsec > slot_start.tv_nsec)))
+		{
+			// overran the end of the subframe we do not want to wait
+			timeout.tv_sec = 0;
+			timeout.tv_nsec = 0;
+
+			//struct timespec overrun = pnf_timespec_sub(pselect_start, sf_start);
+			//NFAPI_TRACE(NFAPI_TRACE_INFO, "Subframe overrun detected of %d.%d running to catchup\n", overrun.tv_sec, overrun.tv_nsec);
+		}
+		else
+		{
+			// still time before the end of the subframe wait
+			timeout = pnf_timespec_sub(slot_start, pselect_start);
+		}
+
+		selectRetval = pselect(pnf_p7->p7_sock+1, &rfds, NULL, NULL, &timeout, NULL);
 
 		uint32_t now_hr_time = pnf_get_current_time_hr();
 
@@ -3224,6 +3311,17 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 		if(selectRetval == 0)
 		{	
 			// timeout
+
+			//update slot start timing
+			slot_start = pnf_timespec_add(slot_start, slot_duration);
+
+			//increment sfn/slot
+			if (++pnf_p7->slot == 20)
+                        {
+                                pnf_p7->slot = 0;
+                                pnf_p7->sfn = (pnf_p7->sfn + 1) % 1024;
+                        }
+
 			continue;
 		}
 		else if (selectRetval == -1 && (errno == EINTR))
@@ -3242,7 +3340,7 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 		if(FD_ISSET(pnf_p7->p7_sock, &rfds)) 
 
 		{
-			pnf_nr_nfapi_p7_read_dispatch_message(pnf_p7, now_hr_time);
+			pnf_nr_nfapi_p7_read_dispatch_message(pnf_p7, now_hr_time); 
 		}
 	}
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "PNF_P7 Terminating..\n");

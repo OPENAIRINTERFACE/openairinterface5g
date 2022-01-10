@@ -24,6 +24,7 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_UE.h"
 
 char* namepointer_chMag ;
@@ -42,6 +43,7 @@ char* namepointer_log2;
 
 PHY_VARS_UE ***PHY_vars_UE_g;
 UL_RCC_IND_t UL_RCC_INFO;
+NR_UL_IND_t UL_INFO;
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];
@@ -81,7 +83,7 @@ const double sinr_to_cqi[4][16]= { {-2.5051, -2.5051, -1.7451, -0.3655, 1.0812, 
 };
 
 //int cqi_to_mcs[16]={0, 0, 1, 3, 5, 7, 9, 13, 15, 16, 20, 23, 25, 27, 27, 27};
-const int cqi_to_mcs[16]= {0, 0, 1, 2, 4, 6, 8, 11, 13, 16, 18, 20, 23, 25, 27, 28};
+const int cqi_to_mcs[16]= {0, 0, 1, 2, 4, 6, 8, 11, 13, 16, 18, 20, 23, 25, 27, 27};
 
 //for SNR to MI conversion 7 th order Polynomial coeff
 const double q_qam16[8]= {3.21151853033897e-10,5.55435952230651e-09,-2.30760065362117e-07,-6.25587743817859e-06,4.62251036452795e-06,0.00224150813158937,0.0393723140344367,0.245486379182639};

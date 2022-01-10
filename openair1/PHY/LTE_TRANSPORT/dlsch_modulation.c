@@ -2921,6 +2921,9 @@ int allocate_REs_in_RB_MCH_khz_1dot25(int32_t **txdataF,
                             uint8_t skip_dc,
                             LTE_DL_FRAME_PARMS *frame_parms)
 {
+  if (!qam_table_s)
+    abort();
+
  uint32_t tti_offset;
   uint8_t re,offset;
   uint8_t qam64_table_offset_re = 0;

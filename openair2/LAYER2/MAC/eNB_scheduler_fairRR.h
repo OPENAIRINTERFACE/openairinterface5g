@@ -85,21 +85,6 @@ void dlsch_scheduler_pre_ue_select_fairRR(
     uint16_t        nb_rbs_required[MAX_NUM_CCs][MAX_MOBILES_PER_ENB],
     DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]);
 
-void dlsch_scheduler_pre_processor_reset_fairRR(
-    module_id_t module_idP,
-    frame_t frameP,
-    sub_frame_t subframeP,
-    int min_rb_unit[NFAPI_CC_MAX],
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
-    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX],
-    uint8_t MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX]);
-
-void assign_rbs_required_fairRR(
-    module_id_t Mod_id,
-    frame_t frameP,
-    sub_frame_t subframe,
-    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB]);
-
 void dlsch_scheduler_pre_processor_allocate_fairRR(
     module_id_t Mod_id,
     int UE_id,

@@ -743,6 +743,11 @@ void pf_dl(module_id_t module_id,
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
     int rbStart = 0; // start wrt BWPstart
 
+    if (sched_ctrl->available_dl_harq.head < 0) {
+      LOG_D(MAC, "UE %d RNTI %04x has no free HARQ process, skipping\n", UE_id, UE_info->rnti[UE_id]);
+      continue;
+    }
+
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
@@ -853,7 +858,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
         frame,
         slot,
         &UE_info->list,
-        2,
+        MAX_MOBILES_PER_GNB,
         n_rb_sched,
         rballoc_mask);
 }
@@ -999,6 +1004,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
     if (!pdcch_pdu) {
+      LOG_D(NR_MAC, "creating pdcch pdu, pdcch_pdu = NULL. \n");
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
       dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;

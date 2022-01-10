@@ -14,38 +14,31 @@
  * limitations under the License.
  */
 
+#pragma once
 
-#ifndef _DEBUG_H_
-#define _DEBUG_H_
+#include <string.h>
+#include <errno.h>
+
+#define ERR strerror(errno)
 
 /*! The trace levels used by the nfapi libraries */
 typedef enum nfapi_trace_level
 {
-	NFAPI_TRACE_ERROR = 1,
-	NFAPI_TRACE_WARN,
-	NFAPI_TRACE_NOTE,
-	NFAPI_TRACE_INFO,
-
-	NFAPI_TRACE_LEVEL_MAX
+    NFAPI_TRACE_NONE,
+    NFAPI_TRACE_ERROR,
+    NFAPI_TRACE_WARN,
+    NFAPI_TRACE_NOTE,
+    NFAPI_TRACE_INFO,
+    NFAPI_TRACE_DEBUG,
 } nfapi_trace_level_t;
 
-/*! The trace function pointer */
-typedef void (*nfapi_trace_fn_t)(nfapi_trace_level_t level, const char* format, ...);
+void nfapi_trace(nfapi_trace_level_t, char const *caller, const char *format, ...)
+    __attribute__((format(printf, 3, 4)));
 
-/*! Global trace function */
-extern nfapi_trace_fn_t nfapi_trace_g;
+nfapi_trace_level_t nfapi_trace_level(void);
 
-/*! Global trace level */
-extern nfapi_trace_level_t nfapi_trace_level_g;
+#define NFAPI_TRACE(LEVEL, FORMAT, ...) do {                            \
+    if (nfapi_trace_level() >= (LEVEL))                                 \
+        nfapi_trace(LEVEL, __func__, FORMAT, ##__VA_ARGS__);            \
+} while (0)
 
-/*! NFAPI trace macro */
-//#define NFAPI_TRACE(level, format, ...) { if(nfapi_trace_g && ((nfapi_trace_level_t)level <= nfapi_trace_level_g)) (*nfapi_trace_g)(level, format, ##__VA_ARGS__); }
-#define NFAPI_TRACE(level, format, ...) { if (nfapi_trace_g) (*nfapi_trace_g)(level, format, ##__VA_ARGS__); }
-
-/*! Function to change the trace level 
- * \param new_level The modified trace level
- */
-
-void nfapi_set_trace_level(nfapi_trace_level_t new_level);
-
-#endif /* _DEBUG_H_ */

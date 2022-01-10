@@ -193,6 +193,7 @@ int main(int argc, char **argv)
 
   int frame=0;
   int frame_length_complex_samples;
+  __attribute__((unused))
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
 
