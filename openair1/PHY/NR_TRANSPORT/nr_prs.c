@@ -49,7 +49,7 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
       k_prime = k_prime_table[3][symInd];
     }
     
-    k = (prs_data->REOffset+k_prime) % prs_data->CombSize ;
+    k = (prs_data->REOffset+k_prime) % prs_data->CombSize + frame_parms->first_carrier_offset ;
     //+ frame_parms->ssb_start_subcarrier;
     
     
@@ -84,5 +84,7 @@ printf("(%d,%d)\n",
       }
   }
 LOG_M("nr_prs.m", "prs",(int16_t *)&txdataF[0],frame_parms->samples_per_slot_wCP, 1, 1);
+printf("first carrier offset: %d \n",frame_parms->first_carrier_offset);
+
   return 0;
 }
