@@ -52,6 +52,7 @@
 #include <executables/softmodem-common.h>
 #include <openair2/RRC/NR_UE/rrc_defs.h>
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #define NR_PRACH_DEBUG 1
 #define PRACH_WRITE_OUTPUT_DEBUG 1
@@ -88,6 +89,13 @@ int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
 int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
 int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
 int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
+//Fixme: Uniq dirty DU instance, by global var, datamodel need better management
+instance_t DUuniqInstance=0;
+instance_t CUuniqInstance=0;
+teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
+                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
+return 0;
+}
 
 void
 rrc_data_ind(
@@ -97,12 +105,6 @@ rrc_data_ind(
   const uint8_t   *const       buffer_pP
 )
 {
-}
-
-int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
-                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
-                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
-    return 0;
 }
 
 int

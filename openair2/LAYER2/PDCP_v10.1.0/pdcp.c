@@ -140,6 +140,36 @@ extern volatile int oai_exit;
 
 pthread_t pdcp_stats_thread_desc;
 
+// will be called when 4G F1 implementation will use GTP-U instead of protobuf
+boolean_t cu_f1u_data_req(
+  protocol_ctxt_t  *ctxt_pP,
+  const srb_flag_t srb_flagP,
+  const rb_id_t rb_id,
+  const mui_t muiP,
+  const confirm_t confirmP,
+  const sdu_size_t sdu_buffer_size,
+  unsigned char *const sdu_buffer,
+  const pdcp_transmission_mode_t mode,
+  const uint32_t *const sourceL2Id,
+  const uint32_t *const destinationL2Id
+  ) {
+  mem_block_t *memblock = get_free_mem_block(sdu_buffer_size, __func__);
+  if (memblock == NULL) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  memcpy(memblock->data,sdu_buffer, sdu_buffer_size);
+  // weird rb id management in 4G, not fully understand (looks bad design)
+  // overcomplex: if i understand, on the interface DRB start at 4 because there can be SRB 0..3
+  // but it would be much simpler to use absolute numbering
+  // instead of this "srb flag" associated to these +/-4
+  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id-4, sdu_buffer_size, memblock, NULL, NULL);
+  if (!ret) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
+    /* what to do in case of failure? for the moment: nothing */
+  }
+  return ret;
+}
 void *pdcp_stats_thread(void *param) {
 
    FILE *fd;
@@ -176,6 +206,33 @@ void *pdcp_stats_thread(void *param) {
 uint64_t get_pdcp_optmask(void) {
   return pdcp_params.optmask;
 }
+
+rlc_op_status_t cu_send_to_du(const protocol_ctxt_t *const ctxt,
+			       const srb_flag_t srb_flag, const MBMS_flag_t MBMS_flag,
+			       const rb_id_t rb_id, const mui_t mui,
+			       confirm_t confirm, sdu_size_t size, mem_block_t *sdu,
+                               const uint32_t *const sourceID, const uint32_t *const destID) {
+  uint8_t *gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+				       size  + GTPU_HEADER_OVERHEAD_MAX);
+  AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
+  memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX,
+	 sdu->data,
+	 size );
+  MessageDef  *message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
+  AssertFatal(message_p != NULL, "OUT OF MEMORY");
+  gtpv1u_enb_tunnel_data_req_t *req=&GTPV1U_ENB_TUNNEL_DATA_REQ(message_p);
+  req->buffer        = gtpu_buffer_p;
+  req->length        = size;
+  req->offset        = GTPU_HEADER_OVERHEAD_MAX;
+  req->rnti          = ctxt->rnti;
+  req->rab_id = rb_id+4;
+  LOG_D(PDCP, "%s() (drb %ld) sending message to gtp size %d\n",
+	__func__, rb_id, size);
+  extern instance_t CUuniqInstance;
+  itti_send_msg_to_task(TASK_VARIABLE, CUuniqInstance, message_p);
+  return TRUE;
+}
+
 //-----------------------------------------------------------------------------
 /*
  * If PDCP_UNIT_TEST is set here then data flow between PDCP and RLC is broken
@@ -249,12 +306,8 @@ boolean_t pdcp_data_req(
       LOG_W(PDCP, PROTOCOL_CTXT_FMT" Instance is not configured for rb_id %ld Ignoring SDU...\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             rb_idP);
-      ctxt_pP->configured=FALSE;
       return FALSE;
     }
-  } else {
-    // instance for a given RB is configured
-    ctxt_pP->configured=TRUE;
   }
 
   if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
@@ -575,7 +628,9 @@ pdcp_data_ind(
   const MBMS_flag_t  MBMS_flagP,
   const rb_id_t      rb_idP,
   const sdu_size_t   sdu_buffer_sizeP,
-  mem_block_t *const sdu_buffer_pP
+  mem_block_t *const sdu_buffer_pP,
+  const uint32_t *const srcID,
+  const uint32_t *const dstID
 )
 //-----------------------------------------------------------------------------
 {
@@ -1072,7 +1127,7 @@ pdcp_data_ind(
            * for the UE compiled in noS1 mode, we need 0
            * TODO: be sure of this
            */
-          if (NFAPI_MODE == NFAPI_UE_STUB_PNF ) {
+          if (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
             pdcpHead->inst  = ctxt_pP->module_id;
           } else {  // nfapi_mode
             if (UE_NAS_USE_TUN) {
@@ -1288,7 +1343,7 @@ pdcp_run (
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
   //  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
-  if (!EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO ) {
+  if (!get_softmodem_params()->emulate_l1 && (!EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO)) {
     pdcp_fifo_read_input_sdus(ctxt_pP);
   }
 
@@ -1298,8 +1353,9 @@ pdcp_run (
   } else {
     start_meas(&UE_pdcp_stats[ctxt_pP->module_id].pdcp_ip);
   }
-
-  pdcp_fifo_flush_sdus(ctxt_pP);
+  if (!get_softmodem_params()->emulate_l1) {
+    pdcp_fifo_flush_sdus(ctxt_pP);
+  }
 
   if (ctxt_pP->enb_flag) {
     stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_ip);
@@ -1491,7 +1547,7 @@ void pdcp_add_UE(const protocol_ctxt_t *const  ctxt_pP) {
         pdcp_enb[ctxt_pP->module_id].rnti[i]=ctxt_pP->rnti;
         pdcp_enb[ctxt_pP->module_id].uid[i]=i;
         pdcp_enb[ctxt_pP->module_id].num_ues++;
-        printf("add new uid is %d %x\n\n", i, ctxt_pP->rnti);
+        LOG_I(PDCP,"add new uid is %d %x\n", i, ctxt_pP->rnti);
         pdcp_init_stats_UE(ctxt_pP->module_id, i);
         // ret=1;
         break;
@@ -2342,7 +2398,7 @@ void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind) {
   pdcp_params.pdcp_data_ind_func = pdcp_data_ind;
 }
 
-uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
+uint64_t pdcp_module_init( uint64_t pdcp_optmask, int id) {
   /* temporary enforce netlink when UE_NAS_USE_TUN is set,
      this is while switching from noS1 as build option
      to noS1 as config option                               */
@@ -2359,18 +2415,18 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
     nas_getparams();
 
     if(UE_NAS_USE_TUN) {
-      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 )? MAX_MOBILES_PER_ENB : 1;
-      netlink_init_tun("ue",num_if);
+      int num_if = (NFAPI_MODE == NFAPI_UE_STUB_PNF || IS_SOFTMODEM_SIML1 || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF)? MAX_MOBILES_PER_ENB : 1;
+      netlink_init_tun("ue",num_if, id);
       if (IS_SOFTMODEM_NOS1)
-    	  nas_config(1, 1, 2, "ue");
-      netlink_init_mbms_tun("uem");
+        nas_config(1, 1, 2, "ue");
+      netlink_init_mbms_tun("uem", id);
       nas_config_mbms(1, 2, 2, "uem");
       LOG_I(PDCP, "UE pdcp will use tun interface\n");
     } else if(ENB_NAS_USE_TUN) {
-      netlink_init_tun("enb",1);
+      netlink_init_tun("enb", 1, 0);
       nas_config(1, 1, 1, "enb");
       if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
-        netlink_init_mbms_tun("enm");
+        netlink_init_mbms_tun("enm", 0);
       	nas_config_mbms(1, 2, 1, "enm"); 
       	LOG_I(PDCP, "ENB pdcp will use mbms tun interface\n");
       }
@@ -2382,8 +2438,8 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
   }else{
          if(pdcp_optmask & ENB_NAS_USE_TUN_W_MBMS_BIT){
              LOG_W(PDCP, "ENB pdcp will use tun interface for MBMS\n");
-            netlink_init_mbms_tun("enm");
-             nas_config_mbms_s1(1, 2, 1, "enm"); 
+             netlink_init_mbms_tun("enm", 0);
+             nas_config_mbms_s1(1, 2, 1, "enm");
          }else
              LOG_E(PDCP, "ENB pdcp will not use tun interface\n");
    }
@@ -2425,6 +2481,7 @@ pdcp_free (
 void pdcp_module_cleanup (void)
 //-----------------------------------------------------------------------------
 {
+  netlink_cleanup();
 }
 
 //-----------------------------------------------------------------------------
