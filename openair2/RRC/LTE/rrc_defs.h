@@ -52,7 +52,7 @@
 
 //for D2D
 #define DEBUG_CTRL_SOCKET
-#define BUFSIZE                1024
+
 #define CONTROL_SOCKET_PORT_NO 8888
 #define MAX_NUM_DEST           10
 //netlink
@@ -311,12 +311,12 @@ typedef enum SL_TRIGGER_e {
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n)
 #define RRM_CALLOC2(t,s)  (t *) malloc16( s )
 
-#define MAX_MEAS_OBJ 6
-#define MAX_MEAS_CONFIG 6
-#define MAX_MEAS_ID 6
+#define MAX_MEAS_OBJ 7
+#define MAX_MEAS_CONFIG 7
+#define MAX_MEAS_ID 7
 
 #define PAYLOAD_SIZE_MAX 1024
-#define RRC_BUF_SIZE 8192
+#define RRC_BUF_SIZE 512
 #define UNDEF_SECURITY_MODE 0xff
 #define NO_SECURITY_MODE 0x20
 
@@ -363,6 +363,7 @@ typedef struct UE_RRC_INFO_s {
   uint32_t N310_cnt;
   uint32_t N311_cnt;
   rnti_t   rnti;
+  struct LTE_DL_DCCH_Message *dl_dcch_msg;
 } __attribute__ ((__packed__)) UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_s {
@@ -916,6 +917,7 @@ typedef struct UE_RRC_INST_s {
   float                           rsrq_db[7];
   float                           rsrp_db_filtered[7];
   float                           rsrq_db_filtered[7];
+  int                             subframeCount;
   /* KeNB as computed from parameters within USIM card */
   uint8_t kenb[32];
   uint8_t nh[32];

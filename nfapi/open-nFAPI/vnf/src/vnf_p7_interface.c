@@ -1,12 +1,12 @@
 /*
  * Copyright 2017 Cisco Systems, Inc.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,13 +45,13 @@ nfapi_vnf_p7_config_t* nfapi_vnf_p7_config_create()
 	_this->_public.segment_size = 1400;
 	_this->_public.max_num_segments = 8;
 	_this->_public.checksum_enabled = 1;
-	
+
 	_this->_public.malloc = &malloc;
-	_this->_public.free = &free;	
+	_this->_public.free = &free;
 
 	_this->_public.codec_config.allocate = &malloc;
 	_this->_public.codec_config.deallocate = &free;
-	
+
 
 	return (nfapi_vnf_p7_config_t*)_this;
 }
@@ -81,12 +81,12 @@ struct timespec timespec_add(struct timespec lhs, struct timespec rhs)
 struct timespec timespec_sub(struct timespec lhs, struct timespec rhs)
 {
 	struct timespec result;
-	if ((lhs.tv_nsec-rhs.tv_nsec)<0) 
+	if ((lhs.tv_nsec-rhs.tv_nsec)<0)
 	{
 		result.tv_sec = lhs.tv_sec-rhs.tv_sec-1;
 		result.tv_nsec = 1000000000+lhs.tv_nsec-rhs.tv_nsec;
-	} 
-	else 
+	}
+	else
 	{
 		result.tv_sec = lhs.tv_sec-rhs.tv_sec;
 		result.tv_nsec = lhs.tv_nsec-rhs.tv_nsec;
@@ -94,7 +94,7 @@ struct timespec timespec_sub(struct timespec lhs, struct timespec rhs)
 	return result;
 }
 
-// monitor the p7 endpoints and the timing loop and 
+// monitor the p7 endpoints and the timing loop and
 // send indications to mac
 int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 {	
@@ -107,9 +107,9 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 
 	vnf_p7_t* vnf_p7 = (vnf_p7_t*)config;
 
-	// Create p7 receive udp port 
+	// Create p7 receive udp port
 	// todo : this needs updating for Ipv6
-	
+
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "Initialising VNF P7 port:%u\n", config->port);
 
 	// open the UDP socket
@@ -128,7 +128,7 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "After setsockopt (IP_TOS) errno: %d\n", errno);
 		return -1;
 	}
-	
+
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "VNF P7 setsockopt succeeded...\n");
 
 	// Create the address structure
@@ -168,20 +168,34 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		// Add the p7 socket
 		FD_SET(vnf_p7->socket, &rfds);
 		maxSock = vnf_p7->socket;
-		
+
 		struct timespec curr_time;
 		clock_gettime(CLOCK_MONOTONIC, &curr_time);
 		setup_time = curr_time.tv_sec - ref_time.tv_sec;
 
-		if(setup_time > 10 && prev_slot != gNB->UL_INFO.slot){ //Give the VNF sufficient time to setup before starting scheduling
-
-			//Call the scheduler
+		nfapi_nr_slot_indication_scf_t *slot_ind = get_queue(&gnb_slot_ind_queue);
+		NFAPI_TRACE(NFAPI_TRACE_DEBUG, "This is the slot_ind queue size %ld in %s():%d\n",
+			    gnb_slot_ind_queue.num_items, __FUNCTION__, __LINE__);
+		if (slot_ind) {
 			pthread_mutex_lock(&gNB->UL_INFO_mutex);
-			gNB->UL_INFO.module_id = gNB->Mod_id;
-			gNB->UL_INFO.CC_id     = gNB->CC_id;
-			gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+			gNB->UL_INFO.frame     = slot_ind->sfn;
+			gNB->UL_INFO.slot      = slot_ind->slot;
+
+			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "gNB->UL_INFO.frame = %d and slot %d, prev_slot = %d, setup_time = %d\n",
+				    gNB->UL_INFO.frame, gNB->UL_INFO.slot, prev_slot, setup_time);
+			if (setup_time > 3 && prev_slot != gNB->UL_INFO.slot) { //Give the VNF sufficient time to setup before starting scheduling  && prev_slot != gNB->UL_INFO.slot
+
+				//Call the scheduler
+				gNB->UL_INFO.module_id = gNB->Mod_id;
+				gNB->UL_INFO.CC_id     = gNB->CC_id;
+				NFAPI_TRACE(NFAPI_TRACE_DEBUG, "Calling NR_UL_indication for gNB->UL_INFO.frame = %d and slot %d\n",
+					    gNB->UL_INFO.frame, gNB->UL_INFO.slot);
+				gNB->if_inst->NR_UL_indication(&gNB->UL_INFO);
+				prev_slot = gNB->UL_INFO.slot;
+			}
 			pthread_mutex_unlock(&gNB->UL_INFO_mutex);
-			prev_slot = gNB->UL_INFO.slot;
+			free(slot_ind);
+			slot_ind = NULL;
 		}
 
 		selectRetval = pselect(maxSock+1, &rfds, NULL, NULL, &pselect_timeout, NULL);
@@ -234,9 +248,9 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 
 	vnf_p7_t* vnf_p7 = (vnf_p7_t*)config;
 
-	// Create p7 receive udp port 
+	// Create p7 receive udp port
 	// todo : this needs updating for Ipv6
-	
+
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "Initialising VNF P7 port:%u\n", config->port);
 
 	// open the UDP socket
@@ -255,7 +269,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		NFAPI_TRACE(NFAPI_TRACE_ERROR, "After setsockopt (IP_TOS) errno: %d\n", errno);
 		return -1;
 	}
-	
+
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "VNF P7 setsockopt succeeded...\n");
 
 	// Create the address structure
@@ -299,7 +313,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 	clock_gettime(CLOCK_MONOTONIC, &sf_start);
 	long millisecond = sf_start.tv_nsec / 1e6;
 	sf_start = timespec_add(sf_start, sf_duration);
-	NFAPI_TRACE(NFAPI_TRACE_INFO, "next subframe will start at %d.%d\n", sf_start.tv_sec, sf_start.tv_nsec);
+	NFAPI_TRACE(NFAPI_TRACE_INFO, "next subframe will start at %ld.%ld\n", sf_start.tv_sec, sf_start.tv_nsec);
 
 	while(vnf_p7->terminate == 0)
 	{
@@ -311,7 +325,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		// Add the p7 socket
 		FD_SET(vnf_p7->socket, &rfds);
 		maxSock = vnf_p7->socket;
-		
+
 		clock_gettime(CLOCK_MONOTONIC, &pselect_start);
 		//long millisecond = pselect_start.tv_nsec / 1e6;
 
@@ -320,7 +334,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
                   //NFAPI_TRACE(NFAPI_TRACE_INFO, "pselect_start:%d.%d sf_start:%d.%d\n", pselect_start.tv_sec, pselect_start.tv_nsec, sf_start.tv_sec, sf_start.tv_nsec);
 
 
-			if((pselect_start.tv_sec > sf_start.tv_sec) || 
+			if((pselect_start.tv_sec > sf_start.tv_sec) ||
 			   ((pselect_start.tv_sec == sf_start.tv_sec) && (pselect_start.tv_nsec > sf_start.tv_nsec)))
 			{
 				// overran the end of the subframe we do not want to wait
@@ -343,7 +357,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 			//pselect_timeout.tv_nsec = 1e6 - (pselect_start.tv_nsec % 1000000);
 
 			//uint8_t underrun_possible =0;
-			
+
 			// if we are not sleeping until the next milisecond due to the
 			// insycn minor adjment flag it so we don't consider it an error
 			//uint8_t underrun_possible =0;
@@ -353,7 +367,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 				if(phy && phy->in_sync && phy->insync_minor_adjustment != 0 && phy->insync_minor_adjustment_duration > 0 && pselect_start.tv_nsec != 0)
 				{
 					NFAPI_TRACE(NFAPI_TRACE_NOTE, "[VNF] Subframe minor adjustment %d (%d->%d)\n", phy->insync_minor_adjustment,
-							pselect_timeout.tv_nsec, pselect_timeout.tv_nsec - (phy->insync_minor_adjustment * 1000)) 
+							pselect_timeout.tv_nsec, pselect_timeout.tv_nsec - (phy->insync_minor_adjustment * 1000))
 					if(phy->insync_minor_adjustment > 0)
 					{
 						// todo check we don't go below 0
@@ -376,7 +390,7 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 				}
 			}
 			*/
-			
+
 
 //long wraps = pselect_timeout.tv_nsec % 1e9;
 
@@ -389,9 +403,9 @@ int nfapi_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 
 if (selectRetval==-1 && errno == 22)
 {
-  NFAPI_TRACE(NFAPI_TRACE_ERROR, "INVAL: pselect_timeout:%d.%ld adj[dur:%d adj:%d], sf_dur:%d.%ld\n", 
-  pselect_timeout.tv_sec, pselect_timeout.tv_nsec, 
-  phy->insync_minor_adjustment_duration, phy->insync_minor_adjustment, 
+  NFAPI_TRACE(NFAPI_TRACE_ERROR, "INVAL: pselect_timeout:%ld.%ld adj[dur:%d adj:%d], sf_dur:%ld.%ld\n",
+  pselect_timeout.tv_sec, pselect_timeout.tv_nsec,
+  phy->insync_minor_adjustment_duration, phy->insync_minor_adjustment,
   sf_duration.tv_sec, sf_duration.tv_nsec);
 }
 			if(selectRetval == 0)
@@ -449,7 +463,7 @@ if (selectRetval==-1 && errno == 22)
 					//phy->insync_minor_adjustment = 0;
                                         phy->insync_minor_adjustment_duration--;
 
-                                        NFAPI_TRACE(NFAPI_TRACE_NOTE, "[VNF] AFTER adjustment - Subframe minor adjustment %dus sf_start.tv_nsec:%d duration:%u\n", 
+                                        NFAPI_TRACE(NFAPI_TRACE_NOTE, "[VNF] AFTER adjustment - Subframe minor adjustment %dus sf_start.tv_nsec:%ld duration:%u\n",
                                             phy->insync_minor_adjustment, sf_start.tv_nsec, phy->insync_minor_adjustment_duration);
 
                                         if (phy->insync_minor_adjustment_duration==0)
@@ -473,7 +487,7 @@ if (selectRetval==-1 && errno == 22)
 				}
 				last_millisecond = millisecond;
 				*/
-				
+
 				millisecond ++;
 			}
 		}
@@ -497,9 +511,7 @@ if (selectRetval==-1 && errno == 22)
 			while(curr != 0)
 			{
 				curr->sfn_sf = increment_sfn_sf(curr->sfn_sf);
-				
 				vnf_sync(vnf_p7, curr);
-
 				curr = curr->next;
 			}
 
@@ -523,7 +535,7 @@ if (selectRetval==-1 && errno == 22)
 			}
 			else
 			{
-				NFAPI_TRACE(NFAPI_TRACE_INFO, "P7 select failed result %d errno %d timeout:%d.%d orginal:%d.%d last_ms:%ld ms:%ld\n", selectRetval, errno, pselect_timeout.tv_sec, pselect_timeout.tv_nsec, pselect_timeout.tv_sec, pselect_timeout.tv_nsec, last_millisecond, millisecond);
+				NFAPI_TRACE(NFAPI_TRACE_INFO, "P7 select failed result %d errno %d timeout:%ld.%ld orginal:%ld.%ld last_ms:%ld ms:%ld\n", selectRetval, errno, pselect_timeout.tv_sec, pselect_timeout.tv_nsec, pselect_timeout.tv_sec, pselect_timeout.tv_nsec, last_millisecond, millisecond);
 				// should we exit now?
                                 if (selectRetval == -1 && errno == 22) // invalid argument??? not sure about timeout duration
                                 {
@@ -534,7 +546,7 @@ if (selectRetval==-1 && errno == 22)
 
 	}
 
-	
+
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "Closing p7 socket\n");
 	close(vnf_p7->socket);
 

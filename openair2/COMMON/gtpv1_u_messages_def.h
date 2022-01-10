@@ -29,9 +29,8 @@ MESSAGE_DEF(GTPV1U_ENB_DATA_FORWARDING_REQ, MESSAGE_PRIORITY_MED, gtpv1u_enb_dat
 MESSAGE_DEF(GTPV1U_ENB_DATA_FORWARDING_IND, MESSAGE_PRIORITY_MED, gtpv1u_enb_data_forwarding_ind_t,Gtpv1uDataForwardingInd)
 MESSAGE_DEF(GTPV1U_ENB_END_MARKER_REQ,      MESSAGE_PRIORITY_MED, gtpv1u_enb_end_marker_req_t,    Gtpv1uEndMarkerReq)
 MESSAGE_DEF(GTPV1U_ENB_END_MARKER_IND,      MESSAGE_PRIORITY_MED, gtpv1u_enb_end_marker_ind_t,    Gtpv1uEndMarkerInd)
-MESSAGE_DEF(GTPV1U_ENB_S1_REQ,        MESSAGE_PRIORITY_MED, Gtpv1uS1Req,    gtpv1uS1Req)
+MESSAGE_DEF(GTPV1U_REQ,        MESSAGE_PRIORITY_MED, Gtpv1uReq,    gtpv1uReq)
 
 MESSAGE_DEF(GTPV1U_GNB_DELETE_TUNNEL_REQ,   MESSAGE_PRIORITY_MED, gtpv1u_gnb_delete_tunnel_req_t,  NRGtpv1uDeleteTunnelReq)
 MESSAGE_DEF(GTPV1U_GNB_DELETE_TUNNEL_RESP,  MESSAGE_PRIORITY_MED, gtpv1u_gnb_delete_tunnel_resp_t, NRGtpv1uDeleteTunnelResp)
-MESSAGE_DEF(GTPV1U_GNB_NG_REQ,              MESSAGE_PRIORITY_MED, Gtpv1uNGReq,                     gtpv1uNGReq)
 MESSAGE_DEF(GTPV1U_GNB_TUNNEL_DATA_REQ,     MESSAGE_PRIORITY_MED, gtpv1u_gnb_tunnel_data_req_t,    NRGtpv1uTunnelDataReq)
