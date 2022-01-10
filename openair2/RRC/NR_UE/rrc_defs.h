@@ -59,9 +59,9 @@
 #define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
 #define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
 
-#define MAX_MEAS_OBJ 6
-#define MAX_MEAS_CONFIG 6
-#define MAX_MEAS_ID 6
+#define MAX_MEAS_OBJ 7
+#define MAX_MEAS_CONFIG 7
+#define MAX_MEAS_ID 7
 
 typedef uint32_t channel_t;
 

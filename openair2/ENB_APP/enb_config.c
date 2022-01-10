@@ -1925,6 +1925,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
     AssertFatal(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr != NULL,
                 "eNB id %u is not defined in configuration file\n",i);
     F1AP_SETUP_REQ (msg_p).num_cells_available = 0;
+    F1AP_SETUP_REQ (msg_p).cell_type = CELL_MACRO_ENB;
 
     for (k=0; k <num_enbs ; k++) {
       if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[k], *(ENBParamList.paramarray[i][ENB_ENB_NAME_IDX].strptr) )== 0) {
@@ -1945,20 +1946,20 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         LOG_I(ENB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
         F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr));
         LOG_I(ENB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
-        F1AP_SETUP_REQ (msg_p).tac[k]              = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
-        LOG_I(ENB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).tac[k]);
-        F1AP_SETUP_REQ (msg_p).mcc[k]              = *PLMNParamList.paramarray[0][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
-        LOG_I(ENB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mcc[k]);
-        F1AP_SETUP_REQ (msg_p).mnc[k]              = *PLMNParamList.paramarray[0][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
-        LOG_I(ENB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc[k]);
-        F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] = *PLMNParamList.paramarray[0][ENB_MNC_DIGIT_LENGTH].u8ptr;
-        LOG_I(ENB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
-        AssertFatal((F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 2) ||
-                    (F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 3),
+        F1AP_SETUP_REQ (msg_p).cell[k].tac              = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
+        LOG_I(ENB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].tac);
+        F1AP_SETUP_REQ (msg_p).cell[k].mcc              = *PLMNParamList.paramarray[0][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+        LOG_I(ENB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mcc);
+        F1AP_SETUP_REQ (msg_p).cell[k].mnc              = *PLMNParamList.paramarray[0][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+        LOG_I(ENB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mnc);
+        F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length = *PLMNParamList.paramarray[0][ENB_MNC_DIGIT_LENGTH].u8ptr;
+        LOG_I(ENB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length);
+        AssertFatal((F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length == 2) ||
+                    (F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length == 3),
                     "BAD MNC DIGIT LENGTH %d",
-                    F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
-        F1AP_SETUP_REQ (msg_p).nr_cellid[k] = (uint64_t)*(ENBParamList.paramarray[i][ENB_NRCELLID_IDX].u64ptr);
-        LOG_I(ENB_APP,"F1AP: nr_cellid[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).nr_cellid[k]);
+                    F1AP_SETUP_REQ (msg_p).cell[k].mnc_digit_length);
+        F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid = (uint64_t)*(ENBParamList.paramarray[i][ENB_NRCELLID_IDX].u64ptr);
+        LOG_I(ENB_APP,"F1AP: nr_cellid[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid);
         LOG_I(ENB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.mac[k]->eth_params_n.remote_addr);
         LOG_I(ENB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.remote_addr));
         F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6 = 0;
@@ -1969,8 +1970,11 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         LOG_I(ENB_APP,"FIAP: DU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.my_addr));
         F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6 = 0;
         F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4 = 1;
+	
         //strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6_address, "");
         strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address, RC.mac[k]->eth_params_n.my_addr);
+	F1AP_SETUP_REQ (msg_p).DUport= RC.mac[k]->eth_params_n.my_portd;
+	F1AP_SETUP_REQ (msg_p).CUport= RC.mac[k]->eth_params_n.remote_portd;
         //strcpy(F1AP_SETUP_REQ (msg_p).CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
         //F1AP_SETUP_REQ (msg_p).CU_port = RC.mac[k]->eth_params_n.remote_portc; // maybe we dont need it
         sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
@@ -1989,12 +1993,12 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
           pthread_mutex_unlock(&rrc->cell_info_mutex);
         } while (cell_info_configured ==0);
 
-        rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).mcc[k];
-        rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).mnc[k];
-        rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).tac[k];
-        rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).nr_cellid[k];
-        F1AP_SETUP_REQ (msg_p).nr_pci[k]    = rrc->carrier[0].physCellId;
-        F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
+        rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).cell[k].mcc;
+        rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).cell[k].mnc;
+        rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).cell[k].tac;
+        rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).cell[k].nr_cellid;
+        F1AP_SETUP_REQ (msg_p).cell[k].nr_pci    = rrc->carrier[0].physCellId;
+        F1AP_SETUP_REQ (msg_p).cell[k].num_ssi = 0;
 
         if (rrc->carrier[0].sib1->tdd_Config) {
           LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
@@ -2070,12 +2074,12 @@ int RCconfig_gtpu(void ) {
 
   if (address) {
     MessageDef *message;
-    AssertFatal((message = itti_alloc_new_message(TASK_ENB_APP, 0, GTPV1U_ENB_S1_REQ))!=NULL,"");
-    IPV4_STR_ADDR_TO_INT_NWBO ( address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
-    LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
-    GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = enb_port_for_S1U;
-    strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
-    sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", enb_port_for_S1U);
+    AssertFatal((message = itti_alloc_new_message(TASK_ENB_APP, 0, GTPV1U_REQ))!=NULL,"");
+    IPV4_STR_ADDR_TO_INT_NWBO ( address, GTPV1U_REQ(message).localAddr, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+    LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_REQ(message).localAddr);
+    GTPV1U_REQ(message).localPort = enb_port_for_S1U;
+    strcpy(GTPV1U_REQ(message).localAddrStr,address);
+    sprintf(GTPV1U_REQ(message).localPortStr,"%d", enb_port_for_S1U);
     itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
   } else
     LOG_E(GTPU,"invalid address for S1U\n");
@@ -3167,7 +3171,7 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
           (check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
            resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
-        for (si_ind=2; si_ind<resp->cells_to_activate[j].num_SI + 2; si_ind++)  {
+        for (si_ind=0; si_ind<resp->cells_to_activate[j].num_SI; si_ind++)  {
           //printf("SI %d size %d: ", si_ind, resp->cells_to_activate[j].SI_container_length[si_ind]);
           //for (int n=0;n<resp->cells_to_activate[j].SI_container_length[si_ind];n++)
           //  printf("%02x ",resp->cells_to_activate[j].SI_container[si_ind][n]);
@@ -3175,7 +3179,7 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
           if (si_ind==6) si_ind=9;
           if (resp->cells_to_activate[j].SI_container[si_ind] != NULL) {
             extract_and_decode_SI(i,
-                                  si_ind,
+                                  resp->cells_to_activate[j].SI_type[si_ind],
                                   resp->cells_to_activate[j].SI_container[si_ind],
                                   resp->cells_to_activate[j].SI_container_length[si_ind]);
           }
