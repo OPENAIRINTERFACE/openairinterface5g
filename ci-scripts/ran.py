@@ -159,6 +159,7 @@ class RANManagement():
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
+		mySSH.command('git advice.detachedHead false', '\$', 5)
 		# Checking the BUILD INFO file
 		if not self.backgroundBuild:
 			mySSH.command('ls *.txt', '\$', 5)
@@ -203,6 +204,7 @@ class RANManagement():
 			else:
 				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
 				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+		logging.debug(mySSH.getBefore()) # print what git said when merging/checking out
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p log', '\$', 5)
@@ -212,6 +214,7 @@ class RANManagement():
 			mySSH.command('echo "./build_oai ' + self.Build_eNB_args + '" > ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('echo ' + lPassWord + ' | sudo -S ls', '\$', 5)
+			logging.debug(mySSH.getBefore()) # print current directory contents for verification
 			mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-build.sh' + ' > ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ' + ' 2>&1 &', lUserName, 5)
 			mySSH.close()
 			HTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
