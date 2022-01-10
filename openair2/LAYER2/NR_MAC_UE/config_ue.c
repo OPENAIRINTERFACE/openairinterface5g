@@ -105,6 +105,13 @@ void set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
     }
   }
 
+  if (tdd_config->pattern1.ext1 == NULL) {
+    cfg->tdd_table.tdd_period = tdd_config->pattern1.dl_UL_TransmissionPeriodicity;
+  } else {
+    AssertFatal(tdd_config->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL, "scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
+    cfg->tdd_table.tdd_period = *tdd_config->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+  }
+
   LOG_I(NR_MAC, "TDD has been properly configured\n");
 
 }
