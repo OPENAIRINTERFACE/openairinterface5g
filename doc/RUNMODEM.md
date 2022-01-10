@@ -179,15 +179,15 @@ With the RF simulator (on the same machine):
 
 ## IF setup with OAI
 
-The `if_freq` and `if_freq_off` options can be used to set (via command line) custom downlink and uplink FR1 arbitrary frequencies for the IF equipment both.
+OAI is also compatible with Intermediate Frequency (IF) equipment. This allows to use RF front-end that with arbitrary frequencies bands that do not comply with the standardised 3GPP NR bands. 
 
-In the same way, the following parameters must be configured in the RUs section of the gNB configuration file:
+To configure the IF frequencies it is necessary to use two command-line options at UE side:
+- `if_freq`, downlink frequency in Hz
+- `if_freq_off`, uplink frequency offset in Hz
 
-`if_freq`
-
-`if_offset`
-
-The values must be given in Hz.
+Accordingly, the following parameters must be configured in the RUs section of the gNB configuration file:
+- `if_freq`
+- `if_offset`
 
 ### Run OAI with custom DL/UL arbitrary frequencies
 

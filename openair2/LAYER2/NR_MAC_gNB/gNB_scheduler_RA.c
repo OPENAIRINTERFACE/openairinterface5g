@@ -422,7 +422,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
   }
   else{
     if(frame_type == TDD)
-      AssertFatal(1==0,"Dynamic TDD not handled yet\n");
+      AssertFatal(frame_type == FDD, "Dynamic TDD not handled yet\n");
   }
 
 
