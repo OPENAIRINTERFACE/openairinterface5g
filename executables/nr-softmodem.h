@@ -29,7 +29,7 @@
     {"D" ,                    CONFIG_HLP_DLBM_PHYTEST,0,                u64ptr:&dlsch_slot_bitmap,          defintval:0,                   TYPE_UINT64, 0},        \
     {"U" ,                    CONFIG_HLP_ULBM_PHYTEST,0,                u64ptr:&ulsch_slot_bitmap,          defintval:0,                   TYPE_UINT64, 0},        \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
-    {"uecap_file",            CONFIG_HLP_UECAP_FILE,  0,                strptr:(char **)&uecap_file,        defstrval:"./",                TYPE_STRING, 0},        \
+    {"uecap_file",            CONFIG_HLP_UECAP_FILE,  0,                strptr:(char **)&uecap_file,        defstrval:"./uecap.xml",       TYPE_STRING, 0},        \
     {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
   }
 

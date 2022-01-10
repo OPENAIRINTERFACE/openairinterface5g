@@ -2639,7 +2639,6 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   asn_dec_rval_t dec_rval;
   NR_UL_DCCH_Message_t ul_dcch_msg;
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
-  char UE_NR_Capability_xer_fname[1024];
   char UE_NR_Capability_xer[65536];
   size_t size;
   uint8_t buffer[200];
@@ -2662,15 +2661,12 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   char *file_path = NR_UE_rrc_inst[ctxt_pP->module_id].uecap_file;
 
   FILE *f = NULL;
-  if (file_path) {
-    sprintf(UE_NR_Capability_xer_fname,"%s",file_path);
-    f = fopen(UE_NR_Capability_xer_fname, "r");
-  }
-
+  if (file_path)
+    f = fopen(file_path, "r");
   if(f){
     size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
     if (size == 0 || size == sizeof UE_NR_Capability_xer) {
-      LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", UE_NR_Capability_xer_fname,size);
+      LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", file_path,size);
       free(UE_Capability_nr);
       return;
     }
