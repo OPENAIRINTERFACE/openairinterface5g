@@ -48,8 +48,6 @@
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
-#include "rt_wrapper.h"
-
 #include "assertions.h"
 
 
@@ -101,7 +99,6 @@ extern RAN_CONTEXT_t RC;
 //#define USRP_DEBUG 1
 struct timing_info_t {
   //unsigned int frame, hw_slot, last_slot, next_slot;
-  RTIME time_min, time_max, time_avg, time_last, time_now;
   //unsigned int mbox0, mbox1, mbox2, mbox_target;
   unsigned int n_samples;
 } timing_info;

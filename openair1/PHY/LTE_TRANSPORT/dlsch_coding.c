@@ -42,7 +42,6 @@
 #include "common/utils/LOG/log.h"
 #include "targets/RT/USER/lte-softmodem.h"
 #include <syscall.h>
-#include "targets/RT/USER/rt_wrapper.h"
 #include <common/utils/threadPool/thread-pool.h>
 
 //#define DEBUG_DLSCH_CODING

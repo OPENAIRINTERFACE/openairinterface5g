@@ -31,7 +31,6 @@
  */
 #include "lte-softmodem.h"
 
-#include "rt_wrapper.h"
 #include "system.h"
 
 #include "LAYER2/MAC/mac.h"

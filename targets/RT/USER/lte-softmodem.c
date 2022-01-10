@@ -34,7 +34,6 @@
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
 
-#include "rt_wrapper.h"
 #include <common/utils/msc/msc.h>
 
 
@@ -518,13 +517,6 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main ( int argc, char **argv )
 {
-  set_priority(79);
-  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
-  {
-    fprintf(stderr, "mlockall: %s\n", strerror(errno));
-    return EXIT_FAILURE;
-  }
-
   int i;
   int CC_id = 0;
   int ru_id;
@@ -537,8 +529,8 @@ int main ( int argc, char **argv )
   }
 
   mode = normal_txrx;
-  set_latency_target();
   logInit();
+  configure_linux();
   printf("Reading in command-line options\n");
   get_options ();
 
@@ -573,13 +565,10 @@ int main ( int argc, char **argv )
   init_opt();
   // to make a graceful exit when ctrl-c is pressed
   set_softmodem_sighandler();
-  check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-  printf("Runtime table\n");
-  fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
 
   /* Read configuration */
   if (RC.nb_inst > 0) {
