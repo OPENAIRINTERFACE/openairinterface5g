@@ -445,13 +445,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     RC.nrmac[Mod_idP]->UL_tti_req_ahead[0] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
     AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
                 "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
-    /* fill in slot/frame numbers: slot is fixed, frame will be updated by
-     * scheduler */
-    uint16_t sf_ahead = (uint16_t) ceil((float)6/(0x01<<(*scc->ssbSubcarrierSpacing)));
-    uint16_t sl_ahead = sf_ahead * (0x01<<(*scc->ssbSubcarrierSpacing));
+    /* fill in slot/frame numbers: slot is fixed, frame will be updated by scheduler
+       extern sf_ahead is initialized in ru_thread but that function is not executed yet here*/
+    const uint16_t sf_ahead = (uint16_t) ceil((float)6/(0x01<<(*scc->ssbSubcarrierSpacing)));
+    const uint16_t sl_ahead = sf_ahead * (0x01<<(*scc->ssbSubcarrierSpacing));
     /* consider that scheduler runs sl_ahead: the first sl_ahead slots are
-     * already "in the past" and thus we put frame 1 instead of 0!  Note that
-     * extern variable sl_ahead is not initialized yet, so computing it above */
+     * already "in the past" and thus we put frame 1 instead of 0!*/
     for (int i = 0; i < n; ++i) {
       nfapi_nr_ul_tti_request_t *req = &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][i];
       req->SFN = i < (sl_ahead-1);
@@ -501,10 +500,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       nr_ulstart_slot = tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0);
       nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
     }
-    else{
-      if(RC.nrmac[Mod_idP]->common_channels[0].frame_type == TDD)
-        AssertFatal(1==0,"Dynamic TDD not handled yet\n");
-    }
+    else
+      // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
+      AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD,"Dynamic TDD not handled yet\n");
 
     for (int slot = 0; slot < n; ++slot) {
       /* FIXME: it seems there is a problem with slot 0/10/slots right after UL:

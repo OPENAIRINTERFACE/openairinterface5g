@@ -1200,10 +1200,9 @@ int nr_acknack_scheduling(int mod_id,
     first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
     first_ul_slot_period = tdd->nrofDownlinkSlots;
   }
-  else{
-    if(RC.nrmac[mod_id]->common_channels[CC_id].frame_type == TDD)
-      AssertFatal(1==0,"Dynamic TDD not handled yet\n");
-  }
+  else
+    // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
+    AssertFatal(RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD,"Dynamic TDD not handled yet\n");
 
   NR_sched_pucch_t *csi_pucch;
 

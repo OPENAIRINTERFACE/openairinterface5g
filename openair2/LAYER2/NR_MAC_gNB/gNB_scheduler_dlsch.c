@@ -75,10 +75,9 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
     nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
     nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
   }
-  else{
-    if(frame_type == TDD)
-      AssertFatal(1==0,"Dynamic TDD not handled yet\n");
-  }
+  else
+    // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
+    AssertFatal(nrmac->common_channels->frame_type == FDD,"Dynamic TDD not handled yet\n");
 
   int target_ss;
   if (bwp) {
