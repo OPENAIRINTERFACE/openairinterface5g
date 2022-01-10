@@ -8,7 +8,7 @@ By default, this facility is included at build-time and activated at run-time. T
 ```bash
 /build_oai --disable-T-Tracer
 ```
--  To use the the T-Tracer instead of the console logging facility, use the command line option *T_stdout*.  *T_stdout* is a boolean option, which, when set to 0 (false) disable the console logging facility. All stdout messages are then sent to the T-Tracer.
+-  To use the the T-Tracer, use the command line option *T_stdout*. When set to 0, it disables the console logging facility. All stdout messages are then sent to the T-Tracer. When set to 1 (the default), the logs are output to the linux console and no T trace is generated. When set to 2 both console logging and T traces are activated.
 
 ## Documentation
 
