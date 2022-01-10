@@ -42,6 +42,8 @@ UE_RRC_INST *UE_rrc_inst = NULL;
 #include "LAYER2/MAC/mac_extern.h"
 #define MAX_U32 0xFFFFFFFF
 
+extern uint16_t ue_id_g;
+
 uint8_t DRB2LCHAN[8];
 
 long logicalChannelGroup0 = 0;

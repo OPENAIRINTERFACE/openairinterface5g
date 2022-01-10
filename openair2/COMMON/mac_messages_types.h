@@ -147,6 +147,7 @@ typedef struct NRRrcMacCcchDataInd_s {
   OCTET_STRING_t *du_to_cu_rrc_container;
   uint8_t   gnb_index;
   int       CC_id;
+  uint64_t  nr_cellid;
 } NRRrcMacCcchDataInd;
 
 typedef struct RrcMacMcchDataReq_s {

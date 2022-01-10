@@ -33,7 +33,7 @@
         <testCase id="090101">
                 <class>Initialize_eNB</class>
                 <desc>Initialize gNB USRP</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<air_interface>NR</air_interface>
         </testCase>
 
@@ -52,7 +52,7 @@
         <testCase id="090102">
                 <class>Initialize_OAI_UE</class>
                 <desc>Initialize NR UE USRP</desc>
-		<Initialize_OAI_UE_args>--phy-test --usrp-args "addr=192.168.30.2,second_addr=192.168.50.2,clock_source=external,time_source=external" --ue-rxgain 50  --rrc_config_path . --dlsch-parallel 4 </Initialize_OAI_UE_args>
+		<Initialize_OAI_UE_args>--phy-test --usrp-args "addr=192.168.30.2,second_addr=192.168.50.2,clock_source=external,time_source=external" --ue-rxgain 50  --rrc_config_path . --dlsch-parallel 4 --log_config.global_log_options level,nocolor,time</Initialize_OAI_UE_args>
 		<air_interface>NR</air_interface>
         </testCase>
 

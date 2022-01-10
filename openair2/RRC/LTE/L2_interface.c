@@ -317,6 +317,12 @@ mac_rrc_data_ind(
       sdu_lenP,
       NULL,
       0);
+    struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_allocate_new_UE_context(RC.rrc[module_idP]);
+    ue_context_p->ue_id_rnti                    = rntiP;
+    ue_context_p->ue_context.rnti               = rntiP;
+    ue_context_p->ue_context.random_ue_identity = rntiP;
+    ue_context_p->ue_context.Srb0.Active        = 1;
+    RB_INSERT(rrc_ue_tree_s, &RC.rrc[module_idP]->rrc_ue_head, ue_context_p);
     return(0);
   }
 

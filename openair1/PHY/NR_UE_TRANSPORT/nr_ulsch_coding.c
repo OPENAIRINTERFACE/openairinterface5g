@@ -260,6 +260,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   Coderate = 0.0;
   
   trace_NRpdu(DIRECTION_UPLINK, harq_process->a, harq_process->pusch_pdu.pusch_data.tb_size, 0, WS_C_RNTI, 0, 0, 0,0, 0);
+
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
 
