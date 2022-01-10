@@ -720,7 +720,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                 ulsch->harq_mask &= ~(1 << harq_pid);
 
                 LOG_D(PHY, "ULSCH received ok \n");
-                nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0);
+                nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0,0);
 	
 	  } else {
 		LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
@@ -735,10 +735,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       		harq_process->handled  = 1;
 		no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
       		LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
-		nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1);
+		nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1,0);
 	  } 
-	  //ulsch->last_iteration_cnt = no_iteration_ldpc;	
-	}
+	  ulsch->last_iteration_cnt = no_iteration_ldpc;	
+	  }
     } 
   } 
   else { 
