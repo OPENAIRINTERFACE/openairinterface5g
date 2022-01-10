@@ -368,25 +368,36 @@ gtpv1u_create_s1u_tunnel(), delete tunnel, ... functions are called inside the o
 
 # New GTP
 ## initialization
-Coexistance until full merge with legacy GTP
-cmake new option: NEW_GTPU to use the new implementation (it changes for the entire executable)
-It is possible to use both old and new GTP in same executable because the itti task and all functions names are different 
-Current status of new implementation: not tested, X2 not developped, 5G new GTP option not developped, remain issues on data coming from void: muid, enb_flag, ...
 
 ocp_gtpv1uTask(): this creates only the thread, doesn't configure anything
 gtpv1Init(): creates a listening socket to Linux for a given reception and select a local IP address
 
-newGtpuCreateTunnel() this function will replace the xxx_create_tunnel_xxx() for various cases
-This creates a outgoing context for a teid (in input), it computes and return the incoming teid that will be used for incoming packets
-These teids and in a "instance", so in a Linux socket: same teid can co-exist for different sockets
- Remain here a lack to fill: the information given in the legacy funtions is not enough to fullfil the data needed by the callback
-stuff like enb_flag, but also mui and more important data are not given explicitly by any legacy function (gtpv1u_create_s1u_tunnel), but the legacy and the new interface to lower layer (like pdcp) require this data.
-The datamodel is still not fully understood, so this data source remain unknown
-A new parameter is the callback function: will be pdpcp_data_req() and gtpv_data_req() (x2 case) for existing implementation and later other call backs like the F1-U implementation.
+## newGtpuCreateTunnel()   
+this function will replace the xxx_create_tunnel_xxx() for various cases  
+The parameters are: 
+1. outgoing TEid, associated with outpoing pair(rnti, id)
+2. incoming packets callback, incoming pair(rnti,id) and a callback function for incoming data 
 
-incoming packets
-the gtp layer retrieves the data, the teid, find out the related data: rnti, bearer and quite a lot of other parameters (not clear why, because it looks like all is statefull, so the lower layer should have the context) 
-if lower layers can be stateless, it is a good idea to keep the context in the gtp layer and pass it to the callback, but the design remain obfuscated.
+## outgoing packets 
+
+Each call to newGtpuCreateTunnel() creates a outgoing context for a teid (given as function input), a pair(rnti,outgoing id).  
+ Each outgoing packet received on GTP-U ITTI queue must match one pair(rnti,id), so the gtp-u thread can lookup the related TEid and use it to encode the outpoing GTP-U tunneled packet.  
+
+## incoming packets   
+
+newGtpuCreateTunnel() computes and return the incoming teid that will be used for incoming packets.
+When a incoming packet arrives on this incoming teid, the GTP-U thread calls the defined callback, with the associated pair(rnti, incoming id).  
+
+stuff like enb_flag, mui and more important data are not given explicitly by any legacy function (gtpv1u_create_s1u_tunnel), but the legacy and the new interface to lower layer (like pdcp) require this data. We hardcode it in first version.
+
+## remaining work 
+These teids and "instance", so in a Linux socket: same teid can co-exist for different sockets
+ Remain here a lack to fill: the information given in the legacy funtions is not enough to fullfil the data needed by the callback  
+
+Coexistance until full merge with legacy GTP
+cmake new option: NEW_GTPU to use the new implementation (it changes for the entire executable)
+It is possible to use both old and new GTP in same executable because the itti task and all functions names are different 
+Current status of new implementation: not tested, X2 not developped, 5G new GTP option not developped, remain issues on data coming from void: muid, enb_flag, ...
 
 # NGAP
 NGAP would be a itti thread as is S1AP (+twin thread SCTP that is almost void processing)?  

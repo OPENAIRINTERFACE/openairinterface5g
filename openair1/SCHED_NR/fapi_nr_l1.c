@@ -151,18 +151,13 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
 
   int slot_type = nr_slot_select(cfg,frame,slot);
+
   uint8_t number_dl_pdu             = (DL_req==NULL) ? 0 : DL_req->dl_tti_request_body.nPDUs;
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
   uint8_t number_ul_tti_pdu         = (UL_tti_req==NULL) ? 0 : UL_tti_req->n_pdus;
   uint8_t number_tx_data_pdu        = (TX_req == NULL) ? 0 : TX_req->Number_of_PDUs;
 
   if (NFAPI_MODE == NFAPI_MONOLITHIC){
-    if (DL_req != NULL && TX_req!=NULL && (number_dl_pdu > 0 || number_ul_dci_pdu > 0 || number_ul_tti_pdu > 0))
-      LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d/%d DL_req:SFN/SLO:%04d/%d:dl_pdu:%d tx_req:SFN/SLOT:%04d/%d:pdus:%d;ul_dci %d ul_tti %d\n",
-      frame,slot,
-      DL_req->SFN,DL_req->Slot,number_dl_pdu,
-      TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs,
-      number_ul_dci_pdu,number_ul_tti_pdu);
 
     if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) {
       notifiedFIFO_elt_t *res;
@@ -245,12 +240,12 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     if (number_ul_dci_pdu>0)
       oai_nfapi_ul_dci_req(UL_dci_req);
 
-    if (number_dl_pdu>0)
-      oai_nfapi_dl_tti_req(DL_req);
-
     if (number_tx_data_pdu>0)
       oai_nfapi_tx_data_req(TX_req);
 
-  }
+    if (number_dl_pdu>0)
+      oai_nfapi_dl_tti_req(DL_req);
 
+  } 
+  
 }

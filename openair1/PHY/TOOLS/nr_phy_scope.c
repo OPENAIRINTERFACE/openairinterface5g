@@ -239,7 +239,7 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
   for (int pix=0; pix<graph->w; pix++) {
     scopeSample_t *end=values+(pix+1)*samplesPerPixel;
     end-=2;
-    AssertFatal(end <= values+datasize,"diff : %ld", end-values+datasize);
+    AssertFatal(end <= values+datasize,"diff : %tu", end-values+datasize);
     double val=0;
 
     for (scopeSample_t *s=values+(pix)*samplesPerPixel;

@@ -42,7 +42,7 @@
 	<testCase id="030111">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RCC (TDD/Band38/10MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band38.tm1.50PRB.multi.rru.conf --noS1</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band38.tm1.50PRB.multi.rru.conf --noS1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 	</testCase>
@@ -50,7 +50,7 @@
 	<testCase id="030112">
 		<class>Initialize_eNB</class>
 		<desc>Initialize Master RRU (TDD/Band38/10MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.band38.tm1.master.conf --noS1</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.band38.tm1.master.conf --noS1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 	</testCase>
@@ -58,7 +58,7 @@
 	<testCase id="030113">
 		<class>Initialize_eNB</class>
 		<desc>Initialize Slave RRU (TDD/Band38/10MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.band38.tm1.slave.conf --noS1</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.band38.tm1.slave.conf --noS1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>2</eNB_instance>
 		<eNB_serverId>2</eNB_serverId>
 	</testCase>

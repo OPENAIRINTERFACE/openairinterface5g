@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-4glte-down</htmlTabRef>
-        <htmlTabName>CleanUp 4G RF</htmlTabName>
+        <htmlTabName>CleanUp 4G RF - Monolithic eNB</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100011

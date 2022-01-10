@@ -82,7 +82,6 @@ extern int asn1_xer_print;
 # define S1AP_INFO(x, args...) LOG_I(S1AP, x, ##args)
 # define S1AP_DEBUG(x, args...) LOG_I(S1AP, x, ##args)
 #else
-# include "mme_default_values.h"
 # define S1AP_ERROR(x, args...) do { fprintf(stdout, "[S1AP][E]"x, ##args); } while(0)
 # define S1AP_WARN(x, args...)  do { fprintf(stdout, "[S1AP][W]"x, ##args); } while(0)
 # define S1AP_TRAF(x, args...)  do { fprintf(stdout, "[S1AP][T]"x, ##args); } while(0)
