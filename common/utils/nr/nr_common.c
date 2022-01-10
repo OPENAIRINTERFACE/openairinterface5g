@@ -42,7 +42,7 @@ const char *duplex_mode[]={"FDD","TDD"};
 // - N_OFFs for bands from 80 to 89 and band 95 is referred to UL
 // - Frequencies are expressed in KHz
 // - col: NR_band ul_min  ul_max  dl_min  dl_max  step  N_OFFs_DL  deltaf_raster
-nr_bandentry_t nr_bandtable[] = {
+const nr_bandentry_t nr_bandtable[] = {
   {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
   {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},
   {3,   1710000, 1785000, 1805000, 1880000, 20, 361000, 100},
@@ -117,7 +117,7 @@ uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
   uint64_t center_freq_diff_khz = 999999999999999999; // 2^64
   uint16_t current_band = 0;
 
-  for (int ind = 0; ind < nr_bandtable_size; ind++) {
+  for (int ind = 0; ind < sizeofArray(nr_bandtable); ind++) {
 
     if (dl_freq_khz < nr_bandtable[ind].dl_min || dl_freq_khz > nr_bandtable[ind].dl_max)
       continue;
@@ -142,8 +142,6 @@ uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
 
   return current_band;
 }
-
-const size_t nr_bandtable_size = sizeof(nr_bandtable) / sizeof(nr_bandentry_t);
 
 int NRRIV2BW(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
@@ -459,31 +457,27 @@ uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
 
 // Returns the corresponding row index of the NR table
 int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
-  int i, j;
   int scs_khz = 15 << scs_index;
   int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
-  size_t s = sizeof(supplementary_bands)/sizeof(supplementary_bands[0]);
-
-  for(j = 0; j < s; j++){
+  for(int j = 0; j < sizeofArray(supplementary_bands); j++){
     if (nr_bandP == supplementary_bands[j])
       AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
   }
 
-  AssertFatal(nr_bandP <= nr_bandtable[nr_bandtable_size-1].band, "NR band %d exceeds NR bands table maximum limit %d\n", nr_bandP, nr_bandtable[nr_bandtable_size-1].band);
-  for (i = 0; i < nr_bandtable_size && nr_bandtable[i].band != nr_bandP; i++);
-
-  // In frequency bands with two deltaFRaster,
-  // the higher deltaFRaster applies to channels using only the SCS that is equal to or larger than the higher deltaFRaster
-  // and SSB SCS is equal to the higher deltaFRaster.
-  while(((i+1)<nr_bandtable_size) &&
-        (nr_bandtable[i+1].band == nr_bandtable[i].band) &&
-        (nr_bandtable[i].deltaf_raster != scs_khz)) {
-    i++;
+  int i;
+  for (i = 0; i < sizeofArray(nr_bandtable); i++) {
+    if ( nr_bandtable[i].band == nr_bandP && nr_bandtable[i].deltaf_raster == scs_khz )
+      break;
   }
 
-  AssertFatal(nr_bandtable[i].band == nr_bandP, "Found band table %d does not correspond to the input one %d\n",nr_bandtable[i].band,nr_bandP);
+  if (i == sizeofArray(nr_bandtable)) {
+    LOG_I(PHY, "not found same deltaf_raster == scs_khz, use only band and last deltaf_raster \n");
+    for(i=sizeofArray(nr_bandtable)-1; i >=0; i--)
+       if ( nr_bandtable[i].band == nr_bandP )
+         break;
+  }
 
-
+  AssertFatal(i > 0 && i < sizeofArray(nr_bandtable), "band is not existing: %d\n",nr_bandP);
   LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
 
   return i;

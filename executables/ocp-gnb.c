@@ -328,9 +328,9 @@ static void init_pdcp(void) {
     pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
   }
 
-  pdcp_module_init(pdcp_initmask);
-  pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-  pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+  nr_pdcp_module_init(pdcp_initmask, 0);
+  pdcp_set_rlc_data_req_func(rlc_data_req);
+  pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
 }
 
 void init_main_gNB(void) {

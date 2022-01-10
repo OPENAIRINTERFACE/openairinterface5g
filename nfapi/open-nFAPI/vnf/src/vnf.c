@@ -85,7 +85,7 @@ void nfapi_vnf_pnf_list_add(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* no
 
 nfapi_vnf_pnf_info_t* nfapi_vnf_pnf_list_find(nfapi_vnf_config_t* config, int p5_idx)
 {
-	NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s : config->pnf_list:%p\n", __FUNCTION__, config->pnf_list);
+	NFAPI_TRACE(NFAPI_TRACE_DEBUG, "config->pnf_list:%p\n", config->pnf_list);
 
 	nfapi_vnf_pnf_info_t* curr = config->pnf_list;
 	while(curr != 0)
@@ -1051,7 +1051,7 @@ void vnf_handle_vendor_extension(void* pRecvMsg, int recvMsgLen, nfapi_vnf_confi
 		}
 		else
 		{
-			NFAPI_TRACE(NFAPI_TRACE_INFO, "%s failed to allocate vendor extention structure\n");
+			NFAPI_TRACE(NFAPI_TRACE_INFO, "failed to allocate vendor extention structure\n");
 		}
 	}
 }
@@ -1383,6 +1383,7 @@ int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* 
 		
 		uint32_t header_buffer_size = NFAPI_HEADER_LENGTH;
 		uint8_t header_buffer[header_buffer_size];
+		memset(header_buffer, 0, header_buffer_size);
 
 		uint32_t stack_buffer_size = 32; //should it be the size of then sctp_notificatoin structure
 		uint8_t stack_buffer[stack_buffer_size];
@@ -1393,6 +1394,7 @@ int vnf_read_dispatch_message(nfapi_vnf_config_t* config, nfapi_vnf_pnf_info_t* 
 		uint32_t message_size = 0;
 
 		struct sockaddr_in addr;
+		memset(&addr, 0, sizeof(addr));
 		socklen_t addr_len = sizeof(addr);
 
 		struct sctp_sndrcvinfo sndrcvinfo;

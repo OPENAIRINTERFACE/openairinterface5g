@@ -222,7 +222,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
      * - END-MARKER
      */
     case NW_GTPV1U_ULP_API_RECV_TPDU: {
-      uint8_t              buffer[4096];
+      uint8_t              buffer[NFAPI_MAX_PACKED_MESSAGE_SIZE];
       uint32_t             buffer_len;
       struct rrc_eNB_ue_context_s        *ue_context_p;
       uint16_t             msgType = NW_GTP_GPDU;
@@ -432,11 +432,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
                  );
 
         if ( result == FALSE ) {
-          if (ctxt.configured == FALSE )
-            LOG_W(GTPU, "PDCP data request failed, cause: [UE:%x]RB is not configured!\n", ctxt.rnti) ;
-          else
-            LOG_W(GTPU, "PDCP data request failed\n");
-
+          LOG_W(GTPU, "PDCP data request failed\n");
           return NW_GTPV1U_FAILURE;
         }
       } else {
@@ -912,7 +908,8 @@ gtpv1u_create_s1u_tunnel(
 
     do {
       s1u_teid = gtpv1u_new_teid();
-      LOG_D(GTPU, "gtpv1u_create_s1u_tunnel() 0x%x %u(dec)\n", s1u_teid, s1u_teid);
+      LOG_I(GTPU, "gtpv1u_data_g %p\n", RC.gtpv1u_data_g);
+      LOG_I(GTPU, "gtpv1u_create_s1u_tunnel() 0x%x %u(dec)\n", s1u_teid, s1u_teid);
       stack_req.apiInfo.createTunnelEndPointInfo.teid          = s1u_teid;
       stack_req.apiInfo.createTunnelEndPointInfo.hUlpSession   = 0;
       stack_req.apiInfo.createTunnelEndPointInfo.hStackSession = 0;

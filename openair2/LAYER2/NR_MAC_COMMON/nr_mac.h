@@ -265,6 +265,16 @@ typedef struct {
 } dci_field_t;
 
 typedef struct {
+  bool expected_sib;
+  bool index_has_sib[16];
+  bool expected_rar;
+  bool index_has_rar[16];
+  bool expected_dci;
+  bool index_has_dci[16];
+  int active_harq_sfn_slot;
+} nr_emulated_l1_t;
+
+typedef struct {
 
   uint8_t     format_indicator; //1 bit
   uint8_t     ra_preamble_index; //6 bits
