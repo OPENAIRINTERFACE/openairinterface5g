@@ -476,9 +476,7 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
       LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
     }
     // configure ss coreset after switching BWP
-    configure_ss_coreset(mac,
-                         scd,
-                         mac->DL_BWP_Id);
+    configure_ss_coreset(mac, scd, mac->DL_BWP_Id);
   } else {
 
     if (scd->firstActiveDownlinkBWP_Id)

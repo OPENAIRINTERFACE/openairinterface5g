@@ -160,7 +160,6 @@
 #define GNB_CONFIG_STRING_SCS_ULBWP4                                     "ul_bwp4_subcarrierSpacing"
 #define GNB_CONFIG_STRING_FIRSTACTIVEULBWP_ID                            "firstActiveUplinkBWP-Id"
 
-
 /*--------------------------------------------------------------------------------------------------------------------*/
 /*                                            pdcch_ConfigSIB1 parameters                                             */
 /*--------------------------------------------------------------------------------------------------------------------*/

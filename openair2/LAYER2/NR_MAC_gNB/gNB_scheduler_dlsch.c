@@ -1120,7 +1120,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
     const int n_dl_bwp = bwp ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
-    AssertFatal(n_dl_bwp <= 4, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
+    AssertFatal(n_dl_bwp <= NR_MAX_NUM_BWP, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
 
     // as per table 7.3.1.1.2-1 in 38.212
     dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1) : 0;
