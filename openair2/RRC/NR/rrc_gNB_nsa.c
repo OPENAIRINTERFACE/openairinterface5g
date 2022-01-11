@@ -123,6 +123,7 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) && ueCapabilityRAT_Container_MRDC != NULL ) {
     xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }
+  LOG_A(NR_RRC, "Successfully decoded UE NR capabilities (NR and MRDC)\n");
 
   ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
   ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = rrc->carrier.servingcellconfig;
@@ -295,14 +296,18 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
       RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[rrc->module_id]->rrc_ue_head, ue_context_p);
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
-      gtpv1u_create_s1u_tunnel(
-        ctxt.instance,
-        &create_tunnel_req,
-        &create_tunnel_resp);
-      rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-        &ctxt,
-        &create_tunnel_resp,
-        &inde_list[0]);
+      memset(&create_tunnel_resp, 0, sizeof(create_tunnel_resp));
+      if (!IS_SOFTMODEM_NOS1) {
+        LOG_D(RRC, "Calling gtpv1u_create_s1u_tunnel()\n");
+        gtpv1u_create_s1u_tunnel(
+          ctxt.instance,
+          &create_tunnel_req,
+          &create_tunnel_resp);
+        rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+          &ctxt,
+          &create_tunnel_resp,
+          &inde_list[0]);
+      }
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = m->nb_e_rabs_tobeadded;
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).target_assoc_id = m->target_assoc_id;
 
@@ -340,7 +345,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                               NULL,
                               (void *)CG_Config,
                               X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer,
-                              1024);
+                              sizeof(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer));
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
     itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
   } else if (get_softmodem_params()->do_ra || get_softmodem_params()->sa) {

@@ -34,6 +34,8 @@
 #define RRC_DCCH_DATA_REQ(mSGpTR)               (mSGpTR)->ittiMsg.rrc_dcch_data_req
 #define RRC_DCCH_DATA_IND(mSGpTR)               (mSGpTR)->ittiMsg.rrc_dcch_data_ind
 #define RRC_PCCH_DATA_REQ(mSGpTR)               (mSGpTR)->ittiMsg.rrc_pcch_data_req
+#define RRC_NRUE_CAP_INFO_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_nrue_cap_info_ind
+#define RRC_DCCH_DATA_COPY_IND(mSGpTR)          (mSGpTR)->ittiMsg.rrc_dcch_data_copy_ind
 
 // gNB
 #define NR_RRC_DCCH_DATA_REQ(mSGpTR)            (mSGpTR)->ittiMsg.nr_rrc_dcch_data_req
@@ -64,6 +66,13 @@ typedef struct RrcDcchDataInd_s {
   uint8_t      module_id;
   uint8_t      eNB_index; // LG: needed in UE
 } RrcDcchDataInd;
+
+typedef struct RrcDcchDataCopyInd_s {
+  uint8_t dcch_index;
+  uint32_t sdu_size;
+  uint8_t *sdu_p;
+  uint8_t      eNB_index;
+} RrcDcchDataCopyInd;
 
 typedef struct NRRrcDcchDataReq_s {
   uint32_t frame;

@@ -93,6 +93,7 @@ class Containerize():
 		self.allImagesSize = {}
 		self.collectInfo = {}
 
+		self.tsharkStarted = False
 		self.pingContName = ''
 		self.pingOptions = ''
 		self.pingLossThreshold = ''
@@ -670,6 +671,10 @@ class Containerize():
 				time.sleep(10)
 
 		if count == 100 and healthy == self.nb_healthy[0]:
+			if self.tsharkStarted == False:
+				logging.debug('Starting tshark on public network')
+				self.CaptureOnDockerNetworks()
+				self.tsharkStarted = True
 			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
 		else:
@@ -677,8 +682,24 @@ class Containerize():
 			HTML.CreateHtmlTestRow('Could not deploy in time', 'KO', CONST.ALL_PROCESSES_OK)
 			logging.error('\u001B[1m Deploying OAI Object(s) FAILED\u001B[0m')
 
+	def CaptureOnDockerNetworks(self):
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml config | grep com.docker.network.bridge.name | sed -e "s@^.*name: @@"'
+		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		cmd = 'sudo nohup tshark -f "not tcp and not arp and not port 53 and not host archive.ubuntu.com and not host security.ubuntu.com"'
+		for name in networkNames.split('\n'):
+			res = re.search('rfsim', name)
+			if res is not None:
+				cmd += ' -i ' + name
+		cmd += ' -w /tmp/capture_'
+		ymlPath = self.yamlPath[0].split('/')
+		cmd += ymlPath[1] + '.pcap > /tmp/tshark.log 2>&1 &'
+		logging.debug(cmd)
+		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+
 	def UndeployGenObject(self, HTML):
 		self.exitStatus = 0
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
 
 		if (self.ranAllowMerge):
 			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@ci-temp@" docker-compose.y*ml > docker-compose-ci.yml'
@@ -706,9 +727,21 @@ class Containerize():
 				logging.debug(cmd)
 				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		if anyLogs:
-			cmd = 'mkdir -p ../cmake_targets/log && mv ' + self.yamlPath[0] + '/*.log ../cmake_targets/log'
+			cmd = 'mkdir -p '+ logPath + ' && mv ' + self.yamlPath[0] + '/*.log ' + logPath
 			logging.debug(cmd)
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+			if self.tsharkStarted:
+				self.tsharkStarted = True
+				ymlPath = self.yamlPath[0].split('/')
+				cmd = 'sudo chmod 666 /tmp/capture_' + ymlPath[1] + '.pcap'
+				logging.debug(cmd)
+				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+				cmd = 'cp /tmp/capture_' + ymlPath[1] + '.pcap ' + logPath
+				logging.debug(cmd)
+				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+				cmd = 'sudo rm /tmp/capture_' + ymlPath[1] + '.pcap'
+				logging.debug(cmd)
+				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml down'
 		logging.debug(cmd)
@@ -726,10 +759,13 @@ class Containerize():
 
 	def PingFromContainer(self, HTML):
 		self.exitStatus = 0
-		cmd = 'mkdir -p ../cmake_targets/log'
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
+		cmd = 'mkdir -p ' + logPath
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
-		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log || true'
+		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ' + logPath + '/ping_' + HTML.testCase_id + '.log || true'
+
 		logging.debug(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -784,14 +820,23 @@ class Containerize():
 		if status:
 			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', 1, html_queue)
 		else:
-			self.exitStatus = 1
-			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			logging.error('\u001B[1;37;41m ping test FAIL -- ' + message + ' \u001B[0m')
 			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'KO', 1, html_queue)
+			# Automatic undeployment
+			logging.debug('----------------------------------------')
+			logging.debug('\u001B[1m Starting Automatic undeployment \u001B[0m')
+			logging.debug('----------------------------------------')
+			HTML.testCase_id = 'AUTO-UNDEPLOY'
+			HTML.desc = 'Automatic Un-Deployment'
+			self.UndeployGenObject(HTML)
+			self.exitStatus = 1
 
 	def IperfFromContainer(self, HTML):
 		self.exitStatus = 0
 
-		cmd = 'mkdir -p ../cmake_targets/log'
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
+		cmd = 'mkdir -p ' + logPath
 		logStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 		# Start the server process
@@ -801,7 +846,8 @@ class Containerize():
 		time.sleep(5)
 
 		# Start the client process
-		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log || true'
+
+		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee '+ logPath + '/iperf_client_' + HTML.testCase_id + '.log || true'
 		logging.debug(cmd)
 		clientStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -810,7 +856,7 @@ class Containerize():
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
-		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log ../cmake_targets/log/iperf_server_' + HTML.testCase_id + '.log'
+		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log '+ logPath + '/iperf_server_' + HTML.testCase_id + '.log'
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 
@@ -906,8 +952,9 @@ class Containerize():
 		if status:
 			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'OK', 1, html_queue)
 		else:
-			self.exitStatus = 1
+			logging.error('\u001B[1m Iperf Test FAIL -- ' + message + ' \u001B[0m')
 			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'KO', 1, html_queue)
+
 
 	def CheckAndAddRoute(self, svrName, ipAddr, userName, password):
 		logging.debug('Checking IP routing on ' + svrName)
@@ -1019,3 +1066,4 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
 			mySSH.close()
+

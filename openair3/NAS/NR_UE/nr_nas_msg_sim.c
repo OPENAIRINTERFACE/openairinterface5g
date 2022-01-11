@@ -43,6 +43,7 @@
 #include <openair3/UICC/usim_interface.h>
 #include <openair3/NAS/COMMON/NR_NAS_defs.h>
 #include <openair1/PHY/phy_extern_nr_ue.h>
+#include <openair1/SIMULATION/ETH_TRANSPORT/proto.h>
 
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
@@ -775,6 +776,30 @@ static void generatePduSessionEstablishRequest(int Mod_id, uicc_t * uicc, as_nas
 }
 
 
+uint8_t get_msg_type(uint8_t *pdu_buffer, uint32_t length) {
+  uint8_t          msg_type = 0;
+  uint8_t          offset   = 0;
+
+  if ((pdu_buffer != NULL) && (length > 0)) {
+    if (((nas_msg_header_t *)(pdu_buffer))->choice.security_protected_nas_msg_header_t.security_header_type > 0) {
+      offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+      if (offset < length) {
+        msg_type = ((mm_msg_header_t *)(pdu_buffer + offset))->message_type;
+
+        if (msg_type == FGS_DOWNLINK_NAS_TRANSPORT) {
+          msg_type = ((dl_nas_transport_t *)(pdu_buffer+ offset))->sm_nas_msg_header.message_type;
+        }
+      }
+    } else { // plain 5GS NAS message
+      msg_type = ((nas_msg_header_t *)(pdu_buffer))->choice.plain_nas_msg_header.message_type;
+    }
+  } else {
+    LOG_I(NAS, "[UE] Received invalid downlink message\n");
+  }
+
+  return msg_type;
+}
+
 void *nas_nrue_task(void *args_p)
 {
   MessageDef           *msg_p;
@@ -848,23 +873,8 @@ void *nas_nrue_task(void *args_p)
               NAS_CONN_ESTABLI_CNF (msg_p).errCode, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
 
         pdu_buffer = NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.data;
-        if((pdu_buffer + 1) != NULL){
-          if (*(pdu_buffer + 1) > 0 ) {
-            if((pdu_buffer + 9) != NULL){
-                msg_type = *(pdu_buffer + 9);
-            } else {
-              LOG_W(NAS, "[UE] Received invalid downlink message\n");
-              break;
-            }
-          } else {
-            if((pdu_buffer + 2) != NULL){
-              msg_type = *(pdu_buffer + 2);
-            } else {
-                LOG_W(NAS, "[UE] Received invalid downlink message\n");
-                break;
-            }
-          }
-        }
+        msg_type = get_msg_type(pdu_buffer, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
+
         if(msg_type == REGISTRATION_ACCEPT){
           LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
 
@@ -893,20 +903,39 @@ void *nas_nrue_task(void *args_p)
             itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
             LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
           }
-        }
-        else if((pdu_buffer + 16) != NULL){
-          msg_type = *(pdu_buffer + 16);
-          if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
-            if(baseNetAddress==NULL) {
-              baseNetAddress = calloc(1,8);
+        } else if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
+            uint8_t offset = 0;
+            uint8_t *payload_container = NULL;
+            offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+            uint16_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
+            if ((payload_container_length >= PAYLOAD_CONTAINER_LENGTH_MIN) && (payload_container_length <= PAYLOAD_CONTAINER_LENGTH_MAX)) {
+              offset += (PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH + 3);
             }
-            sprintf(baseNetAddress, "%d.%d", *(pdu_buffer + 39),*(pdu_buffer + 40));
-            int third_octet = *(pdu_buffer + 41);
-            int fourth_octet = *(pdu_buffer + 42);
-            LOG_I(NAS, "Received PDU Session Establishment Accept\n");
-            nas_config(1,third_octet,fourth_octet,"ue");
+
+            if (offset < NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length) {
+              payload_container = pdu_buffer + offset;
+            }
+            offset = 0;
+
+            while(offset < payload_container_length) {
+	      // Fixme: this is not good 'type' 0x29 searching in TLV like structure
+	      // AND fix dirsty code copy hereafter of the same!!!
+              if (*(payload_container + offset) == 0x29) { // PDU address IEI
+                if ((*(payload_container+offset+1) == 0x05) && (*(payload_container +offset+2) == 0x01)) { // IPV4
+                  nas_getparams();
+                  sprintf(baseNetAddress, "%d.%d", *(payload_container+offset+3), *(payload_container+offset+4));
+                  int third_octet = *(payload_container+offset+5);
+                  int fourth_octet = *(payload_container+offset+6);
+                  LOG_I(NAS, "Received PDU Session Establishment Accept, UE IP: %d.%d.%d.%d\n",
+                    *(payload_container+offset+3), *(payload_container+offset+4),
+                    *(payload_container+offset+5), *(payload_container+offset+6));
+                  nas_config(1,third_octet,fourth_octet,"oaitun_ue");
+                  break;
+                }
+              }
+              offset++;
+            }
           }
-        }
 
         break;
       }
@@ -933,19 +962,10 @@ void *nas_nrue_task(void *args_p)
         as_nas_info_t initialNasMsg={0};
 
         pdu_buffer = NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data;
-        if((pdu_buffer + 1) != NULL){
-          if (*(pdu_buffer + 1) > 0 ) {
-            msg_type = *(pdu_buffer + 9);
-          } else {
-            msg_type = *(pdu_buffer + 2);
-          }
-        }
-        if((pdu_buffer + 2) == NULL){
-          LOG_W(NAS, "[UE] Received invalid downlink message\n");
-          return 0;
-        }
+        msg_type = get_msg_type(pdu_buffer, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length);
 
         switch(msg_type){
+
           case FGS_IDENTITY_REQUEST:
 	            generateIdentityResponse(&initialNasMsg,*(pdu_buffer+3), uicc);
               break;
@@ -959,7 +979,36 @@ void *nas_nrue_task(void *args_p)
           case FGS_DOWNLINK_NAS_TRANSPORT:
             decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
             break;
-
+	case FGS_PDU_SESSION_ESTABLISHMENT_ACC:
+	  {
+	    uint8_t offset = 0;
+	    uint8_t *payload_container = pdu_buffer;
+	    offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
+	    uint16_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
+	    if ((payload_container_length >= PAYLOAD_CONTAINER_LENGTH_MIN) &&
+		(payload_container_length <= PAYLOAD_CONTAINER_LENGTH_MAX))
+	      offset += (PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH + 3);
+	    if (offset < NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length) 
+	      payload_container = pdu_buffer + offset;
+	    
+	    while(offset < payload_container_length) {
+	      if (*(payload_container + offset) == 0x29) { // PDU address IEI
+		if ((*(payload_container+offset+1) == 0x05) && (*(payload_container +offset+2) == 0x01)) { // IPV4
+		  nas_getparams();
+		  sprintf(baseNetAddress, "%d.%d", *(payload_container+offset+3), *(payload_container+offset+4));
+		  int third_octet = *(payload_container+offset+5);
+		  int fourth_octet = *(payload_container+offset+6);
+		  LOG_I(NAS, "Received PDU Session Establishment Accept, UE IP: %d.%d.%d.%d\n",
+			*(payload_container+offset+3), *(payload_container+offset+4),
+			*(payload_container+offset+5), *(payload_container+offset+6));
+		  nas_config(1,third_octet,fourth_octet,"oaitun_ue");
+		  break;
+		}
+	      }
+	      offset++;
+	    }
+	  }
+	  break;
           default:
               LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
               break;
@@ -970,13 +1019,13 @@ void *nas_nrue_task(void *args_p)
           message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
           NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
           NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
+
           NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
           itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
           LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message\n");
         }
-
-        break;
       }
+        break;
 
       default:
         LOG_E(NAS, "[UE %d] Received unexpected message %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));

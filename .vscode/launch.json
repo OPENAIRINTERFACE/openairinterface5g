@@ -9,14 +9,17 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "enter program name, for example ${workspaceFolder}/a.exe",
-            "args": [],
+            "program": "${workspaceFolder}/cmake_targets/ran_build/build/lte-softmodem",
+            "args": [
+                "-O", "../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf",
+                "--noS1"
+            ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/cmake_targets",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
-            "miDebuggerPath": "/path/to/gdb",
+            "miDebuggerPath": "${workspaceFolder}/cmake_targets/sudo-gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
