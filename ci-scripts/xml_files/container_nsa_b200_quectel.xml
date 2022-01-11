@@ -124,6 +124,7 @@
 		<direction>DL</direction>
 		<id>idefix</id>
 		<iperf_packetloss_threshold>3</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
@@ -134,6 +135,7 @@
 		<direction>UL</direction>
 		<id>idefix</id>
 		<iperf_packetloss_threshold>1</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
