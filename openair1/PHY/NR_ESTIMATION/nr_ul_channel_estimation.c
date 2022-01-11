@@ -1137,7 +1137,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
           multadd_real_vector_complex_scalar(filt8_start, ls_estimated, srs_estimated_channel16, 8);
         } else if(nr_srs_info->sc_list[sc_idx] < nr_srs_info->sc_list[sc_idx - 1]) { // Start of OFDM symbol case
           // filt8_start is {12288,8192,4096,0,0,0,0,0}
-          srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx + 2]] - 8;
+          srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx + 2]] - sizeof(uint64_t);
           multadd_real_vector_complex_scalar(filt8_start, ls_estimated, srs_estimated_channel16, 8);
         } else if((sc_idx < (nr_srs_info->sc_list_length - 1) && nr_srs_info->sc_list[sc_idx + 1] < nr_srs_info->sc_list[sc_idx])
                     || (sc_idx == (nr_srs_info->sc_list_length - 1))) { // End of OFDM symbol or last subcarrier cases
@@ -1156,7 +1156,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
           // filt16_start is {12288,8192,8192,8192,4096,0,0,0,0,0,0,0,0,0,0,0}
           multadd_real_vector_complex_scalar(filt16_start, ls_estimated, srs_estimated_channel16, 16);
         } else if(nr_srs_info->sc_list[sc_idx] < nr_srs_info->sc_list[sc_idx - 1]) { // Start of OFDM symbol case
-          srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx + 1]] - 8;
+          srs_estimated_channel16 = (int16_t *)&srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx + 1]] - sizeof(uint64_t);
           // filt16_start is {12288,8192,8192,8192,4096,0,0,0,0,0,0,0,0,0,0,0}
           multadd_real_vector_complex_scalar(filt16_start, ls_estimated, srs_estimated_channel16, 16);
         } else if((sc_idx < (nr_srs_info->sc_list_length - 1) && nr_srs_info->sc_list[sc_idx + 1] < nr_srs_info->sc_list[sc_idx])
