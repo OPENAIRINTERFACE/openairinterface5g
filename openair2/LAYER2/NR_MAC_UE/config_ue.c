@@ -467,10 +467,10 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
   if (bwp_ind && dci_format){
     switch(*dci_format){
     case NR_UL_DCI_FORMAT_0_1:
-      mac->UL_BWP_Id = n_ubwp < 4 ? *bwp_ind : *bwp_ind + 1;;
+      mac->UL_BWP_Id = n_ubwp < 4 ? *bwp_ind : *bwp_ind + 1;
       break;
     case NR_DL_DCI_FORMAT_1_1:
-      mac->DL_BWP_Id = n_ubwp < 4 ? *bwp_ind : *bwp_ind + 1;;
+      mac->DL_BWP_Id = n_ubwp < 4 ? *bwp_ind : *bwp_ind + 1;
       break;
     default:
       LOG_E(MAC, "In %s: failed to configure BWP Id from DCI with format %d \n", __FUNCTION__, *dci_format);
@@ -587,7 +587,7 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id][ss->searchSpaceId - 1] = ss;
+    mac->SSpace[dl_bwp_id-1][ss->searchSpaceId - 1] = ss;
   }
 
   struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
@@ -602,7 +602,7 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id][css->searchSpaceId - 1] = css;
+    mac->SSpace[dl_bwp_id-1][css->searchSpaceId - 1] = css;
   }
 }
 

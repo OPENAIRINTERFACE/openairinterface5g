@@ -102,7 +102,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
                   ss_id,mac->ra.ss->searchSpaceId);
     }
     else
-      ss = mac->SSpace[dl_bwp_id][ss_id-1];
+      ss = mac->SSpace[dl_bwp_id-1][ss_id-1];
   }
   else
     ss = mac->search_space_zero;
@@ -275,9 +275,9 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 
   // loop over all available SS for bwp_id
   if (bwpd) {
-      for (ss_id = 1; ss_id <= FAPI_NR_MAX_SS && mac->SSpace[bwp_id][ss_id-1] != NULL; ss_id++){
+      for (ss_id = 1; ss_id <= FAPI_NR_MAX_SS && mac->SSpace[bwp_id-1][ss_id-1] != NULL; ss_id++){
 	LOG_D(NR_MAC, "[DCI_CONFIG] ss_id %d\n",ss_id);
-	NR_SearchSpace_t *ss = mac->SSpace[bwp_id][ss_id-1];
+	NR_SearchSpace_t *ss = mac->SSpace[bwp_id-1][ss_id-1];
         AssertFatal(ss_id == ss->searchSpaceId,"SS IDs don't correspond\n");
 	fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
 	NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;

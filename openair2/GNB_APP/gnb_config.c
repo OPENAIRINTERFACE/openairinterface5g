@@ -372,8 +372,9 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   scd->firstActiveDownlinkBWP_Id = CALLOC(1, sizeof(*scd->firstActiveDownlinkBWP_Id));
   *scd->firstActiveDownlinkBWP_Id = 1;
   *scd->uplinkConfig->firstActiveUplinkBWP_Id = 1;
-  
- 
+  scd->defaultDownlinkBWP_Id = CALLOC(1, sizeof(*scd->defaultDownlinkBWP_Id));
+  *scd->defaultDownlinkBWP_Id = 0;
+
 for (int j = 0 ;j < 4 ; j++)
 {
   
