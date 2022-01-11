@@ -263,12 +263,14 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int dci_formats,
                         int rnti_types,
                         int N_RB,
-                        int bwp_id);
+                        int bwp_id,
+                        NR_ControlResourceSetId_t controlResourceSetId);
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
-                 int bwp_id);
+                 int bwp_id,
+                 NR_ControlResourceSetId_t controlResourceSetId);
 
 /* find coreset within the search space */
 NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,

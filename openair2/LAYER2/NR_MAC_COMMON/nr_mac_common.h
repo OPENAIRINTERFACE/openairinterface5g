@@ -54,7 +54,8 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
                      uint16_t N_RB,
-                     int bwp_id);
+                     int bwp_id,
+                     NR_ControlResourceSetId_t controlResourceSetId);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,

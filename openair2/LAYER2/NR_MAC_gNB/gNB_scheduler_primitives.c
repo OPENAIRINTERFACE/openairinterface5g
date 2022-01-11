@@ -1062,7 +1062,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
-                 int bwp_id) {
+                 int bwp_id,
+                 NR_ControlResourceSetId_t controlResourceSetId) {
 
   AssertFatal(CellGroup!=NULL,"CellGroup shouldn't be null here\n");
 
@@ -1116,8 +1117,7 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
       if (pdsch_Config->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList != NULL)
         AssertFatal(1==0,"Aperiodic ZP CSI-RS currently not supported\n");
       // transmission configuration indication
-      int corset_id = 1; //TODO : corset_id to come from higher layers
-      if (pdcch_Config->controlResourceSetToAddModList->list.array[corset_id-1]->tci_PresentInDCI != NULL)
+      if (pdcch_Config->controlResourceSetToAddModList->list.array[controlResourceSetId-1]->tci_PresentInDCI != NULL)
         AssertFatal(1==0,"TCI in DCI currently not supported\n");
       //srs resource set
       if (CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->carrierSwitching!=NULL) {
@@ -1159,16 +1159,18 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int dci_format,
                         int rnti_type,
                         int N_RB,
-                        int bwp_id) {
+                        int bwp_id,
+                        NR_ControlResourceSetId_t controlResourceSetId) {
   uint8_t fsize = 0, pos = 0;
 
   uint64_t *dci_pdu = (uint64_t *)pdcch_dci_pdu->Payload;
   *dci_pdu=0;
-  int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,scc->uplinkConfigCommon->initialUplinkBWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id);
+  int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,scc->uplinkConfigCommon->initialUplinkBWP,
+                             CellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id, controlResourceSetId);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
-    prepare_dci(CellGroup, dci_pdu_rel15, dci_format, bwp_id);
+    prepare_dci(CellGroup, dci_pdu_rel15, dci_format, bwp_id, controlResourceSetId);
 
   /// Payload generation
   switch (dci_format) {

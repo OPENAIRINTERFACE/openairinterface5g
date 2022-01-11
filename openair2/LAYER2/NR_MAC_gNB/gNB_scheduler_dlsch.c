@@ -1178,7 +1178,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
-                       bwp? bwp->bwp_Id : 0);
+                       bwp? bwp->bwp_Id : 0,
+                       sched_ctrl->coreset->controlResourceSetId);
 
     LOG_D(NR_MAC,
           "coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
