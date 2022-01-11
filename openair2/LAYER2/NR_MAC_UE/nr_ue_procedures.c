@@ -624,8 +624,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   RA_config_t *ra = &mac->ra;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   uint8_t is_Msg3 = 0;
-  NR_BWP_Id_t dl_bwp_id =  mac->DL_BWP_Id ;
-  NR_BWP_Id_t ul_bwp_id =  mac->UL_BWP_Id ;
+  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   int default_abc = 1;
 
   uint16_t n_RB_DLBWP;
@@ -912,14 +912,14 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     if (dci->tpc == 3) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 3;
     // Sanity check for pucch_resource_indicator value received to check for false DCI.
     valid = 0;
-    if (mac->ULbwp[dl_bwp_id-1] &&
-        mac->ULbwp[dl_bwp_id-1]->bwp_Dedicated &&
-        mac->ULbwp[dl_bwp_id-1]->bwp_Dedicated->pucch_Config &&
-        mac->ULbwp[dl_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup&&
-        mac->ULbwp[dl_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList) {
-      pucch_res_set_cnt = mac->ULbwp[dl_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.count;
+    if (mac->ULbwp[ul_bwp_id-1] &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup&&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList) {
+      pucch_res_set_cnt = mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.count;
       for (int id = 0; id < pucch_res_set_cnt; id++) {
-	if (dci->pucch_resource_indicator < mac->ULbwp[dl_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[id]->resourceList.list.count) {
+	if (dci->pucch_resource_indicator < mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup->resourceSetToAddModList->list.array[id]->resourceList.list.count) {
 	  valid = 1;
 	  break;
 	}
