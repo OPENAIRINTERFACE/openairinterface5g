@@ -74,7 +74,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t ssb_index, n_hf;
   uint16_t ssb_start_symbol;
-  int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
+  int txdataF_offset = slot*fp->samples_per_slot_wCP;
   uint16_t slots_per_hf = (fp->slots_per_frame)>>1;
 
   if (slot<slots_per_hf)
@@ -133,7 +133,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int offset = gNB->CC_id;
-  int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
+  int txdataF_offset = slot*fp->samples_per_slot_wCP;
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
       (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;
