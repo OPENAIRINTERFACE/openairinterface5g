@@ -221,7 +221,7 @@ class Containerize():
 		if (self.ranAllowMerge):
 			imageTag = 'ci-temp'
 			if self.ranTargetBranch == 'develop':
-				mySSH.command('git diff HEAD..origin/develop -- docker/Dockerfile.base' + self.dockerfileprefix + ' | grep --colour=never -i INDEX', '\$', 5)
+				mySSH.command('git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base' + self.dockerfileprefix + ' | grep --colour=never -i INDEX', '\$', 5)
 				result = re.search('index', mySSH.getBefore())
 				if result is not None:
 					forceBaseImageBuild = True
