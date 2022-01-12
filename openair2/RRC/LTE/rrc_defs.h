@@ -484,7 +484,7 @@ typedef struct MEASUREMENT_INFO_s {
 typedef struct {
   char Payload[RRC_BUFFER_SIZE_MAX];
   char Header[RRC_HEADER_SIZE_MAX];
-  char payload_size;
+  uint16_t payload_size;
 } RRC_BUFFER;
 #define RRC_BUFFER_SIZE sizeof(RRC_BUFFER)
 

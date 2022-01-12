@@ -399,11 +399,15 @@ rrc_gNB_generate_RRCSetup(
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   NR_ServingCellConfig_t *servingcellconfigdedicated = rrc->configuration.scd;
-  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
-						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
-						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
-						  masterCellGroup_from_DU,
-						  scc,servingcellconfigdedicated,&rrc->carrier);
+  int16_t ret = do_RRCSetup(ue_context_pP,
+                            (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
+                            rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
+                            masterCellGroup_from_DU,
+                            scc,servingcellconfigdedicated,&rrc->carrier);
+
+  AssertFatal(ret>0,"Error generating RRCSetup for RRCSetupRequest\n");
+
+  ue_p->Srb0.Tx_buffer.payload_size = ret;
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -519,11 +523,15 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   ue_context_pP = rrc_gNB_get_next_free_ue_context(ctxt_pP, rrc_instance_p, 0);
 
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
-						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
-						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
-						  NULL,
-						  scc,servingcellconfigdedicated,&rrc_instance_p->carrier);
+  int16_t ret = do_RRCSetup(ue_context_pP,
+                            (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
+                            rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
+                            NULL,
+                            scc,servingcellconfigdedicated,&rrc_instance_p->carrier);
+
+  AssertFatal(ret>0,"Error generating RRCSetup for RRCReestablishmentRequest\n");
+
+  ue_p->Srb0.Tx_buffer.payload_size = ret;
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),

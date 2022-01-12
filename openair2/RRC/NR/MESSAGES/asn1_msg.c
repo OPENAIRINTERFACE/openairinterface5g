@@ -2059,7 +2059,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 }
 
 //------------------------------------------------------------------------------
-uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
+int16_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
                     OCTET_STRING_t               *masterCellGroup_from_DU,
