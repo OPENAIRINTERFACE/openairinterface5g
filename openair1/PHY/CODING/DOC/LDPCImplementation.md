@@ -24,12 +24,33 @@ loading `libldpc_cl.so` instead of `libldpc.so`:
 
 `make ldpc_cl`
 
-`cp ../../../openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_kernels_CL.cl`
+This command creates the `libldpc_cl.so` shared library. To perform this build successfully, only the OpenCL header `(/usr/include/CL/opencl.h)` and library `(/usr/lib/x86_64-linux-gnu/libOpenCL.so)`are required, they implement OpenCL API support which is not hardware dependent.
+
+```
+Scanning dependencies of target nrLDPC_decoder_kernels_CL
+Built target nrLDPC_decoder_kernels_CL
+Scanning dependencies of target ldpc_cl
+Building C object CMakeFiles/ldpc_cl.dir/usr/local/oai/oai-develop/openairinterface5g/openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c.o
+In file included from /usr/include/CL/cl.h:32,
+                 from /usr/include/CL/opencl.h:38,
+                 from /usr/local/oai/oai-develop/openairinterface5g/openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c:49:
+/usr/include/CL/cl_version.h:34:9: note: #pragma message: cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
+ #pragma message("cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)")
+         ^~~~~~~
+
+Building C object CMakeFiles/ldpc_cl.dir/usr/local/oai/oai-develop/openairinterface5g/openair1/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c.o
+Linking C shared module libldpc_cl.so
+Built target ldpc_cl
+
+```
+
+At runtime, to successfully use hardware acceleration via OpenCL, you need to install vendor specific packages which deliver the required drivers and tools to make use of their GPU (Nvidia, Intel...) , fpga (Xilinx, Intel) or CPU (Intel, AMD, ARM...) through OpenCL. 
 
 `./nr-softmodem -O  libconfig:gnb.band78.sa.fr1.106PRB.usrpb210.conf:dbgl5 --rfsim --rfsimulator.serveraddr server  --sa --log_config.gtpu_log_level info  --loader.ldpc.shlibversion _cl`
 
-``` [LOADER] library libldpc_cl.so successfully loaded
+``` 
 ------------------------------------------------
+[LOADER] library libldpc_cl.so successfully loaded
 [HW]   Platform 0, OpenCL profile FULL_PROFILE
 [HW]   Platform 0, OpenCL version OpenCL 2.1 LINUX
 [HW]   Device 0 is  available
@@ -62,8 +83,9 @@ loading `libldpc_cl.so` instead of `libldpc.so`:
 
 `./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa -O libconfig:/usr/local/oai/conf/nrue_sim.conf:dbgl5  --nokrnmod --loader.ldpc.shlibversion _cl --log_config.hw_log_level info`
 
-```[CONFIG] shlibversion set to  _cl from command line
+```
 ............................................................
+[CONFIG] shlibversion set to  _cl from command line
 [CONFIG] loader.ldpc 1 options set from command line
 [LOADER] library libldpc_cl.so successfully loaded
 [HW]   Platform 0, OpenCL profile FULL_PROFILE
@@ -94,7 +116,6 @@ loading `libldpc_cl.so` instead of `libldpc.so`:
 [HW]   Device 0, max Work Items size for dimension: 1 512
 [HW]   Device 0, max Work Items size for dimension: 2 512 
 ------------------------------------------------------------
-​```
 ```
 
 A mechanism to select ldpc implementation is also available in the `ldpctest` phy simulator via the `-v`option, which can be used to specify the version of the ldpc shared library to be used.
@@ -103,7 +124,9 @@ A mechanism to select ldpc implementation is also available in the `ldpctest` ph
 
 Loading libldpc_cuda.so, the cuda implementation of the ldpc decoder:
 
-```$ ./ldpctest -v _cuda
+```
+$ ./ldpctest -v _cuda
+ldpctest -v _cuda
 Initializing random number generator, seed 0
 block length 8448: 
 n_trials 1: 
@@ -119,18 +142,16 @@ log init done
 [CONFIG] loader.ldpc: 1/2 parameters successfully set 
 [LOADER] library libldpc_cuda.so successfully loaded
 ...................................
-​```
 ```
+
 
 Loading libldpc_cl.so, the opencl implementation of the ldpc decoder:
 
 `make ldpc_cl`
 
-`cp ../../../openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_kernels_CL.cl`
 
-`./ldpctest -v _cl`
-
-```$ ./ldpctest -v _cl
+```
+$ ./ldpctest -v _cl
 Initializing random number generator, seed 0
 block length 8448: 
 n_trials 1: 
@@ -164,7 +185,6 @@ log init done
 [HW]   Device 0, max Work Items size for dimension: 1 512
 [HW]   Device 0, max Work Items size for dimension: 2 512
 ................................
-​```
 ```
 
 
@@ -174,6 +194,6 @@ Libraries implementing the LDPC algorithms must be named `libldpc<_version>.so`,
 
 `libldpc_cuda.so`has been tested with the `ldpctest` executable, usage from the softmodem's has to be tested.
 
-`libldpc_cl`is under development.
+`libldpc_cl.so`is under development.
 
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
