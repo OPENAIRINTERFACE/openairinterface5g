@@ -535,6 +535,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
  
   if (CellGroup) {
 
+    // Preferred DL TDA for InitialBWP
+    calculate_preferred_dl_tda(Mod_idP, NULL);
+
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
 
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
@@ -544,8 +547,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
         calculate_preferred_dl_tda(Mod_idP, bwp);
       }
-    } else {
-      calculate_preferred_dl_tda(Mod_idP, NULL);
     }
 
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;

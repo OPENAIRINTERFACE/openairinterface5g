@@ -323,9 +323,10 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     // call do_RRCSetup like full procedure and extract masterCellGroup
     NR_CellGroupConfig_t cellGroupConfig;
     NR_ServingCellConfigCommon_t *scc=RC.nrrrc[module_idP]->carrier.servingcellconfigcommon;
+    NR_ServingCellConfig_t *servingcellconfigdedicated = RC.nrrrc[module_idP]->configuration.scd;
     memset(&cellGroupConfig,0,sizeof(cellGroupConfig));
 
-    fill_initial_cellGroupConfig(rntiP,&cellGroupConfig,scc,&RC.nrrrc[module_idP]->carrier);
+    fill_initial_cellGroupConfig(rntiP,-1,&cellGroupConfig,scc,servingcellconfigdedicated,&RC.nrrrc[module_idP]->carrier);
     MessageDef* tmp=itti_alloc_new_message_sized(TASK_RRC_GNB, 0, F1AP_INITIAL_UL_RRC_MESSAGE, sizeof(f1ap_initial_ul_rrc_message_t) + sdu_lenP);
     f1ap_initial_ul_rrc_message_t *msg = &F1AP_INITIAL_UL_RRC_MESSAGE(tmp);
 

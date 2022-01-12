@@ -398,11 +398,12 @@ rrc_gNB_generate_RRCSetup(
   //   T_INT(ctxt_pP->rnti));
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  NR_ServingCellConfig_t *servingcellconfigdedicated = rrc->configuration.scd;
   ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  masterCellGroup_from_DU,
-						  scc,&rrc->carrier);
+						  scc,servingcellconfigdedicated,&rrc->carrier);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -513,6 +514,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
   gNB_RRC_INST                 *rrc_instance_p = RC.nrrrc[ctxt_pP->module_id];
   NR_ServingCellConfigCommon_t *scc=rrc_instance_p->carrier.servingcellconfigcommon;
+  NR_ServingCellConfig_t       *servingcellconfigdedicated = rrc_instance_p->configuration.scd;
 
   ue_context_pP = rrc_gNB_get_next_free_ue_context(ctxt_pP, rrc_instance_p, 0);
 
@@ -521,7 +523,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 						  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  NULL,
-						  scc,&rrc_instance_p->carrier);
+						  scc,servingcellconfigdedicated,&rrc_instance_p->carrier);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
