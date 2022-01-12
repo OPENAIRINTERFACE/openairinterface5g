@@ -1247,6 +1247,17 @@ int main(int argc, char **argv) {
       eNB->dlsch[k][i]->rnti = n_rnti+k;
     }
   }
+  
+  for (int i=0;i<NUMBER_OF_ULSCH_MAX; i++) {
+    
+    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH %d/%d\n",i,NUMBER_OF_ULSCH_MAX);
+    eNB->ulsch[i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,eNB->frame_parms.N_RB_UL, 0);
+    
+    if (!eNB->ulsch[i]) {
+      LOG_E(PHY,"Can't get eNB ulsch structures\n");
+      exit(-1);
+    }
+  }
 
   /* allocate memory for both subframes (only one is really used
    * but there is now "copy_harq_proc_struct" which needs both

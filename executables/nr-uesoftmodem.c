@@ -84,6 +84,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 
 #include "nr_nas_msg_sim.h"
+#include <openair1/PHY/MODULATION/nr_modulation.h>
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
