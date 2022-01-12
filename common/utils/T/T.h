@@ -100,7 +100,7 @@ extern int T_stdout;
                      20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)(__VA_ARGS__)
 #define TN_N(n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,\
              n18,n19,n20,n21,n22,n23,n24,n25,n26,n27,n28,n29,n30,n31,n32,n,...) T##n
-#define T(...) do { if (T_stdout == 0) TN(__VA_ARGS__); } while (0)
+#define T(...) do { if (T_stdout == 0 || T_stdout == 2) TN(__VA_ARGS__); } while (0)
 
 /* type used to send arbitrary buffer data */
 typedef struct {
@@ -607,7 +607,7 @@ extern int *T_active;
     {"T_port",                     CONFIG_HLP_TPORT,      0,                iptr:&T_port,        defintval:TTRACER_DEFAULT_PORTNUM, TYPE_INT,   0},\
     {"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,   iptr:&T_nowait,      defintval:0,                       TYPE_INT,   0},\
     {"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,   iptr:&T_dont_fork,   defintval:0,                       TYPE_INT,   0},\
-    {"T_stdout",                   CONFIG_HLP_STDOUT,     PARAMFLAG_BOOL,   iptr:&T_stdout,      defintval:1,                       TYPE_INT,   0},\
+    {"T_stdout",                   CONFIG_HLP_STDOUT,     0,                iptr:&T_stdout,      defintval:1,                       TYPE_INT,   0},\
   }
 
 
