@@ -55,6 +55,8 @@ def main():
                              "rcc.band40.tm1.25PRB": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gnb.band78.tm1.fr1.106PRB.usrpb210.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gnb.band78.sa.fr1.106PRB.usrpn310.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+                             "gNB_SA_CU.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+                             "gNB_SA_DU.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue.nfapi": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue_sim_ci": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}'
                              }
@@ -75,6 +77,10 @@ def main():
               continue
             if re.search(r'sd  = 0x1;', line):
               templine = re.sub(r'sd  = 0x1;', 'sd  = 0x@NSSAI_SD0@;', line)
+              outputfile.write(templine)
+              continue
+            if re.search(r'sd  = 0x010203;', line):
+              templine = re.sub(r'sd  = 0x010203;', 'sd  = 0x@NSSAI_SD0@;', line)
               outputfile.write(templine)
               continue
             if re.search(r'sd  = 0x112233;', line):

@@ -121,7 +121,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            PHY_VARS_NR_UE *ue,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
-                           uint16_t n_pdus){
+                           uint16_t n_pdus,
+			   UE_nr_rxtx_proc_t *proc ){
 
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
@@ -130,6 +131,16 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
     LOG_E(PHY, "In %s: multiple number of DL PDUs not supported yet...\n", __FUNCTION__);
   }
 
+  if (pdu_type !=  FAPI_NR_RX_PDU_TYPE_SSB)
+    trace_NRpdu(DIRECTION_DOWNLINK,
+		dlsch0->harq_processes[dlsch0->current_harq_pid]->b,
+		dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS / 8,
+		pdu_type,
+		WS_C_RNTI,
+		dlsch0->rnti,
+		proc->frame_rx,
+		proc->nr_slot_rx,
+		0,0);
   switch (pdu_type){
     case FAPI_NR_RX_PDU_TYPE_SIB:
       rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.harq_pid = dlsch0->current_harq_pid;
@@ -478,7 +489,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   unsigned int dci_cnt=0;
-  fapi_nr_dci_indication_t dci_ind = {0};
+  fapi_nr_dci_indication_t *dci_ind = calloc(1, sizeof(*dci_ind));
   nr_downlink_indication_t dl_indication;
 
   NR_UE_PDCCH *pdcch_vars = ue->pdcch_vars[proc->thread_id][gNB_id];
@@ -677,7 +688,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 	 n_ss);
 #endif
 
-  dci_cnt = nr_dci_decoding_procedure(ue, proc, &dci_ind, rel15);
+  dci_cnt = nr_dci_decoding_procedure(ue, proc, dci_ind, rel15);
 
 #ifdef NR_PDCCH_SCHED_DEBUG
   LOG_I(PHY,"<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
@@ -691,12 +702,12 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
       ue->Mod_id,frame_rx%1024,nr_slot_rx,nr_mode_string[ue->UE_mode[gNB_id]],
       i + 1,
       dci_cnt,
-      dci_ind.dci_list[i].rnti,
-      dci_ind.dci_list[i].dci_format);
+      dci_ind->dci_list[i].rnti,
+      dci_ind->dci_list[i].dci_format);
   }
   ue->pdcch_vars[proc->thread_id][gNB_id]->dci_received += dci_cnt;
 
-  dci_ind.number_of_dcis = dci_cnt;
+  dci_ind->number_of_dcis = dci_cnt;
     /*
     for (int i=0; i<dci_cnt; i++) {
       
@@ -734,7 +745,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
     */
 
     // fill dl_indication message
-    nr_fill_dl_indication(&dl_indication, &dci_ind, NULL, proc, ue, gNB_id);
+    nr_fill_dl_indication(&dl_indication, dci_ind, NULL, proc, ue, gNB_id);
     //  send to mac
     ue->if_inst->dl_indication(&dl_indication, NULL);
 
@@ -873,7 +884,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH *pdsch_vars;
   uint16_t dmrs_len = get_num_dmrs(dlsch0->harq_processes[dlsch0->current_harq_pid]->dlDmrsSymbPos);
   nr_downlink_indication_t dl_indication;
-  fapi_nr_rx_indication_t rx_ind;
+  fapi_nr_rx_indication_t *rx_ind = calloc(1, sizeof(*rx_ind));
   uint16_t number_pdus = 1;
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[gNB_id];
@@ -1002,17 +1013,17 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
     switch (pdsch) {
       case RA_PDSCH:
-        nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, NULL, number_pdus);
+        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+        nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, NULL, number_pdus, proc);
         ue->UE_mode[gNB_id] = RA_RESPONSE;
         break;
       case PDSCH:
-        nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, gNB_id, ue, dlsch0, NULL, number_pdus);
+        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+        nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, gNB_id, ue, dlsch0, NULL, number_pdus, proc);
         break;
       case SI_PDSCH:
-        nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-        nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, gNB_id, ue, dlsch0, NULL, number_pdus);
+        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+        nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, gNB_id, ue, dlsch0, NULL, number_pdus, proc);
         break;
       default:
         break;

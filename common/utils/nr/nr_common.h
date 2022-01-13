@@ -48,8 +48,7 @@ typedef struct nr_bandentry_s {
   uint8_t deltaf_raster;
 } nr_bandentry_t;
 
-extern const size_t nr_bandtable_size;
-extern nr_bandentry_t nr_bandtable[];
+extern const nr_bandentry_t nr_bandtable[];
 static inline int get_num_dmrs(uint16_t dmrs_mask ) {
 
   int num_dmrs=0;

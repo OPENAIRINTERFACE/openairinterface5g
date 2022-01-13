@@ -72,39 +72,39 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance);
  * gNB-DU Configuration Update
  */
 int CU_handle_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          F1AP_F1AP_PDU_t *pdu);
+    uint32_t assoc_id,
+    uint32_t stream,
+    F1AP_F1AP_PDU_t *pdu);
 
 int CU_send_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
-                    F1AP_GNBDUConfigurationUpdateFailure_t *GNBDUConfigurationUpdateFailure);
+    F1AP_GNBDUConfigurationUpdateFailure_t *GNBDUConfigurationUpdateFailure);
 
 int CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                    F1AP_GNBDUConfigurationUpdateAcknowledge_t *GNBDUConfigurationUpdateAcknowledge);
+    F1AP_GNBDUConfigurationUpdateAcknowledge_t *GNBDUConfigurationUpdateAcknowledge);
 
 /*
  * gNB-CU Configuration Update
  */
 int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configuration_update_t *f1ap_gnb_cu_configuration_update);
 int CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  F1AP_F1AP_PDU_t *pdu);
+    uint32_t assoc_id,
+    uint32_t stream,
+    F1AP_F1AP_PDU_t *pdu);
 
 int CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      F1AP_F1AP_PDU_t *pdu);
+    uint32_t assoc_id,
+    uint32_t stream,
+    F1AP_F1AP_PDU_t *pdu);
 
 /*
  * gNB-DU Resource Coordination
  */
 int CU_handle_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
-                                                   uint32_t assoc_id,
-                                                   uint32_t stream,
-                                                   F1AP_F1AP_PDU_t *pdu);
+    uint32_t assoc_id,
+    uint32_t stream,
+    F1AP_F1AP_PDU_t *pdu);
 
 int CU_send_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
-                    F1AP_GNBDUResourceCoordinationResponse_t *GNBDUResourceCoordinationResponse);
+    F1AP_GNBDUResourceCoordinationResponse_t *GNBDUResourceCoordinationResponse);
 
 #endif /* F1AP_CU_INTERFACE_MANAGEMENT_H_ */

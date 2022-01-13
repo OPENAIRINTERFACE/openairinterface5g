@@ -94,6 +94,9 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "NB_IoT_interface.h"
 #include <executables/split_headers.h>
 
+#if USING_GPROF
+#  include "sys/gmon.h"
+#endif
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -178,7 +181,6 @@ eth_params_t *eth_params;
 double cpuf;
 
 int oaisim_flag=0;
-uint8_t proto_agent_flag = 0;
 
 
 /* forward declarations */
@@ -479,7 +481,7 @@ int restart_L1L2(module_id_t enb_id) {
   return 0;
 }
 
-void init_pdcp(void) {
+static void init_pdcp(void) {
   if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
     pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
@@ -490,16 +492,16 @@ void init_pdcp(void) {
 
     pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
 
-    pdcp_module_init(pdcp_initmask);
+    pdcp_module_init(pdcp_initmask, 0);
 
     if (NODE_IS_CU(RC.rrc[0]->node_type)) {
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+      pdcp_set_rlc_data_req_func(cu_send_to_du);
     } else {
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+      pdcp_set_rlc_data_req_func(rlc_data_req);
+      pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
     }
   } else {
-    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+    pdcp_set_pdcp_data_ind_func(proto_agent_send_pdcp_data_ind);
   }
 }
 
@@ -516,6 +518,13 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main ( int argc, char **argv )
 {
+  set_priority(79);
+  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
+  {
+    fprintf(stderr, "mlockall: %s\n", strerror(errno));
+    return EXIT_FAILURE;
+  }
+
   int i;
   int CC_id = 0;
   int ru_id;
@@ -742,10 +751,19 @@ int main ( int argc, char **argv )
   if(IS_SOFTMODEM_DOSCOPE)
      load_softscope("enb",NULL);
   itti_wait_tasks_end();
+
+#if USING_GPROF
+  // Save the gprof data now (rather than via atexit) in case we crash while shutting down
+  fprintf(stderr, "Recording gprof data...\n");
+  _mcleanup();
+  fprintf(stderr, "Recording gprof data...done\n");
+#endif // USING_GPROF
+
   oai_exit=1;
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
   // stop threads
 
+  #if 0 //Disable clean up because this tends to crash (and unnecessary)
   if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
     if(IS_SOFTMODEM_DOSCOPE)
       end_forms();
@@ -787,7 +805,9 @@ int main ( int argc, char **argv )
       }
     }
   }
+  #endif
 
+  pdcp_module_cleanup();
   terminate_opt();
   logClean();
   printf("Bye.\n");

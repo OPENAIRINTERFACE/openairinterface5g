@@ -21,10 +21,12 @@
 
 #include <time.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 //#include "SIMULATION/TOOLS/sim.h"
 
 
-unsigned int s0, s1, s2, b;
+static unsigned int s0, s1, s2;
 
 //----------------------------------------------
 //
@@ -34,7 +36,7 @@ unsigned int s0, s1, s2, b;
 
 unsigned int taus(void)
 {
-  b = (((s0 << 13) ^ s0) >> 19);
+  unsigned int b = (((s0 << 13) ^ s0) >> 19);
   s0 = (((s0 & 0xFFFFFFFE) << 12)^  b);
   b = (((s1 << 2) ^ s1) >> 25);
   s1 = (((s1 & 0xFFFFFFF8) << 4)^  b);
@@ -50,9 +52,20 @@ void set_taus_seed(unsigned int seed_init)
   unsigned long result = 0;
 
   if (seed_init == 0) {
-    s0 = (unsigned int)time(NULL);
-    s1 = (unsigned int)time(NULL);
-    s2 = (unsigned int)time(NULL);
+    unsigned int data[3];
+    int fd = open("/dev/urandom", O_RDONLY);
+    if (fd == -1)
+    {
+      abort();
+    }
+    if (read(fd, data, sizeof(data)) != sizeof(data))
+    {
+      abort();
+    }
+    close(fd);
+    s0 = data[0];
+    s1 = data[1];
+    s2 = data[2];
   } else {
     /* Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
     srand48_r((long int)seed_init, &buffer);

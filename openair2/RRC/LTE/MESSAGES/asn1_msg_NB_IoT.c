@@ -834,6 +834,7 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
 uint16_t do_RRCConnectionReconfiguration_NB_IoT(
   const protocol_ctxt_t        *const ctxt_pP,
   uint8_t                            *buffer,
+  size_t                              buffer_size,
   uint8_t                             Transaction_id,
   LTE_SRB_ToAddModList_NB_r13_t          *SRB1_list_NB, //SRB_ConfigList2 (default)--> only SRB1
   LTE_DRB_ToAddModList_NB_r13_t          *DRB_list_NB_IoT, //DRB_ConfigList (default)
@@ -886,7 +887,7 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
                                    NULL,
                                    (void *)&dl_dcch_msg_NB_IoT,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
 
   if (enc_rval.encoded <= 0) {
     LOG_E(RRC, "ASN1 message encoding failed %s, %li\n",
@@ -1020,7 +1021,8 @@ uint8_t do_DLInformationTransfer_NB_IoT(
 /*do_RRCConnectionReestablishment_NB-->used to re-establish SRB1*/ //which parameter to use?
 uint8_t do_RRCConnectionReestablishment_NB_IoT(
   uint8_t Mod_id,
-  uint8_t *const buffer,
+  uint8_t *buffer,
+  size_t buffer_size,
   const uint8_t     Transaction_id,
   const NB_IoT_DL_FRAME_PARMS *const frame_parms, //to be changed
   LTE_SRB_ToAddModList_NB_r13_t      *SRB_list_NB_IoT) { //should contain SRB1 already configured?
@@ -1046,7 +1048,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
                                    NULL,
                                    (void *)&dl_ccch_msg_NB_IoT,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
 
   if (enc_rval.encoded <= 0) {
     LOG_E(RRC, "ASN1 message encoding failed (%s, %li)!\n",
@@ -1065,6 +1067,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
 uint8_t do_RRCConnectionRelease_NB_IoT(
   uint8_t                             Mod_id,
   uint8_t                            *buffer,
+  size_t                              buffer_size,
   const uint8_t                             Transaction_id) {
   asn_enc_rval_t enc_rval;
   LTE_DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
@@ -1087,7 +1090,7 @@ uint8_t do_RRCConnectionRelease_NB_IoT(
                                    NULL,
                                    (void *)&dl_dcch_msg_NB_IoT,
                                    buffer,
-                                   RRC_BUF_SIZE);//check
+                                   buffer_size);
   return((enc_rval.encoded+7)/8);
 }
 

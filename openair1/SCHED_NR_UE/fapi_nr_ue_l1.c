@@ -39,11 +39,176 @@
 
 #include "PHY/defs_nr_UE.h"
 #include "PHY/impl_defs_nr.h"
+#include "utils.h"
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
 const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
+queue_t nr_rx_ind_queue;
+queue_t nr_crc_ind_queue;
+queue_t nr_uci_ind_queue;
+
+int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
+
+  if(scheduled_response != NULL)
+  {
+    if (scheduled_response->ul_config != NULL)
+    {
+      fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
+      AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
+                  "Too many ul_config pdus %d", ul_config->number_pdus);
+      for (int i = 0; i < ul_config->number_pdus; ++i)
+      {
+        LOG_I(PHY, "In %s: processing type %d PDU of %d total UL PDUs (ul_config %p) \n",
+              __FUNCTION__, ul_config->ul_config_list[i].pdu_type, ul_config->number_pdus, ul_config);
+
+        uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type;
+        switch (pdu_type)
+        {
+          case (FAPI_NR_UL_CONFIG_TYPE_PUSCH):
+          {
+            nfapi_nr_rx_data_indication_t *rx_ind = CALLOC(1, sizeof(*rx_ind));
+            nfapi_nr_crc_indication_t *crc_ind = CALLOC(1, sizeof(*crc_ind));
+            nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
+            if (scheduled_response->tx_request)
+            {
+              AssertFatal(scheduled_response->tx_request->number_of_pdus <
+                          sizeof(scheduled_response->tx_request->tx_request_body) / sizeof(scheduled_response->tx_request->tx_request_body[0]),
+                          "Too many tx_req pdus %d", scheduled_response->tx_request->number_of_pdus);
+              rx_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
+              rx_ind->sfn = scheduled_response->ul_config->sfn;
+              rx_ind->slot = scheduled_response->ul_config->slot;
+              rx_ind->number_of_pdus = scheduled_response->tx_request->number_of_pdus;
+              rx_ind->pdu_list = CALLOC(rx_ind->number_of_pdus, sizeof(*rx_ind->pdu_list));
+              for (int j = 0; j < rx_ind->number_of_pdus; j++)
+              {
+                fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
+                rx_ind->pdu_list[j].handle = pusch_config_pdu->handle;
+                rx_ind->pdu_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
+                rx_ind->pdu_list[j].pdu_length = tx_req_body->pdu_length;
+                rx_ind->pdu_list[j].pdu = CALLOC(tx_req_body->pdu_length, sizeof(*rx_ind->pdu_list[j].pdu));
+                memcpy(rx_ind->pdu_list[j].pdu, tx_req_body->pdu, tx_req_body->pdu_length * sizeof(*rx_ind->pdu_list[j].pdu));
+                rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
+                rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
+                rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+                char buffer[1024];
+                hexdump(rx_ind->pdu_list[j].pdu, rx_ind->pdu_list[j].pdu_length, buffer, sizeof(buffer));
+                LOG_D(NR_MAC, "Hexdump of pdu %s before queuing rx_ind\n",
+                      buffer);
+              }
+
+              crc_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION;
+              crc_ind->number_crcs = scheduled_response->ul_config->number_pdus;
+              crc_ind->sfn = scheduled_response->ul_config->sfn;
+              crc_ind->slot = scheduled_response->ul_config->slot;
+              crc_ind->crc_list = CALLOC(crc_ind->number_crcs, sizeof(*crc_ind->crc_list));
+              for (int j = 0; j < crc_ind->number_crcs; j++)
+              {
+                crc_ind->crc_list[j].handle = pusch_config_pdu->handle;
+                crc_ind->crc_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
+                LOG_D(NR_MAC, "This is the harq pid %d for crc_list[%d]\n", crc_ind->crc_list[j].harq_id, j);
+                LOG_D(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d]\n",
+                      scheduled_response->frame, scheduled_response->slot, crc_ind->sfn, crc_ind->slot);
+                crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
+                crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
+                crc_ind->crc_list[j].tb_crc_status = 0;
+                crc_ind->crc_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
+                crc_ind->crc_list[j].ul_cqi = 255;
+              }
+
+              if (!put_queue(&nr_rx_ind_queue, rx_ind))
+              {
+                LOG_E(NR_MAC, "Put_queue failed for rx_ind\n");
+                for (int i = 0; i < rx_ind->number_of_pdus; i++)
+                {
+                  free(rx_ind->pdu_list[i].pdu);
+                  rx_ind->pdu_list[i].pdu = NULL;
+                }
+
+                free(rx_ind->pdu_list);
+                rx_ind->pdu_list = NULL;
+                free(rx_ind);
+                rx_ind = NULL;
+              }
+              if (!put_queue(&nr_crc_ind_queue, crc_ind))
+              {
+                LOG_E(NR_MAC, "Put_queue failed for crc_ind\n");
+                free(crc_ind->crc_list);
+                crc_ind->crc_list = NULL;
+                free(crc_ind);
+                crc_ind = NULL;
+              }
+
+              LOG_D(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
+
+              scheduled_response->tx_request->number_of_pdus = 0;
+            }
+            break;
+          }
+
+          default:
+            LOG_I(NR_MAC, "Unknown ul_config->pdu_type %d\n", pdu_type);
+          break;
+        }
+      }
+      scheduled_response->ul_config->number_pdus = 0;
+    }
+
+    if (scheduled_response->dl_config != NULL)
+    {
+      fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
+      AssertFatal(dl_config->number_pdus < sizeof(dl_config->dl_config_list) / sizeof(dl_config->dl_config_list[0]),
+                  "Too many dl_config pdus %d", dl_config->number_pdus);
+      for (int i = 0; i < dl_config->number_pdus; ++i)
+      {
+        LOG_D(PHY, "In %s: processing %s PDU of %d total DL PDUs (dl_config %p) \n",
+              __FUNCTION__, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus, dl_config);
+
+        uint8_t pdu_type = dl_config->dl_config_list[i].pdu_type;
+        switch (pdu_type)
+        {
+          case (FAPI_NR_DL_CONFIG_TYPE_DLSCH):
+          {
+            nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
+            uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
+            uci_ind->sfn = scheduled_response->frame;
+            uci_ind->slot = scheduled_response->slot;
+            uci_ind->num_ucis = 1;
+            uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
+            for (int j = 0; j < uci_ind->num_ucis; j++)
+            {
+              nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
+              uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
+              uci_ind->uci_list[j].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
+              memset(pdu_0_1, 0, sizeof(*pdu_0_1));
+              pdu_0_1->handle = 0;
+              pdu_0_1->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
+              pdu_0_1->pucch_format = 1;
+              pdu_0_1->ul_cqi = 255;
+              pdu_0_1->timing_advance = 0;
+              pdu_0_1->rssi = 0;
+            }
+
+            LOG_I(NR_PHY, "In %s: Filled queue uci_ind which was filled by dlconfig.\n"
+                       "uci_num %d, SFN/SLOT: [%d, %d]\n",
+                          __FUNCTION__, uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
+
+            if (!put_queue(&nr_uci_ind_queue, uci_ind))
+            {
+              LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
+              free(uci_ind->uci_list);
+              free(uci_ind);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+  }
+  return 0;
+}
 
 int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 

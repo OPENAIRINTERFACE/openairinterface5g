@@ -65,6 +65,7 @@
 
 #include <executables/softmodem-common.h>
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 //#define DEBUG_ULSIM
 
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
@@ -85,6 +86,13 @@ THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
 uint32_t N_RB_DL = 106;
 
+//Fixme: Uniq dirty DU instance, by global var, datamodel need better management
+instance_t DUuniqInstance=0;
+instance_t CUuniqInstance=0;
+teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
+                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
+return 0;
+}
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
@@ -120,11 +128,6 @@ rrc_data_ind(
 {
 }
 
-int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
-                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
-                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
-    return 0;
-}
 
 int
 gtpv1u_create_s1u_tunnel(
@@ -1278,8 +1281,10 @@ int main(int argc, char **argv)
 
 	if (n_trials == 1  && round==0) {
 #ifdef __AVX2__
+	  __attribute__((unused))
 	  int off = ((nb_rb&1) == 1)? 4:0;
 #else
+	  __attribute__((unused))
 	  int off = 0;
 #endif
 

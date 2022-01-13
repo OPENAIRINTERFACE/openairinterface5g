@@ -409,10 +409,14 @@ static int socket_udp_receive(int socket_fd, void *buf, int size)
   socklen_t slen = sizeof(client);
   int   l;
 
-  l = recvfrom(socket_fd, buf, size, 0, (struct sockaddr *) &client, &slen);
+  l = recvfrom(socket_fd, buf, size, MSG_TRUNC, (struct sockaddr *) &client, &slen);
   //getsockname(socket_fd, (struct sockaddr *)&client, &slen);
   if (l == -1) goto error;
   if (l == 0) goto socket_closed;
+  if (l > size) {
+    LOG_E(MAC, "%s(%d). Message truncated. %d\n", __FUNCTION__, __LINE__, l);
+    return -1;
+  }
 
   return l;
 

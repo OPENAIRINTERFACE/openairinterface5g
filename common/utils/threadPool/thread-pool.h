@@ -142,7 +142,7 @@ static inline  notifiedFIFO_elt_t *pullNotifiedFIFO_nothreadSafe(notifiedFIFO_t 
   notifiedFIFO_elt_t *ret=nf->outF;
 
   if (nf->outF==nf->outF->next)
-    LOG_E(TMR,"Circular list in thread pool: push several times the same buffer is forbidden\n");
+    LOG_E(UTIL,"Circular list in thread pool: push several times the same buffer is forbidden\n");
 
   nf->outF=nf->outF->next;
 
