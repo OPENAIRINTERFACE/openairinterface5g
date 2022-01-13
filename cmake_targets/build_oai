@@ -115,7 +115,7 @@ Options
    EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, AW2SORI, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport
-   Selects the transport protocol type, options: None, ETHERNET
+   Selects the transport protocol type, options: None, Ethernet, benetel4g, benetel5g
 -P | --phy_simulators
    Makes the unitary tests Layer 1 simulators
 -S | --core_simulators
