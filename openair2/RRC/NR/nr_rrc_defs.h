@@ -213,7 +213,7 @@ typedef struct HANDOVER_INFO_NR_s {
 typedef struct {
   char                                                Payload[NR_RRC_BUFFER_SIZE_MAX];
   char                                                Header[NR_RRC_HEADER_SIZE_MAX];
-  char                                                payload_size;
+  uint16_t                                            payload_size;
 } NR_RRC_BUFFER;
 
 #define NR_RRC_BUFFER_SIZE                            sizeof(RRC_BUFFER_NR)

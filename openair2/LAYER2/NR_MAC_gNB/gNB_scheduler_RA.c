@@ -1518,13 +1518,26 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       } else {
         uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
         LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
-        uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, &buf[mac_pdu_length+2]);
-        ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
-        ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
-        ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-        ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
-        ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
-        LOG_D(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, (int)sizeof(NR_MAC_SUBHEADER_SHORT), ra->mac_pdu_length);
+        uint8_t buffer[CCCH_SDU_SIZE];
+        uint8_t mac_subheader_len = sizeof(NR_MAC_SUBHEADER_SHORT);
+        uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, buffer);
+        if (mac_sdu_length < 256) {
+          ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
+          ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
+          ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
+          ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
+          ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
+        } else {
+          mac_subheader_len = sizeof(NR_MAC_SUBHEADER_LONG);
+          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->R = 0;
+          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->F = 1;
+          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
+          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->L1 = (mac_sdu_length >> 8) & 0xff;
+          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->L2 = mac_sdu_length & 0xff;
+          ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_LONG);
+        }
+        LOG_I(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, mac_subheader_len, ra->mac_pdu_length);
+        memcpy(&buf[mac_pdu_length + mac_subheader_len], buffer, mac_sdu_length);
       }
     }
 
@@ -1581,13 +1594,22 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int rbSize = 0;
     uint8_t tb_scaling = 0;
     uint16_t *vrb_map = cc[CC_id].vrb_map;
+
     do {
-      rbSize++;
-      LOG_D(NR_MAC,"Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
-      harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
-                           nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
-                           rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
-    } while (rbSize < BWPSize && harq->tb_size < ra->mac_pdu_length);
+      do {
+        rbSize++;
+        LOG_D(NR_MAC,"Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
+        harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
+                                       nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
+                                       rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
+      } while (rbSize < BWPSize && harq->tb_size < ra->mac_pdu_length);
+      if(harq->tb_size < ra->mac_pdu_length) {
+        rbSize = 0;
+        mcsIndex++;
+      }
+    } while(rbSize < BWPSize && harq->tb_size < ra->mac_pdu_length && mcsIndex<=28);
+
+    AssertFatal(harq->tb_size >= ra->mac_pdu_length,"Cannot allocate Msg4\n");
 
     int i = 0;
     while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {

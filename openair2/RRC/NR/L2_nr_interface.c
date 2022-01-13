@@ -218,13 +218,13 @@ nr_rrc_data_req(
   return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 }
 
-int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
-                           const int         CC_id,
-                           const frame_t     frameP,
-                           const rb_id_t     Srb_id,
-                           const rnti_t      rnti,
-                           const uint8_t     Nb_tb,
-                           uint8_t *const    buffer_pP ){
+uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
+                             const int         CC_id,
+                             const frame_t     frameP,
+                             const rb_id_t     Srb_id,
+                             const rnti_t      rnti,
+                             const uint8_t     Nb_tb,
+                             uint8_t *const    buffer_pP ){
 
 #ifdef DEBUG_RRC
   LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
@@ -280,13 +280,13 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   if( (Srb_id & RAB_OFFSET ) == CCCH) {
 
     char *payload_pP;
-    uint8_t Sdu_size = 0;
+    uint16_t Sdu_size = 0;
     struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_idP], rnti);
 
     LOG_D(NR_RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
 
     AssertFatal(ue_context_p!=NULL,"failed to get ue_context, rnti %x\n",rnti);
-    char payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
+    uint16_t payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
 
     // check if data is there for MAC
     if (payload_size > 0) {

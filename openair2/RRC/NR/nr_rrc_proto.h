@@ -47,13 +47,13 @@ void rrc_config_nr_buffer(NR_SRB_INFO* Srb_info,
                           uint8_t Lchan_type,
                           uint8_t Role);
 
-int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
-                           const int         CC_id,
-                           const frame_t     frameP,
-                           const rb_id_t     Srb_id,
-                           const rnti_t      rnti,
-                           const uint8_t     Nb_tb,
-                           uint8_t *const    buffer_pP );
+uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
+                             const int         CC_id,
+                             const frame_t     frameP,
+                             const rb_id_t     Srb_id,
+                             const rnti_t      rnti,
+                             const uint8_t     Nb_tb,
+                             uint8_t *const    buffer_pP);
 
 void rrc_gNB_process_SgNBAdditionRequest( 
      const protocol_ctxt_t  *const ctxt_pP,
