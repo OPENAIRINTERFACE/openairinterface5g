@@ -1026,7 +1026,7 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
   int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
-  coreset->controlResourceSetId=1;
+  coreset->controlResourceSetId=2;
   // frequency domain resources depends on BWP size
   // options are 24, 48 or 96
   coreset->frequencyDomainResources.buf = calloc(1,6);
@@ -1068,9 +1068,9 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList));
 
   NR_SearchSpace_t *ss=calloc(1,sizeof(*ss));
-  ss->searchSpaceId = 1;
+  ss->searchSpaceId = 3;
   ss->controlResourceSetId=calloc(1,sizeof(*ss->controlResourceSetId));
-  *ss->controlResourceSetId=1;
+  *ss->controlResourceSetId=2;
   ss->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss->monitoringSlotPeriodicityAndOffset));
   ss->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
   ss->duration=NULL;
@@ -1096,13 +1096,11 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
 
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=NULL;
   if(get_softmodem_params()->sa) {
-    bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1));
-    *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=0;
+    bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1=NULL;
   }
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation=NULL;
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->pagingSearchSpace=NULL;
-  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=calloc(1,sizeof(*bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace));
-  *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=1;
+  bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace=NULL;
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ext1=NULL;
 
   bwp->bwp_Common->pdsch_ConfigCommon=calloc(1,sizeof(*bwp->bwp_Common->pdsch_ConfigCommon));
@@ -1134,7 +1132,7 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
   bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList = calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList));
 
   coreset = calloc(1,sizeof(*coreset));
-  coreset->controlResourceSetId=1;
+  coreset->controlResourceSetId=3;
   // frequency domain resources depends on BWP size
   // options are 24, 48 or 96
   coreset->frequencyDomainResources.buf = calloc(1,6);
@@ -1172,9 +1170,9 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
 
   NR_SearchSpace_t *ss2 = calloc(1,sizeof(*ss2));
 
-  ss2->searchSpaceId=2;
+  ss2->searchSpaceId=4;
   ss2->controlResourceSetId=calloc(1,sizeof(*ss2->controlResourceSetId));
-  *ss2->controlResourceSetId=1;
+  *ss2->controlResourceSetId=3;
   ss2->monitoringSlotPeriodicityAndOffset=calloc(1,sizeof(*ss2->monitoringSlotPeriodicityAndOffset));
   ss2->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
   ss2->monitoringSlotPeriodicityAndOffset->choice.sl1=(NULL_t)0;
