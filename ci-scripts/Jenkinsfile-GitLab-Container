@@ -238,6 +238,26 @@ pipeline {
             }
           }
         }
+        stage ("Test OAI NR UE - OAI gNB - TDD - Band 78 - N300") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-gNB-nrUE-MONO-TDD-Band78-N300', 'Test-TDD-Band78-gNB-NR-UE')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-gNB-nrUE-MONO-TDD-Band78-N300')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
       }
     }
     stage ("Images Push to Registries") {

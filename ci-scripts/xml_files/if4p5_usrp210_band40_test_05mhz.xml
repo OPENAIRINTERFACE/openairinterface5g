@@ -35,14 +35,14 @@
 	<testCase id="030104">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RRU (TDD/Band40)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.tdd.band40.conf --RUs.[0].max_rxgain 125</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.tdd.band40.conf --RUs.[0].max_rxgain 125 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 	</testCase>
 	
 	<testCase id="030105">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RCC (TDD/Band40/5MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band40.tm1.25PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band40.tm1.25PRB.FairScheduler.usrpb210.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 	</testCase>
 	

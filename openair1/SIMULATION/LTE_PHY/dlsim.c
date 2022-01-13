@@ -634,7 +634,7 @@ int main(int argc, char **argv) {
   //  num_layers = 1;
   perfect_ce = 0;
   static paramdef_t options[] = {
-    { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, strptr:NULL, defintval:0, TYPE_INT, 0, NULL, NULL },
+    { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, iptr:&awgn_flag, defintval:0, TYPE_INT, 0, NULL, NULL },
     { "Abstx", "Turns on calibration mode for abstraction.", PARAMFLAG_BOOL, iptr:&abstx,  defintval:0, TYPE_INT, 0 },
     { "bTDD", "Set the tdd configuration mode",0, iptr:&tdd_config,  defintval:3, TYPE_INT, 0 },
     { "BnbRBs", "The LTE bandwith in RBs (100 is 20MHz)",0, iptr:&N_RB_DL,  defintval:25, TYPE_INT, 0 },

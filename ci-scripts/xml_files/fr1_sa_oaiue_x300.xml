@@ -42,7 +42,7 @@
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE (X300)</desc>
 		<air_interface>nr</air_interface>
-		<Initialize_OAI_UE_args>--sa -O ../../../ci-scripts/conf_files/ue.sa.conf --usrp-args "addr=192.168.60.2"  --numerology 1 -r 106 --band 78 -C 3319680000 --nokrnmod 1 --ue-txgain 0 --ue-rxgain 70 --ue-fo-compensation </Initialize_OAI_UE_args>
+		<Initialize_OAI_UE_args>--sa -O ../../../ci-scripts/conf_files/ue.sa.conf --usrp-args "addr=192.168.60.2"  --numerology 1 -r 106 --band 78 -C 3319680000 --nokrnmod 1 --ue-txgain 0 --ue-rxgain 70 --ue-fo-compensation --log_config.global_log_options level,nocolor,time</Initialize_OAI_UE_args>
 	</testCase>
 
 	<testCase id="010002">
@@ -54,7 +54,7 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf --sa --usrp-tx-thread-config 1</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf --sa --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
