@@ -509,18 +509,52 @@ class Dashboard:
         s3.meta.client.copy(copy_source, 'oaitestdashboard', path+'/'+ 'test_styles.css')
 
 
-    def PostGitNote(self,mr,jobname,buildurl,buildid,status):
+    def PostGitNote(self,mr,commit, jobname,buildurl,buildid,status):
+        #current date and time to be posted with test reulst
+        now = datetime.now()
+        dt_string = now.strftime("%d/%m/%Y %H:%M")
+
         gl = gitlab.Gitlab.from_config('OAI')
         project_id = 223
         project = gl.projects.get(project_id)
+
+        #retrieve all the notes from the MR
         editable_mr = project.mergerequests.get(int(mr))
-        mr_notes = editable_mr.notes.list()
-        mr_note = editable_mr.notes.create({
-            'body': 'Completed Test : '+jobname+', status: <b>'+status+'</b>, '+\
-            '(<a href="'+buildurl+'">'+buildid+'</a>)<br>'+\
-            '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results</a>'
-        })
-        editable_mr.save()
+        mr_notes = editable_mr.notes.list(all=True)
+
+        #find key word in notes to find out if such a note has already been posted
+        n=0
+        found=False
+        while found==False and n<len(mr_notes):
+            res=re.search('Consolidated Test Results',mr_notes[n].body)#this is the marker we are looking for in all notes
+            if res!=None:
+                found=True
+            n+=1
+
+        if found==False:
+            #create new note
+            mr_note = editable_mr.notes.create({
+                'body': '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results</a><br>'+\
+                dt_string + ' ' + commit + ': '+jobname+', status is <b>'+status+'</b>, '+\
+                '(<a href="'+buildurl+'">'+buildid+'</a>)<br>'
+            })
+            editable_mr.save()
+        else: 
+            #retrieve current note : due to post incr in the parsing loop, need to check note n-1
+            cur_body = mr_notes[n-1].body
+            append_body = dt_string + ' ' + commit + ': '+jobname+', status is <b>'+status+'</b>, '+\
+                '(<a href="'+buildurl+'">'+buildid+'</a>)<br>'
+            new_body = cur_body + append_body
+            #create a new note at the bottom
+            mr_note = editable_mr.notes.create({
+                'body': new_body
+            })
+            editable_mr.save()  
+            #delete current note 
+            mr_notes[n-1].delete()
+            editable_mr.save()
+
+
 
 
 def main():
@@ -535,13 +569,14 @@ def main():
             buildurl=sys.argv[4]
             buildid=sys.argv[5]
             status=sys.argv[6]
+            commit=sys.argv[7]
             htmlDash=Dashboard()
             if mr in htmlDash.mr_list:
                 htmlDash.Build('singleMR',mr,'/tmp/MR'+mr+'_index.html') 
                 htmlDash.CopyToS3('/tmp/MR'+mr+'_index.html','oaitestdashboard','MR'+mr+'/index.html')
                 htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
                 htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html')
-                htmlDash.PostGitNote(mr,jobname,buildurl,buildid,status)
+                htmlDash.PostGitNote(mr,commit,jobname,buildurl,buildid,status)
             else:
                 print("Not a Merge Request => this build is for testing/debug purpose, no report to git")
     #test and MR status dash boards, cron based
