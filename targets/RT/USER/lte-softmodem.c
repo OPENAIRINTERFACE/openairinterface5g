@@ -530,7 +530,7 @@ int main ( int argc, char **argv )
 
   mode = normal_txrx;
   logInit();
-  configure_linux();
+  set_latency_target();
   printf("Reading in command-line options\n");
   get_options ();
 

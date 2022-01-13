@@ -391,7 +391,7 @@ void thread_top_init(char *thread_name,
 
 
 // Block CPU C-states deep sleep
-void configure_linux(void) {
+void set_latency_target(void) {
   int ret;
   static int latency_target_fd=-1;
   uint32_t latency_target_value=2; // in microseconds

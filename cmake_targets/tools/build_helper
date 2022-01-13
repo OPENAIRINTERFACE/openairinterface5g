@@ -901,7 +901,7 @@ install_nas_tools() {
 
   if [ ! -f .usim.nvram0 ]; then
     echo_success "generate .usim.nvram"
-    ./usim --gen -c $1 -o $2
+    ./usim --gen -c $1 -o $2 > "$3"
   else
     [ ./usim -nt .usim.nvram0 ] && ./usim --gen -c $1 -o $2
   fi
