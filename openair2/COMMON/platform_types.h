@@ -233,11 +233,20 @@ typedef uint8_t            pdusessionid_t;
 //-----------------------------------------------------------------------------
 // may be ITTI not enabled, but type instance is useful also for OTG,
 typedef intptr_t instance_t;
+
+typedef struct sdap_protocol_ctxt_s {
+  boolean_t   rqi;
+  uint8_t     qfi;
+  boolean_t   dc;
+  int         pdusession_id;
+} sdap_protocol_ctxt_t;
+
 typedef struct protocol_ctxt_s {
   module_id_t module_id;     /*!< \brief  Virtualized module identifier      */
   eNB_flag_t  enb_flag;      /*!< \brief  Flag to indicate eNB (1) or UE (0) */
   instance_t  instance;      /*!< \brief  ITTI or OTG module identifier      */
   rnti_t      rnti;
+  sdap_protocol_ctxt_t sdap;
   frame_t     frame;         /*!< \brief  LTE frame number.*/
   sub_frame_t subframe;      /*!< \brief  LTE sub frame number.*/
   eNB_index_t eNB_index;     /*!< \brief  valid for UE indicating the index of connected eNB(s)      */
