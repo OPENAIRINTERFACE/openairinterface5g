@@ -405,7 +405,6 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // preferentially we schedule the msg2 in the mixed slot or in the last dl slot
   // if they are allowed by search space configuration
-
   uint8_t mu = *scc->ssbSubcarrierSpacing;
   uint8_t response_window = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.ra_ResponseWindow;
   uint8_t slot_window;
@@ -491,10 +490,16 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
          || (*msg2_frame == frame_limit && *msg2_slot > slot_limit)
          || ((*msg2_frame * nr_slots_per_frame[mu] + *msg2_slot - monitoring_offset) % monitoring_slot_period != 0)) {
 
-    if(!tdd || ((*msg2_slot%tdd_period_slot) > 0)) {
-      if (*msg2_slot==0)
-        (*msg2_frame)--;
-      (*msg2_slot)--;
+    if((frame_type == FDD) || ((*msg2_slot%tdd_period_slot) > 0)) {
+      if (*msg2_slot==0) {
+        if(*msg2_frame != 0)
+          (*msg2_frame)--;
+        else
+          *msg2_frame = 1023;
+        *msg2_slot = nr_slots_per_frame[mu] - 1;
+      }
+      else
+        (*msg2_slot)--;
     }
     else
       AssertFatal(1==0,"No available DL slot to schedule msg2 has been found");
