@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
   unsigned short input_buffer_length;
   unsigned int ret;
   unsigned int coded_bits_per_codeword,nsymb;
-  unsigned int tx_lev=0,tx_lev_dB,trials,errs[5]= {0,0,0,0,0},round_trials[4]= {0,0,0,0};
+  unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[5]= {0,0,0,0,0},round_trials[4]= {0,0,0,0};
   FILE *bler_fd=NULL;
   char bler_fname[512];
   FILE *time_meas_fd=NULL;
@@ -743,7 +743,7 @@ int main(int argc, char **argv) {
   UE2eNB->max_Doppler = maxDoppler;
 
   // NN: N_RB_UL has to be defined in ulsim
-  for (int k=0; k<NUMBER_OF_UE_MAX; k++) eNB->ulsch[k] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
+  for (int k=0; k<1; k++) eNB->ulsch[k] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
 
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
   printf("ULSCH %p\n",UE->ulsch[0]);
