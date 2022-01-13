@@ -982,10 +982,15 @@ int main(int argc, char **argv)
 
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   initTpool(gNBthreads, gNB->threadPool, true);
-  gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->resp_L1_tx);
+  // L1 TX result FIFO 
+  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initNotifiedFIFO(gNB->L1_tx_free);
+  initNotifiedFIFO(gNB->L1_tx_filled);
+  initNotifiedFIFO(gNB->L1_tx_out);
   // we create 2 threads for L1 tx processing
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,processSlotTX);
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,processSlotTX);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   init_DLSCH_struct(gNB, msgDataTx);
   msgDataTx->slot = slot;
@@ -1305,17 +1310,10 @@ int main(int argc, char **argv)
     printf("\n");
 
     if (print_perf==1) {
-      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d)\n",
+      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, block %d)\n",
 	     1000>>*scc->ssbSubcarrierSpacing, g_rbSize, g_mcsIndex,
-<<<<<<< HEAD
-	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3,
-	     msgDataTx->dlsch[0][0]->harq_process.K,
-	     msgDataTx->dlsch[0][0]->harq_process.K/((msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3)>3824?22:10));
-      printDistribution(gNB->phy_proc_tx[0],table_tx,"PHY proc tx");
-=======
 	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3);
-      printDistribution(gNB->phy_proc_tx_0,table_tx,"PHY proc tx");
->>>>>>> 264e829922fc68e4caa3611b70d921c131e7ca68
+      printDistribution(gNB->phy_proc_tx[0],table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");
       printStatIndent3(&gNB->tinput,"DLSCH LDPC input processing time");
