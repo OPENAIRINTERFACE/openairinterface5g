@@ -2591,12 +2591,12 @@ uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   NR_BWP_Id_t ul_bwp_id =  mac->UL_BWP_Id ;
 
   int N_RB_UL = 0;
-  if(mac->scc_SIB) {
-    N_RB_UL = NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  } else if(mac->ULbwp[ul_bwp_id-1]) {
-    N_RB_UL = NRRIV2BW(mac->ULbwp[ul_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  if(ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1]) {
+    N_RB_UL = NRRIV2BW(mac->ULbwp[ul_bwp_id - 1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   } else if(mac->scc) {
     N_RB_UL = NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  } else if(mac->scc_SIB) {
+    N_RB_UL = NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   }
 
   LOG_D(MAC,"nr_extract_dci_info : dci_pdu %lx, size %d\n",*dci_pdu,dci_size);
