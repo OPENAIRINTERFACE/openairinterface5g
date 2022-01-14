@@ -1853,11 +1853,13 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
         const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id] ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated : NULL;
 
         const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig ? servingCellConfig->downlinkBWP_ToAddModList : NULL;
-        const int bwp_id = servingCellConfig ? *servingCellConfig->firstActiveDownlinkBWP_Id : 0;
+        const int bwp_id = servingCellConfig && servingCellConfig->firstActiveDownlinkBWP_Id ?
+            *servingCellConfig->firstActiveDownlinkBWP_Id : 0;
         sched_ctrl->active_bwp = bwpList && bwp_id > 0 ? bwpList->list.array[bwp_id - 1] : NULL;
 
         const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
-        const int ubwp_id = servingCellConfig ? *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id : 0;
+        const int ubwp_id = servingCellConfig && servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id ?
+            *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id : 0;
         sched_ctrl->active_ubwp = ubwpList && ubwp_id > 0 ? ubwpList->list.array[ubwp_id - 1] : NULL;
 
         if(sched_ctrl->active_bwp) {
