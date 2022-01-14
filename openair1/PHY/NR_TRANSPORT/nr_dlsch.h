@@ -43,8 +43,6 @@ void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_tti_pdsch_pdu_rel15_t 
 
 uint16_t get_RIV(uint16_t rb_start, uint16_t L, uint16_t N_RB);
 
-uint16_t get_SLIV(uint8_t S, uint8_t L);
-
 uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_typeA_position);
 
 void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type);
@@ -85,6 +83,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 		      uint8_t slot,
 		      NR_gNB_DLSCH_t *dlsch,
 		      NR_DL_FRAME_PARMS* frame_parms,
+		      unsigned char * output,
 		      time_stats_t *tinput,
 		      time_stats_t *tprep,
 		      time_stats_t *tparity,

@@ -93,6 +93,7 @@ class Containerize():
 		self.allImagesSize = {}
 		self.collectInfo = {}
 
+		self.tsharkStarted = False
 		self.pingContName = ''
 		self.pingOptions = ''
 		self.pingLossThreshold = ''
@@ -177,7 +178,8 @@ class Containerize():
 			self.dockerfileprefix = '.rhel8.2'
 			self.cliBuildOptions = '--no-cache --disable-compression'
 
-		imageNames = []
+                # we always build the ran-build image with all targets
+		imageNames = [('ran-build', 'build')]
 		result = re.search('eNB', self.imageKind)
 		# Creating a tupple with the imageName and the DockerFile prefix pattern on obelix
 		if result is not None:
@@ -197,8 +199,6 @@ class Containerize():
 						imageNames.append(('oai-physim', 'phySim'))
 					if self.host == 'Ubuntu':
 						imageNames.append(('oai-lte-ru', 'lteRU'))
-		if len(imageNames) == 0:
-			imageNames.append(('oai-enb', 'eNB'))
 		
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
@@ -210,42 +210,41 @@ class Containerize():
 
  		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
-			mySSH.command('mkdir -p  tmp/ca/', '\$', 5)
-			mySSH.command('mkdir -p tmp/entitlement/', '\$', 5) 
+			mySSH.command('mkdir -p tmp/ca/ tmp/entitlement/', '\$', 5)
 			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem tmp/ca/', '\$', 5)
 			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
 
-		sharedimage = 'ran-build'
-		sharedTag = 'develop'
-		forceSharedImageBuild = False
+		baseImage = 'ran-base'
+		baseTag = 'develop'
+		forceBaseImageBuild = False
 		imageTag = 'develop'
 		if (self.ranAllowMerge):
 			imageTag = 'ci-temp'
 			if self.ranTargetBranch == 'develop':
-				mySSH.command('git diff HEAD..origin/develop -- docker/Dockerfile.ran' + self.dockerfileprefix + ' | grep --colour=never -i INDEX', '\$', 5)
+				mySSH.command('git diff HEAD..origin/develop -- docker/Dockerfile.base' + self.dockerfileprefix + ' | grep --colour=never -i INDEX', '\$', 5)
 				result = re.search('index', mySSH.getBefore())
 				if result is not None:
-					forceSharedImageBuild = True
-					sharedTag = 'ci-temp'
+					forceBaseImageBuild = True
+					baseTag = 'ci-temp'
 		else:
-			forceSharedImageBuild = True
+			forceBaseImageBuild = True
 
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 30)
-		if forceSharedImageBuild:
-			mySSH.command(self.cli + ' image rm ' + sharedimage + ':' + sharedTag + ' || true', '\$', 30)
+		if forceBaseImageBuild:
+			mySSH.command(self.cli + ' image rm ' + baseImage + ':' + baseTag + ' || true', '\$', 30)
 		for image,pattern in imageNames:
 			mySSH.command(self.cli + ' image rm ' + image + ':' + imageTag + ' || true', '\$', 30)
 
-		# Build the shared image only on Push Events (not on Merge Requests)
-		# On when the shared image docker file is being modified.
-		if forceSharedImageBuild:
-			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + sharedimage + ' --tag ' + sharedimage + ':' + sharedTag + ' --file docker/Dockerfile.ran' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-build.log 2>&1', '\$', 1600)
-		# First verify if the shared image was properly created.
+		# Build the base image only on Push Events (not on Merge Requests)
+		# On when the base image docker file is being modified.
+		if forceBaseImageBuild:
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + baseImage + ' --tag ' + baseImage + ':' + baseTag + ' --file docker/Dockerfile.base' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-base.log 2>&1', '\$', 1600)
+		# First verify if the base image was properly created.
 		status = True
-		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + sharedimage + ':' + sharedTag, '\$', 5)
+		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + baseImage + ':' + baseTag, '\$', 5)
 		if mySSH.getBefore().count('o such image') != 0:
-			logging.error('\u001B[1m Could not build properly ran-build\u001B[0m')
+			logging.error('\u001B[1m Could not build properly ran-base\u001B[0m')
 			status = False
 		else:
 			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
@@ -253,20 +252,20 @@ class Containerize():
 				imageSize = float(result.group('size'))
 				imageSize = imageSize / 1000
 				if imageSize < 1000:
-					logging.debug('\u001B[1m   ran-build size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
-					self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' kbytes'
+					logging.debug('\u001B[1m   ran-base size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
+					self.allImagesSize['ran-base'] = str(round(imageSize,1)) + ' kbytes'
 				else:
 					imageSize = imageSize / 1000
 					if imageSize < 1000:
-						logging.debug('\u001B[1m   ran-build size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-						self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' Mbytes'
+						logging.debug('\u001B[1m   ran-base size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
+						self.allImagesSize['ran-base'] = str(round(imageSize,1)) + ' Mbytes'
 					else:
 						imageSize = imageSize / 1000
-						logging.debug('\u001B[1m   ran-build size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
-						self.allImagesSize['ran-build'] = str(round(imageSize,1)) + ' Gbytes'
+						logging.debug('\u001B[1m   ran-base size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
+						self.allImagesSize['ran-base'] = str(round(imageSize,1)) + ' Gbytes'
 			else:
-				logging.debug('ran-build size is unknown')
-		# If the shared image failed, no need to continue
+				logging.debug('ran-base size is unknown')
+		# If the base image failed, no need to continue
 		if not status:
 			# Recover the name of the failed container?
 			mySSH.command(self.cli + ' ps --quiet --filter "status=exited" -n1 | xargs ' + self.cli + ' rm -f', '\$', 5)
@@ -278,16 +277,18 @@ class Containerize():
 			sys.exit(1)
 		else:
 			# Recover build logs, for the moment only possible when build is successful
-			mySSH.command(self.cli + ' create --name test ' + sharedimage + ':' + sharedTag, '\$', 5)
-			mySSH.command('mkdir -p cmake_targets/log/ran-build', '\$', 5)
-			mySSH.command(self.cli + ' cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/ran-build', '\$', 5)
+			mySSH.command(self.cli + ' create --name test ' + baseImage + ':' + baseTag, '\$', 5)
+			mySSH.command('mkdir -p cmake_targets/log/ran-base', '\$', 5)
+			mySSH.command(self.cli + ' cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/ran-base', '\$', 5)
 			mySSH.command(self.cli + ' rm -f test', '\$', 5)
 
 		# Build the target image(s)
 		for image,pattern in imageNames:
-			# the archived Dockerfiles have "ran-build:latest" as base image
+			# the archived Dockerfiles have "ran-base:latest" as base image
 			# we need to update them with proper tag
-			mySSH.command('sed -i -e "s#' + sharedimage + ':latest#' + sharedimage + ':' + sharedTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
+			mySSH.command('sed -i -e "s#' + baseImage + ':latest#' + baseImage + ':' + baseTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
+			if image != 'ran-build':
+				mySSH.command('sed -i -e "s#' + "ran-build" + ':latest#' + "ran-build" + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
 			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
@@ -318,7 +319,7 @@ class Containerize():
 							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
 							self.allImagesSize[image] = str(round(imageSize,1)) + ' Gbytes'
 				else:
-					logging.debug('ran-build size is unknown')
+					logging.debug('ran-base size is unknown')
 					self.allImagesSize[image] = 'unknown'
 			# Now pruning dangling images in between target builds
 			mySSH.command(self.cli + ' image prune --force', '\$', 30)
@@ -337,13 +338,17 @@ class Containerize():
 		mySSH.command('zip -r -qq build_log_' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '.zip', '.')
 		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
+		# Remove all intermediate build images
+		if self.ranAllowMerge and forceBaseImageBuild:
+			mySSH.command(self.cli + ' image rm ' + baseImage + ':' + baseTag + ' || true', '\$', 30)
+		mySSH.command(self.cli + ' image rm ran-build:' + imageTag + ' || true','\$', 5)
 		mySSH.close()
 		ZipFile('build_log_' + self.testCase_id + '.zip').extractall('.')
 
 		#Trying to identify the errors and warnings for each built images
 		imageNames1 = imageNames
-		shared = ('ran-build','ran')
-		imageNames1.insert(0, shared) 
+		base = ('ran-base','ran')
+		imageNames1.insert(0, base) 
 		for image,pattern in imageNames1:
 			files = {}
 			file_list = [f for f in os.listdir('build_log_' + self.testCase_id + '/' + image) if os.path.isfile(os.path.join('build_log_' + self.testCase_id + '/' + image, f)) and f.endswith('.txt')]
@@ -606,6 +611,9 @@ class Containerize():
 				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
 			else:
 				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+			# all the xNB run logs shall be on the server 0 for logCollecting
+			if self.eNB_serverId[self.eNB_instance] != '0':
+				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + self.eNB_logFile[self.eNB_instance], self.eNBSourceCodePath + '/cmake_targets/')
 		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 
 	def DeployGenObject(self, HTML):
@@ -638,7 +646,7 @@ class Containerize():
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml up -d ' + self.services[0]
 		logging.debug(cmd)
 		try:
-			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 		except Exception as e:
 			self.exitStatus = 1
 			logging.error('Could not deploy')
@@ -651,7 +659,7 @@ class Containerize():
 		healthy = 0
 		while (count < 10):
 			count += 1
-			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			healthy = 0
 			for state in deployStatus.split('\n'):
 				res = re.search('Up \(healthy\)', state)
@@ -663,6 +671,10 @@ class Containerize():
 				time.sleep(10)
 
 		if count == 100 and healthy == self.nb_healthy[0]:
+			if self.tsharkStarted == False:
+				logging.debug('Starting tshark on public network')
+				self.CaptureOnDockerNetworks()
+				self.tsharkStarted = True
 			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
 		else:
@@ -670,8 +682,24 @@ class Containerize():
 			HTML.CreateHtmlTestRow('Could not deploy in time', 'KO', CONST.ALL_PROCESSES_OK)
 			logging.error('\u001B[1m Deploying OAI Object(s) FAILED\u001B[0m')
 
+	def CaptureOnDockerNetworks(self):
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml config | grep com.docker.network.bridge.name | sed -e "s@^.*name: @@"'
+		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		cmd = 'sudo nohup tshark -f "not tcp and not arp and not port 53 and not host archive.ubuntu.com and not host security.ubuntu.com"'
+		for name in networkNames.split('\n'):
+			res = re.search('rfsim', name)
+			if res is not None:
+				cmd += ' -i ' + name
+		cmd += ' -w /tmp/capture_'
+		ymlPath = self.yamlPath[0].split('/')
+		cmd += ymlPath[1] + '.pcap > /tmp/tshark.log 2>&1 &'
+		logging.debug(cmd)
+		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+
 	def UndeployGenObject(self, HTML):
 		self.exitStatus = 0
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
 
 		if (self.ranAllowMerge):
 			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@ci-temp@" docker-compose.y*ml > docker-compose-ci.yml'
@@ -683,7 +711,7 @@ class Containerize():
 		# if the containers are running, recover the logs!
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
 		logging.debug(cmd)
-		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		anyLogs = False
 		for state in deployStatus.split('\n'):
 			res = re.search('Name|----------', state)
@@ -697,11 +725,23 @@ class Containerize():
 				cName = res.group('container_name')
 				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
 				logging.debug(cmd)
-				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		if anyLogs:
-			cmd = 'mkdir -p ../cmake_targets/log && mv ' + self.yamlPath[0] + '/*.log ../cmake_targets/log'
+			cmd = 'mkdir -p '+ logPath + ' && mv ' + self.yamlPath[0] + '/*.log ' + logPath
 			logging.debug(cmd)
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+			if self.tsharkStarted:
+				self.tsharkStarted = True
+				ymlPath = self.yamlPath[0].split('/')
+				cmd = 'sudo chmod 666 /tmp/capture_' + ymlPath[1] + '.pcap'
+				logging.debug(cmd)
+				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+				cmd = 'cp /tmp/capture_' + ymlPath[1] + '.pcap ' + logPath
+				logging.debug(cmd)
+				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+				cmd = 'sudo rm /tmp/capture_' + ymlPath[1] + '.pcap'
+				logging.debug(cmd)
+				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml down'
 		logging.debug(cmd)
@@ -719,10 +759,13 @@ class Containerize():
 
 	def PingFromContainer(self, HTML):
 		self.exitStatus = 0
-		cmd = 'mkdir -p ../cmake_targets/log'
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
+		cmd = 'mkdir -p ' + logPath
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
-		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ../cmake_targets/log/ping_' + HTML.testCase_id + '.log || true'
+		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ' + logPath + '/ping_' + HTML.testCase_id + '.log || true'
+
 		logging.debug(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -777,14 +820,23 @@ class Containerize():
 		if status:
 			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', 1, html_queue)
 		else:
-			self.exitStatus = 1
-			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			logging.error('\u001B[1;37;41m ping test FAIL -- ' + message + ' \u001B[0m')
 			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'KO', 1, html_queue)
+			# Automatic undeployment
+			logging.debug('----------------------------------------')
+			logging.debug('\u001B[1m Starting Automatic undeployment \u001B[0m')
+			logging.debug('----------------------------------------')
+			HTML.testCase_id = 'AUTO-UNDEPLOY'
+			HTML.desc = 'Automatic Un-Deployment'
+			self.UndeployGenObject(HTML)
+			self.exitStatus = 1
 
 	def IperfFromContainer(self, HTML):
 		self.exitStatus = 0
 
-		cmd = 'mkdir -p ../cmake_targets/log'
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
+		cmd = 'mkdir -p ' + logPath
 		logStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 		# Start the server process
@@ -794,7 +846,8 @@ class Containerize():
 		time.sleep(5)
 
 		# Start the client process
-		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee ../cmake_targets/log/iperf_client_' + HTML.testCase_id + '.log || true'
+
+		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee '+ logPath + '/iperf_client_' + HTML.testCase_id + '.log || true'
 		logging.debug(cmd)
 		clientStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
@@ -803,9 +856,9 @@ class Containerize():
 		logging.debug(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
-		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log ../cmake_targets/log/iperf_server_' + HTML.testCase_id + '.log'
+		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log '+ logPath + '/iperf_server_' + HTML.testCase_id + '.log'
 		logging.debug(cmd)
-		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 
 		# Analyze client output
 		result = re.search('Server Report:', clientStatus)
@@ -899,8 +952,9 @@ class Containerize():
 		if status:
 			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'OK', 1, html_queue)
 		else:
-			self.exitStatus = 1
+			logging.error('\u001B[1m Iperf Test FAIL -- ' + message + ' \u001B[0m')
 			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'KO', 1, html_queue)
+
 
 	def CheckAndAddRoute(self, svrName, ipAddr, userName, password):
 		logging.debug('Checking IP routing on ' + svrName)
@@ -1012,3 +1066,4 @@ class Containerize():
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
 			mySSH.close()
+

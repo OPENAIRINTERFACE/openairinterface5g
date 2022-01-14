@@ -383,7 +383,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   printf("[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
 	 frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #else
-  LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
+  LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
 	frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #endif
   
@@ -405,7 +405,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if DISABLE_LOG_X
     printf("[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #endif
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
   if (first_symbol_flag==1) {
@@ -466,7 +466,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if DISABLE_LOG_X
     printf("[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level %5.2f \n",frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #endif
 
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
@@ -518,7 +518,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if DISABLE_LOG_X
     printf("[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n", frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n", frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n", frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #endif
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 
@@ -577,7 +577,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if DISABLE_LOG_X
     printf("[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #endif
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
   /* Store the valid DL RE's */
@@ -660,7 +660,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if DISABLE_LOG_X
     printf("[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 #endif
 
 // Please keep it: useful for debugging

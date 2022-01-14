@@ -596,20 +596,20 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
 
   /* dicard PDU if no data */
   if (data_size <= 0) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, no data\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, no data\n",
           __FILE__, __LINE__, __FUNCTION__);
     goto discard;
   }
 
   /* dicard PDU if rx buffer is full */
   if (entity->rx_size + data_size > entity->rx_maxsize) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, RX buffer full\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, RX buffer full\n",
           __FILE__, __LINE__, __FUNCTION__);
     goto discard;
   }
 
   if (!sn_in_recv_window(entity, sn)) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, sn out of window (sn %d rx_next %d)\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, sn out of window (sn %d rx_next %d)\n",
           __FILE__, __LINE__, __FUNCTION__,
            sn, entity->rx_next);
     goto discard;
@@ -617,7 +617,7 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
 
   /* discard segment if all the bytes of the segment are already there */
   if (segment_already_received(entity, sn, so, data_size)) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, already received\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, already received\n",
           __FILE__, __LINE__, __FUNCTION__);
     goto discard;
   }
@@ -653,7 +653,7 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
 control:
   cpt = nr_rlc_pdu_decoder_get_bits(&decoder, 3); R(decoder);
   if (cpt != 0) {
-    LOG_D(RLC, "%s:%d:%s: warning: discard PDU, CPT not 0 (%d)\n",
+    LOG_W(RLC, "%s:%d:%s: warning: discard PDU, CPT not 0 (%d)\n",
           __FILE__, __LINE__, __FUNCTION__, cpt);
     goto discard;
   }
@@ -1596,9 +1596,18 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
     exit(1);
   }
 
+  /* log SDUs rejected, at most once per second */
+  if (entity->sdu_rejected != 0
+      && entity->t_current > entity->t_log_buffer_full + 1000) {
+    LOG_E(RLC, "%s:%d:%s: warning: %d SDU rejected, SDU buffer full\n",
+          __FILE__, __LINE__, __FUNCTION__,
+          entity->sdu_rejected);
+    entity->sdu_rejected = 0;
+    entity->t_log_buffer_full = entity->t_current;
+  }
+
   if (entity->tx_size + size > entity->tx_maxsize) {
-    LOG_E(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
-          __FILE__, __LINE__, __FUNCTION__);
+    entity->sdu_rejected++;
     return;
   }
 
@@ -1651,7 +1660,7 @@ static void check_t_poll_retransmit(nr_rlc_entity_am_t *entity)
    */
   entity->force_poll = 1;
 
-  LOG_D(RLC, "%s:%d:%s: warning: t_poll_retransmit expired\n",
+  LOG_W(RLC, "%s:%d:%s: warning: t_poll_retransmit expired\n",
         __FILE__, __LINE__, __FUNCTION__);
 
   /* do we meet conditions of 38.322 5.3.3.4? */
@@ -1742,6 +1751,9 @@ static void check_t_reassembly(nr_rlc_entity_am_t *entity)
     sn = (sn + 1) % entity->sn_modulus;
   entity->rx_highest_status = sn;
 
+  /* trigger status report */
+  entity->status_triggered = 1;
+
   if (sn_compare_rx(entity, entity->rx_next_highest,
                     (entity->rx_highest_status+1) % entity->sn_modulus) > 0 ||
       (entity->rx_next_highest ==
@@ -1826,6 +1838,9 @@ static void clear_entity(nr_rlc_entity_am_t *entity)
   entity->force_poll        = 0;
 
   entity->t_current = 0;
+
+  entity->t_log_buffer_full = 0;
+  entity->sdu_rejected      = 0;
 
   entity->t_poll_retransmit_start = 0;
   entity->t_reassembly_start      = 0;

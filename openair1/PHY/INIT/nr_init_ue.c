@@ -458,7 +458,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   ue->decode_SIB = 1;
 
   init_nr_prach_tables(839);
-
+  init_symbol_rotation(fp);
   return 0;
 }
 

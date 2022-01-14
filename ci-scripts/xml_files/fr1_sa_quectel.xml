@@ -58,7 +58,7 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
@@ -84,8 +84,9 @@
 		<class>Ping</class>
 		<desc>Ping: 20pings in 20sec</desc>
 		<id>nrmodule2_quectel</id>
-		<ping_args>-c 20</ping_args>
-		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+		<ping_args>-c 40</ping_args>
+		<ping_packetloss_threshold>1</ping_packetloss_threshold>
+		<ping_rttavg_threshold>20</ping_rttavg_threshold>
 	</testCase>
 
 	<testCase id="050001">
@@ -93,7 +94,8 @@
 		<desc>Ping: 100pings in 20sec</desc>
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 100 -i 0,2</ping_args>
-		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+		<ping_packetloss_threshold>1</ping_packetloss_threshold>
+		<ping_rttavg_threshold>20</ping_rttavg_threshold>
 	</testCase>
 
 	<testCase id="070000">
@@ -103,6 +105,7 @@
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
@@ -113,6 +116,7 @@
 		<direction>UL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 

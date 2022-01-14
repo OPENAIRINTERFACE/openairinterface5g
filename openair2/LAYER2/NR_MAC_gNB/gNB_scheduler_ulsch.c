@@ -32,6 +32,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
+#include "utils.h"
 #include <openair2/UTIL/OPT/opt.h>
 
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
@@ -104,7 +105,6 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   /* check that TDA index 1 fits into UL slot and does not overlap with PUCCH */
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  AssertFatal(tdaList->list.count >= 3, "need to have at least three TDAs for UL slots\n");
   const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_UL = tdaList->list.array[0];
   const int k2 = get_K2(scc, (NR_BWP_Uplink_t*)ubwp,0, mu);
   int start, len;
@@ -117,27 +117,28 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   // get largest time domain allocation (TDA) for UL slot and UL in mixed slot
   int tdaMi = -1;
-  const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
-  AssertFatal(k2 == get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu),
-              "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
-              k2,
-              get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu));
-  SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
-  const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
-  // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
-  // whether TDA is entirely within mixed slot, UL. Note that here we assume
-  // that the PUCCH is scheduled in every slot, and on all RBs (which is
-  // mostly not true, this is a simplification)
-  if ((symb_pucch & symb_tda_mi) == 0 && (symb_ulMixed & symb_tda_mi) == symb_tda_mi) {
-    tdaMi = 1;
-  } else {
-    LOG_E(NR_MAC,
-          "TDA index 1 UL overlaps with PUCCH or is not entirely in mixed slot (symb_pucch %x symb_ulMixed %x symb_tda_mi %x), won't schedule UL mixed slot\n",
-          symb_pucch,
-          symb_ulMixed,
-          symb_tda_mi);
+  if(tdaList->list.count > 1) {
+    const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
+    AssertFatal(k2 == get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu),
+                "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
+                k2,
+                get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu));
+    SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
+    const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
+    // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
+    // whether TDA is entirely within mixed slot, UL. Note that here we assume
+    // that the PUCCH is scheduled in every slot, and on all RBs (which is
+    // mostly not true, this is a simplification)
+    if ((symb_pucch & symb_tda_mi) == 0 && (symb_ulMixed & symb_tda_mi) == symb_tda_mi) {
+      tdaMi = 1;
+    } else {
+      LOG_E(NR_MAC,
+            "TDA index 1 UL overlaps with PUCCH or is not entirely in mixed slot (symb_pucch %x symb_ulMixed %x symb_tda_mi %x), won't schedule UL mixed slot\n",
+            symb_pucch,
+            symb_ulMixed,
+            symb_tda_mi);
+    }
   }
-
   const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
   const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
   nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
@@ -565,6 +566,7 @@ void handle_nr_ul_harq(const int CC_idP,
   NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   int8_t harq_pid = sched_ctrl->feedback_ul_harq.head;
+  LOG_D(NR_MAC, "Comparing crc_pdu->harq_id vs feedback harq_pid = %d %d\n",crc_pdu->harq_id, harq_pid);
   while (crc_pdu->harq_id != harq_pid || harq_pid < 0) {
     LOG_W(NR_MAC,
           "Unexpected ULSCH HARQ PID %d (have %d) for RNTI 0x%04x (ignore this warning for RA)\n",
@@ -800,14 +802,14 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
         if(ra->cfra) {
 
-          LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
+          LOG_A(NR_MAC, "(ue %i, rnti 0x%04x) CFRA procedure succeeded!\n", UE_id, ra->rnti);
           nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           UE_info->active[UE_id] = true;
 
         } else {
 
-          LOG_I(NR_MAC,"[RAPROC] RA-Msg3 received (sdu_lenP %d)\n",sdu_lenP);
+          LOG_A(NR_MAC,"[RAPROC] RA-Msg3 received (sdu_lenP %d)\n",sdu_lenP);
           LOG_D(NR_MAC,"[RAPROC] Received Msg3:\n");
           for (int k = 0; k < sdu_lenP; k++) {
             LOG_D(NR_MAC,"(%i): 0x%x\n",k,sduP[k]);
@@ -822,6 +824,24 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             ra->state = Msg4;
             ra->Msg4_frame = (frameP + 2) % 1024;
             ra->Msg4_slot = 1;
+            
+            if (ra->msg3_dcch_dtch) {
+              // Check if the UE identified by C-RNTI still exists at the gNB
+              int UE_id_C = find_nr_UE_id(gnb_mod_idP, ra->crnti);
+              if (UE_id_C < 0) {
+                // The UE identified by C-RNTI no longer exists at the gNB
+                // Let's abort the current RA, so the UE will trigger a new RA later but using RRCSetupRequest instead. A better solution may be implemented
+                mac_remove_nr_ue(gnb_mod_idP, ra->rnti);
+                nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+                return;
+              } else {
+                // The UE identified by C-RNTI still exists at the gNB
+                // Reset uplink failure flags/counters/timers at MAC and at RRC so gNB will resume again scheduling resources for this UE
+                UE_info->UE_sched_ctrl[UE_id_C].pusch_consecutive_dtx_cnt = 0;
+                UE_info->UE_sched_ctrl[UE_id_C].ul_failure = 0;
+                nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->crnti);
+              }
+            }
             LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
                   (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state, ra->Msg4_frame, ra->Msg4_slot);
           }
@@ -1483,6 +1503,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
     /* Statistics */
+    AssertFatal(cur_harq->round < 8, "Indexing ulsch_rounds[%d] is out of bounds\n", cur_harq->round);
     UE_info->mac_stats[UE_id].ulsch_rounds[cur_harq->round]++;
     if (cur_harq->round == 0) {
       UE_info->mac_stats[UE_id].ulsch_total_bytes_scheduled += sched_pusch->tb_size;
@@ -1616,6 +1637,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->nr_of_symbols = ps->nrOfSymbols;
 
     /* PUSCH PDU */
+    AssertFatal(cur_harq->round < 4, "Indexing nr_rv_round_map[%d] is out of bounds\n", cur_harq->round);
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;

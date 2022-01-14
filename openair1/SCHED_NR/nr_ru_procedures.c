@@ -477,9 +477,10 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
       memcpy((void*)ru->common.txdataF[i],
            (void*)&gNB->common_vars.txdataF[i][txdataF_offset],
            fp->samples_per_slot_wCP*sizeof(int32_t));
-      memcpy((void*)&ru->common.beam_id[i][slot_tx*fp->symbols_per_slot],
-	     (void*)&gNB->common_vars.beam_id[i][slot_tx*fp->symbols_per_slot],
-	     fp->symbols_per_slot*sizeof(uint8_t));
+      if (ru->do_precoding == 1)
+	memcpy((void*)&ru->common.beam_id[i][slot_tx*fp->symbols_per_slot],
+	       (void*)&gNB->common_vars.beam_id[i][slot_tx*fp->symbols_per_slot],
+	       fp->symbols_per_slot*sizeof(uint8_t));
     }
 
     if (ru->nb_tx == 1 && ru->nb_log_antennas == 1) {

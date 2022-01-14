@@ -35,10 +35,10 @@
 #define F1AP_MESSAGING_H_
 
 void f1ap_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,
-                                      uint32_t buffer_length, uint16_t stream);
+                             uint32_t buffer_length, uint16_t stream);
 
 void f1ap_send_sctp_close_association(instance_t instance,
-    int32_t assoc_id);
+                                      int32_t assoc_id);
 
 
 #endif /* F1AP_MESSAGING_H_ */
