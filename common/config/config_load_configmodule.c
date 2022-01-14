@@ -224,11 +224,9 @@ configmodule_interface_t *load_configmodule(int argc,
     cfgparam = getenv("OAI_CONFIGMODULE");
   }
 
-  /* default different for UE and softmodem because UE doesn't use config file*/
+  /* default different for UE and softmodem because UE may run without config file */
   /* and -O option is not mandatory for UE                                    */
   /* phy simulators behave as UE                                              */
-  /* test of exec name would better be replaced by a parameter to the l       */
-  /* oad_configmodule function */
   if (cfgparam == NULL) {
     tmpflags = tmpflags | CONFIG_NOOOPT;
 
@@ -254,9 +252,14 @@ configmodule_interface_t *load_configmodule(int argc,
   }
 
   cfgptr = calloc(sizeof(configmodule_interface_t),1);
+  /* argv_info is used to memorize command line options which have been recognized */
+  /* and to detect unrecognized command line options which might have been specified */
   cfgptr->argv_info = calloc(sizeof(int32_t), argc);
+  /* argv[0] is the exec name, always Ok */
   cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
 
+  /* when OoptIdx is >0, -O option has been detected at position OoptIdx 
+   *  we must memorize arv[OoptIdx is Ok                                  */ 
   if (OoptIdx >= 0) {
     cfgptr->argv_info[OoptIdx] |= CONFIG_CMDLINEOPT_PROCESSED;
     cfgptr->argv_info[OoptIdx+1] |= CONFIG_CMDLINEOPT_PROCESSED;

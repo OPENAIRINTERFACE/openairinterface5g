@@ -25,15 +25,7 @@
 * \version 1.0
 * \note initial implem - translation of cuda version
 */
-/* uses HW  component id for log messages ( --log_config.hw_log_level <warning| info|debug|trace>) */
-#include <stdio.h>
-#include <unistd.h>
-#include <cuda_runtime.h>
-#include <CL/opencl.h>
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPCdecoder_defs.h"
-#include "assertions.h"
-#include "common/utils/LOG/log.h"
+
 
 #define MAX_ITERATION 2
 #define MC	1
@@ -41,16 +33,29 @@
 #define MAX_OCLDEV   10
 #define MAX_OCLRUNTIME 5
 
-
-#define CLSETKERNELARG(A,B,C,D) \
-rt=clSetKernelArg(A,B,C,D) ;\
-AssertFatal(rt == CL_SUCCESS, "Error %d setting kernel argument index %d\n" , (int)rt, B);
-
 typedef struct{
   char x;
   char y;
   short value;
 } h_element;
+
+#ifdef NRLDPC_KERNEL_SOURCE
+#include "nrLDPC_decoder_kernels_CL.c"
+#else
+/* uses HW  component id for log messages ( --log_config.hw_log_level <warning| info|debug|trace>) */
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <CL/opencl.h>
+#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
+#include "PHY/CODING/nrLDPC_decoder/nrLDPCdecoder_defs.h"
+#include "assertions.h"
+#include "common/utils/LOG/log.h"
+
+#define CLSETKERNELARG(A,B,C,D) \
+rt=clSetKernelArg(A,B,C,D) ;\
+AssertFatal(rt == CL_SUCCESS, "Error %d setting kernel argument index %d\n" , (int)rt, B);
+
 #include "../nrLDPC_decoder_LYC/bgs/BG1_compact_in_C.h"
 
 typedef struct{
@@ -213,19 +218,30 @@ void get_CompilErr(cl_program program, int pltf) {
 
 }
 
-size_t load_source(char **source_str) {
-	int MAX_SOURCE_SIZE=(500*132);
+size_t load_source(char **source_str, char *filename) {
     FILE *fp;
+    struct stat st ;
     size_t source_size;
- 
-    fp = fopen("nrLDPC_decoder_kernels_CL.cl", "r");
-    AssertFatal(fp,"failed to open cl source: %s\n",strerror(errno));
+    char *src= NULL;
     
-    *source_str = (char*)malloc(MAX_SOURCE_SIZE);
-    source_size = fread( *source_str, 1, MAX_SOURCE_SIZE, fp);
-    fclose( fp );
-    return source_size;
+  if (filename == NULL) {
+	src = "nrLDPC_decoder_kernels_CL.clc";
+  } else {
+	src = filename;
+  }
+  fp = fopen(src, "r");
+  AssertFatal(fp,"failed to open cl source %s: %s\n",src,strerror(errno));
+
+  fstat(fileno(fp), &st);
+  source_size = st.st_size;    
+  *source_str = (char*)malloc(source_size);
+  source_size = fread( *source_str, 1, source_size, fp);
+  fclose( fp );
+  LOG_I(HW,"Loaded kernel sources from %s %u bytes\n", (filename==NULL)?"embedded cl code":src,(unsigned int)source_size );
+  return source_size;
 }
+
+
 
 /* from here: entry points in decoder shared lib */
 int ldpc_autoinit(void) {   // called by the library loader 
@@ -284,11 +300,11 @@ int ldpc_autoinit(void) {   // called by the library loader
         ocl.runtime[i].dev_tmp = clCreateBuffer(ocl.runtime[i].context, CL_MEM_READ_ONLY|CL_MEM_HOST_WRITE_ONLY, 68*384, NULL, (cl_int *)&rt);
         AssertFatal(rt == CL_SUCCESS, "Error %d creating buffer dev_tmp for platform %i \n" , (int)rt, i);      
         char *source_str;
-        size_t source_size=load_source(&source_str);      
+        size_t source_size=load_source(&source_str,"nrLDPC_decoder_kernels_CL.clc");      
         cl_program program = clCreateProgramWithSource(ocl.runtime[i].context, 1, 
                                                        (const char **)&source_str, (const size_t *)&source_size,  (cl_int *)&rt);
         AssertFatal(rt == CL_SUCCESS, "Error %d creating program for platform %i \n" , (int)rt, i); 
-        rt = clBuildProgram(program, ocl.runtime[i].num_devices,ocl.runtime[i].devices, NULL, NULL, NULL);  
+        rt = clBuildProgram(program, ocl.runtime[i].num_devices,ocl.runtime[i].devices, NULL /* compile options */, NULL, NULL);  
         if (rt == CL_BUILD_PROGRAM_FAILURE) {
           get_CompilErr(program,i);
 	    } 
@@ -434,3 +450,4 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 	return MAX_ITERATION;
 	
 }
+#endif //NRLDPC_KERNEL_SOURCE
