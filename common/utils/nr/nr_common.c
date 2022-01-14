@@ -502,7 +502,7 @@ int get_subband_size(int NPRB,int size) {
 
 // from start symbol index and nb or symbols to symbol occupation bitmap in a slot
 uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols) {
- return (((1<<nrOfSymbols)-1)<<startSymbolIndex);
+ return ((1<<nrOfSymbols)-1)<<startSymbolIndex;
 }
 
 int get_SLIV(uint8_t S, uint8_t L) {

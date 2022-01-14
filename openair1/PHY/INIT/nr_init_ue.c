@@ -41,6 +41,7 @@
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
+#include "PHY/MODULATION/nr_modulation.h"
 
 #if 0
 void phy_config_harq_ue(module_id_t Mod_id,

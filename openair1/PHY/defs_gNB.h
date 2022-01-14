@@ -951,12 +951,14 @@ typedef struct processingData_L1tx {
   int slot;
   openair0_timestamp timestamp_tx;
   PHY_VARS_gNB *gNB;
-  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
-  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu;
+  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
+  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
   NR_gNB_CSIRS_t csirs_pdu[NUMBER_OF_NR_CSIRS_MAX];
   NR_gNB_DLSCH_t *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];
   NR_gNB_SSB_t ssb[64];
   uint16_t num_pdsch_slot;
+  int num_dl_pdcch;
+  int num_ul_pdcch;
   time_stats_t phy_proc_tx;
 } processingData_L1tx_t;
 

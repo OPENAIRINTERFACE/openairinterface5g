@@ -278,6 +278,14 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+  ps->nrOfLayers = target_dl_Nl;
+  if (ps->time_domain_allocation != tda)
+    nr_set_pdsch_semi_static(
+        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, f, ps);
+
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   const int BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -289,11 +297,14 @@ void nr_preprocessor_phytest(module_id_t module_id,
   /* loop ensures that we allocate exactly target_dl_bw, or return */
   while (true) {
     /* advance to first free RB */
-    while (rbStart < bwpSize && vrb_map[rbStart + BWPStart])
+    while (rbStart < bwpSize &&
+           (vrb_map[rbStart + BWPStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
       rbStart++;
     rbSize = 1;
     /* iterate until we are at target_dl_bw or no available RBs */
-    while (rbStart + rbSize < bwpSize && !vrb_map[rbStart + rbSize + BWPStart] && rbSize < target_dl_bw)
+    while (rbStart + rbSize < bwpSize &&
+           !(vrb_map[rbStart + rbSize + BWPStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)) &&
+           rbSize < target_dl_bw)
       rbSize++;
     /* found target_dl_bw? */
     if (rbSize == target_dl_bw)
@@ -334,16 +345,17 @@ void nr_preprocessor_phytest(module_id_t module_id,
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
-  const int m = UE_info->num_pdcch_cand[UE_id][cid];
-  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                  sched_ctrl->active_bwp,
-                                  sched_ctrl->coreset,
-                                  sched_ctrl->aggregation_level,
-                                  Y,
-                                  m,
-                                  nr_of_candidates);
-  AssertFatal(sched_ctrl->cce_index >= 0,
+  const uint16_t Y = UE_info->Y[UE_id][cid%3][slot];
+
+  int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
+                                      CC_id,
+                                      sched_ctrl->aggregation_level,
+                                      nr_of_candidates,
+                                      &sched_ctrl->sched_pdcch,
+                                      sched_ctrl->coreset,
+                                      Y);
+
+  AssertFatal(CCEIndex >= 0,
               "%s(): could not find CCE for UE %d\n",
               __func__,
               UE_id);
@@ -357,28 +369,26 @@ void nr_preprocessor_phytest(module_id_t module_id,
           rnti,
           frame,
           slot);
-    UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp->bwp_Id][cid];
-    for (int i = 0; i < sched_ctrl->aggregation_level; i++)
-      cce_list[sched_ctrl->cce_index + i] = 0;
+    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return;
   }
+
+  sched_ctrl->cce_index = CCEIndex;
+
+  fill_pdcch_vrb_map(RC.nrmac[module_id],
+                     CC_id,
+                     &sched_ctrl->sched_pdcch,
+                     CCEIndex,
+                     sched_ctrl->aggregation_level);
 
   //AssertFatal(alloc,
   //            "could not find uplink slot for PUCCH (RNTI %04x@%d.%d)!\n",
   //            rnti, frame, slot);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
-  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
-  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
-  ps->nrOfLayers = target_dl_Nl;
-  if (ps->time_domain_allocation != tda)
-    nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, f, ps);
 
   sched_pdsch->mcs = target_dl_mcs;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -398,7 +408,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = 1;
+    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = ((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex;
 
   if ((frame&127) == 0) LOG_D(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
 }
@@ -500,20 +510,21 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid][slot];
-  const int m = UE_info->num_pdcch_cand[UE_id][cid];
-  sched_ctrl->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                           sched_ctrl->active_bwp,
-                                           sched_ctrl->coreset,
-                                           sched_ctrl->aggregation_level,
-                                           Y,
-                                           m,
-                                           nr_of_candidates);
+  const uint16_t Y = UE_info->Y[UE_id][cid%3][slot];
+
+  int CCEIndex = find_pdcch_candidate(nr_mac,
+                                      CC_id,
+                                      sched_ctrl->aggregation_level,
+                                      nr_of_candidates,
+                                      &sched_ctrl->sched_pdcch,
+                                      sched_ctrl->coreset,
+                                      Y);
+
   if (sched_ctrl->cce_index < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
+    nr_mac->pdcch_cand[cid]--;
     return false;
   }
-  UE_info->num_pdcch_cand[UE_id][cid]++;
 
   const int mcs = target_ul_mcs;
   NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
@@ -542,6 +553,12 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
                          >> 3;
 
   /* mark the corresponding RBs as used */
+  fill_pdcch_vrb_map(nr_mac,
+                     CC_id,
+                     &sched_ctrl->sched_pdcch,
+                     CCEIndex,
+                     sched_ctrl->aggregation_level);
+
   for (int rb = rbStart; rb < rbStart + rbSize; rb++)
     vrb_map_UL[rb+BWPStart] |= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
   return true;

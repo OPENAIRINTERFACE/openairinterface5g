@@ -531,7 +531,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
 bool allocate_dl_retransmission(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
-                                uint8_t *rballoc_mask,
+                                uint16_t *rballoc_mask,
                                 int *n_rb_sched,
                                 int UE_id,
                                 int current_harq_pid) {
@@ -561,13 +561,16 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbSize < retInfo->rbSize) {
       rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
       rbSize = 0;
-      while (rbStart < bwpSize && !rballoc_mask[rbStart])
+      while (rbStart < bwpSize &&
+             !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
         rbStart++;
       if (rbStart >= bwpSize) {
         LOG_D(NR_MAC, "cannot allocate retransmission for UE %d/RNTI %04x: no resources\n", UE_id, UE_info->rnti[UE_id]);
         return false;
       }
-      while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize] && rbSize < retInfo->rbSize)
+      while (rbStart + rbSize < bwpSize &&
+             (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)) &&
+             rbSize < retInfo->rbSize)
         rbSize++;
     }
     /* check whether we need to switch the TDA allocation since the last
@@ -577,13 +580,15 @@ bool allocate_dl_retransmission(module_id_t module_id,
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
-    while (rbStart < bwpSize && !rballoc_mask[rbStart])
-      rbStart++;
-    while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
-      rbSize++;
     NR_pdsch_semi_static_t temp_ps;
     temp_ps.nrOfLayers = 1;
     nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, &temp_ps);
+    while (rbStart < bwpSize &&
+           !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+      rbStart++;
+    while (rbStart + rbSize < bwpSize &&
+           (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+      rbSize++;
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -607,8 +612,27 @@ bool allocate_dl_retransmission(module_id_t module_id,
   }
 
   /* Find a free CCE */
-  bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-  if (!freeCCE) {
+  const int cid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+  uint8_t nr_of_candidates;
+  for (int i=0; i<5; i++) {
+    // for now taking the lowest value among the available aggregation levels
+    find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                &nr_of_candidates,
+                                sched_ctrl->search_space,
+                                1<<i);
+    if(nr_of_candidates>0) break;
+  }
+
+  int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
+                                      /* CC_id = */ 0,
+                                      sched_ctrl->aggregation_level,
+                                      nr_of_candidates,
+                                      &sched_ctrl->sched_pdcch,
+                                      sched_ctrl->coreset,
+                                      Y);
+
+  if (CCEIndex<0) {
     LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI retransmission UE %d/RNTI %04x\n",
           frame, slot, UE_id, UE_info->rnti[UE_id]);
     return false;
@@ -625,13 +649,17 @@ bool allocate_dl_retransmission(module_id_t module_id,
           UE_info->rnti[UE_id],
           frame,
           slot);
-    int cid = sched_ctrl->coreset->controlResourceSetId;
-    UE_info->num_pdcch_cand[UE_id][cid]--;
-    int *cce_list = RC.nrmac[module_id]->cce_list[sched_ctrl->active_bwp?sched_ctrl->active_bwp->bwp_Id:0][cid];
-    for (int i = 0; i < sched_ctrl->aggregation_level; i++)
-      cce_list[sched_ctrl->cce_index + i] = 0;
+    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return false;
   }
+
+  sched_ctrl->cce_index = CCEIndex;
+
+  fill_pdcch_vrb_map(RC.nrmac[module_id],
+                     /* CC_id = */ 0,
+                     &sched_ctrl->sched_pdcch,
+                     CCEIndex,
+                     sched_ctrl->aggregation_level);
 
   /* just reuse from previous scheduling opportunity, set new start RB */
   sched_ctrl->sched_pdsch = *retInfo;
@@ -642,7 +670,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* retransmissions: directly allocate */
   *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pdsch.rbSize; rb++)
-    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] = 0;
+    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] -= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
   return true;
 }
 
@@ -655,7 +683,7 @@ void pf_dl(module_id_t module_id,
            NR_list_t *UE_list,
            int max_num_ue,
            int n_rb_sched,
-           uint8_t *rballoc_mask) {
+           uint16_t *rballoc_mask) {
 
   gNB_MAC_INST *mac = RC.nrmac[module_id];
   NR_UE_info_t *UE_info = &mac->UE_info;
@@ -732,7 +760,6 @@ void pf_dl(module_id_t module_id,
     NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    int bwp_Id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
     const uint16_t rnti = UE_info->rnti[UE_id];
     NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
       &sched_ctrl->active_bwp->bwp_Common->genericParameters:
@@ -747,8 +774,27 @@ void pf_dl(module_id_t module_id,
     }
 
     /* Find a free CCE */
-    bool freeCCE = find_free_CCE(module_id, slot, UE_id);
-    if (!freeCCE) {
+    const int cid = sched_ctrl->coreset->controlResourceSetId;
+    const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+    uint8_t nr_of_candidates;
+    for (int i=0; i<5; i++) {
+      // for now taking the lowest value among the available aggregation levels
+      find_aggregation_candidates(&sched_ctrl->aggregation_level,
+                                  &nr_of_candidates,
+                                  sched_ctrl->search_space,
+                                  1<<i);
+      if(nr_of_candidates>0) break;
+    }
+
+    int CCEIndex = find_pdcch_candidate(mac,
+                                        /* CC_id = */ 0,
+                                        sched_ctrl->aggregation_level,
+                                        nr_of_candidates,
+                                        &sched_ctrl->sched_pdcch,
+                                        sched_ctrl->coreset,
+                                        Y);
+
+    if (CCEIndex<0) {
       LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
@@ -767,20 +813,17 @@ void pf_dl(module_id_t module_id,
             rnti,
             frame,
             slot);
-      int cid = sched_ctrl->coreset->controlResourceSetId;
-      UE_info->num_pdcch_cand[UE_id][cid]--;
-      int *cce_list = mac->cce_list[bwp_Id][cid];
-      for (int i = 0; i < sched_ctrl->aggregation_level; i++)
-        cce_list[sched_ctrl->cce_index + i] = 0;
+      mac->pdcch_cand[cid]--;
       return;
     }
 
-    // Freq-demain allocation
-    while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
+    sched_ctrl->cce_index = CCEIndex;
 
-    uint16_t max_rbSize = 1;
-    while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
-      max_rbSize++;
+    fill_pdcch_vrb_map(mac,
+                       /* CC_id = */ 0,
+                       &sched_ctrl->sched_pdcch,
+                       CCEIndex,
+                       sched_ctrl->aggregation_level);
 
     /* MCS has been set above */
 
@@ -791,6 +834,18 @@ void pf_dl(module_id_t module_id,
     const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
     if (ps->time_domain_allocation != tda)
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
+
+    const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+    // Freq-demain allocation
+    while (rbStart < bwpSize &&
+           !(rballoc_mask[rbStart]&slbitmap))
+      rbStart++;
+
+    uint16_t max_rbSize = 1;
+    while (rbStart + max_rbSize < bwpSize &&
+           (rballoc_mask[rbStart + max_rbSize]&slbitmap))
+      max_rbSize++;
+
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
@@ -812,7 +867,7 @@ void pf_dl(module_id_t module_id,
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-      rballoc_mask[rb + sched_pdsch->rbStart] = 0;
+      rballoc_mask[rb + sched_pdsch->rbStart] -= slbitmap;
   }
 }
 
@@ -825,9 +880,18 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   const int CC_id = 0;
 
-  /* Get bwpSize from the first UE */
+  /* Get bwpSize and TDAfrom the first UE */
+  /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+  int startSymbolIndex, nrOfSymbols;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_bwp ?
+      sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
+      scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
   const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp ?
 				    sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
@@ -838,14 +902,18 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 				            scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
 				            MAX_BWP_SIZE);
 
+  const uint16_t slbitmap = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
-  uint8_t rballoc_mask[bwpSize];
+  uint16_t rballoc_mask[bwpSize];
   int n_rb_sched = 0;
   for (int i = 0; i < bwpSize; i++) {
     // calculate mask: init with "NOT" vrb_map:
     // if any RB in vrb_map is blocked (1), the current RBG will be 0
-    rballoc_mask[i] = !vrb_map[i+BWPStart];
-    n_rb_sched += rballoc_mask[i];
+    rballoc_mask[i] = (~vrb_map[i+BWPStart])&0x3fff; //bitwise not and 14 symbols
+    // if all the pdsch symbols are free
+    if((rballoc_mask[i]&slbitmap) ==
+       slbitmap)
+      n_rb_sched++;
   }
 
   /* Retrieve amount of data to send for this UE */
@@ -1000,7 +1068,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][coresetid];
     if (!pdcch_pdu) {
       LOG_D(NR_MAC, "creating pdcch pdu, pdcch_pdu = NULL. \n");
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
@@ -1010,10 +1078,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
-      NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
-      nr_configure_pdcch(gNB_mac, pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
-      gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
+      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, &sched_ctrl->sched_pdcch);
+      gNB_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 
     nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
