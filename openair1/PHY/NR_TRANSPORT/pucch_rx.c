@@ -302,7 +302,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int32_t corr_re[1+frame_parms->nb_antennas_rx][2];
   int32_t corr_im[1+frame_parms->nb_antennas_rx][2];
   //int32_t no_corr = 0;
-  int seq_index;
+  int seq_index = 0;
   int64_t temp;
 
   for(i=0;i<nr_sequences;i++){

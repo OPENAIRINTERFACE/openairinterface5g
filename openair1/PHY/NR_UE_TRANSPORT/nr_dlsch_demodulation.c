@@ -376,11 +376,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   len = (pilots==1)? ((config_type==NFAPI_NR_DMRS_TYPE1)?nb_rb*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb*(12-4*dlsch0_harq->n_dmrs_cdm_groups)):(nb_rb*12);
 
   stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  if (cpumeas(CPUMEAS_GETSTATE))
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
+	  frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
-#ifdef DEBUG_PDSCH_RX
-  LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
-	frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
-#endif
   
   start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
   n_tx = dlsch0_harq->Nl;
@@ -397,10 +396,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                          nb_rb_pdsch);
 
     stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
-
-#ifdef DEBUG_PDSCH_RX
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
-#endif
+    if (cpumeas(CPUMEAS_GETSTATE))
+      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
   if (first_symbol_flag==1) {
@@ -458,10 +455,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
 
     stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
-
-#ifdef DEBUG_PDSCH_RX
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
-#endif
+    if (cpumeas(CPUMEAS_GETSTATE))
+      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 // Now channel compensation
@@ -509,10 +504,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
     stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
-
-#ifdef DEBUG_PDSCH_RX
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n", frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
-#endif
+    if (cpumeas(CPUMEAS_GETSTATE))
+      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n", frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 
@@ -568,10 +561,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
   
     stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
-
-#ifdef DEBUG_PDSCH_RX
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
-#endif
+    if (cpumeas(CPUMEAS_GETSTATE))
+      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
   /* Store the valid DL RE's */
@@ -651,10 +642,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     }
 
     stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
-
-#ifdef DEBUG_PDSCH_RX
-    LOG_I(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
-#endif
+    if (cpumeas(CPUMEAS_GETSTATE))
+      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
 // Please keep it: useful for debugging
 #ifdef DEBUG_PDSCH_RX
