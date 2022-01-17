@@ -47,38 +47,48 @@ pipeline {
                         COMMIT_ID=sh returnStdout: true, script:  """curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests/${MR}" | jq ".sha" || true """
                         COMMIT_ID=COMMIT_ID.trim()
                         echo "Testing NSA on : ${MR} ${SRC_BRANCH} ${COMMIT_ID}"
+                        def GitPostArgs = MR + ' ' + COMMIT_ID + ' '
+
                         //calling NSA B200
-                        build job: "RAN-NSA-B200-Module-LTEBOX", wait : true, propagate : false, parameters: [
+                        jobName = "RAN-NSA-B200-Module-LTEBOX"
+                        def jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),                          
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
                             string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
                             string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
                             booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
+                        jobResult = jobStatus.getResult()
+                        def build_url = jobStatus.getBuildVariables()["BUILD_URL"];
+                        def build_id = jobStatus.getBuildVariables()["BUILD_ID"];
+                        GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult
+                        echo GitPostArgs
+
+
                         //calling NSA 2x2
-                        build job: "RAN-NSA-2x2-Module-OAIEPC", wait : true, propagate : false, parameters: [
-                            string(name: 'eNB_MR', value: String.valueOf(MR)),
-                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
-                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
-                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
-                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
-                        ]
+                        //build job: "RAN-NSA-2x2-Module-OAIEPC", wait : true, propagate : false, parameters: [
+                        //    string(name: 'eNB_MR', value: String.valueOf(MR)),
+                        //    string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                        //    string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                        //    string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                        //    booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        //]
                         //calling LTE 2x2
-                        build job: "RAN-LTE-2x2-Module-OAIEPC", wait : true, propagate : false, parameters: [
-                            string(name: 'eNB_MR', value: String.valueOf(MR)),
-                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
-                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
-                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
-                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
-                        ]
+                        //build job: "RAN-LTE-2x2-Module-OAIEPC", wait : true, propagate : false, parameters: [
+                        //    string(name: 'eNB_MR', value: String.valueOf(MR)),
+                        //    string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                        //    string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                        //    string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                        //    booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        //]
                         //calling SA 
-                        build job: "RAN-SA-Module-CN5G", wait : true, propagate : false, parameters: [
-                            string(name: 'eNB_MR', value: String.valueOf(MR)),
-                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
-                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
-                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
-                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
-                        ]
+                        //build job: "RAN-SA-Module-CN5G", wait : true, propagate : false, parameters: [
+                        //    string(name: 'eNB_MR', value: String.valueOf(MR)),
+                        //    string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                        //    string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                        //    string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                        //    booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        //]
                         //calling OAIUE B200
                         //build job: "RAN-SA-OAIUE-B200-CN5G", wait : true, propagate : false, parameters: [
                         //    string(name: 'eNB_MR', value: String.valueOf(MR)),
@@ -96,13 +106,13 @@ pipeline {
                         //    booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         //]
                         //calling OAIUE N310-X300
-                        build job: "RAN-SA-OAIUE-N310-X300-CN5G", wait : true, propagate : false, parameters: [
-                            string(name: 'eNB_MR', value: String.valueOf(MR)),
-                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
-                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
-                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
-                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
-                        ]
+                        //build job: "RAN-SA-OAIUE-N310-X300-CN5G", wait : true, propagate : false, parameters: [
+                        //    string(name: 'eNB_MR', value: String.valueOf(MR)),
+                        //    string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                        //    string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                        //    string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                        //    booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        //]
 
                     }
                 }                                  
