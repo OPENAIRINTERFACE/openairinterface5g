@@ -49,12 +49,6 @@ void reset_stats(FL_OBJECT *button, long arg) {
   int i,j,k;
   PHY_VARS_eNB *phy_vars_eNB = RC.eNB[0][0];
 
-  printf("XXX %d %d %d\n",
-	 sizeofArray(phy_vars_eNB->UE_stats),
-	 sizeofArray( phy_vars_eNB->UE_stats[i].dlsch_NAK),
-	 sizeofArray( *phy_vars_eNB->UE_stats[i].dlsch_NAK)
-	 );
-
   for (i=0; i<sizeofArray(phy_vars_eNB->UE_stats); i++) {
     for (k=0; k<sizeofArray(phy_vars_eNB->UE_stats[i].dlsch_NAK); k++) { //harq_processes
       for (j=0; j<sizeofArray(*phy_vars_eNB->UE_stats[i].dlsch_NAK); j++) {
