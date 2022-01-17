@@ -100,7 +100,7 @@ class SSHConnection():
 				time.sleep(1)
 			count += 1
 		if connect_status:
-			pass
+			self.command('unset HISTFILE', '\$', 5, silent=True)
 		else:
 			sys.exit('SSH Connection Failed')
 		self.ipaddress = ipaddress

@@ -106,9 +106,9 @@ instance_t legacyInstanceMapping=0;
 #define compatInst(a) ((a)==0 || (a)==INSTANCE_DEFAULT?legacyInstanceMapping:a)
 
 #define GTPV1U_HEADER_SIZE                                  (8)
-
-
-static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, teid_t teid, uint8_t *Msg,int msgLen,
+  
+  
+  static int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, int msgType, teid_t teid, uint8_t *Msg,int msgLen,
                                    bool seqNumFlag, bool  npduNumFlag, bool extHdrFlag, int seqNum, int npduNum, int extHdrType) {
   AssertFatal(extHdrFlag==false,"Not developped");
   int headerAdditional=0;
@@ -116,9 +116,8 @@ static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, te
   if ( seqNumFlag || npduNumFlag || extHdrFlag)
     headerAdditional=4;
 
-  uint8_t *buffer;
   int fullSize=GTPV1U_HEADER_SIZE+headerAdditional+msgLen;
-  AssertFatal((buffer=(uint8_t *) malloc(fullSize)) != NULL, "");
+  uint8_t buffer[fullSize];
   Gtpv1uMsgHeaderT      *msgHdr = (Gtpv1uMsgHeaderT *)buffer ;
   // N should be 0 for us (it was used only in 2G and 3G)
   msgHdr->PN=npduNumFlag;
@@ -128,7 +127,7 @@ static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, te
   //PT=0 is for GTP' TS 32.295 (charging)
   msgHdr->PT=1;
   msgHdr->version=1;
-  msgHdr->msgType=GTP_GPDU;
+  msgHdr->msgType=msgType;
   msgHdr->msgLength=htons(msgLen);
 
   if ( seqNumFlag || extHdrFlag || npduNumFlag)
@@ -153,11 +152,9 @@ static  int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, te
   if ((ret=sendto(h, (void *)buffer, (size_t)fullSize, 0,(struct sockaddr *)&to, sizeof(to) )) != fullSize ) {
     LOG_E(GTPU, "[SD %d] Failed to send data to " IPV4_ADDR " on port %d, buffer size %u, ret: %d, errno: %d\n",
           h, IPV4_ADDR_FORMAT(peerIp), peerPort, fullSize, ret, errno);
-    free(buffer);
     return GTPNOK;
   }
 
-  free(buffer);
   return  !GTPNOK;
 }
 
@@ -199,6 +196,7 @@ static void gtpv1uSend(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req, b
   gtpv1uCreateAndSendMsg(compatInst(instance),
                          tmp.outgoing_ip_addr,
                          tmp.outgoing_port,
+			 GTP_GPDU,
                          tmp.teid_outgoing,
                          buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0) ;
 }
@@ -241,6 +239,7 @@ static void gtpv1uSend2(instance_t instance, gtpv1u_gnb_tunnel_data_req_t *req, 
   gtpv1uCreateAndSendMsg(compatInst(instance),
                          tmp.outgoing_ip_addr,
                          tmp.outgoing_port,
+			 GTP_GPDU,
                          tmp.teid_outgoing,
                          buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0) ;
 }
@@ -647,9 +646,26 @@ static int Gtpv1uHandleEchoReq(int h,
                                uint32_t msgBufLen,
                                uint16_t peerPort,
                                uint32_t peerIp) {
-  LOG_E(GTPU,"EchoReq reply to be dev\n");
-  int rc = GTPNOK;
-  return rc;
+  Gtpv1uMsgHeaderT      *msgHdr = (Gtpv1uMsgHeaderT *) msgBuf;
+   
+  if ( msgHdr->version != 1 ||  msgHdr->PT != 1 ) {
+    LOG_E(GTPU, "[%d] Received a packet that is not GTP header\n", h);
+    return GTPNOK;
+  }
+
+  if ( msgHdr->S != 1 ) {
+    LOG_E(GTPU, "[%d] Received a echo request packet with no sequence number \n", h);
+    return GTPNOK;
+  }
+
+  uint16_t seq=ntohs(*(uint16_t*)(msgHdr+1));
+  LOG_D(GTPU, "[%d] Received a echo request, TEID: %d, seq: %hu\n", h, msgHdr->teid, seq);
+  uint8_t recovery[2]={14,0};
+  
+  return gtpv1uCreateAndSendMsg(h, peerIp, peerPort, GTP_ECHO_RSP, ntohl(msgHdr->teid),
+			 recovery, sizeof recovery,
+			 1, 0, 0, seq, 0, 0);
+
 }
 
 static int Gtpv1uHandleError(int h,

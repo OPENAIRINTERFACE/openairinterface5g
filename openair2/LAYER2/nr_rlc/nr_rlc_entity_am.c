@@ -28,6 +28,19 @@
 
 #include "LOG/log.h"
 
+/* for a given SDU/SDU segment, computes the corresponding PDU header size */
+static int compute_pdu_header_size(nr_rlc_entity_am_t *entity,
+                                   nr_rlc_sdu_segment_t *sdu)
+{
+  int header_size = 2;
+  /* one more byte if SN field length is 18 */
+  if (entity->sn_field_length == 18)
+    header_size++;
+  /* two more bytes for SO if SDU segment is not the first */
+  if (!sdu->is_first) header_size += 2;
+  return header_size;
+}
+
 /*************************************************************************/
 /* PDU RX functions                                                      */
 /*************************************************************************/
@@ -114,6 +127,10 @@ static void consider_retransmission(nr_rlc_entity_am_t *entity,
   nr_rlc_sdu_segment_list_append(&entity->retransmit_list,
                                  &entity->retransmit_end,
                                  cur);
+
+  /* update buffer status */
+  entity->common.bstatus.retx_size += compute_pdu_header_size(entity, cur)
+                                      + cur->size;
 }
 
 /* checks that all the bytes of the SDU sn have been received (but SDU
@@ -351,6 +368,9 @@ static void process_received_ack(nr_rlc_entity_am_t *entity, int ack_sn)
       }
       /* remove from retransmit list */
       prev->next = cur->next;
+      /* update buffer status */
+      entity->common.bstatus.retx_size -= compute_pdu_header_size(entity, cur)
+                                          + cur->size;
       /* put the PDU in the ack list */
       entity->ack_list = nr_rlc_sdu_segment_list_add(sn_compare_tx, entity,
                                                      entity->ack_list, cur);
@@ -623,7 +643,7 @@ void nr_rlc_entity_am_recv_pdu(nr_rlc_entity_t *_entity,
     entity->status_triggered = 1;
     if (!(sn_compare_rx(entity, sn, entity->rx_highest_status) < 0 ||
           sn_compare_rx(entity, sn, v) >= 0)) {
-      LOG_W(RLC, "%s:%d:%s: warning: STATUS trigger should be delayed, according to specs\n",
+      LOG_D(RLC, "%s:%d:%s: warning: STATUS trigger should be delayed, according to specs\n",
             __FILE__, __LINE__, __FUNCTION__);
     }
   }
@@ -838,19 +858,6 @@ static int serialize_sdu(nr_rlc_entity_am_t *entity,
     include_poll(entity, buffer);
 
   return encoder.byte + sdu->size;
-}
-
-/* for a given SDU/SDU segment, computes the corresponding PDU header size */
-static int compute_pdu_header_size(nr_rlc_entity_am_t *entity,
-                                   nr_rlc_sdu_segment_t *sdu)
-{
-  int header_size = 2;
-  /* one more byte if SN field length is 18 */
-  if (entity->sn_field_length == 18)
-    header_size++;
-  /* two more bytes for SO if SDU segment is not the first */
-  if (!sdu->is_first) header_size += 2;
-  return header_size;
 }
 
 /* resize SDU/SDU segment for the corresponding PDU to fit into 'pdu_size'
@@ -1426,8 +1433,12 @@ static int generate_retx_pdu(nr_rlc_entity_am_t *entity, char *buffer,
 
   sdu->next = NULL;
 
-  /* segment if necessary */
   pdu_size = pdu_header_size + sdu->size;
+
+  /* update buffer status */
+  entity->common.bstatus.retx_size -= pdu_size;
+
+  /* segment if necessary */
   if (pdu_size > size) {
     nr_rlc_sdu_segment_t *next_sdu;
     next_sdu = resegment(sdu, entity, size);
@@ -1436,6 +1447,9 @@ static int generate_retx_pdu(nr_rlc_entity_am_t *entity, char *buffer,
     entity->retransmit_list = next_sdu;
     if (entity->retransmit_end == NULL)
       entity->retransmit_end = entity->retransmit_list;
+    /* update buffer status */
+    entity->common.bstatus.retx_size += compute_pdu_header_size(entity, next_sdu)
+                                        + next_sdu->size;
   }
 
   /* put SDU/SDU segment in the wait list */
@@ -1479,11 +1493,15 @@ static int generate_tx_pdu(nr_rlc_entity_am_t *entity, char *buffer, int size)
 
   sdu->next = NULL;
 
+  pdu_size = pdu_header_size + sdu->size;
+
+  /* update buffer status */
+  entity->common.bstatus.tx_size -= pdu_size;
+
   /* assign SN to SDU */
   sdu->sdu->sn = entity->tx_next;
 
   /* segment if necessary */
-  pdu_size = pdu_header_size + sdu->size;
   if (pdu_size > size) {
     nr_rlc_sdu_segment_t *next_sdu;
     next_sdu = resegment(sdu, entity, size);
@@ -1492,6 +1510,9 @@ static int generate_tx_pdu(nr_rlc_entity_am_t *entity, char *buffer, int size)
     entity->tx_list = next_sdu;
     if (entity->tx_end == NULL)
       entity->tx_end = entity->tx_list;
+    /* update buffer status */
+    entity->common.bstatus.tx_size += compute_pdu_header_size(entity, next_sdu)
+                                      + next_sdu->size;
   }
 
   /* update tx_next if the SDU segment is the last */
@@ -1520,24 +1541,6 @@ static int generate_tx_pdu(nr_rlc_entity_am_t *entity, char *buffer, int size)
   return serialize_sdu(entity, sdu, buffer, size, p);
 }
 
-/* Pretend to serialize all the SDUs in a list and return the size
- * of all the PDUs it would produce, limited to 'maxsize'.
- * Used for buffer status reporting.
- */
-static int tx_list_size(nr_rlc_entity_am_t *entity,
-                        nr_rlc_sdu_segment_t *l, int maxsize)
-{
-  int ret = 0;
-
-  while (l != NULL && ret < maxsize) {
-    ret += compute_pdu_header_size(entity, l) + l->size;
-    l = l->next;
-  }
-
-  if (ret > maxsize) ret = maxsize;
-  return ret;
-}
-
 nr_rlc_entity_buffer_status_t nr_rlc_entity_am_buffer_status(
     nr_rlc_entity_t *_entity, int maxsize)
 {
@@ -1549,8 +1552,8 @@ nr_rlc_entity_buffer_status_t nr_rlc_entity_am_buffer_status(
   else
     ret.status_size = 0;
 
-  ret.tx_size = tx_list_size(entity, entity->tx_list, maxsize);
-  ret.retx_size = tx_list_size(entity, entity->retransmit_list, maxsize);
+  ret.tx_size = entity->common.bstatus.tx_size;
+  ret.retx_size = entity->common.bstatus.retx_size;
 
   return ret;
 }
@@ -1593,9 +1596,18 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
     exit(1);
   }
 
+  /* log SDUs rejected, at most once per second */
+  if (entity->sdu_rejected != 0
+      && entity->t_current > entity->t_log_buffer_full + 1000) {
+    LOG_E(RLC, "%s:%d:%s: warning: %d SDU rejected, SDU buffer full\n",
+          __FILE__, __LINE__, __FUNCTION__,
+          entity->sdu_rejected);
+    entity->sdu_rejected = 0;
+    entity->t_log_buffer_full = entity->t_current;
+  }
+
   if (entity->tx_size + size > entity->tx_maxsize) {
-    LOG_E(RLC, "%s:%d:%s: warning: SDU rejected, SDU buffer full\n",
-          __FILE__, __LINE__, __FUNCTION__);
+    entity->sdu_rejected++;
     return;
   }
 
@@ -1606,6 +1618,10 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
   LOG_D(RLC, "Created new RLC SDU and append it to the RLC list \n");
 
   nr_rlc_sdu_segment_list_append(&entity->tx_list, &entity->tx_end, sdu);
+
+  /* update buffer status */
+  entity->common.bstatus.tx_size += compute_pdu_header_size(entity, sdu)
+                                    + sdu->size;
 }
 
 /*************************************************************************/
@@ -1735,6 +1751,9 @@ static void check_t_reassembly(nr_rlc_entity_am_t *entity)
     sn = (sn + 1) % entity->sn_modulus;
   entity->rx_highest_status = sn;
 
+  /* trigger status report */
+  entity->status_triggered = 1;
+
   if (sn_compare_rx(entity, entity->rx_next_highest,
                     (entity->rx_highest_status+1) % entity->sn_modulus) > 0 ||
       (entity->rx_next_highest ==
@@ -1793,6 +1812,10 @@ void nr_rlc_entity_am_discard_sdu(nr_rlc_entity_t *_entity, int sdu_id)
       entity->tx_end = NULL;
   }
 
+  /* update buffer status */
+  entity->common.bstatus.tx_size -= compute_pdu_header_size(entity, cur)
+                                    + cur->size;
+
   nr_rlc_free_sdu_segment(cur);
 }
 
@@ -1815,6 +1838,9 @@ static void clear_entity(nr_rlc_entity_am_t *entity)
   entity->force_poll        = 0;
 
   entity->t_current = 0;
+
+  entity->t_log_buffer_full = 0;
+  entity->sdu_rejected      = 0;
 
   entity->t_poll_retransmit_start = 0;
   entity->t_reassembly_start      = 0;
@@ -1845,6 +1871,9 @@ static void clear_entity(nr_rlc_entity_am_t *entity)
   entity->retransmit_end  = NULL;
 
   entity->ack_list        = NULL;
+
+  entity->common.bstatus.tx_size   = 0;
+  entity->common.bstatus.retx_size = 0;
 }
 
 void nr_rlc_entity_am_reestablishment(nr_rlc_entity_t *_entity)

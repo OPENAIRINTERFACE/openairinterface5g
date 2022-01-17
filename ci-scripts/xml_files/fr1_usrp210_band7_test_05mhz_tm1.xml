@@ -41,7 +41,7 @@
 	<testCase id="030101">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].plmn_list.[0].mcc 311 --eNBs.[0].plmn_list.[0].mnc 480 --eNBs.[0].plmn_list.[0].mnc_length 3 --eNBs.[0].component_carriers.[0].Nid_cell 10</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --eNBs.[0].plmn_list.[0].mcc 311 --eNBs.[0].plmn_list.[0].mnc 480 --eNBs.[0].plmn_list.[0].mnc_length 3 --eNBs.[0].component_carriers.[0].Nid_cell 10 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030201">

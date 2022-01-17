@@ -22,6 +22,7 @@
 # include "intertask_interface.h"
 # include "create_tasks.h"
 # include "common/utils/LOG/log.h"
+# include "executables/softmodem-common.h"
 
   #include "sctp_eNB_task.h"
   #include "s1ap_eNB.h"
@@ -62,6 +63,15 @@ int create_tasks_ue(uint32_t ue_nb) {
     if (itti_create_task (TASK_RRC_UE, rrc_ue_task, NULL) < 0) {
       LOG_E(RRC, "Create task for RRC UE failed\n");
       return -1;
+    }
+
+    if (get_softmodem_params()->nsa) {
+      init_connections_with_nr_ue();
+      LOG_I(RRC, "Started LTE-NR link in the LTE UE\n");
+      if (itti_create_task (TASK_RRC_NSA_UE, recv_msgs_from_nr_ue, NULL) < 0) {
+        LOG_E(RRC, "Create task for RRC NSA UE failed\n");
+        return -1;
+      }
     }
   }
 

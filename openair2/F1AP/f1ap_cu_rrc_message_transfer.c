@@ -287,7 +287,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* RRC Container */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
-  protocol_ctxt_t ctxt;
+  protocol_ctxt_t ctxt={0};
   ctxt.instance = instance;
   ctxt.module_id = instance;
   ctxt.rnti = f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id);

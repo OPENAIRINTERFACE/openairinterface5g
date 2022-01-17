@@ -211,15 +211,13 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
         AssertFatal(rrcConnectionSetup!=NULL,"rrcConnectionSetup is null\n");
         LTE_RadioResourceConfigDedicated_t *radioResourceConfigDedicated = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated;
         // get SRB logical channel information
-        LTE_SRB_ToAddModList_t *SRB_configList;
-        LTE_SRB_ToAddMod_t *SRB1_config;
-        LTE_LogicalChannelConfig_t *SRB1_logicalChannelConfig = NULL;
-        SRB_configList                 = radioResourceConfigDedicated->srb_ToAddModList;
+        LTE_SRB_ToAddModList_t *SRB_configList = radioResourceConfigDedicated->srb_ToAddModList;
         AssertFatal(SRB_configList!=NULL,"SRB_configList is null\n");
+        LTE_LogicalChannelConfig_t *SRB1_logicalChannelConfig = NULL;
 
         for (int cnt = 0; cnt < (SRB_configList)->list.count; cnt++) {
           if ((SRB_configList)->list.array[cnt]->srb_Identity == 1) {
-            SRB1_config = (SRB_configList)->list.array[cnt];
+           LTE_SRB_ToAddMod_t * SRB1_config = (SRB_configList)->list.array[cnt];
 
             if (SRB1_config->logicalChannelConfig) {
               if (SRB1_config->logicalChannelConfig->present ==
@@ -411,7 +409,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                       ue_context_p->ue_context.Srb2.Srb_info.Srb_id=2;
                       LOG_I(F1AP, "[DU %ld] SRB2 is now active\n",ctxt.instance);
                     } else {
-                      LOG_W(F1AP, "[DU %ld] invalide SRB identity %ld\n",ctxt.instance,
+                      LOG_W(F1AP, "[DU %ld] invalid SRB identity %ld\n",ctxt.instance,
                             SRB_configList->list.array[i]->srb_Identity);
                     }
                   }

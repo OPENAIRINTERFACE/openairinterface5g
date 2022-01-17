@@ -1,0 +1,103 @@
+body {
+    font-family: 'lato', sans-serif;
+  }
+
+.Main {
+    text-align: left;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+
+.DashLink {
+    text-align:left;
+    font-size: 16px;    
+}
+
+.DashLink:hover {
+    font-weight: bold;      
+}
+
+
+.Date {
+    text-align: left;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+h3 {
+    font-size: 16px;    
+}
+
+a { text-decoration: none; }
+a:visited { text-decoration: none; color:blue}
+a:hover { text-decoration: none; font-weight: bold; color:blue}
+
+
+.Test_Table {
+    border-collapse: collapse;
+}
+
+.Test_Table tr {
+    font-size: 12px;
+    text-align:center;
+}
+
+
+.Test_Table tr:hover {
+    background-color:lightgray;
+}
+
+.Test_Table td {
+    border: 1px solid black;
+    padding : 5px;
+}
+.Test_Table td:hover {
+font-weight : bold;
+}
+
+.Test_Table th {
+    font-size: 14px;
+    text-align:center;
+    padding : 5px;
+}
+
+
+
+
+.Test_Name {
+    table-layout: fixed;
+    width: 100px;
+    background-color: rgb(143, 154, 216);
+}
+
+.Test_Descr {
+    table-layout: fixed;
+    width: 400px;
+    background-color: rgb(143, 154, 216);
+}
+
+.Pass {
+    table-layout: fixed;
+    width: 100px;
+    background-color: rgb(143, 154, 216);
+}
+
+.Fail {
+    table-layout: fixed;
+    width: 100px;
+    background-color: rgb(143, 154, 216);
+}
+
+.Last_Pass {
+    table-layout: fixed;
+    width: 100px;
+    background-color: rgb(143, 154, 216);
+}
+
+.Last_Fail {
+    table-layout: fixed;
+    width: 100px;
+    background-color: rgb(143, 154, 216);
+}
+

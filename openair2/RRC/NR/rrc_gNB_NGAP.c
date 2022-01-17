@@ -306,7 +306,7 @@ nr_rrc_pdcp_config_security(
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
-  uint8_t                            *k_kdf  = NULL;
+  //uint8_t                            *k_kdf  = NULL;
   static int                          print_keys= 1;
 
   /* Derive the keys from kgnb */
@@ -482,7 +482,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
     uint16_t                        ue_initial_id;
     uint32_t                        gNB_ue_ngap_id;
     rrc_gNB_ue_context_t            *ue_context_p = NULL;
-    protocol_ctxt_t                 ctxt;
+    protocol_ctxt_t                 ctxt={0};
     uint8_t                         pdu_sessions_done = 0;
     gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
     gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
@@ -1054,7 +1054,7 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     uint8_t nb_pdusessions_tosetup = NGAP_PDUSESSION_SETUP_REQ(msg_p).nb_pdusessions_tosetup;
     pdu_sessions_done = 0;
 
-    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0, 0);
     for (int i = 0; i < NR_NB_RB_MAX - 3; i++) {
       if(ue_context_p->ue_context.pduSession[i].status >= PDU_SESSION_STATUS_DONE)
         continue;

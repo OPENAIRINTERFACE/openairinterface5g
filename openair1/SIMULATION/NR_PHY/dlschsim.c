@@ -110,6 +110,7 @@ int main(int argc, char **argv)
 	int ret;
 	//int run_initial_sync=0;
 	int loglvl = OAILOG_WARNING;
+	uint8_t dlsch_threads = 0;
 	float target_error_rate = 0.01;
         uint64_t SSB_positions=0x01;
 	uint16_t nb_symb_sch = 12;
@@ -117,10 +118,9 @@ int main(int argc, char **argv)
 	uint8_t Imcs = 9;
         uint8_t mcs_table = 0;
         double DS_TDL = .03;
-	cpuf = get_cpu_freq_GHz(); 
-        char gNBthreads[128]="n";
-
-        
+	cpuf = get_cpu_freq_GHz();
+	char gNBthreads[128]="n";
+	
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
 		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
 	}
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:X:")) != -1) {
 		switch (c) {
 		/*case 'f':
 			write_output_file = 1;
@@ -141,9 +141,9 @@ int main(int argc, char **argv)
 
 			break;*/
 
-		/*case 'd':
-			frame_type = 1;
-			break;*/
+		case 'd':
+			dlsch_threads = atoi(optarg);
+			break;
 
 		case 'g':
 			switch ((char) *optarg) {
@@ -294,6 +294,11 @@ int main(int argc, char **argv)
 			nb_rb = atoi(optarg);
 			break;
 
+		case 'X':
+		  strncpy(gNBthreads, optarg, sizeof(gNBthreads));
+		  gNBthreads[sizeof(gNBthreads)-1]=0;
+		  break;
+
 		/*case 'x':
 			transmission_mode = atoi(optarg);
 			break;*/
@@ -323,6 +328,7 @@ int main(int argc, char **argv)
 			//printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
 			//printf("-f Output filename (.txt format) for Pe/SNR results\n");
 			printf("-F Input filename (.txt format) for RX conformance testing\n");
+			printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
 			exit(-1);
 			break;
 		}
@@ -334,6 +340,7 @@ int main(int argc, char **argv)
 
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
+	init_dlsch_tpool(dlsch_threads);
 
 	if (ouput_vcd)
         vcd_signal_dumper_init("/tmp/openair_dump_nr_dlschsim.vcd");
@@ -352,6 +359,8 @@ int main(int argc, char **argv)
 	RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
 	RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
 	gNB = RC.gNB[0];
+	gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+	initTpool(gNBthreads, gNB->threadPool, true);
 	//gNB_config = &gNB->gNB_config;
 	frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 	frame_parms->nb_antennas_tx = n_tx;
@@ -481,7 +490,6 @@ int main(int argc, char **argv)
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
-	double errors_bit_uncoded = 0;
 	//unsigned char *estimated_output;
 	unsigned char *estimated_output_bit;
 	unsigned char *test_input_bit;
@@ -531,7 +539,6 @@ int main(int argc, char **argv)
 		n_false_positive = 0;
 
 		for (trial = 0; trial < n_trials; trial++) {
-			errors_bit_uncoded = 0;
 			for (i = 0; i < available_bits; i++) {
 #ifdef DEBUG_CODER
 				if ((i&0xf)==0)
@@ -540,12 +547,12 @@ int main(int argc, char **argv)
 
 				//if (i<16)
 				//   printf("encoder output f[%d] = %d\n",i,dlsch->harq_processes[0]->f[i]);
-				/*
-				if (dlsch->harq_process.f[i] == 0)
+				
+				if (output[i] == 0)
 					modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
 				else
 					modulated_input[i] = -1.0;        ///sqrt(2);
-				*/
+				
 				//if (i<16) printf("modulated_input[%d] = %d\n",i,modulated_input[i]);
 				//SNR =10;
 				SNR_lin = pow(10, SNR / 10.0);
@@ -563,19 +570,14 @@ int main(int argc, char **argv)
 						   i,modulated_input[i],
 						   i,channel_output_fixed[i]);
 */
+
 				//Uncoded BER
 				if (channel_output_fixed[i] < 0)
 					channel_output_uncoded[i] = 1;  //QPSK demod
 				else
 					channel_output_uncoded[i] = 0;
-				/*
-				if (channel_output_uncoded[i] != dlsch->harq_process.f[i])
-					errors_bit_uncoded = errors_bit_uncoded + 1;
-				*/
 			}
 
-			//if (errors_bit_uncoded>10)
-			//printf("errors bits uncoded %f\n", errors_bit_uncoded);
 #ifdef DEBUG_CODER
 			printf("\n");
 			exit(-1);

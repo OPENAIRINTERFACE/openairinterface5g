@@ -42,37 +42,37 @@
 	<testCase id="030101">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band1/5MHz/info)</desc>
-		<Initialize_eNB_args>-O enb.band7.tm1.50PRB.usrpb210.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O enb.band7.tm1.50PRB.usrpb210.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030102">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band1/10MHz/info)</desc>
-		<Initialize_eNB_args>-O 10M.band1.FDD.info.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O 10M.band1.FDD.info.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030103">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band1/20MHz/info)</desc>
-		<Initialize_eNB_args>-O 20M.band1.FDD.info.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O 20M.band1.FDD.info.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030104">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (TDD/Band38/5MHz/info)</desc>
-		<Initialize_eNB_args>-O 5M.band38.TDD.info.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O 5M.band38.TDD.info.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030105">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (TDD/Band38/10MHz/info)</desc>
-		<Initialize_eNB_args>-O 10M.band38.TDD.info.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O 10M.band38.TDD.info.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030106">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (TDD/Band38/20MHz/info)</desc>
-		<Initialize_eNB_args>-O 20M.band38.TDD.info.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O 20M.band38.TDD.info.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030201">

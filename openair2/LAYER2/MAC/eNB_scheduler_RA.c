@@ -918,7 +918,7 @@ generate_Msg4(module_id_t module_idP,
               module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);
         //          AssertFatal(rrc_sdu_length > 0,
         //          "[MAC][eNB Scheduler] CCCH not allocated, rrc_sdu_length: %d\n", rrc_sdu_length);
-        LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
+        LOG_A(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
               module_idP, CC_idP, frameP, subframeP, ra->rnti);
         /// Choose first 4 RBs for Msg4, should really check that these are free!
         first_rb = 0;

@@ -160,80 +160,6 @@ void openair_nr_rrc_on(const protocol_ctxt_t *const ctxt_pP) {
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-void rrc_gNB_process_SgNBAdditionRequest(
-  const protocol_ctxt_t  *const ctxt_pP,
-  rrc_gNB_ue_context_t   *ue_context_pP
-) {
-  rrc_gNB_generate_SgNBAdditionRequestAcknowledge(ctxt_pP,ue_context_pP);
-}
-
-void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
-  const protocol_ctxt_t  *const ctxt_pP,
-  rrc_gNB_ue_context_t   *const ue_context_pP) {
-  //uint8_t size;
-  //uint8_t buffer[100];
-  //int     CC_id = ue_context_pP->ue_context.primaryCC_id;
-  //OCTET_STRING_t                                      *secondaryCellGroup;
-  NR_CellGroupConfig_t                                *cellGroupconfig;
-  struct NR_CellGroupConfig__rlc_BearerToAddModList   *rlc_BearerToAddModList;
-  struct NR_MAC_CellGroupConfig                       *mac_CellGroupConfig;
-  struct NR_PhysicalCellGroupConfig                   *physicalCellGroupConfig;
-  struct NR_SpCellConfig                              *spCellConfig;
-  //struct NR_CellGroupConfig__sCellToAddModList        *sCellToAddModList;
-  cellGroupconfig                           = CALLOC(1,sizeof(NR_CellGroupConfig_t));
-  cellGroupconfig->rlc_BearerToAddModList   = CALLOC(1,sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
-  cellGroupconfig->mac_CellGroupConfig      = CALLOC(1,sizeof(struct NR_MAC_CellGroupConfig));
-  cellGroupconfig->physicalCellGroupConfig  = CALLOC(1,sizeof(struct NR_PhysicalCellGroupConfig));
-  cellGroupconfig->spCellConfig             = CALLOC(1,sizeof(struct NR_SpCellConfig));
-  //cellGroupconfig->sCellToAddModList        = CALLOC(1,sizeof(struct NR_CellGroupConfig__sCellToAddModList));
-  rlc_BearerToAddModList   = cellGroupconfig->rlc_BearerToAddModList;
-  mac_CellGroupConfig      = cellGroupconfig->mac_CellGroupConfig;
-  physicalCellGroupConfig  = cellGroupconfig->physicalCellGroupConfig;
-  spCellConfig             = cellGroupconfig->spCellConfig;
-  //sCellToAddModList        = cellGroupconfig->sCellToAddModList;
-  rlc_bearer_config_t *rlc_config;
-  rlc_config = CALLOC(1,sizeof(rlc_bearer_config_t));
-  //Fill rlc_bearer config value
-  rrc_config_rlc_bearer(ctxt_pP->module_id,
-                        ue_context_pP->ue_context.primaryCC_id,
-                        rlc_config
-                       );
-  //Fill rlc_bearer config to structure
-  do_RLC_BEARER(ctxt_pP->module_id,
-                ue_context_pP->ue_context.primaryCC_id,
-                rlc_BearerToAddModList,
-                rlc_config);
-  mac_cellgroup_t *mac_cellgroup_config;
-  mac_cellgroup_config = CALLOC(1,sizeof(mac_cellgroup_t));
-  //Fill mac_cellgroup_config config value
-  rrc_config_mac_cellgroup(ctxt_pP->module_id,
-                           ue_context_pP->ue_context.primaryCC_id,
-                           mac_cellgroup_config
-                          );
-  //Fill mac_cellgroup config to structure
-  do_MAC_CELLGROUP(ctxt_pP->module_id,
-                   ue_context_pP->ue_context.primaryCC_id,
-                   mac_CellGroupConfig,
-                   mac_cellgroup_config);
-  physicalcellgroup_t *physicalcellgroup_config;
-  physicalcellgroup_config = CALLOC(1,sizeof(physicalcellgroup_t));
-  //Fill physicalcellgroup_config config value
-  rrc_config_physicalcellgroup(ctxt_pP->module_id,
-                               ue_context_pP->ue_context.primaryCC_id,
-                               physicalcellgroup_config
-                              );
-  //Fill physicalcellgroup config to structure
-  do_PHYSICALCELLGROUP(ctxt_pP->module_id,
-                       ue_context_pP->ue_context.primaryCC_id,
-                       physicalCellGroupConfig,
-                       physicalcellgroup_config);
-  do_SpCellConfig(RC.nrrrc[ctxt_pP->module_id],
-                  spCellConfig);
-}
-
-///---------------------------------------------------------------------------------------------------------------///
-///---------------------------------------------------------------------------------------------------------------///
-
 static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration) {
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
@@ -354,9 +280,10 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
   rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
   rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
-  rrc->carrier.minRXTXTIMEpdsch = configuration->minRXTXTIMEpdsch;
+  rrc->carrier.minRXTXTIME = configuration->minRXTXTIME;
   rrc->carrier.sib1_tda = configuration->sib1_tda;
   rrc->carrier.do_CSIRS = configuration->do_CSIRS;
+  nr_rrc_config_ul_tda(configuration->scc,configuration->minRXTXTIME);
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
   rrc->cell_info_configured = 0;
@@ -389,6 +316,8 @@ void rrc_gNB_process_AdditionRequestInformation(const module_id_t gnb_mod_idP, x
   AssertFatal(cg_configinfo->criticalExtensions.choice.c1->present == NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo,
               "ueCapabilityInformation not present\n");
   parse_CG_ConfigInfo(rrc,cg_configinfo,m);
+  LOG_A(NR_RRC, "Successfully parsed CG_ConfigInfo of size %zu bits. (%zu bytes)\n",
+        dec_rval.consumed, (dec_rval.consumed +7/8));
 }
 
 
@@ -864,8 +793,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
-  size = do_RRCReconfiguration(ctxt_pP, buffer,
+  memset(buffer, 0, sizeof(buffer));
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
                                 NULL, //*SRB_configList2,
                                 NULL, //*DRB_configList,
@@ -1133,7 +1062,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
   if(cell_groupConfig_from_DU == NULL){
     cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
     fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup,1,1);
@@ -1142,7 +1071,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     LOG_I(NR_RRC, "Master cell group originating from the DU \n");
     cellGroupConfig = cell_groupConfig_from_DU;
   }
-  size = do_RRCReconfiguration(ctxt_pP, buffer,
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
                                 *SRB_configList2,
                                 *DRB_configList,
@@ -1250,8 +1179,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     LOG_W(NR_RRC,"dedlicated NAS list is empty\n");
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
-  size = do_RRCReconfiguration(ctxt_pP, buffer, xid,
+  memset(buffer, 0, sizeof(buffer));
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer), xid,
                                NULL,
                                NULL,
                                *DRB_Release_configList2,
@@ -1572,6 +1501,7 @@ rrc_gNB_generate_RRCReestablishment(
         ue_context_pP,
         CC_id,
         (uint8_t *) ue_context->Srb0.Tx_buffer.Payload,
+        sizeof(ue_context->Srb0.Tx_buffer.Payload),
         //(uint8_t) carrier->p_gNB, // at this point we do not have the UE capability information, so it can only be TM1 or TM2
         rrc_gNB_get_next_transaction_identifier(module_id),
         SRB_configList
@@ -1827,9 +1757,9 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
           i, ue_context_pP->ue_context.pduSession[i].status, "PDU_SESSION_STATUS_DONE");
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
 
-  size = do_RRCReconfiguration(ctxt_pP, buffer,
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
                                *SRB_configList2,
                                 DRB_configList,
@@ -4213,7 +4143,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case X2AP_ENDC_SGNB_RECONF_COMPLETE:
-        LOG_I(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
+        LOG_A(NR_RRC, "Handling of reconfiguration complete message at RRC gNB is pending \n");
         break;
 
       case NGAP_INITIAL_CONTEXT_SETUP_REQ:
@@ -4440,9 +4370,10 @@ rrc_gNB_generate_RRCRelease(
   uint8_t buffer[RRC_BUF_SIZE];
   uint16_t size = 0;
 
-  memset(buffer, 0, RRC_BUF_SIZE);
+  memset(buffer, 0, sizeof(buffer));
 
-  size = do_NR_RRCRelease(buffer,rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  size = do_NR_RRCRelease(buffer, sizeof(buffer),
+                          rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
   ue_context_pP->ue_context.ul_failure_timer = 0;

@@ -24,7 +24,7 @@
 # include "intertask_interface.h"
 # include "nas_ue_task.h"
 # include "common/utils/LOG/log.h"
-
+# include "vendor_ext.h"
 # include "user_defs.h"
 # include "user_api.h"
 # include "nas_parser.h"
@@ -41,6 +41,8 @@
 // FIXME review these externs
 extern unsigned char NB_eNB_INST;
 extern uint16_t NB_UE_INST;
+
+uint16_t ue_idx_standalone = 0xFFFF;
 
 char *make_port_str_from_ueid(const char *base_port_str, int ueid);
 
@@ -96,41 +98,89 @@ void *nas_ue_task(void *args_p)
 
   itti_mark_task_ready (TASK_NAS_UE);
   MSC_START_USE();
+  LOG_I(NAS, "ue_idx_standalone val:: %u\n", ue_idx_standalone);
   /* Initialize UE NAS (EURECOM-NAS) */
-  for (int i=0; i < users->count; i++)
+  // Intead of for loop for standalone mode
+  if (ue_idx_standalone == 0xFFFF)
   {
-    nas_user_t *user = &users->item[i];
-    user->ueid=i;
+    for (int i = 0; i < users->count; i++)
+    {
+      nas_user_t *user = &users->item[i];
+      user->ueid = i;
 
-    /* Get USIM data application filename */
-    user->usim_data_store = memory_get_path_from_ueid(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME, user->ueid);
-    if ( user->usim_data_store == NULL ) {
-      LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid);
-      exit(EXIT_FAILURE);
+      /* Get USIM data application filename */
+      user->usim_data_store = memory_get_path_from_ueid(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME, user->ueid);
+      if (user->usim_data_store == NULL)
+      {
+        LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid);
+        exit(EXIT_FAILURE);
+      }
+
+      /* Get UE's data pathname */
+      user->user_nvdata_store = memory_get_path_from_ueid(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME, user->ueid);
+      if (user->user_nvdata_store == NULL)
+      {
+        LOG_E(NAS, "[UE %d] - Failed to get USIM nvdata filename", user->ueid);
+        exit(EXIT_FAILURE);
+      }
+
+      /* Get EMM data pathname */
+      user->emm_nvdata_store = memory_get_path_from_ueid(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME, user->ueid);
+      if (user->emm_nvdata_store == NULL)
+      {
+        LOG_E(NAS, "[UE %d] - Failed to get EMM nvdata filename", user->ueid);
+        exit(EXIT_FAILURE);
+      }
+
+      /* Initialize user interface (to exchange AT commands with user process) */
+      nas_user_api_id_initialize(user);
+      /* allocate needed structures */
+      user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));
+      user->at_response = calloc_or_fail(sizeof(at_response_t));
+      user->lowerlayer_data = calloc_or_fail(sizeof(lowerlayer_data_t));
+      /* Initialize NAS user */
+      nas_user_initialize(user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
     }
+  }
+  else
+  {
+    // use new parameter passed into lte-uesoftmodem which instead of looping
+    // calls functions on specific UE index.
 
-    /* Get UE's data pathname */
-    user->user_nvdata_store = memory_get_path_from_ueid(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME, user->ueid);
-    if ( user->user_nvdata_store == NULL ) {
-      LOG_E(NAS, "[UE %d] - Failed to get USIM nvdata filename", user->ueid);
-      exit(EXIT_FAILURE);
-    }
+      nas_user_t *user = &users->item[0];
+      user->ueid = ue_idx_standalone;
+      LOG_I(NAS, "[UE %d] Configuring\n", user->ueid);
 
-    /* Get EMM data pathname */
-    user->emm_nvdata_store = memory_get_path_from_ueid(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME, user->ueid);
-    if ( user->emm_nvdata_store == NULL ) {
-      LOG_E(NAS, "[UE %d] - Failed to get EMM nvdata filename", user->ueid);
-      exit(EXIT_FAILURE);
-    }
-
-    /* Initialize user interface (to exchange AT commands with user process) */
-    nas_user_api_id_initialize(user);
-    /* allocate needed structures */
-    user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));
-    user->at_response = calloc_or_fail(sizeof(at_response_t));
-    user->lowerlayer_data = calloc_or_fail(sizeof(lowerlayer_data_t));
-    /* Initialize NAS user */
-    nas_user_initialize (user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
+      /* Get USIM data application filename */ //
+      user->usim_data_store = memory_get_path_from_ueid(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME, user->ueid);
+      if (user->usim_data_store == NULL)
+      {
+        LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid);
+        exit(EXIT_FAILURE);
+      }
+      /* Get UE's data pathname */
+      user->user_nvdata_store = memory_get_path_from_ueid(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME, user->ueid);
+      if (user->user_nvdata_store == NULL)
+      {
+        LOG_E(NAS, "[UE %d] - Failed to get USIM nvdata filename", user->ueid);
+        exit(EXIT_FAILURE);
+      }
+      /* Get EMM data pathname */
+      user->emm_nvdata_store = memory_get_path_from_ueid(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME, user->ueid);
+      if (user->emm_nvdata_store == NULL)
+      {
+        LOG_E(NAS, "[UE %d] - Failed to get EMM nvdata filename", user->ueid);
+        exit(EXIT_FAILURE);
+      }
+      /* Initialize user interface (to exchange AT commands with user process) */
+      nas_user_api_id_initialize(user);
+      /* allocate needed structures */
+      user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));
+      user->at_response = calloc_or_fail(sizeof(at_response_t));
+      user->lowerlayer_data = calloc_or_fail(sizeof(lowerlayer_data_t));
+      /* Initialize NAS user */
+      nas_user_initialize(user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
+      user->ueid = 0;
   }
 
   /* Set UE activation state */

@@ -43,6 +43,8 @@
 #include <string.h>
 #include <linux/prctl.h>
 #include "common/config/config_userapi.h"
+#include <time.h>
+#include <sys/time.h>
 
 // main log variables
 
@@ -73,6 +75,9 @@ mapping log_options[] = {
   {"nocolor", FLAG_NOCOLOR  },
   {"level",   FLAG_LEVEL  },
   {"thread",  FLAG_THREAD },
+  {"line_num",    FLAG_FILE_LINE },
+  {"function", FLAG_FUNCT},
+  {"time",     FLAG_TIME},
   {NULL,-1}
 };
 
@@ -81,6 +86,7 @@ mapping log_maskmap[] = LOG_MASKMAP_INIT;
 
 char *log_level_highlight_start[] = {LOG_RED, LOG_ORANGE, "", LOG_BLUE, LOG_CYBL};  /*!< \brief Optional start-format strings for highlighting */
 char *log_level_highlight_end[]   = {LOG_RESET,LOG_RESET,LOG_RESET, LOG_RESET,LOG_RESET};   /*!< \brief Optional end-format strings for highlighting */
+static void log_output_memory(log_component_t *c, const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
 
 
 int write_file_matlab(const char *fname,
@@ -495,84 +501,138 @@ int logInit (void)
   return 0;
 }
 
-
-char *log_getthreadname(char *threadname,
-		                int bufsize)
+static inline int log_header(log_component_t *c,
+			     char *log_buffer,
+			     int buffsize,
+			     const char *file,
+			     const char *func,
+			     int line,
+			     int level)
 {
-  int rt =   pthread_getname_np(pthread_self(), threadname,bufsize) ;
+  int flag= g_log->flag | c->flag;
 
-  if (rt == 0) {
-    return threadname;
+  char threadname[64];
+  if (flag & FLAG_THREAD ) {
+    threadname[0]='{';
+    if ( pthread_getname_np(pthread_self(), threadname+1,61) != 0)
+      strcpy(threadname+1, "?thread?");
+    strcat(threadname,"}");
   } else {
-    return "thread?";
+    threadname[0]=0;
   }
+ 
+  char l[32];
+  if (flag & FLAG_FILE_LINE && flag & FLAG_FUNCT )
+    snprintf(l, sizeof l," (%s:%d) ", func, line);
+  else if (flag & FLAG_FILE_LINE)
+    sprintf(l," (%d) ", line);
+  else
+    l[0]=0;
+
+  char timeString[32];
+  if ( flag & FLAG_TIME ) {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    snprintf(timeString, sizeof t,"%05.3f",t.tv_sec+t.tv_nsec/1.0e9);
+  } else {
+    timeString[0]=0;
+  }
+  return  snprintf(log_buffer, buffsize, "%s%s[%s]%c%s %s ",
+		   timeString,
+		   flag & FLAG_NOCOLOR ? "" : log_level_highlight_start[level],
+		   c->name,
+		   flag & FLAG_LEVEL ? g_log->level2string[level] : ' ',
+		   l,
+		   threadname
+		   );
 }
 
-static int log_header(char *log_buffer,
-		              int buffsize,
-					  int comp,
-					  int level,
-					  const char *format)
+#if LOG_MINIMAL
+#include <sys/syscall.h>
+void logMinimal(int comp, int level, const char *format, ...)
 {
-  char threadname[PR_SET_NAME];
-  return  snprintf(log_buffer, buffsize, "%s%s[%s]%c %s %s%s",
-                   log_level_highlight_end[level],
-                   ( (g_log->flag & FLAG_NOCOLOR)?"":log_level_highlight_start[level]),
-                   g_log->log_component[comp].name,
-                   ( (g_log->flag & FLAG_LEVEL)?g_log->level2string[level]:' '),
-                   ( (g_log->flag & FLAG_THREAD)?log_getthreadname(threadname,PR_SET_NAME+1):""),
-                   format,
-                   log_level_highlight_end[level]);
+    struct timespec ts;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
+        abort();
+
+    char buf[MAX_LOG_TOTAL];
+    int n = snprintf(buf, sizeof(buf), "%lu.%06lu %08lx [%s] %c ",
+                     ts.tv_sec,
+                     ts.tv_nsec / 1000,
+                     syscall(__NR_gettid),
+                     g_log->log_component[comp].name,
+                     level);
+    if (n < 0 || n >= sizeof(buf))
+    {
+        fprintf(stderr, "%s: n=%d\n", __func__, n);
+        return;
+    }
+
+    va_list args;
+    va_start(args, format);
+    int m = vsnprintf(buf + n, sizeof(buf) - n, format, args);
+    va_end(args);
+
+    if (m < 0)
+    {
+        fprintf(stderr, "%s: n=%d m=%d\n", __func__, n, m);
+        return;
+    }
+
+    int len = n + m;
+    if (len > sizeof(buf) - 1)
+    {
+        len = sizeof(buf) - 1;
+    }
+    if (buf[len - 1] != '\n')
+    {
+        buf[len++] = '\n';
+    }
+
+    __attribute__((unused))
+    int unused = write(STDOUT_FILENO, buf, len);
 }
+#endif // LOG_MINIMAL
 
 void logRecord_mt(const char *file,
-		          const char *func,
-				  int line,
-				  int comp,
-				  int level,
-				  const char *format,
-				  ... )
+		  const char *func,
+		  int line,
+		  int comp,
+		  int level,
+		  const char *format,
+		  ... )
 {
-  char log_buffer[MAX_LOG_TOTAL]= {0};
+  log_component_t *c = &g_log->log_component[comp];
   va_list args;
   va_start(args,format);
-  if (log_mem_flag == 1) {
-    log_output_memory(file,func,line,comp,level,format,args);
-  } else {
-  log_header(log_buffer,MAX_LOG_TOTAL,comp,level,format);
-  g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer,args);
-  fflush(g_log->log_component[comp].stream);
-  }
+  log_output_memory(c, file,func,line,comp,level,format,args);
   va_end(args);
 }
 
 void vlogRecord_mt(const char *file,
-		           const char *func,
-				   int line,
-				   int comp,
-				   int level,
-				   const char *format,
-				   va_list args )
+		   const char *func,
+		   int line,
+		   int comp,
+		   int level,
+		   const char *format,
+		   va_list args )
 {
-  char log_buffer[MAX_LOG_TOTAL];
-  if (log_mem_flag == 1) {
-    log_output_memory(file,func,line,comp,level, format,args);
-  } else {
-  log_header(log_buffer,MAX_LOG_TOTAL,comp, level,format);
-  g_log->log_component[comp].vprint(g_log->log_component[comp].stream,log_buffer, args);
-  }
+  log_component_t *c = &g_log->log_component[comp];
+  log_output_memory(c, file,func,line,comp,level, format,args);
 }
 
 void log_dump(int component,
-		      void *buffer,
-			  int buffsize,
-			  int datatype,
-			  const char *format,
-			  ... )
+	      void *buffer,
+	      int buffsize,
+	      int datatype,
+	      const char *format,
+	      ... )
 {
   va_list args;
   char *wbuf;
-
+  log_component_t *c = &g_log->log_component[component];
+  int flag= g_log->flag | c->flag;
+  
   switch(datatype) {
     case LOG_DUMP_DOUBLE:
       wbuf=malloc((buffsize * 10)  + 64 + MAX_LOG_TOTAL);
@@ -586,9 +646,8 @@ void log_dump(int component,
 
   if (wbuf != NULL) {
     va_start(args, format);
-    int pos=log_header(wbuf,MAX_LOG_TOTAL,component, OAILOG_INFO,"");
-    int pos2=vsprintf(wbuf+pos,format, args);
-    pos=pos+pos2;
+    int pos=log_header(c, wbuf,MAX_LOG_TOTAL,"noFile","noFunc",0, OAILOG_INFO);
+    pos+=vsprintf(wbuf+pos,format, args);
     va_end(args);
 
     for (int i=0; i<buffsize; i++) {
@@ -603,9 +662,11 @@ void log_dump(int component,
           break;
       }
     }
-
-    sprintf(wbuf+pos,"\n");
-    g_log->log_component[component].print(g_log->log_component[component].stream,wbuf);
+    if ( flag & FLAG_NOCOLOR )
+      sprintf(wbuf+pos,"\n");
+    else
+      sprintf(wbuf+pos,"%s\n",log_level_highlight_end[OAILOG_INFO]);
+    c->print(c->stream,wbuf);
     free(wbuf);
   }
 }
@@ -805,13 +866,10 @@ void flush_mem_to_file(void)
 
 char logmem_log_level[NUM_LOG_LEVEL]={'E','W','I','D','T'};
 
-void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args)
+static void log_output_memory(log_component_t *c, const char *file, const char *func, int line, int comp, int level, const char* format,va_list args)
 {
   //logRecord_mt(file,func,line, pthread_self(), comp, level, format, ##args)
   int len = 0;
-  log_component_t *c;
-  char *log_start;
-  char *log_end;
   /* The main difference with the version above is the use of this local log_buffer.
    * The other difference is the return value of snprintf which was not used
    * correctly. It was not a big problem because in practice MAX_LOG_TOTAL is
@@ -819,92 +877,17 @@ void log_output_memory(const char *file, const char *func, int line, int comp, i
    */
   char log_buffer[MAX_LOG_TOTAL];
 
-  /* for no gcc warnings */
-  (void)log_start;
-  (void)log_end;
-
-
-  c = &g_log->log_component[comp];
-
-  //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_LOG_RECORD, VCD_FUNCTION_IN);
-
   // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if (level == OAILOG_TRACE) {
-    log_start = log_buffer;
-    len = vsnprintf(log_buffer, MAX_LOG_TOTAL, format, args);
-    if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    log_end = log_buffer + len;
-  } else {
-    if ( (g_log->flag & 0x001) || (c->flag & 0x001) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "%s",
-                      log_level_highlight_start[level]);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    log_start = log_buffer + len;
-
-//    if ( (g_log->flag & 0x004) || (c->flag & 0x004) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]",
-                      g_log->log_component[comp].name);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-//    }
-
-    if ( (level >= OAILOG_ERR) && (level <= OAILOG_TRACE) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%c]",
-                      logmem_log_level[level]);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    if ( (g_log->flag & FLAG_THREAD) || (c->flag & FLAG_THREAD) ) {
-#     define THREAD_NAME_LEN 128
-      char threadname[THREAD_NAME_LEN];
-      if (pthread_getname_np(pthread_self(), threadname, THREAD_NAME_LEN) != 0)
-      {
-        perror("pthread_getname_np : ");
-      } else {
-        len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s]", threadname);
-        if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-      }
-#     undef THREAD_NAME_LEN
-    }
-
-    if ( (g_log->flag & FLAG_FUNCT) || (c->flag & FLAG_FUNCT) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s] ",
-                      func);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    if ( (g_log->flag & FLAG_FILE_LINE) || (c->flag & FLAG_FILE_LINE) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%s:%d]",
-                      file, line);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-/*    len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%08lx]", thread_id);
-    if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-
-    struct timeval gettime;
-    gettimeofday(&gettime,NULL);
-    len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "[%ld.%06ld]", gettime.tv_sec, gettime.tv_usec);
-    if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-*/
-    if ( (g_log->flag & FLAG_NOCOLOR) || (c->flag & FLAG_NOCOLOR) ) {
-      len += snprintf(&log_buffer[len], MAX_LOG_TOTAL - len, "%s",
-          log_level_highlight_end[level]);
-      if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    }
-
-    len += vsnprintf(&log_buffer[len], MAX_LOG_TOTAL - len, format, args);
-    if (len > MAX_LOG_TOTAL) len = MAX_LOG_TOTAL;
-    log_end = log_buffer + len;
-  }
-
-  //va_end(args);
-
+  if (level < OAILOG_TRACE)
+    len += log_header(c, log_buffer, MAX_LOG_TOTAL, file, func, line, level);
+  len += vsnprintf(log_buffer+len, MAX_LOG_TOTAL-len, format, args);
+  if ( !((g_log->flag | c->flag) & FLAG_NOCOLOR) )
+    len+=snprintf(log_buffer+len, MAX_LOG_TOTAL-len, "%s", log_level_highlight_end[level]);
+  
   // OAI printf compatibility
-    if(log_mem_flag==1){
-      if(log_mem_d[log_mem_side].enable_flag==1){
-        int temp_index;
+  if(log_mem_flag==1){
+    if(log_mem_d[log_mem_side].enable_flag==1){
+      int temp_index;
         temp_index=log_mem_d[log_mem_side].buf_index;
         if(temp_index+len+1 < LOG_MEM_SIZE){
           log_mem_d[log_mem_side].buf_index+=len;
@@ -935,9 +918,9 @@ void log_output_memory(const char *file, const char *func, int line, int comp, i
           }
         }
       }
-    }else{
-      fwrite(log_buffer, len, 1, stdout);
-    }
+  }else{
+    if (write(fileno(c->stream), log_buffer, len)) {};
+  }
 }
 
 int logInit_log_mem (void)

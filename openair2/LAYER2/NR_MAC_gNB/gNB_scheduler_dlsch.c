@@ -420,9 +420,9 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
     return old_mcs; // no update
 
   // last update is longer than x frames ago
-  const int dtx = stats->dlsch_rounds[0] - bler_stats->dlsch_rounds[0];
-  const int dretx = stats->dlsch_rounds[1] - bler_stats->dlsch_rounds[1];
-  const int dretx2 = stats->dlsch_rounds[2] - bler_stats->dlsch_rounds[2];
+  const int dtx = (int)(stats->dlsch_rounds[0] - bler_stats->dlsch_rounds[0]);
+  const int dretx = (int)(stats->dlsch_rounds[1] - bler_stats->dlsch_rounds[1]);
+  const int dretx2 = (int)(stats->dlsch_rounds[2] - bler_stats->dlsch_rounds[2]);
   const float bler_window = dtx > 0 ? (float) dretx / dtx : bler_stats->bler;
   const float rd2_bler_wnd = dtx > 0 ? (float) dretx2 / dtx : bler_stats->rd2_bler;
   bler_stats->bler = BLER_FILTER * bler_stats->bler + (1 - BLER_FILTER) * bler_window;
@@ -740,6 +740,11 @@ void pf_dl(module_id_t module_id,
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
     int rbStart = 0; // start wrt BWPstart
 
+    if (sched_ctrl->available_dl_harq.head < 0) {
+      LOG_D(MAC, "UE %d RNTI %04x has no free HARQ process, skipping\n", UE_id, UE_info->rnti[UE_id]);
+      continue;
+    }
+
     /* Find a free CCE */
     bool freeCCE = find_free_CCE(module_id, slot, UE_id);
     if (!freeCCE) {
@@ -752,7 +757,7 @@ void pf_dl(module_id_t module_id,
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
-    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1,0);
+    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1, 0);
     if (alloc<0) {
       LOG_D(NR_MAC,
             "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -850,7 +855,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
         frame,
         slot,
         &UE_info->list,
-        2,
+        MAX_MOBILES_PER_GNB,
         n_rb_sched,
         rballoc_mask);
 }
@@ -1000,6 +1005,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
     if (!pdcch_pdu) {
+      LOG_D(NR_MAC, "creating pdcch pdu, pdcch_pdu = NULL. \n");
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
       memset(dl_tti_pdcch_pdu, 0, sizeof(nfapi_nr_dl_tti_request_pdu_t));
       dl_tti_pdcch_pdu->PDUType = NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE;
@@ -1201,6 +1207,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   "UE %d mismatch between scheduled TBS and buffered TB for HARQ PID %d\n",
                   UE_id,
                   current_harq_pid);
+
+      T(T_GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
+        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_INT(harq->round), T_BUFFER(harq->tb, TBS));
     } else { /* initial transmission */
 
       LOG_D(NR_MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);

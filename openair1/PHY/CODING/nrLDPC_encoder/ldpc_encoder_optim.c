@@ -40,9 +40,6 @@
 #include "openair1/PHY/CODING/nrLDPC_defs.h"
 #include "ldpc_encode_parity_check.c"
 #include "ldpc_generate_coefficient.c"
-//#define DEBUG_LDPC
-
-
 
 
 
@@ -50,7 +47,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 {
 
   short nrows=0,ncols=0;
-  int i,i1,rate=3;
+  int rate=3;
   int no_punctured_columns,removed_bit;
 
   int simd_size;
@@ -96,7 +93,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
   memset(d,0,sizeof(unsigned char) * nrows * Zc);
 
   if(impp->tinput != NULL) start_meas(impp->tinput);
-  for (i=0; i<block_length; i++) {
+  for (int i=0; i<block_length; i++) {
     c[i] = (test_input[0][i/8]&(128>>(i&7)))>>(7-(i&7));
       //printf("c(%d,%d)=%d\n",j,i,temp);
     }

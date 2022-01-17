@@ -295,6 +295,11 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ""
 		else:
 			CiTestObj.ue_id = ue_id
+		ping_rttavg_threshold = test.findtext('ping_rttavg_threshold')
+		if (ping_rttavg_threshold is None):
+			CiTestObj.ping_rttavg_threshold = ""
+		else:
+			CiTestObj.ping_rttavg_threshold = ping_rttavg_threshold
 
 	elif action == 'Iperf':
 		CiTestObj.iperf_args = test.findtext('iperf_args')
@@ -305,6 +310,13 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ue_id
 		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only	
 		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
+		iperf_bitrate_threshold = test.findtext('iperf_bitrate_threshold')
+		if (iperf_bitrate_threshold is None):
+			CiTestObj.iperf_bitrate_threshold = "90" #if no threshold is specified, default will be 90%
+		else:
+			CiTestObj.iperf_bitrate_threshold = iperf_bitrate_threshold
+
+
 		CiTestObj.iperf_profile = test.findtext('iperf_profile')
 		if (CiTestObj.iperf_profile is None):
 			CiTestObj.iperf_profile = 'balanced'
@@ -544,7 +556,7 @@ elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
+	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
@@ -806,42 +818,44 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					check_OAI_UE = False
 					RAN.pStatus=CiTestObj.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 					RAN.InitializeeNB(HTML, EPC)
+					if RAN.prematureExit:
+						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace, CONTAINERS)
 				elif action == 'Terminate_UE':
 					CiTestObj.TerminateUE(HTML,COTS_UE, InfraUE, CiTestObj.ue_trace)
 				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'DataDisable_UE':
 					CiTestObj.DataDisableUE(HTML)
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
 				elif action == 'CheckStatusUE':
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE)
+					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Initialize_CatM_module':
 					CiTestObj.InitializeCatM(HTML)
 				elif action == 'Terminate_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE)
+					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Detach_CatM_module':
 					CiTestObj.TerminateCatM(HTML)
 				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE)
+					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Ping':
-					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE)
+					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
 				elif action == 'Iperf':
-					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, InfraUE)
+					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':

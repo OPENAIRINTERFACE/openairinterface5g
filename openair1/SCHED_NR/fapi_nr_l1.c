@@ -148,10 +148,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
   gNB = RC.gNB[Mod_id];
-  start_meas(&gNB->schedule_response_stats);
-  notifiedFIFO_elt_t *res;
-  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-  processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
 
   uint8_t number_dl_pdu             = (DL_req==NULL) ? 0 : DL_req->dl_tti_request_body.nPDUs;
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
@@ -159,6 +155,9 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t number_tx_data_pdu        = (TX_req == NULL) ? 0 : TX_req->Number_of_PDUs;
 
   if (NFAPI_MODE == NFAPI_MONOLITHIC){
+    notifiedFIFO_elt_t *res;
+    res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
+    processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
     if (DL_req != NULL && TX_req!=NULL && (number_dl_pdu > 0 || number_ul_dci_pdu > 0 || number_ul_tti_pdu > 0))
       LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d/%d DL_req:SFN/SLO:%04d/%d:dl_pdu:%d tx_req:SFN/SLOT:%04d/%d:pdus:%d;ul_dci %d ul_tti %d\n",
       frame,slot,
@@ -241,12 +240,12 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     if (number_ul_dci_pdu>0)
       oai_nfapi_ul_dci_req(UL_dci_req);
 
-    if (number_dl_pdu>0)
-      oai_nfapi_dl_tti_req(DL_req);
-
     if (number_tx_data_pdu>0)
       oai_nfapi_tx_data_req(TX_req);
 
-  }
-  stop_meas(&gNB->schedule_response_stats);
+    if (number_dl_pdu>0)
+      oai_nfapi_dl_tti_req(DL_req);
+
+  } 
+  
 }

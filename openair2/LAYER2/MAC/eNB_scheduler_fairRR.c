@@ -1018,8 +1018,8 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
           UE_id,
           CC_id,
           N_RBG[CC_id],
-          (uint16_t(*)[NUMBER_OF_UE_MAX])nb_rbs_required,
-          (uint16_t(*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
+          nb_rbs_required,
+          nb_rbs_required_remaining,
           rballoc_sub);
       temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
       temp_total_ue_count--;
@@ -1925,7 +1925,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           }
 
           trace_pdu(DIRECTION_DOWNLINK, (uint8_t *)UE_info->DLSCH_pdu[CC_id][0][UE_id].payload[0],
-                    TBS, module_idP, WS_RA_RNTI, UE_RNTI(module_idP, UE_id),
+                    TBS, module_idP, WS_C_RNTI, UE_RNTI(module_idP, UE_id),
                     eNB->frame, eNB->subframe,0,0);
           T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
             T_INT(harq_pid), T_BUFFER(UE_info->DLSCH_pdu[CC_id][0][UE_id].payload[0], TBS));

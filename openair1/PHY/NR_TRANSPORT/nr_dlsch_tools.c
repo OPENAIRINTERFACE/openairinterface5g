@@ -32,6 +32,7 @@
 */
 
 #include "nr_dlsch.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 extern void set_taus_seed(unsigned int seed_type);
 
@@ -94,11 +95,6 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
       break;
 
   }
-}
-
-
-uint16_t get_SLIV(uint8_t S, uint8_t L) {
-  return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
 }
 
 static inline uint8_t get_K0(uint8_t row_idx, uint8_t time_alloc_type) {

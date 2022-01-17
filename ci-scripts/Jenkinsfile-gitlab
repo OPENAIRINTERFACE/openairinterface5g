@@ -404,26 +404,6 @@ pipeline {
                               }
                             }
                         }
-                        stage ("Test L2 simulator") {
-                            when {
-                                expression {doFullTestsuite}
-                            }
-                            steps {
-                              lock (vmResource) {
-                                script {
-                                    timeout (time: 30, unit: 'MINUTES') {
-                                        try {
-                                            gitlabCommitStatus(name: "Test L2-sim") {
-                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                                            }
-                                        } catch (Exception e) {
-                                            currentBuild.result = 'FAILURE'
-                                        }
-                                    }
-                                }
-                              }
-                            }
-                        }
                         stage ("Destroy all Virtual Machines") {
                             when {
                                 expression {doMandatoryTests}
@@ -654,28 +634,6 @@ pipeline {
                         always {
                             script {
                                 finalizeSlaveJob('eNB-UE-CI-MONO-FDD-Band7-B200')
-                            }
-                        }
-                        failure {
-                            script {
-                                currentBuild.result = 'FAILURE'
-                            }
-                        }
-                    }
-                }
-                stage ("Test OAI NR UE - OAI gNB - TDD - Band 78 - N300") {
-                    when {
-                        expression {doMandatoryTests}
-                    }
-                    steps {
-                        script {
-                            triggerSlaveJob ('gNB-nrUE-MONO-TDD-Band78-N300', 'Test-TDD-Band78-gNB-NR-UE')
-                        }
-                    }
-                    post {
-                        always {
-                            script {
-                                finalizeSlaveJob('gNB-nrUE-MONO-TDD-Band78-N300')
                             }
                         }
                         failure {

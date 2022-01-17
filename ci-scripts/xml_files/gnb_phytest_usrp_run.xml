@@ -21,21 +21,22 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>gNB-PHY-Test</htmlTabRef>
-        <htmlTabName>Run-gNB-PHY-Test</htmlTabName>
-        <htmlTabIcon>tasks</htmlTabIcon>	
+	<htmlTabRef>gNB-PHY-Test</htmlTabRef>
+	<htmlTabName>Run-gNB-PHY-Test</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>3</repeatCount>
 	<TestCaseRequestedList>
 090101 000001 090109
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
-	
-        <testCase id="090101">
-                <class>Initialize_eNB</class>
-                <desc>Initialize gNB USRP</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test -q -U 787200 -T 106 -t 28 -D 130175 -m 28 -M 106</Initialize_eNB_args>
+
+	<testCase id="090101">
+		<class>Initialize_eNB</class>
+		<desc>Initialize gNB USRP</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test -q -U 787200 -T 106 -t 28 -D 130175 -m 28 -M 106 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<air_interface>NR</air_interface>
-        </testCase>
+		<USRP_IPAddress>192.168.30.2</USRP_IPAddress>
+	</testCase>
 
 	<testCase id="000001">
 		<class>IdleSleep</class>
@@ -44,10 +45,10 @@
 	</testCase>
 
 
-        <testCase id="090109">
-                <class>Terminate_eNB</class>
-                <desc>Terminate gNB</desc>
+	<testCase id="090109">
+		<class>Terminate_eNB</class>
+		<desc>Terminate gNB</desc>
 		<air_interface>NR</air_interface>
-        </testCase>
+	</testCase>
 
 </testCaseList>

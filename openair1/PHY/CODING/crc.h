@@ -44,6 +44,8 @@
 
 #include "crcext.h"
 #include "types.h"
+#include <immintrin.h>
+#include <wmmintrin.h>
 
 /**
  * PCLMULQDQ CRC computation context structure

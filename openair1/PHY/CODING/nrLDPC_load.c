@@ -46,14 +46,14 @@ static loader_shlibfunc_t shlib_fdesc[3];
 
 /* arguments used when called from phy simulators exec's which do not use the config module */
 /* arg is used to initialize the config module so that the loader works as expected */
-char *arg[64]={"ldpctest","-O","cmdlineonly::dbgl0",NULL,NULL};
+char *arg[64]={"ldpctest",NULL};
 
 int load_nrLDPClib(char *version) {
 	 char *ptr = (char*)config_get_if();
 	 char libname[64]="ldpc";
 
      if ( ptr==NULL )  {// phy simulators, config module possibly not loaded
-     	 load_configmodule(0,(char **)NULL,CONFIG_ENABLECMDLINEONLY) ;
+     	 load_configmodule(1,arg,CONFIG_ENABLECMDLINEONLY) ;
      	 logInit();
      }	 
      shlib_fdesc[0].fname = "nrLDPC_decod";

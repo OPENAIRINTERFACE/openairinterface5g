@@ -33,7 +33,7 @@ MESSAGE_DEF(X2AP_SETUP_REQUEST_LOG              , MESSAGE_PRIORITY_MED, IttiMsgT
 /* eNB application layer -> X2AP messages */
 MESSAGE_DEF(X2AP_REGISTER_ENB_REQ               , MESSAGE_PRIORITY_MED, x2ap_register_enb_req_t          , x2ap_register_enb_req)
 MESSAGE_DEF(X2AP_SUBFRAME_PROCESS               , MESSAGE_PRIORITY_MED, x2ap_subframe_process_t          , x2ap_subframe_process)
-
+MESSAGE_DEF(X2AP_RESET_REQ                      , MESSAGE_PRIORITY_MED, x2ap_reset_req_t                 , x2ap_reset_req)
 /* X2AP -> eNB application layer messages */
 MESSAGE_DEF(X2AP_REGISTER_ENB_CNF               , MESSAGE_PRIORITY_MED, x2ap_register_enb_cnf_t          , x2ap_register_enb_cnf)
 MESSAGE_DEF(X2AP_DEREGISTERED_ENB_IND           , MESSAGE_PRIORITY_MED, x2ap_deregistered_enb_ind_t      , x2ap_deregistered_enb_ind)

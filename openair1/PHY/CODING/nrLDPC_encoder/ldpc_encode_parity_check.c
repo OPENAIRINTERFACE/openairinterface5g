@@ -38,8 +38,6 @@
 #include "common/utils/LOG/log.h"
 
 
-//#define DEBUG_LDPC
-
 #include "ldpc384_byte.c"
 #include "ldpc352_byte.c"
 #include "ldpc320_byte.c"

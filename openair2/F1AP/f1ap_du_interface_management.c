@@ -37,9 +37,6 @@
 #include "f1ap_du_interface_management.h"
 #include "assertions.h"
 
-
-static const int nrb_lut[29] = {11, 18, 24, 25, 31, 32, 38, 51, 52, 65, 66, 78, 79, 93, 106, 107, 121, 132, 133, 135, 160, 162, 189, 216, 217, 245, 264, 270, 273};
-
 int to_NRNRB(int nrb) {
   for (int i=0; i<sizeofArray(nrb_lut); i++)
     if (nrb_lut[i] == nrb)
@@ -603,6 +600,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
     // // /* - CHOICE NR-MODE-Info */
     F1AP_NR_Mode_Info_t *nR_Mode_Info=&served_cell_information->nR_Mode_Info;
+    LOG_E(F1AP,"Here hardcoded values instead of values from configuration file\n");
 
     if (f1ap_setup_req->fdd_flag) {
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
