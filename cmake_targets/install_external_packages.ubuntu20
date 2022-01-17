@@ -452,17 +452,6 @@ install_asn1c_from_source(){
     ) > "$asn1_install_log" 2>&1
 }
 
-#################################################
-# 2. compile
-################################################
-
-install_nas_tools() {
-    echo_success "generate .ue_emm.nvram .ue.nvram"
-    ./nvram --gen -c "$1" -o "$2"
-    ./usim --gen -c "$1" -o "$2"
-}
-
-
 ################################
 # set_openair_env
 ###############################
