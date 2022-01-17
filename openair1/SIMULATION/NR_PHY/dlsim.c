@@ -402,7 +402,7 @@ int main(int argc, char **argv)
   NR_UE_MAC_INST_t *UE_mac;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
   int run_initial_sync=0;
-  int loglvl=OAILOG_INFO;
+  int loglvl=OAILOG_WARNING;
 
   //float target_error_rate = 0.01;
   int css_flag=0;
@@ -647,6 +647,7 @@ int main(int argc, char **argv)
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
              argv[0]);
       printf("-h This message\n");
+      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");  
       //printf("-p Use extended prefix mode\n");
       //printf("-d Use TDD\n");
       printf("-n Number of frames to simulate\n");

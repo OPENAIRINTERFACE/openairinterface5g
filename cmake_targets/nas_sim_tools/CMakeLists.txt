@@ -15,6 +15,7 @@ set(CMAKE_C_FLAGS
 set(OPENAIR_DIR     $ENV{OPENAIR_DIR})
 set(OPENAIR3_DIR    $ENV{OPENAIR_DIR}/openair3)
 include_directories (${OPENAIR_DIR}/openair2/COMMON)
+include_directories (${OPENAIR_DIR})
 
 set(CONF2UEDATA_LIB_SRC
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_emm.c

@@ -920,7 +920,7 @@ int main( int argc, char **argv ) {
 #  define PACKAGE_VERSION "UNKNOWN"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-  configure_linux();
+  set_latency_target();
   get_options ();
   get_common_options(SOFTMODEM_GNB_BIT );
   AssertFatal(!CONFIG_ISFLAGSET(CONFIG_ABORT),"Getting configuration failed\n");
