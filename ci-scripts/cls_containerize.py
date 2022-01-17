@@ -736,7 +736,7 @@ class Containerize():
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 			# Analyzing log file!
-			filename = self.yamlPath[0] + '/rfsim?g-oai-?nb.log'
+			filename = self.yamlPath[0] + '/rfsim?g-oai-*.log' # 4g/enb, 5g/gnb, 5g/-du/-cu
 			logging.debug('\u001B[1m Analyzing xNB logfile \u001B[0m ' + filename)
 			cmd = 'ls ' + filename
 			logfileLs = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=5)
