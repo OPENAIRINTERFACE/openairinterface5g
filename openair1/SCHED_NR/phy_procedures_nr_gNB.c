@@ -369,10 +369,10 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 
 
   nr_ulsch_layer_demapping(gNB->pusch_vars[ULSCH_id]->llr,
-				     pusch_pdu->nrOfLayers,
-				     pusch_pdu->qam_mod_order,
-				     G,
-				     gNB->pusch_vars[ULSCH_id]->llr_layers);
+                           pusch_pdu->nrOfLayers,
+                           pusch_pdu->qam_mod_order,
+                           G,
+                           gNB->pusch_vars[ULSCH_id]->llr_layers);
              
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------

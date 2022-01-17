@@ -1213,7 +1213,6 @@ typedef struct
   uint8_t  transformPrecoder;
   uint16_t data_scrambling_id;
   uint8_t  nrOfLayers;
-  uint8_t  Tpmi;
   //DMRS
   uint16_t  ul_dmrs_symb_pos;
   uint8_t  dmrs_config_type;

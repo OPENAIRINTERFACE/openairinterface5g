@@ -33,6 +33,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/nr/nr_common.h"
 #include <limits.h>
+#include <executables/softmodem-common.h>
 
 #define reserved 0xffff
 
@@ -2531,6 +2532,30 @@ uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
   return -1;
 }
 
+uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
+                                   NR_SRS_Config_t *srs_config,
+                                   dci_field_t srs_resource_indicator) {
+
+  uint8_t n_antenna_port = 1;
+  if (get_softmodem_params()->phy_test == 1) {
+    // temporary hack to allow UL-MIMO in phy-test mode without SRS
+    n_antenna_port = *pusch_Config->maxRank;
+  }
+  else {
+    if(srs_config != NULL && srs_resource_indicator.nbits > 0) {
+      for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
+        NR_SRS_ResourceSet_t *srs_resource_set = srs_config->srs_ResourceSetToAddModList->list.array[rs];
+        if(srs_resource_set->usage == NR_SRS_ResourceSet__usage_codebook) {
+          NR_SRS_Resource_t *srs_resource = srs_config->srs_ResourceToAddModList->list.array[srs_resource_indicator.val];
+          AssertFatal(srs_resource != NULL,"SRS resource indicated by DCI does not exist\n");
+          n_antenna_port = 1<<srs_resource->nrofSRS_Ports;
+        }
+      }
+    }
+  }
+  return n_antenna_port;
+}
+
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                      const NR_CellGroupConfig_t *cg,
@@ -2544,17 +2569,16 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
   uint16_t numRBG = 0;
   long rbg_size_config;
   int num_entries = 0;
-  int pusch_antenna_ports = 1; // TODO hardcoded number of antenna ports for pusch
 
   const NR_BWP_DownlinkDedicated_t *bwpd = NULL;
   const NR_BWP_UplinkDedicated_t *ubwpd = NULL;
   const NR_BWP_DownlinkCommon_t *bwpc = NULL;
   const NR_BWP_UplinkCommon_t *ubwpc = NULL;
-  const NR_PDSCH_Config_t *pdsch_Config = NULL;
-  const NR_PUSCH_Config_t *pusch_Config = NULL;
-  const NR_PUCCH_Config_t *pucch_Config = NULL;
-  const NR_PDCCH_Config_t *pdcch_Config = NULL;
-  const NR_SRS_Config_t *srs_config = NULL;
+  NR_PDSCH_Config_t *pdsch_Config = NULL;
+  NR_PUSCH_Config_t *pusch_Config = NULL;
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+  NR_PDCCH_Config_t *pdcch_Config = NULL;
+  NR_SRS_Config_t *srs_config = NULL;
   if(bwp_id > 0) {
     AssertFatal(cg!=NULL,"Cellgroup is null and bwp_id!=0");
     bwpd=cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
@@ -2709,7 +2733,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       // Precoding info and number of layers
       long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
        
-	  pusch_antenna_ports = *pusch_Config->maxRank;
+      uint8_t pusch_antenna_ports = get_pusch_nb_antenna_ports(pusch_Config, srs_config, dci_pdu->srs_resource_indicator);
 	   
       dci_pdu->precoding_information.nbits=0;
       if (pusch_Config && 

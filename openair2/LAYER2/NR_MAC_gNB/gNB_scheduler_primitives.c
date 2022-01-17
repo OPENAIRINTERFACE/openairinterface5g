@@ -691,7 +691,6 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
                     "Non Codebook configuration non supported\n");
         dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
       }
-      AssertFatal((pusch_pdu->Tpmi==0), "unsupport Tpmi\n");
       dci_pdu_rel15->precoding_information.val= 0;
       if (pusch_pdu->nrOfLayers == 2)
       {

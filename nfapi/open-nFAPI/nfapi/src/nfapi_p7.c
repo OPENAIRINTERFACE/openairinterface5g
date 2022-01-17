@@ -950,7 +950,6 @@ static uint8_t pack_ul_tti_request_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu, ui
         push8(pusch_pdu->transformPrecoder, ppWritePackedMsg, end) &&
         push16(pusch_pdu->data_scrambling_id, ppWritePackedMsg, end) &&
         push8(pusch_pdu->nrOfLayers, ppWritePackedMsg, end) &&
-        push8(pusch_pdu->Tpmi, ppWritePackedMsg, end) &&
         push16(pusch_pdu->ul_dmrs_symb_pos, ppWritePackedMsg, end) &&
         push8(pusch_pdu->dmrs_config_type, ppWritePackedMsg, end) &&
         push16(pusch_pdu->ul_dmrs_scrambling_id, ppWritePackedMsg, end) &&
@@ -4449,7 +4448,6 @@ static uint8_t unpack_ul_tti_request_pusch_pdu(void *tlv, uint8_t **ppReadPacked
         pull8(ppReadPackedMsg, &pusch_pdu->transformPrecoder, end) &&
         pull16(ppReadPackedMsg, &pusch_pdu->data_scrambling_id, end) &&
         pull8(ppReadPackedMsg, &pusch_pdu->nrOfLayers, end) &&
-        pull8(ppReadPackedMsg, &pusch_pdu->Tpmi, end) &&
         pull16(ppReadPackedMsg, &pusch_pdu->ul_dmrs_symb_pos, end) &&
         pull8(ppReadPackedMsg, &pusch_pdu->dmrs_config_type, end) &&
         pull16(ppReadPackedMsg, &pusch_pdu->ul_dmrs_scrambling_id, end) &&

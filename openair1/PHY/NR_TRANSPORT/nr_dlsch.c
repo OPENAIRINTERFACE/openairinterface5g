@@ -285,7 +285,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     start_meas(&gNB->dlsch_resource_mapping_stats);
     for (int ap=0; ap<rel15->nrOfLayers; ap++) {
 
-      // DMRS params for this ap
+      // DMRS params for this poir
       get_Wt(Wt, ap, dmrs_Type);
       get_Wf(Wf, ap, dmrs_Type);
       delta = get_delta(ap, dmrs_Type);
