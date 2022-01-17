@@ -738,9 +738,6 @@ class Containerize():
 			# Analyzing log file!
 			filename = self.yamlPath[0] + '/rfsim?g-oai-*.log' # 4g/enb, 5g/gnb, 5g/-du/-cu
 			logging.debug('\u001B[1m Analyzing xNB logfile \u001B[0m ' + filename)
-			cmd = 'ls ' + filename
-			logfileLs = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=5)
-			logging.debug(logfileLs)
 			# For the moment just assume this exists
 			logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML)
 			if (logStatus < 0):
