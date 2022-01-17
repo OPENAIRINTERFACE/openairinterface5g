@@ -59,8 +59,8 @@ pipeline {
                             booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
                         jobResult = jobStatus.getResult()
-                        def build_url = jobStatus.getBuildVariables()["BUILD_URL"];
-                        def build_id = jobStatus.getBuildVariables()["BUILD_ID"];
+                        build_url = jobStatus.getAbsoluteUrl()                      
+                        build_id = jobStatus.getNumber().toString() 
                         GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult
                         echo GitPostArgs
 
