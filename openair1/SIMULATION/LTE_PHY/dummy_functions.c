@@ -86,12 +86,6 @@ int8_t get_Po_NOMINAL_PUSCH(module_id_t module_idP, uint8_t CC_id) { return(0);}
 
 int8_t get_deltaP_rampup(module_id_t module_idP, uint8_t CC_id) { return(0);}
 
-void thread_top_init(char *thread_name,
-                     int affinity,
-                     uint64_t runtime,
-                     uint64_t deadline,
-                     uint64_t period) {}
-
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
 

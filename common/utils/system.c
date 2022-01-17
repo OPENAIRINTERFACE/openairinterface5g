@@ -211,6 +211,19 @@ void start_background_system(void) {
   background_system_process();
 }
 
+int rt_sleep_ns (uint64_t x)
+{
+  struct timespec myTime;
+  clock_gettime(CLOCK_MONOTONIC, &myTime);
+  myTime.tv_sec += x/1000000000ULL;
+  myTime.tv_nsec = x%1000000000ULL;
+  if (myTime.tv_nsec>=1000000000) {
+    myTime.tv_nsec -= 1000000000;
+    myTime.tv_sec++;
+  }
+
+  return clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &myTime, NULL);
+}
 
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority){
   pthread_attr_t attr;
@@ -260,11 +273,128 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   pthread_attr_destroy(&attr);
 }
 
+// Legacy, pthread_create + thread_top_init() should be replaced by threadCreate
+// threadCreate encapsulates the posix pthread api
+void thread_top_init(char *thread_name,
+		     int affinity,
+		     uint64_t runtime,
+		     uint64_t deadline,
+		     uint64_t period) {
+  
+#ifdef DEADLINE_SCHEDULER
+  struct sched_attr attr;
+
+  unsigned int flags = 0;
+
+  attr.size = sizeof(attr);
+  attr.sched_flags = 0;
+  attr.sched_nice = 0;
+  attr.sched_priority = 0;
+
+  attr.sched_policy   = SCHED_DEADLINE;
+  attr.sched_runtime  = runtime;
+  attr.sched_deadline = deadline;
+  attr.sched_period   = period; 
+
+  if (sched_setattr(0, &attr, flags) < 0 ) {
+    perror("[SCHED] eNB tx thread: sched_setattr failed\n");
+    fprintf(stderr,"sched_setattr Error = %s",strerror(errno));
+    exit(1);
+  }
+
+#else //LOW_LATENCY
+  int policy, s, j;
+  struct sched_param sparam;
+  char cpu_affinity[1024];
+  cpu_set_t cpuset;
+  int settingPriority = 1;
+
+  /* Set affinity mask to include CPUs 2 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD threads */
+  /* CPU 1 is reserved for all RX_TX threads */
+  /* Enable CPU Affinity only if number of CPUs > 2 */
+  CPU_ZERO(&cpuset);
+
+#ifdef CPU_AFFINITY
+  if (affinity == 0) {
+    LOG_W(HW,"thread_top_init() called with affinity==0, but overruled by #ifdef CPU_AFFINITY\n");
+  }
+  else if (get_nprocs() > 2)
+  {
+    for (j = 2; j < get_nprocs(); j++)
+      CPU_SET(j, &cpuset);
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
+  }
+#else //CPU_AFFINITY
+  if (affinity) {
+    LOG_W(HW,"thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.\n");
+  }
+#endif //CPU_AFFINITY
+
+  /* Check the actual affinity mask assigned to the thread */
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity,0,sizeof(cpu_affinity));
+  for (j = 0; j < 1024; j++)
+  {
+    if (CPU_ISSET(j, &cpuset))
+    {  
+      char temp[1024];
+      sprintf (temp, " CPU_%d", j);
+      strcat(cpu_affinity, temp);
+    }
+  }
+
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        settingPriority = 0;
+
+  if (settingPriority) {
+    memset(&sparam, 0, sizeof(sparam));
+    sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    policy = SCHED_FIFO;
+  
+    s = pthread_setschedparam(pthread_self(), policy, &sparam);
+    if (s != 0) {
+      perror("pthread_setschedparam : ");
+      exit_fun("Error setting thread priority");
+    }
+  
+    s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+    if (s != 0) {
+      perror("pthread_getschedparam : ");
+      exit_fun("Error getting thread priority");
+    }
+
+    pthread_setname_np(pthread_self(), thread_name);
+
+    LOG_I(HW, "[SCHED][eNB] %s started on CPU %d, sched_policy = %s , priority = %d, CPU Affinity=%s \n",thread_name,sched_getcpu(),
+                     (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+                     (policy == SCHED_RR)    ? "SCHED_RR" :
+                     (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+                     "???",
+                     sparam.sched_priority, cpu_affinity );
+  }
+
+#endif //LOW_LATENCY
+}
+
+
 // Block CPU C-states deep sleep
-void configure_linux(void) {
+void set_latency_target(void) {
   int ret;
   static int latency_target_fd=-1;
-  uint32_t latency_target_value=10; // in microseconds
+  uint32_t latency_target_value=2; // in microseconds
   if (latency_target_fd == -1) {
     if ( (latency_target_fd = open("/dev/cpu_dma_latency", O_RDWR)) != -1 ) {
       ret = write(latency_target_fd, &latency_target_value, sizeof(latency_target_value));
