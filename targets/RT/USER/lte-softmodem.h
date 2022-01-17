@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <linux/sched.h>
-#include "rt_wrapper.h"
 #include <sched.h>
 #include <signal.h>
 #include <stdint.h>
@@ -21,7 +20,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "threads_t.h"
-#include "rt_wrapper.h"
 #include "../../ARCH/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
