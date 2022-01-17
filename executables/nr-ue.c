@@ -19,6 +19,8 @@
  *      contact@openairinterface.org
  */
 
+#define _GNU_SOURCE
+#include <pthread.h>
 #include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/phy_extern_nr_ue.h"
