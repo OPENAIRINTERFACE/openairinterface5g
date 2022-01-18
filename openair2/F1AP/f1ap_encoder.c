@@ -33,46 +33,9 @@
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
 
-int asn1_encoder_xer_print = 0;
+int asn1_encoder_xer_print = 1;
 
-/*
-static inline int f1ap_encode_initiating(f1ap_message *message,
-    uint8_t **buffer,
-    uint32_t *len);
-
-static inline int f1ap_encode_successfull_outcome(f1ap_message *message,
-    uint8_t **buffer, uint32_t *len);
-
-static inline int f1ap_encode_unsuccessfull_outcome(f1ap_message *message,
-    uint8_t **buffer, uint32_t *len);
-
-static inline int f1ap_encode_f1_setup_request(
-  F1ap_F1SetupRequestIEs_t *f1SetupRequestIEs, uint8_t **buffer, uint32_t *length);
-
-static inline int f1ap_encode_trace_failure(F1ap_TraceFailureIndicationIEs_t
-    *trace_failure_ies_p, uint8_t **buffer,
-    uint32_t *length);
-
-static inline int f1ap_encode_initial_context_setup_response(
-  F1ap_InitialContextSetupResponseIEs_t *initialContextSetupResponseIEs,
-  uint8_t **buffer,
-  uint32_t *length);
-
-static inline
-int f1ap_encode_ue_context_release_complete(
-  F1ap_UEContextReleaseCompleteIEs_t *f1ap_UEContextReleaseCompleteIEs,
-  uint8_t                           **buffer,
-  uint32_t                           *length);
-
-static inline
-int f1ap_encode_ue_context_release_request(
-  F1ap_UEContextReleaseRequestIEs_t *f1ap_UEContextReleaseRequestIEs,
-  uint8_t                              **buffer,
-  uint32_t                              *length);
-  */
-
-int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
-{
+int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length) {
   ssize_t    encoded;
   DevAssert(pdu != NULL);
   DevAssert(buffer != NULL);
@@ -84,11 +47,23 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
     LOG_E(F1AP, "----------------- ASN1 ENCODER PRINT END----------------- \n");
   }
 
-  AssertFatal((encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, pdu, (void **)buffer))>0,
-	      "Failed to encode F1AP message\n");
+  char errbuf[128]; /* Buffer for error message */
+  size_t errlen = sizeof(errbuf); /* Size of the buffer */
+  int ret = asn_check_constraints(&asn_DEF_F1AP_F1AP_PDU, pdu, errbuf, &errlen);
+
+  /* assert(errlen < sizeof(errbuf)); // Guaranteed: you may rely on that */
+  if(ret) {
+    fprintf(stderr, "Constraint validation failed: %s\n", errbuf);
+  }
+
+  encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, pdu, (void **)buffer);
+
+  if (encoded < 0) {
+    LOG_E(F1AP, "Failed to encode F1AP message\n");
+    return -1;
+  }
 
   *length = encoded;
-
   return encoded;
 }
 

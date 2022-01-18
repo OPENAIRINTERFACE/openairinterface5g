@@ -292,7 +292,7 @@ uint8_t compute_ri_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
     }
     return max_ri;
   }
-  else
+  else 
     AssertFatal(1==0,"Other configurations not yet implemented\n");
   return -1;
 }
@@ -563,6 +563,7 @@ void nr_csi_meas_reporting(int Mod_idP,
   }
 }
 
+__attribute__((unused))
 static void handle_dl_harq(module_id_t mod_id,
                            int UE_id,
                            int8_t harq_pid,
@@ -1094,8 +1095,10 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
       NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
-      if (!harq)
+      if (!harq) {
+        LOG_E(NR_MAC, "Oh no! Could not find a harq in %s!\n", __FUNCTION__);
         break;
+      }
       DevAssert(harq->is_waiting);
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
@@ -1416,6 +1419,7 @@ int nr_acknack_scheduling(int mod_id,
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
+
   if (pucch_Config) {
     const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
     DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
@@ -1464,8 +1468,11 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
              RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
       pucch_Config = RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
     }
+
     else continue;
-    if (!pucch_Config->schedulingRequestResourceToAddModList) continue;
+    if (!pucch_Config->schedulingRequestResourceToAddModList) 
+        continue;
+
     AssertFatal(pucch_Config->schedulingRequestResourceToAddModList->list.count>0,"NO SR configuration available");
 
     for (int SR_resource_id =0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++) {

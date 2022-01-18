@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-5gnr-down</htmlTabRef>
-        <htmlTabName>CleanUp 5G RF</htmlTabName>
+        <htmlTabName>CleanUp 5G RF - Monolithic gNB</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100002

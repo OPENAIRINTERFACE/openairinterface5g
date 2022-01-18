@@ -27,9 +27,8 @@
 set -e
 
 # Include helper functions
-ORIGIN_PATH=$PWD
-THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
-source $THIS_SCRIPT_PATH/tools/build_helper
+THIS_SCRIPT_PATH=$(dirname $(readlink -f "$0"))
+source "$THIS_SCRIPT_PATH"/tools/build_helper
 
 # Set environment variables (OPENAIR_HOME, ...)
 set_openair_env
@@ -38,7 +37,6 @@ set_openair_env
 gen_nvram_path=$OPENAIR_DIR/targets/bin
 conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
-MSC_GEN=0
 XFORMS="True"
 SKIP_SHARED_LIB_FLAG="False"
 UE_EXPANSION="False"
@@ -106,7 +104,7 @@ Options
 --nrUE
   Makes the NR UE softmodem
 --RU
-  Makes the OAI RRU (without full stack)
+  Makes the OAI RRU
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --UE-conf-nvram [configuration file]
@@ -208,28 +206,24 @@ function main() {
        -g | --run-with-gdb)
             case "$2" in
                 "Release")
-                    GDB=0
                     CMAKE_BUILD_TYPE="Release"
                     echo_info "Will Compile without gdb symbols and with compiler optimization"
                     CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Release"
                     shift
                     ;;
                 "RelWithDebInfo")
-                    GDB=0
                     CMAKE_BUILD_TYPE="RelWithDebInfo"
                     echo_info "Will Compile with gdb symbols"
                     CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_EXPORT_COMPILE_COMMANDS=1"
                     shift
                     ;;
                 "MinSizeRel")
-                    GDB=0
                     CMAKE_BUILD_TYPE="MinSizeRel"
                     echo_info "Will Compile for minimal exec size"
                     CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=MinSizeRel"
                     shift
                     ;;
                 "Debug" | *)
-                    GDB=1
                     CMAKE_BUILD_TYPE="Debug"
                     echo_info "Will Compile with gdb symbols and disable compiler optimization"
                     CMAKE_CMD="$CMAKE_CMD -DCMAKE_BUILD_TYPE=Debug"
@@ -244,37 +238,30 @@ function main() {
             shift;;
        --eNB)
             eNB=1
-            RU=0
             echo_info "Will compile eNB"
             shift;;
        --eNBocp)
             eNBocp=1
-            RU=0
             echo_info "Will compile OCP eNB"
             shift;;
       --gNB)
             gNB=1
-            RU=0
-            NR="True"
             echo_info "Will compile gNB"
             shift;;
        --RU)
-	          RU=1
+            RU=1
             echo_info "Will compile RRU"
 	    shift;;
        -a | --agent)
             echo_info "FlexRAN support is always compiled into the eNB"
             shift;;
        --UE)
-            RU=0
             UE=1
             echo_info "Will compile UE"
             shift;;
        --nrUE)
-            RU=0
             nrUE=1
             rfsimNas=1
-            NR="True"
             echo_info "Will compile NR UE"
             shift;;
        --mu)
@@ -282,10 +269,10 @@ function main() {
             echo_info "Will compile with UE_EXPANSION"
             shift;;
        --UE-conf-nvram)
-            conf_nvram_path=$(readlink -f $2)
+            conf_nvram_path=$(readlink -f "$2")
             shift 2;;
        --UE-gen-nvram)
-            gen_nvram_path=$(readlink -f $2)
+            gen_nvram_path=$(readlink -f "$2")
             shift 2;;
        -w | --hardware)
             # Use OAI_USRP as the key word USRP is used inside UHD driver           
@@ -309,7 +296,6 @@ function main() {
             shift 2;;
        -P | --phy_simulators)
             SIMUS_PHY=1
-	          RU=0
             echo_info "Will compile dlsim, ulsim, ..."
             shift;;
        -S | --core_simulators)
@@ -344,11 +330,11 @@ function main() {
             echo_info "Will compile hw latency test program"
             shift;;
        --verbose-ci)
-	        VERBOSE_CI=1
+            VERBOSE_CI=1
             echo_info "Will compile with verbose instructions in CI Docker env"
             shift;;
        --verbose-compile)
-	        VERBOSE_COMPILE=1
+            VERBOSE_COMPILE=1
             echo_info "Will compile with verbose instructions"
             shift;;
        --cflags_processor)
@@ -478,7 +464,7 @@ function main() {
   ########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" -o "$RU" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	      echo_info "No local radio head and no transport protocol selected"
       fi
@@ -629,7 +615,6 @@ function main() {
     echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
     echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
     echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
-    echo "set ( RU $RU )"                                                 >> $cmake_file
     echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
     echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
@@ -677,14 +662,10 @@ function main() {
         $build_dir $config_libconfig_shlib \
         lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
 
-      if [ "$RU" = "0" ] ; then
-
         compilations \
           $build_dir coding \
           libcoding.so $dbin/libcoding.so
 
-
-      fi
     fi
   fi
 
@@ -726,7 +707,7 @@ function main() {
 
     # generate USIM data
     if [ -f $dbin/conf2uedata ]; then
-      install_nas_tools $conf_nvram_path $gen_nvram_path
+      install_nas_tools $conf_nvram_path $gen_nvram_path "$dlog/conf2uedata.txt"
       echo_info "Copying UE specific part to $DIR/$build_dir/build"
       cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$build_dir/build
       cp -Rvf $dbin/.ue.nvram0 $DIR/$build_dir/build

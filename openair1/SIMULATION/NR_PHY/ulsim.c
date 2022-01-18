@@ -65,6 +65,7 @@
 
 #include <executables/softmodem-common.h>
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 //#define DEBUG_ULSIM
 
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
@@ -85,6 +86,13 @@ THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
 uint32_t N_RB_DL = 106;
 
+//Fixme: Uniq dirty DU instance, by global var, datamodel need better management
+instance_t DUuniqInstance=0;
+instance_t CUuniqInstance=0;
+teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
+                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
+return 0;
+}
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
@@ -120,11 +128,6 @@ rrc_data_ind(
 {
 }
 
-int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
-                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
-                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
-    return 0;
-}
 
 int
 gtpv1u_create_s1u_tunnel(
@@ -272,7 +275,7 @@ int main(int argc, char **argv)
 
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
-  int loglvl = OAILOG_INFO;
+  int loglvl = OAILOG_WARNING;
   //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 0;
@@ -600,6 +603,7 @@ int main(int argc, char **argv)
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
+      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n"); 
       printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -640,7 +644,7 @@ int main(int argc, char **argv)
   else if (N_RB_UL == 106) bandwidth = 40;
   else if (N_RB_UL == 32) bandwidth = 50;
   else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
-			   
+  LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
   if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
 
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
@@ -733,16 +737,12 @@ int main(int argc, char **argv)
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   cfg->carrier_config.num_tx_ant.value = n_tx;
   cfg->carrier_config.num_rx_ant.value = n_rx;
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
+//  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
 
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
-
-  //crcTableInit();
-
-  //nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
 
   //configure UE
@@ -1283,8 +1283,10 @@ int main(int argc, char **argv)
 
 	if (n_trials == 1  && round==0) {
 #ifdef __AVX2__
+	  __attribute__((unused))
 	  int off = ((nb_rb&1) == 1)? 4:0;
 #else
+	  __attribute__((unused))
 	  int off = 0;
 #endif
 

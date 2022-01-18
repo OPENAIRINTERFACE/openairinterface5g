@@ -41,6 +41,7 @@
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
+#include <openair1/PHY/MODULATION/nr_modulation.h>
 
 #if 0
 void phy_config_harq_ue(module_id_t Mod_id,
@@ -458,7 +459,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   ue->decode_SIB = 1;
 
   init_nr_prach_tables(839);
-
+  init_symbol_rotation(fp);
   return 0;
 }
 

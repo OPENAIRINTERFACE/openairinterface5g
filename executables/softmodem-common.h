@@ -98,6 +98,7 @@ extern "C"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 #define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 #define CONFIG_HLP_NFAPI         "Change the nFAPI mode for NR\n"
+#define CONFIG_L1_EMULATOR       "Run in L1 emulated mode (disable PHY layer)\n"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                          */
@@ -121,7 +122,10 @@ extern "C"
 #define USIM_TEST           softmodem_params.usim_test
 #define PRB_INTERPOLATION   softmodem_params.prb_interpolation
 #define NFAPI               softmodem_params.nfapi
+#define NSA                 softmodem_params.nsa
+#define NODE_NUMBER         softmodem_params.node_number
 #define NON_STOP            softmodem_params.non_stop
+#define EMULATE_L1          softmodem_params.emulate_l1
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -153,13 +157,16 @@ extern int usrp_tx_thread;
     {"basicsim",             CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&basicsim,                     defintval:0,           TYPE_INT,    0},                     \
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
-    {"do-prb-interpolation", CONFIG_HLP_PRBINTER,     PARAMFLAG_BOOL, iptr:&PRB_INTERPOLATION,            defintval:0,           TYPE_INT,    0},                     \
+    {"nsa",                  CONFIG_HLP_NSA,          PARAMFLAG_BOOL, iptr:&NSA,                          defintval:0,           TYPE_INT,    0},                     \
+    {"node-number",          NULL,                    0,              u16ptr:&NODE_NUMBER,                defuintval:0,          TYPE_UINT16, 0},                     \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},                     \
+    {"do-prb-interpolation", CONFIG_HLP_PRBINTER,     PARAMFLAG_BOOL, iptr:&PRB_INTERPOLATION,            defintval:0,           TYPE_INT,    0},                     \
     {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
     {"non-stop",             CONFIG_HLP_NONSTOP,      PARAMFLAG_BOOL, iptr:&NON_STOP,                     defintval:0,           TYPE_INT,    0},                     \
+    {"emulate-l1",           CONFIG_L1_EMULATOR,      PARAMFLAG_BOOL, iptr:&EMULATE_L1,                   defintval:0,           TYPE_INT,    0}                      \
   }
 
-  
+#define CONFIG_HLP_NSA           "Enable NSA mode \n"
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
 #define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
@@ -248,7 +255,10 @@ typedef struct {
   uint32_t       send_dmrs_sync;
   int            prb_interpolation;
   uint8_t        nfapi;
+  int            nsa;
+  uint16_t       node_number;
   int            non_stop;
+  int            emulate_l1;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);
@@ -269,6 +279,7 @@ void tx_func(void *param);
 void rx_func(void *param);
 void ru_tx_func(void *param);
 extern uint8_t nfapi_mode;
+extern int16_t vnf_pnf_sfnslot_delta;
 #ifdef __cplusplus
 }
 #endif

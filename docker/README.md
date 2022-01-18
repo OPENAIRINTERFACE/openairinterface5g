@@ -29,12 +29,18 @@
 
 For all platforms, the strategy for building docker/podman images is the same:
 
-*  First we create a common shared image that contains:
+*  First we create a common shared image `ran-base` that contains:
    -  the latest source files (by using the `COPY` function)
    -  all the means to build an OAI RAN executable
       *  all packages, compilers, ...
       *  especially UHD is installed 
-*  Then from this shared image (`ran-build`) we can build target images for:
+*  Then, from the `ran-base` shared image, we create a shared image `ran-build`
+   in which all targets are compiled:
+   -  eNB
+   -  gNB
+   -  lte-UE
+   -  nr-UE
+*  Then from the `ran-build` shared image we can build target images for:
    -  eNB
    -  gNB
    -  lte-UE
@@ -58,7 +64,8 @@ Dockerfiles are named with the following naming convention: `Dockerfile.${target
 
 Targets can be:
 
--  `ran` for an image named `ran-build` (the shared image)
+-  `base` for an image named `ran-base` (shared image)
+-  `ran` for an image named `ran-build` (shared image)
 -  `eNB` for an image named `oai-enb`
 -  `gNB` for an image named `oai-gnb`
 -  `lteUE` for an image named `oai-lte-ue`
@@ -85,9 +92,11 @@ For more details in build within a Openshift Cluster, see [OpenShift README](../
 * `docker-ce` installed
 * Pulling `ubuntu:bionic` from DockerHub
 
-## 3.2. Building the shared image ##
+## 3.2. Building the shared images ##
 
-This can be done starting `2020.w41` tag on the `develop` branch, or any branch that includes that tag.
+Note: This can be done starting `2020.XX` tag on the `develop` branch, or any branch that includes that tag.
+
+There are two shared images: one that has all dependencies, and a second that compiles all targets (eNB, gNB, [nr]UE).
 
 ```bash
 git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
@@ -98,21 +107,25 @@ git checkout develop
 In our Eurecom/OSA environment we need to pass a GIT proxy.
 
 ```bash
-docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.ran.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" .
+docker build --target ran-base --tag ran-base:latest --file docker/Dockerfile.base.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" .
+docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" .
 ```
 
 if you don't need it, do NOT pass any value:
 
 ```bash
-docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.ran.ubuntu18 .
+docker build --target ran-base --tag ran-base:latest --file docker/Dockerfile.base.ubuntu18 .
+docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.ubuntu18 .
 ```
 
-After a while:
+After building both:
 
 ```bash
 docker image ls
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-ran-build           latest              ccb721bc0b57        1 minute ago        4.06GB
+ran-build           latest              f2633a7f5102        1 minute ago        6.81GB
+ran-base            latest              5c9c02a5b4a8        1 minute ago        2.4GB
+
 ...
 ```
 
@@ -131,7 +144,8 @@ docker image ls
 REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
 oai-enb             latest              25ddbd8b7187        1 minute ago        516MB
 <none>              <none>              875ea3b05b60        8 minutes ago       8.18GB
-ran-build           latest              ccb721bc0b57        1 hour ago          4.06GB
+ran-build           latest              f2633a7f5102        1 hour ago          6.81GB
+ran-base            latest              5c9c02a5b4a8        1 hour ago          2.4GB
 ```
 
 Do not forget to remove the temporary image:
