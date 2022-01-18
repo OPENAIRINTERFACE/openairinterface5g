@@ -44,14 +44,14 @@ void pcfich_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                          int16_t *d)
 {
 
-  uint8_t reset = 1;
-  uint32_t x1 = 0;
-  uint32_t s = 0;
+  uint32_t i;
+  uint8_t reset;
+  uint32_t x1=0, x2=0, s=0;
 
-  // x1 is set in lte_gold_generic
-  uint32_t x2 = ((((2*frame_parms->Nid_cell)+1)*(1+subframe))<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.7.1
+  reset = 1;
+  x2 = ((((2*frame_parms->Nid_cell)+1)*(1+subframe))<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.7.1
 
-  for (uint32_t i=0; i<32; i++) {
+  for (i=0; i<32; i++) {
     if ((i&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       //printf("lte_gold[%d]=%x\n",i,s);

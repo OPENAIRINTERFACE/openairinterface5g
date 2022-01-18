@@ -346,7 +346,7 @@ class RANManagement():
 		
 		#reboot USRP if requested in xml
 		if self.USRPIPAddress!='':
-			logging.debug('USRP '+ self.USRPIPAddress +'reboot request')
+			logging.debug('USRP '+ self.USRPIPAddress +': reboot request')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			cmd2usrp='ssh root@'+self.USRPIPAddress+' reboot'
 			mySSH.command2(cmd2usrp,1)

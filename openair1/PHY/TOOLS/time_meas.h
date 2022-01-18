@@ -115,7 +115,24 @@ static inline uint32_t rdtsc_oai(void) {
 #define CPUMEAS_DISABLE  0
 #define CPUMEAS_ENABLE   1
 #define CPUMEAS_GETSTATE 2
-int cpumeas(int action);
+static inline int cpumeas(int action) {
+  switch (action) {
+    case CPUMEAS_ENABLE:
+      opp_enabled = 1;
+      break;
+
+    case CPUMEAS_DISABLE:
+      opp_enabled = 0;
+      break;
+
+    case CPUMEAS_GETSTATE:
+    default:
+      break;
+  }
+
+  return opp_enabled;
+}
+
 static inline void start_meas(time_stats_t *ts) {
   if (opp_enabled) {
     if (ts->meas_flag==0) {

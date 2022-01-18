@@ -1541,6 +1541,10 @@ set(PHY_LDPC_CL_SRC
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder_optim8segmulti.c
 )
+add_custom_target( nrLDPC_decoder_kernels_CL
+                   COMMAND gcc ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c -dD -DNRLDPC_KERNEL_SOURCE -E -o ${CMAKE_CURRENT_BINARY_DIR}/nrLDPC_decoder_kernels_CL.clc
+                   SOURCES ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_CL.c
+)
 
 set(PHY_NR_CODINGIF
   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_load.c;
@@ -1551,6 +1555,7 @@ add_library(ldpc_optim MODULE ${PHY_LDPC_OPTIM_SRC} )
 add_library(ldpc_optim8seg MODULE ${PHY_LDPC_OPTIM8SEG_SRC} )
 add_library(ldpc_cl MODULE ${PHY_LDPC_CL_SRC} )
 target_link_libraries(ldpc_cl OpenCL)
+add_dependencies(ldpc_cl nrLDPC_decoder_kernels_CL)
 
 if (CUDA_FOUND)
   cuda_add_library(ldpc_cuda MODULE ${PHY_LDPC_CUDA_SRC} )
@@ -2767,7 +2772,6 @@ target_link_libraries (test5Gnas LIB_5GNAS_GNB CONFIG_LIB minimal_lib )
 ###################################################
 
 add_executable(lte-softmodem
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
@@ -2882,7 +2886,6 @@ target_link_libraries(du_test
 add_executable(oairu
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
@@ -2910,7 +2913,6 @@ target_link_libraries (oairu pthread m ${CONFIG_LIB} rt ${CMAKE_DL_LIBS} ${T_LIB
 #######################################
 
 add_executable(lte-uesoftmodem
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
