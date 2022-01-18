@@ -196,8 +196,8 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
                     (int)dl_bwp_id-1);
        *bwpd = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated;
        if (mac->DLbwp[dl_bwp_id-1]->bwp_Common) *bwpc = mac->DLbwp[dl_bwp_id-1]->bwp_Common;
-       else if (mac->scc_SIB) *bwpc = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
        else if (mac->scc) *bwpc = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
+       else if (mac->scc_SIB) *bwpc = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
        AssertFatal(*bwpc!=NULL,"bwpc shouldn't be null\n");
     } else {
        if (mac->cg &&
@@ -205,8 +205,8 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
            mac->cg->spCellConfig->spCellConfigDedicated &&
            mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)
           *bwpd = mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
-       if (mac->scc_SIB) *bwpc = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
-       else if (mac->scc) *bwpc = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
+       if (mac->scc) *bwpc = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
+       else if (mac->scc_SIB) *bwpc = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
        AssertFatal(*bwpc!=NULL,"bwpc shouldn't be null\n");
     }
 
@@ -215,8 +215,8 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
                    ul_bwp_id-1);
        *ubwpd = mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated;
        if (mac->ULbwp[ul_bwp_id-1]->bwp_Common) *ubwpc = mac->ULbwp[ul_bwp_id-1]->bwp_Common;
-       else if (mac->scc_SIB) *ubwpc = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
        else if (mac->scc) *ubwpc = mac->scc->uplinkConfigCommon->initialUplinkBWP;
+       else if (mac->scc_SIB) *ubwpc = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
        AssertFatal(*bwpc!=NULL,"bwpc shouldn't be null\n");
 
     }
@@ -227,8 +227,8 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
            mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
            mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
           *ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
-       if (mac->scc_SIB) *ubwpc = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
-       else if (mac->scc) *ubwpc = mac->scc->uplinkConfigCommon->initialUplinkBWP;
+       if (mac->scc) *ubwpc = mac->scc->uplinkConfigCommon->initialUplinkBWP;
+       else if (mac->scc_SIB) *ubwpc = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
        AssertFatal(*ubwpc!=NULL,"ubwpc shouldn't be null\n");
     }
 }
@@ -630,6 +630,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
   uint16_t n_RB_DLBWP;
   if (dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1]) n_RB_DLBWP = NRRIV2BW(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  else if (mac->scc) n_RB_DLBWP =  NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   else if (mac->scc_SIB) n_RB_DLBWP =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   else n_RB_DLBWP = mac->type0_PDCCH_CSS_config.num_rbs;
 
@@ -834,6 +835,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
         dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing;
         pdsch_config = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
+      } else if (mac->scc) {
+        dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        dlsch_config_pdu_1_0->SubcarrierSpacing = mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+        pdsch_config = NULL;
       } else if (mac->scc_SIB) {
         dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
         dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);

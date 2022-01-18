@@ -534,19 +534,19 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
                           NR_BWP_Id_t dl_bwp_id) {
 
 
-  NR_BWP_DownlinkCommon_t *bwp_Common;
-  if (dl_bwp_id>0)
-     bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
-  else {
-    if (mac->scc_SIB)
-      bwp_Common = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
-    else
-      bwp_Common = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
+  NR_BWP_DownlinkCommon_t *bwp_Common = NULL;
+  if(dl_bwp_id > 0 && scd->downlinkBWP_ToAddModList) {
+    bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
+  } else if(mac->scc) {
+    bwp_Common = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
+  } else if(mac->scc_SIB) {
+    bwp_Common = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
   }
+
+  AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
 
   NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
   AssertFatal(pdcch_ConfigCommon != NULL, "pdcch_ConfigCommon is null\n");
-  AssertFatal(pdcch_ConfigCommon->choice.setup->ra_SearchSpace != NULL, "ra_SearchSpace must be available in DL BWP\n");
 
   // configuring eventual common coreset
   NR_ControlResourceSet_t *coreset = pdcch_ConfigCommon->choice.setup->commonControlResourceSet;

@@ -1526,7 +1526,6 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   // one symbol (13)
   NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
   pucchres0->pucch_ResourceId=0;
-  //pucchres0->startingPRB=0;
   pucchres0->startingPRB=(8+uid) % curr_bwp;
   LOG_D(NR_RRC, "pucchres0->startPRB %ld rnti %d curr_bwp %d\n", pucchres0->startingPRB, rnti, curr_bwp);
   pucchres0->intraSlotFrequencyHopping=NULL;
@@ -1670,7 +1669,7 @@ void fill_initial_SpCellConfig(rnti_t rnti,
   pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
   NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig = calloc(1,sizeof(*schedulingRequestResourceConfig));
   schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
-  schedulingRequestResourceConfig->schedulingRequestID= 0;
+  schedulingRequestResourceConfig->schedulingRequestID = 0;
   schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
   schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
   // note: make sure that there is no issue here. Later choose the RNTI accordingly.
