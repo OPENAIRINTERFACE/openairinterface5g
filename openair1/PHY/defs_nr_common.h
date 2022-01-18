@@ -113,7 +113,6 @@
 #define NR_NB_TH_SLOT 2
 
 extern const uint8_t nr_rv_round_map[4]; 
-extern const uint8_t nr_rv_round_map_ue[4]; 
 
 static inline
 uint8_t nr_rv_to_round(uint8_t rv)
