@@ -876,7 +876,6 @@ int main( int argc, char **argv ) {
     nr_phy_free_RU(RC.ru[inst]);
   }
 
-  free_lte_top();
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
   pthread_cond_destroy(&nfapi_sync_cond);
