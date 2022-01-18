@@ -873,6 +873,7 @@ int main( int argc, char **argv ) {
   }
 
   for (int inst = 0; inst < NB_RU; inst++) {
+    kill_NR_RU_proc(inst);
     nr_phy_free_RU(RC.ru[inst]);
   }
 
