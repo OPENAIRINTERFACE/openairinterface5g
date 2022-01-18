@@ -73,7 +73,7 @@
 
 /* Defs */
 #define MAX_NUM_BWP 5
-#define MAX_NUM_CORESET 2
+#define MAX_NUM_CORESET 12
 #define MAX_NUM_CCE 90
 #define MAX_HARQ_ROUNDS 4
 /*!\brief Maximum number of random access process */
@@ -654,7 +654,7 @@ typedef struct {
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
   /// CCE indexing
-  int Y[MAX_MOBILES_PER_GNB][3][160];
+  int Y[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET][160];
   int m[MAX_MOBILES_PER_GNB];
   int num_pdcch_cand[MAX_MOBILES_PER_GNB][MAX_NUM_CORESET];
   // UE selected beam index

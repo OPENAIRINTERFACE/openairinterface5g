@@ -1117,7 +1117,7 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
       if (pdsch_Config->aperiodic_ZP_CSI_RS_ResourceSetsToAddModList != NULL)
         AssertFatal(1==0,"Aperiodic ZP CSI-RS currently not supported\n");
       // transmission configuration indication
-      if (pdcch_Config->controlResourceSetToAddModList->list.array[controlResourceSetId-1]->tci_PresentInDCI != NULL)
+      if (pdcch_Config->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI != NULL)
         AssertFatal(1==0,"TCI in DCI currently not supported\n");
       //srs resource set
       if (CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->carrierSwitching!=NULL) {
@@ -1852,18 +1852,18 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
   return -1;
 }
 
-void set_Y(int Y[3][160], rnti_t rnti) {
+void set_Y(int Y[MAX_NUM_CORESET][160], rnti_t rnti) {
   const int A[3] = {39827, 39829, 39839};
   const int D = 65537;
 
-  Y[0][0] = (A[0] * rnti) % D;
-  Y[1][0] = (A[1] * rnti) % D;
-  Y[2][0] = (A[2] * rnti) % D;
+  for (int i = 0; i < MAX_NUM_CORESET; i++) {
+    Y[i][0] = (A[i%3] * rnti) % D;
+  }
 
   for (int s = 1; s < 160; s++) {
-    Y[0][s] = (A[0] * Y[0][s - 1]) % D;
-    Y[1][s] = (A[1] * Y[1][s - 1]) % D;
-    Y[2][s] = (A[2] * Y[2][s - 1]) % D;
+    for (int i = 0; i < MAX_NUM_CORESET; i++) {
+      Y[i][s] = (A[i%3] * Y[i][s - 1]) % D;
+    }
   }
 }
 
