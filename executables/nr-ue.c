@@ -700,6 +700,16 @@ void processSlotRX(void *arg) {
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
+  if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
+    /* send tick to RLC and PDCP every ms */
+    if (proc->nr_slot_rx % UE->frame_parms.slots_per_subframe == 0) {
+      void nr_rlc_tick(int frame, int subframe);
+      void nr_pdcp_tick(int frame, int subframe);
+      nr_rlc_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+      nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+    }
+  }
+
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
 
     if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
@@ -722,14 +732,6 @@ void processSlotRX(void *arg) {
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
-
-      /* send tick to RLC and PDCP every ms */
-      if (proc->nr_slot_rx % UE->frame_parms.slots_per_subframe == 0) {
-        void nr_rlc_tick(int frame, int subframe);
-        void nr_pdcp_tick(int frame, int subframe);
-        nr_rlc_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
-        nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
-      }
     }
     // calling UL_indication to schedule things other than PUSCH (eg, PUCCH)
     rxtxD->ue_sched_mode = NOT_PUSCH;

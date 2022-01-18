@@ -656,7 +656,7 @@ int main( int argc, char **argv ) {
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   logInit();
-  configure_linux();
+  set_latency_target();
   printf("Reading in command-line options\n");
   get_options ();
 
@@ -873,10 +873,10 @@ int main( int argc, char **argv ) {
   }
 
   for (int inst = 0; inst < NB_RU; inst++) {
+    kill_NR_RU_proc(inst);
     nr_phy_free_RU(RC.ru[inst]);
   }
 
-  free_lte_top();
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
   pthread_cond_destroy(&nfapi_sync_cond);
@@ -886,9 +886,6 @@ int main( int argc, char **argv ) {
   // *** Handle per CC_id openair0
 
   for(ru_id=0; ru_id<NB_RU; ru_id++) {
-    if (RC.ru[ru_id]->rfdevice.trx_end_func)
-      RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-
     if (RC.ru[ru_id]->ifdevice.trx_end_func)
       RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
   }

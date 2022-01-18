@@ -217,6 +217,11 @@ void T_Config_Init(void) {
                          sizeof(ttraceparams) / sizeof(paramdef_t),
                          NULL);
 
-  if (T_stdout == 0)
+  if (T_stdout < 0 || T_stdout > 2) {
+    printf("fatal error: T_stdout = %d but only values 0, 1, or 2 are allowed\n", T_stdout);
+    exit(1);
+  }
+
+  if (T_stdout == 0 || T_stdout == 2)
     T_init(T_port, 1-T_nowait, T_dont_fork);
 }

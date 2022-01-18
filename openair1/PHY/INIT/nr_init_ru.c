@@ -193,7 +193,7 @@ void nr_phy_free_RU(RU_t *ru)
     free_and_zero(ru->common.rxdata_7_5kHz);
 
     // free beamforming input buffers (TX)
-    for (i = 0; i < 15; i++) free_and_zero(ru->common.txdataF[i]);
+    for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdataF[i]);
     free_and_zero(ru->common.txdataF);
 
     // free IFFT input buffers (TX)
@@ -209,10 +209,12 @@ void nr_phy_free_RU(RU_t *ru)
 	free_and_zero(ru->prach_rxsigF[j][i]);
       }
     }
-    for (i = 0; i < ru->num_gNB; i++) {
-      for (p = 0; p < 15; p++) {
-	  for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
-	  free_and_zero(ru->beam_weights[i][p]);
+    if (ru->do_precoding == 1) {
+      for (i = 0; i < ru->num_gNB; i++) {
+        for (p = 0; p < ru->nb_log_antennas; p++) {
+          for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
+          free_and_zero(ru->beam_weights[i][p]);
+        }
       }
     }
   }

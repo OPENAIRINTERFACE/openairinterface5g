@@ -346,7 +346,7 @@ class RANManagement():
 		
 		#reboot USRP if requested in xml
 		if self.USRPIPAddress!='':
-			logging.debug('USRP '+ self.USRPIPAddress +'reboot request')
+			logging.debug('USRP '+ self.USRPIPAddress +': reboot request')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			cmd2usrp='ssh root@'+self.USRPIPAddress+' reboot'
 			mySSH.command2(cmd2usrp,1)
@@ -738,8 +738,8 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png log/*/*.log log/*/*.pcap', '\$', 60)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png log/*/*.log log/*/*.pcap', '\$', 15)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 15)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):

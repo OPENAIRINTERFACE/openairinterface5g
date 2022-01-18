@@ -831,7 +831,8 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   AssertFatal((rfsimulator->epollfd = epoll_create1(0)) != -1,"");
 
-  //randominit(0);
+  // we need to call randominit() for telnet server (use gaussdouble=>uniformrand)
+  randominit(0);
   set_taus_seed(0);
   /* look for telnet server, if it is loaded, add the channel modeling commands to it */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);

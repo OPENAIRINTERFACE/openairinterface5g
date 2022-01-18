@@ -1953,7 +1953,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   uint8_t aarx, aatx;
   uint32_t nb_re_pusch, bwp_start_subcarrier;
-  int avgs;
+  int avgs = 0;
 
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
