@@ -314,13 +314,13 @@ int main(int argc, char **argv)
   double effTP[100]; 
   float eff_tp_check = 100;
   uint8_t snrRun;
-  int prb_inter = 0;
+  int chest_type[2] = {0};
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;
   /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
   int ptrs_arg[2] = {-1,-1};// Invalid values
-  int dmrs_arg[3] = {-1,-1,-1};// Invalid values
+  int dmrs_arg[4] = {-1,-1,-1,-1};// Invalid values
   uint16_t ptrsSymPos = 0;
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:t:u:w:y:z:B:F:G:H:I:M:N:PR:S:T:U:L:Z:W:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:q:r:s:t:u:w:y:z:F:G:H:I:M:N:PR:S:T:U:L:Z:W:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -441,7 +441,9 @@ int main(int argc, char **argv)
       break;
       
     case 'i':
-      prb_inter=1;
+      for(i=0; i < atoi(optarg); i++){
+        chest_type[i] = atoi(argv[optind++]);
+      }
       break;
 	
     case 'k':
@@ -467,6 +469,10 @@ int main(int argc, char **argv)
       
     case 'p':
       extended_prefix_flag = 1;
+      break;
+
+    case 'q':
+      mcs_table = atoi(optarg);
       break;
       
     case 'r':
@@ -520,10 +526,6 @@ int main(int argc, char **argv)
       }
       break;
 
-    case 'B':
-      mcs_table = atoi(optarg);
-      break;
-      
     case 'F':
       input_fd = fopen(optarg, "r");
       if (input_fd == NULL) {
@@ -605,20 +607,20 @@ int main(int argc, char **argv)
       printf("-f Number of frames to simulate\n");
       printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
       printf("-h This message\n");
-      printf("-i Activate PRB based averaging for channel estimation. Frequncy domain interpolation by default.\n");
+      printf("-i Change channel estimation technique. Arguments list: Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
       printf("-p Use extended prefix mode\n");
-      //printf("-t Delay spread for multipath channel\n");
+      printf("-q MCS table\n");
+      printf("-t Delay spread for multipath channel\n");
       printf("-u Set the numerology\n");
       printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used at UE\n");
       printf("-z Number of RX antennas used at gNB\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-      printf("-B MCS table\n");
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
@@ -632,7 +634,7 @@ int main(int argc, char **argv)
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-P Print ULSCH performances\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
-      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:3}, e.g. -U 2 0 2 \n");
+      printf("-U Change DMRS Config, arguments list: DMRS Mapping Type{0=A,1=B}, DMRS AddPos{0:3}, DMRS Config Type{1,2}, Number of CDM groups without data{1,2,3} e.g. -U 4 0 2 0 1 \n");
       printf("-Q If -F used, read parameters from file\n");
       printf("-Z If -Z is used, SC-FDMA or transform precoding is enabled in Uplink \n");
       printf("-W Num of layer for PUSCH\n");
@@ -727,7 +729,6 @@ int main(int argc, char **argv)
   gNB->UL_INFO.crc_ind.crc_list = (nfapi_nr_crc_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_crc_t));
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
-  gNB->prb_interpolation = prb_inter;
   gNB->max_ldpc_iterations = max_ldpc_iterations;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
@@ -792,6 +793,8 @@ int main(int argc, char **argv)
   cfg->carrier_config.num_tx_ant.value = 1;
   cfg->carrier_config.num_rx_ant.value = n_rx;
 //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
+  gNB->chest_freq = chest_type[0];
+  gNB->chest_time = chest_type[1];
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 

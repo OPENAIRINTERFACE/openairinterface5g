@@ -66,6 +66,7 @@
 #include "NR_RRCReconfiguration.h"
 #define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
@@ -434,7 +435,7 @@ int main(int argc, char **argv)
   uint16_t rbSize = 106;
   uint8_t  mcsIndex = 9;
   uint8_t  dlsch_threads = 0;
-  int      prb_inter = 0;
+  int      chest_type[2] = {0};
   uint8_t  max_ldpc_iterations = 5;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
@@ -446,7 +447,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:q:m:w:T:U:X:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:x:y:z:M:N:F:GR:dPI:L:Ea:b:d:e:m:w:T:U:qX:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -503,7 +504,9 @@ int main(int argc, char **argv)
       break;
 
     case 'i':
-      prb_inter=1;
+      for(i=0; i < atoi(optarg); i++){
+        chest_type[i] = atoi(argv[optind++]);
+      }
       break;
 
     case 'n':
@@ -590,9 +593,7 @@ int main(int argc, char **argv)
       break;
       
     case 'I':
-      run_initial_sync=1;
-      //target_error_rate=0.1;
-      slot = 0;
+      max_ldpc_iterations = atoi(optarg);
       break;
 
     case 'L':
@@ -637,10 +638,6 @@ int main(int argc, char **argv)
       output_fd = fopen("txdata.dat", "w+");
       break;
 
-    case 'Q':
-      max_ldpc_iterations = atoi(optarg);
-      break;
-
     case 'T':
       enable_ptrs=1;
       for(i=0; i < atoi(optarg); i++) {
@@ -660,6 +657,12 @@ int main(int argc, char **argv)
       gNBthreads[sizeof(gNBthreads)-1]=0;
       break;
 
+    case 'Y':
+      run_initial_sync=1;
+      //target_error_rate=0.1;
+      slot = 0;
+      break;
+      
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -675,7 +678,7 @@ int main(int argc, char **argv)
       printf("-g [A,B,C,D,E,F,G,R] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models or R for MIMO model (ignores delay spread and Ricean factor)\n");
       printf("-y Number of TX antennas used in gNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      printf("-i Activate PRB based averaging for channel estimation. Frequncy domain interpolation by default.\n");
+      printf("-i Change channel estimation technique. Arguments list: Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}\n");
       //printf("-j Relative strength of second intefering gNB (in dB) - cell_id mod 3 = 2\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -692,13 +695,14 @@ int main(int argc, char **argv)
       printf("-e MSC index\n");
       printf("-q MCS Table index\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
+      printf("-I Maximum LDPC decoder iterations\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
-      printf("-Q Maximum LDPC decoder iterations\n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
       printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
-      printf("-X gNB thread pool configuration, n => no threads");
+      printf("-X gNB thread pool configuration, n => no threads\n");
+      printf("-Y Run initial sync in UE\n");
       exit (-1);
       break;
     }
@@ -989,7 +993,8 @@ int main(int argc, char **argv)
   UE->if_inst->phy_config_request = nr_ue_phy_config_request;
   UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
-  UE->prb_interpolation = prb_inter;
+  UE->chest_freq = chest_type[0];
+  UE->chest_time = chest_type[1];
 
   UE_mac->if_module = nr_ue_if_module_init(0);
 
