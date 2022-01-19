@@ -51,7 +51,7 @@ pipeline {
                         COMMIT_ID=COMMIT_ID.trim()
                         echo "Testing NSA on : ${MR} ${SRC_BRANCH} ${COMMIT_ID}"
                         commit = COMMIT_ID.replace("\"","")
-                        GitPostArgs += MR + ' ' + commit + ' '
+                        GitPostArgs = MR + ' ' + commit + ' '
                         echo GitPostArgs
 
                         //calling LTE 2x2
