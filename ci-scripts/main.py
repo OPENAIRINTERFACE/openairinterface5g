@@ -155,6 +155,11 @@ def GetParametersFromXML(action):
 	elif action == 'Initialize_eNB':
 		RAN.eNB_Trace=test.findtext('eNB_Trace')
 		RAN.eNB_Stats=test.findtext('eNB_Stats')
+		datalog_rt_stats_file=test.findtext('rt_stats_cfg')
+		if datalog_rt_stats_file is None:
+			RAN.datalog_rt_stats_file='datalog_rt_stats.default.yaml'
+		else:
+			RAN.datalog_rt_stats_file=datalog_rt_stats_file
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		USRPIPAddress=test.findtext('USRP_IPAddress')
