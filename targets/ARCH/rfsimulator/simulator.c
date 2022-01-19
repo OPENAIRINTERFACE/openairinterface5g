@@ -740,7 +740,15 @@ static int rfsimulator_get_stats(openair0_device *device) {
 static int rfsimulator_reset_stats(openair0_device *device) {
   return 0;
 }
-static void rfsimulator_end(openair0_device *device) {}
+static void rfsimulator_end(openair0_device *device) {
+  rfsimulator_state_t* s = device->priv;
+  for (int i = 0; i < FD_SETSIZE; i++) {
+    buffer_t *b = &s->buf[i];
+    if (b->conn_sock >= 0 )
+      close(b->conn_sock);
+  }
+  close(s->epollfd);
+}
 static int rfsimulator_stop(openair0_device *device) {
   return 0;
 }
