@@ -243,7 +243,6 @@ nrUE_params_t *get_nrUE_params(void) {
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
-//const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
 
 channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
 
