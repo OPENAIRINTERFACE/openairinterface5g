@@ -82,6 +82,7 @@
 
 #define NR_MAX_PRS_LENGTH 3264 //272*6(max allocation per RB)*2(QPSK)
 #define NR_MAX_PRS_INIT_LENGTH_DWORD 102 // ceil(NR_MAX_CSI_RS_LENGTH/32)
+#define NR_MAX_NUM_PRS_SYMB 12
 
 #define NR_MAX_PUSCH_DMRS_LENGTH NR_MAX_PDSCH_DMRS_LENGTH 
 #define NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD
@@ -372,7 +373,23 @@ struct NR_DL_FRAME_PARMS {
   uint32_t ofdm_offset_divisor;
 };
 
-
+// PRS structures prototype
+typedef struct prs {
+    int PRSResourceSetPeriod[2]; //[slot period, slot offset]
+    int PRSResourceOffset; // array if more than one resource sets.slot offset (0...511) (default 0)
+    int PRSResourceRepetition;// slot offset (1 (default), 2, 4, 6, 8, 16, 32)
+    int PRSResourceTimeGap; // slot offset (1 (default), 2, 4, 6, 8, 16, 32)
+    int NumRB; //number of RBs in freq domain a scalar =< 275 RB
+    int NumPRSSymbols; //number of PRS symbols in time domain
+    int SymbolStart; //starting OFDM symbol of PRS resource in time domain
+    int RBOffset; //Starting PRB index of all PRS resources in a PRS resource set.
+    int CombSize; //RE density of all PRS resources in a PRS resource set. i∈{2,4,6,12}
+    int REOffset; //Starting RE offset in the first OFDM symbol of each PRS resource in a PRS resource set.
+    int MutingPattern1[2]; //Muting bit pattern option-1, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32.
+    int MutingPattern2[2];
+    int MutingBitRepetition;
+    int NPRSID;
+} prs_data_t;
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)

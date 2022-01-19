@@ -28,11 +28,154 @@
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "filt16a_32.h"
 
 //#define DEBUG_PDSCH
 //#define DEBUG_PDCCH
+//#define DEBUG_CH
+#define DEBUG_PRS_CHEST
+extern short nr_qpsk_mod_table[8];
 
+int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
+                              UE_nr_rxtx_proc_t *proc,
+                              NR_DL_FRAME_PARMS *frame_params)
+{
+  // Get K_Prime from the table for the length of PRS or LPRS
+  int k_prime_table[4][12] = {
+        {0,1,0,1,0,1,0,1,0,1,0,1},
+        {0,2,1,3,0,2,1,3,0,2,1,3},
+        {0,3,1,4,2,5,0,3,1,4,2,5},
+        {0,6,3,9,1,7,4,10,2,8,5,11}};
+    
+  int32_t **rxdataF      = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  uint32_t **nr_gold_prs = ue->nr_gold_prs[proc->nr_slot_rx];
+  prs_data_t *prs_cfg    = &ue->prs_cfg;
+  
+  int16_t *prs_chest, ch[2] = {0}, *rxF, *pil, *fl,*fm,*fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
+  int16_t k_prime = 0, k = 0;
+  uint8_t idx = prs_cfg->NPRSID;
+  uint8_t rxAnt = 0; // ant 0 rxdataF for now
+
+  printf("Inside nr_prs_channel_estimation proc->thread_id %d, proc->nr_slot_rx %d\n", proc->thread_id, proc->nr_slot_rx);
+  for(int l = prs_cfg->SymbolStart; l < prs_cfg->SymbolStart+prs_cfg->NumPRSSymbols; l++)
+  {
+    int symInd = l-prs_cfg->SymbolStart;
+    if (prs_cfg->CombSize == 2) {
+      k_prime = k_prime_table[0][symInd];
+    }
+    else if (prs_cfg->CombSize == 4){
+      k_prime = k_prime_table[1][symInd];
+    }
+    else if (prs_cfg->CombSize == 6){
+      k_prime = k_prime_table[2][symInd];
+    }
+    else if (prs_cfg->CombSize == 12){
+      k_prime = k_prime_table[3][symInd];
+    }
+   
+  printf("PRS config l %d k_prime %d:\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", l, k_prime, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
+    //TODO currently supported only comb_size 2 and 4
+    switch (k_prime) {
+      case 0:
+        fl = filt16a_l0;
+        fm = filt16a_m0;
+        fr = filt16a_r0;
+        break;
+      
+      case 1:
+        fl = filt16a_l1;
+        fm = filt16a_m1;
+        fr = filt16a_r1;
+        break;
+
+      case 2:
+        fl = filt16a_l2;
+        fm = filt16a_m2;
+        fr = filt16a_r2;
+        break;
+
+      case 3:
+        fl = filt16a_l3;
+        fm = filt16a_m3;
+        fr = filt16a_r3;
+        break;
+
+      default:
+        printf("nr=prs channel_estimation: k_prime=%d -> ERROR\n",k_prime);
+        return(-1);
+        break;
+    }
+    
+    //re_offset
+    k = (prs_cfg->REOffset+k_prime) % prs_cfg->CombSize + frame_params->first_carrier_offset;
+   
+    // Pilots generation and modulation
+    for (int m = 0; m < (12/prs_cfg->CombSize)*prs_cfg->NumRB; m++) 
+    {
+      idx = (((nr_gold_prs[l][(m<<1)>>5])>>((m<<1)&0x1f))&3);
+      mod_prs[m<<1]     = nr_qpsk_mod_table[idx<<1];
+      mod_prs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
+    } 
+
+    pil       = (int16_t *)&mod_prs[0];
+    rxF       = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
+    prs_chest = (int16_t *)&ue->prs_ch_estimates[rxAnt][l*frame_params->ofdm_symbol_size];
+    memset(prs_chest,0,4*(ue->frame_parms.ofdm_symbol_size));
+    for(int pIdx = 0; pIdx < prs_cfg->NumRB*(12/prs_cfg->CombSize); pIdx+=3) 
+    {
+      //pilot 0
+      ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
+      ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+      
+#ifdef DEBUG_PRS_CHEST
+      printf("pilIdx %d at k %d of l %d reIdx %d rxF %d %d ch[0] %d ch[1] %d\n", pIdx, k, l, (l*frame_params->ofdm_symbol_size + k), rxF[0], rxF[1], ch[0], ch[1]);
+#endif
+      
+      multadd_real_vector_complex_scalar(fl,
+				       ch,
+				       prs_chest,
+				       16);
+      
+      pil +=2;
+      k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
+      rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
+      
+      //pilot 1
+      ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
+      ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+      
+      multadd_real_vector_complex_scalar(fm,
+				       ch,
+				       prs_chest,
+				       16);
+      
+      pil +=2;
+      k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
+      rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
+      
+      //pilot 2
+      ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
+      ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+      
+      multadd_real_vector_complex_scalar(fr,
+				       ch,
+				       prs_chest,
+				       16);
+      
+      pil +=2;
+      k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
+      rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
+      for (int re = 0; re < 12; re++)
+        printf("prs_ch[%d] %d %d\n", re, prs_chest[re<<1], prs_chest[(re<<1)+1]);
+      
+      prs_chest +=24; 
+    } //for m
+  } //for l
+  
+  LOG_M("prsEst.m","prs_chest",&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumRB*12,1,1 );
+  return(0);
+}
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,
@@ -395,6 +538,10 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 					 ch,
 					 dl_ch,
 					 16);
+#ifdef DEBUG_CH
+      for (int re = 0; re < 12; re++)
+        printf("dl_ch[%d] %d %d\n", re, dl_ch[re<<1], dl_ch[(re<<1)+1]);
+#endif
       pil += 2;
       re_offset = (re_offset+4) % ue->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+re_offset)];
@@ -485,8 +632,8 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 
 #ifdef DEBUG_PDCCH
-  printf("PDCCH Channel Estimation : ThreadId %d, gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",proc->thread_id, gNB_id,ch_offset,ue->frame_parms.ofdm_symbol_size,
-         ue->frame_parms.Ncp,Ns,k, symbol);
+  printf("PDCCH Channel Estimation : ThreadId %d, gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, symbol %d\n",
+         proc->thread_id, gNB_id,ch_offset,ue->frame_parms.ofdm_symbol_size,ue->frame_parms.Ncp,Ns,symbol);
 #endif
 
   fl = filt16a_l1;

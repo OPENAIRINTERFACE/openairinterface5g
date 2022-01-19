@@ -1716,6 +1716,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
+      //PRS channel estimation
+      nr_prs_channel_estimation(ue,proc,fp);
     }
 
     nr_ue_rsrp_measurements(ue, gNB_id, proc, nr_slot_rx, 0);

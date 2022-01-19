@@ -108,7 +108,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   prs_data.NumPRSSymbols=6;
   prs_data.NumRB=273;
   prs_data.RBOffset=0;
-  prs_data.CombSize=6;
+  prs_data.CombSize=4;
   prs_data.REOffset=0;
   prs_data.PRSResourceOffset=0;
   prs_data.PRSResourceRepetition=1;
@@ -239,7 +239,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   prs_data.NumPRSSymbols=6;
   prs_data.NumRB=273;
   prs_data.RBOffset=0;
-  prs_data.CombSize=6;
+  prs_data.CombSize=4;
   prs_data.REOffset=0;
   prs_data.PRSResourceOffset=0;
   prs_data.PRSResourceRepetition=1;

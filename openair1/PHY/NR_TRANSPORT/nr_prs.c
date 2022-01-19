@@ -4,7 +4,7 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/sse_intrin.h"
 
-//#define DEBUG_PRS_MOD
+#define DEBUG_PRS_MOD
 #define DEBUG_PRS_MAP
 
 extern short nr_qpsk_mod_table[8];
@@ -65,7 +65,7 @@ printf("m %d idx %d gold seq %d mod_prs %d %d\n", m, idx, nr_gold_prs[l][(m<<1)>
 #endif
       
 #ifdef DEBUG_PRS_MAP
-printf("m %d at k %d of l %d\n", m, k, l);
+printf("m %d at k %d of l %d reIdx %d\n", m, k, l, (l*frame_parms->ofdm_symbol_size + k)<<1);
 #endif
       
       ((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_prs[m<<1]) >> 15;

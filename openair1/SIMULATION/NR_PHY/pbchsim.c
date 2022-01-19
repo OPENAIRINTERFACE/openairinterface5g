@@ -722,16 +722,35 @@ int main(int argc, char **argv)
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
 	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms,ssb_index);
 
-        int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
-	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
+  int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
+      
+  for(int j = 0; j < frame_parms->symbols_per_slot; j++)
+  {
           nr_slot_fep(UE,
                       &proc,
-                      i%frame_parms->symbols_per_slot,
+                      j%frame_parms->symbols_per_slot,
                       ssb_slot);
+  }
 
+	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
           nr_pbch_channel_estimation(UE,&proc,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+  }
 
-        }
+      UE->prs_cfg.PRSResourceSetPeriod[0]=40; // PRS resource slot period
+      UE->prs_cfg.PRSResourceSetPeriod[1]=0;  // resource slot offset
+      UE->prs_cfg.SymbolStart=7;		
+      UE->prs_cfg.NumPRSSymbols=6;
+      UE->prs_cfg.NumRB=273;
+      UE->prs_cfg.RBOffset=0;
+      UE->prs_cfg.CombSize=4;
+      UE->prs_cfg.REOffset=0;
+      UE->prs_cfg.PRSResourceOffset=0;
+      UE->prs_cfg.PRSResourceRepetition=1;
+      UE->prs_cfg.PRSResourceTimeGap=1;
+      UE->prs_cfg.NPRSID=0;
+
+      //PRS channel estimation
+      nr_prs_channel_estimation(UE,&proc,frame_parms);
 
         ret = nr_rx_pbch(UE,
                          &proc,

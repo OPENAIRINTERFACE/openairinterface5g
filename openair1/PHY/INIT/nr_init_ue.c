@@ -194,6 +194,22 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
 
+  //PRS init
+  ue->nr_gold_prs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+  uint32_t ***prs = ue->nr_gold_prs;
+  AssertFatal(prs!=NULL, "NR UE init: positioning reference signal malloc failed\n");
+
+  for (int slot=0; slot<fp->slots_per_frame; slot++) {
+    prs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+    AssertFatal(prs[slot]!=NULL, "NR UE init: positioning reference signal for slot %d - malloc failed\n", slot);
+
+    for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+      prs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+      AssertFatal(prs[slot][symb]!=NULL, "NR UE init: positioning reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
+    }
+  }
+  nr_gold_prs(ue);
+
   /////////////////////////PUSCH DMRS init/////////////////////////
   ///////////
   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
@@ -318,6 +334,16 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
     prach_vars[gNB_id] = (NR_UE_PRACH *)malloc16_clear(sizeof(NR_UE_PRACH));
     pbch_vars[gNB_id] = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
+
+    // PRS channel estimates
+    ue->prs_ch_estimates = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    AssertFatal(ue->prs_ch_estimates!=NULL, "NR UE init: PRS channel estimates malloc failed\n");
+
+    for (i=0; i<fp->nb_antennas_rx; i++) {
+      ue->prs_ch_estimates[i] = (int32_t *)malloc16(2*fp->ofdm_symbol_size*NR_MAX_NUM_PRS_SYMB);
+      AssertFatal(ue->prs_ch_estimates[i]!=NULL, "NR UE init: PRS channel estimates malloc failed %d\n", i);
+    }
+
 
     if (abstraction_flag == 0) {
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
