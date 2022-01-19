@@ -363,6 +363,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     for (int i = 0; i < fp->nb_antennas_rx; i++) {
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext[i]);
       free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2[i]);
+      free_and_zero(pusch_vars[ULSCH_id]->rho[i]);
     }
     for (int i = 0; i < 4*fp->nb_antennas_rx; i++) {
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_estimates[i]);
@@ -376,7 +377,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_magb0[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_mag[i]);
       free_and_zero(pusch_vars[ULSCH_id]->ul_ch_magb[i]);
-      free_and_zero(pusch_vars[ULSCH_id]->rho[i]);
     }
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext);
     free_and_zero(pusch_vars[ULSCH_id]->rxdataF_ext2);
