@@ -49,7 +49,6 @@ void pcfich_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   uint32_t x1=0, x2=0, s=0;
 
   reset = 1;
-  // x1 is set in lte_gold_generic
   x2 = ((((2*frame_parms->Nid_cell)+1)*(1+subframe))<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.7.1
 
   for (i=0; i<32; i++) {

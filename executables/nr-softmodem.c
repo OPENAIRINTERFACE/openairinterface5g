@@ -656,7 +656,7 @@ int main( int argc, char **argv ) {
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   logInit();
-  configure_linux();
+  set_latency_target();
   printf("Reading in command-line options\n");
   get_options ();
 
