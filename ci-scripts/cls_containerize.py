@@ -730,20 +730,34 @@ class Containerize():
 				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
 				logging.debug(cmd)
 				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+		fullStatus = True
 		if anyLogs:
 			cmd = 'mkdir -p '+ logPath + ' && cp ' + self.yamlPath[0] + '/*.log ' + logPath
 			logging.debug(cmd)
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 			# Analyzing log file!
-			filename = self.yamlPath[0] + '/rfsim?g-oai-*.log' # 4g/enb, 5g/gnb, 5g/-du/-cu
-			logging.debug('\u001B[1m Analyzing xNB logfile \u001B[0m ' + filename)
-			# For the moment just assume this exists
-			logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML)
-			if (logStatus < 0):
-				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
-			else:
-				HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+			listOfPossibleRanContainers = ['enb', 'gnb', 'cu', 'du']
+			for container in listOfPossibleRanContainers:
+				filename = self.yamlPath[0] + '/rfsim?g-oai-' + container + '.log'
+				cmd = 'ls ' + filename
+				containerStatus = True
+				try:
+					lsStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+					filename = str(lsStatus).strip()
+				except:
+					containerStatus = False
+				if not containerStatus:
+					continue
+
+				logging.debug('\u001B[1m Analyzing xNB logfile ' + filename + ' \u001B[0m')
+				# For the moment just assume this exists
+				logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML)
+				if (logStatus < 0):
+					fullStatus = False
+					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
+				else:
+					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 
 			cmd = 'rm ' + self.yamlPath[0] + '/*.log'
 			logging.debug(cmd)
@@ -761,6 +775,7 @@ class Containerize():
 				logging.debug(cmd)
 				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
+		logging.debug('\u001B[1m Undeploying \u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml down'
 		logging.debug(cmd)
 		try:
@@ -777,8 +792,12 @@ class Containerize():
 		logging.debug(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
-		HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
-		logging.info('\u001B[1m Undeploying OAI Object(s) PASS\u001B[0m')
+		if fullStatus:
+			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
+			logging.info('\u001B[1m Undeploying OAI Object(s) PASS\u001B[0m')
+		else:
+			HTML.CreateHtmlTestRow('n/a', 'KO', CONST.ALL_PROCESSES_OK)
+			logging.info('\u001B[1m Undeploying OAI Object(s) FAIL\u001B[0m')
 
 	def PingFromContainer(self, HTML):
 		self.exitStatus = 0
