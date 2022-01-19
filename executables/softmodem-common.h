@@ -72,7 +72,7 @@ extern "C"
 #define CONFIG_HLP_DLMCS         "Set the maximum downlink MCS\n"
 #define CONFIG_HLP_STMON         "Enable processing timing measurement of lte softmodem on per subframe basis \n"
 #define CONFIG_HLP_256QAM        "Use the 256 QAM mcs table for PDSCH\n"
-#define CONFIG_HLP_CHESTFREQ     "Set channel estimation type in frequency domain. 0-Linear interpolation (default). 1-PRB based averaging of channel estimates in frequency. \n"
+#define CONFIG_HLP_CHESTFREQ     "Set channel estimation type in frequency domain. 0-Linear interpolation. 1-PRB based averaging of channel estimates in frequency (default). \n"
 #define CONFIG_HLP_CHESTTIME     "Set channel estimation type in time domain. 0-Symbols take estimates of the last preceding DMRS symbol (default). 1-Symbol based averaging of channel estimates in time. \n"
 
 #define CONFIG_HLP_NONSTOP       "Go back to frame sync mode after 100 consecutive PBCH failures\n"
@@ -164,7 +164,7 @@ extern int usrp_tx_thread;
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
     {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
-    {"chest-freq",           CONFIG_HLP_CHESTFREQ,    0,              iptr:&CHEST_FREQ,                   defintval:0,           TYPE_INT,    0},                     \
+    {"chest-freq",           CONFIG_HLP_CHESTFREQ,    0,              iptr:&CHEST_FREQ,                   defintval:1,           TYPE_INT,    0},                     \
     {"chest-time",           CONFIG_HLP_CHESTTIME,    0,              iptr:&CHEST_TIME,                   defintval:0,           TYPE_INT,    0},                     \
     {"nsa",                  CONFIG_HLP_NSA,          PARAMFLAG_BOOL, iptr:&NSA,                          defintval:0,           TYPE_INT,    0},                     \
     {"node-number",          NULL,                    0,              u16ptr:&NODE_NUMBER,                defuintval:0,          TYPE_UINT16, 0},                     \
