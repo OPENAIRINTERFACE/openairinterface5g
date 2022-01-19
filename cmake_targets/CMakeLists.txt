@@ -301,12 +301,8 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
 else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
   if(EXISTS  "/proc/cpuinfo")
     file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
-<<<<<<< HEAD
-    if (CPUINFO MATCHES "avx512bw")
-=======
     message("NOAVX512 is ${NOAVX512}")
     if (CPUINFO MATCHES "avx512bw" AND "${NOAVX512}" STREQUAL "False")
->>>>>>> 74ce2cf4be34a6c62ea74116c4b1c45d3cbf1536
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx512bw -march=skylake-avx512 -mtune=skylake-avx512 " )
       set(COMPILATION_AVX2 "True")
     else()
