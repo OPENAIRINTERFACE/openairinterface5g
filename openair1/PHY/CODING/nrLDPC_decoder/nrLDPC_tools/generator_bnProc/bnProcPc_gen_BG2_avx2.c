@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <immintrin.h>
 #include "../../nrLDPCdecoder_defs.h"

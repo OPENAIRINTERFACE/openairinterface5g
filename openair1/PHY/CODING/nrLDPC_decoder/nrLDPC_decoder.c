@@ -494,11 +494,7 @@ if (BG==1)
 
     // First iteration finished
 
-<<<<<<< HEAD
-    while ( (i < (numMaxIter-1)) && (pcRes != 0) )
-=======
     while ( (i < numMaxIter) && (pcRes != 0) )
->>>>>>> 74ce2cf4be34a6c62ea74116c4b1c45d3cbf1536
     {
         // Increase iteration counter
         i++;

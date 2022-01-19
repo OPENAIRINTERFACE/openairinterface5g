@@ -1,7 +1,6 @@
-
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
-#include <immintrin.h>
 #include "../../nrLDPCdecoder_defs.h"
 #include "../../nrLDPC_types.h"
 

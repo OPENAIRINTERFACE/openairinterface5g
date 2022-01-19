@@ -1,5 +1,5 @@
 C=gcc
-CFLAGS=-W -Wall -mavx2
+CFLAGS=-W -Wall -mavx2 -DCODEGEN=1
 LDFLAGS=
 EXEC=bnProc_gen_avx512
 SRC= $(wildcard *.c)
@@ -13,7 +13,7 @@ bnProc_gen_avx512: $(OBJ)
 
 
 %.o: %.c
-	@$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -g -std=c99  
+	@$(CC) -o $@ -c $< $(CFLAGS) -I ${OPENAIR_HOME}/openair1 -I ${OPENAIR_HOME}/common/utils -I ${OPENAIR_HOME}/common/utils/T -I ${OPENAIR_HOME}/openair2/COMMON -g -std=c99  
 
 .PHONY: clean mrproper
 

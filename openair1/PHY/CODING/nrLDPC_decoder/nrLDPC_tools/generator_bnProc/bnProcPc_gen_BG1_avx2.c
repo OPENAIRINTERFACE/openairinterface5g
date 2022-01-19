@@ -1,9 +1,6 @@
-
-
-
-
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
-#include <immintrin.h>
 #include "../../nrLDPCdecoder_defs.h"
 #include "../../nrLDPC_types.h"
 
@@ -17,7 +14,7 @@ void nrLDPC_bnProcPc_BG1_generator_AVX2(int R)
 
  // system("mkdir -p ../ldpc_gen_files");
 
-  char fname[50];
+  char fname[500];
   sprintf(fname,"../ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG1_R%s_AVX2.h",ratestr[R]);
   FILE *fd=fopen(fname,"w");
   if (fd == NULL) {printf("Cannot create \n");abort();}
