@@ -298,16 +298,7 @@ void nr_processULSegment(void* arg) {
   stop_meas(&phy_vars_gNB->ulsch_deinterleaving_stats);
 
 
-  /*LOG_D(PHY,"HARQ_PID %d Rate Matching Segment %d (coded bits %d,unpunctured/repeated bits %d, TBS %d, mod_order %d, nb_rb %d, Nl %d, rv %d, round %d)...\n",
-        harq_pid,r, G,
-        Kr*3,
-        ulsch_harq->TBS,
-        Qm,
-        nb_rb,
-        n_layers,
-        pusch_pdu->pusch_data.rv_index,
-        ulsch_harq->round);*/
-  //////////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////////////////////////////////
 
 
   //////////////////////////////////////////////////////////////////////////////////////////
@@ -387,13 +378,13 @@ void nr_processULSegment(void* arg) {
 
   if (check_crc((uint8_t*)llrProcBuf,length_dec,ulsch_harq->F,crc_type)) {
 #ifdef PRINT_CRC_CHECK
-      LOG_I(PHY, "Segment %d CRC OK, iterations %d/%d\n",r,no_iteration_ldpc,max_ldpc_iterations);
+      LOG_I(PHY,"Segment %d CRC OK, iterations %d/%d\n",r,no_iteration_ldpc,max_ldpc_iterations);
 #endif
     rdata->decodeIterations = no_iteration_ldpc;
     if (rdata->decodeIterations > p_decoderParms->numMaxIter) rdata->decodeIterations--;
   } else {
 #ifdef PRINT_CRC_CHECK
-      LOG_I(PHY, "CRC NOK\n");
+      LOG_I(PHY,"CRC NOK\n");
 #endif
     rdata->decodeIterations = max_ldpc_iterations + 1;
   }
@@ -480,7 +471,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   A   = (harq_process->TBS)<<3;
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d, Coderate %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers, R);
+  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, Coderate %d RV %d round %d\n",
+        harq_pid, A, G, mcs, n_layers, nb_rb, Qm, R, pusch_pdu->pusch_data.rv_index, harq_process->round);
 
   if (R<1024)
     Coderate = (float) R /(float) 1024;

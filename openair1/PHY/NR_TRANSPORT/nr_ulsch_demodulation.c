@@ -347,14 +347,12 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
     if (is_dmrs_symbol == 0) {
       //
       //rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
-      if (start_re + nb_re_pusch < frame_parms->ofdm_symbol_size) 
-      {
+      if (start_re + nb_re_pusch < frame_parms->ofdm_symbol_size) {
         memcpy1((void*)rxF_ext,
                 (void*)&rxF[start_re*2],
                 nb_re_pusch*sizeof(int32_t));
       } 
-      else 
-      {
+      else {
         int neg_length = frame_parms->ofdm_symbol_size-start_re;
         int pos_length = nb_re_pusch-neg_length;
         memcpy1((void*)rxF_ext,(void*)&rxF[start_re*2],neg_length*sizeof(int32_t));
@@ -373,8 +371,7 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
         memcpy1((void*)ul_ch0_ext,(void*)ul_ch0,nb_re_pusch*sizeof(int32_t));
       }
     }
-    else 
-    { 
+    else {
       #ifdef SUPPORT_PMI_MATRIC  
       for (aatx = 0; aatx < pusch_pdu->nrOfLayers; aatx++)
       #else
@@ -390,26 +387,22 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
         ul_ch0_ext_index = 0;
         ul_ch0_index = 0;        
         
-        for (re = 0; re < nb_re_pusch; re++) 
-        {  
+        for (re = 0; re < nb_re_pusch; re++) {
           uint16_t k= start_re+re;
                 
           is_data_re = allowed_xlsch_re_in_dmrs_symbol(k, start_re, frame_parms->ofdm_symbol_size, pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dmrs_config_type);
           
-          if (++k >= frame_parms->ofdm_symbol_size)
-          {
+          if (++k >= frame_parms->ofdm_symbol_size) {
             k -= frame_parms->ofdm_symbol_size;
           }
 
           #ifdef DEBUG_RB_EXT
-          printf("re = %d, kprime %d, n %d, is_dmrs_symbol = %d, symbol = %d\n", re, k_prime, n, is_dmrs_symbol, symbol);
+          printf("re = %d, is_dmrs_symbol = %d, symbol = %d\n", re, is_dmrs_symbol, symbol);
           #endif
 
           /* save only data and respective channel estimates */
-          if (is_data_re == 1) 
-          { 
-            if (aatx == aarx)
-            {
+          if (is_data_re == 1) {
+            if (aatx == aarx) {
               rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
               rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)]);
               rxF_ext_index +=2;
@@ -1206,8 +1199,7 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
   if (n_rx > 1) 
   {
     #if defined(__x86_64__) || defined(__i386__)
-    for (int aatx=0; aatx<nrOfLayers; aatx++)
-    {      
+    for (int aatx=0; aatx<nrOfLayers; aatx++) {
       int nb_re = nb_rb*12;
 
       rxdataF_comp128[0]   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
@@ -2002,8 +1994,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
           gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] = 0;
           gNB->pusch_vars[ulsch_id]->ulsch_noise_power[aarx] = 0;
         }
-        for (aatx = 0; aatx < rel15_ul->nrOfLayers; aatx++)
-        { 
+        for (aatx = 0; aatx < rel15_ul->nrOfLayers; aatx++) {
           gNB->pusch_vars[ulsch_id]->ulsch_power[aarx] += signal_energy_nodc(
             &gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aatx*gNB->frame_parms.nb_antennas_rx+aarx][symbol * frame_parms->ofdm_symbol_size],
             rel15_ul->rb_size * 12);
