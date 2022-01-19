@@ -425,34 +425,18 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
     AssertFatal(1==0,"Handle DCI searching when CellGroup without dedicated BWP\n");
   }
   // Search space 0, CORESET ID 0
-
-  NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
-
-  if (pdcch_ConfigCommon &&
-      pdcch_ConfigCommon->choice.setup->searchSpaceSIB1 &&
-      !get_softmodem_params()->nsa) {
-
-    NR_SearchSpace_t *ss0 = mac->search_space_zero;
-    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-
-    if (ss0->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
-      if( (frame%2 == mac->type0_PDCCH_CSS_config.sfn_c) && (slot == mac->type0_PDCCH_CSS_config.n_0) ){
-        rel15->num_dci_options = 1;
-        rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-        config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
-        fill_dci_search_candidates(ss0, rel15);
-      }
-    }
-  }
-  else if (!get_softmodem_params()->nsa) { // use coreset0/ss0
+  if (!get_softmodem_params()->nsa) {
     NR_SearchSpace_t *ss0 = mac->search_space_zero;
     if(ss0) {
-      fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15;
+      fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
       rel15->num_dci_options = 1;
       rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-      config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C , -1);
+      config_dci_pdu(mac,
+                     rel15,
+                     dl_config,
+                     ((frame%2==mac->type0_PDCCH_CSS_config.sfn_c)&&(slot==mac->type0_PDCCH_CSS_config.n_0)) ? NR_RNTI_SI : NR_RNTI_C,
+                     -1);
       fill_dci_search_candidates(ss0, rel15);
-      dl_config->number_pdus = 1;
     }
   }
 }
