@@ -532,6 +532,7 @@ class EPCManagement():
 			logging.debug('Terminating OAI CN5G')
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
 			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 60)
+			mySSH.command('docker volume prune --force || true', '\$', 60)
 			time.sleep(2)
 			mySSH.command('tshark -r /tmp/oai-cn5g.pcap | egrep --colour=never "Tracking area update" ','\$', 30)
 			result = re.search('Tracking area update request', mySSH.getBefore())
@@ -760,6 +761,7 @@ class EPCManagement():
 			nbContainers += 1
 
 		mySSH.command('docker-compose down', '\$', 60)
+		mySSH.command('docker volume prune --force || true', '\$', 60)
 		mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' ' + listOfContainers, '\$', 10)
 		noMoreContainerNb = mySSH.getBefore().count('No such object')
 		mySSH.command('docker inspect --format=\'{{.Name}}\' prod-oai-public-net prod-oai-private-net', '\$', 10)
