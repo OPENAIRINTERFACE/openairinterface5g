@@ -715,7 +715,7 @@ function main() {
 
     # generate USIM data
     if [ -f $dbin/conf2uedata ]; then
-      install_nas_tools $conf_nvram_path $gen_nvram_path
+      install_nas_tools $conf_nvram_path $gen_nvram_path "$dlog/conf2uedata.txt"
       echo_info "Copying UE specific part to $DIR/$build_dir/build"
       cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$build_dir/build
       cp -Rvf $dbin/.ue.nvram0 $DIR/$build_dir/build

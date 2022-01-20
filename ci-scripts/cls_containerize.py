@@ -342,6 +342,8 @@ class Containerize():
 		if self.ranAllowMerge and forceBaseImageBuild:
 			mySSH.command(self.cli + ' image rm ' + baseImage + ':' + baseTag + ' || true', '\$', 30)
 		mySSH.command(self.cli + ' image rm ran-build:' + imageTag + ' || true','\$', 5)
+		# Cleaning any created tmp volume
+		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
 		mySSH.close()
 		ZipFile('build_log_' + self.testCase_id + '.zip').extractall('.')
 
@@ -595,6 +597,8 @@ class Containerize():
 			mySSH.command('docker rm -f ' + containerName, '\$', 30)
 		# Forcing the down now to remove the networks and any artifacts
 		mySSH.command('docker-compose --file ci-docker-compose.yml down', '\$', 5)
+		# Cleaning any created tmp volume
+		mySSH.command('docker volume prune --force || true', '\$', 20)
 
 		mySSH.close()
 
@@ -753,6 +757,11 @@ class Containerize():
 			HTML.CreateHtmlTestRow('Could not undeploy', 'KO', CONST.ALL_PROCESSES_OK)
 			logging.error('\u001B[1m Undeploying OAI Object(s) FAILED\u001B[0m')
 			return
+
+		# Cleaning any created tmp volume
+		cmd = 'docker volume prune --force || true'
+		logging.debug(cmd)
+		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
 		HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
 		logging.info('\u001B[1m Undeploying OAI Object(s) PASS\u001B[0m')

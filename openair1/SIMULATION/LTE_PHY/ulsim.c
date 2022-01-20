@@ -743,7 +743,7 @@ int main(int argc, char **argv) {
   UE2eNB->max_Doppler = maxDoppler;
 
   // NN: N_RB_UL has to be defined in ulsim
-  for (int k=0; k<1; k++) eNB->ulsch[k] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
+  for (int k=0; k<NUMBER_OF_ULSCH_MAX; k++) eNB->ulsch[k] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
 
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
   printf("ULSCH %p\n",UE->ulsch[0]);
@@ -1279,14 +1279,14 @@ int main(int argc, char **argv) {
           n_rx_dropped++;
 
         if (trials < 1000) {
-         appendVarArray(table_tx, &t_tx);
-         appendVarArray(table_tx_ifft, &t_tx_ifft);
-         appendVarArray(table_tx_mod, &t_tx_mod );
-         appendVarArray(table_tx_enc, &t_tx_enc );
-         appendVarArray(table_rx, &t_rx );
-         appendVarArray(table_rx_fft, &t_rx_fft );
-         appendVarArray(table_rx_demod, &t_rx_demod );
-         appendVarArray(table_rx_dec, &t_rx_dec );
+         appendVarArray(&table_tx, &t_tx);
+         appendVarArray(&table_tx_ifft, &t_tx_ifft);
+         appendVarArray(&table_tx_mod, &t_tx_mod );
+         appendVarArray(&table_tx_enc, &t_tx_enc );
+         appendVarArray(&table_rx, &t_rx );
+         appendVarArray(&table_rx_fft, &t_rx_fft );
+         appendVarArray(&table_rx_demod, &t_rx_demod );
+         appendVarArray(&table_rx_dec, &t_rx_dec );
        }
       }   //trials
 

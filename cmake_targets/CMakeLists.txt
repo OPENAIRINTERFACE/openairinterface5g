@@ -2778,7 +2778,6 @@ target_link_libraries (test5Gnas LIB_5GNAS_GNB CONFIG_LIB minimal_lib )
 ###################################################
 
 add_executable(lte-softmodem
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
@@ -2893,7 +2892,6 @@ target_link_libraries(du_test
 add_executable(oairu
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
@@ -2921,7 +2919,6 @@ target_link_libraries (oairu pthread m ${CONFIG_LIB} rt ${CMAKE_DL_LIBS} ${T_LIB
 #######################################
 
 add_executable(lte-uesoftmodem
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
