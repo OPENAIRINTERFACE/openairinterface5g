@@ -457,7 +457,8 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   const int max_mcs = min(max_allowed_mcs, min(sched_ctrl->dl_max_mcs, nrmac->dl_max_mcs));
   if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < max_mcs && dtx > 9)
     new_mcs += 1;
-  else if (bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6)
+  else if ((bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6) // above threshold
+           || (dtx <= 3 && old_mcs > 9))  // no activity
     new_mcs -= 1;
 
   // else we are within threshold boundaries
