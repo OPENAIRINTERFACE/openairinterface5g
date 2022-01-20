@@ -139,8 +139,6 @@ int test_ldpc(short No_iteration,
   //double code_rate_actual_vec[8] = {0.2, 0.33333, 0.4, 0.5, 0.66667, 0.73333, 0.81481, 0.88};
 
   t_nrLDPC_dec_params decParams;
-  t_nrLDPC_procBuf nrLDPC_procBuf;
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf = &nrLDPC_procBuf;
     
   t_nrLDPC_time_stats decoder_profiler = {0};
   t_nrLDPC_time_stats* p_decoder_profiler =&decoder_profiler ;
@@ -193,9 +191,6 @@ int test_ldpc(short No_iteration,
   reset_meas(&decoder_profiler.llrRes2llrOut);
   reset_meas(&decoder_profiler.llr2bit);
   //reset_meas(&decoder_profiler.total);
-
-  // Allocate LDPC decoder buffers
-  p_nrLDPC_procBuf = nrLDPC_init_mem();
 
   for (j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
     for (i=0; i<block_length/8; i++) {
@@ -398,7 +393,7 @@ int test_ldpc(short No_iteration,
 	  nrLDPC_initcall(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j]);
 	  for(j=0;j<n_segments;j++) {
     	  start_meas(time_decoder);
-          n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_nrLDPC_procBuf, p_decoder_profiler);
+          n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_decoder_profiler);
 	      stop_meas(time_decoder);
       }
 
@@ -471,8 +466,6 @@ int test_ldpc(short No_iteration,
   free(channel_output);
   //free(channel_output_fixed);
   //free(estimated_output);
-
-  nrLDPC_free_mem(p_nrLDPC_procBuf);
 
   print_meas(&time,"ldpc_encoder",NULL,NULL);
   print_meas(time_optim,"ldpc_encoder_optim",NULL,NULL);

@@ -114,13 +114,6 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
             dlsch->harq_processes[i]->w[r] = NULL;
           }
 
-        for (r=0; r<a_segments; r++) {
-          if (dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]) {
-            nrLDPC_free_mem(dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
-            dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
-          }
-        }
-
         free16(dlsch->harq_processes[i],sizeof(NR_DL_UE_HARQ_t));
         dlsch->harq_processes[i] = NULL;
       }
@@ -169,7 +162,6 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
         if (abstraction_flag == 0) {
           for (r=0; r<a_segments; r++) {
-            dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
             dlsch->harq_processes[i]->c[r] = (uint8_t *)malloc16(1056);
 
             if (dlsch->harq_processes[i]->c[r])
@@ -441,7 +433,6 @@ void nr_processDLSegment(void* arg) {
       no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
                                          (int8_t *)&pl[0],
                                          llrProcBuf,
-                                         p_nrLDPC_procBuf[r],
                                          p_procTime);
       //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_OUT);
 
