@@ -889,9 +889,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
  pucch_Config->resourceToReleaseList = NULL;
  NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
- NR_PUCCH_Resource_t *pucchres1=calloc(1,sizeof(*pucchres1));
  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
- NR_PUCCH_Resource_t *pucchres3=calloc(1,sizeof(*pucchres3));
 
  pucchres0->pucch_ResourceId=1;
  pucchres0->startingPRB= (8 + uid) % curr_bwp;
