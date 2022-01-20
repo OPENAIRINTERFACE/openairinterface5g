@@ -509,46 +509,87 @@ class Dashboard:
         s3.meta.client.copy(copy_source, 'oaitestdashboard', path+'/'+ 'test_styles.css')
 
 
-    def PostGitNote(self,mr,jobname,buildurl,buildid,status):
-        gl = gitlab.Gitlab.from_config('OAI')
-        project_id = 223
-        project = gl.projects.get(project_id)
-        editable_mr = project.mergerequests.get(int(mr))
-        mr_notes = editable_mr.notes.list()
-        mr_note = editable_mr.notes.create({
-            'body': 'Completed Test : '+jobname+', status: <b>'+status+'</b>, '+\
-            '(<a href="'+buildurl+'">'+buildid+'</a>)<br>'+\
-            '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results</a>'
-        })
-        editable_mr.save()
+    def PostGitNote(self,mr,commit,args):
+        #current date and time to be posted with test results
+        #now = datetime.now()
+        #dt_string = now.strftime("%d/%m/%Y %H:%M")
+
+        if len(args)%4 != 0:
+            print("Wrong Number of Arguments")
+            return
+        else :
+            n_tests=len(args)//4
+
+            gl = gitlab.Gitlab.from_config('OAI')
+            project_id = 223
+            project = gl.projects.get(project_id)
+
+            #retrieve all the notes from the MR
+            editable_mr = project.mergerequests.get(int(mr))
+            mr_notes = editable_mr.notes.list(all=True)
+
+            body = '<a href="https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html">Consolidated Test Results</a><br>'+\
+                'Tested CommitID: ' + commit + '<br>'
+
+            for i in range(0,n_tests):
+                jobname = args[4*i]
+                buildurl = args[4*i+1]
+                buildid = args[4*i+2]
+                status = args[4*i+3]
+                body += jobname+', status is <b>'+status+'</b>, (<a href="'+buildurl+'">'+buildid+'</a>)<br>'
+
+            #create new note
+            mr_note = editable_mr.notes.create({
+                'body': body
+            })
+            editable_mr.save()
+
+
 
 
 def main():
 
-    #call from Jenkinsfile : sh "python3 Hdashboard.py testevent ${params.eNB_MR} ${JOB_NAME} ${env.BUILD_URL} ${env.BUILD_ID} ${StatusForDb} "  
+    #call from slave Jenkinsfile : sh "python3 Hdashboard.py testevent ${params.eNB_MR} "  
+    #call from master Jenkinsfile : sh "python3 Hdashboard.py gitpost ${GitPostArgs}"
+   
 
-    #individual MR test results + test dashboard, event based (end of jenkins pipeline)
     if len(sys.argv)>1:
+
+        #individual MR test results + test dashboard, event based (end of slave jenkins pipeline)
         if sys.argv[1]=="testevent" :
             mr=sys.argv[2]
-            jobname=sys.argv[3]
-            buildurl=sys.argv[4]
-            buildid=sys.argv[5]
-            status=sys.argv[6]
             htmlDash=Dashboard()
             if mr in htmlDash.mr_list:
+                #single MR test results
                 htmlDash.Build('singleMR',mr,'/tmp/MR'+mr+'_index.html') 
                 htmlDash.CopyToS3('/tmp/MR'+mr+'_index.html','oaitestdashboard','MR'+mr+'/index.html')
+                #all MR test results
                 htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
                 htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html')
-                htmlDash.PostGitNote(mr,jobname,buildurl,buildid,status)
+
+        #git post with MR test results, event based (end of master jenkins pipeline)
+        elif sys.argv[1]=="gitpost":
+            mr=sys.argv[2]
+            commit=sys.argv[3]
+            args=[]
+            for i in range (4, len(sys.argv)): #jobname, url, id , result
+                args.append(sys.argv[i])
+            htmlDash=Dashboard()
+            if mr in htmlDash.mr_list:
+                htmlDash.PostGitNote(mr,commit, args)
             else:
                 print("Not a Merge Request => this build is for testing/debug purpose, no report to git")
-    #test and MR status dash boards, cron based
+        else:
+            print("Wrong argument at position 1")
+
+
+    #test and MR status dashboards, cron based
     else:
         htmlDash=Dashboard()
+        #all MR status dashboard
         htmlDash.Build('MR','0000','/tmp/MR_index.html') 
         htmlDash.CopyToS3('/tmp/MR_index.html','oairandashboard','index.html') 
+        #all MR test results
         htmlDash.Build('Tests','0000','/tmp/Tests_index.html') 
         htmlDash.CopyToS3('/tmp/Tests_index.html','oaitestdashboard','index.html') 
 

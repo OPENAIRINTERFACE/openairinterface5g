@@ -27,6 +27,9 @@ def pythonExecutor = params.pythonExecutor
 
 def TARGET_BRANCH = "develop"
 def ALLOW_MERGE = true
+def GitPostArgs = ''
+def DataBaseHost = params.DataBaseHost
+def jobStatus
 
 pipeline {
     agent {
@@ -47,38 +50,71 @@ pipeline {
                         COMMIT_ID=sh returnStdout: true, script:  """curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests/${MR}" | jq ".sha" || true """
                         COMMIT_ID=COMMIT_ID.trim()
                         echo "Testing NSA on : ${MR} ${SRC_BRANCH} ${COMMIT_ID}"
+                        commit = COMMIT_ID.replace("\"","")
+                        GitPostArgs = MR + ' ' + commit + ' '
+                        echo GitPostArgs
+
+                        //calling LTE 2x2
+                        jobName = "RAN-LTE-2x2-Module-OAIEPC"
+                        jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
+                            string(name: 'eNB_MR', value: String.valueOf(MR)),
+                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        ]
+                        jobResult = jobStatus.getResult()
+                        build_url = jobStatus.getAbsoluteUrl()
+                        build_id = jobStatus.getNumber().toString()
+                        GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult + ' '
+                        echo GitPostArgs
+
                         //calling NSA B200
-                        build job: "RAN-NSA-B200-Module-LTEBOX", wait : true, propagate : false, parameters: [
+                        jobName = "RAN-NSA-B200-Module-LTEBOX"
+                        jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),                          
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
                             string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
                             string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
                             booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
+                        jobResult = jobStatus.getResult()
+                        build_url = jobStatus.getAbsoluteUrl()
+                        build_id = jobStatus.getNumber().toString()
+                        GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult + ' '
+                        echo GitPostArgs
+
                         //calling NSA 2x2
-                        build job: "RAN-NSA-2x2-Module-OAIEPC", wait : true, propagate : false, parameters: [
+                        jobName = "RAN-NSA-2x2-Module-OAIEPC"
+                        jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
                             string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
                             string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
                             booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
-                        //calling LTE 2x2
-                        build job: "RAN-LTE-2x2-Module-OAIEPC", wait : true, propagate : false, parameters: [
-                            string(name: 'eNB_MR', value: String.valueOf(MR)),
-                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
-                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
-                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
-                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
-                        ]
+                        jobResult = jobStatus.getResult()
+                        build_url = jobStatus.getAbsoluteUrl()
+                        build_id = jobStatus.getNumber().toString()
+                        GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult + ' '
+                        echo GitPostArgs
+
                         //calling SA 
-                        build job: "RAN-SA-Module-CN5G", wait : true, propagate : false, parameters: [
+                        jobName = "RAN-SA-Module-CN5G"
+                        jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
                             string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
                             string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
                             booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
+                        jobResult = jobStatus.getResult()
+                        build_url = jobStatus.getAbsoluteUrl()
+                        build_id = jobStatus.getNumber().toString()
+                        GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult + ' '
+                        echo GitPostArgs
+
+
                         //calling OAIUE B200
                         //build job: "RAN-SA-OAIUE-B200-CN5G", wait : true, propagate : false, parameters: [
                         //    string(name: 'eNB_MR', value: String.valueOf(MR)),
@@ -95,18 +131,37 @@ pipeline {
                         //    string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
                         //    booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         //]
+
                         //calling OAIUE N310-X300
-                        build job: "RAN-SA-OAIUE-N310-X300-CN5G", wait : true, propagate : false, parameters: [
+                        jobName = "RAN-SA-OAIUE-N310-X300-CN5G"
+                        jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
                             string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
                             string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
                             booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
                         ]
-
+                        jobResult = jobStatus.getResult()
+                        build_url = jobStatus.getAbsoluteUrl()
+                        build_id = jobStatus.getNumber().toString()
+                        GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult + ' '
+                        echo GitPostArgs
                     }
                 }                                  
             }   
+        }
+        stage ('Git Post') {
+          when {
+            expression { params.DataBaseHost != "none" }
+          }
+          agent {label DataBaseHost}
+          steps {
+            script {
+              dir ('ci-scripts/ran_dashboard') {
+                sh "python3 Hdashboard.py gitpost ${GitPostArgs}"
+              }
+            }
+          }
         }
     }
 }
