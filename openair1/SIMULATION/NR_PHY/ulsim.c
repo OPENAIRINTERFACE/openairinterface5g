@@ -322,7 +322,7 @@ int main(int argc, char **argv)
   int ibwps=24;
   int ibwp_rboffset=41;
   int params_from_file = 0;
-  int threadCnt=1;
+  int threadCnt=0;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
@@ -670,7 +670,10 @@ int main(int argc, char **argv)
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   char tp_param[80];
-  sprintf(tp_param,"-1");
+  if (threadCnt>0)
+   sprintf(tp_param,"-1");
+  else
+   tp_param[0]='n';
   int s_offset = 0;
   for (int icpu=1; icpu<threadCnt; icpu++) {
     sprintf(tp_param+2+s_offset,",-1");
