@@ -74,6 +74,7 @@ rlc_info_t Rlc_info_um,Rlc_info_am_config;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+char *uecap_file;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 uint16_t sf_ahead=4 ;

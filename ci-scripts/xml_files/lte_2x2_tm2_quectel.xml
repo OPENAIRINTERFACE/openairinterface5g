@@ -21,47 +21,53 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-SA-FR1-Tab2</htmlTabRef>
-	<htmlTabName>SA Ping DL UL with OAI NR UE (X300)</htmlTabName>
+	<htmlTabRef>TEST-LTE-TM2-Tab2</htmlTabRef>
+	<htmlTabName>LTE 2x2 TM2 Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 041000
+ 030001
  000002
- 011000
+ 010000
+ 000001
+ 050002
+ 050003
  000002
- 051000
- 051001
+ 070002
+ 070003
  000001
  010002
  080000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="011000">
-		<class>Initialize_OAI_UE</class>
-		<desc>Initialize OAI UE (X300)</desc>
-		<air_interface>nr</air_interface>
-		<Initialize_OAI_UE_args>--sa -O ../../../ci-scripts/conf_files/ue.sa.conf --usrp-args "addr=192.168.60.2"  --numerology 1 -r 106 --band 78 -C 3319680000 --nokrnmod 1 --ue-txgain 0 --ue-rxgain 70 --ue-fo-compensation --log_config.global_log_options level,nocolor,time</Initialize_OAI_UE_args>
+	<testCase id="010000">
+		<class>Initialize_UE</class>
+		<desc>Initialize Quectel</desc>
+		<id>nrmodule2_quectel</id>
+		<UE_Trace>yes</UE_Trace>
 	</testCase>
+
 
 	<testCase id="010002">
-		<class>Terminate_OAI_UE</class>
-		<desc>Terminate OAI UE</desc>
+		<class>Terminate_UE</class>
+		<desc>Terminate Quectel</desc>
+		<id>nrmodule2_quectel</id>
 	</testCase>
 
 
-	<testCase id="041000">
+	<testCase id="030001">
 		<class>Initialize_eNB</class>
-		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf --sa --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
+		<desc>Initialize eNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band38.lte_2x2_tm2.100PRB.usrpn310.conf --usrp-tx-thread-config 1 --thread-pool 0,2,4,6 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
-		<air_interface>nr</air_interface>
+		<air_interface>lte</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
-		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
+		<USRP_IPAddress>192.168.18.241</USRP_IPAddress>
 	</testCase>
+
 
 	<testCase id="000001">
 		<class>IdleSleep</class>
@@ -76,46 +82,62 @@
 	</testCase>
 
 
-	<testCase id="051000">
+	<testCase id="050002">
 		<class>Ping</class>
-		<desc>Ping from CN to UE: 20pings in 20sec</desc>
+		<desc>Ping: 20 pings</desc>
+		<id>nrmodule2_quectel</id>
 		<ping_args>-c 20</ping_args>
-		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+		<ping_packetloss_threshold>1</ping_packetloss_threshold>
+		<ping_rttavg_threshold>40</ping_rttavg_threshold>
 	</testCase>
-
-	<testCase id="051001">
+	<testCase id="050003">
 		<class>Ping</class>
-		<desc>Ping from CN to UE: 100pings in 20sec</desc>
-		<ping_args>-c 100 -i 0.2</ping_args>
-		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+		<desc>Ping: 100 pings, size 1024</desc>
+		<id>nrmodule2_quectel</id>
+		<ping_args>-c 100 -s 1024 -i 0,2</ping_args>
+		<ping_packetloss_threshold>1</ping_packetloss_threshold>
+		<ping_rttavg_threshold>30</ping_rttavg_threshold>
 	</testCase>
 
-	<testCase id="070000">
+
+	<testCase id="070002">
 		<class>Iperf</class>
-		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 60M -t 60</iperf_args>
+		<desc>iperf (DL/26Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 26M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
-	<testCase id="070001">
+	<testCase id="070003">
 		<class>Iperf</class>
-		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 3M -t 60</iperf_args>
+		<desc>iperf (UL/7Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 7M -t 60</iperf_args>
 		<direction>UL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
+
+
 
 
 	<testCase id="080000">
 		<class>Terminate_eNB</class>
-		<desc>Terminate gNB</desc>
+		<desc>Terminate eNB</desc>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
+		<air_interface>lte</air_interface>
+	</testCase>
+
+	<testCase id="080001">
+		<class>Terminate_eNB</class>
+		<desc>Terminate gNB</desc>
+		<eNB_instance>1</eNB_instance>
+		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
 	</testCase>
 

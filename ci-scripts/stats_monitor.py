@@ -61,9 +61,16 @@ class StatMonitor():
 
     def collect(self,node_type):
         if node_type=='enb':
-            cmd='cat L1_stats.log MAC_stats.log PDCP_stats.log RRC_stats.log'
+            files = ["L1_stats.log", "MAC_stats.log", "PDCP_stats.log", "RRC_stats.log"]
         else: #'gnb'
-            cmd='cat nrL1_stats.log nrMAC_stats.log nrPDCP_stats.log nrRRC_stats.log'
+            files = ["nrL1_stats.log", "nrMAC_stats.log", "nrPDCP_stats.log", "nrRRC_stats.log"]
+        # append each file's contents to another file (prepended with CI-) for
+        # post-mortem/debugging analysis
+        for f in files:
+            cmd = rf'cat {f} >> CI-{f}'
+            subprocess.Popen(shlex.split(cmd))
+        # join the files for further processing
+        cmd = rf'cat {shlex.join(files)}'
         process=subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
         output = process.stdout.readlines()
         if node_type=='enb':

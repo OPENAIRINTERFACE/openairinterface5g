@@ -81,6 +81,8 @@ COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv_5Gue.so \
     /usr/local/lib/
 
 # Now we are copying from builder-image the UHD files.
