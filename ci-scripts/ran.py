@@ -159,6 +159,7 @@ class RANManagement():
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
+		mySSH.command('git advice.detachedHead false', '\$', 5)
 		# Checking the BUILD INFO file
 		if not self.backgroundBuild:
 			mySSH.command('ls *.txt', '\$', 5)
@@ -203,6 +204,7 @@ class RANManagement():
 			else:
 				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
 				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+		logging.debug(mySSH.getBefore()) # print what git said when merging/checking out
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p log', '\$', 5)
@@ -212,6 +214,7 @@ class RANManagement():
 			mySSH.command('echo "./build_oai ' + self.Build_eNB_args + '" > ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('echo ' + lPassWord + ' | sudo -S ls', '\$', 5)
+			logging.debug(mySSH.getBefore()) # print current directory contents for verification
 			mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-build.sh' + ' > ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ' + ' 2>&1 &', lUserName, 5)
 			mySSH.close()
 			HTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
@@ -371,10 +374,11 @@ class RANManagement():
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
-				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
+				fltr = 'port 38412 or port 36412 or port 36422' # NGAP, S1AP, X2AP
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
 				pcapfile = pcapfile_prefix + self.testCase_id + '_log.pcap'
 				mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
-				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -w /tmp/' + pcapfile + ' > /dev/null 2>&1 &','\$', 5)
+				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + pcapfile + ' > /dev/null 2>&1 &','\$', 5)
 			mySSH.close()
 			
 
@@ -390,10 +394,11 @@ class RANManagement():
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
-				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
+				fltr = 'port 38412 or port 36412 or port 36422' # NGAP, S1AP, X2AP
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
 				self.epcPcapFile = 'enb_' + self.testCase_id + '_s1log.pcap'
 				mySSH.command('echo ' + localEpcPassword + ' | sudo -S rm -f /tmp/' + self.epcPcapFile , '\$', 5)
-				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
+				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
 			mySSH.close()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath, '\$', 5)
@@ -738,7 +743,10 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 60)
+		result = re.search('core.\d+', mySSH.getBefore())
+		if result is not None:
+			mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip core* ran_build/build/{lte,nr}-softmodem', '\$', 60) # add core and executable to zip
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 15)
 		mySSH.close()
 
@@ -1016,12 +1024,9 @@ class RANManagement():
 			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
 		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
 
-		if (os.path.isfile('./nrL1_stats.log')) and (os.path.isfile('./nrL1_stats.log')):
-			stat_files_present=True
-		else:
-			stat_files_present=False
-			logging.debug("NR Stats files for RT analysis not found")
-		if stat_files_present:
+		if os.path.isfile('./nrL1_stats.log') and os.path.isfile('./nrMAC_stats.log'):
+			# don't use CI-nrL1_stats.log, as this will increase the processing time for
+			# no reason, we just need the last occurence
 			nrL1_stats = open('./nrL1_stats.log', 'r')
 			nrMAC_stats = open('./nrMAC_stats.log', 'r')
 			for line in nrL1_stats.readlines():
@@ -1042,6 +1047,8 @@ class RANManagement():
 							real_time_stats[k]=tmp.group(1)
 			nrL1_stats.close()
 			nrMAC_stats.close()
+		else:
+			logging.debug("NR Stats files for RT analysis not found")
 
 		#stdout log file and stat log files analysis completed
 		logging.debug('   File analysis (stdout, stats) completed')

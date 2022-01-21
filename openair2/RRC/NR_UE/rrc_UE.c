@@ -422,7 +422,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 
 }
 
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_path){
   int nr_ue;
   if(NB_NR_UE_INST > 0){
     NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)calloc(NB_NR_UE_INST , sizeof(NR_UE_RRC_INST_t));
@@ -496,6 +496,8 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
     }
 
+    NR_UE_rrc_inst->uecap_file = uecap_file;
+
     if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
       // read in files for RRCReconfiguration and RBconfig
       FILE *fd;
@@ -505,7 +507,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* rrc_config_path){
       else
         sprintf(filename,"reconfig.raw");
       fd = fopen(filename,"r");
-          char buffer[1024];
+      char buffer[1024];
       AssertFatal(fd,
                   "cannot read file %s: errno %d, %s\n",
                   filename,
@@ -2637,7 +2639,6 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   asn_dec_rval_t dec_rval;
   NR_UL_DCCH_Message_t ul_dcch_msg;
   NR_UE_CapabilityRAT_Container_t ue_CapabilityRAT_Container;
-  char UE_NR_Capability_xer_fname[1024];
   char UE_NR_Capability_xer[65536];
   size_t size;
   uint8_t buffer[200];
@@ -2646,9 +2647,6 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
         ctxt_pP->module_id,
         ctxt_pP->frame,
         gNB_index);
-
-  sprintf(UE_NR_Capability_xer_fname,"../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml");
-  FILE *f = fopen(UE_NR_Capability_xer_fname, "r");
 
   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
   memset((void *)&ue_CapabilityRAT_Container,0,sizeof(NR_UE_CapabilityRAT_Container_t));
@@ -2660,10 +2658,15 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
   ue_CapabilityRAT_Container.rat_Type = NR_RAT_Type_nr;
   NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
 
+  char *file_path = NR_UE_rrc_inst[ctxt_pP->module_id].uecap_file;
+
+  FILE *f = NULL;
+  if (file_path)
+    f = fopen(file_path, "r");
   if(f){
     size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
     if (size == 0 || size == sizeof UE_NR_Capability_xer) {
-      LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", UE_NR_Capability_xer_fname,size);
+      LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", file_path,size);
       free(UE_Capability_nr);
       return;
     }
@@ -2671,6 +2674,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
     assert(dec_rval.code == RC_OK);
   }
   else {
+    UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
     NR_BandNR_t *nr_bandnr;
     nr_bandnr  = CALLOC(1,sizeof(NR_BandNR_t));
     nr_bandnr->bandNR = 1;

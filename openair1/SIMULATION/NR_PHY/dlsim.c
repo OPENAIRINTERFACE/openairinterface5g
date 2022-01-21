@@ -82,6 +82,7 @@ RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 double cpuf;
+char *uecap_file;
 
 uint16_t sf_ahead=4 ;
 uint16_t sl_ahead=0;

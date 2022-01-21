@@ -909,7 +909,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'UndeployGenObject':
-					CONTAINERS.UndeployGenObject(HTML)
+					CONTAINERS.UndeployGenObject(HTML, RAN)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'PingFromContainer':

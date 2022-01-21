@@ -120,13 +120,15 @@ typedef struct NR_UE_RRC_INST_s {
     NR_DRB_ToAddMod_t              *DRB_config[NB_CNX_UE][8];
     rb_id_t                        *defaultDRB; // remember the ID of the default DRB
 
-    NR_SRB_INFO Srb0[NB_SIG_CNX_UE];
+    char                           *uecap_file;
+
+    NR_SRB_INFO                    Srb0[NB_SIG_CNX_UE];
     NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
     NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
     uint8_t                        MBMS_flag;
     OAI_NR_UECapability_t          *UECap;
-    uint8_t 					             *UECapability;
+    uint8_t 			   *UECapability;
     uint8_t                        UECapability_size;
 
     RA_trigger_t                   ra_trigger;
