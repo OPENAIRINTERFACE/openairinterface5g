@@ -50,6 +50,7 @@
 #include "LAYER2/MAC/mac_vars.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
+#include "NR_IF_Module.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
 
 #ifdef SMBV
@@ -155,8 +156,11 @@ uint32_t       N_RB_DL    = 106;
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
  */
-uint8_t abstraction_flag=0;
+uint8_t abstraction_flag = 0;
 
+nr_bler_struct nr_bler_data[NUM_MCS];
+
+static void init_bler_table(void);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -251,7 +255,6 @@ void init_tpools(uint8_t nun_dlsch_threads) {
   free(params);
   init_dlsch_tpool( nun_dlsch_threads);
 }
-
 static void get_options(void) {
 
   nrUE_params.ofdm_offset_divisor = 8;
@@ -466,6 +469,7 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
   if (get_softmodem_params()->emulate_l1) {
     RCconfig_nr_ue_L1();
+    init_bler_table();
   }
 
   if (get_softmodem_params()->do_ra)
@@ -545,4 +549,64 @@ int main( int argc, char **argv ) {
     vcd_signal_dumper_close();
 
   return 0;
+}
+
+// Read in each MCS file and build BLER-SINR-TB table
+static void init_bler_table(void)
+{
+  const char *openair_dir = getenv("OPENAIR_DIR");
+  if (!openair_dir)
+  {
+    LOG_E(MAC, "No $OPENAIR_DIR\n");
+    abort();
+  }
+
+  for (unsigned int i = 0; i < NUM_MCS; i++)
+  {
+    char fName[1024];
+    snprintf(fName, sizeof(fName), "%s/openair1/SIMULATION/NR_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/mcs%d_awgn_5G.csv", openair_dir, i);
+    FILE *pFile = fopen(fName, "r");
+    if (!pFile)
+    {
+      LOG_E(MAC, "Bler File ERROR! - fopen(), file: %s\n", fName);
+      abort();
+    }
+    size_t bufSize = 1024;
+    char * line = NULL;
+    char * token;
+    char * temp = NULL;
+    int nlines = 0;
+    while (getline(&line, &bufSize, pFile) > 0)
+    {
+      if (!strncmp(line, "SNR", 3))
+      {
+        continue;
+      }
+
+      if (nlines > NUM_SINR)
+      {
+        LOG_E(MAC, "BLER FILE ERROR - num lines greater than expected - file: %s\n", fName);
+        abort();
+      }
+
+      token = strtok_r(line, ";", &temp);
+      int ncols = 0;
+      while (token != NULL)
+      {
+        if (ncols > NUM_BLER_COL)
+        {
+          LOG_E(MAC, "BLER FILE ERROR - num of cols greater than expected\n");
+          abort();
+        }
+
+        nr_bler_data[i].bler_table[nlines][ncols] = strtof(token, NULL);
+        ncols++;
+
+        token = strtok_r(NULL, ";", &temp);
+      }
+      nlines++;
+    }
+    nr_bler_data[i].length = nlines;
+    fclose(pFile);
+  }
 }

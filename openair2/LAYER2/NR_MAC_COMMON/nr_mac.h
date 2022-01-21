@@ -273,6 +273,10 @@ typedef struct {
   bool index_has_dci[16];
   int active_harq_sfn_slot;
   int active_uci_sfn_slot;
+  int crc_rx_ind_sfn_slot;
+  int num_srs;
+  int num_harqs;
+  int num_csi_reports;
 } nr_emulated_l1_t;
 
 typedef struct {

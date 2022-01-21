@@ -2167,6 +2167,9 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   }
 
   N_UCI = O_SR + O_ACK + O_CSI;
+  mac->nr_ue_emul_l1.num_srs = O_SR;
+  mac->nr_ue_emul_l1.num_harqs = O_ACK;
+  mac->nr_ue_emul_l1.num_csi_reports = O_CSI;
 
   // do no transmit pucch if only SR scheduled and it is negative
   if ((O_ACK + O_CSI) == 0 && pucch->sr_payload == 0)
@@ -2192,7 +2195,7 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
                           pucch,
                           pucch_pdu,
                           O_SR, O_ACK, O_CSI);
-    LOG_I(NR_MAC,"Configuring pucch, is_common = %d and format %d\n",pucch->is_common, pucch_pdu->format_type);
+    LOG_D(NR_MAC,"Configuring pucch, is_common = %d\n",pucch->is_common);
     nr_scheduled_response_t scheduled_response;
     fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)

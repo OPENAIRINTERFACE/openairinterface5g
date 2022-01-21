@@ -197,10 +197,34 @@ static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_p
 static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
 {
   nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-  nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
-  nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_dl_tti_request_t *dl_tti_request = get_queue(&nr_dl_tti_req_queue);
   nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
+  LOG_D(NR_MAC, "Try to get a ul_tti_req for HARQ sfn/slot %d %d from queue with %lu items\n",
+        NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot),
+        NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
+  nfapi_nr_ul_tti_request_t *ul_tti_request_harq = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.active_harq_sfn_slot);
+  if (ul_tti_request_harq && ul_tti_request_harq->n_pdus > 0)
+  {
+    check_and_process_dci(NULL, NULL, NULL, ul_tti_request_harq);
+  }
+
+  LOG_D(NR_MAC, "Try to get a ul_tti_req by matching CSI active SFN %d/SLOT %d from queue with %lu items\n",
+          NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_uci_sfn_slot),
+          NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_uci_sfn_slot), nr_ul_tti_req_queue.num_items);
+  nfapi_nr_ul_tti_request_t *ul_tti_request_uci = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.active_uci_sfn_slot);
+  if (ul_tti_request_uci && ul_tti_request_uci->n_pdus > 0)
+  {
+    check_and_process_dci(NULL, NULL, NULL, ul_tti_request_uci);
+  }
+
+  LOG_D(NR_MAC, "Try to get a ul_tti_req by matching CRC active SFN %d/SLOT %d from queue with %lu items\n",
+          NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.crc_rx_ind_sfn_slot),
+          NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.crc_rx_ind_sfn_slot), nr_ul_tti_req_queue.num_items);
+  nfapi_nr_ul_tti_request_t *ul_tti_request_crc = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.crc_rx_ind_sfn_slot);
+  if (ul_tti_request_crc && ul_tti_request_crc->n_pdus > 0)
+  {
+    check_and_process_dci(NULL, NULL, NULL, ul_tti_request_crc);
+  }
 
   if (rach_ind && rach_ind->number_of_pdus > 0)
   {
@@ -215,24 +239,6 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
       free(rach_ind->pdu_list);
       free(rach_ind);
       nr_Msg1_transmitted(0, 0, NFAPI_SFNSLOT2SFN(sfn_slot), 0);
-  }
-  if (crc_ind && crc_ind->number_crcs > 0)
-  {
-    NR_UL_IND_t UL_INFO = {
-      .crc_ind = *crc_ind,
-    };
-    send_nsa_standalone_msg(&UL_INFO, crc_ind->header.message_id);
-    free(crc_ind->crc_list);
-    free(crc_ind);
-  }
-  if (rx_ind && rx_ind->number_of_pdus > 0)
-  {
-    NR_UL_IND_t UL_INFO = {
-      .rx_ind = *rx_ind,
-    };
-    send_nsa_standalone_msg(&UL_INFO, rx_ind->header.message_id);
-    free(rx_ind->pdu_list);
-    free(rx_ind);
   }
   if (dl_tti_request)
   {
@@ -313,7 +319,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   reset_queue(&nr_tx_req_queue);
   reset_queue(&nr_ul_dci_req_queue);
   reset_queue(&nr_ul_tti_req_queue);
-  reset_queue(&nr_wait_ul_tti_req_queue);
 
   NR_PRACH_RESOURCES_t prach_resources;
   memset(&prach_resources, 0, sizeof(prach_resources));
