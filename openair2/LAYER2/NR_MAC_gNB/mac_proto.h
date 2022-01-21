@@ -535,6 +535,12 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint32_t *tbs,
                    uint16_t *nb_rb);
 
+int get_mcs_from_bler(const NR_bler_options_t *bler_options,
+                      const NR_mac_dir_stats_t *stats,
+                      NR_bler_stats_t *bler_stats,
+                      int max_mcs,
+                      frame_t frame);
+
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
 
 void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp);

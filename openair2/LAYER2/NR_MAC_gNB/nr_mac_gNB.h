@@ -459,13 +459,12 @@ typedef struct NR_UE_harq {
 
 //! fixme : need to enhace for the multiple TB CQI report
 
-typedef struct NR_DL_bler_stats {
-  frame_t last_frame_slot;
+typedef struct NR_bler_stats {
+  frame_t last_frame;
   float bler;
-  float rd2_bler;
   uint8_t mcs;
-  uint64_t dlsch_rounds[8];
-} NR_DL_bler_stats_t;
+  uint64_t rounds[8];
+} NR_bler_stats_t;
 
 //
 /*! As per spec 38.214 section 5.2.1.4.2
@@ -627,7 +626,7 @@ typedef struct {
   mac_rlc_status_resp_t rlc_status[NR_MAX_NUM_LCID];
 
   /// Estimation of HARQ from BLER
-  NR_DL_bler_stats_t dl_bler_stats;
+  NR_bler_stats_t dl_bler_stats;
 
   uint16_t ta_frame;
   int16_t ta_update;
@@ -694,6 +693,11 @@ typedef struct NR_mac_stats {
   uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
 
+typedef struct NR_bler_options {
+  double upper;
+  double lower;
+  uint8_t max_mcs;
+} NR_bler_options_t;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 #define MAX_CSI_REPORTCONFIG 48
@@ -835,10 +839,7 @@ typedef struct gNB_MAC_INST_s {
   int xp_pdsch_antenna_ports;
 
   bool first_MIB;
-  double dl_bler_target_upper;
-  double dl_bler_target_lower;
-  double dl_rd2_bler_threshold;
-  uint8_t dl_max_mcs;
+  NR_bler_options_t dl_bler;
   uint8_t harq_round_max;
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;

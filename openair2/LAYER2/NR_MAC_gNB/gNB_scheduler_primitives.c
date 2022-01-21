@@ -761,6 +761,51 @@ void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
       : num_dmrs_cdm_grps_no_data * 4;
 }
 
+#define BLER_UPDATE_FRAME 10
+#define BLER_FILTER 0.9f
+int get_mcs_from_bler(const NR_bler_options_t *bler_options,
+                      const NR_mac_dir_stats_t *stats,
+                      NR_bler_stats_t *bler_stats,
+                      int max_mcs,
+                      frame_t frame)
+{
+  /* first call: everything is zero. Initialize to sensible default */
+  if (bler_stats->last_frame == 0 && bler_stats->mcs == 0) {
+    bler_stats->last_frame = frame;
+    bler_stats->mcs = 9;
+    bler_stats->bler = (bler_options->lower + bler_options->upper) / 2.0f;
+  }
+  int diff = frame - bler_stats->last_frame;
+  if (diff < 0) // wrap around
+    diff += 1024;
+
+  max_mcs = min(max_mcs, bler_options->max_mcs);
+  const uint8_t old_mcs = min(bler_stats->mcs, max_mcs);
+  if (diff < BLER_UPDATE_FRAME)
+    return old_mcs; // no update
+
+  // last update is longer than x frames ago
+  const int dtx = (int)(stats->rounds[0] - bler_stats->rounds[0]);
+  const int dretx = (int)(stats->rounds[1] - bler_stats->rounds[1]);
+  const float bler_window = dtx > 0 ? (float) dretx / dtx : bler_stats->bler;
+  bler_stats->bler = BLER_FILTER * bler_stats->bler + (1 - BLER_FILTER) * bler_window;
+
+  int new_mcs = old_mcs;
+  if (bler_stats->bler < bler_options->lower && old_mcs < max_mcs && dtx > 9)
+    new_mcs += 1;
+  else if ((bler_stats->bler > bler_options->upper && old_mcs > 6) // above threshold
+      || (dtx <= 3 && old_mcs > 9))                                // no activity
+    new_mcs -= 1;
+  // else we are within threshold boundaries
+
+  bler_stats->last_frame = frame;
+  bler_stats->mcs = new_mcs;
+  memcpy(bler_stats->rounds, stats->rounds, sizeof(stats->rounds));
+  LOG_D(MAC, "frame %4d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f)\n",
+        frame, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler);
+  return new_mcs;
+}
+
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 				  nr_scs_e scs_common,
 				  nr_scs_e pdcch_scs,
