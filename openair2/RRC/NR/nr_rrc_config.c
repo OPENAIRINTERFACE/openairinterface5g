@@ -102,6 +102,35 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
       ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation_msg3);
     }
   }
+}
 
+// PUCCH resource set 0 for configuration with O_uci <= 2 bits and/or a positive or negative SR (section 9.2.1 of 38.213)
+void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp, NR_UE_NR_Capability_t *uecap) {
+
+  NR_PUCCH_ResourceSet_t *pucchresset = calloc(1,sizeof(*pucchresset));
+  pucchresset->pucch_ResourceSetId = 0;
+  NR_PUCCH_ResourceId_t *pucchid=calloc(1,sizeof(*pucchid));
+  *pucchid=0;
+  ASN_SEQUENCE_ADD(&pucchresset->resourceList.list,pucchid);
+  pucchresset->maxPayloadSize=NULL;
+
+  if(uecap) {
+    long *pucch_F0_2WithoutFH = uecap->phy_Parameters.phy_ParametersFRX_Diff->pucch_F0_2WithoutFH;
+    AssertFatal(pucch_F0_2WithoutFH == NULL,"UE does not support PUCCH F0 without frequency hopping. Current configuration is without FH\n");
+  }
+
+  NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
+  pucchres0->pucch_ResourceId=*pucchid;
+  pucchres0->startingPRB= (8 + uid) % curr_bwp;
+  pucchres0->intraSlotFrequencyHopping=NULL;
+  pucchres0->secondHopPRB=NULL;
+  pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
+  pucchres0->format.choice.format0=calloc(1,sizeof(*pucchres0->format.choice.format0));
+  pucchres0->format.choice.format0->initialCyclicShift=0;
+  pucchres0->format.choice.format0->nrofSymbols=1;
+  pucchres0->format.choice.format0->startingSymbolIndex=13;
+  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
+
+  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset);
 }
 

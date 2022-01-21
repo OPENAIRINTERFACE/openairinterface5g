@@ -864,22 +864,20 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  if (!servingcellconfigdedicated) {
    ubwp->bwp_Dedicated = calloc(1,sizeof(*ubwp->bwp_Dedicated));
  }
+
  ubwp->bwp_Dedicated->pucch_Config = calloc(1,sizeof(*ubwp->bwp_Dedicated->pucch_Config));
  ubwp->bwp_Dedicated->pucch_Config->present = NR_SetupRelease_PUCCH_Config_PR_setup;
  NR_PUCCH_Config_t *pucch_Config = calloc(1,sizeof(*pucch_Config));
  ubwp->bwp_Dedicated->pucch_Config->choice.setup=pucch_Config;
+
  pucch_Config->resourceSetToAddModList = calloc(1,sizeof(*pucch_Config->resourceSetToAddModList));
  pucch_Config->resourceSetToReleaseList = NULL;
- NR_PUCCH_ResourceSet_t *pucchresset0=calloc(1,sizeof(*pucchresset0));
+ pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
+ pucch_Config->resourceToReleaseList = NULL;
+
+ config_pucch_resset0(pucch_Config, uid, curr_bwp, uecap);
+
  NR_PUCCH_ResourceSet_t *pucchresset1=calloc(1,sizeof(*pucchresset1));
- pucchresset0->pucch_ResourceSetId = 0;
- NR_PUCCH_ResourceId_t *pucchresset0id0=calloc(1,sizeof(*pucchresset0id0));
- *pucchresset0id0=1;
- ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id0);
- pucchresset0->maxPayloadSize=NULL;
-
- ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset0);
-
  pucchresset1->pucch_ResourceSetId = 1;
  NR_PUCCH_ResourceId_t *pucchresset1id0=calloc(1,sizeof(*pucchresset1id0));
  *pucchresset1id0=2;
@@ -887,22 +885,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucchresset1->maxPayloadSize=NULL;
  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset1);
 
- pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
- pucch_Config->resourceToReleaseList = NULL;
- NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
-
- pucchres0->pucch_ResourceId=1;
- pucchres0->startingPRB= (8 + uid) % curr_bwp;
- pucchres0->intraSlotFrequencyHopping=NULL;
- pucchres0->secondHopPRB=NULL;
- pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
- pucchres0->format.choice.format0=calloc(1,sizeof(*pucchres0->format.choice.format0));
- pucchres0->format.choice.format0->initialCyclicShift=0;
- pucchres0->format.choice.format0->nrofSymbols=1;
- pucchres0->format.choice.format0->startingSymbolIndex=13;
- ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
-
  pucchres2->pucch_ResourceId=2;
  pucchres2->startingPRB=0;
  pucchres2->intraSlotFrequencyHopping=NULL;

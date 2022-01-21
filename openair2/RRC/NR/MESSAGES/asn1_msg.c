@@ -995,30 +995,10 @@ void fill_initial_SpCellConfig(int uid,
   initialUplinkBWP->pucch_Config->choice.setup=pucch_Config;
   pucch_Config->resourceSetToAddModList = calloc(1,sizeof(*pucch_Config->resourceSetToAddModList));
   pucch_Config->resourceSetToReleaseList = NULL;
-  NR_PUCCH_ResourceSet_t *pucchresset0=calloc(1,sizeof(*pucchresset0));
-  pucchresset0->pucch_ResourceSetId = 0;
-  NR_PUCCH_ResourceId_t *pucchresset0id0=calloc(1,sizeof(*pucchresset0id0));
-  *pucchresset0id0=0;
-  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id0);
-  pucchresset0->maxPayloadSize=NULL;
-  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset0);
-  
   pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
   pucch_Config->resourceToReleaseList = NULL;
-  // configure one single PUCCH0 opportunity for initial connection procedure
-  // one symbol (13)
-  NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
-  pucchres0->pucch_ResourceId=0;
-  pucchres0->startingPRB=(8+uid) % curr_bwp;
-  LOG_D(NR_RRC, "pucchres0->startPRB %ld uid %d curr_bwp %d\n", pucchres0->startingPRB, uid, curr_bwp);
-  pucchres0->intraSlotFrequencyHopping=NULL;
-  pucchres0->secondHopPRB=NULL;
-  pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
-  pucchres0->format.choice.format0=calloc(1,sizeof(*pucchres0->format.choice.format0));
-  pucchres0->format.choice.format0->initialCyclicShift=0;
-  pucchres0->format.choice.format0->nrofSymbols=1;
-  pucchres0->format.choice.format0->startingSymbolIndex=13;
-  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
+  config_pucch_resset0(pucch_Config, uid, curr_bwp, NULL);
+
   initialUplinkBWP->pusch_Config = calloc(1,sizeof(*initialUplinkBWP->pusch_Config));
   initialUplinkBWP->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
   NR_PUSCH_Config_t *pusch_Config = calloc(1,sizeof(*pusch_Config));
