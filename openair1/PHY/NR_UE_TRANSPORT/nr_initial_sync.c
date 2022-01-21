@@ -247,11 +247,12 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     LOG_I(PHY,"sync_pos %d ssb_offset %d \n",sync_pos,ue->ssb_offset);
 #endif
 
+     accumulated_freq_offset += ue->common_vars.freq_offset;
+
     // digital compensation of FFO for SSB symbols
     if (ue->UE_fo_compensation){
       double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
       double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
-      accumulated_freq_offset += ue->common_vars.freq_offset;
 
       // In SA we need to perform frequency offset correction until the end of buffer because we need to decode SIB1
       // and we do not know yet in which slot it goes.

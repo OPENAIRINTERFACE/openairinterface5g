@@ -843,6 +843,9 @@ int computeSamplesShift(PHY_VARS_NR_UE *UE) {
   int samples_shift = -(UE->rx_offset>>1);
   UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
   UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
+  if (samples_shift != 0) {
+    LOG_I(NR_PHY,"Adjusting frame in time by %i samples\n", samples_shift);
+  }
   return samples_shift;
 }
 
