@@ -1471,11 +1471,9 @@ void *ru_thread( void *param ) {
 
   res = pullNotifiedFIFO(gNB->resp_L1);
   delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(gNB->resp_L1_tx);
+  res = pullNotifiedFIFO(gNB->L1_tx_free);
   delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(gNB->resp_L1_tx);
-  delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(gNB->resp_RU_tx);
+  res = pullNotifiedFIFO(gNB->L1_tx_free);
   delNotifiedFIFO_elt(res);
 
   ru_thread_status = 0;
