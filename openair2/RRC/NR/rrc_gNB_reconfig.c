@@ -45,6 +45,7 @@
 #include "SIMULATION/TOOLS/sim.h"
 #include "executables/softmodem-common.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include "nr_rrc_config.h"
 
 #define false 0
 #define true 1
@@ -875,40 +876,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
  pucch_Config->resourceToReleaseList = NULL;
 
- config_pucch_resset0(pucch_Config, uid, curr_bwp, uecap);
-
- NR_PUCCH_ResourceSet_t *pucchresset1=calloc(1,sizeof(*pucchresset1));
- pucchresset1->pucch_ResourceSetId = 1;
- NR_PUCCH_ResourceId_t *pucchresset1id0=calloc(1,sizeof(*pucchresset1id0));
- *pucchresset1id0=2;
- ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id0);
- pucchresset1->maxPayloadSize=NULL;
- ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset1);
-
- NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
- pucchres2->pucch_ResourceId=2;
- pucchres2->startingPRB=0;
- pucchres2->intraSlotFrequencyHopping=NULL;
- pucchres2->secondHopPRB=NULL;
- pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
- pucchres2->format.choice.format2=calloc(1,sizeof(*pucchres2->format.choice.format2));
- pucchres2->format.choice.format2->nrofPRBs=8;
- pucchres2->format.choice.format2->nrofSymbols=1;
- pucchres2->format.choice.format2->startingSymbolIndex=13;
- ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
-
- pucch_Config->format2=calloc(1,sizeof(*pucch_Config->format2));
- pucch_Config->format2->present=NR_SetupRelease_PUCCH_FormatConfig_PR_setup;
- NR_PUCCH_FormatConfig_t *pucchfmt2 = calloc(1,sizeof(*pucchfmt2));
- pucch_Config->format2->choice.setup = pucchfmt2;
- pucchfmt2->interslotFrequencyHopping=NULL;
- pucchfmt2->additionalDMRS=NULL;
- pucchfmt2->maxCodeRate=calloc(1,sizeof(*pucchfmt2->maxCodeRate));
- *pucchfmt2->maxCodeRate=NR_PUCCH_MaxCodeRate_zeroDot35;
- pucchfmt2->nrofSlots=NULL;
- pucchfmt2->pi2BPSK=NULL;
- pucchfmt2->simultaneousHARQ_ACK_CSI=calloc(1,sizeof(*pucchfmt2->simultaneousHARQ_ACK_CSI));
- *pucchfmt2->simultaneousHARQ_ACK_CSI=NR_PUCCH_FormatConfig__simultaneousHARQ_ACK_CSI_true;
+ config_pucch_resset0(pucch_Config, uid, curr_bwp, uecap); // <= 2 bits
+ config_pucch_resset1(pucch_Config, uecap); // > 2 bits
 
  // for scheduling requestresource
  pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));

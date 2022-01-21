@@ -134,3 +134,50 @@ void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp
   ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset);
 }
 
+
+// PUCCH resource set 1 for configuration with O_uci > 2 bits (currently format2)
+void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, NR_UE_NR_Capability_t *uecap) {
+
+  NR_PUCCH_ResourceSet_t *pucchresset=calloc(1,sizeof(*pucchresset));
+  pucchresset->pucch_ResourceSetId = 1;
+  NR_PUCCH_ResourceId_t *pucchressetid=calloc(1,sizeof(*pucchressetid));
+  *pucchressetid=2;
+  ASN_SEQUENCE_ADD(&pucchresset->resourceList.list,pucchressetid);
+  pucchresset->maxPayloadSize=NULL;
+
+  if(uecap) {
+    long *pucch_F0_2WithoutFH = uecap->phy_Parameters.phy_ParametersFRX_Diff->pucch_F0_2WithoutFH;
+    AssertFatal(pucch_F0_2WithoutFH == NULL,"UE does not support PUCCH F2 without frequency hopping. Current configuration is without FH\n");
+  }
+
+  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
+  pucchres2->pucch_ResourceId=*pucchressetid;
+  pucchres2->startingPRB=0;
+  pucchres2->intraSlotFrequencyHopping=NULL;
+  pucchres2->secondHopPRB=NULL;
+  pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
+  pucchres2->format.choice.format2=calloc(1,sizeof(*pucchres2->format.choice.format2));
+  pucchres2->format.choice.format2->nrofPRBs=8;
+  pucchres2->format.choice.format2->nrofSymbols=1;
+  pucchres2->format.choice.format2->startingSymbolIndex=13;
+  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
+
+  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset);
+
+  pucch_Config->format2=calloc(1,sizeof(*pucch_Config->format2));
+  pucch_Config->format2->present=NR_SetupRelease_PUCCH_FormatConfig_PR_setup;
+  NR_PUCCH_FormatConfig_t *pucchfmt2 = calloc(1,sizeof(*pucchfmt2));
+  pucch_Config->format2->choice.setup = pucchfmt2;
+  pucchfmt2->interslotFrequencyHopping=NULL;
+  pucchfmt2->additionalDMRS=NULL;
+  pucchfmt2->maxCodeRate=calloc(1,sizeof(*pucchfmt2->maxCodeRate));
+  *pucchfmt2->maxCodeRate=NR_PUCCH_MaxCodeRate_zeroDot35;
+  pucchfmt2->nrofSlots=NULL;
+  pucchfmt2->pi2BPSK=NULL;
+
+  // to check UE capabilities for that in principle
+  pucchfmt2->simultaneousHARQ_ACK_CSI=calloc(1,sizeof(*pucchfmt2->simultaneousHARQ_ACK_CSI));
+  *pucchfmt2->simultaneousHARQ_ACK_CSI=NR_PUCCH_FormatConfig__simultaneousHARQ_ACK_CSI_true;
+
+}
+
