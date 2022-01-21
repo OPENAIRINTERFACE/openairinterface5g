@@ -909,15 +909,15 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'UndeployGenObject':
-					CONTAINERS.UndeployGenObject(HTML, RAN)
+					CONTAINERS.UndeployGenObject(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'PingFromContainer':
-					CONTAINERS.PingFromContainer(HTML)
+					CONTAINERS.PingFromContainer(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'IperfFromContainer':
-					CONTAINERS.IperfFromContainer(HTML)
+					CONTAINERS.IperfFromContainer(HTML, RAN)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				else:

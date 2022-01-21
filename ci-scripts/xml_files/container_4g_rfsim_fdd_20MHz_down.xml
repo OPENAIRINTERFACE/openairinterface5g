@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-4glte-down</htmlTabRef>
-        <htmlTabName>CleanUp 4G RF - Monolithic eNB</htmlTabName>
+        <htmlTabRef>rfsim-4glte-fdd20mhz-down</htmlTabRef>
+        <htmlTabName>CleanUp 4G RF</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100011
@@ -32,7 +32,7 @@
         <testCase id="100011">
                 <class>UndeployGenObject</class>
                 <desc>Undeploy all OAI 4G stack</desc>
-                <yaml_path>yaml_files/4g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_20MHz</yaml_path>
         </testCase>
 
 </testCaseList>
