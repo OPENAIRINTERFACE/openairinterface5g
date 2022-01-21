@@ -676,19 +676,19 @@ typedef struct {
   uicc_t *uicc;
 } NRUEcontext_t;
 
-typedef struct {
-  uint64_t lc_bytes_tx[64];
-  uint64_t lc_bytes_rx[64];
-  uint64_t dlsch_rounds[8];
-  uint64_t dlsch_errors;
-  uint64_t dlsch_total_bytes;
-  int dlsch_current_bytes;
-  uint64_t ulsch_rounds[8];
-  uint64_t ulsch_errors;
+typedef struct NR_mac_dir_stats {
+  uint64_t lc_bytes[64];
+  uint64_t rounds[8];
+  uint64_t errors;
+  uint64_t total_bytes;
+  uint32_t current_bytes;
+} NR_mac_dir_stats_t;
+
+typedef struct NR_mac_stats {
+  NR_mac_dir_stats_t dl;
+  NR_mac_dir_stats_t ul;
   uint32_t ulsch_DTX;
   uint64_t ulsch_total_bytes_scheduled;
-  uint64_t ulsch_total_bytes_rx;
-  int ulsch_current_bytes;
   uint32_t pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;

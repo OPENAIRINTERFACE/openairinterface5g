@@ -425,13 +425,13 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   const NR_mac_stats_t *stats = &nrmac->UE_info.mac_stats[UE_id];
 
   // TODO put back this condition when relevant
-  /*const int dret3x = stats->dlsch_rounds[3] - bler_stats->dlsch_rounds[3];
+  /*const int dret3x = stats->dl.rounds[3] - bler_stats->dlsch_rounds[3];
   if (dret3x > 0) {
      if there is a third retransmission, decrease MCS for stabilization and
      restart averaging window to stabilize transmission
     bler_stats->last_frame_slot = now;
     bler_stats->mcs = max(9, bler_stats->mcs - 1);
-    memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
+    memcpy(bler_stats->dlsch_rounds, stats->dl.rounds, sizeof(stats->dl.rounds));
     LOG_D(MAC, "%4d.%2d: %d retx in 3rd round, setting MCS to %d and restarting window\n", frame, slot, dret3x, bler_stats->mcs);
     return bler_stats->mcs;
   }*/
@@ -439,9 +439,9 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
     return old_mcs; // no update
 
   // last update is longer than x frames ago
-  const int dtx = (int)(stats->dlsch_rounds[0] - bler_stats->dlsch_rounds[0]);
-  const int dretx = (int)(stats->dlsch_rounds[1] - bler_stats->dlsch_rounds[1]);
-  const int dretx2 = (int)(stats->dlsch_rounds[2] - bler_stats->dlsch_rounds[2]);
+  const int dtx = (int)(stats->dl.rounds[0] - bler_stats->dlsch_rounds[0]);
+  const int dretx = (int)(stats->dl.rounds[1] - bler_stats->dlsch_rounds[1]);
+  const int dretx2 = (int)(stats->dl.rounds[2] - bler_stats->dlsch_rounds[2]);
   const float bler_window = dtx > 0 ? (float) dretx / dtx : bler_stats->bler;
   const float rd2_bler_wnd = dtx > 0 ? (float) dretx2 / dtx : bler_stats->rd2_bler;
   bler_stats->bler = BLER_FILTER * bler_stats->bler + (1 - BLER_FILTER) * bler_window;
@@ -464,7 +464,7 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   // else we are within threshold boundaries
   bler_stats->last_frame_slot = now;
   bler_stats->mcs = new_mcs;
-  memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
+  memcpy(bler_stats->dlsch_rounds, stats->dl.rounds, sizeof(stats->dl.rounds));
   LOG_D(MAC, "%4d.%2d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f, dretx2 %d, RD2 BLER wnd %.3f avg %.6f)\n",
         frame, slot, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler, dretx2, rd2_bler_wnd, bler_stats->rd2_bler);
   return new_mcs;
@@ -747,7 +747,7 @@ void pf_dl(module_id_t module_id,
     layers[UE_id] = ps->nrOfLayers; // initialization of layers to the previous value in the strcuture
     /* Calculate Throughput */
     const float a = 0.0005f; // corresponds to 200ms window
-    const uint32_t b = UE_info->mac_stats[UE_id].dlsch_current_bytes;
+    const uint32_t b = UE_info->mac_stats[UE_id].dl.current_bytes;
     thr_ue[UE_id] = (1 - a) * thr_ue[UE_id] + a * b;
 
     /* retransmission */
@@ -1088,7 +1088,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
 
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
-    UE_info->mac_stats[UE_id].dlsch_current_bytes = 0;
+    UE_info->mac_stats[UE_id].dl.current_bytes = 0;
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
 
     NR_BWP_DownlinkDedicated_t *bwpd =
@@ -1146,7 +1146,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     harq->feedback_frame = pucch->frame;
     harq->feedback_slot = pucch->ul_slot;
     harq->is_waiting = true;
-    UE_info->mac_stats[UE_id].dlsch_rounds[harq->round]++;
+    UE_info->mac_stats[UE_id].dl.rounds[harq->round]++;
     LOG_D(NR_MAC,
           "%4d.%2d [DLSCH/PDSCH/PUCCH] UE %d RNTI %04x DCI L %d start %3d RBs %3d startSymbol %2d nb_symbol %2d dmrspos %x MCS %2d nrOfLayers %d TBS %4d HARQ PID %2d round %d RV %d NDI %d dl_data_to_ULACK %d (%d.%d) PUCCH allocation %d TPC %d\n",
           frame,
@@ -1479,7 +1479,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             lcid_bytes += len;
           }
 
-          UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += lcid_bytes;
+          UE_info->mac_stats[UE_id].dl.lc_bytes[lcid] += lcid_bytes;
         }
       } else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
         /* we will need the large header, phy-test typically allocates all
@@ -1517,8 +1517,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
         buf=bufEnd;
       }
 
-      UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
-      UE_info->mac_stats[UE_id].dlsch_current_bytes = TBS;
+      NR_mac_stats_t *mac_stats = &UE_info->mac_stats[UE_id];
+      mac_stats->dl.total_bytes += TBS;
+      mac_stats->dl.current_bytes = TBS;
+
       /* save retransmission information */
       harq->sched_pdsch = *sched_pdsch;
       /* save which time allocation has been used, to be used on

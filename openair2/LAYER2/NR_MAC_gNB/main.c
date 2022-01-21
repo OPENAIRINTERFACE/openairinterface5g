@@ -102,9 +102,9 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
 
     stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
                     UE_id,
-                    stats->dlsch_rounds[0], stats->dlsch_rounds[1],
-                    stats->dlsch_rounds[2], stats->dlsch_rounds[3],
-                    stats->dlsch_errors,
+                    stats->dl.rounds[0], stats->dl.rounds[1],
+                    stats->dl.rounds[2], stats->dl.rounds[3],
+                    stats->dl.errors,
                     stats->pucch0_DTX,
                     sched_ctrl->dl_bler_stats.bler,
                     sched_ctrl->dl_bler_stats.mcs);
@@ -112,25 +112,25 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
       stats->num_rsrp_meas = 0;
       stats->cumul_rsrp = 0;
     }
-    stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %"PRIu64"\n", UE_id, stats->dlsch_total_bytes);
+    stroff+=sprintf(output+stroff,"UE %d: dlsch_total_bytes %"PRIu64"\n", UE_id, stats->dl.total_bytes);
     stroff+=sprintf(output+stroff,"UE %d: ulsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", ulsch_DTX %d, ulsch_errors %"PRIu64"\n",
                     UE_id,
-                    stats->ulsch_rounds[0], stats->ulsch_rounds[1],
-                    stats->ulsch_rounds[2], stats->ulsch_rounds[3],
+                    stats->ul.rounds[0], stats->ul.rounds[1],
+                    stats->ul.rounds[2], stats->ul.rounds[3],
                     stats->ulsch_DTX,
-                    stats->ulsch_errors);
+                    stats->ul.errors);
     stroff+=sprintf(output+stroff,
                     "UE %d: ulsch_total_bytes_scheduled %"PRIu64", ulsch_total_bytes_received %"PRIu64"\n",
                     UE_id,
-                    stats->ulsch_total_bytes_scheduled, stats->ulsch_total_bytes_rx);
+                    stats->ulsch_total_bytes_scheduled, stats->ul.total_bytes);
     for (int lc_id = 0; lc_id < 63; lc_id++) {
-      if (stats->lc_bytes_tx[lc_id] > 0) {
-        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %"PRIu64" bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
-	LOG_D(NR_MAC, "UE %d: LCID %d: %"PRIu64" bytes TX\n", UE_id, lc_id, stats->lc_bytes_tx[lc_id]);
+      if (stats->dl.lc_bytes[lc_id] > 0) {
+        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %"PRIu64" bytes TX\n", UE_id, lc_id, stats->dl.lc_bytes[lc_id]);
+	LOG_D(NR_MAC, "UE %d: LCID %d: %"PRIu64" bytes TX\n", UE_id, lc_id, stats->dl.lc_bytes[lc_id]);
       }
-      if (stats->lc_bytes_rx[lc_id] > 0) {
-        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %"PRIu64" bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
-	LOG_D(NR_MAC, "UE %d: LCID %d: %"PRIu64" bytes RX\n", UE_id, lc_id, stats->lc_bytes_rx[lc_id]);
+      if (stats->ul.lc_bytes[lc_id] > 0) {
+        stroff+=sprintf(output+stroff, "UE %d: LCID %d: %"PRIu64" bytes RX\n", UE_id, lc_id, stats->ul.lc_bytes[lc_id]);
+	LOG_D(NR_MAC, "UE %d: LCID %d: %"PRIu64" bytes RX\n", UE_id, lc_id, stats->ul.lc_bytes[lc_id]);
       }
     }
   }
