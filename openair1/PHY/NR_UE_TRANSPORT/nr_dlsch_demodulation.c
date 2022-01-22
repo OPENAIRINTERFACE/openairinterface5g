@@ -2314,14 +2314,13 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
                             nb_rb_0,
                             shift);
         }
-        nr_construct_HhH_elements(conjH_H_elements[ctx*n_tx+rtx],
-                                      n_rx,
-                                      nb_rb_0);
+        nr_construct_HhH_elements(conjH_H_elements[ctx*n_tx+rtx],n_rx,nb_rb_0);
       }
     }
 
   int16_t k,rr[n_tx-1],cc[n_tx-1];
   int fpshift = 8;
+
   //Allocate the matrix inv elements
   int32_t ** inv_H_h_H;
   inv_H_h_H = (int32_t **)malloc16_clear( n_tx*n_tx*sizeof(int32_t *) );
@@ -2330,6 +2329,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
       inv_H_h_H[ctx*n_tx+rtx] = (int32_t *)malloc16_clear( 12*nb_rb*sizeof(int32_t) );
     }
   }
+
   //Compute Inversion of the H^*H matrix
   /* For 2x2 MIMO matrix, we compute
    *        |(conj_H_00xH_00+conj_H_10xH_10)   (conj_H_00xH_01+conj_H_10xH_11)|
@@ -2406,7 +2406,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
                  nb_rb_0,
                  +1,
                  fpshift);//(64*2=2^7)/2^15
-    print_shorts(" nr_det_2x2 ",(int16_t*)&determ_fin[0]);
+    print_shorts("nr_det_2x2",(int16_t*)&determ_fin[0]);
   }
   else if(n_tx==3) {
     nr_det_3x3(conjH_H_elements[0][0],//a11
@@ -2422,7 +2422,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
                nb_rb,
                +1,
                fpshift);
-    print_shorts(" nr_det_3x3",(int16_t*)&determ_fin[0]);
+    print_shorts("nr_det_3x3",(int16_t*)&determ_fin[0]);
   }
   else if(n_tx==4) {
     nr_det_4x4(conjH_H_elements,//
@@ -2430,9 +2430,8 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
                nb_rb,
                +1,
                fpshift);
-    print_shorts(" nr_det_4x4",(int16_t*)&determ_fin[0]);
+    print_shorts("nr_det_4x4",(int16_t*)&determ_fin[0]);
   }
-
 
   // multiply Matrix inversion pf H_h_H by the rx signal vector
   int32_t outtemp[12*nb_rb] __attribute__((aligned(32)));
@@ -2477,7 +2476,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
   //Update LLR thresholds with the Matrix determinant
   __m128i *dl_ch_mag128_0=NULL,*dl_ch_mag128b_0=NULL,*dl_ch_mag128r_0=NULL,*determ_fin_128;
   __m128i mmtmpD2,mmtmpD3;
-    __m128i QAM_amp128={0},QAM_amp128b={0},QAM_amp128r={0};
+  __m128i QAM_amp128={0},QAM_amp128b={0},QAM_amp128r={0};
   short nr_realpart[8]__attribute__((aligned(16))) = {1,0,1,0,1,0,1,0};
   determ_fin_128      = (__m128i *)&determ_fin[0];
 
