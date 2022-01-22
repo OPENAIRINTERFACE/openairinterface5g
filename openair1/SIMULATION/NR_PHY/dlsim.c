@@ -1186,10 +1186,10 @@ int main(int argc, char **argv)
                              frame_length_complex_samples,
                              0);
 
-        double H_awgn_mimo[4][4] ={{1.0, 0.0, 0.0, 0.0}, //rx 0
-                                   {0.0, 1.0, 0.0, 0.0}, //rx 1
-                                   {0.0, 0.0, 1.0, 0.0}, //rx 2
-                                   {0.0, 0.0, 0.0, 1.0}};//rx 3
+        double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05}, //rx 0
+                                   {0.2, 1.0, 0.2, 0.1}, //rx 1
+                                   {0.1, 0.2, 1.0, 0.2}, //rx 2
+                                   {0.05, 0.1, 0.2, 1.0}};//rx 3
 
         for (i=frame_parms->get_samples_slot_timestamp(slot,frame_parms,0); 
              i<frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0);

@@ -1942,6 +1942,29 @@ void nr_det_2x2(int32_t *a,//a
   _m_empty();
 }
 
+/* Zero Forcing Rx function: nr_a_sum_b()
+ * Compute the complex addition x=x+y
+ *
+ * */
+void nr_a_sum_b(__m128i *input_x,
+                __m128i *input_y,
+                unsigned short nb_rb)
+{
+  unsigned short rb;
+
+  for (rb=0; rb<nb_rb; rb++) {
+
+    input_x[0] = _mm_adds_epi16(input_x[0],input_y[0]);
+    input_x[1] = _mm_adds_epi16(input_x[1],input_y[1]);
+    input_x[2] = _mm_adds_epi16(input_x[2],input_y[2]);
+
+    input_x+=3;
+    input_y+=3;
+  }
+  _mm_empty();
+  _m_empty();
+}
+
 /* Zero Forcing Rx function: nr_a_mult_b()
  * Compute the complex Multiplication c=a*b
  *
@@ -2021,13 +2044,15 @@ void nr_det_3x3(int32_t *a11,//
              a33,//d
              outtemp,//ad-bc
              nb_rb,
-             +1,
+             +1*sign,
              shift0);
+  //print_shorts(" out1 det2x2 ",(int16_t*)&outtemp[0]);
     nr_a_mult_b(a11,
                 outtemp,
                 out1,
                 nb_rb,
                 shift0);
+    //print_shorts(" a11*out1 ",(int16_t*)&out1[0]);
     //a12
     nr_det_2x2(a21,//a
                a23,//b
@@ -2035,13 +2060,15 @@ void nr_det_3x3(int32_t *a11,//
                a33,//d
                outtemp,//ad-bc
                nb_rb,
-               -1,
+               -1*sign,
                shift0);
+    //print_shorts(" out2 det2x2 ",(int16_t*)&outtemp[0]);
     nr_a_mult_b(a12,
                 outtemp,
                 out2,
                 nb_rb,
                 shift0);
+    //print_shorts(" a12*out2 ",(int16_t*)&out2[0]);
     //a13
     nr_det_2x2(a21,//a
                a22,//b
@@ -2049,14 +2076,15 @@ void nr_det_3x3(int32_t *a11,//
                a32,//d
                outtemp,//ad-bc
                nb_rb,
-               +1,
+               +1*sign,
                shift0);
+    //print_shorts(" out3 det2x2 ",(int16_t*)&outtemp[0]);
     nr_a_mult_b(a13,
                 outtemp,
                 out3,
                 nb_rb,
                 shift0);
-
+    //print_shorts(" a13*out3 ",(int16_t*)&out3[0]);
     __m128i *out1_128,*out2_128,*out3_128,*det_128;
 
      out1_128 = (__m128i *)out1;
@@ -2067,6 +2095,7 @@ void nr_det_3x3(int32_t *a11,//
      for (int rb=0; rb<3*nb_rb; rb++) {
        det_128[0]    = _mm_adds_epi16(out1_128[0],out2_128[0]);
        det_128[0]    = _mm_adds_epi16(det_128[0],out3_128[0]);
+       //if (rb==0) print_shorts(" out det3x3 ",(int16_t*)&det_128[0]);
        out1_128+=1;
        out2_128+=1;
        out3_128+=1;
@@ -2074,6 +2103,57 @@ void nr_det_3x3(int32_t *a11,//
      }
      _mm_empty();
      _m_empty();
+}
+
+/* Zero Forcing Rx function: nr_det_4x4()
+ * Compute the matrix determinant for 4x4 Matrix
+ *
+ * */
+void nr_det_4x4(int32_t ***a44,//
+                int32_t *ad_bc,//ad-bc
+                unsigned short nb_rb,
+                int32_t sign,
+                int32_t shift0){
+  int32_t outtemp[12*nb_rb] __attribute__((aligned(32)));
+  int32_t outtemp1[12*nb_rb] __attribute__((aligned(32)));
+  int16_t k,rr[3],cc[3];
+  for (int rtx=0;rtx<4;rtx++) {//row
+      k=0;
+      for(int rrtx=0;rrtx<4;rrtx++)
+        if(rrtx != rtx) rr[k++] = rrtx;
+      int ctx=0;
+      k=0;
+      for(int cctx=0;cctx<4;cctx++)
+        if(cctx != ctx) cc[k++] = cctx;
+
+      nr_det_3x3(a44[cc[0]*4+rr[0]][0],//a11
+                 a44[cc[1]*4+rr[0]][0],//a12
+                 a44[cc[2]*4+rr[0]][0],//a13
+                 a44[cc[0]*4+rr[1]][0],//a21
+                 a44[cc[1]*4+rr[1]][0],//a22
+                 a44[cc[2]*4+rr[1]][0],//a23
+                 a44[cc[0]*4+rr[2]][0],//a31
+                 a44[cc[1]*4+rr[2]][0],//a32
+                 a44[cc[2]*4+rr[2]][0],//a33
+                 outtemp,
+                 nb_rb,
+                 ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1),
+                 shift0);
+
+      nr_a_mult_b(a44[ctx*4+rtx][0],
+                  outtemp,
+                  rtx==0? ad_bc:outtemp1,
+                  nb_rb,
+                  shift0);
+
+      if (rtx != 0) nr_a_sum_b((__m128i *)ad_bc,
+                               (__m128i *)outtemp1,
+                               nb_rb);
+
+  }
+
+  _mm_empty();
+  _m_empty();
 }
 
 /* Zero Forcing Rx function: nr_element_sign()
@@ -2140,44 +2220,6 @@ void nr_construct_HhH_elements(int **conjH_H_elements,
   _m_empty();
 }
 
-/* Zero Forcing Rx function: nr_inv_comp_muli
- * Complex number multi: z = x*y
- *                         = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
- * */
-__m128i nr_inv_comp_muli(__m128i input_x,
-                         __m128i input_y)
-{
-  int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
-
-  __m128i xy_re_128, xy_im_128;
-  __m128i output_z, tmp_z0, tmp_z1;
-
-  // complex multiplication (x_re + jx_im)*(y_re + jy_im) = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
-
-  // the real part
-  xy_re_128 = _mm_sign_epi16(input_x,*(__m128i*)&nr_conjug2[0]);
-  xy_re_128 = _mm_madd_epi16(xy_re_128,input_y); //Re: (x_re*y_re - x_im*y_im)
-
-  // the imag part
-  xy_im_128 = _mm_shufflelo_epi16(input_x,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = _mm_shufflehi_epi16(xy_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = _mm_madd_epi16(xy_im_128,input_y);//Im: (x_im*y_re + x_re*y_im)
-
-  //convert back to Q15 before packing
-  xy_re_128 = _mm_srai_epi32(xy_re_128,4);//(2^15/64*2*16)
-  xy_im_128 = _mm_srai_epi32(xy_im_128,4);
-
-  tmp_z0  = _mm_unpacklo_epi32(xy_re_128,xy_im_128);
-  //print_ints("unpack lo:",&tmp_z0[0]);
-  tmp_z1  = _mm_unpackhi_epi32(xy_re_128,xy_im_128);
-  //print_ints("unpack hi:",&tmp_z1[0]);
-  output_z = _mm_packs_epi32(tmp_z0,tmp_z1);
-
-  _mm_empty();
-  _m_empty();
-  return(output_z);
-}
-
 /* Zero Forcing Rx function: nr_conjch0_mult_ch1()
  *
  *
@@ -2223,58 +2265,6 @@ void nr_conjch0_mult_ch1(int *ch0,
   }
   _mm_empty();
   _m_empty();
-}
-
-__m128i nr_comp_muli_sum(__m128i input_x,
-                         __m128i input_y,
-                         __m128i input_w,
-                         __m128i input_z,
-                         unsigned char output_shift0)
-{
-  int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
-
-  __m128i xy_re_128, xy_im_128, wz_re_128, wz_im_128;
-  __m128i output, tmp_z0, tmp_z1;
-
-  // complex multiplication (x_re + jx_im)*(y_re + jy_im) = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
-  // the real part
-  xy_re_128 = _mm_sign_epi16(input_x,*(__m128i*)&nr_conjug2[0]);
-  xy_re_128 = _mm_madd_epi16(xy_re_128,input_y); //Re: (x_re*y_re - x_im*y_im)
-
-  // the imag part
-  xy_im_128 = _mm_shufflelo_epi16(input_x,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = _mm_shufflehi_epi16(xy_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = _mm_madd_epi16(xy_im_128,input_y);//Im: (x_im*y_re + x_re*y_im)
-
-  // complex multiplication (w_re + jw_im)*(z_re + jz_im) = (w_re*z_re - w_im*z_im) + j(w_im*z_re + w_re*z_im)
-  // the real part
-  wz_re_128 = _mm_sign_epi16(input_w,*(__m128i*)&nr_conjug2[0]);
-  wz_re_128 = _mm_madd_epi16(wz_re_128,input_z); //Re: (w_re*z_re - w_im*z_im)
-
-  // the imag part
-  wz_im_128 = _mm_shufflelo_epi16(input_w,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  wz_im_128 = _mm_shufflehi_epi16(wz_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  wz_im_128 = _mm_madd_epi16(wz_im_128,input_z);//Im: (w_im*z_re + w_re*z_im)
-
-
-  xy_re_128 = _mm_sub_epi32(xy_re_128, wz_re_128);
-  xy_im_128 = _mm_sub_epi32(xy_im_128, wz_im_128);
-  //print_ints("rx_re:",(int32_t*)&xy_re_128[0]);
-  //print_ints("rx_Img:",(int32_t*)&xy_im_128[0]);
-  
-//convert back to Q15 before packing
-  xy_re_128 = _mm_srai_epi32(xy_re_128,output_shift0);
-  xy_im_128 = _mm_srai_epi32(xy_im_128,output_shift0);
-  
-  tmp_z0  = _mm_unpacklo_epi32(xy_re_128,xy_im_128);
-  //print_ints("unpack lo:",&tmp_z0[0]);
-  tmp_z1  = _mm_unpackhi_epi32(xy_re_128,xy_im_128);
-  //print_ints("unpack hi:",&tmp_z1[0]);
-  output = _mm_packs_epi32(tmp_z0,tmp_z1);
-
-  _mm_empty();
-  _m_empty();
-  return(output);
 }
 
 /* Zero Forcing Rx function: up to 4 layers
@@ -2331,6 +2321,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
     }
 
   int16_t k,rr[n_tx-1],cc[n_tx-1];
+  int fpshift = 8;
   //Allocate the matrix inv elements
   int32_t ** inv_H_h_H;
   inv_H_h_H = (int32_t **)malloc16_clear( n_tx*n_tx*sizeof(int32_t *) );
@@ -2340,6 +2331,14 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
     }
   }
   //Compute Inversion of the H^*H matrix
+  /* For 2x2 MIMO matrix, we compute
+   *        |(conj_H_00xH_00+conj_H_10xH_10)   (conj_H_00xH_01+conj_H_10xH_11)|
+   * H_h_H= |                                                                 |
+   *        |(conj_H_01xH_00+conj_H_11xH_10)   (conj_H_01xH_01+conj_H_11xH_11)|
+   *
+   *inv(H_h_H) =(1/det)*[d  -b
+   *                     -c  a]
+   **************************************************************************/
   for (int rtx=0;rtx<n_tx;rtx++) {//row
     k=0;
     for(int rrtx=0;rrtx<n_tx;rrtx++)
@@ -2352,6 +2351,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
 
       switch (n_tx) {
          case 2://
+           fpshift = 8;
            nr_element_sign(conjH_H_elements[cc[0]*n_tx+rr[0]][0],
                            inv_H_h_H[rtx*n_tx+ctx],//out transpose
                            nb_rb,
@@ -2359,6 +2359,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
            //printf("Inv matrix (r%d c%d) from (r%d c%d) sign %d \n",ctx,rtx,rr[0],cc[0], ((rtx&&1)==1?-1:1)*((ctx&&1)==1?-1:1));
            break;
          case 3://
+           fpshift = 7;
            nr_det_2x2(conjH_H_elements[cc[0]*n_tx+rr[0]][0],//a
                       conjH_H_elements[cc[1]*n_tx+rr[0]][0],//b
                       conjH_H_elements[cc[0]*n_tx+rr[1]][0],//c
@@ -2366,11 +2367,11 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
                       inv_H_h_H[rtx*n_tx+ctx],//out transpose
                       nb_rb,
                       ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1),
-                      9);
-           printf("Inv matrix (r%d c%d) from det a(r%d c%d) b(r%d c%d) c(r%d c%d) d(r%d c%d) sign %d \n",ctx,rtx,rr[0],cc[0],rr[0],cc[1], rr[1],cc[0],rr[1],cc[1],((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1));
+                      fpshift);
+           //printf("Inv matrix (r%d c%d) from det a(r%d c%d) b(r%d c%d) c(r%d c%d) d(r%d c%d) sign %d \n",ctx,rtx,rr[0],cc[0],rr[0],cc[1], rr[1],cc[0],rr[1],cc[1],((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1));
            break;
-
          case 4://
+           fpshift = 6;
            nr_det_3x3(conjH_H_elements[cc[0]*n_tx+rr[0]][0],//a11
                       conjH_H_elements[cc[1]*n_tx+rr[0]][0],//a12
                       conjH_H_elements[cc[2]*n_tx+rr[0]][0],//a13
@@ -2383,28 +2384,20 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
                       inv_H_h_H[rtx*n_tx+ctx],//out transpose
                       nb_rb,
                       ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1),
-                      9);
-           printf("Inv matrix (r%d c%d) from det a(r%d c%d) b(r%d c%d) c(r%d c%d) d(r%d c%d) sign %d \n",ctx,rtx,rr[0],cc[0],rr[0],cc[1], rr[1],cc[0],rr[1],cc[1],((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1));
+                      fpshift);
+           //printf("Inv matrix (r%d c%d) from det a(r%d c%d) b(r%d c%d) c(r%d c%d) d(r%d c%d) sign %d \n",ctx,rtx,rr[0],cc[0],rr[0],cc[1], rr[1],cc[0],rr[1],cc[1],((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1));
            break;
 
          default:
            return -1;
-
            break;
       }
-
     }
-
   }
-//////////////////////////we are here
 
-  short nr_realpart[8]__attribute__((aligned(16))) = {1,0,1,0,1,0,1,0};
-
-
-
+  //Compute Matrix determinant
   if(n_tx==2) {
   //det_HhH = ad -bc
-
     nr_det_2x2(conjH_H_elements[0][0],//a
                  conjH_H_elements[2][0],
                  conjH_H_elements[1][0],
@@ -2412,130 +2405,131 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
                  determ_fin,
                  nb_rb_0,
                  +1,
-                 9);
-    /* 2- Compute the channel matrix inversion **********************************
-       *
-         *    |(conj_H_00xH_00+conj_H_10xH_10)   (conj_H_00xH_01+conj_H_10xH_11)|
-         * A= |                                                                 |
-         *    |(conj_H_01xH_00+conj_H_11xH_10)   (conj_H_01xH_01+conj_H_11xH_11)|
-         *
-         *
-         *
-         *inv(A) =(1/det)*[d  -b
-         *                 -c  a]
-         *
-         *
-         **************************************************************************/
-      __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*dl_ch_mag128_0=NULL,*dl_ch_mag128b_0=NULL,*dl_ch_mag128r_0=NULL,*determ_fin_128;//*dl_ch_mag128_1,*dl_ch_mag128b_1,*dl_ch_mag128r_1
-      __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
-      __m128i *after_mf_a_128,*after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
-      __m128i QAM_amp128={0},QAM_amp128b={0},QAM_amp128r={0};
-
-      determ_fin_128      = (__m128i *)&determ_fin[0];
-
-      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol*nb_rb*12];//aatx=0 @ aarx =0
-      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[n_rx][symbol*nb_rb*12];//aatx=1 @ aarx =0
-
-      after_mf_a_128 = (__m128i *)conjH_H_elements[0][0];
-      after_mf_b_128 = (__m128i *)conjH_H_elements[2][0];
-      after_mf_c_128 = (__m128i *)conjH_H_elements[1][0];
-      after_mf_d_128 = (__m128i *)conjH_H_elements[3][0];
-
-      if (mod_order>2) {
-        if (mod_order == 4) {
-          QAM_amp128 = _mm_set1_epi16(QAM16_n1);  //2/sqrt(10)
-          QAM_amp128b = _mm_setzero_si128();
-          QAM_amp128r = _mm_setzero_si128();
-        } else if (mod_order == 6) {
-          QAM_amp128  = _mm_set1_epi16(QAM64_n1); //4/sqrt{42}
-          QAM_amp128b = _mm_set1_epi16(QAM64_n2); //2/sqrt{42}
-          QAM_amp128r = _mm_setzero_si128();
-        } else if (mod_order == 8) {
-          QAM_amp128 = _mm_set1_epi16(QAM256_n1); //8/sqrt{170}
-          QAM_amp128b = _mm_set1_epi16(QAM256_n2);//4/sqrt{170}
-          QAM_amp128r = _mm_set1_epi16(QAM256_n3);//2/sqrt{170}
-          }
-        dl_ch_mag128_0      = (__m128i *)&dl_ch_mag[0][symbol*nb_rb*12];
-        dl_ch_mag128b_0     = (__m128i *)&dl_ch_magb[0][symbol*nb_rb*12];
-        dl_ch_mag128r_0     = (__m128i *)&dl_ch_magr[0][symbol*nb_rb*12];
-      }
-
-      for (int rb=0; rb<3*nb_rb_0; rb++) {
-        if (mod_order>2) {
-          /*int sum_det =0;
-          for (int k=0; k<4;k++) {
-            sum_det += ((((int *)&determ_fin_128[0])[k])>>2);
-            //printf("det_%d = %d\n",k,sum_det);
-            }*/
-
-          mmtmpD2 = _mm_sign_epi16(determ_fin_128[0],*(__m128i*)&nr_realpart[0]);
-          //mmtmpD2 = _mm_slli_epi32(mmtmpD2,5);
-
-          mmtmpD3 = _mm_unpacklo_epi32(mmtmpD2,mmtmpD2);
-
-          mmtmpD2 = _mm_unpackhi_epi32(mmtmpD2,mmtmpD2);
-
-          mmtmpD2 = _mm_packs_epi32(mmtmpD3,mmtmpD2);
-
-          dl_ch_mag128_0[0] = mmtmpD2;
-          dl_ch_mag128b_0[0] = mmtmpD2;
-          dl_ch_mag128r_0[0] = mmtmpD2;
-
-          dl_ch_mag128_0[0] = _mm_mulhi_epi16(dl_ch_mag128_0[0],QAM_amp128);
-          dl_ch_mag128_0[0] = _mm_slli_epi16(dl_ch_mag128_0[0],1);
-
-          dl_ch_mag128b_0[0] = _mm_mulhi_epi16(dl_ch_mag128b_0[0],QAM_amp128b);
-          dl_ch_mag128b_0[0] = _mm_slli_epi16(dl_ch_mag128b_0[0],1);
-
-          dl_ch_mag128r_0[0] = _mm_mulhi_epi16(dl_ch_mag128r_0[0],QAM_amp128r);
-          dl_ch_mag128r_0[0] = _mm_slli_epi16(dl_ch_mag128r_0[0],1);
-
-          //print_shorts("mag layer 1:",(int16_t*)&dl_ch_mag128_0[0]);
-          //print_shorts("mag layer 2:",(int16_t*)&dl_ch_mag128_1[0]);
-          //print_shorts("magb layer 1:",(int16_t*)&dl_ch_mag128b_0[0]);
-          //print_shorts("magb layer 2:",(int16_t*)&dl_ch_mag128b_1[0]);
-          //print_shorts("magr layer 1:",(int16_t*)&dl_ch_mag128r_0[0]);
-          //print_shorts("magr layer 2:",(int16_t*)&dl_ch_mag128r_1[0]);
-        }
-        // multiply by channel Inv
-        //rxdataF_zf128_0 = rxdataF_comp128_0*d - b*rxdataF_comp128_1
-        //rxdataF_zf128_1 = rxdataF_comp128_1*a - c*rxdataF_comp128_0
-        //printf("layer_1 \n");
-        mmtmpD0 = nr_comp_muli_sum(rxdataF_comp128_0[0],
-                                   after_mf_d_128[0],
-                                   rxdataF_comp128_1[0],
-                                   after_mf_b_128[0],
-                                   9);
-
-        //printf("layer_2 \n");
-        mmtmpD1 = nr_comp_muli_sum(rxdataF_comp128_1[0],
-                                   after_mf_a_128[0],
-                                   rxdataF_comp128_0[0],
-                                   after_mf_c_128[0],
-                                   9);
-
-        rxdataF_comp128_0[0] = mmtmpD0;
-        rxdataF_comp128_1[0] = mmtmpD1;
-    //#ifdef DEBUG_DLSCH_DEMOD
-        printf("\n Rx signal after ZF l%d rb%d\n",symbol,rb);
-        print_shorts(" Rx layer 1:",(int16_t*)&rxdataF_comp128_0[0]);
-        print_shorts(" Rx layer 2:",(int16_t*)&rxdataF_comp128_1[0]);
-    //#endif
-        determ_fin_128 += 1;
-        dl_ch_mag128_0 += 1;
-        dl_ch_mag128b_0 += 1;
-        dl_ch_mag128r_0 += 1;
-        rxdataF_comp128_0 += 1;
-        rxdataF_comp128_1 += 1;
-        after_mf_a_128 += 1;
-        after_mf_b_128 += 1;
-        after_mf_c_128 += 1;
-        after_mf_d_128 += 1;
-      }
+                 fpshift);//(64*2=2^7)/2^15
+    print_shorts(" nr_det_2x2 ",(int16_t*)&determ_fin[0]);
   }
-      _mm_empty();
-      _m_empty();
-       return(0);
+  else if(n_tx==3) {
+    nr_det_3x3(conjH_H_elements[0][0],//a11
+               conjH_H_elements[n_tx][0],//a12
+               conjH_H_elements[2*n_tx][0],//a13
+               conjH_H_elements[1][0],//a21
+               conjH_H_elements[n_tx+1][0],//a22
+               conjH_H_elements[2*n_tx+1][0],//a23
+               conjH_H_elements[2][0],//a31
+               conjH_H_elements[n_tx+2][0],//a32
+               conjH_H_elements[2*n_tx+2][0],//a33
+               determ_fin,
+               nb_rb,
+               +1,
+               fpshift);
+    print_shorts(" nr_det_3x3",(int16_t*)&determ_fin[0]);
+  }
+  else if(n_tx==4) {
+    nr_det_4x4(conjH_H_elements,//
+               determ_fin,//ad-bc
+               nb_rb,
+               +1,
+               fpshift);
+    print_shorts(" nr_det_4x4",(int16_t*)&determ_fin[0]);
+  }
+
+
+  // multiply Matrix inversion pf H_h_H by the rx signal vector
+  int32_t outtemp[12*nb_rb] __attribute__((aligned(32)));
+  int32_t **rxdataF_zforcing;
+
+  //Allocate rxdataF for zforcing out
+  rxdataF_zforcing        = (int32_t **)malloc16_clear( n_tx*sizeof(int32_t *) );
+   for (int rtx=0;rtx<n_tx;rtx++) {//row
+     rxdataF_zforcing[rtx] = (int32_t *)malloc16_clear( 12*nb_rb*sizeof(int32_t) );
+   }
+
+  for (int rtx=0;rtx<n_tx;rtx++) {//Output Layers row
+    // loop over Layers rtx=0,...,N_Layers-1
+      for (int ctx=0;ctx<n_tx;ctx++) {//column multi
+        //printf("Computing r_%d c_%d\n",rtx,ctx);
+        //print_shorts(" H_h_H=",(int16_t*)&conjH_H_elements[ctx*n_tx+rtx][0][0]);
+        //print_shorts(" Inv_H_h_H=",(int16_t*)&inv_H_h_H[ctx*n_tx+rtx][0]);
+        nr_a_mult_b(inv_H_h_H[ctx*n_tx+rtx],
+                    (int *)&rxdataF_comp[ctx*n_rx][symbol*nb_rb*12],
+                    outtemp,
+                    nb_rb,
+                    fpshift);
+        nr_a_sum_b((__m128i *)rxdataF_zforcing[rtx],
+                                 (__m128i *)outtemp,
+                                 nb_rb);//a =a + b
+        }
+//#ifdef DEBUG_DLSCH_DEMOD
+    printf("Computing layer_%d \n",rtx);;
+    print_shorts(" Rx signal:=",(int16_t*)&rxdataF_zforcing[rtx][0]);
+    print_shorts(" Rx signal:=",(int16_t*)&rxdataF_zforcing[rtx][4]);
+    print_shorts(" Rx signal:=",(int16_t*)&rxdataF_zforcing[rtx][8]);
+//#endif
+    }
+
+  //Copy zero_forcing out to output array
+  for (int rtx=0;rtx<n_tx;rtx++)
+    nr_element_sign(rxdataF_zforcing[rtx],
+                    (int *)&rxdataF_comp[rtx*n_rx][symbol*nb_rb*12],
+                    nb_rb,
+                    +1);
+
+  //Update LLR thresholds with the Matrix determinant
+  __m128i *dl_ch_mag128_0=NULL,*dl_ch_mag128b_0=NULL,*dl_ch_mag128r_0=NULL,*determ_fin_128;
+  __m128i mmtmpD2,mmtmpD3;
+    __m128i QAM_amp128={0},QAM_amp128b={0},QAM_amp128r={0};
+  short nr_realpart[8]__attribute__((aligned(16))) = {1,0,1,0,1,0,1,0};
+  determ_fin_128      = (__m128i *)&determ_fin[0];
+
+  if (mod_order>2) {
+    if (mod_order == 4) {
+      QAM_amp128 = _mm_set1_epi16(QAM16_n1);  //2/sqrt(10)
+      QAM_amp128b = _mm_setzero_si128();
+      QAM_amp128r = _mm_setzero_si128();
+    } else if (mod_order == 6) {
+      QAM_amp128  = _mm_set1_epi16(QAM64_n1); //4/sqrt{42}
+      QAM_amp128b = _mm_set1_epi16(QAM64_n2); //2/sqrt{42}
+      QAM_amp128r = _mm_setzero_si128();
+    } else if (mod_order == 8) {
+      QAM_amp128 = _mm_set1_epi16(QAM256_n1); //8/sqrt{170}
+      QAM_amp128b = _mm_set1_epi16(QAM256_n2);//4/sqrt{170}
+      QAM_amp128r = _mm_set1_epi16(QAM256_n3);//2/sqrt{170}
+    }
+    dl_ch_mag128_0      = (__m128i *)&dl_ch_mag[0][symbol*nb_rb*12];
+    dl_ch_mag128b_0     = (__m128i *)&dl_ch_magb[0][symbol*nb_rb*12];
+    dl_ch_mag128r_0     = (__m128i *)&dl_ch_magr[0][symbol*nb_rb*12];
+
+    for (int rb=0; rb<3*nb_rb_0; rb++) {
+      //for symmetric H_h_H matrix, the determinant is only real values
+      mmtmpD2 = _mm_sign_epi16(determ_fin_128[0],*(__m128i*)&nr_realpart[0]);
+      mmtmpD3 = mmtmpD2;
+      mmtmpD3 = _mm_shufflelo_epi16(mmtmpD3,_MM_SHUFFLE(2,3,0,1));
+      mmtmpD3 = _mm_shufflehi_epi16(mmtmpD3,_MM_SHUFFLE(2,3,0,1));
+      mmtmpD2 = _mm_add_epi16(mmtmpD2,mmtmpD3);
+
+      dl_ch_mag128_0[0] = mmtmpD2;
+      dl_ch_mag128b_0[0] = mmtmpD2;
+      dl_ch_mag128r_0[0] = mmtmpD2;
+
+      dl_ch_mag128_0[0] = _mm_mulhi_epi16(dl_ch_mag128_0[0],QAM_amp128);
+      dl_ch_mag128_0[0] = _mm_slli_epi16(dl_ch_mag128_0[0],1);
+
+      dl_ch_mag128b_0[0] = _mm_mulhi_epi16(dl_ch_mag128b_0[0],QAM_amp128b);
+      dl_ch_mag128b_0[0] = _mm_slli_epi16(dl_ch_mag128b_0[0],1);
+
+      dl_ch_mag128r_0[0] = _mm_mulhi_epi16(dl_ch_mag128r_0[0],QAM_amp128r);
+      dl_ch_mag128r_0[0] = _mm_slli_epi16(dl_ch_mag128r_0[0],1);
+
+      determ_fin_128 += 1;
+      dl_ch_mag128_0 += 1;
+      dl_ch_mag128b_0 += 1;
+      dl_ch_mag128r_0 += 1;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+  return(0);
 }
 
 static void nr_dlsch_layer_demapping(int16_t **llr_cw,
