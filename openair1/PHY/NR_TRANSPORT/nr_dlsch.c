@@ -495,8 +495,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     // The same precoding matrix is applied on prg_size RBs, Thus
     //        pmi = prgs_list[rbidx/prg_size].pm_idx, rbidx =0,...,rbSize-1
     // The Precoding matrix:
-    // The Codebook Type I and Type II are not supported yet.
-    // We`adopt the precoding matrices of PUSCH for 4 layers.
+    // The Codebook Type I
     start_meas(&gNB->dlsch_precoding_stats);
 
     for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
