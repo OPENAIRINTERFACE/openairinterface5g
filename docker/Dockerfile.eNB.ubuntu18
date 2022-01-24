@@ -76,6 +76,8 @@ COPY --from=enb-build \
      /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
      /oai-ran/cmake_targets/ran_build/build/libdfts.so \
      /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so \
+     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
+     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv_enb.so \
      /usr/local/lib/
 
 # Now we are copying from builder-image the UHD files.

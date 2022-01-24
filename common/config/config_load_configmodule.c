@@ -254,7 +254,7 @@ configmodule_interface_t *load_configmodule(int argc,
   cfgptr = calloc(sizeof(configmodule_interface_t),1);
   /* argv_info is used to memorize command line options which have been recognized */
   /* and to detect unrecognized command line options which might have been specified */
-  cfgptr->argv_info = calloc(sizeof(int32_t), argc);
+  cfgptr->argv_info = calloc(sizeof(int32_t), argc+10);
   /* argv[0] is the exec name, always Ok */
   cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
 

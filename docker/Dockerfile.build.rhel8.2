@@ -35,4 +35,4 @@ COPY . .
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --eNB --gNB --RU --UE --nrUE --ninja -w USRP --verbose-ci
+    ./build_oai --eNB --gNB --RU --UE --nrUE --ninja --build-lib all -w USRP --verbose-ci
