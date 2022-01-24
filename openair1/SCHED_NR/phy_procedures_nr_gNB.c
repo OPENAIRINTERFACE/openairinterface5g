@@ -106,7 +106,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   prs_data.PRSResourceSetPeriod[1]=0;  // resource slot offset
   prs_data.SymbolStart=7;		
   prs_data.NumPRSSymbols=6;
-  prs_data.NumRB=273;
+  prs_data.NumRB=8;
   prs_data.RBOffset=0;
   prs_data.CombSize=4;
   prs_data.REOffset=0;

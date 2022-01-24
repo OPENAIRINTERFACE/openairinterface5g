@@ -28,11 +28,17 @@ extern short filt16a_r0[16];
 
 extern short filt16a_m0[16];
 
+extern short filt16a_mm0[16];
+
 extern short filt16a_l1[16];
 
 extern short filt16a_r1[16];
 
 extern short filt16a_m1[16];
+
+extern short filt16a_mm1[16];
+
+extern short filt16a_ml1[16];
 
 extern short filt16a_l2[16];
 
@@ -40,11 +46,19 @@ extern short filt16a_r2[16];
 
 extern short filt16a_m2[16];
 
+extern short filt16a_mm2[16];
+
+extern short filt16a_ml2[16];
+
 extern short filt16a_l3[16];
 
 extern short filt16a_r3[16];
 
 extern short filt16a_m3[16];
+
+extern short filt16a_mm3[16];
+
+extern short filt16a_ml3[16];
 
 extern short filt16a_l0_dc[16];
 

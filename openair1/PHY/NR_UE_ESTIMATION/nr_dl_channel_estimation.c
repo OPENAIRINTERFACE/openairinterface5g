@@ -52,7 +52,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
   uint32_t **nr_gold_prs = ue->nr_gold_prs[proc->nr_slot_rx];
   prs_data_t *prs_cfg    = &ue->prs_cfg;
   
-  int16_t *prs_chest, ch[2] = {0}, *rxF, *pil, *fl,*fm,*fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
+  int16_t *prs_chest, ch[2] = {0}, *rxF, *pil, *fl,*fm, *fmm, *fml, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
   int16_t k_prime = 0, k = 0;
   uint8_t idx = prs_cfg->NPRSID;
   uint8_t rxAnt = 0; // ant 0 rxdataF for now
@@ -75,28 +75,37 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     }
    
   printf("PRS config l %d k_prime %d:\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", l, k_prime, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
+    
     //TODO currently supported only comb_size 2 and 4
     switch (k_prime) {
       case 0:
         fl = filt16a_l0;
+        fmm = filt16a_mm0;
+        fml = filt16a_mm0;
         fm = filt16a_m0;
         fr = filt16a_r0;
         break;
       
       case 1:
         fl = filt16a_l1;
+        fmm = filt16a_mm1;
+        fml = filt16a_ml1;
         fm = filt16a_m1;
         fr = filt16a_r1;
         break;
 
       case 2:
         fl = filt16a_l2;
+        fmm = filt16a_mm2;
+        fml = filt16a_ml2;
         fm = filt16a_m2;
         fr = filt16a_r2;
         break;
 
       case 3:
         fl = filt16a_l3;
+        fmm = filt16a_mm3;
+        fml = filt16a_ml3;
         fm = filt16a_m3;
         fr = filt16a_r3;
         break;
@@ -117,35 +126,55 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       mod_prs[m<<1]     = nr_qpsk_mod_table[idx<<1];
       mod_prs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
     } 
-
+    
+    // Channel estimation and interpolation
     pil       = (int16_t *)&mod_prs[0];
     rxF       = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
     prs_chest = (int16_t *)&ue->prs_ch_estimates[rxAnt][l*frame_params->ofdm_symbol_size];
     memset(prs_chest,0,4*(ue->frame_parms.ofdm_symbol_size));
-    for(int pIdx = 0; pIdx < prs_cfg->NumRB*(12/prs_cfg->CombSize); pIdx+=3) 
-    {
-      //pilot 0
-      ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
-      ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
       
+    //Start pilot
+    ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
+    ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
 #ifdef DEBUG_PRS_CHEST
-      printf("pilIdx %d at k %d of l %d reIdx %d rxF %d %d ch[0] %d ch[1] %d\n", pIdx, k, l, (l*frame_params->ofdm_symbol_size + k), rxF[0], rxF[1], ch[0], ch[1]);
+    printf("pilIdx %d at k %d of l %d reIdx %d rxF %p %d %d ch[0] %d ch[1] %d\n", 0, k, l, (l*frame_params->ofdm_symbol_size + k), rxF, rxF[0], rxF[1], ch[0], ch[1]);
 #endif
       
-      multadd_real_vector_complex_scalar(fl,
-				       ch,
-				       prs_chest,
-				       16);
-      
-      pil +=2;
-      k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
-      rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
-      
-      //pilot 1
+    multadd_real_vector_complex_scalar(fl,
+			       ch,
+			       prs_chest,
+			       16);
+    
+    pil +=2;
+    k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
+    rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
+
+    ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
+    ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+#ifdef DEBUG_PRS_CHEST
+    printf("pilIdx %d at k %d of l %d reIdx %d rxF %p %d %d ch[0] %d ch[1] %d\n", 1, k, l, (l*frame_params->ofdm_symbol_size + k), rxF, rxF[0], rxF[1], ch[0], ch[1]);
+#endif
+    
+    multadd_real_vector_complex_scalar(fml,
+			       ch,
+			       prs_chest,
+			       16);
+    
+    pil +=2;
+    k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
+    rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
+    prs_chest +=8;
+
+    //Middle pilots
+    for(int pIdx = 2; pIdx < prs_cfg->NumRB*(12/prs_cfg->CombSize)-2; pIdx++) 
+    {
       ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
       ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+#ifdef DEBUG_PRS_CHEST
+      printf("pilIdx %d at k %d of l %d reIdx %d rxF %p %d %d ch[0] %d ch[1] %d\n", pIdx, k, l, (l*frame_params->ofdm_symbol_size + k), rxF, rxF[0], rxF[1], ch[0], ch[1]);
+#endif
       
-      multadd_real_vector_complex_scalar(fm,
+      multadd_real_vector_complex_scalar(fmm,
 				       ch,
 				       prs_chest,
 				       16);
@@ -153,27 +182,43 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       pil +=2;
       k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
       rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
-      
-      //pilot 2
-      ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
-      ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
-      
-      multadd_real_vector_complex_scalar(fr,
-				       ch,
-				       prs_chest,
-				       16);
-      
-      pil +=2;
-      k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
-      rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
-      for (int re = 0; re < 12; re++)
-        printf("prs_ch[%d] %d %d\n", re, prs_chest[re<<1], prs_chest[(re<<1)+1]);
-      
-      prs_chest +=24; 
-    } //for m
+      prs_chest +=8;
+    }
+    
+    //End pilot
+    ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
+    ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+#ifdef DEBUG_PRS_CHEST
+    printf("pilIdx %d at k %d of l %d reIdx %d rxF %p %d %d ch[0] %d ch[1] %d\n", 0, k, l, (l*frame_params->ofdm_symbol_size + k), rxF, rxF[0], rxF[1], ch[0], ch[1]);
+#endif
+    
+    multadd_real_vector_complex_scalar(fm,
+			       ch,
+			       prs_chest,
+			       16);
+    
+    pil +=2;
+    k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
+    rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
+    
+    ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
+    ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+#ifdef DEBUG_PRS_CHEST
+    printf("pilIdx %d at k %d of l %d reIdx %d rxF %p %d %d ch[0] %d ch[1] %d\n", 1, k, l, (l*frame_params->ofdm_symbol_size + k), rxF, rxF[0], rxF[1], ch[0], ch[1]);
+#endif
+   
+    multadd_real_vector_complex_scalar(fr,
+	  	       ch,
+	  	       prs_chest,
+	  	       16);
+
+    prs_chest = (int16_t *)&ue->prs_ch_estimates[rxAnt][l*frame_params->ofdm_symbol_size];
+    for (int re = 0; re < prs_cfg->NumRB*12; re++)
+      printf("prs_ch[%d] %d %d\n", re, prs_chest[re<<1], prs_chest[(re<<1)+1]);
+     
   } //for l
   
-  LOG_M("prsEst.m","prs_chest",&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumRB*12,1,1 );
+  LOG_M("prsEst.m","prs_chest",&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumRB*12,1,1);
   return(0);
 }
 
@@ -538,10 +583,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 					 ch,
 					 dl_ch,
 					 16);
-#ifdef DEBUG_CH
-      for (int re = 0; re < 12; re++)
-        printf("dl_ch[%d] %d %d\n", re, dl_ch[re<<1], dl_ch[(re<<1)+1]);
-#endif
+      
       pil += 2;
       re_offset = (re_offset+4) % ue->frame_parms.ofdm_symbol_size;
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+re_offset)];
