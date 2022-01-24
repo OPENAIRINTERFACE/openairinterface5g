@@ -1312,6 +1312,7 @@ void *ru_thread( void *param ) {
       else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
     } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
+    LOG_I(PHY,"RU %d RF started\n",ru->idx);
     // start trx write thread
     if(usrp_tx_thread == 1) {
       if (ru->start_write_thread) {
