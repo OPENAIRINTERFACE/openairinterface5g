@@ -38,11 +38,4 @@
 		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 	</testCase>
 
-	<testCase id="000002">
-		<class>WaitEndBuild_eNB</class>
-		<desc>Wait for end of Build gNB</desc>
-		<eNB_instance>0</eNB_instance>
-		<eNB_serverId>0</eNB_serverId>
-	</testCase>
-
 </testCaseList>

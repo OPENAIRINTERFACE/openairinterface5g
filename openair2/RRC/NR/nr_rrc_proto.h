@@ -79,6 +79,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int scg_id,
                                      int servCellIndex,
                                      int dl_antenna_ports,
+                                     int minRXTXTIMEpdsch,
                                      int do_csirs,
                                      int uid);
 
@@ -93,6 +94,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            int dl_antenna_ports,
+                           int minRXTXTIMEpdsch,
                            int do_csirs,
                            int uid);
 

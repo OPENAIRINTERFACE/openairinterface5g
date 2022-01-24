@@ -258,7 +258,7 @@ uint8_t compute_ri_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
     }
     return ri_restriction;
   }
-  else
+  else 
     AssertFatal(1==0,"Other configurations not yet implemented\n");
   return -1;
 }
@@ -795,6 +795,7 @@ void nr_csi_meas_reporting(int Mod_idP,
   }
 }
 
+__attribute__((unused))
 static void handle_dl_harq(module_id_t mod_id,
                            int UE_id,
                            int8_t harq_pid,
@@ -1451,12 +1452,15 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
       NR_UE_harq_t *harq = find_harq(mod_id, frame, slot, UE_id);
-      if (!harq)
+      if (!harq) {
+        LOG_E(NR_MAC, "Oh no! Could not find a harq in %s!\n", __FUNCTION__);
         break;
+      }
       DevAssert(harq->is_waiting);
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      handle_dl_harq(mod_id, UE_id, pid, harq_value == 1 && harq_confidence == 0);
+      LOG_D(NR_MAC,"bit %d pid %d ack/nack %d\n",harq_bit,pid,harq_value);
+      handle_dl_harq(mod_id, UE_id, pid, harq_value == 0 && harq_confidence == 0);
       if (harq_confidence == 1)  UE_info->mac_stats[UE_id].pucch0_DTX++;
     }
   }
@@ -1544,7 +1548,7 @@ int nr_acknack_scheduling(int mod_id,
   const int nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
   const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots;
   const int first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
-  const int first_ul_slot_period = first_ul_slot_tdd%nr_slots_period;
+  const int first_ul_slot_period = tdd->nrofDownlinkSlots;
   const int CC_id = 0;
   NR_sched_pucch_t *csi_pucch;
 
@@ -1594,11 +1598,11 @@ int nr_acknack_scheduling(int mod_id,
       LOG_D(NR_MAC,"Cannot multiplex csi_pucch for %d.%d\n",csi_pucch->frame,csi_pucch->ul_slot);
       nr_fill_nfapi_pucch(mod_id, frame, slot, csi_pucch, UE_id);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
-      pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
-      if(((s + 1)%nr_slots_period) == 0)
-        pucch->ul_slot = (s + 1 + first_ul_slot_period) % n_slots_frame;
+      pucch->frame = pucch->ul_slot == n_slots_frame - 1 ? (pucch->frame + 1) % 1024 : pucch->frame;
+      if(((pucch->ul_slot + 1)%nr_slots_period) == 0)
+        pucch->ul_slot = (pucch->ul_slot + 1 + first_ul_slot_period) % n_slots_frame;
       else
-        pucch->ul_slot = (s + 1) % n_slots_frame;
+        pucch->ul_slot = (pucch->ul_slot + 1) % n_slots_frame;
     }
   }
 
@@ -1622,7 +1626,6 @@ int nr_acknack_scheduling(int mod_id,
 
   int max_fb_time = 0;
   get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
-  int max_absslot = frame*n_slots_frame + slot + max_fb_time;
 
   LOG_D(NR_MAC,"pucch_acknak 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n",frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
@@ -1631,7 +1634,10 @@ int nr_acknack_scheduling(int mod_id,
     // Find the right timing_indicator value.
     int i = 0;
     while (i < 8) {
-      if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot)
+      int diff = pucch->ul_slot - slot;
+      if (diff<0)
+        diff += n_slots_frame;
+      if (pdsch_to_harq_feedback[i] == diff)
         break;
       ++i;
     }
@@ -1661,8 +1667,10 @@ int nr_acknack_scheduling(int mod_id,
   LOG_D(NR_MAC,"pucch_acknak : %d.%d DAI = 0, looking for new pucch occasion\n",frame,slot);
   /* we need to find a new PUCCH occasion */
 
-  /*Inizialization of timing information*/
-  if (pucch->frame == 0 && pucch->ul_slot == 0) {
+  /*(Re)Inizialization of timing information*/
+  if ((pucch->frame == 0 && pucch->ul_slot == 0) ||
+      ((pucch->frame*n_slots_frame + pucch->ul_slot) <
+      (frame*n_slots_frame + slot))) {
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
@@ -1672,13 +1680,16 @@ int nr_acknack_scheduling(int mod_id,
 
   // Find the right timing_indicator value.
   int ind_found = -1;
-  // while we are within the feedback limits and it has not been
-  while ((pucch->frame*n_slots_frame + pucch->ul_slot) <= max_absslot) {
+  // while we are within the feedback limits
+  while ((n_slots_frame + pucch->ul_slot - slot) % n_slots_frame <= max_fb_time) {
     int i = 0;
     while (i < 8) {
       LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
             i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
-      if (pdsch_to_harq_feedback[i] == pucch->ul_slot - slot) {
+      int diff = pucch->ul_slot - slot;
+      if (diff<0)
+        diff += n_slots_frame;
+      if (pdsch_to_harq_feedback[i] == diff) {
         ind_found = i;
         break;
       }
@@ -1769,6 +1780,7 @@ int nr_acknack_scheduling(int mod_id,
   /* verify that at that slot and symbol, resources are free. We only do this
    * for initialCyclicShift 0 (we assume it always has that one), so other
    * initialCyclicShifts can overlap with ICS 0!*/
+
   if (pucch_Config) {
     const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
     DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
@@ -1817,8 +1829,11 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
              RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
       pucch_Config = RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
     }
+
     else continue;
-    if (!pucch_Config->schedulingRequestResourceToAddModList) continue;
+    if (!pucch_Config->schedulingRequestResourceToAddModList) 
+        continue;
+
     AssertFatal(pucch_Config->schedulingRequestResourceToAddModList->list.count>0,"NO SR configuration available");
 
     for (int SR_resource_id =0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++) {

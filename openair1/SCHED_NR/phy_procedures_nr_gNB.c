@@ -361,10 +361,11 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 	      number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
 	      pusch_pdu->qam_mod_order,
 	      pusch_pdu->nrOfLayers);
-  LOG_D(PHY,"rb_size %d, number_symbols %d, nb_re_dmrs %d, number_dmrs_symbols %d, qam_mod_order %d, nrOfLayer %d\n",
+  LOG_D(PHY,"rb_size %d, number_symbols %d, nb_re_dmrs %d, dmrs symbol positions %d, number_dmrs_symbols %d, qam_mod_order %d, nrOfLayer %d\n",
 	pusch_pdu->rb_size,
 	number_symbols,
 	nb_re_dmrs,
+        pusch_pdu->ul_dmrs_symb_pos,
 	number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
 	pusch_pdu->qam_mod_order,
 	pusch_pdu->nrOfLayers);
@@ -458,6 +459,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
 
   if (0/*pusch_pdu->mcs_index == 9*/) {
+      __attribute__((unused))
 #ifdef __AVX2__
       int off = ((pusch_pdu->rb_size&1) == 1)? 4:0;
 #else
@@ -662,6 +664,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
+      if (NFAPI_MODE == NFAPI_MODE_PNF)
+        pucch->frame = frame_rx;
       if ((pucch->active == 1) &&
           (pucch->frame == frame_rx) &&
           (pucch->slot == slot_rx) ) {

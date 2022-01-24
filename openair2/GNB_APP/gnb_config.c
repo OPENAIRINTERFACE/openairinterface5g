@@ -94,8 +94,6 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
 
   NR_FreqBandIndicatorNR_t                        *dl_frequencyBandList,*ul_frequencyBandList;
   struct NR_SCS_SpecificCarrier                   *dl_scs_SpecificCarrierList,*ul_scs_SpecificCarrierList;
-  struct NR_PDSCH_TimeDomainResourceAllocation    *bwp_dl_timedomainresourceallocation;
-  struct NR_PUSCH_TimeDomainResourceAllocation    *pusch_configcommontimedomainresourceallocation;
   //  struct NR_RateMatchPattern                      *ratematchpattern;
   //  NR_RateMatchPatternId_t                         *ratematchpatternid;
   //  NR_TCI_StateId_t                                *TCI_StateId;
@@ -143,14 +141,6 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->present        = NR_SetupRelease_PDSCH_ConfigCommon_PR_setup;
   scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup   = CALLOC(1,sizeof(struct NR_PDSCH_ConfigCommon));
   scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList = CALLOC(1,sizeof(struct NR_PDSCH_TimeDomainResourceAllocationList));
-  //
-  for (int i=0;i<NR_maxNrofDL_Allocations;i++) {
-    bwp_dl_timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
-    bwp_dl_timedomainresourceallocation->k0  = CALLOC(1,sizeof(long));
-    *bwp_dl_timedomainresourceallocation->k0=0;
-    ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
-		     bwp_dl_timedomainresourceallocation);
-  }
 
   ul_frequencyBandList              = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
   scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList          = CALLOC(1,sizeof(struct NR_MultiFrequencyBandListNR));
@@ -199,12 +189,6 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   ul_scs_SpecificCarrierList  = CALLOC(1,sizeof(struct NR_SCS_SpecificCarrier));
   ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list,ul_scs_SpecificCarrierList);
 
-  for (int i=0;i<NR_maxNrofUL_Allocations;i++) {
-    pusch_configcommontimedomainresourceallocation      = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
-    pusch_configcommontimedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
-    *pusch_configcommontimedomainresourceallocation->k2=0;
-    ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_configcommontimedomainresourceallocation); 
-  }
   //ratematchpattern                              = CALLOC(1,sizeof(struct NR_RateMatchPattern));
   //ratematchpattern->patternType.choice.bitmaps  = CALLOC(1,sizeof(struct NR_RateMatchPattern__patternType__bitmaps));
   //ratematchpattern->patternType.choice.bitmaps->resourceBlocks.buf = MALLOC(35);
@@ -221,6 +205,92 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   //ratematchpattern->subcarrierSpacing           = CALLOC(1,sizeof(NR_SubcarrierSpacing_t));
   //ratematchpatternid                            = CALLOC(1,sizeof(NR_RateMatchPatternId_t));
   
+}
+
+void fill_scc_sim(NR_ServingCellConfigCommon_t *scc,uint64_t *ssb_bitmap,int N_RB_DL,int N_RB_UL,int mu_dl,int mu_ul) {
+
+  *scc->physCellId=0;							\
+  //  *scc->n_TimingAdvanceOffset=NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n0;
+  *scc->ssb_periodicityServingCell=NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms20;
+  scc->dmrs_TypeA_Position=NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2;
+  *scc->ssbSubcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB=641032;
+  *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]=78;
+  scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA=640000;
+  scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier=0;
+  scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+
+  scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth=N_RB_DL;
+  scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth=13036;
+  scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing=mu_dl;//NR_SubcarrierSpacing_kHz30;
+  *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=12;
+  *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero=0;
+  struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation0 = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+  timedomainresourceallocation0->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  timedomainresourceallocation0->startSymbolAndLength=54;
+  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
+                   timedomainresourceallocation0);
+  struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation1 = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+  timedomainresourceallocation1->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
+  timedomainresourceallocation1->startSymbolAndLength=57;
+  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
+                   timedomainresourceallocation1);
+  *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0]=78;
+  *scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA=-1;
+  scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier=0;
+  scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth=N_RB_UL;
+  *scc->uplinkConfigCommon->frequencyInfoUL->p_Max=20;
+  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth=13036;
+  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing=mu_ul;//NR_SubcarrierSpacing_kHz30;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex=98;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM=NR_RACH_ConfigGeneric__msg1_FDM_one;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FrequencyStart=0;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.zeroCorrelationZoneConfig=13;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower=-118;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleTransMax=NR_RACH_ConfigGeneric__preambleTransMax_n10;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.powerRampingStep=NR_RACH_ConfigGeneric__powerRampingStep_dB2;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.ra_ResponseWindow=NR_RACH_ConfigGeneric__ra_ResponseWindow_sl20;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present=NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR_one;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->choice.one=NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB__one_n64;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ra_ContentionResolutionTimer=NR_RACH_ConfigCommon__ra_ContentionResolutionTimer_sf64;
+  *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rsrp_ThresholdSSB=19;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present=NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139=0;
+  scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig=NR_RACH_ConfigCommon__restrictedSetConfig_unrestrictedSet;
+  struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation0 = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
+  pusch_timedomainresourceallocation0->k2  = CALLOC(1,sizeof(long));
+  *pusch_timedomainresourceallocation0->k2=6;
+  pusch_timedomainresourceallocation0->mappingType=NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
+  pusch_timedomainresourceallocation0->startSymbolAndLength=55;
+  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation0);
+  struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation1 = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
+  pusch_timedomainresourceallocation1->k2  = CALLOC(1,sizeof(long));
+  *pusch_timedomainresourceallocation1->k2=6;
+  pusch_timedomainresourceallocation1->mappingType=NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
+  pusch_timedomainresourceallocation1->startSymbolAndLength=38;
+  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation1);
+  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble=1;
+  *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant=-90;
+ scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping=NR_PUCCH_ConfigCommon__pucch_GroupHopping_neither; 
+ *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->hoppingId=40;
+ *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal=-90;
+ scc->ssb_PositionsInBurst->present=NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
+ *ssb_bitmap=0xff;
+ scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity=NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots=7;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols=6;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots=2;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols=4;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity=321;
+
+ scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots=-1;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSymbols=-1;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofUplinkSlots=-1;
+ scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofUplinkSymbols=-1;
+ scc->ss_PBCH_BlockPower=20;
+ *scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing=-1;
 }
 
 
@@ -273,24 +343,9 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   if (*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder!=0)
     scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder = NULL;
 
-  // fix DL and UL Allocation lists
-  
-  for (int i=scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
-    printf("Checking element %d : %ld\n",i,*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0);
-    if (*scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0>32) {
-      printf("removing pdsch_TimeDomainAllocationList element %d\n",i);
-      free(scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0);
-      asn_sequence_del(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,i,1); 
-      printf("List size now %d\n",scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.count);
-    }
-  }
+  // prepare DL Allocation lists
+  nr_rrc_config_dl_tda(scc);
 
-  for (int i=scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count-1;i>=0;i--) {
-    if (*scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->k2>32) {
-      free(scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[i]->k2);
-      asn_sequence_del(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,i,1); 
-    }
-  }
   if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity > 320 ) {
     free(scc->tdd_UL_DL_ConfigurationCommon->pattern2);
     scc->tdd_UL_DL_ConfigurationCommon->pattern2=NULL;
@@ -896,9 +951,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
-  NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(NR_ServingCellConfigCommon_t));
+  NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(*scc));
   uint64_t ssb_bitmap=0xff;
-  memset((void*)scc,0,sizeof(NR_ServingCellConfigCommon_t));
   prepare_scc(scc);
   paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
   paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
@@ -1101,8 +1155,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
         printf("pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
-        printf("minTXRXTIMEpdsch %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIMEPDSCH_IDX].iptr);
-        NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIMEpdsch = *GNBParamList.paramarray[i][GNB_MINRXTXTIMEPDSCH_IDX].iptr;
+        printf("minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIME = *GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr;
         NRRRC_CONFIGURATION_REQ (msg_p).sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
         printf("Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_CSIRS = *GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr;
@@ -1121,23 +1175,14 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 int RCconfig_nr_gtpu(void ) {
 
   int               num_gnbs                      = 0;
-
-
-
-  char*             gnb_interface_name_for_NGU    = NULL;
   char*             gnb_ipv4_address_for_NGU      = NULL;
   uint32_t          gnb_port_for_NGU              = 0;
-  char*             gnb_interface_name_for_S1U    = NULL;
   char*             gnb_ipv4_address_for_S1U      = NULL;
   uint32_t          gnb_port_for_S1U              = 0;
-  char             *address                       = NULL;
-  char             *cidr                          = NULL;
   char gtpupath[MAX_OPTNAME_SIZE*2 + 8];
-  uint8_t           gnb_mode                      = 0;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
-  paramdef_t GTPUParams[] = GNBGTPUPARAMS_DESC;
   LOG_I(GTPU,"Configuring GTPu\n");
 
 /* get number of active eNodeBs */
@@ -1147,49 +1192,32 @@ int RCconfig_nr_gtpu(void ) {
            "Failed to parse config file no active gNodeBs in %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
 
   sprintf(gtpupath,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-  config_get(GTPUParams,sizeof(GTPUParams)/sizeof(paramdef_t),gtpupath);
-
   config_get(NETParams,sizeof(NETParams)/sizeof(paramdef_t),gtpupath); 
-
-  if (NETParams[0].strptr != NULL) { // SA
+  char *cidr=NULL, *address = NULL;
+  int port;
+  if (NETParams[1].strptr != NULL) {
     LOG_I(GTPU, "SA mode \n");
-    cidr = gnb_ipv4_address_for_NGU;
-    gnb_mode = 0;
-  } else {// NSA
+    address = strtok_r(gnb_ipv4_address_for_NGU, "/", &cidr);
+    port=gnb_port_for_NGU;
+  } else { 
     LOG_I(GTPU, "NSA mode \n");
-    cidr = gnb_ipv4_address_for_S1U;
-    gnb_mode = 1;
+    address = strtok_r(gnb_ipv4_address_for_S1U, "/", &cidr);
+    port=gnb_port_for_S1U;
   }
 
-    address = strtok(cidr, "/");
-
-    if (address) {
-      MessageDef *message;
-
-      if (gnb_mode == 1) { // NSA
-        message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_ENB_S1_REQ);
-        AssertFatal(message!=NULL,"");
-        // IPV4_STR_ADDR_TO_INT_NWBO ( address, RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
-        // LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
-        IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
-        LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_ENB_S1_REQ(message).enb_ip_address_for_S1u_S12_S4_up);
-        GTPV1U_ENB_S1_REQ(message).enb_port_for_S1u_S12_S4_up = gnb_port_for_S1U;
-        strcpy(GTPV1U_ENB_S1_REQ(message).addrStr,address);
-        sprintf(GTPV1U_ENB_S1_REQ(message).portStr,"%d", gnb_port_for_NGU);
-      } else {// TODO SA
-        message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_GNB_NG_REQ);
-        AssertFatal(message!=NULL,"");
-        IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
-        LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_GNB_NG_REQ(message).gnb_ip_address_for_NGu_up);
-        GTPV1U_GNB_NG_REQ(message).gnb_port_for_NGu_up = gnb_port_for_NGU;
-        strcpy(GTPV1U_GNB_NG_REQ(message).addrStr,address);
-        sprintf(GTPV1U_GNB_NG_REQ(message).portStr,"%d", gnb_port_for_NGU);
-      }
-     itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
-    } else
-    LOG_E(GTPU,"invalid address for NGU\n");
-
-
+  if (address) {
+    MessageDef *message;
+    message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_REQ);
+    AssertFatal(message!=NULL,"");
+    IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_REQ(message).localAddr, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
+    LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_REQ(message).localAddr);
+    GTPV1U_REQ(message).localPort = port;
+    strcpy(GTPV1U_REQ(message).localAddrStr,address);
+    sprintf(GTPV1U_REQ(message).localPortStr,"%d", port);
+    itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+  } else
+    LOG_E(GTPU,"invalid address for NGU or S1U\n");
+  
 return 0;
 }
 
@@ -1207,6 +1235,10 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
   (void)  my_int;
 
   memset((char*)active_gnb,0,MAX_GNB* sizeof(char*));
+  char*             gnb_ipv4_address_for_NGU      = NULL;
+  uint32_t          gnb_port_for_NGU              = 0;
+  char*             gnb_ipv4_address_for_S1U      = NULL;
+  uint32_t          gnb_port_for_S1U              = 0;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
@@ -1472,7 +1504,7 @@ void NRRCConfig(void) {
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   RC.nb_nr_inst = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
 
-	// Get num MACRLC instances
+  // Get num MACRLC instances
   config_getlist( &MACRLCParamList,NULL,0, NULL);
   RC.nb_nr_macrlc_inst  = MACRLCParamList.numelt;
   // Get num L1 instances
@@ -1548,6 +1580,11 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
             paramdef_t X2Params[]  = X2PARAMS_DESC;
             paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
             paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
+	    char*             gnb_ipv4_address_for_NGU      = NULL;
+	    uint32_t          gnb_port_for_NGU              = 0;
+	    char*             gnb_ipv4_address_for_S1U      = NULL;
+	    uint32_t          gnb_port_for_S1U              = 0;
+
             paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
             /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
             /* this is most probably a problem with the config module */
@@ -1708,7 +1745,9 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
     AssertFatal(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr != NULL,
                 "gNB id %u is not defined in configuration file\n",i);
-    F1AP_SETUP_REQ (msg_p).num_cells_available = 0;
+    f1ap_setup_req_t * f1Setup=&F1AP_SETUP_REQ(msg_p);
+    f1Setup->num_cells_available = 0;
+    f1Setup->cell_type=CELL_MACRO_GNB;
 
     for (k=0; k <num_gnbs ; k++) {
       if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[k], *(GNBParamList.paramarray[i][GNB_GNB_NAME_IDX].strptr)) == 0) {
@@ -1724,42 +1763,46 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
 
         config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
         paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-        F1AP_SETUP_REQ (msg_p).num_cells_available++;
-        F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
-        LOG_I(GNB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
-        F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
-        LOG_I(GNB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
-        F1AP_SETUP_REQ (msg_p).tac[k]              = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).tac[k]);
-        F1AP_SETUP_REQ (msg_p).mcc[k]              = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mcc[k]);
-        F1AP_SETUP_REQ (msg_p).mnc[k]              = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc[k]);
-        F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
-        LOG_I(GNB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
-        AssertFatal((F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 2) ||
-                    (F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 3),
+        f1Setup->num_cells_available++;
+        f1Setup->gNB_DU_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+        LOG_I(GNB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,f1Setup->gNB_DU_id);
+        f1Setup->gNB_DU_name      = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
+        LOG_I(GNB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,f1Setup->gNB_DU_name);
+        f1Setup->cell[k].tac              = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: tac[%d] %d\n",k,f1Setup->cell[k].tac);
+        f1Setup->cell[k].mcc              = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: mcc[%d] %d\n",k,f1Setup->cell[k].mcc);
+        f1Setup->cell[k].mnc              = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+        LOG_I(GNB_APP,"F1AP: mnc[%d] %d\n",k,f1Setup->cell[k].mnc);
+        f1Setup->cell[k].mnc_digit_length = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
+        LOG_I(GNB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,f1Setup->cell[k].mnc_digit_length);
+        AssertFatal((f1Setup->cell[k].mnc_digit_length == 2) ||
+                    (f1Setup->cell[k].mnc_digit_length == 3),
                     "BAD MNC DIGIT LENGTH %d",
-                    F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
-        F1AP_SETUP_REQ (msg_p).nr_cellid[k] = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
-        LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).nr_cellid[k]);
+                    f1Setup->cell[k].mnc_digit_length);
+        f1Setup->cell[k].nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
+        LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,f1Setup->cell[k].nr_cellid);
         LOG_I(GNB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.remote_addr);
-        LOG_I(GNB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.remote_addr));
-        F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6 = 0;
-        F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4 = 1;
-        //strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6_address, "");
-        strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.remote_addr);
+        LOG_I(GNB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",f1Setup->CU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.remote_addr));
+        f1Setup->CU_f1_ip_address.ipv6 = 0;
+        f1Setup->CU_f1_ip_address.ipv4 = 1;
+        //strcpy(f1Setup->CU_f1_ip_address.ipv6_address, "");
+        strcpy(f1Setup->CU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.remote_addr);
         LOG_I(GNB_APP,"F1AP: DU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.my_addr);
-        LOG_I(GNB_APP,"FIAP: DU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.my_addr));
-        F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6 = 0;
-        F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4 = 1;
-        //strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6_address, "");
-        strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.my_addr);
-        //strcpy(F1AP_SETUP_REQ (msg_p).CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
+        LOG_I(GNB_APP,"FIAP: DU_ip4_address in DU %p, strlen %ld\n",
+	      f1Setup->DU_f1_ip_address.ipv4_address,
+	      strlen(RC.nrmac[k]->eth_params_n.my_addr));
+        f1Setup->DU_f1_ip_address.ipv6 = 0;
+        f1Setup->DU_f1_ip_address.ipv4 = 1;
+        //strcpy(f1Setup->DU_f1_ip_address.ipv6_address, "");
+        strcpy(f1Setup->DU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.my_addr);
+	f1Setup->DUport= RC.nrmac[k]->eth_params_n.my_portd;
+	f1Setup->CUport= RC.nrmac[k]->eth_params_n.remote_portd;
+        //strcpy(f1Setup->CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
         sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
         config_get(SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
-        F1AP_SETUP_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
-        F1AP_SETUP_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+        f1Setup->sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
+        f1Setup->sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
         gNB_RRC_INST *rrc = RC.nrrrc[k];
         // wait until RRC cell information is configured
         int cell_info_configured = 0;
@@ -1772,53 +1815,53 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           pthread_mutex_unlock(&rrc->cell_info_mutex);
         } while (cell_info_configured == 0);
 
-        rrc->configuration.mcc[0] = F1AP_SETUP_REQ (msg_p).mcc[k];
-        rrc->configuration.mnc[0] = F1AP_SETUP_REQ (msg_p).mnc[k];
-        rrc->configuration.tac    = F1AP_SETUP_REQ (msg_p).tac[k];
-        rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).nr_cellid[k];
-        F1AP_SETUP_REQ (msg_p).nr_pci[k]    = *rrc->configuration.scc->physCellId;
-        F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
+        rrc->configuration.mcc[0] = f1Setup->cell[k].mcc;
+        rrc->configuration.mnc[0] = f1Setup->cell[k].mnc;
+        rrc->configuration.tac    = f1Setup->cell[k].tac;
+        rrc->nr_cellid = f1Setup->cell[k].nr_cellid;
+        f1Setup->cell[k].nr_pci    = *rrc->configuration.scc->physCellId;
+        f1Setup->cell[k].num_ssi = 0;
 
         if (rrc->configuration.scc->tdd_UL_DL_ConfigurationCommon) {
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
-          F1AP_SETUP_REQ (msg_p).fdd_flag = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_arfcn = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.scs = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.num_frequency_bands = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0] = *rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.sul_active              = 0;
+          f1Setup->fdd_flag = 0;
+          f1Setup->nr_mode_info[k].tdd.nr_arfcn = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+          f1Setup->nr_mode_info[k].tdd.scs = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+          f1Setup->nr_mode_info[k].tdd.nrb = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+          f1Setup->nr_mode_info[k].tdd.num_frequency_bands = 1;
+          f1Setup->nr_mode_info[k].tdd.nr_band[0] = *rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+          f1Setup->nr_mode_info[k].tdd.sul_active              = 0;
         } else {
           /***************** for test *****************/
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
-          F1AP_SETUP_REQ (msg_p).fdd_flag = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn             = 26200UL;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_arfcn             = 26200UL;
+          f1Setup->fdd_flag = 1;
+          f1Setup->nr_mode_info[k].fdd.dl_nr_arfcn             = 26200UL;
+          f1Setup->nr_mode_info[k].fdd.ul_nr_arfcn             = 26200UL;
           // For LTE use scs field to carry prefix type and number of antennas
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_scs                  = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_scs                  = 0;
+          f1Setup->nr_mode_info[k].fdd.dl_scs                  = 0;
+          f1Setup->nr_mode_info[k].fdd.ul_scs                  = 0;
           // use nrb field to hold LTE N_RB_DL (0...5)
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = 3;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = 3;
+          f1Setup->nr_mode_info[k].fdd.ul_nrb                  = 3;
+          f1Setup->nr_mode_info[k].fdd.ul_nrb                  = 3;
           // RK: we need to check there value for FDD's frequency_bands DL/UL
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_num_frequency_bands  = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_band[0]           = 7;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_frequency_bands  = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_band[0]           = 7;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_num_sul_frequency_bands  = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_sul_band[0]           = 7;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_sul_frequency_bands  = 0;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_sul_band[0]           = 7;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active              = 0;
+          f1Setup->nr_mode_info[k].fdd.ul_num_frequency_bands  = 1;
+          f1Setup->nr_mode_info[k].fdd.ul_nr_band[0]           = 7;
+          f1Setup->nr_mode_info[k].fdd.dl_num_frequency_bands  = 1;
+          f1Setup->nr_mode_info[k].fdd.dl_nr_band[0]           = 7;
+          f1Setup->nr_mode_info[k].fdd.ul_num_sul_frequency_bands  = 0;
+          f1Setup->nr_mode_info[k].fdd.ul_nr_sul_band[0]           = 7;
+          f1Setup->nr_mode_info[k].fdd.dl_num_sul_frequency_bands  = 0;
+          f1Setup->nr_mode_info[k].fdd.dl_nr_sul_band[0]           = 7;
+          f1Setup->nr_mode_info[k].fdd.sul_active              = 0;
           /***************** for test *****************/
         }
 
-        F1AP_SETUP_REQ (msg_p).measurement_timing_information[k]             = "0";
-        F1AP_SETUP_REQ (msg_p).ranac[k]                                      = 0;
-        F1AP_SETUP_REQ (msg_p).mib[k]                                        = rrc->carrier.MIB;
-        F1AP_SETUP_REQ (msg_p).sib1[k]                                       = rrc->carrier.SIB1;
-        F1AP_SETUP_REQ (msg_p).mib_length[k]                                 = rrc->carrier.sizeof_MIB;
-        F1AP_SETUP_REQ (msg_p).sib1_length[k]                                = rrc->carrier.sizeof_SIB1;
+        f1Setup->measurement_timing_information[k]             = "0";
+        f1Setup->ranac[k]                                      = 0;
+        f1Setup->mib[k]                                        = rrc->carrier.MIB;
+        f1Setup->sib1[k]                                       = rrc->carrier.SIB1;
+        f1Setup->mib_length[k]                                 = rrc->carrier.sizeof_MIB;
+        f1Setup->sib1_length[k]                                = rrc->carrier.sizeof_SIB1;
         break;
       }
     }
@@ -2014,8 +2057,8 @@ int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 
           du_extract_and_decode_SI(i,
                                    si_ind,
-                                   resp->cells_to_activate[j].SI_container[2+si_ind],
-                                   resp->cells_to_activate[j].SI_container_length[2+si_ind]);
+                                   resp->cells_to_activate[j].SI_container[si_ind],
+                                   resp->cells_to_activate[j].SI_container_length[si_ind]);
         }
 
         // perform MAC/L1 common configuration
@@ -2049,8 +2092,8 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
 
           du_extract_and_decode_SI(i,
                                    si_ind,
-                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container[2+si_ind],
-                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[2+si_ind]);
+                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container[si_ind],
+                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[si_ind]);
         }
 
         // perform MAC/L1 common configuration

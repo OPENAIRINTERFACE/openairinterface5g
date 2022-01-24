@@ -200,7 +200,7 @@ void rx_func(void *param) {
   int down_removed = 0;
   int pucch_removed = 0;
   for (int i = 0; i < rnti_to_remove_count; i++) {
-    LOG_W(NR_PHY, "to remove rnti %d\n", rnti_to_remove[i]);
+    LOG_W(NR_PHY, "to remove rnti 0x%04x\n", rnti_to_remove[i]);
     void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
     void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
     int j;
@@ -240,7 +240,6 @@ void rx_func(void *param) {
   // RX processing
   int tx_slot_type         = nr_slot_select(cfg,frame_tx,slot_tx);
   int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
-
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT
@@ -401,15 +400,15 @@ void init_gNB_Tpool(int inst) {
   LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->pusch_proc_threads,numCPU);
   int threadCnt = min(numCPU, gNB->pusch_proc_threads);
   if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
-  char ul_pool[80];
-  sprintf(ul_pool,"-1");
+  char pool[80];
+  sprintf(pool,"-1");
   int s_offset = 0;
   for (int icpu=1; icpu<threadCnt; icpu++) {
-    sprintf(ul_pool+2+s_offset,",-1");
+    sprintf(pool+2+s_offset,",-1");
     s_offset += 3;
   }
-  if (getenv("noThreads")) strcpy(ul_pool, "n");
-  initTpool(ul_pool, gNB->threadPool, false);
+  if (getenv("noThreads")) strcpy(pool, "n");
+  initTpool(pool, gNB->threadPool, false);
   // ULSCH decoder result FIFO
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->respDecode);
@@ -451,7 +450,9 @@ void init_gNB_Tpool(int inst) {
   msgData->next_slot = get_next_downlink_slot(gNB, &gNB->gNB_config, 0, first_tx_slot-1);
   pushNotifiedFIFO(gNB->resp_RU_tx,msgRUTx); // to unblock the process in the beginning
 
-  threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
+  if (!get_softmodem_params()->emulate_l1) {
+    threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
+  }
 
 }
 

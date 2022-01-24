@@ -212,6 +212,14 @@ typedef enum config_action_e {
   CONFIG_ACTION_MBMS_MODIFY       = 11
 } config_action_t;
 
+/* Maximum size of any message we might send or receive (e.g., via a socket) */
+#define MAX_MESSAGE_SIZE 8192
+
+typedef struct nsa_msg_t {
+  uint8_t msg_type;
+  uint8_t msg_buffer[MAX_MESSAGE_SIZE];
+} nsa_msg_t;
+
 //-----------------------------------------------------------------------------
 // GTPV1U TYPES
 //-----------------------------------------------------------------------------
@@ -233,7 +241,6 @@ typedef struct protocol_ctxt_s {
   frame_t     frame;         /*!< \brief  LTE frame number.*/
   sub_frame_t subframe;      /*!< \brief  LTE sub frame number.*/
   eNB_index_t eNB_index;     /*!< \brief  valid for UE indicating the index of connected eNB(s)      */
-  boolean_t   configured;  /*!< \brief  flag indicating whether the instance is configured or not  */
   boolean_t		brOption;
 } protocol_ctxt_t;
 // warning time hardcoded

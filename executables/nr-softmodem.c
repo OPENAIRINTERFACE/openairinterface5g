@@ -111,15 +111,10 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
+char *uecap_file;
 
-
-int UE_scan = 1;
-int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
 static double snr_dB=20;
-
-FILE *input_fd=NULL;
-
 
 #if MAX_NUM_CCs == 1
 rx_gain_t rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
@@ -193,8 +188,6 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 
 double cpuf;
 
-extern char uecap_xer[1024];
-char uecap_xer_in=0;
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -324,50 +317,36 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
-  paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
-  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
-  sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-  config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
-
-  for(int i = GNB_INTERFACE_NAME_FOR_NG_AMF_IDX; i <= GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX; i++) {
-    if( NETParams[i].strptr == NULL) {
-      LOG_E(NGAP, "No configuration in the file (%d).\n",i);
-      NGAP_CONF_MODE = 0;
-    } else {
-      LOG_D(NGAP, "Configuration in the file: %s.\n",*NETParams[i].strptr);
-    }
-  }
-
-  LOG_E(NGAP,"aprefix %s : %s %s %s %s %d %s %d\n",aprefix,NETParams[0].strptr,NETParams[1].strptr,NETParams[2].strptr,NETParams[3].strptr,NETParams[4].iptr,NETParams[5].strptr,NETParams[6].iptr);
-
   if (AMF_MODE_ENABLED) {
-    if (gnb_nb > 0) {
-      /*
-      if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
-        LOG_E(SCTP, "Create task for SCTP failed\n");
-        return -1;
+
+   char*             gnb_ipv4_address_for_NGU      = NULL;
+   uint32_t          gnb_port_for_NGU              = 0;
+   char*             gnb_ipv4_address_for_S1U      = NULL;
+   uint32_t          gnb_port_for_S1U              = 0;
+    paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
+    char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+    sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+    config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
+    
+    for(int i = GNB_INTERFACE_NAME_FOR_NG_AMF_IDX; i <= GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX; i++) {
+      if( NETParams[i].strptr == NULL) {
+	LOG_E(NGAP, "No configuration in the file.\n");
+	NGAP_CONF_MODE = 0;
+      } else {
+	LOG_D(NGAP, "Configuration in the file: %s.\n",*NETParams[i].strptr);
       }
-      */
+    }
+
+    if (gnb_nb > 0) {
       if(NGAP_CONF_MODE) {
         if (itti_create_task (TASK_NGAP, ngap_gNB_task, NULL) < 0) {
           LOG_E(NGAP, "Create task for NGAP failed\n");
           return -1;
         }
       } else {
-        LOG_E(NGAP, "Ngap task not created\n");
+        LOG_I(NGAP, "Ngap task not created\n");
       }
 
-      if(!emulate_rf) {
-        if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
-          LOG_E(UDP_, "Create task for UDP failed\n");
-          return -1;
-        }
-      }
-
-      /*if (itti_create_task (TASK_GTPV1_U, &nr_gtpv1u_gNB_task, NULL) < 0) {
-        LOG_E(GTPU, "Create task for GTPV1U failed\n");
-        return -1;
-      }*/
     }
   }
 
@@ -610,8 +589,33 @@ static  void wait_nfapi_init(char *thread_name) {
 }
 
 void init_pdcp(void) {
-  if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-    // pdcp_layer_init();
+  if (!get_softmodem_params()->nsa) {
+    if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+      //pdcp_layer_init();
+      uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                              (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+
+      if (IS_SOFTMODEM_NOS1) {
+        printf("IS_SOFTMODEM_NOS1 option enabled \n");
+        pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
+      }
+
+      nr_pdcp_module_init(pdcp_initmask, 0);
+
+      if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+        LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
+        pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
+      } else {
+        LOG_I(PDCP, "node is gNB \n");
+        pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+        pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
+      }
+    } else {
+      LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
+      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+    }
+  } else {
+    pdcp_layer_init();
     uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
                              (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
 
@@ -620,19 +624,9 @@ void init_pdcp(void) {
       pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
     }
 
-    pdcp_module_init(pdcp_initmask);
-
-    if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-      LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
-    } else {
-      LOG_I(PDCP, "node is gNB \n");
-      pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-    }
-  } else {
-    LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
-    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
+    nr_pdcp_module_init(pdcp_initmask, 0);
+    pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
+    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
   }
 }
 
@@ -655,9 +649,11 @@ int main( int argc, char **argv ) {
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   logInit();
-  configure_linux();
+  set_latency_target();
   printf("Reading in command-line options\n");
   get_options ();
+
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
@@ -690,10 +686,12 @@ int main( int argc, char **argv ) {
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
-  if(PDCP_USE_NETLINK)
-    if(!IS_SOFTMODEM_NOS1)
-      netlink_init();
-  
+  if(PDCP_USE_NETLINK && !IS_SOFTMODEM_NOS1) {
+    netlink_init();
+    if (get_softmodem_params()->nsa) {
+      init_pdcp();
+    }
+  }
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
@@ -703,7 +701,9 @@ int main( int argc, char **argv ) {
     RCconfig_NR_L1();
 
   // don't create if node doesn't connect to RRC/S1/GTP
-  AssertFatal(create_gNB_tasks(1) == 0,"cannot create ITTI tasks\n");
+  int ret=create_gNB_tasks(1);
+  AssertFatal(ret==0,"cannot create ITTI tasks\n");
+
   /* Start the agent. If it is turned off in the configuration, it won't start */
   /*
   RCconfig_nr_flexran();
@@ -816,7 +816,9 @@ int main( int argc, char **argv ) {
   }
 
   printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
+
   // We have to set PARAMFLAG_NOFREE on right paramters before re-enabling end_configmodule()
+
   //end_configmodule();
   printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   // wait for end of program

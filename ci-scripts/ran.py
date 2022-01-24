@@ -159,6 +159,7 @@ class RANManagement():
 		# Raphael: here add a check if git clone or git fetch went smoothly
 		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
+		mySSH.command('git advice.detachedHead false', '\$', 5)
 		# Checking the BUILD INFO file
 		if not self.backgroundBuild:
 			mySSH.command('ls *.txt', '\$', 5)
@@ -203,6 +204,7 @@ class RANManagement():
 			else:
 				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
 				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+		logging.debug(mySSH.getBefore()) # print what git said when merging/checking out
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p log', '\$', 5)
@@ -212,6 +214,7 @@ class RANManagement():
 			mySSH.command('echo "./build_oai ' + self.Build_eNB_args + '" > ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('chmod 775 ./my-lte-softmodem-build.sh', '\$', 5)
 			mySSH.command('echo ' + lPassWord + ' | sudo -S ls', '\$', 5)
+			logging.debug(mySSH.getBefore()) # print current directory contents for verification
 			mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-build.sh' + ' > ' + lSourcePath + '/cmake_targets/compile_oai_enb.log ' + ' 2>&1 &', lUserName, 5)
 			mySSH.close()
 			HTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
@@ -346,7 +349,7 @@ class RANManagement():
 		
 		#reboot USRP if requested in xml
 		if self.USRPIPAddress!='':
-			logging.debug('USRP '+ self.USRPIPAddress +'reboot request')
+			logging.debug('USRP '+ self.USRPIPAddress +': reboot request')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			cmd2usrp='ssh root@'+self.USRPIPAddress+' reboot'
 			mySSH.command2(cmd2usrp,1)
@@ -371,10 +374,11 @@ class RANManagement():
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
-				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
+				fltr = 'port 38412 or port 36412 or port 36422' # NGAP, S1AP, X2AP
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
 				pcapfile = pcapfile_prefix + self.testCase_id + '_log.pcap'
 				mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
-				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -w /tmp/' + pcapfile + ' > /dev/null 2>&1 &','\$', 5)
+				mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + pcapfile + ' > /dev/null 2>&1 &','\$', 5)
 			mySSH.close()
 			
 
@@ -390,10 +394,11 @@ class RANManagement():
 			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', mySSH.getBefore())
 			if result is not None:
 				eth_interface = result.group('eth_interface')
-				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
+				fltr = 'port 38412 or port 36412 or port 36422' # NGAP, S1AP, X2AP
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
 				self.epcPcapFile = 'enb_' + self.testCase_id + '_s1log.pcap'
 				mySSH.command('echo ' + localEpcPassword + ' | sudo -S rm -f /tmp/' + self.epcPcapFile , '\$', 5)
-				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
+				mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
 			mySSH.close()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath, '\$', 5)
@@ -474,7 +479,7 @@ class RANManagement():
 			mySSH.command('echo ' + lPassWord + ' | echo "ulimit -c unlimited && sudo UHD_RFNOC_DIR=/usr/local/share/uhd/rfnoc ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		#otherwise the regular command is ok
 		else:
-			mySSH.command('echo "ulimit -c unlimited && ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+			mySSH.command('echo "ulimit -c unlimited && catchsegv ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
@@ -738,8 +743,11 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png log/*/*.log log/*/*.pcap', '\$', 60)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png log/*/*.log log/*/*.pcap', '\$', 15)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 60)
+		result = re.search('core.\d+', mySSH.getBefore())
+		if result is not None:
+			mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip core* ran_build/build/{lte,nr}-softmodem', '\$', 60) # add core and executable to zip
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 15)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
@@ -752,6 +760,7 @@ class RANManagement():
 		msgLine = 0
 		foundSegFault = False
 		foundRealTimeIssue = False
+		foundRealTimeIssue_cnt = 0
 		rrcSetupComplete = 0
 		rrcReleaseRequest = 0
 		rrcReconfigRequest = 0
@@ -881,15 +890,13 @@ class RANManagement():
 			result = re.search('[Cc]ore [dD]ump', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
-			result = re.search('./ran_build/build/lte-softmodem', str(line))
-			if result is not None and not exitSignalReceived:
-				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
 			if result is not None and not exitSignalReceived:
 				foundAssertion = True
 			result = re.search('LLL', str(line))
 			if result is not None and not exitSignalReceived:
 				foundRealTimeIssue = True
+				foundRealTimeIssue_cnt += 1
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
@@ -965,7 +972,7 @@ class RANManagement():
 				if result is not None:
 					mbmsRequestMsg += 1
 			#FR1 NSA test : add new markers to make sure gNB is used
-			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI [0-9a-fA-F]+ received correctly, adding UE MAC Context UE_id [0-9]+\/RNTI [0-9a-fA-F]+', str(line))
+			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI 0x[0-9a-fA-F]+ received correctly, adding UE MAC Context UE_id [0-9]+\/RNTI 0x[0-9a-fA-F]+', str(line))
 			if result is not None:
 				NSA_RAPROC_PUSCH_check = 1
 			#dlsch and ulsch statistics
@@ -1017,12 +1024,9 @@ class RANManagement():
 			datalog_rt_stats = yaml.load(f,Loader=yaml.FullLoader)
 		rt_keys = datalog_rt_stats['Ref'] #we use the keys from the Ref field  
 
-		if (os.path.isfile('./nrL1_stats.log')) and (os.path.isfile('./nrL1_stats.log')):
-			stat_files_present=True
-		else:
-			stat_files_present=False
-			logging.debug("NR Stats files for RT analysis not found")
-		if stat_files_present:
+		if os.path.isfile('./nrL1_stats.log') and os.path.isfile('./nrMAC_stats.log'):
+			# don't use CI-nrL1_stats.log, as this will increase the processing time for
+			# no reason, we just need the last occurence
 			nrL1_stats = open('./nrL1_stats.log', 'r')
 			nrMAC_stats = open('./nrMAC_stats.log', 'r')
 			for line in nrL1_stats.readlines():
@@ -1043,6 +1047,8 @@ class RANManagement():
 							real_time_stats[k]=tmp.group(1)
 			nrL1_stats.close()
 			nrMAC_stats.close()
+		else:
+			logging.debug("NR Stats files for RT analysis not found")
 
 		#stdout log file and stat log files analysis completed
 		logging.debug('   File analysis (stdout, stats) completed')
@@ -1258,7 +1264,7 @@ class RANManagement():
 			global_status = CONST.ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB faced real time issues! \u001B[0m')
-			htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues!\n'
+			htmleNBFailureMsg += nodeB_prefix + 'NB faced real time issues! COUNT = '+ str(foundRealTimeIssue_cnt) +' lines\n'
 		if rlcDiscardBuffer > 0:
 			rlcMsg = nodeB_prefix + 'NB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')

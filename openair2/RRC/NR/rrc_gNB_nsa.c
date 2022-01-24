@@ -38,6 +38,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
+#include "executables/nr-softmodem.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "UTIL/OSA/osa_defs.h"
@@ -123,6 +124,7 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) && ueCapabilityRAT_Container_MRDC != NULL ) {
     xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, ue_context_p->ue_context.UE_Capability_MRDC);
   }
+  LOG_A(NR_RRC, "Successfully decoded UE NR capabilities (NR and MRDC)\n");
 
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
@@ -142,6 +144,30 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   unsigned char *kUPenc = NULL;
   unsigned char *kUPint = NULL;
   int i;
+
+  // In case of phy-test and do-ra mode, read UE capabilities directly from file
+  if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1) {
+    NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
+    char UE_NR_Capability_xer[65536];
+    FILE *f = NULL;
+    if (uecap_file)
+      f = fopen(uecap_file, "r");
+    if(f){
+      size_t size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
+      if (size == 0 || size == sizeof UE_NR_Capability_xer)
+        LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", uecap_file, size);
+      else {
+        UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
+        asn_dec_rval_t dec_rval = xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)&UE_Capability_nr, UE_NR_Capability_xer, size);
+        assert(dec_rval.code == RC_OK);
+        xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,(void *)UE_Capability_nr);
+      }
+    }
+    else
+      LOG_E(NR_RRC,"Could not open UE Capabilities input file. Not handling OAI UE Capabilities.\n");
+    ue_context_p->ue_context.UE_Capability_nr = UE_Capability_nr;
+  }
+
   // NR RRCReconfiguration
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
   ue_context_p->ue_context.reconfig = calloc(1,sizeof(NR_RRCReconfiguration_t));
@@ -240,6 +266,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
+                        carrier->minRXTXTIME,
                         carrier->do_CSIRS,
                         ue_context_p->local_uid);
   } else {
@@ -248,6 +275,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         reconfig_ies,
                         ue_context_p->ue_context.secondaryCellGroup,
                         carrier->pdsch_AntennaPorts,
+                        carrier->minRXTXTIME,
                         carrier->do_CSIRS,
                         ue_context_p->local_uid);
   }
@@ -287,14 +315,18 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
       create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
       RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[rrc->module_id]->rrc_ue_head, ue_context_p);
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
-      gtpv1u_create_s1u_tunnel(
-        ctxt.instance,
-        &create_tunnel_req,
-        &create_tunnel_resp);
-      rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-        &ctxt,
-        &create_tunnel_resp,
-        &inde_list[0]);
+      memset(&create_tunnel_resp, 0, sizeof(create_tunnel_resp));
+      if (!IS_SOFTMODEM_NOS1) {
+        LOG_D(RRC, "Calling gtpv1u_create_s1u_tunnel()\n");
+        gtpv1u_create_s1u_tunnel(
+          ctxt.instance,
+          &create_tunnel_req,
+          &create_tunnel_resp);
+        rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+          &ctxt,
+          &create_tunnel_resp,
+          &inde_list[0]);
+      }
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).nb_e_rabs_admitted_tobeadded = m->nb_e_rabs_tobeadded;
       X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).target_assoc_id = m->target_assoc_id;
 
@@ -332,7 +364,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                               NULL,
                               (void *)CG_Config,
                               X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer,
-                              1024);
+                              sizeof(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer));
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
     itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
   } else if (get_softmodem_params()->do_ra || get_softmodem_params()->sa) {

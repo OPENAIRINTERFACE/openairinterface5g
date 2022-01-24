@@ -198,17 +198,37 @@ pipeline {
             }
           }
         }
-        stage ("RF Simulators") {
+        stage ("4G RF Simulators") {
           when { expression {doMandatoryTests} }
           steps {
             script {
-              triggerSlaveJob ('RAN-RF-Sim-Test', 'Test-RF-Sim-Container')
+              triggerSlaveJob ('RAN-RF-Sim-Test-4G', 'Test-RF-Sim-Container-4G')
             }
           }
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-RF-Sim-Test')
+                finalizeSlaveJob('RAN-RF-Sim-Test-4G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("5G RF Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RF-Sim-Test-5G', 'Test-RF-Sim-Container-4G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RF-Sim-Test-5G')
               }
             }
             failure {
@@ -229,6 +249,26 @@ pipeline {
             always {
               script {
                 finalizeSlaveJob('RAN-NSA-B200-Module-LTEBOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("Test OAI NR UE - OAI gNB - TDD - Band 78 - N300") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-gNB-nrUE-MONO-TDD-Band78-N300', 'Test-TDD-Band78-gNB-NR-UE')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-gNB-nrUE-MONO-TDD-Band78-N300')
               }
             }
             failure {

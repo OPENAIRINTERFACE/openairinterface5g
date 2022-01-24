@@ -25,19 +25,12 @@
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest as enb-base
+
 FROM ran-build:latest AS enb-build
 
-RUN rm -Rf /oai-ran
-WORKDIR /oai-ran
-COPY . .
-
-#run build_oai to build the target image
-RUN /bin/sh oaienv && \ 
-    cd cmake_targets && \
-    mkdir -p log && \
-    ./build_oai --eNB --ninja -w USRP --verbose-ci
-
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
+    cp /oai-ran/docker/scripts/enb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-enb
@@ -48,6 +41,7 @@ RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
         software-properties-common \
+        tzdata \
         procps \
         libsctp1 \
         libnettle6 \
@@ -68,36 +62,43 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/oai-enb/bin
-COPY --from=enb-build /oai-ran/targets/bin/lte-softmodem.Rel15 .
-COPY --from=enb-build /oai-ran/docker/scripts/enb_entrypoint.sh entrypoint.sh
+COPY --from=enb-build \
+    /oai-ran/targets/bin/lte-softmodem.Rel15 \
+    /oai-ran/docker/scripts/entrypoint.sh \
+    ./
 
-WORKDIR /usr/local/lib/
-COPY --from=enb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
-COPY --from=enb-build /oai-ran/targets/bin/libcoding.so .
-COPY --from=enb-build /oai-ran/targets/bin/libparams_libconfig.so .
-COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
-COPY --from=enb-build /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so .
-RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
-RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
-RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
+COPY --from=enb-build \
+     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
+     /oai-ran/cmake_targets/ran_build/build/libtcp_bridge_oai.so \
+     /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
+     /oai-ran/cmake_targets/ran_build/build/liboai_usrpdevif.so \
+     /oai-ran/cmake_targets/ran_build/build/libcoding.so \
+     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+     /oai-ran/cmake_targets/ran_build/build/liboai_iqplayer.so \
+     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
+     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv_enb.so \
+     /usr/local/lib/
 
-COPY --from=enb-build /usr/local/lib/libprotobuf-c.so.1 .
 # Now we are copying from builder-image the UHD files.
-COPY --from=enb-build /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=enb-build /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
-COPY --from=enb-build /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
-WORKDIR /usr/lib/x86_64-linux-gnu
-COPY --from=enb-build /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 .
-COPY --from=enb-build /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 .
-COPY --from=enb-build /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 .
-COPY --from=enb-build /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 .
-COPY --from=enb-build /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 .
-COPY --from=enb-build /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 .
+COPY --from=enb-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=enb-base \
+     /usr/local/lib/libuhd.so.3.15.0 \
+     /usr/local/lib/libprotobuf-c.so.1 \
+     /usr/local/lib/
+COPY --from=enb-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
+COPY --from=enb-base \
+     /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.65.1 \
+     /usr/lib/x86_64-linux-gnu/
 
-RUN ldconfig
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
+    ldconfig
 
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-enb/etc

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+opts=(
+    -Wall -Werror
+    -Wno-error=int-to-pointer-cast
+    -Wno-int-to-pointer-cast
+    -DUNITTEST
+)
+
+set -x
+
+gcc "${opts[@]}" -fsanitize=address -o queue_test queue_test.c queue.c || exit
+./queue_test || exit
+
+gcc "${opts[@]}" -o queue_test queue_test.c queue.c || exit
+valgrind ./queue_test || exit
+
+: PASS
