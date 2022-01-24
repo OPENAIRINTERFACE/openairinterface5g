@@ -1939,6 +1939,8 @@ void fill_ulsch_harq_indication (PHY_VARS_eNB *eNB, LTE_UL_eNB_HARQ_t *ulsch_har
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
+#define packetError(ConD, fmt, args...) if (!(ConD)) { LOG_E(PHY, fmt, args); discard=true; }
+
 void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
   if ( split73 == SPLIT73_DU ) {
     sendFs6Ulharq(fs6ULindicationHarq, UEid, eNB, uci, frame, subframe, harq_ack, tdd_mapping_mode, tdd_multiplexing_mask, 0, 0);
@@ -1954,6 +1956,7 @@ void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, in
   }
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
+  bool discard=false;
   nfapi_harq_indication_t *ind       = &eNB->UL_INFO.harq_ind;
   nfapi_harq_indication_body_t *body = &ind->harq_indication_body;
   assert(eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs <= NFAPI_HARQ_IND_MAX_PDU);
@@ -1986,73 +1989,87 @@ void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, in
       pdu->harq_indication_fdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_FDD_REL13_TAG;
       pdu->harq_indication_fdd_rel13.mode = 0;
       pdu->harq_indication_fdd_rel13.number_of_ack_nack = 1;
-      AssertFatal (harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[0] == 4, "harq_ack[0] is %d, should be 1,2 or 4\n", harq_ack[0]);
-      pdu->harq_indication_fdd_rel13.harq_tb_n[0] = harq_ack[0];
-      // release DLSCH if needed
-      release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+      packetError (harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[0] == 4, "harq_ack[0] is %d, should be 1,2 or 4\n", harq_ack[0]);
+      if (!discard) {
+	pdu->harq_indication_fdd_rel13.harq_tb_n[0] = harq_ack[0];
+	// release DLSCH if needed
+	release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+      }
     } else if (uci->pucch_fmt == pucch_format1b) {
       pdu->harq_indication_fdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_FDD_REL13_TAG;
       pdu->harq_indication_fdd_rel13.mode = 0;
       pdu->harq_indication_fdd_rel13.number_of_ack_nack = 2;
-      AssertFatal (harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[1] == 4, "harq_ack[0] is %d, should be 0,1 or 4\n", harq_ack[0]);
-      AssertFatal (harq_ack[1] == 1 || harq_ack[1] == 2 || harq_ack[1] == 4, "harq_ack[1] is %d, should be 0,1 or 4\n", harq_ack[1]);
-      pdu->harq_indication_fdd_rel13.harq_tb_n[0] = harq_ack[0];
-      pdu->harq_indication_fdd_rel13.harq_tb_n[1] = harq_ack[1];
-      // release DLSCH if needed
-      release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
-      release_harq(eNB,DLSCH_id,1,frame,subframe,0xffff, harq_ack[1] == 1);
-    } else AssertFatal(1==0,"only format 1a/b for now, received %d\n",uci->pucch_fmt);
+      packetError (harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[1] == 4, "harq_ack[0] is %d, should be 0,1 or 4\n", harq_ack[0]);
+      packetError (harq_ack[1] == 1 || harq_ack[1] == 2 || harq_ack[1] == 4, "harq_ack[1] is %d, should be 0,1 or 4\n", harq_ack[1]);
+      if (!discard) {
+	pdu->harq_indication_fdd_rel13.harq_tb_n[0] = harq_ack[0];
+	pdu->harq_indication_fdd_rel13.harq_tb_n[1] = harq_ack[1];
+	// release DLSCH if needed
+	release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+	release_harq(eNB,DLSCH_id,1,frame,subframe,0xffff, harq_ack[1] == 1);
+      }
+    } else
+      packetError(1==0,"only format 1a/b for now, received %d\n",uci->pucch_fmt);
   } else { // TDD
-    AssertFatal (tdd_mapping_mode == 0 || tdd_mapping_mode == 1 || tdd_mapping_mode == 2, "Illegal tdd_mapping_mode %d\n", tdd_mapping_mode);
-    pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
-    pdu->harq_indication_tdd_rel13.mode = tdd_mapping_mode;
-    LOG_D(PHY,"%s(eNB, uci_harq format %d, rnti:%04x, frame:%d, subframe:%d, tdd_mapping_mode:%d) harq_ack[0]:%d harq_ack[1]:%d\n", __FUNCTION__, uci->pucch_fmt,uci->rnti, frame, subframe,
-          tdd_mapping_mode,harq_ack[0],harq_ack[1]);
+    packetError (tdd_mapping_mode == 0 || tdd_mapping_mode == 1 || tdd_mapping_mode == 2, "Illegal tdd_mapping_mode %d\n", tdd_mapping_mode);
+    if (!discard) {
+      pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+      pdu->harq_indication_tdd_rel13.mode = tdd_mapping_mode;
+      LOG_D(PHY,"%s(eNB, uci_harq format %d, rnti:%04x, frame:%d, subframe:%d, tdd_mapping_mode:%d) harq_ack[0]:%d harq_ack[1]:%d\n", __FUNCTION__, uci->pucch_fmt,uci->rnti, frame, subframe,
+	    tdd_mapping_mode,harq_ack[0],harq_ack[1]);
 
-    switch (tdd_mapping_mode) {
+      switch (tdd_mapping_mode) {
       case 0:                    // bundling
         if (uci->pucch_fmt == pucch_format1a) {
           pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
           pdu->harq_indication_tdd_rel13.number_of_ack_nack = 1;
           LOG_D(PHY,"bundling, pucch1a, number of ack nack %d\n",pdu->harq_indication_tdd_rel13.number_of_ack_nack);
-          AssertFatal(harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[0] == 4, "harq_ack[0] is %d, should be 1,2 or 4\n",harq_ack[0]);
-          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = harq_ack[0];
-          // release all bundled DLSCH if needed
-          release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+          packetError(harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[0] == 4, "harq_ack[0] is %d, should be 1,2 or 4\n",harq_ack[0]);
+	  if (!discard) {
+	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = harq_ack[0];
+	    // release all bundled DLSCH if needed
+	    release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+	  }
         } else if (uci->pucch_fmt == pucch_format1b) {
           pdu->harq_indication_tdd_rel13.number_of_ack_nack = 2;
-          AssertFatal(harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[1] == 4, "harq_ack[0] is %d, should be 0,1 or 4\n",harq_ack[0]);
-          AssertFatal(harq_ack[1] == 1 || harq_ack[1] == 2 || harq_ack[1] == 4, "harq_ack[1] is %d, should be 0,1 or 4\n",harq_ack[1]);
-          pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
-          pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = harq_ack[0];
-          pdu->harq_indication_tdd_rel13.harq_data[1].bundling.value_0 = harq_ack[1];
-          // release all DLSCH if needed
-          release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
-          release_harq(eNB,DLSCH_id,1,frame,subframe,0xffff, harq_ack[1] == 1);
+          packetError(harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[1] == 4, "harq_ack[0] is %d, should be 0,1 or 4\n",harq_ack[0]);
+          packetError(harq_ack[1] == 1 || harq_ack[1] == 2 || harq_ack[1] == 4, "harq_ack[1] is %d, should be 0,1 or 4\n",harq_ack[1]);
+	  if (!discard) {
+	    pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+	    pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = harq_ack[0];
+	    pdu->harq_indication_tdd_rel13.harq_data[1].bundling.value_0 = harq_ack[1];
+	    // release all DLSCH if needed
+	    release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+	    release_harq(eNB,DLSCH_id,1,frame,subframe,0xffff, harq_ack[1] == 1);
+	  }
         }
 
         break;
 
       case 1:                    // multiplexing
-        AssertFatal (uci->pucch_fmt == pucch_format1b, "uci->pucch_format %d is not format1b\n", uci->pucch_fmt);
-
-        if (uci->num_pucch_resources == 1 && uci->pucch_fmt == pucch_format1a) {
-          pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
-          pdu->harq_indication_tdd_rel13.number_of_ack_nack = 1;
-          AssertFatal(harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[0] == 4, "harq_ack[0] is %d, should be 1,2 or 4\n",harq_ack[0]);
-          pdu->harq_indication_tdd_rel13.harq_data[0].multiplex.value_0 = harq_ack[0];
-          // release all DLSCH if needed
-          release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+        packetError (uci->pucch_fmt == pucch_format1b, "uci->pucch_format %d is not format1b\n", uci->pucch_fmt);
+	if (!discard) {
+	  if (uci->num_pucch_resources == 1 && uci->pucch_fmt == pucch_format1a) {
+	    pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+	    pdu->harq_indication_tdd_rel13.number_of_ack_nack = 1;
+	    packetError(harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[0] == 4, "harq_ack[0] is %d, should be 1,2 or 4\n",harq_ack[0]);
+	    if (!discard) {
+	      pdu->harq_indication_tdd_rel13.harq_data[0].multiplex.value_0 = harq_ack[0];
+	      // release all DLSCH if needed
+	      release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+	    }
         } else if (uci->num_pucch_resources == 1 && uci->pucch_fmt == pucch_format1b) {
-          pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
-          pdu->harq_indication_tdd_rel13.number_of_ack_nack = 2;
-          AssertFatal(harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[1] == 4, "harq_ack[0] is %d, should be 0,1 or 4\n",harq_ack[0]);
-          AssertFatal(harq_ack[1] == 1 || harq_ack[1] == 2 || harq_ack[1] == 4, "harq_ack[1] is %d, should be 0,1 or 4\n",harq_ack[1]);
-          pdu->harq_indication_tdd_rel13.harq_data[0].multiplex.value_0 = harq_ack[0];
-          pdu->harq_indication_tdd_rel13.harq_data[1].multiplex.value_0 = harq_ack[1];
-          // release all DLSCH if needed
-          release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
-          release_harq(eNB,DLSCH_id,1,frame,subframe,0xffff, harq_ack[1] == 1);
+	    pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+	    pdu->harq_indication_tdd_rel13.number_of_ack_nack = 2;
+	    packetError(harq_ack[0] == 1 || harq_ack[0] == 2 || harq_ack[1] == 4, "harq_ack[0] is %d, should be 0,1 or 4\n",harq_ack[0]);
+	    packetError(harq_ack[1] == 1 || harq_ack[1] == 2 || harq_ack[1] == 4, "harq_ack[1] is %d, should be 0,1 or 4\n",harq_ack[1]);
+	    if (!discard) {
+	      pdu->harq_indication_tdd_rel13.harq_data[0].multiplex.value_0 = harq_ack[0];
+	      pdu->harq_indication_tdd_rel13.harq_data[1].multiplex.value_0 = harq_ack[1];
+	      // release all DLSCH if needed
+	      release_harq(eNB,DLSCH_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
+	      release_harq(eNB,DLSCH_id,1,frame,subframe,0xffff, harq_ack[1] == 1);
+	    }
         } else { // num_pucch_resources (M) > 1
           pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
           pdu->harq_indication_tdd_rel13.number_of_ack_nack = uci->num_pucch_resources;
@@ -2068,7 +2085,7 @@ void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, in
           release_harq(eNB,DLSCH_id,1,frame,subframe,tdd_multiplexing_mask, 1 /* force release? previous code was unconditional */);
         }
 
-        break;
+	  break;
 
       case 2: // special bundling (SR collision)
         pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
@@ -2118,16 +2135,23 @@ void fill_uci_harq_indication (int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, in
             } else {
               pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 0;
             }
-
+	    
             break;
         }
 
         break;
+	}
+      }
     }
   }                             //TDD
-
-  eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs++;
-  LOG_D(PHY,"Incremented eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs:%d\n", eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs);
+  
+  if (!discard) {
+    eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs++;
+    LOG_D(PHY,"Incremented eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs:%d\n", eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs);
+  } else {
+    LOG_W(PHY,"discarded a PUCCH because the decoded values are impossible\n");
+  }
+    
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
