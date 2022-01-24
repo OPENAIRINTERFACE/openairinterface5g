@@ -2023,8 +2023,18 @@ void *UE_thread(void *arg)
     
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
-        // grab 10 ms of signal and wakeup synch thread
 
+	// we shift in time flow because the UE doesn't detect sync when frame alignment is not easy
+	for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+            rxp[i] = (void *)&dummy_rx[i][0];
+	UE->rfdevice.trx_read_func(&UE->rfdevice,
+				   &timestamp,
+				   rxp,
+				   UE->frame_parms.samples_per_tti/2,
+				   UE->frame_parms.nb_antennas_rx);
+	
+        // grab 10 ms of signal and wakeup synch thread
+	
         if (UE->mode != loop_through_memory) {
           if (IS_SOFTMODEM_RFSIM ) {
 	    for(int sf=0; sf<10; sf++) {
