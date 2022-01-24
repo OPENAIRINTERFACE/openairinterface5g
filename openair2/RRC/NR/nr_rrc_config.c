@@ -35,10 +35,10 @@ void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
 
   lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+  // coreset duration setting to be improved in the framework of RRC harmonization, potentially using a common function
   int len_coreset = 1;
   if (curr_bwp < 48)
     len_coreset = 2;
-
   // setting default TDA for DL with
   struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
   timedomainresourceallocation->mappingType = NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;

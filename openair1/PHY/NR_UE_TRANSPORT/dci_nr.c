@@ -180,17 +180,16 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
   }
 
   int rb_count = 0;
+  int data_sc = 9; // 9 sub-carriers with data per PRB
   for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
     for (int symbol_idx = start_symbol; symbol_idx < start_symbol+coreset_time_dur; symbol_idx++) {
       for (int cce_count = 0; cce_count < L[c_id]; cce_count ++) {
-        for (int k=0; k<6/reg_bundle_size_L; k++) { // loop over REG bundles
-          int f = f_bundle_j_list_ord[c_id][k+6*cce_count/reg_bundle_size_L];
+        for (int k=0; k<NR_NB_REG_PER_CCE/reg_bundle_size_L; k++) { // loop over REG bundles
+          int f = f_bundle_j_list_ord[c_id][k+NR_NB_REG_PER_CCE*cce_count/reg_bundle_size_L];
           for(int rb=0; rb<B_rb; rb++) { // loop over the RBs of the bundle
-            // 9 sub-carriers with data per PRB
-            index_z = 9 * rb_count;
-            index_llr = (uint16_t) (f*B_rb + rb + symbol_idx * coreset_nbr_rb) * 9;
-
-            for (int i = 0; i < 9; i++) {
+            index_z = data_sc * rb_count;
+            index_llr = (uint16_t) (f*B_rb + rb + symbol_idx * coreset_nbr_rb) * data_sc;
+            for (int i = 0; i < data_sc; i++) {
               z[index_z + i] = llr[index_llr + i];
 #ifdef NR_PDCCH_DCI_DEBUG
               LOG_I(PHY,"[candidate=%d,symbol_idx=%d,cce=%d,REG bundle=%d,PRB=%d] z[%d]=(%d,%d) <-> \t llr[%d]=(%d,%d) \n",

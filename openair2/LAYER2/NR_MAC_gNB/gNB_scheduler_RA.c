@@ -1612,7 +1612,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
                                      nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
                                      rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
-    } while (harq->tb_size < ra->mac_pdu_length);
+    } while (harq->tb_size < ra->mac_pdu_length && mcsIndex<=28);
 
     int i = 0;
     while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {
