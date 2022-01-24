@@ -529,52 +529,6 @@ pipeline {
                         }
                     }
                 }
-                stage ("Test MONOLITHIC - FDD - Band 13 - B210") {
-                    when {
-                        expression {doFullTestsuite}
-                    }
-                    steps {
-                        script {
-                            sh "sleep 60"
-                            triggerSlaveJob ('eNB-CI-MONO-FDD-Band13-B210', 'Test-Mono-FDD-Band13-LTE-M')
-                        }
-                    }
-                    post {
-                        always {
-                            script {
-                                finalizeSlaveJob('eNB-CI-MONO-FDD-Band13-B210')
-                            }
-                        }
-                        failure {
-                            script {
-                                currentBuild.result = 'FAILURE'
-                            }
-                        }
-                    }
-                }
-                stage ("Test X2 Handover - FDD - Band 13 - B210") {
-                    when {
-                        expression {doFullTestsuite}
-                    }
-                    steps {
-                        script {
-                            sh "sleep 60"
-                            triggerSlaveJob ('eNB-CI-MONO-FDD-Band13-X2HO-B210', 'Test-Mono-FDD-Band13-X2-HO')
-                        }
-                    }
-                    post {
-                        always {
-                            script {
-                                finalizeSlaveJob('eNB-CI-MONO-FDD-Band13-X2HO-B210')
-                            }
-                        }
-                        failure {
-                            script {
-                                currentBuild.result = 'FAILURE'
-                            }
-                        }
-                    }
-                }
                 stage ("Test IF4p5 - TDD - Band 38 - B210 - MultiRRU") {
                     when {
                         expression {doFullTestsuite}
@@ -634,28 +588,6 @@ pipeline {
                         always {
                             script {
                                 finalizeSlaveJob('eNB-UE-CI-MONO-FDD-Band7-B200')
-                            }
-                        }
-                        failure {
-                            script {
-                                currentBuild.result = 'FAILURE'
-                            }
-                        }
-                    }
-                }
-                stage ("Test OAI OCP-eNB - FDD - Band 7 - B210") {
-                    when {
-                        expression {doFullTestsuite}
-                    }
-                    steps {
-                        script {
-                            triggerSlaveJob ('OCPeNB-FDD-Band7-B210', 'Test-OCP-FDD-Band7')
-                        }
-                    }
-                    post {
-                        always {
-                            script {
-                                finalizeSlaveJob('OCPeNB-FDD-Band7-B210')
                             }
                         }
                         failure {
