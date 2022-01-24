@@ -698,6 +698,16 @@ void processSlotRX(void *arg) {
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
+  if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
+    /* send tick to RLC and PDCP every ms */
+    if (proc->nr_slot_rx % UE->frame_parms.slots_per_subframe == 0) {
+      void nr_rlc_tick(int frame, int subframe);
+      void nr_pdcp_tick(int frame, int subframe);
+      nr_rlc_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+      nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
+    }
+  }
+
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
 
     if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
@@ -720,14 +730,6 @@ void processSlotRX(void *arg) {
       protocol_ctxt_t ctxt;
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
-
-      /* send tick to RLC and PDCP every ms */
-      if (proc->nr_slot_rx % UE->frame_parms.slots_per_subframe == 0) {
-        void nr_rlc_tick(int frame, int subframe);
-        void nr_pdcp_tick(int frame, int subframe);
-        nr_rlc_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
-        nr_pdcp_tick(proc->frame_rx, proc->nr_slot_rx / UE->frame_parms.slots_per_subframe);
-      }
     }
     // calling UL_indication to schedule things other than PUSCH (eg, PUCCH)
     rxtxD->ue_sched_mode = NOT_PUSCH;
@@ -1138,13 +1140,15 @@ void *UE_thread(void *arg) {
   return NULL;
 }
 
-void init_NR_UE(int nb_inst, char* rrc_config_path) {
+void init_NR_UE(int nb_inst,
+                char* uecap_file,
+                char* rrc_config_path) {
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
   NR_UE_RRC_INST_t* rrc_inst;
   
   for (inst=0; inst < nb_inst; inst++) {
-    AssertFatal((rrc_inst = nr_l3_init_ue(rrc_config_path)) != NULL, "can not initialize RRC module\n");
+    AssertFatal((rrc_inst = nr_l3_init_ue(uecap_file,rrc_config_path)) != NULL, "can not initialize RRC module\n");
     AssertFatal((mac_inst = nr_l2_init_ue(rrc_inst)) != NULL, "can not initialize L2 module\n");
     AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initialize IF module\n");
   }

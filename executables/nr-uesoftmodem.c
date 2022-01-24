@@ -84,6 +84,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 
 #include "nr_nas_msg_sim.h"
+#include <openair1/PHY/MODULATION/nr_modulation.h>
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
@@ -117,6 +118,7 @@ int                 vcdflag = 0;
 double          rx_gain_off = 0.0;
 char             *usrp_args = NULL;
 char       *rrc_config_path = NULL;
+char            *uecap_file = NULL;
 int               dumpframe = 0;
 
 uint64_t        downlink_frequency[MAX_NUM_CCs][4];
@@ -149,8 +151,6 @@ int            numerology = 0;
 int           oaisim_flag = 0;
 int            emulate_rf = 0;
 uint32_t       N_RB_DL    = 106;
-char         uecap_xer_in = 0;
-char         uecap_xer[1024];
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -263,14 +263,6 @@ static void get_options(void) {
 
   if (vcdflag > 0)
     ouput_vcd = 1;
-
-  if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT))  && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
-    // Here the configuration file is the XER encoded UE capabilities
-    // Read it in and store in asn1c data structures
-    sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
-    printf("%s\n",uecap_xer);
-    uecap_xer_in=1;
-  } /* UE with config file  */
 }
 
 // set PHY vars from command line
@@ -453,7 +445,7 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  init_NR_UE(1,rrc_config_path);
+  init_NR_UE(1,uecap_file,rrc_config_path);
 
   int mode_offset = get_softmodem_params()->nsa ? NUMBER_OF_UE_MAX : 1;
   uint16_t node_number = get_softmodem_params()->node_number;
@@ -522,7 +514,7 @@ int main( int argc, char **argv ) {
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
-    configure_linux();
+    set_latency_target();
     mlockall(MCL_CURRENT | MCL_FUTURE);
 
     if(IS_SOFTMODEM_DOSCOPE) {

@@ -71,6 +71,7 @@
 		<air_interface>nr</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
+		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
 		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
 	</testCase>
 

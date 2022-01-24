@@ -73,6 +73,8 @@ void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, in
     memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list)); 
   }
   ul_config->ul_config_list[ul_config->number_pdus].pdu_type = pdu_type;
+  //ul_config->slot = slot_tx;
+  //ul_config->sfn = frame_tx;
   ul_config->slot = slot_tx;
   ul_config->sfn = frame_tx;
   ul_config->number_pdus++;
@@ -971,6 +973,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         uint8_t ulsch_input_buffer_array[NFAPI_MAX_NUM_UL_PDU][MAX_ULSCH_PAYLOAD_BYTES];
         nr_scheduled_response_t scheduled_response;
         fapi_nr_tx_request_t tx_req;
+        //tx_req.slot = slot_tx;
+        //tx_req.sfn = frame_tx;
         tx_req.slot = slot_tx;
         tx_req.sfn = frame_tx;
         tx_req.number_of_pdus = 0;

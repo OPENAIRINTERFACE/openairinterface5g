@@ -353,21 +353,15 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   if( (abs(ue->common_vars.freq_offset) > 150) && (ret == 0) )
   {
 	  ret=-1;
-#if DISABLE_LOG_X
-	  printf("Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
-#else
 	  LOG_E(HW, "Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
-#endif
   }*/
 
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 
     //#ifdef DEBUG_INITIAL_SYNCH
-#if DISABLE_LOG_X
-    printf("[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
-#else
+
     LOG_I(PHY, "[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
-#endif
+
     //#endif
 
     if (ue->UE_scan_carrier == 0) {
