@@ -146,6 +146,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint8_t dmrs_Type = rel15->dmrsConfigType;
     int nb_re_dmrs;
     uint16_t n_dmrs;
+    LOG_D(PHY,"pdsch: BWPStart %d, BWPSize %d, rbStart %d, rbsize %d\n",
+          rel15->BWPStart,rel15->BWPSize,rel15->rbStart,rel15->rbSize);
     if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
       nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
     }
@@ -282,14 +284,16 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
 	   start_sc, rel15->StartSymbolIndex, rel15->rbSize, nb_re,rel15->nrOfLayers);
 #endif
-    start_meas(&gNB->dlsch_resource_mapping_stats);
-    for (int ap=0; ap<rel15->nrOfLayers; ap++) {
 
-      // DMRS params for this ap
-      get_Wt(Wt, ap, dmrs_Type);
-      get_Wf(Wf, ap, dmrs_Type);
-      delta = get_delta(ap, dmrs_Type);
-      l_prime = 0; // single symbol ap 0
+    for (int ap=0; ap<rel15->nrOfLayers; ap++) {
+    start_meas(&gNB->dlsch_resource_mapping_stats);
+
+      int dmrs_port = get_dmrs_port(ap,rel15->dmrsPorts);
+      // DMRS params for this dmrs port
+      get_Wt(Wt, dmrs_port, dmrs_Type);
+      get_Wf(Wf, dmrs_port, dmrs_Type);
+      delta = get_delta(dmrs_port, dmrs_Type);
+      l_prime = 0; // single symbol nl 0
       l0 = get_l0(rel15->dlDmrsSymbPos);
       l_overline = l0;
 

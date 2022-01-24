@@ -38,6 +38,7 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
+#include "executables/nr-softmodem.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "UTIL/OSA/osa_defs.h"
@@ -143,6 +144,30 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   unsigned char *kUPenc = NULL;
   unsigned char *kUPint = NULL;
   int i;
+
+  // In case of phy-test and do-ra mode, read UE capabilities directly from file
+  if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1) {
+    NR_UE_NR_Capability_t* UE_Capability_nr = NULL;
+    char UE_NR_Capability_xer[65536];
+    FILE *f = NULL;
+    if (uecap_file)
+      f = fopen(uecap_file, "r");
+    if(f){
+      size_t size = fread(UE_NR_Capability_xer, 1, sizeof UE_NR_Capability_xer, f);
+      if (size == 0 || size == sizeof UE_NR_Capability_xer)
+        LOG_E(NR_RRC,"UE Capabilities XER file %s is too large (%ld)\n", uecap_file, size);
+      else {
+        UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
+        asn_dec_rval_t dec_rval = xer_decode(0, &asn_DEF_NR_UE_NR_Capability, (void *)&UE_Capability_nr, UE_NR_Capability_xer, size);
+        assert(dec_rval.code == RC_OK);
+        xer_fprint(stdout,&asn_DEF_NR_UE_NR_Capability,(void *)UE_Capability_nr);
+      }
+    }
+    else
+      LOG_E(NR_RRC,"Could not open UE Capabilities input file. Not handling OAI UE Capabilities.\n");
+    ue_context_p->ue_context.UE_Capability_nr = UE_Capability_nr;
+  }
+
   // NR RRCReconfiguration
   AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
   ue_context_p->ue_context.reconfig = calloc(1,sizeof(NR_RRCReconfiguration_t));
@@ -152,7 +177,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   ue_context_p->ue_context.reconfig->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   ue_context_p->ue_context.reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
-  carrier->initial_csi_index[ue_context_p->local_uid + 1] = 0;
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1 || get_softmodem_params()->sa == 1){
     fill_default_rbconfig(ue_context_p->ue_context.rb_config,
@@ -244,7 +268,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         carrier->pdsch_AntennaPorts,
                         carrier->minRXTXTIME,
                         carrier->do_CSIRS,
-                        carrier->initial_csi_index[ue_context_p->local_uid + 1],
                         ue_context_p->local_uid);
   } else {
     fill_default_reconfig(carrier->servingcellconfigcommon,
@@ -254,7 +277,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         carrier->pdsch_AntennaPorts,
                         carrier->minRXTXTIME,
                         carrier->do_CSIRS,
-                        carrier->initial_csi_index[ue_context_p->local_uid + 1],
                         ue_context_p->local_uid);
   }
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;

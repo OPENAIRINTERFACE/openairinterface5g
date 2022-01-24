@@ -202,56 +202,12 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   pthread_mutex_unlock(&rrc->cell_info_mutex);
 
   if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0) {
-    // This is for phytest only, emulate first X2 message if uecap.raw file is present
-    FILE *fd;
-    fd = fopen("uecap.raw","r");
-
-    if (fd != NULL) {
-      char buffer[4096];
-      int msg_len=fread(buffer,1,4096,fd);
-      LOG_I(RRC,"Read in %d bytes for uecap\n",msg_len);
-      LTE_UL_DCCH_Message_t *LTE_UL_DCCH_Message;
-      asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-                                &asn_DEF_LTE_UL_DCCH_Message,
-                                (void **)&LTE_UL_DCCH_Message,
-                                (uint8_t *)buffer,
-                                msg_len);
-
-      if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-        AssertFatal(1==0,"NR_UL_DCCH_MESSAGE decode error\n");
-        // free the memory
-        SEQUENCE_free( &asn_DEF_LTE_UL_DCCH_Message, LTE_UL_DCCH_Message, 1 );
-        return;
-      }
-
-      fclose(fd);
-      xer_fprint(stdout,&asn_DEF_LTE_UL_DCCH_Message, LTE_UL_DCCH_Message);
-      // recreate enough of X2 EN-DC Container
-      AssertFatal(LTE_UL_DCCH_Message->message.choice.c1.present == LTE_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation,
-                  "ueCapabilityInformation not present\n");
-      NR_CG_ConfigInfo_t *CG_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo));
-      CG_ConfigInfo->criticalExtensions.present = NR_CG_ConfigInfo__criticalExtensions_PR_c1;
-      CG_ConfigInfo->criticalExtensions.choice.c1 = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1));
-      CG_ConfigInfo->criticalExtensions.choice.c1->present = NR_CG_ConfigInfo__criticalExtensions__c1_PR_cg_ConfigInfo;
-      CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo = calloc(1,sizeof(*CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo));
-      NR_CG_ConfigInfo_IEs_t *cg_ConfigInfo = CG_ConfigInfo->criticalExtensions.choice.c1->choice.cg_ConfigInfo;
-      cg_ConfigInfo->ue_CapabilityInfo = calloc(1,sizeof(*cg_ConfigInfo->ue_CapabilityInfo));
-      asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_CapabilityRAT_ContainerList,NULL,
-                                (void *)&LTE_UL_DCCH_Message->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList,buffer,4096);
-      AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-                   enc_rval.failed_type->name, enc_rval.encoded);
-      OCTET_STRING_fromBuf(cg_ConfigInfo->ue_CapabilityInfo,
-                           (const char *)buffer,
-                           (enc_rval.encoded+7)>>3);
-      parse_CG_ConfigInfo(rrc,CG_ConfigInfo,NULL);
-    } else {
-      struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
-      ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
-      ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = configuration->scd;
-      LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);
-      if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-        rrc_add_nsa_user(rrc,ue_context_p,NULL);
-      }
+    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
+    ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
+    ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = configuration->scd;
+    LOG_I(NR_RRC,"Adding new user (%p)\n",ue_context_p);
+    if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+      rrc_add_nsa_user(rrc,ue_context_p,NULL);
     }
   }
 }
@@ -3867,20 +3823,20 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti = ue_context_p->ue_id_rnti;
 
-     if (fd) {
-        if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
-          fprintf(fd,"NR RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
+    if (fd) {
+      if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
+        fprintf(fd,"NR RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
                 ue_context_p->ue_id_rnti,
                 ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi,
                 ue_context_p->ue_context.ul_failure_timer);
-        } else {
-          fprintf(fd,"NR RRC UE rnti %x failure timer %d/8\n",
+      } else {
+        fprintf(fd,"NR RRC UE rnti %x failure timer %d/8\n",
                 ue_context_p->ue_id_rnti,
                 ue_context_p->ue_context.ul_failure_timer);
-        }
+      }
 
-        if (ue_context_p->ue_context.UE_Capability_nr) {
-          fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, 256 QAM DL %s, 256 QAM UL %s, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
+      if (ue_context_p->ue_context.UE_Capability_nr) {
+        fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, 256 QAM DL %s, 256 QAM UL %s, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
                 get_dl_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 is_dl_256QAM_supported(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr) == 1 ? "yes" : "no",
@@ -3888,7 +3844,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
                 get_dl_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_mimo_layersCB(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr));
-        }
+      }
     }
     if (ue_context_p->ue_context.ul_failure_timer > 0) {
       ue_context_p->ue_context.ul_failure_timer++;
@@ -3960,6 +3916,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   }
 
   if (fd) fclose(fd);
+
 
   /* send a tick to x2ap */
   if (is_x2ap_enabled()){

@@ -328,8 +328,8 @@ void nr_processULSegment(void* arg) {
                                rv_index,
                                ulsch_harq->new_rx,
                                E,
-       ulsch_harq->F,
-       Kr-ulsch_harq->F-2*(p_decoderParms->Z))==-1) {
+                               ulsch_harq->F,
+                               Kr-ulsch_harq->F-2*(p_decoderParms->Z))==-1) {
 
     stop_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
 
@@ -475,7 +475,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (harq_process->ndi != pusch_pdu->pusch_data.new_data_indicator) {
     harq_process->new_rx = true;
     harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
-    LOG_E(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
+    LOG_D(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
   }
 
   A   = (harq_process->TBS)<<3;

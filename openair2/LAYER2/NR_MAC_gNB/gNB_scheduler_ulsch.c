@@ -991,6 +991,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
+                                 1, // layers
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.num_dmrs_symb,
                                  retInfo->tb_size,
@@ -1008,6 +1009,9 @@ bool allocate_ul_retransmission(module_id_t module_id,
     retInfo->rbSize = new_rbSize;
     retInfo->time_domain_allocation = tda;
     sched_ctrl->pusch_semi_static = temp_ps;
+
+    // Get previous PUSCH filed info
+    sched_ctrl->sched_pusch = *retInfo;
   }
 
   /* Find free CCE */
@@ -1265,8 +1269,10 @@ void pf_ul(module_id_t module_id,
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
     uint16_t rbSize = 0;
     uint32_t TBS = 0;
+    
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
+                  1, // layers
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->num_dmrs_symb,
                   B,
@@ -1275,8 +1281,8 @@ void pf_ul(module_id_t module_id,
                   &rbSize);
     sched_pusch->rbSize = rbSize;
     sched_pusch->tb_size = TBS;
-    LOG_D(NR_MAC,"rbSize %d, TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
-          rbSize, sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
+    LOG_D(NR_MAC,"rbSize %d (max_rbSize %d), TBS %d, est buf %d, sched_ul %d, B %d, CCE %d, num_dmrs_symb %d, N_PRB_DMRS %d\n",
+          rbSize, max_rbSize,sched_pusch->tb_size, sched_ctrl->estimated_ul_buffer, sched_ctrl->sched_ul_bytes, B,sched_ctrl->cce_index,ps->num_dmrs_symb,ps->N_PRB_DMRS);
 
     /* Mark the corresponding RBs as used */
     n_rb_sched -= sched_pusch->rbSize;
@@ -1376,7 +1382,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* Calculate mask: if any RB in vrb_map_UL is blocked (1), the current RB will be 0 */
   for (int i = 0; i < bwpSize; i++)
     rballoc_mask[i] = i >= st && i <= e;
-
+  LOG_D(NR_MAC,"%d.%d : UL start %d, end %d\n",frame,slot,st,e);
   /* proportional fair scheduling algorithm */
   pf_ul(module_id,
         frame,
@@ -1519,30 +1525,30 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
-
-    LOG_D(NR_MAC,
-          "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
-          frame,
-          slot,
-          rnti,
-          sched_pusch->frame,
-          sched_pusch->slot,
-          sched_ctrl->aggregation_level,
-          sched_pusch->rbStart,
-          sched_pusch->rbSize,
-          ps->startSymbolIndex,
-          ps->nrOfSymbols,
-          ps->ul_dmrs_symb_pos,
-          sched_pusch->mcs,
-          sched_pusch->tb_size,
-          harq_id,
-          cur_harq->round,
-          nr_rv_round_map[cur_harq->round],
-          cur_harq->ndi,
-          sched_ctrl->estimated_ul_buffer,
-          sched_ctrl->sched_ul_bytes,
-          sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes,
-          sched_ctrl->tpc0);
+    if (sched_pusch->rbSize > 5) 
+      LOG_D(NR_MAC,
+            "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
+            frame,
+            slot,
+            rnti,
+            sched_pusch->frame,
+            sched_pusch->slot,
+            sched_ctrl->aggregation_level,
+            sched_pusch->rbStart,
+            sched_pusch->rbSize,
+            ps->startSymbolIndex,
+            ps->nrOfSymbols,
+            ps->ul_dmrs_symb_pos,
+            sched_pusch->mcs,
+            sched_pusch->tb_size,
+            harq_id,
+            cur_harq->round,
+            nr_rv_round_map[cur_harq->round],
+            cur_harq->ndi,
+            sched_ctrl->estimated_ul_buffer,
+            sched_ctrl->sched_ul_bytes,
+            sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes,
+            sched_ctrl->tpc0);
 
 
     /* PUSCH in a later slot, but corresponding DCI now! */
