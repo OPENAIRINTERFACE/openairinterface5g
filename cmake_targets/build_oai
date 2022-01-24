@@ -57,7 +57,7 @@ BUILD_DOXYGEN=0
 BUILD_COVERITY_SCAN=0
 T_TRACER="True"
 DISABLE_HARDWARE_DEPENDENCY="False"
-CMAKE_BUILD_TYPE=""
+CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
 UE_AUTOTEST_TRACE="False"
 UE_DEBUG_TRACE="False"
@@ -585,15 +585,12 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
-  if [ "$SIMUS_PHY" = "1" -o "$SIMUS_CORE" = "1" ] ; then
-    build_dir=phy_simulators
-  else
-    if [ "$T_TRACER" =  "False" ] ; then
+  if [ "$T_TRACER" =  "False" ] ; then
       build_dir=ran_build_noLOG
-    else
+  else
       build_dir=ran_build  
-    fi
   fi
+
   [ "$CLEAN" = "1" ] && rm -rf $DIR/$build_dir/build
   mkdir -p $DIR/$build_dir/build
 
@@ -742,11 +739,11 @@ function main() {
 	# simlist="ldpctest"
     for f in $simlist ; do
       compilations \
-        phy_simulators $f \
+        ran_build $f \
 	    $f $dbin/$f.$REL
     done
     compilations \
-      phy_simulators coding \
+      ran_build coding \
       libcoding.so $dbin/libcoding.so
 #    compilations \
 #	   lte-simulators $config_libconfig_shlib \
@@ -761,7 +758,7 @@ function main() {
     simlist="secu_knas_encrypt_eia1 secu_kenb aes128_ctr_encrypt aes128_ctr_decrypt secu_knas_encrypt_eea2 secu_knas secu_knas_encrypt_eea1 kdf aes128_cmac_encrypt secu_knas_encrypt_eia2"
     for f in $simlist ; do
       compilations \
-	    phy_simulators test_$f \
+	    ran_build test_$f \
 	    test_$f $dbin/test_$f.$REL
     done
   fi

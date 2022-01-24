@@ -134,7 +134,6 @@ clean_all_files() {
     rm -rf "$dir"/ran_build/build
     rm -rf "$dir"/ran_build_noLOG/build
     rm -rf "$dir"/lte-simulators/build 
-    rm -rf "$dir"/phy_simulators/build
     rm -rf "$dir"/nas_sim_tools/build 
     rm -rf "$dir"/oaisim_build_oai/build
     rm -rf "$dir"/oaisim_build_oai/CMakeLists.txt
