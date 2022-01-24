@@ -154,6 +154,7 @@ int main(int argc, char **argv)
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
+  double DS_TDL = .03;
   double ip =0.0;
   //unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
@@ -256,6 +257,21 @@ int main(int argc, char **argv)
       case 'G':
         channel_model=ETU;
         break;
+	
+      case 'H':
+        channel_model = TDL_C;
+	DS_TDL = .030; // 30 ns
+	break;
+  
+      case 'I':
+	channel_model = TDL_C;
+	DS_TDL = .3;  // 300ns
+        break;
+     
+      case 'J':
+	channel_model=TDL_D;
+	DS_TDL = .03;
+	break;
 
       default:
         printf("Unsupported channel model! Exiting.\n");
@@ -505,10 +521,8 @@ int main(int argc, char **argv)
                                 channel_model,
  				fs, 
 				bw, 
-				300e-9,
-                                0,
-                                0,
-                                0, 0);
+				DS_TDL,
+                                0, 0, 0, 0);
 
   if (gNB2UE==NULL) {
 	printf("Problem generating channel model. Exiting.\n");
@@ -656,8 +670,8 @@ int main(int argc, char **argv)
 
   for (i=0; i<frame_length_complex_samples; i++) {
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-      r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-      r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+      s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+      s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
     }
   }
   
@@ -667,9 +681,18 @@ int main(int argc, char **argv)
     n_errors_payload = 0;
 
     for (trial=0; trial<n_trials; trial++) {
-      // multipath channel
-      //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
-      
+
+      if (channel_model != AWGN) {
+	// multipath channel
+	multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0,0);
+      }
+      else {
+	for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+	  memcpy(r_re[aa],s_re[aa],frame_length_complex_samples*sizeof(double));
+	  memcpy(r_im[aa],s_im[aa],frame_length_complex_samples*sizeof(double));
+	}
+      }
+       
       //AWGN
       sigma2_dB = 20*log10((double)AMP/4)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
