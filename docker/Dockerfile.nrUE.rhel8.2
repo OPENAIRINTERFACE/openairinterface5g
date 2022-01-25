@@ -25,17 +25,11 @@
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest AS nr-ue-base
+
 FROM ran-build:latest AS nr-ue-build 
 
-RUN rm -Rf /oai-ran
-WORKDIR /oai-ran
-COPY . .
-
-#run build_oai to build the target image
-RUN /bin/sh oaienv && \ 
-    cd cmake_targets && \
-    mkdir -p log && \
-    ./build_oai --nrUE --ninja -w USRP --verbose-ci
+RUN cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-nr-ue
@@ -62,58 +56,63 @@ RUN yum update -y && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
 WORKDIR /opt/oai-nr-ue/bin
-COPY --from=nr-ue-build /oai-ran/targets/bin/nr-uesoftmodem.Rel15 .
-COPY --from=nr-ue-build /oai-ran/docker/scripts/nr_ue_entrypoint.sh entrypoint.sh
+COPY --from=nr-ue-build \
+    /oai-ran/targets/bin/nr-uesoftmodem.Rel15 \
+    /oai-ran/docker/scripts/entrypoint.sh \
+    ./
 
 WORKDIR /opt/oai-nr-ue/etc
 COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf .
 
-WORKDIR /usr/local/lib/
-COPY --from=nr-ue-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
-COPY --from=nr-ue-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
-COPY --from=nr-ue-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
-COPY --from=nr-ue-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
-COPY --from=nr-ue-build /oai-ran/targets/bin/libcoding.so .
-COPY --from=nr-ue-build /oai-ran/targets/bin/libparams_libconfig.so .
-COPY --from=nr-ue-build /oai-ran/cmake_targets/ran_build/build/libdfts.so .
-COPY --from=nr-ue-build /oai-ran/cmake_targets/ran_build/build/libldpc.so .
-COPY --from=nr-ue-build /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so .
-COPY --from=nr-ue-build /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so .
-COPY --from=nr-ue-build /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so .
-RUN /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so.Rel15 /usr/local/lib/liboai_transpro.so"
-RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so.Rel15 /usr/local/lib/liboai_device.so"
-RUN /bin/bash -c "ln -s /usr/local/lib/librfsimulator.so.Rel15 /usr/local/lib/librfsimulator.so"
+COPY --from=nr-ue-build \
+    /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
+    /oai-ran/cmake_targets/ran_build/build/libtcp_bridge_oai.so \
+    /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
+    /oai-ran/cmake_targets/ran_build/build/liboai_usrpdevif.so \
+    /oai-ran/cmake_targets/ran_build/build/libcoding.so \
+    /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+    /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv_5Gue.so \
+    /usr/local/lib/
 
-COPY --from=nr-ue-build /usr/local/lib/libprotobuf-c.so.1 .
-
-COPY --from=nr-ue-build /lib64/libconfig.so.9 /lib64
-COPY --from=nr-ue-build /lib64/libblas.so.3 /lib64
-COPY --from=nr-ue-build /lib64/liblapack.so.3 /lib64
-COPY --from=nr-ue-build /lib64/liblapacke.so.3 /lib64
-COPY --from=nr-ue-build /lib64/libforms.so.2 /lib64
+COPY --from=nr-ue-base \
+    /lib64/libconfig.so.9 \
+    /lib64/libblas.so.3 \
+    /lib64/liblapack.so.3 \
+    /lib64/liblapacke.so.3 \
+    /lib64/libforms.so.2 \
+    /lib64/libboost_chrono.so.1.66.0 \
+    /lib64/libboost_date_time.so.1.66.0 \
+    /lib64/libboost_filesystem.so.1.66.0 \
+    /lib64/libboost_program_options.so.1.66.0 \
+    /lib64/libboost_serialization.so.1.66.0 \
+    /lib64/libboost_thread.so.1.66.0 \
+    /lib64/libboost_system.so.1.66.0 \
+    /lib64/libboost_unit_test_framework.so.1.66.0 \
+    /lib64/libboost_atomic.so.1.66.0 \
+    /lib64/libboost_timer.so.1.66.0 \
+    /lib64/libboost_regex.so.1.66.0 \
+    /lib64/libicudata.so.60 \
+    /lib64/libicui18n.so.60 \
+    /lib64/libicuuc.so.60 \
+    /lib64/
 
 # Now we are copying from builder-image the UHD files.
-COPY --from=nr-ue-build /lib64/libboost_chrono.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_date_time.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_filesystem.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_program_options.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_serialization.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_thread.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_system.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_unit_test_framework.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_atomic.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_timer.so.1.66.0 /lib64
-COPY --from=nr-ue-build /lib64/libboost_regex.so.1.66.0 /lib64
-
-COPY --from=nr-ue-build /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=nr-ue-build /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
-COPY --from=nr-ue-build /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-nr-ue/bin
+COPY --from=nr-ue-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=nr-ue-base /usr/local/lib/libprotobuf-c.so.1 /usr/local/lib
+COPY --from=nr-ue-base /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
+COPY --from=nr-ue-base /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-nr-ue/bin
 
 WORKDIR /usr/local/share/uhd/rfnoc
-COPY --from=nr-ue-build /usr/local/share/uhd/rfnoc/ .
+COPY --from=nr-ue-base /usr/local/share/uhd/rfnoc/ .
 
-
-RUN ldconfig
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
+    ldconfig
 
 # Copy the relevant configuration files for eNB
 WORKDIR /opt/oai-nr-ue/etc

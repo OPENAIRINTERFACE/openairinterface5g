@@ -22,11 +22,12 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-5gnr</htmlTabRef>
-        <htmlTabName>Testing 5G NR RF sim in containers</htmlTabName>
+        <htmlTabName>Testing 5G NR RF sim - Monolithic gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <repeatCount>4</repeatCount>
         <TestCaseRequestedList>
  100001
+ 000000
  000001
  000002
  000003
@@ -38,11 +39,19 @@
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
 
+        <testCase id="000000">
+                <class>DeployGenObject</class>
+                <desc>Deploy MySql Database</desc>
+                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <services>mysql</services>
+                <nb_healthy>1</nb_healthy>
+        </testCase>
+
         <testCase id="000001">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
-                <services>mysql oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
+                <services>oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
                 <nb_healthy>6</nb_healthy>
         </testCase>
 
@@ -84,7 +93,7 @@
                 <server_container_name>rfsim5g-oai-nr-ue</server_container_name>
                 <client_container_name>rfsim5g-oai-ext-dn</client_container_name>
                 <server_options>-B 12.1.1.2 -u -i 1 -s</server_options>
-                <client_options>-c 12.1.1.2 -u -i 1 -t 30 -b 400K</client_options>
+                <client_options>-c 12.1.1.2 -u -i 1 -t 30 -b 3M</client_options>
         </testCase>
 
         <testCase id="030002">
@@ -93,7 +102,7 @@
                 <server_container_name>rfsim5g-oai-ext-dn</server_container_name>
                 <client_container_name>rfsim5g-oai-nr-ue</client_container_name>
                 <server_options>-u -i 1 -s</server_options>
-                <client_options>-B 12.1.1.2 -c 192.168.72.135 -u -i 1 -t 30 -b 20K</client_options>
+                <client_options>-B 12.1.1.2 -c 192.168.72.135 -u -i 1 -t 30 -b 1M</client_options>
         </testCase>
 
         <testCase id="100001">

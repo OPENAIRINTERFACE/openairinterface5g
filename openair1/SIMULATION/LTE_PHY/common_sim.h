@@ -134,16 +134,16 @@ struct option * parse_oai_options(paramdef_t *options) {
 
 void display_options_values(paramdef_t *options, int verbose) {
   for(paramdef_t * ptr=options; ptr->optname[0]!=0; ptr++) {
-    char varText[256]="need specific display";
+    char varText[256]={0};
 
     if (ptr->voidptr != NULL) {
       if ( (ptr->paramflags & PARAMFLAG_BOOL) )
         strcpy(varText, *(bool *)ptr->iptr ? "True": "False" );
       else  switch (ptr->type) {
-          case TYPE_INT:
-            sprintf(varText,"%d",*ptr->iptr);
-            break;
-
+  	 case TYPE_INT:
+	   sprintf(varText,"%d",*ptr->iptr);
+	  break;
+	  
           case TYPE_DOUBLE:
             sprintf(varText,"%.2f",*ptr->dblptr);
             break;
@@ -157,6 +157,7 @@ void display_options_values(paramdef_t *options, int verbose) {
 	  break;
 
 	default:
+	  strcpy(varText,"Need specific display");
 	  printf("not decoded type\n");
 	  exit(1);
         }

@@ -155,6 +155,11 @@ def GetParametersFromXML(action):
 	elif action == 'Initialize_eNB':
 		RAN.eNB_Trace=test.findtext('eNB_Trace')
 		RAN.eNB_Stats=test.findtext('eNB_Stats')
+		datalog_rt_stats_file=test.findtext('rt_stats_cfg')
+		if datalog_rt_stats_file is None:
+			RAN.datalog_rt_stats_file='datalog_rt_stats.default.yaml'
+		else:
+			RAN.datalog_rt_stats_file=datalog_rt_stats_file
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		USRPIPAddress=test.findtext('USRP_IPAddress')
@@ -295,6 +300,11 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ""
 		else:
 			CiTestObj.ue_id = ue_id
+		ping_rttavg_threshold = test.findtext('ping_rttavg_threshold')
+		if (ping_rttavg_threshold is None):
+			CiTestObj.ping_rttavg_threshold = ""
+		else:
+			CiTestObj.ping_rttavg_threshold = ping_rttavg_threshold
 
 	elif action == 'Iperf':
 		CiTestObj.iperf_args = test.findtext('iperf_args')
@@ -305,6 +315,13 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ue_id
 		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only	
 		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
+		iperf_bitrate_threshold = test.findtext('iperf_bitrate_threshold')
+		if (iperf_bitrate_threshold is None):
+			CiTestObj.iperf_bitrate_threshold = "90" #if no threshold is specified, default will be 90%
+		else:
+			CiTestObj.iperf_bitrate_threshold = iperf_bitrate_threshold
+
+
 		CiTestObj.iperf_profile = test.findtext('iperf_profile')
 		if (CiTestObj.iperf_profile is None):
 			CiTestObj.iperf_profile = 'balanced'
@@ -806,6 +823,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					check_OAI_UE = False
 					RAN.pStatus=CiTestObj.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 					RAN.InitializeeNB(HTML, EPC)
+					if RAN.prematureExit:
+						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
@@ -895,7 +914,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'UndeployGenObject':
-					CONTAINERS.UndeployGenObject(HTML)
+					CONTAINERS.UndeployGenObject(HTML, RAN)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'PingFromContainer':

@@ -88,7 +88,9 @@ $ docker logout
 
 **Just `docker-compose up -d` WILL NOT WORK!**
 
-All the following commands **SHALL** be run from the `ci-scripts/yaml_files/5g_rfsimulator` folder.
+All the following commands **SHALL** be run from the `ci-scripts/yaml_files/5g_rfsimulator` folder for a deployment with monolithic gNB.
+
+For a deployment with the gNB split in CU and DU components, the following commands **SHALL** be run from the `ci-scripts/yaml_files/5g_f1_rfsimulator` folder. 
 
 ## 2.1. Deploy OAI 5G Core Network ##
 
@@ -148,6 +150,9 @@ rfsim5g-traffic: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 
 **CAUTION: To execute this 2nd step, the whole `CN5G` SHALL be in `healthy` state (especially the `mysql` container).**
 
+The gNB can be deployed either in monolithic mode, or in CU/DU split mode.
+- For a deployment with a monolithic gNB:
+
 ```bash
 $ docker-compose up -d oai-gnb
 rfsim5g-oai-nrf is up-to-date
@@ -155,7 +160,16 @@ rfsim5g-oai-spgwu is up-to-date
 rfsim5g-oai-ext-dn is up-to-date
 Creating rfsim5g-oai-gnb ... done
 ```
+- For a deployment with the gNB split in CU and DU components:
+```bash
+#Deployment of the CU
+$ docker-compose up -d oai-cu
+```
 
+```bash
+#Deployment of the DU
+$ docker-compose up -d oai-du
+```
 Wait for a bit.
 
 ```bash

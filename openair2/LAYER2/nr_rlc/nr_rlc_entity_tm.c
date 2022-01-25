@@ -68,22 +68,12 @@ static int generate_tx_pdu(nr_rlc_entity_tm_t *entity, char *buffer, int size)
   memcpy(buffer, sdu->sdu->data, sdu->size);
 
   entity->tx_size -= sdu->size;
+
+  /* update buffer status */
+  entity->common.bstatus.tx_size -= sdu->size;
+
   nr_rlc_free_sdu_segment(sdu);
 
-  return ret;
-}
-
-static int tx_list_size(nr_rlc_entity_tm_t *entity,
-                        nr_rlc_sdu_segment_t *l, int maxsize)
-{
-  int ret = 0;
-
-  while (l != NULL && ret < maxsize) {
-    ret += l->size;
-    l = l->next;
-  }
-
-  if (ret > maxsize) ret = maxsize;
   return ret;
 }
 
@@ -94,7 +84,7 @@ nr_rlc_entity_buffer_status_t nr_rlc_entity_tm_buffer_status(
   nr_rlc_entity_buffer_status_t ret;
 
   ret.status_size = 0;
-  ret.tx_size = tx_list_size(entity, entity->tx_list, maxsize);
+  ret.tx_size = entity->common.bstatus.tx_size;
   ret.retx_size = 0;
 
   return ret;
@@ -136,6 +126,9 @@ void nr_rlc_entity_tm_recv_sdu(nr_rlc_entity_t *_entity,
   sdu = nr_rlc_new_sdu(buffer, size, sdu_id);
 
   nr_rlc_sdu_segment_list_append(&entity->tx_list, &entity->tx_end, sdu);
+
+  /* update buffer status */
+  entity->common.bstatus.tx_size += sdu->size;
 }
 
 /*************************************************************************/
@@ -165,6 +158,8 @@ static void clear_entity(nr_rlc_entity_tm_t *entity)
   entity->tx_list         = NULL;
   entity->tx_end          = NULL;
   entity->tx_size         = 0;
+
+  entity->common.bstatus.tx_size = 0;
 }
 
 void nr_rlc_entity_tm_reestablishment(nr_rlc_entity_t *_entity)
