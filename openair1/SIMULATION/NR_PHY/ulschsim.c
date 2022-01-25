@@ -407,15 +407,10 @@ int main(int argc, char **argv)
   }
 
   for (sf = 0; sf < 2; sf++) {
-    for (i = 0; i < 2; i++) {
-
-        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
-
-        if (!UE->ulsch[sf][0][i]) {
-          printf("Can't get ue ulsch structures.\n");
-          exit(-1);
-        }
-
+    UE->ulsch[sf][0] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
+    if (!UE->ulsch[sf][0]) {
+      printf("Can't get ue ulsch structures.\n");
+      exit(-1);
     }
   }
 
@@ -435,7 +430,7 @@ int main(int argc, char **argv)
   NR_UL_gNB_HARQ_t *harq_process_gNB = ulsch_gNB->harq_processes[harq_pid];
   nfapi_nr_pusch_pdu_t *rel15_ul = &harq_process_gNB->ulsch_pdu;
 
-  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
+  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0];
 
   mod_order = nr_get_Qm_ul(Imcs, 0);
   code_rate = nr_get_code_rate_ul(Imcs, 0);
@@ -532,7 +527,7 @@ int main(int argc, char **argv)
             }
         */
 
-        if (ulsch_ue->g[i] == 0)
+        if (ulsch_ue->harq_processes[harq_pid]->f[i] == 0)
           modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
         else
           modulated_input[i] = -1.0;        ///sqrt(2);

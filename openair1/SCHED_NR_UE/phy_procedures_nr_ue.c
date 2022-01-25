@@ -291,8 +291,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   if (ue->UE_mode[gNB_id] <= PUSCH){
 
-    for (uint8_t harq_pid = 0; harq_pid < ue->ulsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pusch; harq_pid++) {
-      if (ue->ulsch[proc->thread_id][gNB_id][0]->harq_processes[harq_pid]->status == ACTIVE)
+    for (uint8_t harq_pid = 0; harq_pid < ue->ulsch[proc->thread_id][gNB_id]->number_harq_processes_for_pusch; harq_pid++) {
+      if (ue->ulsch[proc->thread_id][gNB_id]->harq_processes[harq_pid]->status == ACTIVE)
         nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, proc->thread_id, gNB_id);
     }
 

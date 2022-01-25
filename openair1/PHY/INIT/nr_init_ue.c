@@ -470,8 +470,10 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,
       for (int k=0; k<RX_NB_TH_MAX; k++) {
         AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
         LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
-        AssertFatal((ue->ulsch[k][i][j]  = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES, abstraction_flag))!=NULL,"Can't get ue ulsch structures\n");
-        LOG_D(PHY,"ulsch[%d][%d][%d] => %p\n",k,i,j,ue->ulsch[k][i][j]);
+        if (j==0) {
+          AssertFatal((ue->ulsch[k][i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES, abstraction_flag))!=NULL,"Can't get ue ulsch structures\n");
+          LOG_D(PHY,"ulsch[%d][%d] => %p\n",k,i,ue->ulsch[k][i]);
+        }
       }
     }
 
