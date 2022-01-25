@@ -87,130 +87,14 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
     // N2 . . . . ... .
     //    X X X X ... X
     //   |<-----N1---->|
-    if (gNB->frame_parms.nb_antennas_tx == 2) {//nrOfAntennaPorts = two
-      N1=1;
-      N2=1;
-      O1=1;
-      O2=1;
-      CSI_RS_antenna_ports=2;
-      LOG_D(PHY, "NR Codebook Config: antenna ports: %d\n",CSI_RS_antenna_ports);
-    } else if(gNB->frame_parms.nb_antennas_tx > 2) {//nrOfAntennaPorts moreThanTwo
-      //Type 1 Single Panel : Based on 38.214 v15.3-Table 5.2.2.2.1-2: Supported configurations of (N1,N2) and (O1,O2)
-      switch(gNB->frame_parms.antennas_tx_n1_n2) {
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_two_one_TypeI_SinglePanel_Restriction:
-          N1=2;
-          N2=1;
-          O1=1;//or 4
-          O2=1;
-          CSI_RS_antenna_ports=4;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_two_one\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_two_two_TypeI_SinglePanel_Restriction:
-          N1=2;
-          N2=2;
-          O1=1;//or 4
-          O2=1;// or 4
-          CSI_RS_antenna_ports=8;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_two_two_TypeI\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_four_one_TypeI_SinglePanel_Restriction:
-          N1=4;
-          N2=1;
-          O1=1;//or 4
-          O2=1;
-          CSI_RS_antenna_ports=8;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_four_one\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_three_two_TypeI_SinglePanel_Restriction:
-          N1=3;
-          N2=2;
-          O1=1;//or 4
-          O2=1;// or 4
-          CSI_RS_antenna_ports=12;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_three_two\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_six_one_TypeI_SinglePanel_Restriction:
-          N1=6;
-          N2=1;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=12;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_six_one\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_four_two_TypeI_SinglePanel_Restriction:
-          N1=4;
-          N2=2;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=16;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_four_two\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_eight_one_TypeI_SinglePanel_Restriction:
-          N1=8;
-          N2=1;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=16;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_eight_one\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_four_three_TypeI_SinglePanel_Restriction:
-          N1=4;
-          N2=3;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=24;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_four_three\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_six_two_TypeI_SinglePanel_Restriction:
-          N1=6;
-          N2=2;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=24;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_six_two\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_twelve_one_TypeI_SinglePanel_Restriction:
-          N1=12;
-          N2=1;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=24;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_twelve_one\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_four_four_TypeI_SinglePanel_Restriction:
-          N1=4;
-          N2=4;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=32;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_four_four\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_eight_two_TypeI_SinglePanel_Restriction:
-          N1=8;
-          N2=2;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=32;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_eight_two\n",CSI_RS_antenna_ports);
-          break;
-        case NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo__n1_n2_PR_sixteen_one_TypeI_SinglePanel_Restriction:
-          N1=16;
-          N2=1;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=32;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d n1_n2_PR_sixteen_one\n",CSI_RS_antenna_ports);
-          break;
-        default:
-          N1=1;
-          N2=1;
-          O1=1;
-          O2=1;
-          CSI_RS_antenna_ports=2;
-          LOG_D(PHY, "NR Codebook Config: codebookType: type1, antenna ports: %d \n",CSI_RS_antenna_ports);
-          break;
-      }
-    }
+    int x_polarization=2;//1 or 2
+    //Get the uniform planar array parameters
+    N2 = 1;//one-dimenstional array (1, 2, 3, 4 are supported in 5G)
+    O2 = 1;//Vertical beam oversampling (1 or 4)
+    N1 = gNB->frame_parms.nb_antennas_tx/(N2*x_polarization);//
+    O1=1;//Horizontal beam oversampling (1 or 4)
+    CSI_RS_antenna_ports=N1*N2*x_polarization;
+    LOG_D(PHY, "NR Codebook Config: antenna ports: %d N1 %d N2 %d\n",CSI_RS_antenna_ports,N1,N2);
 
     // Generation of codebook Type1 with codebookMode 1 (CSI_RS_antenna_ports < 16)
     if (CSI_RS_antenna_ports < 16) {
@@ -269,7 +153,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
       for(int j_col=0; j_col<1; j_col++) { //1 layer
         for (int i_rows=0; i_rows<2*N1*N2; i_rows++) { //2-x polarized antenna
           if(j_col==i_rows) {
-            mat[0][0][i_rows+j_col] = (1<<14);
+            mat[0][0][i_rows+j_col] = 0x7fff;
           }
         }
       }
@@ -323,7 +207,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
           for(int ll=0; ll<N1*O1; ll++) { //i_1_1
             for (int mm=0; mm<N2*O2; mm++) { //i_1_2
               for (int nn=0; nn<2; nn++) {
-                if((llb != ll) || (mmb != mm)) pmiq_size += 1;
+                if((llb != ll) || (mmb != mm) || ((N1 == 1) && (N2 == 1))) pmiq_size += 1;
               }
             }
           }
@@ -336,7 +220,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
       for(int j_col=0; j_col<2; j_col++) { //2 layers
         for (int i_rows=0; i_rows<2*N1*N2; i_rows++) { //2-x polarized antenna
           if(j_col==i_rows) {
-            mat[1][0][i_rows*2+j_col] = (1<<14);
+            mat[1][0][i_rows*2+j_col] = 0x7fff;
           }
         }
       }
@@ -348,7 +232,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
           for(int ll=0; ll<N1*O1; ll++) { //i_1_1
             for (int mm=0; mm<N2*O2; mm++) { //i_1_2
               for (int nn=0; nn<2; nn++) {
-                if((llb != ll) || (mmb != mm)){
+                if((llb != ll) || (mmb != mm) || ((N1 == 1) && (N2 == 1))){
                   pmiq += 1;
                   mat[1][pmiq] = (int32_t *)malloc16((2*N1*N2)*(2)*sizeof(int32_t));
                   LOG_I(PHY, "layer 2 Codebook pmiq = %d\n",pmiq);
@@ -418,7 +302,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
         for(int j_col=0; j_col<3; j_col++) { //3 layers
           for (int i_rows=0; i_rows<2*N1*N2; i_rows++) { //2-x polarized antenna
             if(j_col==i_rows) {
-              mat[2][0][i_rows*3+j_col] = (1<<13);
+              mat[2][0][i_rows*3+j_col] = 0x7fff;
             }
           }
         }
@@ -445,9 +329,9 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                         mmc = mm;
                         phase_sign = 1;
                       }
-                      if (j_col==3) {
-                        llc = llb;
-                        mmc = mmb;
+                      if (j_col==2) {
+                        llc = ll;
+                        mmc = mm;
                         phase_sign = -1;
                       }
                       for (int i_rows=0; i_rows<N1*N2; i_rows++) {
@@ -506,7 +390,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
         for(int j_col=0; j_col<4; j_col++) { //4 layers
           for (int i_rows=0; i_rows<2*N1*N2; i_rows++) { //2-x polarized antenna
             if(j_col==i_rows) {
-              mat[3][0][i_rows*4+j_col] = (1<<13);
+              mat[3][0][i_rows*4+j_col] = 0x7fff;
             }
           }
         }
@@ -534,12 +418,12 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                         mmc = mm;
                         phase_sign = 1;
                       }
-                      if (j_col==3) {
+                      if (j_col==2) {
                         llc = llb;
                         mmc = mmb;
                         phase_sign = -1;
                       }
-                      if (j_col==4) {
+                      if (j_col==3) {
                         llc = ll;
                         mmc = mm;
                         phase_sign = -1;
@@ -554,7 +438,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                           ((short*) &mat[3][pmiq][i_rows*4+j_col])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
                         else
                           ((short*) &mat[3][pmiq][i_rows*4+j_col])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-                        LOG_I(PHY, "4 Layer Precoding Matrix[3][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[3][pmiq][i_rows*4+j_col])[0],((short*) &mat[3][pmiq][i_rows*4+j_col])[1]);
+                        LOG_D(PHY, "4 Layer Precoding Matrix[3][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[3][pmiq][i_rows*4+j_col])[0],((short*) &mat[3][pmiq][i_rows*4+j_col])[1]);
                       }
 
                       for (int i_rows=N1*N2; i_rows<2*N1*N2; i_rows++) {
@@ -567,7 +451,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                           ((short*) &mat[3][pmiq][i_rows*4+j_col])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
                         else
                           ((short*) &mat[3][pmiq][i_rows*4+j_col])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-                        LOG_I(PHY, "4 Layer Precoding Matrix[3][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[3][pmiq][i_rows*4+j_col])[0],((short*) &mat[3][pmiq][i_rows*4+j_col])[1]);
+                        LOG_D(PHY, "4 Layer Precoding Matrix[3][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[3][pmiq][i_rows*4+j_col])[0],((short*) &mat[3][pmiq][i_rows*4+j_col])[1]);
                       }
                     }
                   }
