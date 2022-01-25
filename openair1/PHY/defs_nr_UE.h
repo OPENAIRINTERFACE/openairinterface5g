@@ -824,6 +824,8 @@ typedef struct {
   NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_gNB_MAX];
   prs_data_t prs_cfg;
+  int32_t **prs_ch_estimates;
+  int32_t **prs_ch_estimates_time;
   
   //Paging parameters
   uint32_t              IMSImod1024;
@@ -846,7 +848,6 @@ typedef struct {
 
 #endif
 
-  int32_t **prs_ch_estimates;
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];

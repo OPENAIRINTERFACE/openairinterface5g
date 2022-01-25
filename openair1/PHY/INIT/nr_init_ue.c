@@ -336,12 +336,14 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     pbch_vars[gNB_id] = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
 
     // PRS channel estimates
-    ue->prs_ch_estimates = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    AssertFatal(ue->prs_ch_estimates!=NULL, "NR UE init: PRS channel estimates malloc failed\n");
+    ue->prs_ch_estimates      = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->prs_ch_estimates_time = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    AssertFatal(((ue->prs_ch_estimates!=NULL) || (ue->prs_ch_estimates_time!=NULL)), "NR UE init: PRS channel estimates malloc failed\n");
 
     for (i=0; i<fp->nb_antennas_rx; i++) {
-      ue->prs_ch_estimates[i] = (int32_t *)malloc16(2*fp->ofdm_symbol_size*NR_MAX_NUM_PRS_SYMB);
-      AssertFatal(ue->prs_ch_estimates[i]!=NULL, "NR UE init: PRS channel estimates malloc failed %d\n", i);
+      ue->prs_ch_estimates[i]      = (int32_t *)malloc16(2*fp->ofdm_symbol_size*NR_MAX_NUM_PRS_SYMB);
+      ue->prs_ch_estimates_time[i] = (int32_t *)malloc16(2*fp->ofdm_symbol_size*NR_MAX_NUM_PRS_SYMB);
+      AssertFatal(((ue->prs_ch_estimates[i]!=NULL) || (ue->prs_ch_estimates_time[i]!=NULL)), "NR UE init: PRS channel estimates malloc failed %d\n", i);
     }
 
 
