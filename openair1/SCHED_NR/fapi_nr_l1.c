@@ -150,68 +150,69 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   gNB = RC.gNB[Mod_id];
   start_meas(&gNB->schedule_response_stats);
 
+  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
+
+  int slot_type = nr_slot_select(cfg,frame,slot);
+
   uint8_t number_dl_pdu             = (DL_req==NULL) ? 0 : DL_req->dl_tti_request_body.nPDUs;
   uint8_t number_ul_dci_pdu         = (UL_dci_req==NULL) ? 0 : UL_dci_req->numPdus;
   uint8_t number_ul_tti_pdu         = (UL_tti_req==NULL) ? 0 : UL_tti_req->n_pdus;
   uint8_t number_tx_data_pdu        = (TX_req == NULL) ? 0 : TX_req->Number_of_PDUs;
 
   if (NFAPI_MODE == NFAPI_MONOLITHIC){
-    notifiedFIFO_elt_t *res;
-    res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-    processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-    if (DL_req != NULL && TX_req!=NULL && (number_dl_pdu > 0 || number_ul_dci_pdu > 0 || number_ul_tti_pdu > 0))
-      LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SLOT:%04d/%d DL_req:SFN/SLO:%04d/%d:dl_pdu:%d tx_req:SFN/SLOT:%04d/%d:pdus:%d;ul_dci %d ul_tti %d\n",
-      frame,slot,
-      DL_req->SFN,DL_req->Slot,number_dl_pdu,
-      TX_req->SFN,TX_req->Slot,TX_req->Number_of_PDUs,
-      number_ul_dci_pdu,number_ul_tti_pdu);
 
-    int pdcch_received=0;
-    msgTx->num_pdsch_slot=0;
-    msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
-    msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
-    msgTx->slot = slot;
-    msgTx->frame = frame;
+    if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) {
+      notifiedFIFO_elt_t *res;
+      res = pullTpool(gNB->L1_tx_free, gNB->threadPool);
+      processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
 
-    for (int i=0;i<number_dl_pdu;i++) {
-      nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
-      LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_tti_pdu->PDUType);
-      switch (dl_tti_pdu->PDUType) {
-        case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
-          handle_nr_nfapi_ssb_pdu(msgTx,frame,slot,
-                                  dl_tti_pdu);
-          break;
+      int pdcch_received=0;
+      msgTx->num_pdsch_slot=0;
+      msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
+      msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
+      msgTx->slot = slot;
+      msgTx->frame = frame;
 
-        case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
-          AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
-          msgTx->pdcch_pdu = dl_tti_pdu->pdcch_pdu;
+      for (int i=0;i<number_dl_pdu;i++) {
+        nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
+        LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_tti_pdu->PDUType);
+        switch (dl_tti_pdu->PDUType) {
+          case NFAPI_NR_DL_TTI_SSB_PDU_TYPE:
+            handle_nr_nfapi_ssb_pdu(msgTx,frame,slot,
+                                    dl_tti_pdu);
+            break;
 
-          pdcch_received = 1;
-          break;
+          case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
+            AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
+            msgTx->pdcch_pdu = dl_tti_pdu->pdcch_pdu;
 
-        case NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE:
-          LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
-          handle_nfapi_nr_csirs_pdu(msgTx,frame,slot,
-            &dl_tti_pdu->csi_rs_pdu);
-          break;
+            pdcch_received = 1;
+            break;
 
-        case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
-          LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
-          nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdu->pdsch_pdu.pdsch_pdu_rel15;
-          uint16_t pduIndex = pdsch_pdu_rel15->pduIndex;
-          AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
-          pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
-          uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
-          AssertFatal(msgTx->num_pdsch_slot < gNB->number_of_nr_dlsch_max,"Number of PDSCH PDUs %d exceeded the limit %d\n",
-            msgTx->num_pdsch_slot,gNB->number_of_nr_dlsch_max);
-          handle_nr_nfapi_pdsch_pdu(msgTx,&dl_tti_pdu->pdsch_pdu, sdu);
+          case NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE:
+            LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
+            handle_nfapi_nr_csirs_pdu(msgTx,frame,slot,
+              &dl_tti_pdu->csi_rs_pdu);
+            break;
+
+          case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
+            LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
+            nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdu->pdsch_pdu.pdsch_pdu_rel15;
+            uint16_t pduIndex = pdsch_pdu_rel15->pduIndex;
+            AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
+            pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
+            uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
+            AssertFatal(msgTx->num_pdsch_slot < gNB->number_of_nr_dlsch_max,"Number of PDSCH PDUs %d exceeded the limit %d\n",
+              msgTx->num_pdsch_slot,gNB->number_of_nr_dlsch_max);
+            handle_nr_nfapi_pdsch_pdu(msgTx,&dl_tti_pdu->pdsch_pdu, sdu);
+        }
       }
+
+      if (number_ul_dci_pdu > 0)
+        msgTx->ul_pdcch_pdu = UL_dci_req->ul_dci_pdu_list[number_ul_dci_pdu-1]; // copy the last pdu
+
+      pushNotifiedFIFO(gNB->L1_tx_filled,res);
     }
-
-    if (number_ul_dci_pdu > 0)
-      msgTx->ul_pdcch_pdu = UL_dci_req->ul_dci_pdu_list[number_ul_dci_pdu-1]; // copy the last pdu
-
-    pushNotifiedFIFO(gNB->resp_L1_tx,res);
 
     for (int i = 0; i < number_ul_tti_pdu; i++) {
       switch (UL_tti_req->pdus_list[i].pdu_type) {

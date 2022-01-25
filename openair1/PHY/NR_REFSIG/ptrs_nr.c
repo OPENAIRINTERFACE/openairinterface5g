@@ -105,10 +105,9 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
                        uint8_t L_ptrs,
                        uint16_t ul_dmrs_symb_pos) {
 
-  uint i = 0, last_symbol, l_ref;
-  int l_counter;
-  l_ref         = start_symbol;
-  last_symbol   = start_symbol + duration_in_symbols - 1;
+  int i = 0;
+  int l_ref = start_symbol;
+  const int last_symbol   = start_symbol + duration_in_symbols - 1;
   if (L_ptrs==0) {
     LOG_E(PHY,"bug: impossible L_ptrs\n");
     *ptrs_symbols = 0;
@@ -117,7 +116,7 @@ void set_ptrs_symb_idx(uint16_t *ptrs_symbols,
 
   while ( (l_ref + i*L_ptrs) <= last_symbol) {
 
-    int is_dmrs_symbol = 0;
+    int is_dmrs_symbol = 0, l_counter;
 
     for(l_counter = l_ref + i*L_ptrs; l_counter >= max(l_ref + (i-1)*L_ptrs + 1, l_ref); l_counter--) {
 
@@ -269,8 +268,8 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
     return;
   }
   uint16_t              sc_per_symbol    = (nb_rb + K_ptrs - 1)/K_ptrs;
-  int16_t              *ptrs_p           = (int16_t *)malloc(sizeof(int32_t)*((1 + sc_per_symbol/4)*4));
-  int16_t              *dmrs_comp_p      = (int16_t *)malloc(sizeof(int32_t)*((1 + sc_per_symbol/4)*4));
+  struct complex16      ptrs_p[(1 + sc_per_symbol/4)*4];
+  struct complex16      dmrs_comp_p[(1 + sc_per_symbol/4)*4];
   double                abs              = 0.0;
   double                real             = 0.0;
   double                imag             = 0.0;
@@ -278,7 +277,7 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
   double                alpha            = 0;
 #endif
   /* generate PTRS RE for the symbol */
-  nr_gen_ref_conj_symbols(gold_seq,sc_per_symbol*2,ptrs_p, NR_MOD_TABLE_QPSK_OFFSET,2);// 2 for QPSK
+  nr_gen_ref_conj_symbols(gold_seq,sc_per_symbol*2,(int16_t*)ptrs_p, NR_MOD_TABLE_QPSK_OFFSET,2);// 2 for QPSK
 
   /* loop over all sub carriers to get compensated RE on ptrs symbols*/
   for (int re = 0; re < nb_re_pdsch; re++) {
@@ -292,8 +291,8 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
                                     0,// start_re is 0 here
                                     ofdm_symbol_size);
     if(is_ptrs_re) {
-      dmrs_comp_p[re_cnt*2]     = rxF_comp[re *2];
-      dmrs_comp_p[(re_cnt*2)+1] = rxF_comp[(re *2)+1];
+      dmrs_comp_p[re_cnt].r = rxF_comp[re *2];
+      dmrs_comp_p[re_cnt].i = rxF_comp[(re *2)+1];
       re_cnt++;
     }
     else {
@@ -307,7 +306,7 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
   *ptrs_sc = re_cnt;
 
   /*Multiple compensated data with conj of PTRS */
-  mult_cpx_vector(dmrs_comp_p, ptrs_p, ptrs_ch_p,(1 + sc_per_symbol/4)*4,15); // 2^15 shifted
+  mult_cpx_vector((int16_t*)dmrs_comp_p, (int16_t*)ptrs_p, ptrs_ch_p,(1 + sc_per_symbol/4)*4,15); // 2^15 shifted
 
   /* loop over all ptrs sub carriers in a symbol */
   /* sum the error vector */
@@ -331,9 +330,6 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
 #ifdef DEBUG_PTRS
   printf("[PHY][PTRS]: Estimated Symbol  %d -> %d + j* %d \n",symbol, error_est[0], error_est[1] );
 #endif
-  /* free vectors */
-  free(ptrs_p);
-  free(dmrs_comp_p);
 }
 
 
@@ -426,9 +422,10 @@ void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, double
 /* estimate from slope */
 void ptrs_estimate_from_slope(int16_t *error_est, double *slope_p, uint8_t start, uint8_t end)
 {
+  struct complex16 *error=(struct complex16 *) error_est;
   for(uint8_t i = 1; i< (end -start);i++) {
-    error_est[(start+i)*2]      = (error_est[start*2]   + (int16_t)(i * slope_p[0]));// real
-    error_est[((start +i)*2)+1] = (error_est[(start*2)+1] + (int16_t)( i * slope_p[1])); //imag
+    error[start+i].r = error[start].r + (int16_t)(i * slope_p[0]);// real
+    error[start+i].i = error[start].i + (int16_t)(i * slope_p[1]); //imag
 #ifdef DEBUG_PTRS
     printf("[PHY][PTRS]: Estimated Symbol %2d -> %4d %4d from Slope (%4f %4f)\n", start+i,error_est[(start+i)*2],error_est[((start +i)*2)+1],
            slope_p[0],slope_p[1]);

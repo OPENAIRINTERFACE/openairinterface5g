@@ -353,6 +353,8 @@ typedef struct {
 } fapi_nr_ul_config_request_pdu_t;
 
 typedef struct {
+  //uint16_t sfn;
+  //uint16_t slot;
   uint16_t sfn;
   uint16_t slot;
   uint8_t number_pdus;

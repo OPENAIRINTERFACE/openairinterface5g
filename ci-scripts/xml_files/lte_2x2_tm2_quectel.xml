@@ -21,32 +21,22 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-NSA-FR1-TM2-Tab2</htmlTabRef>
-	<htmlTabName>NSA 2x2 Attach-Detach with QUECTEL</htmlTabName>
+	<htmlTabRef>TEST-LTE-TM2-Tab2</htmlTabRef>
+	<htmlTabName>LTE 2x2 TM2 Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 031000
- 041000
+ 030001
  000002
  010000
  000001
- 050000
+ 050002
+ 050003
  000002
- 010004
- 000002
- 010003
+ 070002
+ 070003
  000001
- 050000
- 000002
- 010004
- 000002
- 010003
- 000001
- 050000
- 000002
  010002
- 080001
  080000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -65,23 +55,11 @@
 		<id>nrmodule2_quectel</id>
 	</testCase>
 
-	<testCase id="010003">
-		<class>Attach_UE</class>
-		<desc>Attach Quectel</desc>
-		<id>nrmodule2_quectel</id>
-	</testCase>
 
-	<testCase id="010004">
-		<class>Detach_UE</class>
-		<desc>Detach Quectel</desc>
-		<id>nrmodule2_quectel</id>
-	</testCase>	
-
-
-	<testCase id="031000">
+	<testCase id="030001">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band38.nsa_2x2.100PRB.usrpn310.conf --usrp-tx-thread-config 1 --thread-pool 0,2,4,6 --log_config.global_log_options level,nocolor,time,line_num,function</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band38.lte_2x2_tm2.100PRB.usrpn310.conf --usrp-tx-thread-config 1 --thread-pool 0,2,4,6 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>lte</air_interface>
@@ -91,22 +69,10 @@
 	</testCase>
 
 
-	<testCase id="041000">
-		<class>Initialize_eNB</class>
-		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time,line_num,function</Initialize_eNB_args>
-		<eNB_instance>1</eNB_instance>
-		<eNB_serverId>1</eNB_serverId>
-		<air_interface>nr</air_interface>
-		<eNB_Stats>yes</eNB_Stats>
-		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
-		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
-	</testCase>
-
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>60</idle_sleep_time_in_sec>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
 	</testCase>
 
 	<testCase id="000002">
@@ -116,13 +82,46 @@
 	</testCase>
 
 
-	<testCase id="050000">
+	<testCase id="050002">
 		<class>Ping</class>
-		<desc>Ping: 20pings in 20sec</desc>
+		<desc>Ping: 20 pings</desc>
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 20</ping_args>
-		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+		<ping_packetloss_threshold>1</ping_packetloss_threshold>
+		<ping_rttavg_threshold>40</ping_rttavg_threshold>
 	</testCase>
+	<testCase id="050003">
+		<class>Ping</class>
+		<desc>Ping: 100 pings, size 1024</desc>
+		<id>nrmodule2_quectel</id>
+		<ping_args>-c 100 -s 1024 -i 0,2</ping_args>
+		<ping_packetloss_threshold>1</ping_packetloss_threshold>
+		<ping_rttavg_threshold>30</ping_rttavg_threshold>
+	</testCase>
+
+
+	<testCase id="070002">
+		<class>Iperf</class>
+		<desc>iperf (DL/26Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 26M -t 60</iperf_args>
+		<direction>DL</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="070003">
+		<class>Iperf</class>
+		<desc>iperf (UL/7Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 7M -t 60</iperf_args>
+		<direction>UL</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
 
 
 
