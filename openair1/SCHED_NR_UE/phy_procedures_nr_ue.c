@@ -1716,8 +1716,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-      //PRS channel estimation
-      nr_prs_channel_estimation(ue,proc,fp);
     }
 
     nr_ue_rsrp_measurements(ue, gNB_id, proc, nr_slot_rx, 0);
@@ -1742,6 +1740,30 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_OUT);
     }
+    
+    ue->prs_cfg.PRSResourceSetPeriod[0]=40; // PRS resource slot period
+    ue->prs_cfg.PRSResourceSetPeriod[1]=0;  // resource slot offset
+    ue->prs_cfg.SymbolStart=7;		
+    ue->prs_cfg.NumPRSSymbols=4;
+    ue->prs_cfg.NumRB=fp->N_RB_DL;
+    ue->prs_cfg.RBOffset=0;
+    ue->prs_cfg.CombSize=4;
+    ue->prs_cfg.REOffset=0;
+    ue->prs_cfg.PRSResourceOffset=0;
+    ue->prs_cfg.PRSResourceRepetition=1;
+    ue->prs_cfg.PRSResourceTimeGap=1;
+    ue->prs_cfg.NPRSID=0;
+
+    for(int j = ue->prs_cfg.SymbolStart; j < (ue->prs_cfg.SymbolStart + ue->prs_cfg.NumPRSSymbols); j++)
+    {
+            nr_slot_fep(ue,
+                        proc,
+                        j,
+                        nr_slot_rx);
+    }
+
+    //PRS channel estimation
+    nr_prs_channel_estimation(ue,proc,fp);
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {

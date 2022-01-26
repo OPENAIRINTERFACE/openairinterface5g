@@ -30,6 +30,7 @@
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "filt16a_32.h"
+#include "T.h"
 
 //#define DEBUG_PDSCH
 //#define DEBUG_PDCCH
@@ -52,12 +53,13 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
   uint32_t **nr_gold_prs = ue->nr_gold_prs[proc->nr_slot_rx];
   prs_data_t *prs_cfg    = &ue->prs_cfg;
   
+  uint8_t rxAnt = 0; // ant 0 rxdataF for now
   int16_t *prs_chest, ch[2] = {0}, *rxF, *pil, *fl,*fm, *fmm, *fml, *fmr, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
   int16_t k_prime = 0, k = 0, re_offset;
   uint8_t idx = prs_cfg->NPRSID;
-  uint8_t rxAnt = 0; // ant 0 rxdataF for now
-  int16_t *ch_intrp = (int16_t *)malloc16(frame_params->ofdm_symbol_size*2*sizeof(int16_t));
-  AssertFatal(ch_intrp != NULL, "nr_prs_channel_estimation: channel estimate buffer initialization failed!!");
+  int16_t *ch_intrp = (int16_t *)malloc16(frame_params->ofdm_symbol_size*sizeof(int32_t));
+  int32_t *ch_time  = (int32_t *)malloc16(frame_params->ofdm_symbol_size*sizeof(int32_t));
+  AssertFatal(((ch_intrp != NULL) || (ch_time != NULL)), "nr_prs_channel_estimation: channel estimate buffer initialization failed!!");
   int16_t *ch_init = ch_intrp;
 
   for(int l = prs_cfg->SymbolStart; l < prs_cfg->SymbolStart+prs_cfg->NumPRSSymbols; l++)
@@ -303,6 +305,11 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
 		  		     ch_intrp,
 	    	       16);
     }
+    else
+    {
+      printf("NR_PRS UE Channel EStimation: CombSize other than 2 and 4 are NOT supported currently! Returning");
+      return(0); 
+    }
 
     ch_intrp = ch_init;
     for (int re = 0; re < prs_cfg->NumRB*12; re++)
@@ -356,12 +363,19 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     
     idft(idftsizeidx,
          (int16_t *)&ue->prs_ch_estimates[rxAnt][l*frame_params->ofdm_symbol_size],
-         (int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size],1);
+         (int16_t *)&ch_time[0],1);
 
+    memcpy((int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size], &ch_time[frame_params->ofdm_symbol_size>>1], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
+    memcpy((int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size + (frame_params->ofdm_symbol_size>>1)], &ch_time[0], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
   } //for l
   
-  LOG_M("prsEst.m","prs_chest",&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], frame_params->ofdm_symbol_size,1,1);
-  LOG_M("prsEst_time.m","prs_chest_time",&ue->prs_ch_estimates_time[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], frame_params->ofdm_symbol_size,1,1);
+  LOG_M("rxSigF.m","rxF",&rxdataF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
+  LOG_M("prsEstF.m","prs_chest",&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
+  LOG_M("prsEstT.m","prs_chest_time",&ue->prs_ch_estimates_time[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
+  
+  T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
+    T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
+    T_INT(0), T_BUFFER(&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], frame_params->ofdm_symbol_size*sizeof(int32_t)));
   return(0);
 }
 

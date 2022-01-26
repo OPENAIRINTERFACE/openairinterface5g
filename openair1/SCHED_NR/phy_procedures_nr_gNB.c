@@ -83,14 +83,14 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
     n_hf=1;
 
   ssb_index = ssb_pdu.ssb_pdu_rel15.SsbBlockIndex;
-  LOG_D(PHY,"common_signal_procedures: frame %d, slot %d ssb index %d\n",frame,slot,ssb_index);
+  LOG_I(PHY,"common_signal_procedures: frame %d, slot %d ssb index %d\n",frame,slot,ssb_index);
 
   int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp,ssb_index); // computing the starting symbol for current ssb
   ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
 
   nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 
-  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
+  LOG_I(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
   nr_generate_pss(gNB->d_pss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
   nr_generate_sss(gNB->d_sss, &txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
   
@@ -140,6 +140,8 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
                    AMP,
                    ssb_start_symbol,
                    n_hf, frame, cfg, fp);
+  
+  LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],fp->samples_per_subframe_wCP,1,1);
 }
 
 
@@ -152,10 +154,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int offset = gNB->CC_id;
   int txdataF_offset = (slot%2)*fp->samples_per_slot_wCP;
-  
-  // defining inputs and initials for nr_generate_prs()
-  int **txdataF = gNB->common_vars.txdataF;
-    
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
       (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;
@@ -247,6 +245,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   prs_data.NPRSID=0;
   
   // tbc
+  int **txdataF = gNB->common_vars.txdataF;
   
   nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
   */
