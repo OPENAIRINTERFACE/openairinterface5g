@@ -44,7 +44,6 @@
 #include <string.h>
 #include <math.h>
 #include "common_lib.h"
-#include "msc.h"
 #include "fapi_nr_ue_interface.h"
 #include "assertions.h"
 

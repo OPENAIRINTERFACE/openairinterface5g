@@ -44,7 +44,6 @@
 #include "T.h"
 
 #include "assertions.h"
-#include "msc.h"
 
 #include <time.h>
 // RU OFDM Modulator gNodeB

@@ -30,7 +30,6 @@
 
 #include "mme_config.h"
 #include "intertask_interface.h"
-#include "msc.h"
 
 #include "gtpv1u.h"
 #include "NwGtpv1u.h"
@@ -170,14 +169,6 @@ NwGtpv1uRcT gtpv1u_gNB_process_stack_req(
 #endif
         //warning "LG eps bearer mapping to DRB id to do (offset -4)"
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->enb_id, ENB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->enb_id);
-        MSC_LOG_TX_MESSAGE(
-          MSC_GTPU_ENB,
-          MSC_PDCP_ENB,
-          NULL,0,
-          MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
-          0,0,
-          (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-          buffer_len);
 
         result = pdcp_data_req(
                    &ctxt,
@@ -300,7 +291,6 @@ void *gtpv1u_gNB_task(void *args) {
   rc = gtpv1u_gNB_init();
   AssertFatal(rc == 0, "gtpv1u_eNB_init Failed");
   itti_mark_task_ready(TASK_GTPV1_U);
-  MSC_START_USE();
 
   while(1) {
     (void) gtpv1u_eNB_process_itti_msg (NULL);
@@ -366,14 +356,6 @@ NwGtpv1uRcT nr_gtpv1u_gNB_process_stack_req(
 // #endif
         //warning "LG eps bearer mapping to DRB id to do (offset -4)"
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->gnb_id, GNB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->gnb_id);
-        // MSC_LOG_TX_MESSAGE(
-        //   MSC_GTPU_ENB,
-        //   MSC_PDCP_ENB,
-        //   NULL,0,
-        //   MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
-        //   0,0,
-        //   (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-        //   buffer_len);
 
         result = pdcp_data_req(
                    &ctxt,
@@ -515,14 +497,6 @@ gtpv1u_create_ngu_tunnel(
   int                      addrs_length_in_bytes= 0;
   int                      loop_counter         = 0;
   int                      ret                  = 0;
-  MSC_LOG_RX_MESSAGE(
-    MSC_GTPU_GNB,
-    MSC_RRC_GNB,
-    NULL,0,
-    MSC_AS_TIME_FMT" CREATE_TUNNEL_REQ RNTI %"PRIx16" inst %u ntuns %u psid %u upf-ngu teid %u",
-    0,0,create_tunnel_req_pP->rnti, instanceP,
-    create_tunnel_req_pP->num_tunnels, create_tunnel_req_pP->pdusession_id[0],
-    create_tunnel_req_pP->outgoing_teid[0]);
   create_tunnel_resp_pP->rnti        = create_tunnel_req_pP->rnti;
   create_tunnel_resp_pP->status      = 0;
   create_tunnel_resp_pP->num_tunnels = 0;
@@ -634,13 +608,6 @@ gtpv1u_create_ngu_tunnel(
     }
   }
 
-  MSC_LOG_TX_MESSAGE(
-    MSC_GTPU_GNB,
-    MSC_RRC_GNB,
-    NULL,0,
-    "0 GTPV1U_GNB_CREATE_TUNNEL_RESP rnti %x teid %x",
-    create_tunnel_resp_pP->rnti,
-    ngu_teid);
   LOG_D(GTPU, "Tx GTPV1U_GNB_CREATE_TUNNEL_RESP ue rnti %x status %d\n",
         create_tunnel_req_pP->rnti,
         create_tunnel_resp_pP->status);
@@ -805,13 +772,6 @@ int gtpv1u_delete_ngu_tunnel(
         GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).rnti,
         GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).gnb_NGu_teid,
         GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).status);
-  MSC_LOG_TX_MESSAGE(
-    MSC_GTPU_GNB,
-    MSC_RRC_GNB,
-    NULL,0,
-    "0 GTPV1U_GNB_DELETE_TUNNEL_RESP rnti %x teid %x",
-    GTPV1U_GNB_DELETE_TUNNEL_RESP(message_p).rnti,
-    teid_gNB);
   return itti_send_msg_to_task(TASK_RRC_GNB, instanceP, message_p);
 }
 
@@ -830,11 +790,6 @@ static int gtpv1u_gNB_send_init_udp(const Gtpv1uNGReq *req) {
   addr.s_addr = req->gnb_ip_address_for_NGu_up;
   UDP_INIT(message_p).address = inet_ntoa(addr);
   LOG_I(GTPU, "Tx UDP_INIT IP addr %s (%x)\n", UDP_INIT(message_p).address,UDP_INIT(message_p).port);
-  MSC_LOG_EVENT(
-    MSC_GTPU_ENB,
-    "0 UDP bind  %s:%u",
-    UDP_INIT(message_p).address,
-    UDP_INIT(message_p).port);
   return itti_send_msg_to_task(TASK_UDP, INSTANCE_DEFAULT, message_p);
 }
 
@@ -883,27 +838,12 @@ static int gtpv1u_gnb_tunnel_data_req(gtpv1u_gnb_tunnel_data_req_t *gnb_tunnel_d
 
       if (rc != NW_GTPV1U_OK) {
         LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
-        MSC_LOG_EVENT(MSC_GTPU_GNB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                      gnb_ngu_teid,outgoing_teid,data_req_p->length);
         (void)gnb_ngu_teid; /* avoid gcc warning "set but not used" */
       } else {
         rc = nwGtpv1uProcessUlpReq(RC.nr_gtpv1u_data_g->gtpv1u_stack, &stack_req);
 
         if (rc != NW_GTPV1U_OK) {
           LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
-          MSC_LOG_EVENT(MSC_GTPU_GNB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                        gnb_ngu_teid,outgoing_teid,data_req_p->length);
-        } else {
-          MSC_LOG_TX_MESSAGE(
-            MSC_GTPU_GNB,
-            MSC_GTPU_SGW,
-            NULL,
-            0,
-            MSC_AS_TIME_FMT" G-PDU ltid %u rtid %u size %u",
-            0,0,
-            gnb_ngu_teid,
-            outgoing_teid,
-            data_req_p->length);
         }
 
         rc = nwGtpv1uMsgDelete(RC.nr_gtpv1u_data_g->gtpv1u_stack,
@@ -1002,7 +942,6 @@ void *nr_gtpv1u_gNB_task(void *args) {
   rc = nr_gtpv1u_gNB_init();
   AssertFatal(rc == 0, "gtpv1u_gNB_init Failed");
   itti_mark_task_ready(TASK_GTPV1_U);
-  MSC_START_USE();
 
   while(1) {
     (void) gtpv1u_gNB_process_itti_msg (NULL);

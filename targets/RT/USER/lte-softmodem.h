@@ -23,7 +23,6 @@
 #include "../../ARCH/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
-#include "msc.h"
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"

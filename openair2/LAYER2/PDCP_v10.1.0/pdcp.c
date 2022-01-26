@@ -48,7 +48,6 @@
 #include "platform_constants.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "msc.h"
 #include "common/ngran_types.h"
 #include "targets/COMMON/openairinterface5g_limits.h"
 #include "targets/RT/USER/lte-softmodem.h"
@@ -1058,14 +1057,6 @@ pdcp_data_ind(
             ctxt_pP->rnti,
             rb_id + 4,
             sdu_buffer_sizeP - payload_offset );
-      MSC_LOG_TX_MESSAGE(
-        MSC_PDCP_ENB,
-        MSC_GTPU_ENB,
-        NULL,0,
-        "0 GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u",
-        ctxt_pP->rnti,
-        rb_id + 4,
-        sdu_buffer_sizeP - payload_offset);
       //LOG_T(PDCP,"Sending to GTPV1U %d bytes\n", sdu_buffer_sizeP - payload_offset);
       gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
                                   sdu_buffer_sizeP - payload_offset + GTPU_HEADER_OVERHEAD_MAX);
@@ -2228,20 +2219,6 @@ pdcp_config_set_security(
     pdcp_pP->kUPenc  = kUPenc;
     /* Activate security */
     pdcp_pP->security_activated = 1;
-    MSC_LOG_EVENT(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-      "0 Set security ciph %X integ %x UE %"PRIx16" ",
-      pdcp_pP->cipheringAlgorithm,
-      pdcp_pP->integrityProtAlgorithm,
-      ctxt_pP->rnti);
-  } else {
-    MSC_LOG_EVENT(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-      "0 Set security failed UE %"PRIx16" ",
-      ctxt_pP->rnti);
-    LOG_E(PDCP,PROTOCOL_PDCP_CTXT_FMT"  bad security mode %d",
-          PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
-          security_modeP);
   }
 }
 

@@ -46,7 +46,6 @@
 #include "s1ap_eNB_ue_context.h"
 #include "s1ap_eNB_nas_procedures.h"
 #include "s1ap_eNB_management_procedures.h"
-#include "msc.h"
 
 //------------------------------------------------------------------------------
 int s1ap_eNB_handle_nas_first_req(
@@ -310,14 +309,6 @@ int s1ap_eNB_handle_nas_first_req(
     }
 
     ue_desc_p->tx_stream = mme_desc_p->nextstream;
-    MSC_LOG_TX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        (const char *)NULL,
-        0,
-        MSC_AS_TIME_FMT" initialUEMessage initiatingMessage eNB_ue_s1ap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        ue_desc_p->eNB_ue_s1ap_id);
     /* Send encoded message over sctp */
     s1ap_eNB_itti_send_sctp_data_req(instance_p->instance, mme_desc_p->assoc_id,
                                      buffer, length, ue_desc_p->tx_stream);
@@ -374,14 +365,6 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
 
     if ((ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance,
                      enb_ue_s1ap_id)) == NULL) {
-        MSC_LOG_RX_DISCARDED_MESSAGE(
-            MSC_S1AP_ENB,
-            MSC_S1AP_MME,
-            NULL,
-            0,
-            MSC_AS_TIME_FMT" downlinkNASTransport  eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-            enb_ue_s1ap_id,
-            mme_ue_s1ap_id);
         S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%lx\n",
                    assoc_id,
                    enb_ue_s1ap_id);
@@ -412,15 +395,6 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
             return -1;
         }
     }
-
-    MSC_LOG_RX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        NULL,
-        0,
-        MSC_AS_TIME_FMT" downlinkNASTransport  eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-        assoc_id,
-        mme_ue_s1ap_id);
 
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
                                S1AP_ProtocolIE_ID_id_NAS_PDU, true);
@@ -536,15 +510,6 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
         return -1;
     }
 
-    MSC_LOG_TX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        (const char *)NULL,
-        0,
-        MSC_AS_TIME_FMT" uplinkNASTransport initiatingMessage eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        ue_context_p->eNB_ue_s1ap_id,
-        ue_context_p->mme_ue_s1ap_id);
     /* UE associated signalling -> use the allocated stream */
     s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                      ue_context_p->mme_ref->assoc_id, buffer,
@@ -574,10 +539,6 @@ int s1ap_eNB_nas_non_delivery_ind(instance_t instance,
         /* The context for this eNB ue s1ap id doesn't exist in the map of eNB UEs */
         S1AP_WARN("Failed to find ue context associated with eNB ue s1ap id: %06x\n",
                   s1ap_nas_non_delivery_ind->eNB_ue_s1ap_id);
-        MSC_LOG_EVENT(
-            MSC_S1AP_ENB,
-            MSC_AS_TIME_FMT" Sent of NAS_NON_DELIVERY_IND to MME failed, no context for eNB_ue_s1ap_id %06x",
-            s1ap_nas_non_delivery_ind->eNB_ue_s1ap_id);
         return -1;
     }
 
@@ -623,21 +584,9 @@ int s1ap_eNB_nas_non_delivery_ind(instance_t instance,
     if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
         S1AP_ERROR("Failed to encode NAS NON delivery indication\n");
         /* Encode procedure has failed... */
-        MSC_LOG_EVENT(
-            MSC_S1AP_ENB,
-            MSC_AS_TIME_FMT" Sent of NAS_NON_DELIVERY_IND to MME failed (encoding)");
         return -1;
     }
 
-    MSC_LOG_TX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        (const char *)buffer,
-        length,
-        MSC_AS_TIME_FMT" NASNonDeliveryIndication initiatingMessage eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        ue_context_p->eNB_ue_s1ap_id,
-        ue_context_p->mme_ue_s1ap_id);
     /* UE associated signalling -> use the allocated stream */
     s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                      ue_context_p->mme_ref->assoc_id, buffer,
@@ -802,15 +751,6 @@ int s1ap_eNB_initial_ctxt_resp(
         return -1;
     }
 
-    MSC_LOG_TX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        (const char *)buffer,
-        length,
-        MSC_AS_TIME_FMT" InitialContextSetup successfulOutcome eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        initial_ctxt_resp_p->eNB_ue_s1ap_id,
-        ue_context_p->mme_ue_s1ap_id);
     /* UE associated signalling -> use the allocated stream */
     s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                      ue_context_p->mme_ref->assoc_id, buffer,
@@ -891,15 +831,6 @@ int s1ap_eNB_ue_capabilities(instance_t instance,
         return -1;
     }
 
-    MSC_LOG_TX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        (const char *)buffer,
-        length,
-        MSC_AS_TIME_FMT" UECapabilityInfoIndication initiatingMessage eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        ue_cap_info_ind_p->eNB_ue_s1ap_id,
-        ue_context_p->mme_ue_s1ap_id);
     /* UE associated signalling -> use the allocated stream */
     s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                      ue_context_p->mme_ref->assoc_id, buffer,
@@ -1075,15 +1006,6 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
         return -1;
     }
 
-    MSC_LOG_TX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        (const char *)buffer,
-        length,
-        MSC_AS_TIME_FMT" E_RAN Setup successfulOutcome eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        e_rab_setup_resp_p->eNB_ue_s1ap_id,
-        ue_context_p->mme_ue_s1ap_id);
     /* UE associated signalling -> use the allocated stream */
     s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                      ue_context_p->mme_ref->assoc_id, buffer,
@@ -1238,15 +1160,6 @@ int s1ap_eNB_e_rab_modify_resp(instance_t instance,
         return -1;
     }
 
-    MSC_LOG_TX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        (const char *)buffer,
-        length,
-        MSC_AS_TIME_FMT" E_RAN Modify successful Outcome eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        e_rab_modify_resp_p->eNB_ue_s1ap_id,
-        ue_context_p->mme_ue_s1ap_id);
     /* UE associated signalling -> use the allocated stream */
     s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                      ue_context_p->mme_ref->assoc_id, buffer,
@@ -1378,15 +1291,6 @@ int s1ap_eNB_e_rab_release_resp(instance_t instance,
         return -1;
     }
 
-    MSC_LOG_TX_MESSAGE(
-        MSC_S1AP_ENB,
-        MSC_S1AP_MME,
-        (const char *)buffer,
-        length,
-        MSC_AS_TIME_FMT" E_RAN Release successfulOutcome eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        e_rab_release_resp_p->eNB_ue_s1ap_id,
-        ue_context_p->mme_ue_s1ap_id);
     /* UE associated signalling -> use the allocated stream */
     s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                      ue_context_p->mme_ref->assoc_id, buffer,
@@ -1614,16 +1518,6 @@ int s1ap_eNB_path_switch_req(instance_t instance,
   }
 
   ue_context_p->tx_stream = mme_desc_p->nextstream;
-
-  MSC_LOG_TX_MESSAGE(
-    MSC_S1AP_ENB,
-    MSC_S1AP_MME,
-    (const char *)buffer,
-    length,
-    MSC_AS_TIME_FMT" E_RAN Setup successfulOutcome eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_p->eNB_ue_s1ap_id,
-    path_switch_req_p->mme_ue_s1ap_id);
 
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,

@@ -145,7 +145,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int n_scid;
   abstraction_flag = 0;
   LOG_I(PHY, "Initializing UE vars (abstraction %u) for gNB TXant %u, UE RXant %u\n", abstraction_flag, fp->nb_antennas_tx, fp->nb_antennas_rx);
-  //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_gNB_INST);
   phy_init_nr_top(ue);
   // many memory allocation sizes are hard coded
   AssertFatal( fp->nb_antennas_rx <= 4, "hard coded allocation for ue_common_vars->dl_ch_estimates[gNB_id]" );

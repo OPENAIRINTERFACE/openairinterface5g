@@ -33,7 +33,6 @@
 
 #include "assertions.h"
 #include "intertask_interface.h"
-#include "msc.h"
 
 #include "gtpv1u.h"
 #include "NwGtpv1u.h"
@@ -51,7 +50,6 @@
 #include "gtpv1u_eNB_defs.h"
 #include "gtpv1u_eNB_task.h"
 #include "rrc_eNB_GTPV1U.h"
-#include <common/utils/msc/msc.h>
 
 #undef GTP_DUMP_SOCKET
 
@@ -146,11 +144,6 @@ static int gtpv1u_eNB_send_init_udp(const Gtpv1uS1Req *req) {
   addr.s_addr = req->enb_ip_address_for_S1u_S12_S4_up;
   UDP_INIT(message_p).address = inet_ntoa(addr);
   LOG_I(GTPU, "Tx UDP_INIT IP addr %s (%x)\n", UDP_INIT(message_p).address,UDP_INIT(message_p).port);
-  MSC_LOG_EVENT(
-    MSC_GTPU_ENB,
-    "0 UDP bind  %s:%u",
-    UDP_INIT(message_p).address,
-    UDP_INIT(message_p).port);
   return itti_send_msg_to_task(TASK_UDP, INSTANCE_DEFAULT, message_p);
 }
 
@@ -266,14 +259,6 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 #endif
         //#warning "LG eps bearer mapping to DRB id to do (offset -4)"
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->enb_id, ENB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->enb_id);
-        MSC_LOG_TX_MESSAGE(
-          MSC_GTPU_ENB,
-          MSC_PDCP_ENB,
-          NULL,0,
-          MSC_AS_TIME_FMT" DATA-REQ rb %u size %u",
-          0,0,
-          (gtpv1u_teid_data_p->eps_bearer_id) ? gtpv1u_teid_data_p->eps_bearer_id - 4: 5-4,
-          buffer_len);
         ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id], ctxt.rnti);
 
         if((ue_context_p != NULL) &&
@@ -736,14 +721,6 @@ gtpv1u_create_x2u_tunnel(
   hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
   int                      i;
   ebi_t                    eps_bearer_id        = 0;
-  MSC_LOG_RX_MESSAGE(
-    MSC_GTPU_ENB,
-    MSC_RRC_ENB,
-    NULL,0,
-    MSC_AS_TIME_FMT" CREATE_X2U_TUNNEL_REQ RNTI %"PRIx16" inst %u ntuns %u ebid %u enb-x2u teid %u",
-    0,0,create_tunnel_req_pP->rnti, instanceP,
-    create_tunnel_req_pP->num_tunnels, create_tunnel_req_pP->eps_bearer_id[0],
-    create_tunnel_req_pP->tenb_X2u_teid[0]);
   create_tunnel_resp_pP->rnti        = create_tunnel_req_pP->rnti;
   create_tunnel_resp_pP->status      = 0;
   create_tunnel_resp_pP->num_tunnels = 0;
@@ -795,13 +772,6 @@ gtpv1u_create_x2u_tunnel(
     }
   }
 
-  MSC_LOG_TX_MESSAGE(
-    MSC_GTPU_ENB,
-    MSC_RRC_ENB,
-    NULL,0,
-    "0 GTPV1U_ENB_CREATE_TUNNEL_RESP rnti %x teid %x",
-    create_tunnel_resp_pP->rnti,
-    x2u_teid);
   LOG_D(GTPU, "Tx GTPV1U_ENB_CREATE_TUNNEL_RESP ue rnti %x status %d\n",
         create_tunnel_req_pP->rnti,
         create_tunnel_resp_pP->status);
@@ -885,14 +855,6 @@ gtpv1u_create_s1u_tunnel(
   int                      addrs_length_in_bytes= 0;
   int                      loop_counter         = 0;
   int                      ret                  = 0;
-  MSC_LOG_RX_MESSAGE(
-    MSC_GTPU_ENB,
-    MSC_RRC_ENB,
-    NULL,0,
-    MSC_AS_TIME_FMT" CREATE_TUNNEL_REQ RNTI %"PRIx16" inst %u ntuns %u ebid %u sgw-s1u teid %u",
-    0,0,create_tunnel_req_pP->rnti, instanceP,
-    create_tunnel_req_pP->num_tunnels, create_tunnel_req_pP->eps_bearer_id[0],
-    create_tunnel_req_pP->sgw_S1u_teid[0]);
   create_tunnel_resp_pP->rnti        = create_tunnel_req_pP->rnti;
   create_tunnel_resp_pP->status      = 0;
   create_tunnel_resp_pP->num_tunnels = 0;
@@ -1005,13 +967,6 @@ gtpv1u_create_s1u_tunnel(
     }
   }
 
-  MSC_LOG_TX_MESSAGE(
-    MSC_GTPU_ENB,
-    MSC_RRC_ENB,
-    NULL,0,
-    "0 GTPV1U_ENB_CREATE_TUNNEL_RESP rnti %x teid %x",
-    create_tunnel_resp_pP->rnti,
-    s1u_teid);
   LOG_D(GTPU, "Tx GTPV1U_ENB_CREATE_TUNNEL_RESP ue rnti %x status %d\n",
         create_tunnel_req_pP->rnti,
         create_tunnel_resp_pP->status);
@@ -1175,13 +1130,6 @@ int gtpv1u_delete_s1u_tunnel(
         GTPV1U_ENB_DELETE_TUNNEL_RESP(message_p).rnti,
         GTPV1U_ENB_DELETE_TUNNEL_RESP(message_p).enb_S1u_teid,
         GTPV1U_ENB_DELETE_TUNNEL_RESP(message_p).status);
-  MSC_LOG_TX_MESSAGE(
-    MSC_GTPU_ENB,
-    MSC_RRC_ENB,
-    NULL,0,
-    "0 GTPV1U_ENB_DELETE_TUNNEL_RESP rnti %x teid %x",
-    GTPV1U_ENB_DELETE_TUNNEL_RESP(message_p).rnti,
-    teid_eNB);
   if (req_pP->from_gnb)
     return itti_send_msg_to_task(TASK_RRC_GNB, instanceP, message_p);
   else
@@ -1351,27 +1299,12 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
 
           if (rc != NW_GTPV1U_OK) {
             LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
-            MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                          enb_s1u_teid,sgw_s1u_teid,data_req_p->length);
             (void)enb_s1u_teid; /* avoid gcc warning "set but not used" */
           } else {
             rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
 
             if (rc != NW_GTPV1U_OK) {
               LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
-              MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                            enb_s1u_teid,sgw_s1u_teid,data_req_p->length);
-            } else {
-              MSC_LOG_TX_MESSAGE(
-                MSC_GTPU_ENB,
-                MSC_GTPU_SGW,
-                NULL,
-                0,
-                MSC_AS_TIME_FMT" G-PDU ltid %u rtid %u size %u",
-                0,0,
-                enb_s1u_teid,
-                sgw_s1u_teid,
-                data_req_p->length);
             }
 
             rc = nwGtpv1uMsgDelete(RC.gtpv1u_data_g->gtpv1u_stack,
@@ -1428,27 +1361,12 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
 
           if (rc != NW_GTPV1U_OK) {
             LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
-            MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                          enb_s1u_teid,tenb_x2u_teid,data_req_p->length);
             (void)enb_s1u_teid; /* avoid gcc warning "set but not used" */
           } else {
             rc = nwGtpv1uProcessUlpReq(RC.gtpv1u_data_g->gtpv1u_stack, &stack_req);
 
             if (rc != NW_GTPV1U_OK) {
               LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
-              MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                            enb_s1u_teid,tenb_x2u_teid,data_req_p->length);
-            } else {
-              MSC_LOG_TX_MESSAGE(
-                MSC_GTPU_ENB,
-                MSC_GTPU_SGW,
-                NULL,
-                0,
-                MSC_AS_TIME_FMT" G-PDU ltid %u rtid %u size %u",
-                0,0,
-                enb_s1u_teid,
-                tenb_x2u_teid,
-                data_req_p->length);
             }
 
             rc = nwGtpv1uMsgDelete(RC.gtpv1u_data_g->gtpv1u_stack,
@@ -1506,8 +1424,6 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
 	  
           if (rc != NW_GTPV1U_OK) {
             LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
-            MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                          enb_s1u_teid,tenb_x2u_teid,data_req_p->length);
             (void)enb_s1u_teid; /* avoid gcc warning "set but not used" */
           } else {
             pMsg = (NwGtpv1uMsgT *) stack_req.apiInfo.sendtoInfo.hMsg;
@@ -1516,19 +1432,6 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
 	    
             if (rc != NW_GTPV1U_OK) {
               LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
-              MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
-                            enb_s1u_teid,tenb_x2u_teid,data_req_p->length);
-            } else {
-              MSC_LOG_TX_MESSAGE(
-                MSC_GTPU_ENB,
-                MSC_GTPU_SGW,
-                NULL,
-                0,
-                MSC_AS_TIME_FMT" G-PDU ltid %u rtid %u size %u",
-                0,0,
-                enb_s1u_teid,
-                tenb_x2u_teid,
-                data_req_p->length);
             }
 
             rc = nwGtpv1uMsgDelete(RC.gtpv1u_data_g->gtpv1u_stack,
@@ -1589,7 +1492,6 @@ void *gtpv1u_eNB_task(void *args) {
   rc = gtpv1u_eNB_init();
   AssertFatal(rc == 0, "gtpv1u_eNB_init Failed");
   itti_mark_task_ready(TASK_GTPV1_U);
-  MSC_START_USE();
 
   while(1) {
     (void) gtpv1u_eNB_process_itti_msg (NULL);

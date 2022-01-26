@@ -67,7 +67,7 @@ BUILD_ECLIPSE=0
 NR="False"
 ITTI_SIM="False"
 SANITIZE_ADDRESS="False"
-OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope msc"
+OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
 RU=0
 trap handle_ctrl_c INT
 

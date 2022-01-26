@@ -44,7 +44,6 @@
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "msc.h"
 
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
@@ -309,7 +308,6 @@ void *udp_eNB_task(void *args_p)
   udp_enb_init();
 
   itti_mark_task_ready(TASK_UDP);
-  MSC_START_USE();
 
   while(1) {
     itti_receive_msg(TASK_UDP, &received_message_p);

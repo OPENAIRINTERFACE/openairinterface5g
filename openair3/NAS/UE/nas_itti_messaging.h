@@ -26,7 +26,6 @@
 #include "assertions.h"
 #include "intertask_interface.h"
 #include "esm_proc.h"
-#include "msc.h"
 
 #ifndef NAS_ITTI_MESSAGING_H_
 #define NAS_ITTI_MESSAGING_H_
