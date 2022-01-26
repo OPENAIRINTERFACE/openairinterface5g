@@ -116,5 +116,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay);
 void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp, NR_UE_NR_Capability_t *uecap);
 void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, NR_UE_NR_Capability_t *uecap);
 void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time);
+void schedulingrequest_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
+                              NR_PUCCH_Config_t *pucch_Config);
 
 #endif
