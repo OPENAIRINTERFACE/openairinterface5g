@@ -171,7 +171,6 @@ extern int usrp_tx_thread;
 #define CONFIG_HLP_NSA           "Enable NSA mode \n"
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
-#define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
 #define CONFIG_FLOG_OPT          "R"
 #define CONFIG_LOGL_OPT          "g"
