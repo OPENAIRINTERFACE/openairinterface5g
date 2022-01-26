@@ -40,13 +40,6 @@
 typedef c16_t scopeSample_t;
 #define SquaredNorm(VaR) ((VaR).r * (VaR).r + (VaR).i * (VaR).i)
 
-typedef struct {
-  int dataSize;
-  int elementSz;
-  int colSz;
-  int lineSz;
-} scopeGraphData_t;
-
 typedef struct OAIgraph {
   FL_OBJECT *graph;
   FL_OBJECT *text;
