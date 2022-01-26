@@ -36,7 +36,6 @@
 #include "rrc_eNB_S1AP.h"
 #include "enb_config.h"
 #include "common/ran_context.h"
-#include "gtpv1u.h"
 
 #include "s1ap_eNB.h"
 #include "s1ap_eNB_defs.h"

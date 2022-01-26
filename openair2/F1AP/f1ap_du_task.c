@@ -103,7 +103,7 @@ static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, c
   strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
   sprintf(tmp.originService, "%d", DUport);
   sprintf(tmp.destinationService, "%d", CUport);
-  return ocp_gtpv1Init(tmp);
+  return gtpv1Init(tmp);
 }
 
 void *F1AP_DU_task(void *arg) {

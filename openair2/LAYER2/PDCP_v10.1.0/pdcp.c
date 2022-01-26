@@ -60,7 +60,6 @@
 #include <pthread.h>
 
 #  include "gtpv1u_eNB_task.h"
-#  include "gtpv1u.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "ENB_APP/enb_config.h"
@@ -229,7 +228,7 @@ rlc_op_status_t cu_send_to_du(const protocol_ctxt_t *const ctxt,
   LOG_D(PDCP, "%s() (drb %ld) sending message to gtp size %d\n",
 	__func__, rb_id, size);
   extern instance_t CUuniqInstance;
-  itti_send_msg_to_task(TASK_VARIABLE, CUuniqInstance, message_p);
+  itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
   return TRUE;
 }
 
@@ -1078,7 +1077,7 @@ pdcp_data_ind(
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ctxt_pP->rnti;
       GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
-      itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
+      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
       packet_forwarded = TRUE;
     }
   } else {

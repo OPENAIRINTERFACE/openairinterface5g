@@ -365,7 +365,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
     //Use check on x2ap to consider the NSA scenario and check on AMF_MODE_ENABLED for the SA scenario
     if(is_x2ap_enabled() || AMF_MODE_ENABLED) {
-      if (itti_create_task (TASK_GTPV1_U, &nr_gtpv1u_gNB_task, NULL) < 0) {
+      if (itti_create_task (TASK_GTPV1_U, &gtpv1uTask, NULL) < 0) {
         LOG_E(GTPU, "Create task for GTPV1U failed\n");
         return -1;
       }

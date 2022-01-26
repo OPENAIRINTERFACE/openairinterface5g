@@ -47,7 +47,7 @@ static instance_t cu_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
   strncpy(tmp.destinationHost, IPaddrs->remote_addr, sizeof(tmp.destinationHost)-1);
   sprintf(tmp.originService, "%d",  IPaddrs->my_portd);
   sprintf(tmp.destinationService, "%d",  IPaddrs->remote_portd);
-  return ocp_gtpv1Init(tmp);
+  return gtpv1Init(tmp);
 }
 
 static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind,
