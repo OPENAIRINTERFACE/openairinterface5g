@@ -1149,15 +1149,7 @@ void fill_initial_SpCellConfig(int uid,
   *schedulingRequestResourceConfig->resource = 0;
   ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
 
- pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
- long *delay[8];
- for (int i=0;i<8;i++) {
-   delay[i] = calloc(1,sizeof(*delay[i]));
-   AssertFatal(carrier->minRXTXTIME >=2 && carrier->minRXTXTIME <7,
-               "check minRXTXTIME %d\n",carrier->minRXTXTIME);
-   *delay[i] = (i+carrier->minRXTXTIME);
-   ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
- }
+  set_dl_DataToUL_ACK(pucch_Config, carrier->minRXTXTIME);
 
   SpCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->initialDownlinkBWP));
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;

@@ -893,13 +893,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  pucch_Config->schedulingRequestResourceToReleaseList=NULL;
  pucch_Config->multi_CSI_PUCCH_ResourceList=NULL;
- pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
- long *delay[8];
- for (int i=0;i<8;i++) {
-   delay[i] = calloc(1,sizeof(*delay[i]));
-   *delay[i] = i+minRXTXTIME;
-   ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
- }
+
+ set_dl_DataToUL_ACK(pucch_Config, minRXTXTIME);
+
  pucch_Config->spatialRelationInfoToAddModList = calloc(1,sizeof(*pucch_Config->spatialRelationInfoToAddModList));
  NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
  pucchspatial->pucch_SpatialRelationInfoId = 1;
