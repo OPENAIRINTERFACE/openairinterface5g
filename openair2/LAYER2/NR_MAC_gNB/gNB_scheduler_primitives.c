@@ -1936,19 +1936,18 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
   return -1;
 }
 
-void set_Y(int Y[3][160], rnti_t rnti) {
+uint16_t get_Y(int cid, int slot, rnti_t rnti) {
+
   const int A[3] = {39827, 39829, 39839};
   const int D = 65537;
+  int Y;
 
-  Y[0][0] = (A[0] * rnti) % D;
-  Y[1][0] = (A[1] * rnti) % D;
-  Y[2][0] = (A[2] * rnti) % D;
+  Y = (A[cid] * rnti) % D;
 
-  for (int s = 1; s < 160; s++) {
-    Y[0][s] = (A[0] * Y[0][s - 1]) % D;
-    Y[1][s] = (A[1] * Y[1][s - 1]) % D;
-    Y[2][s] = (A[2] * Y[2][s - 1]) % D;
-  }
+  for (int s = 0; s < slot; s++)
+    Y = (A[cid] * Y) % D;
+
+  return Y;
 }
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
@@ -2032,7 +2031,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     UE_info->CellGroup[UE_id] = CellGroup;
     add_nr_list(&UE_info->list, UE_id);
     memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
-    set_Y(UE_info->Y[UE_id], rntiP);
     if (CellGroup && CellGroup->spCellConfig && CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated)
       compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];

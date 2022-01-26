@@ -669,7 +669,6 @@ typedef struct {
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
   /// CCE indexing
-  int Y[MAX_MOBILES_PER_GNB][3][160];
   int m[MAX_MOBILES_PER_GNB];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];

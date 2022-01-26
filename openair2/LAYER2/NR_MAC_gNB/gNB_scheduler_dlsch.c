@@ -613,7 +613,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Find a free CCE */
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+  const uint16_t Y = get_Y(cid%3, slot, UE_info->rnti[UE_id]);
   uint8_t nr_of_candidates;
   for (int i=0; i<5; i++) {
     // for now taking the lowest value among the available aggregation levels
@@ -775,7 +775,7 @@ void pf_dl(module_id_t module_id,
 
     /* Find a free CCE */
     const int cid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t Y = RC.nrmac[module_id]->UE_info.Y[UE_id][cid%3][slot];
+    const uint16_t Y = get_Y(cid%3, slot, UE_info->rnti[UE_id]);
     uint8_t nr_of_candidates;
     for (int i=0; i<5; i++) {
       // for now taking the lowest value among the available aggregation levels
