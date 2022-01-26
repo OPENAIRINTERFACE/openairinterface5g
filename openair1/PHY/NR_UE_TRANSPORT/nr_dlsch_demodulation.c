@@ -2150,24 +2150,26 @@ uint8_t nr_matrix_inverse(int32_t **a44,//Input matrix//conjH_H_elements[0]
     double complex determin_cpx;
     for (int i=0; i<12*nb_rb; i++) {
 
+      //Convert Q15 to floating point
       for (int rtx=0;rtx<size;rtx++) {//row
         for (int ctx=0;ctx<size;ctx++) {//column
-          a44_cpx[ctx*size+rtx]= ((double)((short *)a44[ctx*size+rtx])[(i<<1)]) + I*((double)((short *)a44[ctx*size+rtx])[(i<<1)+1]);
+          a44_cpx[ctx*size+rtx]= ((double)((short *)a44[ctx*size+rtx])[(i<<1)])/(1<<(shift0-1)) + I*((double)((short *)a44[ctx*size+rtx])[(i<<1)+1])/(1<<(shift0-1));
+          //if (i<4) printf("a44_cpx(%d,%d)= ((FP %d))%lf+(FP %d)j%lf \n",ctx,rtx,((short *)a44[ctx*size+rtx])[(i<<1)],creal(a44_cpx[ctx*size+rtx]),((short *)a44[ctx*size+rtx])[(i<<1)+1],cimag(a44_cpx[ctx*size+rtx]));
         }
       }
       //Compute Matrix determinant (copy real value only)
       determin_cpx = nr_determin_cpx(a44_cpx,//
                                      size,//size
                                      +1);
-      //if (i<4) printf("order %d nr_det_cpx = %lf+j%lf \n",log2_approx(creal(determin_cpx)),creal(determin_cpx)/(1<<((size-1)*shift0)),cimag(determin_cpx)/(1<<((size-1)*shift0)));
+      //if (i<4) printf("order %d nr_det_cpx = %lf+j%lf \n",log2_approx(creal(determin_cpx)),creal(determin_cpx),cimag(determin_cpx));
 
       //Round and convert to Q15 (Out in the same format as Fixed point).
       if (creal(determin_cpx)>0) {//determin of the symmetric matrix is real part only
-        ((short*) ad_bc)[i<<1] = (short) ((creal(determin_cpx)/(1<<((size-1)*shift0)))+0.5);//
-        ((short*) ad_bc)[(i<<1)+1] = (short) ((cimag(determin_cpx)/(1<<((size-1)*shift0)))+0.5);//
+        ((short*) ad_bc)[i<<1] = (short) ((creal(determin_cpx)*(1<<(shift0)))+0.5);//
+        //((short*) ad_bc)[(i<<1)+1] = (short) ((cimag(determin_cpx)*(1<<(shift0)))+0.5);//
       } else {
-        ((short*) ad_bc)[i<<1] = (short) ((creal(determin_cpx)/(1<<((size-1)*shift0)))-0.5);//
-        ((short*) ad_bc)[(i<<1)+1] = (short) ((cimag(determin_cpx)/(1<<((size-1)*shift0)))-0.5);//
+        ((short*) ad_bc)[i<<1] = (short) ((creal(determin_cpx)*(1<<(shift0)))-0.5);//
+        //((short*) ad_bc)[(i<<1)+1] = (short) ((cimag(determin_cpx)*(1<<(shift0)))-0.5);//
       }
       //if (i<4) printf("nr_det_FP= %d+j%d \n",((short*) ad_bc)[i<<1],((short*) ad_bc)[(i<<1)+1]);
       //Compute Inversion of the H^*H matrix (normalized output divide by determinant)
@@ -2187,18 +2189,18 @@ uint8_t nr_matrix_inverse(int32_t **a44,//Input matrix//conjH_H_elements[0]
 
           inv_H_h_H_cpx[rtx*size+ctx] = nr_determin_cpx(sub_matrix_cpx,//
                                                         size-1,//size
-                                                        ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1))/(determin_cpx);
-          //if (i==0) printf("H_h_H(r%d,c%d)=%lf+j%lf --> inv_H_h_H(%d,%d) = %lf+j%lf \n",rtx,ctx,creal(a44_cpx[ctx*size+rtx]),cimag(a44_cpx[ctx*size+rtx]),ctx,rtx,creal(inv_H_h_H_cpx[rtx*size+ctx])*(1<<18),cimag(inv_H_h_H_cpx[rtx*size+ctx])*(1<<18));
+                                                        ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1));
+          //if (i==0) printf("H_h_H(r%d,c%d)=%lf+j%lf --> inv_H_h_H(%d,%d) = %lf+j%lf \n",rtx,ctx,creal(a44_cpx[ctx*size+rtx]),cimag(a44_cpx[ctx*size+rtx]),ctx,rtx,creal(inv_H_h_H_cpx[rtx*size+ctx]),cimag(inv_H_h_H_cpx[rtx*size+ctx]));
 
           if (creal(inv_H_h_H_cpx[rtx*size+ctx])>0)
-            ((short *) inv_H_h_H[rtx*size+ctx])[i<<1] = (short) ((creal(inv_H_h_H_cpx[rtx*size+ctx])*(1<<18))+0.5);//Convert to Q 18
+            ((short *) inv_H_h_H[rtx*size+ctx])[i<<1] = (short) ((creal(inv_H_h_H_cpx[rtx*size+ctx])*(1<<(shift0-1)))+0.5);//Convert to Q 18
           else
-            ((short *) inv_H_h_H[rtx*size+ctx])[i<<1] = (short) ((creal(inv_H_h_H_cpx[rtx*size+ctx])*(1<<18))-0.5);//
+            ((short *) inv_H_h_H[rtx*size+ctx])[i<<1] = (short) ((creal(inv_H_h_H_cpx[rtx*size+ctx])*(1<<(shift0-1)))-0.5);//
 
           if (cimag(inv_H_h_H_cpx[rtx*size+ctx])>0)
-            ((short *) inv_H_h_H[rtx*size+ctx])[(i<<1)+1] = (short) ((cimag(inv_H_h_H_cpx[rtx*size+ctx])*(1<<18))+0.5);//
+            ((short *) inv_H_h_H[rtx*size+ctx])[(i<<1)+1] = (short) ((cimag(inv_H_h_H_cpx[rtx*size+ctx])*(1<<(shift0-1)))+0.5);//
           else
-            ((short *) inv_H_h_H[rtx*size+ctx])[(i<<1)+1] = (short) ((cimag(inv_H_h_H_cpx[rtx*size+ctx])*(1<<18))-0.5);//
+            ((short *) inv_H_h_H[rtx*size+ctx])[(i<<1)+1] = (short) ((cimag(inv_H_h_H_cpx[rtx*size+ctx])*(1<<(shift0-1)))-0.5);//
 
           //if (i<4) printf("inv_H_h_H_FP(%d,%d)= %d+j%d \n",ctx,rtx, ((short *) inv_H_h_H[rtx*size+ctx])[i<<1],((short *) inv_H_h_H[rtx*size+ctx])[(i<<1)+1]);
         }
@@ -2316,14 +2318,13 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
     }
   }
   int fp_flag = 1;//0: float point calc 1: Fixed point calc
-  int fpshift = 8;
   nr_matrix_inverse(conjH_H_elements[0],//Input matrix
                     inv_H_h_H,//Inverse
                     determ_fin,//determin
                     n_tx,//size
                     nb_rb_0,
                     fp_flag,//fixed point flag
-                    fpshift);//the out put is Q15
+                    shift-(fp_flag==1?2:0));//the out put is Q15
 
   // multiply Matrix inversion pf H_h_H by the rx signal vector
   int32_t outtemp[12*nb_rb_0] __attribute__((aligned(32)));
@@ -2344,7 +2345,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
                     (int *)&rxdataF_comp[ctx*n_rx][symbol*nb_rb*12],
                     outtemp,
                     nb_rb_0,
-                    fpshift + (fp_flag? 0: 2));//out in 15-fpshift
+                    shift-(fp_flag==1?2:0));
         nr_a_sum_b((__m128i *)rxdataF_zforcing[rtx],
                    (__m128i *)outtemp,
                    nb_rb_0);//a =a + b
@@ -2391,7 +2392,6 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
 
     for (int rb=0; rb<3*nb_rb_0; rb++) {
       //for symmetric H_h_H matrix, the determinant is only real values
-      if (fp_flag) {
         mmtmpD2 = _mm_sign_epi16(determ_fin_128[0],*(__m128i*)&nr_realpart[0]);//set imag part to 0
         mmtmpD3 = _mm_shufflelo_epi16(mmtmpD2,_MM_SHUFFLE(2,3,0,1));
         mmtmpD3 = _mm_shufflehi_epi16(mmtmpD3,_MM_SHUFFLE(2,3,0,1));
@@ -2408,14 +2408,7 @@ uint8_t nr_zero_forcing_rx(int **rxdataF_comp,
         dl_ch_mag128b_0[0] = _mm_slli_epi16(dl_ch_mag128b_0[0],1);
         dl_ch_mag128r_0[0] = _mm_mulhi_epi16(dl_ch_mag128r_0[0],QAM_amp128r);
         dl_ch_mag128r_0[0] = _mm_slli_epi16(dl_ch_mag128r_0[0],1);
-      } else{
-        dl_ch_mag128_0[0] = QAM_amp128;
-        dl_ch_mag128_0[0] = _mm_srai_epi16(dl_ch_mag128_0[0],fpshift-1);
-        dl_ch_mag128b_0[0] = QAM_amp128b;
-        dl_ch_mag128b_0[0] = _mm_srai_epi16(dl_ch_mag128b_0[0],fpshift-1);
-        dl_ch_mag128r_0[0] = QAM_amp128r;
-        dl_ch_mag128r_0[0] = _mm_srai_epi16(dl_ch_mag128r_0[0],fpshift-1);
-      }
+
 
       determ_fin_128 += 1;
       dl_ch_mag128_0 += 1;
