@@ -40,8 +40,6 @@
 
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
-#include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
-
 extern RAN_CONTEXT_t RC;
 
 #include <stdint.h>

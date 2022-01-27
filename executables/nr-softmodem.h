@@ -5,7 +5,6 @@
 
 #include "flexran_agent.h"
 #include "PHY/defs_gNB.h"
-#include "proto_agent.h"
 
 #define DEFAULT_DLF 2680000000
 
@@ -65,5 +64,6 @@ void init_gNB_afterRU(void);
 
 extern int stop_L1L2(module_id_t gnb_id);
 extern int restart_L1L2(module_id_t gnb_id);
+void init_pdcp(void);
 
 #endif
