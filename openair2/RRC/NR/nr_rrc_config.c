@@ -149,15 +149,16 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
 }
 
 
-void set_dl_mcs_table(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *scc, NR_UE_NR_Capability_t *cap) {
+void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+                      NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
+                      NR_ServingCellConfigCommon_t *scc) {
 
   if (cap == NULL){
-    bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
+    bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
     return;
   }
 
   int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-  int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
   struct NR_FrequencyInfoDL__scs_SpecificCarrierList scs_list = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList;
   int bw_rb = -1;
   for(int i=0; i<scs_list.list.count; i++){
@@ -208,12 +209,12 @@ void set_dl_mcs_table(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *scc,
     }
   }
   if (supported && (supported_mo == NR_ModulationOrder_qam256)) {
-    if(bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
-      bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table));
-    *bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+    if(bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
+      bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table));
+    *bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
   }
   else
-    bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
+    bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
 }
 
 

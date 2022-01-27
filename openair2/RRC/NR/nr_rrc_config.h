@@ -113,7 +113,9 @@ typedef struct physicalcellgroup_s{
 
 void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc);
 void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay);
-void set_dl_mcs_table(NR_BWP_Downlink_t *bwp, NR_ServingCellConfigCommon_t *scc, NR_UE_NR_Capability_t *cap);
+void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+                      NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
+                      NR_ServingCellConfigCommon_t *scc);
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        NR_ServingCellConfigCommon_t *scc,
                        int numerology,
