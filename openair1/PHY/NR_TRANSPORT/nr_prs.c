@@ -4,8 +4,8 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/sse_intrin.h"
 
-#define DEBUG_PRS_MOD
-#define DEBUG_PRS_MAP
+//#define DEBUG_PRS_MOD
+//#define DEBUG_PRS_MAP
 
 extern short nr_qpsk_mod_table[8];
 
@@ -29,10 +29,8 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
   int16_t mod_prs[NR_MAX_PRS_LENGTH<<1];
   uint8_t idx=prs_data->NPRSID;
   
-  
    // PRS resource mapping with combsize=k which means PRS symbols exist in every k-th subcarrier in frequency domain
    // According to ts138.211 sec.7.4.1.7.2
-
   for (int l = prs_data->SymbolStart; l < prs_data->SymbolStart + prs_data->NumPRSSymbols; l++) {
 
     int symInd = l-prs_data->SymbolStart;
@@ -50,31 +48,28 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
     }
     
     k = (prs_data->REOffset+k_prime) % prs_data->CombSize + frame_parms->first_carrier_offset ;
-
-    
     
     // QPSK modulation
-    
     for (int m = 0; m < (12/prs_data->CombSize) * prs_data->NumRB; m++) {
       idx = (((nr_gold_prs[l][(m<<1)>>5])>>((m<<1)&0x1f))&3);
       mod_prs[m<<1] = nr_qpsk_mod_table[idx<<1];
       mod_prs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
       
 #ifdef DEBUG_PRS_MOD
-printf("m %d idx %d gold seq %d mod_prs %d %d\n", m, idx, nr_gold_prs[l][(m<<1)>>5], mod_prs[m<<1], mod_prs[(m<<1)+1]);
+      LOG_D("m %d idx %d gold seq %d mod_prs %d %d\n", m, idx, nr_gold_prs[l][(m<<1)>>5], mod_prs[m<<1], mod_prs[(m<<1)+1]);
 #endif
       
 #ifdef DEBUG_PRS_MAP
-printf("m %d at k %d of l %d reIdx %d\n", m, k, l, (l*frame_parms->ofdm_symbol_size + k)<<1);
+      LOG_D("m %d at k %d of l %d reIdx %d\n", m, k, l, (l*frame_parms->ofdm_symbol_size + k)<<1);
 #endif
       
       ((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_prs[m<<1]) >> 15;
       ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_prs[(m<<1) + 1]) >> 15;
     
 #ifdef DEBUG_PRS_MAP
-printf("(%d,%d)\n",
-((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
-((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+      LOG_D("(%d,%d)\n",
+      ((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+      ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
 
       k = k +  prs_data->CombSize;
@@ -83,8 +78,7 @@ printf("(%d,%d)\n",
         k-=frame_parms->ofdm_symbol_size;
       }
   }
-LOG_M("nr_prs.m", "prs",(int16_t *)&txdataF[0],frame_parms->samples_per_slot_wCP, 1, 1);
-printf("first carrier offset: %d \n",frame_parms->first_carrier_offset);
+  LOG_M("nr_prs.m", "prs",(int16_t *)&txdataF[0],frame_parms->samples_per_slot_wCP, 1, 1);
 
   return 0;
 }

@@ -1758,7 +1758,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     {
             nr_slot_fep(ue,
                         proc,
-                        j,
+                        (j%fp->symbols_per_slot),
                         nr_slot_rx);
     }
 
