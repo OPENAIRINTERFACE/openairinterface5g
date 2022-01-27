@@ -408,7 +408,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = ((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex;
+    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
 
   if ((frame&127) == 0) LOG_D(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
 }
