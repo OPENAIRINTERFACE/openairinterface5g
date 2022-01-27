@@ -81,7 +81,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     //re_offset
     k = re_offset = (prs_cfg->REOffset+k_prime) % prs_cfg->CombSize + frame_params->first_carrier_offset;
   
-    LOG_D("PRS config l %d k_prime %d, re_offset %d :\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", l, k_prime, re_offset, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
+    LOG_D(PHY, "PRS config l %d k_prime %d, re_offset %d :\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", l, k_prime, re_offset, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
    
     // Pilots generation and modulation
     for (int m = 0; m < (12/prs_cfg->CombSize)*prs_cfg->NumRB; m++) 
@@ -121,7 +121,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
           break;
 
         default:
-          LOG_I("nr=prs channel_estimation: k_prime=%d -> ERROR\n",k_prime);
+          LOG_I(PHY, "nr=prs channel_estimation: k_prime=%d -> ERROR\n",k_prime);
           return(-1);
           break;
       }
@@ -236,7 +236,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
           break;
 
         default:
-          LOG_I("nr=prs channel_estimation: k_prime=%d -> ERROR\n",k_prime);
+          LOG_I(PHY, "nr=prs channel_estimation: k_prime=%d -> ERROR\n",k_prime);
           return(-1);
           break;
       }
@@ -307,7 +307,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     }
     else
     {
-      LOG_I("NR_PRS UE Channel EStimation: CombSize other than 2 and 4 are NOT supported currently! Returning");
+      LOG_I(PHY, "NR_PRS UE Channel EStimation: CombSize other than 2 and 4 are NOT supported currently! Returning");
       return(0); 
     }
 
@@ -316,7 +316,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     {
       prs_chest[re_offset]   = ch_intrp[re<<1];
       prs_chest[re_offset+1] = ch_intrp[(re<<1)+1];
-      LOG_D("prs_ch[%d] %d %d\n", re_offset, ch_intrp[re<<1], ch_intrp[(re<<1)+1]);
+      LOG_D(PHY, "prs_ch[%d] %d %d\n", re_offset, ch_intrp[re<<1], ch_intrp[(re<<1)+1]);
       re_offset = (re_offset+1) % frame_params->ofdm_symbol_size;
     }
     
@@ -357,7 +357,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       break;
 
     default:
-      LOG_I("unsupported ofdm symbol size \n");
+      LOG_I(PHY, "unsupported ofdm symbol size \n");
       assert(0);
     }
     
