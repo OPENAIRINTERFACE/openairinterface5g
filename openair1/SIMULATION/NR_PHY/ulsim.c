@@ -805,7 +805,7 @@ int main(int argc, char **argv)
 
   unsigned char harq_pid = 0;
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
   NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
@@ -1046,7 +1046,7 @@ int main(int argc, char **argv)
     while (round<max_rounds && crc_status) {
       round_trials[round][snrRun]++;
       ulsch_ue->harq_processes[harq_pid]->round = round;
-      gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
+      gNB->ulsch[0]->harq_processes[harq_pid]->round = round;
       rv_index = nr_rv_round_map[round];
 
       UE_proc.thread_id = 0;
@@ -1362,8 +1362,8 @@ int main(int argc, char **argv)
 	}
         ////////////////////////////////////////////////////////////
 
-	if ((gNB->ulsch[0][0]->last_iteration_cnt >=
-	    gNB->ulsch[0][0]->max_ldpc_iterations+1) || ul_proc_error == 1) {
+	if ((gNB->ulsch[0]->last_iteration_cnt >=
+	    gNB->ulsch[0]->max_ldpc_iterations+1) || ul_proc_error == 1) {
 	  error_flag = 1; 
 	  n_errors[round][snrRun]++;
 	  crc_status = 1;

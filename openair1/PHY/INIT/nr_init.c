@@ -550,21 +550,15 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
 
     LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
 
-    for (int j=0; j<2; j++) {
-      // ULSCH for data
-      gNB->ulsch[i][j] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL, 0);
+    gNB->ulsch[i] = new_gNB_ulsch(MAX_LDPC_ITERATIONS, fp->N_RB_UL, 0);
 
-      if (!gNB->ulsch[i][j]) {
-        LOG_E(PHY,"Can't get gNB ulsch structures\n");
-        exit(-1);
-      }
-
+    if (!gNB->ulsch[i]) {
+      LOG_E(PHY,"Can't get gNB ulsch structures\n");
+      exit(-1);
     }
-
   }
 
   gNB->rx_total_gain_dB=130;
-
 
   //fp->pucch_config_common.deltaPUCCH_Shift = 1;
 }

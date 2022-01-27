@@ -147,7 +147,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
-                            NR_gNB_ULSCH_t **ulsch_gNB,
+                            NR_gNB_ULSCH_t *ulsch_gNB,
                             uint8_t symbol,
                             uint8_t start_symbol,
                             uint16_t nb_rb,

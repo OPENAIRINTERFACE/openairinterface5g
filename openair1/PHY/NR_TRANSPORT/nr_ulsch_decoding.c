@@ -428,7 +428,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
   
 
-  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[ULSCH_id][0];
+  NR_gNB_ULSCH_t                       *ulsch                 = phy_vars_gNB->ulsch[ULSCH_id];
   NR_gNB_PUSCH                         *pusch                 = phy_vars_gNB->pusch_vars[ULSCH_id];
   NR_UL_gNB_HARQ_t                     *harq_process          = ulsch->harq_processes[harq_pid];
 
