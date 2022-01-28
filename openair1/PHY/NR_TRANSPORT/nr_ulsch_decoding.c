@@ -431,7 +431,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     LOG_E(PHY,"ulsch_decoding.c: NULL harq_process pointer\n");
     return 1;
   }
-
+  uint8_t dtx_det = 0;
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams    = &decParams;
 
@@ -470,6 +470,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (harq_process->ndi != pusch_pdu->pusch_data.new_data_indicator) {
     harq_process->new_rx = true;
     harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
+    dtx_det = 1;
     LOG_E(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
   }
 
@@ -601,6 +602,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
   memset(harq_process->c[r],0,Kr_bytes);
 
+  if ((dtx_det==0)&&(pusch_pdu->pusch_data.rv_index==0)){
+  //if (dtx_det==0){
   if (mcs >9){
   memcpy((&z_ol[0]),ulsch_llr+r_offset,E*sizeof(short));
   
@@ -609,7 +612,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     pl_ol128[j] = _mm_packs_epi16(pv_ol128[i],pv_ol128[i+1]);  
   }
 	
-  ret = nrLDPC_decoder_offload(p_decParams,
+  ret = nrLDPC_decoder_offload(p_decParams, harq_pid,
 			r,  
 			pusch_pdu->pusch_data.rv_index,
 			harq_process->F,
@@ -698,7 +701,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
         printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
         }
   	*/ 
-  
+  }
+  else{
+    no_iteration_ldpc = ulsch->max_ldpc_iterations+1;
+  }
 	bool decodeSuccess = (no_iteration_ldpc <= ulsch->max_ldpc_iterations);
         if (decodeSuccess) { 
 		memcpy(harq_process->b+offset,

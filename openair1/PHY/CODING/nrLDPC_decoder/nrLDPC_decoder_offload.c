@@ -166,6 +166,7 @@ struct thread_params {
 	struct nrLDPCoffload_params *p_offloadParams;	
         int8_t* p_out;
         uint8_t r;
+        uint8_t harq_pid;
 	rte_atomic16_t nb_dequeued;
 	rte_atomic16_t processing_status;
 	rte_atomic16_t burst_sz;
@@ -636,6 +637,9 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 	unsigned int i, j;
 	bool large_input = false;
 	uint8_t nb_segments = 1;
+	uint64_t start_time=rte_rdtsc_precise();
+	uint64_t start_time1; //=rte_rdtsc_precise();
+	uint64_t total_time=0, total_time1=0;
 
 	for (i = 0; i < n; ++i) {
 		char *data;
@@ -663,8 +667,17 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 				m_head->data_off = 0;
 				m_head->data_len = data_len;
 			} else {
+
 			        rte_pktmbuf_reset(m_head);
 				data = rte_pktmbuf_append(m_head, data_len);
+
+				total_time = rte_rdtsc_precise() - start_time;
+
+				if (total_time > 10*3000)
+				  LOG_E(PHY," init op first: %u\n",(uint) (total_time/3000));
+
+				start_time1 = rte_rdtsc_precise();
+
 				
 				TEST_ASSERT_NOT_NULL(data,
 					"Couldn't append %u bytes to mbuf from %d data type mbuf pool",
@@ -675,6 +688,9 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 					"Data addr in mbuf (%p) is not aligned to device min alignment (%u)",
 					data, min_alignment);
 				rte_memcpy(data, p_llr, data_len);
+				total_time1 = rte_rdtsc_precise() - start_time;
+				if (total_time1 > 10*3000)
+				  LOG_E(PHY,"init op second: %u\n",(uint) (total_time1/3000));
 			}
 
 			bufs[i].length += data_len;
@@ -709,7 +725,7 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 		} else {
 
 			/* allocate chained-mbuf for output buffer */
-			for (j = 1; j < nb_segments; ++j) {
+			/*for (j = 1; j < nb_segments; ++j) {
 				struct rte_mbuf *m_tail =
 						rte_pktmbuf_alloc(mbuf_pool);
 				TEST_ASSERT_NOT_NULL(m_tail,
@@ -722,7 +738,7 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 				TEST_ASSERT_SUCCESS(ret,
 						"Couldn't chain mbufs from %d data type mbuf pool",
 						op_type);
-			}
+						}*/
 		}
 	}
 
@@ -796,6 +812,7 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		struct rte_bbdev_op_data *harq_outputs,
 		struct rte_bbdev_dec_op *ref_op,
 		uint8_t r,
+		uint8_t harq_pid,
 		t_nrLDPCoffload_params *p_offloadParams)
 {
 	unsigned int i;
@@ -827,8 +844,8 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE; //|RTE_BBDEV_LDPC_CRC_TYPE_24B_DROP; 
 		ops[i]->ldpc_dec.code_block_mode = 1; //ldpc_dec->code_block_mode;
 		
-		ops[i]->ldpc_dec.harq_combined_input.offset =r*1024*32;
-		ops[i]->ldpc_dec.harq_combined_output.offset =r*1024*32;
+		ops[i]->ldpc_dec.harq_combined_input.offset = harq_pid*1024*32*32+r*1024*32;
+		ops[i]->ldpc_dec.harq_combined_output.offset = harq_pid*1024*32*32+r*1024*32;
 		
 
 		if (hard_outputs != NULL)
@@ -1043,6 +1060,7 @@ pmd_lcore_ldpc_dec(void *arg)
 	struct rte_bbdev_dec_op *ops_deq[num_ops];
 	struct rte_bbdev_dec_op *ref_op = tp->op_params->ref_dec_op;
 	uint8_t r= tp->r;
+	uint8_t harq_pid = tp->harq_pid;
 	struct test_buffers *bufs = NULL;
 	int i, j, ret;
 	struct rte_bbdev_info info;
@@ -1087,7 +1105,7 @@ pmd_lcore_ldpc_dec(void *arg)
 
 	set_ldpc_dec_op(ops_enq, num_ops, 0, bufs->inputs,
 				bufs->hard_outputs, bufs->soft_outputs,
-			bufs->harq_inputs, bufs->harq_outputs, ref_op, r, p_offloadParams);
+			bufs->harq_inputs, bufs->harq_outputs, ref_op, r, harq_pid, p_offloadParams);
 
 	/* Set counter to validate the ordering */
 	for (j = 0; j < num_ops; ++j)
@@ -1154,11 +1172,11 @@ pmd_lcore_ldpc_dec(void *arg)
 
 	rte_bbdev_dec_op_free_bulk(ops_enq, num_ops);
 
-	/*total_time = rte_rdtsc_precise() - start_time;
+	total_time = rte_rdtsc_precise() - start_time;
 
-	if (total_time > 10*3000)
+	if (total_time > 100*3000)
 	  LOG_E(PHY," pmd lcore: %u\n",(uint) (total_time/3000));
-	*/
+	
 	double tb_len_bits = calc_ldpc_dec_TB_size(ref_op);
 
 	tp->ops_per_sec = ((double)total_time / (double)rte_get_tsc_hz());
@@ -1208,6 +1226,7 @@ start_pmd_dec(struct active_device *ad,
 	      struct thread_params *t_params,
               t_nrLDPCoffload_params *p_offloadParams,
 	      uint8_t r,
+	      uint8_t harq_pid,
 	      int8_t* p_out)
 {
 	int ret;
@@ -1250,6 +1269,7 @@ start_pmd_dec(struct active_device *ad,
 	t_params[0].p_out = p_out;
 	t_params[0].p_offloadParams = p_offloadParams;
 	t_params[0].r = r;
+	t_params[0].harq_pid = harq_pid;
 
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		if (used_cores >= num_lcores)
@@ -1262,6 +1282,7 @@ start_pmd_dec(struct active_device *ad,
 		t_params[used_cores].p_out = p_out; 
 		t_params[used_cores].p_offloadParams = p_offloadParams; 
 		t_params[used_cores].r = r;
+		t_params[used_cores].harq_pid = harq_pid;
 
 		rte_eal_remote_launch(pmd_lcore_ldpc_dec,
 				&t_params[used_cores++], lcore_id);
@@ -1289,7 +1310,7 @@ start_pmd_dec(struct active_device *ad,
 
 	/* Print throughput if interrupts are disabled and test passed */
 	if (!intr_enabled) {
-	  // print_dec_throughput(t_params, num_lcores);
+	  ///print_dec_throughput(t_params, num_lcores);
 	  //rte_free(t_params);
 	  //	total_time1 = rte_rdtsc_precise() - start_time1;
 
@@ -1396,33 +1417,37 @@ struct rte_mbuf *m_head[DATA_NUM_TYPES];
 struct thread_params *t_params;
 
 
-int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_t rv, uint16_t F, 
+int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid, uint8_t C, uint8_t rv, uint16_t F, 
 			uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out, uint8_t mode) 
 {
     	t_nrLDPCoffload_params offloadParams;
     	t_nrLDPCoffload_params* p_offloadParams    = &offloadParams;
     	uint64_t start=rte_rdtsc_precise();
-	uint64_t start_time=rte_rdtsc_precise();
+	uint64_t start_time;//=rte_rdtsc_precise();
 	uint64_t start_time1; //=rte_rdtsc_precise();
 	uint64_t total_time=0, total_time1=0;
 	uint32_t numIter = 0;
 	int ret;
+	uint64_t start_time_init;
+	uint64_t total_time_init=0;
+
 	/*
 	int argc_re=2;
 	char *argv_re[2];
-	argv_re[0] = "/home/wang/dpdk2005/dpdk-20.05/build/app/testbbdev";
+	argv_re[0] = "/home/eurecom/hongzhi/dpdk-20.05orig/build/app/testbbdev";
 	argv_re[1] = "--";
 	*/
-       int argc_re=7;
-       char *argv_re[7];
-       argv_re[0] = "/home/wang/dpdk2005/dpdk-20.05/build/app/testbbdev";
-       argv_re[1] = "-l";
-       argv_re[2] = "35";
-       argv_re[3] = "-w";
-       argv_re[4] = "b0:00.0";
-       argv_re[5] = "--file-prefix=b6";
-       argv_re[6] = "--";
-
+	
+	int argc_re=7;
+        char *argv_re[7];
+        argv_re[0] = "/home/eurecom/hongzhi/dpdk-20.05orig/build/app/testbbdev";
+        argv_re[1] = "-l";
+        argv_re[2] = "31";
+        argv_re[3] = "-w";
+        argv_re[4] = "81:00.0";
+        argv_re[5] = "--file-prefix=b6";
+        argv_re[6] = "--";
+	
 	test_params.num_ops=1; 
 	test_params.burst_sz=1;
 	test_params.num_lcores=1;		
@@ -1555,8 +1580,11 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 
 	break;
 	case 1:
-	  //printf("offload param E %d BG %d F %d Z %d Qm %d\n", E,p_decParams->BG, F,p_decParams->Z, Qm);
-	  //start_time = rte_rdtsc_precise();
+	  //printf("offload param E %d BG %d F %d Z %d Qm %d rv %d\n", E,p_decParams->BG, F,p_decParams->Z, Qm,rv);
+	  //uint64_t start_time_init;
+	  //uint64_t total_time_init=0;
+
+	  start_time_init = rte_rdtsc_precise();
 	  p_offloadParams->E = E;
           p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
           p_offloadParams->BG = p_decParams->BG;
@@ -1601,20 +1629,20 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t C, uint8_
 				"Couldn't init rte_bbdev_op_data structs");
 
 	  }
-	  /*total_time = rte_rdtsc_precise() - start_time;
+	  total_time_init = rte_rdtsc_precise() - start_time_init;
 
-	  if (total_time > 100*3000)
-            LOG_E(PHY," ldpc decoder mode 1 first: %u\n",(uint) (total_time/3000));
-
-	    start_time1 = rte_rdtsc_precise();*/
-	    ret = start_pmd_dec(ad, op_params, t_params, p_offloadParams, C, p_out);
+	  if (total_time_init > 100*3000)
+            LOG_E(PHY," ldpc decoder mode 1 first: %u\n",(uint) (total_time_init/3000));
+	  
+	    start_time1 = rte_rdtsc_precise();
+	    ret = start_pmd_dec(ad, op_params, t_params, p_offloadParams, C, harq_pid, p_out);
 	  if (ret<0) {
 	    printf("Couldn't start pmd dec");
 	    return(-1);
 	  }
-	  /*total_time1 = rte_rdtsc_precise() - start_time;
+	  total_time1 = rte_rdtsc_precise() - start_time1;
 	  if (total_time1 > 100*3000)
-	  LOG_E(PHY," ldpc decoder mode 1 second: %u\n",(uint) (total_time1/3000));*/
+	  LOG_E(PHY," ldpc decoder mode 1 second: %u\n",(uint) (total_time1/3000));
 	break;
 	case 2:
 
