@@ -544,6 +544,30 @@ class Dashboard:
             })
             editable_mr.save()
 
+    def AWSCleanup(self,mode):
+        #first build MR list from aws S3 bucket
+        if mode != 'report' and mode !='delete':
+            print("incorrect mode for awsclean")
+            return
+        aws_mr_list=[]
+        s3 = boto3.resource('s3')
+        my_bucket = s3.Bucket('oaitestdashboard')
+        for my_bucket_object in my_bucket.objects.all():
+            #MR objects are like MR1407/index.html
+            res=re.search(r'^MR([0-9]+)',my_bucket_object.key)
+            if res!=None:
+                aws_mr_list.append(res.group(1))#store MR number as a string
+        #open MR list from GIt already exists as an attribute of this class self.mr_list
+        #parse aws MR list and delete those MR that are no longer open        
+        for aws_mr in aws_mr_list:
+            if aws_mr not in self.mr_list:
+                if mode=="report":
+                    print(aws_mr+' can be deleted from AWS S3')
+                else :
+                    awspath="MR"+aws_mr+"/"
+                    print('deleting ' + aws_mr)
+                    my_bucket.objects.filter(Prefix=awspath).delete()
+
 
 
 
@@ -579,6 +603,10 @@ def main():
                 htmlDash.PostGitNote(mr,commit, args)
             else:
                 print("Not a Merge Request => this build is for testing/debug purpose, no report to git")
+        elif sys.argv[1]=="awsclean":
+            mode=sys.argv[2]#report or delete
+            htmlDash=Dashboard()
+            htmlDash.AWSCleanup(mode)
         else:
             print("Wrong argument at position 1")
 
