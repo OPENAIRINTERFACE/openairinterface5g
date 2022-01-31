@@ -443,7 +443,7 @@ void init_gNB_Tpool(int inst) {
   initNotifiedFIFO(gNB->L1_tx_out);
   
   // we create 2 threads for L1 tx processing
-  for (int i=0; i < 1; i++) {
+  for (int i=0; i < 2; i++) {
     notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
     processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
     init_DLSCH_struct(gNB, msgDataTx);
