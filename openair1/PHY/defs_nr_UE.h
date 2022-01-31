@@ -862,7 +862,7 @@ typedef struct {
   uint16_t scramblingID_pdcch;
 
   /// PUSCH DMRS sequence
-  uint32_t ****nr_gold_pusch_dmrs;
+  uint32_t ***nr_gold_pusch_dmrs;
 
   uint32_t X_u[64][839];
 

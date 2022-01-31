@@ -67,21 +67,8 @@
 #define NR_PBCH_DMRS_LENGTH 144 // in mod symbols
 #define NR_PBCH_DMRS_LENGTH_DWORD 10 // ceil(2(QPSK)*NR_PBCH_DMRS_LENGTH/32)
 
-/*These max values are for the gold sequences which are generated at init for the
- * full carrier bandwidth*/
-#define NR_MAX_PDCCH_DMRS_INIT_LENGTH ((NR_MAX_NB_RB<<1)*3) // 3 symbols *2(QPSK)
-#define NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD 52 // ceil(NR_MAX_PDCCH_DMRS_LENGTH/32)
 /*used for the resource mapping*/
 #define NR_MAX_PDCCH_DMRS_LENGTH 576 // 16(L)*2(QPSK)*3(3 DMRS symbs per REG)*6(REG per CCE)
-
-#define NR_MAX_PDSCH_DMRS_LENGTH 3300      //275*6(k)*2(QPSK real+imag) 
-#define NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD 104  // ceil(NR_MAX_PDSCH_DMRS_LENGTH/32)
-
-#define NR_MAX_CSI_RS_LENGTH 4400 //275*8(max allocation per RB)*2(QPSK)
-#define NR_MAX_CSI_RS_INIT_LENGTH_DWORD 138  // ceil(NR_MAX_CSI_RS_LENGTH/32)
-
-#define NR_MAX_PUSCH_DMRS_LENGTH NR_MAX_PDSCH_DMRS_LENGTH 
-#define NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD
 
 #define NR_MAX_DCI_PAYLOAD_SIZE 64
 #define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)

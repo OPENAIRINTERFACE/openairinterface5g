@@ -137,10 +137,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *const common_vars        = &ue->common_vars;
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
-  int i,j,k,l,slot,symb,q;
+  int i,j,k,l,slot,symb;
   int gNB_id;
   int th_id;
-  uint32_t ****pusch_dmrs;
   uint16_t N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig
   int n_scid;
   abstraction_flag = 0;
@@ -197,22 +196,22 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   /////////////////////////PUSCH DMRS init/////////////////////////
   ///////////
-  ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
-  pusch_dmrs             = ue->nr_gold_pusch_dmrs;
+
+  // ceil(((NB_RB*6(k)*2(QPSK)/32) // 3 RE *2(QPSK)
+  int pusch_dmrs_init_length =  ((fp->N_RB_UL*12)>>5)+1;
+
+  ue->nr_gold_pusch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+  uint32_t ***pusch_dmrs = ue->nr_gold_pusch_dmrs;
   n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
 
   for (slot=0; slot<fp->slots_per_frame; slot++) {
-    pusch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t **));
+    pusch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
     AssertFatal(pusch_dmrs[slot]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d - malloc failed\n", slot);
 
     for (symb=0; symb<fp->symbols_per_slot; symb++) {
-      pusch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_MAX_NB_CODEWORDS*sizeof(uint32_t *));
+      pusch_dmrs[slot][symb] = (uint32_t *)malloc16(pusch_dmrs_init_length*sizeof(uint32_t));
       AssertFatal(pusch_dmrs[slot][symb]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
-      for (q=0; q<NR_MAX_NB_CODEWORDS; q++) {
-        pusch_dmrs[slot][symb][q] = (uint32_t *)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
-        AssertFatal(pusch_dmrs[slot][symb][q]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
-      }
     }
   }
 
@@ -264,6 +263,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     }
   }
 
+  // ceil(((NB_RB<<1)*3)/32) // 3 RE *2(QPSK)
+  int pdcch_dmrs_init_length =  (((fp->N_RB_DL<<1)*3)>>5)+1;
   //PDCCH DMRS init (gNB offset = 0)
   ue->nr_gold_pdcch[0] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
   uint32_t ***pdcch_dmrs = ue->nr_gold_pdcch[0];
@@ -274,13 +275,16 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     AssertFatal(pdcch_dmrs[slot]!=NULL, "NR init: pdcch_dmrs for slot %d - malloc failed\n", slot);
 
     for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      pdcch_dmrs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+      pdcch_dmrs[slot][symb] = (uint32_t *)malloc16(pdcch_dmrs_init_length*sizeof(uint32_t));
       AssertFatal(pdcch_dmrs[slot][symb]!=NULL, "NR init: pdcch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
     }
   }
 
   ue->scramblingID_pdcch = fp->Nid_cell;
   nr_gold_pdcch(ue,fp->Nid_cell);
+
+  // ceil(((NB_RB*6(k)*2(QPSK)/32) // 3 RE *2(QPSK)
+  int pdsch_dmrs_init_length =  ((fp->N_RB_DL*12)>>5)+1;
 
   //PDSCH DMRS init (eNB offset = 0)
   ue->nr_gold_pdsch[0] = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
@@ -295,7 +299,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
       for (int q=0; q<NR_MAX_NB_CODEWORDS; q++) {
-        pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(pdsch_dmrs_init_length*sizeof(uint32_t));
         AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
       }
     }
