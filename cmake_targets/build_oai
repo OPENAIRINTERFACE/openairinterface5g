@@ -99,25 +99,23 @@ Options
   Makes the LTE softmodem
 --eNBocp
   Makes the OCP LTE softmodem
--gNB
+--gNB
   Makes the NR softmodem
---nrUE
-  Makes the NR UE softmodem
 --RU
   Makes the OAI RRU
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
+--nrUE
+  Makes the NR UE softmodem
 --UE-conf-nvram [configuration file]
    Specify conf_nvram_path (default \"$conf_nvram_path\")
 --UE-gen-nvram [output path]
    Specify gen_nvram_path (default \"$gen_nvram_path\")
---HWLAT
-    Makes test program for haw latency tests
--a | --agent
-   Enables agent for software-defined control of the eNB
 -w | --hardware
    EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, AW2SORI, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
+-t | --transport
+   Selects the transport protocol type, options: None, Ethernet, benetel4g, benetel5g
 -P | --phy_simulators
    Makes the unitary tests Layer 1 simulators
 -S | --core_simulators
@@ -128,6 +126,14 @@ Options
    runs only specified test cases specified here. This flag is only valid with -s
 -V | --vcd
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
+-x | --xforms
+   Will compile with software oscilloscope features
+--HWLAT
+    Makes test program for haw latency tests
+--HWLAT_TEST
+  Compiles a hw latency test program
+--verbose-ci
+  Compile with verbose instructions in CI Docker env
 --verbose-compile
    Shows detailed compilation instructions in makefile
 --cflags_processor
@@ -163,6 +169,10 @@ Options
    Build for I/Q record-playback modes
 -k | --skip-shared-libraries
    Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
+--ninja
+  Tell cmake to use the Ninja build system. Without, will generate make files
+--sanitize-address | -fsanitize=address
+   Enable the address sanitizer on all targets
 --ittiSIM
   Makes the itti simulator
 -h | --help
@@ -707,7 +717,7 @@ function main() {
 
     # generate USIM data
     if [ -f $dbin/conf2uedata ]; then
-      install_nas_tools $conf_nvram_path $gen_nvram_path
+      install_nas_tools $conf_nvram_path $gen_nvram_path "$dlog/conf2uedata.txt"
       echo_info "Copying UE specific part to $DIR/$build_dir/build"
       cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$build_dir/build
       cp -Rvf $dbin/.ue.nvram0 $DIR/$build_dir/build

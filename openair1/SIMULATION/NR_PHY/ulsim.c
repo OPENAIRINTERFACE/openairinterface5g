@@ -74,6 +74,7 @@ rlc_info_t Rlc_info_um,Rlc_info_am_config;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+char *uecap_file;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 uint16_t sf_ahead=4 ;
@@ -275,7 +276,7 @@ int main(int argc, char **argv)
 
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
-  int loglvl = OAILOG_INFO;
+  int loglvl = OAILOG_WARNING;
   //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 0;
@@ -603,6 +604,7 @@ int main(int argc, char **argv)
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
+      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n"); 
       printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -643,7 +645,7 @@ int main(int argc, char **argv)
   else if (N_RB_UL == 106) bandwidth = 40;
   else if (N_RB_UL == 32) bandwidth = 50;
   else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
-			   
+  LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
   if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
 
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,

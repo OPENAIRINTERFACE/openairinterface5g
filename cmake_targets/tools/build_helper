@@ -756,6 +756,7 @@ check_install_oai_software() {
 	libidn11-dev \
 	libmysqlclient-dev  \
 	libpython2.7-dev \
+        libreadline-dev \
 	libsctp1  \
 	libsctp-dev  \
 	libssl-dev  \
@@ -842,6 +843,7 @@ check_install_oai_software() {
       patch \
       psmisc \
       python \
+      readline-devel \
       subversion \
       xmlstarlet \
       python-pip \
@@ -892,20 +894,10 @@ install_asn1c_from_source(){
 ################################################
 
 install_nas_tools() {
-  if [ ! -f .ue.nvram0 ]; then
-    echo_success "generate .ue_emm.nvram .ue.nvram"
-    ./nvram --gen -c $1 -o $2
-  else
-    [ ./nvram -nt .ue.nvram0 -o ./nvram -nt .ue_emm.nvram0 ] && ./nvram --gen -c $1 -o $2
-  fi
-
-  if [ ! -f .usim.nvram0 ]; then
-    echo_success "generate .usim.nvram"
-    ./usim --gen -c $1 -o $2
-  else
-    [ ./usim -nt .usim.nvram0 ] && ./usim --gen -c $1 -o $2
-  fi
-
+  echo_success "generate .ue_emm.nvram .ue.nvram"
+  ./nvram --gen -c $1 -o $2 > "$3"
+  echo_success "generate .usim.nvram"
+  ./usim --gen -c $1 -o $2 >> "$3"
 }
 
 

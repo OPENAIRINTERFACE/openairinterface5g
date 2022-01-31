@@ -24,6 +24,7 @@
 # authors Laurent Thomas
 #
 #######################################
+
 if [ ! -f /etc/os-release ]; then
     echo "No /etc/os-release file found. You're likely on an unsupported distro."
     exit 1
@@ -452,17 +453,6 @@ install_asn1c_from_source(){
     ) > "$asn1_install_log" 2>&1
 }
 
-#################################################
-# 2. compile
-################################################
-
-install_nas_tools() {
-    echo_success "generate .ue_emm.nvram .ue.nvram"
-    ./nvram --gen -c "$1" -o "$2"
-    ./usim --gen -c "$1" -o "$2"
-}
-
-
 ################################
 # set_openair_env
 ###############################
@@ -483,7 +473,7 @@ if ! check_supported_distribution; then
     echo_error "Your distribution $(get_distribution_release) is not supported by oai !"
     exit 1
 fi
-
+set_openair_env
 echo_info "Installing packages"
 check_install_ubuntu_packages
 
