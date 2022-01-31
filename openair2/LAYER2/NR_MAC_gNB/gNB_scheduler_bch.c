@@ -433,6 +433,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
 
 void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                                nfapi_nr_dl_tti_request_body_t *dl_req,
+                               int pdu_index,
                                NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                uint32_t TBS,
                                int StartSymbolIndex,
@@ -465,7 +466,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   pdsch_pdu_rel15->pduBitmap = 0;
   pdsch_pdu_rel15->rnti = SI_RNTI;
-  pdsch_pdu_rel15->pduIndex = gNB_mac->pdu_index[0]++;
+  pdsch_pdu_rel15->pduIndex = pdu_index;
 
   pdsch_pdu_rel15->BWPSize  = type0_PDCCH_CSS_config->num_rbs;
   pdsch_pdu_rel15->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
@@ -632,7 +633,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
                                            candidate_idx, sib1_sdu_length);
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
-      nr_fill_nfapi_dl_sib1_pdu(module_idP, dl_req, type0_PDCCH_CSS_config, TBS, startSymbolIndex, nrOfSymbols, dlDmrsSymbPos);
+      int pdu_index = gNB_mac->pdu_index[0]++;
+      nr_fill_nfapi_dl_sib1_pdu(module_idP, dl_req, pdu_index, type0_PDCCH_CSS_config, TBS, startSymbolIndex, nrOfSymbols, dlDmrsSymbPos);
 
       const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
       nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
@@ -642,7 +644,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       memcpy(tx_req->TLVs[0].value.direct, sib1_payload, sib1_sdu_length);
 
       tx_req->PDU_length = TBS;
-      tx_req->PDU_index  = gNB_mac->pdu_index[0]++;
+      tx_req->PDU_index  = pdu_index;
       tx_req->num_TLV = 1;
       tx_req->TLVs[0].length = TBS + 2;
       gNB_mac->TX_req[CC_id].Number_of_PDUs++;
