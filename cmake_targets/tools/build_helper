@@ -168,7 +168,7 @@ clean_all_files() {
  rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
  rm -rf $dir/ran_build $dir/ran_build_noLOG
  rm -rf $dir/lte-simulators/build 
- rm -rf $dir/phy_simulators/build $dir/nas_sim_tools/build 
+ rm -rf $dir/nas_sim_tools/build 
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
  rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
