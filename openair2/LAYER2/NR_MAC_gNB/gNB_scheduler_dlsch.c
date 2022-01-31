@@ -584,10 +584,10 @@ bool allocate_dl_retransmission(module_id_t module_id,
     temp_ps.nrOfLayers = 1;
     nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, &temp_ps);
     while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+           !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbStart++;
     while (rbStart + rbSize < bwpSize &&
-           (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+           (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbSize++;
     uint32_t new_tbs;
     uint16_t new_rbSize;
