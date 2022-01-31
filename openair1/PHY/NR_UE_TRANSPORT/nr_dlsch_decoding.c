@@ -80,8 +80,8 @@ void init_dlsch_tpool(uint8_t num_dlsch_threads) {
 }
 
 void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
-  int i,r;
-  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
+
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;
   NR_UE_DLSCH_t *dlsch=*dlschptr;
 
   if (dlsch) {
@@ -90,35 +90,16 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
       a_segments = a_segments/273 +1;
     }
 
-    for (i=0; i<dlsch->Mdlharq; i++) {
+    for (int i=0; i<dlsch->Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
         if (dlsch->harq_processes[i]->b) {
           free16(dlsch->harq_processes[i]->b,a_segments*1056);
           dlsch->harq_processes[i]->b = NULL;
         }
 
-        for (r=0; r<a_segments; r++) {
+        for (int r=0; r<a_segments; r++) {
           free16(dlsch->harq_processes[i]->c[r],1056);
           dlsch->harq_processes[i]->c[r] = NULL;
-        }
-
-        for (r=0; r<a_segments; r++)
-          if (dlsch->harq_processes[i]->d[r]) {
-            free16(dlsch->harq_processes[i]->d[r],(5*8448)*sizeof(short));
-            dlsch->harq_processes[i]->d[r] = NULL;
-          }
-
-        for (r=0; r<a_segments; r++)
-          if (dlsch->harq_processes[i]->w[r]) {
-            free16(dlsch->harq_processes[i]->w[r],(5*8448)*sizeof(short));
-            dlsch->harq_processes[i]->w[r] = NULL;
-          }
-
-        for (r=0; r<a_segments; r++) {
-          if (dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]) {
-            nrLDPC_free_mem(dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
-            dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
-          }
         }
 
         free16(dlsch->harq_processes[i],sizeof(NR_DL_UE_HARQ_t));
@@ -132,9 +113,11 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
 }
 
 NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_ldpc_iterations,uint16_t N_RB_DL, uint8_t abstraction_flag) {
+
   NR_UE_DLSCH_t *dlsch;
-  uint8_t exit_flag = 0,i,r;
-  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
+  uint8_t exit_flag = 0;
+
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;  //number of segments to be allocated
 
   if (N_RB_DL != 273) {
     a_segments = a_segments*N_RB_DL;
@@ -153,7 +136,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
     dlsch->Mlimit = 4;
     dlsch->max_ldpc_iterations = max_ldpc_iterations;
 
-    for (i=0; i<Mdlharq; i++) {
+    for (int i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (NR_DL_UE_HARQ_t *)malloc16(sizeof(NR_DL_UE_HARQ_t));
 
       if (dlsch->harq_processes[i]) {
@@ -168,26 +151,14 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
           exit_flag=3;
 
         if (abstraction_flag == 0) {
-          for (r=0; r<a_segments; r++) {
+          dlsch->harq_processes[i]->c = (uint8_t **)malloc16(a_segments*sizeof(uint8_t *));
+          dlsch->harq_processes[i]->p_nrLDPC_procBuf = (uint8_t **)malloc16(a_segments*sizeof(uint8_t *));
+          for (int r=0; r<a_segments; r++) {
             dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
             dlsch->harq_processes[i]->c[r] = (uint8_t *)malloc16(1056);
 
             if (dlsch->harq_processes[i]->c[r])
               memset(dlsch->harq_processes[i]->c[r],0,1056);
-            else
-              exit_flag=2;
-
-            dlsch->harq_processes[i]->d[r] = (short *)malloc16((5*8448)*sizeof(short));
-
-            if (dlsch->harq_processes[i]->d[r])
-              memset(dlsch->harq_processes[i]->d[r],0,(5*8448)*sizeof(short));
-            else
-              exit_flag=2;
-
-            dlsch->harq_processes[i]->w[r] = (short *)malloc16((5*8448)*sizeof(short));
-
-            if (dlsch->harq_processes[i]->w[r])
-              memset(dlsch->harq_processes[i]->w[r],0,(5*8448)*sizeof(short));
             else
               exit_flag=2;
           }
@@ -344,10 +315,12 @@ void nr_processDLSegment(void* arg) {
 #if UE_TIMING_TRACE
     start_meas(dlsch_deinterleaving_stats);
 #endif
+    int16_t w[5*8448];
+    memset(w,0,(5*8448)*sizeof(short));
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_IN);
     nr_deinterleaving_ldpc(E,
                            Qm,
-                           harq_process->w[r], // [hna] w is e
+                           w, // [hna] w is e
                            dlsch_llr+r_offset);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
@@ -367,12 +340,14 @@ void nr_processDLSegment(void* arg) {
           harq_process->round); */
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_IN);
 
+    int16_t d[5*8448];
+    memset(d,0,(5*8448)*sizeof(short));
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,
                                  p_decoderParms->BG,
                                  p_decoderParms->Z,
-                                 harq_process->d[r],
-                                 harq_process->w[r],
+                                 d,
+                                 w,
                                  harq_process->C,
                                  harq_process->rvidx,
                                  (harq_process->first_rx==1)?1:0,
@@ -398,7 +373,7 @@ void nr_processDLSegment(void* arg) {
       LOG_I(PHY,"decoder input(segment %u) :",r);
 
       for (int i=0; i<E; i++)
-        LOG_D(PHY,"%d : %d\n",i,harq_process->d[r][i]);
+        LOG_D(PHY,"%d : %d\n",i,d[i]);
 
       LOG_D(PHY,"\n");
     }
@@ -426,9 +401,9 @@ void nr_processDLSegment(void* arg) {
       //set Filler bits
       memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
       //Move coded bits before filler bits
-      memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+      memcpy((&z[0]+2*harq_process->Z),d,(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
       //skip filler bits
-      memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+      memcpy((&z[0]+Kr),d+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
 
       //Saturate coded bits before decoding into 8 bits values
       for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
@@ -612,6 +587,11 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                     &harq_process->F,
                     p_decParams->BG);
 
+    if (harq_process->C>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*harq_process->Nl) {
+      LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d\n",harq_process->C,harq_process->B);
+      return(-1);
+    }
+
     if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD) && (!frame%100))
       LOG_I(PHY,"K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
   }
@@ -627,7 +607,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
   p_decParams->outMode= 0;
   r_offset = 0;
-  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*harq_process->Nl;  //number of segments to be allocated
 
   if (nb_rb != 273) {
     a_segments = a_segments*nb_rb;

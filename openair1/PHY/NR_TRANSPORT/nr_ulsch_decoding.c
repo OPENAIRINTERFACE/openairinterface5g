@@ -197,7 +197,7 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         //t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_NR_ULSCH_SEGMENTS];
         ulsch->harq_processes[i]->Z=0;
         /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
-        //int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
+        //int16_t e[MAX_NUM_NR_ULSCH_SEGMENTS][3*8448];
         ulsch->harq_processes[i]->E=0;
 
 

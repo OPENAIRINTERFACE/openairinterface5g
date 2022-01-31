@@ -102,7 +102,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
 
   uint32_t available_bits;
-  uint32_t scrambled_output[NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **tx_layers;
   int32_t **txdataF;
   int8_t Wf[2], Wt[2];
@@ -176,7 +175,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
 
   available_bits = G;
-
+  uint32_t scrambled_output[(available_bits>>5)+1];
   memset(scrambled_output, 0, ((available_bits>>5)+1)*sizeof(uint32_t));
 
   nr_pusch_codeword_scrambling(harq_process_ul_ue->f,

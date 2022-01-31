@@ -179,7 +179,7 @@ typedef struct {
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
+  uint8_t **c;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// MCS table for this DLSCH
@@ -194,14 +194,8 @@ typedef struct {
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_nrmode_t mimo_mode;
-  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t *w[MAX_NUM_NR_DLSCH_SEGMENTS];
-  /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  //double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
-  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// LDPC processing buffers
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_NR_DLSCH_SEGMENTS];
+  t_nrLDPC_procBuf **p_nrLDPC_procBuf;
   /// Number of code segments 
   uint32_t C;
   /// Number of bits in code segments

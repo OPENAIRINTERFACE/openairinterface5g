@@ -228,7 +228,7 @@ typedef struct {
 
 typedef struct {
   /// TX buffers for multiple layers
-  int32_t *txdataF_layers[NR_MAX_NB_LAYERS];
+  int32_t **txdataF_layers;
   } NR_UE_PUSCH;
 
 typedef struct {

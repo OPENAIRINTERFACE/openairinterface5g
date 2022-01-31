@@ -123,9 +123,10 @@ void phy_init_nr_ue__PDSCH(NR_UE_PDSCH *const pdsch,
 void phy_init_nr_ue_PUSCH(NR_UE_PUSCH *const pusch,
                           const NR_DL_FRAME_PARMS *const fp) {
   AssertFatal( pusch, "pusch==0" );
-
-  for (int i=0; i<NR_MAX_NB_LAYERS; i++) {
-    pusch->txdataF_layers[i] = (int32_t *)malloc16_clear(NR_MAX_PUSCH_ENCODED_LENGTH*sizeof(int32_t));
+  int max_pusch_length = fp->N_RB_UL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*fp->nb_antennas_tx;
+  pusch->txdataF_layers = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t *));
+  for (int i=0; i<fp->nb_antennas_tx; i++) {
+    pusch->txdataF_layers[i] = (int32_t *)malloc16_clear(max_pusch_length*sizeof(int32_t));
   }
 }
 

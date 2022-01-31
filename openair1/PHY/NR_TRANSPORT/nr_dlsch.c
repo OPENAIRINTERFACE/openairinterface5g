@@ -138,7 +138,6 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
     NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
-    uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
     int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
     int16_t **tx_layers = (int16_t**)dlsch->txdataF;
     int16_t **txdataF_precoding = (int16_t**)dlsch->txdataF_precoding;
@@ -159,6 +158,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
+    uint32_t scrambled_output[rel15->NrOfCodewords][encoded_length>>5];
     int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
@@ -180,8 +180,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
-    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
-    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * rel15->nrOfLayers] __attribute__((aligned(32)));
+    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * rel15->nrOfLayers);
     start_meas(dlsch_encoding_stats);
     nr_dlsch_encoding(gNB,
 		      harq->pdu, frame, slot, dlsch, frame_parms, output,

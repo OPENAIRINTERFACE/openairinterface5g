@@ -89,7 +89,7 @@ typedef struct {
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
+  uint8_t **c;
   /// Frame where current HARQ round was sent
   uint32_t frame;
   /// Subframe where current HARQ round was sent
@@ -157,13 +157,13 @@ typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
   /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
-  int32_t *txdataF[NR_MAX_NB_LAYERS];
+  int32_t **txdataF;
   /// TX buffers for UE-spec transmission (antenna ports 1000 or 1001,...,1007, before precoding)
-  int32_t *txdataF_precoding[NR_MAX_NB_LAYERS];
+  int32_t **txdataF_precoding;
   /// Modulated symbols buffer
   int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  int32_t **ue_spec_bf_weights[NR_MAX_NB_LAYERS];
+  int32_t ***ue_spec_bf_weights;
   /// dl channel estimates (estimated from ul channel estimates)
   int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
@@ -287,7 +287,7 @@ typedef struct {
   /// LDPC lifting size (38.212 V15.4.0 table 5.3.2-1)
   uint32_t Z;
   /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
-  int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
+  int16_t e[MAX_NUM_NR_ULSCH_SEGMENTS][3*8448];
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
   uint32_t E;
   /// Number of segments processed so far
