@@ -763,9 +763,9 @@ int main(int argc, char **argv)
       UE->prs_cfg.PRSResourceSetPeriod[1]=0;  // resource slot offset
       UE->prs_cfg.SymbolStart=7;		
       UE->prs_cfg.NumPRSSymbols=4;
-      UE->prs_cfg.NumRB=273;
+      UE->prs_cfg.NumRB=frame_parms->N_RB_DL;
       UE->prs_cfg.RBOffset=0;
-      UE->prs_cfg.CombSize=4;
+      UE->prs_cfg.CombSize=2;
       UE->prs_cfg.REOffset=0;
       UE->prs_cfg.PRSResourceOffset=0;
       UE->prs_cfg.PRSResourceRepetition=1;

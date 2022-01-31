@@ -81,8 +81,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     //re_offset
     k = re_offset = (prs_cfg->REOffset+k_prime) % prs_cfg->CombSize + frame_params->first_carrier_offset;
   
-    LOG_D(PHY, "PRS config l %d k_prime %d, re_offset %d :\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", l, k_prime, re_offset, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
-   
+#ifdef DEBUG_PRS_CHEST 
+    printf("PRS config l %d k_prime %d, re_offset %d k %d :\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", l, k_prime, re_offset, k, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
+#endif
     // Pilots generation and modulation
     for (int m = 0; m < (12/prs_cfg->CombSize)*prs_cfg->NumRB; m++) 
     {
@@ -129,7 +130,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       //Start pilot
       ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
       ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
-      
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(fl,
 		  	       ch,
 		  	       ch_intrp,
@@ -144,6 +147,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       {
         ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
         ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot %d : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n", pIdx, rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
         if(pIdx == 1) // 2nd pilot
         {
           multadd_real_vector_complex_scalar(fml,
@@ -164,6 +170,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
         
         ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
         ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot %d : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n", pIdx+1, rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
         if(pIdx == (prs_cfg->NumRB*(12/prs_cfg->CombSize)-3)) // 2nd last pilot
         {
           multadd_real_vector_complex_scalar(fmr,
@@ -188,7 +197,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       //End pilot
       ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
       ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
-      
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot %d : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n", prs_cfg->NumRB*(12/prs_cfg->CombSize)-1, rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(fr,
 	    	       ch,
 	    	       ch_intrp,
@@ -244,7 +255,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       //Start pilot
       ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
       ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
-      
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(fl,
 		  	       ch,
 	    	       ch_intrp,
@@ -256,7 +269,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
 
       ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
       ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
-      
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot 1 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(fml,
 		  	       ch,
 	    	       ch_intrp,
@@ -272,7 +287,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       {
         ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
         ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
-
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot %d : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n", pIdx, rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
         multadd_real_vector_complex_scalar(fmm,
 		  		       ch,
 		  		       ch_intrp,
@@ -287,7 +304,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       //End pilot
       ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
       ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
-
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot %d : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n", prs_cfg->NumRB*(12/prs_cfg->CombSize)-2, rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(fmr,
 		  	       ch,
 		  		     ch_intrp,
@@ -299,7 +318,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       
       ch[0] = (int16_t)(((int32_t)rxF[0]*pil[0] + (int32_t)rxF[1]*pil[1])>>15);
       ch[1] = (int16_t)(((int32_t)rxF[1]*pil[0] - (int32_t)rxF[0]*pil[1])>>15);
-
+#ifdef DEBUG_PRS_CHEST
+      printf("pilot %d : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n", prs_cfg->NumRB*(12/prs_cfg->CombSize)-1, rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(fr,
 	    	       ch,
 		  		     ch_intrp,
@@ -316,8 +337,10 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     {
       prs_chest[re_offset]   = ch_intrp[re<<1];
       prs_chest[re_offset+1] = ch_intrp[(re<<1)+1];
-      LOG_D(PHY, "prs_ch[%d] %d %d\n", re_offset, ch_intrp[re<<1], ch_intrp[(re<<1)+1]);
-      re_offset = (re_offset+1) % frame_params->ofdm_symbol_size;
+#ifdef DEBUG_PRS_CHEST
+      printf("prs_ch[%d] %d %d\n", re_offset, ch_intrp[re<<1], ch_intrp[(re<<1)+1]);
+#endif
+      re_offset = (re_offset+2) % frame_params->ofdm_symbol_size;
     }
     
     // Time domain IMPULSE response
@@ -368,14 +391,17 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     memcpy((int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size], &ch_time[frame_params->ofdm_symbol_size>>1], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
     memcpy((int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size + (frame_params->ofdm_symbol_size>>1)], &ch_time[0], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
   } //for l
-  
-  LOG_M("rxSigF.m","rxF",&rxdataF[rxAnt][0], frame_params->symbols_per_slot*frame_params->ofdm_symbol_size,1,1);
+  LOG_M("PRSpilot.m", "prs_loc", &mod_prs[0], prs_cfg->NumRB*(12/prs_cfg->CombSize),1,1); 
+  LOG_M("rxSigF.m","rxF",&rxdataF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
   LOG_M("prsEstF.m","prs_chestF",&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
   LOG_M("prsEstT.m","prs_chestT",&ue->prs_ch_estimates_time[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
   
   T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
     T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
     T_INT(0), T_BUFFER(&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], frame_params->ofdm_symbol_size*sizeof(int32_t)));
+
+  free(ch_intrp);
+  free(ch_time);
   return(0);
 }
 
@@ -802,7 +828,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
           }
         }
     }
-
   }
   return(0);
 }

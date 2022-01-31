@@ -78,7 +78,7 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
         k-=frame_parms->ofdm_symbol_size;
       }
   }
-  LOG_M("nr_prs.m", "prs",(int16_t *)&txdataF[0],frame_parms->samples_per_slot_wCP, 1, 1);
+  LOG_M("nr_prs.m", "prs",(int16_t *)&txdataF[prs_data->SymbolStart*frame_parms->ofdm_symbol_size],prs_data->NumPRSSymbols*frame_parms->ofdm_symbol_size, 1, 1);
 
   return 0;
 }
