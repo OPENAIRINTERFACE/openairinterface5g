@@ -321,6 +321,11 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                                  pz,
                                  &harq_process->F,
                                  harq_process->BG);
+
+    if (harq_process->C>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*harq_process->pusch_pdu.nrOfLayers) {
+      LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d\n",harq_process->C,harq_process->B);
+      return(-1);
+    }
     stop_meas(&ue->ulsch_segmentation_stats);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_SEGMENTATION, VCD_FUNCTION_OUT);
 

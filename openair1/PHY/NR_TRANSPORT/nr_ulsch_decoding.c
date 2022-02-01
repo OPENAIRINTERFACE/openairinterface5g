@@ -554,6 +554,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                   &harq_process->F,
                   p_decParams->BG);
 
+  if (harq_process->C>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*n_layers) {
+    LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d\n",harq_process->C,harq_process->B);
+    return(-1);
+  }
+
+
 #ifdef DEBUG_ULSCH_DECODING
   printf("ulsch decoding nr segmentation Z %d\n", harq_process->Z);
   if (!frame%100)

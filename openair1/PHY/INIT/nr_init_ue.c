@@ -66,6 +66,7 @@ extern uint16_t beta_cqi[16];
  */
 void phy_init_nr_ue__PDSCH(NR_UE_PDSCH *const pdsch,
                            const NR_DL_FRAME_PARMS *const fp) {
+
   AssertFatal( pdsch, "pdsch==0" );
   pdsch->pmi_ext = (uint8_t *)malloc16_clear( fp->N_RB_DL );
   pdsch->llr[0] = (int16_t *)malloc16_clear( (8*(3*8*6144))*sizeof(int16_t) );
