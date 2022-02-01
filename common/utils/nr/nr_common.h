@@ -35,6 +35,7 @@
 
 #include <stdint.h>
 #include "assertions.h"
+#include "PHY/defs_common.h"
 
 typedef struct nr_bandentry_s {
   int16_t band;
@@ -47,9 +48,22 @@ typedef struct nr_bandentry_s {
   uint8_t deltaf_raster;
 } nr_bandentry_t;
 
-extern const size_t nr_bandtable_size;
-extern nr_bandentry_t nr_bandtable[];
+extern const nr_bandentry_t nr_bandtable[];
+static inline int get_num_dmrs(uint16_t dmrs_mask ) {
 
+  int num_dmrs=0;
+
+  for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
+  return(num_dmrs);
+}
+
+
+int get_SLIV(uint8_t S, uint8_t L);
+void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset);
+uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index);
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index);
+lte_frame_type_t get_frame_type(uint16_t nr_bandP, uint8_t scs_index);
 uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex);
 int NRRIV2BW(int locationAndBandwidth,int N_RB);
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
@@ -64,6 +78,7 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
 int get_subband_size(int NPRB,int size);
 void SLIV2SL(int SLIV,int *S,int *L);
 int get_dmrs_port(int nl, uint16_t dmrs_ports);
+int get_nb_periods_per_frame(uint8_t tdd_period);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))

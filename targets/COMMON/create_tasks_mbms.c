@@ -25,7 +25,6 @@
 # include "targets/RT/USER/lte-softmodem.h"
 # include "common/ran_context.h"
 
-#ifdef OPENAIR2
     #include "sctp_eNB_task.h"
     #include "x2ap_eNB.h"
     #include "s1ap_eNB.h"
@@ -40,7 +39,6 @@
     #include "lteRALenb.h"
   #endif
   #include "RRC/LTE/rrc_defs.h"
-#endif
 # include "f1ap_cu_task.h"
 # include "f1ap_du_task.h"
 # include "enb_app.h"
@@ -53,6 +51,7 @@
 int create_tasks_mbms(uint32_t enb_nb) {
  // LOG_D(ENB_APP, "%s(enb_nb:%d\n", __FUNCTION__, enb_nb);
  // ngran_node_t type = RC.rrc[0]->node_type;
+  AssertFatal(!get_softmodem_params()->nsa, "In NSA mode\n");
   int rc;
 
   if (enb_nb == 0) return 0;

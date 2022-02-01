@@ -121,6 +121,8 @@ int nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
   string[6] = 0x01;
 
   kdf(string, 7, key, 32, out, 32);
+  // in NR, we use the last 16 bytes, ignoring the first 16 ones
+  memcpy(*out, *out+16, 16);
 
   return 0;
 }

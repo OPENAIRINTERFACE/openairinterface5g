@@ -762,6 +762,7 @@ typedef struct RRU_config_s {
 typedef struct processingData_RU {
   int frame_tx;
   int slot_tx;
+  int next_slot;
   openair0_timestamp timestamp_tx;
   RU_t *ru;
 } processingData_RU_t;

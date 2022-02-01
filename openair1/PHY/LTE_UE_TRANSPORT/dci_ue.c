@@ -50,9 +50,6 @@
 //#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
 
-//#undef ALL_AGGREGATION
-
-
 uint16_t extract_crc(uint8_t *dci,uint8_t dci_len)
 {
 
@@ -2802,7 +2799,6 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
     if (dci_cnt>old_dci_cnt)
       return(dci_cnt);
 
-    //#ifdef ALL_AGGREGATION
     // Now check UE_SPEC format 1 search spaces at aggregation 8
     old_dci_cnt=dci_cnt;
     dci_decoding_procedure0(pdcch_vars,0,mode,subframe,
@@ -2836,7 +2832,6 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
     if (dci_cnt>old_dci_cnt)
       return(dci_cnt);
 
-    //#endif //ALL_AGGREGATION
   } else if (tmode == 3) {
 
 
@@ -2946,7 +2941,6 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
     if (dci_cnt>old_dci_cnt)
       return(dci_cnt);
 
-    //#ifdef ALL_AGGREGATION
     // Now check UE_SPEC format 2_2A search spaces at aggregation 8
     LOG_D(PHY," Now check UE_SPEC format 2_2A search spaces at aggregation 8 dci length: %d[bits] %d[bytes]\n",format2A_size_bits,format2A_size_bytes);
     old_dci_cnt=dci_cnt;
@@ -3082,7 +3076,6 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
     if (dci_cnt>old_dci_cnt)
       return(dci_cnt);
 
-    //#ifdef ALL_AGGREGATION
     // Now check UE_SPEC format 2_2A search spaces at aggregation 8
     old_dci_cnt=dci_cnt;
     dci_decoding_procedure0(pdcch_vars,0,mode,
@@ -3214,7 +3207,6 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
     if (dci_cnt>old_dci_cnt)
       return(dci_cnt);
 
-    //#ifdef ALL_AGGREGATION
 
     // Now check UE_SPEC format 1E_2A_M10PRB search spaces at aggregation 8
     old_dci_cnt=dci_cnt;
@@ -3249,7 +3241,6 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *ue,
     if (dci_cnt>old_dci_cnt)
       return(dci_cnt);
 
-    //#endif  //ALL_AGGREGATION
 
   }
 

@@ -40,9 +40,6 @@
 #include "openair1/PHY/CODING/nrLDPC_defs.h"
 #include "ldpc_encode_parity_check.c"
 #include "ldpc_generate_coefficient.c"
-//#define DEBUG_LDPC
-
-
 
 
 
@@ -50,7 +47,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
 {
 
   short nrows=0,ncols=0;
-  int i,i1,rate=3;
+  int rate=3;
   int no_punctured_columns,removed_bit;
 
   int simd_size;
@@ -86,8 +83,6 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
   unsigned char c[22*Zc] __attribute__((aligned(32))); //padded input, unpacked, max size
   unsigned char d[46*Zc] __attribute__((aligned(32))); //coded parity part output, unpacked, max size
 
-  unsigned char c_extension[2*22*Zc*simd_size] __attribute__((aligned(32)));      //double size matrix of c
-
   // calculate number of punctured bits
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*rate)/Zc;
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length*rate);
@@ -98,7 +93,7 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
   memset(d,0,sizeof(unsigned char) * nrows * Zc);
 
   if(impp->tinput != NULL) start_meas(impp->tinput);
-  for (i=0; i<block_length; i++) {
+  for (int i=0; i<block_length; i++) {
     c[i] = (test_input[0][i/8]&(128>>(i&7)))>>(7-(i&7));
       //printf("c(%d,%d)=%d\n",j,i,temp);
     }
@@ -108,24 +103,10 @@ int nrLDPC_encod(unsigned char **test_input,unsigned char **channel_input,int Zc
   if ((BG==1 && Zc>176) || (BG==2 && Zc>64)) { 
     // extend matrix
     if(impp->tprep != NULL) start_meas(impp->tprep);
-    for (i1=0; i1 < ncols; i1++)
-      {
-	memcpy(&c_extension[2*i1*Zc], &c[i1*Zc], Zc*sizeof(unsigned char));
-	memcpy(&c_extension[(2*i1+1)*Zc], &c[i1*Zc], Zc*sizeof(unsigned char));
-      }
-    for (i1=1;i1<simd_size;i1++) {
-      memcpy(&c_extension[(2*ncols*Zc*i1)], &c_extension[i1], (2*ncols*Zc*sizeof(unsigned char))-i1);
-      //    memset(&c_extension[(2*ncols*Zc*i1)],0,i1);
-      /*
-	printf("shift %d: ",i1);
-	for (int j=0;j<64;j++) printf("%d ",c_extension[(2*ncols*Zc*i1)+j]);
-	printf("\n");
-      */
-    }
     if(impp->tprep != NULL) stop_meas(impp->tprep);
     //parity check part
     if(impp->tparity != NULL) start_meas(impp->tparity);
-    encode_parity_check_part_optim(c_extension, d, BG, Zc, Kb);
+    encode_parity_check_part_optim(c, d, BG, Zc, Kb,simd_size, ncols);
     if(impp->tparity != NULL) stop_meas(impp->tparity);
   }
   else {

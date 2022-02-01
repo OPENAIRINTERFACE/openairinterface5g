@@ -119,6 +119,9 @@ typedef enum {
 #define GNB_CONFIG_STRING_SIB1TDA                       "sib1_tda"
 #define GNB_CONFIG_STRING_DOCSIRS                       "do_CSIRS"
 #define GNB_CONFIG_STRING_NRCELLID                      "nr_cellid"
+#define GNB_CONFIG_STRING_MINRXTXTIME                   "min_rxtxtime"
+#define GNB_CONFIG_STRING_ULPRBBLACKLIST                "ul_prbblacklist"
+
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
@@ -145,7 +148,9 @@ typedef enum {
 {GNB_CONFIG_STRING_SIB1TDA,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_DOCSIRS,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,    0},  \
-}															     	
+{GNB_CONFIG_STRING_MINRXTXTIME,                  NULL,   0,            iptr:NULL,   defintval:2,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                TYPE_STRING,    0}   \
+}
 
 #define GNB_GNB_ID_IDX                  0
 #define GNB_CELL_TYPE_IDX               1
@@ -167,6 +172,8 @@ typedef enum {
 #define GNB_SIB1_TDA_IDX                17
 #define GNB_DO_CSIRS_IDX                18
 #define GNB_NRCELLID_IDX                19
+#define GNB_MINRXTXTIME_IDX             20
+#define GNB_ULPRBBLACKLIST_IDX          21
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \
@@ -327,29 +334,17 @@ typedef enum {
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval             type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define GNBNETPARAMS_DESC {  \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NG_AMF,        NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_NG_AMF,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NGU,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_NGU,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_PORT_FOR_NGU,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
-{GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0}      \
-}   
-
-
-
-/*--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            GTPU  configuration parameters                                                                                                      */
-/*   optname                                            helpstr   paramflags    XXXptr              defXXXval                                           type           numelt     */
-/*--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define GNBGTPUPARAMS_DESC { \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NGU,           NULL,    0,            strptr:&gnb_interface_name_for_NGU,      defstrval:"lo",                TYPE_STRING,   0},        \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_NGU,                NULL,    0,            strptr:&gnb_ipv4_address_for_NGU,        defstrval:"127.0.0.1",         TYPE_STRING,   0},        \
-{GNB_CONFIG_STRING_GNB_PORT_FOR_NGU,                     NULL,    0,            uptr:&gnb_port_for_NGU,                  defintval:2152,                TYPE_UINT,     0},        \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U,           NULL,    0,            strptr:&gnb_interface_name_for_S1U,      defstrval:"lo",                TYPE_STRING,   0},        \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_S1U,             NULL,    0,            strptr:&gnb_ipv4_address_for_S1U,        defstrval:"127.0.0.1",         TYPE_STRING,   0},        \
-{GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,    0,            uptr:&gnb_port_for_S1U,                  defintval:2152,                TYPE_UINT,     0}         \
-}
+    {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NG_AMF,        NULL,      0,         strptr:NULL,         defstrval:NULL,       TYPE_STRING,      0}, \
+      {GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_NG_AMF,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0}, \
+      {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NGU,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0}, \
+      {GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_NGU,                NULL,      0,         strptr:&gnb_ipv4_address_for_NGU, defstrval:"127.0.0.1",TYPE_STRING,   0},	\
+      {GNB_CONFIG_STRING_GNB_PORT_FOR_NGU,                     NULL,      0,         uptr:&gnb_port_for_NGU,           defintval:2152L,      TYPE_UINT,     0},	\
+      {GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,                      defstrval:NULL,       TYPE_STRING,   0},	\
+      {GNB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,                        defintval:0L,         TYPE_UINT,     0}, \
+      {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U,           NULL,    0,           strptr:NULL,                      defstrval:NULL,       TYPE_STRING,   0},	\
+      {GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_S1U,             NULL,    0,           strptr:&gnb_ipv4_address_for_S1U, defstrval:"127.0.0.1",TYPE_STRING,   0}, \
+      {GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,    0,           uptr:&gnb_port_for_S1U,           defintval:2152L,       TYPE_UINT,     0}	\
+  }
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -463,10 +458,12 @@ typedef enum {
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* security configuration                                                                                                                                                           */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CONFIG_STRING_SECURITY      "security"
+#define CONFIG_STRING_SECURITY             "security"
 
-#define SECURITY_CONFIG_CIPHERING   "ciphering_algorithms"
-#define SECURITY_CONFIG_INTEGRITY   "integrity_algorithms"
+#define SECURITY_CONFIG_CIPHERING          "ciphering_algorithms"
+#define SECURITY_CONFIG_INTEGRITY          "integrity_algorithms"
+#define SECURITY_CONFIG_DO_DRB_CIPHERING   "drb_ciphering"
+#define SECURITY_CONFIG_DO_DRB_INTEGRITY   "drb_integrity"
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*   security configuration                                                                                                                                                         */
@@ -475,10 +472,15 @@ typedef enum {
 #define SECURITY_GLOBALPARAMS_DESC { \
     {SECURITY_CONFIG_CIPHERING,            "preferred ciphering algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
     {SECURITY_CONFIG_INTEGRITY,            "preferred integrity algorithms\n",            0,                strlistptr:NULL,      defstrlistval:NULL,       TYPE_STRINGLIST,  0}, \
+    {SECURITY_CONFIG_DO_DRB_CIPHERING,     "use ciphering for DRBs",                      0,                strptr:NULL,          defstrval:"yes",          TYPE_STRING,      0}, \
+    {SECURITY_CONFIG_DO_DRB_INTEGRITY,     "use integrity for DRBs",                      0,                strptr:NULL,          defstrval:"no",           TYPE_STRING,      0}, \
 }
 
-#define SECURITY_CONFIG_CIPHERING_IDX   0
-#define SECURITY_CONFIG_INTEGRITY_IDX   1
+#define SECURITY_CONFIG_CIPHERING_IDX          0
+#define SECURITY_CONFIG_INTEGRITY_IDX          1
+#define SECURITY_CONFIG_DO_DRB_CIPHERING_IDX   2
+#define SECURITY_CONFIG_DO_DRB_INTEGRITY_IDX   3
+
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 #endif

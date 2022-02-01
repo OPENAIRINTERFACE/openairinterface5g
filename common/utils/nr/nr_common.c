@@ -34,13 +34,15 @@
 #include "assertions.h"
 #include "nr_common.h"
 
+const char *duplex_mode[]={"FDD","TDD"};
+
 // Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
 // Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
 // Notes:
 // - N_OFFs for bands from 80 to 89 and band 95 is referred to UL
 // - Frequencies are expressed in KHz
 // - col: NR_band ul_min  ul_max  dl_min  dl_max  step  N_OFFs_DL  deltaf_raster
-nr_bandentry_t nr_bandtable[] = {
+const nr_bandentry_t nr_bandtable[] = {
   {1,   1920000, 1980000, 2110000, 2170000, 20, 422000, 100},
   {2,   1850000, 1910000, 1930000, 1990000, 20, 386000, 100},
   {3,   1710000, 1785000, 1805000, 1880000, 20, 361000, 100},
@@ -63,8 +65,8 @@ nr_bandentry_t nr_bandtable[] = {
   {41,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
   {41,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
   {47,  5855000, 5925000, 5855000, 5925000,  1, 790334,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
-  //{48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
+  {48,  3550000, 3700000, 3550000, 3700000,  1, 636667,  15},
+  {48,  3550000, 3700000, 3550000, 3700000,  2, 636668,  30},
   {50,  1432000, 1517000, 1432000, 1517000, 20, 286400, 100},
   {51,  1427000, 1432000, 1427000, 1432000, 20, 285400, 100},
   {53,  2483500, 2495000, 2483500, 2495000, 20, 496700, 100},
@@ -88,14 +90,15 @@ nr_bandentry_t nr_bandtable[] = {
   {84,  1920000, 1980000,     000,     000, 20, 384000, 100},
   {86,  1710000, 1785000,     000,     000, 20, 342000, 100},
   {89,   824000,  849000,     000,     000, 20, 342000, 100},
-  {90,  2496000, 2690000, 2496000, 2690000, 3,  499200,  15},
-  {90,  2496000, 2690000, 2496000, 2690000, 6,  499200,  30},
+  {90,  2496000, 2690000, 2496000, 2690000,  3, 499200,  15},
+  {90,  2496000, 2690000, 2496000, 2690000,  6, 499200,  30},
   {90,  2496000, 2690000, 2496000, 2690000, 20, 499200, 100},
   {91,   832000,  862000, 1427000, 1432000, 20, 285400, 100},
   {92,   832000,  862000, 1432000, 1517000, 20, 286400, 100},
   {93,   880000,  915000, 1427000, 1432000, 20, 285400, 100},
   {94,   880000,  915000, 1432000, 1517000, 20, 286400, 100},
   {95,  2010000, 2025000,     000,     000, 20, 402000, 100},
+  {96,  5925000, 7125000, 5925000, 7125000,  1, 795000,  15},
   {257,26500020,29500000,26500020,29500000,  1,2054166,  60},
   {257,26500080,29500000,26500080,29500000,  2,2054167, 120},
   {258,24250080,27500000,24250080,27500000,  1,2016667,  60},
@@ -114,7 +117,7 @@ uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
   uint64_t center_freq_diff_khz = 999999999999999999; // 2^64
   uint16_t current_band = 0;
 
-  for (int ind = 0; ind < nr_bandtable_size; ind++) {
+  for (int ind = 0; ind < sizeofArray(nr_bandtable); ind++) {
 
     if (dl_freq_khz < nr_bandtable[ind].dl_min || dl_freq_khz > nr_bandtable[ind].dl_max)
       continue;
@@ -139,8 +142,6 @@ uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
 
   return current_band;
 }
-
-const size_t nr_bandtable_size = sizeof(nr_bandtable) / sizeof(nr_bandentry_t);
 
 int NRRIV2BW(int locationAndBandwidth,int N_RB) {
   int tmp = locationAndBandwidth/N_RB;
@@ -231,6 +232,72 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
 }
 
 
+void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
+
+  uint8_t count=0, start=0, start_set=0;
+
+  uint64_t bitmap = (((uint64_t)FreqDomainResource[0])<<37)|
+    (((uint64_t)FreqDomainResource[1])<<29)|
+    (((uint64_t)FreqDomainResource[2])<<21)|
+    (((uint64_t)FreqDomainResource[3])<<13)|
+    (((uint64_t)FreqDomainResource[4])<<5)|
+    (((uint64_t)FreqDomainResource[5])>>3);
+
+  for (int i=0; i<45; i++)
+    if ((bitmap>>(44-i))&1) {
+      count++;
+      if (!start_set) {
+        start = i;
+        start_set = 1;
+      }
+    }
+  *rb_offset = 6*start;
+  *n_rb = 6*count;
+}
+
+int get_nb_periods_per_frame(uint8_t tdd_period) {
+
+  int nb_periods_per_frame;
+  switch(tdd_period) {
+    case 0:
+      nb_periods_per_frame = 20; // 10ms/0p5ms
+      break;
+
+    case 1:
+      nb_periods_per_frame = 16; // 10ms/0p625ms
+      break;
+
+    case 2:
+      nb_periods_per_frame = 10; // 10ms/1ms
+      break;
+
+    case 3:
+      nb_periods_per_frame = 8; // 10ms/1p25ms
+      break;
+
+    case 4:
+      nb_periods_per_frame = 5; // 10ms/2ms
+      break;
+
+    case 5:
+      nb_periods_per_frame = 4; // 10ms/2p5ms
+      break;
+
+    case 6:
+      nb_periods_per_frame = 2; // 10ms/5ms
+      break;
+
+    case 7:
+      nb_periods_per_frame = 1; // 10ms/10ms
+      break;
+
+    default:
+      AssertFatal(1==0,"Undefined tdd period %d\n", tdd_period);
+  }
+  return nb_periods_per_frame;
+}
+
+
 int get_dmrs_port(int nl, uint16_t dmrs_ports) {
 
   if (dmrs_ports == 0) return 0; // dci 1_0
@@ -249,6 +316,172 @@ int get_dmrs_port(int nl, uint16_t dmrs_ports) {
   return p;
 }
 
+lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
+{
+  lte_frame_type_t current_type;
+  int32_t delta_duplex = get_delta_duplex(current_band, scs_index);
+
+  if (delta_duplex == 0)
+    current_type = TDD;
+  else
+    current_type = FDD;
+
+  LOG_I(NR_MAC, "NR band %d, duplex mode %s, duplex spacing = %d KHz\n", current_band, duplex_mode[current_type], delta_duplex);
+
+  return current_type;
+}
+
+// Computes the duplex spacing (either positive or negative) in KHz
+int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
+{
+  int nr_table_idx = get_nr_table_idx(nr_bandP, scs_index);
+
+  int32_t delta_duplex = (nr_bandtable[nr_table_idx].ul_min - nr_bandtable[nr_table_idx].dl_min);
+
+  LOG_I(NR_MAC, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
+
+  return delta_duplex;
+}
+
+uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
+{
+
+  if (nr_band < 100)  { //FR1
+   switch(mu) {
+    case 0 :
+      if (nb_rb<=25)
+        return 5;
+      if (nb_rb<=52)
+        return 10;
+      if (nb_rb<=79)
+        return 15;
+      if (nb_rb<=106)
+        return 20;
+      if (nb_rb<=133)
+        return 25;
+      if (nb_rb<=160)
+        return 30;
+      if (nb_rb<=216)
+        return 40;
+      if (nb_rb<=270)
+        return 50;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 1 :
+      if (nb_rb<=11)
+        return 5;
+      if (nb_rb<=24)
+        return 10;
+      if (nb_rb<=38)
+        return 15;
+      if (nb_rb<=51)
+        return 20;
+      if (nb_rb<=65)
+        return 25;
+      if (nb_rb<=78)
+        return 30;
+      if (nb_rb<=106)
+        return 40;
+      if (nb_rb<=133)
+        return 50;
+      if (nb_rb<=162)
+        return 60;
+      if (nb_rb<=189)
+        return 70;
+      if (nb_rb<=217)
+        return 80;
+      if (nb_rb<=245)
+        return 90;
+      if (nb_rb<=273)
+        return 100;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 2 :
+      if (nb_rb<=11)
+        return 10;
+      if (nb_rb<=18)
+        return 15;
+      if (nb_rb<=24)
+        return 20;
+      if (nb_rb<=31)
+        return 25;
+      if (nb_rb<=38)
+        return 30;
+      if (nb_rb<=51)
+        return 40;
+      if (nb_rb<=65)
+        return 50;
+      if (nb_rb<=79)
+        return 60;
+      if (nb_rb<=93)
+        return 70;
+      if (nb_rb<=107)
+        return 80;
+      if (nb_rb<=121)
+        return 90;
+      if (nb_rb<=135)
+        return 100;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    default:
+      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
+   }
+  }
+  else {
+   switch(mu) {
+    case 2 :
+      if (nb_rb<=66)
+        return 50;
+      if (nb_rb<=132)
+        return 100;
+      if (nb_rb<=264)
+        return 200;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    case 3 :
+      if (nb_rb<=32)
+        return 50;
+      if (nb_rb<=66)
+        return 100;
+      if (nb_rb<=132)
+        return 200;
+      if (nb_rb<=264)
+        return 400;
+      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
+      break;
+    default:
+      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
+   }
+  }
+}
+
+// Returns the corresponding row index of the NR table
+int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
+  int scs_khz = 15 << scs_index;
+  int supplementary_bands[] = {29,75,76,80,81,82,83,84,86,89,95};
+  for(int j = 0; j < sizeofArray(supplementary_bands); j++){
+    if (nr_bandP == supplementary_bands[j])
+      AssertFatal(0 == 1, "Band %d is a supplementary band (%d). This is not supported yet.\n", nr_bandP, supplementary_bands[j]);
+  }
+
+  int i;
+  for (i = 0; i < sizeofArray(nr_bandtable); i++) {
+    if ( nr_bandtable[i].band == nr_bandP && nr_bandtable[i].deltaf_raster == scs_khz )
+      break;
+  }
+
+  if (i == sizeofArray(nr_bandtable)) {
+    LOG_I(PHY, "not found same deltaf_raster == scs_khz, use only band and last deltaf_raster \n");
+    for(i=sizeofArray(nr_bandtable)-1; i >=0; i--)
+       if ( nr_bandtable[i].band == nr_bandP )
+         break;
+  }
+
+  AssertFatal(i > 0 && i < sizeofArray(nr_bandtable), "band is not existing: %d\n",nr_bandP);
+  LOG_D(PHY, "NR band table index %d (Band %d, dl_min %lu, ul_min %lu)\n", i, nr_bandtable[i].band, nr_bandtable[i].dl_min,nr_bandtable[i].ul_min);
+
+  return i;
+}
 
 int get_subband_size(int NPRB,int size) {
   // implements table  5.2.1.4-2 from 36.214
@@ -265,6 +498,10 @@ int get_subband_size(int NPRB,int size) {
   if (NPRB<275) return (size==0 ? 16 : 32);
   AssertFatal(1==0,"Shouldn't get here, NPRB %d\n",NPRB);
  
+}
+
+int get_SLIV(uint8_t S, uint8_t L) {
+  return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
 }
 
 void SLIV2SL(int SLIV,int *S,int *L) {

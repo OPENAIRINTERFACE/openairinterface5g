@@ -278,7 +278,7 @@ void *fapi_thread_start(void *ptr) {
 
     if(instance->tick == 1000) {
       if(instance->tx_byte_count > 0) {
-        printf("[FAPI] Tx rate %d bytes/sec\n", instance->tx_byte_count);
+        printf("[FAPI] Tx rate %u bytes/sec\n", instance->tx_byte_count);
         instance->tx_byte_count = 0;
       }
 
@@ -319,7 +319,7 @@ void *fapi_thread_start(void *ptr) {
       millisec = now_ts.tv_nsec / 1e6;
 
       if(last_millisec != -1 && ((last_millisec + 1 ) % 1000) != millisec) {
-        printf("*** missing millisec %d %d\n", last_millisec, millisec);
+        printf("*** missing millisec %u %u\n", last_millisec, millisec);
         catchup = millisec - last_millisec - 1;
       }
 

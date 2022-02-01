@@ -49,6 +49,9 @@ typedef struct cpumeasurdef {
   char statname[TELNET_MAXMEASURNAME_LEN];
   time_stats_t *astatptr;
   unsigned int statemask;
+  uint8_t  num_occur1;
+  uint8_t  num_occur2;
+  uint8_t  num_occur3;
 } telnet_cpumeasurdef_t;
 
 typedef struct ltemeasurdef {
@@ -60,6 +63,7 @@ typedef struct ltemeasurdef {
 
 #define GROUP_LTESTATS    0
 #define GROUP_CPUSTATS    1
+
 typedef void(*measur_dislayfunc_t)(telnet_printfunc_t prnt);
 typedef struct mesurgroupdef {
   char groupname[TELNET_MAXMEASURNAME_LEN];
@@ -79,9 +83,11 @@ typedef struct mesurgroupdef {
 #ifdef TELNETSRV_MEASURMENTS_MAIN
 int measurcmd_show(char *buf, int debug, telnet_printfunc_t prnt);
 int measurcmd_cpustats(char *buf, int debug, telnet_printfunc_t prnt);
+int measurcmd_async(char *buf, int debug, telnet_printfunc_t prnt);
 telnetshell_cmddef_t measur_cmdarray[] = {
-  {"show", "groups | <group name>" , measurcmd_show},
+  {"show", "groups | <group name> | inq" , measurcmd_show},
   {"cpustats","[enable | disable]",measurcmd_cpustats},
+  {"async","[enable | disable]",measurcmd_async},
   {"","",NULL}
 };
 

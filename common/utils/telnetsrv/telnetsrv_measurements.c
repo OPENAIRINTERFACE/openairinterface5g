@@ -64,13 +64,30 @@ void measurcmd_display_groups(telnet_printfunc_t prnt,telnet_measurgroupdef_t *m
 } /* measurcmd_display_groups */
 /*----------------------------------------------------------------------------------------------------*/
 /* cpu measurements functions                         */
-void measurcmd_display_cpumeasures(telnet_printfunc_t prnt, telnet_cpumeasurdef_t  *cpumeasure, int cpumeasure_size) {
-  for (int i=0; i<cpumeasure_size; i++) {
-    prnt("%02d %*s:  %15.3f us; %15d %s",i,TELNET_MAXMEASURNAME_LEN-1,(cpumeasure+i)->statname,
-         ((cpumeasure+i)->astatptr->trials!=0)?(((cpumeasure+i)->astatptr->diff)/((cpumeasure+i)->astatptr->trials))/cpufreq/1000:0,
-         (cpumeasure+i)->astatptr->trials, ((i%2)==1)?"|\n":"  | " );
-  }
 
+
+static char *stridx(int max,int i, char *buff) {
+    if (max>1)
+        sprintf(buff,"[%d]",i);
+    else
+        sprintf(buff,"   ");
+    return buff;
+
+}
+void measurcmd_display_cpumeasures(telnet_printfunc_t prnt, telnet_cpumeasurdef_t  *cpumeasure, int cpumeasure_size) {
+  int p=0;
+  char stridx1[16];
+  char stridx2[16];
+  for (int i=0; i<cpumeasure_size; i++)
+    for (int o1=0;o1<cpumeasure[i].num_occur1;o1++)
+      for (int o2=0;o2<=cpumeasure[i].num_occur2;o2++)
+      {
+      prnt("%02d %*s%s%s:  %15.3f us; %15d %s",p,TELNET_MAXMEASURNAME_LEN+7,(cpumeasure+i)->statname,
+            stridx(cpumeasure[i].num_occur1,o1,stridx1),stridx(cpumeasure[i].num_occur2,o2,stridx2),
+           ((cpumeasure+i+o1+o2)->astatptr->trials!=0)?(((cpumeasure+i+o1+o2)->astatptr->diff)/((cpumeasure+i+o1+o2)->astatptr->trials))/cpufreq/1000:0,
+           (cpumeasure+i+o1+o2)->astatptr->trials, ((p%2)==1)?"|\n":"  | " );
+      p++;
+      }
   prnt("\n\n");
 } /* measurcmd_display_measures */
 
@@ -137,11 +154,17 @@ int measurcmd_show(char *buf, int debug, telnet_printfunc_t prnt) {
   }
   telnet_measurgroupdef_t *measurgroups;
   int num_measurgroups = fptr( &measurgroups);
- 
+
   int s = sscanf(buf,"%ms %i-%i\n",&subcmd, &idx1,&idx2);
 
   if (s>0) {
-    if ( strcmp(subcmd,"groups") == 0) {
+    if ( strcmp(subcmd,"inq") == 0) {
+                notifiedFIFO_elt_t *msg =newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
+                time_stats_msg_t *msgdata=NotifiedFifoData(msg);
+                msgdata->msgid = TIMESTAT_MSGID_DISPLAY;
+                msgdata->displayFunc = prnt;
+                pushNotifiedFIFO(&measur_fifo, msg);
+    } else if ( strcmp(subcmd,"groups") == 0){
       measurcmd_display_groups(prnt,measurgroups,num_measurgroups);
       badcmd=0;
     } else {
@@ -182,13 +205,13 @@ int measurcmd_cpustats(char *buf, int debug, telnet_printfunc_t prnt) {
   int badcmd=1;
 
   if (debug > 0)
-    prnt(" measurcmd_show received %s\n",buf);
+    prnt(" measurcmd_cpustats received %s\n",buf);
 
   int s = sscanf(buf,"%ms %i-%i\n",&subcmd, &idx1,&idx2);
 
   if (s>0) {
     if ( strcmp(subcmd,"enable") == 0) {
-      cpumeas(CPUMEAS_ENABLE);
+      
       badcmd=0;
     } else if ( strcmp(subcmd,"disable") == 0) {
       cpumeas(CPUMEAS_DISABLE);
@@ -198,6 +221,64 @@ int measurcmd_cpustats(char *buf, int debug, telnet_printfunc_t prnt) {
 
   if (badcmd) {
     prnt("Cpu measurments state: %s\n",PRINT_CPUMEAS_STATE);
+  }
+
+  free(subcmd);
+  return CMDSTATUS_FOUND;
+}
+
+void measurcmd_async_help(telnet_printfunc_t prnt) {
+}
+
+int measurcmd_async(char *buf, int debug, telnet_printfunc_t prnt) {
+  char *subcmd=NULL;
+  int idx1, idx2;
+  int okcmd=0;
+
+  if (buf == NULL) {
+	  measurcmd_async_help(prnt);
+	  return CMDSTATUS_FOUND;
+  }
+  if (debug > 0)
+    prnt(" measurcmd_async received %s\n",buf);
+  
+
+  int s = sscanf(buf,"%ms %i-%i\n",&subcmd, &idx1,&idx2);
+
+  if (s==1) {
+    if ( strcmp(subcmd,"enable") == 0) {
+      init_meas();
+      okcmd=1;
+    } else if ( strcmp(subcmd,"disable") == 0) {
+      end_meas();
+      okcmd=1;
+    }
+  } else if ( s == 3 ) {
+	int msgid;
+    if ( strcmp(subcmd,"enable") == 0) {
+      msgid = TIMESTAT_MSGID_ENABLE;
+      okcmd=1;
+    } else if ( strcmp(subcmd,"disable") == 0) {
+      msgid = TIMESTAT_MSGID_DISABLE;
+      okcmd=1;
+    } else if ( strcmp(subcmd,"display") == 0) {
+      msgid = TIMESTAT_MSGID_DISPLAY;
+      okcmd=1;
+    }
+    if (okcmd) {
+      notifiedFIFO_elt_t *nfe = newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
+	  time_stats_msg_t *msg = (time_stats_msg_t *)NotifiedFifoData(nfe);
+      msg->msgid = msgid ;
+      msg->displayFunc = prnt;
+	  for(int i=idx1; i<idx2; i++) {
+		msg->timestat_id =i;
+        pushNotifiedFIFO(&measur_fifo, nfe);
+	  }
+    }	  
+  }
+
+  if (!(okcmd)) {
+    prnt("Unknown command: %s\n",buf);
   }
 
   free(subcmd);

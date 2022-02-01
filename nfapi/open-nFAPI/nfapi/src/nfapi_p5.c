@@ -429,16 +429,6 @@ static uint8_t pack_embms_mbsfn_config_value(void *tlv, uint8_t **ppWritePackedM
            pusharray8(value->fourframes_flag, 8,value->num_mbsfn_config,ppWritePackedMsg, end) &&
            pusharrays32(value->mbsfn_subframeconfig, 8, value->num_mbsfn_config, ppWritePackedMsg, end));
 }
-// static uint8_t unpack_embms_mbsfn_config_value(void* tlv, uint8_t **ppReadPackedMsg, uint8_t* end)
-// {
-//     nfapi_embms_mbsfn_config_t* value = (nfapi_embms_mbsfn_config_t*)tlv;
-
-//     return ( pull16(ppReadPackedMsg, &value->num_mbsfn_config, end) &&
-//              pull16(ppReadPackedMsg, &value->radioframe_allocation_period, end) &&
-//              pull16(ppReadPackedMsg, &value->radioframe_allocation_offset, end) &&
-//              pull8(ppReadPackedMsg, &value->fourframes_flag, end) &&
-//                      pullarrays32(ppReadPackedMsg, value->mbsfn_subframeconfig, 8, value->num_mbsfn_config, end));
-// }
 
 static uint8_t pack_param_response(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p4_p5_codec_config_t *config) {
   nfapi_param_response_t *pNfapiMsg = (nfapi_param_response_t *)msg;
@@ -1036,7 +1026,7 @@ static uint8_t pack_p5_message_body(nfapi_p4_p5_message_header_t *header, uint8_
 
 static uint32_t get_packed_msg_len(uintptr_t msgHead, uintptr_t msgEnd) {
   if (msgEnd < msgHead) {
-    NFAPI_TRACE(NFAPI_TRACE_ERROR, "get_packed_msg_len: Error in pointers supplied %d, %d\n", msgHead, msgEnd);
+    NFAPI_TRACE(NFAPI_TRACE_ERROR, "get_packed_msg_len: Error in pointers supplied %lu, %lu\n", msgHead, msgEnd);
     return 0;
   }
 
@@ -1349,7 +1339,6 @@ static uint8_t unpack_nr_pnf_config_request(uint8_t **ppReadPackedMsg, uint8_t *
   };
   return unpack_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension);
 }
-
 
 
 static uint8_t unpack_pnf_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t *config) {
@@ -1723,6 +1712,7 @@ static uint8_t unpack_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, vo
   return ( pull8(ppReadPackedMsg, &pNfapiMsg->num_tlv, end) &&
            unpack_tlv_list(unpack_fns, sizeof(unpack_fns)/sizeof(unpack_tlv_t), ppReadPackedMsg, end, config, &pNfapiMsg->vendor_extension));
 }
+
 static uint8_t unpack_nr_config_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p4_p5_codec_config_t* config)
 {
 	nfapi_nr_config_request_scf_t *pNfapiMsg = (nfapi_nr_config_request_scf_t*)msg;

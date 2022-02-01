@@ -34,7 +34,6 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 //#include "PHY/extern.h"
-//#include "LAYER2/MAC/extern.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
@@ -91,8 +90,8 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
   uint8_t u[2]={0,0},v[2]={0,0};
 
-  LOG_D(PHY,"pucch0: nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, mcs %d\n",pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->mcs);
-
+  LOG_D(PHY,"pucch0: slot %d nr_symbols %d, start_symbol %d, prb_start %d, second_hop_prb %d,  group_hop_flag %d, sequence_hop_flag %d, mcs %d\n",
+        nr_slot_tx,pucch_pdu->nr_of_symbols,pucch_pdu->start_symbol_index,pucch_pdu->prb_start,pucch_pdu->second_hop_prb,pucch_pdu->group_hop_flag,pucch_pdu->sequence_hop_flag,pucch_pdu->mcs);
 
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch0] sequence generation: variable initialization for test\n");
@@ -806,8 +805,8 @@ void nr_generate_pucch1_old(PHY_VARS_NR_UE *ue,
 }
 #endif //0
 
-inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) __attribute__((always_inline));
-inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) {
+static inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) __attribute__((always_inline));
+static inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) {
   uint32_t x1, x2, s=0;
   int i;
   uint8_t c;

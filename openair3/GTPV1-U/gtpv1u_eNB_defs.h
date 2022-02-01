@@ -111,14 +111,6 @@ typedef struct gtpv1u_data_s {
   uint16_t              seq_num;
   uint8_t               restart_counter;
 
-#ifdef GTPU_IN_KERNEL
-  char                 *interface_name;
-  int                   interface_index;
-
-  struct iovec         *malloc_ring;
-  void                 *sock_mmap_ring[16];
-  int                   sock_desc[16]; // indexed by marking
-#endif
 } gtpv1u_data_t;
 
 int

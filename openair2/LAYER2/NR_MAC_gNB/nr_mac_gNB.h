@@ -145,6 +145,8 @@ typedef struct {
   uint8_t msg3_first_rb;
   /// Msg3 number of RB
   uint8_t msg3_nb_rb;
+  /// Msg3 BWP start
+  uint8_t msg3_bwp_start;
   /// Msg3 TPC command
   uint8_t msg3_TPC;
   /// Msg3 ULdelay command
@@ -153,6 +155,8 @@ typedef struct {
   uint8_t msg3_cqireq;
   /// Round of Msg3 HARQ
   uint8_t msg3_round;
+  /// Flag to indicate if Msg3 carries a DCCH or DTCH message
+  bool msg3_dcch_dtch;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4
@@ -420,6 +424,13 @@ typedef struct NR_UE_harq {
 
 //! fixme : need to enhace for the multiple TB CQI report
 
+typedef struct NR_DL_bler_stats {
+  frame_t last_frame_slot;
+  float bler;
+  float rd2_bler;
+  uint8_t mcs;
+  uint64_t dlsch_rounds[8];
+} NR_DL_bler_stats_t;
 
 //
 /*! As per spec 38.214 section 5.2.1.4.2
@@ -529,7 +540,8 @@ typedef struct {
   /// corresponding to the sched_pusch/sched_pdsch structures below
   int cce_index;
   uint8_t aggregation_level;
-
+  /// maximum aggregation level for UE, can be used to select level
+  int maxL;
   /// PUCCH scheduling information. Array of two: HARQ+SR in the first field,
   /// CSI in second.  This order is important for nr_acknack_scheduling()!
   NR_sched_pucch_t sched_pucch[2];
@@ -562,7 +574,11 @@ typedef struct {
   /// per-LC status data
   mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
 
+  /// Estimation of HARQ from BLER
+  NR_DL_bler_stats_t dl_bler_stats;
+
   int lcid_mask;
+  int lcid_to_schedule;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -604,18 +620,19 @@ typedef struct {
 } NRUEcontext_t;
 
 typedef struct {
-  int lc_bytes_tx[64];
-  int lc_bytes_rx[64];
-  int dlsch_rounds[8];
-  int dlsch_errors;
-  int dlsch_total_bytes;
+  uint64_t lc_bytes_tx[64];
+  uint64_t lc_bytes_rx[64];
+  uint64_t dlsch_rounds[8];
+  uint64_t dlsch_errors;
+  uint64_t dlsch_total_bytes;
   int dlsch_current_bytes;
-  int ulsch_rounds[8];
-  int ulsch_errors;
-  int ulsch_DTX;
-  int ulsch_total_bytes_scheduled;
-  int ulsch_total_bytes_rx;
+  uint64_t ulsch_rounds[8];
+  uint64_t ulsch_errors;
+  uint32_t ulsch_DTX;
+  uint64_t ulsch_total_bytes_scheduled;
+  uint64_t ulsch_total_bytes_rx;
   int ulsch_current_bytes;
+  uint32_t pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
 } NR_mac_stats_t;
@@ -662,6 +679,7 @@ typedef struct gNB_MAC_INST_s {
   NR_TAG_t                        *tag;
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
+  pthread_t                       stats_thread;
   /// Pusch target SNR
   int                             pusch_target_snrx10;
   /// Pucch target SNR
@@ -678,7 +696,8 @@ typedef struct gNB_MAC_INST_s {
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
-
+  int num_ulprbbl;
+  int ulprbbl[275];
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
@@ -743,7 +762,7 @@ typedef struct gNB_MAC_INST_s {
   int *preferred_ul_tda[MAX_NUM_BWP];
 
   /// maximum number of slots before a UE will be scheduled ULSCH automatically
-  uint32_t ulsch_max_slots_inactivity;
+  uint32_t ulsch_max_frame_inactivity;
 
   /// DL preprocessor for differentiated scheduling
   nr_pp_impl_dl pre_processor_dl;
@@ -751,9 +770,15 @@ typedef struct gNB_MAC_INST_s {
   nr_pp_impl_ul pre_processor_ul;
 
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
+  uint16_t cset0_bwp_start;
+  uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
   bool first_MIB;
+  double dl_bler_target_upper;
+  double dl_bler_target_lower;
+  double dl_rd2_bler_threshold;
+  uint8_t dl_max_mcs;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

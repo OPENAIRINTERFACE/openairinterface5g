@@ -72,16 +72,10 @@ void reset_stats(FL_OBJECT *button, long arg) {
 
 static void *scope_thread_UE(void *arg) {
   char stats_buffer[16384];
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  FILE *UE_stats, *eNB_stats;
-# endif
   struct sched_param sched_param;
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
   sched_setscheduler(0, SCHED_FIFO,&sched_param);
   printf("Scope thread has priority %d\n",sched_param.sched_priority);
-# ifdef ENABLE_XFORMS_WRITE_STATS
-  UE_stats  = fopen("UE_stats.txt", "w");
-#endif
 
   while (!oai_exit) {
     //      dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
@@ -94,16 +88,6 @@ static void *scope_thread_UE(void *arg) {
                  0,7);
     //  printf("%s",stats_buffer);
   }
-
-# ifdef ENABLE_XFORMS_WRITE_STATS
-
-  if (UE_stats) {
-    rewind (UE_stats);
-    fwrite (stats_buffer, 1, len, UE_stats);
-    fclose (UE_stats);
-  }
-
-# endif
   pthread_exit((void *)arg);
 }
 

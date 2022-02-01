@@ -50,8 +50,6 @@
 //#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
 
-//#undef ALL_AGGREGATION
-
 //extern uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 //extern uint16_t pcfich_reg[4];
 

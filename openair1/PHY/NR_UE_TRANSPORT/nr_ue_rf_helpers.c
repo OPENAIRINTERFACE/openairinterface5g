@@ -33,19 +33,17 @@
 #include "nr_transport_proto_ue.h"
 #include "executables/softmodem-common.h"
 
-void nr_get_carrier_frequencies(NR_DL_FRAME_PARMS *fp, uint64_t *dl_carrier, uint64_t *ul_carrier){
+void nr_get_carrier_frequencies(PHY_VARS_NR_UE *ue, uint64_t *dl_carrier, uint64_t *ul_carrier){
 
-  if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1 || !downlink_frequency[0][0]) {
-    *dl_carrier = fp->dl_CarrierFreq;
-  } else {
-    *dl_carrier = downlink_frequency[0][0];
+  NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
+  if (ue->if_freq!=0) {
+    *dl_carrier = ue->if_freq;
+    *ul_carrier = *dl_carrier + ue->if_freq_off;
   }
-
-  if (uplink_frequency_offset[0][0])
-    *ul_carrier = *dl_carrier + uplink_frequency_offset[0][0];
-  else
-    *ul_carrier = *dl_carrier + fp->ul_CarrierFreq - fp->dl_CarrierFreq;
-
+  else{
+    *dl_carrier = fp->dl_CarrierFreq;
+    *ul_carrier = fp->ul_CarrierFreq;
+  }
 }
 
 

@@ -10,6 +10,10 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf)
 * If the farray pointer is null,  looks for `< modname >_getfarray` symbol, calls the corresponding function when the symbol is found. `< modname >_getfarray` takes one argument, a pointer to a  `loader_shlibfunc_t` array, and returns the number of items in this array, as defined by the `getfarrayfunc_t` type. The `loader_shlibfunc_t` array returned by the shared library must be fully filled (both `fname` and `fptr` fields).
 * looks for the `numf` function symbols listed in the `farray[i].fname` arguments and set the corresponding `farray[i].fptr`function pointers
 
+```c
+int load_module_version_shlib(char *modname, char *version, loader_shlibfunc_t *farray, int numf)
+```
+Allows loading a specific library version, as specified by the `version` parameter. When version is not NULL the version that is possibly specified as a config module parameter is ignored. This call has been introduced for phy simulators executables which do not use the config module. It is used, for example,  by the ldcp initialization (`load_nrLDPClib` function in [nrLDPC_load.c](../../../../../openair1/PHY/CODING/nrLDPC_load.c)  to allow the `ldpctest` simulator to select the cuda accelerated ldcp implementation. `load_module_shlib` is just a define macro to switch to a `load_module_version_shlib` call,  adding a NULL pointer for the version parameter.
 
 ```c
 void * get_shlibmodule_fptr(char *modname, char *fname)

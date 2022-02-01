@@ -5,7 +5,7 @@ set -euo pipefail
 PREFIX=/opt/oai-lte-ue
 
 # Based another env var, pick one template to use
-if [[ -v USE_NFAPI ]]; then ln -s $PREFIX/etc/ue.nfapi.conf $PREFIX/etc/ue.conf; fi
+if [[ -v USE_NFAPI ]]; then cp $PREFIX/etc/ue.nfapi.conf $PREFIX/etc/ue.conf; fi
 
 # Only this template will be manipulated and the USIM one!
 CONFIG_FILES=`ls $PREFIX/etc/ue.conf $PREFIX/etc/ue_usim.conf || true`
@@ -39,11 +39,11 @@ $PREFIX/bin/conf2uedata -c $PREFIX/etc/ue_usim.conf -o $PREFIX
 
 # Load the USRP binaries
 if [[ -v USE_B2XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t b2xx
+    $PREFIX/bin/uhd_images_downloader.py -t b2xx
 elif [[ -v USE_X3XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t x3xx
+    $PREFIX/bin/uhd_images_downloader.py -t x3xx
 elif [[ -v USE_N3XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t n3xx
+    $PREFIX/bin/uhd_images_downloader.py -t n3xx
 fi
 
 # in case we have conf file, append

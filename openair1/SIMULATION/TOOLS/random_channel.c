@@ -519,12 +519,12 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
     chan_desc->ch[i] = (struct complexd *) malloc(chan_desc->channel_length * sizeof(struct complexd));
 
   for (int i = 0; i<nb_tx*nb_rx; i++)
-    chan_desc->chF[i] = (struct complexd *) malloc(1200 * sizeof(struct complexd));
+    chan_desc->chF[i] = (struct complexd *) malloc((2+(275*12)) * sizeof(struct complexd));
 
   for (int i = 0; i<chan_desc->nb_taps; i++)
     chan_desc->a[i]         = (struct complexd *) malloc(nb_tx*nb_rx * sizeof(struct complexd));
 
-  chan_desc->R_sqrt  = (struct complexd **) malloc(6*sizeof(struct complexd **));
+  chan_desc->R_sqrt  = (struct complexd **) malloc(tdl_pathsby3*sizeof(struct complexd **));
 
   if (nb_tx==2 && nb_rx==2) {
     for (int i = 0; i<(tdl_pathsby3); i++)
@@ -1708,10 +1708,9 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname) {
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   double s;
   int i,k,l,aarx,aatx;
-  struct complexd anew[NB_ANTENNAS_TX*NB_ANTENNAS_RX],acorr[NB_ANTENNAS_TX*NB_ANTENNAS_RX];
+  struct complexd anew[desc->nb_tx*desc->nb_rx];
+  struct complexd acorr[desc->nb_tx*desc->nb_rx];
   struct complexd phase, alpha, beta;
-  AssertFatal(desc->nb_tx<=NB_ANTENNAS_TX && desc->nb_rx <= NB_ANTENNAS_RX,
-              "random_channel.c: Error: temporary buffer for channel not big enough (%d,%d)\n",desc->nb_tx,desc->nb_rx);
   start_meas(&desc->random_channel);
 
   for (i=0; i<(int)desc->nb_taps; i++) {
@@ -1735,7 +1734,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
         }
 
 #ifdef DEBUG_CH
-        printf("(%d,%d,%d) %f->(%f,%f) (%f,%f) phase (%f,%f)\n",aarx,aatx,i,desc->amps[i],anew[aarx+(aatx*desc->nb_rx)].x,anew[aarx+(aatx*desc->nb_rx)].y,desc->aoa,desc->ricean_factor,phase.x,phase.y);
+        printf("(%d,%d,%d) %f->(%f,%f) (%f,%f) phase (%f,%f)\n",aarx,aatx,i,desc->amps[i],anew[aarx+(aatx*desc->nb_rx)].r,anew[aarx+(aatx*desc->nb_rx)].i,desc->aoa,desc->ricean_factor,phase.r,phase.i);
 #endif
       } //aatx
     } //aarx
@@ -1752,6 +1751,11 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     */
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
+    bzero(acorr,desc->nb_tx*desc->nb_rx*sizeof(struct complexd));
+    cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void *) desc->R_sqrt[i/3], (void *) anew, 1, (void *) acorr, 1);
+
+    /*
+    FIXME: Function cblas_zgemv has an undefined output (for the same input) after a second call in RHEL8 (acorr = nan)
     alpha.r = 1.0;
     alpha.i = 0.0;
     beta.r = 0.0;
@@ -1759,6 +1763,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     cblas_zgemv(CblasRowMajor, CblasNoTrans, desc->nb_tx*desc->nb_rx, desc->nb_tx*desc->nb_rx,
                 (void *) &alpha, (void *) desc->R_sqrt[i/3], desc->nb_rx*desc->nb_tx,
                 (void *) anew, 1, (void *) &beta, (void *) acorr, 1);
+    */
 
     /*
     for (aarx=0;aarx<desc->nb_rx;aarx++) {
@@ -1827,7 +1832,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
             } //nb_taps
 
 #ifdef DEBUG_CH
-            printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
+            printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);
 #endif
           } //channel_length
         }

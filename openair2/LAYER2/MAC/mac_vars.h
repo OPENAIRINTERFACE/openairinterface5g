@@ -105,13 +105,11 @@ eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_EN
 eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB]; // eNBxUE = 8x8
 
 
-#ifdef OPENAIR2
   unsigned char NB_eNB_INST = 0;
   uint16_t NB_UE_INST = 0;
   uint16_t NB_THREAD_INST = 0;
   unsigned char NB_RN_INST = 0;
   unsigned char NB_INST = 0;
-#endif
 
 
 DCI0_5MHz_TDD_1_6_t UL_alloc_pdu;

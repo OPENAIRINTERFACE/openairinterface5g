@@ -39,6 +39,8 @@
 
 extern const uint8_t nr_slots_per_frame[5];
 
+extern dci_pdu_rel15_t *def_dci_pdu_rel15;
+
 /* extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
 extern const uint32_t Extended_BSR_TABLE[BSR_TABLE_SIZE];
 extern const uint8_t cqi2fmt0_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
@@ -75,6 +77,9 @@ extern uint8_t new_dlsch_ue_select_tbl_in_use;
 extern boolean_t pre_scd_activeUE[NUMBER_OF_UE_MAX];
 extern eNB_UE_STATS pre_scd_eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 #endif*/
+
+extern const uint32_t NR_SHORT_BSR_TABLE[NR_SHORT_BSR_TABLE_SIZE];
+extern const uint32_t NR_LONG_BSR_TABLE[NR_LONG_BSR_TABLE_SIZE];
 
 //	Type0-PDCCH search space
 extern const int32_t table_38213_13_1_c1[16];

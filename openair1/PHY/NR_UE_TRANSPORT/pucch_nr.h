@@ -37,7 +37,6 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 //#include "PHY/extern.h"
-//#include "LAYER2/MAC/extern.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"

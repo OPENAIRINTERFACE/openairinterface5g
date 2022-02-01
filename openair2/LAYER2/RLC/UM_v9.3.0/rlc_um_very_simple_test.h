@@ -33,7 +33,6 @@
 //-----------------------------------------------------------------------------
 #        include "rlc_um_entity.h"
 #        include "mem_block.h"
-#        include "rrm_config_structs.h"
 #        include "rlc_um_structs.h"
 #        include "rlc_um_constants.h"
 //-----------------------------------------------------------------------------

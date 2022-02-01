@@ -102,12 +102,13 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
                       entity->rb_id, rcvd_count, entity->is_gnb ? 0 : 1);
     if (memcmp(integrity, buffer + size - integrity_size, 4) != 0) {
       LOG_E(PDCP, "discard NR PDU, integrity failed\n");
+//      return;
     }
   }
 
   if (rcvd_count < entity->rx_deliv
       || nr_pdcp_sdu_in_list(entity->rx_list, rcvd_count)) {
-    LOG_D(PDCP, "discard NR PDU rcvd_count=%d\n", rcvd_count);
+    LOG_W(PDCP, "discard NR PDU rcvd_count=%d\n", rcvd_count);
     return;
   }
 

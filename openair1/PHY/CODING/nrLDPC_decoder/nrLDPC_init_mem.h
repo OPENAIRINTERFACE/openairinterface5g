@@ -34,7 +34,6 @@
 #include <stdlib.h>
 #include "nrLDPC_types.h"
 
-#ifndef malloc32_clear
 /**
    \brief Allocates 32 byte aligned memory and initializes to zero
    \param size Input size in bytes
@@ -46,7 +45,6 @@ static inline void* malloc32_clear(size_t size)
     memset(ptr, 0, size);
     return ptr;
 }
-#endif
 
 /**
    \brief Allocates and initializes the internal decoder processing buffers

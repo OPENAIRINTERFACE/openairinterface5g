@@ -38,8 +38,6 @@
 #include "common/utils/LOG/log.h"
 
 
-//#define DEBUG_LDPC
-
 #include "ldpc384_byte.c"
 #include "ldpc352_byte.c"
 #include "ldpc320_byte.c"
@@ -73,9 +71,18 @@
 
 
 
-static inline void encode_parity_check_part_optim(uint8_t *c,uint8_t *d, short BG,short Zc,short Kb)
+static void encode_parity_check_part_optim(uint8_t *cc,uint8_t *d, short BG,short Zc,short Kb, int simd_size, int ncols)
 {
-
+  unsigned char c[2*22*Zc*simd_size] __attribute__((aligned(32)));      //double size matrix of c
+  
+  for (int i1=0; i1 < ncols; i1++)   {
+    memcpy(&c[2*i1*Zc], &cc[i1*Zc], Zc*sizeof(unsigned char));
+    memcpy(&c[(2*i1+1)*Zc], &cc[i1*Zc], Zc*sizeof(unsigned char));
+  }
+  for (int i1=1;i1<simd_size;i1++) {
+    memcpy(&c[(2*ncols*Zc*i1)], &c[i1], (2*ncols*Zc*sizeof(unsigned char))-i1);
+  }
+  
   if (BG==1)
   {
     switch (Zc)

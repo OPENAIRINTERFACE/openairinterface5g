@@ -33,13 +33,7 @@
 #ifndef __PHY_NR_UE_TRANSPORT_DCI_NR__H__
 #define __PHY_NR_UE_TRANSPORT_DCI_NR__H__
 
-#ifndef USER_MODE
-#include "PHY/types.h"
-#else
 #include <stdint.h>
-#endif
-
-
 
 #define MAX_DCI_SIZE_BITS 45
 

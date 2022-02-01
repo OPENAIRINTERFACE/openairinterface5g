@@ -5,8 +5,8 @@ set -euo pipefail
 PREFIX=/opt/oai-lte-ru
 
 # Based another env var, pick one template to use
-if [[ -v USE_FDD_RRU ]]; then ln -s $PREFIX/etc/rru.fdd.conf $PREFIX/etc/rru.conf; fi
-if [[ -v USE_TDD_RRU ]]; then ln -s $PREFIX/etc/rru.tdd.conf $PREFIX/etc/rru.conf; fi
+if [[ -v USE_FDD_RRU ]]; then cp $PREFIX/etc/rru.fdd.conf $PREFIX/etc/rru.conf; fi
+if [[ -v USE_TDD_RRU ]]; then cp $PREFIX/etc/rru.tdd.conf $PREFIX/etc/rru.conf; fi
 
 # Only this template will be manipulated
 CONFIG_FILES=`ls $PREFIX/etc/rru.conf || true`
@@ -35,11 +35,11 @@ done
 
 # Load the USRP binaries
 if [[ -v USE_B2XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t b2xx
+    $PREFIX/bin/uhd_images_downloader.py -t b2xx
 elif [[ -v USE_X3XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t x3xx
+    $PREFIX/bin/uhd_images_downloader.py -t x3xx
 elif [[ -v USE_N3XX ]]; then
-    /usr/lib/uhd/utils/uhd_images_downloader.py -t n3xx
+    $PREFIX/bin/uhd_images_downloader.py -t n3xx
 fi
 
 echo "=================================="

@@ -39,18 +39,31 @@
 #include "NR_MeasConfig.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_RadioBearerConfig.h"
+#include "openair2/PHY_INTERFACE/queue_t.h"
+
+extern queue_t nr_rach_ind_queue;
+extern queue_t nr_rx_ind_queue;
+extern queue_t nr_crc_ind_queue;
+extern queue_t nr_uci_ind_queue;
+extern queue_t nr_sfn_slot_queue;
+extern queue_t nr_chan_param_queue;
+extern queue_t nr_dl_tti_req_queue;
+extern queue_t nr_tx_req_queue;
+extern queue_t nr_ul_dci_req_queue;
+extern queue_t nr_ul_tti_req_queue;
+extern queue_t nr_wait_ul_tti_req_queue;
 //
 //  main_rrc.c
 //
 /**\brief Layer 3 initialization*/
-NR_UE_RRC_INST_t* nr_l3_init_ue(char*);
+NR_UE_RRC_INST_t* nr_l3_init_ue(char*,char*);
 
 //
 //  UE_rrc.c
 //
 
 /**\brief Initial the top level RRC structure instance*/
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char*);
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char*,char*);
 
 
 
@@ -133,14 +146,39 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
                               const rb_id_t     Srb_id,
                               uint8_t           *buffer_pP);
 
+uint8_t
+rrc_data_req_nr_ue(
+  const protocol_ctxt_t   *const ctxt_pP,
+  const rb_id_t                  rb_idP,
+  const mui_t                    muiP,
+  const confirm_t                confirmP,
+  const sdu_size_t               sdu_sizeP,
+  uint8_t                 *const buffer_pP,
+  const pdcp_transmission_mode_t modeP
+);
+
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_nrue_task(void *args_p);
+
+/**\brief RRC NSA UE task.
+   \param void *args_p Pointer on arguments to start the task. */
+void *recv_msgs_from_lte_ue(void *args_p);
+
+void init_connections_with_lte_ue(void);
+
+void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_type);
+
+void start_oai_nrue_threads(void);
 
 /**\brief RRC UE generate RRCSetupRequest message.
    \param module_id  module id
    \param gNB_index  gNB index  */
 void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index);
+
+void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len);
+
+int get_from_lte_ue_fd();
 
 /** @}*/
 #endif

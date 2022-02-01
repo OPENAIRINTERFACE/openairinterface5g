@@ -10,7 +10,7 @@
 #define FAPI_NR_MAX_RA_OCCASION_PER_CSIRS          64
 // Constants Defined in 38.213
 #define FAPI_NR_MAX_CORESET_PER_BWP                3
-#define FAPI_NR_MAX_SS_PER_CORESET                 10
+#define FAPI_NR_MAX_SS                             10
 
 
 /// RX_IND
@@ -57,6 +57,7 @@
 /// UL_CONFIG_REQ
 #define FAPI_NR_UL_CONFIG_LIST_NUM 10
 
+#define FAPI_NR_UL_CONFIG_TYPE_DONE  0x00
 #define FAPI_NR_UL_CONFIG_TYPE_PRACH 0x01
 #define FAPI_NR_UL_CONFIG_TYPE_PUCCH 0x02
 #define FAPI_NR_UL_CONFIG_TYPE_PUSCH 0x03

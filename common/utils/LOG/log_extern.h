@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include"log.h"
+#include "log.h"
 
 extern log_t *g_log;
 

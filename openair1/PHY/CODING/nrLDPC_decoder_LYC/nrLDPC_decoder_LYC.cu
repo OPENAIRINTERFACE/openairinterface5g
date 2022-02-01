@@ -7,14 +7,14 @@
  * \note
  * \warning
  */
-
+#include <iostream>
 #include <stdio.h>
 #include <unistd.h>
 #include <cuda_runtime.h>
 #include <cuda.h>
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPCdecoder_defs.h"
-
+#include "assertions.h"
 #include "bgs/BG1_I0"
 #include "bgs/BG1_I1"
 #include "bgs/BG1_I2"
@@ -462,10 +462,11 @@ void read_BG(int BG, int *h, int row, int col)
 }
 
 extern "C"
-void init_LLR_DMA_for_CUDA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, int block_length){
+void init_LLR_DMA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out){
 	
 	uint16_t Zc          = p_decParams->Z;
     uint8_t  BG         = p_decParams->BG;
+    int block_length     = p_decParams->block_length;
 	uint8_t row,col;
 	if(BG == 1){
 		row = 46;
@@ -483,14 +484,60 @@ void init_LLR_DMA_for_CUDA(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8
 	
 }
 
+using namespace std ;
+
+/* from here: entry points in decoder shared lib */
 extern "C"
-int32_t nrLDPC_decoder_LYC(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, int block_length, time_stats_t *time_decoder)
+int ldpc_autoinit(void) {   // called by the library loader 
+/*int devices = 0; 
+
+  cudaError_t err = cudaGetDeviceCount(&devices); 
+  AssertFatal(devices>0,"\nNo cuda GPU found\n\n");
+
+    const int kb = 1024;
+    const int mb = kb * kb;
+    wcout << "NBody.GPU" << endl << "=========" << endl << endl;
+
+    wcout << "CUDA version:   v" << CUDART_VERSION << endl;    
+    
+
+    wcout << "CUDA Devices: " << endl << endl;
+
+    for(int i = 0; i < devices; ++i)
+    {
+        cudaDeviceProp props;
+        cudaGetDeviceProperties(&props, i);
+        wcout << i << ": " << props.name << ": " << props.major << "." << props.minor << endl;
+        wcout << "  Global memory:   " << props.totalGlobalMem / mb << "mb" << endl;
+        wcout << "  Shared memory:   " << props.sharedMemPerBlock / kb << "kb" << endl;
+        wcout << "  Constant memory: " << props.totalConstMem / kb << "kb" << endl;
+        wcout << "  Block registers: " << props.regsPerBlock << endl << endl;
+
+        wcout << "  Warp size:         " << props.warpSize << endl;
+        wcout << "  Threads per block: " << props.maxThreadsPerBlock << endl;
+        wcout << "  Max block dimensions: [ " << props.maxThreadsDim[0] << ", " << props.maxThreadsDim[1]  << ", " << props.maxThreadsDim[2] << " ]" << endl;
+        wcout << "  Max grid dimensions:  [ " << props.maxGridSize[0] << ", " << props.maxGridSize[1]  << ", " << props.maxGridSize[2] << " ]" << endl;
+        wcout << endl;
+    }
+*/
+  warmup_for_GPU();
+  return 0;  
+}
+
+extern "C"
+void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out) {
+	set_compact_BG(p_decParams->Z,p_decParams->BG);
+	init_LLR_DMA(p_decParams, p_llr,  p_out);
+}
+
+
+extern "C"
+int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out,t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats *time_decoder)
 {
-
-
     uint16_t Zc          = p_decParams->Z;
     uint8_t  BG         = p_decParams->BG;
     uint8_t  numMaxIter = p_decParams->numMaxIter;
+    int block_length    = p_decParams->block_length;
     e_nrLDPC_outMode outMode = p_decParams->outMode;
 	cudaError_t cudaStatus;
 	uint8_t row,col;
