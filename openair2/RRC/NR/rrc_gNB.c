@@ -748,6 +748,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   memset(buffer, 0, sizeof(buffer));
   size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
@@ -758,10 +760,10 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 NULL,
                                 dedicatedNAS_MessageList,
+                                ue_context_pP,
+                                &rrc->carrier,
                                 NULL,
-                                NULL,
-                                NULL,
-                                NULL);
+                                ue_p->masterCellGroup);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 

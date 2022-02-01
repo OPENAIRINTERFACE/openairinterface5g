@@ -336,6 +336,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
       ps->mcsTableIdx = 2;
   }
   else ps->mcsTableIdx = 0;
+  LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
 
   if(dci_format == 0) // format 1_0
     ps->numDmrsCdmGrpsNoData = (ps->nrOfSymbols == 2 ? 1 : 2);

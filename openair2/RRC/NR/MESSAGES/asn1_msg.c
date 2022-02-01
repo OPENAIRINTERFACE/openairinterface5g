@@ -1402,6 +1402,8 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             NR_UE_NR_Capability_t *uecap) {
 
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
+  if (SpCellConfig == NULL) return;
+
   NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
 
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
