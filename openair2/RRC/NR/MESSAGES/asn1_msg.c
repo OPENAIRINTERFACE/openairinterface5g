@@ -1647,7 +1647,7 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
     rlc_BearerConfig_drb->logicalChannelIdentity                     = 4;
     rlc_BearerConfig_drb->servedRadioBearer                          = calloc(1, sizeof(*rlc_BearerConfig_drb->servedRadioBearer));
     rlc_BearerConfig_drb->servedRadioBearer->present                 = NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
-    rlc_BearerConfig_drb->servedRadioBearer->choice.drb_Identity     = 1;
+    rlc_BearerConfig_drb->servedRadioBearer->choice.drb_Identity     = 4; //1;
     rlc_BearerConfig_drb->reestablishRLC                             = NULL;
     rlc_Config_drb                                                   = calloc(1, sizeof(NR_RLC_Config_t));
     rlc_Config_drb->present                                          = NR_RLC_Config_PR_am;
