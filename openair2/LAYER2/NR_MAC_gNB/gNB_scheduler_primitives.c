@@ -2438,7 +2438,6 @@ void nr_csirs_scheduling(int Mod_idP,
       int period, offset;
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
-      NR_BWP_Downlink_t *bwp=sched_ctrl->active_bwp; 
       NR_BWP_t *genericParameters = sched_ctrl->active_bwp ? 
                                     &sched_ctrl->active_bwp->bwp_Common->genericParameters:
                                     &gNB_mac->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;

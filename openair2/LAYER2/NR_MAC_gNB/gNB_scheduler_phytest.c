@@ -279,12 +279,10 @@ void nr_preprocessor_phytest(module_id_t module_id,
               UE_id);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
-  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
-  if (ps->time_domain_allocation != tda)
-    nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, target_dl_Nl, sched_ctrl,ps);
+  if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
+    nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, target_dl_Nl, sched_ctrl, ps);
 
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -389,7 +387,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->pucch_allocation = alloc;
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
-
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
     nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, target_dl_Nl, sched_ctrl, ps);
 

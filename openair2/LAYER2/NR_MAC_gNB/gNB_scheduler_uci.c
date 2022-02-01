@@ -701,7 +701,7 @@ void nr_csi_meas_reporting(int Mod_idP,
     const NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
     AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
                 "NO CSI report configuration available");
-    NR_PUCCH_Config_t *pucch_Config;
+    NR_PUCCH_Config_t *pucch_Config = NULL;
     if (sched_ctrl->active_ubwp) {
       pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
     } else if (RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id] &&
@@ -736,7 +736,7 @@ void nr_csi_meas_reporting(int Mod_idP,
         if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource)
           break;
       AssertFatal(res_index < n,
-                  "CSI pucch resource %d not found among PUCCH resources\n",pucchcsires->pucch_Resource);
+                  "CSI pucch resource %ld not found among PUCCH resources\n",pucchcsires->pucch_Resource);
 
       // find free PUCCH that is in order with possibly existing PUCCH
       // schedulings (other CSI, SR)
