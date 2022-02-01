@@ -148,7 +148,8 @@ int openair0_device_load(openair0_device *device,
       LOG_E(HW, "%s %d:Unsupported radio head\n", __FILE__, __LINE__);
       return -1;
 	}
-  }
+  } else
+    AssertFatal(false, "can't open the radio device: %s\n", get_devname(device->type));
 
   return rc;
 }

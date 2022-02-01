@@ -119,7 +119,7 @@ typedef enum {
 #define GNB_CONFIG_STRING_SIB1TDA                       "sib1_tda"
 #define GNB_CONFIG_STRING_DOCSIRS                       "do_CSIRS"
 #define GNB_CONFIG_STRING_NRCELLID                      "nr_cellid"
-#define GNB_CONFIG_STRING_MINRXTXTIMEPDSCH              "min_rxtxtime_pdsch"
+#define GNB_CONFIG_STRING_MINRXTXTIME                   "min_rxtxtime"
 #define GNB_CONFIG_STRING_ULPRBBLACKLIST                "ul_prbblacklist"
 
 
@@ -148,8 +148,8 @@ typedef enum {
 {GNB_CONFIG_STRING_SIB1TDA,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_DOCSIRS,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,    0},  \
-{GNB_CONFIG_STRING_MINRXTXTIMEPDSCH,             NULL,   0,            iptr:NULL,   defintval:2,                 TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                 TYPE_STRING,   0}   \
+{GNB_CONFIG_STRING_MINRXTXTIME,                  NULL,   0,            iptr:NULL,   defintval:2,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                TYPE_STRING,    0}   \
 }
 
 #define GNB_GNB_ID_IDX                  0
@@ -172,7 +172,7 @@ typedef enum {
 #define GNB_SIB1_TDA_IDX                17
 #define GNB_DO_CSIRS_IDX                18
 #define GNB_NRCELLID_IDX                19
-#define GNB_MINRXTXTIMEPDSCH_IDX        20
+#define GNB_MINRXTXTIME_IDX             20
 #define GNB_ULPRBBLACKLIST_IDX          21
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
@@ -334,29 +334,17 @@ typedef enum {
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval             type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define GNBNETPARAMS_DESC {  \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NG_AMF,        NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_NG_AMF,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NGU,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_NGU,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_GNB_PORT_FOR_NGU,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
-{GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{GNB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0}      \
-}   
-
-
-
-/*--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            GTPU  configuration parameters                                                                                                      */
-/*   optname                                            helpstr   paramflags    XXXptr              defXXXval                                           type           numelt     */
-/*--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define GNBGTPUPARAMS_DESC { \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NGU,           NULL,    0,            strptr:&gnb_interface_name_for_NGU,      defstrval:"lo",                TYPE_STRING,   0},        \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_NGU,                NULL,    0,            strptr:&gnb_ipv4_address_for_NGU,        defstrval:"127.0.0.1",         TYPE_STRING,   0},        \
-{GNB_CONFIG_STRING_GNB_PORT_FOR_NGU,                     NULL,    0,            uptr:&gnb_port_for_NGU,                  defintval:2152,                TYPE_UINT,     0},        \
-{GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U,           NULL,    0,            strptr:&gnb_interface_name_for_S1U,      defstrval:"lo",                TYPE_STRING,   0},        \
-{GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_S1U,             NULL,    0,            strptr:&gnb_ipv4_address_for_S1U,        defstrval:"127.0.0.1",         TYPE_STRING,   0},        \
-{GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,    0,            uptr:&gnb_port_for_S1U,                  defintval:2152,                TYPE_UINT,     0}         \
-}
+    {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NG_AMF,        NULL,      0,         strptr:NULL,         defstrval:NULL,       TYPE_STRING,      0}, \
+      {GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_NG_AMF,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0}, \
+      {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_NGU,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0}, \
+      {GNB_CONFIG_STRING_GNB_IPV4_ADDR_FOR_NGU,                NULL,      0,         strptr:&gnb_ipv4_address_for_NGU, defstrval:"127.0.0.1",TYPE_STRING,   0},	\
+      {GNB_CONFIG_STRING_GNB_PORT_FOR_NGU,                     NULL,      0,         uptr:&gnb_port_for_NGU,           defintval:2152L,      TYPE_UINT,     0},	\
+      {GNB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,                      defstrval:NULL,       TYPE_STRING,   0},	\
+      {GNB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,                        defintval:0L,         TYPE_UINT,     0}, \
+      {GNB_CONFIG_STRING_GNB_INTERFACE_NAME_FOR_S1U,           NULL,    0,           strptr:NULL,                      defstrval:NULL,       TYPE_STRING,   0},	\
+      {GNB_CONFIG_STRING_GNB_IPV4_ADDRESS_FOR_S1U,             NULL,    0,           strptr:&gnb_ipv4_address_for_S1U, defstrval:"127.0.0.1",TYPE_STRING,   0}, \
+      {GNB_CONFIG_STRING_GNB_PORT_FOR_S1U,                     NULL,    0,           uptr:&gnb_port_for_S1U,           defintval:2152L,       TYPE_UINT,     0}	\
+  }
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 

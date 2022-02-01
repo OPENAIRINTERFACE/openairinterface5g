@@ -108,6 +108,14 @@ class EPCManagement():
 			logging.debug('Using the ltebox simulated HSS')
 			mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
+			result = re.search('hss_sim s6as diam_hss', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('echo ' + self.Password + ' | sudo -S killall hss_sim', '\$', 5)
+			mySSH.command('ps aux | grep --colour=never xGw | grep -v grep', '\$', 5, silent=True)
+			result = re.search('root.*xGw', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('cd /opt/ltebox/tools', '\$', 5)
+				mySSH.command('echo ' + self.Password + ' | sudo -S ./stop_ltebox', '\$', 5)
 			mySSH.command('cd /opt/hss_sim0609', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S rm -f hss.log', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S echo "Starting sudo session" && sudo su -c "screen -dm -S simulated_hss ./starthss"', '\$', 5)
@@ -125,7 +133,7 @@ class EPCManagement():
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 MME in Docker')
-			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup tshark -i eth0 -i lo:s10 -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup tshark -i eth0 -i lo:s10 -f "not port 2152" -w /tmp/mme_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
 			time.sleep(5)
 			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-mme /bin/bash -c "nohup ./bin/oai_mme -c ./etc/' + self.mmeConfFile + ' > mme_check_run.log 2>&1"', '\$', 5)
 		elif re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
@@ -190,8 +198,8 @@ class EPCManagement():
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		if re.match('OAI-Rel14-Docker', self.Type, re.IGNORECASE):
 			logging.debug('Using the OAI EPC Release 14 SPGW-CUPS in Docker')
-			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "nohup tshark -i eth0 -i lo:p5c -i lo:s5c -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
-			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "nohup tshark -i eth0 -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "nohup tshark -i eth0 -i lo:p5c -i lo:s5c -f "not port 2152" -w /tmp/spgwc_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
+			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwu-tiny /bin/bash -c "nohup tshark -i eth0 -f "not port 2152" -w /tmp/spgwu_check_run.pcap 2>&1 > /dev/null"', '\$', 5)
 			time.sleep(5)
 			mySSH.command('docker exec -d ' + self.containerPrefix + '-oai-spgwc /bin/bash -c "nohup ./bin/oai_spgwc -o -c ./etc/spgw_c.conf > spgwc_check_run.log 2>&1"', '\$', 5)
 			time.sleep(5)
@@ -420,6 +428,11 @@ class EPCManagement():
 			mySSH.command('cd scripts', '\$', 5)
 			time.sleep(1)
 			mySSH.command('echo ' + self.Password + ' | sudo -S screen -S simulated_hss -X quit', '\$', 5)
+			time.sleep(5)
+			mySSH.command('ps aux | grep --colour=never hss_sim | grep -v grep', '\$', 5, silent=True)
+			result = re.search('hss_sim s6as diam_hss', mySSH.getBefore())
+			if result is not None:
+				mySSH.command('echo ' + self.Password + ' | sudo -S killall hss_sim', '\$', 5)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
@@ -446,6 +459,7 @@ class EPCManagement():
 		elif re.match('ltebox', self.Type, re.IGNORECASE):
 			mySSH.command('cd /opt/ltebox/tools', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S ./stop_mme', '\$', 5)
+			time.sleep(5)
 		else:
 			logging.error('This should not happen!')
 		mySSH.close()
@@ -518,6 +532,7 @@ class EPCManagement():
 			logging.debug('Terminating OAI CN5G')
 			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
 			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 60)
+			mySSH.command('docker volume prune --force || true', '\$', 60)
 			time.sleep(2)
 			mySSH.command('tshark -r /tmp/oai-cn5g.pcap | egrep --colour=never "Tracking area update" ','\$', 30)
 			result = re.search('Tracking area update request', mySSH.getBefore())
@@ -746,6 +761,7 @@ class EPCManagement():
 			nbContainers += 1
 
 		mySSH.command('docker-compose down', '\$', 60)
+		mySSH.command('docker volume prune --force || true', '\$', 60)
 		mySSH.command('docker inspect --format=\'{{.State.Health.Status}}\' ' + listOfContainers, '\$', 10)
 		noMoreContainerNb = mySSH.getBefore().count('No such object')
 		mySSH.command('docker inspect --format=\'{{.Name}}\' prod-oai-public-net prod-oai-private-net', '\$', 10)
@@ -759,7 +775,7 @@ class EPCManagement():
 			HTML.CreateHtmlTestRowQueue(self.Type, 'OK', 1, html_queue)
 		else:
 			logging.debug('Undeployment went wrong')
-			HTML.CreateHtmlTestRowQueu(self.Type, 'KO', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue(self.Type, 'KO', 1, html_queue)
 
 	def LogCollectHSS(self):
 		mySSH = SSH.SSHConnection()

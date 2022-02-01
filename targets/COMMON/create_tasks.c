@@ -59,7 +59,7 @@ int create_tasks(uint32_t enb_nb) {
   rc = itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL);
   AssertFatal(rc >= 0, "Create task for RRC eNB failed\n");
 
-  if (EPC_MODE_ENABLED && ! ( split73==SPLIT73_DU ) ) {
+  if (get_softmodem_params()->emulate_l1 || (EPC_MODE_ENABLED && split73 != SPLIT73_DU)) {
     rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for SCTP failed\n");
   }
@@ -73,12 +73,13 @@ int create_tasks(uint32_t enb_nb) {
     }
     rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
-    if (is_x2ap_enabled()) {
+  }
+
+  if (is_x2ap_enabled()) {
       rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
       AssertFatal(rc >= 0, "Create task for X2AP failed\n");
-    } else {
+  } else {
       LOG_I(X2AP, "X2AP is disabled.\n");
-    }
   }
 
   if (NODE_IS_CU(type)) {
@@ -89,6 +90,9 @@ int create_tasks(uint32_t enb_nb) {
   if (NODE_IS_DU(type)) {
     rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
     AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
+    // DU is now GTP-U instead of protobuf
+    rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
+    AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
   }
 
   if (!NODE_IS_CU(type)) {

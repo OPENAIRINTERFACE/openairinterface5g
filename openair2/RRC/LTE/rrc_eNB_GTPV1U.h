@@ -57,7 +57,7 @@ rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
  */
 void rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(
   module_id_t enb_mod_idP,
-  const rrc_eNB_ue_context_t* const ue_context_pP
+  rrc_eNB_ue_context_t* ue_context_pP
 );
 
 boolean_t

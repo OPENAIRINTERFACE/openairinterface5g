@@ -306,6 +306,8 @@ int get_spf(nfapi_nr_config_request_scf_t *cfg);
 
 int to_absslot(nfapi_nr_config_request_scf_t *cfg,int frame,int slot);
 
+int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH n);
+
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,
                    uint8_t numdmrscdmgroupnodata,
@@ -409,6 +411,9 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                const uint8_t ul_cqi,
                const uint16_t rssi);
 
+void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
+                         const NR_PDSCH_ServingCellConfig_t *pdsch);
+
 void handle_nr_ul_harq(const int CC_idP,
                        module_id_t mod_id,
                        frame_t frame,
@@ -442,5 +447,5 @@ bool nr_find_nb_rb(uint16_t Qm,
 
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
 
-void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen);
+void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp);
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

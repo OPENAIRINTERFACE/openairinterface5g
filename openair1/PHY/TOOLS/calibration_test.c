@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
   get_common_options(SOFTMODEM_GNB_BIT );
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
-  configure_linux();
+  set_latency_target();
 
     
   int N_RB=50;

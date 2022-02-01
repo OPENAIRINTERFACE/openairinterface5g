@@ -272,6 +272,7 @@ bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
                                frame_t frame,
                                sub_frame_t slot){
+  //pthread_mutex_lock(&mutextest);
 
   protocol_ctxt_t   ctxt={0};
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
@@ -347,7 +348,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   if ((slot == 0) && (frame & 127) == 0) {
      stats_output[0]='\0';
-     dump_mac_stats(RC.nrmac[module_idP],stats_output,16384);
+     dump_mac_stats(RC.nrmac[module_idP],stats_output,16384,true);
      LOG_I(NR_MAC,"Frame.Slot %d.%d\n%s\n",frame,slot,stats_output);
   }
 
@@ -373,7 +374,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, f, s);
   }
 
-    // This schedule SR
+  // This schedule SR
   nr_sr_reporting(module_idP, frame, slot);
 
   // Schedule CSI-RS transmission

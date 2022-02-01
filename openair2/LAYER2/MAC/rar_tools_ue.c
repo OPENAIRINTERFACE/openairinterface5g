@@ -67,6 +67,7 @@ uint16_t ue_process_rar(const module_id_t module_idP, const int CC_id, const fra
       LOG_D(PHY, "Found RAR with the intended RAPID %d\n",
             rarh->RAPID);
       rar = (uint8_t *) (dlsch_buffer + n_rarh + (n_rarpy - 1) * 6);
+      UE_mac_inst[module_idP].UE_mode[0] = RA_RESPONSE;
       break;
     }
 
@@ -77,9 +78,10 @@ uint16_t ue_process_rar(const module_id_t module_idP, const int CC_id, const fra
     }
 
     if (rarh->E == 0) {
-      LOG_I(PHY,
+      LOG_I(MAC,
             "No RAR found with the intended RAPID. The closest RAPID in all RARs is %d\n",
             best_rx_rapid);
+      UE_mac_inst[module_idP].UE_mode[0] = PRACH;
       break;
     } else {
       rarh++;
@@ -94,7 +96,7 @@ uint16_t ue_process_rar(const module_id_t module_idP, const int CC_id, const fra
     return (0xffff);
   }
 
-  LOG_I(MAC,
+  LOG_A(MAC,
         "[UE %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",
         module_idP, frameP, *(uint8_t *) rarh, rar[0], rar[1], rar[2],
         rar[3], rar[4], rar[5], rarh->RAPID, preamble_index);
@@ -130,7 +132,7 @@ uint16_t ue_process_rar(const module_id_t module_idP, const int CC_id, const fra
   }
 
   // move the selected RAR to the front of the RA_PDSCH buffer
-  memcpy(selected_rar_buffer + 0, (uint8_t *) rarh, 1);
-  memcpy(selected_rar_buffer + 1, (uint8_t *) rar, 6);
+  memmove(selected_rar_buffer + 0, (uint8_t *) rarh, 1);
+  memmove(selected_rar_buffer + 1, (uint8_t *) rar, 6);
   return ret;
 }

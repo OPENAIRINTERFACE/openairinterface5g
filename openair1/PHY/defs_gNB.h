@@ -96,20 +96,6 @@ typedef struct {
   uint32_t subframe;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// Concatenated sequences
-  uint8_t *e;
-  /// LDPC-code outputs
-  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
-  /// Interleaver outputs
-  uint8_t *f;
-  /// Number of code segments
-  uint32_t C;
-  /// Number of bits in "small" code segments
-  uint32_t K;
-  /// Number of "Filler" bits
-  uint32_t F;
-  /// Encoder BG
-  uint8_t BG;
   /// LDPC lifting size
   uint32_t Z;
 } NR_DL_gNB_HARQ_t;
@@ -608,6 +594,8 @@ typedef struct gNB_L1_proc_t_s {
   pthread_t L1_stats_thread;
   /// pthread structure for printing time meas
   pthread_t process_stats_thread;
+  /// pthread structure for reordering L1 tx thread messages
+  pthread_t pthread_tx_reorder;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// flag to indicate first TX transmission
@@ -858,8 +846,7 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t *phy_proc_tx_0;
-  time_stats_t *phy_proc_tx_1;
+  time_stats_t *phy_proc_tx[2];
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*
@@ -868,6 +855,9 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;
+  time_stats_t dlsch_resource_mapping_stats;
+  time_stats_t dlsch_layer_mapping_stats;
+  time_stats_t dlsch_precoding_stats;
   time_stats_t tinput;
   time_stats_t tprep;
   time_stats_t tparity;
@@ -897,7 +887,9 @@ typedef struct PHY_VARS_gNB_s {
   */
   notifiedFIFO_t *respDecode;
   notifiedFIFO_t *resp_L1;
-  notifiedFIFO_t *resp_L1_tx;
+  notifiedFIFO_t *L1_tx_free;
+  notifiedFIFO_t *L1_tx_filled;
+  notifiedFIFO_t *L1_tx_out;
   notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;

@@ -662,14 +662,19 @@ int main(int argc, char **argv)
           if (uci_pdu.sr->sr_indication == 0 || uci_pdu.sr->sr_confidence_level == 1)
             sr_errors+=1;
         }
+        // harq value 0 -> pass
+        // confidence value 0 -> good confidence
+        const int harq_value0 = uci_pdu.harq->harq_list[0].harq_value;
+        const int harq_value1 = uci_pdu.harq->harq_list[1].harq_value;
+        const int confidence_lvl = uci_pdu.harq->harq_confidence_level;
         if(nr_bit>0){
           if (nr_bit==1 && do_DTX == 0)
-            ack_nack_errors+=(actual_payload^uci_pdu.harq->harq_list[0].harq_value);
+            ack_nack_errors+=(actual_payload^(!harq_value0));
           else if (do_DTX == 0)
-            ack_nack_errors+=(((actual_payload&1)^uci_pdu.harq->harq_list[0].harq_value)+((actual_payload>>1)^uci_pdu.harq->harq_list[1].harq_value));
-          else if ((uci_pdu.harq->harq_confidence_level == 0 && uci_pdu.harq->harq_list[0].harq_value == 1) ||
-                         (uci_pdu.harq->harq_confidence_level == 0 && nr_bit == 2 && uci_pdu.harq->harq_list[1].harq_value==1))
-                  ack_nack_errors++;
+            ack_nack_errors+=(((actual_payload&1)^(!harq_value0))+((actual_payload>>1)^(!harq_value1)));
+          else if ((!confidence_lvl && !harq_value0) ||
+                   (!confidence_lvl && nr_bit == 2 && !harq_value1))
+            ack_nack_errors++;
           free(uci_pdu.harq->harq_list);
         }
       }
