@@ -92,6 +92,7 @@ class RANManagement():
 		self.epcPcapFile = ''
 		self.runtime_stats= ''
 		self.datalog_rt_stats={}
+		self.datalog_rt_stats_file='datalog_rt_stats.default.yaml'
 		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
 		self.eNB_Stats = '' #if 'yes', Statistics Monitor will be launched at initialization		
 		self.USRPIPAddress = ''
@@ -722,6 +723,9 @@ class RANManagement():
 				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze, HTML)
 				if (logStatus < 0):
 					HTML.CreateHtmlTestRow('N/A', 'KO', logStatus)
+					#display rt stats for gNB only
+					if len(self.datalog_rt_stats)!=0 and nodeB_prefix == 'g':
+						HTML.CreateHtmlDataLogTable(self.datalog_rt_stats)
 					self.prematureExit = True
 					self.eNBmbmsEnables[int(self.eNB_instance)] = False
 					return
@@ -810,6 +814,7 @@ class RANManagement():
 		#NSA specific log markers
 		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
 		nodeB_prefix_found = False
+		RealTimeProcessingIssue = False
 	
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
@@ -1011,7 +1016,7 @@ class RANManagement():
 		#the following part takes the *_stats.log files as source (not the stdout log file)
 
 		#the datalog config file has to be loaded
-		datalog_rt_stats_file='datalog_rt_stats.yaml'
+		datalog_rt_stats_file=self.datalog_rt_stats_file
 		if (os.path.isfile(datalog_rt_stats_file)):
 			yaml_file=datalog_rt_stats_file
 		elif (os.path.isfile('ci-scripts/'+datalog_rt_stats_file)):
@@ -1127,8 +1132,7 @@ class RANManagement():
 				#check if there is a fail => will render the test as failed
 				for k in datalog_rt_stats['Data']:
 					if float(datalog_rt_stats['Data'][k][2])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
-						#setting prematureExit is ok although not the best option
-						self.prematureExit=False #temp for debug : do not stop the test if RT stats are excedeed
+						RealTimeProcessingIssue = True
 			else:
 				statMsg = 'No real time stats found in the log file\n'
 				logging.debug('No real time stats found in the log file')
@@ -1162,7 +1166,10 @@ class RANManagement():
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg			
 
-
+		if RealTimeProcessingIssue:
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with real time processing issue! \u001B[0m')
+			htmleNBFailureMsg += 'Fail due to real time processing issue\n'
+			global_status = CONST.ENB_REAL_TIME_PROCESSING_ISSUE
 		if uciStatMsgCount > 0:
 			statMsg = nodeB_prefix + 'NB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')

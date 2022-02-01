@@ -529,28 +529,6 @@ pipeline {
                         }
                     }
                 }
-                stage ("Test IF4p5 - TDD - Band 38 - B210 - MultiRRU") {
-                    when {
-                        expression {doFullTestsuite}
-                    }
-                    steps {
-                        script {
-                            triggerSlaveJob ('eNB-CI-IF4p5-TDD-Band38-MultiRRU-B210', 'Test-IF4p5-TDD-Band38-Multi-RRU')
-                        }
-                    }
-                    post {
-                        always {
-                            script {
-                                finalizeSlaveJob('eNB-CI-IF4p5-TDD-Band38-MultiRRU-B210')
-                            }
-                        }
-                        failure {
-                            script {
-                                currentBuild.result = 'FAILURE'
-                            }
-                        }
-                    }
-                }
                 stage ("Test OAI UE - FDD - Band 20 - B200") {
                     when {
                         expression {doFullTestsuite}
