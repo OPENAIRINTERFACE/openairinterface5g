@@ -86,8 +86,8 @@ mapping log_options[] = {
 
 mapping log_maskmap[] = LOG_MASKMAP_INIT;
 
-char *log_level_highlight_start[] = {LOG_RED, LOG_ORANGE, "", LOG_BLUE, LOG_CYBL};  /*!< \brief Optional start-format strings for highlighting */
-char *log_level_highlight_end[]   = {LOG_RESET,LOG_RESET,LOG_RESET, LOG_RESET,LOG_RESET};   /*!< \brief Optional end-format strings for highlighting */
+char *log_level_highlight_start[] = {LOG_RED, LOG_ORANGE, LOG_GREEN, "", LOG_BLUE, LOG_CYBL};  /*!< \brief Optional start-format strings for highlighting */
+char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET};   /*!< \brief Optional end-format strings for highlighting */
 static void log_output_memory(log_component_t *c, const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
 
 
