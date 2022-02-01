@@ -580,14 +580,14 @@ bool allocate_dl_retransmission(module_id_t module_id,
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
+    NR_pdsch_semi_static_t temp_ps = *ps;
+    nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd,tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
     while (rbStart < bwpSize &&
            !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbStart++;
     while (rbStart + rbSize < bwpSize &&
            (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbSize++;
-    NR_pdsch_semi_static_t temp_ps = *ps;
-    nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd,tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,

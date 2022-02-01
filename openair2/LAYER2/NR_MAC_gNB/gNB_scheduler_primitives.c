@@ -2137,7 +2137,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     UE_info->CellGroup[UE_id] = CellGroup;
     add_nr_list(&UE_info->list, UE_id);
     memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
-    set_Y(UE_info->Y[UE_id], rntiP);
     if (CellGroup && 
         CellGroup->spCellConfig && 
         CellGroup->spCellConfig->spCellConfigDedicated &&
