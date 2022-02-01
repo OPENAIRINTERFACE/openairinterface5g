@@ -1081,7 +1081,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 }
 
 //-----------------------------------------------------------------------------
-int
+void
 rrc_gNB_modify_dedicatedRRCReconfiguration(
   const protocol_ctxt_t     *const ctxt_pP,
   rrc_gNB_ue_context_t      *ue_context_pP)
@@ -1258,8 +1258,6 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
-
-  return 0;
 }
 
 //-----------------------------------------------------------------------------

@@ -122,7 +122,7 @@ rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
   uint8_t                   xid
 );
 
-int
+void
 rrc_gNB_modify_dedicatedRRCReconfiguration(
   const protocol_ctxt_t     *const ctxt_pP,
   rrc_gNB_ue_context_t      *ue_context_pP

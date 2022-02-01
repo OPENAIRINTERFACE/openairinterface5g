@@ -1156,7 +1156,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
           continue;
         }
         
-        //Check same PDU session ID to handle multiple pdu session id
+        //Check if same PDU session ID to handle multiple pdu sessions
         for (j = i+1; j < nb_pdusessions_tomodify; j++) {
           if (is_treated[j] == FALSE &&
               NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[j].pdusession_id == 
@@ -1240,9 +1240,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
 
     if (ue_context_p->ue_context.nb_of_failed_pdusessions < ue_context_p->ue_context.nb_of_modify_pdusessions) {
       LOG_D(NR_RRC, "generate RRCReconfiguration \n");
-      if (0 == rrc_gNB_modify_dedicatedRRCReconfiguration(&ctxt, ue_context_p)) {
-        return (0);
-      }
+      rrc_gNB_modify_dedicatedRRCReconfiguration(&ctxt, ue_context_p);
     } else { // all pdu modification failed
       LOG_I(NR_RRC, "pdu session modify failed, fill NGAP_PDUSESSION_MODIFY_RESP with the pdu session information that failed to modify \n");
       uint8_t nb_of_pdu_sessions_failed = 0;
@@ -1354,7 +1352,7 @@ rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
         pdu_sessions_failed++;
       }
     } else {
-      LOG_D(NR_RRC,"xid does not corresponds  (context pdu session index %d, status %d, xid %d/%d) \n ",
+      LOG_D(NR_RRC,"xid does not correspond (context pdu session index %d, status %d, xid %d/%d) \n ",
             i, ue_context_pP->ue_context.modify_pdusession[i].status, xid, ue_context_pP->ue_context.modify_pdusession[i].xid);
     }
   }
