@@ -1096,7 +1096,6 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
   uint8_t                        buffer[RRC_BUF_SIZE];
   uint16_t                       size;
   int                            qos_flow_index = 0;
-  NR_QFI_t                       qfi = 0;
   int i, j;
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
@@ -1199,8 +1198,8 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
-  memset(buffer, 0, RRC_BUF_SIZE);
-  size = do_RRCReconfiguration(ctxt_pP, buffer,
+  memset(buffer, 0, sizeof(buffer));
+  size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
                                 NULL,
                                 DRB_configList2,
