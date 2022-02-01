@@ -529,6 +529,8 @@ static inline int log_header(log_component_t *c,
     snprintf(l, sizeof l, "(%s:%d) ", func, line);
   else if (flag & FLAG_FILE_LINE)
     snprintf(l, sizeof l, "(%d) ", line);
+  else if (flag & FLAG_FUNCT)
+    snprintf(l, sizeof l, "(%s) ", func);
   else
     l[0] = 0;
 
@@ -551,8 +553,8 @@ static inline int log_header(log_component_t *c,
     threadIdString[0] = 0;
   }
   return snprintf(log_buffer, buffsize, "%s%s%s[%s] %c %s%s",
-		   timeString,
 		   flag & FLAG_NOCOLOR ? "" : log_level_highlight_start[level],
+		   timeString,
 		   threadIdString,
 		   c->name,
 		   flag & FLAG_LEVEL ? g_log->level2string[level] : ' ',
