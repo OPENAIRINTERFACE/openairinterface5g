@@ -329,7 +329,7 @@ void nr_processDLSegment(void* arg) {
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
 
-  uint8_t  Ilbrm    = 0;
+  uint8_t Ilbrm = 1;
 
   Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
@@ -394,7 +394,7 @@ void nr_processDLSegment(void* arg) {
     r_offset += E;
 
     if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD)) {
-      LOG_I(PHY,"decoder input(segment %u) :",r);
+      LOG_D(PHY,"decoder input(segment %u) :",r);
 
       for (int i=0; i<E; i++)
         LOG_D(PHY,"%d : %d\n",i,harq_process->d[r][i]);
@@ -502,6 +502,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   // HARQ stats
   phy_vars_ue->dl_stats[harq_process->round]++;
+  LOG_D(PHY,"Round %d RV idx %d\n",harq_process->round,harq_process->rvidx);
   uint8_t kc;
   uint32_t Tbslbrm;// = 950984;
   uint16_t nb_rb;// = 30;
