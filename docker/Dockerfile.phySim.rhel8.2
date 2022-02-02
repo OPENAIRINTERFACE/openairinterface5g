@@ -85,10 +85,10 @@ COPY --from=phy-sim-build \
     /lib64/liblapack.so.3 \
     /lib64/libexslt.so.0 \
     /lib64/libxslt.so.1 \
-    /oai-ran/cmake_targets/phy_simulators/build/libdfts.so \
-    /oai-ran/cmake_targets/phy_simulators/build/libSIMU.so \
-    /oai-ran/cmake_targets/phy_simulators/build/libldpc.so \
-    /oai-ran/cmake_targets/phy_simulators/build/libldpc_orig.so \
+    /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+    /oai-ran/cmake_targets/ran_build/build/libSIMU.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
     /usr/local/lib/
 
 RUN ldconfig
