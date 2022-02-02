@@ -37,6 +37,8 @@
  070003
  070002
  000001
+ 070002
+ 000001
  050000
  050001
  010002
@@ -155,6 +157,14 @@
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
+	<testCase id="070002">
+		<class>Iperf</class>
+		<desc>iperf (BIDIR TCP)(10 sec)(single-ue profile)</desc>
+		<iperf_args>-t 10 --bidir</iperf_args>
+		<direction>BIDIR</direction>
+		<id>idefix</id>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
 
 	<testCase id="080000">
 		<class>Terminate_eNB</class>

@@ -1104,7 +1104,7 @@ int main(int argc, char **argv)
         else
           phy_procedures_gNB_TX(msgDataTx,frame,slot,1);
             
-        int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
+        int txdataF_offset = slot * frame_parms->samples_per_slot_wCP;
         
         if (n_trials==1) {
           LOG_M("txsigF0.m","txsF0=", &gNB->common_vars.txdataF[0][txdataF_offset+2*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
