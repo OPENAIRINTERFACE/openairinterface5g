@@ -2536,8 +2536,8 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
-		     nr_rnti_type_t rnti_type,
-		     uint16_t N_RB,
+                     nr_rnti_type_t rnti_type,
+                     uint16_t N_RB,
                      int bwp_id) {
 
   uint16_t size = 0;
@@ -2568,15 +2568,17 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
     srs_config = (ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup : NULL;
   }
   else if (cg){
-    bwpd=cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
-    bwpc=initialDownlinkBWP;
-    ubwpd=cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP; 
-    ubwpc=initialUplinkBWP;
-    pdsch_Config = (bwpd->pdsch_Config) ? bwpd->pdsch_Config->choice.setup : NULL;
-    pdcch_Config = (bwpd->pdcch_Config) ? bwpd->pdcch_Config->choice.setup : NULL;
-    pucch_Config = (ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
-    pusch_Config = (ubwpd->pusch_Config) ? ubwpd->pusch_Config->choice.setup :  NULL;
-    srs_config = (ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup: NULL;
+    bwpc = initialDownlinkBWP;
+    ubwpc = initialUplinkBWP;
+    bwpd = cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated ?
+           cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
+    ubwpd = cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated && cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+            cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+    pdsch_Config = (bwpd && bwpd->pdsch_Config) ? bwpd->pdsch_Config->choice.setup : NULL;
+    pdcch_Config = (bwpd && bwpd->pdcch_Config) ? bwpd->pdcch_Config->choice.setup : NULL;
+    pucch_Config = (ubwpd && ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
+    pusch_Config = (ubwpd && ubwpd->pusch_Config) ? ubwpd->pusch_Config->choice.setup :  NULL;
+    srs_config = (ubwpd && ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup: NULL;
   }
 
   int n_ul_bwp=1,n_dl_bwp=1;

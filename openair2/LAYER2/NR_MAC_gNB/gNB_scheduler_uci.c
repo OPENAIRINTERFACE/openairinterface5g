@@ -75,11 +75,13 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   NR_CellGroupConfig_t *cg=UE_info->CellGroup[UE_id];
 
-  NR_BWP_UplinkDedicated_t *ubwpd;
-  ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
+  NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
   LOG_D(NR_MAC,"pucch_acknak: %d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch in %d.%d\n",frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
-  nr_configure_pucch(pucch_pdu,
+  nr_configure_pucch(mod_id,
+                     pucch_pdu,
                      scc,
                      UE_info->CellGroup[UE_id],
                      UE_info->UE_sched_ctrl[UE_id].active_ubwp,
@@ -521,9 +523,16 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
 
-      NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
-        &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
-        &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+      NR_BWP_t *genericParameters = NULL;
+      if(sched_ctrl->active_ubwp) {
+        genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
+      } else if(scc) {
+        genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+      } else {
+        NR_SIB1_t *sib1 = RC.nrmac[Mod_idP]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+        genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+      }
+
       int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 
       // going through the list of PUCCH resources to find the one indexed by resource_id
@@ -1411,9 +1420,16 @@ int nr_acknack_scheduling(int mod_id,
     pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
 
-  NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
-    &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
-    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  NR_BWP_t *genericParameters = NULL;
+  if(sched_ctrl->active_ubwp) {
+    genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
+  } else if(scc) {
+    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  } else {
+    NR_SIB1_t *sib1 = RC.nrmac[mod_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+  }
+
   int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 
   /* verify that at that slot and symbol, resources are free. We only do this

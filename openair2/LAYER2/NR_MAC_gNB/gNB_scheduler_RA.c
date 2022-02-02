@@ -827,7 +827,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
 
-    config_uldci(ubwp,
+    config_uldci(module_idP,
+                 ubwp,
                  ubwpd,
                  scc,
                  pusch_pdu,

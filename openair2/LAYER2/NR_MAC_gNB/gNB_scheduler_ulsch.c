@@ -55,9 +55,21 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   /* there is a mixed slot only when in TDD */
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
-  const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-  const NR_TDD_UL_DL_Pattern_t *tdd =
-      scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  NR_ServingCellConfigCommonSIB_t *scc_sib1 = get_softmodem_params()->sa ?
+      RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1->servingCellConfigCommon : NULL;
+
+  AssertFatal(scc!=NULL || scc_sib1!=NULL,"We need one serving cell config common\n");
+
+  const int mu = scc ? scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing :
+                 scc_sib1->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
+
+  NR_TDD_UL_DL_Pattern_t *tdd = NULL;
+  if (scc && scc->tdd_UL_DL_ConfigurationCommon) {
+    tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
+  } else if (scc_sib1 && scc_sib1->tdd_UL_DL_ConfigurationCommon) {
+    tdd = &scc_sib1->tdd_UL_DL_ConfigurationCommon->pattern1;
+  }
+
   /* Uplink symbols are at the end of the slot */
   const int symb_ulMixed = tdd ? ((1 << tdd->nrofUplinkSymbols) - 1) << (14 - tdd->nrofUplinkSymbols) : 0;
 
@@ -101,7 +113,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   /* check that TDA index 1 fits into UL slot and does not overlap with PUCCH */
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_UL = tdaList->list.array[0];
-  const int k2 = get_K2(scc, (NR_BWP_Uplink_t*)ubwp,0, mu);
+  const int k2 = get_K2(scc, scc_sib1, (NR_BWP_Uplink_t*)ubwp,0, mu);
   int start, len;
   SLIV2SL(tdaP_UL->startSymbolAndLength, &start, &len);
   const uint16_t symb_tda = ((1 << len) - 1) << start;
@@ -114,10 +126,10 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   int tdaMi = -1;
   if(tdaList->list.count > 1) {
     const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
-    AssertFatal(k2 == get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu),
+    AssertFatal(k2 == get_K2(scc, scc_sib1, (NR_BWP_Uplink_t*)ubwp, 1, mu),
                 "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
                 k2,
-                get_K2(scc, (NR_BWP_Uplink_t*)ubwp, 1, mu));
+                get_K2(scc, scc_sib1, (NR_BWP_Uplink_t*)ubwp, 1, mu));
     SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
     const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
     // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
@@ -135,7 +147,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
     }
   }
   const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
-  const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const int n = slots_per_frame[mu];
   nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
 
   const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
@@ -879,11 +891,21 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   }
 }
 
-long get_K2(NR_ServingCellConfigCommon_t *scc,NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu) {
-  DevAssert(scc);
-  const NR_PUSCH_TimeDomainResourceAllocation_t *tda_list = ubwp ?
-    ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment]:
-    scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
+long get_K2(NR_ServingCellConfigCommon_t *scc,
+            NR_ServingCellConfigCommonSIB_t *scc_sib1,
+            NR_BWP_Uplink_t *ubwp,
+            int time_domain_assignment,
+            int mu) {
+
+  NR_PUSCH_TimeDomainResourceAllocation_t *tda_list = NULL;
+  if(ubwp) {
+    tda_list = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
+  } else if(scc) {
+    tda_list = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
+  } else if(scc_sib1) {
+    tda_list = scc_sib1->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
+  }
+
   if (tda_list->k2)
     return *tda_list->k2;
   else if (mu < 2)
@@ -943,8 +965,21 @@ bool allocate_ul_retransmission(module_id_t module_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
   NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-  NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
-  NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+
+  NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+
+  NR_BWP_t *genericParameters = NULL;
+  if (sched_ctrl->active_ubwp) {
+    genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
+  } else if (scc) {
+    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  } else {
+    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+  }
+
   int rbStart = 0; // wrt BWP start
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
@@ -969,7 +1004,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(module_id, scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -981,7 +1016,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
       rbSize++;
     NR_pusch_semi_static_t temp_ps;
     int dci_format = get_dci_format(sched_ctrl);
-    nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp,ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    nr_set_pusch_semi_static(module_id, scc, sched_ctrl->active_ubwp,ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -1080,10 +1115,22 @@ void pf_ul(module_id_t module_id,
 
     LOG_D(NR_MAC,"pf_ul: preparing UL scheduling for UE %d\n",UE_id);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+
+    NR_BWP_t *genericParameters = NULL;
+    if (sched_ctrl->active_ubwp) {
+      genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
+    } else if (scc) {
+      genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    } else {
+      NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+      genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+    }
+
     int rbStart = 0; // wrt BWP start
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-    NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+    NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
@@ -1154,7 +1201,7 @@ void pf_ul(module_id_t module_id,
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-        nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+        nr_set_pusch_semi_static(module_id, scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = 9;
       update_ul_ue_R_Qm(sched_pusch, ps);
@@ -1223,8 +1270,20 @@ void pf_ul(module_id_t module_id,
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-    NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
-    NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters : &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated
+                                      && cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+
+    NR_BWP_t *genericParameters = NULL;
+    if (sched_ctrl->active_ubwp) {
+      genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
+    } else if (scc) {
+      genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    } else {
+      NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+      genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+    }
+
     int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
@@ -1253,7 +1312,7 @@ void pf_ul(module_id_t module_id,
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(module_id, scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
     update_ul_ue_R_Qm(sched_pusch, ps);
 
     /* Calculate the current scheduling bytes and the necessary RBs */
@@ -1285,7 +1344,14 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+  NR_ServingCellConfigCommonSIB_t *scc_sib1 = get_softmodem_params()->sa ?
+                                              RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1->servingCellConfigCommon : NULL;
+
+  AssertFatal(scc!=NULL || scc_sib1!=NULL,"We need one serving cell config common\n");
+
+  const int mu = scc ? scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing :
+                 scc_sib1->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
+
   NR_UE_info_t *UE_info = &nr_mac->UE_info;
 
   if (UE_info->num_UEs == 0)
@@ -1302,7 +1368,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int tda = sched_ctrl->active_ubwp ? nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   if (tda < 0)
     return false;
-  int K2 = get_K2(scc, sched_ctrl->active_ubwp, tda, mu);
+  int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
 
@@ -1320,8 +1386,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   sched_ctrl->sched_pusch.frame = sched_frame;
   for (UE_id = UE_info->list.next[UE_id]; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    AssertFatal(K2 == get_K2(scc,sched_ctrl->active_ubwp, tda, mu),
-                "Different K2, %d(UE%d) != %ld(UE%d)\n", K2, 0, get_K2(scc,sched_ctrl->active_ubwp, tda, mu), UE_id);
+    AssertFatal(K2 == get_K2(scc,scc_sib1,sched_ctrl->active_ubwp, tda, mu),
+                "Different K2, %d(UE%d) != %ld(UE%d)\n", K2, 0, get_K2(scc,scc_sib1,sched_ctrl->active_ubwp, tda, mu), UE_id);
     sched_ctrl->sched_pusch.slot = sched_slot;
     sched_ctrl->sched_pusch.frame = sched_frame;
   }
@@ -1331,17 +1397,30 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * Calculate largest contiguous RBs */
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_ubwp ?
-                                    sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth:
-                                    scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,
-                                    MAX_BWP_SIZE);
-  const uint16_t bwpStart = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp ?
-                                            sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth:
-                                            scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,
-                                            MAX_BWP_SIZE);
-  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_ubwp ?
-    sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
-    scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+
+  NR_BWP_t *genericParameters = NULL;
+  if (sched_ctrl->active_ubwp) {
+    genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
+  } else if (scc) {
+    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  } else {
+    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+  }
+
+  const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  const uint16_t bwpStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+
+  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = NULL;
+  if (sched_ctrl->active_ubwp) {
+    tdaList = sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  } else if (scc) {
+    tdaList = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  } else {
+    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+    tdaList = sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  }
+
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
@@ -1443,7 +1522,11 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     if (sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) continue;
 
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-    NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
+
+    NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+
     UE_info->mac_stats[UE_id].ulsch_current_bytes = 0;
 
     /* dynamic PUSCH values (RB alloc, MCS, hence R, Qm, TBS) that change in
@@ -1564,7 +1647,16 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->handle = 0; //not yet used
 
     /* FAPI: BWP */
-    NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ? &sched_ctrl->active_ubwp->bwp_Common->genericParameters:&scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    NR_BWP_t *genericParameters = NULL;
+    if (sched_ctrl->active_ubwp) {
+      genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
+    } else if (scc) {
+      genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+    } else {
+      NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+      genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+    }
+
     pusch_pdu->bwp_size  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     pusch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     pusch_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
@@ -1706,10 +1798,16 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
     int n_ubwp=1;
-    if (cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
-        n_ubwp = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
+    if (cg &&
+        cg->spCellConfig &&
+        cg->spCellConfig->spCellConfigDedicated &&
+        cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+        cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList) {
+      n_ubwp = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
+    }
 
-    config_uldci(sched_ctrl->active_ubwp,
+    config_uldci(module_id,
+                 sched_ctrl->active_ubwp,
                  ubwpd,
                  scc,
                  pusch_pdu,

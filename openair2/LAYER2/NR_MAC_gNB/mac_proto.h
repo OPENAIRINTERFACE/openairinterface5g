@@ -176,7 +176,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234);
 
 
-void config_uldci(const NR_BWP_Uplink_t *ubwp,
+void config_uldci(module_id_t module_id,
+                  const NR_BWP_Uplink_t *ubwp,
                   const NR_BWP_UplinkDedicated_t *ubwpd,
                   const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
@@ -233,7 +234,8 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           nfapi_nr_config_request_scf_t cfg);
 */
 
-void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
+void nr_configure_pucch(module_id_t module_id,
+                        nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *CellGroup,
                         NR_BWP_Uplink_t *bwp,
@@ -279,13 +281,19 @@ NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
                                      NR_SearchSpace__searchSpaceType_PR ss_type);
 
 /* find a search space within a BWP */
-NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
+NR_SearchSpace_t *get_searchspace(module_id_t module_id,
+                                  NR_ServingCellConfigCommon_t *scc,
                                   NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                                   NR_SearchSpace__searchSpaceType_PR target_ss);
 
-long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
+long get_K2(NR_ServingCellConfigCommon_t *scc,
+            NR_ServingCellConfigCommonSIB_t *scc_sib1,
+            NR_BWP_Uplink_t *ubwp,
+            int time_domain_assignment,
+            int mu);
 
-void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+void nr_set_pdsch_semi_static(module_id_t module_id,
+                              const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
                               const NR_BWP_DownlinkDedicated_t *bwpd0,
@@ -293,9 +301,10 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               const long dci_format,
                               NR_pdsch_semi_static_t *ps);
 
-void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+void nr_set_pusch_semi_static(module_id_t module_id,
+                              const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
-			                        const NR_BWP_UplinkDedicated_t *ubwpd,
+                              const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,

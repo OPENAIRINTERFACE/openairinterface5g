@@ -641,7 +641,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
       }
-      sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
+      sched_ctrl->search_space = get_searchspace(Mod_idP, scc, bwpd, target_ss);
       sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
       sched_ctrl->maxL = 2;
     }
