@@ -1225,7 +1225,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType &&
                      sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
-                     NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+                     NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
 
     const int rnti_type = NR_RNTI_C;
 

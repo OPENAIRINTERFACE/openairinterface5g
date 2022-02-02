@@ -2205,7 +2205,12 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
     bwpd = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
     ubwpd = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
   }
-
+  else if (CellGroup && CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated) { // this is an initialBWP
+    AssertFatal((bwpd=CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)!=NULL,
+                "CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP is null\n");
+    AssertFatal((ubwpd=CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)!=NULL,
+                "CellGroup->spCellConfig->spCellConfigDedicated->uplnikConfig->initialUplinkBWP is null\n");
+  }
   NR_SearchSpace_t *ss=NULL;
 
   // common search type uses DCI format 1_0
