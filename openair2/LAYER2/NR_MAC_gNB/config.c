@@ -431,9 +431,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int sib1_tda,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
-	                   int add_ue,
+                           NR_BCCH_DL_SCH_Message_t *sib1,
+                           int add_ue,
                            uint32_t rnti,
-	                   NR_CellGroupConfig_t *CellGroup) {
+                           NR_CellGroupConfig_t *CellGroup) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -531,8 +532,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
   }
  
-  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib; 
- 
+  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib;
+  if (sib1) RC.nrmac[Mod_idP]->common_channels[0].sib1 = sib1;
+
   if (CellGroup) {
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;

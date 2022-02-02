@@ -2035,6 +2035,7 @@ void configure_gnb_du_mac(int inst) {
                         rrc->configuration.sib1_tda,
                         rrc->configuration.scc,
                         NULL,
+                        NULL,
                         0,
                         0, // rnti
                         (NR_CellGroupConfig_t *)NULL
