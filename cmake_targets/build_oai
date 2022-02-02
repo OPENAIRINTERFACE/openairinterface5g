@@ -57,7 +57,7 @@ BUILD_DOXYGEN=0
 BUILD_COVERITY_SCAN=0
 T_TRACER="True"
 DISABLE_HARDWARE_DEPENDENCY="False"
-CMAKE_BUILD_TYPE=""
+CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
 UE_AUTOTEST_TRACE="False"
 UE_DEBUG_TRACE="False"
@@ -585,15 +585,12 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
-  if [ "$SIMUS_PHY" = "1" -o "$SIMUS_CORE" = "1" ] ; then
-    build_dir=phy_simulators
-  else
-    if [ "$T_TRACER" =  "False" ] ; then
+  if [ "$T_TRACER" =  "False" ] ; then
       build_dir=ran_build_noLOG
-    else
+  else
       build_dir=ran_build  
-    fi
   fi
+
   [ "$CLEAN" = "1" ] && rm -rf $DIR/$build_dir/build
   mkdir -p $DIR/$build_dir/build
 
@@ -601,84 +598,81 @@ function main() {
   config_libconfig_shlib=params_libconfig
   
   # first generate the CMakefile in the right directory
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1" -o "$nrUE" = "1" -o "$HW" = "EXMIMO" -o "$ittiSIM" = "1" -o "$rfsimNas" = "1" ] ; then
+  # softmodem compilation
+  
+  cmake_file=$DIR/$build_dir/CMakeLists.txt
+  echo "cmake_minimum_required(VERSION 2.8)"                             >  $cmake_file
+  echo "project (OpenAirInterface)"                                    >> $cmake_file
+  echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
+  echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )"       >> $cmake_file
+  echo "set ( UE_EXPANSION $UE_EXPANSION )"                             >> $cmake_file
+  #    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"                            >> $cmake_file
+  echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"                           >> $cmake_file
+  echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"                            >> $cmake_file
+  echo "set ( RF_BOARD \"${HW}\")"                                      >> $cmake_file
+  echo "set ( TRANSP_PRO \"${TP}\")"                                    >> $cmake_file
+  echo "set ( PACKAGE_NAME \"${exec}\")"                                >> $cmake_file
+  echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )" >> $cmake_file
+  echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"             >> $cmake_file
+  echo "set ( T_TRACER $T_TRACER )"                                     >> $cmake_file
+  echo "set ( UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE )"                   >> $cmake_file
+  echo "set ( UE_DEBUG_TRACE $UE_DEBUG_TRACE )"                         >> $cmake_file
+  echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
+  echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
+  echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
+  echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
+  echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
+  echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
+  cd  $DIR/$build_dir/build
+  eval $CMAKE_CMD
 
-    # softmodem compilation
-
-    cmake_file=$DIR/$build_dir/CMakeLists.txt
-    echo "cmake_minimum_required(VERSION 2.8)"                             >  $cmake_file
-    echo "project (OpenAirInterface)"                                    >> $cmake_file
-    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
-    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )"       >> $cmake_file
-    echo "set ( UE_EXPANSION $UE_EXPANSION )"                             >> $cmake_file
-#    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"                            >> $cmake_file
-    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"                           >> $cmake_file
-    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"                            >> $cmake_file
-    echo "set ( RF_BOARD \"${HW}\")"                                      >> $cmake_file
-    echo "set ( TRANSP_PRO \"${TP}\")"                                    >> $cmake_file
-    echo "set ( PACKAGE_NAME \"${exec}\")"                                >> $cmake_file
-    echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )" >> $cmake_file
-    echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"             >> $cmake_file
-    echo "set ( T_TRACER $T_TRACER )"                                     >> $cmake_file
-    echo "set ( UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE )"                   >> $cmake_file
-    echo "set ( UE_DEBUG_TRACE $UE_DEBUG_TRACE )"                         >> $cmake_file
-    echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
-    echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
-    echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
-    echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
-    echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
-    cd  $DIR/$build_dir/build
-    eval $CMAKE_CMD
-
-    execlist=""
-    if [ "$eNB" = "1" ] ; then
+  execlist=""
+  if [ "$eNB" = "1" ] ; then
       execlist="$execlist lte-softmodem"
-    fi
-    if [ "$eNBocp" = "1" ] ; then
+  fi
+  if [ "$eNBocp" = "1" ] ; then
       execlist="$execlist ocp-enb"
-    fi
-    if [ "$gNB" = "1" ] ; then
+  fi
+  if [ "$gNB" = "1" ] ; then
       execlist="$execlist nr-softmodem"
-    fi
-    if [ "$RU" = "1" ] ; then
+  fi
+  if [ "$RU" = "1" ] ; then
       execlist="$execlist oairu"
-    fi
-    if [ "$UE" = 1 ] ; then
+  fi
+  if [ "$UE" = 1 ] ; then
       execlist="$execlist lte-uesoftmodem"
-    fi
-    if [ "$nrUE" = 1 ] ; then
+  fi
+  if [ "$nrUE" = 1 ] ; then
       execlist="$execlist nr-uesoftmodem"
-    fi
-
-    if [ "$ittiSIM" = "1" ] ; then
+  fi
+  
+  if [ "$ittiSIM" = "1" ] ; then
       execlist="$execlist nr-ittisim"
-    fi
-
-    for f in $execlist ; do
+  fi
+  
+  for f in $execlist ; do
       echo_info "Compiling $f..."
       compilations \
-        $build_dir $f \
-        $f $dbin/$f.$REL
-    done
-
-
-# mandatory shared libraries common to UE and (e/g)NB
-
-    if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
+          $build_dir $f \
+          $f $dbin/$f.$REL
+  done
+  
+  
+  # mandatory shared libraries common to UE and (e/g)NB
+  
+  if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
       echo_info "Building shared libraries common to UE and gNB"
-
+      
       compilations \
-        $build_dir $config_libconfig_shlib \
-        lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
-
-        compilations \
+          $build_dir $config_libconfig_shlib \
+          lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+      
+      compilations \
           $build_dir coding \
           libcoding.so $dbin/libcoding.so
-
-    fi
+      
   fi
-
+  
   if [ "$UE" = 1 ] ; then
 
     echo_info "Compiling UE specific part"
@@ -727,11 +721,8 @@ function main() {
     fi
   fi
 
-  if [ "$SIMUS_PHY" = "1" -o "$SIMUS_CORE" = "1" ] ; then
-    cd  $DIR/$build_dir/build
-    eval $CMAKE_CMD
-  fi
-
+  cd  $DIR/$build_dir/build
+  
   ##################
   # PHY simulators #
   ##################
@@ -742,11 +733,11 @@ function main() {
 	# simlist="ldpctest"
     for f in $simlist ; do
       compilations \
-        phy_simulators $f \
+        ran_build $f \
 	    $f $dbin/$f.$REL
     done
     compilations \
-      phy_simulators coding \
+      ran_build coding \
       libcoding.so $dbin/libcoding.so
 #    compilations \
 #	   lte-simulators $config_libconfig_shlib \
@@ -761,7 +752,7 @@ function main() {
     simlist="secu_knas_encrypt_eia1 secu_kenb aes128_ctr_encrypt aes128_ctr_decrypt secu_knas_encrypt_eea2 secu_knas secu_knas_encrypt_eea1 kdf aes128_cmac_encrypt secu_knas_encrypt_eia2"
     for f in $simlist ; do
       compilations \
-	    phy_simulators test_$f \
+	    ran_build test_$f \
 	    test_$f $dbin/test_$f.$REL
     done
   fi

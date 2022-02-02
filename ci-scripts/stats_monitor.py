@@ -11,6 +11,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import yaml
+import os
 
 
 class StatMonitor():
@@ -59,18 +60,21 @@ class StatMonitor():
                 self.d[node_type]['mcs'].append(int(result.group(4)))
 
 
-    def collect(self,node_type):
+    def collect(self,testcase_id,node_type):
         if node_type=='enb':
             files = ["L1_stats.log", "MAC_stats.log", "PDCP_stats.log", "RRC_stats.log"]
         else: #'gnb'
             files = ["nrL1_stats.log", "nrMAC_stats.log", "nrPDCP_stats.log", "nrRRC_stats.log"]
-        # append each file's contents to another file (prepended with CI-) for
-        # post-mortem/debugging analysis
+        #append each file's contents to another file (prepended with CI-) for debug
         for f in files:
-            cmd = rf'cat {f} >> CI-{f}'
-            subprocess.Popen(shlex.split(cmd))
-        # join the files for further processing
-        cmd = rf'cat {shlex.join(files)}'
+            if os.path.isfile(f):
+                cmd = 'cat '+ f + ' >> CI-'+testcase_id+'-'+f
+                subprocess.Popen(cmd,shell=True)  
+        #join the files for further processing
+        cmd='cat '
+        for f in files:
+            if os.path.isfile(f):
+                cmd += f+' '
         process=subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE)
         output = process.stdout.readlines()
         if node_type=='enb':
@@ -79,7 +83,7 @@ class StatMonitor():
             self.process_gnb(node_type,output)
 
 
-    def graph(self,node_type):
+    def graph(self,testcase_id, node_type):
         for page in self.d[node_type]['graph']:#work out a set a graphs per page
             col = 1
             figure, axis = plt.subplots(len(self.d[node_type]['graph'][page]), col ,figsize=(10, 10))
@@ -110,13 +114,14 @@ class StatMonitor():
 
             plt.tight_layout()
             #save as png
-            plt.savefig(node_type+'_stats_monitor_'+page+'.png')
+            plt.savefig(node_type+'_stats_monitor_'+testcase_id+'_'+page+'.png')
 
 
 if __name__ == "__main__":
 
     cfg_filename = sys.argv[1] #yaml file as metrics config
-    node = sys.argv[2]#enb or gnb
+    testcase_id = sys.argv[2] #test case id to name files accordingly, especially if we have several tests in a sequence
+    node = sys.argv[3]#enb or gnb
     mon=StatMonitor(cfg_filename)
 
     #collecting stats when modem process is stopped
@@ -124,11 +129,11 @@ if __name__ == "__main__":
     process=subprocess.Popen(CMD, shell=True, stdout=subprocess.PIPE)
     output = process.stdout.readlines()
     while len(output)!=0 :
-        mon.collect(node)
+        mon.collect(testcase_id,node)
         process=subprocess.Popen(CMD, shell=True, stdout=subprocess.PIPE)
         output = process.stdout.readlines()
         time.sleep(1)
     print('Process stopped')
     with open(node+'_stats_monitor.pickle', 'wb') as handle:
         pickle.dump(mon.d, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    mon.graph(node)
+    mon.graph(testcase_id, node)
