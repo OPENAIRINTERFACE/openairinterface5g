@@ -141,7 +141,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
     a_segments = (a_segments/273)+1;
   }
 
-  uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+  uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
   dlsch = (NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
 
   if (dlsch) {
