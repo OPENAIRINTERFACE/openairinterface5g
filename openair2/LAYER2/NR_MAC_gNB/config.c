@@ -537,25 +537,27 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
   if (CellGroup) {
 
-    const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
+    calculate_preferred_dl_tda(Mod_idP, NULL);
 
-    const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-    if(bwpList) {
-      AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
-      for (int i = 0; i < bwpList->list.count; ++i) {
-        const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
-        calculate_preferred_dl_tda(Mod_idP, bwp);
+    const NR_ServingCellConfig_t *servingCellConfig = NULL;
+    if(CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated) {
+      servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
+      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
+      if(bwpList) {
+        AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
+        for (int i = 0; i < bwpList->list.count; ++i) {
+          const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
+          calculate_preferred_dl_tda(Mod_idP, bwp);
+        }
       }
-    } else {
-      calculate_preferred_dl_tda(Mod_idP, NULL);
-    }
 
-    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-    if(ubwpList) {
-      AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
-      for (int i = 0; i < ubwpList->list.count; ++i) {
-        const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
-        calculate_preferred_ul_tda(Mod_idP, ubwp);
+      const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+      if(ubwpList) {
+        AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
+        for (int i = 0; i < ubwpList->list.count; ++i) {
+          const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
+          calculate_preferred_ul_tda(Mod_idP, ubwp);
+        }
       }
     }
 
@@ -614,7 +616,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
-      const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
       if (sched_ctrl->available_dl_harq.len == 0) {
