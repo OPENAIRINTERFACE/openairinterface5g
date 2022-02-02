@@ -123,12 +123,12 @@ typedef enum UE_STATE_NR_e {
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n)
 #define RRM_CALLOC2(t,s)  (t *) malloc16( s )
 
-#define MAX_MEAS_OBJ                                  6
-#define MAX_MEAS_CONFIG                               6
-#define MAX_MEAS_ID                                   6
+#define MAX_MEAS_OBJ                                  7
+#define MAX_MEAS_CONFIG                               7
+#define MAX_MEAS_ID                                   7
 
 #define PAYLOAD_SIZE_MAX                              1024
-#define RRC_BUF_SIZE                                  8192
+#define RRC_BUF_SIZE                                  512
 #define UNDEF_SECURITY_MODE                           0xff
 #define NO_SECURITY_MODE                              0x20
 
@@ -367,6 +367,8 @@ typedef struct gNB_RRC_UE_s {
   transport_layer_addr_t             gnb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            gnb_gtp_ebi[S1AP_MAX_E_RAB];
   rb_id_t                            gnb_gtp_psi[S1AP_MAX_E_RAB];
+  //GTPV1 F1-U TUNNELS
+  uint32_t                           incoming_teid[S1AP_MAX_E_RAB]; 
 
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
@@ -447,8 +449,7 @@ typedef struct {
   int sib1_tda;
   int pdsch_AntennaPorts;
   int pusch_AntennaPorts;
-  int pusch_TargetSNRx10;
-  int pucch_TargetSNRx10;
+  int minRXTXTIME;
   int do_CSIRS;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
@@ -471,6 +472,10 @@ typedef struct {
   /* nia0 = 0, nia1 = 1, ... */
   int integrity_algorithms[4];
   int integrity_algorithms_count;
+
+  /* flags to enable/disable ciphering and integrity for DRBs */
+  int do_drb_ciphering;
+  int do_drb_integrity;
 } nr_security_configuration_t;
 
 //---NR---(completely change)---------------------
@@ -516,6 +521,8 @@ typedef struct gNB_RRC_INST_s {
   uint16_t sctp_out_streams;
   int cell_info_configured;
   pthread_mutex_t cell_info_mutex;
+
+  char *uecap_file;
 
   // security configuration (preferred algorithms)
   nr_security_configuration_t security;

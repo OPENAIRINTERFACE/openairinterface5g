@@ -44,9 +44,8 @@
 #include "PHY/TOOLS/tools_defs.h"
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
-
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include <openair2/UTIL/OPT/opt.h>
 
 //#define DEBUG_PUSCH_MAPPING
 //#define DEBUG_MAC_PDU
@@ -107,7 +106,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **tx_layers;
   int32_t **txdataF;
-  int8_t Wf[2], Wt[2], l_prime[2], delta;
+  int8_t Wf[2], Wt[2];
+  int l_prime[2], delta;
   uint8_t nb_dmrs_re_per_rb;
   int ap, i;
   int sample_offsetF, N_RE_prime;
@@ -143,7 +143,12 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
     ulsch_ue->Nid_cell    = Nid_cell;
 
-    get_num_re_dmrs(pusch_pdu, &nb_dmrs_re_per_rb, &number_dmrs_symbols);
+    for (int i = start_symbol; i < start_symbol + number_of_symbols; i++) {
+      if((ul_dmrs_symb_pos >> i) & 0x01)
+        number_dmrs_symbols += 1;
+    }
+
+    nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4)*cdm_grps_no_data;
 
     LOG_D(PHY,"ulsch %x : start_rb %d bwp_start %d start_sc %d start_symbol %d num_symbols %d cdmgrpsnodata %d num_dmrs %d dmrs_re_per_rb %d\n",
           rnti,start_rb,pusch_pdu->bwp_start,start_sc,start_symbol,number_of_symbols,cdm_grps_no_data,number_dmrs_symbols,nb_dmrs_re_per_rb);
@@ -159,7 +164,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
     
 
-    nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G);
+    trace_NRpdu(DIRECTION_UPLINK,
+		ulsch_ue->harq_processes[harq_pid]->a,
+		ulsch_ue->harq_processes[harq_pid]->pusch_pdu.pusch_data.tb_size,
+		0, WS_C_RNTI, rnti, frame, slot, 0, 0);
+
+    if (nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G) == -1)
+      return;
+
 
     ///////////
     ////////////////////////////////////////////////////////////////////
@@ -407,7 +419,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         if (is_dmrs == 1) {
           // if transform precoding is enabled
           if (pusch_pdu->transform_precoding == 0) {
-          
+
             ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[2*dmrs_idx]) >> 15;
             ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[(2*dmrs_idx) + 1]) >> 15;
           

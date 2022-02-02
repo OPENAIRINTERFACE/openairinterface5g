@@ -409,6 +409,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB);
 void init_dfts(void);
 
 void fill_subframe_mask(PHY_VARS_eNB *eNB);
+void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg);
 
 /** @} */
 #endif

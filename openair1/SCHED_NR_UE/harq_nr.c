@@ -331,7 +331,6 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
 
 void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int rv, uint8_t rnti_type) {
 
-
   if (rnti_type == _SI_RNTI_ ||
       rnti_type == _P_RNTI_ ||
       rnti_type == _RA_RNTI_) {
@@ -351,38 +350,38 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int 
         break;
       case 1:
         dl_harq->round = 2;
+        dl_harq->status = ACTIVE;
         dl_harq->first_rx = 0;
         if (dl_harq->DCINdi != ndi) {
           LOG_E(PHY,"Missed previous DCI detections. NDI toggled but rv %d does not correspond to first reception\n",rv);
-          dl_harq->status = ACTIVE;
           dl_harq->first_rx = 1;
           dl_harq->DCINdi = ndi;
         }
-        else if (dl_harq->ack)
+        else if (dl_harq->ack == 1)
           dl_harq->status = SCH_IDLE;
         break;
       case 2:
         dl_harq->round = 1;
+        dl_harq->status = ACTIVE;
         dl_harq->first_rx = 0;
         if (dl_harq->DCINdi != ndi) {
           LOG_E(PHY,"Missed previous DCI detections. NDI toggled but rv %d does not correspond to first reception\n",rv);
-          dl_harq->status = ACTIVE;
           dl_harq->first_rx = 1;
           dl_harq->DCINdi = ndi;
         }
-        else if (dl_harq->ack)
+        else if (dl_harq->ack == 1)
           dl_harq->status = SCH_IDLE;
         break;
       case 3:
         dl_harq->round = 3;
+        dl_harq->status = ACTIVE;
         dl_harq->first_rx = 0;
         if (dl_harq->DCINdi != ndi) {
           LOG_E(PHY,"Missed previous DCI detections. NDI toggled but rv %d does not correspond to first reception\n",rv);
-          dl_harq->status = ACTIVE;
           dl_harq->first_rx = 1;
           dl_harq->DCINdi = ndi;
         }
-        else if (dl_harq->ack)
+        else if (dl_harq->ack == 1)
           dl_harq->status = SCH_IDLE;
         break;
       default:

@@ -496,14 +496,6 @@ error:
   return -1;
 }
 
-boolean_t pdcp_data_ind(
-  const protocol_ctxt_t *const  ctxt_pP,
-  const srb_flag_t srb_flagP,
-  const MBMS_flag_t MBMS_flagP,
-  const rb_id_t rb_id,
-  const sdu_size_t sdu_buffer_size,
-  mem_block_t *const sdu_buffer);
-
 int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
   boolean_t result = 0;
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
@@ -525,7 +517,6 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
   ctxt_pP.rnti = ctxt->fsp_rnti;
   ctxt_pP.frame = ctxt->fsp_frame;
   ctxt_pP.subframe = ctxt->fsp_subframe;
-  ctxt_pP.configured = 1;
   ctxt_pP.brOption = 0;
   ctxt_pP.eNB_index = ctxt->fsp_enb_index;
   srb_flagP = rlc_data->fsp_srb_flag;
@@ -546,7 +537,7 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
                          flag_MBMS,
                          rb_idP,
                          pdcp_pdu_size,
-                         pdcp_pdu_p);
+                         pdcp_pdu_p, NULL, NULL);
   return result;
 error:
 

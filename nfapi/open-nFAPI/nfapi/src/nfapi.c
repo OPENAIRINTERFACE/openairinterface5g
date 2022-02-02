@@ -585,7 +585,7 @@ int unpack_tlv_list(unpack_tlv_t unpack_fns[], uint16_t size, uint8_t **ppReadPa
 
         // check if the length was right;
         if(tl->length != (*ppReadPackedMsg - pStartOfValue)) {
-          NFAPI_TRACE(NFAPI_TRACE_ERROR, "Warning tlv tag 0x%x length %d not equal to unpack %d\n", tl->tag, tl->length, (*ppReadPackedMsg - pStartOfValue));
+          NFAPI_TRACE(NFAPI_TRACE_ERROR, "Warning tlv tag 0x%x length %d not equal to unpack %ld\n", tl->tag, tl->length, (*ppReadPackedMsg - pStartOfValue));
         }
       }
     }
@@ -662,7 +662,7 @@ int unpack_p7_tlv_list(unpack_p7_tlv_t unpack_fns[], uint16_t size, uint8_t **pp
 
         // check if the length was right;
         if(tl->length != (*ppReadPackedMsg - pStartOfValue)) {
-          NFAPI_TRACE(NFAPI_TRACE_ERROR, "Warning tlv tag 0x%x length %d not equal to unpack %d\n", tl->tag, tl->length, (*ppReadPackedMsg - pStartOfValue));
+          NFAPI_TRACE(NFAPI_TRACE_ERROR, "Warning tlv tag 0x%x length %d not equal to unpack %ld\n", tl->tag, tl->length, (*ppReadPackedMsg - pStartOfValue));
         }
       }
     }

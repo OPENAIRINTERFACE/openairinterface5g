@@ -24,6 +24,7 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_UE.h"
 
 char* namepointer_chMag ;
@@ -42,6 +43,7 @@ char* namepointer_log2;
 
 PHY_VARS_UE ***PHY_vars_UE_g;
 UL_RCC_IND_t UL_RCC_INFO;
+NR_UL_IND_t UL_INFO;
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];
@@ -54,13 +56,6 @@ const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
 
 unsigned char NB_RU=0;
-
-#ifndef OPENAIR2
-//unsigned char NB_eNB_INST=0;
-//uint16_t NB_UE_INST=0;
-//unsigned char NB_RN_INST=0;
-//unsigned char NB_INST=0;
-#endif
 
 int number_of_cards;
 
@@ -87,7 +82,6 @@ const double sinr_to_cqi[4][16]= { {-2.5051, -2.5051, -1.7451, -0.3655, 1.0812, 
   { -4.1057, -4.1057, -3.3768, -2.2916, -1.1392, 0.1236, 1.2849, 3.1933, 5.9298, 6.4052, 9.6245, 10.9414, 13.5166, 14.9545, 14.9545, 14.9545}
 };
 
-//int cqi_to_mcs[16]={0, 0, 1, 3, 5, 7, 9, 13, 15, 16, 20, 23, 25, 27, 27, 27};
 const int cqi_to_mcs[16]= {0, 0, 1, 2, 4, 6, 8, 11, 13, 16, 18, 20, 23, 25, 27, 28};
 
 //for SNR to MI conversion 7 th order Polynomial coeff

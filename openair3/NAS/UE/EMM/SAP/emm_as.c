@@ -136,17 +136,25 @@ static int _emm_as_encrypt(
 
 static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg);
 
-static int _emm_as_security_res(const emm_data_t *emm_data, const emm_as_security_t *,
-                                ul_info_transfer_req_t *);
-static int _emm_as_establish_req(const emm_data_t *emm_data, const emm_as_establish_t *,
-                                 nas_establish_req_t *);
+
+
 
 
 static int _emm_as_cell_info_req(const emm_as_cell_info_t *, cell_info_req_t *);
-
-static int _emm_as_data_req(const emm_data_t *emm_data, const emm_as_data_t *msg, ul_info_transfer_req_t *);
-static int _emm_as_status_ind(const emm_data_t *emm_data, const emm_as_status_t *, ul_info_transfer_req_t *);
-static int _emm_as_release_req(const emm_as_release_t *, nas_release_req_t *);
+/* prototyping of the following function modified: the last parameter turned to a void pointer
+ * instead of a ponter to the union field of the as_msg packed structure. This is to avoid new warnings introduced
+ * from gcc V9 which warns when accessing fields in a packed structure which may result in an alignment problem
+ * at run time. Modifications allow gcc to know at compile time that it cannot assume any alignment for those pointers.
+ * On X86 this is not fatal, as at run time the problem can be fixed (but it's better for perf to avoid). On other 
+ * processor as Arm i think it can end in seg fault
+ */
+static int _emm_as_security_res(const emm_data_t *emm_data, const emm_as_security_t *,
+                                void *ul_info_transfer_req_unaligned);
+static int _emm_as_establish_req(const emm_data_t *emm_data, const emm_as_establish_t *,
+                                 void *nas_establish_req_unaligned);                             
+static int _emm_as_data_req(const emm_data_t *emm_data, const emm_as_data_t *msg, void *ul_info_transfer_req_unaligned);
+static int _emm_as_status_ind(const emm_data_t *emm_data, const emm_as_status_t *, void *ul_info_transfer_req_unaligned);
+static int _emm_as_release_req(const emm_as_release_t *, void *nas_release_req_unaligned);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -938,32 +946,32 @@ static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg)
   case _EMMAS_DATA_REQ:
     as_msg.msgID = _emm_as_data_req(user->emm_data,
                      &msg->u.data,
-                     &as_msg.msg.ul_info_transfer_req);
+                     (void *)(&as_msg.msg.ul_info_transfer_req));
     break;
 
   case _EMMAS_STATUS_IND:
     as_msg.msgID = _emm_as_status_ind(user->emm_data,
                      &msg->u.status,
-                     &as_msg.msg.ul_info_transfer_req);
+                     (void *)(&as_msg.msg.ul_info_transfer_req));
     break;
 
   case _EMMAS_RELEASE_REQ:
     as_msg.msgID = _emm_as_release_req(
                      &msg->u.release,
-                     &as_msg.msg.nas_release_req);
+                     (void *)(&as_msg.msg.nas_release_req));
     break;
 
 
   case _EMMAS_SECURITY_RES:
     as_msg.msgID = _emm_as_security_res(user->emm_data,
                      &msg->u.security,
-                     &as_msg.msg.ul_info_transfer_req);
+                     (void *)(&as_msg.msg.ul_info_transfer_req));
     break;
 
   case _EMMAS_ESTABLISH_REQ:
     as_msg.msgID = _emm_as_establish_req(user->emm_data,
                      &msg->u.establish,
-                     &as_msg.msg.nas_establish_req);
+                     (void *)(&as_msg.msg.nas_establish_req));
     break;
 
 
@@ -1069,10 +1077,10 @@ static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg)
  **                                                                        **
  ***************************************************************************/
 static int _emm_as_data_req(const emm_data_t *emm_data, const emm_as_data_t *msg,
-                            ul_info_transfer_req_t *as_msg)
+                            void *ul_info_transfer_req_unaligned)
 {
   LOG_FUNC_IN;
-
+  ul_info_transfer_req_t *as_msg = (ul_info_transfer_req_t *)ul_info_transfer_req_unaligned;
   int size = 0;
   int is_encoded = FALSE;
 
@@ -1165,12 +1173,12 @@ static int _emm_as_data_req(const emm_data_t *emm_data, const emm_as_data_t *msg
  **                                                                        **
  ***************************************************************************/
 static int _emm_as_status_ind(const emm_data_t *emm_data, const emm_as_status_t *msg,
-                              ul_info_transfer_req_t *as_msg)
+                              void *ul_info_transfer_req_unaligned)
 {
   LOG_FUNC_IN;
 
   int size = 0;
-
+  ul_info_transfer_req_t *as_msg = (ul_info_transfer_req_t *)ul_info_transfer_req_unaligned;
   LOG_TRACE(INFO, "EMMAS-SAP - Send AS status indication (cause=%d)",
             msg->emm_cause);
 
@@ -1239,12 +1247,12 @@ static int _emm_as_status_ind(const emm_data_t *emm_data, const emm_as_status_t 
  **                                                                        **
  ***************************************************************************/
 static int _emm_as_release_req(const emm_as_release_t *msg,
-                               nas_release_req_t *as_msg)
+                               void *nas_release_req_unaligned)
 {
   LOG_FUNC_IN;
 
   LOG_TRACE(INFO, "EMMAS-SAP - Send AS release request");
-
+  nas_release_req_t *as_msg = (nas_release_req_t *)nas_release_req_unaligned;
   /* Setup the AS message */
   if (msg->guti) {
     as_msg->s_tmsi.MMEcode = msg->guti->gummei.MMEcode;
@@ -1279,10 +1287,10 @@ static int _emm_as_release_req(const emm_as_release_t *msg,
  **                                                                        **
  ***************************************************************************/
 static int _emm_as_security_res(const emm_data_t *emm_data, const emm_as_security_t *msg,
-                                ul_info_transfer_req_t *as_msg)
+                                void *ul_info_transfer_req_unaligned)
 {
   LOG_FUNC_IN;
-
+  ul_info_transfer_req_t *as_msg=(ul_info_transfer_req_t *)ul_info_transfer_req_unaligned;
   int size = 0;
 
   LOG_TRACE(INFO, "EMMAS-SAP - Send AS security response");
@@ -1373,12 +1381,12 @@ static int _emm_as_security_res(const emm_data_t *emm_data, const emm_as_securit
  **                                                                        **
  ***************************************************************************/
 static int _emm_as_establish_req(const emm_data_t *emm_data, const emm_as_establish_t *msg,
-                                 nas_establish_req_t *as_msg)
+                                 void *nas_establish_req_unaligned)
 {
   LOG_FUNC_IN;
 
   int size = 0;
-
+  nas_establish_req_t *as_msg = (nas_establish_req_t *)nas_establish_req_unaligned;
   LOG_TRACE(INFO, "EMMAS-SAP - Send AS connection establish request");
 
   nas_message_t nas_msg;

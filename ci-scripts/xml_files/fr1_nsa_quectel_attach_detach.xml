@@ -81,7 +81,7 @@
 	<testCase id="030000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.fr1.25PRB.usrpb210.conf --log_config.global_log_options level,nocolor,time,line_num,function</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>lte</air_interface>
@@ -92,7 +92,7 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.fr1.106PRB.usrpb210.conf -E -q --log_config.global_log_options level,nocolor,time,line_num,function</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>

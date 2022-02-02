@@ -28,7 +28,6 @@
 * \email: raymond.knopp@eurecom.fr ,navid.nikaein@eurecom.fr, michele.paffetti@studio.unibo.it
 */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h> /* for atoi(3) */
@@ -36,9 +35,6 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#else
-#include <linux/module.h>  /* Needed by all modules */
-#endif
 
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
@@ -129,10 +125,12 @@ uint8_t do_RRCConnectionSetupComplete_NB_IoT(uint8_t Mod_id, uint8_t* buffer, co
 @param Transaction_id
 @returns Size of encoded bit stream in bytes*/
 
-uint8_t do_RRCConnectionReconfigurationComplete_NB_IoT(
+size_t do_RRCConnectionReconfigurationComplete_NB_IoT(
   const protocol_ctxt_t* const ctxt_pP,
   uint8_t* buffer,
-  const uint8_t Transaction_id
+  size_t buffer_size,
+  const uint8_t Transaction_id,
+  OCTET_STRING_t *str
 );
 
 /**
@@ -182,6 +180,7 @@ uint16_t
 do_RRCConnectionReconfiguration_NB_IoT(
   const protocol_ctxt_t*        const ctxt_pP,
     uint8_t                            *buffer,
+    size_t                              buffer_size,
     uint8_t                             Transaction_id,
     SRB_ToAddModList_NB_r13_t          *SRB_list_NB_IoT,
     DRB_ToAddModList_NB_r13_t          *DRB_list_NB_IoT,
@@ -253,8 +252,8 @@ do_RRCConnectionReject_NB_IoT(
 @param transaction_id Transaction index
 @returns Size of encoded bit stream in bytes*/
 
-uint8_t do_RRCConnectionRelease_NB_IoT(uint8_t Mod_id, uint8_t *buffer,int Transaction_id);
-
+uint8_t do_RRCConnectionRelease_NB_IoT(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                                       int Transaction_id);
 
 uint8_t do_DLInformationTransfer_NB_IoT(
 		uint8_t Mod_id,
@@ -277,7 +276,8 @@ uint8_t do_DLInformationTransfer_NB_IoT(
 
 uint8_t do_RRCConnectionReestablishment_NB_IoT(
 		uint8_t Mod_id,
-		uint8_t* const buffer,
+		uint8_t* buffer,
+		size_t buffer_size,
 		const uint8_t     Transaction_id,
 		const NB_IoT_DL_FRAME_PARMS* const frame_parms, //to be changed
 		SRB_ToAddModList_NB_r13_t**             SRB_configList_NB_IoT

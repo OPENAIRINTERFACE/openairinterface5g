@@ -389,36 +389,19 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
   pdcph.sourceL2Id = 0;
   pdcph.destinationL2Id = 0;
 
-
-
-#ifdef PDCP_USE_NETLINK
   bytes_wrote = nas_netlink_send((char *)&pdcph,NAS_PDCPH_SIZE);
 #ifdef NAS_DEBUG_SEND
   printk("[NAS] Wrote %d bytes (header for %d byte skb) to PDCP via netlink\n",
          bytes_wrote,skb->len);
 #endif
-#else
-  bytes_wrote = rtf_put(NAS2PDCP_FIFO, &pdcph, NAS_PDCPH_SIZE);
-#ifdef NAS_DEBUG_SEND
-  printk("[NAS] Wrote %d bytes (header for %d byte skb) to PDCP fifo\n",
-         bytes_wrote,skb->len);
-#endif
-#endif //PDCP_USE_NETLINK
 
   if (bytes_wrote != NAS_PDCPH_SIZE) {
     printk("NAS_COMMON_QOS_SEND: problem while writing PDCP's header (bytes wrote = %d )\n",bytes_wrote);
     printk("rb_id %ld, Wrote %d, Header Size %lu\n", pdcph.rb_id , bytes_wrote, NAS_PDCPH_SIZE);
-#ifndef PDCP_USE_NETLINK
-    rtf_reset(NAS2PDCP_FIFO);
-#endif //PDCP_USE_NETLINK
     return;
   }
 
-#ifdef  PDCP_USE_NETLINK
   bytes_wrote += nas_netlink_send((char *)skb->data,skb->len);
-#else
-  bytes_wrote += rtf_put(NAS2PDCP_FIFO, skb->data, skb->len);
-#endif //PDCP_USE_NETLINK
 
   if (bytes_wrote != skb->len+NAS_PDCPH_SIZE) {
     printk("NAS_COMMON_QOS_SEND: Inst %d, RB_ID %ld: problem while writing PDCP's data, bytes_wrote = %d, Data_len %d, PDCPH_SIZE %lu\n",
@@ -427,9 +410,6 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
            bytes_wrote,
            skb->len,
            NAS_PDCPH_SIZE); // congestion
-#ifndef PDCP_USE_NETLINK
-    rtf_reset(NAS2PDCP_FIFO);
-#endif //PDCP_USE_NETLINK
     return;
   }
 
@@ -449,69 +429,6 @@ void nas_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct class
 #endif
 }
 
-#ifndef PDCP_USE_NETLINK
-//---------------------------------------------------------------------------
-void nas_COMMON_QOS_receive()
-{
-  //---------------------------------------------------------------------------
-  uint8_t sapi;
-  struct pdcp_data_ind_header_s     pdcph;
-  unsigned char data_buffer[2048];
-  struct classifier_entity *rclass;
-  struct nas_priv *priv;
-  int bytes_read;
-
-  // Start debug information
-#ifdef NAS_DEBUG_RECEIVE
-  printk("NAS_COMMON_QOS_RECEIVE - begin \n");
-#endif
-
-  // End debug information
-
-  bytes_read =  rtf_get(PDCP2PDCP_USE_RT_FIFO,&pdcph, NAS_PDCPH_SIZE);
-
-  while (bytes_read>0) {
-    if (bytes_read != NAS_PDCPH_SIZE) {
-      printk("NAS_COMMON_QOS_RECEIVE: problem while reading PDCP header\n");
-      return;
-    }
-
-    priv=netdev_priv(nasdev[pdcph.inst]);
-    rclass = nas_COMMON_search_class_for_rb(pdcph.rb_id,priv);
-
-    bytes_read+= rtf_get(PDCP2PDCP_USE_RT_FIFO,
-                         data_buffer,
-                         pdcph.data_size);
-
-#ifdef NAS_DEBUG_RECEIVE
-    printk("NAS_COMMON_QOS_RECEIVE - Got header for RB %d, Inst %d \n",
-           pdcph.rb_id,
-           pdcph.inst);
-#endif
-
-    if (rclass) {
-#ifdef NAS_DEBUG_RECEIVE
-      printk("[NAS][COMMON] Found corresponding connection in classifier for RAB\n");
-#endif //NAS_DEBUG_RECEIVE
-
-      nas_COMMON_receive(pdcph.data_size,
-                         (void *)data_buffer,
-                         pdcph.inst,
-                         rclass,
-                         pdcph.rb_id);
-    }
-
-    bytes_read =  rtf_get(PDCP2PDCP_USE_RT_FIFO, &pdcph, NAS_PDCPH_SIZE);
-  }
-
-
-
-#ifdef NAS_DEBUG_RECEIVE
-  printk("NAS_COMMON_QOS_RECEIVE - end \n");
-#endif
-}
-
-#else
 void nas_COMMON_QOS_receive(struct nlmsghdr *nlh)
 {
 
@@ -542,7 +459,6 @@ void nas_COMMON_QOS_receive(struct nlmsghdr *nlh)
   }
 
 }
-#endif //PDCP_USE_NETLINK
 
 //---------------------------------------------------------------------------
 struct cx_entity *nas_COMMON_search_cx(nasLocalConnectionRef_t lcr,struct nas_priv *priv)

@@ -1,0 +1,198 @@
+version: '3.8'
+
+services:
+    cassandra:
+        image: cassandra:2.1
+        container_name: prod-cassandra
+        networks:
+            private_net:
+                ipv4_address: 192.168.68.2
+        environment:
+            CASSANDRA_CLUSTER_NAME: "OAI HSS Cluster"
+            CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+        healthcheck:
+            test: /bin/bash -c "nodetool status"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    db_init:
+        image: cassandra:2.1
+        container_name: prod-db-init
+        depends_on: [cassandra]
+        deploy:
+            restart_policy:
+                condition: on-failure
+                max_attempts: 10
+        networks:
+            private_net:
+                ipv4_address: 192.168.68.4
+        volumes:
+            - ./oai_db.cql:/home/oai_db.cql
+        entrypoint: /bin/bash -c "cqlsh --file /home/oai_db.cql 192.168.68.2 && echo 'OK'"
+
+    oai_hss:
+        image: oai-hss:production
+        container_name: prod-oai-hss
+        privileged: true
+        depends_on: [cassandra]
+        networks:
+            private_net:
+                ipv4_address: 192.168.68.3
+            public_net:
+                ipv4_address: 192.168.61.194
+        environment:
+            TZ: Europe/Paris
+            REALM: openairinterface.org
+            HSS_FQDN: hss.openairinterface.org
+            PREFIX: /openair-hss/etc
+            cassandra_Server_IP: 192.168.68.2
+            OP_KEY: 1006020f0a478bf6b699f15c062e42b3
+            LTE_K: FEC86BA6EB707ED08905757B1BB44B8F 
+            APN1: oai.ipv4
+            APN2: oai2.ipv4
+            FIRST_IMSI: 208970100001127 
+            NB_USERS: 10
+        healthcheck:
+            test: /bin/bash -c "pgrep oai_hss"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    redis:
+        image: redis:6.0.5
+        container_name: prod-redis
+        privileged: true
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.198
+        volumes:
+            - ./redis_extern.conf:/usr/local/etc/redis/redis.conf
+        entrypoint: /bin/bash -c "redis-server /usr/local/etc/redis/redis.conf"
+        healthcheck:
+            test: /bin/bash -c "redis-cli -h 192.168.61.198 -p 6380 ping"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    magma_mme:
+        image: magma-mme:production
+        container_name: prod-magma-mme
+        hostname: mme
+        privileged: true
+        depends_on: [oai_hss, redis]
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.195
+        environment:
+            TZ: Europe/Paris
+            REALM: openairinterface.org
+            PREFIX: /openair-mme/etc
+            HSS_HOSTNAME: hss
+            HSS_FQDN: hss.openairinterface.org
+            HSS_REALM: openairinterface.org
+            MME_FQDN: mme.openairinterface.org
+            FEATURES: mme_oai
+        volumes:
+            - ./mme_fd.sprint.conf:/magma-mme/etc/mme_fd.conf.tmplt
+            - ./mme.conf:/magma-mme/etc/mme.conf
+            - ./entrypoint.sh:/magma-mme/bin/entrypoint.sh
+        entrypoint: /bin/bash -c "/magma-mme/bin/entrypoint.sh"
+        healthcheck:
+            test: /bin/bash -c "pgrep oai_mme"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai_spgwc:
+        image: oai-spgwc:production
+        privileged: true
+        depends_on: [magma_mme]
+        container_name: prod-oai-spgwc
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.196
+        environment:
+            TZ: Europe/Paris
+            SGW_INTERFACE_NAME_FOR_S11: eth0
+            PGW_INTERFACE_NAME_FOR_SX: eth0
+            DEFAULT_DNS_IPV4_ADDRESS: 192.168.18.129
+            DEFAULT_DNS_SEC_IPV4_ADDRESS: 8.8.4.4
+            PUSH_PROTOCOL_OPTION: 'true'
+            APN_NI_1: oai.ipv4
+            APN_NI_2: oai2.ipv4
+            DEFAULT_APN_NI_1: oai.ipv4
+            UE_IP_ADDRESS_POOL_1: '12.1.1.2 - 12.1.1.254'
+            UE_IP_ADDRESS_POOL_2: '12.0.0.2 - 12.0.0.254'
+            MCC: '208'
+            MNC: '97'
+            MNC03: '097'
+            TAC: 1
+            GW_ID: 1
+            REALM: openairinterface.org
+            UE_MTU_IPV4: 1500
+        healthcheck:
+            test: /bin/bash -c "pgrep oai_spgwc"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai_spgwu:
+        image: oai-spgwu-tiny:production
+        privileged: true
+        container_name: prod-oai-spgwu-tiny
+        depends_on: [oai_spgwc]
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.197
+        environment:
+            TZ: Europe/Paris
+            PID_DIRECTORY: /var/run
+            INSTANCE: 1
+            SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP: eth0
+            PGW_INTERFACE_NAME_FOR_SGI: eth0
+            SGW_INTERFACE_NAME_FOR_SX: eth0
+            SPGWC0_IP_ADDRESS: 192.168.61.196
+            NETWORK_UE_IP: '12.1.1.0/24'
+            NETWORK_UE_NAT_OPTION: 'yes'
+            MCC: '208'
+            MNC: '97'
+            MNC03: '097'
+            TAC: 1
+            GW_ID: 1
+            REALM: openairinterface.org
+        healthcheck:
+            test: /bin/bash -c "pgrep oai_spgwu"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    trf_gen:
+        image: trf-gen:production
+        privileged: true
+        container_name: prod-trf-gen
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.200
+        entrypoint: /bin/bash -c "ip route add 12.1.1.0/24 via 192.168.61.197 dev eth0; sleep infinity"
+        healthcheck:
+            test: /bin/bash -c "ip route | grep '12.1.1.0'"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    private_net:
+        name: prod-oai-private-net
+        ipam:
+            config:
+                - subnet: 192.168.68.0/26
+        driver_opts:
+            com.docker.network.bridge.name: "oai-priv-net"
+    public_net:
+        name: prod-oai-public-net
+        ipam:
+            config:
+                - subnet: 192.168.61.192/26
+        driver_opts:
+            com.docker.network.bridge.name: "oai-pub-net"

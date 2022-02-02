@@ -36,7 +36,6 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/LOG/log.h"
 #include "PHY/sse_intrin.h"
-#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 
 //#define k1 1000
 #define k1 ((long long int) 1000)

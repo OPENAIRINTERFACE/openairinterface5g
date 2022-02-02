@@ -30,12 +30,8 @@
 #include "PHY/types.h"
 #include <threadPool/thread-pool.h>
 
-#if defined(ENABLE_USE_MME)
 #include "s1ap_eNB.h"
-#ifdef PDCP_USE_NETLINK
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#endif
-#endif
 
 /* help strings definition for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_HLP_RFCFGF        "Configuration file for front-end (e.g. LMS7002M)\n"
@@ -91,8 +87,9 @@
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
-#define CONFIG_HLP_DISABLETIMECORR   "disable UE timing correction\n"
-#define CONFIG_HLP_RRC_CFG_PATH   "path for RRC configuration\n"
+#define CONFIG_HLP_DISABLETIMECORR "disable UE timing correction\n"
+#define CONFIG_HLP_RRC_CFG_PATH  "path for RRC configuration\n"
+#define CONFIG_HLP_UECAP_FILE    "path for UE Capabilities file\n"
 
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"

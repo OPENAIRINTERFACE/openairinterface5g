@@ -218,14 +218,9 @@ void pnf_nfapi_trace(nfapi_trace_level_t nfapi_level, const char *message, ...) 
 }
 
 void pnf_set_thread_priority(int priority) {
+  set_priority(priority);
+
   pthread_attr_t ptAttr;
-  struct sched_param schedParam;
-  schedParam.__sched_priority = priority;
-
-  if(sched_setscheduler(0, SCHED_RR, &schedParam) != 0) {
-    printf("failed to set SCHED_RR\n");
-  }
-
   if(pthread_attr_setschedpolicy(&ptAttr, SCHED_RR) != 0) {
     printf("failed to set pthread SCHED_RR %d\n", errno);
   }
@@ -248,7 +243,7 @@ void *pnf_p7_thread_start(void *ptr) {
 }
 
 void *pnf_nr_p7_thread_start(void *ptr) {
-  NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] P7 THREAD %s\n", __FUNCTION__);
+  NFAPI_TRACE(NFAPI_TRACE_INFO, "[NR_PNF] NR P7 THREAD %s\n", __FUNCTION__);
   pnf_set_thread_priority(79);
   nfapi_pnf_p7_config_t *config = (nfapi_pnf_p7_config_t *)ptr;
   nfapi_nr_pnf_p7_start(config);
@@ -805,7 +800,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
   // to keep only the necessary just to keep the nfapi FSM rolling by sending a dummy response.
   LTE_DL_FRAME_PARMS *fp;
 
-  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
     struct PHY_VARS_eNB_s *eNB = RC.eNB[0][0];
     fp = &eNB->frame_parms;
   } else {
@@ -967,7 +962,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
     num_tlv++;
   }
 
-  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
     printf("[PNF] CONFIG_REQUEST[num_tlv:%d] TLVs processed:%d\n", req->num_tlv, num_tlv);
     printf("[PNF] Simulating PHY CONFIG - DJP\n");
     PHY_Config_t phy_config;
@@ -991,7 +986,7 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
   nfapi_pnf_config_resp(config, &nfapi_resp);
   printf("[PNF] Sent NFAPI_CONFIG_RESPONSE phy_id:%d\n", phy_info->id);
 
-  if(NFAPI_MODE==NFAPI_UE_STUB_PNF)
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF)
     free(fp);
 
   return 0;
@@ -1104,24 +1099,38 @@ void pnf_phy_deallocate_p7_vendor_ext(nfapi_p7_message_header_t *header) {
   free(header);
 }
 
+notifiedFIFO_elt_t *l1tx_message_extract(PHY_VARS_gNB *gNB, int frame, int slot) {
+  notifiedFIFO_elt_t *res;
+
+  //TODO: This needs to be reworked for nfapi to work
+  res = pullTpool(gNB->L1_tx_free, gNB->threadPool);
+  return res;
+}
 
 int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_dci_request_t *req) {
   
   //   LOG_D(PHY,"[PNF] HI_DCI0_REQUEST SFN/SF:%05d dci:%d hi:%d\n", NFAPI_SFNSF2DEC(req->sfn_sf), req->hi_dci0_request_body.number_of_dci, req->hi_dci0_request_body.number_of_hi);
 
   struct PHY_VARS_gNB_s *gNB = RC.gNB[0];
+
+  // extract the next available thread message (priority to message with current slot, then free message)
+  notifiedFIFO_elt_t *res;
+  res = l1tx_message_extract(gNB, req->SFN, req->Slot);
+  processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
+
   if (proc ==NULL) 
     proc = &gNB->proc.L1_proc;
 
-  for (int i=0; i<req->numPdus; i++) {
-    if (req->ul_dci_pdu_list[i].PDUType == 0) {
-      nfapi_nr_ul_dci_request_pdus_t *ul_dci_req_pdu = &req->ul_dci_pdu_list[i]; 
-      handle_nfapi_nr_ul_dci_pdu(gNB, req->SFN, req->Slot, ul_dci_req_pdu); 
+  if (req->numPdus > 0) {
+    if (req->ul_dci_pdu_list[req->numPdus-1].PDUType == 0) { // copy only the last PDU (PHY can have only one UL PDCCH pdu)
+      msgTx->ul_pdcch_pdu = req->ul_dci_pdu_list[req->numPdus-1]; // copy the last pdu
     } 
     else {
-      LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), i, req->ul_dci_pdu_list[i].PDUType);
+      LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), req->numPdus-1, req->ul_dci_pdu_list[req->numPdus-1].PDUType);
     }
   }
+
+  pushNotifiedFIFO(gNB->L1_tx_filled,res);
 
   return 0;
 }
@@ -1181,49 +1190,42 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
      proc = &gNB->proc.L1_proc;
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu_list = req->dl_tti_request_body.dl_tti_pdu_list;
 
-    //if (req->dl_tti_request_body.nPDUs)
-    // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %u, PduIdx: %u,\n",
-    //             __FUNCTION__, proc->frame_tx, proc->slot_tx, proc->frame_rx, proc->slot_rx, // TODO: change subframes to slot
-    //             req->SFN,
-    //             req->Slot,
-    //             req->dl_tti_request_body.nGroup,
-    //             req->dl_tti_request_body.nPDUs,
-    //             req->dl_tti_request_body.nUe,
-    //             req->dl_tti_request_body.PduIdx);
+  if (req->dl_tti_request_body.nPDUs)
+    NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() TX:%d/%d RX:%d/%d; sfn:%d, slot:%d, nGroup:%u, nPDUs: %u, nUE: %p, PduIdx: %p,\n",
+                __FUNCTION__, proc->frame_tx, proc->slot_tx, proc->frame_rx, proc->slot_rx, // TODO: change subframes to slot
+                req->SFN,
+                req->Slot,
+                req->dl_tti_request_body.nGroup,
+                req->dl_tti_request_body.nPDUs,
+                req->dl_tti_request_body.nUe,
+                req->dl_tti_request_body.PduIdx);
 
   for (int i=0; i<req->dl_tti_request_body.nPDUs; i++) {
     // NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() sfn/sf:%d PDU[%d] size:%d pdcch_vars->num_dci:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(req->sfn_sf), i, dl_config_pdu_list[i].pdu_size,pdcch_vars->num_dci);
+    notifiedFIFO_elt_t *res;
+    res = l1tx_message_extract(gNB, sfn, slot);
+    processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
 
     if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) {
-      nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu=&dl_tti_pdu_list[i];
-      handle_nfapi_nr_pdcch_pdu(gNB, sfn, slot, &dl_tti_pdu->pdcch_pdu);
+      // we trust the scheduler sends only one PDCCH PDU per slot
+      msgTx->pdcch_pdu = dl_tti_pdu_list[i].pdcch_pdu; // fills the last received PDCCH PDU
     } 
     else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {
       //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() PDU:%d BCH: pdu_index:%u pdu_length:%d sdu_length:%d BCH_SDU:%x,%x,%x\n", __FUNCTION__, i, pdu_index, bch_pdu->bch_pdu_rel8.length, tx_request_pdu[sfn][sf][pdu_index]->segments[0].segment_length, sdu[0], sdu[1], sdu[2]);
-      handle_nr_nfapi_ssb_pdu(gNB, sfn, slot, &dl_tti_pdu_list[i]);
+      handle_nr_nfapi_ssb_pdu(msgTx, sfn, slot, &dl_tti_pdu_list[i]);
       gNB->pbch_configured=1;
-    } 
+    }
     else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE) {
       nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu = &dl_tti_pdu_list[i].pdsch_pdu;
-      nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15_pdu = &pdsch_pdu->pdsch_pdu_rel15;     
+      nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15_pdu = &pdsch_pdu->pdsch_pdu_rel15;
       nfapi_nr_pdu_t *tx_data = tx_data_request[sfn][slot][rel15_pdu->pduIndex];
 
       if (tx_data != NULL) {
-        int UE_id = find_nr_dlsch(rel15_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
-        AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
-        AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
-        NR_gNB_DLSCH_t *dlsch0 = gNB->dlsch[UE_id][0];
-        int harq_pid = dlsch0->harq_ids[sfn%2][slot];
-
-        if(harq_pid >= dlsch0->Mdlharq) {
-          LOG_E(PHY,"pnf_phy_dl_config_req illegal harq_pid %d\n", harq_pid);
-          return(-1);
-        }
-
-        uint8_t *dlsch_sdu = nr_tx_pdus[UE_id][harq_pid];
-        memcpy(dlsch_sdu, tx_data->TLVs[0].value.direct,tx_data->PDU_length);
+        uint8_t *dlsch_sdu = (uint8_t *)tx_data->TLVs[0].value.direct;
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() DLSCH:pdu_index:%d handle_nfapi_dlsch_pdu(eNB, proc_rxtx, dlsch_pdu, transport_blocks:%d sdu:%p) eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols:%d\n", __FUNCTION__, rel8_pdu->pdu_index, rel8_pdu->transport_blocks, dlsch_sdu, eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols);
-        handle_nr_nfapi_pdsch_pdu(gNB, sfn, slot,pdsch_pdu, dlsch_sdu);
+        AssertFatal(msgTx->num_pdsch_slot < gNB->number_of_nr_dlsch_max,"Number of PDSCH PDUs %d exceeded the limit %d\n",
+          msgTx->num_pdsch_slot,gNB->number_of_nr_dlsch_max);
+        handle_nr_nfapi_pdsch_pdu(msgTx, pdsch_pdu, dlsch_sdu);
       } 
       else {
         NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() DLSCH NULL TX PDU SFN/SF:%d PDU_INDEX:%d\n", __FUNCTION__, NFAPI_SFNSLOT2DEC(sfn,slot), rel15_pdu->pduIndex);     
@@ -1231,11 +1233,12 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     }
     else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE) {
       nfapi_nr_dl_tti_csi_rs_pdu *csi_rs_pdu = &dl_tti_pdu_list[i].csi_rs_pdu;
-      handle_nfapi_nr_csirs_pdu(gNB, sfn, slot, csi_rs_pdu);
+      handle_nfapi_nr_csirs_pdu(msgTx, sfn, slot, csi_rs_pdu);
     }
     else {
       NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() UNKNOWN:%d\n", __FUNCTION__, dl_tti_pdu_list[i].PDUType);
     }
+    pushNotifiedFIFO(gNB->L1_tx_filled,res);
   }
 
   if(req->vendor_extension)
@@ -1427,6 +1430,7 @@ int pnf_phy_ul_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     switch (ul_tti_pdu_list[i].pdu_type) {
       case NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE:
         //LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_UL_TTI_PUSCH_PDU_TYPE for %d.%d\n", frame, slot, UL_tti_req->SFN, UL_tti_req->Slot);
+        //curr_sfn = curr_sfn + 3; //Gokul
         nr_fill_ulsch(gNB,curr_sfn, curr_slot, &ul_tti_pdu_list[i].pusch_pdu);
         break;
       case NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE:
@@ -1622,7 +1626,6 @@ nfapi_pnf_p7_subframe_buffer_t dummy_subframe;
 
 int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi_start_request_t *req) {
   printf("[PNF] Received NFAPI_START_REQ phy_id:%d\n", req->header.phy_id);
-  nfapi_set_trace_level(NFAPI_TRACE_INFO);
   pnf_info *pnf = (pnf_info *)(config->user_data);
   phy_info *phy_info = pnf->phys;
   nfapi_pnf_p7_config_t *p7_config = nfapi_pnf_p7_config_create();
@@ -1658,11 +1661,11 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   p7_config->tx_req = &pnf_phy_tx_req;
   p7_config->lbt_dl_config_req = &pnf_phy_lbt_dl_config_req;
   p7_config->ue_release_req = &pnf_phy_ue_release_req;
-  if (NFAPI_MODE==NFAPI_UE_STUB_PNF) {
-    p7_config->dl_config_req = &memcpy_dl_config_req;
-    p7_config->ul_config_req = &memcpy_ul_config_req;
-    p7_config->hi_dci0_req = &memcpy_hi_dci0_req;
-    p7_config->tx_req = &memcpy_tx_req;
+  if (NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
+    p7_config->dl_config_req = NULL;
+    p7_config->ul_config_req = NULL;
+    p7_config->hi_dci0_req = NULL;
+    p7_config->tx_req = NULL;
   } else {
     p7_config->dl_config_req = &pnf_phy_dl_config_req;
     p7_config->ul_config_req = &pnf_phy_ul_config_req;
@@ -1715,7 +1718,7 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
   //phy_init_RU(RC.ru[0]);
   printf("[PNF] About to call init_eNB_afterRU()\n");
 
-  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+  if (NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
     init_eNB_afterRU();
   }
 
@@ -1742,7 +1745,6 @@ int start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfapi
 
 int nr_start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  nfapi_nr_start_request_scf_t *req) {
   printf("[PNF] Received NFAPI_START_REQ phy_id:%d\n", req->header.phy_id);
-  nfapi_set_trace_level(NFAPI_TRACE_INFO);
   pnf_info *pnf = (pnf_info *)(config->user_data);
   phy_info *phy_info = pnf->phys;
   nfapi_pnf_p7_config_t *p7_config = nfapi_pnf_p7_config_create();
@@ -1788,10 +1790,10 @@ int nr_start_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy,  n
   p7_config->lbt_dl_config_req = &pnf_phy_lbt_dl_config_req;
   p7_config->ue_release_req = &pnf_phy_ue_release_req;
   if (NFAPI_MODE==NFAPI_UE_STUB_PNF) {
-    p7_config->dl_config_req = &memcpy_dl_config_req;
-    p7_config->ul_config_req = &memcpy_ul_config_req;
-    p7_config->hi_dci0_req = &memcpy_hi_dci0_req;
-    p7_config->tx_req = &memcpy_tx_req;
+    p7_config->dl_config_req = NULL;
+    p7_config->ul_config_req = NULL;
+    p7_config->hi_dci0_req = NULL;
+    p7_config->tx_req = NULL;
   } else {
     p7_config->dl_config_req = &pnf_phy_dl_config_req;
     p7_config->ul_config_req = &pnf_phy_ul_config_req;
@@ -2193,7 +2195,7 @@ void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_add
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port) {
   printf("%s() PNF\n\n\n\n\n\n", __FUNCTION__);
 
-  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
     nfapi_setmode(NFAPI_MODE_PNF);  // PNF!
   }
   nfapi_pnf_config_t *config = nfapi_pnf_config_create();
@@ -2247,15 +2249,13 @@ void oai_subframe_ind(uint16_t sfn, uint16_t sf) {
     uint16_t sfn_sf_tx = sfn<<4 | sf; 
 
     if ((sfn % 100 == 0) && sf==0) {
-      struct timespec ts;
-      clock_gettime(CLOCK_MONOTONIC, &ts);
-      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s %d.%d (sfn:%u sf:%u) SFN/SF(TX):%u\n", __FUNCTION__, ts.tv_sec, ts.tv_nsec, sfn, sf, NFAPI_SFNSF2DEC(sfn_sf_tx));
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] (sfn:%u sf:%u) SFN/SF(TX):%u\n", sfn, sf, NFAPI_SFNSF2DEC(sfn_sf_tx));
     }
 
     int subframe_ret = nfapi_pnf_p7_subframe_ind(p7_config_g, p7_config_g->phy_id, sfn_sf_tx);
 
     if (subframe_ret) {
-      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] %s(frame:%u subframe:%u) SFN/SF(TX):%u - PROBLEM with pnf_p7_subframe_ind()\n", __FUNCTION__, sfn, sf, sfn_sf_tx, NFAPI_SFNSF2DEC(sfn_sf_tx));
+      NFAPI_TRACE(NFAPI_TRACE_INFO, "[PNF] (frame:%u subframe:%u) SFN/SF(TX):%u - PROBLEM with pnf_p7_subframe_ind()\n", sfn, sf, sfn_sf_tx);
     } else {
       //NFAPI_TRACE(NFAPI_TRACE_INFO, "***NFAPI subframe handler finished *** \n");
     }

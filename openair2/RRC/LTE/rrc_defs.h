@@ -52,7 +52,7 @@
 
 //for D2D
 #define DEBUG_CTRL_SOCKET
-#define BUFSIZE                1024
+
 #define CONTROL_SOCKET_PORT_NO 8888
 #define MAX_NUM_DEST           10
 //netlink
@@ -173,13 +173,6 @@ extern pthread_mutex_t slrb_mutex;
 //the thread function
 void *send_UE_status_notification(void *);
 
-
-
-//#include "COMMON/openair_defs.h"
-#ifndef USER_MODE
-  //#include <rtai.h>
-#endif
-
 #include "LTE_SystemInformationBlockType1.h"
 #include "LTE_SystemInformation.h"
 #include "LTE_RRCConnectionReconfiguration.h"
@@ -216,12 +209,6 @@ void *send_UE_status_notification(void *);
 #define NB_CNX_CH MAX_MOBILES_PER_ENB
 #define NB_SIG_CNX_UE 2 //MAX_MANAGED_RG_PER_MOBILE
 #define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
-
-#ifndef NO_RRM
-  #include "L3_rrc_interface.h"
-  #include "rrc_rrm_msg.h"
-  #include "rrc_rrm_interface.h"
-#endif
 
 
 #include "intertask_interface.h"
@@ -324,12 +311,12 @@ typedef enum SL_TRIGGER_e {
 #define RRM_CALLOC(t,n)   (t *) malloc16( sizeof(t) * n)
 #define RRM_CALLOC2(t,s)  (t *) malloc16( s )
 
-#define MAX_MEAS_OBJ 6
-#define MAX_MEAS_CONFIG 6
-#define MAX_MEAS_ID 6
+#define MAX_MEAS_OBJ 7
+#define MAX_MEAS_CONFIG 7
+#define MAX_MEAS_ID 7
 
 #define PAYLOAD_SIZE_MAX 1024
-#define RRC_BUF_SIZE 8192
+#define RRC_BUF_SIZE 512
 #define UNDEF_SECURITY_MODE 0xff
 #define NO_SECURITY_MODE 0x20
 
@@ -364,7 +351,7 @@ typedef struct UE_RRC_INFO_s {
   uint8_t SIwindowsize_MBMS; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
   uint8_t handoverTarget;
   HO_STATE_t ho_state;
-  uint16_t SIperiod; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
+  uint16_t SIperiod ; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
   uint16_t SIperiod_MBMS; //!< Corresponds to the SIB1-MBMS si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120 TODO
   unsigned short UE_index;
   uint32_t T300_active;
@@ -376,6 +363,7 @@ typedef struct UE_RRC_INFO_s {
   uint32_t N310_cnt;
   uint32_t N311_cnt;
   rnti_t   rnti;
+  struct LTE_DL_DCCH_Message *dl_dcch_msg;
 } __attribute__ ((__packed__)) UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_s {
@@ -929,6 +917,7 @@ typedef struct UE_RRC_INST_s {
   float                           rsrq_db[7];
   float                           rsrp_db_filtered[7];
   float                           rsrq_db_filtered[7];
+  int                             subframeCount;
   /* KeNB as computed from parameters within USIM card */
   uint8_t kenb[32];
   uint8_t nh[32];

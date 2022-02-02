@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <linux/sched.h>
-#include "rt_wrapper.h"
 #include <sched.h>
 #include <signal.h>
 #include <stdint.h>
@@ -21,7 +20,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "threads_t.h"
-#include "rt_wrapper.h"
 #include "../../ARCH/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
@@ -114,7 +112,9 @@
     {"usrp-args",         CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200",TYPE_STRING,   0},   \
     {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
     {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
-    {"A",                 CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
+    {"A",                 CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0},   \
+    {"ue-idx-standalone", NULL,                   0,               u16ptr:&ue_idx_standalone,          defuintval:0xFFFF,    TYPE_UINT16,   0},   \
+    {"node-number",       NULL,                   0,               u16ptr:&node_number,                defuintval:2,         TYPE_UINT16,   0},   \
   }
 
 /*-----------------------------------------------------------------------------------------------------------------------------*/
@@ -137,6 +137,9 @@ uint64_t get_pdcp_optmask(void);
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
 extern int sync_var;
+
+extern uint16_t ue_id_g;
+extern uint16_t node_number;
 
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t  uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -208,7 +211,10 @@ extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
 
 extern void init_UE_stub_single_thread(int nb_inst, int eMBMS_active, int uecap_xer_in, char *emul_iface);
+extern void init_UE_standalone_thread(int ue_idx);
 
 extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
+
+extern void init_bler_table(void);
 
 #endif

@@ -451,9 +451,9 @@ sctp_handle_new_association_req(
 
             if (s > 0 ) {
                 if (((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr == in.s_addr) {
-                    struct sockaddr_in locaddr;
+                    struct sockaddr_in locaddr={0};
                     locaddr.sin_family = AF_INET;
-                    locaddr.sin_port = htons(sctp_new_association_req_p->port);
+                    locaddr.sin_port = 0;
                     locaddr.sin_addr.s_addr = in.s_addr;
 
                     if (sctp_bindx(sd, (struct sockaddr*)&locaddr, 1, SCTP_BINDX_ADD_ADDR) < 0) {
@@ -693,7 +693,7 @@ static int sctp_create_new_listener(
     sctp_init_t     *init_p,
     int server_type)
 {
-    struct sctp_event_subscribe   event;
+    struct sctp_event_subscribe   event={0};
     struct sockaddr              *addr      = NULL;
     struct sctp_cnx_list_elm_s   *sctp_cnx  = NULL;
     uint16_t                      i  = 0, j = 0;
@@ -925,21 +925,14 @@ void
 sctp_eNB_read_from_socket(
     struct sctp_cnx_list_elm_s *sctp_cnx)
 {
-    int                    flags = 0, n;
-    socklen_t              from_len;
-    struct sctp_sndrcvinfo sinfo;
-
-    struct sockaddr_in addr;
-    uint8_t buffer[SCTP_RECV_BUFFER_SIZE];
-
     DevAssert(sctp_cnx != NULL);
 
-    memset((void *)&addr, 0, sizeof(struct sockaddr_in));
-    from_len = (socklen_t)sizeof(struct sockaddr_in);
-    memset((void *)&sinfo, 0, sizeof(struct sctp_sndrcvinfo));
+    int    flags = 0;
+    struct sctp_sndrcvinfo sinfo={0};
+    uint8_t buffer[SCTP_RECV_BUFFER_SIZE];
 
-    n = sctp_recvmsg(sctp_cnx->sd, (void *)buffer, SCTP_RECV_BUFFER_SIZE,
-                     (struct sockaddr *)&addr, &from_len,
+    int n = sctp_recvmsg(sctp_cnx->sd, (void *)buffer, SCTP_RECV_BUFFER_SIZE,
+                    NULL, NULL, 
                      &sinfo, &flags);
 
     if (n < 0) {
@@ -1050,8 +1043,8 @@ sctp_eNB_read_from_socket(
                        sctp_cnx->ppid);
         }
 
-        SCTP_DEBUG("[%d][%d] Msg of length %d received from port %u, on stream %d, PPID %d\n",
-                   sinfo.sinfo_assoc_id, sctp_cnx->sd, n, ntohs(addr.sin_port),
+        SCTP_DEBUG("[%d][%d] Msg of length %d received, on stream %d, PPID %d\n",
+                   sinfo.sinfo_assoc_id, sctp_cnx->sd, n, 
                    sinfo.sinfo_stream, ntohl(sinfo.sinfo_ppid));
 
         sctp_itti_send_new_message_ind(sctp_cnx->task_id,

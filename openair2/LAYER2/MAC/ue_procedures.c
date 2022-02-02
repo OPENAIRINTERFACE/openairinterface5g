@@ -77,13 +77,6 @@ static int mbms_mch_i=0;
 //static int num_msi_per_CSA[28];
 
 
-/*
- *
-#ifndef USER_MODE
-#define msg debug_msg
-#endif
- */
-
 mapping BSR_names[] = {
   {"NONE", 0},
   {"SHORT BSR", 1},
@@ -156,15 +149,13 @@ void ue_init_mac(module_id_t module_idP) {
     UE_mac_inst[module_idP].scheduling_info.LCID_buffer_remain[i] = 0;
   }
 
-  if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
     pthread_mutex_init(&UE_mac_inst[module_idP].UL_INFO_mutex,NULL);
-    UE_mac_inst[module_idP].UE_mode[0] = NOT_SYNCHED; //PRACH;
+    UE_mac_inst[module_idP].UE_mode[0] = PRACH; //NOT_SYNCHED;
     UE_mac_inst[module_idP].first_ULSCH_Tx =0;
     UE_mac_inst[module_idP].SI_Decoded = 0;
     next_ra_frame = 0;
     next_Mod_id = 0;
-    tx_request_pdu_list = NULL;
-    tx_req_num_elems = 0;
   }
 }
 
@@ -418,7 +409,7 @@ ue_send_sdu(module_id_t module_idP,
 
   if (payload_ptr != NULL) {
     for (i = 0; i < num_ce; i++) {
-      //    printf("ce %d : %d\n",i,rx_ces[i]);
+      LOG_I(MAC, "ce %d : %d\n",i,rx_ces[i]);
       switch (rx_ces[i]) {
         case UE_CONT_RES:
           LOG_I(MAC,
@@ -443,7 +434,7 @@ ue_send_sdu(module_id_t module_idP,
                       "[UE %d][RAPROC] Contention detected, RA failed\n",
                       module_idP);
 
-                if(NFAPI_MODE==NFAPI_UE_STUB_PNF) { // phy_stub mode
+                if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // phy_stub mode
                   //  Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
                   // PRACH state.
                   LOG_I(MAC, "nfapi_mode3: Setting UE_mode BACK to PRACH 1\n");
@@ -469,7 +460,7 @@ ue_send_sdu(module_id_t module_idP,
             [module_idP].
             RA_contention_resolution_timer_active = 0;
 
-            if(NFAPI_MODE==NFAPI_UE_STUB_PNF) { // phy_stub mode
+            if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // phy_stub mode
               // Modification for phy_stub mode operation here. We only need to change the ue_mode to PUSCH
               UE_mac_inst[module_idP].UE_mode[eNB_index] = PUSCH;
             } else { // Full stack mode
@@ -487,7 +478,7 @@ ue_send_sdu(module_id_t module_idP,
 #endif
 
           // Eliminate call to process_timing_advance for the phy_stub UE operation mode. Is this correct?
-          if (NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+          if (NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
             process_timing_advance(module_idP,CC_id,payload_ptr[0]);
           }
 
@@ -1251,65 +1242,6 @@ int ue_query_mch_fembms(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, 
   }
 
 
-
-  
-#ifdef OLD
-          // Acount for sf_allocable in CSA
-        int num_sf_alloc = 0;
-
-        for (l = 0; l < 8; l++) {
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l] == NULL)
-            continue;
-
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.present != LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame)
-            continue;
-
-          uint32_t common_mbsfn_SubframeConfig = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.choice.oneFrame.buf[0];
-
-
-          for (j = 0; j < 6; j++)
-            num_sf_alloc += ((common_mbsfn_SubframeConfig & (0x80 >> j)) == (0x80 >> j));
-            //num_sf_alloc=1;
-        }
-	
-	num_sf_alloc = 10;
-
-        num_non_mbsfn_SubframeConfig = (UE_mac_inst[module_idP].non_mbsfn_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | UE_mac_inst[module_idP].non_mbsfn_SubframeConfig->subframeAllocation_r14.buf[0]>>7);
-	int ones=0;
-	for(j=0; j < 16; j++){
-		if(num_non_mbsfn_SubframeConfig & 1)
-			ones++;
-		num_non_mbsfn_SubframeConfig>>=1;
-	}
-
-        for (l = 0; l < 28; l++) {
-          if (UE_mac_inst[module_idP].pmch_stop_mtch[l] >= 1/*num_sf_alloc*/) {
-            if (UE_mac_inst[module_idP].pmch_stop_mtch[l] != 2047) {
-              if (UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch] != NULL){
-                mtch_mcs = UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch]->dataMCS_r9;
-    	       //int common_mbsfn_alloc_offset = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[0]->radioframeAllocationOffset;
-               long common_mbsfn_period  = 1 << UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[0]->radioframeAllocationPeriod;
-               long commonSF_AllocPeriod = 4 << UE_mac_inst[module_idP].commonSF_AllocPeriod_r9;
-               if(UE_mac_inst[module_idP].common_num_sf_alloc >= UE_mac_inst[module_idP].pmch_stop_mtch[l]){
-                       //LOG_E(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);
-
-                       mtch_mcs = -1;
-               }/*else
-                       OG_W(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);*/
-                       LOG_D(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d num_sf_alloc %d commonSF_AllocPeriod %ld, common_mbsfn_period %ld num_non_mbsfn_SubframeConfig %x ones %d\n",UE_mac_inst[module_idP].common_num_sf_alloc,num_sf_alloc, commonSF_AllocPeriod,common_mbsfn_period,num_non_mbsfn_SubframeConfig,ones);
-                UE_mac_inst[module_idP].common_num_sf_alloc++;
-                UE_mac_inst[module_idP].common_num_sf_alloc = UE_mac_inst[module_idP].common_num_sf_alloc % (num_sf_alloc * commonSF_AllocPeriod / common_mbsfn_period-(1+ones)*(commonSF_AllocPeriod/4)); //TODO
-              }
-              else
-                mtch_mcs = -1;
-
-              mch_lcid = (uint8_t)l;
-              break;
-            }
-          }
-        }
-#endif
-
 {
  	 // Acount for sf_allocable in Common SF Allocation
  	 int num_sf_alloc = 0;
@@ -1869,49 +1801,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
 	//}
   }
 
-#ifdef OLD
-        // Acount for sf_allocable in CSA
-        int num_sf_alloc = 0;
 
-        for (l = 0; l < 8; l++) {
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l] == NULL)
-            continue;
-
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.present != LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame)
-            continue;
-
-          uint32_t common_mbsfn_SubframeConfig = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[l]->subframeAllocation.choice.oneFrame.buf[0];
-
-          for (j = 0; j < 6; j++)
-            num_sf_alloc += ((common_mbsfn_SubframeConfig & (0x80 >> j)) == (0x80 >> j));
-	    //num_sf_alloc=1;
-        }
-
-        for (l = 0; l < 28; l++) {
-          if (UE_mac_inst[module_idP].pmch_stop_mtch[l] >= 1/*num_sf_alloc*/) {
-            if (UE_mac_inst[module_idP].pmch_stop_mtch[l] != 2047) {
-              if (UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch] != NULL){
-                mtch_mcs = UE_mac_inst[module_idP].pmch_Config[UE_mac_inst[module_idP].msi_pmch]->dataMCS_r9;
-               long common_mbsfn_period  = 1 << UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[0]->radioframeAllocationPeriod;
-               long commonSF_AllocPeriod = 4 << UE_mac_inst[module_idP].commonSF_AllocPeriod_r9;
-               if(UE_mac_inst[module_idP].common_num_sf_alloc >= UE_mac_inst[module_idP].pmch_stop_mtch[l]){
-		       //LOG_E(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);
-
-                       mtch_mcs = -1;
-	       }/*else
-		       LOG_W(MAC,"Attemp to UE_mac_inst[module_idP].common_num_sf_alloc %d\n",UE_mac_inst[module_idP].common_num_sf_alloc);*/
-               	UE_mac_inst[module_idP].common_num_sf_alloc++;
-           	UE_mac_inst[module_idP].common_num_sf_alloc = UE_mac_inst[module_idP].common_num_sf_alloc % (num_sf_alloc * commonSF_AllocPeriod / common_mbsfn_period);
-	      }
-              else
-                mtch_mcs = -1;
-
-              mch_lcid = (uint8_t)l;
-              break;
-            }
-          }
-        }
-#endif
 
 {
  	 // Acount for sf_allocable in Common SF Allocation
@@ -2616,6 +2506,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
               scheduling_info.BSR_bytes[UE_mac_inst[module_idP].
                                         scheduling_info.LCGID
                                         [lcid]]);
+        AssertFatal(num_sdus < sizeof(sdu_lengths) / sizeof(sdu_lengths[0]), "num_sdus %d > num sdu_length elements\n", num_sdus);
         sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
                                 UE_mac_inst
                                 [module_idP].
@@ -2747,7 +2638,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 
   // build PHR and update the timers
   if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)) {
-    if(NFAPI_MODE==NFAPI_UE_STUB_PNF) {
+    if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
       //Substitute with a static value for the MAC layer abstraction (phy_stub mode)
       phr_p->PH = 60;
     } else {
@@ -3198,7 +3089,7 @@ ue_scheduler(const module_id_t module_idP,
             "Module id %u Contention resolution timer expired, RA failed\n",
             module_idP);
 
-      if(NFAPI_MODE==NFAPI_UE_STUB_PNF) { // phy_stub mode
+      if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) { // phy_stub mode
         // Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
         // PRACH state.
         LOG_I(MAC, "nfapi_mode3: Setting UE_mode to PRACH 2 \n");
