@@ -552,7 +552,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = 0; // start wrt BWPstart
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  const long f = (sched_ctrl->active_bwp ||bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+  const long f = ((sched_ctrl->active_bwp || bwpd) && sched_ctrl->search_space &&
+                  sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
+                    sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   int rbSize = 0;
   const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
   AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
