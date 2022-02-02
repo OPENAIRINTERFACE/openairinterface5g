@@ -78,7 +78,8 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
         k-=frame_parms->ofdm_symbol_size;
       }
   }
+#ifdef DEBUG_PRS_MAP
   LOG_M("nr_prs.m", "prs",(int16_t *)&txdataF[prs_data->SymbolStart*frame_parms->ofdm_symbol_size],prs_data->NumPRSSymbols*frame_parms->ofdm_symbol_size, 1, 1);
-
+#endif
   return 0;
 }

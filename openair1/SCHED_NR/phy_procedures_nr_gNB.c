@@ -141,7 +141,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
                    ssb_start_symbol,
                    n_hf, frame, cfg, fp);
   
-  LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[txdataF_offset],fp->samples_per_subframe_wCP,1,1);
+  //LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[txdataF_offset],fp->samples_per_subframe_wCP,1,1);
 }
 
 
