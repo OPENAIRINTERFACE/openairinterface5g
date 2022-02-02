@@ -788,7 +788,9 @@ void pf_dl(module_id_t module_id,
     AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-    const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+    const long f = ((sched_ctrl->active_bwp || bwpd) && sched_ctrl->search_space &&
+                    sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
+                   sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
     if (ps->time_domain_allocation != tda)
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -1161,14 +1163,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tpc,
           pucch->timing_indicator);
 
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    int dci_format;
-    if (sched_ctrl->search_space) {
-       dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-    }
-    else {
-       dci_format = NR_DL_DCI_FORMAT_1_0;
-    }
+    int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType &&
+                     sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
+                     NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
+
     const int rnti_type = NR_RNTI_C;
 
     fill_dci_pdu_rel15(scc,

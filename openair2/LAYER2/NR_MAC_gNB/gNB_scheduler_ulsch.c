@@ -39,16 +39,11 @@
 
 int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl) {
 
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    int dci_format;
-    if (sched_ctrl->search_space) {
-       dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-    }
-    else {
-       dci_format = NR_UL_DCI_FORMAT_0_0;
-    }
+  int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType &&
+                   sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
+                   NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
 
-    return(dci_format);
+  return(dci_format);
 }
 
 void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp)

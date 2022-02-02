@@ -374,7 +374,10 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
-  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+  const long f = (sched_ctrl->active_bwp && sched_ctrl->search_space &&
+                  sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
+                 sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda)
     nr_set_pdsch_semi_static(
@@ -444,7 +447,9 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
-  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const long f = (sched_ctrl->active_bwp && sched_ctrl->search_space &&
+                  sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
+                    sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
   const uint8_t num_dmrs_cdm_grps_no_data = 1;
   /* we want to avoid a lengthy deduction of DMRS and other parameters in
