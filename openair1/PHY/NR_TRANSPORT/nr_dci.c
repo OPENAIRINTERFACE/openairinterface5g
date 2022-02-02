@@ -251,7 +251,7 @@ void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 }
 
 void nr_generate_dci_top(nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
-			                   nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
+                         nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
                          uint32_t **gold_pdcch_dmrs,
                          int32_t *txdataF,
                          int16_t amp,
