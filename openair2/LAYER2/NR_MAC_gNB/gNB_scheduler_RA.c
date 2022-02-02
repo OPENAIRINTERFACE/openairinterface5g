@@ -1488,12 +1488,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       return;
     }
 
-    int n_rb=0;
-    for (int i=0;i<6;i++)
-      for (int j=0;j<8;j++) {
-        n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
-      }
-    n_rb*=6;
+    int n_rb,rb_offset;
+    get_coreset_rballoc(coreset->frequencyDomainResources.buf,&n_rb,&rb_offset);
     const uint16_t N_cce = n_rb * coreset->duration / NR_NB_REG_PER_CCE;
     const int delta_PRI=0;
     int r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);

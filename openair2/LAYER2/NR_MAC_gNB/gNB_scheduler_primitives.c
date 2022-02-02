@@ -947,7 +947,7 @@ void nr_configure_pucch(module_id_t module_id,
   pucch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
   pucch_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
   pucch_pdu->cyclic_prefix = (genericParameters->cyclicPrefix==NULL) ? 0 : *genericParameters->cyclicPrefix;
-  if (r_pucch<0 || bwp ){
+  if (bwp || bwpd) {
       LOG_D(NR_MAC,"pucch_acknak: Filling dedicated configuration for PUCCH\n");
    // we have either a dedicated BWP or Dedicated PUCCH configuration on InitialBWP
       AssertFatal(bwp!=NULL || bwpd!=NULL,"We need one dedicated configuration for a BWP (neither additional or initial BWP has a dedicated configuration)\n");
