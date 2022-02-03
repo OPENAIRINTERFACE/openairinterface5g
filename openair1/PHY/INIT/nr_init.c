@@ -93,7 +93,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
     O2 = 1;//Vertical beam oversampling (1 or 4)
     N1 = gNB->frame_parms.nb_antennas_tx/(N2*x_polarization);//
     O1=1;//Horizontal beam oversampling (1 or 4)
-    CSI_RS_antenna_ports=N1*N2*x_polarization;
+    CSI_RS_antenna_ports=gNB->frame_parms.nb_antennas_tx;
     LOG_D(PHY, "NR Codebook Config: antenna ports: %d N1 %d N2 %d\n",CSI_RS_antenna_ports,N1,N2);
 
     // Generation of codebook Type1 with codebookMode 1 (CSI_RS_antenna_ports < 16)
@@ -139,7 +139,9 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
         }
       }
 
-      gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(gNB->frame_parms.nb_antennas_tx* sizeof(int32_t **));
+      int max_mimo_layers =(CSI_RS_antenna_ports<NR_MAX_NB_LAYERS) ? CSI_RS_antenna_ports : NR_MAX_NB_LAYERS;
+
+      gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(max_mimo_layers* sizeof(int32_t **));
       int32_t ***mat = gNB->nr_mimo_precoding_matrix;
       double complex res_code;
 
@@ -174,7 +176,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                 ((short*) &mat[0][pmiq][len])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
               else
                 ((short*) &mat[0][pmiq][len])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-              LOG_D(PHY, "1 Layer Precoding Matrix[0][pmi %d][antPort %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq, len, creal(res_code), cimag(res_code),((short*) &mat[0][pmiq][len])[0],((short*) &mat[0][pmiq][len])[1]);
+              LOG_D(PHY, "1 Layer Precoding Matrix[0][pmi %d][antPort %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                    pmiq, len, creal(res_code), cimag(res_code),((short*) &mat[0][pmiq][len])[0],((short*) &mat[0][pmiq][len])[1]);
             }
 
             for(int len=N1*N2; len<2*N1*N2; len++) {
@@ -187,7 +190,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                 ((short*) &mat[0][pmiq][len])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
               else
                 ((short*) &mat[0][pmiq][len])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-              LOG_D(PHY, "1 Layer Precoding Matrix[0][pmi %d][antPort %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq, len, creal(res_code), cimag(res_code),((short*) &mat[0][pmiq][len])[0],((short*) &mat[0][pmiq][len])[1]);
+              LOG_D(PHY, "1 Layer Precoding Matrix[0][pmi %d][antPort %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                    pmiq, len, creal(res_code), cimag(res_code),((short*) &mat[0][pmiq][len])[0],((short*) &mat[0][pmiq][len])[1]);
             }
           }
         }
@@ -257,7 +261,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                         ((short*) &mat[1][pmiq][i_rows*2+j_col])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
                       else
                         ((short*) &mat[1][pmiq][i_rows*2+j_col])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-                      LOG_I(PHY, "2 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[1][pmiq][i_rows*2+j_col])[0],((short*) &mat[1][pmiq][i_rows*2+j_col])[1]);
+                      LOG_D(PHY, "2 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                            pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[1][pmiq][i_rows*2+j_col])[0],((short*) &mat[1][pmiq][i_rows*2+j_col])[1]);
                     }
                     for (int i_rows=N1*N2; i_rows<2*N1*N2; i_rows++) {
                       res_code=sqrt(1/(double)(2*CSI_RS_antenna_ports))*(phase_sign)*theta_n[nn]*v_lm[llc][mmc][i_rows-N1*N2];
@@ -269,7 +274,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                         ((short*) &mat[1][pmiq][i_rows*2+j_col])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
                       else
                         ((short*) &mat[1][pmiq][i_rows*2+j_col])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-                      LOG_I(PHY, "2 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[1][pmiq][i_rows*2+j_col])[0],((short*) &mat[1][pmiq][i_rows*2+j_col])[1]);
+                      LOG_D(PHY, "2 Layer Precoding Matrix[1][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                            pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[1][pmiq][i_rows*2+j_col])[0],((short*) &mat[1][pmiq][i_rows*2+j_col])[1]);
                     }
                   }
                 }
@@ -281,7 +287,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
       //Table 5.2.2.2.1-7:
       //Codebook for 3-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
-      if(CSI_RS_antenna_ports>=3) {
+      if(max_mimo_layers>=3) {
 
         //pmi_size is computed as follows
         pmiq_size = 1;//unity matrix
@@ -344,7 +350,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                           ((short*) &mat[2][pmiq][i_rows*3+j_col])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
                         else
                           ((short*) &mat[2][pmiq][i_rows*3+j_col])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-                        LOG_I(PHY, "3 Layer Precoding Matrix[2][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[2][pmiq][i_rows*3+j_col])[0],((short*) &mat[2][pmiq][i_rows*3+j_col])[1]);
+                        LOG_D(PHY, "3 Layer Precoding Matrix[2][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                              pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[2][pmiq][i_rows*3+j_col])[0],((short*) &mat[2][pmiq][i_rows*3+j_col])[1]);
                       }
                       for (int i_rows=N1*N2; i_rows<2*N1*N2; i_rows++) {
                         res_code=sqrt(1/(double)(3*CSI_RS_antenna_ports))*(phase_sign)*theta_n[nn]*v_lm[llc][mmc][i_rows-N1*N2];
@@ -356,7 +363,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                           ((short*) &mat[2][pmiq][i_rows*3+j_col])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
                         else
                           ((short*) &mat[2][pmiq][i_rows*3+j_col])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-                        LOG_I(PHY, "3 Layer Precoding Matrix[2][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[2][pmiq][i_rows*3+j_col])[0],((short*) &mat[2][pmiq][i_rows*3+j_col])[1]);
+                        LOG_D(PHY, "3 Layer Precoding Matrix[2][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                              pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[2][pmiq][i_rows*3+j_col])[0],((short*) &mat[2][pmiq][i_rows*3+j_col])[1]);
                       }
                     }
                   }
@@ -369,7 +377,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
       //Table 5.2.2.2.1-8:
       //Codebook for 4-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
-      if(CSI_RS_antenna_ports>=4) {
+      if(max_mimo_layers>=4) {
         //pmi_size is computed as follows
         pmiq_size = 1;//unity matrix
         for(int llb=0; llb<N1*O1; llb++) { //i_1_1
@@ -438,7 +446,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                           ((short*) &mat[3][pmiq][i_rows*4+j_col])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
                         else
                           ((short*) &mat[3][pmiq][i_rows*4+j_col])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-                        LOG_D(PHY, "4 Layer Precoding Matrix[3][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[3][pmiq][i_rows*4+j_col])[0],((short*) &mat[3][pmiq][i_rows*4+j_col])[1]);
+                        LOG_D(PHY, "4 Layer Precoding Matrix[3][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                              pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[3][pmiq][i_rows*4+j_col])[0],((short*) &mat[3][pmiq][i_rows*4+j_col])[1]);
                       }
 
                       for (int i_rows=N1*N2; i_rows<2*N1*N2; i_rows++) {
@@ -451,7 +460,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                           ((short*) &mat[3][pmiq][i_rows*4+j_col])[1] = (short) ((cimag(res_code)*32768)+0.5);//convert to Q15
                         else
                           ((short*) &mat[3][pmiq][i_rows*4+j_col])[1] = (short) ((cimag(res_code)*32768)-0.5);//convert to Q15
-                        LOG_D(PHY, "4 Layer Precoding Matrix[3][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[3][pmiq][i_rows*4+j_col])[0],((short*) &mat[3][pmiq][i_rows*4+j_col])[1]);
+                        LOG_D(PHY, "4 Layer Precoding Matrix[3][pmi %d][antPort %d][layerIdx %d]= %f+j %f -> Fixed Point %d+j %d \n",
+                              pmiq,i_rows,j_col, creal(res_code), cimag(res_code),((short*) &mat[3][pmiq][i_rows*4+j_col])[0],((short*) &mat[3][pmiq][i_rows*4+j_col])[1]);
                       }
                     }
                   }

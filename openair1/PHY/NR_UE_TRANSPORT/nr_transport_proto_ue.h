@@ -825,11 +825,11 @@ void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
                                      int start_point);
 
 void nr_dlsch_deinterleaving(uint8_t symbol,
-							uint8_t start_symbol,
-							uint16_t L,
-							uint16_t *llr,
-							uint16_t *llr_deint,
-							uint16_t nb_rb_pdsch);
+                             uint8_t start_symbol,
+                             uint16_t L,
+                             uint16_t *llr,
+                             uint16_t *llr_deint,
+                             uint16_t nb_rb_pdsch);
 
 void dlsch_dual_stream_correlation(NR_DL_FRAME_PARMS *frame_parms,
                                    unsigned char symbol,
