@@ -22,18 +22,21 @@
 -->
 <testCaseList>
 	<htmlTabRef>TEST-SA-FR1-Tab3</htmlTabRef>
-	<htmlTabName>SA Ping DL UL with QUECTEL</htmlTabName>
+	<htmlTabName>SA 162PRB</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 040000
+ 042000
  000002
  010000
  000001
- 050000
- 050001
- 070000
- 070001
+ 052000
+ 000001
+ 072000
+ 000001
+ 072001
+ 000001
+ 072002
  000001
  010002
  080000
@@ -55,7 +58,7 @@
 	</testCase>
 
 
-	<testCase id="040000">
+	<testCase id="042000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.162PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
@@ -81,39 +84,44 @@
 	</testCase>
 
 
-	<testCase id="050000">
+	<testCase id="052000">
 		<class>Ping</class>
-		<desc>Ping: 20pings in 20sec</desc>
+		<desc>Ping: 40pings in 40sec</desc>
 		<id>nrmodule2_quectel</id>
-		<ping_args>-c 20</ping_args>
-		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+		<ping_args>-c 40</ping_args>
+		<ping_packetloss_threshold>1</ping_packetloss_threshold>
+		<ping_rttavg_threshold>20</ping_rttavg_threshold>
 	</testCase>
 
-	<testCase id="050001">
-		<class>Ping</class>
-		<desc>Ping: 100pings in 20sec</desc>
-		<id>nrmodule2_quectel</id>
-		<ping_args>-c 100 -i 0,2</ping_args>
-		<ping_packetloss_threshold>5</ping_packetloss_threshold>
-	</testCase>
 
-	<testCase id="070000">
+	<testCase id="072000">
 		<class>Iperf</class>
 		<desc>iperf (DL/140Mbps/UDP)(60 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 140M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
-		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>50</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
-	<testCase id="070001">
+	<testCase id="072001">
 		<class>Iperf</class>
 		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 3M -t 60</iperf_args>
 		<direction>UL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="072002">
+		<class>Iperf</class>
+		<desc>iperf (BIDIR TCP)(10 sec)(single-ue profile)</desc>
+		<iperf_args>-t 10 --bidir</iperf_args>
+		<direction>BIDIR</direction>
+		<id>nrmodule2_quectel</id>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
