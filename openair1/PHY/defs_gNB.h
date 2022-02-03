@@ -594,6 +594,8 @@ typedef struct gNB_L1_proc_t_s {
   pthread_t L1_stats_thread;
   /// pthread structure for printing time meas
   pthread_t process_stats_thread;
+  /// pthread structure for reordering L1 tx thread messages
+  pthread_t pthread_tx_reorder;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// flag to indicate first TX transmission
@@ -751,7 +753,6 @@ typedef struct PHY_VARS_gNB_s {
   //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
   uint16_t num_pdsch_rnti[80];
   NR_gNB_PBCH        pbch;
-  nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
@@ -774,9 +775,6 @@ typedef struct PHY_VARS_gNB_s {
 
   // PUCCH0 Look-up table for cyclic-shifts
   NR_gNB_PUCCH0_LUT_t pucch0_lut;
-  /// NR synchronization sequences
-  int16_t d_pss[NR_PSS_LENGTH];
-  int16_t d_sss[NR_SSS_LENGTH];
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch_dmrs[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
@@ -844,8 +842,7 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t *phy_proc_tx_0;
-  time_stats_t *phy_proc_tx_1;
+  time_stats_t *phy_proc_tx[2];
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*
@@ -886,7 +883,9 @@ typedef struct PHY_VARS_gNB_s {
   */
   notifiedFIFO_t *respDecode;
   notifiedFIFO_t *resp_L1;
-  notifiedFIFO_t *resp_L1_tx;
+  notifiedFIFO_t *L1_tx_free;
+  notifiedFIFO_t *L1_tx_filled;
+  notifiedFIFO_t *L1_tx_out;
   notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;

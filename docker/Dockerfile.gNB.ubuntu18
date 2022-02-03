@@ -78,6 +78,7 @@ COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
     /usr/local/lib/
 
 # Now we are copying from builder-image the UHD files.

@@ -44,6 +44,7 @@ nfapi_pnf_p7_config_t* nfapi_pnf_p7_config_create()
 	_this->_public.codec_config.allocate = &malloc;
 	_this->_public.codec_config.deallocate = &free;
 
+	// cppcheck-suppress memleak
 	return &(_this->_public);
 }
 
@@ -63,10 +64,6 @@ int nfapi_pnf_p7_start(nfapi_pnf_p7_config_t* config)
 	if(config == 0)
 		return -1;
 
-	// Make sure to set the defined trace function before using NFAPI_TRACE
-	if(config->trace)
-		nfapi_trace_g = config->trace;
-
 	pnf_p7_t* _this = (pnf_p7_t*)(config);
 
 	NFAPI_TRACE(NFAPI_TRACE_INFO, "%s\n", __FUNCTION__);
@@ -81,10 +78,6 @@ int nfapi_nr_pnf_p7_start(nfapi_pnf_p7_config_t* config)
 	// Verify that config is not null
 	if(config == 0)
 		return -1;
-
-	// Make sure to set the defined trace function before using NFAPI_TRACE
-	if(config->trace)
-		nfapi_trace_g = config->trace;
 
 	pnf_p7_t* _this = (pnf_p7_t*)(config);
 
@@ -175,17 +168,7 @@ int nfapi_pnf_p7_rach_ind(nfapi_pnf_p7_config_t* config, nfapi_rach_indication_t
 	pnf_p7_t* _this = (pnf_p7_t*)(config);
 	return pnf_p7_pack_and_send_p7_message(_this, (nfapi_p7_message_header_t*)ind, sizeof(nfapi_rach_indication_t));
 }
-int nfapi_pnf_p7_srs_ind(nfapi_pnf_p7_config_t* config, nfapi_srs_indication_t* ind)
-{
-	if(config == NULL || ind == NULL)
-	{
-		NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s: invalid input params\n", __FUNCTION__);
-		return -1;
-	}
 
-	pnf_p7_t* _this = (pnf_p7_t*)(config);
-	return pnf_p7_pack_and_send_p7_message(_this, (nfapi_p7_message_header_t*)ind, sizeof(nfapi_srs_indication_t));
-}
 int nfapi_pnf_p7_sr_ind(nfapi_pnf_p7_config_t* config, nfapi_sr_indication_t* ind)
 {
 	if(config == NULL || ind == NULL)

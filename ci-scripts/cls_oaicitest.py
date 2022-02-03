@@ -57,12 +57,15 @@ import sshconnection
 import cls_module_ue
 import cls_ci_ueinfra		#class defining the multi Ue infrastrucure
 
+logging.getLogger("matplotlib").setLevel(logging.WARNING)
+import matplotlib.pyplot as plt
+import numpy as np
 
 #-----------------------------------------------------------
 # Utility functions
 #-----------------------------------------------------------
 
-def GetPingTimeAnalysis(ping_log_file):
+def GetPingTimeAnalysis(RAN,ping_log_file,ping_rttavg_threshold):
 	#ping time values read from file
 	t_ping=[]
 	#ping stats (dictionary) to be returned by the function
@@ -86,17 +89,46 @@ def GetPingTimeAnalysis(ping_log_file):
 		max_loc=t_ping.index(max(t_ping))
 		ping_stat['max_loc']=max_loc
 		#remove it
-		t_ping.pop(max_loc)
+		t_ping_post=t_ping.copy()
+		t_ping_post.pop(max_loc)
 		#new stats after removing max value
-		ping_stat['min_1']=min(t_ping)
-		ping_stat['mean_1']=stat.mean(t_ping)
-		ping_stat['median_1']=stat.median(t_ping)
-		ping_stat['max_1']=max(t_ping)
+		ping_stat['min_1']=min(t_ping_post)
+		ping_stat['mean_1']=stat.mean(t_ping_post)
+		ping_stat['median_1']=stat.median(t_ping_post)
+		ping_stat['max_1']=max(t_ping_post)
+
+		#plot ping over time and save png for artifacts
+		ticks = np.arange(0, len(t_ping), 1)
+		figure, axis = plt.subplots(figsize=(10, 10))
+		axis.plot(ticks,t_ping,marker='o')
+		axis.set_xlabel('Ping Events')
+		axis.set_ylabel("Ping RTT (in ms)")
+		axis.set_title(ping_log_file)
+		axis.set_xticks(ticks)
+		axis.set_xticklabels([])
+		YMAX=20 #base scale
+		if max(t_ping) > YMAX:
+			y_max=max(t_ping)+1
+		else:
+			y_max=YMAX+1
+		plt.ylim(0,y_max)
+		if ping_rttavg_threshold != '':
+			th_label="AVG Ping Fail Threshold="+ping_rttavg_threshold
+			plt.axhline(y=float(ping_rttavg_threshold), color='r', linestyle='-',label=th_label)
+			axis.legend()
+		plt.savefig(ping_log_file+'.png')
+
+		#copy the png file already to enb to move it move it later into the artifacts
+		try:
+			mySSH = sshconnection.SSHConnection()
+			mySSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, ping_log_file+'.png', RAN.eNBSourceCodePath + '/cmake_targets/')
+		except:
+			logging.debug('\u001B[1;37;41m Ping PNG SCP to eNB FAILED\u001B[0m')
 
 		return ping_stat
 
 	else:
-		logging.error("Ping log file does not exist")
+		logging.error("GetPingTimeAnalysis : Ping log file does not exist")
 		return -1
 
 	
@@ -129,6 +161,7 @@ class OaiCiTest():
 		self.ping_rttavg_threshold =''
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
+		self.iperf_bitrate_threshold = ''
 		self.iperf_profile = ''
 		self.iperf_options = ''
 		self.iperf_direction = ''
@@ -1531,7 +1564,7 @@ class OaiCiTest():
 		statusQueue.put(message)
 		lock.release()
 
-	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue,EPC, Module_UE):
+	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue,EPC, Module_UE,RAN):
 		try:
 			SSH = sshconnection.SSHConnection()
 			# Launch ping on the EPC side (true for ltebox and old open-air-cn)
@@ -1559,6 +1592,7 @@ class OaiCiTest():
 					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)				
 				else:
 					ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+				ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
 				#copy the ping log file to have it locally for analysis (ping stats)
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')				
 			else:
@@ -1578,6 +1612,7 @@ class OaiCiTest():
 					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 					#cat is executed on EPC
 					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+					ping_log_file='/scripts/ping_' + self.testCase_id + '_' + device_id + '.log'
 				else: #launch from Module
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 					#target address is different depending on EPC type
@@ -1595,6 +1630,7 @@ class OaiCiTest():
 
 					#cat is executed locally 
 					SSH.command('cat ping_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', 5)
+					ping_log_file='ping_' + self.testCase_id + '_' + self.ue_id + '.log'
 					ping_status=0
 
 			# TIMEOUT CASE
@@ -1642,9 +1678,9 @@ class OaiCiTest():
 			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
 
 			#adding extra ping stats from local file
-			ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
+			#ping_log_file variable is defined above in this function, depending on device/ue
 			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
-			ping_stat=GetPingTimeAnalysis(ping_log_file)
+			ping_stat=GetPingTimeAnalysis(RAN,ping_log_file,self.ping_rttavg_threshold)
 			ping_stat_msg=''
 			if (ping_stat!=-1) and (len(ping_stat)!=0):
 				ping_stat_msg+='Ping stats before removing largest value : \n'
@@ -1834,7 +1870,7 @@ class OaiCiTest():
 				device_id = self.UEDevices[i]
 			else:
 				device_id = Module_UE.ID + "-" + Module_UE.Kind 
-			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,Module_UE,))
+			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,Module_UE,RAN,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -2009,6 +2045,35 @@ class OaiCiTest():
 		else:
 			return -2
 
+
+	def Iperf_analyzeV2BIDIR(self, lock, UE_IPAddress, device_id, statusQueue,server_filename,client_filename):
+		#server file is unused for the moment
+		if (not os.path.isfile(client_filename)):
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Could not analyze from client log')
+			return
+		report=[]
+		report_msg='Client Report:\n'
+		with open(client_filename, 'r') as f_client:
+			for line in f_client.readlines():
+				result = re.search(rf'^\[\s+\d+\](?P<direction>\[.+\]).*\s+(?P<bitrate>[0-9\.]+ [KMG]bits\/sec).*\s+(?P<role>\bsender|receiver\b)', str(line))
+				if result is not None:
+					report.append(str(line))
+					report_msg+=result.group('role') + ' ' + result.group('direction')+ '\t = ' +result.group('bitrate')+'\n'
+
+		if len(report)>0:
+			lock.acquire()
+			statusQueue.put(0)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put(report_msg)
+			logging.debug('\u001B[1;37;45m TCP Bidir Iperf Result (' + UE_IPAddress + ') \u001B[0m')
+			logging.debug('\u001B[1;35m    ' + report_msg + '\u001B[0m')
+			lock.release()
+		else:
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Could not analyze from client log')
+
+
+
 	def Iperf_analyzeV2Server(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options, filename,type):
 		if (not os.path.isfile(filename)):
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Could not analyze from server log')
@@ -2085,12 +2150,20 @@ class OaiCiTest():
 				pl = float(100 * pl_sum / ps_sum)
 				packetloss = '%2.1f ' % (pl)
 				packetloss += '%'
+				#checking packet loss compliance
 				if float(pl) > float(self.iperf_packetloss_threshold):
-					pal_too_high_msg = 'Packet Loss too high :  actual = '+packetloss+', target = '+self.iperf_packetloss_threshold+'%\n'
+					pal_too_high_msg = 'Packet Loss too high :  tested = '+packetloss+', target = '+self.iperf_packetloss_threshold+'%'
 				else:
-					pal_too_high_msg=''			
+					pal_too_high_msg='Packet Loss value is within acceptance range'
+				#checking bitrate perf compliance
+				if float(br_loss) < float(self.iperf_bitrate_threshold):
+					bit_too_low_msg = 'Bitrate too low :  tested = '+bitperf+', target = '+self.iperf_bitrate_threshold+'%'
+				else:
+					bit_too_low_msg='Bitrate perf value is within acceptance range'
 			lock.acquire()
-			if (br_loss < 90) or (float(pl) > float(self.iperf_packetloss_threshold)):
+			if (float(br_loss) < float(self.iperf_bitrate_threshold)) and (float(pl) > float(self.iperf_packetloss_threshold)):
+				statusQueue.put(-1)
+			elif (float(br_loss) < float(self.iperf_bitrate_threshold)) or (float(pl) > float(self.iperf_packetloss_threshold)): 
 				statusQueue.put(1)
 			else:
 				statusQueue.put(0)
@@ -2101,7 +2174,7 @@ class OaiCiTest():
 			brl_msg = 'Bitrate Perf: ' + bitperf
 			jit_msg = 'Jitter      : ' + jitter
 			pal_msg = 'Packet Loss : ' + packetloss
-			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n' + pal_too_high_msg + '\n')
+			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n' + pal_too_high_msg + '\n' + bit_too_low_msg + '\n')
 			logging.debug('\u001B[1;37;45m iperf result (' + UE_IPAddress + ') \u001B[0m')
 			logging.debug('\u001B[1;35m    ' + req_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + bir_msg + '\u001B[0m')
@@ -2109,6 +2182,7 @@ class OaiCiTest():
 			logging.debug('\u001B[1;35m    ' + jit_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + pal_msg + '\u001B[0m')
 			logging.debug('\u001B[1;35m    ' + pal_too_high_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + bit_too_low_msg + '\u001B[0m')
 			lock.release()
 		else:
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Could not analyze from server log')
@@ -2297,14 +2371,19 @@ class OaiCiTest():
 			result = re.search('TRF_IP_ADDR = (?P<trf_ip_addr>[0-9\.]+)', SSH.getBefore())
 			if result is not None:
 				trf_gen_IP = result.group('trf_ip_addr')
+			#kill iperf processes on EPC side
+			SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
+			SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf3"', '\$', 5)
 			SSH.close()
 			#kill iperf processes on UE side before (in case there are still some remaining)
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'killall --signal=SIGKILL iperf'
 			SSH.command(cmd,'\$',5)
+			cmd = 'killall --signal=SIGKILL iperf3'
+			SSH.command(cmd,'\$',5)
 			SSH.close()
 
-			iperf_time = self.Iperf_ComputeTime()	
+			iperf_time = self.Iperf_ComputeTime()
 			if self.iperf_direction=="DL":
 				logging.debug("Iperf for Module in DL mode detected")
 				#server side UE
@@ -2318,7 +2397,7 @@ class OaiCiTest():
 				#client side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
-				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
+
 				iperf_cmd = 'bin/iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > ' + client_filename
 				cmd = 'docker exec -it prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',int(iperf_time)*5.0)
@@ -2337,7 +2416,7 @@ class OaiCiTest():
 				#server side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
+
 				iperf_cmd = 'echo $USER; nohup bin/iperf -s -u 2>&1 > ' + server_filename
 				cmd = 'docker exec -d prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',5)
@@ -2362,6 +2441,38 @@ class OaiCiTest():
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, server_filename, '.')
 				#send for analysis
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,server_filename,1)
+
+			elif self.iperf_direction=="BIDIR":
+				logging.debug("Iperf for Module in BIDIR mode detected")
+				#server side EPC
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+
+				iperf_cmd = 'echo $USER; nohup /usr/local/bin/iperf3 -s 2>&1 > ' + server_filename
+				cmd = 'docker exec -d prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
+				SSH.command(cmd,'\$',5)
+				SSH.close()
+
+				#client side UE
+				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+				cmd = 'rm '+ client_filename
+				SSH.command(cmd,'\$',5)
+				SSH.command('iperf3 -B ' + UE_IPAddress + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' 2>&1 > ' + client_filename, '\$', int(iperf_time)*5.0)
+				SSH.close()
+
+				#once client is done, retrieve the server file from container to EPC Host
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				SSH.command('docker cp prod-trf-gen:/iperf-2.0.13/' + server_filename + ' ' + EPC.SourceCodePath, '\$', 5)
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/' + server_filename, '.')
+				SSH.close()
+
+				#copy the 2 resulting files locally 
+				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, client_filename, '.')
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, server_filename, '.')
+				#send for analysis
+				self.Iperf_analyzeV2BIDIR(lock, UE_IPAddress, device_id, statusQueue, server_filename, client_filename)
+
 			else :
 				logging.debug("Incorrect or missing IPERF direction in XML")
 
@@ -2427,6 +2538,30 @@ class OaiCiTest():
 				#send for analysis
 				filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
+			elif self.iperf_direction=="BIDIR":
+				logging.debug("Iperf for Module in BIDIR mode detected")
+				#server side EPC
+				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+				cmd = 'rm ' + server_filename
+				SSH.command(cmd,'\$',5)
+				cmd = 'echo $USER; nohup iperf3 -s 2>&1 > '+server_filename+' &'
+				SSH.command(cmd,'\$',5)
+				SSH.close()
+
+				#client side UE
+				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+				cmd = 'rm ' + client_filename
+				SSH.command(cmd,'\$',5)
+				SSH.command('iperf3 -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > '+client_filename, '\$', int(iperf_time)*5.0)
+				SSH.close()
+
+				#copy the 2 resulting files locally
+				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, client_filename, '.')
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, server_filename, '.')
+				#send for analysis
+				self.Iperf_analyzeV2BIDIR(lock, UE_IPAddress, device_id, statusQueue, server_filename, client_filename)
 			else :
 				logging.debug("Incorrect or missing IPERF direction in XML")
 
@@ -3014,9 +3149,6 @@ class OaiCiTest():
 			result = re.search('[Cc]ore [dD]ump', str(line))
 			if result is not None and not exitSignalReceived:
 				foundSegFault = True
-			result = re.search('./lte-uesoftmodem', str(line))
-			if result is not None and not exitSignalReceived:
-				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
 			if result is not None and not exitSignalReceived:
 				foundAssertion = True
@@ -3393,6 +3525,41 @@ class OaiCiTest():
 					CONTAINERS.eNB_instance=instance
 					CONTAINERS.UndeployObject(HTML,RAN)
 		RAN.prematureExit=True
+
+	#this function is called only if eNB/gNB fails to start
+	#RH to be re-factored
+	def AutoTerminateeNB(self,HTML,RAN,EPC,CONTAINERS):
+		if (RAN.Initialize_eNB_args != ''):
+			self.testCase_id = 'AUTO-KILL-RAN'
+			HTML.testCase_id = self.testCase_id
+			self.desc = 'Automatic Termination of all RAN nodes'
+			HTML.desc = self.desc
+			self.ShowTestID()
+			#terminate all RAN nodes eNB/gNB/OCP
+			for instance in range(0, len(RAN.air_interface)):
+				if RAN.air_interface[instance]!='':
+					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
+					RAN.eNB_instance=instance
+					RAN.TerminateeNB(HTML,EPC)
+		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
+			self.testCase_id = 'AUTO-KILL-flexran-ctl'
+			HTML.testCase_id = self.testCase_id
+			self.desc = 'Automatic Termination of FlexRan CTL'
+			HTML.desc = self.desc
+			self.ShowTestID()
+			self.TerminateFlexranCtrl(HTML,RAN,EPC)
+		if CONTAINERS.yamlPath[0] != '':
+			self.testCase_id = 'AUTO-KILL-CONTAINERS'
+			HTML.testCase_id = self.testCase_id
+			self.desc = 'Automatic Termination of all RAN containers'
+			HTML.desc = self.desc
+			self.ShowTestID()
+			for instance in range(0, len(CONTAINERS.yamlPath)):
+				if CONTAINERS.yamlPath[instance]!='':
+					CONTAINERS.eNB_instance=instance
+					CONTAINERS.UndeployObject(HTML,RAN)
+		RAN.prematureExit=True
+
 
 	def IdleSleep(self,HTML):
 		time.sleep(self.idle_sleep_time)

@@ -65,6 +65,7 @@
 
 #include <executables/softmodem-common.h>
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 //#define DEBUG_ULSIM
 
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
@@ -73,6 +74,7 @@ rlc_info_t Rlc_info_um,Rlc_info_am_config;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
+char *uecap_file;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 uint16_t sf_ahead=4 ;
@@ -85,6 +87,13 @@ THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
 uint32_t N_RB_DL = 106;
 
+//Fixme: Uniq dirty DU instance, by global var, datamodel need better management
+instance_t DUuniqInstance=0;
+instance_t CUuniqInstance=0;
+teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
+                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
+return 0;
+}
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
@@ -120,11 +129,6 @@ rrc_data_ind(
 {
 }
 
-int ocp_gtpv1u_create_s1u_tunnel(instance_t instance,
-                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
-                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
-    return 0;
-}
 
 int
 gtpv1u_create_s1u_tunnel(
@@ -240,7 +244,6 @@ nrUE_params_t *get_nrUE_params(void) {
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
-//const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
 
 channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
 
@@ -272,7 +275,7 @@ int main(int argc, char **argv)
 
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
-  int loglvl = OAILOG_INFO;
+  int loglvl = OAILOG_WARNING;
   //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 0;
@@ -600,6 +603,7 @@ int main(int argc, char **argv)
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
+      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n"); 
       printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -640,7 +644,7 @@ int main(int argc, char **argv)
   else if (N_RB_UL == 106) bandwidth = 40;
   else if (N_RB_UL == 32) bandwidth = 50;
   else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
-			   
+  LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
   if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
 
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
@@ -665,13 +669,16 @@ int main(int argc, char **argv)
   char tp_param[] = "n";
   initTpool(tp_param, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
-  gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->resp_L1_tx);
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,NULL);
+  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initNotifiedFIFO(gNB->L1_tx_free);
+  initNotifiedFIFO(gNB->L1_tx_filled);
+  initNotifiedFIFO(gNB->L1_tx_out);
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,NULL);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   msgDataTx->slot = -1;
-  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
-  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
+  gNB->phy_proc_tx[0] = &msgDataTx->phy_proc_tx;
   //gNB_config = &gNB->gNB_config;
 
   //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
@@ -1113,6 +1120,7 @@ int main(int argc, char **argv)
       }
 
       // prepare ULSCH/PUSCH reception
+      pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
       nr_schedule_response(Sched_INFO);
 
       // --------- setting parameters for UE --------
@@ -1278,8 +1286,10 @@ int main(int argc, char **argv)
 
 	if (n_trials == 1  && round==0) {
 #ifdef __AVX2__
+	  __attribute__((unused))
 	  int off = ((nb_rb&1) == 1)? 4:0;
 #else
+	  __attribute__((unused))
 	  int off = 0;
 #endif
 

@@ -28,7 +28,7 @@
 #include <signal.h>
 #include <execinfo.h>
 
-#include "backtrace.h"
+#include <common/utils/backtrace.h>
 
 /* Obtain a backtrace and print it to stdout. */
 void display_backtrace(void) {
@@ -48,9 +48,4 @@ void display_backtrace(void) {
     printf("%s\n", strings[i]);
 
   free(strings);
-}
-
-void backtrace_handle_signal(siginfo_t *info) {
-  display_backtrace();
-  //exit(EXIT_FAILURE);
 }

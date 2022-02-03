@@ -70,10 +70,11 @@ typedef enum {
   NFAPI_MODE_VNF,
   NFAPI_UE_STUB_PNF,
   NFAPI_UE_STUB_OFFNET,
+  NFAPI_MODE_STANDALONE_PNF,
   NFAPI_MODE_UNKNOWN
 } nfapi_mode_t;
 
-char *nfapi_get_strmode(void);
+const char *nfapi_get_strmode(void);
 void nfapi_logmode(void);
 nfapi_mode_t nfapi_getmode(void);
 void nfapi_setmode(nfapi_mode_t nfapi_mode);

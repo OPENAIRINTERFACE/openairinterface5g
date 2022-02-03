@@ -51,24 +51,7 @@ double get_cpu_freq_GHz(void)
   return cpu_freq_GHz;
 }
 
-int cpumeas(int action)
-{
-  switch (action) {
-    case CPUMEAS_ENABLE:
-      opp_enabled = 1;
-      break;
 
-    case CPUMEAS_DISABLE:
-      opp_enabled = 0;
-      break;
-
-    case CPUMEAS_GETSTATE:
-    default:
-      break;
-  }
-
-  return opp_enabled;
-}
 
 void print_meas_now(time_stats_t *ts,
                     const char *name,
