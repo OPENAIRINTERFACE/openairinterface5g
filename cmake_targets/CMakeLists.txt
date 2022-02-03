@@ -343,8 +343,8 @@ set(CMAKE_CXX_FLAGS
 
 
 if (SANITIZE_ADDRESS)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-common")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-common")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -static-libasan -fno-common")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -static-libasan -fno-common")
 endif ()
 
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
