@@ -152,7 +152,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
         if (abstraction_flag == 0) {
           dlsch->harq_processes[i]->c = (uint8_t **)malloc16(a_segments*sizeof(uint8_t *));
-          dlsch->harq_processes[i]->p_nrLDPC_procBuf = (uint8_t **)malloc16(a_segments*sizeof(uint8_t *));
+          dlsch->harq_processes[i]->p_nrLDPC_procBuf = (t_nrLDPC_procBuf **)malloc16(a_segments*sizeof(t_nrLDPC_procBuf *));
           for (int r=0; r<a_segments; r++) {
             dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
             dlsch->harq_processes[i]->c[r] = (uint8_t *)malloc16(1056);

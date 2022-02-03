@@ -122,7 +122,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   int txdataf_size = frame_parms->N_RB_DL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8; // max pdsch encoded length for each layer
 
   dlsch->txdataF = (int32_t **)malloc16(max_layers*sizeof(int32_t *));
-  dlsch->txdataF_precoding = (int32_t **)malloc16(max_layers*sizeof(int32_t *));
+
   dlsch->ue_spec_bf_weights = (int32_t ***)malloc16(max_layers*sizeof(int32_t **));
   for (int layer=0; layer<max_layers; layer++) {
     dlsch->ue_spec_bf_weights[layer] = (int32_t **)malloc16(64*sizeof(int32_t *));
@@ -135,7 +135,6 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
       }
     }
     dlsch->txdataF[layer] = (int32_t *)malloc16((txdataf_size)*sizeof(int32_t));
-    dlsch->txdataF_precoding[layer] = (int32_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int32_t));
   }
 
   for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)

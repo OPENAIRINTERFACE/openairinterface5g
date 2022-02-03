@@ -140,7 +140,6 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
     int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
     int16_t **tx_layers = (int16_t**)dlsch->txdataF;
-    int16_t **txdataF_precoding = (int16_t**)dlsch->txdataF_precoding;
     int8_t Wf[2], Wt[2], l0, l_prime, l_overline, delta;
     uint8_t dmrs_Type = rel15->dmrsConfigType;
     int nb_re_dmrs;
@@ -277,6 +276,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
       start_sc -= frame_parms->ofdm_symbol_size;
 
     int txdataF_offset = (slot%2)*frame_parms->samples_per_slot_wCP;
+    int16_t **txdataF_precoding = (int16_t **)malloc16(rel15->nrOfLayers*sizeof(int16_t *));
+    for (int layer = 0; layer<rel15->nrOfLayers; layer++)
+      txdataF_precoding[layer] = (int16_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int16_t));
 
 #ifdef DEBUG_DLSCH_MAPPING
     printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
@@ -591,6 +593,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     else {
       LOG_D(PHY,"beam index for PDSCH allocation already taken\n");
     }
+    for (int layer = 0; layer<rel15->nrOfLayers; layer++)
+      free16(txdataF_precoding[layer],2*14*frame_parms->ofdm_symbol_size);
+    free16(txdataF_precoding,rel15->nrOfLayers);
   }// dlsch loop
 }
 
