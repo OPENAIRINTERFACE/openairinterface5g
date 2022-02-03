@@ -1193,7 +1193,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
                 ue_context_p->ue_context.pduSession[j].status == PDU_SESSION_STATUS_DONE) {
               break;
             }
-
+            // Found established pdu session, prepare to send RRC message
             ue_context_p->ue_context.modify_pdusession[i].status              = PDU_SESSION_STATUS_NEW;
             ue_context_p->ue_context.modify_pdusession[i].param.pdusession_id = 
             NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[i].pdusession_id;
@@ -1204,7 +1204,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
               ue_context_p->ue_context.modify_pdusession[i].param.nas_pdu.length =
                 NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[i].nas_pdu.length;
             }
-
+            // Save new pdu session parameters, qos, upf addr, teid
             for (qos_flow_index = 0; qos_flow_index < NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[i].nb_qos; qos_flow_index++) {
               ue_context_p->ue_context.modify_pdusession[i].param.qos[qos_flow_index] =
                 NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[i].qos[qos_flow_index];
@@ -1216,6 +1216,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
               ue_context_p->ue_context.pduSession[j].param.upf_addr;
             ue_context_p->ue_context.modify_pdusession[i].param.gtp_teid = 
               ue_context_p->ue_context.pduSession[j].param.gtp_teid;
+            
             is_treated[i] = TRUE;
             break;
           }
