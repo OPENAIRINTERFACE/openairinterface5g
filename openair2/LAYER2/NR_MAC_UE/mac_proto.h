@@ -214,6 +214,7 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
 
 uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch,
+                           int csi_report_id,
                            NR_CSI_MeasConfig_t *csi_MeasConfig);
 
 uint8_t get_rsrp_index(int rsrp);

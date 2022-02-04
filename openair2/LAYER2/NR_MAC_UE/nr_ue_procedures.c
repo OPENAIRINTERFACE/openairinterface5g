@@ -2362,7 +2362,7 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
                       "CSI resource not found among PUCCH resources\n");
 
           pucch->resource_indicator = found;
-          csi_bits = nr_get_csi_payload(mac, pucch, csi_measconfig);
+          csi_bits += nr_get_csi_payload(mac, pucch, csi_report_id, csi_measconfig);
         }
       }
       else
@@ -2376,31 +2376,30 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
 
 uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch,
+                           int csi_report_id,
                            NR_CSI_MeasConfig_t *csi_MeasConfig) {
 
   int n_csi_bits = 0;
 
   AssertFatal(csi_MeasConfig->csi_ReportConfigToAddModList->list.count>0,"No CSI Report configuration available\n");
 
-  for (int csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
-    struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
-    NR_CSI_ResourceConfigId_t csi_ResourceConfigId = csi_reportconfig->resourcesForChannelMeasurement;
-    switch(csi_reportconfig->reportQuantity.present) {
-      case NR_CSI_ReportConfig__reportQuantity_PR_none:
-        break;
-      case NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP:
-        n_csi_bits += get_ssb_rsrp_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
-        break;
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
-        AssertFatal(1==0,"Measurement report based on CSI-RS not availalble\n");
-      default:
-        AssertFatal(1==0,"Invalid CSI report quantity type %d\n",csi_reportconfig->reportQuantity.present);
-    }
+  struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+  NR_CSI_ResourceConfigId_t csi_ResourceConfigId = csi_reportconfig->resourcesForChannelMeasurement;
+  switch(csi_reportconfig->reportQuantity.present) {
+    case NR_CSI_ReportConfig__reportQuantity_PR_none:
+      break;
+    case NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP:
+      n_csi_bits = get_ssb_rsrp_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
+      break;
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
+      AssertFatal(1==0,"Measurement report based on CSI-RS not availalble\n");
+    default:
+      AssertFatal(1==0,"Invalid CSI report quantity type %d\n",csi_reportconfig->reportQuantity.present);
   }
   return (n_csi_bits);
 }
