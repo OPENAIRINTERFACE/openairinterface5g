@@ -332,17 +332,18 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       return(0); 
     }
 
+    //reset channel pointer
     ch_intrp = ch_init;
+#ifdef DEBUG_PRS_CHEST
     for (int re = 0; re < prs_cfg->NumRB*12; re++)
     {
-      prs_chest[re_offset]   = ch_intrp[re<<1];
-      prs_chest[re_offset+1] = ch_intrp[(re<<1)+1];
-#ifdef DEBUG_PRS_CHEST
-      printf("prs_ch[%d] %d %d\n", re_offset, ch_intrp[re<<1], ch_intrp[(re<<1)+1]);
-#endif
-      re_offset = (re_offset+2) % frame_params->ofdm_symbol_size;
+      printf("prs_ch[%d] %d %d\n", re, ch_intrp[re<<1], ch_intrp[(re<<1)+1]);
     }
-    
+#endif
+    // Place PRS channel estimates in rxdataF shifted format
+    memcpy((int16_t *)&ue->prs_ch_estimates[rxAnt][l*frame_params->ofdm_symbol_size+re_offset], &ch_init[0], (frame_params->ofdm_symbol_size - re_offset)*sizeof(int32_t));
+    memcpy((int16_t *)&ue->prs_ch_estimates[rxAnt][l*frame_params->ofdm_symbol_size], &ch_init[2*(frame_params->ofdm_symbol_size - re_offset)], (prs_cfg->NumRB*12-(frame_params->ofdm_symbol_size-re_offset))*sizeof(int32_t));
+
     // Time domain IMPULSE response
     idft_size_idx_t idftsizeidx;
 
@@ -391,14 +392,15 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     memcpy((int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size], &ch_time[frame_params->ofdm_symbol_size>>1], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
     memcpy((int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size + (frame_params->ofdm_symbol_size>>1)], &ch_time[0], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
   } //for l
+#ifdef DEBUG_PRS_CHEST
   LOG_M("PRSpilot.m", "prs_loc", &mod_prs[0], prs_cfg->NumRB*(12/prs_cfg->CombSize),1,1); 
   LOG_M("rxSigF.m","rxF",&rxdataF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
   LOG_M("prsEstF.m","prs_chestF",&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
   LOG_M("prsEstT.m","prs_chestT",&ue->prs_ch_estimates_time[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
-  
+#endif
   T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
     T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
-    T_INT(0), T_BUFFER(&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], frame_params->ofdm_symbol_size*sizeof(int32_t)));
+    T_INT(0), T_BUFFER(&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
 
   free(ch_intrp);
   free(ch_time);
