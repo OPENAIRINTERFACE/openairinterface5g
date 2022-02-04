@@ -1218,12 +1218,13 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int dci_format,
                         int rnti_type,
                         int N_RB,
-                        int bwp_id) {
+                        int bwp_id,
+                        uint16_t cset0_bwp_size) {
   uint8_t fsize = 0, pos = 0;
 
   uint64_t *dci_pdu = (uint64_t *)pdcch_dci_pdu->Payload;
   *dci_pdu=0;
-  int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,scc->uplinkConfigCommon->initialUplinkBWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id);
+  int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,scc->uplinkConfigCommon->initialUplinkBWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id, cset0_bwp_size);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
@@ -1567,7 +1568,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       pos+=4;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->harq_pid & 0xf) << (dci_size - pos);
       // Padding bits
-      for (int a = pos; a < 32; a++)
+      for (int a = pos; a < dci_size; a++)
         *dci_pdu |= ((uint64_t)dci_pdu_rel15->padding & 1) << (dci_size - pos++);
       // UL/SUL indicator – 1 bit
       /* commented for now (RK): need to get this from BWP descriptor

@@ -846,7 +846,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                        NR_UL_DCI_FORMAT_0_0,
                        NR_RNTI_TC,
                        pusch_pdu->bwp_size,
-                       ra->bwp_id);
+                       ra->bwp_id,
+                       nr_mac->cset0_bwp_size);
 
     // Mark the corresponding RBs as used
     for (int rb = 0; rb < ra->msg3_nb_rb; rb++) {
@@ -1359,7 +1360,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_RA,
                        BWPSize,
-                       bwpid);
+                       bwpid,
+                       nr_mac->cset0_bwp_size);
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
@@ -1732,7 +1734,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_TC,
                        pdsch_pdu_rel15->BWPSize,
-                       bwpid);
+                       bwpid,
+                       nr_mac->cset0_bwp_size);
 
     // Add padding header and zero rest out if there is space left
     if (ra->mac_pdu_length < harq->tb_size) {

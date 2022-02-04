@@ -1824,7 +1824,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                        ps->dci_format,
                        rnti_types[0],
                        pusch_pdu->bwp_size,
-                       bwpid);
+                       bwpid,
+                       nr_mac->cset0_bwp_size);
 
     memset(sched_pusch, 0, sizeof(*sched_pusch));
   }

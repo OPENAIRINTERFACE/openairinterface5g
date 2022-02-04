@@ -565,7 +565,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     genericParameters = &sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
   }
 
-  const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = 0; // start wrt BWPstart
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
@@ -775,7 +776,8 @@ void pf_dl(module_id_t module_id,
       genericParameters = &sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
     }
 
-    const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+    const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
+    const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     int rbStart = 0; // start wrt BWPstart
 
     if (sched_ctrl->available_dl_harq.head < 0) {
@@ -884,8 +886,16 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
     genericParameters = &sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
   }
 
-  const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-  const uint16_t BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  NR_BWP_DownlinkDedicated_t *bwpd =
+      UE_info->CellGroup[UE_id] &&
+      UE_info->CellGroup[UE_id]->spCellConfig &&
+      UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated ?
+      UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
+
+  const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
+
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
   uint8_t rballoc_mask[bwpSize];
@@ -1060,6 +1070,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
       genericParameters = &sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
     }
 
+    NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space : gNB_mac->sched_ctrlCommon->search_space;
+
     const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid];
@@ -1072,7 +1084,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
-      NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space:gNB_mac->sched_ctrlCommon->search_space;
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
       nr_configure_pdcch(gNB_mac, pdcch_pdu, ss, coreset, scc, genericParameters, NULL);
       gNB_mac->pdcch_pdu_idx[CC_id][bwpid][coresetid] = pdcch_pdu;
@@ -1093,8 +1104,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int pduindex = gNB_mac->pdu_index[CC_id]++;
     pdsch_pdu->pduIndex = pduindex;
 
-    pdsch_pdu->BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-    pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+    if (coresetid == 0) {
+      pdsch_pdu->BWPSize  = gNB_mac->cset0_bwp_size;
+      pdsch_pdu->BWPStart = gNB_mac->cset0_bwp_start;
+    } else {
+      pdsch_pdu->BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+    }
+
     pdsch_pdu->SubcarrierSpacing = genericParameters->subcarrierSpacing;
 
     pdsch_pdu->CyclicPrefix = genericParameters->cyclicPrefix ? *genericParameters->cyclicPrefix : 0;
@@ -1223,8 +1240,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tpc,
           pucch->timing_indicator);
 
-    int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType &&
-                     sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
+    int dci_format = ss && ss->searchSpaceType && ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
                      NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
 
     const int rnti_type = NR_RNTI_C;
@@ -1236,7 +1252,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
-                       bwp? bwp->bwp_Id : 0);
+                       bwp? bwp->bwp_Id : 0,
+                       gNB_mac->cset0_bwp_size);
 
     LOG_D(NR_MAC,
           "coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
