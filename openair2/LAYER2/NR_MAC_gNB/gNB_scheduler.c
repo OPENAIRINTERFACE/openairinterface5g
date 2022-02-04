@@ -68,7 +68,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
-  nfapi_nr_dl_tti_pdcch_pdu_rel15_t ***pdcch = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t ***)gNB->pdcch_pdu_idx[CC_idP];
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t **pdcch = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t **)gNB->pdcch_pdu_idx[CC_idP];
   nfapi_nr_ul_tti_request_t    *future_ul_tti_req =
       &gNB->UL_tti_req_ahead[CC_idP][(slotP + num_slots - 1) % num_slots];
   nfapi_nr_ul_dci_request_t    *UL_dci_req = &gNB->UL_dci_req[0];
@@ -81,7 +81,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   DL_req[CC_idP].dl_tti_request_body.nPDUs             = 0;
   DL_req[CC_idP].dl_tti_request_body.nGroup            = 0;
   //DL_req[CC_idP].dl_tti_request_body.transmission_power_pcfich           = 6000;
-  memset(pdcch, 0, sizeof(**pdcch) * MAX_NUM_BWP * MAX_NUM_CORESET);
+  memset(pdcch, 0, sizeof(*pdcch) * MAX_NUM_CORESET);
 
   UL_dci_req[CC_idP].SFN                         = frameP;
   UL_dci_req[CC_idP].Slot                        = slotP;
@@ -308,16 +308,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  for(int i_bwp = 0; i_bwp < MAX_NUM_BWP; i_bwp++) {
-    for (int i_coreset = 0; i_coreset < MAX_NUM_CORESET; i_coreset++) {
-      memset(RC.nrmac[module_idP]->cce_list[i_bwp][i_coreset],0,MAX_NUM_CCE*sizeof(int));
-    }
-  }
-    
-  NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
-  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id])
-    for (int i=0; i<MAX_NUM_CORESET; i++)
-      UE_info->num_pdcch_cand[UE_id][i] = 0;
+  for (int i=0; i<MAX_NUM_CORESET; i++)
+    RC.nrmac[module_idP]->pdcch_cand[i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
 

@@ -314,7 +314,7 @@ void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart,  uint16_t symStart
   uint16_t *vrb_map = cc[CC_id].vrb_map;
 
   for (int rb = 0; rb < 20; rb++)
-    vrb_map[rbStart + rb] = 15<<symStart;
+    vrb_map[rbStart + rb] = SL_to_bitmap(symStart, 4);
 
 }
 
@@ -329,7 +329,9 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                int num_total_bytes) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
-  uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
+  NR_COMMON_channels_t *cc = &gNB_mac->common_channels[CC_id];
+  NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  uint16_t *vrb_map = cc->vrb_map;
 
   if (gNB_mac->sched_ctrlCommon == NULL){
     LOG_D(NR_MAC,"schedule_control_common: Filling nr_mac->sched_ctrlCommon\n");
@@ -340,6 +342,12 @@ uint32_t schedule_control_sib1(module_id_t module_id,
     fill_coresetZero(gNB_mac->sched_ctrlCommon->coreset,type0_PDCCH_CSS_config);
     gNB_mac->cset0_bwp_start = type0_PDCCH_CSS_config->cset_start_rb;
     gNB_mac->cset0_bwp_size = type0_PDCCH_CSS_config->num_rbs;
+    gNB_mac->sched_ctrlCommon->sched_pdcch = set_pdcch_structure(NULL,
+                                                                 gNB_mac->sched_ctrlCommon->search_space,
+                                                                 gNB_mac->sched_ctrlCommon->coreset,
+                                                                 scc,
+                                                                 NULL,
+                                                                 type0_PDCCH_CSS_config);
   }
 
   gNB_mac->sched_ctrlCommon->pdsch_semi_static.time_domain_allocation = time_domain_allocation;
@@ -354,13 +362,13 @@ uint32_t schedule_control_sib1(module_id_t module_id,
     if (nr_of_candidates>0) break; // choosing the lower value of aggregation level available
   }
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-  gNB_mac->sched_ctrlCommon->cce_index = allocate_nr_CCEs(RC.nrmac[module_id],
-                                                          NULL,
-                                                          gNB_mac->sched_ctrlCommon->coreset,
-                                                          gNB_mac->sched_ctrlCommon->aggregation_level,
-                                                          0,
-                                                          candidate_idx,
-                                                          nr_of_candidates);
+  gNB_mac->sched_ctrlCommon->cce_index = find_pdcch_candidate(gNB_mac,
+                                                              CC_id,
+                                                              gNB_mac->sched_ctrlCommon->aggregation_level,
+                                                              nr_of_candidates,
+                                                              &gNB_mac->sched_ctrlCommon->sched_pdcch,
+                                                              gNB_mac->sched_ctrlCommon->coreset,
+                                                              0);
 
   AssertFatal(gNB_mac->sched_ctrlCommon->cce_index >= 0, "Could not find CCE for coreset0\n");
 
@@ -384,7 +392,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   int rbSize = 0;
   uint32_t TBS = 0;
   do {
-    if(rbSize < bwpSize && !vrb_map[rbStart + rbSize])
+    if(rbSize < bwpSize && !(vrb_map[rbStart + rbSize]&SL_to_bitmap(startSymbolIndex, nrOfSymbols)))
       rbSize++;
     else{
       if (gNB_mac->sched_ctrlCommon->sched_pdsch.mcs<10)
@@ -411,16 +419,21 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   LOG_D(MAC,"dmrs_length %d\n",dmrs_length);
   LOG_D(MAC,"N_PRB_DMRS = %d\n",N_PRB_DMRS);
   LOG_D(MAC,"mappingtype = %d\n", mappingtype);
-
   // Mark the corresponding RBs as used
+  fill_pdcch_vrb_map(gNB_mac,
+                     CC_id,
+                     &gNB_mac->sched_ctrlCommon->sched_pdcch,
+                     gNB_mac->sched_ctrlCommon->cce_index,
+                     gNB_mac->sched_ctrlCommon->aggregation_level);
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
-    vrb_map[rb + rbStart] = 1;
+    vrb_map[rb + rbStart] = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   }
   return TBS;
 }
 
 void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                                nfapi_nr_dl_tti_request_body_t *dl_req,
+                               int pdu_index,
                                NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                uint32_t TBS,
                                int StartSymbolIndex,
@@ -437,13 +450,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
   dl_req->nPDUs += 1;
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-  nr_configure_pdcch(NULL,
-                     pdcch_pdu_rel15,
-                     gNB_mac->sched_ctrlCommon->search_space,
+  nr_configure_pdcch(pdcch_pdu_rel15,
                      gNB_mac->sched_ctrlCommon->coreset,
-                     scc,
                      NULL,
-                     type0_PDCCH_CSS_config);
+                     &gNB_mac->sched_ctrlCommon->sched_pdcch);
 
   nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void*)dl_tti_pdsch_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -456,7 +466,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   pdsch_pdu_rel15->pduBitmap = 0;
   pdsch_pdu_rel15->rnti = SI_RNTI;
-  pdsch_pdu_rel15->pduIndex = gNB_mac->pdu_index[0]++;
+  pdsch_pdu_rel15->pduIndex = pdu_index;
 
   pdsch_pdu_rel15->BWPSize  = type0_PDCCH_CSS_config->num_rbs;
   pdsch_pdu_rel15->BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
@@ -624,7 +634,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
                                            candidate_idx, sib1_sdu_length);
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
-      nr_fill_nfapi_dl_sib1_pdu(module_idP, dl_req, type0_PDCCH_CSS_config, TBS, startSymbolIndex, nrOfSymbols, dlDmrsSymbPos);
+      int pdu_index = gNB_mac->pdu_index[0]++;
+      nr_fill_nfapi_dl_sib1_pdu(module_idP, dl_req, pdu_index, type0_PDCCH_CSS_config, TBS, startSymbolIndex, nrOfSymbols, dlDmrsSymbPos);
 
       const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
       nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
@@ -634,7 +645,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       memcpy(tx_req->TLVs[0].value.direct, sib1_payload, sib1_sdu_length);
 
       tx_req->PDU_length = TBS;
-      tx_req->PDU_index  = gNB_mac->pdu_index[0]++;
+      tx_req->PDU_index  = pdu_index;
       tx_req->num_TLV = 1;
       tx_req->TLVs[0].length = TBS + 2;
       gNB_mac->TX_req[CC_id].Number_of_PDUs++;
