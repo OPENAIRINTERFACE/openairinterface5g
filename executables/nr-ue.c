@@ -641,13 +641,13 @@ static void UE_synch(void *arg) {
           if (UE->mode != loop_through_memory)
             UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
         }
-
-        break;
-
-      case si:
-      default:
-        break;
       }
+      break;
+
+    case si:
+    default:
+      break;
+
   }
 }
 
