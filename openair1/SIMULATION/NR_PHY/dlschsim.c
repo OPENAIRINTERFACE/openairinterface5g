@@ -67,7 +67,6 @@ uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
-void processSlotTX(void *arg) {}
 
 int main(int argc, char **argv)
 {
@@ -437,22 +436,9 @@ int main(int argc, char **argv)
 	UE->dlsch_SI[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	UE->dlsch_ra[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
-
-        gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-        initTpool(gNBthreads, gNB->threadPool, true);
-        gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-        initNotifiedFIFO(gNB->resp_L1_tx);
-     // we create 2 threads for L1 tx processing
-        notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,processSlotTX);
-        processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-        init_DLSCH_struct(gNB, msgDataTx);
-        msgDataTx->slot = slot;
-        msgDataTx->frame = frame;
-        memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-        reset_meas(&msgDataTx->phy_proc_tx);
-        gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
-        pushTpool(gNB->threadPool,msgL1Tx);
-	NR_gNB_DLSCH_t *dlsch = msgDataTx->dlsch[0][0];
+  processingData_L1tx_t msgDataTx;
+  init_DLSCH_struct(gNB, &msgDataTx);
+	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	uint8_t is_crnti = 0, llr8_flag = 0;
@@ -526,8 +512,8 @@ int main(int argc, char **argv)
 
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
-	unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
-        bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+	    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
+    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 	if (input_fd == NULL) {
 	  nr_dlsch_encoding(gNB, test_input, frame, slot, dlsch, frame_parms,output,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 	}
@@ -657,7 +643,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < 2; i++) {
 		printf("gNB %d\n", i);
-		free_gNB_dlsch(&(msgDataTx->dlsch[0][i]),N_RB_DL);
+		free_gNB_dlsch(&(msgDataTx.dlsch[0][i]),N_RB_DL);
 		printf("UE %d\n", i);
 		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]),N_RB_DL);
 	}
