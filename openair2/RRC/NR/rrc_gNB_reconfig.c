@@ -876,41 +876,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pucch_Config->multi_CSI_PUCCH_ResourceList=NULL;
 
  set_dl_DataToUL_ACK(pucch_Config, minRXTXTIME);
-
- pucch_Config->spatialRelationInfoToAddModList = calloc(1,sizeof(*pucch_Config->spatialRelationInfoToAddModList));
- NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
- pucchspatial->pucch_SpatialRelationInfoId = 1;
- pucchspatial->servingCellId = NULL;
- if(do_csirs) {
-   pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
-   pucchspatial->referenceSignal.choice.csi_RS_Index = 0;
- }
- else {
-   pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
-   pucchspatial->referenceSignal.choice.ssb_Index = 0;
- }
- pucchspatial->pucch_PathlossReferenceRS_Id = 0;
- pucchspatial->p0_PUCCH_Id = 1;
- pucchspatial->closedLoopIndex = NR_PUCCH_SpatialRelationInfo__closedLoopIndex_i0;
- ASN_SEQUENCE_ADD(&pucch_Config->spatialRelationInfoToAddModList->list,pucchspatial);
- pucch_Config->spatialRelationInfoToReleaseList=NULL;
- pucch_Config->pucch_PowerControl=calloc(1,sizeof(*pucch_Config->pucch_PowerControl));
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0));
- *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0 = 0;
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f1 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f1));
- *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f1 = 0;
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2));
- *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2 = 0;
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f3 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f3));
- *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f3 = 0;
- pucch_Config->pucch_PowerControl->deltaF_PUCCH_f4 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f4));
- *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f4 = 0;
- pucch_Config->pucch_PowerControl->p0_Set = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->p0_Set));
- NR_P0_PUCCH_t *p00 = calloc(1,sizeof(*p00));
- p00->p0_PUCCH_Id=1;
- p00->p0_PUCCH_Value = 0;
- ASN_SEQUENCE_ADD(&pucch_Config->pucch_PowerControl->p0_Set->list,p00);
- pucch_Config->pucch_PowerControl->pathlossReferenceRSs = NULL;
+ set_pucch_power_config(pucch_Config, do_csirs);
 
  if (!servingcellconfigdedicated) {
    // copy pusch_Config from dedicated initialBWP

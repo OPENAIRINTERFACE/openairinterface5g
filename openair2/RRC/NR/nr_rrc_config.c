@@ -192,6 +192,53 @@ void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, NR_UE_NR_Capability_t
 
 }
 
+void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs) {
+
+  pucch_Config->pucch_PowerControl = calloc(1,sizeof(*pucch_Config->pucch_PowerControl));
+  NR_P0_PUCCH_t *p00 = calloc(1,sizeof(*p00));
+  p00->p0_PUCCH_Id = 1;
+  p00->p0_PUCCH_Value = 0;
+  pucch_Config->pucch_PowerControl->p0_Set = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->p0_Set));
+  ASN_SEQUENCE_ADD(&pucch_Config->pucch_PowerControl->p0_Set->list,p00);
+
+  pucch_Config->pucch_PowerControl->pathlossReferenceRSs = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->pathlossReferenceRSs));
+  struct NR_PUCCH_PathlossReferenceRS *PL_ref_RS = calloc(1,sizeof(*PL_ref_RS));
+  PL_ref_RS->pucch_PathlossReferenceRS_Id = 0;
+  if(do_csirs) {
+    PL_ref_RS->referenceSignal.present = NR_PUCCH_PathlossReferenceRS__referenceSignal_PR_csi_RS_Index;
+    PL_ref_RS->referenceSignal.choice.csi_RS_Index = 0;
+  }
+  else {
+    PL_ref_RS->referenceSignal.present = NR_PUCCH_PathlossReferenceRS__referenceSignal_PR_ssb_Index;
+    PL_ref_RS->referenceSignal.choice.ssb_Index = 0;
+  }
+  ASN_SEQUENCE_ADD(&pucch_Config->pucch_PowerControl->pathlossReferenceRSs->list,PL_ref_RS);
+
+  pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0));
+  *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0 = 0;
+  pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2));
+  *pucch_Config->pucch_PowerControl->deltaF_PUCCH_f2 = 0;
+
+  pucch_Config->spatialRelationInfoToAddModList = calloc(1,sizeof(*pucch_Config->spatialRelationInfoToAddModList));
+  pucch_Config->spatialRelationInfoToReleaseList=NULL;
+  NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
+  pucchspatial->pucch_SpatialRelationInfoId = 1;
+  pucchspatial->servingCellId = NULL;
+  if(do_csirs) {
+    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
+    pucchspatial->referenceSignal.choice.csi_RS_Index = 0;
+  }
+  else {
+    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
+    pucchspatial->referenceSignal.choice.ssb_Index = 0;
+  }
+
+  pucchspatial->pucch_PathlossReferenceRS_Id = PL_ref_RS->pucch_PathlossReferenceRS_Id;
+  pucchspatial->p0_PUCCH_Id = p00->p0_PUCCH_Id;
+  pucchspatial->closedLoopIndex = NR_PUCCH_SpatialRelationInfo__closedLoopIndex_i0;
+  ASN_SEQUENCE_ADD(&pucch_Config->spatialRelationInfoToAddModList->list,pucchspatial);
+}
+
 void schedulingrequest_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
                               NR_PUCCH_Config_t *pucch_Config) {
 

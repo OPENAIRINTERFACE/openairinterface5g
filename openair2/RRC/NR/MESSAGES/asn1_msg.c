@@ -1357,6 +1357,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   NR_BWP_UplinkDedicated_t *initialUplinkBWP = SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
   NR_PUCCH_Config_t *pucch_Config = initialUplinkBWP->pucch_Config->choice.setup;
   config_pucch_resset1(pucch_Config, uecap);
+  set_pucch_power_config(pucch_Config, carrier->do_CSIRS);
 }
 
 void fill_initial_cellGroupConfig(int uid,
