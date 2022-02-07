@@ -614,7 +614,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
       const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-      sched_ctrl->update_ps = TRUE;
+      sched_ctrl->update_pdsch_ps = TRUE;
+      sched_ctrl->update_pusch_ps = TRUE;
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
       if (sched_ctrl->available_dl_harq.len == 0) {
         // add all available DL HARQ processes for this UE in SA
