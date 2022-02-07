@@ -19,7 +19,7 @@ typedef boolean_t (*gtpCallback)(
   const pdcp_transmission_mode_t modeP,
   const uint32_t *sourceL2Id,
   const uint32_t *destinationL2Id);
-  
+
 typedef struct openAddr_s {
   char originHost[HOST_NAME_MAX];
   char originService[HOST_NAME_MAX];
@@ -33,11 +33,11 @@ typedef struct openAddr_s {
 void gtpv1uReceiver(int h);
 void gtpv1uProcessTimeout(int handle,void *arg);
 int gtpv1u_create_s1u_tunnel(const instance_t instance, const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
-                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp);
+                             gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp);
 int gtpv1u_update_s1u_tunnel(const instance_t instanceP,
-                                 const gtpv1u_enb_create_tunnel_req_t   *create_tunnel_req_pP,
-                                 const rnti_t prior_rnti
-                                );
+                             const gtpv1u_enb_create_tunnel_req_t   *create_tunnel_req_pP,
+                             const rnti_t prior_rnti
+                            );
 int gtpv1u_delete_s1u_tunnel( const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP);
 int gtpv1u_delete_s1u_tunnel( const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP);
 
@@ -52,7 +52,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
                            transport_layer_addr_t remoteAddr, int port, gtpCallback callBack);
 void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer_id, teid_t newOutgoingTeid);
 int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti);
-  int newGtpuDeleteTunnels(instance_t instance, rnti_t rnti, int nbTunnels, pdusessionid_t *pdusession_id);
+int newGtpuDeleteTunnels(instance_t instance, rnti_t rnti, int nbTunnels, pdusessionid_t *pdusession_id);
 instance_t gtpv1Init(openAddr_t context);
 void *gtpv1uTask(void *args);
 

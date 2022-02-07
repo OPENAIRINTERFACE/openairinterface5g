@@ -79,7 +79,7 @@ class gtpEndPoint {
   // this allow using non standard gtp port number (different from 2152)
   // and so, for example tu run 4G and 5G cores on one system
   tcp_udp_port_t get_dstport() {
-	  return (tcp_udp_port_t)atol(addr.destinationService);
+    return (tcp_udp_port_t)atol(addr.destinationService);
   }
 };
 
@@ -106,10 +106,10 @@ instance_t legacyInstanceMapping=0;
 #define compatInst(a) ((a)==0 || (a)==INSTANCE_DEFAULT?legacyInstanceMapping:a)
 
 #define GTPV1U_HEADER_SIZE                                  (8)
-  
-  
-  static int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, int msgType, teid_t teid, uint8_t *Msg,int msgLen,
-                                   bool seqNumFlag, bool  npduNumFlag, bool extHdrFlag, int seqNum, int npduNum, int extHdrType) {
+
+
+static int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, int msgType, teid_t teid, uint8_t *Msg,int msgLen,
+                                  bool seqNumFlag, bool  npduNumFlag, bool extHdrFlag, int seqNum, int npduNum, int extHdrType) {
   AssertFatal(extHdrFlag==false,"Not developped");
   int headerAdditional=0;
 
@@ -149,6 +149,7 @@ instance_t legacyInstanceMapping=0;
   to.sin_addr.s_addr = peerIp ;
   LOG_D(GTPU,"sending packet size: %d to %s\n",fullSize, inet_ntoa(to.sin_addr) );
   int ret;
+
   if ((ret=sendto(h, (void *)buffer, (size_t)fullSize, 0,(struct sockaddr *)&to, sizeof(to) )) != fullSize ) {
     LOG_E(GTPU, "[SD %d] Failed to send data to " IPV4_ADDR " on port %d, buffer size %u, ret: %d, errno: %d\n",
           h, IPV4_ADDR_FORMAT(peerIp), peerPort, fullSize, ret, errno);
@@ -196,7 +197,7 @@ static void gtpv1uSend(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req, b
   gtpv1uCreateAndSendMsg(compatInst(instance),
                          tmp.outgoing_ip_addr,
                          tmp.outgoing_port,
-			 GTP_GPDU,
+                         GTP_GPDU,
                          tmp.teid_outgoing,
                          buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0) ;
 }
@@ -239,7 +240,7 @@ static void gtpv1uSend2(instance_t instance, gtpv1u_gnb_tunnel_data_req_t *req, 
   gtpv1uCreateAndSendMsg(compatInst(instance),
                          tmp.outgoing_ip_addr,
                          tmp.outgoing_port,
-			 GTP_GPDU,
+                         GTP_GPDU,
                          tmp.teid_outgoing,
                          buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0) ;
 }
@@ -309,6 +310,7 @@ static  int udpServerSocket(openAddr_s addr) {
     LOG_E(GTPU,"getaddrinfo error: %s\n", gai_strerror(status));
     return -1;
   }
+
   int sockfd=-1;
 
   // loop through all the results and bind to the first we can
@@ -488,20 +490,20 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
 }
 
 int gtpv1u_create_s1u_tunnel(instance_t instance,
-                                 const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
-                                 gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+                             const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
+                             gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
   LOG_D(GTPU, "[%ld] Start create tunnels for RNTI %x, num_tunnels %d, sgw_S1u_teid %x\n",
         instance,
         create_tunnel_req->rnti,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->sgw_S1u_teid[0]);
   tcp_udp_port_t dstport=globGtp.instances[compatInst(instance)].get_dstport();
+
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     AssertFatal(create_tunnel_req->eps_bearer_id[i] > 4,
                 "From legacy code not clear, seems impossible (bearer=%d)\n",
                 create_tunnel_req->eps_bearer_id[i]);
     int incoming_rb_id=create_tunnel_req->eps_bearer_id[i]-4;
-
     teid_t teid=newGtpuCreateTunnel(compatInst(instance), create_tunnel_req->rnti,
                                     incoming_rb_id,
                                     create_tunnel_req->eps_bearer_id[i],
@@ -565,11 +567,12 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->outgoing_teid[0]);
   tcp_udp_port_t dstport=globGtp.instances[compatInst(instance)].get_dstport();
+
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
                                     create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
-				    create_tunnel_req->outgoing_teid[i],
+                                    create_tunnel_req->outgoing_teid[i],
                                     create_tunnel_req->dst_addr[i], dstport,
                                     sdap_gnb_data_req);
     create_tunnel_resp->status=0;
@@ -600,7 +603,7 @@ int gtpv1u_create_x2u_tunnel(
   AssertFatal( false, "to be developped\n");
 }
 
-  int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
   LOG_D(GTPU, "[%ld] Start delete tunnels for RNTI %x\n",
         instance, rnti);
   pthread_mutex_lock(&globGtp.gtp_lock);
@@ -627,15 +630,15 @@ int gtpv1u_create_x2u_tunnel(
   LOG_I(GTPU, "[%ld] Deleted all tunnels for RNTI %x (%d tunnels deleted)\n", instance, rnti, nb);
   return !GTPNOK;
 }
-  
-  // Legacy delete tunnel finish by deleting all the rnti
-  // so the list of bearer provided is only a design bug
-  int gtpv1u_delete_s1u_tunnel( const instance_t instance,
-                                  const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+
+// Legacy delete tunnel finish by deleting all the rnti
+// so the list of bearer provided is only a design bug
+int gtpv1u_delete_s1u_tunnel( const instance_t instance,
+                              const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
   return  newGtpuDeleteAllTunnels(instance, req_pP->rnti);
 }
-  
-  int newGtpuDeleteTunnels(instance_t instance, rnti_t rnti, int nbTunnels, pdusessionid_t *pdusession_id) {
+
+int newGtpuDeleteTunnels(instance_t instance, rnti_t rnti, int nbTunnels, pdusessionid_t *pdusession_id) {
   LOG_D(GTPU, "[%ld] Start delete tunnels for RNTI %x\n",
         instance, rnti);
   pthread_mutex_lock(&globGtp.gtp_lock);
@@ -652,6 +655,7 @@ int gtpv1u_create_x2u_tunnel(
 
   for (int i=0; i<nbTunnels; i++) {
     auto ptr2=ptrRNTI->second.bearers.find(pdusession_id[i]);
+
     if ( ptr2 == ptrRNTI->second.bearers.end() ) {
       LOG_E(GTPU,"[%ld] GTP-U instance: delete of not existing tunnel RNTI:RAB: %x/%x\n", instance, rnti,pdusession_id[i]);
     } else {
@@ -659,33 +663,34 @@ int gtpv1u_create_x2u_tunnel(
       nb++;
     }
   }
-  
+
   if (ptrRNTI->second.bearers.size() == 0 )
     // no tunnels on this rnti, erase the ue entry
     inst->ue2te_mapping.erase(ptrRNTI);
+
   pthread_mutex_unlock(&globGtp.gtp_lock);
   LOG_I(GTPU, "[%ld] Deleted all tunnels for RNTI %x (%d tunnels deleted)\n", instance, rnti, nb);
   return !GTPNOK;
-  }
-  
+}
+
 int gtpv1u_delete_x2u_tunnel( const instance_t instanceP,
                               const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
   LOG_E(GTPU,"x2 tunnel not implemented\n");
   return 0;
 }
-  
+
 int gtpv1u_delete_ngu_tunnel( const instance_t instance,
-                                  gtpv1u_gnb_delete_tunnel_req_t * req) {
+                              gtpv1u_gnb_delete_tunnel_req_t *req) {
   return  newGtpuDeleteTunnels(instance, req->rnti, req->num_pdusession, req->pdusession_id);
 }
-  
+
 static int Gtpv1uHandleEchoReq(int h,
                                uint8_t *msgBuf,
                                uint32_t msgBufLen,
                                uint16_t peerPort,
                                uint32_t peerIp) {
   Gtpv1uMsgHeaderT      *msgHdr = (Gtpv1uMsgHeaderT *) msgBuf;
-   
+
   if ( msgHdr->version != 1 ||  msgHdr->PT != 1 ) {
     LOG_E(GTPU, "[%d] Received a packet that is not GTP header\n", h);
     return GTPNOK;
@@ -696,14 +701,12 @@ static int Gtpv1uHandleEchoReq(int h,
     return GTPNOK;
   }
 
-  uint16_t seq=ntohs(*(uint16_t*)(msgHdr+1));
+  uint16_t seq=ntohs(*(uint16_t *)(msgHdr+1));
   LOG_D(GTPU, "[%d] Received a echo request, TEID: %d, seq: %hu\n", h, msgHdr->teid, seq);
-  uint8_t recovery[2]={14,0};
-  
+  uint8_t recovery[2]= {14,0};
   return gtpv1uCreateAndSendMsg(h, peerIp, peerPort, GTP_ECHO_RSP, ntohl(msgHdr->teid),
-			 recovery, sizeof recovery,
-			 1, 0, 0, seq, 0, 0);
-
+                                recovery, sizeof recovery,
+                                1, 0, 0, seq, 0, 0);
 }
 
 static int Gtpv1uHandleError(int h,

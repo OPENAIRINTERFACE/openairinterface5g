@@ -30,8 +30,8 @@
 #define GTPV1U_ENB_TASK_H_
 
 typedef struct gtpv1u_data_s {
- /* RB tree of UEs */
-  hash_table_t         *ue_mapping; 
+  /* RB tree of UEs */
+  hash_table_t         *ue_mapping;
 } gtpv1u_data_t;
 
 #define GTPV1U_BEARER_OFFSET 3
@@ -53,8 +53,8 @@ typedef struct fixMe_gtpv1u_bearer_s {
   in_addr_t       sgw_ip_addr;
   struct in6_addr sgw_ip6_addr;
   teid_t          teid_teNB;
-  in_addr_t       tenb_ip_addr;				///< target eNB ipv4
-  struct in6_addr tenb_ip6_addr;				///< target eNB ipv6
+  in_addr_t       tenb_ip_addr;       ///< target eNB ipv4
+  struct in6_addr tenb_ip6_addr;        ///< target eNB ipv6
   tcp_udp_port_t  port;
   //NwGtpv1uStackSessionHandleT stack_session;
   bearer_state_t state;
@@ -86,28 +86,28 @@ gtpv1u_new_data_req(
   uint32_t buf_offset);*/
 
 int   gtpv1u_eNB_init(void);
-void *gtpv1u_eNB_process_itti_msg(void*);
+void *gtpv1u_eNB_process_itti_msg(void *);
 void *gtpv1u_eNB_task(void *args);
 
 int
 gtpv1u_create_x2u_tunnel(
   const instance_t instanceP,
-  const gtpv1u_enb_create_x2u_tunnel_req_t *  const create_tunnel_req_pP,
-        gtpv1u_enb_create_x2u_tunnel_resp_t * const create_tunnel_resp_pP);
+  const gtpv1u_enb_create_x2u_tunnel_req_t   *const create_tunnel_req_pP,
+  gtpv1u_enb_create_x2u_tunnel_resp_t *const create_tunnel_resp_pP);
 
 int
 gtpv1u_create_s1u_tunnel(
   const instance_t instanceP,
-  const gtpv1u_enb_create_tunnel_req_t *  const create_tunnel_req_pP,
-        gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP);
+  const gtpv1u_enb_create_tunnel_req_t   *const create_tunnel_req_pP,
+  gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP);
 
 int
 gtpv1u_update_s1u_tunnel(
-    const instance_t                              instanceP,
-    const gtpv1u_enb_create_tunnel_req_t * const  create_tunnel_req_pP,
-    const rnti_t                                  prior_rnti);
+  const instance_t                              instanceP,
+  const gtpv1u_enb_create_tunnel_req_t *const  create_tunnel_req_pP,
+  const rnti_t                                  prior_rnti);
 
 int gtpv1u_delete_x2u_tunnel(
   const instance_t                             instanceP,
-  const gtpv1u_enb_delete_tunnel_req_t * const req_pP);
+  const gtpv1u_enb_delete_tunnel_req_t *const req_pP);
 #endif /* GTPV1U_ENB_TASK_H_ */

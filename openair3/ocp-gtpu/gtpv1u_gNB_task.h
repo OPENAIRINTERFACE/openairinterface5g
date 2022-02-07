@@ -37,8 +37,8 @@ void *nr_gtpv1u_gNB_task(void *args);
 int
 gtpv1u_create_ngu_tunnel(
   const instance_t instanceP,
-  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
-        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP);
+  const gtpv1u_gnb_create_tunnel_req_t   *const create_tunnel_req_pP,
+  gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP);
 
 int
 gtpv1u_update_ngu_tunnel(
@@ -48,7 +48,7 @@ gtpv1u_update_ngu_tunnel(
 );
 
 int gtpv1u_delete_ngu_tunnel( const instance_t instance,
-			      gtpv1u_gnb_delete_tunnel_req_t *req);
+                              gtpv1u_gnb_delete_tunnel_req_t *req);
 
 #endif /* GTPV1U_GNB_TASK_H_ */
 
