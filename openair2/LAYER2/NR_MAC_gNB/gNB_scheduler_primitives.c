@@ -306,13 +306,13 @@ int cce_to_reg_interleaving(const int R, int k, int n_shift, const int C, int L,
   return f;
 }
 
-uint8_t find_pdcch_candidate(gNB_MAC_INST *mac,
-                             int cc_id,
-                             int aggregation,
-                             int nr_of_candidates,
-                             NR_sched_pdcch_t *pdcch,
-                             NR_ControlResourceSet_t *coreset,
-                             uint16_t Y){
+int find_pdcch_candidate(gNB_MAC_INST *mac,
+                         int cc_id,
+                         int aggregation,
+                         int nr_of_candidates,
+                         NR_sched_pdcch_t *pdcch,
+                         NR_ControlResourceSet_t *coreset,
+                         uint16_t Y){
 
   uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
   const int next_cand = mac->pdcch_cand[coreset->controlResourceSetId];
@@ -332,12 +332,11 @@ uint8_t find_pdcch_candidate(gNB_MAC_INST *mac,
   const int C = R>0 ? N_regs/(L*R) : 0;
   const int B_rb = L/N_symb; // nb of RBs occupied by each REG bundle
 
-  int first_cce;
-  bool taken = false; // flag if the resource for a given candidate are taken
   // loop over all the available candidates
   // this implements TS 38.211 Sec. 7.3.2.2
   for(int m=next_cand; m<nr_of_candidates; m++) { // loop over candidates
-    first_cce = aggregation * (( Y + CEILIDIV((m*N_cces),(aggregation*nr_of_candidates)) + N_ci ) % CEILIDIV(N_cces,aggregation));
+    bool taken = false; // flag if the resource for a given candidate are taken
+    int first_cce = aggregation * (( Y + CEILIDIV((m*N_cces),(aggregation*nr_of_candidates)) + N_ci ) % CEILIDIV(N_cces,aggregation));
     for (int j=first_cce; (j<first_cce+aggregation) && !taken; j++) { // loop over CCEs
       for (int k=6*j/L; (k<(6*j/L+6/L)) && !taken; k++) { // loop over REG bundles
         int f = cce_to_reg_interleaving(R, k, pdcch->ShiftIndex, C, L, N_regs);
