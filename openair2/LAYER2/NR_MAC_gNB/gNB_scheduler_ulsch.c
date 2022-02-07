@@ -711,7 +711,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_info->mac_stats[UE_id].ulsch_DTX++;
       }
       if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
-         LOG_D(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
+         LOG_W(NR_MAC,"Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
+               UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt);
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
          nr_mac_gNB_rrc_ul_failure(gnb_mod_idP,CC_idP,frameP,slotP,rntiP);
       }
