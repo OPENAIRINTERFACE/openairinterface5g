@@ -1,4 +1,4 @@
-﻿SNR;MCS;TBS;rate;err0;trials0;err1;trials1;err2;trials2;err3;trials3;dci_err
+SNR;MCS;TBS;rate;err0;trials0;err1;trials1;err2;trials2;err3;trials3;dci_err
 10;19;24072;3.0293;1500;1500;0;0;0;0;0;0;0
 10.1;19;24072;3.0293;1500;1500;0;0;0;0;0;0;0
 10.2;19;24072;3.0293;1500;1500;0;0;0;0;0;0;0
