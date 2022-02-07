@@ -220,6 +220,11 @@ void dlsch_scheduler_pre_ue_select_fairRR(
         continue;
       }
 
+
+      if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 0
+          || UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
+        continue;
+
       if(mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED) {
         continue;
       }
@@ -333,6 +338,10 @@ void dlsch_scheduler_pre_ue_select_fairRR(
       rnti = UE_RNTI(module_idP,UE_id);
 
       if (rnti == NOT_A_RNTI)
+        continue;
+
+      if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 0
+          || UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
         continue;
 
       if(mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED) {
@@ -457,6 +466,10 @@ void dlsch_scheduler_pre_ue_select_fairRR(
       rnti = UE_RNTI(module_idP,UE_id);
 
       if (rnti == NOT_A_RNTI)
+        continue;
+
+      if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 0
+          || UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
         continue;
 
       if(mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED) {
