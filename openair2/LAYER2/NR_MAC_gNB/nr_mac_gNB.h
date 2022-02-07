@@ -594,7 +594,7 @@ typedef struct {
   int ul_failure;
   struct CSI_Report CSI_report[MAX_CSI_REPORTS];
   bool SR;
-
+  bool update_ps;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
