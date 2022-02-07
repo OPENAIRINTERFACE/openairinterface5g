@@ -579,7 +579,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
      * (re-)transmission */
     if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
       nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, ps);
-      sched_ctrl->update_pdsch_ps = FALSE;
+      sched_ctrl->update_pdsch_ps = false;
     }
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -798,7 +798,7 @@ void pf_dl(module_id_t module_id,
     const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
     if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
-      sched_ctrl->update_pdsch_ps = FALSE;
+      sched_ctrl->update_pdsch_ps = false;
     }
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
