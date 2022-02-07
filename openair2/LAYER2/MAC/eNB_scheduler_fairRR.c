@@ -2241,7 +2241,8 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     if (UE_info->UE_template[CC_id][UE_id].configured == FALSE)
       continue;
 
-    if (UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
+    if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 0
+        || UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
       continue;
 
     // UL DCI
@@ -2403,7 +2404,8 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     if (UE_info->UE_template[CC_id][UE_id].configured == FALSE)
       continue;
 
-    if (UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
+    if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 0
+        || UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
       continue;
 
     if ( (ulsch_ue_select[CC_id].ue_num >= ulsch_ue_max_num[CC_id]) || (cc_id_flag[CC_id] == 1) ) {
