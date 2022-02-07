@@ -409,7 +409,7 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   /*const int dret3x = stats->dlsch_rounds[3] - bler_stats->dlsch_rounds[3];
   if (dret3x > 0) {
      if there is a third retransmission, decrease MCS for stabilization and
-     restart averaging window to stabilize transmission 
+     restart averaging window to stabilize transmission
     bler_stats->last_frame_slot = now;
     bler_stats->mcs = max(9, bler_stats->mcs - 1);
     memcpy(bler_stats->dlsch_rounds, stats->dlsch_rounds, sizeof(stats->dlsch_rounds));
@@ -431,7 +431,7 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   int new_mcs = old_mcs;
   // TODO put back this condition when relevant
   /* first ensure that number of 2nd retx is below threshold. If this is the
-   * case, use 1st retx to adjust faster 
+   * case, use 1st retx to adjust faster
   if (bler_stats->rd2_bler > nrmac->dl_rd2_bler_threshold && old_mcs > 6) {
     new_mcs -= 2;
   } else if (bler_stats->rd2_bler < nrmac->dl_rd2_bler_threshold) {*/
@@ -486,7 +486,8 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                         DL_SCH_LCID_DCCH,
                                                         0,
                                                         0);
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0)  
+    if ((sched_ctrl->lcid_mask&(1<<4)) > 0) {  
+       start_meas(&RC.nrmac[module_id]->rlc_status_ind);
        sched_ctrl->rlc_status[DL_SCH_LCID_DTCH] = mac_rlc_status_ind(module_id,
                                                                     rnti,
                                                                     module_id,
@@ -497,16 +498,17 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                                     DL_SCH_LCID_DTCH,
                                                                     0,
                                                                     0);
-
-     if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
-       lcid = DL_SCH_LCID_DCCH;       
-     } 
-     else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
-     {
-       lcid = DL_SCH_LCID_DCCH1;       
-     }else{
-       lcid = DL_SCH_LCID_DTCH;       
-     }
+       stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
+    }
+    if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
+      lcid = DL_SCH_LCID_DCCH;       
+    } 
+    else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
+    {
+      lcid = DL_SCH_LCID_DCCH1;       
+    }else{
+      lcid = DL_SCH_LCID_DTCH;       
+    }
                                                       
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
     //later multiplex here. Just select DCCH/SRB before DTCH/DRB
@@ -1228,6 +1230,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       // const int lcid = DL_SCH_LCID_DTCH;
       const int lcid = sched_ctrl->lcid_to_schedule;
       int dlsch_total_bytes = 0;
+      start_meas(&gNB_mac->rlc_data_req);
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
         while (size > 3) {
@@ -1241,6 +1244,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           /* limit requested number of bytes to what preprocessor specified, or
            * such that TBS is full */
           const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+
           len = mac_rlc_data_req(module_id,
                                  rnti,
                                  module_id,
@@ -1301,6 +1305,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         buf += size;
         dlsch_total_bytes += size;
       }
+      stop_meas(&gNB_mac->rlc_data_req);
 
       // Add padding header and zero rest out if there is space left
       if (size > 0) {
