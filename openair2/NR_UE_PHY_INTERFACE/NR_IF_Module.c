@@ -292,11 +292,11 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     mac->nr_ue_emul_l1.expected_sib = false;
-    memset(mac->nr_ue_emul_l1.index_has_sib, 0, sizeof(*mac->nr_ue_emul_l1.index_has_sib));
+    memset(mac->nr_ue_emul_l1.index_has_sib, 0, sizeof(mac->nr_ue_emul_l1.index_has_sib));
     mac->nr_ue_emul_l1.expected_rar = false;
-    memset(mac->nr_ue_emul_l1.index_has_rar, 0, sizeof(*mac->nr_ue_emul_l1.index_has_rar));
+    memset(mac->nr_ue_emul_l1.index_has_rar, 0, sizeof(mac->nr_ue_emul_l1.index_has_rar));
     mac->nr_ue_emul_l1.expected_dci = false;
-    memset(mac->nr_ue_emul_l1.index_has_dci, 0, sizeof(*mac->nr_ue_emul_l1.index_has_dci));
+    memset(mac->nr_ue_emul_l1.index_has_dci, 0, sizeof(mac->nr_ue_emul_l1.index_has_dci));
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
@@ -420,7 +420,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
 
     if (!dl_info->rx_ind)
     {
-        dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
+        dl_info->rx_ind = CALLOC(num_pdus, sizeof(fapi_nr_rx_indication_t));
     }
     AssertFatal(dl_info->rx_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
     fapi_nr_rx_indication_t *rx_ind = dl_info->rx_ind;

@@ -3809,6 +3809,18 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       LOG_A(NR_MAC, "[UE %d][RAPROC][%d.%d] Found RAR with the intended RAPID %d\n", mod_id, frame, slot, rarh->RAPID);
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
       ra->RA_RAPID_found = 1;
+      if (get_softmodem_params()->emulate_l1) {
+        LOG_I(NR_MAC, "If we found the RAR, the other PDUs are for other UEs and we dont need to process. "
+                      "Only save rx_indication_body[%d] as only PDU in RX_indication\n", pdu_id);
+        dl_info->rx_ind->number_pdus = 1;
+        if (pdu_id != 0) {
+          memcpy(&dl_info->rx_ind->rx_indication_body[0],
+                &dl_info->rx_ind->rx_indication_body[pdu_id],
+                sizeof(fapi_nr_rx_indication_body_t));
+        }
+        mac->nr_ue_emul_l1.expected_rar = false;
+        memset(mac->nr_ue_emul_l1.index_has_rar, 0, sizeof(mac->nr_ue_emul_l1.index_has_rar));
+      }
       break;
     }
     if (rarh->E == 0) {
