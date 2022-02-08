@@ -41,8 +41,11 @@ int decode_eps_network_feature_support(EpsNetworkFeatureSupport *epsnetworkfeatu
   ielen = *(buffer + decoded);
   decoded++;
   CHECK_LENGTH_DECODER(len - decoded, ielen);
-  *epsnetworkfeaturesupport = *buffer & 0x1;
-  decoded++;
+  /* note: only the bit "IMS voice over PS session in S1 mode" is processed
+   * TODO: deal with other bits?
+   */
+  *epsnetworkfeaturesupport = (*(buffer + decoded)) & 0x1;
+  decoded += ielen;
 #if defined (NAS_DEBUG)
   dump_eps_network_feature_support_xml(epsnetworkfeaturesupport, iei);
 #endif
