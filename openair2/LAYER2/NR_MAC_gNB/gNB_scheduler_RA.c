@@ -614,7 +614,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                                             ra->coreset,
                                             scc,
                                             genericParameters,
-                                            NULL);
+                                            &nr_mac->type0_PDCCH_CSS_config[ra->beam_id]);
 
       // retrieving ra pdcch monitoring period and offset
       find_monitoring_periodicity_offset_common(ra->ra_ss, &monitoring_slot_period, &monitoring_offset);

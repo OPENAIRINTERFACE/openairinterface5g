@@ -652,7 +652,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                                                     sched_ctrl->coreset,
                                                     scc,
                                                     genericParameters,
-                                                    NULL);
+                                                    RC.nrmac[Mod_idP]->type0_PDCCH_CSS_config);
       sched_ctrl->maxL = 2;
     }
   }
