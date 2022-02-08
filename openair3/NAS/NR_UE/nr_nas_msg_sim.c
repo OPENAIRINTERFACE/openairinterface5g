@@ -674,7 +674,7 @@ void decodeDownlinkNASTransport(as_nas_info_t *initialNasMsg, uint8_t * pdu_buff
     sprintf(baseNetAddress, "%d.%d", *(pdu_buffer + 39),*(pdu_buffer + 40));
     int third_octet = *(pdu_buffer + 41);
     int fourth_octet = *(pdu_buffer + 42);
-    LOG_I(NAS, "Received PDU Session Establishment Accept\n");
+    LOG_A(NAS, "Received PDU Session Establishment Accept\n");
     nas_config(1,third_octet,fourth_octet,"ue");
   } else {
     LOG_E(NAS, "Received unexpected message in DLinformationTransfer %d\n", msg_type);
