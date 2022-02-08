@@ -29,36 +29,28 @@ int nr_generate_sss(  int32_t *txdataF,
                       nfapi_nr_config_request_scf_t* config,
                       NR_DL_FRAME_PARMS *frame_parms)
 {
-  int i,k,l;
-  int m0, m1;
-  int Nid, Nid1, Nid2;
-  //int16_t a;
-  int16_t d_sss[NR_SSS_LENGTH];
-  int16_t x0[NR_SSS_LENGTH], x1[NR_SSS_LENGTH];
+  int16_t x0[NR_SSS_LENGTH];
+  int16_t x1[NR_SSS_LENGTH];
   const int x0_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
   const int x1_initial[7] = { 1, 0, 0, 0, 0, 0, 0 };
 
   /// Sequence generation
-  Nid = config->cell_config.phy_cell_id.value;
-  Nid2 = Nid % 3;
-  Nid1 = (Nid - Nid2)/3;
+  int Nid = config->cell_config.phy_cell_id.value;
+  int Nid2 = Nid % 3;
+  int Nid1 = (Nid - Nid2)/3;
 
-  for ( i=0 ; i < 7 ; i++) {
+  for (int i=0; i < 7; i++) {
     x0[i] = x0_initial[i];
     x1[i] = x1_initial[i];
   }
 
-  for ( i=0 ; i < NR_SSS_LENGTH - 7 ; i++) {
+  for (int i=0; i < NR_SSS_LENGTH - 7; i++) {
     x0[i+7] = (x0[i + 4] + x0[i]) % 2;
     x1[i+7] = (x1[i + 1] + x1[i]) % 2;
   }
 
-  m0 = 15*(Nid1/112) + (5*Nid2);
-  m1 = Nid1 % 112;
-
-  for (i = 0; i < NR_SSS_LENGTH ; i++) {
-    d_sss[i] = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] ) * 23170;
-  }
+  int m0 = 15*(Nid1/112) + (5*Nid2);
+  int m1 = Nid1 % 112;
 
 #ifdef NR_SSS_DEBUG
   write_output("d_sss.m", "d_sss", (void*)d_sss, NR_SSS_LENGTH, 1, 1);
@@ -66,17 +58,18 @@ int nr_generate_sss(  int32_t *txdataF,
 
   /// Resource mapping
 
-    // SSS occupies a predefined position (subcarriers 56-182, symbol 2) within the SSB block starting from
-    k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
-    l = ssb_start_symbol + 2;
+  // SSS occupies a predefined position (subcarriers 56-182, symbol 2) within the SSB block starting from
+  int k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
+  int l = ssb_start_symbol + 2;
 
-    for (int m = 0; m < NR_SSS_LENGTH; m++) {
-      ((int16_t*)txdataF)[2*(l*frame_parms->ofdm_symbol_size + k)] = (amp * d_sss[m]) >> 15;
-      k++;
+  for (int i = 0; i < NR_SSS_LENGTH; i++) {
+    int16_t d_sss = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] ) * 23170;
+    ((int16_t*)txdataF)[2*(l*frame_parms->ofdm_symbol_size + k)] = (((int16_t)amp) * d_sss) >> 15;
+    k++;
 
-      if (k >= frame_parms->ofdm_symbol_size)
-        k-=frame_parms->ofdm_symbol_size;
-    }
+    if (k >= frame_parms->ofdm_symbol_size)
+      k-=frame_parms->ofdm_symbol_size;
+  }
 #ifdef NR_SSS_DEBUG
   //  write_output("sss_0.m", "sss_0", (void*)txdataF[0][l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
 #endif

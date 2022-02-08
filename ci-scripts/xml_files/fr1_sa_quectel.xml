@@ -31,9 +31,13 @@
  010000
  000001
  050000
+ 000001
  050001
+ 000001
  070000
+ 000001
  070001
+ 000001
  070002
  000001
  010002
@@ -84,7 +88,7 @@
 
 	<testCase id="050000">
 		<class>Ping</class>
-		<desc>Ping: 20pings in 20sec</desc>
+		<desc>Ping: 40pings in 40sec</desc>
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 40</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>

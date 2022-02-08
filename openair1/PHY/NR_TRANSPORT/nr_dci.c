@@ -250,7 +250,6 @@ void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
 }
 
-
 void nr_generate_dci_top(processingData_L1tx_t *msgTx,
                          uint32_t **gold_pdcch_dmrs,
                          int32_t *txdataF,
