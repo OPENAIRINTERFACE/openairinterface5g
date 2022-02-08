@@ -278,7 +278,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     int txdataF_offset = (slot%2)*frame_parms->samples_per_slot_wCP;
     int16_t **txdataF_precoding = (int16_t **)malloc16(rel15->nrOfLayers*sizeof(int16_t *));
     for (int layer = 0; layer<rel15->nrOfLayers; layer++)
-      txdataF_precoding[layer] = (int16_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int16_t));
+      txdataF_precoding[layer] = (int16_t *)malloc16(2*2*14*frame_parms->ofdm_symbol_size*sizeof(int16_t));
 
 #ifdef DEBUG_DLSCH_MAPPING
     printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
