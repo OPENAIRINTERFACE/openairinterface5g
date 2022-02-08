@@ -33,7 +33,6 @@
 #define ScaleZone 4
 #define localBuff(NaMe,SiZe) float NaMe[SiZe]; memset(NaMe,0,sizeof(NaMe));
 
-int otg_enabled;
 
 const FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 const FL_COLOR water_colors[4] = {FL_BLUE,FL_GREEN,FL_YELLOW,FL_RED};
@@ -240,7 +239,7 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
   for (int pix=0; pix<graph->w; pix++) {
     scopeSample_t *end=values+(pix+1)*samplesPerPixel;
     end-=2;
-    AssertFatal(end <= values+datasize,"diff : %ld", end-values+datasize);
+    AssertFatal(end <= values+datasize,"diff : %tu", end-values+datasize);
     double val=0;
 
     for (scopeSample_t *s=values+(pix)*samplesPerPixel;

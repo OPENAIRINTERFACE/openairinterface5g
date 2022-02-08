@@ -26,17 +26,10 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <platform_types.h>
+#include "backtrace.h"
 
-#if defined(ENB_MODE)
-# define display_backtrace()
-#else
-# include "backtrace.h"
-#endif
-
-void output_log_mem(void);
 #define _Assert_Exit_                           \
     fprintf(stderr, "\nExiting execution\n");   \
-    display_backtrace();                        \
     fflush(stdout);                             \
     fflush(stderr);                             \
     abort();

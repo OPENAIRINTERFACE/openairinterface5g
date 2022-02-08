@@ -24,26 +24,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#if !defined (msg)
-# define msg(aRGS...) LOG_D(PHY, ##aRGS)
-#endif
-#ifndef malloc16
-#  ifdef __AVX2__
-#    define malloc16(x) memalign(32,x)
-#  else
-#    define malloc16(x) memalign(16,x)
-#  endif
-#endif
-#define free16(y,x) free(y)
-#define bigmalloc malloc
-#define bigmalloc16 malloc16
-#define openair_free(y,x) free((y))
-#define PAGE_SIZE 4096
-
-#define PAGE_MASK 0xfffff000
-#define virt_to_phys(x) (x)
-
-#define cmax(a,b)  ((a>b) ? (a) : (b))
-#define cmin(a,b)  ((a<b) ? (a) : (b))
+#include <common/utils/utils.h>
 #endif // /*__openair_DEFS_H__ */
 

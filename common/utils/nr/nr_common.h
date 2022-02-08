@@ -48,8 +48,7 @@ typedef struct nr_bandentry_s {
   uint8_t deltaf_raster;
 } nr_bandentry_t;
 
-extern const size_t nr_bandtable_size;
-extern nr_bandentry_t nr_bandtable[];
+extern const nr_bandentry_t nr_bandtable[];
 static inline int get_num_dmrs(uint16_t dmrs_mask ) {
 
   int num_dmrs=0;
@@ -79,6 +78,7 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
 int get_subband_size(int NPRB,int size);
 void SLIV2SL(int SLIV,int *S,int *L);
 int get_dmrs_port(int nl, uint16_t dmrs_ports);
+uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols);
 int get_nb_periods_per_frame(uint8_t tdd_period);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)

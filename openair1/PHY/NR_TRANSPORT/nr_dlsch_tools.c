@@ -32,6 +32,7 @@
 */
 
 #include "nr_dlsch.h"
+#include "../../../nfapi/oai_integration/vendor_ext.h"
 
 extern void set_taus_seed(unsigned int seed_type);
 

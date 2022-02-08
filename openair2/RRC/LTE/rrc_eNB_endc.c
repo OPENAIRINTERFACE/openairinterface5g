@@ -171,8 +171,10 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
 
   OCTET_STRING_t dummy_scg_conf;
   unsigned char scg_conf_buf[4] = { 0, 0, 0, 0 };
-  if (scg_group_config!=NULL)
+  if (scg_group_config!=NULL) {
 	  nr.choice.setup.nr_SecondaryCellGroupConfig_r15 = scg_group_config; //&scg_conf;
+          LOG_E(RRC, "setting scg_group_config\n");
+  }
   else{
 	  nr.choice.setup.nr_SecondaryCellGroupConfig_r15 = &dummy_scg_conf;
 	  dummy_scg_conf.buf = scg_conf_buf;
@@ -197,8 +199,10 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   OCTET_STRING_t dummy_nr1_conf;
   unsigned char nr1_buf[4] = { 0, 0, 0, 0 };
 
-  if(scg_RB_config!=NULL)
+  if(scg_RB_config!=NULL) {
 	  cr_1510.nr_RadioBearerConfig1_r15 = scg_RB_config;
+          LOG_E(RRC, "setting scg_RB_config\n");
+  }
   else{
 	  cr_1510.nr_RadioBearerConfig1_r15 = &dummy_nr1_conf;
 	  dummy_nr1_conf.buf = nr1_buf;
@@ -230,7 +234,8 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
                                    (void *)&dl_dcch_msg,
                                    buffer,
                                    buffer_size);
-
+  AssertFatal (enc_rval.encoded > 0, "asn_DEF_LTE_DL_DCCH_Message message encoding failed (%s, %jd)!\n",
+                 enc_rval.failed_type->name, enc_rval.encoded);
 {
 int len = (enc_rval.encoded + 7) / 8;
 int i;

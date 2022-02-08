@@ -34,7 +34,7 @@
 	<testCase id="090110">
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE -- sniffing Orange frequency</desc>
-		<Initialize_OAI_UE_args>-C 816000000 -r 50 --ue-rxgain 135 --ue-scan-carrier --no-L2-connect --nokrnmod 1</Initialize_OAI_UE_args>
+		<Initialize_OAI_UE_args>-C 816000000 -r 50 --ue-rxgain 135 --ue-scan-carrier --no-L2-connect --nokrnmod 1 --log_config.global_log_options level,nocolor,time</Initialize_OAI_UE_args>
 	</testCase>
 
 	<testCase id="000001">

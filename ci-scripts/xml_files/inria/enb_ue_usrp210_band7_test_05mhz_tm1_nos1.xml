@@ -52,7 +52,7 @@
 	<testCase id="030101">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --noS1 --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --noS1 --eNBs.[0].rrc_inactivity_threshold 0 --RUs.[0].max_rxgain 120 --eNBs.[0].component_carriers.[0].pusch_p0_Nominal -90 --eNBs.[0].component_carriers.[0].pucch_p0_Nominal -96 --eNBs.[0].tracking_area_code 600 --eNBs.[0].plmn_list.[0].mnc 95 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030201">
@@ -63,7 +63,7 @@
 	<testCase id="090101">
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE (FDD/Band7/5MHz)</desc>
-		<Initialize_OAI_UE_args>-C 2680000000 -r 25 --ue-rxgain 130 --ue-txgain 1 --ue-max-power -6 --ue-scan-carrier --nokrnmod 1 --noS1</Initialize_OAI_UE_args>
+		<Initialize_OAI_UE_args>-C 2680000000 -r 25 --ue-rxgain 130 --ue-txgain 1 --ue-max-power -6 --ue-scan-carrier --nokrnmod 1 --noS1 --log_config.global_log_options level,nocolor,time</Initialize_OAI_UE_args>
 	</testCase>
 
 	<testCase id="090109">

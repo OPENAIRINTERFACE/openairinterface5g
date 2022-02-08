@@ -36,11 +36,12 @@
 /*
  * UE Context Setup
  */
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_t *req);
+
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
                                        uint32_t         stream,
                                        F1AP_F1AP_PDU_t *pdu);
-int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance);
 int DU_send_UE_CONTEXT_SETUP_FAILURE(instance_t instance);
 
 
@@ -55,9 +56,9 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
  * UE Context Release Command (gNB-CU initiated)
  */
 int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
-                                         uint32_t         assoc_id,
-                                         uint32_t         stream,
-                                         F1AP_F1AP_PDU_t *pdu);
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    F1AP_F1AP_PDU_t *pdu);
 
 /*
  * UE Context Release Complete (gNB-DU initiated)
@@ -70,9 +71,9 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
  * UE Context Modification (gNB-CU initiated)
  */
 int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
-                                              uint32_t         assoc_id,
-                                              uint32_t         stream,
-                                              F1AP_F1AP_PDU_t *pdu);
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    F1AP_F1AP_PDU_t *pdu);
 int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance);
 int DU_send_UE_CONTEXT_MODIFICATION_FAILURE(instance_t instance);
 
@@ -82,9 +83,11 @@ int DU_send_UE_CONTEXT_MODIFICATION_FAILURE(instance_t instance);
  */
 int DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance);
 int DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t       instance,
-                                              uint32_t         assoc_id,
-                                              uint32_t         stream,
-                                              F1AP_F1AP_PDU_t *pdu);
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    F1AP_F1AP_PDU_t *pdu);
+
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup_t *req);
 
 /*
  * UE Inactivity Notification

@@ -44,7 +44,6 @@
 #include <execinfo.h>
 #include <getopt.h>
 #include <sys/sysinfo.h>
-#include "rt_wrapper.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -1490,6 +1489,7 @@ static void *ru_stats_thread(void *param) {
 static void *ru_thread_tx( void *param ) {
   RU_t *ru         = (RU_t *)param;
   RU_proc_t *proc  = &ru->proc;
+  __attribute__((unused))
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   PHY_VARS_eNB *eNB;
   L1_proc_t *eNB_proc;
@@ -1917,7 +1917,8 @@ static void *ru_thread( void *param ) {
 // This thread run the initial synchronization like a UE
 void *ru_thread_synch(void *arg) {
   RU_t *ru = (RU_t *)arg;
-  LTE_DL_FRAME_PARMS *fp;
+  __attribute__((unused))
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   int64_t peak_val, avg;
   static int ru_thread_synch_status = 0;
   int cnt=0;

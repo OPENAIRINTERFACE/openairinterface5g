@@ -63,8 +63,7 @@ uint16_t NB_UE_INST = 1;
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
-uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
@@ -193,6 +192,7 @@ int main(int argc, char **argv)
 
   int frame=0;
   int frame_length_complex_samples;
+  __attribute__((unused))
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
 

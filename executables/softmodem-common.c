@@ -180,15 +180,18 @@ void softmodem_printresources(int sig, telnet_printfunc_t pf) {
 }
 
 void signal_handler(int sig) {
-  void *array[10];
-  size_t size;
+  //void *array[10];
+  //size_t size;
 
   if (sig==SIGSEGV) {
     // get void*'s for all entries on the stack
+    /* backtrace uses malloc, that is not good in signal handlers
+     * I let the code, because it would be nice to make it better
     size = backtrace(array, 10);
     // print out all the frames to stderr
     fprintf(stderr, "Error: signal %d:\n", sig);
     backtrace_symbols_fd(array, size, 2);
+    */
     exit(-1);
   } else {
     if(sig==SIGINT ||sig==SOFTMODEM_RTSIGNAL)
@@ -208,10 +211,13 @@ void set_softmodem_sighandler(void) {
   memset(&act,0,sizeof(act));
   act.sa_handler=signal_handler;
   sigaction(SOFTMODEM_RTSIGNAL,&act,&oldact);
+  // Disabled in order generate a core dump for analysis with gdb
+  # if 0
   printf("Send signal %d to display resource usage...\n",SIGRTMIN+1);
   signal(SIGSEGV, signal_handler);
   signal(SIGINT,  signal_handler);
   signal(SIGTERM, signal_handler);
   signal(SIGABRT, signal_handler);
+  #endif
 }
 

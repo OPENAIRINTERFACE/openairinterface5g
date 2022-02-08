@@ -80,6 +80,7 @@ COPY --from=lte-ue-build \
     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
     /oai-ran/cmake_targets/ran_build/build/libSIMU.so \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
     /usr/local/lib/
 
 # Now we are copying from builder-image the UHD files.
