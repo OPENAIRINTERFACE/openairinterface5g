@@ -60,7 +60,7 @@ cd cmake_targets/
 ./build_oai -I --phy_simulators
 ```
 
-After completing the build, the binaries are available in the cmake_targets/phy_simulators/build directory.  
+After completing the build, the binaries are available in the cmake_targets/ran_build/build directory.  
 A copy is also available in the target/bin directory, with all binaries suffixed by the 3GPP release number, today **.Rel15**.  
 
 

@@ -34,9 +34,6 @@
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
 
-#include "rt_wrapper.h"
-
-
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
@@ -542,12 +539,6 @@ AssertFatal(false,"");
 }
 
 int main( int argc, char **argv ) {
-  set_priority(79);
-  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
-  {
-    fprintf(stderr, "mlockall: %s\n", strerror(errno));
-    return EXIT_FAILURE;
-  }
 
   int CC_id;
   uint8_t  abstraction_flag=0;
@@ -565,8 +556,8 @@ int main( int argc, char **argv ) {
 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
-  set_latency_target();
   logInit();
+  set_latency_target();
   printf("Reading in command-line options\n");
 
   for (int i=0; i<MAX_NUM_CCs; i++) tx_max_power[i]=23;
@@ -629,7 +620,6 @@ int main( int argc, char **argv ) {
   pdcp_pc5_socket_init();
   // to make a graceful exit when ctrl-c is pressed
   set_softmodem_sighandler();
-  check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
@@ -662,52 +652,6 @@ int main( int argc, char **argv ) {
 
 
   cpuf=get_cpu_freq_GHz();
-
-
-#if 0 // #ifndef DEADLINE_SCHEDULER
-
-  printf("NO deadline scheduler\n");
-  /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
-  cpu_set_t cpuset;
-  int s;
-  char cpu_affinity[1024];
-  CPU_ZERO(&cpuset);
-#ifdef CPU_AFFINITY
-  int j;
-  if (get_nprocs() > 2) {
-    for (j = 2; j < get_nprocs(); j++)
-      CPU_SET(j, &cpuset);
-
-    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-
-    if (s != 0) {
-      perror( "pthread_setaffinity_np");
-      exit_fun("Error setting processor affinity");
-    }
-    LOG_I(HW, "Setting the affinity of main function to all CPUs, for device library to use CPU 0 only!\n");
-  }
-
-#endif
-  /* Check the actual affinity mask assigned to the thread */
-  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-
-  if (s != 0) {
-    perror( "pthread_getaffinity_np");
-    exit_fun("Error getting processor affinity ");
-  }
-
-  memset(cpu_affinity, 0, sizeof(cpu_affinity));
-
-  for (int j = 0; j < CPU_SETSIZE; j++) {
-    if (CPU_ISSET(j, &cpuset)) {
-      char temp[1024];
-      sprintf(temp, " CPU_%d ", j);
-      strcat(cpu_affinity, temp);
-    }
-  }
-
-  LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
-#endif
 
   if (create_tasks_ue(NB_UE_INST) < 0) {
     printf("cannot create ITTI tasks\n");

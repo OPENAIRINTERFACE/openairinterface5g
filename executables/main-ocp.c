@@ -1150,7 +1150,7 @@ int main ( int argc, char **argv ) {
 #if T_TRACER
   T_Config_Init();
 #endif
-  configure_linux();
+  set_latency_target();
   set_softmodem_sighandler();
   cpuf=get_cpu_freq_GHz();
   set_taus_seed (0);

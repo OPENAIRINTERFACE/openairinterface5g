@@ -111,15 +111,10 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 //Temp fix for inexistent NR upper layer
 unsigned char NB_gNB_INST = 1;
+char *uecap_file;
 
-
-int UE_scan = 1;
-int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
 static double snr_dB=20;
-
-FILE *input_fd=NULL;
-
 
 #if MAX_NUM_CCs == 1
 rx_gain_t rx_gain_mode[MAX_NUM_CCs][4] = {{max_gain,max_gain,max_gain,max_gain}};
@@ -193,8 +188,6 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 
 double cpuf;
 
-extern char uecap_xer[1024];
-char uecap_xer_in=0;
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -656,7 +649,7 @@ int main( int argc, char **argv ) {
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   logInit();
-  configure_linux();
+  set_latency_target();
   printf("Reading in command-line options\n");
   get_options ();
 
@@ -710,6 +703,7 @@ int main( int argc, char **argv ) {
   // don't create if node doesn't connect to RRC/S1/GTP
   int ret=create_gNB_tasks(1);
   AssertFatal(ret==0,"cannot create ITTI tasks\n");
+
   /* Start the agent. If it is turned off in the configuration, it won't start */
   /*
   RCconfig_nr_flexran();

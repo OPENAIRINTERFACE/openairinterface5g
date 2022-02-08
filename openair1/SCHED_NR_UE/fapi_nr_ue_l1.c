@@ -419,6 +419,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         }
       }
 
+
       //Clear the fields when all the config pdu are done
       if (pdu_done == ul_config->number_pdus) {
         if (scheduled_response->tx_request)
@@ -429,6 +430,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         LOG_D(PHY, "%d.%d clear ul_config %p\n", scheduled_response->frame, slot, ul_config);
         memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list));
       }
+
       pthread_mutex_unlock(&ul_config->mutex_ul_config);
     }
   }
