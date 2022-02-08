@@ -158,7 +158,7 @@ uint32_t       N_RB_DL    = 106;
  */
 uint8_t abstraction_flag = 0;
 
-nr_bler_struct nr_bler_data[NUM_MCS];
+nr_bler_struct nr_bler_data[NR_NUM_MCS];
 
 static void init_bler_table(void);
 
@@ -561,7 +561,7 @@ static void init_bler_table(void)
     abort();
   }
 
-  for (unsigned int i = 0; i < NUM_MCS; i++)
+  for (unsigned int i = 0; i < NR_NUM_MCS; i++)
   {
     char fName[1024];
     snprintf(fName, sizeof(fName), "%s/openair1/SIMULATION/NR_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/mcs%d_awgn_5G.csv", openair_dir, i);

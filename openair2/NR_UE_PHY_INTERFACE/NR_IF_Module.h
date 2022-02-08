@@ -41,7 +41,7 @@
 #include "nfapi_nr_interface_scf.h"
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 
-#define NUM_MCS 29
+#define NR_NUM_MCS 29
 #define NUM_SINR 100
 #define NUM_BLER_COL 13
 #define NUM_NFAPI_SLOT 20
@@ -74,7 +74,7 @@ typedef struct
     float bler_table[NUM_SINR][NUM_BLER_COL];
 } nr_bler_struct;
 
-extern nr_bler_struct nr_bler_data[NUM_MCS];
+extern nr_bler_struct nr_bler_data[NR_NUM_MCS];
 
 typedef enum {
   ONLY_PUSCH,

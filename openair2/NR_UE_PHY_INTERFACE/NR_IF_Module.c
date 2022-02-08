@@ -1404,13 +1404,13 @@ static int get_mcs_from_sinr(float sinr)
     return 0;
   }
 
-  if (sinr > (nr_bler_data[NUM_MCS-1].bler_table[nr_bler_data[NUM_MCS-1].length - 1][0]))
+  if (sinr > (nr_bler_data[NR_NUM_MCS-1].bler_table[nr_bler_data[NR_NUM_MCS-1].length - 1][0]))
   {
     LOG_I(NR_MAC, "The SINR found is larger than last MCS table\n");
-    return NUM_MCS-1;
+    return NR_NUM_MCS-1;
   }
 
-  for (int n = NUM_MCS-1; n >= 0; n--)
+  for (int n = NR_NUM_MCS-1; n >= 0; n--)
   {
     CHECK_INDEX(nr_bler_data, n);
     float largest_sinr = (nr_bler_data[n].bler_table[nr_bler_data[n].length - 1][0]);
@@ -1429,7 +1429,7 @@ static int get_cqi_from_mcs(void)
 {
   static const int mcs_to_cqi[] = {0, 1, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
                                    9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15};
-  assert(NUM_ELEMENTS(mcs_to_cqi) == NUM_MCS);
+  assert(NUM_ELEMENTS(mcs_to_cqi) == NR_NUM_MCS);
   int slot = 0;
   while (slot < NUM_NFAPI_SLOT)
   {
