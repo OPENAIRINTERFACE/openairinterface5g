@@ -523,6 +523,8 @@ typedef struct gNB_RRC_INST_s {
   int cell_info_configured;
   pthread_mutex_t cell_info_mutex;
 
+  char *uecap_file;
+
   // security configuration (preferred algorithms)
   nr_security_configuration_t security;
 } gNB_RRC_INST;
