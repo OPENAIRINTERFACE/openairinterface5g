@@ -38,15 +38,12 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-#include "SCHED_NR_UE/defs.h"
-#include "SCHED_NR_UE/pucch_uci_ue_nr.h"
+#include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
 #include "SCHED_NR/extern.h"
 #include "SCHED_NR_UE/phy_sch_processing_time.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
-#include "PHY/NR_TRANSPORT/nr_dci.h"
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
@@ -60,6 +57,7 @@
 //#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
+//#define NR_PDSCH_DEBUG
 
 #ifndef PUCCH
 #define PUCCH
@@ -284,16 +282,17 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   LOG_D(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
-
   start_meas(&ue->phy_proc_tx);
 
   if (ue->UE_mode[gNB_id] <= PUSCH){
-
     for (uint8_t harq_pid = 0; harq_pid < ue->ulsch[proc->thread_id][gNB_id][0]->number_harq_processes_for_pusch; harq_pid++) {
       if (ue->ulsch[proc->thread_id][gNB_id][0]->harq_processes[harq_pid]->status == ACTIVE)
         nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, proc->thread_id, gNB_id);
     }
+  }
 
+  if (ue->UE_mode[gNB_id] == PUSCH) {
+    ue_srs_procedures_nr(ue, proc, gNB_id);
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
@@ -1947,7 +1946,6 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDUR
 stop_meas(&ue->phy_proc_rx[proc->thread_id]);
 if (cpumeas(CPUMEAS_GETSTATE))
   LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_slot_rx,ue->phy_proc_rx[proc->thread_id].p_time/(cpuf*1000.0));
-
 
 //#endif //pdsch
 

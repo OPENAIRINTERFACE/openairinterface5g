@@ -128,6 +128,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *const common_vars        = &ue->common_vars;
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
+  NR_UE_SRS **const srs_vars             = ue->srs_vars;
+
   int i,j,k,l,slot,symb,q;
   int gNB_id;
   int th_id;
@@ -310,6 +312,24 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
     prach_vars[gNB_id] = (NR_UE_PRACH *)malloc16_clear(sizeof(NR_UE_PRACH));
     pbch_vars[gNB_id] = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
+    srs_vars[gNB_id] = (NR_UE_SRS *)malloc16_clear(sizeof(NR_UE_SRS));
+
+    srs_vars[gNB_id]->active = false;
+    ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
+    ue->nr_srs_info->srs_generated_signal = (int32_t *) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
+    ue->nr_srs_info->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
+    ue->nr_srs_info->srs_received_signal = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->nr_srs_info->srs_ls_estimated_channel = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->nr_srs_info->srs_estimated_channel_freq = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->nr_srs_info->srs_estimated_channel_time = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->nr_srs_info->srs_estimated_channel_time_shifted = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    for (i=0; i<fp->nb_antennas_rx; i++) {
+      ue->nr_srs_info->srs_received_signal[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      ue->nr_srs_info->srs_ls_estimated_channel[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      ue->nr_srs_info->srs_estimated_channel_freq[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      ue->nr_srs_info->srs_estimated_channel_time[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      ue->nr_srs_info->srs_estimated_channel_time_shifted[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+    }
 
     if (abstraction_flag == 0) {
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
