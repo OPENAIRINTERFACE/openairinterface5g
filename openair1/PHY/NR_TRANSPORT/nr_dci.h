@@ -29,13 +29,11 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                          nfapi_nr_rnti_type_e rnti_type,
                          uint16_t N_RB);
 
-void nr_generate_dci_top(
-			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
-			    nfapi_nr_dl_tti_pdcch_pdu *ul_pdcch_pdu,
-			    uint32_t **gold_pdcch_dmrs,
-                            int32_t *txdataF,
-                            int16_t amp,
-                            NR_DL_FRAME_PARMS *frame_parms);
+void nr_generate_dci_top(processingData_L1tx_t *msgTx,
+                         uint32_t **gold_pdcch_dmrs,
+                         int32_t *txdataF,
+                         int16_t amp,
+                         NR_DL_FRAME_PARMS *frame_parms);
 
 void nr_pdcch_scrambling(uint32_t *in,
                          uint32_t size,

@@ -1402,9 +1402,6 @@ typedef struct
 } nfapi_nr_ul_dci_request_t;
 */
 
-  // normally one PDU per coreset per BWP
-#define NFAPI_NR_MAX_UL_DCI_PDUS 4
-
 typedef struct {
   /// only possible value 0: PDCCH PDU
   uint16_t PDUType;
@@ -1418,7 +1415,7 @@ typedef struct {
   uint16_t SFN;
   uint16_t Slot;
   uint8_t  numPdus;
-  nfapi_nr_ul_dci_request_pdus_t ul_dci_pdu_list[NFAPI_NR_MAX_UL_DCI_PDUS];
+  nfapi_nr_ul_dci_request_pdus_t ul_dci_pdu_list[NFAPI_NR_MAX_NB_CORESETS];
 } nfapi_nr_ul_dci_request_t;
 
 //3.4.5 slot_errors
