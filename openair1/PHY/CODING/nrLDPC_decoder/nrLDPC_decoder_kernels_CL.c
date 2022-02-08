@@ -29,16 +29,7 @@
 * \note initial implem - translation of cuda version
 * \warning
 */
-#define define MAX_ITERATION 2
-#define MC	1
 
-#define INT32_MAX 2147483647
-
-typedef struct{
-  char x;
-  char y;
-  short value;
-} h_element;
 
 //__global char dev_dt [46*68*384];
 //__local char *dev_t;
@@ -46,7 +37,7 @@ typedef struct{
 //__global unsigned char dev_tmp[68*384];
 
 
-
+#define INT32_MAX 2147483647
 
 //__constant h_element dev_h_compact1[46*19] = {};  // used in kernel 1
 //__constant h_element dev_h_compact2[68*30] = {};  // used in kernel 2
@@ -299,4 +290,3 @@ __kernel void pack_decoded_bit(__global unsigned char * dev_llr, __global unsign
 		}
 	}
 }
-

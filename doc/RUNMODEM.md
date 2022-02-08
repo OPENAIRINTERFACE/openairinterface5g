@@ -89,6 +89,8 @@ At the UE the --phy-test flag will
 
 ```bash sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test```
 
+In phy-test mode it is possible to mimic the reception of UE Capabilities at gNB by passing through the command line parameter `--uecap_file` the location and file name of the input UE Capability file, e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
+
 ### Launch UE in another window
 
 ```bash sudo ./nr-uesoftmodem --phy-test [--rrc_config_path ../../../ci-scripts/rrc-files]```
@@ -121,6 +123,8 @@ From the `cmake_targets/ran_build/build` folder:
 gNB on machine 1:
 
 `sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra`
+
+In do-ra mode it is possible to mimic the reception of UE Capabilities at gNB by passing through the command line parameter `--uecap_file` the location and file name of the input UE Capability file, e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
 
 UE on machine 2:
 
@@ -161,13 +165,17 @@ gNB on machine 1:
 
 UE on machine 2:
 
-`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 -s 516 --sa`
 
 With the RF simulator (on the same machine):
 
 `sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa`
 
-`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 -s 516 --rfsim --sa`
+
+where `-r` sets the transmission bandwidth configuration in terms of RBs, `-C` sets the downlink carrier frequency and `-s` sets the SSB start subcarrier.
+
+Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabilities input file (path location + filename), e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
 
 ## IF setup with OAI
 

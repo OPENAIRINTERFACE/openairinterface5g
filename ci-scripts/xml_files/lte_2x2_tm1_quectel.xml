@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>TEST-LTE-TM2</htmlTabRef>
-	<htmlTabName>LTE 2x2 Ping DL UL with QUECTEL</htmlTabName>
+	<htmlTabRef>TEST-LTE-TM1-Tab1</htmlTabRef>
+	<htmlTabName>LTE 2x2 TM1 Ping DL UL with QUECTEL</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>

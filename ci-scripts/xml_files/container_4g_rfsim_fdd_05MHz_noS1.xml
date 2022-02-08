@@ -21,16 +21,11 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-4glte</htmlTabRef>
-        <htmlTabName>Testing 4G LTE RF sim - Monolithic eNB</htmlTabName>
+        <htmlTabRef>rfsim-4glte-fdd05mhz-noS1</htmlTabRef>
+        <htmlTabName>Monolithic eNB - FDD 05MHz - noS1</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
-        <repeatCount>2</repeatCount>
         <TestCaseRequestedList>
  100011
- 000011
- 000001
- 000012
- 000002
  000013
  000001
  000014
@@ -42,14 +37,6 @@
  100011
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
-
-        <testCase id="000011">
-                <class>DeployGenObject</class>
-                <desc>Deploy Cassandra Database</desc>
-                <yaml_path>yaml_files/4g_rfsimulator</yaml_path>
-                <services>cassandra db_init</services>
-                <nb_healthy>1</nb_healthy>
-        </testCase>
 
         <testCase id="000001">
                 <class>IdleSleep</class>
@@ -63,43 +50,35 @@
                 <idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
         </testCase>
 
-        <testCase id="000012">
-                <class>DeployGenObject</class>
-                <desc>Deploy OAI 4G CoreNetwork</desc>
-                <yaml_path>yaml_files/4g_rfsimulator</yaml_path>
-                <services>oai_hss oai_mme oai_spgwc oai_spgwu trf_gen</services>
-                <nb_healthy>6</nb_healthy>
-        </testCase>
-
         <testCase id="000013">
                 <class>DeployGenObject</class>
-                <desc>Deploy OAI 4G eNB RF sim</desc>
-                <yaml_path>yaml_files/4g_rfsimulator</yaml_path>
+                <desc>Deploy OAI 4G eNB RF sim (FDD 05MHz)</desc>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_05MHz_noS1</yaml_path>
                 <services>enb</services>
-                <nb_healthy>7</nb_healthy>
+                <nb_healthy>1</nb_healthy>
         </testCase>
 
         <testCase id="000014">
                 <class>DeployGenObject</class>
-                <desc>Deploy OAI 4G NR-UE RF sim</desc>
-                <yaml_path>yaml_files/4g_rfsimulator</yaml_path>
+                <desc>Deploy OAI 4G NR-UE RF sim (FDD 05MHz)</desc>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_05MHz_noS1</yaml_path>
                 <services>oai_ue0</services>
-                <nb_healthy>8</nb_healthy>
+                <nb_healthy>2</nb_healthy>
         </testCase>
 
         <testCase id="020011">
                 <class>PingFromContainer</class>
                 <desc>Ping Traffic-Gen from LTE-UE</desc>
                 <container_name>rfsim4g-oai-lte-ue0</container_name>
-                <options>-I oaitun_ue1 -c 20 192.168.61.11</options>
+                <options>-I oaitun_ue1 -c 20 10.0.1.1</options>
                 <loss_threshold>5</loss_threshold>
         </testCase>
 
         <testCase id="020012">
                 <class>PingFromContainer</class>
-                <desc>Ping LTE-UE from Traffic-Gen</desc>
-		<container_name>rfsim4g-trf-gen</container_name>
-                <options>-c 20 12.0.0.2</options>
+                <desc>Ping LTE-UE from eNB</desc>
+				<container_name>rfsim4g-oai-enb</container_name>
+                <options>-I oaitun_enb1 -c 20 10.0.1.2</options>
                 <loss_threshold>5</loss_threshold>
         </testCase>
 
@@ -107,24 +86,24 @@
                 <class>IperfFromContainer</class>
                 <desc>Iperf UDP Downlink</desc>
                 <server_container_name>rfsim4g-oai-lte-ue0</server_container_name>
-                <client_container_name>rfsim4g-trf-gen</client_container_name>
-                <server_options>-B 12.0.0.2 -u -i 1 -s</server_options>
-                <client_options>-c 12.0.0.2 -u -i 1 -t 30 -b 2M</client_options>
+                <client_container_name>rfsim4g-oai-enb</client_container_name>
+                <server_options>-B 10.0.1.2 -u -i 1 -s</server_options>
+                <client_options>-B 10.0.1.1 -c 10.0.1.2 -u -i 1 -t 30 -b 2M</client_options>
         </testCase>
 
         <testCase id="030012">
                 <class>IperfFromContainer</class>
                 <desc>Iperf UDP Uplink</desc>
-                <server_container_name>rfsim4g-trf-gen</server_container_name>
+                <server_container_name>rfsim4g-oai-enb</server_container_name>
                 <client_container_name>rfsim4g-oai-lte-ue0</client_container_name>
-                <server_options>-u -i 1 -s</server_options>
-                <client_options>-B 12.0.0.2 -c 192.168.61.11 -u -i 1 -t 30 -b 1M</client_options>
+                <server_options>-B 10.0.1.1 -u -i 1 -s</server_options>
+                <client_options>-B 10.0.1.2 -c 10.0.1.1 -u -i 1 -t 30 -b 1M</client_options>
         </testCase>
 
         <testCase id="100011">
                 <class>UndeployGenObject</class>
                 <desc>Undeploy all OAI 4G stack</desc>
-                <yaml_path>yaml_files/4g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_05MHz_noS1</yaml_path>
         </testCase>
 
 </testCaseList>

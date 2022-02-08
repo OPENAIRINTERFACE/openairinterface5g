@@ -675,7 +675,6 @@ typedef struct {
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
   /// CCE indexing
-  int Y[MAX_MOBILES_PER_GNB][3][160];
   int m[MAX_MOBILES_PER_GNB];
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
@@ -761,6 +760,10 @@ typedef struct gNB_MAC_INST_s {
   time_stats_t schedule_dlsch_preprocessor;
   /// processing time of eNB DLSCH scheduler
   time_stats_t schedule_dlsch;  // include rlc_data_req + MAC header + preprocessor
+  /// processing time of rlc_data_req
+  time_stats_t rlc_data_req;
+  /// processing time of rlc_status_ind
+  time_stats_t rlc_status_ind;
   /// processing time of eNB MCH scheduler
   time_stats_t schedule_mch;
   /// processing time of eNB ULSCH reception

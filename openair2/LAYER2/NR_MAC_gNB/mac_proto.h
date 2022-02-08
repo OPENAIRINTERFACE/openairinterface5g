@@ -260,13 +260,13 @@ NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
                                      NR_BWP_t *bwp,
                                      NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 
-uint8_t find_pdcch_candidate(gNB_MAC_INST *mac,
-                             int cc_id,
-                             int aggregation,
-                             int nr_of_candidates,
-                             NR_sched_pdcch_t *pdcch,
-                             NR_ControlResourceSet_t *coreset,
-                             uint16_t Y);
+int find_pdcch_candidate(gNB_MAC_INST *mac,
+                         int cc_id,
+                         int aggregation,
+                         int nr_of_candidates,
+                         NR_sched_pdcch_t *pdcch,
+                         NR_ControlResourceSet_t *coreset,
+                         uint16_t Y);
 
 void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
                         int CC_id,
@@ -325,6 +325,8 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
                               NR_pusch_semi_static_t *ps);
+
+uint16_t get_Y(int cid, int slot, rnti_t rnti);
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 

@@ -26,19 +26,19 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 040000
+ 041000
  000002
- 010000
+ 011000
  000002
- 050000
- 050001
+ 051000
+ 051001
  000001
  010002
  080000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="010000">
+	<testCase id="011000">
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE (X300)</desc>
 		<air_interface>nr</air_interface>
@@ -51,7 +51,7 @@
 	</testCase>
 
 
-	<testCase id="040000">
+	<testCase id="041000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf --sa --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
@@ -76,14 +76,14 @@
 	</testCase>
 
 
-	<testCase id="050000">
+	<testCase id="051000">
 		<class>Ping</class>
 		<desc>Ping from CN to UE: 20pings in 20sec</desc>
 		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>5</ping_packetloss_threshold>
 	</testCase>
 
-	<testCase id="050001">
+	<testCase id="051001">
 		<class>Ping</class>
 		<desc>Ping from CN to UE: 100pings in 20sec</desc>
 		<ping_args>-c 100 -i 0.2</ping_args>

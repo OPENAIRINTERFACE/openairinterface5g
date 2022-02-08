@@ -306,13 +306,13 @@ int cce_to_reg_interleaving(const int R, int k, int n_shift, const int C, int L,
   return f;
 }
 
-uint8_t find_pdcch_candidate(gNB_MAC_INST *mac,
-                             int cc_id,
-                             int aggregation,
-                             int nr_of_candidates,
-                             NR_sched_pdcch_t *pdcch,
-                             NR_ControlResourceSet_t *coreset,
-                             uint16_t Y){
+int find_pdcch_candidate(gNB_MAC_INST *mac,
+                         int cc_id,
+                         int aggregation,
+                         int nr_of_candidates,
+                         NR_sched_pdcch_t *pdcch,
+                         NR_ControlResourceSet_t *coreset,
+                         uint16_t Y){
 
   uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
   const int next_cand = mac->pdcch_cand[coreset->controlResourceSetId];
@@ -332,12 +332,11 @@ uint8_t find_pdcch_candidate(gNB_MAC_INST *mac,
   const int C = R>0 ? N_regs/(L*R) : 0;
   const int B_rb = L/N_symb; // nb of RBs occupied by each REG bundle
 
-  int first_cce;
-  bool taken = false; // flag if the resource for a given candidate are taken
   // loop over all the available candidates
   // this implements TS 38.211 Sec. 7.3.2.2
   for(int m=next_cand; m<nr_of_candidates; m++) { // loop over candidates
-    first_cce = aggregation * (( Y + CEILIDIV((m*N_cces),(aggregation*nr_of_candidates)) + N_ci ) % CEILIDIV(N_cces,aggregation));
+    bool taken = false; // flag if the resource for a given candidate are taken
+    int first_cce = aggregation * (( Y + CEILIDIV((m*N_cces),(aggregation*nr_of_candidates)) + N_ci ) % CEILIDIV(N_cces,aggregation));
     for (int j=first_cce; (j<first_cce+aggregation) && !taken; j++) { // loop over CCEs
       for (int k=6*j/L; (k<(6*j/L+6/L)) && !taken; k++) { // loop over REG bundles
         int f = cce_to_reg_interleaving(R, k, pdcch->ShiftIndex, C, L, N_regs);
@@ -376,14 +375,7 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
 
   for (int j=first_cce; j<first_cce+aggregation; j++) { // loop over CCEs
     for (int k=6*j/L; k<(6*j/L+6/L); k++) { // loop over REG bundles
-      int f;  // interleaving function
-      if(R==0)
-        f = k;
-      else {
-        int c = k/R;
-        int r = k%R;
-        f = (r*C + c + n_shift)%(N_regs/L);
-      }
+      int f = cce_to_reg_interleaving(R, k, n_shift, C, L, N_regs);
       for(int rb=0; rb<B_rb; rb++) // loop over the RBs of the bundle
         vrb_map[pdcch->BWPStart + f*B_rb + rb] |= SL_to_bitmap(pdcch->StartSymbolIndex, N_symb);
     }
@@ -1963,19 +1955,18 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
   return -1;
 }
 
-void set_Y(int Y[3][160], rnti_t rnti) {
+uint16_t get_Y(int cid, int slot, rnti_t rnti) {
+
   const int A[3] = {39827, 39829, 39839};
   const int D = 65537;
+  int Y;
 
-  Y[0][0] = (A[0] * rnti) % D;
-  Y[1][0] = (A[1] * rnti) % D;
-  Y[2][0] = (A[2] * rnti) % D;
+  Y = (A[cid] * rnti) % D;
 
-  for (int s = 1; s < 160; s++) {
-    Y[0][s] = (A[0] * Y[0][s - 1]) % D;
-    Y[1][s] = (A[1] * Y[1][s - 1]) % D;
-    Y[2][s] = (A[2] * Y[2][s - 1]) % D;
-  }
+  for (int s = 0; s < slot; s++)
+    Y = (A[cid] * Y) % D;
+
+  return Y;
 }
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
@@ -2059,8 +2050,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     UE_info->CellGroup[UE_id] = CellGroup;
     add_nr_list(&UE_info->list, UE_id);
     memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
-    set_Y(UE_info->Y[UE_id], rntiP);
-    if (CellGroup && CellGroup->spCellConfig && CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated)
+    if (CellGroup && CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated)
       compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));

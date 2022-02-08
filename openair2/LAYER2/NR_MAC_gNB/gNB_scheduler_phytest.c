@@ -53,7 +53,6 @@
 //#define UL_HARQ_PRINT
 extern RAN_CONTEXT_t RC;
 
-const uint8_t nr_rv_round_map[4] = {0, 2, 3, 1};
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
 //uint8_t mac_pdu[MAX_NR_DLSCH_PAYLOAD_BYTES];
@@ -345,7 +344,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid%3][slot];
+  const uint16_t Y = get_Y(cid%3, slot, UE_info->rnti[UE_id]);
 
   int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
                                       CC_id,
@@ -408,7 +407,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = ((1<<ps->nrOfSymbols)-1)<<ps->startSymbolIndex;
+    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
 
   if ((frame&127) == 0) LOG_D(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
 }
@@ -510,7 +509,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = UE_info->Y[UE_id][cid%3][slot];
+  const uint16_t Y = get_Y(cid%3, slot, UE_info->rnti[UE_id]);
 
   int CCEIndex = find_pdcch_candidate(nr_mac,
                                       CC_id,
