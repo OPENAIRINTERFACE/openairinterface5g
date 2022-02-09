@@ -740,7 +740,7 @@ void pf_dl(module_id_t module_id,
   }
 
   /* Loop UE_sched to find max coeff and allocate transmission */
-  while (max_num_ue > 0 && n_rb_sched > 0 && UE_sched.head >= 0) {
+  while (max_num_ue > 0 && n_rb_sched >= MIN_NUM_PRBS_TO_SCHEDULE && UE_sched.head >= 0) {
 
     /* Find max coeff from UE_sched*/
     int *max = &UE_sched.head; /* assume head is max */
