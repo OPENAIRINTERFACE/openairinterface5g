@@ -220,6 +220,9 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
         LOG_D(NR_MAC, "In %s: received UL-SCH sub-PDU with LCID 0x%x in %d.%d (remaining PDU length %d)\n", __func__, rx_lcid, frameP, slot, pdu_len);
 
+        if (pdu_len < 7) {
+          break;
+        }
         unsigned char *ce_ptr;
         int n_Lcg = 0;
 

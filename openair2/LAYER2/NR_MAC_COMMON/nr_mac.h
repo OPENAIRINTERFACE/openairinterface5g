@@ -265,15 +265,25 @@ typedef struct {
 } dci_field_t;
 
 typedef struct {
+  /* The active harq sfn/slot field was created to save the
+     scheduled SFN/Slot transmission for the ACK/NAK. If we
+     do not save it, then we have to calculate it again as the
+     NRUE MAC layer already does in get_downlink_ack(). */
+  int active_harq_sfn;
+  int active_harq_slot;
+  int crc_rx_ind_sfn_slot;
+  bool active;
+} emul_l1_harq_t;
+
+typedef struct {
   bool expected_sib;
   bool index_has_sib[16];
   bool expected_rar;
   bool index_has_rar[16];
   bool expected_dci;
   bool index_has_dci[16];
-  int active_harq_sfn_slot;
+  emul_l1_harq_t harq[16];
   int active_uci_sfn_slot;
-  int crc_rx_ind_sfn_slot;
   int num_srs;
   int num_harqs;
   int num_csi_reports;

@@ -36,10 +36,11 @@
 #include "fapi_nr_ue_l1.h"
 #include "harq_nr.h"
 //#include "PHY/phy_vars_nr_ue.h"
-#include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
+
 #include "PHY/defs_nr_UE.h"
 #include "PHY/impl_defs_nr.h"
 #include "utils.h"
+#include "openair2/PHY_INTERFACE/queue_t.h"
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
@@ -103,6 +104,8 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               rx_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RX_DATA_INDICATION;
               rx_ind->sfn = scheduled_response->ul_config->sfn;
               rx_ind->slot = scheduled_response->ul_config->slot;
+              LOG_I(NR_MAC, "This is sched sfn/sl [%d %d] and rx sfn/sl [%d %d]\n",
+                      scheduled_response->frame, scheduled_response->slot, rx_ind->sfn, rx_ind->slot);
               rx_ind->number_of_pdus = scheduled_response->tx_request->number_of_pdus;
               rx_ind->pdu_list = CALLOC(rx_ind->number_of_pdus, sizeof(*rx_ind->pdu_list));
               for (int j = 0; j < rx_ind->number_of_pdus; j++)
@@ -122,20 +125,20 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               crc_ind->number_crcs = scheduled_response->ul_config->number_pdus;
               crc_ind->sfn = scheduled_response->ul_config->sfn;
               crc_ind->slot = scheduled_response->ul_config->slot;
-              mac->nr_ue_emul_l1.crc_rx_ind_sfn_slot = NFAPI_SFNSLOT2HEX(crc_ind->sfn, crc_ind->slot);
               crc_ind->crc_list = CALLOC(crc_ind->number_crcs, sizeof(*crc_ind->crc_list));
               for (int j = 0; j < crc_ind->number_crcs; j++)
               {
                 crc_ind->crc_list[j].handle = pusch_config_pdu->handle;
                 crc_ind->crc_list[j].harq_id = pusch_config_pdu->pusch_data.harq_process_id;
-                LOG_D(NR_MAC, "This is the harq pid %d for crc_list[%d]\n", crc_ind->crc_list[j].harq_id, j);
-                LOG_D(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d]\n",
+                LOG_I(NR_MAC, "This is the harq pid %d for crc_list[%d]\n", crc_ind->crc_list[j].harq_id, j);
+                LOG_I(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d]\n",
                       scheduled_response->frame, scheduled_response->slot, crc_ind->sfn, crc_ind->slot);
                 crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
                 crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
                 crc_ind->crc_list[j].tb_crc_status = 0;
                 crc_ind->crc_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
                 crc_ind->crc_list[j].ul_cqi = 255;
+                mac->nr_ue_emul_l1.harq[crc_ind->crc_list[j].harq_id].crc_rx_ind_sfn_slot = NFAPI_SFNSLOT2HEX(crc_ind->sfn, crc_ind->slot);
                 LOG_D(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d] with mcs_index in ul_cqi -> %d\n",
                       scheduled_response->frame, scheduled_response->slot, crc_ind->sfn, crc_ind->slot,pusch_config_pdu->mcs_index);
               }
@@ -163,7 +166,8 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 crc_ind = NULL;
               }
 
-              LOG_D(PHY, "In %s: Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__);
+              LOG_I(PHY, "In %s: [%d, %d] Filled queue rx/crc_ind which was filled by ulconfig. \n", __FUNCTION__,
+                  scheduled_response->frame, scheduled_response->slot);
 
               scheduled_response->tx_request->number_of_pdus = 0;
             }
@@ -200,65 +204,58 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 pdu_0_1->ul_cqi = 255;
                 pdu_0_1->timing_advance = 0;
                 pdu_0_1->rssi = 0;
-
+                LOG_I(NR_PHY, "In %s: UCI SFN/SLOT: [%d, %d] and mac->nr_ue_emul_l1.num_harq %d\n",
+                          __FUNCTION__, uci_ind->sfn, uci_ind->slot, mac->nr_ue_emul_l1.num_harqs);
                 if (mac->nr_ue_emul_l1.num_harqs > 0) {
+                  int harq_index = 0;
                   pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
                   pdu_0_1->harq = CALLOC(1, sizeof(*pdu_0_1->harq));
-                  pdu_0_1->harq->num_harq = 1;
+                  pdu_0_1->harq->num_harq = mac->nr_ue_emul_l1.num_harqs;
                   pdu_0_1->harq->harq_confidence_level = 0;
+                  pdu_0_1->harq->harq_list = CALLOC(pdu_0_1->harq->num_harq, sizeof(*pdu_0_1->harq->harq_list));
                   int harq_pid = -1;
                   for (int k = 0; k < 16; k++)
                   {
-                    LOG_D(NR_MAC, "dl_frame = %d  sl_slot = %d feedback_to_ul = %d active_harq_sfn_slot = %d.%d\n",
-                                    mac->dl_harq_info[k].dl_frame,
-                                    mac->dl_harq_info[k].dl_slot,
-                                    mac->dl_harq_info[k].feedback_to_ul,
-                                    NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot),
-                                    NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot));
-                    int sfn_slot = NFAPI_SFNSLOT2HEX(mac->dl_harq_info[k].dl_frame,
-                                      (mac->dl_harq_info[k].dl_slot +
-                                      mac->dl_harq_info[k].feedback_to_ul));
-                    if (!mac->dl_harq_info[k].active &&
-                        (sfn_slot == mac->nr_ue_emul_l1.active_harq_sfn_slot ||
-                        sfn_slot == mac->nr_ue_emul_l1.active_uci_sfn_slot))
+                    LOG_I(NR_MAC, "HARQ PID %d active = %d saved sfn_slot = %d.%d vs current sfn.slot %d.%d\n",
+                                    k, mac->nr_ue_emul_l1.harq[k].active,
+                                    mac->nr_ue_emul_l1.harq[k].active_harq_sfn,
+                                    mac->nr_ue_emul_l1.harq[k].active_harq_slot,
+                                    uci_ind->sfn,
+                                    uci_ind->slot);
+                    if (mac->nr_ue_emul_l1.harq[k].active &&
+                        mac->nr_ue_emul_l1.harq[k].active_harq_sfn == uci_ind->sfn &&
+                        mac->nr_ue_emul_l1.harq[k].active_harq_slot == uci_ind->slot)
                     {
+                      mac->nr_ue_emul_l1.harq[k].active = false;
                       harq_pid = k;
-                      LOG_D(NR_MAC, "Setting harq_pid = %d\n", k);
+                      LOG_I(NR_MAC, "Setting harq_pid = %d and num_harqs %d for %d.%d\n", k, pdu_0_1->harq->num_harq,
+                              uci_ind->sfn, uci_ind->slot);
+                      pdu_0_1->harq->harq_list[harq_index].harq_value = !mac->dl_harq_info[k].ack;
+                      harq_index++;
+                      LOG_I(NR_PHY, "In %s: Building uci_ind_%d with num_harqs %d and pdu_bitmap %d\n"
+                            "uci_num %d, SFN/SLOT: [%d, %d]\n",
+                            __FUNCTION__, uci_ind->uci_list[0].pdu_type,
+                            pdu_0_1->harq->num_harq, pdu_0_1->pduBitmap,
+                            uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
                     }
                   }
-                  pdu_0_1->harq->harq_list = CALLOC(pdu_0_1->harq->num_harq, sizeof(*pdu_0_1->harq->harq_list));
-                  for (int k = 0; k < pdu_0_1->harq->num_harq; k++)
-                  {
-                      AssertFatal(harq_pid != -1, "No active harq_pid, sfn_slot = %u.%u", uci_ind->sfn, uci_ind->slot);
-                      pdu_0_1->harq->harq_list[k].harq_value = !mac->dl_harq_info[harq_pid].ack;
-                  }
+                  AssertFatal(harq_pid != -1, "No active harq_pid, sfn_slot = %u.%u", uci_ind->sfn, uci_ind->slot);
                 }
               }
-              int sfn_slot = NFAPI_SFNSLOT2HEX(uci_ind->sfn, uci_ind->slot);
-              nfapi_nr_uci_indication_t *queued_uci_ind = unqueue_matching(&nr_uci_ind_queue,
-                                                                          MAX_QUEUE_SIZE,
-                                                                          sfn_slot_matcher,
-                                                                          &sfn_slot);
-              if (queued_uci_ind)
-              {
-                  LOG_I(NR_MAC, "There was a matching UCI with sfn %d, slot %d in queue\n",
-                        NFAPI_SFNSLOT2SFN(sfn_slot), NFAPI_SFNSLOT2SLOT(sfn_slot));
-                  free(queued_uci_ind);
-                  break;
-              }
             }
 
-            LOG_I(NR_PHY, "In %s: Filled queue uci_ind_%d which was filled by ulconfig.\n"
-                       "uci_num %d, SFN/SLOT: [%d, %d]\n",
+            LOG_I(NR_PHY, "In %s: Sending uci_ind_%d which was filled by ulconfig.\n"
+                       "uci_num %d, SFN/SLOT: [%d, %d] and pdu_bitmap %d\n",
                           __FUNCTION__, uci_ind->uci_list[0].pdu_type,
-                          uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
-
-            if (!put_queue(&nr_uci_ind_queue, uci_ind))
-            {
-              LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
-              free(uci_ind->uci_list);
-              free(uci_ind);
-            }
+                          uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot,
+                          uci_ind->uci_list[0].pucch_pdu_format_0_1.pduBitmap);
+            LOG_I(NR_MAC, "Sending UCI with %d PDUs in sfn.slot %d/%d\n",
+                uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
+            NR_UL_IND_t UL_INFO = {
+                .uci_ind = *uci_ind,
+            };
+            send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+            free_uci_inds(uci_ind);
             break;
           }
 
@@ -269,93 +266,6 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
       }
       scheduled_response->ul_config->number_pdus = 0;
     }
-
-    if (scheduled_response->dl_config != NULL)
-    {
-      fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
-      AssertFatal(dl_config->number_pdus < sizeof(dl_config->dl_config_list) / sizeof(dl_config->dl_config_list[0]),
-                  "Too many dl_config pdus %d", dl_config->number_pdus);
-      for (int i = 0; i < dl_config->number_pdus; ++i)
-      {
-        LOG_D(PHY, "In %s: processing %s PDU of %d total DL PDUs (dl_config %p) \n",
-              __FUNCTION__, dl_pdu_type[dl_config->dl_config_list[i].pdu_type - 1], dl_config->number_pdus, dl_config);
-
-        uint8_t pdu_type = dl_config->dl_config_list[i].pdu_type;
-        switch (pdu_type)
-        {
-          case (FAPI_NR_DL_CONFIG_TYPE_DLSCH):
-          {
-            nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
-            uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
-            uci_ind->sfn = scheduled_response->frame;
-            uci_ind->slot = NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot);
-            uci_ind->num_ucis = 1;
-            uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
-            for (int j = 0; j < uci_ind->num_ucis; j++)
-            {
-              nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[j].pucch_pdu_format_0_1;
-              uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE;
-              uci_ind->uci_list[j].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_0_1_t);
-              memset(pdu_0_1, 0, sizeof(*pdu_0_1));
-              pdu_0_1->handle = 0;
-              pdu_0_1->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti;
-              pdu_0_1->pucch_format = 1;
-              pdu_0_1->ul_cqi = 255;
-              pdu_0_1->timing_advance = 0;
-              pdu_0_1->rssi = 0;
-              pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR
-              pdu_0_1->harq = CALLOC(1, sizeof(*pdu_0_1->harq));
-              pdu_0_1->harq->num_harq = 1;
-              pdu_0_1->harq->harq_confidence_level = 0;
-              int harq_pid = -1;
-              for (int k = 0; k < 16; k++)
-              {
-                LOG_D(NR_MAC, "dl_frame = %d  dl_slot = %d feedback_to_ul = %d  active = %d k = %d "
-                                "active_harq_sfn_slot = %d.%d "
-                                "active_uci_sfn_slot = %d.%d\n",
-                                mac->dl_harq_info[k].dl_frame,
-                                mac->dl_harq_info[k].dl_slot,
-                                mac->dl_harq_info[k].feedback_to_ul,
-                                mac->dl_harq_info[k].active,
-                                k,
-                                NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot),
-                                NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot),
-                                NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_uci_sfn_slot),
-                                NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_uci_sfn_slot));
-                int sfn_slot = NFAPI_SFNSLOT2HEX(mac->dl_harq_info[k].dl_frame,
-                                  (mac->dl_harq_info[k].dl_slot +
-                                  mac->dl_harq_info[k].feedback_to_ul));
-                if (mac->dl_harq_info[k].active &&
-                    sfn_slot == mac->nr_ue_emul_l1.active_harq_sfn_slot)
-                {
-                  harq_pid = k;
-                  LOG_D(NR_MAC, "Setting harq_pid = %d\n", k);
-                }
-              }
-              pdu_0_1->harq->harq_list = CALLOC(pdu_0_1->harq->num_harq, sizeof(*pdu_0_1->harq->harq_list));
-              for (int k = 0; k < pdu_0_1->harq->num_harq; k++)
-              {
-                  AssertFatal(harq_pid != -1, "No active harq_pid, sfn_slot = %u.%u", uci_ind->sfn, uci_ind->slot);
-                  pdu_0_1->harq->harq_list[k].harq_value = !mac->dl_harq_info[harq_pid].ack;
-              }
-            }
-
-            LOG_I(NR_PHY, "In %s: Filled queue uci_ind which was filled by dlconfig.\n"
-                       "uci_num %d, SFN/SLOT: [%d, %d]\n",
-                          __FUNCTION__, uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
-
-            if (!put_queue(&nr_uci_ind_queue, uci_ind))
-            {
-              LOG_E(NR_MAC, "Put_queue failed for uci_ind\n");
-              free(uci_ind->uci_list);
-              free(uci_ind);
-            }
-            break;
-          }
-        }
-      }
-    }
-
   }
   return 0;
 }

@@ -599,14 +599,19 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
 
-  LOG_D(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx)\n",
-	dci->rnti,dci->dci_format,dci->n_CCE,dci->payloadSize,*(unsigned long long*)dci->payloadBits);
+  LOG_I(MAC,"Received dci indication (rnti %x,dci format %d,n_CCE %d,payloadSize %d,payload %llx, pid %d)\n",
+	          dci->rnti, dci->dci_format,
+            dci->n_CCE, dci->payloadSize,
+            *(unsigned long long*)dci->payloadBits,
+            def_dci_pdu_rel15->harq_pid);
   int8_t ret = nr_extract_dci_info(mac, dci->dci_format, dci->payloadSize, dci->rnti, (uint64_t *)dci->payloadBits, def_dci_pdu_rel15);
   if ((ret&1) == 1) return -1;
   else if (ret == 2) {
     dci->dci_format = NR_UL_DCI_FORMAT_0_0;
     def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci->dci_format];
   }
+  LOG_I(MAC,"After extracting dci info. dci format %d, pid %d\n",
+	          dci->dci_format, def_dci_pdu_rel15->harq_pid);
   int8_t ret_proc = nr_ue_process_dci(module_id, cc_id, gNB_index, frame, slot, def_dci_pdu_rel15, dci);
   return ret_proc;
 }
@@ -631,7 +636,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   else if (mac->scc_SIB) n_RB_DLBWP =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   else n_RB_DLBWP = mac->type0_PDCCH_CSS_config.num_rbs;
 
-  LOG_D(MAC, "In %s: Processing received DCI format %s (DL BWP %d)\n", __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP);
+  LOG_I(MAC, "In %s: Processing received DCI format %s (DL BWP %d) harq_pid %d\n",
+        __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP, dci->harq_pid);
 
   switch(dci_format){
   case NR_UL_DCI_FORMAT_0_0: {
@@ -947,6 +953,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
    if(rnti != ra->ra_rnti && rnti != SI_RNTI)
      AssertFatal(1+dci->pdsch_to_harq_feedback_timing_indicator.val>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d).\n",
                  1+dci->pdsch_to_harq_feedback_timing_indicator.val,DURATION_RX_TO_TX);
+   LOG_I(MAC,"(nr_ue_procedures.c) dci->pdsch_to_harq_feedback_timing_indicator.val=%d \n",
+	 dci->pdsch_to_harq_feedback_timing_indicator.val);
 
    // set the harq status at MAC for feedback
    set_harq_status(mac,dci->pucch_resource_indicator,
@@ -1118,6 +1126,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     valid = 0;
     pucch_res_set_cnt = ubwpd->pucch_Config->choice.setup->resourceSetToAddModList->list.count;
     for (int id = 0; id < pucch_res_set_cnt; id++) {
+      LOG_I(NR_MAC, "pucch_resource_indicator %d, ubwpd[%d].resource.list.count %d\n",
+            dci->pucch_resource_indicator, id,
+            ubwpd->pucch_Config->choice.setup->resourceSetToAddModList->list.array[id]->resourceList.list.count);
       if (dci->pucch_resource_indicator < ubwpd->pucch_Config->choice.setup->resourceSetToAddModList->list.array[id]->resourceList.list.count) {
         valid = 1;
         break;
@@ -1235,7 +1246,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // according to TS 38.213 Table 9.2.3-1
     uint8_t feedback_ti =
       ubwpd->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
-
+    LOG_I(MAC,"(nr_ue_procedures.c) 1237 feedback_ti=%d and dci->pdsch_to_harq_feedback_timing_indicator.val %d, pdsch_to_harq_feedback_time_ind %d\n",
+	 feedback_ti, dci->pdsch_to_harq_feedback_timing_indicator.val,
+         dlsch_config_pdu_1_1->pdsch_to_harq_feedback_time_ind);
     AssertFatal(feedback_ti>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d). Min feedback time set in config file (min_rxtxtime).\n",
                 feedback_ti,DURATION_RX_TO_TX);
 
@@ -1334,10 +1347,21 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   // FIXME k0 != 0 currently not taken into consideration
   current_harq->dl_frame = frame;
   current_harq->dl_slot = slot;
-  mac->nr_ue_emul_l1.active_harq_sfn_slot = NFAPI_SFNSLOT2HEX(frame, (slot + data_toul_fb));
+  // TODO: if (get_softmodem_params()->emaulte_l1)
+  // in downlink: 0-7, 10-17
+  if (data_toul_fb + slot > 19) {
+    if (frame + 1 < 1024)
+      frame++;
+    else
+      frame = 0;
+    slot = (data_toul_fb + slot) - 20;
+  }
+  else {
+    slot = data_toul_fb + slot;
+  }
 
-  LOG_D(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d\n",
-        harq_id, frame, slot, frame, (slot + data_toul_fb));
+  LOG_I(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d\n",
+        harq_id, current_harq->dl_frame, current_harq->dl_slot, frame, slot);
 }
 
 
@@ -1819,18 +1843,24 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size) {
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup &&
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList &&
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL)) {
-      if (uci_size <= 2) {
+      if (uci_size <= 3) {
         pucch_resource_set_id = 0;
+        LOG_I(NR_MAC, "Melissa %s()%d, we are setting resource_set_id = %d",
+                __FUNCTION__, __LINE__, pucch_resource_set_id);
         return (pucch_resource_set_id);
         break;
       }
       else {
         pucch_resource_set_id = 1;
+        LOG_I(NR_MAC, "Melissa %s()%d, we are setting resource_set_id = %d",
+                __FUNCTION__, __LINE__, pucch_resource_set_id);
         return (pucch_resource_set_id);
         break;
       }
     }
     pucch_resource_set_id++;
+    LOG_I(NR_MAC, "Melissa %s()%d, we are setting resource_set_id = %d",
+                __FUNCTION__, __LINE__, pucch_resource_set_id);
   }
 
   pucch_resource_set_id = MAX_NB_OF_PUCCH_RESOURCE_SETS;
@@ -1915,6 +1945,13 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac,
       pucch->pucch_resource = NULL;
       return;
     }
+    LOG_I(MAC,"Melissa resourceSetToAddModList %p\n", resourceSetToAddModList);
+    LOG_I(MAC,"Melissa resourceSetToAddModList->list.array[0] %p\n", resourceSetToAddModList->list.array[0]);
+    LOG_I(MAC,"Melissa pucch->resource_set_id %d\n", pucch->resource_set_id);
+    LOG_I(MAC,"Melissa resourceSetToAddModList->list.array[pucch->resource_set_id] %p\n", resourceSetToAddModList->list.array[pucch->resource_set_id]);
+    LOG_I(MAC,"Melissa resourceSetToAddModList->list.array[pucch->resource_set_id]->resourceList %p\n", resourceSetToAddModList->list.array[pucch->resource_set_id]->resourceList);
+    LOG_I(MAC,"Melissa resourceSetToAddModList->list.array[pucch->resource_set_id]->resourceList.list.count %d\n", resourceSetToAddModList->list.array[pucch->resource_set_id]->resourceList.list.count);
+
     n_list = resourceSetToAddModList->list.array[pucch->resource_set_id]->resourceList.list.count;
     if (pucch->resource_indicator > n_list) {
       LOG_E(MAC,"Invalid PUCCH resource id %d\n",pucch->resource_indicator);
@@ -2015,16 +2052,33 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
       current_harq = &mac->dl_harq_info[dl_harq_pid];
 
       if (current_harq->active) {
-
-        sched_slot = current_harq->dl_slot + current_harq->feedback_to_ul;
         sched_frame = current_harq->dl_frame;
-        if (sched_slot>=slots_per_frame){
-          sched_slot %= slots_per_frame;
-          sched_frame++;
+        if (current_harq->feedback_to_ul + current_harq->dl_slot > 19) {
+            if (sched_frame + 1 < 1024)
+                sched_frame++;
+            else
+                sched_frame = 0;
+            sched_slot = (current_harq->feedback_to_ul + current_harq->dl_slot) - slots_per_frame;
         }
-        LOG_D(PHY,"HARQ pid %d is active for %d.%d (dl_slot %d, feedback_to_ul %d, is_common %d\n",dl_harq_pid, sched_frame,sched_slot,current_harq->dl_slot,current_harq->feedback_to_ul,current_harq->is_common);
+        else {
+            sched_slot = current_harq->feedback_to_ul + current_harq->dl_slot;
+        }
+
+        LOG_I(PHY,"HARQ pid %d is active for %d.%d and inputted %d.%d (dl_slot %d, feedback_to_ul %d, is_common %d active %d\n",
+              dl_harq_pid,
+              sched_frame,
+              sched_slot, frame, slot,
+              current_harq->dl_slot,
+              current_harq->feedback_to_ul,
+              current_harq->is_common,
+              current_harq->active);
         /* check if current tx slot should transmit downlink acknowlegment */
         if (sched_frame == frame && sched_slot == slot) {
+          if (get_softmodem_params()->emulate_l1) {
+            mac->nr_ue_emul_l1.harq[dl_harq_pid].active = true;
+            mac->nr_ue_emul_l1.harq[dl_harq_pid].active_harq_sfn = frame;
+            mac->nr_ue_emul_l1.harq[dl_harq_pid].active_harq_slot = slot;
+          }
 
           if (current_harq->dai > NR_DL_MAX_DAI) {
             LOG_E(MAC,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
@@ -2045,6 +2099,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
               }
 
               number_harq_feedback++;
+              LOG_I(NR_MAC, "number_harq_feedback = %d\n", number_harq_feedback);
               if (current_harq->ack_received)
                 ack_data[code_word][dai_current - 1] = current_harq->ack;
               else
@@ -2132,6 +2187,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
       V_temp2 = dai[1][m];         /* second code word has been received */
       O_bit_number_cw1 = (8 * j) + 2*(V_temp - 1) + 1;
       o_ACK = o_ACK | (ack_data[1][m] << O_bit_number_cw1);
+      LOG_I(NR_MAC, "%s():%d o_ACK = %d\n", __FUNCTION__, __LINE__, o_ACK);
     }
 
     if (two_transport_blocks == TRUE) {
@@ -2141,6 +2197,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
       O_bit_number_cw0 = (4 * j) + (V_temp - 1);
     }
 
+      LOG_I(NR_MAC, "%s():%d o_ACK = %d\n", __FUNCTION__, __LINE__, o_ACK);
     o_ACK = o_ACK | (ack_data[0][m] << O_bit_number_cw0);
     LOG_D(MAC,"m %d bit number %d o_ACK %d\n",m,O_bit_number_cw0,o_ACK);
   }
@@ -2154,14 +2211,16 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   }
   else {
     O_ACK = 4 * j + V_temp2;         /* only one transport block */
+      LOG_I(NR_MAC, "%s():%d O_ACK = %d\n", __FUNCTION__, __LINE__, O_ACK);
   }
 
   if (number_harq_feedback != O_ACK) {
-    LOG_E(MAC,"PUCCH Error for number of bits for acknowledgment : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
-    return (0);
+    LOG_E(MAC,"PUCCH Error for number of bits for acknowledgment. number_harq_feedback %d, O_ACK %d \n",
+          number_harq_feedback, O_ACK);
+    number_harq_feedback = O_ACK; //return (0);
   }
 
-  reverse_n_bits(&o_ACK,number_harq_feedback);
+      LOG_I(NR_MAC, "%s():%d o_ACK = %d\n", __FUNCTION__, __LINE__, o_ACK);
   pucch->ack_payload = o_ACK;
 
   LOG_D(MAC,"frame %d slot %d pucch acknack payload %d\n",frame,slot,o_ACK);
@@ -3837,6 +3896,8 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   #endif
 
   if (ra->RA_RAPID_found) {
+   // if (rarh->RAPID != preamble_index) 
+     // return 0;
 
     RAR_grant_t rar_grant;
 

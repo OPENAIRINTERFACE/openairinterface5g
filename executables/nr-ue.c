@@ -32,6 +32,7 @@
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
+#include <pthread.h>
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -199,31 +200,16 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
   nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_dl_tti_request_t *dl_tti_request = get_queue(&nr_dl_tti_req_queue);
   nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
-  LOG_D(NR_MAC, "Try to get a ul_tti_req for HARQ sfn/slot %d %d from queue with %lu items\n",
-        NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_harq_sfn_slot),
-        NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
-  nfapi_nr_ul_tti_request_t *ul_tti_request_harq = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.active_harq_sfn_slot);
-  if (ul_tti_request_harq && ul_tti_request_harq->n_pdus > 0)
-  {
-    check_and_process_dci(NULL, NULL, NULL, ul_tti_request_harq);
-  }
 
-  LOG_D(NR_MAC, "Try to get a ul_tti_req by matching CSI active SFN %d/SLOT %d from queue with %lu items\n",
-          NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.active_uci_sfn_slot),
-          NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_uci_sfn_slot), nr_ul_tti_req_queue.num_items);
-  nfapi_nr_ul_tti_request_t *ul_tti_request_uci = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.active_uci_sfn_slot);
-  if (ul_tti_request_uci && ul_tti_request_uci->n_pdus > 0)
-  {
-    check_and_process_dci(NULL, NULL, NULL, ul_tti_request_uci);
-  }
-
-  LOG_D(NR_MAC, "Try to get a ul_tti_req by matching CRC active SFN %d/SLOT %d from queue with %lu items\n",
-          NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.crc_rx_ind_sfn_slot),
-          NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.crc_rx_ind_sfn_slot), nr_ul_tti_req_queue.num_items);
-  nfapi_nr_ul_tti_request_t *ul_tti_request_crc = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.crc_rx_ind_sfn_slot);
-  if (ul_tti_request_crc && ul_tti_request_crc->n_pdus > 0)
-  {
-    check_and_process_dci(NULL, NULL, NULL, ul_tti_request_crc);
+  for (int i = 0; i < 16; i++) {
+    LOG_D(NR_MAC, "Try to get a ul_tti_req by matching CRC active SFN %d/SLOT %d from queue with %lu items\n",
+            NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.harq[i].crc_rx_ind_sfn_slot),
+            NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.harq[i].crc_rx_ind_sfn_slot), nr_ul_tti_req_queue.num_items);
+    nfapi_nr_ul_tti_request_t *ul_tti_request_crc = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.harq[i].crc_rx_ind_sfn_slot);
+    if (ul_tti_request_crc && ul_tti_request_crc->n_pdus > 0)
+    {
+      check_and_process_dci(NULL, NULL, NULL, ul_tti_request_crc);
+    }
   }
 
   if (rach_ind && rach_ind->number_of_pdus > 0)
@@ -389,6 +375,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
     ul_info.ue_sched_mode = SCHED_ALL;
+    LOG_I(NR_MAC, "frame_rx %d, slot rx %d, frame tx %d, slot tx %d, slot_ahead %d\n",
+                 ul_info.frame_rx, ul_info.slot_rx, ul_info.frame_tx, ul_info.slot_tx, slot_ahead);
 
     if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
@@ -417,8 +405,9 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
                       mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
                       ul_info.slot_tx, mac->frame_type))
     {
-      LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
+      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() and nr_ue_pucch_scheduler from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
+      nr_ue_pucch_scheduler(0, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
       check_nr_prach(mac, &ul_info, &prach_resources);
     }
     if (!IS_SOFTMODEM_NOS1 && get_softmodem_params()->sa) {
