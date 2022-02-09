@@ -186,7 +186,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
       INT8_TO_OCTET_STRING(1,&SliceSupport_item->sNSSAI.sST);
       //OCTET_STRING_fromBuf(&SliceSupport_item->sNSSAI.sST, "1", 1);
       asn1cCalloc(SliceSupport_item->sNSSAI.sD, tmp);
-      INT24_TO_OCTET_STRING(1,tmp);
+      INT24_TO_OCTET_STRING(10203,tmp);
       //OCTET_STRING_fromBuf(tmp, "1",1);
     //}
     
