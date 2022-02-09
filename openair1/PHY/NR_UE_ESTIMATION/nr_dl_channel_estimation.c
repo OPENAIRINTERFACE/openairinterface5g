@@ -57,10 +57,13 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
   int16_t *prs_chest, ch[2] = {0}, *rxF, *pil, *fl,*fm, *fmm, *fml, *fmr, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
   int16_t k_prime = 0, k = 0, re_offset;
   uint8_t idx = prs_cfg->NPRSID;
-  int16_t *ch_intrp = (int16_t *)malloc16(frame_params->ofdm_symbol_size*sizeof(int32_t));
+  int16_t *ch_freq  = (int16_t *)malloc16(frame_params->ofdm_symbol_size*sizeof(int32_t));
   int32_t *ch_time  = (int32_t *)malloc16(frame_params->ofdm_symbol_size*sizeof(int32_t));
-  AssertFatal(((ch_intrp != NULL) || (ch_time != NULL)), "nr_prs_channel_estimation: channel estimate buffer initialization failed!!");
-  int16_t *ch_init = ch_intrp;
+  AssertFatal(((ch_freq != NULL) || (ch_time != NULL)), "nr_prs_channel_estimation: channel estimate buffer initialization failed!!");
+  int16_t *ch_init = ch_freq;
+  
+  int32_t tdoa[NR_MAX_NUM_PRS_SYMB]   = {0};
+  int32_t ch_pwr[NR_MAX_NUM_PRS_SYMB] = {0};
 
   for(int l = prs_cfg->SymbolStart; l < prs_cfg->SymbolStart+prs_cfg->NumPRSSymbols; l++)
   {
@@ -96,8 +99,8 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     pil       = (int16_t *)&mod_prs[0];
     rxF       = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
     prs_chest = (int16_t *)&ue->prs_ch_estimates[rxAnt][l*frame_params->ofdm_symbol_size];
-    memset(prs_chest,0,4*(ue->frame_parms.ofdm_symbol_size));
-    memset(ch_intrp,0,4*(ue->frame_parms.ofdm_symbol_size));
+    memset(prs_chest,0,sizeof(int32_t)*(ue->frame_parms.ofdm_symbol_size));
+    memset(ch_freq,0,sizeof(int32_t)*(ue->frame_parms.ofdm_symbol_size));
     
     if(prs_cfg->CombSize == 2)
     {
@@ -135,7 +138,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
 #endif
       multadd_real_vector_complex_scalar(fl,
 		  	       ch,
-		  	       ch_intrp,
+		  	       ch_freq,
 		  	       8);
       
       pil +=2;
@@ -154,14 +157,14 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
         {
           multadd_real_vector_complex_scalar(fml,
 		      	       ch,
-		      	       ch_intrp,
+		      	       ch_freq,
 		      	       8);
         } 
         else
         {
           multadd_real_vector_complex_scalar(fm,
 		      	       ch,
-		      	       ch_intrp,
+		      	       ch_freq,
 		      	       8);
         }
         pil +=2;
@@ -177,21 +180,21 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
         {
           multadd_real_vector_complex_scalar(fmr,
 		      	       ch,
-		      	       ch_intrp,
+		      	       ch_freq,
 		      	       8);
         } 
         else
         {
           multadd_real_vector_complex_scalar(fmm,
 		      	       ch,
-		      	       ch_intrp,
+		      	       ch_freq,
 		      	       8);
         } 
         
         pil +=2;
         k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
         rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
-        ch_intrp +=8;
+        ch_freq +=8;
       }
       
       //End pilot
@@ -202,7 +205,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
 #endif
       multadd_real_vector_complex_scalar(fr,
 	    	       ch,
-	    	       ch_intrp,
+	    	       ch_freq,
 	    	       8);
       
     }
@@ -259,9 +262,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       printf("pilot 0 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
 #endif
       multadd_real_vector_complex_scalar(fl,
-		  	       ch,
-	    	       ch_intrp,
-		  	       16);
+	    	       ch,
+	    	       ch_freq,
+	    	       16);
       
       pil +=2;
       k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
@@ -273,14 +276,14 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       printf("pilot 1 : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
 #endif
       multadd_real_vector_complex_scalar(fml,
-		  	       ch,
-	    	       ch_intrp,
-		  	       16);
+	    	       ch,
+	    	       ch_freq,
+	    	       16);
       
       pil +=2;
       k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
       rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
-      ch_intrp +=8;
+      ch_freq +=8;
 
       //Middle pilots
       for(int pIdx = 2; pIdx < prs_cfg->NumRB*(12/prs_cfg->CombSize)-2; pIdx++) 
@@ -291,14 +294,13 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       printf("pilot %d : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n", pIdx, rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
 #endif
         multadd_real_vector_complex_scalar(fmm,
-		  		       ch,
-		  		       ch_intrp,
-		  		       16);
-        
+	    	       ch,
+	    	       ch_freq,
+	    	       16);
         pil +=2;
         k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
         rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
-        ch_intrp +=8;
+        ch_freq +=8;
       }
       
       //End pilot
@@ -308,10 +310,9 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       printf("pilot %d : rxF - > (%d,%d) addr %p  ch -> (%d,%d), pil -> (%d,%d) \n", prs_cfg->NumRB*(12/prs_cfg->CombSize)-2, rxF[0],rxF[1],&rxF[0],ch[0],ch[1],pil[0],pil[1]);
 #endif
       multadd_real_vector_complex_scalar(fmr,
-		  	       ch,
-		  		     ch_intrp,
-		  	       16);
-      
+	    	       ch,
+	    	       ch_freq,
+	    	       16);
       pil +=2;
       k   = (k+prs_cfg->CombSize) % frame_params->ofdm_symbol_size;
       rxF = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
@@ -323,7 +324,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
 #endif
       multadd_real_vector_complex_scalar(fr,
 	    	       ch,
-		  		     ch_intrp,
+	    	       ch_freq,
 	    	       16);
     }
     else
@@ -333,11 +334,11 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     }
 
     //reset channel pointer
-    ch_intrp = ch_init;
+    ch_freq = ch_init;
 #ifdef DEBUG_PRS_CHEST
     for (int re = 0; re < prs_cfg->NumRB*12; re++)
     {
-      printf("prs_ch[%d] %d %d\n", re, ch_intrp[re<<1], ch_intrp[(re<<1)+1]);
+      printf("prs_ch[%d] %d %d\n", re, ch_freq[re<<1], ch_freq[(re<<1)+1]);
     }
 #endif
     // Place PRS channel estimates in rxdataF shifted format
@@ -389,22 +390,59 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
          (int16_t *)&ue->prs_ch_estimates[rxAnt][l*frame_params->ofdm_symbol_size],
          (int16_t *)&ch_time[0],1);
 
+    // rearrange impulse response
     memcpy((int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size], &ch_time[frame_params->ofdm_symbol_size>>1], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
     memcpy((int16_t *)&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size + (frame_params->ofdm_symbol_size>>1)], &ch_time[0], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
+
+    // peak estimator
+    peak_estimator(&ue->prs_ch_estimates_time[rxAnt][l*frame_params->ofdm_symbol_size],
+                   frame_params->ofdm_symbol_size,
+                   &tdoa[l],
+                   &ch_pwr[l]);
+    LOG_I(PHY, "TDoA for PRS symbol %d ==> %d, Channel power %.1f dB\n", l, tdoa[l]-(frame_params->ofdm_symbol_size>>1), 10*log10(ch_pwr[l]));
   } //for l
+
 #ifdef DEBUG_PRS_CHEST
   LOG_M("PRSpilot.m", "prs_loc", &mod_prs[0], prs_cfg->NumRB*(12/prs_cfg->CombSize),1,1); 
   LOG_M("rxSigF.m","rxF",&rxdataF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
   LOG_M("prsEstF.m","prs_chestF",&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
   LOG_M("prsEstT.m","prs_chestT",&ue->prs_ch_estimates_time[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
 #endif
+
+  // T tracer dump
   T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
     T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
     T_INT(0), T_BUFFER(&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
 
-  free(ch_intrp);
+  T(T_UE_PHY_INPUT_SIGNAL, T_INT(0),
+    T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
+    T_INT(0), T_BUFFER(&ue->prs_ch_estimates_time[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
+
+  free(ch_freq);
   free(ch_time);
   return(0);
+}
+
+static inline int abs32(int x)
+{
+  return (((int)((short*)&x)[0])*((int)((short*)&x)[0]) + ((int)((short*)&x)[1])*((int)((short*)&x)[1]));
+}
+
+/* Generic function to find the peak of channel estimation buffer */
+void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t *peak_val)
+{
+  int32_t max_val = 0, max_idx = 0, abs_val = 0;
+  for(int k = 0; k < buf_len; k++)
+  {
+    abs_val = abs32(buffer[k]);
+    if(abs_val > max_val)
+    {
+      max_val = abs_val;
+      max_idx = k;
+    }
+  }
+  *peak_val = max_val;
+  *peak_idx = max_idx;
 }
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
