@@ -307,6 +307,7 @@ static void dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output) {
   stroff += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL, output+stroff);
+  stroff += print_meas_log(&gNB->schedule_response_stats, "Schedule Response",NULL,NULL, output+stroff);
   if (ru->feprx) stroff += print_meas_log(&ru->ofdm_demod_stats,"feprx",NULL,NULL, output+stroff);
 
   if (ru->feptx_ofdm) {
@@ -343,6 +344,7 @@ void *nrL1_stats_thread(void *param) {
   reset_meas(&gNB->ul_indication_stats);
   reset_meas(&gNB->rx_pusch_stats);
   reset_meas(&gNB->ulsch_decoding_stats);
+  reset_meas(&gNB->schedule_response_stats);
 
   while (!oai_exit) {
     sleep(1);
@@ -412,8 +414,8 @@ void init_gNB_Tpool(int inst) {
   // ULSCH decoding threadpool
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-  LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->pusch_proc_threads,numCPU);
-  int threadCnt = min(numCPU, gNB->pusch_proc_threads);
+  LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->thread_pool_size,numCPU);
+  int threadCnt = min(numCPU, gNB->thread_pool_size);
   if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
   char pool[80];
   sprintf(pool,"-1");
@@ -443,7 +445,7 @@ void init_gNB_Tpool(int inst) {
   initNotifiedFIFO(gNB->L1_tx_out);
   
   // we create 2 threads for L1 tx processing
-  for (int i=0; i < 1; i++) {
+  for (int i=0; i < 2; i++) {
     notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
     processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
     init_DLSCH_struct(gNB, msgDataTx);

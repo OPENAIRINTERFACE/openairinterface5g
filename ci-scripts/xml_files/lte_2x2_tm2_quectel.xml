@@ -102,8 +102,8 @@
 
 	<testCase id="070002">
 		<class>Iperf</class>
-		<desc>iperf (DL/26Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 26M -t 60</iperf_args>
+		<desc>iperf (DL/1Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 1M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>

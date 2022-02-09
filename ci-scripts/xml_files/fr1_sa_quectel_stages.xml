@@ -26,21 +26,21 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
- 040000
+ 041000
  000002
  010000
  000001
- 050000
+ 051000
  000001
- 070000
+ 071000
  000001
- 070001
+ 071001
  000001
- 070002
+ 071002
  000001
- 070003
+ 071003
  000001
- 070004
+ 071004
  000001
  010002
  080000
@@ -62,7 +62,7 @@
 	</testCase>
 
 
-	<testCase id="040000">
+	<testCase id="041000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
@@ -88,9 +88,9 @@
 	</testCase>
 
 
-	<testCase id="050000">
+	<testCase id="051000">
 		<class>Ping</class>
-		<desc>Ping: 20pings in 20sec</desc>
+		<desc>Ping: 40pings in 40sec</desc>
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 40</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
@@ -98,7 +98,7 @@
 	</testCase>
 
 
-	<testCase id="070000">
+	<testCase id="071000">
 		<class>Iperf</class>
 		<desc>iperf (DL/10Mbps/UDP)(30 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 10M -t 30</iperf_args>
@@ -108,7 +108,7 @@
 		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
-	<testCase id="070001">
+	<testCase id="071001">
 		<class>Iperf</class>
 		<desc>iperf (DL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 20M -t 30</iperf_args>
@@ -118,7 +118,7 @@
 		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
-	<testCase id="070002">
+	<testCase id="071002">
 		<class>Iperf</class>
 		<desc>iperf (DL/40Mbps/UDP)(30 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 40M -t 30</iperf_args>
@@ -128,7 +128,7 @@
 		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
-	<testCase id="070003">
+	<testCase id="071003">
 		<class>Iperf</class>
 		<desc>iperf (DL/60Mbps/UDP)(30 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 60M -t 30</iperf_args>
@@ -138,14 +138,14 @@
 		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
-	<testCase id="070004">
+	<testCase id="071004">
 		<class>Iperf</class>
 		<desc>iperf (DL/90Mbps/UDP)(30 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 90M -t 30</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
-		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
-		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+		<iperf_packetloss_threshold>10</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>90</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 

@@ -148,6 +148,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
   gNB = RC.gNB[Mod_id];
+  start_meas(&gNB->schedule_response_stats);
+
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
 
   int slot_type = nr_slot_select(cfg,frame,slot);
@@ -164,10 +166,9 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       res = pullTpool(gNB->L1_tx_free, gNB->threadPool);
       processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
 
-      int pdcch_received=0;
       msgTx->num_pdsch_slot=0;
-      msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
-      msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
+      msgTx->num_dl_pdcch=0;
+      msgTx->num_ul_pdcch=number_ul_dci_pdu;
       msgTx->slot = slot;
       msgTx->frame = frame;
 
@@ -181,16 +182,14 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
             break;
 
           case NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE:
-            AssertFatal(pdcch_received == 0, "pdcch_received is not 0, we can only handle one PDCCH PDU per slot\n");
-            msgTx->pdcch_pdu = dl_tti_pdu->pdcch_pdu;
-
-            pdcch_received = 1;
+            LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
+            msgTx->pdcch_pdu[msgTx->num_dl_pdcch] = dl_tti_pdu->pdcch_pdu;
+            msgTx->num_dl_pdcch++;
             break;
 
           case NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE:
             LOG_D(PHY,"frame %d, slot %d, Got NFAPI_NR_DL_TTI_CSI_RS_PDU_TYPE for %d.%d\n",frame,slot,DL_req->SFN,DL_req->Slot);
-            handle_nfapi_nr_csirs_pdu(msgTx,frame,slot,
-              &dl_tti_pdu->csi_rs_pdu);
+            handle_nfapi_nr_csirs_pdu(msgTx,frame,slot,&dl_tti_pdu->csi_rs_pdu);
             break;
 
           case NFAPI_NR_DL_TTI_PDSCH_PDU_TYPE:
@@ -201,13 +200,13 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
             pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
             uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
             AssertFatal(msgTx->num_pdsch_slot < gNB->number_of_nr_dlsch_max,"Number of PDSCH PDUs %d exceeded the limit %d\n",
-              msgTx->num_pdsch_slot,gNB->number_of_nr_dlsch_max);
+                        msgTx->num_pdsch_slot,gNB->number_of_nr_dlsch_max);
             handle_nr_nfapi_pdsch_pdu(msgTx,&dl_tti_pdu->pdsch_pdu, sdu);
         }
       }
 
-      if (number_ul_dci_pdu > 0)
-        msgTx->ul_pdcch_pdu = UL_dci_req->ul_dci_pdu_list[number_ul_dci_pdu-1]; // copy the last pdu
+      for (int i=0; i<number_ul_dci_pdu; i++)
+        msgTx->ul_pdcch_pdu[i] = UL_dci_req->ul_dci_pdu_list[i];
 
       pushNotifiedFIFO(gNB->L1_tx_filled,res);
     }
@@ -246,6 +245,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     if (number_dl_pdu>0)
       oai_nfapi_dl_tti_req(DL_req);
 
-  } 
-  
+  }
+  stop_meas(&gNB->schedule_response_stats);
 }
