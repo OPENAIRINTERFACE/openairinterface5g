@@ -288,7 +288,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
             nfapi_nr_uci_indication_t *uci_ind = CALLOC(1, sizeof(*uci_ind));
             uci_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_UCI_INDICATION;
             uci_ind->sfn = scheduled_response->frame;
-            uci_ind->slot = scheduled_response->slot;
+            uci_ind->slot = NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.active_harq_sfn_slot);
             uci_ind->num_ucis = 1;
             uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
             for (int j = 0; j < uci_ind->num_ucis; j++)
