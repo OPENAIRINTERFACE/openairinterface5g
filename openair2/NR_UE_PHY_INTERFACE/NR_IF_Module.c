@@ -945,6 +945,7 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                         nfapi_nr_ul_tti_request_t *evicted_ul_tti_req = put_queue_replace(&nr_ul_tti_req_queue, ul_tti_request);
                         free(evicted_ul_tti_req);
                     }
+                    break;
                 }
             }
             break;
