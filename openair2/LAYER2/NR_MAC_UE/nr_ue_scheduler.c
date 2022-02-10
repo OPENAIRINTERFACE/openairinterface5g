@@ -944,6 +944,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
           mac->if_module->scheduled_response(&scheduled_response);
       }
+      else
+      {
+        dl_config->number_pdus = 0;
+      }
     }
   } else if (ul_info) {
 
