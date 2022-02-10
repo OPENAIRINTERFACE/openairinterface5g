@@ -155,7 +155,7 @@ void nr_feptx_ofdm_2thread(RU_t *ru,int frame_tx,int tti_tx) {
   int aa   = 0;//physical antenna number
   int ret  = 0;
   int ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
-  int txdataF_offset   = ((tti_tx%2)*fp->samples_per_slot_wCP);
+  int txdataF_offset   = (tti_tx*fp->samples_per_slot_wCP);
 
   if (nr_slot_select(cfg,frame_tx,slot) == NR_UPLINK_SLOT) return;
   for (aa=0; aa<ru->nb_tx; aa++) memset(ru->common.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
@@ -300,7 +300,7 @@ static void *nr_feptx_thread(void *param) {
     ofdm_mask_full   = (1<<(ru->nb_tx*2))-1;
 
     if(ru->num_gNB != 0){
-      txdataF_offset = ((slot%2)*fp->samples_per_slot_wCP);
+      txdataF_offset = (slot*fp->samples_per_slot_wCP);
       ////////////precoding////////////
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 1);
       
@@ -464,7 +464,7 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
   int32_t ***bw;
   int i=0;
   int slot_tx = tti_tx;
-  int txdataF_offset   = ((tti_tx%2)*fp->samples_per_slot_wCP);
+  int txdataF_offset   = (tti_tx*fp->samples_per_slot_wCP);
 
   start_meas(&ru->precoding_stats);
   AssertFatal(ru->nb_log_antennas > 0,"ru->nb_log_antennas is 0!\n");
