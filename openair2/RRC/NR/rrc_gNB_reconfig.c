@@ -54,7 +54,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      NR_CellGroupConfig_t *secondaryCellGroup,
                                      int scg_id,
                                      int servCellIndex,
-                                     int dl_antenna_ports,
+                                     rrc_pdsch_AntennaPorts_t dl_antenna_ports_struct,
                                      int minRXTXTIME,
                                      int do_csirs,
                                      int do_srs,
@@ -67,6 +67,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
   // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
   AssertFatal(uid>=0 && uid<30, "gNB cannot allocate the SRS resources\n");
+
+  int dl_antenna_ports = dl_antenna_ports_struct.N1 * dl_antenna_ports_struct.N2 * dl_antenna_ports_struct.XP;
 
   uint64_t bitmap=0;
   switch (servingcellconfigcommon->ssb_PositionsInBurst->present) {
@@ -1404,7 +1406,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_ServingCellConfig_t *servingcellconfigdedicated,
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
-                           int dl_antenna_ports,
+                           rrc_pdsch_AntennaPorts_t dl_antenna_ports,
                            int minRXTXTIME,
                            int do_csirs,
                            int do_srs,

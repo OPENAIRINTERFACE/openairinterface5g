@@ -1904,15 +1904,6 @@ int16_t do_RRCReconfiguration(
       ie->radioBearerConfig->srb3_ToRelease    = NULL;
       ie->radioBearerConfig->drb_ToReleaseList = DRB_releaseList;
     }
-    /******************** Secondary Cell Group ********************/
-    // rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
-    // fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,
-    //                                  ue_context_pP->ue_context.secondaryCellGroup,
-    //                                  1,
-    //                                  1,
-    //                                  carrier->pdsch_AntennaPorts,
-    //                                  carrier->initial_csi_index[ue_context_p->local_uid + 1],
-    //                                  ue_context_pP->local_uid);
 
     /******************** Meas Config ********************/
     // measConfig
