@@ -802,9 +802,6 @@ void pf_dl(module_id_t module_id,
       LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
-    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
-    max_num_ue--;
-    if (max_num_ue < 0) return;
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
@@ -818,8 +815,13 @@ void pf_dl(module_id_t module_id,
             frame,
             slot);
       mac->pdcch_cand[cid]--;
-      return;
+      continue;
     }
+
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE
+     * and PUCCH */
+    max_num_ue--;
+    AssertFatal(max_num_ue >= 0, "Illegal max_num_ue %d\n", max_num_ue);
 
     sched_ctrl->cce_index = CCEIndex;
 
