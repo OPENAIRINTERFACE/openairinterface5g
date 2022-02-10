@@ -602,8 +602,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
   memset(harq_process->c[r],0,Kr_bytes);
 
-  if ((dtx_det==0)&&(pusch_pdu->pusch_data.rv_index==0)){
-  //if (dtx_det==0){
+  //if ((dtx_det==0)&&(pusch_pdu->pusch_data.rv_index==0)){
+  if (dtx_det==0){
   if (mcs >9){
   memcpy((&z_ol[0]),ulsch_llr+r_offset,E*sizeof(short));
   
@@ -705,6 +705,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   else{
     no_iteration_ldpc = ulsch->max_ldpc_iterations+1;
   }
+
 	bool decodeSuccess = (no_iteration_ldpc <= ulsch->max_ldpc_iterations);
         if (decodeSuccess) { 
 		memcpy(harq_process->b+offset,
@@ -716,37 +717,40 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   	else {
 	  LOG_D(PHY,"uplink segment error %d/%d\n",r,harq_process->C);
 	  LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
+	  break; //don't even attempt to decode other segments
 	}  	
-	if (r==(harq_process->C-1)){
-	  if ((decodeSuccess)&&(harq_process->processedSegments==(harq_process->C))) {
-		LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
-                        phy_vars_gNB->Mod_id,harq_process->slot,harq_process->TBS);
-                harq_process->status = SCH_IDLE;
-                harq_process->round  = 0;
-                ulsch->harq_mask &= ~(1 << harq_pid);
+  }
 
-                LOG_D(PHY, "ULSCH received ok \n");
-                nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0,0);
-	
-	  } else {
-		LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
-           	 	phy_vars_gNB->Mod_id, harq_process->frame, harq_process->slot,
-            		harq_pid,harq_process->status, harq_process->round,harq_process->TBS,r);
-      		if (harq_process->round >= ulsch->Mlimit) {
-        		harq_process->status = SCH_IDLE;
-        		harq_process->round  = 0;
-        		harq_process->handled  = 0;
-        		ulsch->harq_mask &= ~(1 << harq_pid);
-      		}
-      		harq_process->handled  = 1;
-		no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
-      		LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
-		nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1,0);
-	  } 
-	  ulsch->last_iteration_cnt = no_iteration_ldpc;	
-	  }
-    } 
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
+
+  if ((harq_process->processedSegments==(harq_process->C))) {
+    LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
+	  phy_vars_gNB->Mod_id,harq_process->slot,harq_process->TBS);
+    harq_process->status = SCH_IDLE;
+    harq_process->round  = 0;
+    ulsch->harq_mask &= ~(1 << harq_pid);
+    
+    LOG_D(PHY, "ULSCH received ok \n");
+    nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0,0);
+    
+  } else {
+    LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
+	  phy_vars_gNB->Mod_id, harq_process->frame, harq_process->slot,
+	  harq_pid,harq_process->status, harq_process->round,harq_process->TBS,r);
+    if (harq_process->round >= ulsch->Mlimit) {
+      harq_process->status = SCH_IDLE;
+      harq_process->round  = 0;
+      harq_process->handled  = 0;
+      ulsch->harq_mask &= ~(1 << harq_pid);
+    }
+    harq_process->handled  = 1;
+    no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+    LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
+    nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1,0);
   } 
+  ulsch->last_iteration_cnt = no_iteration_ldpc;	
+  }
+
   else { 
   void (*nr_processULSegment_ptr)(void*) = &nr_processULSegment;
 
