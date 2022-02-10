@@ -80,8 +80,6 @@
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
 
-#define MIN_NUM_PRBS_TO_SCHEDULE  5
-
 /*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
  * Especially useful in the scheduler and to keep "classes" of users. */
 typedef struct {

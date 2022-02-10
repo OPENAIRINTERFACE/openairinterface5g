@@ -598,6 +598,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
                                  retInfo->tb_size,
+                                 1, /* minimum of 1RB: need to find exact TBS, don't preclude any number */
                                  rbSize,
                                  &new_tbs,
                                  &new_rbSize);
@@ -739,8 +740,9 @@ void pf_dl(module_id_t module_id,
     }
   }
 
+  const int min_rbSize = 5;
   /* Loop UE_sched to find max coeff and allocate transmission */
-  while (max_num_ue > 0 && n_rb_sched >= MIN_NUM_PRBS_TO_SCHEDULE && UE_sched.head >= 0) {
+  while (max_num_ue > 0 && n_rb_sched >= min_rbSize && UE_sched.head >= 0) {
 
     /* Find max coeff from UE_sched*/
     int *max = &UE_sched.head; /* assume head is max */
@@ -859,6 +861,7 @@ void pf_dl(module_id_t module_id,
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                   sched_ctrl->num_total_bytes + oh,
+                  min_rbSize,
                   max_rbSize,
                   &TBS,
                   &rbSize);
