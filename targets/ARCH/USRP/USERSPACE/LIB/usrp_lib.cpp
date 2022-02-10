@@ -464,7 +464,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHI
       write_package[end].buff[i]    = buff[i];
     write_thread->count_write++;
     write_thread->end = (write_thread->end + 1)% MAX_WRITE_THREAD_PACKAGE;
-    LOG_D(HW,"Signaling TX TS %llu\n",(unsigned long long)timestamp);
+    //    LOG_D(HW,"Signaling TX TS %llu\n",(unsigned long long)timestamp);
     pthread_cond_signal(&write_thread->cond_write);
     pthread_mutex_unlock(&write_thread->mutex_write);
     return 0;
@@ -555,7 +555,7 @@ void *trx_usrp_write_thread(void * arg){
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet;
     s->tx_md.end_of_burst   = last_packet;
     s->tx_md.time_spec      = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
-    LOG_D(PHY,"usrp_tx_write: tx_count %llu SoB %d, EoB %d, TS %llu\n",(unsigned long long)s->tx_count,s->tx_md.start_of_burst,s->tx_md.end_of_burst,(unsigned long long)timestamp); 
+    // LOG_D(PHY,"usrp_tx_write: tx_count %llu SoB %d, EoB %d, TS %llu\n",(unsigned long long)s->tx_count,s->tx_md.start_of_burst,s->tx_md.end_of_burst,(unsigned long long)timestamp); 
     s->tx_count++;
 
     // bit 3 enables gpio (for backward compatibility)

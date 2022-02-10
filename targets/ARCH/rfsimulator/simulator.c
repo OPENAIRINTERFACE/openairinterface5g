@@ -429,7 +429,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if (!alreadyLocked)
     pthread_mutex_lock(&Sockmutex);
 
-  LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
+  //LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
@@ -464,8 +464,8 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if (!alreadyLocked)
     pthread_mutex_unlock(&Sockmutex);
 
-  LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
-        nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
+  //LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
+  //    nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
   return nsamps;
 }
 
@@ -536,7 +536,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       } else if ( sz == 0 )
         continue;
 
-      LOG_D(HW, "Socket rcv %zd bytes\n", sz);
+      //LOG_D(HW, "Socket rcv %zd bytes\n", sz);
       AssertFatal((b->remainToTransfer-=sz) >= 0, "");
       b->transferPtr+=sz;
 
@@ -599,11 +599,11 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       if ( b->headerMode==false ) {
         if ( ! b->trashingPacket ) {
           b->lastReceivedTS=b->th.timestamp+b->th.size-byteToSample(b->remainToTransfer,b->th.nbAnt);
-          LOG_D(HW,"UEsock: %d Set b->lastReceivedTS %ld\n", fd, b->lastReceivedTS);
+          //LOG_D(HW,"UEsock: %d Set b->lastReceivedTS %ld\n", fd, b->lastReceivedTS);
         }
 
         if ( b->remainToTransfer==0) {
-          LOG_D(HW,"UEsock: %d Completed block reception: %ld\n", fd, b->lastReceivedTS);
+          //LOG_D(HW,"UEsock: %d Completed block reception: %ld\n", fd, b->lastReceivedTS);
           b->headerMode=true;
           b->transferPtr=(char *)&b->th;
           b->remainToTransfer=sizeof(samplesBlockHeader_t);
