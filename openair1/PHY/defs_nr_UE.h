@@ -1012,6 +1012,8 @@ typedef struct {
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx[RX_NB_TH];
 
+  time_stats_t ue_ul_indication_stats;
+
   uint32_t use_ia_receiver;
 
   time_stats_t ofdm_mod_stats;
@@ -1020,7 +1022,6 @@ typedef struct {
   time_stats_t ulsch_modulation_stats;
   time_stats_t ulsch_segmentation_stats;
   time_stats_t ulsch_rate_matching_stats;
-  time_stats_t ulsch_turbo_encoding_stats;
   time_stats_t ulsch_interleaving_stats;
   time_stats_t ulsch_multiplexing_stats;
 
@@ -1033,6 +1034,7 @@ typedef struct {
   time_stats_t pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_procedures_stat[RX_NB_TH];
 
+  time_stats_t rx_pdsch_stats;
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;
   time_stats_t rx_dft_stats;
@@ -1041,13 +1043,13 @@ typedef struct {
   time_stats_t dlsch_decoding_stats[2];
   time_stats_t dlsch_demodulation_stats;
   time_stats_t dlsch_rate_unmatching_stats;
-  time_stats_t dlsch_turbo_decoding_stats;
+  time_stats_t dlsch_ldpc_decoding_stats;
   time_stats_t dlsch_deinterleaving_stats;
   time_stats_t dlsch_llr_stats;
   time_stats_t dlsch_llr_stats_parallelization[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_unscrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
-  time_stats_t dlsch_turbo_encoding_stats;
+  time_stats_t dlsch_ldpc_encoding_stats;
   time_stats_t dlsch_interleaving_stats;
   time_stats_t dlsch_tc_init_stats;
   time_stats_t dlsch_tc_alpha_stats;
@@ -1106,6 +1108,9 @@ typedef struct LDPCDecode_ue_s {
   int offset;
   int Tbslbrm;
   int decodeIterations;
+  time_stats_t ts_deinterleave;
+  time_stats_t ts_rate_unmatch;
+  time_stats_t ts_ldpc_decode;
 } ldpcDecode_ue_t;
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"

@@ -179,6 +179,16 @@ static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts) {
   }
 }
 
+static inline void merge_meas(time_stats_t *dst_ts, time_stats_t *src_ts)
+{
+  if (!opp_enabled)
+    return;
+  dst_ts->trials += src_ts->trials;
+  dst_ts->diff += src_ts->diff;
+  if (src_ts->max > dst_ts->max)
+    dst_ts->max = src_ts->max;
+}
+
 extern notifiedFIFO_t measur_fifo;
 #define CPUMEASUR_SECTION "cpumeasur"
 

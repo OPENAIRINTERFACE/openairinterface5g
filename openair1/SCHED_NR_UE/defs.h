@@ -406,8 +406,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             PDSCH_t pdsch,
                             NR_UE_DLSCH_t *dlsch0,
                             NR_UE_DLSCH_t *dlsch1,
-                            int *dlsch_errors,
-                            uint8_t dlsch_parallel);
+                            int *dlsch_errors);
 
 int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
