@@ -206,7 +206,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
   }
 }
 
-int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
+int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t col, int32_t rxdataF_comp[][col],
                      int16_t *pdcch_llr, uint8_t symbol,uint32_t coreset_nbr_rb) {
   int16_t *rxF = (int16_t *) &rxdataF_comp[0][(symbol * coreset_nbr_rb * 12)];
   int32_t i;
@@ -343,7 +343,8 @@ void nr_pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 // This function will extract the mapped DM-RS PDCCH REs as per 38.211 Section 7.4.1.3.2 (Mapping to physical resources)
 void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
                                  int32_t **dl_ch_estimates,
-                                 int32_t **rxdataF_ext,
+                                 int32_t col,
+                                 int32_t rxdataF_ext[][col],
                                  int32_t **dl_ch_estimates_ext,
                                  uint8_t symbol,
                                  NR_DL_FRAME_PARMS *frame_parms,
@@ -537,9 +538,9 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 
 #define print_shorts(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
 
-void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
+void nr_pdcch_channel_compensation(int32_t col, int32_t rxdataF_ext[][col],
                                    int32_t **dl_ch_estimates_ext,
-                                   int32_t **rxdataF_comp,
+                                   int32_t rxdataF_comp[][col],
                                    int32_t **rho,
                                    NR_DL_FRAME_PARMS *frame_parms,
                                    uint8_t symbol,
@@ -650,7 +651,8 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
 
 
 void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
-                         int32_t **rxdataF_comp,
+                         int32_t col,
+                         int32_t rxdataF_comp[][col],
                          uint8_t symbol) {
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
@@ -698,6 +700,13 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   int32_t avgs;
   int32_t avgP[4];
   int n_rb,rb_offset;
+
+  /// \brief Pointers to extracted PDCCH symbols in frequency-domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_DL[
+  int32_t rxdataF_ext[4*frame_parms->nb_antennas_rx][4*273*12];  // 4 symbols, 100 PRBs, 12 REs per PRB]
+  int32_t rxdataF_comp[4*frame_parms->nb_antennas_rx][4*273*12];  // 4 symbols, 100 PRBs, 12 REs per PRB]
+
   get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
   LOG_D(PHY,"pdcch coreset: freq %x, n_rb %d, rb_offset %d\n",
         rel15->coreset.frequency_domain_resource[0],n_rb,rb_offset);
@@ -706,7 +715,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
     nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
                                 pdcch_vars->dl_ch_estimates,
-                                pdcch_vars->rxdataF_ext,
+                                4*273*12,
+                                rxdataF_ext,
                                 pdcch_vars->dl_ch_estimates_ext,
                                 s,
                                 frame_parms,
@@ -739,9 +749,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     LOG_D(PHY,"we enter nr_pdcch_channel_compensation(log2_maxh=%d)\n",log2_maxh);
     LOG_D(PHY,"in nr_pdcch_channel_compensation(rxdataF_ext x dl_ch_estimates_ext -> rxdataF_comp)\n");
     // compute LLRs for ofdm symbol 0 only
-    nr_pdcch_channel_compensation(pdcch_vars->rxdataF_ext,
+    nr_pdcch_channel_compensation(4*273*12, rxdataF_ext,
                                   pdcch_vars->dl_ch_estimates_ext,
-                                  pdcch_vars->rxdataF_comp,
+                                  rxdataF_comp,
                                   NULL,
                                   frame_parms,
                                   s,
@@ -749,13 +759,14 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                   n_rb); // log2_maxh+I0_shift
     if (frame_parms->nb_antennas_rx > 1) {
       LOG_D(PHY,"we enter nr_pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n", frame_parms->nb_antennas_rx);
-      nr_pdcch_detection_mrc(frame_parms, pdcch_vars->rxdataF_comp,s);
+      nr_pdcch_detection_mrc(frame_parms, 4*273*12, rxdataF_comp,s);
     }
 
     LOG_D(PHY,"we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
     LOG_D(PHY,"in nr_pdcch_llr(rxdataF_comp -> llr)\n");
     nr_pdcch_llr(frame_parms,
-                 pdcch_vars->rxdataF_comp,
+                 4*273*12,
+                 rxdataF_comp,
                  pdcch_vars->llr,
                  s,
                  n_rb);

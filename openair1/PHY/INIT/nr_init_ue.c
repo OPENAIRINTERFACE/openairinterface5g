@@ -378,10 +378,10 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
         ue->pdcch_vars[th_id][gNB_id]->llr16               = (int16_t *)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
         ue->pdcch_vars[th_id][gNB_id]->wbar                = (int16_t *)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
         ue->pdcch_vars[th_id][gNB_id]->e_rx                = (int16_t *)malloc16_clear( 4*2*100*12 );
-        ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp        = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
+        //ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp        = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
         ue->pdcch_vars[th_id][gNB_id]->dl_ch_rho_ext       = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
         ue->pdcch_vars[th_id][gNB_id]->rho                 = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-        ue->pdcch_vars[th_id][gNB_id]->rxdataF_ext         = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
+        // ue->pdcch_vars[th_id][gNB_id]->rxdataF_ext         = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
         ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates_ext = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
         // Channel estimates
         ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates      = (int32_t **)malloc16_clear(4*fp->nb_antennas_rx*sizeof(int32_t *));
@@ -396,9 +396,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
             ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates_time[idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
             //  size_t num = 7*2*fp->N_RB_DL*12;
             size_t num = 4*273*12;  // 4 symbols, 100 PRBs, 12 REs per PRB
-            ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp[idx]        = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
+            //ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp[idx]        = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
             ue->pdcch_vars[th_id][gNB_id]->dl_ch_rho_ext[idx]       = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
-            ue->pdcch_vars[th_id][gNB_id]->rxdataF_ext[idx]         = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
+            // ue->pdcch_vars[th_id][gNB_id]->rxdataF_ext[idx]         = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
             ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates_ext[idx] = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
           }
         }

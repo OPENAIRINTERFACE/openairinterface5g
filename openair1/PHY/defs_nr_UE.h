@@ -583,11 +583,11 @@ typedef struct {
   /// \brief Pointers to extracted PDCCH symbols in frequency-domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
-  int32_t **rxdataF_ext;
+  // int32_t **rxdataF_ext;
   /// \brief Pointers to extracted and compensated PDCCH symbols in frequency-domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
-  int32_t **rxdataF_comp;
+  // int32_t **rxdataF_comp;
   /// \brief Hold the channel estimates in frequency domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
