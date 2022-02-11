@@ -684,9 +684,10 @@ class Containerize():
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			healthy = 0
 			for state in deployStatus.split('\n'):
-				res = re.search('Up \(healthy\)', state)
-				if res is not None:
+				if re.search('Up \(healthy\)', state) is not None:
 					healthy += 1
+				if re.search('rfsim4g-db-init.*Exit 0', state) is not None:
+					subprocess.check_output('docker rm -f rfsim4g-db-init || true', shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 				containerStatus.append(state)
 			if healthy == self.nb_healthy[0]:
 				count = 100
@@ -698,6 +699,8 @@ class Containerize():
 				logging.debug('Starting tshark on public network')
 				self.CaptureOnDockerNetworks()
 			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
+			for cState in containerStatus:
+				logging.debug(cState)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
 		else:
 			HTML.CreateHtmlTestRow('Could not deploy in time', 'KO', CONST.ALL_PROCESSES_OK)
@@ -760,7 +763,11 @@ class Containerize():
 				cName = res.group('container_name')
 				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
 				logging.debug(cmd)
-				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				if re.search('magma-mme', cName) is not None:
+					cmd = 'cd ' + self.yamlPath[0] + ' && docker cp -L ' + cName + ':/var/log/mme.log ' + cName + '-full.log'
+					logging.debug(cmd)
+					subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		fullStatus = True
 		if anyLogs:
 			cmd = 'mkdir -p '+ logPath + ' && cp ' + self.yamlPath[0] + '/*.log ' + logPath
