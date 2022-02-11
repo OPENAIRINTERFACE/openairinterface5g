@@ -388,6 +388,7 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
                    uint32_t bytes,
+                   uint16_t nb_rb_min,
                    uint16_t nb_rb_max,
                    uint32_t *tbs,
                    uint16_t *nb_rb)
@@ -403,7 +404,7 @@ bool nr_find_nb_rb(uint16_t Qm,
     return true;
 
   /* is the minimum enough? */
-  *nb_rb = MIN_NUM_PRBS_TO_SCHEDULE;
+  *nb_rb = nb_rb_min;
   *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
   if (bytes <= *tbs)
     return true;
@@ -411,7 +412,7 @@ bool nr_find_nb_rb(uint16_t Qm,
   /* perform binary search to allocate all bytes within a TBS up to nb_rb_max
    * RBs */
   int hi = nb_rb_max;
-  int lo = 1;
+  int lo = nb_rb_min;
   for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
     const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, 1) >> 3;
     if (bytes == TBS) {
