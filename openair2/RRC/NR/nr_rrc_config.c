@@ -165,6 +165,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
     csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = NULL;
     csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = NULL;
   }
+  csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
+  csi_MeasConfig->nzp_CSI_RS_ResourceToReleaseList = NULL;
 }
 
 void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
