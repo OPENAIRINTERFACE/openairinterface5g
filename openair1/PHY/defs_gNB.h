@@ -594,6 +594,8 @@ typedef struct gNB_L1_proc_t_s {
   pthread_t L1_stats_thread;
   /// pthread structure for printing time meas
   pthread_t process_stats_thread;
+  /// pthread structure for reordering L1 tx thread messages
+  pthread_t pthread_tx_reorder;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// flag to indicate first TX transmission
@@ -844,8 +846,7 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t *phy_proc_tx_0;
-  time_stats_t *phy_proc_tx_1;
+  time_stats_t *phy_proc_tx[2];
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*
@@ -886,7 +887,9 @@ typedef struct PHY_VARS_gNB_s {
   */
   notifiedFIFO_t *respDecode;
   notifiedFIFO_t *resp_L1;
-  notifiedFIFO_t *resp_L1_tx;
+  notifiedFIFO_t *L1_tx_free;
+  notifiedFIFO_t *L1_tx_filled;
+  notifiedFIFO_t *L1_tx_out;
   notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;
@@ -951,12 +954,14 @@ typedef struct processingData_L1tx {
   int slot;
   openair0_timestamp timestamp_tx;
   PHY_VARS_gNB *gNB;
-  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
-  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu;
+  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
+  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
   NR_gNB_CSIRS_t csirs_pdu[NUMBER_OF_NR_CSIRS_MAX];
   NR_gNB_DLSCH_t *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];
   NR_gNB_SSB_t ssb[64];
   uint16_t num_pdsch_slot;
+  int num_dl_pdcch;
+  int num_ul_pdcch;
   time_stats_t phy_proc_tx;
 } processingData_L1tx_t;
 

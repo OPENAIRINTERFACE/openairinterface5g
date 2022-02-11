@@ -670,13 +670,16 @@ int main(int argc, char **argv)
   char tp_param[] = "n";
   initTpool(tp_param, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
-  gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->resp_L1_tx);
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,NULL);
+  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initNotifiedFIFO(gNB->L1_tx_free);
+  initNotifiedFIFO(gNB->L1_tx_filled);
+  initNotifiedFIFO(gNB->L1_tx_out);
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,NULL);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   msgDataTx->slot = -1;
-  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
-  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
+  gNB->phy_proc_tx[0] = &msgDataTx->phy_proc_tx;
   //gNB_config = &gNB->gNB_config;
 
   //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
@@ -1118,6 +1121,7 @@ int main(int argc, char **argv)
       }
 
       // prepare ULSCH/PUSCH reception
+      pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
       nr_schedule_response(Sched_INFO);
 
       // --------- setting parameters for UE --------
