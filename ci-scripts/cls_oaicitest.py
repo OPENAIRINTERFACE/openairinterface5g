@@ -2047,13 +2047,30 @@ class OaiCiTest():
 
 
 	def Iperf_analyzeV2BIDIR(self, lock, UE_IPAddress, device_id, statusQueue,server_filename,client_filename):
-		#server file is unused for the moment
-		if (not os.path.isfile(client_filename)):
-			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Could not analyze from client log')
+
+		#check the 2 files are here 
+		if (not os.path.isfile(client_filename)) or (not os.path.isfile(server_filename)):
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Client or Server Log File not present')
 			return
-		report=[]
-		report_msg='Client Report:\n'
-		with open(client_filename, 'r') as f_client:
+		#check the 2 files size
+		if (os.path.getsize(client_filename)==0) and (os.path.getsize(server_filename)==0):
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Client and Server Log File are empty')
+			return
+
+		report_msg='TCP BIDIR Report:\n'
+		#if client is not empty, all the info is in, otherwise we ll use the server file to get some partial info
+		client_filesize = os.path.getsize(client_filename)
+		if client_filesize == 0:
+			report_msg+="Client file (UE) present but !!! EMPTY !!!\n"
+			report_msg+="Partial report from server file\n"
+			filename = server_filename
+		else :		
+			report_msg+="Report from client file (UE)\n"
+			filename = client_filename
+
+		report=[] #used to check if relevant lines were found
+
+		with open(filename, 'r') as f_client:
 			for line in f_client.readlines():
 				result = re.search(rf'^\[\s+\d+\](?P<direction>\[.+\]).*\s+(?P<bitrate>[0-9\.]+ [KMG]bits\/sec).*\s+(?P<role>\bsender|receiver\b)', str(line))
 				if result is not None:
@@ -2070,7 +2087,7 @@ class OaiCiTest():
 			logging.debug('\u001B[1;35m    ' + report_msg + '\u001B[0m')
 			lock.release()
 		else:
-			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Could not analyze from client log')
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Could not analyze from Log file')
 
 
 
