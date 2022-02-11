@@ -44,8 +44,7 @@
 @param
 @returns 0 on success
  */
-int nr_generate_pss(int16_t *d_pss,
-                    int32_t *txdataF,
+int nr_generate_pss(int32_t *txdataF,
                     int16_t amp,
                     uint8_t ssb_start_symbol,
                     nfapi_nr_config_request_scf_t *config,
@@ -57,8 +56,7 @@ int nr_generate_pss(int16_t *d_pss,
 @param
 @returns 0 on success
  */
-int nr_generate_sss(int16_t *d_sss,
-                    int32_t *txdataF,
+int nr_generate_sss(int32_t *txdataF,
                     int16_t amp,
                     uint8_t ssb_start_symbol,
                     nfapi_nr_config_request_scf_t *config,
@@ -83,8 +81,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 @param
 @returns 0 on success
  */
-int nr_generate_pbch(NR_gNB_PBCH *pbch,
-                     nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
+int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
                      uint8_t *interleaver,
                      int32_t *txdataF,
                      int16_t amp,

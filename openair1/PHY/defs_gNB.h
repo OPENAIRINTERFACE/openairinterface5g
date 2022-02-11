@@ -753,7 +753,6 @@ typedef struct PHY_VARS_gNB_s {
   //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
   uint16_t num_pdsch_rnti[80];
   NR_gNB_PBCH        pbch;
-  nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
@@ -776,9 +775,6 @@ typedef struct PHY_VARS_gNB_s {
 
   // PUCCH0 Look-up table for cyclic-shifts
   NR_gNB_PUCCH0_LUT_t pucch0_lut;
-  /// NR synchronization sequences
-  int16_t d_pss[NR_PSS_LENGTH];
-  int16_t d_sss[NR_SSS_LENGTH];
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch_dmrs[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
@@ -869,6 +865,7 @@ typedef struct PHY_VARS_gNB_s {
 
   time_stats_t rx_pusch_stats;
   time_stats_t ul_indication_stats;
+  time_stats_t schedule_response_stats;
   time_stats_t ulsch_decoding_stats;
   time_stats_t ulsch_rate_unmatching_stats;
   time_stats_t ulsch_ldpc_decoding_stats;
@@ -893,7 +890,7 @@ typedef struct PHY_VARS_gNB_s {
   notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;
-  uint8_t pusch_proc_threads;
+  uint8_t thread_pool_size;
   int number_of_nr_dlsch_max;
   int number_of_nr_ulsch_max;
   void * scopeData;

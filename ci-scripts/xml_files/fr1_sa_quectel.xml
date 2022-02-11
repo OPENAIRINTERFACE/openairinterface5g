@@ -31,9 +31,14 @@
  010000
  000001
  050000
+ 000001
  050001
+ 000001
  070000
+ 000001
  070001
+ 000001
+ 070002
  000001
  010002
  080000
@@ -83,7 +88,7 @@
 
 	<testCase id="050000">
 		<class>Ping</class>
-		<desc>Ping: 20pings in 20sec</desc>
+		<desc>Ping: 40pings in 40sec</desc>
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 40</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
@@ -118,6 +123,15 @@
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
 		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="070002">
+		<class>Iperf</class>
+		<desc>iperf (BIDIR TCP)(10 sec)(single-ue profile)</desc>
+		<iperf_args>-t 10 --bidir</iperf_args>
+		<direction>BIDIR</direction>
+		<id>nrmodule2_quectel</id>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 

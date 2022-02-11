@@ -59,8 +59,7 @@ double cpuf;
 //uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
-uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
-uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
@@ -119,7 +118,7 @@ int main(int argc, char **argv)
         double DS_TDL = .03;
 	cpuf = get_cpu_freq_GHz();
 	char gNBthreads[128]="n";
-	
+
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
 		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
 	}
@@ -532,12 +531,12 @@ int main(int argc, char **argv)
 
 				//if (i<16)
 				//   printf("encoder output f[%d] = %d\n",i,dlsch->harq_processes[0]->f[i]);
-				
+
 				if (output[i] == 0)
 					modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
 				else
 					modulated_input[i] = -1.0;        ///sqrt(2);
-				
+
 				//if (i<16) printf("modulated_input[%d] = %d\n",i,modulated_input[i]);
 				//SNR =10;
 				SNR_lin = pow(10, SNR / 10.0);

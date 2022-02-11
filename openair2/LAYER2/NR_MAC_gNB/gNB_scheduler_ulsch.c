@@ -711,7 +711,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_info->mac_stats[UE_id].ulsch_DTX++;
       }
       if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
-         LOG_D(NR_MAC,"Detected UL Failure on PUSCH, stopping scheduling\n");
+         LOG_W(NR_MAC,"Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
+               UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt);
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
          nr_mac_gNB_rrc_ul_failure(gnb_mod_idP,CC_idP,frameP,slotP,rntiP);
       }
@@ -910,13 +911,22 @@ bool nr_UE_is_to_be_scheduled(module_id_t mod_id, int CC_id, int UE_id, frame_t 
   const NR_UE_sched_ctrl_t *sched_ctrl = &nrmac->UE_info.UE_sched_ctrl[UE_id];
   const int last_ul_sched = sched_ctrl->last_ul_frame * n + sched_ctrl->last_ul_slot;
 
+  const NR_TDD_UL_DL_Pattern_t *tdd =
+      scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  int num_slots_per_period;
+  int tdd_period_len[8] = {500,625,1000,1250,2000,2500,5000,10000};
+  if (tdd)
+    num_slots_per_period = n*tdd_period_len[tdd->dl_UL_TransmissionPeriodicity]/10000;
+  else
+    num_slots_per_period = n;
+
   const int diff = (now - last_ul_sched + 1024 * n) % (1024 * n);
   /* UE is to be scheduled if
    * (1) we think the UE has more bytes awaiting than what we scheduled
    * (2) there is a scheduling request
    * (3) or we did not schedule it in more than 10 frames */
   const bool has_data = sched_ctrl->estimated_ul_buffer > sched_ctrl->sched_ul_bytes;
-  const bool high_inactivity = diff >= nrmac->ulsch_max_frame_inactivity * n;
+  const bool high_inactivity = diff >= (nrmac->ulsch_max_frame_inactivity>0 ? (nrmac->ulsch_max_frame_inactivity * n) : num_slots_per_period);
   LOG_D(NR_MAC,
         "%4d.%2d UL inactivity %d slots has_data %d SR %d\n",
         frame,
@@ -1518,6 +1528,11 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   nfapi_nr_ul_dci_request_t *ul_dci_req = &RC.nrmac[module_id]->UL_dci_req[CC_id];
   ul_dci_req->SFN = frame;
   ul_dci_req->Slot = slot;
+  /* a PDCCH PDU groups DCIs per BWP and CORESET. Save a pointer to each
+   * allocated PDCCH so we can easily allocate UE's DCIs independent of any
+   * CORESET order */
+  nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_coreset[MAX_NUM_CORESET] = {0};
+
 
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
@@ -1756,7 +1771,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     NR_SearchSpace_t *ss = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->search_space: RC.nrmac[module_id]->sched_ctrlCommon->search_space;
     NR_ControlResourceSet_t *coreset = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->coreset: RC.nrmac[module_id]->sched_ctrlCommon->coreset;
     const int coresetid = coreset->controlResourceSetId;
-    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = nr_mac->pdcch_pdu_idx[CC_id][coresetid];
+    nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = pdcch_pdu_coreset[coresetid];
     if (!pdcch_pdu) {
       nfapi_nr_ul_dci_request_pdus_t *ul_dci_request_pdu = &ul_dci_req->ul_dci_pdu_list[ul_dci_req->numPdus];
       memset(ul_dci_request_pdu, 0, sizeof(nfapi_nr_ul_dci_request_pdus_t));
@@ -1765,7 +1780,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
       nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, &sched_ctrl->sched_pdcch);
-      nr_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
+      pdcch_pdu_coreset[coresetid] = pdcch_pdu;
     }
 
     LOG_D(NR_MAC,"Configuring ULDCI/PDCCH in %d.%d at CCE %d, rnti %x\n", frame,slot,sched_ctrl->cce_index,rnti);

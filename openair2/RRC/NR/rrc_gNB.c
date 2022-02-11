@@ -617,7 +617,7 @@ rrc_gNB_process_RRCSetupComplete(
 )
 //-----------------------------------------------------------------------------
 {
-  LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing NR_RRCSetupComplete from UE (SRB1 Active)\n",
+  LOG_A(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing NR_RRCSetupComplete from UE (SRB1 Active)\n",
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
   ue_context_pP->ue_context.Srb1.Active = 1;
   ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = 1;
@@ -709,7 +709,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   DRB_config->pdcp_Config->moreThanOneRLC = NULL;
 
   DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
-  *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
+  *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms100;
   DRB_config->pdcp_Config->ext1 = NULL;
 
   ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
@@ -1347,7 +1347,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
     for (int i = 0; i < DRB_configList->list.count; i++) {
       if (DRB_configList->list.array[i]) {
         drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
-        LOG_I(NR_RRC, "[gNB %d] Frame  %d : Logical Channel UL-DCCH, Received NR_RRCReconfigurationComplete from UE rnti %x, reconfiguring DRB %d\n",
+        LOG_A(NR_RRC, "[gNB %d] Frame  %d : Logical Channel UL-DCCH, Received NR_RRCReconfigurationComplete from UE rnti %x, reconfiguring DRB %d\n",
             ctxt_pP->module_id,
             ctxt_pP->frame,
             ctxt_pP->rnti,

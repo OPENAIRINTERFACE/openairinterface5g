@@ -55,6 +55,7 @@
 #include <errno.h>
 #include <string.h>
 
+const uint8_t nr_rv_round_map[4] = { 0, 2, 3, 1 };
 uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
 uint8_t vnf_first_sched_entry = 1;
@@ -388,7 +389,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ulsch(module_idP, frame, slot);
 
   // This schedules the DCI for Downlink and PDSCH
-  nr_schedule_ue_spec(module_idP, frame, slot);
+  start_meas(&gNB->schedule_dlsch);
+  nr_schedule_ue_spec(module_idP, frame, slot); 
+  stop_meas(&gNB->schedule_dlsch);
 
   nr_schedule_pucch(module_idP, frame, slot);
 
