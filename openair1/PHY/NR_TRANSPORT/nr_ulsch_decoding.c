@@ -119,7 +119,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
     a_segments = a_segments/273 +1;
   }
 
-  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+  uint32_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
   ulsch = (NR_gNB_ULSCH_t *)malloc16_clear(sizeof(NR_gNB_ULSCH_t));
   
   ulsch->max_ldpc_iterations = max_ldpc_iterations;

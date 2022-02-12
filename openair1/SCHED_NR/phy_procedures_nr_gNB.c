@@ -19,19 +19,13 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/phy_extern.h"
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
-#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
-#include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
-#include "SCHED/sched_eNB.h"
-#include "sched_nr.h"
-#include "SCHED/sched_common_extern.h"
 #include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_interface.h"
 #include "nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 #include "fapi_nr_l1.h"
@@ -39,6 +33,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/nr_modulation.h"
+#include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
 #include "T.h"
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
@@ -183,15 +178,13 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
 
   for (int i=0;i<NUMBER_OF_NR_CSIRS_MAX;i++){
     NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[i];
-    if ((csirs->active == 1)) {
+    if (csirs->active == 1) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
       nr_generate_csi_rs(gNB, AMP, csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
       csirs->active = 0;
     }
   }
-
-  if (do_meas==1) stop_meas(&msgTx->phy_proc_tx);
 
 //  if ((frame&127) == 0) dump_pdsch_stats(gNB);
 
@@ -201,20 +194,9 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
-  //pthread_mutex_unlock(&mutextest);
 
+  if (do_meas==1) stop_meas(&msgTx->phy_proc_tx);
 }
-
-
-
-/*
-
-  if ((cfg->subframe_config.duplex_mode.value == TDD) && 
-      ((nr_slot_select(fp,frame,slot)&NR_DOWNLINK_SLOT)==SF_DL)) return;
-
-  //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX,1);
-
-*/
 
 void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
@@ -369,11 +351,10 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------
   start_meas(&gNB->ulsch_unscrambling_stats);
-  nr_ulsch_unscrambling_optim(gNB->pusch_vars[ULSCH_id]->llr,
-			      G,
-			      0,
-			      pusch_pdu->data_scrambling_id,
-			      pusch_pdu->rnti);
+  nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id]->llr,
+                        G,
+                        pusch_pdu->data_scrambling_id,
+                        pusch_pdu->rnti);
   stop_meas(&gNB->ulsch_unscrambling_stats);
   //----------------------------------------------------------
   //--------------------- ULSCH decoding ---------------------
@@ -601,6 +582,20 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     }
   }
 
+  for (int i=0;i<NUMBER_OF_NR_SRS_MAX;i++) {
+    NR_gNB_SRS_t *srs = gNB->srs[i];
+    if (srs) {
+      if ((srs->active == 1) && (srs->frame == frame_rx) && (srs->slot == slot_rx)) {
+        nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
+        for(int symbol = 0; symbol<(1<<srs_pdu->num_symbols); symbol++) {
+          for(rb = srs_pdu->bwp_start; rb < (srs_pdu->bwp_start+srs_pdu->bwp_size); rb++) {
+            gNB->rb_mask_ul[gNB->frame_parms.symbols_per_slot-srs_pdu->time_start_position-1+symbol][rb>>5] |= 1<<(rb&31);
+          }
+        }
+      }
+    }
+  }
+
 }
 
 void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
@@ -808,6 +803,43 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
       }
     }
   }
+
+  for (int i=0;i<NUMBER_OF_NR_SRS_MAX;i++) {
+    NR_gNB_SRS_t *srs = gNB->srs[i];
+    if (srs) {
+      if ((srs->active == 1) && (srs->frame == frame_rx) && (srs->slot == slot_rx)) {
+
+        LOG_D(NR_PHY, "(%d.%d) gNB is waiting for SRS, id = %i\n", frame_rx, slot_rx, i);
+
+        nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
+
+        // At least currently, the configuration is constant, so it is enough to generate the sequence just once.
+        if(gNB->nr_srs_info[i]->sc_list_length == 0) {
+          generate_srs_nr(srs_pdu, &gNB->frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
+        }
+
+        nr_get_srs_signal(gNB,frame_rx,slot_rx,srs_pdu, gNB->nr_srs_info[i], gNB->nr_srs_info[i]->srs_received_signal);
+
+        nr_srs_channel_estimation(gNB,frame_rx,slot_rx,srs_pdu,
+                                  gNB->nr_srs_info[i],
+                                  gNB->nr_srs_info[i]->srs_generated_signal,
+                                  gNB->nr_srs_info[i]->srs_received_signal,
+                                  gNB->nr_srs_info[i]->srs_estimated_channel_freq,
+                                  gNB->nr_srs_info[i]->srs_estimated_channel_time,
+                                  gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted,
+                                  gNB->nr_srs_info[i]->noise_power);
+
+        T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
+          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
+
+        T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
+          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
+
+        srs->active = 0;
+      }
+    }
+  }
+
   stop_meas(&gNB->phy_proc_rx);
   // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
   if ((frame_rx&127) == 0 && slot_rx==19) {

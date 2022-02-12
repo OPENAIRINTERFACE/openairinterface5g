@@ -53,12 +53,12 @@
 
 //extern int32_t uplink_counter;
 
-void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint32_t size,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out) {
-
+void nr_pusch_codeword_scrambling_uci(uint8_t *in,
+                                      uint32_t size,
+                                      uint32_t Nid,
+                                      uint32_t n_RNTI,
+                                      uint32_t* out)
+{
   uint8_t reset, b_idx;
   uint32_t x1, x2, s=0, temp_out;
 
@@ -89,7 +89,19 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
       *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
     //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);
   }
+}
 
+void nr_pusch_codeword_scrambling(uint8_t *in,
+                                  uint32_t size,
+                                  uint32_t Nid,
+                                  uint32_t n_RNTI,
+                                  bool uci_on_pusch,
+                                  uint32_t* out)
+{
+  if (uci_on_pusch)
+    nr_pusch_codeword_scrambling_uci(in, size, Nid, n_RNTI, out);
+  else
+    nr_codeword_scrambling(in, size, 0, Nid, n_RNTI, out);
 }
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
@@ -187,6 +199,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                  available_bits,
                                  ulsch_ue->Nid_cell,
                                  rnti,
+                                 false,
                                  scrambled_output[cwd_index]); // assume one codeword for the moment
 
 
