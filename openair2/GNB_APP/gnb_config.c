@@ -451,7 +451,7 @@ void fix_scd(NR_ServingCellConfig_t *scd) {
     for (int i = scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.count-1; i >= 0; i--) {
       if ((*scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.array[i] < 1)
           || (*scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.array[i] > 276)) {
-        LOG_I(RRC, "DL PTRS frequencyDensity %d not set. Assuming PTRS not present! \n", i);
+        LOG_I(NR_RRC, "DL PTRS frequencyDensity %d not set. Assuming PTRS not present! \n", i);
         free(scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS);
         scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS = NULL;
         break;
@@ -1149,16 +1149,16 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 		      (NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l] == 3),"BAD MNC DIGIT LENGTH %d",
 		      NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l]);
 	}
-        printf("SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
+        LOG_I(GNB_APP,"SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
-        printf("pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
+        LOG_I(GNB_APP,"pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
-        printf("pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
+        LOG_I(GNB_APP,"pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
-        printf("minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
+        LOG_I(GNB_APP,"minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIME = *GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr;
         NRRRC_CONFIGURATION_REQ (msg_p).sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
-        printf("Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
+        LOG_I(GNB_APP,"Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_CSIRS = *GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr;
         NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
         NRRRC_CONFIGURATION_REQ (msg_p).scd = scd;

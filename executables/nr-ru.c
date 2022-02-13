@@ -2084,9 +2084,7 @@ static void NRRCconfig_RU(void) {
 
         RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
         RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
-        RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
         RC.ru[j]->sf_extension                      = *(RUParamList.paramarray[j][RU_SF_EXTENSION_IDX].uptr);
-        for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
       } //strcmp(local_rf, "yes") == 0
       else {
         printf("RU %d: Transport %s\n",j,*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr));
@@ -2106,8 +2104,6 @@ static void NRRCconfig_RU(void) {
           RC.ru[j]->if_south                     = REMOTE_IF5;
           RC.ru[j]->function                     = NGFI_RAU_IF5;
           RC.ru[j]->eth_params.transp_preference = ETH_UDP_IF5_ECPRI_MODE;
-        } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "udp_ecpri_if5") == 0) {
-          RC.ru[j]->if_south                     = REMOTE_IF5;
         } else if (strcmp(*(RUParamList.paramarray[j][RU_TRANSPORT_PREFERENCE_IDX].strptr), "raw") == 0) {
           RC.ru[j]->if_south                     = REMOTE_IF5;
           RC.ru[j]->function                     = NGFI_RAU_IF5;
@@ -2130,7 +2126,12 @@ static void NRRCconfig_RU(void) {
       RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
       RC.ru[j]->if_freq_offset                    = *(RUParamList.paramarray[j][RU_IF_FREQ_OFFSET].iptr);
       RC.ru[j]->do_precoding                      = *(RUParamList.paramarray[j][RU_DO_PRECODING].iptr);
-
+      RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
+      for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
+      RC.ru[j]->openair0_cfg.nr_flag              = *(RUParamList.paramarray[j][RU_NR_FLAG].iptr);
+      RC.ru[j]->openair0_cfg.nr_band              = RC.ru[j]->band[0];
+      RC.ru[j]->openair0_cfg.nr_scs_for_raster    = *(RUParamList.paramarray[j][RU_NR_SCS_FOR_RASTER].iptr);
+      printf("[RU %d] Setting nr_flag %d, nr_band %d, nr_scs_for_raster %d\n",j,RC.ru[j]->openair0_cfg.nr_flag,RC.ru[j]->openair0_cfg.nr_band,RC.ru[j]->openair0_cfg.nr_scs_for_raster);
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;
 

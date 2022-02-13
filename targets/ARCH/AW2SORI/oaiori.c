@@ -228,14 +228,38 @@ int aw2s_startstreaming(openair0_device *device) {
   ORI_Result_e  RE_result;
 
   openair0_config_t *openair0_cfg = device->openair0_cfg;
+  ORI_Object_s *tx0,*tx1,*tx2,*tx3,*rx0,*rx1,*rx2,*rx3;
+  if (openair0_cfg->nr_flag == 0 ) {
+    tx0= ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ? ORI_ObjectType_TxEUtraFDD :ORI_ObjectType_TxEUtraTDD, 0, NULL);
+    tx1= (openair0_cfg->tx_num_channels > 1) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxEUtraFDD : ORI_ObjectType_TxEUtraTDD, 1, NULL) : NULL;
+    tx2= (openair0_cfg->tx_num_channels > 2) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxEUtraFDD : ORI_ObjectType_TxEUtraTDD, 2, NULL) : NULL;
+    tx3= (openair0_cfg->tx_num_channels > 3) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxEUtraFDD : ORI_ObjectType_TxEUtraTDD, 3, NULL) : NULL;
+    rx0= ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD, 0, NULL);
+    rx1= (openair0_cfg->rx_num_channels > 1) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD, 1, NULL) : NULL;
+    rx2= (openair0_cfg->rx_num_channels > 2) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD, 2, NULL) : NULL;
+    rx3= (openair0_cfg->rx_num_channels > 3) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD, 3, NULL) : NULL;
+  } else {
+    tx0= ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ? ORI_ObjectType_TxNRFDD :ORI_ObjectType_TxNRTDD, 0, NULL);
+    tx1= (openair0_cfg->tx_num_channels > 1) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxNRFDD : ORI_ObjectType_TxNRTDD, 1, NULL) : NULL;
+    tx2= (openair0_cfg->tx_num_channels > 2) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxNRFDD : ORI_ObjectType_TxNRTDD, 2, NULL) : NULL;
+    tx3= (openair0_cfg->tx_num_channels > 3) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxNRFDD : ORI_ObjectType_TxNRTDD, 3, NULL) : NULL;
+    rx0= ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD, 0, NULL);
+    rx1= (openair0_cfg->rx_num_channels > 1) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxNRFDD : ORI_ObjectType_RxNRTDD, 1, NULL) : NULL;
+    rx2= (openair0_cfg->rx_num_channels > 2) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxNRFDD : ORI_ObjectType_RxNRTDD, 2, NULL) : NULL;
+    rx3= (openair0_cfg->rx_num_channels > 3) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxNRFDD : ORI_ObjectType_RxNRTDD, 3, NULL) : NULL;
 
-  ORI_Object_s *tx0= ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ? ORI_ObjectType_TxEUtraFDD :ORI_ObjectType_TxEUtraTDD, 0, NULL);
-  ORI_Object_s *tx1= (openair0_cfg->tx_num_channels > 1) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxEUtraFDD : ORI_ObjectType_TxEUtraTDD, 1, NULL) : NULL;
-  ORI_Object_s *rx0= ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD, 0, NULL);
-  ORI_Object_s *rx1= (openair0_cfg->rx_num_channels > 1) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD, 1, NULL) : NULL;
+  }
   ORI_Object_s *link= ORI_FindObject(ori, ORI_ObjectType_ORILink, 0, NULL);
 
-  if (tx0 == NULL || (tx1 == NULL && openair0_cfg->tx_num_channels > 1) || rx0 == NULL || (rx1 == NULL && openair0_cfg->rx_num_channels > 1) || link == NULL) return (-1);
+  if (tx0 == NULL || 
+      (tx1 == NULL && openair0_cfg->tx_num_channels > 1) || 
+      (tx2 == NULL && openair0_cfg->tx_num_channels > 2) ||
+      (tx3 == NULL && openair0_cfg->tx_num_channels > 3) ||
+      rx0 == NULL || 
+      (rx1 == NULL && openair0_cfg->rx_num_channels > 1) || 
+      (rx2 == NULL && openair0_cfg->rx_num_channels > 2) || 
+      (rx3 == NULL && openair0_cfg->rx_num_channels > 3) || 
+      link == NULL) return (-1);
 
  /*******************************************************************
    * UNLOCK Link 
@@ -285,6 +309,40 @@ int aw2s_startstreaming(openair0_device *device) {
     printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
   }
   /*******************************************************************
+   * UNLOCK TX2
+   *******************************************************************/
+
+  if (tx2) { 
+    printf("\n\n\n========================================================\n");
+
+    /* Put Tx1 into service */
+   result = ORI_ObjectStateModification(ori, tx2, ORI_AST_Unlocked, &RE_result);
+    if(result != ORI_Result_SUCCESS)
+      {
+        printf("ORI_ObjectStateModify failed with error: %s\n", ORI_Result_Print(result));
+        aw2s_oricleanup(device);
+        return -1;
+      }
+    printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
+  }
+  /*******************************************************************
+   * UNLOCK TX3
+   *******************************************************************/
+
+  if (tx3) { 
+    printf("\n\n\n========================================================\n");
+
+    /* Put Tx3 into service */
+   result = ORI_ObjectStateModification(ori, tx1, ORI_AST_Unlocked, &RE_result);
+    if(result != ORI_Result_SUCCESS)
+      {
+        printf("ORI_ObjectStateModify failed with error: %s\n", ORI_Result_Print(result));
+        aw2s_oricleanup(device);
+        return -1;
+      }
+    printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
+  }
+  /*******************************************************************
    * UNLOCK RX0
    *******************************************************************/
 
@@ -320,6 +378,38 @@ int aw2s_startstreaming(openair0_device *device) {
     printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
   }
 
+  /*******************************************************************
+   * UNLOCK RX2
+   *******************************************************************/
+  if (rx2) {
+    printf("\n\n\n========================================================\n");
+
+    /* Put Rx1 into service */
+    result = ORI_ObjectStateModification(ori, rx2, ORI_AST_Unlocked, &RE_result);
+    if(result != ORI_Result_SUCCESS)
+      {
+        printf("ORI_ObjectStateModify failed with error: %s\n", ORI_Result_Print(result));
+        aw2s_oricleanup(device);
+        return -1;
+      }
+    printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
+  }
+  /*******************************************************************
+   * UNLOCK RX3
+   *******************************************************************/
+  if (rx3) {
+    printf("\n\n\n========================================================\n");
+
+    /* Put Rx1 into service */
+    result = ORI_ObjectStateModification(ori, rx3, ORI_AST_Unlocked, &RE_result);
+    if(result != ORI_Result_SUCCESS)
+      {
+        printf("ORI_ObjectStateModify failed with error: %s\n", ORI_Result_Print(result));
+        aw2s_oricleanup(device);
+        return -1;
+      }
+    printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
+  }
   /*
   while (rx0->fst != ORI_FST_Operational || 
          (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
@@ -331,6 +421,9 @@ int aw2s_startstreaming(openair0_device *device) {
   uint64_t TS;
   char temp_rx[1024] __attribute__((aligned(32)));
   int aid,r0=0,r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
+  int r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
+  int r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;
+
   int i;
   int Npackets=1024000;
   for (i=0;i<Npackets;i++) {
@@ -341,15 +434,23 @@ int aw2s_startstreaming(openair0_device *device) {
                            &aid);
     if (aid == 0) r0=1;
     if (aid == 1) r1=1;
+    if (aid == 2) r2=1;
+    if (aid == 3) r3=1;
   }
-  if (r0==1 && r1==1) printf("Streaming started, returning to OAI\n");
+  if (r0==1 && r1==1 && r2==1 && r3==1) printf("Streaming started, returning to OAI\n");
   else {
-    printf("Didn't get anything from one antenna port after %d packets %d,%d\n",Npackets,r0,r1);
+    printf("Didn't get anything from one antenna port after %d packets %d,%d,%d,%d\n",Npackets,r0,r1,r2,r3);
     return(-1);
   }
   return(0);
 
 }
+
+uint32_t to_nrarfcn(int nr_bandP,
+                    uint64_t dl_CarrierFreq,
+                    uint8_t scs_index,
+                    uint32_t bw);
+
 int aw2s_oriinit(openair0_device *device) {
 
 
@@ -438,59 +539,64 @@ int aw2s_oriinit(openair0_device *device) {
    *******************************************************************/
 
   /* Prepare parameters */
-  ORI_ObjectTypeRef_s txTypeRef = { NULL, openair0_cfg->duplex_mode == duplex_mode_FDD ? ORI_ObjectType_TxEUtraFDD : ORI_ObjectType_TxEUtraTDD};
+  ORI_ObjectTypeRef_s txTypeRef = { NULL, openair0_cfg->duplex_mode == duplex_mode_FDD ? 
+                                          (openair0_cfg->nr_flag == 0 ? ORI_ObjectType_TxEUtraFDD : ORI_ObjectType_TxNRFDD):
+                                          (openair0_cfg->nr_flag == 0 ? ORI_ObjectType_TxEUtraTDD : ORI_ObjectType_TxNRTDD)};
   ORI_ObjectParams_u txParams;
   ORI_ObjectParam_e txParamList[9];
   ORI_Result_e txParamResult[9];
   int num_txparams;
 
-  if (openair0_cfg->duplex_mode == duplex_mode_FDD) {
-      txParamList[0] = ORI_ObjectParam_SigPath_antPort; 
-      txParamList[1] = ORI_ObjectParam_SigPath_axcW; 
-      txParamList[2] = ORI_ObjectParam_SigPath_axcB;
-      txParamList[3] = ORI_ObjectParam_SigPath_chanBW; 
-      txParamList[4] = ORI_ObjectParam_SigPath_earfcn; 
-      txParamList[5] = ORI_ObjectParam_TxSigPath_maxTxPwr;
-      num_txparams = 6;
-  }
-  else {
-      txParamList[0] = ORI_ObjectParam_SigPath_antPort; 
-      txParamList[1] = ORI_ObjectParam_SigPath_axcW; 
-      txParamList[2] = ORI_ObjectParam_SigPath_axcB;
-      txParamList[3] = ORI_ObjectParam_SigPath_chanBW; 
-      txParamList[4] = ORI_ObjectParam_SigPath_earfcn; 
-      txParamList[5] = ORI_ObjectParam_TxSigPath_maxTxPwr;
-      txParamList[6] = ORI_ObjectParam_SigPath_tddULDLConfig;
-      txParamList[7] = ORI_ObjectParam_SigPath_tddSpecialSFConfig;
-      txParamList[8] = ORI_ObjectParam_TxSigPath_tddCPLengthDL;
-      num_txparams = 9;
-  }
+  txParamList[0] = ORI_ObjectParam_SigPath_antPort; 
+  txParamList[1] = ORI_ObjectParam_SigPath_axcW; 
+  txParamList[2] = ORI_ObjectParam_SigPath_axcB;
+  txParamList[3] = ORI_ObjectParam_SigPath_chanBW; 
+  txParamList[4] = (openair0_cfg->nr_flag ==0) ? ORI_ObjectParam_SigPath_earfcn : ORI_ObjectParam_SigPath_AWS_arfcn; 
+  txParamList[5] = ORI_ObjectParam_TxSigPath_maxTxPwr;
+  num_txparams = 6;
 
 
   /* Create tx0 */
   ORI_Object_s * tx0;
   printf("AW2S: duplex_mode %d, tx_bw %f, rx_bw %f\n",openair0_cfg->duplex_mode,openair0_cfg->tx_bw,openair0_cfg->rx_bw);
-  if (openair0_cfg->duplex_mode == duplex_mode_FDD) {
+  if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 0) {
     txParams.TxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 0, NULL);
     txParams.TxEUtraFDD.axcW = 1;
     txParams.TxEUtraFDD.axcB = 0;
     txParams.TxEUtraFDD.chanBW = openair0_cfg->tx_bw/100e3;
-    txParams.TxEUtraFDD.earfcn = 3350;
-    txParams.TxEUtraFDD.maxTxPwr = -100;
+    txParams.TxEUtraTDD.earfcn = to_earfcn_DL_aw2s(-1,(long long int)openair0_cfg->tx_freq[0],txParams.TxEUtraTDD.chanBW);
+    txParams.TxEUtraFDD.maxTxPwr = 430-((int)openair0_cfg->tx_gain[0]*10);
   }
-  else if (openair0_cfg->duplex_mode == duplex_mode_TDD) {
+  else if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 1) {
+    txParams.TxNRFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 0, NULL);
+    txParams.TxNRFDD.axcW = 1;
+    txParams.TxNRFDD.axcB = 0;
+    txParams.TxNRFDD.chanBW = openair0_cfg->tx_bw/100e3;
+
+    txParams.TxNRFDD.AWS_arfcn = to_nrarfcn(openair0_cfg->nr_band,(long long int)openair0_cfg->tx_freq[0],openair0_cfg->nr_scs_for_raster,(uint32_t)openair0_cfg->tx_bw);
+    txParams.TxNRFDD.maxTxPwr = 430-((int)openair0_cfg->tx_gain[0]*10);
+  }
+  else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 0) {
     txParams.TxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 0, NULL);
     txParams.TxEUtraTDD.axcW = 1;
     txParams.TxEUtraTDD.axcB = 0;
     txParams.TxEUtraTDD.chanBW = openair0_cfg->tx_bw/100e3;
     txParams.TxEUtraTDD.earfcn = to_earfcn_DL_aw2s(-1,(long long int)openair0_cfg->tx_freq[0],txParams.TxEUtraTDD.chanBW);
     txParams.TxEUtraTDD.maxTxPwr = 430-((int)openair0_cfg->tx_gain[0]*10);
-    txParams.TxEUtraTDD.tddULDLConfig = 1;
-    txParams.TxEUtraTDD.tddSpecialSFConfig = 0;
-    txParams.TxEUtraTDD.tddCPLengthDL = ORI_tddCPLength_Normal;
 
-    printf("AW2S: Configuring for TDD, EARFCN %u, Power %d, BW %d\n",
+    printf("AW2S: Configuring for LTE TDD, EARFCN %u, Power %d, BW %d\n",
 	txParams.TxEUtraTDD.earfcn,txParams.TxEUtraTDD.maxTxPwr,txParams.TxEUtraTDD.chanBW);
+  }
+  else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 1) {
+    txParams.TxNRTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 0, NULL);
+    txParams.TxNRTDD.axcW = 1;
+    txParams.TxNRTDD.axcB = 0;
+    txParams.TxNRTDD.chanBW = openair0_cfg->tx_bw/100e3;
+    txParams.TxNRTDD.AWS_arfcn = to_nrarfcn(openair0_cfg->nr_band,(long long int)openair0_cfg->tx_freq[0],openair0_cfg->nr_scs_for_raster,(uint32_t)openair0_cfg->tx_bw);
+    txParams.TxNRTDD.maxTxPwr = 430-((int)openair0_cfg->tx_gain[0]*10);
+
+    printf("AW2S: Configuring for NR TDD, NRARFCN %u, Power %d, BW %d\n",
+	txParams.TxNRTDD.AWS_arfcn,txParams.TxNRTDD.maxTxPwr,txParams.TxNRTDD.chanBW);
   }
   else {
     aw2s_oricleanup(device);
@@ -499,28 +605,51 @@ int aw2s_oriinit(openair0_device *device) {
   result = ORI_ObjectCreation(ori, txTypeRef, txParams, txParamList, num_txparams, txParamResult, &tx0, &RE_result);
   if(RE_result != ORI_Result_SUCCESS)
     {
-      printf("ORI_ObjectCreation (txParams0.TxEUtraFDD/TDD) failed with error: %s (%s,%s,%s,%s,%s,%s,%s,%s,%s\n", ORI_Result_Print(result),
+      printf("ORI_ObjectCreation (txParams0.TxEUtra/NRFDD/TDD) failed with error: %s (%s,%s,%s,%s,%s,%s\n", ORI_Result_Print(RE_result),
 	ORI_Result_Print(txParamResult[0]),
         ORI_Result_Print(txParamResult[1]),
         ORI_Result_Print(txParamResult[2]),
         ORI_Result_Print(txParamResult[3]),
         ORI_Result_Print(txParamResult[4]),
-        ORI_Result_Print(txParamResult[5]),
-        ORI_Result_Print(txParamResult[6]),
-        ORI_Result_Print(txParamResult[7]),
-        ORI_Result_Print(txParamResult[8]));
+        ORI_Result_Print(txParamResult[5]));
       aw2s_oricleanup(device);
       return -1;
     }
-  printf("ORI_ObjectCreation (txParams0.TxEUtraFDD/TDD): %s\n", ORI_Result_Print(RE_result));
+  printf("ORI_ObjectCreation (txParams0.TxEUtra/NRFDD/TDD): %s\n", ORI_Result_Print(RE_result));
 
 
   /* Create tx1 */
   if (openair0_cfg->tx_num_channels > 1) {
     ORI_Object_s * tx1;
-    if (openair0_cfg->duplex_mode ==duplex_mode_FDD) txParams.TxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
-    else                                  txParams.TxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
+    if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 0) 
+       txParams.TxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 1)  
+       txParams.TxNRFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 0)  
+       txParams.TxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 1)  
+       txParams.TxNRTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
     result = ORI_ObjectCreation(ori, txTypeRef, txParams, txParamList, num_txparams, txParamResult, &tx1, &RE_result);
+    if(RE_result != ORI_Result_SUCCESS)
+      {
+        printf("ORI_ObjectCreation (txParams1.TxEUtra/NRFDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        aw2s_oricleanup(device);
+        return -1;
+      }
+    printf("ORI_ObjectCreation (txParams1.TxEUtra/NRFDD/TDD): %s\n", ORI_Result_Print(RE_result));
+  }
+
+  if (openair0_cfg->tx_num_channels > 2) {
+    ORI_Object_s * tx2;
+    if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 0) 
+       txParams.TxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 2, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 1)  
+       txParams.TxNRFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 2, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 0)  
+       txParams.TxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 2, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 1)  
+       txParams.TxNRTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 2, NULL);
+    result = ORI_ObjectCreation(ori, txTypeRef, txParams, txParamList, num_txparams, txParamResult, &tx2, &RE_result);
     if(RE_result != ORI_Result_SUCCESS)
       {
         printf("ORI_ObjectCreation (txParams1.TxEUtraFDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
@@ -529,7 +658,25 @@ int aw2s_oriinit(openair0_device *device) {
       }
     printf("ORI_ObjectCreation (txParams1.TxEUtraFDD/TDD): %s\n", ORI_Result_Print(RE_result));
   }
-
+  if (openair0_cfg->tx_num_channels == 4) {
+    ORI_Object_s * tx3;
+    if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 0) 
+       txParams.TxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 3, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 1)  
+       txParams.TxNRFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 3, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 0)  
+       txParams.TxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 3, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 1)  
+       txParams.TxNRTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 3, NULL);
+    result = ORI_ObjectCreation(ori, txTypeRef, txParams, txParamList, num_txparams, txParamResult, &tx3, &RE_result);
+    if(RE_result != ORI_Result_SUCCESS)
+      {
+        printf("ORI_ObjectCreation (txParams1.TxEUtra/NRFDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        aw2s_oricleanup(device);
+        return -1;
+      }
+    printf("ORI_ObjectCreation (txParams3.TxEUtra/NRFDD/TDD): %s\n", ORI_Result_Print(RE_result));
+  }
 
 
   /*******************************************************************
@@ -537,39 +684,52 @@ int aw2s_oriinit(openair0_device *device) {
    *******************************************************************/
 
   /* Prepare parameters */
-  ORI_ObjectTypeRef_s rxTypeRef = { NULL,  openair0_cfg->duplex_mode == duplex_mode_FDD ? ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD};
-  ORI_ObjectParams_u rxParams,rxParams1;
-  ORI_ObjectParam_e rxParamList[8] = { ORI_ObjectParam_SigPath_antPort, ORI_ObjectParam_SigPath_axcW, ORI_ObjectParam_SigPath_axcB,
+  ORI_ObjectTypeRef_s rxTypeRef = { NULL,  openair0_cfg->duplex_mode == duplex_mode_FDD ? 
+                                           (openair0_cfg->nr_flag == 0 ? ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxNRFDD ) :
+                                           (openair0_cfg->nr_flag == 0 ? ORI_ObjectType_RxEUtraTDD : ORI_ObjectType_RxNRTDD)};
+  ORI_ObjectParams_u rxParams;
+  ORI_ObjectParam_e rxParamList[5] = { ORI_ObjectParam_SigPath_antPort, ORI_ObjectParam_SigPath_axcW, ORI_ObjectParam_SigPath_axcB,
 				       ORI_ObjectParam_SigPath_chanBW, ORI_ObjectParam_SigPath_earfcn };
-  ORI_Result_e rxParamResult[8];
+  ORI_Result_e rxParamResult[5];
   int num_rxparams = 5;
-  if (openair0_cfg->duplex_mode == duplex_mode_TDD) {
-      rxParamList[5] = ORI_ObjectParam_SigPath_tddULDLConfig;
-      rxParamList[6] = ORI_ObjectParam_SigPath_tddSpecialSFConfig;
-      rxParamList[7] = ORI_ObjectParam_RxSigPath_tddCPLengthUL;
-      num_rxparams = 8;
-  }
   /* Create rx0 */
   ORI_Object_s * rx0;
-  if (openair0_cfg->duplex_mode == duplex_mode_FDD) {
+  if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 0) {
     rxParams.RxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 0, NULL);
     rxParams.RxEUtraFDD.axcW = 1;
     rxParams.RxEUtraFDD.axcB = 0;
-    rxParams.RxEUtraFDD.chanBW = 200;
-    rxParams.RxEUtraFDD.earfcn = 21350;
+    rxParams.RxEUtraFDD.chanBW = txParams.TxEUtraFDD.chanBW;
+    rxParams.RxEUtraFDD.earfcn = to_earfcn_UL_aw2s(-1,(long long int)openair0_cfg->rx_freq[0],txParams.TxEUtraFDD.chanBW);
     result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx0, &RE_result);
   }    
-  else {
+  else if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 1) {
+    rxParams.RxNRFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 0, NULL);
+    rxParams.RxNRFDD.axcW = 1;
+    rxParams.RxNRFDD.axcB = 0;
+    rxParams.RxNRFDD.chanBW = txParams.TxNRFDD.chanBW;
+    rxParams.RxNRFDD.AWS_arfcn = to_nrarfcn(openair0_cfg->nr_band,(long long int)openair0_cfg->rx_freq[0],openair0_cfg->nr_scs_for_raster,openair0_cfg->rx_bw);
+    result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx0, &RE_result);
+  }    
+  else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 0) {
     rxParams.RxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 0, NULL);
     rxParams.RxEUtraTDD.axcW = 1;
     rxParams.RxEUtraTDD.axcB = 0;
     rxParams.RxEUtraTDD.chanBW = txParams.TxEUtraTDD.chanBW;
     rxParams.RxEUtraTDD.earfcn = txParams.TxEUtraTDD.earfcn;
-    rxParams.RxEUtraTDD.tddULDLConfig = 1;
-    rxParams.RxEUtraTDD.tddSpecialSFConfig = 1;
-    rxParams.RxEUtraTDD.tddCPLengthUL = ORI_tddCPLength_Normal;
 
     printf("AW2S: Creating RX0 for EARFCN %d\n",rxParams.RxEUtraTDD.earfcn);
+ 
+    result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx0, &RE_result);
+
+  }
+  else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 1) {
+    rxParams.RxNRTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 0, NULL);
+    rxParams.RxNRTDD.axcW = 1;
+    rxParams.RxNRTDD.axcB = 0;
+    rxParams.RxNRTDD.chanBW = txParams.TxNRTDD.chanBW;
+    rxParams.RxNRTDD.AWS_arfcn = txParams.TxNRTDD.AWS_arfcn;
+
+    printf("AW2S: Creating RX0 for NRARFCN %d\n",rxParams.RxNRTDD.AWS_arfcn);
  
     result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx0, &RE_result);
 
@@ -581,27 +741,78 @@ int aw2s_oriinit(openair0_device *device) {
       aw2s_oricleanup(device);
       return -1;
     }
-  printf("ORI_ObjectCreation (rxParams0.RxEUtraFDD/TDD): %s\n", ORI_Result_Print(RE_result));
+  printf("ORI_ObjectCreation (rxParams0.RxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
   
   if (openair0_cfg->rx_num_channels > 1) {  
     /* Create rx1 */
     ORI_Object_s * rx1;
-    memcpy((void*)&rxParams1,(void*)&rxParams,sizeof(rxParams));
-    if (openair0_cfg->duplex_mode == duplex_mode_FDD)  rxParams1.RxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
-    else rxParams1.RxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
+    if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 0)  
+       rxParams.RxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 1)  
+       rxParams.RxNRFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 0)  
+       rxParams.RxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 1)  
+       rxParams.RxNRTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 1, NULL);
 
-    result = ORI_ObjectCreation(ori, rxTypeRef, rxParams1, rxParamList, num_rxparams, rxParamResult, &rx1, &RE_result);
+    result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx1, &RE_result);
   
   
     if(result != ORI_Result_SUCCESS)
       {
-        printf("ORI_ObjectCreation (rxParams1.RxEUtraFDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
         aw2s_oricleanup(device);
         return -1;
       }
-    printf("ORI_ObjectCreation (rxParams1.RxEUtraFDD/TDD): %s\n", ORI_Result_Print(RE_result));
+    printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
   }
 
+  if (openair0_cfg->rx_num_channels > 2) {  
+    /* Create rx2 */
+    ORI_Object_s * rx2;
+    if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 0)  
+       rxParams.RxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 2, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 1)  
+       rxParams.RxNRFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 2, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 0)  
+       rxParams.RxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 2, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 1)  
+       rxParams.RxNRTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 2, NULL);
+
+    result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx2, &RE_result);
+  
+  
+    if(result != ORI_Result_SUCCESS)
+      {
+        printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        aw2s_oricleanup(device);
+        return -1;
+      }
+    printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
+  }
+  if (openair0_cfg->rx_num_channels > 3) {  
+    /* Create rx3 */
+    ORI_Object_s * rx3;
+    if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 0)  
+       rxParams.RxEUtraFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 3, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_FDD && openair0_cfg->nr_flag == 1)  
+       rxParams.RxNRFDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 3, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 0)  
+       rxParams.RxEUtraTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 3, NULL);
+    else if (openair0_cfg->duplex_mode == duplex_mode_TDD && openair0_cfg->nr_flag == 1)  
+       rxParams.RxNRTDD.antPort = ORI_FindObject(ori, ORI_ObjectType_AntennaPort, 3, NULL);
+
+    result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx3, &RE_result);
+  
+  
+    if(result != ORI_Result_SUCCESS)
+      {
+        printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        aw2s_oricleanup(device);
+        return -1;
+      }
+    printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
+  }
   /* Create link */
 
   ORI_ObjectParams_u linkParams;
