@@ -37,7 +37,7 @@
  * UE Context Setup
  */
 int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
-                                     f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req);
+                                     f1ap_ue_context_setup_t *f1ap_ue_context_setup_req);
 
 int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
                                         uint32_t         assoc_id,
@@ -54,9 +54,9 @@ int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t       instance,
  * UE Context Release Request (gNB-DU initiated)
  */
 int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
-                                         uint32_t         assoc_id,
-                                         uint32_t         stream,
-                                         F1AP_F1AP_PDU_t *pdu);
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    F1AP_F1AP_PDU_t *pdu);
 
 /*
  * UE Context Release (gNB-CU initiated)
@@ -65,32 +65,32 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
                                        f1ap_ue_context_release_cmd_t *cmd);
 
 int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
-                                         uint32_t         assoc_id,
-                                         uint32_t         stream,
-                                         F1AP_F1AP_PDU_t *pdu);
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    F1AP_F1AP_PDU_t *pdu);
 
 /*
  * UE Context Modification (gNB-CU initiated)
  */
 int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance);
 int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
-                                               uint32_t         assoc_id,
-                                               uint32_t         stream,
-                                               F1AP_F1AP_PDU_t *pdu);
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    F1AP_F1AP_PDU_t *pdu);
 int CU_handle_UE_CONTEXT_MODIFICATION_FAILURE(instance_t       instance,
-                                              uint32_t         assoc_id,
-                                              uint32_t         stream,
-                                              F1AP_F1AP_PDU_t *pdu);
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    F1AP_F1AP_PDU_t *pdu);
 
 /*
  * UE Context Modification Required (gNB-DU initiated)
  */
 int CU_handle_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t       instance,
-                                               uint32_t         assoc_id,
-                                               uint32_t         stream,
-                                               F1AP_F1AP_PDU_t *pdu);
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    F1AP_F1AP_PDU_t *pdu);
 int CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance,
-                                            F1AP_UEContextModificationConfirm_t UEContextModificationConfirm_t);
+    F1AP_UEContextModificationConfirm_t UEContextModificationConfirm_t);
 
 /*
  * UE Inactivity Notification

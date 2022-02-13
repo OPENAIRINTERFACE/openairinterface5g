@@ -68,64 +68,6 @@ typedef enum {
 } UE_MAC_Tx_ind_type_e;
 
 
-
-// *** UE_UL_Config.request related structures
-
-
-typedef struct{
-	//module_id_t module_idP;
-	//int CC_id;
-	//frame_t frameP;
-	uint8_t eNB_id;
-	//uint16_t rnti;
-	//sub_frame_t subframe_tx;
-	uint32_t SR_payload; //0 or 1
-}UE_MAC_ul_config_SR;
-
-
-
-typedef struct{
-	//module_id_t module_idP;
-	//int CC_id;
-	//frame_t frameP;
-	uint8_t eNB_indexP;
-	//sub_frame_t subframeP;
-
-	uint8_t ra_RACH_MaskIndex;
-	int8_t ra_PREAMBLE_RECEIVED_TARGET_POWER;
-	uint8_t ra_TDD_map_index;
-	uint16_t ra_RNTI;
-	uint8_t *Msg3;
-}UE_MAC_ul_config_rach;
-
-typedef struct {
-	union {
-		UE_MAC_ul_config_rach			ue_rach_config;
-		//UE_MAC_ul_config_ULSCH     		ue_ULSCH_pdu;
-		UE_MAC_ul_config_SR     		ue_SR_config;
-	};
-} UE_MAC_ul_config_request_list;
-
-typedef struct {
-	nfapi_tl_t tl;
-	uint16_t length_list;
-	UE_MAC_ul_config_request_list* ue_ul_config_list;
-} UE_MAC_ul_config_request_body_t;
-
-typedef struct {
-	//nfapi_p7_message_header_t header;
-	uint16_t sfn_sf;
-	UE_MAC_ul_config_request_body_t ue_ul_config_request_body; //nfapi_dl_config_request_body_t
-} UE_MAC_ul_config_request_t;
-
-
-
-
-
-
-
-
-
 // *** UE_Tx.request related structures
 
 typedef struct {

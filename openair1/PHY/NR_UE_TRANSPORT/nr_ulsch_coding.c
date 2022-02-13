@@ -118,7 +118,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL,
     a_segments = a_segments/273 +1;
   }  
 
-  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+  uint32_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
   ulsch = (NR_UE_ULSCH_t *)malloc16(sizeof(NR_UE_ULSCH_t));
 
@@ -258,7 +258,6 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   Ilbrm = 0;
   Tbslbrm = 950984; //max tbs
   Coderate = 0.0;
-  trace_NRpdu(DIRECTION_UPLINK, harq_process->a, harq_process->pusch_pdu.pusch_data.tb_size, 0, WS_C_RNTI, 0, 0, 0,0, 0);
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
 

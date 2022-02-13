@@ -35,14 +35,14 @@
 	<testCase id="030121">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RRU (FDD/Band7)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 	</testCase>
 
 	<testCase id="030122">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RCC (FDD/Band7/20MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band7.tm1.if4p5.lo.100PRB.usrpb210.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band7.tm1.if4p5.lo.100PRB.usrpb210.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 	</testCase>
 

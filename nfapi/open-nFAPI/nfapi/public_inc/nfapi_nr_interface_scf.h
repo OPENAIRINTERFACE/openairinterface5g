@@ -984,6 +984,8 @@ typedef struct {
   /// A value indicating how the BCH payload is generated. This should match the PARAM/CONFIG TLVs. Value: 0: MAC generates the full PBCH payload, see Table 3-41, where bchPayload has 31 bits 1: PHY generates the timing PBCH bits, see Table 3-41, where the bchPayload has 24 bits 2: PHY generates the full PBCH payload
   uint8_t  bchPayloadFlag;
   uint32_t bchPayload;
+  /// A value indicating the channel quality between the gNB and nrUE. Value: 0->255 dBM
+  uint8_t  ssbRsrp;
   nfapi_nr_tx_precoding_and_beamforming_t precoding_and_beamforming;
 } nfapi_nr_dl_tti_ssb_pdu_rel15_t;
 
@@ -1310,7 +1312,7 @@ typedef struct
   uint8_t  comb_offset;//Transmission comb offset 𝑘 ̄ TC [TS38.211, Sec 6.4.1.4.3] Value: 0 → 1 (combSize = 0) Value: 0 → 3 (combSize = 1)
   uint8_t  cyclic_shift;
   uint8_t  frequency_position;
-  uint8_t  frequency_shift;
+  uint16_t frequency_shift;
   uint8_t  frequency_hopping;
   uint8_t  group_or_sequence_hopping;//Group or sequence hopping configuration (RRC parameter groupOrSequenceHopping in SRS-Resource
   uint8_t  resource_type;//Type of SRS resource allocation
@@ -1400,9 +1402,6 @@ typedef struct
 } nfapi_nr_ul_dci_request_t;
 */
 
-  // normally one PDU per coreset per BWP
-#define NFAPI_NR_MAX_UL_DCI_PDUS 4
-
 typedef struct {
   /// only possible value 0: PDCCH PDU
   uint16_t PDUType;
@@ -1416,7 +1415,7 @@ typedef struct {
   uint16_t SFN;
   uint16_t Slot;
   uint8_t  numPdus;
-  nfapi_nr_ul_dci_request_pdus_t ul_dci_pdu_list[NFAPI_NR_MAX_UL_DCI_PDUS];
+  nfapi_nr_ul_dci_request_pdus_t ul_dci_pdu_list[NFAPI_NR_MAX_NB_CORESETS];
 } nfapi_nr_ul_dci_request_t;
 
 //3.4.5 slot_errors
@@ -1476,7 +1475,7 @@ typedef enum {
 //section 3.4.7 rx_data_indication
 
 //table 3-61
-
+#define NFAPI_NR_RX_DATA_IND_MAX_PDU 100
 typedef struct 
 {
   uint32_t handle;
@@ -1497,12 +1496,13 @@ typedef struct
   uint16_t sfn;
   uint16_t slot;
   uint16_t number_of_pdus;
-  nfapi_nr_rx_data_pdu_t *pdu_list; 
+  nfapi_nr_rx_data_pdu_t *pdu_list;
 
 } nfapi_nr_rx_data_indication_t;
 
 //3.4.8 crc_indication
 //table 3-62
+#define NFAPI_NR_CRC_IND_MAX_PDU 100
 typedef struct
 {
   uint32_t handle;
@@ -1642,6 +1642,7 @@ typedef enum {
   NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE = 2,
 } nfapi_nr_uci_pdu_type_e;
 
+#define NFAPI_NR_UCI_IND_MAX_PDU 100
 typedef struct
 {
   uint16_t pdu_type;  // 0 for PDU on PUSCH, 1 for PUCCH format 0 or 1, 2 for PUCCH format 2 to 4
@@ -1678,7 +1679,7 @@ typedef struct
   nfapi_nr_srs_indication_reported_symbol_resource_block_t* rb_list;
 }nfapi_nr_srs_indication_reported_symbol_t;
 
-
+#define NFAPI_NR_SRS_IND_MAX_PDU 100
 typedef struct
 {
   uint32_t handle;

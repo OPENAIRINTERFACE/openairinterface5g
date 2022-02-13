@@ -27,6 +27,8 @@
 #define NFAPI_PNF_PARAM_GENERAL_OUI_LENGTH 3
 #define NFAPI_MAX_NUM_RF_BANDS 16
 
+#define NFAPI_MAX_PACKED_MESSAGE_SIZE 8192
+
 // The following definition control the size of arrays used in the interface.
 // These may be changed if desired. They are used in the encoder to make sure 
 // that the user has not specified a 'count' larger than the max array, and also
@@ -122,12 +124,13 @@ typedef struct {
 
 // Convenience methods to convert between SFN/SLOT formats
 #define NFAPI_SFNSLOT2DEC(_sfn,_slot) ( _sfn*20 + _slot  )  // total count of slots
-#define NFAPI_SFNSLOTDEC2SFNSLOT(_sfnslot_dec) ((((_sfnslot_dec) / 20) << 4) | (((_sfnslot_dec) - (((_sfnslot_dec) / 20) * 10)) & 0x3F))
+#define NFAPI_SFNSLOTDEC2SFNSLOT(_sfnslot_dec) ((((_sfnslot_dec) / 20) << 6) | (((_sfnslot_dec) - (((_sfnslot_dec) / 20) * 20)) & 0x3F))
 
 #define NFAPI_SFNSLOT2SFN(_sfnslot) ((_sfnslot) >> 6)
 #define NFAPI_SFNSLOT2SLOT(_sfnslot) ((_sfnslot) & 0x3F)
 #define NFAPI_SFNSLOTDEC2SFN(_sfnslot_dec) ((_sfnslot_dec) / 20)
 #define NFAPI_SFNSLOTDEC2SLOT(_sfnslot_dec) ((_sfnslot_dec) % 20)
+#define NFAPI_SFNSLOT2HEX(_sfn,_slot) ((_sfn << 6) | (_slot & 0x3F))
 
 #define NFAPI_MAX_SFNSLOTDEC 1024*20 // 20 is for numerology 1
 
@@ -705,7 +708,6 @@ typedef struct {
 #define NFAPI_PHICH_CONFIG_PHICH_RESOURCE_TAG 0x0014
 #define NFAPI_PHICH_CONFIG_PHICH_DURATION_TAG 0x0015
 #define NFAPI_PHICH_CONFIG_PHICH_POWER_OFFSET_TAG 0x0016
-
 
 typedef struct {
 	nfapi_uint16_tlv_t primary_synchronization_signal_epre_eprers;
@@ -2497,7 +2499,7 @@ typedef struct {
 typedef struct {
 	nfapi_p7_message_header_t header;
 	uint32_t t1;
-	int32_t delta_sfn_sf;	
+	int32_t delta_sfn_sf;
 	nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_dl_node_sync_t;
 
@@ -2872,11 +2874,12 @@ typedef struct {
  } nfapi_rx_indication_rel9_t;
 #define NFAPI_RX_INDICATION_REL9_TAG 0x2025
 
+#define NFAPI_RX_IND_DATA_MAX 8192
 typedef struct {
 	nfapi_rx_ue_information rx_ue_information;
 	nfapi_rx_indication_rel8_t rx_indication_rel8;
 	nfapi_rx_indication_rel9_t rx_indication_rel9;
-	uint8_t* data;
+	uint8_t rx_ind_data[NFAPI_RX_IND_DATA_MAX];
 } nfapi_rx_indication_pdu_t;
 
 #define NFAPI_RX_IND_MAX_PDU 100

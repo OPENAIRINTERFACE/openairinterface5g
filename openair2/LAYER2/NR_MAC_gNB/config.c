@@ -518,12 +518,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
       RC.nrmac[Mod_idP]->sib1_tda = sib1_tda;
       for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
-	       cc->ra[n].cfra = false;
-	       cc->ra[n].rnti = 0;
-	       cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
-	       cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
-	       for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
-	          cc->ra[n].preambles.preamble_list[i] = i;
+        cc->ra[n].cfra = false;
+        cc->ra[n].msg3_dcch_dtch = false;
+        cc->ra[n].rnti = 0;
+        cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+        cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
+        for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+          cc->ra[n].preambles.preamble_list[i] = i;
       }
     }
   }
@@ -533,7 +534,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (CellGroup) {
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
-
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
     if(bwpList) {
       AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
@@ -601,8 +601,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
           ra->preambles.preamble_list[i] = i;
       }
+      ra->msg3_dcch_dtch = false;
       LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
+      NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon;
       const int UE_id = find_nr_UE_id(Mod_idP,rnti);
       int target_ss;
       UE_info->CellGroup[UE_id] = CellGroup;
@@ -623,19 +625,30 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       }
       // update coreset/searchspace
       void *bwpd = NULL;
+      NR_BWP_t *genericParameters = NULL;
       target_ss = NR_SearchSpace__searchSpaceType_PR_common;
       if ((sched_ctrl->active_bwp)) {
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
         bwpd = (void*)sched_ctrl->active_bwp->bwp_Dedicated;
+        genericParameters = &sched_ctrl->active_bwp->bwp_Common->genericParameters;
       }
       else if (CellGroup->spCellConfig &&
                  CellGroup->spCellConfig->spCellConfigDedicated &&
                  (CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
         target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+        genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       }
+      else
+        AssertFatal(1==0,"Either initial BWP or active BWP should always be present\n");
       sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
       sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
+      sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
+                                                    sched_ctrl->search_space,
+                                                    sched_ctrl->coreset,
+                                                    scc,
+                                                    genericParameters,
+                                                    NULL);
       sched_ctrl->maxL = 2;
     }
   }

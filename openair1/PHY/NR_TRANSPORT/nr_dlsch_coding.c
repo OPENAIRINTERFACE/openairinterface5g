@@ -108,7 +108,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     a_segments = a_segments/273 +1;
   }
 
-  uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+  uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
   NR_gNB_DLSCH_t *dlsch = malloc16(sizeof(NR_gNB_DLSCH_t));
   AssertFatal(dlsch, "cannot allocate dlsch\n");
   bzero(dlsch,sizeof(NR_gNB_DLSCH_t));
@@ -213,7 +213,7 @@ void ldpc8blocks( void *p) {
   for (int rr=impp->macro_num*8; rr < impp->n_segments && rr < (impp->macro_num+1)*8; rr++ ) {
     if (impp->F>0) {
       // writing into positions d[r][k-2Zc] as in clause 5.3.2 step 2) in 38.212
-      memset(&impp->d[rr][Kr-impp->F-2*(*impp->Zc)], impp->F, NR_NULL);
+      memset(&impp->d[rr][Kr-impp->F-2*(*impp->Zc)], NR_NULL, impp->F);
     }
 
 #ifdef DEBUG_DLSCH_CODING
@@ -266,6 +266,8 @@ void ldpc8blocks( void *p) {
     for (int i =0; i<16; i++)
       printf("output interleaving f[%d]= %d r_offset %u\n", i,impp->output[i+r_offset], r_offset);
 
+    if (r==impp->n_segments-1)
+      write_output("enc_output.m","enc",impp->output,G,1,4);
 
 #endif
     r_offset += E;
@@ -292,8 +294,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
 
-  if ( dlsch->rnti != SI_RNTI )
-    trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, dlsch->rnti, frame, slot,0, 0);
+  if ( rel15->rnti != SI_RNTI)
+    trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
 
   NR_gNB_SCH_STATS_t *stats=NULL;
   int first_free=-1;

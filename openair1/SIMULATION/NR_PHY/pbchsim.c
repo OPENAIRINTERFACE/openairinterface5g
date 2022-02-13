@@ -63,8 +63,7 @@ uint16_t NB_UE_INST = 1;
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
-uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
@@ -91,8 +90,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             PDSCH_t pdsch,
                             NR_UE_DLSCH_t *dlsch0,
                             NR_UE_DLSCH_t *dlsch1,
-                            int *dlsch_errors,
-                            uint8_t dlsch_parallel) {
+                            int *dlsch_errors) {
   return false;
 }
 
@@ -193,6 +191,7 @@ int main(int argc, char **argv)
 
   int frame=0;
   int frame_length_complex_samples;
+  __attribute__((unused))
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
 
@@ -713,7 +712,7 @@ int main(int argc, char **argv)
       }
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, 1, 0, 0);
+	ret = nr_initial_sync(&proc, UE, 1, 0);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }

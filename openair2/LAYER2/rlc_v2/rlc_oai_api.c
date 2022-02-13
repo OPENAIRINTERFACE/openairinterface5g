@@ -394,19 +394,12 @@ rb_found:
   LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d",
         __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
-  memblock = get_free_mem_block(size, __func__);
-  if (memblock == NULL) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
-  memcpy(memblock->data, buf, size);
 
   /* unused fields? */
   ctx.instance = ue->module_id;
   ctx.frame = 0;
   ctx.subframe = 0;
   ctx.eNB_index = 0;
-  ctx.configured = 1;
   ctx.brOption = 0;
 
   /* used fields? */
@@ -425,17 +418,40 @@ rb_found:
     AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
                 "Can't be CU, bad node type %d\n", type);
 
-    if (NODE_IS_DU(type) && is_srb == 1) {
-      MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE);
-      F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
-      F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
-      F1AP_UL_RRC_MESSAGE(msg).rrc_container = (unsigned char *)buf;
-      F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
-      itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0 /*ctxt_pP->module_id*/), msg);
-      return;
+    if (NODE_IS_DU(type)) {
+      if (is_srb == 1) {
+	MessageDef *msg = itti_alloc_new_message_sized(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE, sizeof(*msg) + size);
+	F1AP_UL_RRC_MESSAGE(msg).rrc_container = (uint8_t*)(msg+1);
+	memcpy(F1AP_UL_RRC_MESSAGE(msg).rrc_container, buf, size);
+	F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
+	F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
+	F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
+	itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0 /*ctxt_pP->module_id*/), msg);
+	return;
+      }  else {
+	// Fixme: very dirty workaround of incomplete F1-U implementation
+	instance_t DUuniqInstance=0;
+	MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
+	gtpv1u_enb_tunnel_data_req_t *req=&GTPV1U_ENB_TUNNEL_DATA_REQ(msg);
+	req->buffer=malloc(size);
+	memcpy(req->buffer,buf,size);
+	req->length=size;
+	req->offset=0;
+	req->rnti=ue->rnti;
+	req->rab_id=rb_id+4;
+	LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
+	itti_send_msg_to_task(OCP_GTPV1_U, DUuniqInstance, msg);      
+	return;
+      }
     }
   }
-
+  
+  memblock = get_free_mem_block(size, __func__);
+  if (memblock == NULL) {
+    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
+    exit(1);
+  }
+  memcpy(memblock->data, buf, size);
   if (!get_pdcp_data_ind_func()(&ctx, is_srb, is_mbms, rb_id, size, memblock, NULL, NULL)) {
     LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed (is_srb %d rb_id %d rnti %d)\n",
           __FILE__, __LINE__, __FUNCTION__,
@@ -832,10 +848,10 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
   if (0 /*||
       ctxt_pP->instance != 0 || ctxt_pP->eNB_index != 0 ||
-      ctxt_pP->configured != 1 || ctxt_pP->brOption != 0 */) {
-    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %ld %d %d %d)\n", __FUNCTION__,
+      ctxt_pP->brOption != 0 */) {
+    LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %ld %d %d)\n", __FUNCTION__,
           ctxt_pP->enb_flag , ctxt_pP->module_id, ctxt_pP->instance,
-          ctxt_pP->eNB_index, ctxt_pP->configured, ctxt_pP->brOption);
+          ctxt_pP->eNB_index, ctxt_pP->brOption);
     exit(1);
   }
 
@@ -1040,5 +1056,12 @@ void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
                      confirm_t    confirmP,
                      sdu_size_t   sdu_sizeP,
                      mem_block_t *sdu_pP){
-
+  rlc_data_req (ctxt_pP,
+		srb_flagP,
+		MBMS_flagP,
+		rb_idP,
+		muiP,
+		confirmP,
+		sdu_sizeP,
+		sdu_pP, NULL, NULL);
 }

@@ -48,6 +48,8 @@
 
 
 #include "UTIL/MEM/mem_block.h"
+#include <common/utils/assertions.h>
+
 
 //-----------------------------------------------------------------------------
 void         list_init (list_t* , char *);
@@ -126,10 +128,13 @@ static inline void * dataArray(varArray_t * input) {
   return input+1;
 }
 
-static inline void appendVarArray(varArray_t * input, void* data) {
+static inline void appendVarArray(varArray_t ** inputPtr, void* data) {
+  varArray_t *input=*inputPtr;
   if (input->size>=input->mallocedSize) {
      input->mallocedSize+=input->increment;
-     input=(varArray_t *)realloc(input,sizeof(varArray_t)+input->mallocedSize*input->atomSize);
+     *inputPtr=(varArray_t *)realloc(input,sizeof(varArray_t)+input->mallocedSize*input->atomSize);
+     AssertFatal(*inputPtr, "no memory left");
+     input=*inputPtr;
   }
   memcpy((uint8_t*)(input+1)+input->atomSize*input->size++, data, input->atomSize);
 }

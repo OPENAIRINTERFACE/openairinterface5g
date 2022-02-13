@@ -41,10 +41,12 @@
 #include "common/utils/LOG/log.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-
-
+#include "PHY_INTERFACE/phy_stub_UE.h"
 #include "common/ran_context.h"
 #include <openair2/RRC/LTE/rrc_proto.h>
+
+extern void openair_rrc_top_init_ue( int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
+
 void dl_phy_sync_success(module_id_t module_idP, frame_t frameP, unsigned char eNB_index, uint8_t first_sync) { //init as MR
   LOG_D(MAC, "[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n",
         module_idP, frameP, eNB_index);
@@ -86,6 +88,16 @@ mac_top_init_ue(int eMBMS_active, char *uecap_xer,
     }
   } else {
     UE_mac_inst = NULL;
+  }
+
+  // mutex below are used for multiple UE's L2 FAPI simulation.
+  if (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
+    pthread_mutex_init(&fill_ul_mutex.rx_mutex,NULL);
+    pthread_mutex_init(&fill_ul_mutex.crc_mutex,NULL);
+    pthread_mutex_init(&fill_ul_mutex.sr_mutex,NULL);
+    pthread_mutex_init(&fill_ul_mutex.harq_mutex,NULL);
+    pthread_mutex_init(&fill_ul_mutex.cqi_mutex,NULL);
+    pthread_mutex_init(&fill_ul_mutex.rach_mutex,NULL);
   }
 
   LOG_I(MAC, "[MAIN] calling RRC\n");
