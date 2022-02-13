@@ -553,6 +553,16 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
   }
 }
 
+void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg)
+{
+  const NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  const nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
+  const uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
+  for (int i=0; i<gNB->number_of_nr_dlsch_max; i++)
+    for (int j=0; j<2; j++)
+      free_gNB_dlsch(&msg->dlsch[i][j], grid_size);
+}
+
 void init_nr_transport(PHY_VARS_gNB *gNB) {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   LOG_I(PHY, "Initialise nr transport\n");

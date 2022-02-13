@@ -473,16 +473,13 @@ int main(int argc, char **argv)
 	rel15->dlDmrsSymbPos = 4;
 	rel15->mcsIndex[0] = Imcs;
         rel15->numDmrsCdmGrpsNoData = 1;
-	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
-	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
-	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
+	double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
+	short channel_output_fixed[16 * 68 * 384];
 	//unsigned char *estimated_output;
-	unsigned char *estimated_output_bit;
-	unsigned char *test_input_bit;
 	unsigned int errors_bit = 0;
-	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	unsigned char test_input_bit[16 * 68 * 384];
 	//estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	unsigned char estimated_output_bit[16 * 68 * 384];
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
@@ -496,9 +493,10 @@ int main(int argc, char **argv)
 	harq_process->dlDmrsSymbPos = 4;
 	harq_process->n_dmrs_cdm_groups = 1;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
+
 	unsigned char *test_input;
 	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
-
+	//unsigned char test_input[TBS / 8]  __attribute__ ((aligned(16)));
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
 
@@ -555,12 +553,6 @@ int main(int argc, char **argv)
 						   i,modulated_input[i],
 						   i,channel_output_fixed[i]);
 */
-
-				//Uncoded BER
-				if (channel_output_fixed[i] < 0)
-					channel_output_uncoded[i] = 1;  //QPSK demod
-				else
-					channel_output_uncoded[i] = 0;
 			}
 
 #ifdef DEBUG_CODER
@@ -642,12 +634,11 @@ int main(int argc, char **argv)
 	 }
 	 }*/
 
-	for (i = 0; i < 2; i++) {
-		printf("gNB %d\n", i);
-		free_gNB_dlsch(&(msgDataTx.dlsch[0][i]),N_RB_DL);
-		printf("UE %d\n", i);
-		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]),N_RB_DL);
-	}
+  free(test_input);
+
+  free_channel_desc_scm(gNB2UE);
+
+  reset_DLSCH_struct(gNB, &msgDataTx);
 
 	for (i = 0; i < 2; i++) {
 		free(s_re[i]);

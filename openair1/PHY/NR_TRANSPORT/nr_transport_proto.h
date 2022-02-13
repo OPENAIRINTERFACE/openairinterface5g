@@ -106,6 +106,8 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
                               uint8_t abstraction_flag,
                               uint16_t N_RB);
 
+void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB);
+
 /** \brief This function is the top-level entry point to PUSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
     - channel compensation (matched filtering)
