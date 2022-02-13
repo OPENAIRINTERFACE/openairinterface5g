@@ -3076,7 +3076,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
 
   NR_CellGroupConfig_t *cellGroupConfig;
   cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-  fill_mastercellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup);
+  fill_mastercellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup,rrc->um_on_default_drb);
 
   /* Configure SRB2 */
   NR_SRB_ToAddMod_t            *SRB2_config          = NULL;
@@ -3423,20 +3423,20 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti = ue_context_p->ue_id_rnti;
 
-     if (fd) {
-        if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
-          fprintf(fd,"NR RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
+    if (fd) {
+      if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
+        fprintf(fd,"NR RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
                 ue_context_p->ue_id_rnti,
                 ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi,
                 ue_context_p->ue_context.ul_failure_timer);
-        } else {
-          fprintf(fd,"NR RRC UE rnti %x failure timer %d/8\n",
+      } else {
+        fprintf(fd,"NR RRC UE rnti %x failure timer %d/8\n",
                 ue_context_p->ue_id_rnti,
                 ue_context_p->ue_context.ul_failure_timer);
-        }
+      }
 
-        if (ue_context_p->ue_context.UE_Capability_nr) {
-          fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, 256 QAM DL %s, 256 QAM UL %s, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
+      if (ue_context_p->ue_context.UE_Capability_nr) {
+        fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, 256 QAM DL %s, 256 QAM UL %s, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
                 get_dl_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 is_dl_256QAM_supported(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr) == 1 ? "yes" : "no",
@@ -3444,7 +3444,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
                 get_dl_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_mimo_layersCB(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
                 get_ul_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr));
-        }
+      }
     }
     if (ue_context_p->ue_context.ul_failure_timer > 0) {
       ue_context_p->ue_context.ul_failure_timer++;
@@ -3504,6 +3504,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   }
 
   if (fd) fclose(fd);
+
 
   /* send a tick to x2ap */
   if (is_x2ap_enabled()){

@@ -325,7 +325,8 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   } else {
     ssb_SubcarrierOffset_limit = 12;
   }
-
+  if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
+    AssertFatal(sco==(scs_scaling * (ssb_SubcarrierOffset>>(cfg->ssb_config.scs_common.value))),"absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
@@ -361,8 +362,9 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->ssb_table.ssb_mask_list[1].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
   cfg->num_tlv+=2;
 
+  // logical antenna ports
   cfg->carrier_config.num_tx_ant.value = pdsch_AntennaPorts;
-  AssertFatal(pdsch_AntennaPorts > 0 && pdsch_AntennaPorts < 13, "pdsch_AntennaPorts in 1...12\n");
+  AssertFatal(pdsch_AntennaPorts > 0 && pdsch_AntennaPorts < 33, "pdsch_AntennaPorts in 1...32\n");
   cfg->carrier_config.num_tx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_TX_ANT_TAG;
 
   int num_ssb=0;
@@ -650,6 +652,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                                                     genericParameters,
                                                     NULL);
       sched_ctrl->maxL = 2;
+      if (CellGroup->spCellConfig &&
+          CellGroup->spCellConfig->spCellConfigDedicated &&
+          CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
+          CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup
+        )
+      compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, Mod_idP);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

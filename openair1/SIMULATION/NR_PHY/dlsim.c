@@ -271,17 +271,13 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  ps->nrOfLayers = g_nrOfLayers;
-
-  int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats ?
-      NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-
   nr_set_pdsch_semi_static(scc,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
-                           /* tda = */ 2,
-                           dci_format,
+                           /* tda = */ 0,
+                           g_nrOfLayers,
+                           sched_ctrl,
                            ps);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
@@ -1216,7 +1212,7 @@ int main(int argc, char **argv)
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
-        
+
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,

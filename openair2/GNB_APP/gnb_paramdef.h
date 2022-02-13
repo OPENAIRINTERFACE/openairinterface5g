@@ -151,7 +151,7 @@ typedef enum {
 {GNB_CONFIG_STRING_DOSRS,                        NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,    0},  \
 {GNB_CONFIG_STRING_MINRXTXTIME,                  NULL,   0,            iptr:NULL,   defintval:2,                 TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                TYPE_STRING,    0}   \
+{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                TYPE_STRING,    0},   \
 {GNB_CONFIG_STRING_UMONDEFAULTDRB,               NULL,   0,            uptr:NULL,   defuintval:0,                 TYPE_UINT,   0}   \
 }
 

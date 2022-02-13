@@ -114,7 +114,7 @@ void fill_initial_cellGroupConfig(rnti_t rnti,
 
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup,int use_rlc_um_for_drb);
 
-uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
+int     do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     uint8_t                      *const buffer,
                     const uint8_t                transaction_id,
                     OCTET_STRING_t               *masterCellGroup_from_DU,
