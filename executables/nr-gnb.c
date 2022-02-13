@@ -129,7 +129,6 @@ void rx_func(void *param) {
   int slot_rx = info->slot_rx;
   int frame_tx = info->frame_tx;
   int slot_tx = info->slot_tx;
-  sl_ahead = sf_ahead*gNB->frame_parms.slots_per_subframe;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
 
   start_meas(&softmodem_stats_rxtx_sf);

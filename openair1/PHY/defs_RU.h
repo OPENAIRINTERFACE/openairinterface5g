@@ -506,6 +506,8 @@ typedef struct RU_t_s {
   int att_tx;
   /// flag to indicate precoding operation in RU
   int do_precoding;
+  /// TX processing advance in subframes
+  int sf_ahead;
   /// FAPI confiuration
   nfapi_nr_config_request_scf_t  config;
   /// Frame parameters

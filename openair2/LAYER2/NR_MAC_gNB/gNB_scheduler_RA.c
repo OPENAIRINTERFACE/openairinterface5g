@@ -400,7 +400,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t monitoring_slot_period,
                       uint16_t monitoring_offset,uint8_t beam_index,
                       uint8_t num_active_ssb,
-                      int16_t *tdd_beam_association){
+                      int16_t *tdd_beam_association, int sl_ahead){
 
   // preferentially we schedule the msg2 in the mixed slot or in the last dl slot
   // if they are allowed by search space configuration
@@ -628,7 +628,8 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                        monitoring_offset,
                        beam_index,
                        cc->num_active_ssb,
-                       nr_mac->tdd_beam_association);
+                       nr_mac->tdd_beam_association,
+		       nr_mac->if_inst->sl_ahead);
 
       ra->Msg2_frame = msg2_frame;
       ra->Msg2_slot = msg2_slot;

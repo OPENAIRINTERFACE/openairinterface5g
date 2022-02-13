@@ -109,7 +109,6 @@ const char ru_states[6][9] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERRO
 extern const char NB_functions[7][20];
 extern const char NB_timing[2][20];
 
-extern uint16_t sf_ahead;
 
 extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 
@@ -254,8 +253,8 @@ void fh_if4p5_south_in(RU_t *ru,
 
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
   if (get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
-    proc->tti_tx   = (sf+sf_ahead)%10;
-    proc->frame_tx = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
+    proc->tti_tx   = (sf+ru->sf_ahead)%10;
+    proc->frame_tx = (sf>(9-ru->sf_ahead)) ? (f+1)&1023 : f;
   }
 
   LOG_D(PHY,"Setting proc for (%d,%d)\n",sf,f);
@@ -654,13 +653,13 @@ void rx_rf(RU_t *ru,
 
   if (get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->fh_north_asynch_in == NULL) {
 #ifdef PHY_TX_THREAD
-    proc->timestamp_phy_tx = proc->timestamp_rx+((sf_ahead-1)*fp->samples_per_tti);
-    proc->subframe_phy_tx  = (proc->tti_rx+(sf_ahead-1))%10;
-    proc->frame_phy_tx     = (proc->tti_rx>(9-(sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+    proc->timestamp_phy_tx = proc->timestamp_rx+((ru->sf_ahead-1)*fp->samples_per_tti);
+    proc->subframe_phy_tx  = (proc->tti_rx+(ru->sf_ahead-1))%10;
+    proc->frame_phy_tx     = (proc->tti_rx>(9-(ru->sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #else
-    proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-    proc->tti_tx       = (proc->tti_rx+sf_ahead)%10;
-    proc->frame_tx     = (proc->tti_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+    proc->timestamp_tx = proc->timestamp_rx+(ru->sf_ahead*fp->samples_per_tti);
+    proc->tti_tx       = (proc->tti_rx+ru->sf_ahead)%10;
+    proc->frame_tx     = (proc->tti_rx>(9-ru->sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #endif
     //proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
     //proc->subframe_tx  = (proc->tti_rx+sf_ahead)%10;
@@ -3072,6 +3071,7 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
       ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
+      ru[j]->sf_ahead                          = *(RUParamList.paramarray[j][RU_SF_AHEAD_IDX].uptr);
       *ru_mask= (*ru_mask)|(1<<j);
     }// j=0..num_rus
   } 

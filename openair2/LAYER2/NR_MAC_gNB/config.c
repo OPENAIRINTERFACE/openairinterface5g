@@ -423,7 +423,6 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
 
 }
 
-extern uint16_t sl_ahead;
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
                            int pdsch_AntennaPorts,
@@ -453,7 +452,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
        * variable sl_ahead seems to not be correctly initialized, but I leave
        * it for information purposes here (the fix would always put 0, what
        * happens now, too) */
-      req->SFN = i < sl_ahead;
+      req->SFN = i < RC.nrmac[Mod_idP]->if_inst->sl_ahead;
       req->Slot = i;
     }
 

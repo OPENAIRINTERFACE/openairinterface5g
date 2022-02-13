@@ -764,7 +764,7 @@ int main( int argc, char **argv ) {
   printf("wait_gNBs()\n");
   wait_gNBs();
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
-
+  int sl_ahead=6;
   if (RC.nb_RU >0) {
     printf("Initializing RU threads\n");
     init_NR_RU(get_softmodem_params()->rf_config_file);
@@ -772,7 +772,10 @@ int main( int argc, char **argv ) {
     for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
       RC.ru[ru_id]->rf_map.chain=CC_id+chain_offset;
+      if (ru_id==0) sl_ahead = RC.ru[ru_id]->sf_ahead * RC.gNB[0]->frame_parms.slots_per_subframe;	
+      else AssertFatal(RC.ru[ru_id]->sf_ahead != RC.ru[0]->sf_ahead,"RU %d has different sf_ahead %d than RU 0 %d\n",RC.ru[ru_id]->sf_ahead,RC.ru[0]->sf_ahead);
     }
+    
   }
 
   config_sync_var=0;
@@ -789,6 +792,7 @@ int main( int argc, char **argv ) {
     // once all RUs are ready initialize the rest of the gNBs ((dependence on final RU parameters after configuration)
     printf("ALL RUs ready - init gNBs\n");
 
+    for (int idx=0;idx<RC.nb_nr_L1_inst;idx++) RC.gNB[idx]->if_inst->sl_ahead = sl_ahead;
     if(IS_SOFTMODEM_DOSCOPE) {
       sleep(1);
       scopeParms_t p;
