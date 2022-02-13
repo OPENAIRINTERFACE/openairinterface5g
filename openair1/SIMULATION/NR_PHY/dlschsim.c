@@ -29,6 +29,7 @@
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/load_module_shlib.h"
 #include "T.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
@@ -670,6 +671,8 @@ int main(int argc, char **argv)
 
 	if (ouput_vcd)
         vcd_signal_dumper_close();
+
+  loader_reset();
 
 	return (n_errors);
 }
