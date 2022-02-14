@@ -236,6 +236,11 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           nfapi_nr_config_request_scf_t cfg);
 */
 
+int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
+                          NR_BWP_Uplink_t *bwp,
+                          NR_BWP_UplinkDedicated_t *bwpd,
+                          int CCEIndex);
+
 void nr_configure_pucch(module_id_t module_id,
                         nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,

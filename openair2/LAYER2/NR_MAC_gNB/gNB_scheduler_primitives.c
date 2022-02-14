@@ -930,6 +930,20 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
   pdcch_pdu->precoderGranularity = coreset->precoderGranularity;
 }
 
+int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
+                          NR_BWP_Uplink_t *bwp,
+                          NR_BWP_UplinkDedicated_t *bwpd,
+                          int CCEIndex) {
+  int r_pucch = -1;
+  if(bwp == NULL && bwpd == NULL) {
+    int n_rb,rb_offset;
+    get_coreset_rballoc(coreset->frequencyDomainResources.buf,&n_rb,&rb_offset);
+    const uint16_t N_cce = n_rb * coreset->duration / NR_NB_REG_PER_CCE;
+    const int delta_PRI=0;
+    r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);
+  }
+  return r_pucch;
+}
 
 // This function configures pucch pdu fapi structure
 void nr_configure_pucch(module_id_t module_id,
@@ -1026,7 +1040,7 @@ void nr_configure_pucch(module_id_t module_id,
   pucch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
   pucch_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
   pucch_pdu->cyclic_prefix = (genericParameters->cyclicPrefix==NULL) ? 0 : *genericParameters->cyclicPrefix;
-  if (bwp || bwpd) {
+  if (r_pucch<0 || bwp ){
       LOG_D(NR_MAC,"pucch_acknak: Filling dedicated configuration for PUCCH\n");
    // we have either a dedicated BWP or Dedicated PUCCH configuration on InitialBWP
       AssertFatal(bwp!=NULL || bwpd!=NULL,"We need one dedicated configuration for a BWP (neither additional or initial BWP has a dedicated configuration)\n");

@@ -1535,13 +1535,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       return;
     }
 
-    int n_rb,rb_offset;
-    get_coreset_rballoc(coreset->frequencyDomainResources.buf,&n_rb,&rb_offset);
-    const uint16_t N_cce = n_rb * coreset->duration / NR_NB_REG_PER_CCE;
     const int delta_PRI=0;
-    int r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);
+    int r_pucch = nr_get_pucch_resource(coreset, sched_ctrl->active_ubwp, NULL, CCEIndex);
 
-    LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, N_cce %d, nb_of_candidates %d,delta_PRI %d)\n",r_pucch,CCEIndex,N_cce,nr_of_candidates,delta_PRI);
+    LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, nb_of_candidates %d, delta_PRI %d)\n", r_pucch, CCEIndex, nr_of_candidates, delta_PRI);
+
     int alloc = nr_acknack_scheduling(module_idP, UE_id, frameP, slotP, r_pucch, 1);
     AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];

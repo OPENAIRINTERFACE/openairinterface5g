@@ -557,6 +557,13 @@ bool allocate_dl_retransmission(module_id_t module_id,
       cg->spCellConfig->spCellConfigDedicated ?
       cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
 
+  NR_BWP_UplinkDedicated_t *ubwpd =
+      cg &&
+      cg->spCellConfig &&
+      cg->spCellConfig->spCellConfigDedicated &&
+      cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+
   NR_BWP_t *genericParameters = NULL;
   if(sched_ctrl->active_bwp) {
     genericParameters = &sched_ctrl->active_bwp->bwp_Common->genericParameters;
@@ -662,12 +669,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
-  int n_rb,rb_offset;
-  get_coreset_rballoc(sched_ctrl->coreset->frequencyDomainResources.buf,&n_rb,&rb_offset);
-  const uint16_t N_cce = n_rb * sched_ctrl->coreset->duration / NR_NB_REG_PER_CCE;
-  const int delta_PRI=0;
-  int r_pucch = ((sched_ctrl->cce_index<<1)/N_cce)+(delta_PRI<<1);
-
+  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, ubwpd, CCEIndex);
   const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, r_pucch, 0);
   if (alloc<0) {
     LOG_D(MAC,
@@ -792,6 +794,13 @@ void pf_dl(module_id_t module_id,
         cg->spCellConfig->spCellConfigDedicated ?
         cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
 
+    NR_BWP_UplinkDedicated_t *ubwpd =
+        cg &&
+        cg->spCellConfig &&
+        cg->spCellConfig->spCellConfigDedicated &&
+        cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+        cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     const uint16_t rnti = UE_info->rnti[UE_id];
 
@@ -845,12 +854,7 @@ void pf_dl(module_id_t module_id,
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
-    int n_rb,rb_offset;
-    get_coreset_rballoc(sched_ctrl->coreset->frequencyDomainResources.buf,&n_rb,&rb_offset);
-    const uint16_t N_cce = n_rb * sched_ctrl->coreset->duration / NR_NB_REG_PER_CCE;
-    const int delta_PRI=0;
-    int r_pucch = ((sched_ctrl->cce_index<<1)/N_cce)+(delta_PRI<<1);
-
+    int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, ubwpd, CCEIndex);
     const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, r_pucch, 0);
     if (alloc<0) {
       LOG_D(NR_MAC,
