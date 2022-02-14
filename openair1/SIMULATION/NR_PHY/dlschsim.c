@@ -666,6 +666,7 @@ int main(int argc, char **argv)
         vcd_signal_dumper_close();
 
   loader_reset();
+  logTerm();
 
 	return (n_errors);
 }
