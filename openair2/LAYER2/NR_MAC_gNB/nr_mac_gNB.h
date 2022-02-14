@@ -379,6 +379,12 @@ typedef struct NR_sched_pusch {
   int time_domain_allocation;
 } NR_sched_pusch_t;
 
+typedef struct NR_sched_srs {
+  int frame;
+  int slot;
+  bool srs_scheduled;
+} NR_sched_srs_t;
+
 /* PDSCH semi-static configuratio: as long as the TDA/DMRS/mcsTable remains the
  * same, there is no need to recalculate all S/L or DMRS-related parameters
  * over and over again.  Hence, we store them in this struct for easy
@@ -566,8 +572,11 @@ typedef struct {
 
   /// PUSCH semi-static configuration: is not cleared across TTIs
   NR_pusch_semi_static_t pusch_semi_static;
-  /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
+  /// Sched PUSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pusch_t sched_pusch;
+
+  /// Sched SRS: scheduling decisions
+  NR_sched_srs_t sched_srs;
 
   /// uplink bytes that are currently scheduled
   int sched_ul_bytes;

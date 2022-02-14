@@ -57,10 +57,16 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int dl_antenna_ports,
                                      int minRXTXTIME,
                                      int do_csirs,
+                                     int do_srs,
                                      int initial_csi_index,
                                      int uid) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
+
+  // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
+  // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
+  // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
+  AssertFatal(uid>=0 && uid<30, "gNB cannot allocate the SRS resources\n");
 
   uint64_t bitmap=0;
   switch (servingcellconfigcommon->ssb_PositionsInBurst->present) {
@@ -797,13 +803,21 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  *srs_resset0_id=0;
  ASN_SEQUENCE_ADD(&srs_resset0->srs_ResourceIdList->list,srs_resset0_id);
  srs_Config->srs_ResourceToReleaseList=NULL;
- srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_aperiodic;
- srs_resset0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic));
- srs_resset0->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger=1;
- srs_resset0->resourceType.choice.aperiodic->csi_RS=NULL;
- srs_resset0->resourceType.choice.aperiodic->slotOffset= calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic->slotOffset));
- *srs_resset0->resourceType.choice.aperiodic->slotOffset=2;
- srs_resset0->resourceType.choice.aperiodic->ext1=NULL;
+
+  if(do_srs) {
+    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_periodic;
+    srs_resset0->resourceType.choice.periodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.periodic));
+    srs_resset0->resourceType.choice.periodic->associatedCSI_RS = NULL;
+  } else {
+    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_aperiodic;
+    srs_resset0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic));
+    srs_resset0->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger=1;
+    srs_resset0->resourceType.choice.aperiodic->csi_RS=NULL;
+    srs_resset0->resourceType.choice.aperiodic->slotOffset= calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic->slotOffset));
+    *srs_resset0->resourceType.choice.aperiodic->slotOffset=2;
+    srs_resset0->resourceType.choice.aperiodic->ext1=NULL;
+  }
+
  srs_resset0->usage=NR_SRS_ResourceSet__usage_codebook;
  srs_resset0->alpha = calloc(1,sizeof(*srs_resset0->alpha));
  *srs_resset0->alpha = NR_Alpha_alpha1;
@@ -822,17 +836,28 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  srs_res0->transmissionComb.choice.n2=calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));
  srs_res0->transmissionComb.choice.n2->combOffset_n2=0;
  srs_res0->transmissionComb.choice.n2->cyclicShift_n2=0;
- srs_res0->resourceMapping.startPosition=2;
+ srs_res0->resourceMapping.startPosition = 2 + uid%2;
  srs_res0->resourceMapping.nrofSymbols=NR_SRS_Resource__resourceMapping__nrofSymbols_n1;
  srs_res0->resourceMapping.repetitionFactor=NR_SRS_Resource__resourceMapping__repetitionFactor_n1;
  srs_res0->freqDomainPosition=0;
  srs_res0->freqDomainShift=0;
- srs_res0->freqHopping.c_SRS = 0;
  srs_res0->freqHopping.b_SRS=0;
  srs_res0->freqHopping.b_hop=0;
+ srs_res0->freqHopping.c_SRS = rrc_get_max_nr_csrs(
+     NRRIV2BW(servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 275),
+     srs_res0->freqHopping.b_SRS);
  srs_res0->groupOrSequenceHopping=NR_SRS_Resource__groupOrSequenceHopping_neither;
- srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_aperiodic;
- srs_res0->resourceType.choice.aperiodic=calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
+
+  if(do_srs) {
+    srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_periodic;
+    srs_res0->resourceType.choice.periodic=calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
+    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
+    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl160 = 17 + (uid>1)*10; // 17/17/.../147/157 are mixed slots
+  } else {
+    srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_aperiodic;
+    srs_res0->resourceType.choice.aperiodic=calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
+  }
+
  srs_res0->sequenceId=40;
  srs_res0->spatialRelationInfo=calloc(1,sizeof(*srs_res0->spatialRelationInfo));
  srs_res0->spatialRelationInfo->servingCellId=NULL;
@@ -1351,6 +1376,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            int dl_antenna_ports,
                            int minRXTXTIME,
                            int do_csirs,
+                           int do_srs,
                            int initial_csi_index,
                            int uid) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
@@ -1367,6 +1393,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                                   dl_antenna_ports,
                                   minRXTXTIME,
                                   do_csirs,
+                                  do_srs,
                                   initial_csi_index,
                                   uid);
 

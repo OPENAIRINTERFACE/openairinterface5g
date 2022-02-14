@@ -281,7 +281,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
-                           /* tda = */ 0,
+                           /* tda = */ 2,
                            dci_format,
                            ps);
 
@@ -778,7 +778,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 6, 0, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 6, 0, 0, 0, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);
