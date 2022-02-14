@@ -269,20 +269,20 @@ typedef struct {
      scheduled SFN/Slot transmission for the ACK/NAK. If we
      do not save it, then we have to calculate it again as the
      NRUE MAC layer already does in get_downlink_ack(). */
-  int active_harq_sfn;
-  int active_harq_slot;
-  int crc_rx_ind_sfn_slot;
+  int active_dl_harq_sfn;
+  int active_dl_harq_slot;
+  int active_ul_harq_sfn_slot;
   bool active;
 } emul_l1_harq_t;
 
 typedef struct {
   bool expected_sib;
-  bool index_has_sib[16];
+  bool index_has_sib[NR_MAX_HARQ_PROCESSES];
   bool expected_rar;
-  bool index_has_rar[16];
+  bool index_has_rar[NR_MAX_HARQ_PROCESSES];
   bool expected_dci;
-  bool index_has_dci[16];
-  emul_l1_harq_t harq[16];
+  bool index_has_dci[NR_MAX_HARQ_PROCESSES];
+  emul_l1_harq_t harq[NR_MAX_HARQ_PROCESSES];
   int active_uci_sfn_slot;
   int num_srs;
   int num_harqs;

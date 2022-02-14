@@ -201,11 +201,11 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
   nfapi_nr_dl_tti_request_t *dl_tti_request = get_queue(&nr_dl_tti_req_queue);
   nfapi_nr_ul_dci_request_t *ul_dci_request = get_queue(&nr_ul_dci_req_queue);
 
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++) {
     LOG_D(NR_MAC, "Try to get a ul_tti_req by matching CRC active SFN %d/SLOT %d from queue with %lu items\n",
-            NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.harq[i].crc_rx_ind_sfn_slot),
-            NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.harq[i].crc_rx_ind_sfn_slot), nr_ul_tti_req_queue.num_items);
-    nfapi_nr_ul_tti_request_t *ul_tti_request_crc = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.harq[i].crc_rx_ind_sfn_slot);
+            NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.harq[i].active_ul_harq_sfn_slot),
+            NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.harq[i].active_ul_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
+    nfapi_nr_ul_tti_request_t *ul_tti_request_crc = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.harq[i].active_ul_harq_sfn_slot);
     if (ul_tti_request_crc && ul_tti_request_crc->n_pdus > 0)
     {
       check_and_process_dci(NULL, NULL, NULL, ul_tti_request_crc);

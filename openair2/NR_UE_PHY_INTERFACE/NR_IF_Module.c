@@ -465,7 +465,7 @@ static void fill_rx_ind(nfapi_nr_pdu_t *pdu_list, fapi_nr_rx_indication_t *rx_in
     {
         length += pdu_list->TLVs[j].length;
     }
-    LOG_I(NR_PHY, "Elkadi %s: num_tlv %d and length %d, pdu index %d\n",
+    LOG_I(NR_PHY, "%s: num_tlv %d and length %d, pdu index %d\n",
         __FUNCTION__, pdu_list->num_TLV, length, pdu_idx);
     uint8_t *pdu = malloc(length);
     AssertFatal(pdu != NULL, "%s: Out of memory in malloc", __FUNCTION__);
@@ -618,7 +618,6 @@ static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
 static bool send_crc_ind_and_rx_ind(int sfn_slot)
 {
   bool sent_crc_rx = true;
-  LOG_I(NR_MAC, "Melissa, This is the num items in crc %d and rx %d\n", nr_crc_ind_queue.num_items, nr_rx_ind_queue.num_items);
 
   nfapi_nr_rx_data_indication_t *rx_ind = unqueue_matching(&nr_rx_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
   nfapi_nr_crc_indication_t *crc_ind = unqueue_matching(&nr_crc_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
@@ -709,10 +708,8 @@ static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_
             dl_ind->dci_ind->dci_list[k].dci_format = rel15_dci->dci_format_options[j];
             LOG_I(NR_PHY, "format assigned dl_ind->dci_ind->dci_list[k].dci_format %d\n",
                   dl_ind->dci_ind->dci_list[k].dci_format);
-            int CCEind = rel15_dci->CCE[j];
-            int L = rel15_dci->L[j];
-            dl_ind->dci_ind->dci_list[k].n_CCE = CCEind;
-            dl_ind->dci_ind->dci_list[k].N_CCE = L;
+            dl_ind->dci_ind->dci_list[k].n_CCE = rel15_dci->CCE[j];
+            dl_ind->dci_ind->dci_list[k].N_CCE = rel15_dci->L[j];
         }
       }
     }
@@ -796,10 +793,8 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                           mac->scc->tdd_UL_DL_ConfigurationCommon :
                           mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
                           ul_info.slot_tx,
-                          mac->frame_type)) {
-            LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() from %s\n", ul_info.slot_tx, __FUNCTION__);
+                          mac->frame_type))
             nr_ue_ul_indication(&ul_info);
-        }
     }
 }
 
@@ -918,16 +913,10 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                 LOG_E(NR_PHY, "Message ul_tti_request failed to unpack\n");
                 break;
             }
-            LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST message in SFN/slot %d %d.\n",
-                  ul_tti_request->SFN, ul_tti_request->Slot);
-            for (int i = 0; i < ul_tti_request->n_pdus; i++) {
-                LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST pdu_type %d, ra_state %d.\n",
-                      ul_tti_request->pdus_list[i].pdu_type, mac->ra.ra_state);
-                if (ul_tti_request->pdus_list[i].pdu_type == 1 &&
-                    mac->ra.ra_state >= RA_SUCCEEDED) {
 
-                    LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST that were queueing with rnti %x!\n",
-                            ul_tti_request->pdus_list[i].pucch_pdu.rnti);
+            for (int i = 0; i < ul_tti_request->n_pdus; i++) {
+                if (ul_tti_request->pdus_list[i].pdu_type == NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE &&
+                    mac->ra.ra_state >= RA_SUCCEEDED) {
                     if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
                     {
                         LOG_I(NR_PHY, "put_queue failed for ul_tti_request, calling put_queue_replace.\n");
@@ -937,8 +926,6 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                     break;
                 }
                 else if (mac->ra.ra_state < RA_SUCCEEDED) {
-                    LOG_I(NR_PHY, "Received an NFAPI_NR_PHY_MSG_TYPE_UL_TTI_REQUEST before RA_SUCEEDED that were queueing with rnti %x!\n",
-                            ul_tti_request->pdus_list[i].pucch_pdu.rnti);
                     if (!put_queue(&nr_ul_tti_req_queue, ul_tti_request))
                     {
                         LOG_I(NR_PHY, "put_queue failed for ul_tti_request, calling put_queue_replace.\n");
@@ -1098,8 +1085,8 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 // L2 Abstraction Layer
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
 int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
-
-  dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
+  if (get_softmodem_params()->emulate_l1)
+    dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
 
   update_harq_status(dl_info->module_id,
                      dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid,
@@ -1147,8 +1134,6 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
-    LOG_I(NR_MAC, "In %s():%d calling nr_ue_pucch_scheduler in %d.%d\n",
-        __FUNCTION__, __LINE__, ul_info->frame_tx, ul_info->slot_tx);
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) &&
       !get_softmodem_params()->emulate_l1)
     nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
@@ -1184,12 +1169,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
     if (dl_info && dl_info->dci_ind && dl_info->dci_ind->number_of_dcis) {
       LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
       for (int i = 0; i < dl_info->dci_ind->number_of_dcis; i++) {
+        LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
         fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
-        LOG_I(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d, format %d, harq_pid %d\n",
-              i,
-              dl_info->dci_ind->number_of_dcis,
-              dci_index->dci_format,
-              mac->def_dci_pdu_rel15[dci_index->dci_format].harq_pid);
         nr_scheduled_response_t scheduled_response;
         int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
@@ -1200,7 +1181,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
         /* The check below filters out UL_DCIs (format 7) which are being processed as DL_DCIs. */
         if (dci_index->dci_format == 7 && mac->ra.ra_state == RA_SUCCEEDED) {
-          LOG_I(NR_MAC, "We are filtering a UL_DCI to prevent it from being treated like a DL_DCI\n");
+          LOG_D(NR_MAC, "We are filtering a UL_DCI to prevent it from being treated like a DL_DCI\n");
           break;
         }
         dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
@@ -1214,7 +1195,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
-        //memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
+        if (!get_softmodem_params()->emulate_l1)
+          memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
       }
       free(dl_info->dci_ind);
       dl_info->dci_ind = NULL;
