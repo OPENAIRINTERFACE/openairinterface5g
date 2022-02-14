@@ -181,7 +181,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
             uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
             for (int j = 0; j < uci_ind->num_ucis; j++)
             {
-              LOG_I(NR_MAC, "ul_config->ul_config_list[%d].pucch_config_pdu.n_bit = %d", i, ul_config->ul_config_list[i].pucch_config_pdu.n_bit);
+              LOG_I(NR_MAC, "ul_config->ul_config_list[%d].pucch_config_pdu.n_bit = %d\n", i, ul_config->ul_config_list[i].pucch_config_pdu.n_bit);
               if (ul_config->ul_config_list[i].pucch_config_pdu.n_bit > 3 && mac->nr_ue_emul_l1.num_csi_reports > 0)
               {
                 uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE;
