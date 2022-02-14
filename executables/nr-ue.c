@@ -375,8 +375,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
     ul_info.ue_sched_mode = SCHED_ALL;
-    LOG_I(NR_MAC, "frame_rx %d, slot rx %d, frame tx %d, slot tx %d, slot_ahead %d\n",
-                 ul_info.frame_rx, ul_info.slot_rx, ul_info.frame_tx, ul_info.slot_tx, slot_ahead);
 
     if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
@@ -405,7 +403,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
                       mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
                       ul_info.slot_tx, mac->frame_type))
     {
-      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() and nr_ue_pucch_scheduler from %s\n", ul_info.slot_tx, __FUNCTION__);
+      LOG_I(NR_MAC, "Slot %d. calling nr_ue_ul_ind() and nr_ue_pucch_scheduler() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_ul_indication(&ul_info);
       nr_ue_pucch_scheduler(0, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
       check_nr_prach(mac, &ul_info, &prach_resources);

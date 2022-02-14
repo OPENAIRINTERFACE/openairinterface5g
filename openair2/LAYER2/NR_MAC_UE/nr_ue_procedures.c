@@ -631,7 +631,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   else if (mac->scc_SIB) n_RB_DLBWP =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   else n_RB_DLBWP = mac->type0_PDCCH_CSS_config.num_rbs;
 
-
   LOG_D(MAC, "In %s: Processing received DCI format %s (DL BWP %d)\n", __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP);
 
   switch(dci_format){
@@ -1236,6 +1235,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // according to TS 38.213 Table 9.2.3-1
     uint8_t feedback_ti =
       ubwpd->pucch_Config->choice.setup->dl_DataToUL_ACK->list.array[dci->pdsch_to_harq_feedback_timing_indicator.val][0];
+
     AssertFatal(feedback_ti>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d). Min feedback time set in config file (min_rxtxtime).\n",
                 feedback_ti,DURATION_RX_TO_TX);
 
@@ -2177,11 +2177,12 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   }
 
   if (number_harq_feedback != O_ACK) {
-    LOG_E(MAC,"PUCCH Error for number of bits for acknowledgment. number_harq_feedback %d, O_ACK %d \n",
-          number_harq_feedback, O_ACK);
+
+    LOG_E(MAC,"PUCCH Error for number of bits for acknowledgment : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return (0);
   }
 
+  reverse_n_bits(&o_ACK,number_harq_feedback);
   pucch->ack_payload = o_ACK;
 
   LOG_D(MAC,"frame %d slot %d pucch acknack payload %d\n",frame,slot,o_ACK);

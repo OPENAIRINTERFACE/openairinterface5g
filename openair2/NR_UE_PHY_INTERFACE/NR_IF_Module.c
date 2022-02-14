@@ -1170,14 +1170,15 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
       LOG_D(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
       for (int i = 0; i < dl_info->dci_ind->number_of_dcis; i++) {
         LOG_D(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
-        fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
         nr_scheduled_response_t scheduled_response;
         int8_t ret = handle_dci(dl_info->module_id,
                                 dl_info->cc_id,
                                 dl_info->gNB_index,
                                 dl_info->frame,
                                 dl_info->slot,
-                                dci_index);
+                                dl_info->dci_ind->dci_list+i);
+
+        fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
 
         /* The check below filters out UL_DCIs (format 7) which are being processed as DL_DCIs. */
         if (dci_index->dci_format == 7 && mac->ra.ra_state == RA_SUCCEEDED) {
