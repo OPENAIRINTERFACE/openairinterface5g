@@ -1101,41 +1101,10 @@ void pnf_phy_deallocate_p7_vendor_ext(nfapi_p7_message_header_t *header) {
 
 notifiedFIFO_elt_t *l1tx_message_extract(PHY_VARS_gNB *gNB, int frame, int slot) {
   notifiedFIFO_elt_t *res;
-  notifiedFIFO_elt_t *freeRes = NULL;
 
-  // check first message
-  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-  processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-  if (msgTx->slot == slot) {
-    return res;
-  }
-  if (msgTx->slot == -1) {
-    freeRes = res;
-  }
-
-  // check second message
-  pushNotifiedFIFO(gNB->resp_L1_tx,res);
-  res = pullTpool(gNB->resp_L1_tx, gNB->threadPool);
-  msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-  if (msgTx->slot == slot) {
-    return res;
-  }
-  if (msgTx->slot == -1) {
-    freeRes = res;
-  }
-
-  if (freeRes) {
-    msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-    msgTx->num_pdsch_slot=0;
-    msgTx->pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
-    msgTx->ul_pdcch_pdu.pdcch_pdu.pdcch_pdu_rel15.numDlDci = 0;
-    msgTx->slot = slot;
-    msgTx->frame = frame;
-    return freeRes;
-  }
-  pushNotifiedFIFO(gNB->resp_L1_tx,res);
-  AssertFatal(1==0, "It means both L1 Tx messages are still waiting to be processed. This happens when L1 Tx processing is too slow. Message slot %d, scheduled slot %d\n",
-    msgTx->slot, slot);
+  //TODO: This needs to be reworked for nfapi to work
+  res = pullTpool(gNB->L1_tx_free, gNB->threadPool);
+  return res;
 }
 
 int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, nfapi_nr_ul_dci_request_t *req) {
@@ -1153,15 +1122,15 @@ int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     proc = &gNB->proc.L1_proc;
 
   if (req->numPdus > 0) {
-    if (req->ul_dci_pdu_list[req->numPdus-1].PDUType == 0) { // copy only the last PDU (PHY can have only one UL PDCCH pdu)
-      msgTx->ul_pdcch_pdu = req->ul_dci_pdu_list[req->numPdus-1]; // copy the last pdu
-    } 
-    else {
-      LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), req->numPdus-1, req->ul_dci_pdu_list[req->numPdus-1].PDUType);
+    for (int i=0; i<req->numPdus; i++) {
+      if (req->ul_dci_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) // only possible value 0: PDCCH PDU
+        msgTx->ul_pdcch_pdu[i] = req->ul_dci_pdu_list[i];
+      else
+        LOG_E(PHY,"[PNF] UL_DCI_REQ sfn_slot:%d PDU[%d] - unknown pdu type:%d\n", NFAPI_SFNSLOT2DEC(req->SFN, req->Slot), req->numPdus-1, req->ul_dci_pdu_list[req->numPdus-1].PDUType);
     }
   }
 
-  pushNotifiedFIFO(gNB->resp_L1_tx,res);
+  pushNotifiedFIFO(gNB->L1_tx_filled,res);
 
   return 0;
 }
@@ -1238,8 +1207,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
 
     if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_PDCCH_PDU_TYPE) {
-      // we trust the scheduler sends only one PDCCH PDU per slot
-      msgTx->pdcch_pdu = dl_tti_pdu_list[i].pdcch_pdu; // fills the last received PDCCH PDU
+      msgTx->pdcch_pdu[i] = dl_tti_pdu_list[i].pdcch_pdu; // copies all the received PDCCH PDUs
     } 
     else if (dl_tti_pdu_list[i].PDUType == NFAPI_NR_DL_TTI_SSB_PDU_TYPE) {
       //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() PDU:%d BCH: pdu_index:%u pdu_length:%d sdu_length:%d BCH_SDU:%x,%x,%x\n", __FUNCTION__, i, pdu_index, bch_pdu->bch_pdu_rel8.length, tx_request_pdu[sfn][sf][pdu_index]->segments[0].segment_length, sdu[0], sdu[1], sdu[2]);
@@ -1269,7 +1237,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     else {
       NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() UNKNOWN:%d\n", __FUNCTION__, dl_tti_pdu_list[i].PDUType);
     }
-    pushNotifiedFIFO(gNB->resp_L1_tx,res);
+    pushNotifiedFIFO(gNB->L1_tx_filled,res);
   }
 
   if(req->vendor_extension)

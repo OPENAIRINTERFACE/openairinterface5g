@@ -111,7 +111,6 @@ services:
     oai-smf:
         container_name: "rfsim5g-oai-smf"
         image: oai-smf:latest
-        entrypoint: /bin/bash -c "/openair-smf/bin/oai_smf -c /openair-smf/bin/oai-smf.conf -o"
         environment:
             - TZ=Europe/Paris
             - INSTANCE=0
@@ -140,12 +139,13 @@ services:
             - REGISTER_NRF=yes
             - DISCOVER_UPF=yes
             - USE_FQDN_DNS=yes
+            - DNN_NI0=oai
+            - DNN_NI2=oai.ipv4
         depends_on:
             - oai-nrf
             - oai-amf
         volumes:
             - ./smf-healthcheck.sh:/openair-smf/bin/smf-healthcheck.sh
-            - ./oai-smf.conf:/openair-smf/bin/oai-smf.conf
         healthcheck:
             test: /bin/bash -c "/openair-smf/bin/smf-healthcheck.sh"
             interval: 10s

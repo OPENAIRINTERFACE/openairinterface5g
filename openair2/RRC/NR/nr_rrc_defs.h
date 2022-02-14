@@ -451,6 +451,7 @@ typedef struct {
   int pusch_AntennaPorts;
   int minRXTXTIME;
   int do_CSIRS;
+  int do_SRS;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_PDCCH_ConfigSIB1_t                     *pdcch_ConfigSIB1;
@@ -521,6 +522,8 @@ typedef struct gNB_RRC_INST_s {
   uint16_t sctp_out_streams;
   int cell_info_configured;
   pthread_mutex_t cell_info_mutex;
+
+  char *uecap_file;
 
   // security configuration (preferred algorithms)
   nr_security_configuration_t security;

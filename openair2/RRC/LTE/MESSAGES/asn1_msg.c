@@ -4293,7 +4293,7 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
   LTE_MeasResultListEUTRA_t  *measResultListEUTRA2=&measResultNeighCells->choice.measResultListEUTRA;
   asn1cSequenceAdd(measResultListEUTRA2->list, struct LTE_MeasResultEUTRA, measresulteutra_list);
   measresulteutra_list->physCellId = phy_id;
-  asn1cCalloc(measresulteutra_list->cgi_Info, measresult_cgi2);
+  //asn1cCalloc(measresulteutra_list->cgi_Info, measresult_cgi2);
   //measresult_cgi2->cellGlobalId= {0};
   //measresult_cgi2->trackingAreaCode= {0};
   struct LTE_MeasResultEUTRA__measResult* measResult= &measresulteutra_list->measResult;

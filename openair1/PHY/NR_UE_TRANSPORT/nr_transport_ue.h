@@ -149,7 +149,7 @@ typedef struct {
   /// ACK/NAK Bundling flag
   uint8_t bundling;
   /// Concatenated "g"-sequences (for definition see 36-212 V15.4.0 2018-12, p.31)
-  uint8_t g[MAX_NUM_NR_CHANNEL_BITS];
+  uint8_t g[MAX_NUM_NR_CHANNEL_BITS] __attribute__ ((aligned(32)));
   /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
   uint8_t h[MAX_NUM_NR_CHANNEL_BITS];
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
