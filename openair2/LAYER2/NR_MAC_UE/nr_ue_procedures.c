@@ -1334,7 +1334,7 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   // FIXME k0 != 0 currently not taken into consideration
   current_harq->dl_frame = frame;
   current_harq->dl_slot = slot;
-  if (get_softmodem_params()->emaulte_l1) {
+  if (get_softmodem_params()->emulate_l1) {
     if (data_toul_fb + slot > 19) {
       if (frame + 1 < 1024)
         frame++;

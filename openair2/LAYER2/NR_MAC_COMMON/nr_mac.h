@@ -39,6 +39,7 @@
 #include <stdbool.h>
 
 #include "NR_SubcarrierSpacing.h"
+#include "openair1/SCHED_NR_UE/harq_nr.h"
 
 #define NR_SHORT_BSR_TABLE_SIZE 32
 #define NR_LONG_BSR_TABLE_SIZE 256

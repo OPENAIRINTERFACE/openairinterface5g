@@ -649,7 +649,6 @@ static bool send_crc_ind_and_rx_ind(int sfn_slot)
 
 static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_ul_tti_request_t *ul_tti_req)
 {
-    NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     int num_pdus = ul_tti_req->n_pdus;
     int sfn_slot = NFAPI_SFNSLOT2HEX(ul_tti_req->SFN, ul_tti_req->Slot);
     AssertFatal(num_pdus >= 0, "Invalid ul_tti_request number of PDUS\n");
