@@ -531,12 +531,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
   }
  
-  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib; 
- 
+  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib;
+
   if (CellGroup) {
 
-    // Preferred DL TDA for InitialBWP
-    calculate_preferred_dl_tda(Mod_idP, NULL);
+    if (!get_softmodem_params()->phy_test) {
+      calculate_preferred_dl_tda(Mod_idP, NULL);
+    }
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
@@ -613,7 +614,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
-      const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
       if (sched_ctrl->available_dl_harq.len == 0) {
