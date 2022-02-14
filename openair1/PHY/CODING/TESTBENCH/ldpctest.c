@@ -285,15 +285,6 @@ int test_ldpc(short No_iteration,
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length/((float)nom_rate/(float)denom_rate));
   encoder_implemparams_t impp=INIT0_LDPCIMPLEMPARAMS;
 
-  // CRC attachement
-  for (j=0; j<n_segments; j++) {
-    int crc = 0;
-    crc = crc24b(test_input[j],block_length-24)>>8;
-    test_input[j][(block_length-24)>>3] = ((uint8_t*)&crc)[2];
-    test_input[j][1+((block_length-24)>>3)] = ((uint8_t*)&crc)[1];
-    test_input[j][2+((block_length-24)>>3)] = ((uint8_t*)&crc)[0];
-  }
- 
   impp.gen_code=1;
   if (ntrials==0)
     encoder_orig(test_input,channel_input, Zc, BG, block_length, BG, &impp);
@@ -415,7 +406,7 @@ int test_ldpc(short No_iteration,
 
       //count errors
       for(j=0;j<n_segments;j++) {
-      for (i=0; i<(block_length-24)>>3; i++)
+      for (i=0; i<(block_length)>>3; i++)
       {
           //printf("block_length>>3: %d \n",block_length>>3);
          /// printf("i: %d \n",i);
@@ -429,7 +420,7 @@ int test_ldpc(short No_iteration,
         }
       }
 
-      for (i=0; i<block_length-24; i++)
+      for (i=0; i<block_length; i++)
         {
           estimated_output_bit[j][i] = (estimated_output[j][i/8]&(1<<(i&7)))>>(i&7);
           test_input_bit[i] = (test_input[j][i/8]&(1<<(i&7)))>>(i&7); // Further correct for multiple segments
