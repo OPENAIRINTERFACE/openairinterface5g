@@ -77,6 +77,15 @@ void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map);
 
 void init_nr_prach_tables(int N_ZC);
 
+void nr_codeword_scrambling(uint8_t *in,
+                            uint32_t size,
+                            uint8_t q,
+                            uint32_t Nid,
+                            uint32_t n_RNTI,
+                            uint32_t* out);
+
+void nr_codeword_unscrambling(int16_t* llr, uint32_t size, uint8_t q, uint32_t Nid, uint32_t n_RNTI);
+
 /**@}*/
 
 void init_pucch2_luts(void);

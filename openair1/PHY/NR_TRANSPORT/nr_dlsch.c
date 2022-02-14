@@ -47,69 +47,10 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint8_t q,
                                   uint32_t Nid,
                                   uint32_t n_RNTI,
-                                  uint32_t* out) {
-
-  uint8_t reset, b_idx;
-  uint32_t x1, x2, s=0;
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_CODEWORD_SCRAMBLING, 1);
-  reset = 1;
-  x2 = (n_RNTI<<15) + (q<<14) + Nid;
-
-  for (int i=0; i<size; i++) {
-    b_idx = i&0x1f;
-    if (b_idx==0) {
-      s = lte_gold_generic(&x1, &x2, reset);
-      reset = 0;
-      if (i)
-        out++;
-    }
-    *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
-    //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);
-  }
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_CODEWORD_SCRAMBLING, 0);
+                                  uint32_t* out)
+{
+  nr_codeword_scrambling(in, size, q, Nid, n_RNTI, out);
 }
-
-void nr_pdsch_codeword_scrambling_optim(uint8_t *in,
-					uint32_t size,
-					uint8_t q,
-					uint32_t Nid,
-					uint32_t n_RNTI,
-					uint32_t* out) {
-  
-  uint32_t x1, x2, s=0,in32;
-
-  x2 = (n_RNTI<<15) + (q<<14) + Nid;
-
-  s=lte_gold_generic(&x1, &x2, 1);
-
-#if defined(__AVX2__)
-  for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++) {
-    in32=_mm256_movemask_epi8(_mm256_slli_epi16(((__m256i*)in)[i],7));
-    out[i]=(in32^s);
-    //printf("in[%d] %x => %x\n",i,in32,out[i]);
-    s=lte_gold_generic(&x1, &x2, 0);
-  }
-#elif defined(__SSE4__)
-  _m128i *in128;
-  for (int i=0; i<((size>>5)+((size&0x1f) > 0 ? 1 : 0)); i++) {
-    in128=&((__m128i*)in)[i<<1];
-    ((uint16_t*)&in32)[0] = _mm128_movemask_epi8(_mm256_slli_epi16(in128[0],7));
-    ((uint16_t*)&in32)[1] = _mm128_movemask_epi8(_mm256_slli_epi16(in128[1],7));
-    out[i]=(in32^s);
-    s=lte_gold_generic(&x1, &x2, 0);
-  }
-  //#elsif defined(__arm__) || defined(__aarch64)
-  
-#else 
-  nr_pdsch_codeword_scrambling(in,
-			       size,
-			       q,
-			       Nid,
-			       n_RNTI,
-			       out);
-#endif
-}
-
 
 void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                        int frame,
@@ -214,12 +155,12 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     for (int q=0; q<rel15->NrOfCodewords; q++)
       memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
     for (int q=0; q<rel15->NrOfCodewords; q++)
-      nr_pdsch_codeword_scrambling_optim(output,
-					 encoded_length,
-					 q,
-					 rel15->dataScramblingId,
-					 rel15->rnti,
-					 scrambled_output[q]);
+      nr_pdsch_codeword_scrambling(output,
+                                   encoded_length,
+                                   q,
+                                   rel15->dataScramblingId,
+                                   rel15->rnti,
+                                   scrambled_output[q]);
     
     stop_meas(dlsch_scrambling_stats);
 #ifdef DEBUG_DLSCH
