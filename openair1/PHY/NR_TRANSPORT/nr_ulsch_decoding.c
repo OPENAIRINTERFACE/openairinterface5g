@@ -613,7 +613,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   }
 	
   ret = nrLDPC_decoder_offload(p_decParams, harq_pid,
-			r,  
+			ULSCH_id,r,  
 			pusch_pdu->pusch_data.rv_index,
 			harq_process->F,
 			E,

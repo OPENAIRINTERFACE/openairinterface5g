@@ -167,6 +167,7 @@ struct thread_params {
         int8_t* p_out;
         uint8_t r;
         uint8_t harq_pid;
+        uint8_t ulsch_id;
 	rte_atomic16_t nb_dequeued;
 	rte_atomic16_t processing_status;
 	rte_atomic16_t burst_sz;
@@ -813,6 +814,7 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		struct rte_bbdev_dec_op *ref_op,
 		uint8_t r,
 		uint8_t harq_pid,
+		uint8_t ulsch_id,
 		t_nrLDPCoffload_params *p_offloadParams)
 {
 	unsigned int i;
@@ -843,9 +845,9 @@ set_ldpc_dec_op(struct rte_bbdev_dec_op **ops, unsigned int n,
 		ops[i]->ldpc_dec.rv_index = p_offloadParams->rv; 
 		ops[i]->ldpc_dec.op_flags = RTE_BBDEV_LDPC_ITERATION_STOP_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_IN_ENABLE|RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE; //|RTE_BBDEV_LDPC_CRC_TYPE_24B_DROP; 
 		ops[i]->ldpc_dec.code_block_mode = 1; //ldpc_dec->code_block_mode;
-		
-		ops[i]->ldpc_dec.harq_combined_input.offset = harq_pid*1024*32*32+r*1024*32;
-		ops[i]->ldpc_dec.harq_combined_output.offset = harq_pid*1024*32*32+r*1024*32;
+		//printf("set ldpc ulsch_id %d\n",ulsch_id);
+		ops[i]->ldpc_dec.harq_combined_input.offset = ulsch_id*1024*32*32*16+harq_pid*1024*32*32+r*1024*32;
+		ops[i]->ldpc_dec.harq_combined_output.offset = ulsch_id*1024*32*32*16+harq_pid*1024*32*32+r*1024*32;
 		
 
 		if (hard_outputs != NULL)
@@ -1061,6 +1063,7 @@ pmd_lcore_ldpc_dec(void *arg)
 	struct rte_bbdev_dec_op *ref_op = tp->op_params->ref_dec_op;
 	uint8_t r= tp->r;
 	uint8_t harq_pid = tp->harq_pid;
+	uint8_t ulsch_id = tp->ulsch_id;
 	struct test_buffers *bufs = NULL;
 	int i, j, ret;
 	struct rte_bbdev_info info;
@@ -1105,7 +1108,7 @@ pmd_lcore_ldpc_dec(void *arg)
 
 	set_ldpc_dec_op(ops_enq, num_ops, 0, bufs->inputs,
 				bufs->hard_outputs, bufs->soft_outputs,
-			bufs->harq_inputs, bufs->harq_outputs, ref_op, r, harq_pid, p_offloadParams);
+			bufs->harq_inputs, bufs->harq_outputs, ref_op, r, harq_pid, ulsch_id, p_offloadParams);
 
 	/* Set counter to validate the ordering */
 	for (j = 0; j < num_ops; ++j)
@@ -1227,6 +1230,7 @@ start_pmd_dec(struct active_device *ad,
               t_nrLDPCoffload_params *p_offloadParams,
 	      uint8_t r,
 	      uint8_t harq_pid,
+	      uint8_t ulsch_id,
 	      int8_t* p_out)
 {
 	int ret;
@@ -1270,6 +1274,7 @@ start_pmd_dec(struct active_device *ad,
 	t_params[0].p_offloadParams = p_offloadParams;
 	t_params[0].r = r;
 	t_params[0].harq_pid = harq_pid;
+	t_params[0].ulsch_id = ulsch_id;
 
 	RTE_LCORE_FOREACH_SLAVE(lcore_id) {
 		if (used_cores >= num_lcores)
@@ -1283,6 +1288,7 @@ start_pmd_dec(struct active_device *ad,
 		t_params[used_cores].p_offloadParams = p_offloadParams; 
 		t_params[used_cores].r = r;
 		t_params[used_cores].harq_pid = harq_pid;
+		t_params[used_cores].ulsch_id = ulsch_id;
 
 		rte_eal_remote_launch(pmd_lcore_ldpc_dec,
 				&t_params[used_cores++], lcore_id);
@@ -1417,7 +1423,7 @@ struct rte_mbuf *m_head[DATA_NUM_TYPES];
 struct thread_params *t_params;
 
 
-int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid, uint8_t C, uint8_t rv, uint16_t F, 
+int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid, uint8_t ulsch_id, uint8_t C, uint8_t rv, uint16_t F, 
 			uint32_t E, uint8_t Qm, int8_t* p_llr, int8_t* p_out, uint8_t mode) 
 {
     	t_nrLDPCoffload_params offloadParams;
@@ -1635,7 +1641,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid,
             LOG_E(PHY," ldpc decoder mode 1 first: %u\n",(uint) (total_time_init/3000));
 	  
 	    start_time1 = rte_rdtsc_precise();
-	    ret = start_pmd_dec(ad, op_params, t_params, p_offloadParams, C, harq_pid, p_out);
+	    ret = start_pmd_dec(ad, op_params, t_params, p_offloadParams, C, harq_pid, ulsch_id, p_out);
 	  if (ret<0) {
 	    printf("Couldn't start pmd dec");
 	    return(-1);
