@@ -674,7 +674,7 @@ int main(int argc, char **argv){
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->nrUE_config.prach_config.num_prach_fd_occasions_list = (fapi_nr_num_prach_fd_occasions_t *) malloc(num_prach_fd_occasions*sizeof(fapi_nr_num_prach_fd_occasions_t));
 
-  if (init_nr_ue_signal(UE, 1, 0) != 0){
+  if (init_nr_ue_signal(UE, 1) != 0){
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }

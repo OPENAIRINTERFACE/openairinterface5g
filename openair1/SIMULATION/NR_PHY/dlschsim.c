@@ -413,7 +413,7 @@ int main(int argc, char **argv)
 	memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
 	//phy_init_nr_top(frame_parms);
-	if (init_nr_ue_signal(UE, 1, 0) != 0) {
+	if (init_nr_ue_signal(UE, 1) != 0) {
 		printf("Error at UE NR initialisation\n");
 		exit(-1);
 	}
@@ -641,6 +641,8 @@ int main(int argc, char **argv)
   reset_DLSCH_struct(gNB, &msgDataTx);
 
   phy_free_nr_gNB(gNB);
+
+  term_nr_ue_signal(UE, 1);
 
 	for (i = 0; i < 2; i++) {
 		free(s_re[i]);

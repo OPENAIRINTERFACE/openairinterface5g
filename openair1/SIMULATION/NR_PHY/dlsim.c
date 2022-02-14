@@ -917,7 +917,7 @@ int main(int argc, char **argv)
                       
   UE->perfect_ce = 0;
 
-  if (init_nr_ue_signal(UE, 1, 0) != 0)
+  if (init_nr_ue_signal(UE, 1) != 0)
   {
     printf("Error at UE NR initialisation\n");
     exit(-1);
