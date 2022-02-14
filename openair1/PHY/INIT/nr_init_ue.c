@@ -20,28 +20,19 @@
  */
 
 #include "phy_init.h"
-#include "SCHED_UE/sched_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
-//#include "SIMULATION/TOOLS/sim.h"
-/*#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#include "TDD-Config.h"
-#include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
 #include "openair1/PHY/impl_defs_nr.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
-#include <math.h>
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-//#include "PHY/LTE_REFSIG/lte_refsig.h"
-#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
-#include "PHY/INIT/phy_init.h"
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
-#include <openair1/PHY/MODULATION/nr_modulation.h>
+#include "PHY/MODULATION/nr_modulation.h"
 
 #if 0
 void phy_config_harq_ue(module_id_t Mod_id,
@@ -138,6 +129,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *const common_vars        = &ue->common_vars;
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
+  NR_UE_SRS **const srs_vars             = ue->srs_vars;
+
   int i,j,k,l,slot,symb,q;
   int gNB_id;
   int th_id;
@@ -320,6 +313,24 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
     prach_vars[gNB_id] = (NR_UE_PRACH *)malloc16_clear(sizeof(NR_UE_PRACH));
     pbch_vars[gNB_id] = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
+    srs_vars[gNB_id] = (NR_UE_SRS *)malloc16_clear(sizeof(NR_UE_SRS));
+
+    srs_vars[gNB_id]->active = false;
+    ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
+    ue->nr_srs_info->srs_generated_signal = (int32_t *) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
+    ue->nr_srs_info->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
+    ue->nr_srs_info->srs_received_signal = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->nr_srs_info->srs_ls_estimated_channel = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->nr_srs_info->srs_estimated_channel_freq = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->nr_srs_info->srs_estimated_channel_time = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    ue->nr_srs_info->srs_estimated_channel_time_shifted = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    for (i=0; i<fp->nb_antennas_rx; i++) {
+      ue->nr_srs_info->srs_received_signal[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      ue->nr_srs_info->srs_ls_estimated_channel[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      ue->nr_srs_info->srs_estimated_channel_freq[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      ue->nr_srs_info->srs_estimated_channel_time[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      ue->nr_srs_info->srs_estimated_channel_time_shifted[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+    }
 
     if (abstraction_flag == 0) {
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
@@ -532,6 +543,7 @@ void init_N_TA_offset(PHY_VARS_NR_UE *ue){
 void phy_init_nr_top(PHY_VARS_NR_UE *ue) {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   crcTableInit();
+  init_scrambling_luts();
   load_dftslib();
   init_context_synchro_nr(frame_parms);
   generate_ul_reference_signal_sequences(SHRT_MAX);
@@ -543,6 +555,5 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue) {
   //generate_16qam_table();
   //generate_RIV_tables();
   //init_unscrambling_lut();
-  //init_scrambling_lut();
   //set_taus_seed(1328);
 }

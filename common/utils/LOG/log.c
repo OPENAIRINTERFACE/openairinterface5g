@@ -65,6 +65,7 @@ char logmem_filename[1024] = {0};
 mapping log_level_names[] = {
   {"error",  OAILOG_ERR},
   {"warn",   OAILOG_WARNING},
+  {"analysis", OAILOG_ANALYSIS},
   {"info",   OAILOG_INFO},
   {"debug",  OAILOG_DEBUG},
   {"trace",  OAILOG_TRACE},
@@ -78,14 +79,15 @@ mapping log_options[] = {
   {"line_num",    FLAG_FILE_LINE },
   {"function", FLAG_FUNCT},
   {"time",     FLAG_TIME},
+  {"thread_id", FLAG_THREAD_ID},
   {NULL,-1}
 };
 
 
 mapping log_maskmap[] = LOG_MASKMAP_INIT;
 
-char *log_level_highlight_start[] = {LOG_RED, LOG_ORANGE, "", LOG_BLUE, LOG_CYBL};  /*!< \brief Optional start-format strings for highlighting */
-char *log_level_highlight_end[]   = {LOG_RESET,LOG_RESET,LOG_RESET, LOG_RESET,LOG_RESET};   /*!< \brief Optional end-format strings for highlighting */
+char *log_level_highlight_start[] = {LOG_RED, LOG_ORANGE, LOG_GREEN, "", LOG_BLUE, LOG_CYBL};  /*!< \brief Optional start-format strings for highlighting */
+char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET};   /*!< \brief Optional end-format strings for highlighting */
 static void log_output_memory(log_component_t *c, const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
 
 
@@ -501,6 +503,7 @@ int logInit (void)
   return 0;
 }
 
+#include <sys/syscall.h>
 static inline int log_header(log_component_t *c,
 			     char *log_buffer,
 			     int buffsize,
@@ -514,85 +517,51 @@ static inline int log_header(log_component_t *c,
   char threadname[64];
   if (flag & FLAG_THREAD ) {
     threadname[0]='{';
-    if ( pthread_getname_np(pthread_self(), threadname+1,61) != 0)
+    if (pthread_getname_np(pthread_self(), threadname + 1, sizeof(threadname) - 3) != 0)
       strcpy(threadname+1, "?thread?");
-    strcat(threadname,"}");
+    strcat(threadname,"} ");
   } else {
     threadname[0]=0;
   }
- 
+
   char l[32];
   if (flag & FLAG_FILE_LINE && flag & FLAG_FUNCT )
-    snprintf(l, sizeof l," (%s:%d) ", func, line);
+    snprintf(l, sizeof l, "(%s:%d) ", func, line);
   else if (flag & FLAG_FILE_LINE)
-    sprintf(l," (%d) ", line);
+    snprintf(l, sizeof l, "(%d) ", line);
+  else if (flag & FLAG_FUNCT)
+    snprintf(l, sizeof l, "(%s) ", func);
   else
-    l[0]=0;
+    l[0] = 0;
 
   char timeString[32];
   if ( flag & FLAG_TIME ) {
     struct timespec t;
-    clock_gettime(CLOCK_MONOTONIC, &t);
-    snprintf(timeString, sizeof t,"%05.3f",t.tv_sec+t.tv_nsec/1.0e9);
+    if (clock_gettime(CLOCK_MONOTONIC, &t) == -1)
+        abort();
+    snprintf(timeString, sizeof(timeString), "%lu.%06lu ",
+             t.tv_sec,
+             t.tv_nsec / 1000);
   } else {
-    timeString[0]=0;
+    timeString[0] = 0;
   }
-  return  snprintf(log_buffer, buffsize, "%s%s[%s]%c%s %s ",
-		   timeString,
+
+  char threadIdString[32];
+  if (flag & FLAG_THREAD_ID) {
+    snprintf(threadIdString, sizeof(threadIdString), "%08lx ", syscall(__NR_gettid));
+  } else {
+    threadIdString[0] = 0;
+  }
+  return snprintf(log_buffer, buffsize, "%s%s%s[%s] %c %s%s",
 		   flag & FLAG_NOCOLOR ? "" : log_level_highlight_start[level],
+		   timeString,
+		   threadIdString,
 		   c->name,
 		   flag & FLAG_LEVEL ? g_log->level2string[level] : ' ',
 		   l,
 		   threadname
 		   );
 }
-
-#if LOG_MINIMAL
-#include <sys/syscall.h>
-void logMinimal(int comp, int level, const char *format, ...)
-{
-    struct timespec ts;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1)
-        abort();
-
-    char buf[MAX_LOG_TOTAL];
-    int n = snprintf(buf, sizeof(buf), "%lu.%06lu %08lx [%s] %c ",
-                     ts.tv_sec,
-                     ts.tv_nsec / 1000,
-                     syscall(__NR_gettid),
-                     g_log->log_component[comp].name,
-                     level);
-    if (n < 0 || n >= sizeof(buf))
-    {
-        fprintf(stderr, "%s: n=%d\n", __func__, n);
-        return;
-    }
-
-    va_list args;
-    va_start(args, format);
-    int m = vsnprintf(buf + n, sizeof(buf) - n, format, args);
-    va_end(args);
-
-    if (m < 0)
-    {
-        fprintf(stderr, "%s: n=%d m=%d\n", __func__, n, m);
-        return;
-    }
-
-    int len = n + m;
-    if (len > sizeof(buf) - 1)
-    {
-        len = sizeof(buf) - 1;
-    }
-    if (buf[len - 1] != '\n')
-    {
-        buf[len++] = '\n';
-    }
-
-    __attribute__((unused))
-    int unused = write(STDOUT_FILENO, buf, len);
-}
-#endif // LOG_MINIMAL
 
 void logRecord_mt(const char *file,
 		  const char *func,
@@ -864,7 +833,14 @@ void flush_mem_to_file(void)
   }
 }
 
-char logmem_log_level[NUM_LOG_LEVEL]={'E','W','I','D','T'};
+const char logmem_log_level[NUM_LOG_LEVEL] = {
+  [OAILOG_ERR] = 'E',
+  [OAILOG_WARNING] = 'W',
+  [OAILOG_ANALYSIS] = 'A',
+  [OAILOG_INFO] = 'I',
+  [OAILOG_DEBUG] = 'D',
+  [OAILOG_TRACE] = 'T',
+};
 
 static void log_output_memory(log_component_t *c, const char *file, const char *func, int line, int comp, int level, const char* format,va_list args)
 {
@@ -878,12 +854,32 @@ static void log_output_memory(log_component_t *c, const char *file, const char *
   char log_buffer[MAX_LOG_TOTAL];
 
   // make sure that for log trace the extra info is only printed once, reset when the level changes
-  if (level < OAILOG_TRACE)
-    len += log_header(c, log_buffer, MAX_LOG_TOTAL, file, func, line, level);
-  len += vsnprintf(log_buffer+len, MAX_LOG_TOTAL-len, format, args);
-  if ( !((g_log->flag | c->flag) & FLAG_NOCOLOR) )
-    len+=snprintf(log_buffer+len, MAX_LOG_TOTAL-len, "%s", log_level_highlight_end[level]);
-  
+  if (level < OAILOG_TRACE) {
+    int n = log_header(c, log_buffer+len, MAX_LOG_TOTAL, file, func, line, level);
+    if (n > 0) {
+      len += n;
+      if (len > MAX_LOG_TOTAL) {
+        len = MAX_LOG_TOTAL;
+      }
+    }
+  }
+  int n = vsnprintf(log_buffer+len, MAX_LOG_TOTAL-len, format, args);
+  if (n > 0) {
+    len += n;
+    if (len > MAX_LOG_TOTAL) {
+      len = MAX_LOG_TOTAL;
+    }
+  }
+  if ( !((g_log->flag | c->flag) & FLAG_NOCOLOR) ) {
+    int n = snprintf(log_buffer+len, MAX_LOG_TOTAL-len, "%s", log_level_highlight_end[level]);
+    if (n > 0) {
+      len += n;
+      if (len > MAX_LOG_TOTAL) {
+        len = MAX_LOG_TOTAL;
+      }
+    }
+  }
+
   // OAI printf compatibility
   if(log_mem_flag==1){
     if(log_mem_d[log_mem_side].enable_flag==1){
@@ -919,6 +915,7 @@ static void log_output_memory(log_component_t *c, const char *file, const char *
         }
       }
   }else{
+    AssertFatal(len >= 0 && len <= MAX_LOG_TOTAL, "Bad len %d\n", len);
     if (write(fileno(c->stream), log_buffer, len)) {};
   }
 }

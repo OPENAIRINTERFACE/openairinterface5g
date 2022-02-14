@@ -14,7 +14,7 @@
 
 This page is only valid for an `Ubuntu18` host.
 
-**NOTE: this version (2021-10-05) is valid for the `v1.1.0` and `v1.2.0` versions of the `OAI 5G CN`.**
+**NOTE: this version (2022-01-27) has been updated  for the `v1.3.0` version of the `OAI 5G CN`.**
 
 **TABLE OF CONTENTS**
 
@@ -76,9 +76,9 @@ $ docker image tag rdefosseoai/oai-nr-ue:develop oai-nr-ue:develop
 $ docker logout
 ```
 
-**CAUTION: 2021/10/05 with the release `v1.2.0` of the `CN5G`, the previous version was not compatible any-more.**
+**CAUTION: 2022/01/27 with the release `v1.3.0` of the `CN5G`, the previous version was not compatible any-more.**
 
-**This new version is working for both the `v1.1.0` and `v1.2.0` of the `CN5G`.**
+**This new version is working only with the `v1.3.0` of the `CN5G`.**
 
 # 2. Deploy containers #
 

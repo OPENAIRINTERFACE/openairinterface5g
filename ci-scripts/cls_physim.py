@@ -183,7 +183,7 @@ class PhySim:
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
 		mySSH.command('cd '+self.__workSpacePath,'\$',5)
 		#run and redirect the results to a log file
-		mySSH.command(self.__workSpacePath+'phy_simulators/build/ldpctest ' + self.runargs + ' >> '+self.__runLogFile, '\$', 30)
+		mySSH.command(self.__workSpacePath+'ran_build/build/ldpctest ' + self.runargs + ' >> '+self.__runLogFile, '\$', 30)
 		mySSH.close()
 		#return updated HTML to main
 		lHTML = html.HTMLManagement()

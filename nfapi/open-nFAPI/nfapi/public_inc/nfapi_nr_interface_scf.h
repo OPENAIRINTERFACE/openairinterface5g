@@ -1312,7 +1312,7 @@ typedef struct
   uint8_t  comb_offset;//Transmission comb offset 𝑘 ̄ TC [TS38.211, Sec 6.4.1.4.3] Value: 0 → 1 (combSize = 0) Value: 0 → 3 (combSize = 1)
   uint8_t  cyclic_shift;
   uint8_t  frequency_position;
-  uint8_t  frequency_shift;
+  uint16_t frequency_shift;
   uint8_t  frequency_hopping;
   uint8_t  group_or_sequence_hopping;//Group or sequence hopping configuration (RRC parameter groupOrSequenceHopping in SRS-Resource
   uint8_t  resource_type;//Type of SRS resource allocation
@@ -1402,9 +1402,6 @@ typedef struct
 } nfapi_nr_ul_dci_request_t;
 */
 
-  // normally one PDU per coreset per BWP
-#define NFAPI_NR_MAX_UL_DCI_PDUS 4
-
 typedef struct {
   /// only possible value 0: PDCCH PDU
   uint16_t PDUType;
@@ -1418,7 +1415,7 @@ typedef struct {
   uint16_t SFN;
   uint16_t Slot;
   uint8_t  numPdus;
-  nfapi_nr_ul_dci_request_pdus_t ul_dci_pdu_list[NFAPI_NR_MAX_UL_DCI_PDUS];
+  nfapi_nr_ul_dci_request_pdus_t ul_dci_pdu_list[NFAPI_NR_MAX_NB_CORESETS];
 } nfapi_nr_ul_dci_request_t;
 
 //3.4.5 slot_errors

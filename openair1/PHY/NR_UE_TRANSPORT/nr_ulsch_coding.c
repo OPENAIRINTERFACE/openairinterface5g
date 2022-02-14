@@ -118,7 +118,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL,
     a_segments = a_segments/273 +1;
   }  
 
-  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+  uint32_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
 
   ulsch = (NR_UE_ULSCH_t *)malloc16(sizeof(NR_UE_ULSCH_t));
 

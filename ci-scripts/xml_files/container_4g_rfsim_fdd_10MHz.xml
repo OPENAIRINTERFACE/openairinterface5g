@@ -1,0 +1,129 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+        <htmlTabRef>rfsim-4glte-fdd10mhz</htmlTabRef>
+        <htmlTabName>Monolithic eNB - FDD 10MHz</htmlTabName>
+        <htmlTabIcon>wrench</htmlTabIcon>
+        <TestCaseRequestedList>
+ 100011
+ 000011
+ 000001
+ 000012
+ 000002
+ 000013
+ 000001
+ 000014
+ 000002
+ 020011
+ 020012
+ 030011
+ 030012
+ 100011
+        </TestCaseRequestedList>
+        <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="000011">
+                <class>DeployGenObject</class>
+                <desc>Deploy Cassandra Database</desc>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_10MHz</yaml_path>
+                <services>cassandra db_init</services>
+                <nb_healthy>1</nb_healthy>
+        </testCase>
+
+        <testCase id="000001">
+                <class>IdleSleep</class>
+                <desc>Sleep</desc>
+                <idle_sleep_time_in_sec>30</idle_sleep_time_in_sec>
+        </testCase>
+
+        <testCase id="000002">
+                <class>IdleSleep</class>
+                <desc>Sleep</desc>
+                <idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+        </testCase>
+
+        <testCase id="000012">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 4G CoreNetwork</desc>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_10MHz</yaml_path>
+                <services>oai_hss oai_mme oai_spgwc oai_spgwu trf_gen</services>
+                <nb_healthy>6</nb_healthy>
+        </testCase>
+
+        <testCase id="000013">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 4G eNB RF sim (FDD 10MHz)</desc>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_10MHz</yaml_path>
+                <services>enb</services>
+                <nb_healthy>7</nb_healthy>
+        </testCase>
+
+        <testCase id="000014">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 4G NR-UE RF sim (FDD 10MHz)</desc>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_10MHz</yaml_path>
+                <services>oai_ue0</services>
+                <nb_healthy>8</nb_healthy>
+        </testCase>
+
+        <testCase id="020011">
+                <class>PingFromContainer</class>
+                <desc>Ping Traffic-Gen from LTE-UE</desc>
+                <container_name>rfsim4g-oai-lte-ue0</container_name>
+                <options>-I oaitun_ue1 -c 20 192.168.61.11</options>
+                <loss_threshold>5</loss_threshold>
+        </testCase>
+
+        <testCase id="020012">
+                <class>PingFromContainer</class>
+                <desc>Ping LTE-UE from Traffic-Gen</desc>
+		<container_name>rfsim4g-trf-gen</container_name>
+                <options>-c 20 12.0.0.2</options>
+                <loss_threshold>5</loss_threshold>
+        </testCase>
+
+        <testCase id="030011">
+                <class>IperfFromContainer</class>
+                <desc>Iperf UDP Downlink</desc>
+                <server_container_name>rfsim4g-oai-lte-ue0</server_container_name>
+                <client_container_name>rfsim4g-trf-gen</client_container_name>
+                <server_options>-B 12.0.0.2 -u -i 1 -s</server_options>
+                <client_options>-c 12.0.0.2 -u -i 1 -t 30 -b 2M</client_options>
+        </testCase>
+
+        <testCase id="030012">
+                <class>IperfFromContainer</class>
+                <desc>Iperf UDP Uplink</desc>
+                <server_container_name>rfsim4g-trf-gen</server_container_name>
+                <client_container_name>rfsim4g-oai-lte-ue0</client_container_name>
+                <server_options>-u -i 1 -s</server_options>
+                <client_options>-B 12.0.0.2 -c 192.168.61.11 -u -i 1 -t 30 -b 1M</client_options>
+        </testCase>
+
+        <testCase id="100011">
+                <class>UndeployGenObject</class>
+                <desc>Undeploy all OAI 4G stack</desc>
+                <yaml_path>yaml_files/4g_rfsimulator_fdd_10MHz</yaml_path>
+        </testCase>
+
+</testCaseList>

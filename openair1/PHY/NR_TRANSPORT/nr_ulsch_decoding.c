@@ -119,7 +119,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
     a_segments = a_segments/273 +1;
   }
 
-  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+  uint32_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
   ulsch = (NR_gNB_ULSCH_t *)malloc16_clear(sizeof(NR_gNB_ULSCH_t));
   
   ulsch->max_ldpc_iterations = max_ldpc_iterations;
@@ -454,7 +454,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
-  harq_process->round = nr_rv_round_map[pusch_pdu->pusch_data.rv_index];
+  harq_process->round = nr_rv_to_round(pusch_pdu->pusch_data.rv_index);
 
   harq_process->new_rx = false; // flag to indicate if this is a new reception for this harq (initialized to false)
   if (harq_process->round == 0) {

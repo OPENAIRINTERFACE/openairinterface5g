@@ -58,8 +58,7 @@ uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
-uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
-uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 double cpuf;
 //uint8_t nfapi_mode = 0;
