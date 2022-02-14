@@ -79,12 +79,12 @@ char quantize8bit(double D,double x)
 }
 
 typedef struct {
-  double n_iter_mean[100];
-  double n_iter_std[100];
-  int n_iter_max[100];
-  double snr[100];
-  double ber[100];
-  double bler[100];
+  double n_iter_mean[400];
+  double n_iter_std[400];
+  int n_iter_max[400];
+  double snr[400];
+  double ber[400];
+  double bler[400];
 } n_iter_stats_t;
 
 nrLDPC_encoderfunc_t encoder_orig;
