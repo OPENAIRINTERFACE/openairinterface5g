@@ -307,6 +307,24 @@ int nr_find_pucch(uint16_t rnti,
                   int slot,
                   PHY_VARS_gNB *gNB);
 
+NR_gNB_SRS_t *new_gNB_srs(void);
+
+int nr_find_srs(uint16_t rnti,
+                int frame,
+                int slot,
+                PHY_VARS_gNB *gNB);
+
+void nr_fill_srs(PHY_VARS_gNB *gNB,
+                 int frame,
+                 int slot,
+                 nfapi_nr_srs_pdu_t *srs_pdu);
+
+int nr_get_srs_signal(PHY_VARS_gNB *gNB,
+                      int frame,
+                      int slot,
+                      nfapi_nr_srs_pdu_t *srs_pdu,
+                      nr_srs_info_t *nr_srs_info,
+                      int32_t **srs_received_signal);
 
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
