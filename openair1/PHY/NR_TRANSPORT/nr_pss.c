@@ -30,25 +30,15 @@ int nr_generate_pss(  int32_t *txdataF,
                       nfapi_nr_config_request_scf_t* config,
                       NR_DL_FRAME_PARMS *frame_parms)
 {
-  int i,k,l,m;
-  int16_t a;
-  int16_t d_pss[NR_PSS_LENGTH];
   int16_t x[NR_PSS_LENGTH];
   const int x_initial[7] = {0, 1, 1 , 0, 1, 1, 1};
 
-  uint8_t Nid2 = config->cell_config.phy_cell_id.value % 3;
-
   /// Sequence generation
-  for (i=0; i < 7; i++)
+  for (int i=0; i < 7; i++)
     x[i] = x_initial[i];
 
-  for (i=0; i < (NR_PSS_LENGTH - 7); i++) {
+  for (int i=0; i < (NR_PSS_LENGTH - 7); i++) {
     x[i+7] = (x[i + 4] + x[i]) %2;
-  }
-
-  for (i=0; i < NR_PSS_LENGTH; i++) {
-    m = (i + 43*Nid2)%(NR_PSS_LENGTH);
-    d_pss[i] = (1 - 2*x[m]) * 23170;
   }
 
 #ifdef NR_PSS_DEBUG
@@ -57,22 +47,24 @@ int nr_generate_pss(  int32_t *txdataF,
 #endif
 
   /// Resource mapping
-  a = amp;
 
-    // PSS occupies a predefined position (subcarriers 56-182, symbol 0) within the SSB block starting from
-    k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
-    if (k>= frame_parms->ofdm_symbol_size) k-=frame_parms->ofdm_symbol_size;
+  // PSS occupies a predefined position (subcarriers 56-182, symbol 0) within the SSB block starting from
+  int k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
+  if (k>= frame_parms->ofdm_symbol_size) k-=frame_parms->ofdm_symbol_size;
 
-    l = ssb_start_symbol;
+  int l = ssb_start_symbol;
 
-    for (m = 0; m < NR_PSS_LENGTH; m++) {
-      //      printf("pss: writing position k %d / %d\n",k,frame_parms->ofdm_symbol_size);
-      ((int16_t*)txdataF)[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
-      k++;
+  uint8_t Nid2 = config->cell_config.phy_cell_id.value % 3;
+  for (int i = 0; i < NR_PSS_LENGTH; i++) {
+    int m = (i + 43*Nid2)%(NR_PSS_LENGTH);
+    int16_t d_pss = (1 - 2*x[m]) * 23170;
+    //      printf("pss: writing position k %d / %d\n",k,frame_parms->ofdm_symbol_size);
+    ((int16_t*)txdataF)[2*(l*frame_parms->ofdm_symbol_size + k)] = (((int16_t)amp) * d_pss) >> 15;
+    k++;
 
-      if (k >= frame_parms->ofdm_symbol_size)
-        k-=frame_parms->ofdm_symbol_size;
-    }
+    if (k >= frame_parms->ofdm_symbol_size)
+      k-=frame_parms->ofdm_symbol_size;
+  }
 
 #ifdef NR_PSS_DEBUG
   LOG_M("pss_0.m", "pss_0", 
