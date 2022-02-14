@@ -405,6 +405,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB);
 int l1_north_init_gNB(void);
 void init_nr_transport(PHY_VARS_gNB *gNB);
+void reset_nr_transport(PHY_VARS_gNB *gNB);
 
 void init_dfts(void);
 

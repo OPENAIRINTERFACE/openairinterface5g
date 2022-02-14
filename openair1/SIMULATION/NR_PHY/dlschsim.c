@@ -640,6 +640,8 @@ int main(int argc, char **argv)
 
   reset_DLSCH_struct(gNB, &msgDataTx);
 
+  phy_free_nr_gNB(gNB);
+
 	for (i = 0; i < 2; i++) {
 		free(s_re[i]);
 		free(s_im[i]);

@@ -62,6 +62,11 @@ NR_gNB_PUCCH_t *new_gNB_pucch(void){
     return (pucch);
 }
 
+void free_gNB_pucch(NR_gNB_PUCCH_t *pucch)
+{
+  free_and_zero(pucch);
+}
+
 int nr_find_pucch(uint16_t rnti,
                   int frame,
                   int slot,
