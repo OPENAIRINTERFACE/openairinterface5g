@@ -461,6 +461,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   harq_process->round = nr_rv_to_round(pusch_pdu->pusch_data.rv_index);
 
   harq_process->new_rx = false; // flag to indicate if this is a new reception for this harq (initialized to false)
+  dtx_det = 0;
   if (harq_process->round == 0) {
     harq_process->new_rx = true;
     harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
@@ -583,7 +584,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   Kr_bytes = Kr>>3;
   offset = 0;
 
-  if (enable_ldpc_offload) {
+  if ((enable_ldpc_offload)&& (dtx_det==0)) {
     
   if (harq_process->C == 1) {
     if (A > 3824)
@@ -603,7 +604,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   memset(harq_process->c[r],0,Kr_bytes);
 
   //if ((dtx_det==0)&&(pusch_pdu->pusch_data.rv_index==0)){
-  if (dtx_det==0){
+  //if (dtx_det==0){
   if (mcs >9){
   memcpy((&z_ol[0]),ulsch_llr+r_offset,E*sizeof(short));
   
@@ -701,10 +702,11 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
         printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
         }
   	*/ 
-  }
+  /*}
   else{
+    dtx_det = 0;
     no_iteration_ldpc = ulsch->max_ldpc_iterations+1;
-  }
+    }*/
 
 	bool decodeSuccess = (no_iteration_ldpc <= ulsch->max_ldpc_iterations);
         if (decodeSuccess) { 
@@ -751,7 +753,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   ulsch->last_iteration_cnt = no_iteration_ldpc;	
   }
 
-  else { 
+  else {
+  dtx_det = 0;
   void (*nr_processULSegment_ptr)(void*) = &nr_processULSegment;
 
   for (r=0; r<harq_process->C; r++) {
