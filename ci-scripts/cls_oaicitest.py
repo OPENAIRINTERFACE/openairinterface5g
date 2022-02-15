@@ -2505,9 +2505,14 @@ class OaiCiTest():
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'killall --signal=SIGKILL iperf'
 			SSH.command(cmd,'\$',5)
+			cmd = 'killall --signal=SIGKILL iperf3'
+			SSH.command(cmd,'\$',5)
 			SSH.close()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'killall --signal=SIGKILL iperf'
+			SSH.command(cmd,'\$',5)
+			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
+			cmd = 'killall --signal=SIGKILL iperf3'
 			SSH.command(cmd,'\$',5)
 			SSH.close()
 
@@ -2561,9 +2566,12 @@ class OaiCiTest():
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
 			elif self.iperf_direction=="BIDIR":
 				logging.debug("Iperf for Module in BIDIR mode detected")
+				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+
+
 				#server side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 				cmd = 'rm ' + server_filename
 				SSH.command(cmd,'\$',5)
 				cmd = 'echo $USER; nohup iperf3 -s 2>&1 > '+server_filename+' &'
@@ -2572,7 +2580,6 @@ class OaiCiTest():
 
 				#client side UE
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 				cmd = 'rm ' + client_filename
 				SSH.command(cmd,'\$',5)
 				SSH.command('iperf3 -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > '+client_filename, '\$', int(iperf_time)*5.0)
@@ -2590,9 +2597,13 @@ class OaiCiTest():
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 			cmd = 'killall --signal=SIGKILL iperf'
 			SSH.command(cmd,'\$',5)
+			cmd = 'killall --signal=SIGKILL iperf3'
+			SSH.command(cmd,'\$',5)
 			SSH.close()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			cmd = 'killall --signal=SIGKILL iperf'
+			SSH.command(cmd,'\$',5)
+			cmd = 'killall --signal=SIGKILL iperf3'
 			SSH.command(cmd,'\$',5)
 			SSH.close()
 			return
