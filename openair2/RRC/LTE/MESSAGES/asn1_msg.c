@@ -4293,8 +4293,9 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
   LTE_MeasResultListEUTRA_t  *measResultListEUTRA2=&measResultNeighCells->choice.measResultListEUTRA;
   asn1cSequenceAdd(measResultListEUTRA2->list, struct LTE_MeasResultEUTRA, measresulteutra_list);
   measresulteutra_list->physCellId = phy_id;
+  /* TODO: This asn1cCalloc leaks memory but also masks a bug.
+     If we delete this asn1cCalloc statement, eNB will crash in NSA mode. */
   asn1cCalloc(measresulteutra_list->cgi_Info, measresult_cgi2);
-  memset(measresult_cgi2, 0, sizeof(LTE_CellGlobalIdEUTRA_t));
   struct LTE_MeasResultEUTRA__measResult* measResult= &measresulteutra_list->measResult;
   asn1cCallocOne(measResult->rsrpResult, rsrp_tar);
   asn1cCallocOne(measResult->rsrqResult, rsrq_tar);
