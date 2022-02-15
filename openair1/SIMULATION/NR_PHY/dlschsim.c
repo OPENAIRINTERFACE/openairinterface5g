@@ -422,8 +422,7 @@ int main(int argc, char **argv)
 	//init_nr_ue_transport(UE, 0);
 	for (int sf = 0; sf < 2; sf++) {
 		for (i = 0; i < 2; i++) {
-			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL,
-					0);
+			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL);
 
 			if (!UE->dlsch[sf][0][i]) {
 				printf("Can't get ue dlsch structures\n");
