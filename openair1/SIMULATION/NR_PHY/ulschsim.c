@@ -26,6 +26,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include "common/config/config_userapi.h"
+#include "common/utils/load_module_shlib.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h"
 #include "PHY/types.h"
@@ -372,7 +373,7 @@ int main(int argc, char **argv)
 
 
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  RC.gNB[0] = calloc(1, sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
 
@@ -616,6 +617,14 @@ int main(int argc, char **argv)
   for (sf = 0; sf < 2; sf++)
     for (i = 0; i < 2; i++)
       free_nr_ue_ulsch(&UE->ulsch[sf][0][i], N_RB_UL);
+  term_nr_ue_signal(UE, 1);
+  free(UE);
+
+  phy_free_nr_gNB(gNB);
+  free(gNB->threadPool);
+  free(gNB->respDecode);
+  free(RC.gNB[0]);
+  free(RC.gNB);
 
   free_channel_desc_scm(gNB2UE);
 
@@ -624,6 +633,9 @@ int main(int argc, char **argv)
 
   if (input_fd)
     fclose(input_fd);
+
+  loader_reset();
+  logTerm();
 
   return (n_errors);
 }
