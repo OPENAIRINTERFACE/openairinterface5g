@@ -75,25 +75,23 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
   if(gNB->frame_parms.nb_antennas_tx>1){
     //NR Codebook Generation for codebook type1 SinglePanel
-    //csi_reportconfig->codebookConfig->codebookType.choice.type1->subType.present
-    int N1;
-    int N2;
-    int O1;
-    int O2;
-    int CSI_RS_antenna_ports;
+    int N1 = gNB->ap_N1;
+    int N2 = gNB->ap_N2;
     //Uniform Planner Array: UPA
     //    X X X X ... X
     //    X X X X ... X
     // N2 . . . . ... .
     //    X X X X ... X
     //   |<-----N1---->|
-    int x_polarization=2;//1 or 2
+    int x_polarization = gNB->ap_XP;
     //Get the uniform planar array parameters
-    N2 = 1;//one-dimenstional array (1, 2, 3, 4 are supported in 5G)
-    O2 = 1;//Vertical beam oversampling (1 or 4)
-    N1 = gNB->frame_parms.nb_antennas_tx/(N2*x_polarization);//
-    O1=1;//Horizontal beam oversampling (1 or 4)
-    CSI_RS_antenna_ports=gNB->frame_parms.nb_antennas_tx;
+    // To be confirmed
+    int O2 = N2 > 1? 4 : 1; //Vertical beam oversampling (1 or 4)
+    int O1 = 4; //Horizontal beam oversampling (1 or 4)
+    int CSI_RS_antenna_ports = gNB->frame_parms.nb_antennas_tx;
+    AssertFatal(CSI_RS_antenna_ports == N1*N2*x_polarization,
+                "Nb of antenna ports at PHY %d does not correspond to what passed down with fapi %d\n",
+                 N1*N2*x_polarization, CSI_RS_antenna_ports);
     LOG_D(PHY, "NR Codebook Config: antenna ports: %d N1 %d N2 %d\n",CSI_RS_antenna_ports,N1,N2);
 
     // Generation of codebook Type1 with codebookMode 1 (CSI_RS_antenna_ports < 16)
