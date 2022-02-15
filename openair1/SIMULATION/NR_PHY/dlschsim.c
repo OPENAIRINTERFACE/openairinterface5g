@@ -638,8 +638,15 @@ int main(int argc, char **argv)
   reset_DLSCH_struct(gNB, &msgDataTx);
 
   phy_free_nr_gNB(gNB);
+  free(gNB->threadPool);
+  free(RC.gNB[0]);
+  free(RC.gNB);
 
+  for (int sf = 0; sf < 2; sf++)
+    for (int i = 0; i < 2; i++)
+      free_nr_ue_dlsch(&UE->dlsch[sf][0][i], N_RB_DL);
   term_nr_ue_signal(UE, 1);
+  free(UE);
 
 	for (i = 0; i < 2; i++) {
 		free(s_re[i]);
