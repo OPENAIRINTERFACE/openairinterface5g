@@ -767,13 +767,13 @@ int main(int argc, char **argv)
   }
 
   //nr_init_frame_parms_ue(&UE->frame_parms);
-  init_nr_ue_transport(UE, 0);
+  init_nr_ue_transport(UE);
 
   /*
   for (int sf = 0; sf < 2; sf++) {
     for (i = 0; i < 2; i++) {
 
-        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
+        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8);
 
         if (!UE->ulsch[sf][0][i]) {
           printf("Can't get ue ulsch structures\n");

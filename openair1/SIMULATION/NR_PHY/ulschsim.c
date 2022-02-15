@@ -400,7 +400,7 @@ int main(int argc, char **argv)
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
   //phy_init_nr_top(frame_parms);
-  if (init_nr_ue_signal(UE, 1, 0) != 0) {
+  if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation.\n");
     exit(-1);
   }
@@ -408,7 +408,7 @@ int main(int argc, char **argv)
   for (sf = 0; sf < 2; sf++) {
     for (i = 0; i < 2; i++) {
 
-        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
+        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8);
 
         if (!UE->ulsch[sf][0][i]) {
           printf("Can't get ue ulsch structures.\n");
