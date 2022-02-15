@@ -720,6 +720,9 @@ int main(int argc, char **argv)
 	UE_nr_rxtx_proc_t proc={0};
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
+	const int estimateSz=7*2*sizeof(int)*frame_parms->ofdm_symbol_size;
+	struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
+	struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][estimateSz];
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
 	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms,ssb_index);
 
@@ -730,17 +733,20 @@ int main(int argc, char **argv)
                       i%frame_parms->symbols_per_slot,
                       ssb_slot);
 
-          nr_pbch_channel_estimation(UE,&proc,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+          nr_pbch_channel_estimation(UE,estimateSz, dl_ch_estimates, dl_ch_estimates_time, &proc, 
+				     0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
 
         }
-
+	fapiPbch_t result;
         ret = nr_rx_pbch(UE,
                          &proc,
-                         UE->pbch_vars[0],
+			 estimateSz, dl_ch_estimates,
+			 UE->pbch_vars[0],
                          frame_parms,
                          0,
                          ssb_index%8,
-                         SISO);
+                         SISO,
+			 &result);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
@@ -749,9 +755,9 @@ int main(int argc, char **argv)
 	  for (int i=0; i<8; i++)
 	    gNB_xtra_byte |= ((gNB->pbch.pbch_a>>(31-i))&1)<<(7-i);
  
-	  payload_ret = (UE->pbch_vars[0]->xtra_byte == gNB_xtra_byte);
+	  payload_ret = (result.xtra_byte == gNB_xtra_byte);
 	  for (i=0;i<3;i++){
-	    payload_ret += (UE->pbch_vars[0]->decoded_output[i] == ((msgDataTx.ssb[ssb_index].ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)) & 0xff));
+	    payload_ret += (result.decoded_output[i] == ((msgDataTx.ssb[ssb_index].ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)) & 0xff));
 	  } 
 	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->pbch_vars[0]->xtra_byte);
 	  //printf("ret %d\n", payload_ret);

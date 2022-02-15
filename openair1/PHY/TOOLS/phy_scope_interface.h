@@ -32,6 +32,7 @@
 #ifndef __PHY_SCOPE_INTERFACE_H__
 #define __PHY_SCOPE_INTERFACE_H__
 #include <openair1/PHY/defs_gNB.h>
+
 typedef struct {
   int *argc;
   char **argv;
@@ -39,16 +40,25 @@ typedef struct {
   PHY_VARS_gNB *gNB;
 } scopeParms_t;
 
+enum UEdataType {
+  pbchDlChEstimateTime,
+  pbchLlr,
+  pbchRxdataF_comp,
+  UEdataTypeNumberOfItems
+};
 
 typedef struct scopeData_s {
   int *argc;
   char **argv;
   RU_t *ru;
   PHY_VARS_gNB *gNB;
-  int32_t * rxdataF;
+  void * liveData;
   void (*slotFunc)(int32_t* data, int slot,  void * scopeData);
+  void (*copyData)(enum UEdataType, void * data, int elementSz, int colSz, int lineSz);
 } scopeData_t;
 
 int load_softscope(char *exectype, void *initarg);
 int end_forms(void) ;
+
+#define scopeCopy(ue, type, ...) if(ue->scopeData) ((scopeData_t*)ue->scopeData)->copyData(type, ##__VA_ARGS__);
 #endif
