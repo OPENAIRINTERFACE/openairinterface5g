@@ -638,9 +638,9 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 	unsigned int i, j;
 	bool large_input = false;
 	uint8_t nb_segments = 1;
-	uint64_t start_time=rte_rdtsc_precise();
-	uint64_t start_time1; //=rte_rdtsc_precise();
-	uint64_t total_time=0, total_time1=0;
+	//uint64_t start_time=rte_rdtsc_precise();
+	//uint64_t start_time1; //=rte_rdtsc_precise();
+	//uint64_t total_time=0, total_time1=0;
 
 	for (i = 0; i < n; ++i) {
 		char *data;
@@ -672,14 +672,14 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 			        rte_pktmbuf_reset(m_head);
 				data = rte_pktmbuf_append(m_head, data_len);
 
-				total_time = rte_rdtsc_precise() - start_time;
+				/*total_time = rte_rdtsc_precise() - start_time;
 
 				if (total_time > 10*3000)
 				  LOG_E(PHY," init op first: %u\n",(uint) (total_time/3000));
 
 				start_time1 = rte_rdtsc_precise();
 
-				
+				*/
 				TEST_ASSERT_NOT_NULL(data,
 					"Couldn't append %u bytes to mbuf from %d data type mbuf pool",
 					data_len, op_type);
@@ -689,9 +689,9 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 					"Data addr in mbuf (%p) is not aligned to device min alignment (%u)",
 					data, min_alignment);
 				rte_memcpy(data, p_llr, data_len);
-				total_time1 = rte_rdtsc_precise() - start_time;
+				/*total_time1 = rte_rdtsc_precise() - start_time;
 				if (total_time1 > 10*3000)
-				  LOG_E(PHY,"init op second: %u\n",(uint) (total_time1/3000));
+				LOG_E(PHY,"init op second: %u\n",(uint) (total_time1/3000));*/
 			}
 
 			bufs[i].length += data_len;
@@ -994,7 +994,7 @@ create_reference_ldpc_dec_op(struct rte_bbdev_dec_op *op, t_nrLDPCoffload_params
 
 
 
-
+/*
 static uint32_t
 calc_ldpc_dec_TB_size(struct rte_bbdev_dec_op *op)
 {
@@ -1016,7 +1016,7 @@ calc_ldpc_dec_TB_size(struct rte_bbdev_dec_op *op)
 	}
 	return tb_size;
 }
-
+*/
 
 static int
 init_test_op_params(struct test_op_params *op_params,
@@ -1054,7 +1054,7 @@ pmd_lcore_ldpc_dec(void *arg)
 {
 	struct thread_params *tp = arg;
 	uint16_t enq, deq;
-	uint64_t total_time = 0, start_time;
+	//uint64_t total_time = 0, start_time;
 	const uint16_t queue_id = tp->queue_id;
 	const uint16_t burst_sz = tp->op_params->burst_sz;
 	const uint16_t num_ops = tp->op_params->num_to_process;
@@ -1075,7 +1075,7 @@ pmd_lcore_ldpc_dec(void *arg)
        
         //bool extDdr = check_bit(ldpc_cap_flags,
 	//		RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_OUT_ENABLE);
-	start_time = rte_rdtsc_precise();
+	//start_time = rte_rdtsc_precise();
 	bool loopback = check_bit(ref_op->ldpc_dec.op_flags,
 			RTE_BBDEV_LDPC_INTERNAL_HARQ_MEMORY_LOOPBACK);
 	bool hc_out = check_bit(ref_op->ldpc_dec.op_flags,
@@ -1175,7 +1175,7 @@ pmd_lcore_ldpc_dec(void *arg)
 
 	rte_bbdev_dec_op_free_bulk(ops_enq, num_ops);
 
-	total_time = rte_rdtsc_precise() - start_time;
+	/*total_time = rte_rdtsc_precise() - start_time;
 
 	if (total_time > 100*3000)
 	  LOG_E(PHY," pmd lcore: %u\n",(uint) (total_time/3000));
@@ -1188,7 +1188,7 @@ pmd_lcore_ldpc_dec(void *arg)
 	tp->mbps = (((double)(num_ops * TEST_REPETITIONS * tb_len_bits)) /
 			1000000.0) / ((double)total_time /
 			(double)rte_get_tsc_hz());
-		
+	*/	
 	return ret;
 }
 
@@ -1238,10 +1238,10 @@ start_pmd_dec(struct active_device *ad,
 	struct thread_params *tp;
 	//struct rte_bbdev_info info;
 	uint16_t num_lcores;
-	uint64_t start_time, start_time1 ; //= rte_rdtsc_precise();
-	uint64_t total_time=0, total_time1=0;
+	//uint64_t start_time, start_time1 ; //= rte_rdtsc_precise();
+	//uint64_t total_time=0, total_time1=0;
 	//rte_bbdev_info_get(ad->dev_id, &info);
-	start_time = rte_rdtsc_precise();
+	//start_time = rte_rdtsc_precise();
 	/*printf("+ ------------------------------------------------------- +\n");
 	printf("== start pmd dec\ndev: %s, nb_queues: %u, burst size: %u, num ops: %u, num_lcores: %u,  itr mode: %s, GHz: %lg\n",
 			info.dev_name, ad->nb_queues, op_params->burst_sz,
@@ -1261,7 +1261,7 @@ start_pmd_dec(struct active_device *ad,
 			RTE_ALIGN(sizeof(struct thread_params) * num_lcores,
 				RTE_CACHE_LINE_SIZE));
 	*/
-	total_time = rte_rdtsc_precise() - start_time;
+	//total_time = rte_rdtsc_precise() - start_time;
 	rte_atomic16_set(&op_params->sync, SYNC_WAIT);
 
 	/* Master core is set at first entry */
@@ -1429,13 +1429,13 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid,
     	t_nrLDPCoffload_params offloadParams;
     	t_nrLDPCoffload_params* p_offloadParams    = &offloadParams;
     	uint64_t start=rte_rdtsc_precise();
-	uint64_t start_time;//=rte_rdtsc_precise();
+	/*uint64_t start_time;//=rte_rdtsc_precise();
 	uint64_t start_time1; //=rte_rdtsc_precise();
-	uint64_t total_time=0, total_time1=0;
+	uint64_t total_time=0, total_time1=0;*/
 	uint32_t numIter = 0;
 	int ret;
-	uint64_t start_time_init;
-	uint64_t total_time_init=0;
+	/*uint64_t start_time_init;
+	  uint64_t total_time_init=0;*/
 
 	/*
 	int argc_re=2;
@@ -1590,7 +1590,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid,
 	  //uint64_t start_time_init;
 	  //uint64_t total_time_init=0;
 
-	  start_time_init = rte_rdtsc_precise();
+	  //start_time_init = rte_rdtsc_precise();
 	  p_offloadParams->E = E;
           p_offloadParams->n_cb = (p_decParams->BG==1)?(66*p_decParams->Z):(50*p_decParams->Z);
           p_offloadParams->BG = p_decParams->BG;
@@ -1635,20 +1635,20 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid,
 				"Couldn't init rte_bbdev_op_data structs");
 
 	  }
-	  total_time_init = rte_rdtsc_precise() - start_time_init;
+	  /*total_time_init = rte_rdtsc_precise() - start_time_init;
 
 	  if (total_time_init > 100*3000)
             LOG_E(PHY," ldpc decoder mode 1 first: %u\n",(uint) (total_time_init/3000));
 	  
-	    start_time1 = rte_rdtsc_precise();
+	    start_time1 = rte_rdtsc_precise();*/
 	    ret = start_pmd_dec(ad, op_params, t_params, p_offloadParams, C, harq_pid, ulsch_id, p_out);
 	  if (ret<0) {
 	    printf("Couldn't start pmd dec");
 	    return(-1);
 	  }
-	  total_time1 = rte_rdtsc_precise() - start_time1;
+	  /*total_time1 = rte_rdtsc_precise() - start_time1;
 	  if (total_time1 > 100*3000)
-	  LOG_E(PHY," ldpc decoder mode 1 second: %u\n",(uint) (total_time1/3000));
+	  LOG_E(PHY," ldpc decoder mode 1 second: %u\n",(uint) (total_time1/3000));*/
 	break;
 	case 2:
 
