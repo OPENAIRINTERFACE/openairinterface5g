@@ -204,6 +204,11 @@ int16_t *base_sequence_36_or_larger(unsigned int Msc_RS,
 
 void generate_lowpapr_typ1_refsig_sequences(unsigned int scaling)
 {
+  /* prevent multiple calls, relevant when both UE & gNB initialize this */
+  static bool already_called = false;
+  if (already_called) return;
+  already_called = true;
+
 	unsigned int u,Msc_RS;
   unsigned int v = 0; // sequence hopping and group hopping are not supported yet
 
@@ -223,6 +228,11 @@ void generate_lowpapr_typ1_refsig_sequences(unsigned int scaling)
 
 void generate_ul_reference_signal_sequences(unsigned int scaling)
 {
+  /* prevent multiple calls, relevant when both UE & gNB initialize this */
+  static bool already_called = false;
+  if (already_called) return;
+  already_called = true;
+
 	unsigned int u,v,Msc_RS;
 
 #if 0
@@ -295,10 +305,10 @@ void free_ul_reference_signal_sequences(void)
     for (u=0; u < U_GROUP_NUMBER; u++) {
       for (v=0; v < V_BASE_SEQUENCE_NUMBER; v++) {
         if (rv_ul_ref_sig[u][v][Msc_RS])
-          free16(rv_ul_ref_sig[u][v][Msc_RS],2*sizeof(int16_t)*ul_allocated_re[Msc_RS]);
+          free_and_zero(rv_ul_ref_sig[u][v][Msc_RS]);
         if ((v==0) && (Msc_RS < MAX_INDEX_DMRS_UL_ALLOCATED_REs))
           if (dmrs_lowpaprtype1_ul_ref_sig[u][v][Msc_RS])
-            free16(dmrs_lowpaprtype1_ul_ref_sig[u][v][Msc_RS],2*sizeof(int16_t)*dmrs_ul_allocated_res[Msc_RS]);        
+            free_and_zero(dmrs_lowpaprtype1_ul_ref_sig[u][v][Msc_RS]);
       }
     }
   }
@@ -321,7 +331,7 @@ void free_gnb_lowpapr_sequences(void)
     v=0;
     for (u=0; u < U_GROUP_NUMBER; u++) {      
       if (gNB_dmrs_lowpaprtype1_sequence[u][v][Msc_RS])
-        free16(gNB_dmrs_lowpaprtype1_sequence[u][v][Msc_RS],2*sizeof(int16_t)*dmrs_ul_allocated_res[Msc_RS]);
+        free_and_zero(gNB_dmrs_lowpaprtype1_sequence[u][v][Msc_RS]);
     }
   }
 }
