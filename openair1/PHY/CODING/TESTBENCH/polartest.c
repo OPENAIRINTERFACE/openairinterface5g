@@ -160,7 +160,7 @@ if (logFlag){
 
   uint8_t testArrayLength = ceil(testLength / 32.0);
   uint8_t coderArrayLength = ceil(coderLength / 32.0);
-  uint32_t testInput[testArrayLength]; //generate randomly
+  uint32_t testInput[min(2,testArrayLength)]; //generate randomly
   uint32_t encoderOutput[coderArrayLength];
   uint32_t estimatedOutput[testArrayLength]; //decoder output
   memset(testInput,0,sizeof(uint32_t) * testArrayLength);

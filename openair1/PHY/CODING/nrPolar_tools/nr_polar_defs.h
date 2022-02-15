@@ -278,34 +278,6 @@ void nr_matrix_multiplication_uint8_1D_uint8_2D(uint8_t *matrix1,
     uint16_t row,
     uint16_t col);
 
-uint8_t ***nr_alloc_uint8_3D_array(uint16_t xlen,
-                                   uint16_t ylen,
-                                   uint16_t zlen);
-
-uint8_t **nr_alloc_uint8_2D_array(uint16_t xlen,
-                                  uint16_t ylen);
-
-double ***nr_alloc_double_3D_array(uint16_t xlen,
-                                   uint16_t ylen,
-                                   uint16_t zlen);
-
-double **nr_alloc_double_2D_array(uint16_t xlen,
-                                  uint16_t ylen);
-
-void nr_free_double_3D_array(double ***input,
-                             uint16_t xlen,
-                             uint16_t ylen);
-
-void nr_free_double_2D_array(double **input,
-                             uint16_t xlen);
-
-void nr_free_uint8_3D_array(uint8_t ***input,
-                            uint16_t xlen,
-                            uint16_t ylen);
-
-void nr_free_uint8_2D_array(uint8_t **input,
-                            uint16_t xlen);
-
 void nr_sort_asc_double_1D_array_ind(double *matrix,
                                      uint8_t *ind,
                                      uint8_t len);
@@ -316,52 +288,33 @@ void nr_sort_asc_int16_1D_array_ind(int32_t *matrix,
 
 void nr_free_double_2D_array(double **input, uint16_t xlen);
 
-void updateLLR(double ***llr,
-               uint8_t **llrU,
-               uint8_t ***bit,
-               uint8_t **bitU,
-               uint8_t listSize,
-               uint16_t row,
-               uint16_t col,
-               uint16_t xlen,
-               uint8_t ylen);
-
-void updateBit(uint8_t ***bit,
-               uint8_t **bitU,
-               uint8_t listSize,
-               uint16_t row,
-               uint16_t col,
-               uint16_t xlen,
-               uint8_t ylen);
-
+void updateLLR(uint8_t listSize,
+	       uint16_t row,
+	       uint16_t col,
+	        uint16_t xlen,
+	       uint8_t ylen,
+	       int zlen,
+	       double  llr[xlen][ylen][zlen],
+	       uint8_t llrU[xlen][ylen],
+	       uint8_t bit[xlen][ylen][zlen],
+	       uint8_t bitU[xlen][ylen]
+	       );
 void updatePathMetric(double *pathMetric,
-                      double ***llr,
-                      uint8_t listSize,
-                      uint8_t bitValue,
-                      uint16_t row);
-
+		      uint8_t listSize,
+		      uint8_t bitValue,
+		      uint16_t row,
+		      int xlen,
+		      int ylen,
+		      int zlen,
+		      double llr[xlen][ylen][zlen]
+		      );
 void updatePathMetric2(double *pathMetric,
-                       double ***llr,
-                       uint8_t listSize,
-                       uint16_t row);
-
-void computeLLR(double ***llr,
-                uint16_t row,
-                uint16_t col,
-                uint8_t i,
-                uint16_t offset);
-
-void updateCrcChecksum(uint8_t **crcChecksum,
-                       uint8_t **crcGen,
-                       uint8_t listSize,
-                       uint32_t i2,
-                       uint8_t len);
-
-void updateCrcChecksum2(uint8_t **crcChecksum,
-                        uint8_t **crcGen,
-                        uint8_t listSize,
-                        uint32_t i2,
-                        uint8_t len);
+		       uint8_t listSize,
+		       uint16_t row,
+		       int xlen,
+		       int ylen,
+		       int zlen,
+		       double llr[xlen][ylen][zlen]);
 
 //Also nr_polar_rate_matcher
 static inline void nr_polar_interleaver(uint8_t *input,
