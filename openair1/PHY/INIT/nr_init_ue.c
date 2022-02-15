@@ -485,10 +485,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   }
 
   // initialization for the last instance of pdsch_vars (used for MU-MIMO)
-  for (th_id = 0; th_id < RX_NB_TH_MAX; th_id++)
-    ue->pdsch_vars[th_id][gNB_id] = malloc16_clear(sizeof(NR_UE_PDSCH));
-
   for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
+    ue->pdsch_vars[th_id][gNB_id] = malloc16_clear(sizeof(NR_UE_PDSCH));
     ue->pdsch_vars[th_id][gNB_id]->llr[1] = malloc16_clear((8*(3*8*8448))*sizeof(int16_t));
     ue->pdsch_vars[th_id][gNB_id]->layer_llr[1] = malloc16_clear((8*(3*8*8448))*sizeof(int16_t));
   }
@@ -680,6 +678,13 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     free_and_zero(ue->prach_vars[gNB_id]->prachF);
     free_and_zero(ue->prach_vars[gNB_id]->prach);
     free_and_zero(ue->prach_vars[gNB_id]);
+  }
+
+  const int gNB_id = ue->n_connected_gNB;
+  for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
+    free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr[1]);
+    free_and_zero(ue->pdsch_vars[th_id][gNB_id]->layer_llr[1]);
+    free_and_zero(ue->pdsch_vars[th_id][gNB_id]);
   }
 
   free_and_zero(ue->sinr_CQI_dB);
