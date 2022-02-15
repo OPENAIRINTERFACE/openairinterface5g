@@ -41,6 +41,10 @@ typedef struct complex16 scopeSample_t;
 #define SquaredNorm(VaR) ((VaR).r*(VaR).r+(VaR).i*(VaR).i)
 
 typedef struct {
+  int dataSize;
+  int elementSz;
+  int colSz;
+  int lineSz;
 } scopeGraphData_t;
 
 typedef struct OAIgraph {
@@ -59,7 +63,7 @@ typedef struct OAIgraph {
   boolean_t initDone;
   int iteration;
   void (*gNBfunct) (struct OAIgraph *graph, scopeData_t *p, int UE_id);
-  void (*nrUEfunct)(scopeGraphData_t** data, struct OAIgraph *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id);
+  void (*nrUEfunct)(scopeGraphData_t **data, struct OAIgraph *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id);
 } OAIgraph_t;
 
 /* Forms and Objects */
@@ -546,7 +550,7 @@ static void *scope_thread_gNB(void *arg) {
 
 static void copyRxdataF(int32_t *data, int slot,  void *scopeData) {
   scopeData_t *scope=(scopeData_t *)scopeData;
-  memcpy(((int32_t*)scope->liveData) + slot*scope->gNB->frame_parms.samples_per_slot_wCP,
+  memcpy(((int32_t *)scope->liveData) + slot*scope->gNB->frame_parms.samples_per_slot_wCP,
          data,
          scope->gNB->frame_parms.samples_per_slot_wCP*sizeof(int32_t));
 }
@@ -584,10 +588,11 @@ static void ueChannelResponse  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_
   // Channel Impulse Response
   if (!data[pbchDlChEstimateTime])
     return;
-  
-  genericPowerPerAntena(graph, phy_vars_ue->frame_parms.nb_antennas_rx,
-                        (const scopeSample_t **) &data[pbchDlChEstimateTime],
-                        phy_vars_ue->frame_parms.ofdm_symbol_size>>3);
+
+  const scopeSample_t *tmp=(scopeSample_t *)(data[pbchDlChEstimateTime]+1);
+  genericPowerPerAntena(graph, data[pbchDlChEstimateTime]->colSz,
+                        &tmp,
+                        data[pbchDlChEstimateTime]->lineSz);
 }
 
 static void ueFreqWaterFall (scopeGraphData_t **data, OAIgraph_t *graph,PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id ) {
@@ -639,51 +644,38 @@ static void uePbchLLR  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_
   if ( !data[pbchLlr])
     return;
 
-  int16_t *pbch_llr = (int16_t *)data[pbchLlr];
+  const int sz=data[pbchLlr]->lineSz;
+  //const int antennas=data[pbchLlr]->colSz;
+  // We take the first antenna only for now
+  int16_t *llrs = (int16_t *) (data[pbchLlr]+1);
   float *llr_pbch, *bit_pbch;
-  oai_xygraph_getbuff(graph, &bit_pbch, &llr_pbch, 864, 0);
+  oai_xygraph_getbuff(graph, &bit_pbch, &llr_pbch, sz, 0);
 
-  for (int i=0; i<864; i++) {
-    llr_pbch[i] = (float) pbch_llr[i];
+  for (int i=0; i<sz; i++) {
+    llr_pbch[i] = llrs[i];
   }
 
-  oai_xygraph(graph,bit_pbch,llr_pbch,864,0,10);
+  oai_xygraph(graph,bit_pbch,llr_pbch,sz,0,10);
 }
+
 static void uePbchIQ  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PBCH I/Q of MF Output
-
   if (!data[pbchRxdataF_comp])
     return;
-  
-  scopeSample_t *pbch_comp = (scopeSample_t *) data[pbchRxdataF_comp];
+
+  scopeSample_t *pbch_comp = (scopeSample_t *) (data[pbchRxdataF_comp]+1);
+  const int sz=data[pbchRxdataF_comp]->lineSz;
   float *I, *Q;
-  oai_xygraph_getbuff(graph, &I, &Q, 180*3, 0);
-  memset(I,0,180*3*sizeof(*I));
-  memset(Q,0,180*3*sizeof(*Q));
-  int first_symbol=1;
-  int base=0;
+  oai_xygraph_getbuff(graph, &I, &Q, sz, 0);
 
-  for (int symbol=first_symbol; symbol<(first_symbol+3); symbol++) {
-    int nb_re;
-
-    if (symbol == 2 || symbol == 6)
-      nb_re = 72;
-    else
-      nb_re = 180;
-
-    AssertFatal(base+nb_re<180*3,"");
-
-    for (int i=0; i<nb_re; i++) {
-      I[base+i] = pbch_comp[symbol*20*12+i].r;
-      Q[base+i] = pbch_comp[symbol*20*12+i].i;
-    }
-
-    base+=nb_re;
+  for (int i=0; i<sz; i++) {
+    I[i]=pbch_comp[i].r;
+    Q[i]=pbch_comp[i].i;
   }
 
-  AssertFatal(base <= 180*3,"");
-  oai_xygraph(graph,I,Q,base,0, 10);
+  oai_xygraph(graph, I, Q, sz, 0, true);
 }
+
 static void uePcchLLR  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDCCH LLRs
   if (!phy_vars_ue->pdcch_vars[0][eNB_id]->llr)
@@ -882,7 +874,7 @@ static OAI_phy_scope_t *create_phy_scope_nrue( int ID ) {
 }
 
 void phy_scope_nrUE(scopeGraphData_t **UEliveData,
-		    OAI_phy_scope_t *form,
+                    OAI_phy_scope_t *form,
                     PHY_VARS_NR_UE *phy_vars_ue,
                     int eNB_id,
                     int UE_id) {
@@ -909,20 +901,19 @@ void phy_scope_nrUE(scopeGraphData_t **UEliveData,
 static void *nrUEscopeThread(void *arg) {
   PHY_VARS_NR_UE *ue=(PHY_VARS_NR_UE *)arg;
   size_t stksize;
-  pthread_attr_t atr={0};
+  pthread_attr_t atr= {0};
   pthread_attr_getstacksize(&atr, &stksize);
   pthread_attr_setstacksize(&atr,32*1024*1024 );
   int fl_argc=1;
   char *name="5G-UE-scope";
   fl_initialize (&fl_argc, &name, NULL, 0, 0);
   OAI_phy_scope_t  *form_nrue=create_phy_scope_nrue(0);
+  (( scopeData_t *)ue->scopeData)->liveData=calloc(sizeof(scopeGraphData_t *), UEdataTypeNumberOfItems);
 
-  scopeGraphData_t *UEliveData[UEdataTypeNumberOfItems];
-  
   while (!oai_exit) {
     fl_freeze_form(form_nrue->phy_scope);
-    phy_scope_nrUE(UEliveData,
-		   form_nrue,
+    phy_scope_nrUE((( scopeData_t *)ue->scopeData)->liveData,
+                   form_nrue,
                    ue,
                    0,0);
     fl_unfreeze_form(form_nrue->phy_scope);
@@ -933,8 +924,30 @@ static void *nrUEscopeThread(void *arg) {
   pthread_exit((void *)arg);
 }
 
-void UEcopyData(enum UEdataType type, void * data, int elementSz, int colSz, int lineSz) {
- 
+void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz) {
+  scopeData_t *tmp=(scopeData_t *)ue->scopeData;
+
+  if (tmp) {
+    scopeGraphData_t *live= ((scopeGraphData_t **)tmp->liveData)[type];
+
+    if (live == NULL || live->dataSize < elementSz*colSz*lineSz) {
+      scopeGraphData_t *ptr=realloc(live, sizeof(scopeGraphData_t) + elementSz*colSz*lineSz);
+
+      if (!ptr) {
+        LOG_E(PHY,"can't realloc\n");
+        return;
+      } else {
+        live=ptr;
+      }
+    }
+
+    live->dataSize=elementSz*colSz*lineSz;
+    live->elementSz=elementSz;
+    live->colSz=colSz;
+    live->lineSz=lineSz;
+    memcpy(live+1, dataIn,  elementSz*colSz*lineSz);
+    ((scopeGraphData_t **)tmp->liveData)[type]=live;
+  }
 }
 
 void nrUEinitScope(PHY_VARS_NR_UE *ue) {
@@ -942,7 +955,7 @@ void nrUEinitScope(PHY_VARS_NR_UE *ue) {
   scopeData_t *scope=(scopeData_t *) ue->scopeData;
   scope->copyData=UEcopyData;
   pthread_t forms_thread;
-  threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW); 
+  threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
 
 void nrscope_autoinit(void *dataptr) {

@@ -1170,7 +1170,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                                          (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
                                          (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
                                          (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
-
+	    free((dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu);
             break;
           case FAPI_NR_RX_PDU_TYPE_SIB:
             ret_mask |= (handle_bcch_dlsch(dl_info->module_id,
