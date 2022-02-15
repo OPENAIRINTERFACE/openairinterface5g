@@ -356,7 +356,7 @@ int main(int argc, char **argv)
 	}
 
 	RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
-	RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+	RC.gNB[0] = calloc(1, sizeof(PHY_VARS_gNB));
 	gNB = RC.gNB[0];
 	gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
 	initTpool(gNBthreads, gNB->threadPool, true);
