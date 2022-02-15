@@ -104,6 +104,49 @@ queue_t nr_rach_ind_queue;
 
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg);
 
+static int dump_L1_UE_meas_stats(PHY_VARS_NR_UE *ue, char *output, int max_len)
+{
+  int stroff = 0;
+  stroff += print_meas_log(&ue->phy_proc_tx, "L1 TX processing", NULL, NULL, output);
+  stroff += print_meas_log(&ue->ulsch_encoding_stats, "ULSCH encoding", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->phy_proc_rx[0], "L1 RX processing t0", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->phy_proc_rx[1], "L1 RX processing t1", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->ue_ul_indication_stats, "UL Indication", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->rx_pdsch_stats, "PDSCH receiver", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_decoding_stats[0], "PDSCH decoding t0", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_decoding_stats[1], "PDSCH decoding t1", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_deinterleaving_stats, " -> Deinterleive", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_rate_unmatching_stats, " -> Rate Unmatch", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_ldpc_decoding_stats, " ->  LDPC Decode", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_unscrambling_stats, "PDSCH unscrambling", NULL, NULL, output + stroff);
+  stroff += print_meas_log(&ue->dlsch_rx_pdcch_stats, "PDCCH handling", NULL, NULL, output + stroff);
+  return stroff;
+}
+
+static void *nrL1_UE_stats_thread(void *param)
+{
+  PHY_VARS_NR_UE *ue = (PHY_VARS_NR_UE *) param;
+  const int max_len = 16384;
+  char output[max_len];
+  char filename[30];
+  snprintf(filename, 29, "nrL1_UE_stats-%d.log", ue->Mod_id);
+  filename[29] = 0;
+  FILE *fd = fopen(filename, "w");
+  AssertFatal(fd != NULL, "Cannot open %s\n", filename);
+
+  while (!oai_exit) {
+    sleep(1);
+    const int len = dump_L1_UE_meas_stats(ue, output, max_len);
+    AssertFatal(len < max_len, "exceeded length\n");
+    fwrite(output, len + 1, 1, fd); // + 1 for terminating NULL byte
+    fflush(fd);
+    fseek(fd, 0, SEEK_SET);
+  }
+  fclose(fd);
+
+  return NULL;
+}
+
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t UE_id,
                      uint8_t abstraction_flag)
@@ -593,7 +636,7 @@ static void UE_synch(void *arg) {
       uint64_t dl_carrier, ul_carrier;
       nr_get_carrier_frequencies(UE, &dl_carrier, &ul_carrier);
 
-      if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa, get_nrUE_params()->nr_dlsch_parallel) == 0) {
+      if (nr_initial_sync(&syncD->proc, UE, 2, get_softmodem_params()->sa) == 0) {
         freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
         hw_slot_offset = ((UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe * UE->frame_parms.slots_per_subframe) +
                          round((float)((UE->rx_offset<<1) % UE->frame_parms.samples_per_subframe)/UE->frame_parms.samples_per_slot0);
@@ -666,6 +709,7 @@ void processSlotTX(void *arg) {
     // trigger L2 to run ue_scheduler thru IF module
     // [TODO] mapping right after NR initial sync
     if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
+      start_meas(&UE->ue_ul_indication_stats);
       nr_uplink_indication_t ul_indication;
       memset((void*)&ul_indication, 0, sizeof(ul_indication));
 
@@ -680,6 +724,7 @@ void processSlotTX(void *arg) {
       ul_indication.ue_sched_mode = rxtxD->ue_sched_mode;
 
       UE->if_inst->ul_indication(&ul_indication);
+      stop_meas(&UE->ue_ul_indication_stats);
     }
 
     if ((UE->mode != loop_through_memory) && (rxtxD->ue_sched_mode != NOT_PUSCH)) {
@@ -1164,6 +1209,8 @@ void init_NR_UE_threads(int nb_inst) {
 
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     threadCreate(&threads[inst], UE_thread, (void *)UE, "UEthread", -1, OAI_PRIORITY_RT_MAX);
+    pthread_t stat_pthread;
+    threadCreate(&stat_pthread, nrL1_UE_stats_thread, UE, "L1_UE_stats", -1, OAI_PRIORITY_RT_LOW);
   }
 }
 

@@ -294,6 +294,10 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  NR-PUCCH 
    - Format 0 (2 bits, for ACK/NACK and SR)
    - Format 2 (up to 11 bits, mainly for CSI feedback)
+*  NR-SRS
+    - SRS signal reception
+    - Channel estimation (with T tracer real time monitoring)
+    - Power noise estimation
 *  NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
@@ -322,6 +326,8 @@ The following features are valid for the gNB and the 5G-NR UE.
   - phy-test scheduler (fixed allocation)
   - regular scheduler with dynamic allocation
   - HARQ procedures for uplink
+- Scheduler procedures for SRS reception
+  - Periodic SRS reception
 - MAC procedures to handle CSI measurement report
   - evalution of RSRP report
   - evaluation of CQI report
@@ -433,11 +439,12 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Format 0 (2 bits for ACK/NACK and SR)
    - Format 2 (up to 64 bits, mainly for CSI feedback)
    - Format 1, 3 and 4 present but old code never dested (need restructuring before verification)
-*  NR-PRACH
+* NR-SRS
+    - Generation of sequence at PHY
+    - SRS signal transmission
+* NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
-*  NR-SRS
-   - Old code never dested (need restructuring before verification)
-*  SS-RSRP
+* SS-RSRP
    - RSRP measured on synchronization SSB (ok only for single SSB)
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
 *  Highly efficient 3GPP compliant polar encoder and decoder
@@ -452,21 +459,21 @@ The following features are valid for the gNB and the 5G-NR UE.
 ## NR UE Higher Layers ##
 
 **UE MAC**
-*  Minimum system information (MSI)
+* Minimum system information (MSI)
    - MIB processing
    - Scheduling of system information block 1 (SIB1) reception
-*  Random access procedure (needs improvement, there is still not a clear separation between MAC and PHY)
+* Random access procedure (needs improvement, there is still not a clear separation between MAC and PHY)
    - Mapping SSBs to multiple ROs
    - Scheduling of PRACH
    - Processing of RAR
    - Transmission and re-transmission of Msg3
    - Msg4 and contention resolution
-*  DCI processing
+* DCI processing
    - format 10 (RA-RNTI, C-RNTI, SI-RNTI, TC-RNTI)
    - format 00 (C-RNTI, TC-RNTI)
    - format 11 (C-RNTI)
    - format 01 (C-RNTI)
-*  UCI processing
+* UCI processing
    - ACK/NACK processing
    - Triggering periodic SR
    - CSI measurement reporting (SSB RSRP only)
@@ -475,6 +482,8 @@ The following features are valid for the gNB and the 5G-NR UE.
    - HARQ procedures
 * ULSCH scheduler
    - Configuration of fapi PDU according to DCI
+* Scheduler procedures for SRS transmission
+   - Periodic SRS transmission
 
 
 **UE RLC**
