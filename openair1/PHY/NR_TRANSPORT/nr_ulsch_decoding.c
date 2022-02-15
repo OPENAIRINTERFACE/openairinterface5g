@@ -739,6 +739,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
 	  phy_vars_gNB->Mod_id, harq_process->frame, harq_process->slot,
 	  harq_pid,harq_process->status, harq_process->round,harq_process->TBS,r);
+    harq_process->round++;
     if (harq_process->round >= ulsch->Mlimit) {
       harq_process->status = SCH_IDLE;
       harq_process->round  = 0;
