@@ -26,6 +26,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include "common/config/config_userapi.h"
+#include "common/utils/load_module_shlib.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h" 
 #include "PHY/types.h"
@@ -70,7 +71,6 @@ int main(int argc, char **argv)
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   double cfo=0;
   uint8_t snr1set=0;
-  int **txdataF,**rxdataF;
   double **s_re,**s_im,**r_re,**r_im;
   //int sync_pos, sync_pos_slot;
   //FILE *rx_frame_file;
@@ -372,7 +372,7 @@ int main(int argc, char **argv)
 
   printf("Transmitted payload is %ld, do_DTX = %d\n",actual_payload,do_DTX);
 
-  RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
+  RC.gNB = calloc(1, sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   gNB->pucch0_thres = pucch_DTX_thres;
@@ -441,24 +441,15 @@ int main(int argc, char **argv)
   s_im = malloc(n_tx*sizeof(double*));
   r_re = malloc(n_rx*sizeof(double*));
   r_im = malloc(n_rx*sizeof(double*));
-  txdataF = malloc(n_tx*sizeof(int*));
-  rxdataF = malloc(n_rx*sizeof(int*));
-  gNB->common_vars.rxdataF=rxdataF;
   memcpy((void*)&gNB->frame_parms,(void*)frame_parms,sizeof(frame_parms));
   for (int aatx=0; aatx<n_tx; aatx++) {
     s_re[aatx] = calloc(1,frame_length_complex_samples*sizeof(double));
     s_im[aatx] = calloc(1,frame_length_complex_samples*sizeof(double));
-    printf("Allocating %d samples for txdataF\n",frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size);
-    txdataF[aatx] = memalign(32,14*frame_parms->ofdm_symbol_size*sizeof(int));
-    bzero(txdataF[aatx],14*frame_parms->ofdm_symbol_size*sizeof(int));
   }
 
   for (int aarx=0; aarx<n_rx; aarx++) {
     r_re[aarx] = calloc(1,frame_length_complex_samples*sizeof(double));
     r_im[aarx] = calloc(1,frame_length_complex_samples*sizeof(double));
-    printf("Allocating %d samples for rxdataF\n",frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size);
-    rxdataF[aarx] = memalign(32,14*frame_parms->ofdm_symbol_size*sizeof(int));
-    bzero(rxdataF[aarx],14*frame_parms->ofdm_symbol_size*sizeof(int));
   }
 
   uint8_t mcs=0;
@@ -536,6 +527,7 @@ int main(int argc, char **argv)
     ack_nack_errors=0;
     sr_errors=0;
     n_errors = 0;
+    int **txdataF = gNB->common_vars.txdataF;
     for (trial=0; trial<n_trials; trial++) {
       for (int aatx=0;aatx<1;aatx++)
         bzero(txdataF[aatx],frame_parms->ofdm_symbol_size*sizeof(int));
@@ -562,6 +554,7 @@ int main(int argc, char **argv)
 
       int i0;
       double txr,txi,rxr,rxi,nr,ni;
+      int **rxdataF = gNB->common_vars.rxdataF;
       for (int symb=0; symb<gNB->frame_parms.symbols_per_slot;symb++) {
         if (symb<startingSymbolIndex || symb >= startingSymbolIndex+nrofSymbols) {
           i0 = symb*gNB->frame_parms.ofdm_symbol_size;
@@ -662,20 +655,20 @@ int main(int argc, char **argv)
             sr_errors+=1;
         }
         // harq value 0 -> pass
+        nfapi_nr_harq_t *harq_list = uci_pdu.harq->harq_list;
         // confidence value 0 -> good confidence
-        const int harq_value0 = uci_pdu.harq->harq_list[0].harq_value;
-        const int harq_value1 = uci_pdu.harq->harq_list[1].harq_value;
         const int confidence_lvl = uci_pdu.harq->harq_confidence_level;
         if(nr_bit>0){
           if (nr_bit==1 && do_DTX == 0)
-            ack_nack_errors+=(actual_payload^(!harq_value0));
+            ack_nack_errors+=(actual_payload^(!harq_list[0].harq_value));
           else if (do_DTX == 0)
-            ack_nack_errors+=(((actual_payload&1)^(!harq_value0))+((actual_payload>>1)^(!harq_value1)));
-          else if ((!confidence_lvl && !harq_value0) ||
-                   (!confidence_lvl && nr_bit == 2 && !harq_value1))
+            ack_nack_errors+=(((actual_payload&1)^(!harq_list[0].harq_value))+((actual_payload>>1)^(!harq_list[1].harq_value)));
+          else if ((!confidence_lvl && !harq_list[0].harq_value) ||
+                   (!confidence_lvl && nr_bit == 2 && !harq_list[1].harq_value))
             ack_nack_errors++;
           free(uci_pdu.harq->harq_list);
         }
+        free(uci_pdu.harq);
       }
       else if (format==1) {
         nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,hopping_id,
@@ -735,25 +728,34 @@ int main(int argc, char **argv)
     }
   }
 
+  free_channel_desc_scm(UE2gNB);
+  term_freq_channel();
+
+  phy_free_nr_gNB(gNB);
+  free(RC.gNB[0]);
+  free(RC.gNB);
+
+  term_nr_ue_signal(UE, 1);
+  free(UE);
+
   for (int aatx=0; aatx<n_tx; aatx++) {
     free(s_re[aatx]);
     free(s_im[aatx]);
-    free(txdataF[aatx]);
   }
   for (int aarx=0; aarx<n_rx; aarx++) {
     free(r_re[aarx]);
     free(r_im[aarx]);
-    free(rxdataF[aarx]);
   }
   free(s_re);
   free(s_im);
   free(r_re);
   free(r_im);
-  free(txdataF);
-  free(rxdataF);
 
   if (output_fd) fclose(output_fd);
   if (input_fd)  fclose(input_fd);
+
+  loader_reset();
+  logTerm();
 
   return(n_errors);
 }
