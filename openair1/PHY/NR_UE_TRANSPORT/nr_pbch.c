@@ -36,6 +36,7 @@
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/INIT/phy_init.h"
 #include "openair1/SCHED_NR_UE/defs.h"
+#include <openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h>
 
 //#define DEBUG_PBCH 
 //#define DEBUG_PBCH_ENCODING
@@ -46,16 +47,16 @@
 
 #define print_shorts(s,x) printf("%s : %d,%d,%d,%d,%d,%d,%d,%d\n",s,((int16_t*)x)[0],((int16_t*)x)[1],((int16_t*)x)[2],((int16_t*)x)[3],((int16_t*)x)[4],((int16_t*)x)[5],((int16_t*)x)[6],((int16_t*)x)[7])
 
-uint16_t nr_pbch_extract(int **rxdataF,
-                         int **dl_ch_estimates,
-                         int **rxdataF_ext,
-                         int **dl_ch_estimates_ext,
+static uint16_t nr_pbch_extract(int **rxdataF,
+                         const int estimateSz,
+			 struct complex16 dl_ch_estimates[][estimateSz],
+                         struct complex16 rxdataF_ext[][20*12*4],
+                         struct complex16 dl_ch_estimates_ext[][20*12*4],
                          uint32_t symbol,
                          uint32_t s_offset,
                          NR_DL_FRAME_PARMS *frame_parms) {
   uint16_t rb;
   uint8_t i,j,aarx;
-  int32_t *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
   int nushiftmod4 = frame_parms->nushift;
 
   AssertFatal(symbol>=1 && symbol<5,
@@ -66,8 +67,8 @@ uint16_t nr_pbch_extract(int **rxdataF,
     unsigned int rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier;
     rx_offset = (rx_offset)%(frame_parms->ofdm_symbol_size);
 
-    rxF        = &rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
-    rxF_ext    = &rxdataF_ext[aarx][symbol*20*12];
+    struct complex16 *rxF        = (struct complex16 *)&rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
+    struct complex16 *rxF_ext    = rxdataF_ext[aarx];
 #ifdef DEBUG_PBCH
     printf("extract_rbs (nushift %d): rx_offset=%d, symbol %u\n",frame_parms->nushift,
            (rx_offset + ((symbol+s_offset)*(frame_parms->ofdm_symbol_size))),symbol);
@@ -76,7 +77,6 @@ uint16_t nr_pbch_extract(int **rxdataF,
     for (int i =0; i<8; i++) {
       printf("rxF [%d]= %d\n",i,rxF[i]);
       printf("pbch extract rxF  %d %d addr %p\n", p[2*i], p[2*i+1], &p[2*i]);
-      printf("rxF ext addr %p\n", &rxF_ext[i]);
     }
 
 #endif
@@ -134,11 +134,10 @@ uint16_t nr_pbch_extract(int **rxdataF,
           }
       }
     }
-
-    dl_ch0 = &dl_ch_estimates[aarx][((symbol+s_offset)*(frame_parms->ofdm_symbol_size))];
+    struct complex16 *dl_ch0 = &dl_ch_estimates[aarx][((symbol+s_offset)*(frame_parms->ofdm_symbol_size))];
 
     //printf("dl_ch0 addr %p\n",dl_ch0);
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*20*12];
+    struct complex16 *dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*20*12];
 
     for (rb=0; rb<20; rb++) {
       j=0;
@@ -199,7 +198,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
 //__m128i avg128;
 
 //compute average channel_level on each (TX,RX) antenna pair
-int nr_pbch_channel_level(int **dl_ch_estimates_ext,
+int nr_pbch_channel_level(struct complex16 dl_ch_estimates_ext[][20*12*4],
                           NR_DL_FRAME_PARMS *frame_parms,
                           uint32_t symbol) {
   int16_t rb, nb_rb=20;
@@ -258,13 +257,13 @@ int nr_pbch_channel_level(int **dl_ch_estimates_ext,
   return(avg2);
 }
 
-void nr_pbch_channel_compensation(int **rxdataF_ext,
-                                  int **dl_ch_estimates_ext,
-                                  int **rxdataF_comp,
-                                  NR_DL_FRAME_PARMS *frame_parms,
-                                  uint32_t symbol,
-                                  uint8_t output_shift) {
-  const uint16_t nb_re=symbol == 2 ? 72 : 180;
+static void nr_pbch_channel_compensation(struct complex16 rxdataF_ext[][20*12*4],
+					 struct complex16 dl_ch_estimates_ext[][20*12*4],
+					 int cols,
+					 struct complex16 rxdataF_comp[][cols],
+					 NR_DL_FRAME_PARMS *frame_parms,
+					 uint32_t symbol,
+					 uint8_t output_shift) {
   AssertFatal((symbol > 0 && symbol < 4),
               "symbol %d is illegal for PBCH DM-RS\n",
               symbol);
@@ -273,15 +272,15 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
 
   for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     vect128 *dl_ch128          = (vect128 *)&dl_ch_estimates_ext[aarx][symbol*20*12];
-    vect128 *rxdataF128        = (vect128 *)&rxdataF_ext[aarx][symbol*20*12];
-    vect128 *rxdataF_comp128   = (vect128 *)&rxdataF_comp[aarx][symbol*20*12];
+    vect128 *rxdataF128        = (vect128 *)rxdataF_ext[aarx];
+    vect128 *rxdataF_comp128   = (vect128 *)rxdataF_comp[aarx];
     /*
     printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[aarx][symbol*20*12]);
-    printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
+    printf("rxdataf ext addr %p symbol %d\n", rxdataF_ext[aarx], symbol);
     printf("rxdataf_comp addr %p\n",&rxdataF_comp[aarx][symbol*20*12]);
     */
 
-    for (int re=0; re<nb_re; re+=12) {
+    for (int re=0; re<cols; re+=12) {
       *rxdataF_comp128++ = mulByConjugate128(rxdataF128++, dl_ch128++, output_shift);
       *rxdataF_comp128++ = mulByConjugate128(rxdataF128++, dl_ch128++, output_shift);
       *rxdataF_comp128++ = mulByConjugate128(rxdataF128++, dl_ch128++, output_shift);
@@ -327,16 +326,18 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 }
 
 static void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
-                          uint16_t Nid,
-                          uint8_t nushift,
-                          uint16_t M,
-                          uint16_t length,
-                          uint8_t bitwise,
-                          uint32_t unscrambling_mask) {
+				 int16_t *demod_pbch_e,	 
+                                 uint16_t Nid,
+                                 uint8_t nushift,
+                                 uint16_t M,
+                                 uint16_t length,
+                                 uint8_t bitwise,
+				 uint32_t unscrambling_mask,
+				 uint32_t pbch_a_prime,
+				 uint32_t *pbch_a_interleaved) {
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
   uint8_t k=0;
-  int16_t *demod_pbch_e = pbch->llr;
   reset = 1;
   // x1 is set in first call to lte_gold_generic
   x2 = Nid; //this is c_init
@@ -361,10 +362,10 @@ static void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
         reset = 0;
       }
 
-      (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
-      k += (!((unscrambling_mask>>i)&1));
+    *pbch_a_interleaved ^= ((unscrambling_mask>>i)&1)? ((pbch_a_prime>>i)&1)<<i : (((pbch_a_prime>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
+    k += (!((unscrambling_mask>>i)&1));
 #ifdef DEBUG_PBCH_ENCODING
-      printf("i %d k %d offset %d (unscrambling_mask>>i)&1) %d s: %08x\t  pbch_a_interleaved 0x%08x (!((unscrambling_mask>>i)&1)) %d\n", i, k, offset, (unscrambling_mask>>i)&1, s, pbch->pbch_a_interleaved,
+     printf("i %d k %d offset %d (unscrambling_mask>>i)&1) %d s: %08x\t  pbch_a_interleaved 0x%08x (!((unscrambling_mask>>i)&1)) %d\n", i, k, offset, (unscrambling_mask>>i)&1, s, *pbch_a_interleaved,
              (!((unscrambling_mask>>i)&1)));
 #endif
     } else {
@@ -386,7 +387,7 @@ static void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
   }
 }
 
-void nr_pbch_quantize(int16_t *pbch_llr8,
+static void nr_pbch_quantize(int16_t *pbch_llr8,
                       int16_t *pbch_llr,
                       uint16_t len) {
   uint16_t i;
@@ -410,11 +411,13 @@ uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,7,29,25,27,5,8,24,9,10,11,
 
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
+                int estimateSz, struct complex16 dl_ch_estimates [][estimateSz], 
                 NR_UE_PBCH *nr_ue_pbch_vars,
                 NR_DL_FRAME_PARMS *frame_parms,
                 uint8_t gNB_id,
                 uint8_t i_ssb,
-                MIMO_mode_t mimo_mode) {
+                MIMO_mode_t mimo_mode,
+		fapiPbch_t* result) {
 
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
   int max_h=0;
@@ -422,9 +425,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //uint8_t pbch_a[64];
 //FT ?? cppcheck doesn't like pbch_a allocation because of line 525..and i don't get what this variable is for..
 //uint8_t *pbch_a = malloc(sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
-  //uint32_t pbch_a_prime;
-  int16_t *pbch_e_rx;
-  uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
   uint8_t nushift;
   uint16_t M;
   uint8_t Lmax=frame_parms->Lmax; 
@@ -437,9 +437,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 // FT ?? cppcheck fix  memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
 
-  pbch_e_rx = &nr_ue_pbch_vars->llr[0];
-  // clear LLR buffer
-  memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_E);
+  int16_t pbch_e_rx[960]={0}; //Fixme: previous version erase only NR_POLAR_PBCH_E bytes
+  int pbch_e_rx_idx=0;
   int symbol_offset=1;
 
   if (ue->is_synchronized > 0)
@@ -455,12 +454,19 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
 
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
+  double log2_maxh;
   for (symbol=1; symbol<4; symbol++) {
-
+    const uint16_t nb_re=symbol == 2 ? 72 : 180;
+    struct complex16 rxdataF_ext[frame_parms->nb_antennas_rx][20*12*4];
+    struct complex16 rxdataF_comp[frame_parms->nb_antennas_rx][nb_re];
+    //was dl_ch_estimates[idx]     = (int32_t *)malloc16_clear( sizeof(int32_t)*7*2*sizeof(int)*(fp->ofdm_symbol_size) );
+    struct complex16 dl_ch_estimates_ext[frame_parms->nb_antennas_rx][20*12*4];
+    
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
-                    nr_ue_pbch_vars->dl_ch_estimates,
-                    nr_ue_pbch_vars->rxdataF_ext,
-                    nr_ue_pbch_vars->dl_ch_estimates_ext,
+		    estimateSz,
+                    dl_ch_estimates,
+                    rxdataF_ext,
+                    dl_ch_estimates_ext,
                     symbol,
                     symbol_offset,
                     frame_parms);
@@ -470,115 +476,113 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
 
     if (symbol == 1) {
-      max_h = nr_pbch_channel_level(nr_ue_pbch_vars->dl_ch_estimates_ext,
+      max_h = nr_pbch_channel_level(dl_ch_estimates_ext,
                                     frame_parms,
                                     symbol);
-      nr_ue_pbch_vars->log2_maxh = 3+(log2_approx(max_h)/2);
+      log2_maxh = 3+(log2_approx(max_h)/2);
     }
 
 #ifdef DEBUG_PBCH
     LOG_I(PHY,"[PHY] PBCH log2_maxh = %d (%d)\n",nr_ue_pbch_vars->log2_maxh,max_h);
 #endif
-    nr_pbch_channel_compensation(nr_ue_pbch_vars->rxdataF_ext,
-                                 nr_ue_pbch_vars->dl_ch_estimates_ext,
-                                 nr_ue_pbch_vars->rxdataF_comp,
+    nr_pbch_channel_compensation(rxdataF_ext,
+                                 dl_ch_estimates_ext,
+				 nb_re,
+                                 rxdataF_comp,
                                  frame_parms,
                                  symbol,
-                                 nr_ue_pbch_vars->log2_maxh); // log2_maxh+I0_shift
+                                 log2_maxh); // log2_maxh+I0_shift
 
     /*if (frame_parms->nb_antennas_rx > 1)
       pbch_detection_mrc(frame_parms,
-                         nr_ue_pbch_vars->rxdataF_comp,
+                         rxdataF_comp,
                          symbol);*/
 
     /*
         if (mimo_mode == ALAMOUTI) {
-          nr_pbch_alamouti(frame_parms,nr_ue_pbch_vars->rxdataF_comp,symbol);
+          nr_pbch_alamouti(frame_parms,rxdataF_comp,symbol);
         } else if (mimo_mode != SISO) {
           LOG_I(PHY,"[PBCH][RX] Unsupported MIMO mode\n");
           return(-1);
         }
     */
     if (symbol==2) {
-      nr_pbch_quantize(pbch_e_rx,
-                       (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
+      nr_pbch_quantize(pbch_e_rx+pbch_e_rx_idx,
+                       (short *)rxdataF_comp[0],
                        144);
-      pbch_e_rx+=144;
+      pbch_e_rx_idx+=144;
     } else {
-      nr_pbch_quantize(pbch_e_rx,
-                       (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
+      nr_pbch_quantize(pbch_e_rx+pbch_e_rx_idx,
+                       (short *)rxdataF_comp[0],
                        360);
-      pbch_e_rx+=360;
+      pbch_e_rx_idx+=360;
     }
   }
 
 #ifdef DEBUG_PBCH
-  write_output("rxdataF_comp.m","rxFcomp",&nr_ue_pbch_vars->rxdataF_comp[0][240],240*3,1,1);
+  write_output("rxdataF_comp.m","rxFcomp",rxdataF_comp[0],240*3,1,1);
 #endif
-  pbch_e_rx = nr_ue_pbch_vars->llr;
   //demod_pbch_e = nr_ue_pbch_vars->demod_pbch_e;
 // FT?? cppcheck fix -  pbch_a = nr_ue_pbch_vars->pbch_a;
 #ifdef DEBUG_PBCH
-  //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
-  short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][20*12]);
+  short *p = (short *)rxdataF_comp[0]);
 
-  for (int cnt = 0; cnt < 864  ; cnt++)
+for (int cnt = 0; cnt < 864  ; cnt++)
     printf("pbch rx llr %d\n",*(pbch_e_rx+cnt));
 
 #endif
   //un-scrambling
-  M =  NR_POLAR_PBCH_E;
-  nushift = (Lmax==4)? i_ssb&3 : i_ssb&7;
+M =  NR_POLAR_PBCH_E;
+nushift = (Lmax==4)? i_ssb&3 : i_ssb&7;
   uint32_t unscrambling_mask = (Lmax==64)?0x100006D:0x1000041;
-
-  nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
+  uint32_t pbch_a_interleaved=0;
+uint32_t pbch_a_prime=0;
+nr_pbch_unscrambling(nr_ue_pbch_vars,pbch_e_rx,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0,  pbch_a_prime, &pbch_a_interleaved);
   //polar decoding de-rate matching
   const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,1,&ue->polarList);
-  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&nr_ue_pbch_vars->pbch_a_prime,0,currentPtr);
+  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&pbch_a_prime,0,currentPtr);
 
   if(decoderState) return(decoderState);
 
-  //  printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);
+  //  printf("polar decoder output 0x%08x\n",pbch_a_prime);
   // Decoder reversal
   uint32_t a_reversed=0;
 
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-    a_reversed |= (((uint64_t)nr_ue_pbch_vars->pbch_a_prime>>i)&1)<<(31-i);
+    a_reversed |= (((uint64_t)pbch_a_prime>>i)&1)<<(31-i);
 
-  nr_ue_pbch_vars->pbch_a_prime = a_reversed;
+  pbch_a_prime = a_reversed;
   //payload un-scrambling
-  nr_ue_pbch_vars->pbch_a_interleaved=0;
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
-  nushift = ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) ^ (((nr_ue_pbch_vars->pbch_a_prime>>6)&1)<<1);
-  nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1,unscrambling_mask);
-  //printf("nushift %d sfn 3rd %d 2nd %d", nushift,((nr_ue_pbch_vars->pbch_a_prime>>6)&1), ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) );
+  nushift = ((pbch_a_prime>>24)&1) ^ (((pbch_a_prime>>6)&1)<<1);
+nr_pbch_unscrambling(nr_ue_pbch_vars,pbch_e_rx,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1,unscrambling_mask,pbch_a_prime, &pbch_a_interleaved);
+  //printf("nushift %d sfn 3rd %d 2nd %d", nushift,((pbch_a_prime>>6)&1), ((pbch_a_prime>>24)&1) );
   //payload deinterleaving
   //uint32_t in=0;
   uint32_t out=0;
 
   for (int i=0; i<32; i++) {
-    out |= ((nr_ue_pbch_vars->pbch_a_interleaved>>i)&1)<<(pbch_deinterleaving_pattern[i]);
+    out |= ((pbch_a_interleaved>>i)&1)<<(pbch_deinterleaving_pattern[i]);
 #ifdef DEBUG_PBCH
-    printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, nr_ue_pbch_vars->pbch_a_interleaved, out, pbch_deinterleaving_pattern[i], (nr_ue_pbch_vars->pbch_a_interleaved>>i)&1);
+    printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, pbch_a_interleaved, out, pbch_deinterleaving_pattern[i], (pbch_a_interleaved>>i)&1);
 #endif
   }
 
   uint32_t payload = 0;
-  //uint8_t xtra_byte = 0;
-  nr_ue_pbch_vars->xtra_byte = (out>>24)&0xff;
+  result->xtra_byte = (out>>24)&0xff;
 
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
     payload |= ((out>>i)&1)<<(NR_POLAR_PBCH_PAYLOAD_BITS-i-1);
 
   for (int i=0; i<3; i++)
-    decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
+    result->decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
 
-  frame_parms->half_frame_bit = ((nr_ue_pbch_vars->xtra_byte>>4)&0x01); // computing the half frame index from the extra byte
+frame_parms->half_frame_bit = (result->xtra_byte>>4)&0x01; // computing the half frame index from the extra byte
 
   frame_parms->ssb_index = i_ssb;  // ssb index corresponds to i_ssb for Lmax = 4,8
   if (Lmax == 64) {   // for Lmax = 64 ssb index 4th,5th and 6th bits are in extra byte
     for (int i=0; i<3; i++)
-      frame_parms->ssb_index += (((nr_ue_pbch_vars->xtra_byte>>(7-i))&0x01)<<(3+i));
+      frame_parms->ssb_index += (((result->xtra_byte>>(7-i))&0x01)<<(3+i));
   }
 
   ue->symbol_offset = nr_get_ssb_start_symbol(frame_parms,frame_parms->ssb_index);
@@ -587,25 +591,26 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   uint8_t frame_number_4lsb = 0;
   for (int i=0; i<4; i++)
-    frame_number_4lsb |= ((nr_ue_pbch_vars->xtra_byte>>i)&1)<<(3-i);
+    frame_number_4lsb |= ((result->xtra_byte>>i)&1)<<(3-i);
 
   proc->decoded_frame_rx = frame_number_4lsb;
 
 #ifdef DEBUG_PBCH
-  printf("xtra_byte %x payload %x\n", nr_ue_pbch_vars->xtra_byte, payload);
+  printf("xtra_byte %x payload %x\n", xtra_byte, payload);
 
   for (int i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++) {
     //     printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
-    printf("[PBCH] decoder payload[%d] = %x\n",i,decoded_output[i]);
+    printf("[PBCH] decoder payload[%d] = %x\n",i,result->decoded_output[i]);
   }
 #endif
 
   nr_downlink_indication_t dl_indication;
-  fapi_nr_rx_indication_t *rx_ind = calloc(1, sizeof(*rx_ind));
-  uint16_t number_pdus = 1;
+fapi_nr_rx_indication_t *rx_ind = calloc(1, sizeof(*rx_ind));
+uint16_t number_pdus = 1;
 
-  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
-  nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, NULL, number_pdus, proc);
+nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+
+nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, NULL, number_pdus, proc,(void*)result);
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);
