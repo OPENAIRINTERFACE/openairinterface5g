@@ -100,7 +100,7 @@ class SSHConnection():
 				time.sleep(1)
 			count += 1
 		if connect_status:
-			pass
+			self.command('unset HISTFILE', '\$', 5, silent=True)
 		else:
 			sys.exit('SSH Connection Failed')
 		self.ipaddress = ipaddress
@@ -157,22 +157,24 @@ class SSHConnection():
 		if not silent:
 			logging.debug(commandline)
 		self.cmd2Results = ''
+		noHistoryCmd = 'unset HISTFILE; ' + commandline
 		myHost = self.username + '@' + self.ipaddress
 		# CAUTION: THIS METHOD IMPLIES THAT THERE ARE VALID SSH KEYS
 		# BETWEEN THE PYTHON EXECUTOR NODE AND THE REMOTE HOST
 		# OTHERWISE IT WON'T WORK
-		lSsh = subprocess.Popen(["ssh", "%s" % myHost, commandline],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		lSsh = subprocess.Popen(["ssh", "%s" % myHost, noHistoryCmd],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		self.cmd2Results = str(lSsh.stdout.readlines())
 
 	def command3(self, commandline, timeout, silent=False):
 		if not silent:
 			logging.debug(commandline)
 		self.cmd2Results = ''
+		noHistoryCmd = 'unset HISTFILE; ' + commandline
 		myHost = self.username + '@' + self.ipaddress
 		# CAUTION: THIS METHOD IMPLIES THAT THERE ARE VALID SSH KEYS
 		# BETWEEN THE PYTHON EXECUTOR NODE AND THE REMOTE HOST
 		# OTHERWISE IT WON'T WORK
-		lSsh = subprocess.Popen(["ssh", "%s" % myHost, commandline],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+		lSsh = subprocess.Popen(["ssh", "%s" % myHost, noHistoryCmd],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		return lSsh.stdout.readlines()
 
 		

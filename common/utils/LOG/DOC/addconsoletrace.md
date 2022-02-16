@@ -3,6 +3,7 @@
 ```C
 LOG_E(<component>,<format>,<argument>,...)
 LOG_W(<component>,<format>,<argument>,...)
+LOG_A(<component>,<format>,<argument>,...)
 LOG_I(<component>,<format>,<argument>,...)
 LOG_D(<component>,<format>,<argument>,...)
 LOG_T(<component>,<format>,<argument>,...)
@@ -14,9 +15,10 @@ these macros are used in place of the printf C function. The additionnal ***comp
 |:---------|:---------------|:---------------|----------------:|
 | LOG_E |  E | 0 | error |
 | LOG_W | W | 1 | warning |
-| LOG_I | I | 2 | informational |
-| LOG_D | D | 3 | debug |
-| LOG_T | T | 4 | trace |
+| LOG_A | A | 2 | analysis |
+| LOG_I | I | 3 | informational |
+| LOG_D | D | 4 | debug |
+| LOG_T | T | 5 | trace |
 
 component list is defined as an `enum` in  [log.h](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/utils/LOG/log.h). A new component can be defined by adding an item in this type, it must also be defined in the T tracer [T_messages.txt ](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/utils/T/T_messages.txt).
 

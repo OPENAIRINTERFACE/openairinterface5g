@@ -115,65 +115,110 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_Served_Cells_List, true);
   req->num_cells_available = ie->value.choice.GNB_DU_Served_Cells_List.list.count;
-  LOG_D(F1AP, "req->num_cells_available %d \n",
-        req->num_cells_available);
-  int num_cells_available = req->num_cells_available;
+  LOG_D(F1AP, "req->num_cells_available %d \n", req->num_cells_available);
 
-  for (i=0; i<num_cells_available; i++) {
-    F1AP_GNB_DU_Served_Cells_Item_t *served_cells_item_p;
-    served_cells_item_p = &(((F1AP_GNB_DU_Served_Cells_ItemIEs_t *)
-                             ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->
-                            value.choice.GNB_DU_Served_Cells_Item);
-
+  for (i=0; i<req->num_cells_available; i++) {
+    F1AP_GNB_DU_Served_Cells_Item_t *served_cells_item = &(((F1AP_GNB_DU_Served_Cells_ItemIEs_t *)
+							    ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->
+							   value.choice.GNB_DU_Served_Cells_Item);
+    F1AP_Served_Cell_Information_t *servedCellInformation= &served_cells_item->served_Cell_Information;
     /* tac */
-    if (served_cells_item_p->served_Cell_Information.fiveGS_TAC) {
-      OCTET_STRING_TO_INT16(served_cells_item_p->served_Cell_Information.fiveGS_TAC, req->cell[i].tac);
+    if (servedCellInformation->fiveGS_TAC) {
+      OCTET_STRING_TO_INT16(servedCellInformation->fiveGS_TAC, req->cell[i].tac);
       LOG_D(F1AP, "req->tac[%d] %d \n", i, req->cell[i].tac);
     }
-
+    
     /* - nRCGI */
-    TBCD_TO_MCC_MNC(&(served_cells_item_p->served_Cell_Information.nRCGI.pLMN_Identity), req->cell[i].mcc,
+    TBCD_TO_MCC_MNC(&(servedCellInformation->nRCGI.pLMN_Identity), req->cell[i].mcc,
                     req->cell[i].mnc,req->cell[i].mnc_digit_length);
     // NR cellID
-    BIT_STRING_TO_NR_CELL_IDENTITY(&served_cells_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
+    BIT_STRING_TO_NR_CELL_IDENTITY(&servedCellInformation->nRCGI.nRCellIdentity,
                                    req->cell[i].nr_cellid);
     LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
           req->cell[i].mcc,
           req->cell[i].mnc,
           (long long unsigned int)req->cell[i].nr_cellid);
     /* - nRPCI */
-    req->cell[i].nr_pci = served_cells_item_p->served_Cell_Information.nRPCI;
+    req->cell[i].nr_pci = servedCellInformation->nRPCI;
     LOG_D(F1AP, "req->nr_pci[%d] %d \n", i, req->cell[i].nr_pci);
-
+    
     // LTS: FIXME data model failure: we don't KNOW if we receive a 4G or a 5G cell
     // Furthermore, cell_type is not a attribute of a cell in the data structure !!!!!!!!!!
     if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU)
       f1ap_req(true, instance)->cell_type=CELL_MACRO_GNB;
     else
       f1ap_req(true, instance)->cell_type=CELL_MACRO_ENB;
-
+    
+    // FDD Cells
+    if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_fDD) {
+      struct fdd_s *FDDs=&req->nr_mode_info[i].fdd;
+      F1AP_FDD_Info_t * fDD_Info=servedCellInformation->nR_Mode_Info.choice.fDD;
+      FDDs->ul_nr_arfcn=fDD_Info->uL_NRFreqInfo.nRARFCN;
+      FDDs->ul_num_frequency_bands=fDD_Info->uL_NRFreqInfo.freqBandListNr.list.count;
+      for (int f=0; f < fDD_Info->uL_NRFreqInfo.freqBandListNr.list.count; f++) {
+	F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->uL_NRFreqInfo.freqBandListNr.list.array[f];
+	FDDs->ul_nr_band[f]=FreqItem->freqBandIndicatorNr;
+	int num_available_supported_SULBands=FreqItem->supportedSULBandList.list.count;
+	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
+          F1AP_SupportedSULFreqBandItem_t * SulItem= FreqItem->supportedSULBandList.list.array[sul];
+	  FDDs->ul_nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
+	}
+      }
+      FDDs->dl_nr_arfcn=fDD_Info->dL_NRFreqInfo.nRARFCN;
+      int dlBands=fDD_Info->dL_NRFreqInfo.freqBandListNr.list.count;
+      for (int dlB=0; dlB < dlBands; dlB++) {
+	F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->dL_NRFreqInfo.freqBandListNr.list.array[dlB];
+	FDDs->dl_nr_band[dlB]=FreqItem->freqBandIndicatorNr;
+	int num_available_supported_SULBands = FreqItem->supportedSULBandList.list.count;
+	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
+	  F1AP_SupportedSULFreqBandItem_t * SulItem= FreqItem->supportedSULBandList.list.array[sul];
+	  FDDs->ul_nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
+	}
+      }
+      FDDs->ul_scs=fDD_Info->uL_Transmission_Bandwidth.nRSCS;
+      FDDs->ul_nrb=nrb_lut[fDD_Info->uL_Transmission_Bandwidth.nRNRB];
+      FDDs->dl_scs=fDD_Info->dL_Transmission_Bandwidth.nRSCS;
+      FDDs->dl_nrb=nrb_lut[fDD_Info->dL_Transmission_Bandwidth.nRNRB]; 
+    }
+    
+    // TDD
+    if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_tDD) {
+      struct tdd_s *TDDs=&req->nr_mode_info[i].tdd;
+      F1AP_TDD_Info_t * tDD_Info=servedCellInformation->nR_Mode_Info.choice.tDD;
+      TDDs->nr_arfcn=tDD_Info->nRFreqInfo.nRARFCN;
+      TDDs->num_frequency_bands=tDD_Info->nRFreqInfo.freqBandListNr.list.count;
+      for (int f=0; f < tDD_Info->nRFreqInfo.freqBandListNr.list.count; f++) {
+	struct F1AP_FreqBandNrItem * FreqItem=tDD_Info->nRFreqInfo.freqBandListNr.list.array[f];
+	TDDs->nr_band[f]=FreqItem->freqBandIndicatorNr;
+	int num_available_supported_SULBands=FreqItem->supportedSULBandList.list.count;
+	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
+          struct F1AP_SupportedSULFreqBandItem * SulItem= FreqItem->supportedSULBandList.list.array[sul];
+	  TDDs->nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
+	}
+      }
+      TDDs->scs=tDD_Info->transmission_Bandwidth.nRSCS;
+      TDDs->nrb=nrb_lut[tDD_Info->transmission_Bandwidth.nRNRB];
+    }
+	
+    struct F1AP_GNB_DU_System_Information * DUsi=served_cells_item->gNB_DU_System_Information;
     LOG_I(F1AP, "Received Cell in %d context\n", f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB);
     // System Information
     /* mib */
-    req->mib[i] = calloc(served_cells_item_p->gNB_DU_System_Information->mIB_message.size + 1, sizeof(char));
-    memcpy(req->mib[i], served_cells_item_p->gNB_DU_System_Information->mIB_message.buf,
-           served_cells_item_p->gNB_DU_System_Information->mIB_message.size);
+    req->mib[i] = calloc(DUsi->mIB_message.size + 1, sizeof(char));
+    memcpy(req->mib[i], DUsi->mIB_message.buf, DUsi->mIB_message.size);
     /* Convert the mme name to a printable string */
-    req->mib[i][served_cells_item_p->gNB_DU_System_Information->mIB_message.size] = '\0';
-    req->mib_length[i] = served_cells_item_p->gNB_DU_System_Information->mIB_message.size;
-    LOG_D(F1AP, "req->mib[%d] len = %d \n",
-          i, req->mib_length[i]);
+    req->mib[i][DUsi->mIB_message.size] = '\0';
+    req->mib_length[i] = DUsi->mIB_message.size;
+    LOG_D(F1AP, "req->mib[%d] len = %d \n", i, req->mib_length[i]);
     /* sib1 */
-    req->sib1[i] = calloc(served_cells_item_p->gNB_DU_System_Information->sIB1_message.size + 1, sizeof(char));
-    memcpy(req->sib1[i], served_cells_item_p->gNB_DU_System_Information->sIB1_message.buf,
-           served_cells_item_p->gNB_DU_System_Information->sIB1_message.size);
+    req->sib1[i] = calloc(DUsi->sIB1_message.size + 1, sizeof(char));
+    memcpy(req->sib1[i], DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
     /* Convert the mme name to a printable string */
-    req->sib1[i][served_cells_item_p->gNB_DU_System_Information->sIB1_message.size] = '\0';
-    req->sib1_length[i] = served_cells_item_p->gNB_DU_System_Information->sIB1_message.size;
-    LOG_D(F1AP, "req->sib1[%d] len = %d \n",
-          i, req->sib1_length[i]);
+    req->sib1[i][DUsi->sIB1_message.size] = '\0';
+    req->sib1_length[i] = DUsi->sIB1_message.size;
+    LOG_D(F1AP, "req->sib1[%d] len = %d \n", i, req->sib1_length[i]);
   }
-
+  
   // char *measurement_timing_information[F1AP_MAX_NB_CELLS];
   // uint8_t ranac[F1AP_MAX_NB_CELLS];
   // int fdd_flag = f1ap_setup_req->fdd_flag;
@@ -208,11 +253,14 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   //     uint16_t nr_sul_band[32];
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
+
+
+  
   // We copy and store in F1 task data, RRC will free "req" as it frees all itti received messages
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
   memcpy(&F1AP_SETUP_REQ(message_p), req, sizeof(f1ap_setup_req_t) );
-
-  if (num_cells_available > 0) {
+  
+  if (req->num_cells_available > 0) {
     if (f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
     } else {
@@ -223,7 +271,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     itti_free(TASK_CU_F1,message_p);
     return -1;
   }
-
+  
   return 0;
 }
 

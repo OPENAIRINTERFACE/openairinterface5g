@@ -56,6 +56,7 @@ typedef boolean_t (pdcp_data_ind_t)( const protocol_ctxt_t *, const srb_flag_t,
 						 mem_block_t *,const uint32_t *const, const uint32_t *const);
 typedef pdcp_data_ind_t* pdcp_data_ind_func_t;
 
+#define MAX_NUMBER_NETIF                 1 //16
 #define ENB_NAS_USE_TUN_W_MBMS_BIT      (1<< 10)
 #define PDCP_USE_NETLINK_BIT            (1<< 11)
 #define LINK_ENB_PDCP_TO_IP_DRIVER_BIT  (1<< 13)
@@ -410,7 +411,8 @@ void pdcp_mbms_run            (
 */
 void pdcp_run            (
   const protocol_ctxt_t *const  ctxt_pP);
-uint64_t pdcp_module_init     (uint64_t pdcp_optmask);
+uint64_t pdcp_module_init (uint64_t pdcp_optmask, int ue_id);
+uint64_t nr_pdcp_module_init(uint64_t _pdcp_optmask, int id);
 void pdcp_module_cleanup (void);
 void nr_ip_over_LTE_DRB_preconfiguration (void);
 void pdcp_layer_init     (void);

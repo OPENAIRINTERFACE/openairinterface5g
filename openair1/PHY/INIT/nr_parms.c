@@ -209,7 +209,6 @@ uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
   return samp_count;
 }
 
-
 uint32_t get_slot_from_timestamp(openair0_timestamp timestamp_rx, NR_DL_FRAME_PARMS* fp)
 {
    uint32_t slot_idx = 0;
@@ -251,11 +250,9 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
   int Ncp = NFAPI_CP_NORMAL;
   int mu = cfg->ssb_config.scs_common.value;
 
-#if DISABLE_LOG_X
-  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
-#else
+
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
-#endif
+
 
   if (Ncp == NFAPI_CP_EXTENDED)
     AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
@@ -344,11 +341,8 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   AssertFatal(fp->ul_CarrierFreq == (fp->dl_CarrierFreq + uplink_frequency_offset), "Disagreement in uplink frequency for band %d: ul_CarrierFreq = %lu Hz vs expected %lu Hz\n", fp->nr_band, fp->ul_CarrierFreq, fp->dl_CarrierFreq + uplink_frequency_offset);
 
-#if DISABLE_LOG_X
-  printf("Initializing UE frame parms for mu %d, N_RB %d, Ncp %d\n",fp->numerology_index, fp->N_RB_DL, Ncp);
-#else
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",fp->numerology_index, fp->N_RB_DL, Ncp);
-#endif
+
 
   if (Ncp == NFAPI_CP_EXTENDED)
     AssertFatal(fp->numerology_index == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, fp->numerology_index);

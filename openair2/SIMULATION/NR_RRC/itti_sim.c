@@ -394,7 +394,7 @@ statis void init_pdcp(void) {
     pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
   }
 
-  pdcp_module_init(pdcp_initmask);
+  pdcp_module_init(pdcp_initmask, 0);
 
   pdcp_set_rlc_data_req_func(rlc_data_req);
   pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
@@ -406,7 +406,7 @@ int create_tasks_nrue(uint32_t ue_nb) {
   itti_wait_ready(1);
 
   if (ue_nb > 0) {
-    printf("create TASK_RRC_NRUE\n");
+    LOG_D(NR_RRC, "create TASK_RRC_NRUE\n");
     if (itti_create_task (TASK_RRC_NRUE, rrc_nrue_task, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for RRC UE failed\n");
       return -1;
@@ -546,7 +546,7 @@ int main( int argc, char **argv )
 #endif
 
   logInit();
-  //configure_linux();
+  //set_latency_target();
   printf("Reading in command-line options\n");
   get_options ();
 

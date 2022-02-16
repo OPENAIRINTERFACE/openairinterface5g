@@ -25,20 +25,17 @@
 #include <unistd.h>
 #include <string.h>
 #include "assertions.h"
-#ifndef PHYSIM
-  #include <pthread.h>
-  #include "common/config/config_userapi.h"
-#endif
+#include <pthread.h>
+#include "common/config/config_userapi.h"
+#include <common/utils/threadPool/thread-pool.h>
 // global var for openair performance profiler
 int opp_enabled = 0;
 double cpu_freq_GHz  __attribute__ ((aligned(32)));
 
 double cpu_freq_GHz  __attribute__ ((aligned(32)))=0.0;
-#ifndef PHYSIM
 static uint32_t    max_cpumeasur;
 static time_stats_t  **measur_table;
 notifiedFIFO_t measur_fifo;
-#endif
 double get_cpu_freq_GHz(void)
 {
   if (cpu_freq_GHz <1 ) {
@@ -54,24 +51,7 @@ double get_cpu_freq_GHz(void)
   return cpu_freq_GHz;
 }
 
-int cpumeas(int action)
-{
-  switch (action) {
-    case CPUMEAS_ENABLE:
-      opp_enabled = 1;
-      break;
 
-    case CPUMEAS_DISABLE:
-      opp_enabled = 0;
-      break;
-
-    case CPUMEAS_GETSTATE:
-    default:
-      break;
-  }
-
-  return opp_enabled;
-}
 
 void print_meas_now(time_stats_t *ts,
                     const char *name,
@@ -187,7 +167,6 @@ double get_time_meas_us(time_stats_t *ts)
   return 0;
 }
 
-#ifndef PHYSIM
 /* function for the asynchronous measurment module: cpu stat are sent to a dedicated thread
  * which is in charge of computing the cpu time spent in a given function/algorithm...
  */
@@ -294,4 +273,3 @@ void end_meas(void) {
     msg->msgid = TIMESTAT_MSGID_END ;
     pushNotifiedFIFO(&measur_fifo, nfe);
 }
-#endif

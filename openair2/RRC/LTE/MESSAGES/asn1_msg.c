@@ -2129,7 +2129,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
+uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size, uint8_t *rv) {
   asn_enc_rval_t enc_rval;
   uint8_t buf[5],buf2=0;
   LTE_UL_CCCH_Message_t ul_ccch_msg;
@@ -2178,7 +2178,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv) {
                                    NULL,
                                    (void *)&ul_ccch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
@@ -2378,12 +2378,39 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
   return((enc_rval.encoded+7)/8);
 }
 
+static void assign_scg_ConfigResponseNR_r15(LTE_RRCConnectionReconfigurationComplete_t *rrc, OCTET_STRING_t *str)
+{
+  LTE_RRCConnectionReconfigurationComplete_r8_IEs_t *rrc_r8 = &rrc->criticalExtensions.choice.
+                                                    rrcConnectionReconfigurationComplete_r8;
+  typeof(rrc_r8->nonCriticalExtension) nce1;
+  rrc_r8->nonCriticalExtension = nce1 = CALLOC(1, sizeof(*nce1));
+
+  typeof(nce1->nonCriticalExtension) nce2;
+  nce1->nonCriticalExtension = nce2 = CALLOC(1, sizeof(*nce2));
+
+  typeof(nce2->nonCriticalExtension) nce3;
+  nce2->nonCriticalExtension = nce3 = CALLOC(1, sizeof(*nce3));
+
+  typeof(nce3->nonCriticalExtension) nce4;
+  nce3->nonCriticalExtension = nce4 = CALLOC(1, sizeof(*nce4));
+
+  typeof(nce4->nonCriticalExtension) nce5;
+  nce4->nonCriticalExtension = nce5 = CALLOC(1, sizeof(*nce5));
+
+  typeof(nce5->nonCriticalExtension) nce6;
+  nce5->nonCriticalExtension = nce6 = CALLOC(1, sizeof(*nce6));
+
+  nce6->scg_ConfigResponseNR_r15 = str;
+}
+
 //------------------------------------------------------------------------------
-uint8_t
+size_t
 do_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *buffer,
-  const uint8_t Transaction_id
+  size_t buffer_size,
+  const uint8_t Transaction_id,
+  OCTET_STRING_t *str
 )
 //------------------------------------------------------------------------------
 {
@@ -2397,7 +2424,13 @@ do_RRCConnectionReconfigurationComplete(
   rrcConnectionReconfigurationComplete->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionReconfigurationComplete->criticalExtensions.present =
     LTE_RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8;
-  rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
+  if (str != NULL) {
+    assign_scg_ConfigResponseNR_r15(rrcConnectionReconfigurationComplete, str);
+    LOG_D(RRC, "Successfully assigned scg_ConfigResponseNR_r15\n");
+  }
+  else {
+    rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
+  }
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_LTE_UL_DCCH_Message, (void *)&ul_dcch_msg);
@@ -2407,7 +2440,7 @@ do_RRCConnectionReconfigurationComplete(
                                    NULL,
                                    (void *)&ul_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   LOG_D(RRC,"RRCConnectionReconfigurationComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
@@ -3142,6 +3175,7 @@ uint8_t do_RRCConnectionSetup_BR(
 uint8_t do_SecurityModeCommand(
   const protocol_ctxt_t *const ctxt_pP,
   uint8_t *const buffer,
+  size_t buffer_size,
   const uint8_t Transaction_id,
   const uint8_t cipheringAlgorithm,
   const uint8_t integrityProtAlgorithm
@@ -3171,7 +3205,7 @@ uint8_t do_SecurityModeCommand(
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -3200,6 +3234,7 @@ uint8_t do_SecurityModeCommand(
 //------------------------------------------------------------------------------
 uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                 uint8_t               *const buffer,
+                                size_t                       buffer_size,
                                 const uint8_t                Transaction_id,
                                 int16_t              eutra_band,
                                 uint32_t              nr_band)
@@ -3220,58 +3255,56 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count=0;
   ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list,
                    &rat);
+
+  /* request NR configuration */
   LTE_UECapabilityEnquiry_r8_IEs_t *r8 = &dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry.criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8;
   LTE_UECapabilityEnquiry_v8a0_IEs_t r8_a0;
   LTE_UECapabilityEnquiry_v1180_IEs_t r11_80;
   LTE_UECapabilityEnquiry_v1310_IEs_t r13_10;
   LTE_UECapabilityEnquiry_v1430_IEs_t r14_30;
   LTE_UECapabilityEnquiry_v1510_IEs_t r15_10;
-  OCTET_STRING_t req_freq;
 
-  if (nr_band>0) {
+  memset(&r8_a0, 0, sizeof(r8_a0));
+  memset(&r11_80, 0, sizeof(r11_80));
+  memset(&r13_10, 0, sizeof(r13_10));
+  memset(&r14_30, 0, sizeof(r14_30));
+  memset(&r15_10, 0, sizeof(r15_10));
 
-    /* request NR configuration */
+  r8->nonCriticalExtension = &r8_a0;
+  r8_a0.nonCriticalExtension = &r11_80;
+  r11_80.nonCriticalExtension = &r13_10;
+  r13_10.nonCriticalExtension = &r14_30;
+  r14_30.nonCriticalExtension = &r15_10;
 
-    memset(&r8_a0, 0, sizeof(r8_a0));
-    memset(&r11_80, 0, sizeof(r11_80));
-    memset(&r13_10, 0, sizeof(r13_10));
-    memset(&r14_30, 0, sizeof(r14_30));
-    memset(&r15_10, 0, sizeof(r15_10));
+  /* TODO: no hardcoded values here */
 
-    r8->nonCriticalExtension = &r8_a0;
-    r8_a0.nonCriticalExtension = &r11_80;
-    r11_80.nonCriticalExtension = &r13_10;
-    r13_10.nonCriticalExtension = &r14_30;
-    r14_30.nonCriticalExtension = &r15_10;
+  nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
 
-    /* TODO: no hardcoded values here */
+  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+  nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
+  nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
+  nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
+  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
 
-    nsa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
-
-    nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
-    nsa_band->present = NR_FreqBandInformation_PR_bandInformationEUTRA;
-    nsa_band->choice.bandInformationEUTRA = (NR_FreqBandInformationEUTRA_t *) calloc(1, sizeof(NR_FreqBandInformationEUTRA_t));
-    nsa_band->choice.bandInformationEUTRA->bandEUTRA = eutra_band;
-    ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
-
-    nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
-    nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
-    nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
-  //if(nr_band > 0)
+  nsa_band = (NR_FreqBandInformation_t *) calloc(1,sizeof(NR_FreqBandInformation_t));
+  nsa_band->present = NR_FreqBandInformation_PR_bandInformationNR;
+  nsa_band->choice.bandInformationNR = (NR_FreqBandInformationNR_t *) calloc(1, sizeof(NR_FreqBandInformationNR_t));
+  if(nr_band > 0)
     nsa_band->choice.bandInformationNR->bandNR = nr_band;
-  //else
-  //  nsa_band->choice.bandInformationNR->bandNR = 78;
-    ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
+  else
+    nsa_band->choice.bandInformationNR->bandNR = 78;
+  ASN_SEQUENCE_ADD(&nsa_band_list->list, nsa_band);
 
+  OCTET_STRING_t req_freq;
   //unsigned char req_freq_buf[5] = { 0x00, 0x20, 0x1a, 0x02, 0x68 };  // bands 7 & nr78
-    unsigned char req_freq_buf[1024];
-    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
-                                NULL,
-                                (void *)nsa_band_list,
-                                req_freq_buf,
-                                1024);
+  unsigned char req_freq_buf[1024];
+  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_FreqBandList,
+                              NULL,
+                              (void *)nsa_band_list,
+                              req_freq_buf,
+                              1024);
 
-    xer_fprint(stdout, &asn_DEF_NR_FreqBandList, (void *)nsa_band_list);
+  xer_fprint(stdout, &asn_DEF_NR_FreqBandList, (void *)nsa_band_list);
 
 
 
@@ -3282,22 +3315,20 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //0x01, 0x60, 0x18, 0x05, 0x80, 0xc0, 0x04, 0x04, 0xc1, 0x2c, 0x10, 0x08, 0x20, 0x30, 0x40, 0xe0, 0x82, 0x40, 0x28, 0x80, 0x9a
 //  };
 
-    req_freq.buf = req_freq_buf;
-    req_freq.size = (enc_rval.encoded+7)/8;
+  req_freq.buf = req_freq_buf;
+  req_freq.size = (enc_rval.encoded+7)/8;
 //  req_freq.size = 21;
 
-    r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;
-    // Add request for eutra-nr 
-  }
-//  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  r15_10.requestedFreqBandsNR_MRDC_r15 = &req_freq;
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_LTE_DL_DCCH_Message, (void *)&dl_dcch_msg);
-//  }
+  }
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -3324,6 +3355,7 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 //------------------------------------------------------------------------------
 uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    uint8_t               *const buffer,
+                                   size_t                       buffer_size,
                                    const uint8_t                Transaction_id,
                                    int16_t              eutra_band,
                                    uint32_t             nr_band)
@@ -3417,7 +3449,7 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -3444,6 +3476,7 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
 uint16_t do_RRCConnectionReconfiguration_BR(const protocol_ctxt_t        *const ctxt_pP,
     uint8_t                            *buffer,
+    size_t                              buffer_size,
     uint8_t                             Transaction_id,
     LTE_SRB_ToAddModList_t                 *SRB_list,
     LTE_DRB_ToAddModList_t                 *DRB_list,
@@ -3545,7 +3578,7 @@ uint16_t do_RRCConnectionReconfiguration_BR(const protocol_ctxt_t        *const 
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed %s, %lu!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
@@ -3562,6 +3595,7 @@ uint16_t do_RRCConnectionReconfiguration_BR(const protocol_ctxt_t        *const 
  */
 uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     uint8_t                                *buffer,
+    size_t                                  buffer_size,
     uint8_t                                 Transaction_id,
     LTE_SRB_ToAddModList_t                 *SRB_list,
     LTE_DRB_ToAddModList_t                 *DRB_list,
@@ -3722,7 +3756,7 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -3977,6 +4011,7 @@ uint8_t do_RRCConnectionReject(uint8_t                    Mod_id,
 
 uint8_t do_RRCConnectionRelease(uint8_t                             Mod_id,
                                 uint8_t                            *buffer,
+                                size_t                              buffer_size,
                                 uint8_t                             Transaction_id) {
   asn_enc_rval_t enc_rval;
   LTE_DL_DCCH_Message_t dl_dcch_msg;
@@ -3998,7 +4033,7 @@ uint8_t do_RRCConnectionRelease(uint8_t                             Mod_id,
                                    NULL,
                                    (void *)&dl_dcch_msg,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -4008,6 +4043,7 @@ uint8_t TMGI[5] = {4,3,2,1,0};//TMGI is a string of octet, ref. TS 24.008 fig. 1
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                            uint8_t sync_area,
                            uint8_t *buffer,
+                           size_t buffer_size,
                            LTE_MCCH_Message_t *mcch_message,
                            LTE_MBSFNAreaConfiguration_r9_t **mbsfnAreaConfiguration) {
   asn_enc_rval_t enc_rval;
@@ -4114,7 +4150,7 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                                    NULL,
                                    (void *)mcch_message,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -4133,7 +4169,9 @@ uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
 }
 
 
-uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t) {
+uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                             int measid, int phy_id, long rsrp_s, long rsrq_s,
+                             long rsrp_t, long rsrq_t) {
   asn_enc_rval_t enc_rval;
   LTE_UL_DCCH_Message_t ul_dcch_msg;
   LTE_MeasurementReport_t  *measurementReport;
@@ -4205,7 +4243,7 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
                                    NULL,
                                    (void *)&ul_dcch_msg,
                                    buffer,
-                                   100);
+                                   buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -4217,6 +4255,64 @@ uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_
 
   free(measResultListEUTRA2);
   measResultListEUTRA2 = NULL;
+  return((enc_rval.encoded+7)/8);
+}
+
+#define asn1cCallocOne(VaR, VaLue) \
+  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue;
+#define asn1cCalloc(VaR, lOcPtr) \
+  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR));
+#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
+  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
+  ASN_SEQUENCE_ADD(&VaR,lOcPtr);
+
+ssize_t do_nrMeasurementReport(uint8_t *buffer,
+                               size_t bufsize,
+                               LTE_MeasId_t measid,
+                               LTE_PhysCellIdNR_r15_t phy_id,
+                               long rsrp_s,
+                               long rsrq_s,
+                               long rsrp_tar,
+                               long rsrq_tar) {
+
+  LTE_UL_DCCH_Message_t ul_dcch_msg={0};
+  ul_dcch_msg.message.present = LTE_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_measurementReport;
+
+  LTE_MeasurementReport_t *measurementReport = &ul_dcch_msg.message.choice.c1.choice.measurementReport;
+  measurementReport->criticalExtensions.present = LTE_MeasurementReport__criticalExtensions_PR_c1;
+  measurementReport->criticalExtensions.choice.c1.present = LTE_MeasurementReport__criticalExtensions__c1_PR_measurementReport_r8;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension =
+    calloc(1, sizeof(*measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.nonCriticalExtension));
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measId = measid;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrpResult = rsrp_s;
+  measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultPCell.rsrqResult = rsrq_s;
+  asn1cCalloc(measurementReport->criticalExtensions.choice.c1.choice.measurementReport_r8.measResults.measResultNeighCells,  
+              measResultNeighCells); 
+  measResultNeighCells->present = LTE_MeasResults__measResultNeighCells_PR_measResultNeighCellListNR_r15;
+  LTE_MeasResultListEUTRA_t  *measResultListEUTRA2=&measResultNeighCells->choice.measResultListEUTRA;
+  asn1cSequenceAdd(measResultListEUTRA2->list, struct LTE_MeasResultEUTRA, measresulteutra_list);
+  measresulteutra_list->physCellId = phy_id;
+  //asn1cCalloc(measresulteutra_list->cgi_Info, measresult_cgi2);
+  //measresult_cgi2->cellGlobalId= {0};
+  //measresult_cgi2->trackingAreaCode= {0};
+  struct LTE_MeasResultEUTRA__measResult* measResult= &measresulteutra_list->measResult;
+  asn1cCallocOne(measResult->rsrpResult, rsrp_tar);
+  asn1cCallocOne(measResult->rsrqResult, rsrq_tar);
+  
+  
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message,
+                                   NULL,
+                                   &ul_dcch_msg,
+                                   buffer,
+                                   bufsize);
+  if(enc_rval.encoded == -1) {
+    LOG_I(RRC, "[eNB AssertFatal] ASN1 message encoding failed (%s, %lu)!\n",
+          enc_rval.failed_type->name, enc_rval.encoded);
+    SEQUENCE_free(&asn_DEF_LTE_UL_DCCH_Message, &ul_dcch_msg, ASFM_FREE_UNDERLYING_AND_RESET);
+    return -1;
+  }
+
   return((enc_rval.encoded+7)/8);
 }
 
@@ -4237,7 +4333,8 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
   return encoded;
 }
 
-uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain) {
+uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
+                  ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain) {
   LOG_D(RRC, "[eNB %d] do_Paging start\n", Mod_id);
   asn_enc_rval_t enc_rval;
   LTE_PCCH_Message_t pcch_msg;
@@ -4289,7 +4386,8 @@ uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_pagin
   ASN_SEQUENCE_ADD(&pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list, paging_record_p);
   LOG_D(RRC, "[eNB %d] do_Paging paging_record: cn_Domain %ld, ue_paging_identity.presenceMask %d, PagingRecordList.count %d\n",
         Mod_id, paging_record_p->cn_Domain, ue_paging_identity.presenceMask, pcch_msg.message.choice.c1.choice.paging.pagingRecordList->list.count);
-  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_PCCH_Message, NULL, (void *)&pcch_msg, buffer, RRC_BUF_SIZE);
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_PCCH_Message, NULL, (void *)&pcch_msg,
+                                   buffer, buffer_size);
 
   if(enc_rval.encoded == -1) {
     LOG_I(RRC, "[eNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
@@ -4378,7 +4476,161 @@ int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size) {
   return((enc_rval.encoded+7)/8);
 }
 
-OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {
+//-----------------------------------------------------------------------------
+int
+is_en_dc_supported(
+  LTE_UE_EUTRA_Capability_t *c
+)
+//-----------------------------------------------------------------------------
+{
+  LOG_D(RRC, "Entered %s \n", __FUNCTION__);
+  /* to be refined - check that the bands supported by the UE include
+   * the band of the gNB
+   */
+#define NCE nonCriticalExtension
+  return c != NULL
+         && c->NCE != NULL
+         && c->NCE->NCE != NULL
+         && c->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15 != NULL
+         && c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 != NULL
+         && *c->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->NCE->irat_ParametersNR_r15->en_DC_r15 ==
+         LTE_IRAT_ParametersNR_r15__en_DC_r15_supported;
+#undef NCE
+}
+
+void allocate_en_DC_r15(LTE_UE_EUTRA_Capability_t *cap)
+{
+  LOG_D(RRC, "Entered %s\n", __FUNCTION__);
+  if (!cap->nonCriticalExtension)
+    cap->nonCriticalExtension = CALLOC(1, sizeof(*cap->nonCriticalExtension));
+
+  typeof(cap->nonCriticalExtension) nce1 = cap->nonCriticalExtension;
+  if (!nce1->nonCriticalExtension)
+    nce1->nonCriticalExtension = CALLOC(1, sizeof(*nce1->nonCriticalExtension));
+
+  typeof(nce1->nonCriticalExtension) nce2 = nce1->nonCriticalExtension;
+  if (!nce2->nonCriticalExtension)
+    nce2->nonCriticalExtension = CALLOC(1, sizeof(*nce2->nonCriticalExtension));
+
+  typeof(nce2->nonCriticalExtension) nce3 = nce2->nonCriticalExtension;
+  if (!nce3->nonCriticalExtension)
+    nce3->nonCriticalExtension = CALLOC(1, sizeof(*nce3->nonCriticalExtension));
+
+  typeof(nce3->nonCriticalExtension) nce4 = nce3->nonCriticalExtension;
+  if (!nce4->nonCriticalExtension)
+    nce4->nonCriticalExtension = CALLOC(1, sizeof(*nce4->nonCriticalExtension));
+
+  typeof(nce4->nonCriticalExtension) nce5 = nce4->nonCriticalExtension;
+  if (!nce5->nonCriticalExtension)
+    nce5->nonCriticalExtension = CALLOC(1, sizeof(*nce5->nonCriticalExtension));
+
+  typeof(nce5->nonCriticalExtension) nce6 = nce5->nonCriticalExtension;
+  if (!nce6->nonCriticalExtension)
+    nce6->nonCriticalExtension = CALLOC(1, sizeof(*nce6->nonCriticalExtension));
+
+  typeof(nce6->nonCriticalExtension) nce7 = nce6->nonCriticalExtension;
+  if (!nce7->nonCriticalExtension)
+    nce7->nonCriticalExtension = CALLOC(1, sizeof(*nce7->nonCriticalExtension));
+
+  typeof(nce7->nonCriticalExtension) nce8 = nce7->nonCriticalExtension;
+  if (!nce8->nonCriticalExtension)
+    nce8->nonCriticalExtension = CALLOC(1, sizeof(*nce8->nonCriticalExtension));
+
+  typeof(nce8->nonCriticalExtension) nce9 = nce8->nonCriticalExtension;
+  if (!nce9->nonCriticalExtension)
+    nce9->nonCriticalExtension = CALLOC(1, sizeof(*nce9->nonCriticalExtension));
+
+  typeof(nce9->nonCriticalExtension) nce10 = nce9->nonCriticalExtension;
+  if (!nce10->nonCriticalExtension)
+    nce10->nonCriticalExtension = CALLOC(1, sizeof(*nce10->nonCriticalExtension));
+
+  typeof(nce10->nonCriticalExtension) nce11 = nce10->nonCriticalExtension;
+  if (!nce11->nonCriticalExtension)
+    nce11->nonCriticalExtension = CALLOC(1, sizeof(*nce11->nonCriticalExtension));
+
+  typeof(nce11->nonCriticalExtension) nce12 = nce11->nonCriticalExtension;
+  if (!nce12->nonCriticalExtension)
+    nce12->nonCriticalExtension = CALLOC(1, sizeof(*nce12->nonCriticalExtension));
+
+  typeof(nce12->nonCriticalExtension) nce13 = nce12->nonCriticalExtension;
+  if (!nce13->nonCriticalExtension)
+    nce13->nonCriticalExtension = CALLOC(1, sizeof(*nce13->nonCriticalExtension));
+
+  typeof(nce13->nonCriticalExtension) nce14 = nce13->nonCriticalExtension;
+  if (!nce14->nonCriticalExtension)
+    nce14->nonCriticalExtension = CALLOC(1, sizeof(*nce14->nonCriticalExtension));
+
+  typeof(nce14->nonCriticalExtension) nce15 = nce14->nonCriticalExtension;
+  if (!nce15->nonCriticalExtension)
+    nce15->nonCriticalExtension = CALLOC(1, sizeof(*nce15->nonCriticalExtension));
+
+  typeof(nce15->nonCriticalExtension) nce16 = nce15->nonCriticalExtension;
+  if (!nce16->nonCriticalExtension)
+    nce16->nonCriticalExtension = CALLOC(1, sizeof(*nce16->nonCriticalExtension));
+
+  typeof(nce16->nonCriticalExtension) nce17 = nce16->nonCriticalExtension;
+  if (!nce17->nonCriticalExtension)
+    nce17->nonCriticalExtension = CALLOC(1, sizeof(*nce17->nonCriticalExtension));
+
+  typeof(nce17->nonCriticalExtension) nce18 = nce17->nonCriticalExtension;
+  if (!nce18->nonCriticalExtension)
+    nce18->nonCriticalExtension = CALLOC(1, sizeof(*nce18->nonCriticalExtension));
+
+  typeof(nce18->nonCriticalExtension) nce19 = nce18->nonCriticalExtension;
+  if (!nce19->nonCriticalExtension)
+    nce19->nonCriticalExtension = CALLOC(1, sizeof(*nce19->nonCriticalExtension));
+
+  typeof(nce19->nonCriticalExtension) nce20 = nce19->nonCriticalExtension;
+  if (!nce20->nonCriticalExtension)
+    nce20->nonCriticalExtension = CALLOC(1, sizeof(*nce20->nonCriticalExtension));
+
+  typeof(nce20->nonCriticalExtension) nce21 = nce20->nonCriticalExtension;
+  if (!nce21->nonCriticalExtension)
+    nce21->nonCriticalExtension = CALLOC(1, sizeof(*nce21->nonCriticalExtension));
+
+  typeof(nce21->nonCriticalExtension) nce22 = nce21->nonCriticalExtension;
+  if (!nce22->nonCriticalExtension)
+    nce22->nonCriticalExtension = CALLOC(1, sizeof(*nce22->nonCriticalExtension));
+
+  typeof(nce22->nonCriticalExtension) nce23 = nce22->nonCriticalExtension;
+  if (!nce23->nonCriticalExtension)
+    nce23->nonCriticalExtension = CALLOC(1, sizeof(*nce23->nonCriticalExtension));
+
+  typeof(nce23->nonCriticalExtension) nce24 = nce23->nonCriticalExtension;
+  if (!nce24->irat_ParametersNR_r15)
+    nce24->irat_ParametersNR_r15 = CALLOC(1, sizeof(*nce24->irat_ParametersNR_r15));
+
+  typeof(nce24->irat_ParametersNR_r15) irat = nce24->irat_ParametersNR_r15;
+  if (!irat->en_DC_r15)
+    irat->en_DC_r15 = CALLOC(1, sizeof(*irat->en_DC_r15));
+
+  *irat->en_DC_r15 = LTE_IRAT_ParametersNR_r15__en_DC_r15_supported;
+
+}
+
+OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname, bool received_nr_msg) {
   static OAI_UECapability_t UECapability; /* TODO declared static to allow returning this has an address should be allocated in a cleaner way. */
   static LTE_SupportedBandEUTRA_t Bandlist[4]; // the macro ASN_SEQUENCE_ADD() does not copy the source, but only stores a reference to it
   static LTE_InterFreqBandInfo_t InterFreqBandInfo[4][4]; // the macro ASN_SEQUENCE_ADD() does not copy the source, but only stores a reference to it
@@ -4476,7 +4728,13 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {
       UE_EUTRA_Capability->featureGroupIndicators = bit_string;
     }
 
-    // UE_EUTRA_Capability->interRAT_Parameters     // null
+    if (get_softmodem_params()->nsa && received_nr_msg)
+    {
+       allocate_en_DC_r15(UE_EUTRA_Capability);
+       if (!is_en_dc_supported(UE_EUTRA_Capability)){
+         LOG_E(RRC, "We did not properly allocate en_DC_r15 for UE_EUTRA_Capability\n");
+       }
+    }
   } else {
     FILE *f = fopen(UE_EUTRA_Capability_xer_fname, "r");
     assert(f);

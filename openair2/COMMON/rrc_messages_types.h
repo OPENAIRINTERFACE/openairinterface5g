@@ -91,6 +91,8 @@
 #define RLC_SDU_INDICATION(mSGpTR)      (mSGpTR)->ittiMsg.rlc_sdu_indication
 #define NRDuDlReq(mSGpTR)      (mSGpTR)->ittiMsg.nr_du_dl_req
 
+#define NAS_OAI_TUN_NSA(mSGpTR)         (mSGpTR)->ittiMsg.nas_oai_tun_nsa
+
 //-------------------------------------------------------------------------------------------//
 typedef struct RrcStateInd_s {
   Rrc_State_t     state;
@@ -413,8 +415,9 @@ typedef struct NRRrcConfigurationReq_s {
   int                     sib1_tda;
   int                     pdsch_AntennaPorts;
   int                     pusch_AntennaPorts;
-  int                     minRXTXTIMEpdsch;
+  int                     minRXTXTIME;
   int                     do_CSIRS;
+  int                     do_SRS;
   int                     pusch_TargetSNRx10;
   int                     pucch_TargetSNRx10;
 } gNB_RrcConfigurationReq;
@@ -432,6 +435,8 @@ typedef nas_establish_req_t     NasConnEstabliReq;
 typedef ul_info_transfer_req_t  NasUlDataReq;
 
 typedef rab_establish_rsp_t     NasRabEstRsp;
+
+typedef nas_oai_tun_nsa_t       NasOaiTunNsa;
 
 // UE: RRC -> NAS messages
 typedef cell_info_cnf_t         NasCellSelectionCnf;

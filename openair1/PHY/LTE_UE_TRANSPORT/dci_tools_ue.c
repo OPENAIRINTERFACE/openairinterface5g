@@ -1293,7 +1293,7 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         }
 
         granted_re = nb_rb_alloc * (12-crs_re);
-        pbch_pss_sss_re = adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,dlsch0_harq->Qm,subframe,symbol);
+        pbch_pss_sss_re = adjust_G2(frame_parms->Ncp,frame_parms->frame_type, frame_parms->N_RB_DL,dlsch0_harq->rb_alloc_even,dlsch0_harq->Qm,subframe,symbol);
         pbch_pss_sss_re = (double)pbch_pss_sss_re * ((double)(12-crs_re)/12);
         data_re = granted_re - pbch_pss_sss_re;
         llr_offset = data_re * dlsch0_harq->Qm * 2;

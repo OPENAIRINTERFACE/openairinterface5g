@@ -59,8 +59,7 @@ double cpuf;
 //uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
 
-uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
-uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
@@ -68,7 +67,6 @@ uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
-void processSlotTX(void *arg) {}
 
 int main(int argc, char **argv)
 {
@@ -110,6 +108,7 @@ int main(int argc, char **argv)
 	int ret;
 	//int run_initial_sync=0;
 	int loglvl = OAILOG_WARNING;
+	uint8_t dlsch_threads = 0;
 	float target_error_rate = 0.01;
         uint64_t SSB_positions=0x01;
 	uint16_t nb_symb_sch = 12;
@@ -117,10 +116,9 @@ int main(int argc, char **argv)
 	uint8_t Imcs = 9;
         uint8_t mcs_table = 0;
         double DS_TDL = .03;
-	cpuf = get_cpu_freq_GHz(); 
-        char gNBthreads[128]="n";
+	cpuf = get_cpu_freq_GHz();
+	char gNBthreads[128]="n";
 
-        
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
 		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
 	}
@@ -128,7 +126,7 @@ int main(int argc, char **argv)
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpVg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:X:")) != -1) {
 		switch (c) {
 		/*case 'f':
 			write_output_file = 1;
@@ -141,9 +139,9 @@ int main(int argc, char **argv)
 
 			break;*/
 
-		/*case 'd':
-			frame_type = 1;
-			break;*/
+		case 'd':
+			dlsch_threads = atoi(optarg);
+			break;
 
 		case 'g':
 			switch ((char) *optarg) {
@@ -294,6 +292,11 @@ int main(int argc, char **argv)
 			nb_rb = atoi(optarg);
 			break;
 
+		case 'X':
+		  strncpy(gNBthreads, optarg, sizeof(gNBthreads));
+		  gNBthreads[sizeof(gNBthreads)-1]=0;
+		  break;
+
 		/*case 'x':
 			transmission_mode = atoi(optarg);
 			break;*/
@@ -323,6 +326,7 @@ int main(int argc, char **argv)
 			//printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
 			//printf("-f Output filename (.txt format) for Pe/SNR results\n");
 			printf("-F Input filename (.txt format) for RX conformance testing\n");
+			printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
 			exit(-1);
 			break;
 		}
@@ -334,6 +338,7 @@ int main(int argc, char **argv)
 
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
+	init_dlsch_tpool(dlsch_threads);
 
 	if (ouput_vcd)
         vcd_signal_dumper_init("/tmp/openair_dump_nr_dlschsim.vcd");
@@ -352,6 +357,8 @@ int main(int argc, char **argv)
 	RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
 	RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
 	gNB = RC.gNB[0];
+	gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+	initTpool(gNBthreads, gNB->threadPool, true);
 	//gNB_config = &gNB->gNB_config;
 	frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 	frame_parms->nb_antennas_tx = n_tx;
@@ -429,22 +436,9 @@ int main(int argc, char **argv)
 	UE->dlsch_SI[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	UE->dlsch_ra[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
- 
-        gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-        initTpool(gNBthreads, gNB->threadPool, true);
-        gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-        initNotifiedFIFO(gNB->resp_L1_tx);
-     // we create 2 threads for L1 tx processing
-        notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,processSlotTX);
-        processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-        init_DLSCH_struct(gNB, msgDataTx);
-        msgDataTx->slot = slot;
-        msgDataTx->frame = frame;
-        memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-        reset_meas(&msgDataTx->phy_proc_tx);
-        gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
-        pushTpool(gNB->threadPool,msgL1Tx);
-	NR_gNB_DLSCH_t *dlsch = msgDataTx->dlsch[0][0];
+  processingData_L1tx_t msgDataTx;
+  init_DLSCH_struct(gNB, &msgDataTx);
+	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	uint8_t is_crnti = 0, llr8_flag = 0;
@@ -481,7 +475,6 @@ int main(int argc, char **argv)
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
-	double errors_bit_uncoded = 0;
 	//unsigned char *estimated_output;
 	unsigned char *estimated_output_bit;
 	unsigned char *test_input_bit;
@@ -517,11 +510,10 @@ int main(int argc, char **argv)
 	/*for (int i=0; i<TBS/8; i++)
 	 printf("test input[%d]=%d \n",i,test_input[i]);*/
 
-
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
-	unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
-        bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+	    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
+    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 	if (input_fd == NULL) {
 	  nr_dlsch_encoding(gNB, test_input, frame, slot, dlsch, frame_parms,output,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 	}
@@ -531,7 +523,6 @@ int main(int argc, char **argv)
 		n_false_positive = 0;
 
 		for (trial = 0; trial < n_trials; trial++) {
-			errors_bit_uncoded = 0;
 			for (i = 0; i < available_bits; i++) {
 #ifdef DEBUG_CODER
 				if ((i&0xf)==0)
@@ -540,12 +531,12 @@ int main(int argc, char **argv)
 
 				//if (i<16)
 				//   printf("encoder output f[%d] = %d\n",i,dlsch->harq_processes[0]->f[i]);
-				/*
-				if (dlsch->harq_process.f[i] == 0)
+
+				if (output[i] == 0)
 					modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
 				else
 					modulated_input[i] = -1.0;        ///sqrt(2);
-				*/
+
 				//if (i<16) printf("modulated_input[%d] = %d\n",i,modulated_input[i]);
 				//SNR =10;
 				SNR_lin = pow(10, SNR / 10.0);
@@ -563,19 +554,14 @@ int main(int argc, char **argv)
 						   i,modulated_input[i],
 						   i,channel_output_fixed[i]);
 */
+
 				//Uncoded BER
 				if (channel_output_fixed[i] < 0)
 					channel_output_uncoded[i] = 1;  //QPSK demod
 				else
 					channel_output_uncoded[i] = 0;
-				/*
-				if (channel_output_uncoded[i] != dlsch->harq_process.f[i])
-					errors_bit_uncoded = errors_bit_uncoded + 1;
-				*/
 			}
 
-			//if (errors_bit_uncoded>10)
-			//printf("errors bits uncoded %f\n", errors_bit_uncoded);
 #ifdef DEBUG_CODER
 			printf("\n");
 			exit(-1);
@@ -657,7 +643,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < 2; i++) {
 		printf("gNB %d\n", i);
-		free_gNB_dlsch(&(msgDataTx->dlsch[0][i]),N_RB_DL);
+		free_gNB_dlsch(&(msgDataTx.dlsch[0][i]),N_RB_DL);
 		printf("UE %d\n", i);
 		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]),N_RB_DL);
 	}

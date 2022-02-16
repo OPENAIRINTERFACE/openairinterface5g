@@ -93,7 +93,7 @@ class Log_Mgt:
 		avail_space =int(self.__CheckAvailSpace())*1000 #avail space in target folder, initially displayed in Gb
 		avg_size=self.__AvgSize() #average size of artifacts in the target folder
 		logging.debug("Avail Space : " + str(avail_space) + " / Artifact Avg Size : " + str(avg_size))
-		if avail_space < 2*avg_size: #reserved space is 2x artifact file ; oldest file will be deleted
+		if avail_space < 50*avg_size: #reserved space is 50x artifact file ; oldest file will be deleted
 			oldestfile=self.__GetOldestFile()
 			HOST=self.Username+'@'+self.IPAddress
 			COMMAND="echo " + self.Password + " | sudo -S rm "+ self.path + "/" + oldestfile
