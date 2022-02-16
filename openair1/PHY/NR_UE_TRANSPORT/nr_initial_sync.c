@@ -196,8 +196,7 @@ char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
 int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                     PHY_VARS_NR_UE *ue,
-                    int n_frames, int sa,
-                    int dlsch_parallel)
+                    int n_frames, int sa)
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
@@ -528,8 +527,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                          SI_PDSCH,
                                          ue->dlsch_SI[gnb_id],
                                          NULL,
-                                         &ue->dlsch_SI_errors[gnb_id],
-                                         dlsch_parallel);
+                                         &ue->dlsch_SI_errors[gnb_id]);
 
           // deactivate dlsch once dlsch proc is done
           ue->dlsch_SI[gnb_id]->active = 0;

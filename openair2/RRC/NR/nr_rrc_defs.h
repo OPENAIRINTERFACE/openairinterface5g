@@ -451,6 +451,7 @@ typedef struct {
   int pusch_AntennaPorts;
   int minRXTXTIME;
   int do_CSIRS;
+  int do_SRS;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_ServingCellConfig_t                    *servingcellconfig;
