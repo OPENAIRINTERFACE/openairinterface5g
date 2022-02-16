@@ -2308,7 +2308,7 @@ function run_test_on_vm {
             echo "${CN_CONFIG} : Starting the NR-UE"
             echo "############################################################"
             CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_sa_test.log
-            #last argument = 2 is to enable --sa for SA test
+            #last argument = 2 is to enable --sa for SA test for 106PRB
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 2
             if [ $NR_UE_SYNC -eq 0 ]
             then
@@ -2343,9 +2343,11 @@ function run_test_on_vm {
                 echo "SA test NOT OK"
                 echo "try_cnt = " $try_cnt
                 try_cnt=$((try_cnt+1))
+                SA_106PRB_STATUS = -1
             else
                 echo "SA test OK"
                 try_cnt=$((try_cnt+10))
+                SA_106PRB_STATUS = 0
             fi
         done
         ########### end SA test
@@ -2382,15 +2384,15 @@ function run_test_on_vm {
             echo "${CN_CONFIG} : Starting the gNB"
             echo "############################################################"
             CURRENT_GNB_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_gnb_sa_test.log
-            #last argument = 3 is to enable --sa for SA test 24PRB
-            start_rf_sim_gnb $GNB_VM_CMDS "$GNB_VM_IP_ADDR" $CURRENT_GNB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG 3
+            #last argument = 2 is to enable --sa for SA test 
+            start_rf_sim_gnb $GNB_VM_CMDS "$GNB_VM_IP_ADDR" $CURRENT_GNB_LOG_FILE $PRB $CONF_FILE $S1_NOS1_CFG 2
 
             echo "############################################################"
             echo "${CN_CONFIG} : Starting the NR-UE"
             echo "############################################################"
             CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_sa_test.log
-            #last argument = 2 is to enable --sa for SA test
-            start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 2
+            #last argument = 3 is to enable --sa for SA test for 24PRB
+            start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 3
             if [ $NR_UE_SYNC -eq 0 ]
             then
                 echo "Problem w/ gNB and NR-UE not syncing"
@@ -2424,9 +2426,11 @@ function run_test_on_vm {
                 echo "SA test NOT OK"
                 echo "try_cnt = " $try_cnt
                 try_cnt=$((try_cnt+1))
+                SA_24PRB_STATUS = -1
             else
                 echo "SA test OK"
                 try_cnt=$((try_cnt+10))
+                SA_24PRB_STATUS = 0
             fi
         done
         ########### end SA test
@@ -2748,7 +2752,8 @@ function run_test_on_vm {
         echo "Checking run status"
         echo "############################################################"
 
-        if [ $SA_STATUS -ne 0 ]; then NR_STATUS=-1; fi     
+        if [ $SA_106PRB_STATUS -ne 0 ]; then NR_STATUS=-1; fi 
+        if [ $SA_24PRB_STATUS -ne 0 ]; then NR_STATUS=-1; fi  
         if [ $RA_FR2_STATUS -ne 0 ]; then NR_STATUS=-1; fi        
         if [ $RA_FR1_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $SYNC_STATUS -ne 0 ]; then NR_STATUS=-1; fi
