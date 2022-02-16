@@ -18,7 +18,7 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#define _GNU_SOURCE
+
 #include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/phy_extern_nr_ue.h"
@@ -32,6 +32,7 @@
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
+#include <pthread.h>
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
