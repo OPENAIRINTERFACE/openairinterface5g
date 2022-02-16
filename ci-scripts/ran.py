@@ -493,9 +493,9 @@ class RANManagement():
 		conf_file='../ci-scripts/stats_monitor_conf.yaml'
 		if self.eNB_Stats=='yes':
 			if (self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb'):
-				mySSH.command('echo $USER; nohup python3 ' + monitor_file + ' ' + conf_file + ' enb 2>&1 > enb_stats_monitor_execution.log &', '\$', 5)
+				mySSH.command('echo $USER; nohup python3 ' + monitor_file + ' ' + conf_file + ' ' + self.testCase_id + ' enb 2>&1 > enb_stats_monitor_execution.log &', '\$', 5)
 			else:
-				mySSH.command('echo $USER; nohup python3 ' + monitor_file + ' ' + conf_file + ' gnb 2>&1 > gnb_stats_monitor_execution.log &', '\$', 5)
+				mySSH.command('echo $USER; nohup python3 ' + monitor_file + ' ' + conf_file + ' ' + self.testCase_id + ' gnb 2>&1 > gnb_stats_monitor_execution.log &', '\$', 5)
 
 
 
@@ -671,10 +671,14 @@ class RANManagement():
 				mySSH.command('echo ' + localEpcPassword + ' | sudo -S chmod 666 /tmp/' + self.epcPcapFile, '\$', 5)
 				mySSH.copyin(localEpcIpAddr, localEpcUserName, localEpcPassword, '/tmp/' + self.epcPcapFile, '.')
 				mySSH.copyout(lIpAddr, lUserName, lPassWord, self.epcPcapFile, lSourcePath + '/cmake_targets/.')
+			mySSH.command('killall --signal SIGKILL record', '\$', 5)
 			mySSH.close()
+		# if T tracer was run with option 0 (no logs), analyze logs
+		# from textlog, otherwise do normal analysis (e.g., option 2)
+		result = re.search('T_stdout 0', str(self.Initialize_eNB_args))
+		if (result is not None):
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
-			mySSH.command('killall --signal SIGKILL record', '\$', 5)
 			mySSH.command('cd ' + lSourcePath + '/common/utils/T/tracer/', '\$', 5)
 			enbLogFile = self.eNBLogFiles[int(self.eNB_instance)]
 			raw_record_file = enbLogFile.replace('.log', '_record.raw')

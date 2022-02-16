@@ -280,7 +280,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
-                           /* tda = */ 0,
+                           /* tda = */ 2,
                            dci_format,
                            ps);
 
@@ -777,7 +777,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 6, 0, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 6, 0, 0, 0, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);
@@ -1053,8 +1053,6 @@ int main(int argc, char **argv)
         
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
 
-        memset(RC.nrmac[0]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
-        memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
@@ -1062,7 +1060,7 @@ int main(int argc, char **argv)
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
         for (int i=0; i<MAX_NUM_CORESET; i++)
-          gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
+          gNB_mac->pdcch_cand[i] = 0;
       
         if (css_flag == 0) {
           nr_schedule_ue_spec(0, frame, slot);
@@ -1104,7 +1102,7 @@ int main(int argc, char **argv)
         else
           phy_procedures_gNB_TX(msgDataTx,frame,slot,1);
             
-        int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
+        int txdataF_offset = slot * frame_parms->samples_per_slot_wCP;
         
         if (n_trials==1) {
           LOG_M("txsigF0.m","txsF0=", &gNB->common_vars.txdataF[0][txdataF_offset+2*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);

@@ -349,7 +349,7 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int 
         dl_harq->DCINdi = ndi;
         break;
       case 1:
-        dl_harq->round = 2;
+        dl_harq->round = 3;
         dl_harq->status = ACTIVE;
         dl_harq->first_rx = 0;
         if (dl_harq->DCINdi != ndi) {
@@ -373,7 +373,7 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int 
           dl_harq->status = SCH_IDLE;
         break;
       case 3:
-        dl_harq->round = 3;
+        dl_harq->round = 2;
         dl_harq->status = ACTIVE;
         dl_harq->first_rx = 0;
         if (dl_harq->DCINdi != ndi) {

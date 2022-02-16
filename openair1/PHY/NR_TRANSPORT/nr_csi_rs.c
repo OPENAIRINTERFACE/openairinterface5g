@@ -35,7 +35,7 @@ void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
 
   NR_DL_FRAME_PARMS frame_parms=gNB->frame_parms;
   int32_t **txdataF = gNB->common_vars.txdataF;
-  int txdataF_offset = (slot%2)*frame_parms.samples_per_slot_wCP;
+  int txdataF_offset = slot*frame_parms.samples_per_slot_wCP;
   uint32_t **gold_csi_rs = gNB->nr_gold_csi_rs[slot];
   //*8(max allocation per RB)*2(QPSK))
   int csi_rs_length =  frame_parms.N_RB_DL<<4;
