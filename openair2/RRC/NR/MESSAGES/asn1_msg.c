@@ -1905,7 +1905,9 @@ void fill_initial_SpCellConfig(rnti_t rnti,
     }
   }
 
-  xer_fprint(stdout, &asn_DEF_NR_SpCellConfig, (void *)SpCellConfig);
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_SpCellConfig, (void *)SpCellConfig);
+  }
 
 }
 
