@@ -315,6 +315,11 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
         nr_gold_pdsch(ue,ue->scramblingID);
 
+        // initialize the pusch dmrs
+        uint16_t N_n_scid[2] = {fp->Nid_cell,fp->Nid_cell};
+        int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
+        nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
+
         // we also need to take into account the shift by samples_per_frame in case the if is true
         if (ue->ssb_offset < sync_pos_frame){
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
