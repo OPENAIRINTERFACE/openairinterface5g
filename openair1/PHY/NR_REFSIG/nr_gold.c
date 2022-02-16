@@ -82,11 +82,12 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
 {
   
   uint32_t x1, x2;
-  uint8_t reset, q;
+  uint8_t reset;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint32_t ****pdsch_dmrs = gNB->nr_gold_pdsch_dmrs;
   int pdsch_dmrs_init_length =  ((fp->N_RB_DL*12)>>5)+1;
-  uint16_t N_n_scid[NR_MAX_NB_CODEWORDS]={Nid, Nid}; // Not correct, appropriate scrambling IDs have to be updated to support DCI 1_1
+  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
+  uint16_t N_n_scid[2]={Nid, Nid};
   uint8_t n_scid=0; // again works only for 1_0
   for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
 
@@ -99,8 +100,8 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
           reset = 0;
         }
 
-        for (q = 1; q < NR_MAX_NB_CODEWORDS; q++)
-          memcpy(pdsch_dmrs[slot][symb][q],pdsch_dmrs[slot][symb][0],sizeof(uint32_t)*pdsch_dmrs_init_length);
+        if(nb_codewords>1)
+          memcpy(pdsch_dmrs[slot][symb][1],pdsch_dmrs[slot][symb][0],sizeof(uint32_t)*pdsch_dmrs_init_length);
     }
   }
 }

@@ -1847,13 +1847,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     start_meas(&ue->dlsch_procedures_stat[proc->thread_id]);
 
+    NR_UE_DLSCH_t *dlsch1 = NULL;
+    if (NR_MAX_NB_LAYERS>4)
+      dlsch1 = ue->dlsch[proc->thread_id][gNB_id][1];
+
     if (ret_pdsch >= 0)
       nr_ue_dlsch_procedures(ue,
 			   proc,
 			   gNB_id,
 			   PDSCH,
 			   ue->dlsch[proc->thread_id][gNB_id][0],
-			   ue->dlsch[proc->thread_id][gNB_id][1],
+			   dlsch1,
 			   &ue->dlsch_errors[gNB_id],
 			   dlsch_parallel);
 

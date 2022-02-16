@@ -137,7 +137,9 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     dlsch->txdataF[layer] = (int32_t *)malloc16((txdataf_size)*sizeof(int32_t));
   }
 
-  for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
+  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
+  dlsch->mod_symbs = (int32_t **)malloc16(nb_codewords*sizeof(int32_t *));
+  for (int q=0; q<nb_codewords; q++)
     dlsch->mod_symbs[q] = (int32_t *)malloc16(txdataf_size*max_layers*sizeof(int32_t));
 
   dlsch->calib_dl_ch_estimates = (int32_t **)malloc16(64*sizeof(int32_t *));

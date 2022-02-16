@@ -159,7 +159,7 @@ typedef struct {
   /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
   int32_t **txdataF;
   /// Modulated symbols buffer
-  int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
+  int32_t **mod_symbs;
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
   int32_t ***ue_spec_bf_weights;
   /// dl channel estimates (estimated from ul channel estimates)

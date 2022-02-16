@@ -296,11 +296,12 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     pdsch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t **));
     AssertFatal(pdsch_dmrs[slot]!=NULL, "NR init: pdsch_dmrs for slot %d - malloc failed\n", slot);
 
+    int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
     for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_MAX_NB_CODEWORDS*sizeof(uint32_t *));
+      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(nb_codewords*sizeof(uint32_t *));
       AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
-      for (int q=0; q<NR_MAX_NB_CODEWORDS; q++) {
+      for (int q=0; q<nb_codewords; q++) {
         pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(pdsch_dmrs_init_length*sizeof(uint32_t));
         AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
       }
@@ -471,8 +472,10 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
 void init_nr_ue_transport(PHY_VARS_NR_UE *ue,
                           int abstraction_flag) {
+
+  int num_codeword = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
-    for (int j=0; j<2; j++) {
+    for (int j=0; j<num_codeword; j++) {
       for (int k=0; k<RX_NB_TH_MAX; k++) {
         AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
         LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
