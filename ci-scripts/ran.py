@@ -815,8 +815,8 @@ class RANManagement():
 		removing_ue = 0
 		#count"X2AP-PDU"
 		x2ap_pdu = 0
-		#NSA specific log markers
-		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
+		#gnb specific log markers
+		gnb_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': [], 'Detected UL Failure on PUSCH':[]}
 		nodeB_prefix_found = False
 		RealTimeProcessingIssue = False
 	
@@ -1008,11 +1008,11 @@ class RANManagement():
 			result = re.search('X2AP-PDU', str(line))
 			if result is not None:
 				x2ap_pdu += 1
-			#nsa markers logging
-			for k in nsa_markers:
+			#gnb markers logging
+			for k in gnb_markers:
 				result = re.search(k, line)
 				if result is not None:
-					nsa_markers[k].append(line_cnt)					
+					gnb_markers[k].append(line_cnt)
 
 		enb_log_file.close()
 
@@ -1096,19 +1096,23 @@ class RANManagement():
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			#nsa markers
+			#gnb markers
 			statMsg = 'logfile line count = ' + str(line_cnt)			
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			if len(nsa_markers['SgNBReleaseRequestAcknowledge'])!=0:
-				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(nsa_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences , starting line ' + str(nsa_markers['SgNBReleaseRequestAcknowledge'][0])
+			if len(gnb_markers['SgNBReleaseRequestAcknowledge'])!=0:
+				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(gnb_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences , starting line ' + str(gnb_markers['SgNBReleaseRequestAcknowledge'][0])
 			else:
-				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(nsa_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences' 
+				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(gnb_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences' 
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			statMsg = 'FAILURE = ' + str(len(nsa_markers['FAILURE'])) + ' occurences'
+			statMsg = 'FAILURE = ' + str(len(gnb_markers['FAILURE'])) + ' occurences'
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			statMsg = 'Detected UL Failure on PUSCH = ' + str(len(gnb_markers['Detected UL Failure on PUSCH'])) + ' occurences'
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
@@ -1158,14 +1162,14 @@ class RANManagement():
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			if len(nsa_markers['SgNBReleaseRequest'])!=0:
-				statMsg = 'SgNBReleaseRequest = ' + str(len(nsa_markers['SgNBReleaseRequest'])) + ' occurences , starting line ' + str(nsa_markers['SgNBReleaseRequest'][0])
+			if len(gnb_markers['SgNBReleaseRequest'])!=0:
+				statMsg = 'SgNBReleaseRequest = ' + str(len(gnb_markers['SgNBReleaseRequest'])) + ' occurences , starting line ' + str(gnb_markers['SgNBReleaseRequest'][0])
 			else:
-				statMsg = 'SgNBReleaseRequest = ' + str(len(nsa_markers['SgNBReleaseRequest'])) + ' occurences'
+				statMsg = 'SgNBReleaseRequest = ' + str(len(gnb_markers['SgNBReleaseRequest'])) + ' occurences'
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			statMsg = 'scgFailureInformationNR-r15 = ' + str(len(nsa_markers['scgFailureInformationNR-r15'])) + ' occurences'
+			statMsg = 'scgFailureInformationNR-r15 = ' + str(len(gnb_markers['scgFailureInformationNR-r15'])) + ' occurences'
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg			
