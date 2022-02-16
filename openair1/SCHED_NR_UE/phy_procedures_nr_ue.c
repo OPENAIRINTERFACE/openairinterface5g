@@ -1404,8 +1404,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
     LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
     const int estimateSz=7*2*sizeof(int)*fp->ofdm_symbol_size;
-    struct complex16 dl_ch_estimates[fp->nb_antennas_rx][estimateSz];
-    struct complex16 dl_ch_estimates_time[fp->nb_antennas_rx][estimateSz];
+    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates[fp->nb_antennas_rx][estimateSz];
+    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[fp->nb_antennas_rx][estimateSz];
     for (int i=1; i<4; i++) {
 
       nr_slot_fep(ue,

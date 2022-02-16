@@ -457,6 +457,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     struct complex16 rxdataF_comp[frame_parms->nb_antennas_rx][nb_re];
     //was dl_ch_estimates[idx]     = (int32_t *)malloc16_clear( sizeof(int32_t)*7*2*sizeof(int)*(fp->ofdm_symbol_size) );
     struct complex16 dl_ch_estimates_ext[frame_parms->nb_antennas_rx][20*12*4];
+    memset(dl_ch_estimates_ext,0, sizeof  dl_ch_estimates_ext);
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
                     estimateSz,
                     dl_ch_estimates,
@@ -540,7 +541,9 @@ printf("pbch rx llr %d\n",*(pbch_e_rx+cnt));
   nr_pbch_unscrambling(nr_ue_pbch_vars,pbch_e_rx,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0,  pbch_a_prime, &pbch_a_interleaved);
   //polar decoding de-rate matching
   const t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,1,&ue->polarList);
-  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&pbch_a_prime,0,currentPtr);
+uint64_t tmp=pbch_a_prime;
+decoderState = polar_decoder_int16(pbch_e_rx,&tmp,0,currentPtr);
+pbch_a_prime=tmp;
 
   if(decoderState) return(decoderState);
 

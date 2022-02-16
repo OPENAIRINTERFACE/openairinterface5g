@@ -430,13 +430,14 @@ int main(int argc, char **argv)
 
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
-  RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
+  RC.gNB = (PHY_VARS_gNB**) calloc(sizeof(PHY_VARS_gNB *),1);
   RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   gNB->ofdm_offset_divisor = UINT_MAX;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
+  frame_parms->nb_antenna_ports_gNB=n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
   frame_parms->nushift = Nid_cell%4;
@@ -522,23 +523,17 @@ int main(int argc, char **argv)
   s_im = malloc(2*sizeof(double*));
   r_re = malloc(2*sizeof(double*));
   r_im = malloc(2*sizeof(double*));
-  txdata = malloc(2*sizeof(int*));
+  txdata = calloc(2,sizeof(int*));
 
   for (i=0; i<2; i++) {
 
-    s_re[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(s_re[i],frame_length_complex_samples*sizeof(double));
-    s_im[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(s_im[i],frame_length_complex_samples*sizeof(double));
-
-    r_re[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(r_re[i],frame_length_complex_samples*sizeof(double));
-    r_im[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(r_im[i],frame_length_complex_samples*sizeof(double));
+    s_re[i] = calloc(frame_length_complex_samples, sizeof(double));
+    s_im[i] = calloc(frame_length_complex_samples, sizeof(double));
+    r_re[i] = calloc(frame_length_complex_samples, sizeof(double));
+    r_im[i] = calloc(frame_length_complex_samples, sizeof(double));
 
     printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
-    txdata[i] = malloc(frame_length_complex_samples*sizeof(int));
-    bzero(r_re[i],frame_length_complex_samples*sizeof(int));
+    txdata[i] = calloc(frame_length_complex_samples, sizeof(int));
   }
 
   if (pbch_file_fd!=NULL) {
@@ -547,8 +542,8 @@ int main(int argc, char **argv)
 
 
   //configure UE
-  UE = malloc(sizeof(PHY_VARS_NR_UE));
-  memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
+  UE = calloc(1,sizeof(*UE));
+  memcpy(&UE->frame_parms,frame_parms,sizeof(*frame_parms));
   //phy_init_nr_top(UE); //called from init_nr_ue_signal
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      UE->is_synchronized = 1;
@@ -721,8 +716,8 @@ int main(int argc, char **argv)
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
 	const int estimateSz=7*2*sizeof(int)*frame_parms->ofdm_symbol_size;
-	struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
-	struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][estimateSz];
+	__attribute__ ((aligned(32))) struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
+	__attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][estimateSz];
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
 	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms,ssb_index);
 
