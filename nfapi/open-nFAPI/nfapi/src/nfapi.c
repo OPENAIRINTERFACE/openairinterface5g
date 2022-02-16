@@ -357,22 +357,22 @@ uint32_t pullarray32(uint8_t **values_to_pull,
                      uint32_t max_num_values_to_pull,
                      uint32_t num_values_to_pull,
                      uint8_t *out_end) {
-  if(num_values_to_pull == 0)
+  if (num_values_to_pull == 0)
 
     return 1;
 
-  if(num_values_to_pull > max_num_values_to_pull) {
+  if (num_values_to_pull > max_num_values_to_pull) {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s exceed array size (%d > %d)\n",
                 __FUNCTION__, num_values_to_pull, max_num_values_to_pull);
     on_error();
     return 0;
   }
 
-  if((out_end - (*values_to_pull)) >= sizeof(uint32_t) * num_values_to_pull) {
+  if ((out_end - (*values_to_pull)) >= sizeof(uint32_t) * num_values_to_pull) {
     uint32_t idx;
 
-    for(idx = 0; idx < num_values_to_pull; ++idx) {
-      if(!pull32(values_to_pull, &out[idx], out_end))
+    for (idx = 0; idx < num_values_to_pull; ++idx) {
+      if (!pull32(values_to_pull, &out[idx], out_end))
         return 0;
     }
 
@@ -414,21 +414,21 @@ uint32_t pusharray32(const uint32_t *values_to_push,
                      uint32_t num_values_to_push,
                      uint8_t **out,
                      uint8_t *out_end) {
-  if(num_values_to_push == 0)
+  if (num_values_to_push == 0)
     return 1;
 
-  if(num_values_to_push > max_num_values_to_push) {
+  if (num_values_to_push > max_num_values_to_push) {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s exceed array size (%d > %d)\n",
                 __FUNCTION__, num_values_to_push, max_num_values_to_push);
     on_error();
     return 0;
   }
 
-  if((out_end - (*out)) >= sizeof(uint32_t) * num_values_to_push) {
+  if ((out_end - (*out)) >= sizeof(uint32_t) * num_values_to_push) {
     uint32_t idx;
 
-    for(idx = 0; idx < num_values_to_push; ++idx) {
-      if(!push32(values_to_push[idx], out, out_end))
+    for (idx = 0; idx < num_values_to_push; ++idx) {
+      if (!push32(values_to_push[idx], out, out_end))
         return 0;
     }
 
