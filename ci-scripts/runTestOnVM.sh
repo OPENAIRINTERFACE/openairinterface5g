@@ -1406,7 +1406,7 @@ function start_rf_sim_nr_ue {
             echo "echo \"./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --log_config.global_log_options level,nocolor,time\" > ./my-nr-softmodem-run.sh " >> $1
         else # -eq 3 SA test 24PRB 
         then
-           echo "echo \"./nr-uesoftmodem -r 24 -s 24 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --log_config.global_log_options level,nocolor,time\" > ./my-nr-softmodem-run.sh " >> $1
+           echo "echo \"./nr-uesoftmodem -r 24 -s 24 --numerology 1 --band 78 -C 3604320000 --rfsim --sa --log_config.global_log_options level,nocolor,time\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1
@@ -2359,10 +2359,10 @@ function run_test_on_vm {
         echo "############################################################"
         #SA test, attention : has a different config file from the rest of the test
         CN_CONFIG="noS1"
-        CONF_FILE=gnb.band78.sa.fr1.24PRB.usrpn310.conf
+        CONF_FILE=gnb.sa.band78.fr1.24PRB.usrpb210.conf
         S1_NOS1_CFG=0
         PRB=24
-        FREQUENCY=3510
+        FREQUENCY=3600
 
         if [ ! -d $ARCHIVES_LOC ]
         then
