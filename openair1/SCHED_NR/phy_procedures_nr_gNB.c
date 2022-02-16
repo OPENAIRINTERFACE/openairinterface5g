@@ -100,7 +100,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
 
   else
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index&7],&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
-    
+/*
   prs_data_t prs_data;
   prs_data.PRSResourceSetPeriod[0]=40; // PRS resource slot period
   prs_data.PRSResourceSetPeriod[1]=0;  // resource slot offset
@@ -114,8 +114,8 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   prs_data.PRSResourceRepetition=1;
   prs_data.PRSResourceTimeGap=1;
   prs_data.NPRSID=0;
-
-  nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &prs_data, cfg, fp);
+*/
+  nr_generate_prs(gNB->nr_gold_prs[slot],&txdataF[0][txdataF_offset], AMP, &gNB->prs_cfg, cfg, fp);
 
 
   if (T_ACTIVE(T_GNB_PHY_MIB)) {

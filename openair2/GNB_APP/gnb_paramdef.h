@@ -352,7 +352,8 @@ typedef enum {
 #define CONFIG_STRING_L1_LIST                              "L1s"
 #define CONFIG_STRING_L1_CONFIG                            "l1_config"
 
-
+/* PRS configuration section names   */
+#define GNB_CONFIG_STRING_PRS_CONFIG                       "prs_config"
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 

@@ -54,6 +54,7 @@
 #include "nfapi_pnf.h"
 
 //#include "L1_paramdef.h"
+#include "prs_nr_paramdef.h"
 #include "L1_nr_paramdef.h"
 #include "MACRLC_nr_paramdef.h"
 #include "common/config/config_userapi.h"
@@ -599,6 +600,64 @@ void RCconfig_nr_flexran()
 								   | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
 								   | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
 
+  }
+}
+
+void RCconfig_nr_prs(void)
+{
+  uint16_t  j;
+
+  paramdef_t PRS_Params[] = PRS_PARAMS_DESC;
+  paramlist_def_t PRS_ParamList = {GNB_CONFIG_STRING_PRS_CONFIG,NULL,0};
+
+  if (RC.gNB == NULL) {
+    RC.gNB                       = (PHY_VARS_gNB **)malloc((1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB*));
+    LOG_I(NR_PHY,"RC.gNB = %p\n",RC.gNB);
+    memset(RC.gNB,0,(1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB*));
+  }
+
+  config_getlist( &PRS_ParamList,PRS_Params,sizeof(PRS_Params)/sizeof(paramdef_t), NULL);
+
+  if (PRS_ParamList.numelt > 0) {
+
+    for (j = 0; j < RC.nb_nr_L1_inst; j++) {
+
+      if (RC.gNB[j] == NULL) {
+        RC.gNB[j]                       = (PHY_VARS_gNB *)malloc(sizeof(PHY_VARS_gNB));
+        LOG_I(NR_PHY,"RC.gNB[%d] = %p\n",j,RC.gNB[j]);
+        memset(RC.gNB[j],0,sizeof(PHY_VARS_gNB));
+	      RC.gNB[j]->Mod_id  = j;
+      }
+
+      RC.gNB[j]->prs_cfg.PRSResourceSetPeriod[0]  = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD0].uptr);
+      RC.gNB[j]->prs_cfg.PRSResourceSetPeriod[1]  = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD1].uptr);
+      RC.gNB[j]->prs_cfg.SymbolStart              = *(PRS_ParamList.paramarray[j][PRS_SYMBOL_START].uptr);
+      RC.gNB[j]->prs_cfg.NumPRSSymbols            = *(PRS_ParamList.paramarray[j][PRS_NUM_SYMBOLS].uptr);
+      RC.gNB[j]->prs_cfg.NumRB                    = *(PRS_ParamList.paramarray[j][PRS_NUM_RB].uptr);
+      RC.gNB[j]->prs_cfg.RBOffset                 = *(PRS_ParamList.paramarray[j][PRS_RB_OFFSET].uptr);
+      RC.gNB[j]->prs_cfg.CombSize                 = *(PRS_ParamList.paramarray[j][PRS_COMB_SIZE].uptr);
+      RC.gNB[j]->prs_cfg.REOffset                 = *(PRS_ParamList.paramarray[j][PRS_RE_OFFSET].uptr);
+      RC.gNB[j]->prs_cfg.PRSResourceOffset        = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_OFFSET].uptr);
+      RC.gNB[j]->prs_cfg.PRSResourceRepetition    = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_REPETITION].uptr);
+      RC.gNB[j]->prs_cfg.PRSResourceTimeGap       = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_TIME_GAP].uptr);
+
+      LOG_I(NR_PHY, "PRS Config for gNB_ID %d\n", j);
+      LOG_I(NR_PHY, "PRSResourceSetPeriod0 %d\n", RC.gNB[j]->prs_cfg.PRSResourceSetPeriod[0]);
+      LOG_I(NR_PHY, "PRSResourceSetPeriod1 %d\n", RC.gNB[j]->prs_cfg.PRSResourceSetPeriod[1]);
+      LOG_I(NR_PHY, "SymbolStart %d\n", RC.gNB[j]->prs_cfg.SymbolStart);
+      LOG_I(NR_PHY, "NumPRSSymbols %d\n", RC.gNB[j]->prs_cfg.NumPRSSymbols);
+      LOG_I(NR_PHY, "NumRB %d\n", RC.gNB[j]->prs_cfg.NumRB);
+      LOG_I(NR_PHY, "RBOffset %d\n", RC.gNB[j]->prs_cfg.RBOffset);
+      LOG_I(NR_PHY, "CombSize %d\n", RC.gNB[j]->prs_cfg.CombSize);
+      LOG_I(NR_PHY, "REOffset %d\n", RC.gNB[j]->prs_cfg.REOffset);
+      LOG_I(NR_PHY, "PRSResourceOffset %d\n", RC.gNB[j]->prs_cfg.PRSResourceOffset);
+      LOG_I(NR_PHY, "PRSResourceRepetition %d\n", RC.gNB[j]->prs_cfg.PRSResourceRepetition);
+      LOG_I(NR_PHY, "PRSResourceTimeGap %d\n", RC.gNB[j]->prs_cfg.PRSResourceTimeGap);
+    } // for j
+  }
+  else
+  {
+    LOG_I(NR_PHY,"No " GNB_CONFIG_STRING_PRS_CONFIG " configuration found\n");
   }
 }
 
@@ -2172,6 +2231,7 @@ void nr_read_config_and_init(void) {
   uint32_t    gnb_nb = RC.nb_nr_inst;
 
   RCconfig_NR_L1();
+  RCconfig_nr_prs();
   set_node_type();
   RCconfig_nr_macrlc();
 

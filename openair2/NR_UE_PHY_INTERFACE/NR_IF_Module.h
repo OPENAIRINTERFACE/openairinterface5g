@@ -278,5 +278,7 @@ int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, 
 
 int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
 
+void RCconfig_nrUE_prs(void *cfg);
+
 #endif
 

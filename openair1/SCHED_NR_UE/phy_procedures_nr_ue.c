@@ -1659,7 +1659,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_OUT);
     }
-    
+
+/*
     ue->prs_cfg.PRSResourceSetPeriod[0]=40; // PRS resource slot period
     ue->prs_cfg.PRSResourceSetPeriod[1]=0;  // resource slot offset
     ue->prs_cfg.SymbolStart=7;		
@@ -1672,7 +1673,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     ue->prs_cfg.PRSResourceRepetition=1;
     ue->prs_cfg.PRSResourceTimeGap=1;
     ue->prs_cfg.NPRSID=0;
-
+*/
     for(int j = ue->prs_cfg.SymbolStart; j < (ue->prs_cfg.SymbolStart + ue->prs_cfg.NumPRSSymbols); j++)
     {
             nr_slot_fep(ue,
