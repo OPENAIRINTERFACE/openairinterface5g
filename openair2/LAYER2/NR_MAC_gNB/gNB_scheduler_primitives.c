@@ -2076,6 +2076,11 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
                                                   scc,
                                                   genericParameters,
                                                   NULL);
+    sched_ctrl->bwp_switch_info.current_bwp = bwp_id;
+    sched_ctrl->bwp_switch_info.next_bwp = -1;
+    sched_ctrl->bwp_switch_info.bwp_switch_timer = 0;
+    sched_ctrl->bwp_switch_info.bwp_switch_state = BWP_SWITCH_INACTIVE;
+    sched_ctrl->bwp_switch_info.bwp_switch_delay = 40;
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
     if (ubwpList) AssertFatal(ubwpList->list.count <= NR_MAX_NUM_BWP,
 			      "uplinkBWP_ToAddModList has %d BWP!\n",

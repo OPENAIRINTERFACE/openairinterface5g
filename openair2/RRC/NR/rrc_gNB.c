@@ -1775,6 +1775,44 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
 }
 //-----------------------------------------------------------------------------
 
+int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP,
+                               protocol_ctxt_t              *const ctxt_pP,
+                               const int                    bwp_id) {
+
+  uint8_t buffer[RRC_BUF_SIZE];
+  memset(buffer, 0, sizeof(buffer));
+  uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
+
+  NR_CellGroupConfig_t *masterCellGroup = ue_context_pP->ue_context.masterCellGroup;
+  *masterCellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = bwp_id;
+  *masterCellGroup->spCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = bwp_id;
+  *masterCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = bwp_id;
+
+  uint16_t  size = do_RRCReconfiguration(ctxt_pP,
+                                         buffer,
+                                         sizeof(buffer),
+                                         xid,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         masterCellGroup);
+
+  nr_rrc_data_req(ctxt_pP,
+                  DCCH,
+                  rrc_gNB_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+
+  return 0;
+}
+
 /*------------------------------------------------------------------------------*/
 int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,

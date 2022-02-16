@@ -64,6 +64,10 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
+void schedule_nr_bwp_switch(module_id_t module_id,
+                            frame_t frame,
+                            sub_frame_t slot);
+
 /* \brief main DL scheduler function. Calls a preprocessor to decide on
  * resource allocation, then "post-processes" resource allocation (nFAPI
  * messages, statistics, HARQ handling, CEs, ... */

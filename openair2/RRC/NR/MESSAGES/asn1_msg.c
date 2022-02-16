@@ -2493,7 +2493,9 @@ int16_t do_RRCReconfiguration(
             enc_rval.failed_type->name, enc_rval.encoded);
         return -1;
       }
-      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+        xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
+      }
       ie->nonCriticalExtension->masterCellGroup = calloc(1,sizeof(OCTET_STRING_t));
 
       ie->nonCriticalExtension->masterCellGroup->buf = masterCellGroup_buf;
@@ -2502,9 +2504,9 @@ int16_t do_RRCReconfiguration(
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
 
-    //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-        xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
-    //}
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
+    }
 
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
                                     NULL,

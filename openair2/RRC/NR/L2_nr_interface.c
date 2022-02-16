@@ -304,6 +304,19 @@ uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
 
 }
 
+int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
+                                 const frame_t         frameP,
+                                 const sub_frame_t     sub_frameP,
+                                 const rnti_t          rntiP,
+                                 const int             bwp_id) {
+
+  struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[module_idP], rntiP);
+
+  protocol_ctxt_t ctxt;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, GNB_FLAG_YES, rntiP, frameP, sub_frameP, 0);
+  nr_rrc_reconfiguration_req(ue_context_p, &ctxt, bwp_id);
+}
+
 int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
                            const int             CC_id,
                            const frame_t         frameP,

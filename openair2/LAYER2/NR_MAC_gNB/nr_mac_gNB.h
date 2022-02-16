@@ -551,6 +551,20 @@ typedef struct NR_UE_ul_harq {
   NR_sched_pusch_t sched_pusch;
 } NR_UE_ul_harq_t;
 
+typedef enum {
+  BWP_SWITCH_INACTIVE = 0,
+  BWP_SWITCH_TO_START,
+  BWP_SWITCH_RUNNING
+} NR_BWP_switch_states_t;
+
+typedef struct NR_BWP_switch_info {
+  NR_BWP_Id_t current_bwp;
+  NR_BWP_Id_t next_bwp;
+  int bwp_switch_timer;
+  uint8_t bwp_switch_delay;
+  NR_BWP_switch_states_t bwp_switch_state;
+} NR_BWP_switch_info_t;
+
 /*! \brief scheduling control information set through an API */
 #define MAX_CSI_REPORTS 48
 typedef struct {
@@ -558,6 +572,10 @@ typedef struct {
   NR_BWP_Downlink_t *active_bwp;
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
+
+  /// the state of bwp switch procedure
+  NR_BWP_switch_info_t bwp_switch_info;
+
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
   NR_ControlResourceSet_t *coreset;
@@ -624,7 +642,8 @@ typedef struct {
   int ul_failure;
   struct CSI_Report CSI_report[MAX_CSI_REPORTS];
   bool SR;
-
+  bool update_pdsch_ps;
+  bool update_pusch_ps;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free

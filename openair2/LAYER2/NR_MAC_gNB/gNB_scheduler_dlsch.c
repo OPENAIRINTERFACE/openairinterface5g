@@ -500,14 +500,14 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                                     0);
        stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
     }
-    if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
+    if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0) {
       lcid = DL_SCH_LCID_DCCH;       
-    } 
-    else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
-    {
+    } else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0) {
       lcid = DL_SCH_LCID_DCCH1;       
-    }else{
-      lcid = DL_SCH_LCID_DTCH;       
+    } else if (sched_ctrl->bwp_switch_info.bwp_switch_state != BWP_SWITCH_RUNNING) {
+      lcid = DL_SCH_LCID_DTCH;
+    } else {
+      continue;
     }
                                                       
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
@@ -577,8 +577,10 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda)
+    if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
       nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, f, ps);
+      sched_ctrl->update_pdsch_ps = false;
+    }
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -838,8 +840,10 @@ void pf_dl(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     const long f = (sched_ctrl->active_bwp || bwpd) ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
-    if (ps->time_domain_allocation != tda)
+    if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, f, ps);
+      sched_ctrl->update_pdsch_ps = false;
+    }
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     // Freq-demain allocation
@@ -962,6 +966,70 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id)
   }
 
   return nr_fr1_dlsch_preprocessor;
+}
+
+void nr_bwp_switch(module_id_t module_id,
+                   frame_t frame,
+                   sub_frame_t slot,
+                   int UE_id,
+                   int bwp_id) {
+
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  switch(sched_ctrl->bwp_switch_info.bwp_switch_state) {
+
+    case BWP_SWITCH_TO_START:
+      LOG_W(NR_MAC,"(%d.%d) [UE_id %d] Schedule BWP switch from bwp_id %ld to %d\n",
+            frame, slot, UE_id, UE_info->UE_sched_ctrl[UE_id].active_bwp->bwp_Id, bwp_id);
+      sched_ctrl->bwp_switch_info.bwp_switch_timer = 0;
+      sched_ctrl->bwp_switch_info.bwp_switch_state = BWP_SWITCH_RUNNING;
+      nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE_info->rnti[UE_id], bwp_id);
+      break;
+
+    case BWP_SWITCH_RUNNING:
+      sched_ctrl->bwp_switch_info.bwp_switch_timer++;
+      if(sched_ctrl->bwp_switch_info.bwp_switch_timer == sched_ctrl->bwp_switch_info.bwp_switch_delay) {
+        const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id] ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated : NULL;
+        const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig ? servingCellConfig->downlinkBWP_ToAddModList : NULL;
+        const int bwp_id = servingCellConfig && servingCellConfig->firstActiveDownlinkBWP_Id ?
+                           *servingCellConfig->firstActiveDownlinkBWP_Id : 0;
+        sched_ctrl->active_bwp = bwpList && bwp_id > 0 ? bwpList->list.array[bwp_id - 1] : NULL;
+        const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
+        const int ubwp_id = servingCellConfig && servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id ?
+                            *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id : 0;
+        sched_ctrl->active_ubwp = ubwpList && ubwp_id > 0 ? ubwpList->list.array[ubwp_id - 1] : NULL;
+        sched_ctrl->bwp_switch_info.bwp_switch_state = BWP_SWITCH_INACTIVE;
+      }
+      break;
+
+    case BWP_SWITCH_INACTIVE:
+      break;
+
+    default:
+      AssertFatal(1==0,"Invalid bwp switch state\n");
+      break;
+  }
+}
+
+void schedule_nr_bwp_switch(module_id_t module_id,
+                            frame_t frame,
+                            sub_frame_t slot) {
+
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  const NR_list_t *UE_list = &UE_info->list;
+
+  // TODO: Implementation of a algorithm to perform:
+  //  - the BWP switch trigger: sched_ctrl->bwp_switch_info.bwp_switch_state = BWP_SWITCH_TO_START
+  //  - the BWP selection:      sched_ctrl->bwp_switch_info.next_bwp = bwp_id
+
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if(sched_ctrl->bwp_switch_info.bwp_switch_state > BWP_SWITCH_INACTIVE) {
+      nr_bwp_switch(module_id, frame, slot, UE_id, sched_ctrl->bwp_switch_info.next_bwp);
+    }
+  }
+
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
