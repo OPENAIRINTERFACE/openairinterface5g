@@ -65,6 +65,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
 
+  if(uecap == NULL)
+    LOG_E(RRC,"No UE Capabilities available when programming default CellGroup in NSA\n");
+
   // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
   // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
   // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
