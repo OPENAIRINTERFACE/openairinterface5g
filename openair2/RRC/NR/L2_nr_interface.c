@@ -315,6 +315,8 @@ int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, GNB_FLAG_YES, rntiP, frameP, sub_frameP, 0);
   nr_rrc_reconfiguration_req(ue_context_p, &ctxt, bwp_id);
+
+  return 0;
 }
 
 int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
