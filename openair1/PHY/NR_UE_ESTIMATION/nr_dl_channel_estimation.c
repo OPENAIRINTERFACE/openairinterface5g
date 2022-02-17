@@ -410,11 +410,11 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
 #endif
 
   // T tracer dump
-  T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
+  T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(0),
     T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
     T_INT(0), T_BUFFER(&ue->prs_ch_estimates[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
 
-  T(T_UE_PHY_INPUT_SIGNAL, T_INT(0),
+  T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
     T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
     T_INT(0), T_BUFFER(&ue->prs_ch_estimates_time[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
 
