@@ -409,8 +409,9 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
                       ul_info.slot_tx, mac->frame_type))
     {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() and nr_ue_pucch_scheduler() from %s\n", ul_info.slot_tx, __FUNCTION__);
-      nr_ue_ul_indication(&ul_info);
-      nr_ue_pucch_scheduler(0, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
+      nr_ue_scheduler(NULL, &ul_info);
+      nr_ue_prach_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
+      nr_ue_pucch_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
       check_nr_prach(mac, &ul_info, &prach_resources);
     }
     if (!IS_SOFTMODEM_NOS1 && get_softmodem_params()->sa) {

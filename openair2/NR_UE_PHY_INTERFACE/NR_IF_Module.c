@@ -767,7 +767,10 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                           mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
                           ul_info.slot_tx,
                           mac->frame_type))
-            nr_ue_ul_indication(&ul_info);
+        {
+            nr_ue_scheduler(NULL, &ul_info);
+            nr_ue_prach_scheduler(ul_info.module_id, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
+        }
     }
 }
 
@@ -1110,8 +1113,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
-  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) &&
-      !get_softmodem_params()->emulate_l1)
+  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
     nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
   switch(ret){
