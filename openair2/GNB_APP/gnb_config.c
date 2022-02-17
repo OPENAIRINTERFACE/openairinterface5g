@@ -458,6 +458,25 @@ for (int j = 0; j < NR_MAX_NUM_BWP; j++) {
 /* This function checks dedicated serving cell configuration and performs fixes as needed */
 void fix_scd(NR_ServingCellConfig_t *scd) {
 
+  // Remove unused BWPs
+  int b = 0;
+  while (b<scd->downlinkBWP_ToAddModList->list.count) {
+    if (scd->downlinkBWP_ToAddModList->list.array[b]->bwp_Common->genericParameters.locationAndBandwidth == 0) {
+      asn_sequence_del(&scd->downlinkBWP_ToAddModList->list,b,1);
+    } else {
+      b++;
+    }
+  }
+
+  b = 0;
+  while (b<scd->uplinkConfig->uplinkBWP_ToAddModList->list.count) {
+    if (scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[b]->bwp_Common->genericParameters.locationAndBandwidth == 0) {
+      asn_sequence_del(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,b,1);
+    } else {
+      b++;
+    }
+  }
+
   // Check for DL PTRS parameters validity
   for (int bwp_i = 0 ; bwp_i<scd->downlinkBWP_ToAddModList->list.count; bwp_i++) {
 
@@ -1086,31 +1105,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       (int)scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Common->genericParameters.locationAndBandwidth
       );
     }
-
-    for(int bb = 0; bb<scd->uplinkConfig->uplinkBWP_ToAddModList->list.count; bb++) {
-      printf("scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[bb]->bwp_Common->genericParameters = %li\n",
-             scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[bb]->bwp_Common->genericParameters.locationAndBandwidth);
-    }
-
-    // Remove unused BWPs
-    int b = 0;
-    while (b<scd->downlinkBWP_ToAddModList->list.count) {
-      if (scd->downlinkBWP_ToAddModList->list.array[b]->bwp_Common->genericParameters.locationAndBandwidth == 0) {
-        asn_sequence_del(&scd->downlinkBWP_ToAddModList->list,b,1);
-      } else {
-        b++;
-      }
-    }
-
-    b = 0;
-    while (b<scd->uplinkConfig->uplinkBWP_ToAddModList->list.count) {
-      if (scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[b]->bwp_Common->genericParameters.locationAndBandwidth == 0) {
-        asn_sequence_del(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,b,1);
-      } else {
-        b++;
-      }
-    }
-
     fix_scd(scd);
 
     printf("NRRRC %d: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
