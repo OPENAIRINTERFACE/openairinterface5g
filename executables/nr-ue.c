@@ -313,6 +313,13 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   int last_sfn_slot = -1;
   uint16_t sfn_slot = 0;
 
+  module_id_t mod_id = 0;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++) {
+      mac->nr_ue_emul_l1.harq[i].active = false;
+      mac->nr_ue_emul_l1.harq[i].active_ul_harq_sfn_slot = -1;
+  }
+
   while (!oai_exit)
   {
     if (sem_wait(&sfn_slot_semaphore) != 0)
@@ -347,8 +354,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     LOG_D(NR_MAC, "The received sfn/slot [%d %d] from proxy\n",
           frame, slot);
 
-    module_id_t mod_id = 0;
-    NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
     if (get_softmodem_params()->sa && mac->mib == NULL)
     {
       LOG_D(NR_MAC, "We haven't gotten MIB. Lets see if we received it\n");

@@ -74,6 +74,38 @@ static void fill_uci_2_3_4(nfapi_nr_uci_pucch_pdu_format_2_3_4_t *pdu_2_3_4,
   pdu_2_3_4->csi_part1.csi_part1_crc = 0;
 }
 
+static void free_uci_inds(nfapi_nr_uci_indication_t *uci_ind)
+{
+    for (int k = 0; k < uci_ind->num_ucis; k++)
+    {
+        if (uci_ind->uci_list[k].pdu_type == NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE)
+        {
+            nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[k].pucch_pdu_format_0_1;
+            free(pdu_0_1->sr);
+            pdu_0_1->sr = NULL;
+            if (pdu_0_1->harq)
+            {
+                free(pdu_0_1->harq->harq_list);
+                pdu_0_1->harq->harq_list = NULL;
+            }
+            free(pdu_0_1->harq);
+            pdu_0_1->harq = NULL;
+        }
+        if (uci_ind->uci_list[k].pdu_type == NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE)
+        {
+            nfapi_nr_uci_pucch_pdu_format_2_3_4_t *pdu_2_3_4 = &uci_ind->uci_list[k].pucch_pdu_format_2_3_4;
+            free(pdu_2_3_4->sr.sr_payload);
+            pdu_2_3_4->sr.sr_payload = NULL;
+            free(pdu_2_3_4->harq.harq_payload);
+            pdu_2_3_4->harq.harq_payload = NULL;
+        }
+    }
+    free(uci_ind->uci_list);
+    uci_ind->uci_list = NULL;
+    free(uci_ind);
+    uci_ind = NULL;
+}
+
 int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response) {
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   if(scheduled_response != NULL)
@@ -136,6 +168,8 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 crc_ind->crc_list[j].tb_crc_status = 0;
                 crc_ind->crc_list[j].timing_advance = 31;
                 crc_ind->crc_list[j].ul_cqi = 255;
+                AssertFatal(mac->nr_ue_emul_l1.harq[crc_ind->crc_list[j].harq_id].active_ul_harq_sfn_slot == -1,
+                            "We did not send an active CRC when we should have!\n");
                 mac->nr_ue_emul_l1.harq[crc_ind->crc_list[j].harq_id].active_ul_harq_sfn_slot = NFAPI_SFNSLOT2HEX(crc_ind->sfn, crc_ind->slot);
                 LOG_D(NR_MAC, "This is sched sfn/sl [%d %d] and crc sfn/sl [%d %d] with mcs_index in ul_cqi -> %d\n",
                       scheduled_response->frame, scheduled_response->slot, crc_ind->sfn, crc_ind->slot,pusch_config_pdu->mcs_index);
@@ -218,6 +252,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                     {
                       mac->nr_ue_emul_l1.harq[k].active = false;
                       harq_pid = k;
+                      AssertFatal(harq_index < pdu_0_1->harq->num_harq, "Invalid harq_index %d\n", harq_index);
                       pdu_0_1->harq->harq_list[harq_index].harq_value = !mac->dl_harq_info[k].ack;
                       harq_index++;
                     }

@@ -540,38 +540,6 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
     dl_info->rx_ind->number_pdus = pdu_idx;
 }
 
-void free_uci_inds(nfapi_nr_uci_indication_t *uci_ind)
-{
-    for (int k = 0; k < uci_ind->num_ucis; k++)
-    {
-        if (uci_ind->uci_list[k].pdu_type == NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE)
-        {
-            nfapi_nr_uci_pucch_pdu_format_0_1_t *pdu_0_1 = &uci_ind->uci_list[k].pucch_pdu_format_0_1;
-            free(pdu_0_1->sr);
-            pdu_0_1->sr = NULL;
-            if (pdu_0_1->harq)
-            {
-                free(pdu_0_1->harq->harq_list);
-                pdu_0_1->harq->harq_list = NULL;
-            }
-            free(pdu_0_1->harq);
-            pdu_0_1->harq = NULL;
-        }
-        if (uci_ind->uci_list[k].pdu_type == NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE)
-        {
-            nfapi_nr_uci_pucch_pdu_format_2_3_4_t *pdu_2_3_4 = &uci_ind->uci_list[k].pucch_pdu_format_2_3_4;
-            free(pdu_2_3_4->sr.sr_payload);
-            pdu_2_3_4->sr.sr_payload = NULL;
-            free(pdu_2_3_4->harq.harq_payload);
-            pdu_2_3_4->harq.harq_payload = NULL;
-        }
-    }
-    free(uci_ind->uci_list);
-    uci_ind->uci_list = NULL;
-    free(uci_ind);
-    uci_ind = NULL;
-}
-
 static void copy_ul_dci_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_ul_dci_request_t *ul_dci_req)
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
@@ -624,6 +592,12 @@ static bool send_crc_ind_and_rx_ind(int sfn_slot)
 
   if (crc_ind && crc_ind->number_crcs > 0)
   {
+    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+    for (int i = 0; i < crc_ind->number_crcs; i++) {
+        int harq_pid = crc_ind->crc_list[i].harq_id;
+        LOG_D(NR_MAC, "Resetting harq_pid %d active_ul_harq_sfn_slot\n", harq_pid);
+        mac->nr_ue_emul_l1.harq[harq_pid].active_ul_harq_sfn_slot = -1;
+    }
     NR_UL_IND_t UL_INFO = {
       .crc_ind = *crc_ind,
     };
@@ -912,7 +886,10 @@ static void enqueue_nr_nfapi_msg(void *buffer, ssize_t len, nfapi_p7_message_hea
                 LOG_E(NR_PHY, "Message ul_tti_request failed to unpack\n");
                 break;
             }
-
+            /* We are filtering UL_TTI_REQs below. We only care about UL_TTI_REQs that
+               will trigger sending a ul_harq (CRC/RX pair). This UL_TTI_REQ will have
+               NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE. If we have not yet completed the CBRA/
+               CFRA procedure, we need to queue all UL_TTI_REQs. */
             for (int i = 0; i < ul_tti_request->n_pdus; i++) {
                 if (ul_tti_request->pdus_list[i].pdu_type == NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE &&
                     mac->ra.ra_state >= RA_SUCCEEDED) {
