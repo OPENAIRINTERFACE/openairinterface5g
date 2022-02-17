@@ -158,14 +158,19 @@ if (logFlag){
 #endif
 }
 
-  uint8_t testArrayLength = ceil(testLength / 32.0);
-  uint8_t coderArrayLength = ceil(coderLength / 32.0);
-  uint32_t testInput[max(2,testArrayLength)]; //generate randomly
+  const uint8_t testArrayLength = ceil(testLength / 32.0);
+  const uint8_t coderArrayLength = ceil(coderLength / 32.0);
+  // in the polar code, often uint64_t arrays are used, but we work with
+  // uint32_t arrays below, so realArrayLength is the length that always
+  // satisfies uint64_t array length
+  const uint8_t realArrayLength = ((testArrayLength + 1) / 2) * 2;
+  printf("testArrayLength %d realArrayLength %d\n", testArrayLength, realArrayLength);
+  uint32_t testInput[realArrayLength]; //generate randomly
   uint32_t encoderOutput[coderArrayLength];
-  uint32_t estimatedOutput[testArrayLength]; //decoder output
-  memset(testInput,0,sizeof(uint32_t) * testArrayLength);
+  uint32_t estimatedOutput[realArrayLength]; //decoder output
+  memset(testInput,0,sizeof(uint32_t) * realArrayLength); // does not reset all
   memset(encoderOutput,0,sizeof(uint32_t) * coderArrayLength);
-  memset(estimatedOutput,0,sizeof(uint32_t) * testArrayLength);
+  memset(estimatedOutput,0,sizeof(uint32_t) * realArrayLength);
   uint8_t encoderOutputByte[coderLength];
   double modulatedInput[coderLength]; //channel input
   double channelOutput[coderLength];  //add noise
@@ -334,9 +339,9 @@ if (logFlag){
       decoderState=0;
       nBitError=0;
       blockErrorState=0;
-	  memset(testInput,0,sizeof(uint32_t) * testArrayLength);
+	  memset(testInput,0,sizeof(uint32_t) * realArrayLength);
 	  memset(encoderOutput,0,sizeof(uint32_t) * coderArrayLength);
-	  memset(estimatedOutput,0,sizeof(uint32_t) * testArrayLength);
+	  memset(estimatedOutput,0,sizeof(uint32_t) * realArrayLength);
     }
 
     //Calculate error statistics for the SNR.
