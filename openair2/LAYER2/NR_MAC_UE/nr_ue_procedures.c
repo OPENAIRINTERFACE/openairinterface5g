@@ -1827,6 +1827,7 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size) {
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup &&
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList &&
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL)) {
+      // PUCCH with format0 can be up to 3 bits (2 ack/nacks + 1 sr is 3 max bits)
       if (uci_size <= 3) {
         pucch_resource_set_id = 0;
         return (pucch_resource_set_id);

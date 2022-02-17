@@ -303,6 +303,8 @@ static void fill_dl_info_with_pdcch(fapi_nr_dci_indication_t *dci, nfapi_nr_dl_d
     }
     dci->dci_list[idx].payloadSize = rx_dci->PayloadSizeBits;
     dci->dci_list[idx].rnti = rx_dci->RNTI;
+    dci->dci_list[idx].n_CCE = rx_dci->CceIndex;
+    dci->dci_list[idx].N_CCE = rx_dci->AggregationLevel;
     dci->number_of_dcis = idx + 1;
 }
 
