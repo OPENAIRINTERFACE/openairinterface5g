@@ -419,8 +419,9 @@ int main(int argc, char **argv)
 
 	//nr_init_frame_parms_ue(&UE->frame_parms);
 	//init_nr_ue_transport(UE, 0);
+        int num_codeword = NR_MAX_NB_LAYERS > 4? 2:1;
 	for (int sf = 0; sf < 2; sf++) {
-		for (i = 0; i < 2; i++) {
+		for (i = 0; i < num_codeword; i++) {
 			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL,
 					0);
 
