@@ -208,6 +208,23 @@ decoder_node_t *add_nodes(int level, int first_leaf_index, t_nrPolar_params *pol
   return(new_node);
 }
 
+void delete_nodes(decoder_node_t * n) {
+  if (n) {
+    if(n->left)
+      delete_nodes(n->left);
+    if(n->right)
+      delete_nodes(n->right);
+    free(n->alpha);
+    free(n->beta);
+    free(n);
+  }
+}
+
+void delete_decoder_tree(t_nrPolar_params *polarParams) {
+  if (polarParams->tree.root)
+    delete_nodes(polarParams->tree.root);
+}
+
 void build_decoder_tree(t_nrPolar_params *polarParams)
 {
   polarParams->tree.num_nodes=0;

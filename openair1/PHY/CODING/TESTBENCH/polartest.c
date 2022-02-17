@@ -20,7 +20,7 @@
 
 int main(int argc, char *argv[])
 {
-  //Default simulation values (Aim for iterations = 1000000.)
+  //Default simulation values (Aim for iterations = 1000000.) 
   int decoder_int16=0;
   int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, 2=UCI
   double SNRstart = -20.0, SNRstop = 0.0, SNRinc= 0.5; //dB
@@ -160,7 +160,7 @@ if (logFlag){
 
   uint8_t testArrayLength = ceil(testLength / 32.0);
   uint8_t coderArrayLength = ceil(coderLength / 32.0);
-  uint32_t testInput[min(2,testArrayLength)]; //generate randomly
+  uint32_t testInput[max(2,testArrayLength)]; //generate randomly
   uint32_t encoderOutput[coderArrayLength];
   uint32_t estimatedOutput[testArrayLength]; //decoder output
   memset(testInput,0,sizeof(uint32_t) * testArrayLength);
@@ -357,5 +357,6 @@ if (logFlag){
   print_meas(&timeEncoder,"polar_encoder",NULL,NULL);
   print_meas(&timeDecoder,"polar_decoder",NULL,NULL);
   if (logFlag) fclose(logFile);
+  nr_polar_delete(currentPtr);
   return (0);
 }

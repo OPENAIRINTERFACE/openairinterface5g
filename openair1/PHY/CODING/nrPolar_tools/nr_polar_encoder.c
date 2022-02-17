@@ -334,7 +334,7 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
   AssertFatal(polarParams->N==512 || polarParams->N==256 || polarParams->N==128,"N = %d, not done yet\n",polarParams->N);
   // build G bit vectors for information bit positions and convert the bit as bytes tables in nr_polar_kronecker_power_matrices.c to 64 bit packed vectors.
   // keep only rows of G which correspond to information/crc bits
-  polarParams->G_N_tab = (uint64_t **)malloc((polarParams->K + polarParams->n_pc) * sizeof(int64_t *));
+  polarParams->G_N_tab = (uint64_t **)calloc((polarParams->K + polarParams->n_pc),sizeof(int64_t *));
   int k=0;
 
   for (int i=0; i<polarParams->N; i++) {

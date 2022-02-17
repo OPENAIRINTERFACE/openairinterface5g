@@ -36,6 +36,37 @@
 static int intcmp(const void *p1,const void *p2) {
   return(*(int16_t *)p1 > *(int16_t *)p2);
 }
+void nr_polar_delete(t_nrPolar_params * polarParams) {
+  delete_decoder_tree(polarParams);
+  //From build_polar_tables()
+  for (int k=0; k < polarParams->K + polarParams->n_pc; k++)
+    if (polarParams->G_N_tab[k]) 
+      free(polarParams->G_N_tab[k]);
+  free(polarParams->G_N_tab);
+  free(polarParams->rm_tab);
+  if (polarParams->crc_generator_matrix)
+    free(polarParams->crc_generator_matrix);
+  //polar_encoder vectors:
+  free(polarParams->nr_polar_crc);
+  free(polarParams->nr_polar_aPrime);
+  free(polarParams->nr_polar_APrime);
+  free(polarParams->nr_polar_D);
+  free(polarParams->nr_polar_E);
+    //Polar Coding vectors
+  free(polarParams->nr_polar_U);
+  free(polarParams->nr_polar_CPrime);
+  free(polarParams->nr_polar_B);
+  free(polarParams->nr_polar_A);
+  free(polarParams->interleaving_pattern);
+  free(polarParams->deinterleaving_pattern);
+  free(polarParams->rate_matching_pattern);
+  free(polarParams->information_bit_pattern);
+  free(polarParams->Q_I_N);
+  free(polarParams->Q_F_N);
+  free(polarParams->Q_PC_N);
+  free(polarParams->channel_interleaver_pattern);
+  free(polarParams);
+}
 
 static void nr_polar_init(t_nrPolar_params * *polarParams,
                           int8_t messageType,
@@ -151,7 +182,7 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
       newPolarInitNode->deinterleaving_pattern[newPolarInitNode->interleaving_pattern[i]] = i;
 
     newPolarInitNode->rate_matching_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->encoderLength);
-    uint16_t *J = malloc(sizeof(uint16_t) * newPolarInitNode->N);
+    uint16_t J[newPolarInitNode->N];
     nr_polar_rate_matching_pattern(newPolarInitNode->rate_matching_pattern,
                                    J,
                                    nr_polar_subblock_interleaver_pattern,
@@ -181,7 +212,6 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
     nr_polar_channel_interleaver_pattern(newPolarInitNode->channel_interleaver_pattern,
                                          newPolarInitNode->i_bil,
                                          newPolarInitNode->encoderLength);
-    free(J);
     if (decoder_flag == 1) build_decoder_tree(newPolarInitNode);
     build_polar_tables(newPolarInitNode);
     init_polar_deinterleaver_table(newPolarInitNode);

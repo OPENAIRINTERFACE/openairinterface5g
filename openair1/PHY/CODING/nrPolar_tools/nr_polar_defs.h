@@ -332,5 +332,6 @@ static inline void nr_polar_deinterleaver(uint8_t *input,
 {
 	for (int i=0; i<size; i++) output[pattern[i]]=input[i];
 }
-
+void delete_decoder_tree(t_nrPolar_params *);
+void nr_polar_delete(t_nrPolar_params *);
 #endif

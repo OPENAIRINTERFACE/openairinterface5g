@@ -141,18 +141,18 @@ int8_t polar_decoder(double *input,
       updatePathMetric2(pathMetric, currentListSize, currentBit, polarParams->N, polarParams->n+1, 2*listSize, llr);
 
       for (int i = 0; i < currentListSize; i++) {
-        for (int j = 0; j < polarParams->N; j++) {
-          for (int k = 0; k < (polarParams->n+1); k++) {
+      for (int j = 0; j < polarParams->N; j++) {
+	for (int k = 0; k < (polarParams->n+1); k++) {
             bit[j][k][i+currentListSize]=bit[j][k][i];
             llr[j][k][i+currentListSize]=llr[j][k][i];
           }
-        }
+	}
       }
 
-      for (int i = 0; i < currentListSize; i++) {
-        bit[currentBit][0][i]=0;
-        crcState[i+currentListSize]=crcState[i];
-      }
+	for (int i = 0; i < currentListSize; i++) {
+	  bit[currentBit][0][i]=0;
+	  crcState[i+currentListSize]=crcState[i];
+	}
 
       for (int i = currentListSize; i < 2*currentListSize; i++) bit[currentBit][0][i]=1;
 
@@ -264,13 +264,6 @@ int8_t polar_decoder(double *input,
 
       if (decoderIterationCheck==0) {
         //perror("[SCL polar decoder] All list entries have failed the CRC checks.");
-        //free(d_tilde);
-        //free(pathMetric);
-        //free(crcState);
-        //nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
-        //nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-        //nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
-        free(tempECGM);
         return(-1);
       }
 
@@ -531,13 +524,6 @@ int8_t polar_decoder_dci(double *input,
 
       if (decoderIterationCheck==0) {
         //perror("[SCL polar decoder] All list entries have failed the CRC checks.");
-        //free(d_tilde);
-        //free(pathMetric);
-        //free(crcState);
-        //nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
-        //nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-        //nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
-        free(tempECGM);
         return(-1);
       }
 
