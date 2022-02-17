@@ -174,17 +174,13 @@ void nr_phy_free_RU(RU_t *ru)
 
   LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
 
-  free_and_zero(ru->nr_frame_parms);
-  free_and_zero(ru->frame_parms);
-
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
-    int32_t *ptr;
-    for (i = 0; i < ru->nb_tx; i++) {
-      ptr=&ru->common.txdata[i][-ru->sf_extension];
-      free_and_zero(ptr);
-    }
-    for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdata[i]);
+    for (i = 0; i < ru->nb_tx; i++)
+      free_and_zero(ru->common.txdata[i]);
     free_and_zero(ru->common.txdata);
+
+    for (i = 0; i < ru->nb_rx; i++)
+      free_and_zero(ru->common.rxdata[i]);
     free_and_zero(ru->common.rxdata);
   } // else: IF5 or local RF -> nothing to free()
 
@@ -193,7 +189,7 @@ void nr_phy_free_RU(RU_t *ru)
     free_and_zero(ru->common.rxdata_7_5kHz);
 
     // free beamforming input buffers (TX)
-    for (i = 0; i < 15; i++) free_and_zero(ru->common.txdataF[i]);
+    for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdataF[i]);
     free_and_zero(ru->common.txdataF);
 
     // free IFFT input buffers (TX)
@@ -205,15 +201,21 @@ void nr_phy_free_RU(RU_t *ru)
     free_and_zero(ru->common.rxdataF);
 
     for (j=0;j<NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX;j++) {
-      for (i = 0; i < ru->nb_rx; i++) {
+      for (i = 0; i < ru->nb_rx; i++)
 	free_and_zero(ru->prach_rxsigF[j][i]);
-      }
+      free_and_zero(ru->prach_rxsigF[j]);
     }
-    for (i = 0; i < ru->num_gNB; i++) {
-      for (p = 0; p < 15; p++) {
-	  for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
-	  free_and_zero(ru->beam_weights[i][p]);
+
+    if (ru->do_precoding == 1) {
+      for (i = 0; i < ru->num_gNB; i++) {
+        for (p = 0; p < ru->nb_log_antennas; p++) {
+            for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
+            free_and_zero(ru->beam_weights[i][p]);
+        }
       }
+      for(i=0; i< ru->nb_tx; ++i)
+        free_and_zero(ru->common.beam_id[i]);
+      free_and_zero(ru->common.beam_id);
     }
   }
   free_and_zero(ru->common.sync_corr);
