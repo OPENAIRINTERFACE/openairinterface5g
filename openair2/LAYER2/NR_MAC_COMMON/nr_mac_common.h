@@ -121,6 +121,13 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
 uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset);
 
+int get_bw_tbslbrm(NR_ServingCellConfigCommon_t *scc,
+                   NR_CellGroupConfig_t *cg);
+
+uint32_t nr_compute_tbslbrm(uint16_t table,
+			    uint16_t nb_rb,
+		            uint8_t Nl);
+
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,
                                            NR_MIB_t *mib,

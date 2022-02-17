@@ -928,7 +928,6 @@ typedef struct LDPCDecode_s {
   int segment_r;
   int r_offset;
   int offset;
-  int Tbslbrm;
   int decodeIterations;
 } ldpcDecode_t;
 

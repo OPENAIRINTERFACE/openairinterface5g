@@ -233,8 +233,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   uint16_t Kr,r;
   uint32_t r_offset;
   uint32_t E,Kb;
-  uint8_t Ilbrm; 
-  uint32_t Tbslbrm; 
+  uint8_t Ilbrm;
   uint16_t R;
   float Coderate;
 
@@ -256,7 +255,6 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   r_offset=0;
   F=0;
   Ilbrm = 0;
-  Tbslbrm = 950984; //max tbs
   Coderate = 0.0;
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
@@ -440,12 +438,10 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
     E = nr_get_E(G, harq_process->C, mod_order, harq_process->pusch_pdu.nrOfLayers, r);
 
-    Tbslbrm = nr_compute_tbslbrm(0,nb_rb,harq_process->pusch_pdu.nrOfLayers);
-
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
     start_meas(&ue->ulsch_rate_matching_stats);
     if (nr_rate_matching_ldpc(Ilbrm,
-                              Tbslbrm,
+                              0,
                               harq_process->BG,
                               *pz,
                               harq_process->d[r],

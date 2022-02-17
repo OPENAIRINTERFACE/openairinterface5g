@@ -229,13 +229,8 @@ void ldpc8blocks( void *p) {
           impp->F,
           Kr-impp->F-2*(*impp->Zc),
           mod_order,nb_rb);
-    // for tbslbrm calculation according to 5.4.2.1 of 38.212
-    uint8_t Nl = 4;
 
-    if (rel15->nrOfLayers < Nl)
-      Nl = rel15->nrOfLayers;
-
-    uint32_t Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
+    uint32_t Tbslbrm = rel15->maintenance_parms_v3.tbSizeLbrmBytes;
     uint8_t Ilbrm = 1;
 
     uint8_t e[E];

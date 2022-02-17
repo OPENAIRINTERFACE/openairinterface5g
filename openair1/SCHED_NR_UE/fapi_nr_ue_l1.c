@@ -286,6 +286,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->n_dmrs_cdm_groups = dlsch_config_pdu->n_dmrs_cdm_groups;
             dlsch0_harq->mcs = dlsch_config_pdu->mcs;
             dlsch0_harq->rvidx = dlsch_config_pdu->rv;
+            dlsch0_harq->tbslbrm = dlsch_config_pdu->tbslbrm;
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             //get nrOfLayers from DCI info
             uint8_t Nl = 0;

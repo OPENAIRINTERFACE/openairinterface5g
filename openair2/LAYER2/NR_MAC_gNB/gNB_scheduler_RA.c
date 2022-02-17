@@ -1338,6 +1338,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint8_t tb_scaling = 0;
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
 
+    int bw_tbslbrm = get_bw_tbslbrm(scc, ra->CellGroup);
+    pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
+                                                                               bw_tbslbrm,
+                                                                               1);
+
     // Fill PDCCH DL DCI PDU
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
     pdcch_pdu_rel15->numDlDci++;
@@ -1714,6 +1719,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     int x_Overhead = 0;
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
+
+    int bw_tbslbrm = get_bw_tbslbrm(scc, ra->CellGroup);
+    pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
+                                                                               bw_tbslbrm,
+                                                                               1);
 
     pdsch_pdu_rel15->precodingAndBeamforming.num_prgs=1;
     pdsch_pdu_rel15->precodingAndBeamforming.prg_size=275;

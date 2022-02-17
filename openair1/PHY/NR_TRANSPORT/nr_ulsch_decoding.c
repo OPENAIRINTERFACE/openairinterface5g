@@ -259,7 +259,6 @@ void nr_processULSegment(void* arg) {
   int rv_index = rdata->rv_index;
   int r_offset = rdata->r_offset;
   uint8_t kc = rdata->Kc;
-  uint32_t Tbslbrm = rdata->Tbslbrm;
   short* ulsch_llr = rdata->ulsch_llr;
   int max_ldpc_iterations = p_decoderParms->numMaxIter;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
@@ -319,7 +318,7 @@ void nr_processULSegment(void* arg) {
   //start_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
 
   if (nr_rate_matching_ldpc_rx(Ilbrm,
-                               Tbslbrm,
+                               0,
                                p_decoderParms->BG,
                                p_decoderParms->Z,
                                ulsch_harq->d[r],
@@ -420,7 +419,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint32_t r_offset;
   uint32_t offset;
   int kc;
-  int Tbslbrm;
   int E;
 
 #ifdef PRINT_CRC_CHECK
@@ -559,7 +557,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (!frame%100)
     printf("K %d C %d Z %d \n", harq_process->K, harq_process->C, harq_process->Z);
 #endif
-  Tbslbrm = nr_compute_tbslbrm(0,nb_rb,n_layers);
 
   p_decParams->Z = harq_process->Z;
 
@@ -610,7 +607,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->r_offset = r_offset;
     rdata->Kr_bytes = Kr_bytes;
     rdata->rv_index = pusch_pdu->pusch_data.rv_index;
-    rdata->Tbslbrm = Tbslbrm;
     rdata->offset = offset;
     rdata->ulsch = ulsch;
     rdata->ulsch_id = ULSCH_id;

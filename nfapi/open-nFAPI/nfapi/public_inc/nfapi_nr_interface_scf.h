@@ -777,6 +777,10 @@ typedef struct {
 }  nfapi_nr_dl_tti_pdcch_pdu_rel15_t;
 
 typedef struct {
+  uint32_t tbSizeLbrmBytes;
+}nfapi_v3_pdsch_maintenance_parameters_t;
+
+typedef struct {
   uint16_t pduBitmap;
   uint16_t rnti;
   uint16_t pduIndex;
@@ -854,6 +858,7 @@ typedef struct {
   uint8_t nEpreRatioOfPDSCHToPTRS;
   // Beamforming
   nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming;
+  nfapi_v3_pdsch_maintenance_parameters_t maintenance_parms_v3;
 }nfapi_nr_dl_tti_pdsch_pdu_rel15_t;
 
 
