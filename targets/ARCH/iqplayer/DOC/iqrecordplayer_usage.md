@@ -1,7 +1,7 @@
 # I/Q record-playback
 ## using the iq recorder or iq player
 
-This feature provides I/Q record-playback as presented in the 4th OAI workshop. Tests have only been performed with a eNB, but the implementation should allow any softmodem executable to use the iq's record/player.
+This feature provides I/Q record-playback as presented in the 4th OAI workshop. The implementation allows any softmodem executable to use the iq's record/player.
 The I/Q record/playback feature is briefly described hereafter, it allows you to:
 * record subframes received by the USRP board in a file while the system is operating (for example you can record a full UE connection/traffic/ disconnection sequence). Today the oai USRP device is the only one supporting the recording feature. 
 * replay subframes from a file to operate the system (possibly in multiple loops if the recorded sequence is convenient from the logical point of view). 
