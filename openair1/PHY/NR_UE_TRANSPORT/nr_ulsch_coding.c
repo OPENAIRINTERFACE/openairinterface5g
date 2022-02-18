@@ -43,7 +43,7 @@
 
 //#define DEBUG_ULSCH_CODING
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
+void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr, uint16_t N_RB_UL)
 
 {
   int i, r;
