@@ -384,7 +384,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
                 return 0;
           if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
             //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
-            if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+            if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
                   return 0;
             mac_subheader_len = 3;
             mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)

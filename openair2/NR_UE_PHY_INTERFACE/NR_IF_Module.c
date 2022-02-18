@@ -683,8 +683,6 @@ static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_
             dl_ind->dci_ind->dci_list[k].dci_format = rel15_dci->dci_format_options[j];
             LOG_I(NR_PHY, "format assigned dl_ind->dci_ind->dci_list[k].dci_format %d\n",
                   dl_ind->dci_ind->dci_list[k].dci_format);
-            dl_ind->dci_ind->dci_list[k].n_CCE = rel15_dci->CCE[j];
-            dl_ind->dci_ind->dci_list[k].N_CCE = rel15_dci->L[j];
         }
       }
     }
@@ -1067,6 +1065,10 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 // L2 Abstraction Layer
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
 int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
+  /* L1 assigns harq_pid, but in emulated L1 mode we need to assign
+     the harq_pid based on the saved global g_harq_pid. Because we are
+     emulating L1, no antenna measurements are conducted to calculate
+     a harq_pid, therefore we must set it here. */
   if (get_softmodem_params()->emulate_l1)
     dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
 
@@ -1116,6 +1118,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
     nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
+
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
     nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
 
