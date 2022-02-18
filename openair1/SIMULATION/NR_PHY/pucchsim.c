@@ -653,6 +653,7 @@ int main(int argc, char **argv)
         if(sr_flag==1){
           if (uci_pdu.sr->sr_indication == 0 || uci_pdu.sr->sr_confidence_level == 1)
             sr_errors+=1;
+          free(uci_pdu.sr);
         }
         // harq value 0 -> pass
         nfapi_nr_harq_t *harq_list = uci_pdu.harq->harq_list;
