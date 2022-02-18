@@ -748,6 +748,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
     memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
     fill_dci_from_dl_config(&mac->dl_info, &mac->dl_config_request);
+    nr_ue_scheduler(&mac->dl_info, NULL);
     nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
@@ -1176,8 +1177,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
-        if (!get_softmodem_params()->emulate_l1)
-          memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
+        memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
       }
       free(dl_info->dci_ind);
       dl_info->dci_ind = NULL;
