@@ -1882,11 +1882,11 @@ void fill_initial_SpCellConfig(rnti_t rnti,
       NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
       fill_default_downlinkBWP(bwp, bwp_loop, servingcellconfigdedicated, scc, carrier);
       ASN_SEQUENCE_ADD(&SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list,bwp);
-      SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id));
-      *SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = servingcellconfigdedicated->firstActiveDownlinkBWP_Id ? *servingcellconfigdedicated->firstActiveDownlinkBWP_Id : 1;
-      SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id));
-      *SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = servingcellconfigdedicated->defaultDownlinkBWP_Id ? *servingcellconfigdedicated->defaultDownlinkBWP_Id : 1;
     }
+    SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id));
+    *SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = servingcellconfigdedicated->firstActiveDownlinkBWP_Id ? *servingcellconfigdedicated->firstActiveDownlinkBWP_Id : 1;
+    SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id));
+    *SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = servingcellconfigdedicated->defaultDownlinkBWP_Id ? *servingcellconfigdedicated->defaultDownlinkBWP_Id : 1;
   }
 
   // Uplink BWPs
@@ -1900,9 +1900,9 @@ void fill_initial_SpCellConfig(rnti_t rnti,
       NR_BWP_Uplink_t *ubwp = calloc(1, sizeof(*ubwp));
       fill_default_uplinkBWP(ubwp, bwp_loop, servingcellconfigdedicated, scc, carrier, uid);
       ASN_SEQUENCE_ADD(&SpCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list, ubwp);
-      SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id));
-      *SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id : 1;
     }
+    SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id));
+    *SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id : 1;
   }
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
