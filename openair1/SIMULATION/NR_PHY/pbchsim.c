@@ -27,6 +27,7 @@
 #include <sys/mman.h>
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/load_module_shlib.h"
 #include "common/ran_context.h" 
 #include "common/utils/nr/nr_common.h"
 #include "PHY/types.h"
@@ -775,6 +776,15 @@ int main(int argc, char **argv)
 
   } // NSR
 
+  free_channel_desc_scm(gNB2UE);
+
+  phy_free_nr_gNB(gNB);
+  free(RC.gNB[0]);
+  free(RC.gNB);
+
+  term_nr_ue_signal(UE, 1);
+  free(UE);
+
   for (i=0; i<2; i++) {
     free(s_re[i]);
     free(s_im[i]);
@@ -794,6 +804,9 @@ int main(int argc, char **argv)
 
   if (input_fd)
     fclose(input_fd);
+
+  loader_reset();
+  logTerm();
 
   return(n_errors);
 
