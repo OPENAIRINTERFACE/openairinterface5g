@@ -264,10 +264,10 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
 
             LOG_I(NR_PHY, "Sending UCI with %d PDUs in sfn.slot %d/%d\n",
                   uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
-            NR_UL_IND_t UL_INFO = {
+            NR_UL_IND_t ul_info = {
                 .uci_ind = *uci_ind,
             };
-            send_nsa_standalone_msg(&UL_INFO, uci_ind->header.message_id);
+            send_nsa_standalone_msg(&ul_info, uci_ind->header.message_id);
             free_uci_inds(uci_ind);
             break;
           }
