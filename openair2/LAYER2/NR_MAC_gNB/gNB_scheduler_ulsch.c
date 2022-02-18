@@ -1020,9 +1020,6 @@ bool allocate_ul_retransmission(module_id_t module_id,
     retInfo->rbSize = new_rbSize;
     retInfo->time_domain_allocation = tda;
     sched_ctrl->pusch_semi_static = temp_ps;
-
-    // Get previous PUSCH filed info
-    sched_ctrl->sched_pusch = *retInfo;
   }
 
   /* Find a free CCE */
