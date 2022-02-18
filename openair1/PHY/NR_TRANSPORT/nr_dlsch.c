@@ -295,7 +295,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
           ptrs_symbol = is_ptrs_symbol(l,dlPtrsSymPos);
           if(ptrs_symbol) {
             /* PTRS QPSK Modulation for each OFDM symbol in a slot */
-            printf("Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
+            LOG_D(PHY,"Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
             nr_modulation(pdsch_dmrs[l][0], (n_ptrs<<1), DMRS_MOD_ORDER, mod_ptrs);
           }
         }
