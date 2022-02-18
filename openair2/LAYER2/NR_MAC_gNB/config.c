@@ -535,7 +535,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
   if (CellGroup) {
 
-    if (!get_softmodem_params()->phy_test) {
+    if (get_softmodem_params()->sa) {
       calculate_preferred_dl_tda(Mod_idP, NULL);
     }
 
