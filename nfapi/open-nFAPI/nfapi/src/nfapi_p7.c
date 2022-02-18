@@ -3304,7 +3304,6 @@ static uint8_t pack_nr_uci_indication_body(nfapi_nr_uci_t* value, uint8_t **ppWr
 		return 0;
 
 	switch (value->pdu_type) {
-        NFAPI_TRACE(NFAPI_TRACE_INFO, " NFAPI_NR_UCI_PUSCH_PDU_TYPE = %d \n", value->pdu_type);
       case NFAPI_NR_UCI_PUSCH_PDU_TYPE:
         NFAPI_TRACE(NFAPI_TRACE_WARN, "Unhandled NFAPI_NR_UCI_PUSCH_PDU_TYPE \n");
         break;
