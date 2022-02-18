@@ -184,31 +184,7 @@ void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
   else if (cap->phy_Parameters.phy_ParametersFR1 && cap->phy_Parameters.phy_ParametersFR1->pdsch_256QAM_FR1)
     supported = true;
 
-  // check featureSet
-  NR_FeatureSets_t *fs=cap->featureSets;
-  NR_ModulationOrder_t supported_mo = 0;
-  if (fs && supported) {
-    // go through DL feature sets and look for one with current SCS
-    for (int i=0;i<fs->featureSetsDownlinkPerCC->list.count;i++) {
-      int supported_bw;
-      NR_FeatureSetDownlinkPerCC_t *fs_cc = fs->featureSetsDownlinkPerCC->list.array[i];
-      switch (fs_cc->supportedBandwidthDL.present) {
-        case NR_SupportedBandwidth_PR_fr1:
-          supported_bw = fs_cc->supportedBandwidthDL.choice.fr1;
-          break;
-        case NR_SupportedBandwidth_PR_fr2:
-          supported_bw = fs_cc->supportedBandwidthDL.choice.fr2;
-          break;
-        default:
-          AssertFatal(1==0,"Invalid parameter for supported bandwith choice\n");
-      }
-      if (fs_cc->supportedSubcarrierSpacingDL == scs &&
-          supported_bw == bw &&
-          fs_cc->supportedModulationOrderDL)
-        supported_mo = *fs_cc->supportedModulationOrderDL ;
-    }
-  }
-  if (supported && (supported_mo == NR_ModulationOrder_qam256)) {
+  if (supported) {
     if(bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
       bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table));
     *bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
