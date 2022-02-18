@@ -1145,7 +1145,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
     int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
     // Maximum number of PRBs across all configured DL BWPs
-    int bw_tbslbrm = get_bw_tbslbrm(scc, cg);
+    int bw_tbslbrm = get_bw_tbslbrm(genericParameters, cg);
     pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ps->mcsTableIdx,
                                                                          bw_tbslbrm,
                                                                          nl_tbslbrm);

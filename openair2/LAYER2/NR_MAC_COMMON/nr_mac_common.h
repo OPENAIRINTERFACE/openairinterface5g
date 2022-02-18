@@ -121,7 +121,7 @@ uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
 uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset);
 
-int get_bw_tbslbrm(NR_ServingCellConfigCommon_t *scc,
+int get_bw_tbslbrm(NR_BWP_t *genericParameters,
                    NR_CellGroupConfig_t *cg);
 
 uint32_t nr_compute_tbslbrm(uint16_t table,

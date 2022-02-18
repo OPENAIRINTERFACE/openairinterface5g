@@ -891,7 +891,14 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
 
-    int bw_tbslbrm = get_bw_tbslbrm(mac->scc, mac->cg);
+    int bw_tbslbrm;
+    if (mac->scc || mac->scc_SIB || mac->cg) {
+      NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
+                                              mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+      bw_tbslbrm = get_bw_tbslbrm(&genericParameters, mac->cg);
+    }
+    else
+      bw_tbslbrm = dlsch_config_pdu_1_0->BWPSize;
     dlsch_config_pdu_1_0->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_0->mcs_table,
 			                               bw_tbslbrm,
 		                                       1);
@@ -1265,7 +1272,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     long *maxMIMO_Layers = mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
     AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
     int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
-    int bw_tbslbrm = get_bw_tbslbrm(mac->scc, mac->cg);
+    NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
+                                            mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+    int bw_tbslbrm = get_bw_tbslbrm(&genericParameters, mac->cg);
     dlsch_config_pdu_1_1->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_1->mcs_table,
 			                               bw_tbslbrm,
 		                                       nl_tbslbrm);
