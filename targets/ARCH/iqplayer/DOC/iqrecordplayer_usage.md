@@ -75,7 +75,7 @@ U[HW]I ru thread Writing file header to /tmp/iqfile
 ```
 
 ### Playback/replay mode
-The option works only for 5MHz bandwidth because the information stored in the iq's file header regarding bandwidth is not yet properly processed. 
+When replaying iq's received by eNB or gNB The option works only for 5MHz bandwidth because the information stored in the iq's file header regarding bandwidth is not yet properly processed.  
  In this version,  mismatch between file content and run time parameters might lead to unpredictable results. In addition a file recorded on a AVX2-capable processor cannot be replayed on a non-AVX2-capable processor (this is to be further investigated).
 options for replay mode are:
 * `subframes-replay` Activate replay mode
@@ -83,6 +83,7 @@ options for replay mode are:
 * `subframes-loops` Number of iterations to replay the entire subframes file (default is 5)
 * `subframes-read-delay` Delay in microseconds to read a subframe in replay mode (default 200)
 * `subframes-write-delay` Delay in milliseconds to write a subframe in replay mode (default 15)
+* `use-mmap` Boolean, set to 1 (true) by default, iq file is map to memory if true, otherwise iq's are read from file. 
 
 >iq player session example:
 ```bash
