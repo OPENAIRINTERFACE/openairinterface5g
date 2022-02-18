@@ -79,7 +79,7 @@ void init_dlsch_tpool(uint8_t num_dlsch_threads) {
   free(params);
 }
 
-void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr, uint16_t N_RB_DL) {
   int i,r;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
   NR_UE_DLSCH_t *dlsch=*dlschptr;

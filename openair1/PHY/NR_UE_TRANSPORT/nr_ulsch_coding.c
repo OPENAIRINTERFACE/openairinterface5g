@@ -107,7 +107,6 @@ void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,unsigned char N_RB_UL)
 
 NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids)
 {
-  unsigned char exit_flag = 0,i,r;
   uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS;  //number of segments to be allocated
 
   if (N_RB_UL != 273) {
@@ -127,7 +126,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids)
   //for (i=0; i<10; i++)
     //ulsch->harq_ids[i] = 0;
 
-  for (i=0; i<number_of_harq_pids; i++) {
+  for (int i = 0; i < number_of_harq_pids; i++) {
 
     ulsch->harq_processes[i] = malloc16(sizeof(NR_UL_UE_HARQ_t));
     DevAssert(ulsch->harq_processes[i]);
@@ -141,7 +140,7 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids)
     DevAssert(ulsch->harq_processes[i]->b);
     bzero(ulsch->harq_processes[i]->b,ulsch_bytes);
 
-    for (r=0; r<a_segments; r++) {
+    for (int r = 0; r < a_segments; r++) {
       // account for filler in first segment and CRCs for multiple segment case
       ulsch->harq_processes[i]->c[r] = malloc16(8448);
       DevAssert(ulsch->harq_processes[i]->c[r]);

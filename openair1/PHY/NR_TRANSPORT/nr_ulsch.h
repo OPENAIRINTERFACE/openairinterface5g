@@ -33,7 +33,7 @@
 #include "PHY/defs_gNB.h"
 #include "common/utils/threadPool/thread-pool.h"
 
-void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch,uint8_t N_RB_UL);
+void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch, uint16_t N_RB_UL);
 
 NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL);
 
