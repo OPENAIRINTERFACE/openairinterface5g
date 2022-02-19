@@ -58,6 +58,12 @@
 #include "common/ran_context.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in ulsim, not finished yet */
+  return "detect_leaks=0";
+}
+
 double cpuf;
 #define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
