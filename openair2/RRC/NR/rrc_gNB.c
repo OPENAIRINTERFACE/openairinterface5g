@@ -30,6 +30,10 @@
 #define RRC_GNB_C
 #define RRC_GNB_C
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "nr_rrc_config.h"
 #include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
@@ -102,27 +106,6 @@
 //#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
-
-extern boolean_t nr_rrc_pdcp_config_asn1_req(
-    const protocol_ctxt_t *const  ctxt_pP,
-    NR_SRB_ToAddModList_t  *const srb2add_list,
-    NR_DRB_ToAddModList_t  *const drb2add_list,
-    NR_DRB_ToReleaseList_t *const drb2release_list,
-    const uint8_t                   security_modeP,
-    uint8_t                  *const kRRCenc,
-    uint8_t                  *const kRRCint,
-    uint8_t                  *const kUPenc,
-    uint8_t                  *const kUPint
-    ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-    ,rb_id_t                 *const defaultDRB,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
-
-extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
-                                                   const NR_SRB_ToAddModList_t   * const srb2add_listP,
-                                                   const NR_DRB_ToAddModList_t   * const drb2add_listP,
-                                                   const NR_DRB_ToReleaseList_t  * const drb2release_listP,
-                                                   const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
-                                                   struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn);
 
@@ -2195,7 +2178,6 @@ rrc_gNB_decode_dcch(
   asn_dec_rval_t                      dec_rval;
   NR_UL_DCCH_Message_t                *ul_dcch_msg  = NULL;
   struct rrc_gNB_ue_context_s         *ue_context_p = NULL;
-  MessageDef                         *msg_delete_tunnels_p = NULL;
   uint8_t                             xid;
 
   int i;
@@ -2294,21 +2276,17 @@ rrc_gNB_decode_dcch(
             xid = ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier;
             ue_context_p->ue_context.pdu_session_release_command_flag = 0;
             //gtp tunnel delete
-            msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, 0, GTPV1U_GNB_DELETE_TUNNEL_REQ);
-            memset(&GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-            GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-
+	    gtpv1u_gnb_delete_tunnel_req_t req={0};
             for(i = 0; i < NB_RB_MAX; i++) {
               if(xid == ue_context_p->ue_context.pduSession[i].xid) {
-                GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).pdusession_id[GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_pdusession++] =
+                req.pdusession_id[req.num_pdusession++] =
                   ue_context_p->ue_context.gnb_gtp_psi[i];
                 ue_context_p->ue_context.gnb_gtp_teid[i] = 0;
                 memset(&ue_context_p->ue_context.gnb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.gnb_gtp_addrs[i]));
                 ue_context_p->ue_context.gnb_gtp_psi[i]  = 0;
               }
             }
-
-            itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->instance, msg_delete_tunnels_p);
+	    gtpv1u_delete_ngu_tunnel(ctxt_pP->instance, &req);
             //NGAP_PDUSESSION_RELEASE_RESPONSE
             rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(ctxt_pP, ue_context_p, xid);
           } else if (ue_context_p->ue_context.established_pdu_sessions_flag != 1) {
@@ -3641,9 +3619,6 @@ void *rrc_gnb_task(void *args_p) {
         rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(msg_p, msg_name_p, instance);
         break;
 
-      case GTPV1U_GNB_DELETE_TUNNEL_RESP:
-        break;
-
       /* Messages from gNB app */
       case NRRRC_CONFIGURATION_REQ:
         LOG_I(NR_RRC, "[gNB %ld] Received %s : %p\n", instance, msg_name_p,&NRRRC_CONFIGURATION_REQ(msg_p));
@@ -3691,11 +3666,6 @@ void *rrc_gnb_task(void *args_p) {
 
       case X2AP_ENDC_DC_OVERALL_TIMEOUT:
         rrc_gNB_process_dc_overall_timeout(GNB_INSTANCE_TO_MODULE_ID(instance), &X2AP_ENDC_DC_OVERALL_TIMEOUT(msg_p));
-        break;
-
-      /* Messages from GTP */
-      case GTPV1U_ENB_DELETE_TUNNEL_RESP:
-        /* nothing to do? */
         break;
 
       case NGAP_UE_CONTEXT_RELEASE_REQ:

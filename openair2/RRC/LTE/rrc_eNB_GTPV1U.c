@@ -210,7 +210,7 @@ boolean_t gtpv_data_req_new (
       GTPV1U_ENB_END_MARKER_REQ(msg).offset = GTPU_HEADER_OVERHEAD_MAX;
       LOG_I(GTPU, "Send End Marker to GTPV1-U at frame %d and subframe %d \n", ctxt->frame,ctxt->subframe);
       itti_send_msg_to_task(TASK_GTPV1_U, ENB_MODULE_ID_TO_INSTANCE(ctxt->module_id), msg);
-      return NW_GTPV1U_OK;
+      return 0;
   }
   
   /* target enb */
@@ -225,7 +225,7 @@ boolean_t gtpv_data_req_new (
       gtpv1u_enb_delete_tunnel_req_t delete_tunnel_req;
       memset(&delete_tunnel_req, 0, sizeof(delete_tunnel_req));
       delete_tunnel_req.rnti = ctxt->rnti;
-      gtpv1u_delete_x2u_tunnel(ctxt->module_id, &delete_tunnel_req, GTPV1U_TARGET_ENB);
+      gtpv1u_delete_x2u_tunnel(ctxt->module_id, &delete_tunnel_req);
       return true;
     } else {
       /* data packet */

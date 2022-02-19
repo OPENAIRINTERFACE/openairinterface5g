@@ -499,8 +499,6 @@ static void init_pdcp(void) {
       pdcp_set_rlc_data_req_func(rlc_data_req);
       pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
     }
-  } else {
-    pdcp_set_pdcp_data_ind_func(proto_agent_send_pdcp_data_ind);
   }
 }
 

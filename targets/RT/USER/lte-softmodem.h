@@ -30,7 +30,6 @@
 #include "flexran_agent.h"
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#include "proto_agent.h"
 #include "executables/softmodem-common.h"
 
 

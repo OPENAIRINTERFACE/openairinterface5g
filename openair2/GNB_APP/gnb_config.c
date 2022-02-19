@@ -1227,7 +1227,7 @@ int RCconfig_nr_gtpu(void ) {
     GTPV1U_REQ(message).localPort = port;
     strcpy(GTPV1U_REQ(message).localAddrStr,address);
     sprintf(GTPV1U_REQ(message).localPortStr,"%d", port);
-    itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+    itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
   } else
     LOG_E(GTPU,"invalid address for NGU or S1U\n");
   

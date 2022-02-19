@@ -33,7 +33,6 @@
 #include "rrc_eNB_S1AP.h"
 #include "gnb_config.h"
 #include "common/ran_context.h"
-#include "gtpv1u.h"
 
 #include "asn1_conversions.h"
 #include "intertask_interface.h"
@@ -44,6 +43,7 @@
 
 #include "gtpv1u_eNB_task.h"
 #include "gtpv1u_gNB_task.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "RRC/NR/rrc_gNB_GTPV1U.h"
 
@@ -1395,7 +1395,6 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
   protocol_ctxt_t                 ctxt;
   pdusession_release_t            pdusession_release_params[NGAP_MAX_PDUSESSION];
   uint8_t                         nb_pdusessions_torelease;
-  MessageDef                     *msg_delete_tunnels_p = NULL;
   uint8_t xid;
   int i, pdusession;
   uint8_t b_existed,is_existed;
@@ -1473,20 +1472,18 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
     } else {
       //gtp tunnel delete
       LOG_I(NR_RRC, "gtp tunnel delete \n");
-      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, 0, GTPV1U_GNB_DELETE_TUNNEL_REQ);
-      memset(&GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-      GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+      gtpv1u_gnb_delete_tunnel_req_t req={0};
+      req.rnti = ue_context_p->ue_context.rnti;
 
       for(i = 0; i < NB_RB_MAX; i++) {
         if(xid == ue_context_p->ue_context.pduSession[i].xid) {
-          GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).pdusession_id[GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_pdusession++] = ue_context_p->ue_context.gnb_gtp_psi[i];
+          req.pdusession_id[req.num_pdusession++] = ue_context_p->ue_context.gnb_gtp_psi[i];
           ue_context_p->ue_context.gnb_gtp_teid[i] = 0;
           memset(&ue_context_p->ue_context.gnb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.gnb_gtp_addrs[i]));
           ue_context_p->ue_context.gnb_gtp_psi[i]  = 0;
         }
       }
-
-      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
+      gtpv1u_delete_ngu_tunnel(instance, &req);
       //NGAP_PDUSESSION_RELEASE_RESPONSE
       rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
       LOG_I(NR_RRC, "Send PDU Session Release Response \n");

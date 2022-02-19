@@ -19,18 +19,12 @@
  *      contact@openairinterface.org
  */
 
-MESSAGE_DEF(GTPV1U_ENB_UPDATE_TUNNEL_REQ,   MESSAGE_PRIORITY_MED, gtpv1u_enb_update_tunnel_req_t,  Gtpv1uUpdateTunnelReq)
-MESSAGE_DEF(GTPV1U_ENB_UPDATE_TUNNEL_RESP,  MESSAGE_PRIORITY_MED, gtpv1u_enb_update_tunnel_resp_t, Gtpv1uUpdateTunnelResp)
-MESSAGE_DEF(GTPV1U_ENB_DELETE_TUNNEL_REQ,   MESSAGE_PRIORITY_MED, gtpv1u_enb_delete_tunnel_req_t,  Gtpv1uDeleteTunnelReq)
-MESSAGE_DEF(GTPV1U_ENB_DELETE_TUNNEL_RESP,  MESSAGE_PRIORITY_MED, gtpv1u_enb_delete_tunnel_resp_t, Gtpv1uDeleteTunnelResp)
-MESSAGE_DEF(GTPV1U_ENB_TUNNEL_DATA_IND,     MESSAGE_PRIORITY_MED, gtpv1u_enb_tunnel_data_ind_t,    Gtpv1uTunnelDataInd)
+
 MESSAGE_DEF(GTPV1U_ENB_TUNNEL_DATA_REQ,     MESSAGE_PRIORITY_MED, gtpv1u_enb_tunnel_data_req_t,    Gtpv1uTunnelDataReq)
 MESSAGE_DEF(GTPV1U_ENB_DATA_FORWARDING_REQ, MESSAGE_PRIORITY_MED, gtpv1u_enb_data_forwarding_req_t,Gtpv1uDataForwardingReq)
 MESSAGE_DEF(GTPV1U_ENB_DATA_FORWARDING_IND, MESSAGE_PRIORITY_MED, gtpv1u_enb_data_forwarding_ind_t,Gtpv1uDataForwardingInd)
 MESSAGE_DEF(GTPV1U_ENB_END_MARKER_REQ,      MESSAGE_PRIORITY_MED, gtpv1u_enb_end_marker_req_t,    Gtpv1uEndMarkerReq)
 MESSAGE_DEF(GTPV1U_ENB_END_MARKER_IND,      MESSAGE_PRIORITY_MED, gtpv1u_enb_end_marker_ind_t,    Gtpv1uEndMarkerInd)
-MESSAGE_DEF(GTPV1U_REQ,        MESSAGE_PRIORITY_MED, Gtpv1uReq,    gtpv1uReq)
+MESSAGE_DEF(GTPV1U_REQ,                     MESSAGE_PRIORITY_MED, Gtpv1uReq,    gtpv1uReq)
 
-MESSAGE_DEF(GTPV1U_GNB_DELETE_TUNNEL_REQ,   MESSAGE_PRIORITY_MED, gtpv1u_gnb_delete_tunnel_req_t,  NRGtpv1uDeleteTunnelReq)
-MESSAGE_DEF(GTPV1U_GNB_DELETE_TUNNEL_RESP,  MESSAGE_PRIORITY_MED, gtpv1u_gnb_delete_tunnel_resp_t, NRGtpv1uDeleteTunnelResp)
 MESSAGE_DEF(GTPV1U_GNB_TUNNEL_DATA_REQ,     MESSAGE_PRIORITY_MED, gtpv1u_gnb_tunnel_data_req_t,    NRGtpv1uTunnelDataReq)

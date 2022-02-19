@@ -365,7 +365,7 @@ int create_gNB_tasks(uint32_t gnb_nb) {
 
     //Use check on x2ap to consider the NSA scenario and check on AMF_MODE_ENABLED for the SA scenario
     if(is_x2ap_enabled() || AMF_MODE_ENABLED) {
-      if (itti_create_task (TASK_GTPV1_U, &nr_gtpv1u_gNB_task, NULL) < 0) {
+      if (itti_create_task (TASK_GTPV1_U, &gtpv1uTask, NULL) < 0) {
         LOG_E(GTPU, "Create task for GTPV1U failed\n");
         return -1;
       }
@@ -589,47 +589,19 @@ static  void wait_nfapi_init(char *thread_name) {
 }
 
 void init_pdcp(void) {
+  uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+    PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT:
+    LINK_ENB_PDCP_TO_GTPV1U_BIT;
+  
   if (!get_softmodem_params()->nsa) {
     if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
-      //pdcp_layer_init();
-      uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
-                              (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
-
-      if (IS_SOFTMODEM_NOS1) {
-        printf("IS_SOFTMODEM_NOS1 option enabled \n");
-        pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
-      }
-
       nr_pdcp_module_init(pdcp_initmask, 0);
-
-      if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-        LOG_I(PDCP, "node is CU, pdcp send rlc_data_req by proto_agent \n");
-        pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t)proto_agent_send_rlc_data_req);
-      } else {
-        LOG_I(PDCP, "node is gNB \n");
-        pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-        pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
-      }
-    } else {
-      LOG_I(PDCP, "node is DU, rlc send pdcp_data_ind by proto_agent \n");
-      pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) proto_agent_send_pdcp_data_ind);
     }
   } else {
     pdcp_layer_init();
-    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
-                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
-
-    if (IS_SOFTMODEM_NOS1) {
-      printf("IS_SOFTMODEM_NOS1 option enabled \n");
-      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT;
-    }
-
     nr_pdcp_module_init(pdcp_initmask, 0);
-    pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
-    pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
   }
 }
-
 
 int main( int argc, char **argv ) {
   int ru_id, CC_id = 0;
