@@ -369,8 +369,8 @@ void fh_if4p5_south_in(RU_t *ru,
   proc->frame_rx = f;
   proc->timestamp_rx = (proc->frame_rx * fp->samples_per_subframe * 10)  + fp->get_samples_slot_timestamp(proc->tti_rx, fp, 0);
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_subframe);
-  proc->tti_tx   = (sl+(fp->slots_per_subframe*ru->sf_ahead))%fp->slots_per_frame;
-  proc->frame_tx = (sl>(fp->slots_per_frame-1-(fp->slots_per_subframe*ru->sf_ahead))) ? (f+1)&1023 : f;
+  proc->tti_tx   = (sl+ru->sl_ahead)%fp->slots_per_frame;
+  proc->frame_tx = (sl>(fp->slots_per_frame-1-(ru->sl_ahead))) ? (f+1)&1023 : f;
 
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *slot) {
@@ -1290,7 +1290,7 @@ void *ru_thread( void *param ) {
     }
   }
 
-  LOG_I(PHY, "Signaling main thread that RU %d is ready, sf_ahead %d\n",ru->idx,ru->sf_ahead);
+  LOG_I(PHY, "Signaling main thread that RU %d is ready, sl_ahead %d\n",ru->idx,ru->sl_ahead);
   pthread_mutex_lock(&RC.ru_mutex);
   RC.ru_mask &= ~(1<<ru->idx);
   pthread_cond_signal(&RC.ru_cond);
@@ -1376,9 +1376,12 @@ void *ru_thread( void *param ) {
       opp_enabled = opp_enabled0;
     }
     if (initial_wait == 0 && ru->rx_fhaul.trials > 1000) reset_meas(&ru->rx_fhaul);
-    proc->timestamp_tx = proc->timestamp_rx + (ru->sf_ahead*fp->samples_per_subframe);
-    proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(fp->slots_per_subframe*ru->sf_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
-    proc->tti_tx      = (proc->tti_rx + (fp->slots_per_subframe*ru->sf_ahead))%fp->slots_per_frame;
+    proc->timestamp_tx = proc->timestamp_rx;
+    int sl=proc->tti_tx;
+    for (int slidx=0;slidx<ru->sl_ahead;slidx++)
+       proc->timestamp_tx += fp->get_samples_per_slot((sl+slidx)%fp->slots_per_frame,fp);
+    proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(ru->sl_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+    proc->tti_tx      = (proc->tti_rx + ru->sl_ahead)%fp->slots_per_frame;
     LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0]:[RX:%d%d TX(SFN):%d]\n",
           frame,slot,
           proc->frame_rx,proc->tti_rx,
@@ -2122,7 +2125,7 @@ static void NRRCconfig_RU(void) {
       RC.ru[j]->if_frequency                      = *(RUParamList.paramarray[j][RU_IF_FREQUENCY].u64ptr);
       RC.ru[j]->if_freq_offset                    = *(RUParamList.paramarray[j][RU_IF_FREQ_OFFSET].iptr);
       RC.ru[j]->do_precoding                      = *(RUParamList.paramarray[j][RU_DO_PRECODING].iptr);
-      RC.ru[j]->sf_ahead                          = *(RUParamList.paramarray[j][RU_SF_AHEAD].iptr);
+      RC.ru[j]->sl_ahead                          = *(RUParamList.paramarray[j][RU_SL_AHEAD].iptr);
       RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
       for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
       RC.ru[j]->openair0_cfg.nr_flag              = *(RUParamList.paramarray[j][RU_NR_FLAG].iptr);

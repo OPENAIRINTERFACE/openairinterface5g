@@ -806,6 +806,8 @@ typedef struct gNB_MAC_INST_s {
   double dl_rd2_bler_threshold;
   uint8_t dl_max_mcs;
   uint8_t harq_round_max;
+  uint8_t min_grant_prb;
+  uint8_t min_grant_mcs;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

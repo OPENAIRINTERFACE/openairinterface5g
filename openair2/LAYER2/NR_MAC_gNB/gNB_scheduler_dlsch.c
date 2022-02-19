@@ -979,7 +979,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
-
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
 
@@ -1351,6 +1350,21 @@ void nr_schedule_ue_spec(module_id_t module_id,
                 size);
           if (len == 0)
             break;
+          struct timespec time_request;
+          clock_gettime(CLOCK_REALTIME, &time_request);
+          if (lcid>=4)           
+                LOG_D(NR_MAC,
+                "%4d.%2d [UE %04x]: Time %lu.%lu:  %d bytes %s %d -> DLSCH (ndata %lu, remaining size %lu)\n",
+                frame,
+                slot,
+                rnti,
+                time_request.tv_sec,
+                time_request.tv_nsec,
+                len,
+                lcid < 4 ? "DCCH" : "DTCH",
+                lcid,
+                (unsigned long)ndata,
+                (unsigned long)size);
 
           header->R = 0;
           header->F = 1;

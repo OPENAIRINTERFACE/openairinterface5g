@@ -462,9 +462,14 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   exit(1);
 
 rb_found:
-  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d\n",
-        __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
+  if (is_srb==0) {
+     struct timespec time_request;
+     clock_gettime(CLOCK_REALTIME, &time_request);
 
+     LOG_D(RLC, "%s:%d:%s: delivering SDU Time %lu.%lu (rnti %d is_srb %d rb_id %d) size %d\n",
+           __FILE__, __LINE__, __FUNCTION__, time_request.tv_sec,time_request.tv_nsec,
+           ue->rnti, is_srb, rb_id, size);
+  }
   /* unused fields? */
   ctx.instance = 0;
   ctx.frame = 0;
