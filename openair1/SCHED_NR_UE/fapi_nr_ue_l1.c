@@ -336,6 +336,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         /* PUCCH */
         fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
         LOG_D(PHY, "%d.%d ul B ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+        /* SRS */
+        fapi_nr_ul_config_srs_pdu *srs_config_pdu;
 
         switch (pdu_type){
 
@@ -411,6 +413,15 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
         break;
 
+        case (FAPI_NR_UL_CONFIG_TYPE_SRS):
+          // srs config pdu
+          srs_config_pdu = &ul_config->ul_config_list[i].srs_config_pdu;
+          memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->srs_config_pdu), (void*)srs_config_pdu, sizeof(fapi_nr_ul_config_srs_pdu));
+          PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->active = true;
+          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+          pdu_done++;
+        break;
+
         default:
           ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
           pdu_done++; // count the no of pdu processed
@@ -418,6 +429,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         break;
         }
       }
+
 
       //Clear the fields when all the config pdu are done
       if (pdu_done == ul_config->number_pdus) {
@@ -429,6 +441,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         LOG_D(PHY, "%d.%d clear ul_config %p\n", scheduled_response->frame, slot, ul_config);
         memset(ul_config->ul_config_list, 0, sizeof(ul_config->ul_config_list));
       }
+
       pthread_mutex_unlock(&ul_config->mutex_ul_config);
     }
   }

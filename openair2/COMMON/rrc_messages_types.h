@@ -417,6 +417,7 @@ typedef struct NRRrcConfigurationReq_s {
   int                     pusch_AntennaPorts;
   int                     minRXTXTIME;
   int                     do_CSIRS;
+  int                     do_SRS;
   int                     pusch_TargetSNRx10;
   int                     pucch_TargetSNRx10;
 } gNB_RrcConfigurationReq;

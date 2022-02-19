@@ -190,6 +190,8 @@ void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
 
+void nr_schedule_srs(int module_id, frame_t frame);
+
 void nr_csirs_scheduling(int Mod_idP,
                          frame_t frame,
                          sub_frame_t slot,
@@ -248,13 +250,31 @@ void find_search_space(int ss_type,
                        NR_BWP_Downlink_t *bwp,
                        NR_SearchSpace_t *ss);
 
-void nr_configure_pdcch(gNB_MAC_INST *gNB_mac,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
-                        NR_SearchSpace_t *ss,
+void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ControlResourceSet_t *coreset,
-                        NR_ServingCellConfigCommon_t *scc,
                         NR_BWP_t *bwp,
-                        NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
+                        NR_sched_pdcch_t *pdcch);
+
+NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
+                                     NR_SearchSpace_t *ss,
+                                     NR_ControlResourceSet_t *coreset,
+                                     NR_ServingCellConfigCommon_t *scc,
+                                     NR_BWP_t *bwp,
+                                     NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
+
+int find_pdcch_candidate(gNB_MAC_INST *mac,
+                         int cc_id,
+                         int aggregation,
+                         int nr_of_candidates,
+                         NR_sched_pdcch_t *pdcch,
+                         NR_ControlResourceSet_t *coreset,
+                         uint16_t Y);
+
+void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
+                        int CC_id,
+                        NR_sched_pdcch_t *pdcch,
+                        int first_cce,
+                        int aggregation);
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,
@@ -299,6 +319,8 @@ void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
                               NR_pusch_semi_static_t *ps);
+
+uint16_t get_Y(int cid, int slot, rnti_t rnti);
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
