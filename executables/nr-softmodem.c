@@ -29,8 +29,6 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 #include <common/utils/assertions.h>
 
-#include "msc.h"
-
 #include "PHY/types.h"
 #include "common/ran_context.h"
 
@@ -656,7 +654,6 @@ int main( int argc, char **argv ) {
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, tasks_info);
   // initialize mscgen log after ITTI
-  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   if(PDCP_USE_NETLINK && !IS_SOFTMODEM_NOS1) {
     netlink_init();

@@ -338,7 +338,6 @@ void *rrc_enb_process_msg(void *);
   TASK_DEF(TASK_RRC_NRUE, TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_NAS_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
   TASK_DEF(TASK_RAL_UE,   TASK_PRIORITY_MED,  200, NULL, NULL)  \
-  TASK_DEF(TASK_MSC,      TASK_PRIORITY_MED,  200, NULL, NULL)\
   TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)\
   TASK_DEF(TASK_CU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
   TASK_DEF(TASK_DU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
@@ -558,7 +557,6 @@ MessageDef *itti_alloc_new_message_sized(
    This function should be called from the main thread after having created all ITTI tasks.
  **/
 void itti_wait_tasks_end(void);
-#define  ADDED_QUEUES_MAX 10 // Fix me: MSC component too hard to understand, we keep room for 10 queues created dynamically
 void itti_set_task_real_time(task_id_t task_id);
 
 /** \brief Send a termination message to all tasks.

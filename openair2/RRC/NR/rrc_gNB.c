@@ -70,7 +70,6 @@
 #include "rlc.h"
 #include "rrc_eNB_UE_context.h"
 #include "platform_types.h"
-#include "msc.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -407,15 +406,6 @@ rrc_gNB_generate_RRCSetup(
       LOG_D(NR_RRC,
 	    PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
 	    PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-      MSC_LOG_TX_MESSAGE(
-			 MSC_RRC_GNB,
-			 MSC_RRC_UE,
-			 ue_p->Srb0.Tx_buffer.Header, // LG WARNING
-			 ue_p->Srb0.Tx_buffer.payload_size,
-			 MSC_AS_TIME_FMT" RRCSetup UE %x size %u",
-			 MSC_AS_TIME_ARGS(ctxt_pP),
-			 ue_context_pP->ue_context.rnti,
-			 ue_p->Srb0.Tx_buffer.payload_size);
       LOG_I(NR_RRC,
 	    PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
 	    PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -486,15 +476,6 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          (NR_CellGroupConfig_t *)NULL
 			 );
 
-  MSC_LOG_TX_MESSAGE(
-		     MSC_RRC_GNB,
-		     MSC_RRC_UE,
-		     ue_p->Srb0.Tx_buffer.Header, // LG WARNING
-		     ue_p->Srb0.Tx_buffer.payload_size,
-		     MSC_AS_TIME_FMT" RRCSetup UE %x size %u",
-		     MSC_AS_TIME_ARGS(ctxt_pP),
-		     ue_context_pP->ue_context.rnti,
-		     ue_p->Srb0.Tx_buffer.payload_size);
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -536,14 +517,6 @@ rrc_gNB_generate_RRCReject(
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
               ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRCReject \n");
-  MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
-                    MSC_RRC_UE,
-                    ue_p->Srb0.Tx_buffer.Header,
-                    ue_p->Srb0.Tx_buffer.payload_size,
-                    MSC_AS_TIME_FMT" NR_RRCReject UE %x size %u",
-                    MSC_AS_TIME_ARGS(ctxt_pP),
-                    ue_context_pP == NULL ? -1 : ue_context_pP->ue_context.rnti,
-                    ue_p->Srb0.Tx_buffer.payload_size);
   LOG_I(NR_RRC,
       PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating NR_RRCReject (bytes %d)\n",
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -804,15 +777,6 @@ rrc_gNB_generate_defaultRRCReconfiguration(
           rrc_gNB_mui,
           ctxt_pP->module_id,
           DCCH);
-      MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
-          MSC_RRC_UE,
-          buffer,
-          size,
-          MSC_AS_TIME_FMT" NR_RRCReconfiguration UE %x MUI %d size %u",
-          MSC_AS_TIME_ARGS(ctxt_pP),
-          ue_context_pP->ue_context.rnti,
-          rrc_gNB_mui,
-          size);
       nr_rrc_data_req(ctxt_pP,
           DCCH,
           rrc_gNB_mui++,
@@ -1034,16 +998,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   LOG_D(NR_RRC,
         "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
         ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_gNB_mui, ctxt_pP->module_id, DCCH);
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_GNB,
-    MSC_RRC_UE,
-    buffer,
-    size,
-    MSC_AS_TIME_FMT" dedicated RRCReconfiguration UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti,
-    rrc_gNB_mui,
-    size);
 
 #ifdef ITTI_SIM
   MessageDef *message_p;
@@ -1142,16 +1096,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
   LOG_D(NR_RRC,
         "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
         ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_gNB_mui, ctxt_pP->module_id, DCCH);
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_GNB,
-    MSC_RRC_UE,
-    buffer,
-    size,
-    MSC_AS_TIME_FMT" dedicated NR_RRCReconfiguration UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti,
-    rrc_gNB_mui,
-    size);
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
@@ -1216,9 +1160,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
                         ue_context_pP->ue_context.kgnb,
                         &kRRCint);
   /* Refresh SRBs/DRBs */
-  MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_PDCP_ENB, NULL, 0, MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security unchanged)",
-                   MSC_AS_TIME_ARGS(ctxt_pP),
-                   ue_context_pP->ue_context.rnti);
 
 #ifndef ITTI_SIM
   LOG_D(NR_RRC,"Configuring PDCP DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
@@ -1447,14 +1388,6 @@ rrc_gNB_generate_RRCReestablishment(
       }
     }  // if (*SRB_configList != NULL)
     
-    MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
-                       MSC_RRC_UE,
-                       ue_context->Srb0.Tx_buffer.Header,
-                       ue_context->Srb0.Tx_buffer.payload_size,
-                       MSC_AS_TIME_FMT" NR_RRCReestablishment UE %x size %u",
-                       MSC_AS_TIME_ARGS(ctxt_pP),
-                       ue_context->rnti,
-                       ue_context->Srb0.Tx_buffer.payload_size);
     LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n",
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           ue_context->Srb0.Tx_buffer.payload_size);
@@ -1717,16 +1650,6 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
     LOG_D(NR_RRC,
           "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
           ctxt_pP->frame, ctxt_pP->module_id, size, ue_context_pP->ue_context.rnti, rrc_gNB_mui, ctxt_pP->module_id, DCCH);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_GNB,
-      MSC_RRC_UE,
-      buffer,
-      size,
-      MSC_AS_TIME_FMT" LTE_RRCConnectionReconfiguration UE %x MUI %d size %u",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_pP->ue_context.rnti,
-      rrc_gNB_mui,
-      size);
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
@@ -1797,15 +1720,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
         ue_context_p = rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti);
         if (ue_context_p != NULL) {
           rrc_gNB_free_mem_UE_context(ctxt_pP, ue_context_p);
-          MSC_LOG_RX_DISCARDED_MESSAGE(
-              MSC_RRC_GNB,
-              MSC_RRC_UE,
-              buffer,
-              dec_rval.consumed,
-              MSC_AS_TIME_FMT" NR_RRCSetupRequest UE %x size %u (UE already in context)",
-              MSC_AS_TIME_ARGS(ctxt_pP),
-              ue_context_p->ue_context.rnti,
-              dec_rval.consumed);
         } else {
           rrcSetupRequest = &ul_ccch_msg->message.choice.c1->choice.rrcSetupRequest->rrcSetupRequest;
           if (NR_InitialUE_Identity_PR_randomValue == rrcSetupRequest->ue_Identity.present) {
@@ -2097,13 +2011,6 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT"CALLING RLC CONFIG SRB1 (rbid %d)\n",
                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
                 Idx);
-          MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
-                            MSC_PDCP_GNB,
-                            NULL,
-                            0,
-                            MSC_AS_TIME_FMT" CONFIG_REQ UE %x SRB",
-                            MSC_AS_TIME_ARGS(ctxt_pP),
-                            ue_context_p->ue_context.rnti);
           // nr_rrc_pdcp_config_asn1_req(ctxt_pP,
           //                         ue_context_p->ue_context.SRB_configList,
           //                         NULL,
@@ -2246,15 +2153,6 @@ rrc_gNB_decode_dcch(
 
         LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)(Rx_sdu), sdu_sizeP,
                     "[MSG] RRC Connection Reconfiguration Complete\n");
-        MSC_LOG_RX_MESSAGE(
-        MSC_RRC_GNB,
-        MSC_RRC_UE,
-        Rx_sdu,
-        sdu_sizeP,
-        MSC_AS_TIME_FMT" NR_RRCReconfigurationComplete UE %x size %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        ue_context_p->ue_context.rnti,
-        sdu_sizeP);
         LOG_D(NR_RRC,
             PROTOCOL_NR_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
             "(RRCReconfigurationComplete) ---> RRC_gNB]\n",
@@ -2312,15 +2210,6 @@ rrc_gNB_decode_dcch(
 
         LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                     "[MSG] RRC SetupComplete\n");
-        MSC_LOG_RX_MESSAGE(
-                MSC_RRC_GNB,
-                MSC_RRC_UE,
-                Rx_sdu,
-                sdu_sizeP,
-                MSC_AS_TIME_FMT" NR_RRCSetupComplete UE %x size %u",
-                MSC_AS_TIME_ARGS(ctxt_pP),
-                ue_context_p->ue_context.rnti,
-                sdu_sizeP);
         LOG_D(NR_RRC,
                 PROTOCOL_NR_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
                 "(RRCSetupComplete) ---> RRC_gNB\n",
@@ -2399,15 +2288,6 @@ rrc_gNB_decode_dcch(
             LOG_D(NR_RRC,"[MSG] RRC UL Information Transfer \n");
             LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                         "[MSG] RRC UL Information Transfer \n");
-            MSC_LOG_RX_MESSAGE(
-              MSC_RRC_GNB,
-              MSC_RRC_UE,
-              Rx_sdu,
-              sdu_sizeP,
-              MSC_AS_TIME_FMT" ulInformationTransfer UE %x size %u",
-              MSC_AS_TIME_ARGS(ctxt_pP),
-              ue_context_p->ue_context.rnti,
-              sdu_sizeP);
 
             if (AMF_MODE_ENABLED == 1) {
                 rrc_gNB_send_NGAP_UPLINK_NAS(ctxt_pP,
@@ -2447,15 +2327,6 @@ rrc_gNB_decode_dcch(
         case NR_UL_DCCH_MessageType__c1_PR_securityModeFailure:
             LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                        "[MSG] NR RRC Security Mode Failure\n");
-            MSC_LOG_RX_MESSAGE(
-                MSC_RRC_GNB,
-                MSC_RRC_UE,
-                Rx_sdu,
-                sdu_sizeP,
-                MSC_AS_TIME_FMT" securityModeFailure UE %x size %u",
-                MSC_AS_TIME_ARGS(ctxt_pP),
-                ue_context_p->ue_context.rnti,
-                sdu_sizeP);
             LOG_W(NR_RRC,
                   PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
                   "(securityModeFailure) ---> RRC_gNB\n",
@@ -2478,15 +2349,6 @@ rrc_gNB_decode_dcch(
 
         LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                 "[MSG] NR_RRC UECapablility Information\n");
-            MSC_LOG_RX_MESSAGE(
-            MSC_RRC_GNB,
-            MSC_RRC_UE,
-            Rx_sdu,
-            sdu_sizeP,
-            MSC_AS_TIME_FMT" ueCapabilityInformation UE %x size %u",
-            MSC_AS_TIME_ARGS(ctxt_pP),
-            ue_context_p->ue_context.rnti,
-            sdu_sizeP);
         LOG_I(NR_RRC,
             PROTOCOL_NR_RRC_CTXT_UE_FMT" received ueCapabilityInformation on UL-DCCH %d from UE\n",
             PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -2592,15 +2454,6 @@ rrc_gNB_decode_dcch(
             case NR_UL_DCCH_MessageType__c1_PR_rrcReestablishmentComplete:
               LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                           "[MSG] NR_RRC Connection Reestablishment Complete\n");
-              MSC_LOG_RX_MESSAGE(
-                MSC_RRC_GNB,
-                MSC_RRC_UE,
-                Rx_sdu,
-                sdu_sizeP,
-                MSC_AS_TIME_FMT" NR_RRCConnectionReestablishmentComplete UE %x size %u",
-                MSC_AS_TIME_ARGS(ctxt_pP),
-                ue_context_p->ue_context.rnti,
-                sdu_sizeP);
               LOG_I(NR_RRC,
                     PROTOCOL_RRC_CTXT_UE_FMT" RLC RB %02d --- RLC_DATA_IND %d bytes "
                     "(rrcConnectionReestablishmentComplete) ---> RRC_gNB\n",
@@ -3741,16 +3594,6 @@ rrc_gNB_generate_SecurityModeCommand(
         size,
         rrc_gNB_mui,
         DCCH);
-      MSC_LOG_TX_MESSAGE(
-        MSC_RRC_GNB,
-        MSC_RRC_UE,
-        buffer,
-        size,
-        MSC_AS_TIME_FMT" securityModeCommand UE %x MUI %d size %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        ue_context_pP->ue_context.rnti,
-        rrc_gNB_mui,
-        size);
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
@@ -3823,16 +3666,6 @@ rrc_gNB_generate_UECapabilityEnquiry(
         size,
         rrc_gNB_mui,
         DCCH);
-      MSC_LOG_TX_MESSAGE(
-        MSC_RRC_GNB,
-        MSC_RRC_UE,
-        buffer,
-        size,
-        MSC_AS_TIME_FMT" rrcNRUECapabilityEnquiry UE %x MUI %d size %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        ue_context_pP->ue_context.rnti,
-        rrc_gNB_mui,
-        size);
 #ifdef ITTI_SIM
   MessageDef *message_p;
   uint8_t *message_buffer;
@@ -3892,16 +3725,6 @@ rrc_gNB_generate_RRCRelease(
         size,
         rrc_gNB_mui,
         DCCH);
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_GNB,
-    MSC_RRC_UE,
-    buffer,
-    size,
-    MSC_AS_TIME_FMT" NR_RRCRelease UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_context.rnti,
-    rrc_gNB_mui,
-    size);
 
 #ifdef ITTI_SIM
     MessageDef *message_p;
