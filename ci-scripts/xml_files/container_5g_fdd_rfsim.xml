@@ -21,57 +21,59 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-5gnr-tdd</htmlTabRef>
-        <htmlTabName>Testing 5G NR RF sim - Monolithic TDD gNB</htmlTabName>
+        <htmlTabRef>rfsim-5gnr-fdd</htmlTabRef>
+        <htmlTabName>Testing 5G NR RF sim - Monolithic FDD gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <repeatCount>4</repeatCount>
         <TestCaseRequestedList>
- 100001
- 000000
- 000001
- 000002
- 000003
- 020001
- 020002
- 030001
- 030002
- 100001
+ 100011
+ 000010
+ 000011
+ 000012
+ 000013
+ 020011
+ 020012
+ 100011
         </TestCaseRequestedList>
+<!-- Not done yet because of code instability
+ 030011
+ 030012
+-->
         <TestCaseExclusionList></TestCaseExclusionList>
 
-        <testCase id="000000">
+        <testCase id="000010">
                 <class>DeployGenObject</class>
                 <desc>Deploy MySql Database</desc>
-                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/5g_fdd_rfsimulator</yaml_path>
                 <services>mysql</services>
                 <nb_healthy>1</nb_healthy>
         </testCase>
 
-        <testCase id="000001">
+        <testCase id="000011">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G CoreNetwork</desc>
-                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/5g_fdd_rfsimulator</yaml_path>
                 <services>oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
                 <nb_healthy>6</nb_healthy>
         </testCase>
 
-        <testCase id="000002">
+        <testCase id="000012">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G gNB RF sim SA</desc>
-                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/5g_fdd_rfsimulator</yaml_path>
                 <services>oai-gnb</services>
                 <nb_healthy>7</nb_healthy>
         </testCase>
 
-        <testCase id="000003">
+        <testCase id="000013">
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
-                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/5g_fdd_rfsimulator</yaml_path>
                 <services>oai-nr-ue</services>
                 <nb_healthy>8</nb_healthy>
         </testCase>
 
-        <testCase id="020001">
+        <testCase id="020011">
                 <class>PingFromContainer</class>
                 <desc>Ping ext-dn from NR-UE</desc>
                 <container_name>rfsim5g-oai-nr-ue</container_name>
@@ -79,7 +81,7 @@
                 <loss_threshold>5</loss_threshold>
         </testCase>
 
-        <testCase id="020002">
+        <testCase id="020012">
                 <class>PingFromContainer</class>
                 <desc>Ping NR-UE from ext-dn</desc>
 		<container_name>rfsim5g-oai-ext-dn</container_name>
@@ -87,7 +89,7 @@
                 <loss_threshold>5</loss_threshold>
         </testCase>
 
-        <testCase id="030001">
+        <testCase id="030011">
                 <class>IperfFromContainer</class>
                 <desc>Iperf UDP Downlink</desc>
                 <server_container_name>rfsim5g-oai-nr-ue</server_container_name>
@@ -96,7 +98,7 @@
                 <client_options>-c 12.1.1.2 -u -i 1 -t 30 -b 3M</client_options>
         </testCase>
 
-        <testCase id="030002">
+        <testCase id="030012">
                 <class>IperfFromContainer</class>
                 <desc>Iperf UDP Uplink</desc>
                 <server_container_name>rfsim5g-oai-ext-dn</server_container_name>
@@ -105,10 +107,10 @@
                 <client_options>-B 12.1.1.2 -c 192.168.72.135 -u -i 1 -t 30 -b 1M</client_options>
         </testCase>
 
-        <testCase id="100001">
+        <testCase id="100011">
                 <class>UndeployGenObject</class>
                 <desc>Undeploy all OAI 5G stack</desc>
-                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/5g_fdd_rfsimulator</yaml_path>
         </testCase>
 
 </testCaseList>

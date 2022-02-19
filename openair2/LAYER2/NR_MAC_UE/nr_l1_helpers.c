@@ -38,7 +38,6 @@
 #include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 #include "NR_P-Max.h"
 
-
 // Implementation of 6.2.4 Configured ransmitted power
 // 3GPP TS 38.101-1 version 16.5.0 Release 16
 // -

@@ -263,9 +263,9 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_IN);
 
-  LOG_D(PHY,"ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
-  LOG_D(PHY,"ulsch coding A %d G %d mod_order %d\n", A,G, mod_order);
-  LOG_D(PHY,"harq_pid %d harq_process->ndi %d, pusch_data.new_data_indicator %d\n",
+  LOG_D(NR_PHY, "ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
+  LOG_D(NR_PHY, "ulsch coding A %d G %d mod_order %d\n", A, G, mod_order);
+  LOG_D(NR_PHY, "harq_pid %d harq_process->ndi %d, pusch_data.new_data_indicator %d\n",
         harq_pid,harq_process->ndi,harq_process->pusch_pdu.pusch_data.new_data_indicator);
 
   if (harq_process->first_tx == 1 ||
