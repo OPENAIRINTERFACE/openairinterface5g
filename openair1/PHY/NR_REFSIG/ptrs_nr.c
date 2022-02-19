@@ -268,8 +268,8 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
     return;
   }
   uint16_t              sc_per_symbol    = (nb_rb + K_ptrs - 1)/K_ptrs;
-  struct complex16      ptrs_p[(1 + sc_per_symbol/4)*4];
-  struct complex16      dmrs_comp_p[(1 + sc_per_symbol/4)*4];
+  struct complex16      ptrs_p[(1 + sc_per_symbol/4)*4] __attribute__((aligned(32)));
+  struct complex16      dmrs_comp_p[(1 + sc_per_symbol/4)*4] __attribute__((aligned(32)));
   double                abs              = 0.0;
   double                real             = 0.0;
   double                imag             = 0.0;
