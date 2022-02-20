@@ -1305,9 +1305,8 @@ static int missing_size(nr_rlc_entity_am_t *entity, missing_data_t *m,
   missing_data_t m_nack;
 
   /* be careful to limit a range to 255 SNs, that is: cut if needed */
-  sn_count = m->sn_end - m->sn_start + 1;
-  if (sn_count < 0)
-    sn_count += entity->sn_modulus;
+  sn_count = (m->sn_end - m->sn_start + entity->sn_modulus)
+              % entity->sn_modulus + 1;
 
   sn_start = m->sn_start;
 
