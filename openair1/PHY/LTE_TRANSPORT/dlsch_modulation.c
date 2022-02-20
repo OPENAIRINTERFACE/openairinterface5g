@@ -673,6 +673,237 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
   return(0);
 }
 
+int allocate_REs_in_RB_no_pilots_QPSK_tm2(PHY_VARS_eNB* phy_vars_eNB,
+                                          int **txdataF,
+                                          uint32_t *jj,
+                                          uint32_t *jj2,
+                                          uint16_t re_offset,
+                                          uint32_t symbol_offset,
+                                          LTE_DL_eNB_HARQ_t *dlsch0_harq,
+                                          LTE_DL_eNB_HARQ_t *dlsch1_harq,
+                                          uint8_t pilots,
+                                          int16_t amp,
+                                          uint8_t precoder_index,
+                                          int16_t *qam_table0,
+                                          int16_t *qam_table1,
+                                          uint32_t *re_allocated,
+                                          uint8_t skip_dc,
+                                          uint8_t skip_half,
+                                          uint8_t lprime,
+                                          uint8_t mprime,
+                                          uint8_t Ns,
+                                          int *P1_SHIFT,
+                                          int *P2_SHIFT)
+{
+
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->frame_parms;
+
+  uint8_t *x0             = dlsch0_harq->eDL;
+  uint32_t qam4_table_offset = 0;
+
+  uint32_t tti_offset;
+  uint8_t re;
+  uint8_t *x0p;
+  uint8_t first_re;
+  uint64_t *qam_table4_0=(uint64_t*)qam_table0;
+  uint64_t *qam_table4_1=(uint64_t*)qam_table1;
+
+  first_re=0;
+  if (skip_half==2)
+    first_re=6;
+  re=first_re;
+
+
+  x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+re;
+
+  uint64_t *txF0 = (uint64_t*)&txdataF[0][tti_offset]; 
+  uint64_t *txF1 = (uint64_t*)&txdataF[1][tti_offset]; 
+
+  // 8-bits corresponds to 4 QPSK symbols input which generates 4 QPSK symbols on 2 TX antenna ports
+  qam4_table_offset=(((uint32_t)x0p[0]))|
+	            (((uint32_t)x0p[1])<<1)|
+                    (((uint32_t)x0p[2])<<2)|
+		    (((uint32_t)x0p[3])<<3);
+
+  txF0[0]=qam_table4_0[qam4_table_offset];
+  txF1[0]=qam_table4_1[qam4_table_offset];
+  x0p+=4;
+
+  qam4_table_offset=(((uint32_t)x0p[0]))|
+	            (((uint32_t)x0p[1])<<1)|
+                    (((uint32_t)x0p[2])<<2)|
+		    (((uint32_t)x0p[3])<<3);
+  txF0[1]=qam_table4_0[qam4_table_offset];
+  txF1[1]=qam_table4_1[qam4_table_offset];
+
+  x0p+=4;
+  qam4_table_offset=(((uint32_t)x0p[0]))|
+	            (((uint32_t)x0p[1])<<1)|
+                    (((uint32_t)x0p[2])<<2)|
+		    (((uint32_t)x0p[3])<<3);
+
+  txF0[2]=qam_table4_0[qam4_table_offset];
+  txF1[2]=qam_table4_1[qam4_table_offset];
+
+  if(skip_half==0) {
+    if (skip_dc>0) {
+      tti_offset=symbol_offset+re_offset+re-frame_parms->ofdm_symbol_size+1;
+      txF0 = (uint64_t*)&txdataF[0][tti_offset]; 
+      txF1 = (uint64_t*)&txdataF[1][tti_offset]; 
+    }
+    x0p+=4;
+    qam4_table_offset=(((uint32_t)x0p[0]))|
+	              (((uint32_t)x0p[1])<<1)|
+                      (((uint32_t)x0p[2])<<2)|
+	  	      (((uint32_t)x0p[3])<<3);
+
+    txF0[3]=qam_table4_0[qam4_table_offset];
+    txF1[3]=qam_table4_1[qam4_table_offset];
+    x0p+=4;
+    qam4_table_offset=(((uint32_t)x0p[0]))|
+  	              (((uint32_t)x0p[1])<<1)|
+                      (((uint32_t)x0p[2])<<2)|
+		      (((uint32_t)x0p[3])<<3);
+
+    txF0[4]=qam_table4_0[qam4_table_offset];
+    txF1[4]=qam_table4_1[qam4_table_offset];
+    x0p+=4;
+    qam4_table_offset=(((uint32_t)x0p[0]))|
+      	              (((uint32_t)x0p[1])<<1)|
+                      (((uint32_t)x0p[2])<<2)|
+		      (((uint32_t)x0p[3])<<3);
+    txF0[5]=qam_table4_0[qam4_table_offset];
+    txF1[5]=qam_table4_1[qam4_table_offset];
+  }
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 6;
+    *jj=*jj + 12;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 12;
+    *jj=*jj + 24;
+  }
+
+  return(0);
+}
+int allocate_REs_in_RB_no_pilots_16QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
+                                           int **txdataF,
+                                           uint32_t *jj,
+                                           uint32_t *jj2,
+                                           uint16_t re_offset,
+                                           uint32_t symbol_offset,
+                                           LTE_DL_eNB_HARQ_t *dlsch0_harq,
+                                           LTE_DL_eNB_HARQ_t *dlsch1_harq,
+                                           uint8_t pilots,
+                                           int16_t amp,
+                                           uint8_t precoder_index,
+                                           int16_t *qam_table0,
+                                           int16_t *qam_table1,
+                                           uint32_t *re_allocated,
+                                           uint8_t skip_dc,
+                                           uint8_t skip_half,
+                                           uint8_t lprime,
+                                           uint8_t mprime,
+                                           uint8_t Ns,
+                                           int *P1_SHIFT,
+                                           int *P2_SHIFT)
+{
+
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->frame_parms;
+
+  uint8_t *x0             = dlsch0_harq->eDL;
+  uint32_t qam16_table_offset = 0;
+
+  uint32_t tti_offset;
+  uint8_t re;
+  uint8_t *x0p;
+  uint8_t first_re;
+  uint64_t *qam_table16_0=(uint64_t*)qam_table0;
+  uint64_t *qam_table16_1=(uint64_t*)qam_table1;
+
+  first_re=0;
+  if (skip_half==2)
+    first_re=6;
+  re=first_re;
+
+
+  x0p=&x0[*jj],tti_offset=symbol_offset+re_offset+re;
+
+  uint64_t *txF0 = (uint64_t*)&txdataF[0][tti_offset]; 
+  uint64_t *txF1 = (uint64_t*)&txdataF[1][tti_offset]; 
+
+  // 8-bits corresponds to 2 16QAM symbols input which generates 2 16QAM symbols on 2 TX antenna ports
+  qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                     (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2)|
+                     (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4)|
+                     (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+  txF0[0]=qam_table16_0[qam16_table_offset];
+  txF1[0]=qam_table16_1[qam16_table_offset];
+  x0p+=8;
+  qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                     (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                     (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                     (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+  txF0[1]=qam_table16_0[qam16_table_offset];
+  txF1[1]=qam_table16_1[qam16_table_offset];
+
+  x0p+=8;
+  qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                     (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                     (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                     (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+  txF0[2]=qam_table16_0[qam16_table_offset];
+  txF1[2]=qam_table16_1[qam16_table_offset];
+
+  if(skip_half==0) {
+    if (skip_dc>0) {
+      tti_offset=symbol_offset+re_offset+re-frame_parms->ofdm_symbol_size+1;
+      txF0 = (uint64_t*)&txdataF[0][tti_offset]; 
+      txF1 = (uint64_t*)&txdataF[1][tti_offset]; 
+    }
+    x0p+=8;
+    qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                       (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                       (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                       (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+    txF0[3]=qam_table16_0[qam16_table_offset];
+    txF1[3]=qam_table16_1[qam16_table_offset];
+    x0p+=8;
+    qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                       (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                       (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                       (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+    txF0[4]=qam_table16_0[qam16_table_offset];
+    txF1[4]=qam_table16_1[qam16_table_offset];
+    x0p+=8;
+    qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                       (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                       (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                       (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+    txF0[5]=qam_table16_0[qam16_table_offset];
+    txF1[5]=qam_table16_1[qam16_table_offset];
+  }
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 6;
+    *jj=*jj + 24;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 12;
+    *jj=*jj + 48;
+  }
+
+  return(0);
+}
+
 int allocate_REs_in_RB_no_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
                                             int **txdataF,
                                             uint32_t *jj,
@@ -727,7 +958,7 @@ int allocate_REs_in_RB_no_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
     qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                        (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                        (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                       (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                       (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
     txF0[0]=qam_table64_0[qam64_table_offset];
     txF1[0]=qam_table64_1[qam64_table_offset];
@@ -735,7 +966,7 @@ int allocate_REs_in_RB_no_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
     qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                        (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                        (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                       (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                       (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
     txF0[1]=qam_table64_0[qam64_table_offset];
     txF1[1]=qam_table64_1[qam64_table_offset];
@@ -744,14 +975,14 @@ int allocate_REs_in_RB_no_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
     qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                        (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                        (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                       (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                       (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
     txF0[2]=qam_table64_0[qam64_table_offset];
     txF1[2]=qam_table64_1[qam64_table_offset];
 
     if(skip_half==0) {
       if (skip_dc>0) {
-        tti_offset=symbol_offset+re_offset+re-frame_parms->ofdm_symbol_size+7;
+        tti_offset=symbol_offset+re_offset+re-frame_parms->ofdm_symbol_size+1;
         txF0 = (uint64_t*)&txdataF[0][tti_offset]; 
         txF1 = (uint64_t*)&txdataF[1][tti_offset]; 
       }
@@ -759,7 +990,7 @@ int allocate_REs_in_RB_no_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
       qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                        (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                        (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                       (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                       (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
       txF0[3]=qam_table64_0[qam64_table_offset];
       txF1[3]=qam_table64_1[qam64_table_offset];
@@ -767,7 +998,7 @@ int allocate_REs_in_RB_no_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
       qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                        (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                        (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                       (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                       (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
       txF0[4]=qam_table64_0[qam64_table_offset];
       txF1[4]=qam_table64_1[qam64_table_offset];
@@ -775,11 +1006,11 @@ int allocate_REs_in_RB_no_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
       qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                        (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                        (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                       (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                       (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
       txF0[5]=qam_table64_0[qam64_table_offset];
       txF1[5]=qam_table64_1[qam64_table_offset];
-    }
+  }
   if(skip_half!=0)
   {
     *re_allocated = *re_allocated + 6;
@@ -791,6 +1022,169 @@ int allocate_REs_in_RB_no_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
     *jj=*jj + 72;
   }
 
+  return(0);
+}
+
+int allocate_REs_in_RB_pilots_QPSK_tm2(PHY_VARS_eNB* phy_vars_eNB,
+                                         int **txdataF,
+                                         uint32_t *jj,
+                                         uint32_t *jj2,
+                                         uint16_t re_offset,
+                                         uint32_t symbol_offset,
+                                         LTE_DL_eNB_HARQ_t *dlsch0_harq,
+                                         LTE_DL_eNB_HARQ_t *dlsch1_harq,
+                                         uint8_t pilots,
+                                         int16_t amp,
+                                         uint8_t precoder_index,
+                                         int16_t *qam_table0,
+                                         int16_t *qam_table1,
+                                         uint32_t *re_allocated,
+                                         uint8_t skip_dc,
+                                         uint8_t skip_half,
+                                         uint8_t lprime,
+                                         uint8_t mprime,
+                                         uint8_t Ns,
+                                         int *P1_SHIFT,
+                                         int *P2_SHIFT)
+{
+
+
+
+  uint8_t *x0             = dlsch0_harq->eDL;
+  int32_t qam4_table_offset = 0;
+
+  uint32_t tti_offset;
+  uint8_t re;
+  uint8_t *x0p;
+  uint8_t first_re;
+  uint64_t *qam_table4_0=(uint64_t*)qam_table0;
+  uint64_t *qam_table4_1=(uint64_t*)qam_table1;
+
+  first_re=0;
+  if (skip_half==2)
+    first_re=6;
+  re=first_re;
+  x0p=&x0[*jj];
+  uint64_t tmp0[4];
+  uint64_t tmp1[4];
+
+  qam4_table_offset=(((uint32_t)x0p[0]))|
+	             (((uint32_t)x0p[1])<<1)|
+                     (((uint32_t)x0p[2])<<2)|
+		     (((uint32_t)x0p[3])<<3);
+
+  tmp0[0]=qam_table4_0[qam4_table_offset];
+  tmp1[0]=qam_table4_1[qam4_table_offset];
+  x0p+=4;
+  qam4_table_offset=(((uint32_t)x0p[0]))|
+	            (((uint32_t)x0p[1])<<1)|
+                    (((uint32_t)x0p[2])<<2)|
+		    (((uint32_t)x0p[3])<<3);
+
+  tmp0[1]=qam_table4_0[qam4_table_offset];
+  tmp1[1]=qam_table4_1[qam4_table_offset];
+
+  if(skip_half==0) {
+    x0p+=4;
+    qam4_table_offset=(((uint32_t)x0p[0]))|
+  	               (((uint32_t)x0p[1])<<1)|
+                       (((uint32_t)x0p[2])<<2)|
+	   	       (((uint32_t)x0p[3])<<3);
+
+    tmp0[2]=qam_table4_0[qam4_table_offset];
+    tmp1[2]=qam_table4_1[qam4_table_offset];
+    x0p+=4;
+    qam4_table_offset=(((uint32_t)x0p[0]))|
+	               (((uint32_t)x0p[1])<<1)|
+                       (((uint32_t)x0p[2])<<2)|
+		       (((uint32_t)x0p[3])<<3);
+
+    tmp0[3]=qam_table4_0[qam4_table_offset];
+    tmp1[3]=qam_table4_1[qam4_table_offset];
+  }
+  if (P2_SHIFT[0] == 0) { // pilots in 0,3,6,9
+    tti_offset=symbol_offset+re_offset+re;
+    txdataF[0][tti_offset+1]=((uint32_t*)tmp0)[0]; 
+    txdataF[1][tti_offset+1]=((uint32_t*)tmp1)[0];
+    txdataF[0][tti_offset+2]=((uint32_t*)tmp0)[1]; 
+    txdataF[1][tti_offset+2]=((uint32_t*)tmp1)[1];
+    txdataF[0][tti_offset+4]=((uint32_t*)tmp0)[2]; 
+    txdataF[1][tti_offset+4]=((uint32_t*)tmp1)[2];
+    txdataF[0][tti_offset+5]=((uint32_t*)tmp0)[3]; 
+    txdataF[1][tti_offset+5]=((uint32_t*)tmp1)[3];
+
+    if (skip_half ==0) {
+      if (skip_dc>0) tti_offset=symbol_offset+1; 
+      else           tti_offset+=6;
+
+      txdataF[0][tti_offset+1]=((uint32_t*)tmp0)[4]; 
+      txdataF[1][tti_offset+1]=((uint32_t*)tmp1)[4];
+      txdataF[0][tti_offset+2]=((uint32_t*)tmp0)[5]; 
+      txdataF[1][tti_offset+2]=((uint32_t*)tmp1)[5];
+      txdataF[0][tti_offset+4]=((uint32_t*)tmp0)[6]; 
+      txdataF[1][tti_offset+4]=((uint32_t*)tmp1)[6];
+      txdataF[0][tti_offset+5]=((uint32_t*)tmp0)[7]; 
+      txdataF[1][tti_offset+5]=((uint32_t*)tmp1)[7];
+    }
+  } else if (P2_SHIFT[0]==1) { //pilots in 1,4,7,10
+    tti_offset=symbol_offset+re_offset+re;
+    txdataF[0][tti_offset+0]=((uint32_t*)tmp0)[0]; 
+    txdataF[1][tti_offset+0]=((uint32_t*)tmp1)[0];
+    txdataF[0][tti_offset+2]=((uint32_t*)tmp0)[1]; 
+    txdataF[1][tti_offset+2]=((uint32_t*)tmp1)[1];
+    txdataF[0][tti_offset+3]=((uint32_t*)tmp0)[2]; 
+    txdataF[1][tti_offset+3]=((uint32_t*)tmp1)[2];
+    txdataF[0][tti_offset+5]=((uint32_t*)tmp0)[3]; 
+    txdataF[1][tti_offset+5]=((uint32_t*)tmp1)[3];
+
+    if (skip_half ==0) {
+      if (skip_dc>0) tti_offset=symbol_offset+1;
+      else           tti_offset+=6;
+
+      txdataF[0][tti_offset+0]=((uint32_t*)tmp0)[4]; 
+      txdataF[1][tti_offset+0]=((uint32_t*)tmp1)[4];
+      txdataF[0][tti_offset+2]=((uint32_t*)tmp0)[5]; 
+      txdataF[1][tti_offset+2]=((uint32_t*)tmp1)[5];
+      txdataF[0][tti_offset+3]=((uint32_t*)tmp0)[6]; 
+      txdataF[1][tti_offset+3]=((uint32_t*)tmp1)[6];
+      txdataF[0][tti_offset+5]=((uint32_t*)tmp0)[7]; 
+      txdataF[1][tti_offset+5]=((uint32_t*)tmp1)[7];
+    }
+  } else { //pilots in 2,5,8,11	  
+    tti_offset=symbol_offset+re_offset+re;
+    txdataF[0][tti_offset+0]=((uint32_t*)tmp0)[0]; 
+    txdataF[1][tti_offset+0]=((uint32_t*)tmp1)[0];
+    txdataF[0][tti_offset+1]=((uint32_t*)tmp0)[1]; 
+    txdataF[1][tti_offset+1]=((uint32_t*)tmp1)[1];
+    txdataF[0][tti_offset+3]=((uint32_t*)tmp0)[2]; 
+    txdataF[1][tti_offset+3]=((uint32_t*)tmp1)[2];
+    txdataF[0][tti_offset+4]=((uint32_t*)tmp0)[3]; 
+    txdataF[1][tti_offset+4]=((uint32_t*)tmp1)[3];
+
+    if (skip_half ==0) {
+      if (skip_dc>0) tti_offset=symbol_offset+1;
+      else           tti_offset+=6;
+
+      txdataF[0][tti_offset+0]=((uint32_t*)tmp0)[4]; 
+      txdataF[1][tti_offset+0]=((uint32_t*)tmp1)[4];
+      txdataF[0][tti_offset+1]=((uint32_t*)tmp0)[5]; 
+      txdataF[1][tti_offset+1]=((uint32_t*)tmp1)[5];
+      txdataF[0][tti_offset+3]=((uint32_t*)tmp0)[6]; 
+      txdataF[1][tti_offset+3]=((uint32_t*)tmp1)[6];
+      txdataF[0][tti_offset+4]=((uint32_t*)tmp0)[7]; 
+      txdataF[1][tti_offset+4]=((uint32_t*)tmp1)[7];
+    }
+  }
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 4;
+    *jj=*jj + 8;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 8;
+    *jj=*jj + 16;
+  }
   return(0);
 }
 
@@ -904,7 +1298,7 @@ int allocate_REs_in_RB_pilots_64QAM_siso(PHY_VARS_eNB* phy_vars_eNB,
   return(0);
 }
 
-int allocate_REs_in_RB_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
+int allocate_REs_in_RB_pilots_16QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
                                          int **txdataF,
                                          uint32_t *jj,
                                          uint32_t *jj2,
@@ -928,7 +1322,168 @@ int allocate_REs_in_RB_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
 {
 
 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->frame_parms;
+
+  uint8_t *x0             = dlsch0_harq->eDL;
+  int32_t qam16_table_offset = 0;
+
+  uint32_t tti_offset;
+  uint8_t re;
+  uint8_t *x0p;
+  uint8_t first_re;
+  uint64_t *qam_table16_0=(uint64_t*)qam_table0;
+  uint64_t *qam_table16_1=(uint64_t*)qam_table1;
+
+  first_re=0;
+  if (skip_half==2)
+    first_re=6;
+  re=first_re;
+  x0p=&x0[*jj];
+  uint64_t tmp0[4];
+  uint64_t tmp1[4];
+
+  qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                     (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                     (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                     (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+  tmp0[0]=qam_table16_0[qam16_table_offset];
+  tmp1[0]=qam_table16_1[qam16_table_offset];
+  x0p+=8;
+  qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                     (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                     (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                     (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+  tmp0[1]=qam_table16_0[qam16_table_offset];
+  tmp1[1]=qam_table16_1[qam16_table_offset];
+
+  if(skip_half==0) {
+    x0p+=8;
+    qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                       (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                       (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                       (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+    tmp0[2]=qam_table16_0[qam16_table_offset];
+    tmp1[2]=qam_table16_1[qam16_table_offset];
+    x0p+=8;
+    qam16_table_offset=(((uint32_t)x0p[0])<<1)|(((uint32_t)x0p[2]))|
+                       (((uint32_t)x0p[1])<<3)|(((uint32_t)x0p[3])<<2) |
+                       (((uint32_t)x0p[4])<<5)|(((uint32_t)x0p[6])<<4) |
+                       (((uint32_t)x0p[5])<<7)|(((uint32_t)x0p[7])<<6);
+
+    tmp0[3]=qam_table16_0[qam16_table_offset];
+    tmp1[3]=qam_table16_1[qam16_table_offset];
+  }
+  if (P2_SHIFT[0] == 0) { // pilots in 0,3,6,9
+    tti_offset=symbol_offset+re_offset+re;
+    txdataF[0][tti_offset+1]=((uint32_t*)tmp0)[0]; 
+    txdataF[1][tti_offset+1]=((uint32_t*)tmp1)[0];
+    txdataF[0][tti_offset+2]=((uint32_t*)tmp0)[1]; 
+    txdataF[1][tti_offset+2]=((uint32_t*)tmp1)[1];
+    txdataF[0][tti_offset+4]=((uint32_t*)tmp0)[2]; 
+    txdataF[1][tti_offset+4]=((uint32_t*)tmp1)[2];
+    txdataF[0][tti_offset+5]=((uint32_t*)tmp0)[3]; 
+    txdataF[1][tti_offset+5]=((uint32_t*)tmp1)[3];
+
+    if (skip_half ==0) {
+      if (skip_dc>0) tti_offset=symbol_offset+1; 
+      else           tti_offset+=6;
+
+      txdataF[0][tti_offset+1]=((uint32_t*)tmp0)[4]; 
+      txdataF[1][tti_offset+1]=((uint32_t*)tmp1)[4];
+      txdataF[0][tti_offset+2]=((uint32_t*)tmp0)[5]; 
+      txdataF[1][tti_offset+2]=((uint32_t*)tmp1)[5];
+      txdataF[0][tti_offset+4]=((uint32_t*)tmp0)[6]; 
+      txdataF[1][tti_offset+4]=((uint32_t*)tmp1)[6];
+      txdataF[0][tti_offset+5]=((uint32_t*)tmp0)[7]; 
+      txdataF[1][tti_offset+5]=((uint32_t*)tmp1)[7];
+    }
+  } else if (P2_SHIFT[0]==1) { //pilots in 1,4,7,10
+    tti_offset=symbol_offset+re_offset+re;
+    txdataF[0][tti_offset+0]=((uint32_t*)tmp0)[0]; 
+    txdataF[1][tti_offset+0]=((uint32_t*)tmp1)[0];
+    txdataF[0][tti_offset+2]=((uint32_t*)tmp0)[1]; 
+    txdataF[1][tti_offset+2]=((uint32_t*)tmp1)[1];
+    txdataF[0][tti_offset+3]=((uint32_t*)tmp0)[2]; 
+    txdataF[1][tti_offset+3]=((uint32_t*)tmp1)[2];
+    txdataF[0][tti_offset+5]=((uint32_t*)tmp0)[3]; 
+    txdataF[1][tti_offset+5]=((uint32_t*)tmp1)[3];
+
+    if (skip_half ==0) {
+      if (skip_dc>0) tti_offset=symbol_offset+1;
+      else           tti_offset+=6;
+
+      txdataF[0][tti_offset+0]=((uint32_t*)tmp0)[4]; 
+      txdataF[1][tti_offset+0]=((uint32_t*)tmp1)[4];
+      txdataF[0][tti_offset+2]=((uint32_t*)tmp0)[5]; 
+      txdataF[1][tti_offset+2]=((uint32_t*)tmp1)[5];
+      txdataF[0][tti_offset+3]=((uint32_t*)tmp0)[6]; 
+      txdataF[1][tti_offset+3]=((uint32_t*)tmp1)[6];
+      txdataF[0][tti_offset+5]=((uint32_t*)tmp0)[7]; 
+      txdataF[1][tti_offset+5]=((uint32_t*)tmp1)[7];
+    }
+  } else { //pilots in 2,5,8,11	  
+    tti_offset=symbol_offset+re_offset+re;
+    txdataF[0][tti_offset+0]=((uint32_t*)tmp0)[0]; 
+    txdataF[1][tti_offset+0]=((uint32_t*)tmp1)[0];
+    txdataF[0][tti_offset+1]=((uint32_t*)tmp0)[1]; 
+    txdataF[1][tti_offset+1]=((uint32_t*)tmp1)[1];
+    txdataF[0][tti_offset+3]=((uint32_t*)tmp0)[2]; 
+    txdataF[1][tti_offset+3]=((uint32_t*)tmp1)[2];
+    txdataF[0][tti_offset+4]=((uint32_t*)tmp0)[3]; 
+    txdataF[1][tti_offset+4]=((uint32_t*)tmp1)[3];
+
+    if (skip_half ==0) {
+      if (skip_dc>0) tti_offset=symbol_offset+1;
+      else           tti_offset+=6;
+
+      txdataF[0][tti_offset+0]=((uint32_t*)tmp0)[4]; 
+      txdataF[1][tti_offset+0]=((uint32_t*)tmp1)[4];
+      txdataF[0][tti_offset+1]=((uint32_t*)tmp0)[5]; 
+      txdataF[1][tti_offset+1]=((uint32_t*)tmp1)[5];
+      txdataF[0][tti_offset+3]=((uint32_t*)tmp0)[6]; 
+      txdataF[1][tti_offset+3]=((uint32_t*)tmp1)[6];
+      txdataF[0][tti_offset+4]=((uint32_t*)tmp0)[7]; 
+      txdataF[1][tti_offset+4]=((uint32_t*)tmp1)[7];
+    }
+  }
+  if(skip_half!=0)
+  {
+    *re_allocated = *re_allocated + 4;
+    *jj=*jj + 16;
+  }
+  else
+  {
+    *re_allocated = *re_allocated + 8;
+    *jj=*jj + 32;
+  }
+  return(0);
+}
+
+int allocate_REs_in_RB_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
+                                         int **txdataF,
+                                         uint32_t *jj,
+                                         uint32_t *jj2,
+                                         uint16_t re_offset,
+                                         uint32_t symbol_offset,
+                                         LTE_DL_eNB_HARQ_t *dlsch0_harq,
+                                         LTE_DL_eNB_HARQ_t *dlsch1_harq,
+                                         uint8_t pilots,
+                                         int16_t amp,
+                                         uint8_t precoder_index,
+                                         int16_t *qam_table0,
+                                         int16_t *qam_table1,
+                                         uint32_t *re_allocated,
+                                         uint8_t skip_dc,
+                                         uint8_t skip_half,
+                                         uint8_t lprime,
+                                         uint8_t mprime,
+                                         uint8_t Ns,
+                                         int *P1_SHIFT,
+                                         int *P2_SHIFT)
+{
+
 
   uint8_t *x0             = dlsch0_harq->eDL;
   int32_t qam64_table_offset = 0;
@@ -955,7 +1510,7 @@ int allocate_REs_in_RB_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
   qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                      (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                      (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                     (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                     (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
   tmp0[0]=qam_table64_0[qam64_table_offset];
   tmp1[0]=qam_table64_1[qam64_table_offset];
@@ -963,7 +1518,7 @@ int allocate_REs_in_RB_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
   qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                      (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                      (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                     (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                     (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
   tmp0[1]=qam_table64_0[qam64_table_offset];
   tmp1[1]=qam_table64_1[qam64_table_offset];
@@ -973,7 +1528,7 @@ int allocate_REs_in_RB_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
     qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                      (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                      (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                     (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                     (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
     tmp0[2]=qam_table64_0[qam64_table_offset];
     tmp1[2]=qam_table64_1[qam64_table_offset];
@@ -981,7 +1536,7 @@ int allocate_REs_in_RB_pilots_64QAM_tm2(PHY_VARS_eNB* phy_vars_eNB,
     qam64_table_offset=(((uint32_t)x0p[0])<<2)|(((uint32_t)x0p[2])<<1)|(((uint32_t)x0p[4]))|
                      (((uint32_t)x0p[1])<<5)|(((uint32_t)x0p[3])<<4)|(((uint32_t)x0p[5])<<3) |
                      (((uint32_t)x0p[6])<<8)|(((uint32_t)x0p[8])<<7)|(((uint32_t)x0p[10])<<6) |
-                     (((uint32_t)x0p[7]<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9);
+                     (((uint32_t)x0p[7])<<11)|(((uint32_t)x0p[9])<<10)|((uint32_t)x0p[11])<<9;
 
     tmp0[3]=qam_table64_0[qam64_table_offset];
     tmp1[3]=qam_table64_1[qam64_table_offset];
@@ -2470,12 +3025,155 @@ inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) {
 }
 
 
+uint64_t qam4_tm2_p2_0[8][16];
+uint64_t qam4_tm2_p2_1[8][16];
+uint64_t qam4_tm2_p2_b0[8][4][16];
+uint64_t qam4_tm2_p2_b1[8][4][16];
+
+uint64_t qam16_tm2_p2_0[8][256];
+uint64_t qam16_tm2_p2_1[8][256];
+uint64_t qam16_tm2_p2_b0[8][4][256];
+uint64_t qam16_tm2_p2_b1[8][4][256];
+
 uint64_t qam64_tm2_p2_0[8][4096];
 uint64_t qam64_tm2_p2_1[8][4096];
 uint64_t qam64_tm2_p2_b0[8][4][4096];
 uint64_t qam64_tm2_p2_b1[8][4][4096];
 
 
+void init_modulation_LUT_qam4_tm2_p2() {
+
+// QPSK TM2 2-antennas
+// 8 bit = 4 modulation inputs
+   uint64_t *s0;
+   uint64_t *s1;
+   double rhoA_dB,rhoB_dB;
+   int16_t sqrt_rhoA,amp_rho_a,sqrt_rhoB,amp_rho_b;
+   int qam4_table_offset_re,qam4_table_offset_im;
+
+   for (int index=0;index<16;index++) {
+     for (int pa=0;pa<8;pa++) {
+        rhoA_dB   = computeRhoA_eNB(pa, NULL, 1, 2);
+        sqrt_rhoA = (int16_t)(pow(10,(0.05*rhoA_dB))*pow(2,13));
+        amp_rho_a = (int16_t)(((int32_t)AMP*sqrt_rhoA)>>13);
+	s0 = &qam4_tm2_p2_0[pa][index];
+	s1 = &qam4_tm2_p2_1[pa][index];
+        // Antenna 0
+        qam4_table_offset_re = index&1;
+        qam4_table_offset_im = (index>>1)&1;
+
+	((int16_t*)s0)[0]=(int16_t)(((int32_t)qpsk_table[qam4_table_offset_re]*amp_rho_a)>>15);
+	((int16_t*)s0)[1]=(int16_t)(((int32_t)qpsk_table[qam4_table_offset_im]*amp_rho_a)>>15);
+
+        // Antenna 1 => -x1*
+        qam4_table_offset_re = (index>>2)&1;
+        qam4_table_offset_im = (index>>3)&1;
+      
+	((int16_t*)s1)[0]=-(int16_t)(((int32_t)qpsk_table[qam4_table_offset_re]*amp_rho_a)>>15);
+	((int16_t*)s1)[1]=(int16_t)(((int32_t)qpsk_table[qam4_table_offset_im]*amp_rho_a)>>15);
+        
+	((int16_t*)s0)[2] = -((int16_t*)s1)[0]; //=-x1*
+        ((int16_t*)s0)[3] = ((int16_t*)s1)[1];
+        ((int16_t*)s1)[2] = ((int16_t*)s0)[0];  //x0*
+        ((int16_t*)s1)[3] = -((int16_t*)s0)[1];
+	for (int pb=0;pb<4;pb++) {
+          rhoB_dB   = computeRhoB_eNB(pa,pb, 2, NULL, 1);
+          sqrt_rhoB = (int16_t)(pow(10,(0.05*rhoB_dB))*pow(2,13));
+          amp_rho_b = (int16_t)(((int32_t)AMP*sqrt_rhoB)>>13);
+	  s0 = &qam4_tm2_p2_b0[pa][pb][index];
+	  s1 = &qam4_tm2_p2_b1[pa][pb][index];
+          // Antenna 0
+          qam4_table_offset_re = index&1;
+          qam4_table_offset_im = (index>>1)&1;
+
+
+	  ((int16_t*)s0)[0]=(int16_t)(((int32_t)qpsk_table[qam4_table_offset_re]*amp_rho_b)>>15);
+	  ((int16_t*)s0)[1]=(int16_t)(((int32_t)qpsk_table[qam4_table_offset_im]*amp_rho_b)>>15);
+
+
+          // Antenna 1 => -x1*
+          qam4_table_offset_re = (index>>2)&1;
+          qam4_table_offset_im = (index>>3)&1;
+      
+	  ((int16_t*)s1)[0]=-(int16_t)(((int32_t)qpsk_table[qam4_table_offset_re]*amp_rho_b)>>15);
+	  ((int16_t*)s1)[1]=(int16_t)(((int32_t)qpsk_table[qam4_table_offset_im]*amp_rho_b)>>15);
+        
+	  ((int16_t*)s0)[2] = -((int16_t*)s1)[0]; //=-x1*
+          ((int16_t*)s0)[3] = ((int16_t*)s1)[1];
+          ((int16_t*)s1)[2] = ((int16_t*)s0)[0];  //x0*
+          ((int16_t*)s1)[3] = -((int16_t*)s0)[1];
+	}
+     }	
+   }
+}
+void init_modulation_LUT_qam16_tm2_p2() {
+
+// 16QAM TM2 2-antennas
+// 8 bit = 2 modulation inputs
+   uint64_t *s0;
+   uint64_t *s1;
+   double rhoA_dB,rhoB_dB;
+   int16_t sqrt_rhoA,amp_rho_a,sqrt_rhoB,amp_rho_b;
+   int qam16_table_offset_re,qam16_table_offset_im;
+
+   for (int index=0;index<256;index++) {
+     for (int pa=0;pa<8;pa++) {
+        rhoA_dB   = computeRhoA_eNB(pa, NULL, 1, 2);
+        sqrt_rhoA = (int16_t)(pow(10,(0.05*rhoA_dB))*pow(2,13));
+        amp_rho_a = (int16_t)(((int32_t)AMP*sqrt_rhoA)>>13);
+	s0 = &qam16_tm2_p2_0[pa][index];
+	s1 = &qam16_tm2_p2_1[pa][index];
+        // Antenna 0
+        qam16_table_offset_re = index&3;
+        qam16_table_offset_im = (index>>2)&3;
+
+
+	((int16_t*)s0)[0]=(int16_t)(((int32_t)qam16_table[qam16_table_offset_re]*amp_rho_a)>>15);
+	((int16_t*)s0)[1]=(int16_t)(((int32_t)qam16_table[qam16_table_offset_im]*amp_rho_a)>>15);
+
+
+        // Antenna 1 => -x1*
+        qam16_table_offset_re = (index>>4)&3;
+        qam16_table_offset_im = (index>>6)&3;
+      
+	((int16_t*)s1)[0]=-(int16_t)(((int32_t)qam16_table[qam16_table_offset_re]*amp_rho_a)>>15);
+	((int16_t*)s1)[1]=(int16_t)(((int32_t)qam16_table[qam16_table_offset_im]*amp_rho_a)>>15);
+        
+	((int16_t*)s0)[2] = -((int16_t*)s1)[0]; //=-x1*
+        ((int16_t*)s0)[3] = ((int16_t*)s1)[1];
+        ((int16_t*)s1)[2] = ((int16_t*)s0)[0];  //x0*
+        ((int16_t*)s1)[3] = -((int16_t*)s0)[1];
+	for (int pb=0;pb<4;pb++) {
+          rhoB_dB   = computeRhoB_eNB(pa,pb, 2, NULL, 1);
+          sqrt_rhoB = (int16_t)(pow(10,(0.05*rhoB_dB))*pow(2,13));
+          amp_rho_b = (int16_t)(((int32_t)AMP*sqrt_rhoB)>>13);
+	  s0 = &qam16_tm2_p2_b0[pa][pb][index];
+	  s1 = &qam16_tm2_p2_b1[pa][pb][index];
+          // Antenna 0
+          qam16_table_offset_re = index&3;
+          qam16_table_offset_im = (index>>2)&3;
+
+
+	  ((int16_t*)s0)[0]=(int16_t)(((int32_t)qam16_table[qam16_table_offset_re]*amp_rho_b)>>15);
+	  ((int16_t*)s0)[1]=(int16_t)(((int32_t)qam16_table[qam16_table_offset_im]*amp_rho_b)>>15);
+
+
+          // Antenna 1 => -x1*
+          qam16_table_offset_re = (index>>4)&3;
+          qam16_table_offset_im = (index>>6)&3;
+      
+	  ((int16_t*)s1)[0]=-(int16_t)(((int32_t)qam16_table[qam16_table_offset_re]*amp_rho_b)>>15);
+	  ((int16_t*)s1)[1]=(int16_t)(((int32_t)qam16_table[qam16_table_offset_im]*amp_rho_b)>>15);
+        
+	  ((int16_t*)s0)[2] = -((int16_t*)s1)[0]; //=-x1*
+          ((int16_t*)s0)[3] = ((int16_t*)s1)[1];
+          ((int16_t*)s1)[2] = ((int16_t*)s0)[0];  //x0*
+          ((int16_t*)s1)[3] = -((int16_t*)s0)[1];
+
+	}
+     }	
+   }
+}
 void init_modulation_LUT_qam64_tm2_p2() {
 
 // 64QAM TM2 2-antennas
@@ -2547,6 +3245,8 @@ void init_modulation_LUT_qam64_tm2_p2() {
 
 void init_modulation_LUTs() {
 
+  init_modulation_LUT_qam4_tm2_p2();
+  init_modulation_LUT_qam16_tm2_p2();
   init_modulation_LUT_qam64_tm2_p2();
 
 }
@@ -2851,31 +3551,52 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     case 2:
       qam_table_s0 = NULL;
       if (pilots) {
-        qam_table_s0 = qpsk_table_b0;
-        allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
-          allocate_REs_in_RB_pilots_QPSK_siso :
-          allocate_REs_in_RB;
+	if (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) {
+          qam_table_s0 = qpsk_table_b0;
+          allocate_REs = allocate_REs_in_RB_pilots_QPSK_siso; 
+	}
+	else if (dlsch0->harq_processes[harq_pid]->mimo_mode == ALAMOUTI) {
+          qam_table_s0 = (int16_t*)qam4_tm2_p2_b0[dlsch0->pa][dlsch0->pb];
+          qam_table_s1 = (int16_t*)qam4_tm2_p2_b1[dlsch0->pa][dlsch0->pb];
+	  P2_SHIFT[0]=nushiftmod3;
+          allocate_REs = allocate_REs_in_RB_pilots_QPSK_tm2;
+	}
       }
       else {
-        qam_table_s0 = qpsk_table_a0;
-        allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
-          allocate_REs_in_RB_no_pilots_QPSK_siso :
-          allocate_REs_in_RB;
+	if (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) {
+          qam_table_s0 = qpsk_table_a0;
+          allocate_REs = allocate_REs_in_RB_no_pilots_QPSK_siso;
+	}
+	else if (dlsch0->harq_processes[harq_pid]->mimo_mode == ALAMOUTI) {
+          qam_table_s0 = (int16_t*)qam4_tm2_p2_0[dlsch0->pa];
+          qam_table_s1 = (int16_t*)qam4_tm2_p2_1[dlsch0->pa];
+	  allocate_REs = allocate_REs_in_RB_no_pilots_QPSK_tm2;
+	}
       }
       break;
     case 4:
       if (pilots) {
-        qam_table_s0 = qam16_table_b0;
-        allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
-          allocate_REs_in_RB_pilots_16QAM_siso :
-          allocate_REs_in_RB;
+	if (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) {
+          qam_table_s0 = qam16_table_b0;
+          allocate_REs = allocate_REs_in_RB_pilots_16QAM_siso;
+        }
+        else if (dlsch0->harq_processes[harq_pid]->mimo_mode == ALAMOUTI) {
+          qam_table_s0 = (int16_t*)qam16_tm2_p2_b0[dlsch0->pa][dlsch0->pb];
+          qam_table_s1 = (int16_t*)qam16_tm2_p2_b1[dlsch0->pa][dlsch0->pb];
+	  P2_SHIFT[0]=nushiftmod3;
+          allocate_REs = allocate_REs_in_RB_pilots_16QAM_tm2;
+	}
       }
       else {
-        qam_table_s0 = qam16_table_a0;
-        allocate_REs = (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) ?
-          allocate_REs_in_RB_no_pilots_16QAM_siso :
-          allocate_REs_in_RB;
-
+	if (dlsch0->harq_processes[harq_pid]->mimo_mode == SISO) {
+          qam_table_s0 = qam16_table_a0;
+          allocate_REs = allocate_REs_in_RB_no_pilots_16QAM_siso;
+	}
+	else if (dlsch0->harq_processes[harq_pid]->mimo_mode == ALAMOUTI) {
+          qam_table_s0 = (int16_t*)qam16_tm2_p2_0[dlsch0->pa];
+          qam_table_s1 = (int16_t*)qam16_tm2_p2_1[dlsch0->pa];
+	  allocate_REs = allocate_REs_in_RB_no_pilots_16QAM_tm2;
+	}
       }
       break;
 
@@ -2885,9 +3606,9 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
           qam_table_s0 = qam64_table_b0;
           allocate_REs = allocate_REs_in_RB_pilots_64QAM_siso;
         }
-	else {
-          qam_table_s0 = qam64_tm2_p2_b0[dlsch0->pa][dlsch0->pb];
-          qam_table_s1 = qam64_tm2_p2_b1[dlsch0->pa][dlsch0->pb];
+	else if (dlsch0->harq_processes[harq_pid]->mimo_mode == ALAMOUTI) {
+          qam_table_s0 = (int16_t*)qam64_tm2_p2_b0[dlsch0->pa][dlsch0->pb];
+          qam_table_s1 = (int16_t*)qam64_tm2_p2_b1[dlsch0->pa][dlsch0->pb];
 	  P2_SHIFT[0]=nushiftmod3;
           allocate_REs = allocate_REs_in_RB_pilots_64QAM_tm2;
         }
