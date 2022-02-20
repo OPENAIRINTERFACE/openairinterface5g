@@ -1103,7 +1103,7 @@ boolean_t nr_rrc_pdcp_config_asn1_req(
   if (kRRCint != NULL) {
     /* todo */
   }
-
+  
   if (drb2release_list != NULL) {
     // TODO
   }
