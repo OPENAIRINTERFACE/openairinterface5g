@@ -225,7 +225,7 @@ int load_module_version_shlib(char *modname, char *version, loader_shlibfunc_t *
       }
       if (j == shlib->numfunc) {
         if (shlib->numfunc == shlib->len_funcarray) {
-          loader_shlibfunc_t *n = reallocarray(shlib->funcarray, shlib->numfunc * 2, sizeof(loader_shlibfunc_t));
+          loader_shlibfunc_t *n = realloc(shlib->funcarray, shlib->numfunc * 2 * sizeof(loader_shlibfunc_t));
           if (!n) {
             fprintf(stderr, "[LOADER] %s(): unable to allocate memory\n", __func__);
             ret = -1;
