@@ -677,7 +677,6 @@ class Containerize():
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps -a'
 		count = 0
 		healthy = 0
-		containerStatus = []
 		while (count < 10):
 			count += 1
 			containerStatus = []

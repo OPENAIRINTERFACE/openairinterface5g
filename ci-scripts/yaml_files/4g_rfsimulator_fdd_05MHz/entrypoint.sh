@@ -20,7 +20,7 @@ cp mme_fd.conf.tmplt $PREFIX/mme_fd.conf
 
 for K in "${!MME_CONF[@]}"; do 
   egrep -lRZ "$K" $PREFIX/mme_fd.conf | xargs -0 -l sed -i -e "s|$K|${MME_CONF[$K]}|g"
-  ret=$?;[[ ret -ne 0 ]] && echo "Tried to replace $K with ${MME_CONF[$K]}"
+  ret=$?;[[ ret -ne 0 ]] && echo "Could not replace $K with ${MME_CONF[$K]}"
 done
 
 sed -i -e "s@etc/freeDiameter@etc@" /magma-mme/etc/mme_fd.conf
