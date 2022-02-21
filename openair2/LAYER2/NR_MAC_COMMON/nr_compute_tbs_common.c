@@ -51,7 +51,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
   uint32_t Ninfo, Np_info, C;
   uint8_t n, scale;
 
-  LOG_D(NR_MAC,"nb_symb_sch %d, nb_dmrs_prb %d, nb_rb_oh %d\n",nb_symb_sch,nb_dmrs_prb,nb_rb_oh);
+  LOG_D(NR_MAC, "In %s: nb_symb_sch %d, nb_dmrs_prb %d, nb_rb %d, nb_rb_oh %d, tb_scaling %d Nl %d\n", __FUNCTION__, nb_symb_sch, nb_dmrs_prb, nb_rb, nb_rb_oh, tb_scaling, Nl);
 
   nbp_re = NR_NB_SC_PER_RB * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
   nb_re = min(156, nbp_re) * nb_rb;
@@ -86,7 +86,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
     }
   }
 
-  LOG_D(NR_MAC, "In %s: Ninfo %d nbp_re %d nb_re %d Qm %d, R %d, tbs %d\n", __FUNCTION__, Ninfo, nbp_re, nb_re, Qm, R, nr_tbs);
+  LOG_D(NR_MAC, "In %s: Ninfo %d nbp_re %d nb_re %d Qm %d, R %d, tbs %d bits\n", __FUNCTION__, Ninfo, nbp_re, nb_re, Qm, R, nr_tbs);
 
   return nr_tbs;
 

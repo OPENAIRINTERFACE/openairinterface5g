@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
+#include <nr-uesoftmodem.h>
 
 #include "PHY/defs_nr_UE.h"
 

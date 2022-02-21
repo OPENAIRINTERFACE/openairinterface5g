@@ -2038,6 +2038,11 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->pucch_consecutive_dtx_cnt = 0;
     sched_ctrl->pusch_consecutive_dtx_cnt = 0;
     sched_ctrl->ul_failure                = 0;
+
+    sched_ctrl->sched_srs.frame = -1;
+    sched_ctrl->sched_srs.slot = -1;
+    sched_ctrl->sched_srs.srs_scheduled = false;
+
     /* set illegal time domain allocation to force recomputation of all fields */
     sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
     sched_ctrl->pusch_semi_static.time_domain_allocation = -1;
@@ -2266,12 +2271,12 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
     }
     AssertFatal(found==1,"Couldn't find a ue specific searchspace\n");
 
-
     if (ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0) {
       for (int i=0; i<8; i++) {
         pdsch_to_harq_feedback[i] = i+1;
         if(pdsch_to_harq_feedback[i]>*max_fb_time)
           *max_fb_time = pdsch_to_harq_feedback[i];
+
       }
     }
     else {

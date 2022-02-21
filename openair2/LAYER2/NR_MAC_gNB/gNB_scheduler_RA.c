@@ -397,6 +397,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
 void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
                       NR_ServingCellConfigCommon_t *scc,
+                      lte_frame_type_t frame_type,
                       uint16_t monitoring_slot_period,
                       uint16_t monitoring_offset,uint8_t beam_index,
                       uint8_t num_active_ssb,
@@ -404,18 +405,25 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // preferentially we schedule the msg2 in the mixed slot or in the last dl slot
   // if they are allowed by search space configuration
-
   uint8_t mu = *scc->ssbSubcarrierSpacing;
   uint8_t response_window = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.ra_ResponseWindow;
   uint8_t slot_window;
+  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   // number of mixed slot or of last dl slot if there is no mixed slot
-  uint8_t last_dl_slot_period = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+  uint8_t last_dl_slot_period = n_slots_frame-1;
   // lenght of tdd period in slots
-  uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols == 0)
-    last_dl_slot_period--;
-  if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
-    tdd_period_slot++;
+  uint8_t tdd_period_slot = n_slots_frame;
+
+  if (tdd) {
+    last_dl_slot_period = tdd->nrofDownlinkSymbols == 0? (tdd->nrofDownlinkSlots-1) : tdd->nrofDownlinkSlots;
+    tdd_period_slot = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+  }
+  else{
+    if(frame_type == TDD)
+      AssertFatal(frame_type == FDD, "Dynamic TDD not handled yet\n");
+  }
+
 
   switch(response_window){
     case NR_RACH_ConfigGeneric__ra_ResponseWindow_sl1:
@@ -449,7 +457,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // slot and frame limit to transmit msg2 according to response window
   uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
-  uint8_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
+  uint16_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
 
   // computing start of next period
 
@@ -478,9 +486,21 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
-  while (((*msg2_slot>slot_limit)&&(*msg2_frame>frame_limit)) || ((*msg2_frame*nr_slots_per_frame[mu]+*msg2_slot-monitoring_offset)%monitoring_slot_period !=0))  {
-    if((*msg2_slot%tdd_period_slot) > 0)
-      (*msg2_slot)--;
+  while (*msg2_frame > frame_limit
+         || (*msg2_frame == frame_limit && *msg2_slot > slot_limit)
+         || ((*msg2_frame * nr_slots_per_frame[mu] + *msg2_slot - monitoring_offset) % monitoring_slot_period != 0)) {
+
+    if((frame_type == FDD) || ((*msg2_slot%tdd_period_slot) > 0)) {
+      if (*msg2_slot==0) {
+        if(*msg2_frame != 0)
+          (*msg2_frame)--;
+        else
+          *msg2_frame = 1023;
+        *msg2_slot = nr_slots_per_frame[mu] - 1;
+      }
+      else
+        (*msg2_slot)--;
+    }
     else
       AssertFatal(1==0,"No available DL slot to schedule msg2 has been found");
   }
@@ -503,6 +523,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
+  lte_frame_type_t frame_type = cc->frame_type;
 
   uint8_t total_RApreambles = MAX_NUM_NR_PRACH_PREAMBLES;
   uint8_t  num_ssb_per_RO = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
@@ -624,6 +645,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                        &msg2_frame,
                        &msg2_slot,
                        scc,
+                       frame_type,
                        monitoring_slot_period,
                        monitoring_offset,
                        beam_index,
@@ -734,10 +756,13 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     // beam association for FR2
     int16_t *tdd_beam_association = nr_mac->tdd_beam_association;
     if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
-      uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-      if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
-        tdd_period_slot++;
+      // FR2
+      const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+      const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+      AssertFatal(tdd,"Dynamic TDD not handled yet\n");
+      uint8_t tdd_period_slot = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
       int num_tdd_period = sched_slot/tdd_period_slot;
+
       if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
         return; // can't schedule retransmission in this slot
       else
@@ -898,6 +923,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   uint16_t msg3_nb_rb = 8; // sdu has 6 or 8 bytes
 
+  lte_frame_type_t frame_type = RC.nrmac[module_id]->common_channels->frame_type;
+
   int mu = ubwp ?
     ubwp->bwp_Common->genericParameters.subcarrierSpacing :
     scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
@@ -908,8 +935,9 @@ void nr_get_Msg3alloc(module_id_t module_id,
     ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
     scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
 
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  const int n_slots_frame = nr_slots_per_frame[mu];
   uint8_t k2 = 0;
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   if (frame_type == TDD) {
     int nb_periods_per_frame = get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
     int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
@@ -935,16 +963,15 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   AssertFatal(ra->Msg3_tda_id<16,"Unable to find Msg3 time domain allocation in list\n");
 
-  if (nr_slots_per_frame[mu]>temp_slot)
+  if (n_slots_frame > temp_slot)
     ra->Msg3_frame = current_frame;
   else
-    ra->Msg3_frame = (current_frame + (temp_slot/nr_slots_per_frame[mu]))%1024;
+    ra->Msg3_frame = (current_frame + (temp_slot / n_slots_frame)) % 1024;
 
   // beam association for FR2
   if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
-    uint8_t tdd_period_slot =  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots + scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-    if ((scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) || (scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0))
-      tdd_period_slot++;
+    AssertFatal(tdd,"Dynamic TDD not handled yet\n");
+    uint8_t tdd_period_slot = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
     int num_tdd_period = ra->Msg3_slot/tdd_period_slot;
     if((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=ra->beam_id))
       AssertFatal(1==0,"Cannot schedule MSG3\n");
@@ -1000,6 +1027,7 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
 
 
   int start_symbol_index,nr_of_symbols;
+
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
   int mcsindex = -1; // init value
 
@@ -1018,14 +1046,13 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
   pusch_pdu->ul_dmrs_symb_pos = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1,start_symbol_index, scc->dmrs_TypeA_Position);
-  LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
+  LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, ul_dmrs_symb_pos:%x\n", start_symbol_index, nr_of_symbols, mappingtype, pusch_pdu->ul_dmrs_symb_pos);
   pusch_pdu->dmrs_config_type = 0;
   pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId; //If provided and the PUSCH is not a msg3 PUSCH, otherwise, L2 should set this to physical cell id.
   pusch_pdu->scid = 0; //DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]. Should match what is sent in DCI 0_1, otherwise set to 0.
   pusch_pdu->dmrs_ports = 1;  // 6.2.2 in 38.214 only port 0 to be used
   pusch_pdu->num_dmrs_cdm_grps_no_data = 2;  // no data in dmrs symbols as in 6.2.2 in 38.214
   pusch_pdu->resource_alloc = 1; //type 1
-
   pusch_pdu->rb_start = msg3_first_rb;
   if (msg3_nb_rb > pusch_pdu->bwp_size)
     AssertFatal(1==0,"MSG3 allocated number of RBs exceed the BWP size\n");
@@ -2042,25 +2069,16 @@ void nr_fill_rar(uint8_t Mod_idP,
   rar->UL_GRANT_4 = (uint8_t) ul_grant & 0xff;
 
 #ifdef DEBUG_RAR
-  //LOG_I(NR_MAC, "rarbi->E = 0x%x\n", rarbi->E);
-  //LOG_I(NR_MAC, "rarbi->T = 0x%x\n", rarbi->T);
-  //LOG_I(NR_MAC, "rarbi->R = 0x%x\n", rarbi->R);
-  //LOG_I(NR_MAC, "rarbi->BI = 0x%x\n", rarbi->BI);
-
   LOG_I(NR_MAC, "rarh->E = 0x%x\n", rarh->E);
   LOG_I(NR_MAC, "rarh->T = 0x%x\n", rarh->T);
   LOG_I(NR_MAC, "rarh->RAPID = 0x%x (%i)\n", rarh->RAPID, rarh->RAPID);
-
   LOG_I(NR_MAC, "rar->R = 0x%x\n", rar->R);
   LOG_I(NR_MAC, "rar->TA1 = 0x%x\n", rar->TA1);
-
   LOG_I(NR_MAC, "rar->TA2 = 0x%x\n", rar->TA2);
   LOG_I(NR_MAC, "rar->UL_GRANT_1 = 0x%x\n", rar->UL_GRANT_1);
-
   LOG_I(NR_MAC, "rar->UL_GRANT_2 = 0x%x\n", rar->UL_GRANT_2);
   LOG_I(NR_MAC, "rar->UL_GRANT_3 = 0x%x\n", rar->UL_GRANT_3);
   LOG_I(NR_MAC, "rar->UL_GRANT_4 = 0x%x\n", rar->UL_GRANT_4);
-
   LOG_I(NR_MAC, "rar->TCRNTI_1 = 0x%x\n", rar->TCRNTI_1);
   LOG_I(NR_MAC, "rar->TCRNTI_2 = 0x%x\n", rar->TCRNTI_2);
 #endif
