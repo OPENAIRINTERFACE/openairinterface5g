@@ -720,7 +720,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt++;
         UE_info->mac_stats[UE_id].ulsch_DTX++;
       }
-      if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
+      if (!get_softmodem_params()->phy_test && UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
          LOG_W(NR_MAC,"Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
                UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt);
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
@@ -1010,6 +1010,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
+                                 1, // layers
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.num_dmrs_symb,
                                  retInfo->tb_size,
@@ -1355,6 +1356,7 @@ void pf_ul(module_id_t module_id,
     uint32_t TBS = 0;
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
+                  1, // layers
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->num_dmrs_symb,
                   B,
