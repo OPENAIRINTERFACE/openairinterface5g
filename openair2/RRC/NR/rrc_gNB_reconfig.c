@@ -432,9 +432,7 @@ void fill_default_nsa_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
   pucch_Config->resourceToReleaseList = NULL;
   NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
-  NR_PUCCH_Resource_t *pucchres1=calloc(1,sizeof(*pucchres1));
   NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
-  NR_PUCCH_Resource_t *pucchres3=calloc(1,sizeof(*pucchres3));
 
   int curr_bwp = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
