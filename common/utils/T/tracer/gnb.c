@@ -4,15 +4,28 @@
 #include <pthread.h>
 #include <unistd.h>
 #include "database.h"
+#include "event.h"
 #include "handler.h"
 #include "config.h"
 #include "logger/logger.h"
-#include "view/view.h"
 #include "gui/gui.h"
+#include "utils.h"
+#include "openair_logo.h"
+
+int ue_id[65536];
+int next_ue_id;
 
 typedef struct {
   widget *pucch_pusch_iq_plot;
+  widget *ul_freq_estimate_ue_xy_plot;
+  widget *ul_time_estimate_ue_xy_plot;
+  widget *current_ue_label;
+  widget *current_ue_button;
+  widget *prev_ue_button;
+  widget *next_ue_button;
   logger *pucch_pusch_iq_logger;
+  logger *ul_freq_estimate_ue_logger;
+  logger *ul_time_estimate_ue_logger;
 } gnb_gui;
 
 typedef struct {
@@ -21,6 +34,7 @@ typedef struct {
   int nevents;
   pthread_mutex_t lock;
   gnb_gui *e;
+  int ue;                /* what UE is displayed in the UE specific views */
   void *database;
 } gnb_data;
 
@@ -69,34 +83,133 @@ static void *gui_thread(void *_g)
   return NULL;
 }
 
-static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database,
-    gnb_data *ed)
+static void set_current_ue(gui *g, gnb_data *e, int ue)
+{
+  char s[256];
+
+  sprintf(s, "[UE %d]  ", ue);
+  label_set_text(g, e->e->current_ue_label, s);
+
+  sprintf(s, "GNB_PHY_PUCCH_PUSCH_IQ [UE %d]", ue);
+  xy_plot_set_title(g, e->e->pucch_pusch_iq_plot, s);
+
+  sprintf(s, "UL channel estimation in frequency domain [UE %d]", ue);
+  xy_plot_set_title(g, e->e->ul_freq_estimate_ue_xy_plot, s);
+
+  sprintf(s, "UL channel estimation in time domain [UE %d]", ue);
+  xy_plot_set_title(g, e->e->ul_time_estimate_ue_xy_plot, s);
+}
+
+void reset_ue_ids(void)
+{
+  int i;
+  printf("resetting known UEs\n");
+  for (i = 0; i < 65536; i++) ue_id[i] = -1;
+  ue_id[65535] = 0;
+  ue_id[65534] = 1;     /* HACK: to be removed */
+  ue_id[2]     = 2;     /* this supposes RA RNTI = 2, very openair specific */
+  next_ue_id = 0;
+}
+
+static void click(void *private, gui *g, char *notification, widget *w, void *notification_data)
+{
+  int *d = notification_data;
+  int button = d[0];
+  gnb_data *ed = private;
+  gnb_gui *e = ed->e;
+  int ue = ed->ue;
+  int do_reset = 0;
+
+  if (button != 1) return;
+  if (w == e->prev_ue_button) { ue--; if (ue < 0) ue = 0; }
+  if (w == e->next_ue_button) ue++;
+  if (w == e->current_ue_button) do_reset = 1;
+
+  if (pthread_mutex_lock(&ed->lock)) abort();
+  if (do_reset) reset_ue_ids();
+  if (ue != ed->ue) {
+    set_current_ue(g, ed, ue);
+    ed->ue = ue;
+  }
+  if (pthread_mutex_unlock(&ed->lock)) abort();
+}
+
+static void gnb_main_gui(gnb_gui *e, gui *g, event_handler *h, void *database, gnb_data *ed)
 {
   widget *main_window;
   widget *top_container;
   widget *line;
+  widget *col;
+  widget *logo;
   widget *w;
+  widget *w2;
   logger *l;
   view *v;
 
-  main_window = new_toplevel_window(g, 500, 300, "gNB tracer");
-
+  main_window = new_toplevel_window(g, 1500, 230, "gNB tracer");
   top_container = new_container(g, VERTICAL);
   widget_add_child(g, main_window, top_container, -1);
 
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
+  logo = new_image(g, openair_logo_png, openair_logo_png_len);
+
+  /* logo + prev/next UE buttons */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, col, logo, -1);
+  w = new_container(g, HORIZONTAL);
+  widget_add_child(g, col, w, -1);
+  w2 = new_label(g, "");
+  widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->current_ue_button = w2;
+  e->current_ue_label = w2;
+  w2 = new_label(g, "  [prev UE]  ");
+  widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->prev_ue_button = w2;
+  w2 = new_label(g, "  [next UE]  ");
+  widget_add_child(g, w, w2, -1);
+  label_set_clickable(g, w2, 1);
+  e->next_ue_button = w2;
+  widget_add_child(g, line, col, -1);
 
   /* PUCCH/PUSCH IQ data */
-  w = new_xy_plot(g, 55, 55, "", 50);
+  w = new_xy_plot(g, 200, 200, "", 10);
   e->pucch_pusch_iq_plot = w;
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, -1000, 1000, -1000, 1000);
-  xy_plot_set_title(g, w, "rxdataF");
   l = new_iqlog_full(h, database, "GNB_PHY_PUCCH_PUSCH_IQ", "rxdataF");
   v = new_view_xy(300*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
   logger_add_view(l, v);
   e->pucch_pusch_iq_logger = l;
+
+  /* UL channel estimation in frequency domain */
+  w = new_xy_plot(g, 490, 200, "", 50);
+  e->ul_freq_estimate_ue_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, 0, 2048, -10, 80);
+  l = new_framelog(h, database, "GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE", "subframe", "chest_t");
+  framelog_set_update_only_at_sf9(l, 0);
+  v = new_view_xy(2048, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
+  logger_add_view(l, v);
+  e->ul_freq_estimate_ue_logger = l;
+
+  /* UL channel estimation in time domain */
+  w = new_xy_plot(g, 490, 200, "", 50);
+  e->ul_time_estimate_ue_xy_plot = w;
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, 0, 2048, -10, 80);
+  l = new_framelog(h, database, "GNB_PHY_UL_TIME_CHANNEL_ESTIMATE", "subframe", "chest_t");
+  framelog_set_update_only_at_sf9(l, 0);
+  v = new_view_xy(2048, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
+  logger_add_view(l, v);
+  e->ul_time_estimate_ue_logger = l;
+
+  set_current_ue(g, ed, ed->ue);
+  register_notifier(g, "click", e->current_ue_button, click, ed);
+  register_notifier(g, "click", e->prev_ue_button, click, ed);
+  register_notifier(g, "click", e->next_ue_button, click, ed);
 }
 
 int main(int n, char **v)
@@ -136,7 +249,11 @@ int main(int n, char **v)
   h = new_handler(database);
 
   on_off(database, "GNB_PHY_PUCCH_PUSCH_IQ", is_on, 1);
+  on_off(database, "GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE", is_on, 1);
+  on_off(database, "GNB_PHY_UL_TIME_CHANNEL_ESTIMATE", is_on, 1);
 
+  gnb_data.ue = 0;
+  gnb_data.e = &eg;
   gnb_data.database = database;
   gnb_data.socket = -1;
   gnb_data.is_on = is_on;

@@ -720,7 +720,7 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0, 0, 0, 0);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
@@ -731,9 +731,9 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, 6, scc, &rrc.carrier.mib,0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, 6, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;

@@ -187,6 +187,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 			   rrc->carrier.pdsch_AntennaPorts,
 			   rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           rrc->carrier.minRXTXTIME,
 			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
 			   &rrc->carrier.mib,
 			   0,
@@ -239,6 +240,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->carrier.minRXTXTIME = configuration->minRXTXTIME;
   rrc->carrier.sib1_tda = configuration->sib1_tda;
   rrc->carrier.do_CSIRS = configuration->do_CSIRS;
+  rrc->carrier.do_SRS = configuration->do_SRS;
   nr_rrc_config_ul_tda(configuration->scc,configuration->minRXTXTIME);
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
@@ -299,6 +301,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
 			     rrc->carrier.pdsch_AntennaPorts,
 			     rrc->carrier.pusch_AntennaPorts,
 			     rrc->carrier.sib1_tda,
+                             rrc->carrier.minRXTXTIME,
 			     NULL,
                              NULL,
 			     0,
@@ -492,6 +495,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->carrier.pdsch_AntennaPorts,
                          rrc_instance_p->carrier.pusch_AntennaPorts,
                          rrc_instance_p->carrier.sib1_tda,
+                         rrc_instance_p->carrier.minRXTXTIME,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
                          &rrc_instance_p->carrier.mib,
                          0,
@@ -1257,6 +1261,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           rrc->carrier.minRXTXTIME,
                            NULL,
                            NULL,
                            0,

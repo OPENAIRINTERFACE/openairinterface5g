@@ -119,7 +119,7 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint16_t N_RB_UL, uint
     a_segments = a_segments/273 +1;
   }
 
-  uint16_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+  uint32_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
   ulsch = (NR_gNB_ULSCH_t *)malloc16_clear(sizeof(NR_gNB_ULSCH_t));
   
   ulsch->max_ldpc_iterations = max_ldpc_iterations;
@@ -480,7 +480,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   A   = (harq_process->TBS)<<3;
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d, Coderate %d\n",harq_pid,A,G, mcs, n_layers, nb_rb, Qm, n_layers, R);
+  LOG_D(NR_PHY, "ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d, Coderate %d\n", harq_pid, A, G, mcs, n_layers, nb_rb, Qm, n_layers, R);
 
   if (R<1024)
     Coderate = (float) R /(float) 1024;

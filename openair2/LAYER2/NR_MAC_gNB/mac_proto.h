@@ -50,10 +50,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
+                           int minRXTXTIMEpdsch,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
-		                       int add_ue,
-			                     uint32_t rnti,
+                           int add_ue,
+                           uint32_t rnti,
                            NR_CellGroupConfig_t *CellGroup);
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
@@ -189,6 +190,8 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
 void nr_schedule_pucch(int Mod_idP,
                        frame_t frameP,
                        sub_frame_t slotP);
+
+void nr_schedule_srs(int module_id, frame_t frame);
 
 void nr_csirs_scheduling(int Mod_idP,
                          frame_t frame,
