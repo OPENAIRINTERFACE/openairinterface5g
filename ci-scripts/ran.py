@@ -676,13 +676,13 @@ class RANManagement():
 		# if T tracer was run with option 0 (no logs), analyze logs
 		# from textlog, otherwise do normal analysis (e.g., option 2)
 		result = re.search('T_stdout 0', str(self.Initialize_eNB_args))
+		enbLogFile = self.eNBLogFiles[int(self.eNB_instance)]
+		raw_record_file = enbLogFile.replace('.log', '_record.raw')
+		replay_log_file = enbLogFile.replace('.log', '_replay.log')
 		if (result is not None):
 			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			mySSH.command('cd ' + lSourcePath + '/common/utils/T/tracer/', '\$', 5)
-			enbLogFile = self.eNBLogFiles[int(self.eNB_instance)]
-			raw_record_file = enbLogFile.replace('.log', '_record.raw')
-			replay_log_file = enbLogFile.replace('.log', '_replay.log')
 			extracted_txt_file = enbLogFile.replace('.log', '_extracted_messages.txt')
 			extracted_log_file = enbLogFile.replace('.log', '_extracted_messages.log')
 			mySSH.command('./extract_config -i ' + lSourcePath + '/cmake_targets/' + raw_record_file + ' > ' + lSourcePath + '/cmake_targets/' + extracted_txt_file, '\$', 5)
@@ -705,6 +705,8 @@ class RANManagement():
 				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*stats.log', '.')
 				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*.pickle', '.')
 				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/*.png', '.')
+				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/'+raw_record_file, '.')
+				mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/'+replay_log_file, '.')
 				#
 				copyin_res = mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + fileToAnalyze, '.')
 				if (copyin_res == -1):
@@ -720,7 +722,9 @@ class RANManagement():
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrL1_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './nrMAC_stats.log', self.eNBSourceCodePath + '/cmake_targets/')
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.pickle', self.eNBSourceCodePath + '/cmake_targets/')
-					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.png', self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './gnb_stats_monitor.png', self.eNBSourceCodePath + '/cmake_targets/')#RH 21/02/2002 this does not work, there are more than 1 png file
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword,'./'+raw_record_file, self.eNBSourceCodePath + '/cmake_targets/')
+					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword,'./'+replay_log_file, self.eNBSourceCodePath + '/cmake_targets/')
 					#
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
