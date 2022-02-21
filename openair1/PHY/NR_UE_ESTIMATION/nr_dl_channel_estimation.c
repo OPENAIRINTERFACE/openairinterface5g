@@ -35,7 +35,7 @@
 //#define DEBUG_PDSCH
 //#define DEBUG_PDCCH
 //#define DEBUG_CH
-//#define DEBUG_PRS_CHEST
+#define DEBUG_PRS_CHEST
 extern short nr_qpsk_mod_table[8];
 
 int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
@@ -82,7 +82,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
     }
    
     //re_offset
-    k = re_offset = (prs_cfg->REOffset+k_prime) % prs_cfg->CombSize + frame_params->first_carrier_offset;
+    k = re_offset = (prs_cfg->REOffset+k_prime) % prs_cfg->CombSize + prs_cfg->RBOffset*12 + frame_params->first_carrier_offset;
   
 #ifdef DEBUG_PRS_CHEST 
     printf("PRS config l %d k_prime %d, re_offset %d k %d :\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", l, k_prime, re_offset, k, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);

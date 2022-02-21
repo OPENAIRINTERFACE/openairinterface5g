@@ -47,7 +47,7 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
       k_prime = k_prime_table[3][symInd];
     }
     
-    k = (prs_data->REOffset+k_prime) % prs_data->CombSize + frame_parms->first_carrier_offset ;
+    k = (prs_data->REOffset+k_prime) % prs_data->CombSize + prs_data->RBOffset*12 + frame_parms->first_carrier_offset;
     
     // QPSK modulation
     for (int m = 0; m < (12/prs_data->CombSize) * prs_data->NumRB; m++) {
