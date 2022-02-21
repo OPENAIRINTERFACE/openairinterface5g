@@ -552,19 +552,17 @@ int main(int argc, char **argv)
 
       if (n_trials==1) printf("txlev %d (%f dB), offset %d, sigma2 %f ( %f dB)\n",txlev,10*log10(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size,sigma2,sigma2_dB);
 
-      int i0;
-      double txr,txi,rxr,rxi,nr,ni;
-      int **rxdataF = gNB->common_vars.rxdataF;
+      struct complex16 **rxdataF =  (struct complex16 **)gNB->common_vars.rxdataF;
       for (int symb=0; symb<gNB->frame_parms.symbols_per_slot;symb++) {
         if (symb<startingSymbolIndex || symb >= startingSymbolIndex+nrofSymbols) {
-          i0 = symb*gNB->frame_parms.ofdm_symbol_size;
+          int i0 = symb*gNB->frame_parms.ofdm_symbol_size;
           for (int re=0;re<N_RB_DL*12;re++) {
             i=i0+((gNB->frame_parms.first_carrier_offset + re)%gNB->frame_parms.ofdm_symbol_size);
             for (int aarx=0;aarx<n_rx;aarx++) {
-              nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
-              ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
-              ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*(nr)/sqrt((double)txlev));
-              ((int16_t*)rxdataF[aarx])[1+(i<<1)] = (int16_t)(100.0*(ni)/sqrt((double)txlev));
+              double nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
+              double ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
+              rxdataF[aarx][i].r = (int16_t)(100.0*(nr)/sqrt((double)txlev));
+              rxdataF[aarx][i].i = (int16_t)(100.0*(ni)/sqrt((double)txlev));
             }
           }
         }
@@ -572,43 +570,45 @@ int main(int argc, char **argv)
 
       random_channel(UE2gNB,0);
       freq_channel(UE2gNB,N_RB_DL,2*N_RB_DL+1,scs/1000);
-      struct complexd phasor;
-      double rxr_tmp;
       for (int symb=0; symb<nrofSymbols; symb++) {
-        i0 = (startingSymbolIndex + symb)*gNB->frame_parms.ofdm_symbol_size;
+        int i0 = (startingSymbolIndex + symb)*gNB->frame_parms.ofdm_symbol_size;
         for (int re=0;re<N_RB_DL*12;re++) {
           i=i0+((gNB->frame_parms.first_carrier_offset + re)%gNB->frame_parms.ofdm_symbol_size);
-          phasor.r = cos(2*M_PI*phase*re);
+          struct complexd phasor;
+	  phasor.r = cos(2*M_PI*phase*re);
           phasor.i = sin(2*M_PI*phase*re);
           for (int aarx=0;aarx<n_rx;aarx++) {
-            txr = (double)(((int16_t *)txdataF[0])[(i<<1)]);
-            txi = (double)(((int16_t *)txdataF[0])[1+(i<<1)]);
-            rxr = txr*UE2gNB->chF[aarx][re].r - txi*UE2gNB->chF[aarx][re].i;
-            rxi = txr*UE2gNB->chF[aarx][re].i + txi*UE2gNB->chF[aarx][re].r;
-            rxr_tmp = rxr*phasor.r - rxi*phasor.i;
+            double txr = (double)(((int16_t *)txdataF[0])[(i<<1)]);
+            double txi = (double)(((int16_t *)txdataF[0])[1+(i<<1)]);
+	    double rxr={0},rxi={0};
+	    for (int l = 0; l<UE2gNB->channel_length; l++) {
+	      rxr = txr*UE2gNB->chF[aarx][l].r - txi*UE2gNB->chF[aarx][l].i;
+	      rxi = txr*UE2gNB->chF[aarx][l].i + txi*UE2gNB->chF[aarx][l].r;
+	    }
+	    double rxr_tmp = rxr*phasor.r - rxi*phasor.i;
             rxi     = rxr*phasor.i + rxi*phasor.r;
             rxr = rxr_tmp;
-            nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
-            ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
-            ((int16_t*)rxdataF[aarx])[i<<1] = (int16_t)(100.0*(rxr + nr)/sqrt((double)txlev));
-            ((int16_t*)rxdataF[aarx])[1+(i<<1)]=(int16_t)(100.0*(rxi + ni)/sqrt((double)txlev));
+            double nr = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
+            double ni = sqrt(sigma2/2)*gaussdouble(0.0,1.0);
+            rxdataF[aarx][i].r = (int16_t)(100.0*(rxr + nr)/sqrt((double)txlev));
+            rxdataF[aarx][i].i=(int16_t)(100.0*(rxi + ni)/sqrt((double)txlev));
 
             if (n_trials==1 && abs(txr) > 0) printf("symb %d, re %d , aarx %d : txr %f, txi %f, chr %f, chi %f, nr %f, ni %f, rxr %f, rxi %f => %d,%d\n",
                                                     symb, re, aarx, txr,txi,
                                                     UE2gNB->chF[aarx][re].r,UE2gNB->chF[aarx][re].i,
                                                     nr,ni, rxr,rxi,
-                                                    ((int16_t*)rxdataF[aarx])[i<<1],((int16_t*)rxdataF[aarx])[1+(i<<1)]);
+                                                    rxdataF[aarx][i].r,rxdataF[aarx][i].i);
           }
         }
       }
 
       int rxlev=0;
-      for (int aarx=0;aarx<n_rx;aarx++) rxlev += signal_energy(&rxdataF[aarx][startingSymbolIndex*frame_parms->ofdm_symbol_size],
+      for (int aarx=0;aarx<n_rx;aarx++) rxlev += signal_energy((int32_t*)&rxdataF[aarx][startingSymbolIndex*frame_parms->ofdm_symbol_size],
                                                            frame_parms->ofdm_symbol_size);
 
       int rxlev_pucch=0;
 
-      for (int aarx=0;aarx<n_rx;aarx++) rxlev_pucch += signal_energy(&rxdataF[aarx][startingSymbolIndex*frame_parms->ofdm_symbol_size],
+      for (int aarx=0;aarx<n_rx;aarx++) rxlev_pucch += signal_energy((int32_t*)&rxdataF[aarx][startingSymbolIndex*frame_parms->ofdm_symbol_size],
                                                            12);
 
       // set UL mask for pucch allocation
@@ -672,7 +672,7 @@ int main(int argc, char **argv)
         free(uci_pdu.harq);
       }
       else if (format==1) {
-        nr_decode_pucch1(rxdataF,PUCCH_GroupHopping,hopping_id,
+        nr_decode_pucch1((int32_t **)rxdataF,PUCCH_GroupHopping,hopping_id,
                          &(payload_received),frame_parms,amp,nr_slot_tx,
                          m0,nrofSymbols,startingSymbolIndex,startingPRB,
                          startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
@@ -728,7 +728,8 @@ int main(int argc, char **argv)
       break;
     }
   }
-
+  if (gNB->uci_polarParams)
+     nr_polar_delete(gNB->uci_polarParams);
   free_channel_desc_scm(UE2gNB);
   term_freq_channel();
 

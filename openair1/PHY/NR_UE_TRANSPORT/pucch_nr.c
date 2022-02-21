@@ -850,7 +850,7 @@ static inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_
   printf("\t\t [nr_pucch2_3_4_scrambling] scrambling M_bit=%d bits\n", M_bit);
 #endif
 }
-void nr_uci_encoding(uint64_t payload,
+static void nr_uci_encoding(uint64_t payload,
                      uint8_t nr_bit,
                      int fmt,
                      uint8_t is_pi_over_2_bpsk_enabled,
