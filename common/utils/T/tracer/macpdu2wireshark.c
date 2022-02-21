@@ -362,16 +362,6 @@ void nr_dl_retx(void *_d, event e)
            e.e[d->nr_dl_retx_data].bsize, NO_PREAMBLE);
 }
 
-void nr_dl_retx(void *_d, event e)
-{
-  ev_data *d = _d;
-
-  trace_nr(d, NR_DIRECTION_DOWNLINK, NR_C_RNTI, e.e[d->nr_dl_retx_rnti].i,
-           e.e[d->nr_dl_retx_frame].i, e.e[d->nr_dl_retx_slot].i,
-           e.e[d->nr_dl_retx_data].b, e.e[d->nr_dl_retx_data].bsize,
-           NO_PREAMBLE);
-}
-
 void nr_mib(void *_d, event e)
 {
   ev_data *d = _d;
@@ -577,20 +567,6 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
   if (d->nr_dl_retx_rnti == -1 || d->nr_dl_retx_frame == -1 ||
       d->nr_dl_retx_slot == -1 || d->nr_dl_retx_harq_pid == -1 ||
       d->nr_dl_retx_data == -1)
-    goto error;
-
-  /* NR dl retx: rnti, frame, slot, data */
-  f = get_format(database, nr_dl_retx_id);
-
-  for (i = 0; i < f.count; i++) {
-    G("rnti",  "int",    d->nr_dl_retx_rnti);
-    G("frame", "int",    d->nr_dl_retx_frame);
-    G("slot",  "int",    d->nr_dl_retx_slot);
-    G("data",  "buffer", d->nr_dl_retx_data);
-  }
-
-  if (d->nr_dl_retx_rnti == -1 || d->nr_dl_retx_frame == -1 ||
-      d->nr_dl_retx_slot == -1 || d->nr_dl_retx_data == -1)
     goto error;
 
   /* NR MIB: frame, slot, data */

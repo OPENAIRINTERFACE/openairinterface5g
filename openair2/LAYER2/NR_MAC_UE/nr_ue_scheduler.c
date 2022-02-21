@@ -166,12 +166,14 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
   int mu = mac->ULbwp[0] ?
     mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing :
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
-  NR_TDD_UL_DL_Pattern_t *tdd_pattern = &tdd_config->pattern1;
-  const int num_slots_per_tdd = nr_slots_per_frame[mu] >> (7 - tdd_pattern->dl_UL_TransmissionPeriodicity);
-  const int num_slots_ul = tdd_pattern->nrofUplinkSlots + (tdd_pattern->nrofUplinkSymbols!=0);
+  const int n = nr_slots_per_frame[mu];
+  const int num_slots_per_tdd = tdd_config ? (n >> (7 - tdd_config->pattern1.dl_UL_TransmissionPeriodicity)) : n;
+  const int num_slots_ul = tdd_config ? (tdd_config->pattern1.nrofUplinkSlots + (tdd_config->pattern1.nrofUplinkSymbols != 0)) : n;
   int index = slot % num_slots_ul;
 
-  LOG_D(NR_MAC, "In %s slots per tdd %d, num_slots_ul %d, index %d\n", __FUNCTION__,
+  LOG_D(NR_MAC, "In %s slots per %s: %d, num_slots_ul %d, index %d\n",
+                __FUNCTION__,
+                tdd_config ? "TDD" : "FDD",
                 num_slots_per_tdd,
                 num_slots_ul,
                 index);
@@ -632,7 +634,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->nr_of_symbols = NrOfSymbols;
 
     l_prime_mask = get_l_prime(NrOfSymbols, mappingtype, add_pos, dmrslength, StartSymbolIndex, mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    LOG_D(MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d , DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, mappingtype, l_prime_mask);
+    LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, mappingtype, l_prime_mask);
 
     #ifdef DEBUG_MSG3
     LOG_D(NR_MAC, "In %s BWP assignment (BWP (start %d, size %d) \n", __FUNCTION__, pusch_config_pdu->bwp_start, pusch_config_pdu->bwp_size);
@@ -1571,7 +1573,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 
     // Calculate TX slot and frame
     *slot_tx = (current_slot + k2) % nr_slots_per_frame[mu];
-    *frame_tx = ((current_slot + k2) > nr_slots_per_frame[mu]) ? (current_frame + 1) % 1024 : current_frame;
+    *frame_tx = ((current_slot + k2) > (nr_slots_per_frame[mu]-1)) ? (current_frame + 1) % 1024 : current_frame;
 
   }
 
@@ -2260,8 +2262,7 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   }
 
   // CSI
-  if (mac->ra.ra_state == RA_SUCCEEDED ||
-      get_softmodem_params()->phy_test == 1)
+  if (mac->ra.ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test == 1)
     O_CSI = nr_get_csi_measurements(mac, frameP, slotP, pucch);
 
   // ACKNACK
