@@ -982,10 +982,24 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     }
   } else if (mu == NR_MU_3) {
     switch(N_RB) {
-      case 66:
+      case 132:
         if (fp->threequarter_fs) {
           cfg->sample_rate=184.32e6;
           cfg->samples_per_frame = 1843200;
+          cfg->tx_bw = 200e6;
+          cfg->rx_bw = 200e6;
+        } else {
+          cfg->sample_rate = 245.76e6;
+          cfg->samples_per_frame = 2457600;
+          cfg->tx_bw = 200e6;
+          cfg->rx_bw = 200e6;
+        }
+
+        break;
+      case 66:
+        if (fp->threequarter_fs) {
+          cfg->sample_rate=92.16e6;
+          cfg->samples_per_frame = 921600;
           cfg->tx_bw = 100e6;
           cfg->rx_bw = 100e6;
         } else {
@@ -999,8 +1013,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
 
       case 32:
         if (fp->threequarter_fs) {
-          cfg->sample_rate=92.16e6;
-          cfg->samples_per_frame = 921600;
+          cfg->sample_rate=46.08e6;
+          cfg->samples_per_frame = 460800;
           cfg->tx_bw = 50e6;
           cfg->rx_bw = 50e6;
         } else {

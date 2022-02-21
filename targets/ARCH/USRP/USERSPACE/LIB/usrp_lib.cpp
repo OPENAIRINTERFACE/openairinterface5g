@@ -1109,6 +1109,12 @@ extern "C" {
     LOG_I(HW,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
     switch ((int)openair0_cfg[0].sample_rate) {
+      case 184320000:
+        // from usrp_time_offset
+        //openair0_cfg[0].samples_per_packet    = 2048;
+        openair0_cfg[0].tx_sample_advance     = 15; //to be checked
+        break;
+
       case 122880000:
         // from usrp_time_offset
         //openair0_cfg[0].samples_per_packet    = 2048;
