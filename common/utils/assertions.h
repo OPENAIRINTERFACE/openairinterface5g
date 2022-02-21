@@ -35,7 +35,7 @@
     char tmp [1000];							\
     sprintf(tmp,"gdb -ex='set confirm off' -ex 'thread apply all bt' -ex q -p %d > /tmp/full_stacks.%d < /dev/null", \
 	    getpid(), getpid());					\
-    system(tmp);							\
+    __attribute__((unused)) int dummy=system(tmp);						\
   }									\
   fprintf(stderr, "\nExiting execution\n");				\
   fflush(stdout);							\
