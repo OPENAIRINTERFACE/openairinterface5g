@@ -718,6 +718,7 @@ typedef struct gNB_MAC_INST_s {
   int                             ssb_SubcarrierOffset;
   /// SIB1 Time domain allocation
   int                             sib1_tda;
+  int                             minRXTXTIMEpdsch;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)

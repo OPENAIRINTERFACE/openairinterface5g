@@ -2346,12 +2346,12 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
     }
     AssertFatal(found==1,"Couldn't find a ue specific searchspace\n");
 
-
     if (ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0) {
       for (int i=0; i<8; i++) {
         pdsch_to_harq_feedback[i] = i+1;
         if(pdsch_to_harq_feedback[i]>*max_fb_time)
           *max_fb_time = pdsch_to_harq_feedback[i];
+
       }
     }
     else {

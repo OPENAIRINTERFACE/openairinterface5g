@@ -1725,9 +1725,11 @@ int get_nr_prach_info_from_index(uint8_t index,
         subframe = slot >> mu;
         s_map = table_6_3_3_2_2_prachConfig_Index[index][4];
         if ( (s_map>>subframe)&0x01 ) {
+          *N_RA_slot = table_6_3_3_2_2_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
           if (mu == 1) {
-            if ( (table_6_3_3_2_2_prachConfig_Index[index][6] <= 1) && (slot%2 == 0) )
+            if ((*N_RA_slot <= 1) && (slot % 2 == 0)){
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe
+            }
           }
           for(int i = 0; i <= subframe ; i++) {
             if ( (s_map >> i) & 0x01) {
@@ -1736,6 +1738,7 @@ int get_nr_prach_info_from_index(uint8_t index,
           }
           if (start_symbol != NULL && N_t_slot != NULL && N_dur != NULL && format != NULL){
             *start_symbol = table_6_3_3_2_2_prachConfig_Index[index][5];
+            *config_period = x;
             *N_t_slot = table_6_3_3_2_2_prachConfig_Index[index][7];
             *N_dur = table_6_3_3_2_2_prachConfig_Index[index][8];
             if (table_6_3_3_2_2_prachConfig_Index[index][1] != -1)
@@ -2396,7 +2399,14 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
   uint8_t row, colomn;
   int32_t l_prime;
 
-  LOG_D(NR_MAC, "PUSCH: NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", duration_in_symbols, start_symbol, mapping_type, dmrs_typeA_position);
+  LOG_D(NR_MAC, "In %s: PUSCH NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d additional_pos:%d, pusch_maxLength:%d\n",
+    __FUNCTION__,
+    duration_in_symbols,
+    start_symbol,
+    mapping_type,
+    dmrs_typeA_position,
+    additional_pos,
+    pusch_maxLength);
 
   // Section 6.4.1.1.3 in Spec 38.211
   // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PUSCH resources
@@ -4163,4 +4173,3 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
   }
   return valid;
 }
-
