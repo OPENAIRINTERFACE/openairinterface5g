@@ -718,9 +718,9 @@ int main(int argc, char *argv[])
     		(double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),
     		sqrt((double)time_decoder->diff_square/time_decoder->trials/pow(1000,2)/pow(get_cpu_freq_GHz(),2)-pow((double)time_decoder->diff/time_decoder->trials/1000.0/get_cpu_freq_GHz(),2)),
     		(double)time_decoder->max/1000.0/get_cpu_freq_GHz(),
-    		dec_iter.n_iter_mean[i],
-    		dec_iter.n_iter_std[i],
-    		dec_iter.n_iter_max[i]
+        dec_iter.n_iter_mean[i],
+        dec_iter.n_iter_std[i],
+        dec_iter.n_iter_max[i]
     		);
 
     i=i+1;
