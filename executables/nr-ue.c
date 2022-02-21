@@ -886,26 +886,13 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
-
-  // compute TO compensation that should be applied for this frame
-  if ( UE->rx_offset < UE->frame_parms.samples_per_frame/2  &&
-       UE->rx_offset > 0 ) {
-    LOG_I(PHY,"!!!adjusting -1 samples!!! rx_offset == %d\n", UE->rx_offset);
-    UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
-    UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
-    return -1 ;
+  int samples_shift = -(UE->rx_offset>>1);
+  UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
+  UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
+  if (samples_shift != 0) {
+    LOG_I(NR_PHY,"Adjusting frame in time by %i samples\n", samples_shift);
   }
-
-  if ( UE->rx_offset > UE->frame_parms.samples_per_frame/2 &&
-       UE->rx_offset < UE->frame_parms.samples_per_frame ) {
-    int rx_offset = UE->rx_offset - UE->frame_parms.samples_per_frame;
-    LOG_I(PHY,"!!!adjusting +1 samples!!! rx_offset == %d\n", rx_offset);
-    UE->rx_offset   = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
-    UE->max_pos_fil = 0; // reset IIR filter when sample shift is applied
-    return 1;
-  }
-
-  return 0;
+  return samples_shift;
 }
 
 static inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
