@@ -122,23 +122,20 @@ int16_t *base_sequence_less_than_36(unsigned int M_ZC,
 *********************************************************************/
 
 int16_t get_index_for_dmrs_lowpapr_seq(int16_t num_dmrs_res) {
-  
-  int16_t index = -1;
- 
-  if (num_dmrs_res >= dmrs_ul_allocated_res[(MAX_INDEX_DMRS_UL_ALLOCATED_REs-1)]) 
+
+  int16_t index = num_dmrs_res/6 - 1;
+
+  if (index >= MAX_INDEX_DMRS_UL_ALLOCATED_REs)
     index = MAX_INDEX_DMRS_UL_ALLOCATED_REs-1;
-  else 
-    index = (num_dmrs_res/6) -1;
 
   for (;index >= 0; index--) {
     if (dmrs_ul_allocated_res[index] == num_dmrs_res)
       break;
-
   }
 
-  LOG_D(PHY, "num_dmrs_res: %d    INDEX RETURNED:  %d", num_dmrs_res, index);  
-  return index;  
+  LOG_D(PHY, "num_dmrs_res: %d    INDEX RETURNED:  %d", num_dmrs_res, index);
 
+  return index;
 }
 
 /*******************************************************************
