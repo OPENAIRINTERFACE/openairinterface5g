@@ -344,10 +344,6 @@ struct NR_DL_FRAME_PARMS {
   uint8_t numerology_index;
   /// Number of Physical transmit antennas in node (corresponds to nrOfAntennaPorts)
   uint8_t nb_antennas_tx;
-  /// UPA Panel Antenna configuration: two_one, two_two, four_one, three_two, six_one, etc
-  uint8_t antennas_tx_n1_n2;
-  /// UPA Panel Antenna Type: non, Single panel, or multiple
-  uint8_t antennas_tx_panel_type;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
   /// Number of common transmit antenna ports in eNodeB (1 or 2)
