@@ -74,6 +74,7 @@ int l1_north_init_gNB() {
 int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
   if(gNB->frame_parms.nb_antennas_tx>1){
+    int CSI_RS_antenna_ports = gNB->frame_parms.nb_antennas_tx;
     //NR Codebook Generation for codebook type1 SinglePanel
     int N1 = gNB->ap_N1;
     int N2 = gNB->ap_N2;
@@ -87,8 +88,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
     //Get the uniform planar array parameters
     // To be confirmed
     int O2 = N2 > 1? 4 : 1; //Vertical beam oversampling (1 or 4)
-    int O1 = 4; //Horizontal beam oversampling (1 or 4)
-    int CSI_RS_antenna_ports = gNB->frame_parms.nb_antennas_tx;
+    int O1 = CSI_RS_antenna_ports > 2? 4 : 1; //Horizontal beam oversampling (1 or 4)
     AssertFatal(CSI_RS_antenna_ports == N1*N2*x_polarization,
                 "Nb of antenna ports at PHY %d does not correspond to what passed down with fapi %d\n",
                  N1*N2*x_polarization, CSI_RS_antenna_ports);
