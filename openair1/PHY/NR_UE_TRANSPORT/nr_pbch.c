@@ -601,7 +601,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
 
   nr_downlink_indication_t dl_indication;
-  //Fixme: on the heap to please the mandatory free in nr_ue_ul_indication()
   fapi_nr_rx_indication_t *rx_ind=calloc(sizeof(*rx_ind),1);
   uint16_t number_pdus = 1;
 
@@ -610,6 +609,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);
+  else
+    free(rx_ind); // dl_indication would free(), so free() here if not called
 
   return 0;
 }
