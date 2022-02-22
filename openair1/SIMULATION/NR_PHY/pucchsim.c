@@ -465,7 +465,6 @@ int main(int argc, char **argv)
       mcs=table2_mcs[actual_payload+shift];
     else AssertFatal(1==0,"Either nr_bit %d or sr_flag %d must be non-zero\n", nr_bit, sr_flag);
   }
-  else if (format == 2 && nr_bit > 11) gNB->uci_polarParams = nr_polar_params(2, nr_bit, nrofPRB, 1, NULL);
 
   startingPRB_intraSlotHopping = N_RB_DL-1;
   uint32_t hopping_id = Nid_cell;
@@ -728,8 +727,6 @@ int main(int argc, char **argv)
       break;
     }
   }
-  if (gNB->uci_polarParams)
-     nr_polar_delete(gNB->uci_polarParams);
   free_channel_desc_scm(UE2gNB);
   term_freq_channel();
 

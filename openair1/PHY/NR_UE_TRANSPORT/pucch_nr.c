@@ -946,12 +946,10 @@ static void nr_uci_encoding(uint64_t payload,
     AssertFatal(nrofPRB<=16,"Number of PRB >16\n");
   } else if (A>=12) {
     AssertFatal(A<65,"Polar encoding not supported yet for UCI with more than 64 bits\n");
-    t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_UCI_PUCCH_MESSAGE_TYPE, 
-						   A, 
-						   nrofPRB,
-						   1,
-						   NULL);
-    polar_encoder_fast(&payload, b, 0,0,currentPtr);
+    polar_encoder_fast(&payload, b, 0,0,
+                       NR_POLAR_UCI_PUCCH_MESSAGE_TYPE, 
+                       A, 
+                       nrofPRB);
   }
   
 }

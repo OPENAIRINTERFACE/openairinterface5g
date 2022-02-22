@@ -533,9 +533,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
   //polar decoding de-rate matching
-  t_nrPolar_params *currentPtr = nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,1,&ue->polarList);
-  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&nr_ue_pbch_vars->pbch_a_prime,0,currentPtr);
-  nr_polar_delete(currentPtr);
+  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&nr_ue_pbch_vars->pbch_a_prime,0,
+                                     NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
 
   if(decoderState) return(decoderState);
 
@@ -602,12 +601,12 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
 
   nr_downlink_indication_t dl_indication;
-  fapi_nr_rx_indication_t rx_ind;
-  memset(&rx_ind, 0, sizeof(rx_ind));
+  //Fixme: on the heap to please the mandatory free in nr_ue_ul_indication()
+  fapi_nr_rx_indication_t *rx_ind=calloc(sizeof(*rx_ind),1);
   uint16_t number_pdus = 1;
 
-  nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, gNB_id);
-  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, NULL, number_pdus, proc);
+  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+  nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, NULL, number_pdus, proc);
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);

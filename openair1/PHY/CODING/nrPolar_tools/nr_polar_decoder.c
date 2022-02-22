@@ -58,9 +58,13 @@ static inline void updateCrcChecksum2(int xlen,
 
 int8_t polar_decoder(double *input,
                      uint32_t *out,
-                     const t_nrPolar_params *polarParams,
-                     uint8_t listSize)
+                     uint8_t listSize,
+                     int8_t messageType,
+                     uint16_t messageLength,
+                     uint8_t aggregation_level
+                     )
 {
+  const t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
   //Assumes no a priori knowledge.
   uint8_t bit[polarParams->N][polarParams->n+1][2*listSize];
   memset(bit,0,sizeof bit);
@@ -302,9 +306,13 @@ int8_t polar_decoder(double *input,
 
 int8_t polar_decoder_dci(double *input,
                          uint32_t *out,
-                         const t_nrPolar_params *polarParams,
                          uint8_t listSize,
-                         uint16_t n_RNTI) {
+                         uint16_t n_RNTI,
+                         int8_t messageType,
+                         uint16_t messageLength,
+                         uint8_t aggregation_level ) {
+    const t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
+
   uint8_t bit[polarParams->N][polarParams->n+1][2*listSize];
   memset(bit,0,sizeof bit);
   uint8_t bitUpdated[polarParams->N][polarParams->n+1]; //0=False, 1=True
@@ -596,8 +604,11 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
 uint32_t polar_decoder_int16(int16_t *input,
                              uint64_t *out,
                              uint8_t ones_flag,
-                             const t_nrPolar_params *polarParams)
+                             int8_t messageType,
+                             uint16_t messageLength,
+                             uint8_t aggregation_level )
 {
+    const t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
   nr_polar_rate_matching_int16(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
 

@@ -33,10 +33,20 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
+#define PolarKey ((messageType<<24)|(messageLength<<8)|aggregation_level)
+static t_nrPolar_params * PolarList=NULL;
+static pthread_mutex_t PolarListMutex=PTHREAD_MUTEX_INITIALIZER;
+
 static int intcmp(const void *p1,const void *p2) {
   return(*(int16_t *)p1 > *(int16_t *)p2);
 }
-void nr_polar_delete(t_nrPolar_params * polarParams) {
+
+static void nr_polar_delete_list(t_nrPolar_params * polarParams) {
+  if (!polarParams)
+    return;
+  if (polarParams->nextPtr)
+    nr_polar_delete_list(polarParams->nextPtr);
+  
   delete_decoder_tree(polarParams);
   //From build_polar_tables()
   for (int k=0; k < polarParams->K + polarParams->n_pc; k++)
@@ -68,20 +78,36 @@ void nr_polar_delete(t_nrPolar_params * polarParams) {
   free(polarParams);
 }
 
-static void nr_polar_init(t_nrPolar_params * *polarParams,
-                          int8_t messageType,
+static void nr_polar_delete(void) {
+  pthread_mutex_lock(&PolarListMutex);
+  nr_polar_delete_list(PolarList);
+  PolarList=NULL;
+  pthread_mutex_unlock(&PolarListMutex);  
+}
+
+t_nrPolar_params * nr_polar_params(int8_t messageType,
                           uint16_t messageLength,
                           uint8_t aggregation_level,
 			  int decoder_flag) {
-  t_nrPolar_params *currentPtr = *polarParams;
-  uint16_t aggregation_prime = (messageType >= 2) ? aggregation_level : nr_polar_aggregation_prime(aggregation_level);
-
+  // The lock is weak, because we never delete in the list, only at exit time
+  // therefore, returning t_nrPolar_params * from the list is safe for future usage
+  pthread_mutex_lock(&PolarListMutex);
+  if(!PolarList)
+    atexit(nr_polar_delete);
+  
+  t_nrPolar_params *currentPtr = PolarList;
   //Parse the list. If the node is already created, return without initialization.
   while (currentPtr != NULL) {
     //printf("currentPtr->idx %d, (%d,%d)\n",currentPtr->idx,currentPtr->payloadBits,currentPtr->encoderLength);
     //LOG_D(PHY,"Looking for index %d\n",(messageType * messageLength * aggregation_prime));
-    if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
-    else currentPtr = currentPtr->nextPtr;
+    if (currentPtr->idx == PolarKey ) {
+      if (decoder_flag && !currentPtr->tree.root)
+        build_decoder_tree(currentPtr);
+      pthread_mutex_unlock(&PolarListMutex);
+      return currentPtr ;
+    }
+    else
+      currentPtr = currentPtr->nextPtr;
   }
 
   //  printf("currentPtr %p (polarParams %p)\n",currentPtr,polarParams);
@@ -90,7 +116,7 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
  
   if (newPolarInitNode != NULL) {
     //   LOG_D(PHY,"Setting new polarParams index %d, messageType %d, messageLength %d, aggregation_prime %d\n",(messageType * messageLength * aggregation_prime),messageType,messageLength,aggregation_prime);
-    newPolarInitNode->idx = (messageType * messageLength * aggregation_prime);
+    newPolarInitNode->idx = PolarKey;
     newPolarInitNode->nextPtr = NULL;
     //printf("newPolarInitNode->idx %d, (%d,%d,%d:%d)\n",newPolarInitNode->idx,messageType,messageLength,aggregation_prime,aggregation_level);
 
@@ -212,7 +238,8 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
     nr_polar_channel_interleaver_pattern(newPolarInitNode->channel_interleaver_pattern,
                                          newPolarInitNode->i_bil,
                                          newPolarInitNode->encoderLength);
-    if (decoder_flag == 1) build_decoder_tree(newPolarInitNode);
+    if (decoder_flag == 1) 
+        build_decoder_tree(newPolarInitNode);
     build_polar_tables(newPolarInitNode);
     init_polar_deinterleaver_table(newPolarInitNode);
     //printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
@@ -220,52 +247,28 @@ static void nr_polar_init(t_nrPolar_params * *polarParams,
     AssertFatal(1 == 0, "[nr_polar_init] New t_nrPolar_params * could not be created");
   }
 
-  //Fixme: the list is not thread safe
-  //The defect is not critical: we always append (never delete items) and adding two times the same is fine
-  newPolarInitNode->nextPtr=*polarParams;
-  *polarParams=newPolarInitNode;
-  return;
+  newPolarInitNode->nextPtr=PolarList;
+  PolarList=newPolarInitNode;
+  pthread_mutex_unlock(&PolarListMutex);
+  return newPolarInitNode;
 }
 
-void nr_polar_print_polarParams(t_nrPolar_params *polarParams) {
+void nr_polar_print_polarParams() {
   uint8_t i = 0;
 
-  if (polarParams == NULL) {
+  if (PolarList == NULL) {
     printf("polarParams is empty.\n");
   } else {
+    t_nrPolar_params * polarParams=PolarList;
     while (polarParams != NULL) {
-      printf("polarParams[%d] = %d\n", i, polarParams->idx);
+      printf("polarParams[%d] = %d, %d, %d\n", i,
+             polarParams->idx>>24, (polarParams->idx>>8)&0xFFFF, polarParams->idx&0xFF);
       polarParams = polarParams->nextPtr;
       i++;
     }
   }
 
   return;
-}
-
-t_nrPolar_params *nr_polar_params (int8_t messageType,
-                                   uint16_t messageLength,
-                                   uint8_t aggregation_level,
-	 		           int decoding_flag,
-				   t_nrPolar_params **polarList_ext) {
-  static t_nrPolar_params *polarList = NULL;
-  nr_polar_init(polarList_ext != NULL ? polarList_ext : &polarList, 
-		messageType,messageLength,aggregation_level,decoding_flag);
-  t_nrPolar_params *polarParams=polarList_ext != NULL ? *polarList_ext : polarList;
-  const int tag=messageType * messageLength * (messageType>=2 ? aggregation_level : nr_polar_aggregation_prime(aggregation_level));
-
-
-	
-  while (polarParams != NULL) {
-    //    LOG_D(PHY,"nr_polar_params : tag %d (from nr_polar_init %d)\n",tag,polarParams->idx);
-    if (polarParams->idx == tag)
-      return polarParams;
-
-    polarParams = polarParams->nextPtr;
-  }
-
-  AssertFatal(false,"Polar Init tables internal failure, no polarParams found\n");
-  return NULL;
 }
 
 uint16_t nr_polar_aggregation_prime (uint8_t aggregation_level) {
