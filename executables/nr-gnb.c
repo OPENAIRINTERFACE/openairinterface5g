@@ -301,7 +301,7 @@ void rx_func(void *param) {
 static void dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output) {
   int stroff = 0;
   stroff += print_meas_log(gNB->phy_proc_tx[0], "L1 Tx processing thread 0", NULL, NULL, output);
-  //stroff += print_meas_log(gNB->phy_proc_tx[1], "L1 Tx processing thread 1", NULL, NULL, output+stroff);
+  stroff += print_meas_log(gNB->phy_proc_tx[1], "L1 Tx processing thread 1", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL, output+stroff);
   stroff += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output+stroff);
@@ -338,7 +338,7 @@ void *nrL1_stats_thread(void *param) {
   AssertFatal(fd!=NULL,"Cannot open nrL1_stats.log\n");
 
   reset_meas(gNB->phy_proc_tx[0]);
-  //reset_meas(gNB->phy_proc_tx[1]);
+  reset_meas(gNB->phy_proc_tx[1]);
   reset_meas(&gNB->dlsch_encoding_stats);
   reset_meas(&gNB->phy_proc_rx);
   reset_meas(&gNB->ul_indication_stats);
