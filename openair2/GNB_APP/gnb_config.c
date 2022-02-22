@@ -740,7 +740,7 @@ void RCconfig_nr_macrlc() {
   uint16_t prbbl[275];
   int num_prbbl=0;
   int prb;
-  memset(prbbl,0,275*sizeof(uint16_t));
+  memset(prbbl,0,prbbl);
   while (pt) {
     prb=atoi(pt); 
     prbbl[prb] = 0x3FFF; // all symbols taken

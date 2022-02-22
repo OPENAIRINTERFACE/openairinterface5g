@@ -557,7 +557,7 @@ void nr_csi_meas_reporting(int Mod_idP,
         // verify resources are free
         for (int i = start; i < start + len; ++i) {
           if((vrb_map_UL[i+bwp_start] & mask) != 0) {
-            LOG_E(NR_MAC, "%s(): VRB MAP not free. Can't schedule CSI reporting on PUCCH.\n", __func__);
+            LOG_E(NR_MAC, "%4d.%2d VRB MAP in %4d.%2d not free. Can't schedule CSI reporting on PUCCH.\n", frame, slot, frame, sched_slot);
             memset(curr_pucch, 0, sizeof(*curr_pucch));
           }
           else
@@ -1273,17 +1273,18 @@ int nr_acknack_scheduling(int mod_id,
    *   later)
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
+  NR_CellGroupConfig_t *cg = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id];
 
   NR_PUCCH_Config_t *pucch_Config = NULL;
   if (sched_ctrl->active_ubwp) {
     pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-  } else if (RC.nrmac[mod_id]->UE_info.CellGroup[UE_id] &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
-    pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+  } else if (cg &&
+             cg->spCellConfig &&
+             cg->spCellConfig->spCellConfigDedicated &&
+             cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+             cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+             cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+    pucch_Config = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
     &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
@@ -1336,7 +1337,6 @@ int nr_acknack_scheduling(int mod_id,
   LOG_D(NR_MAC, "In %s: pucch_acknak 1. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n", __FUNCTION__, frame, slot, pucch->frame, pucch->ul_slot, pucch->dai_c);
 
   // this is hardcoded for now as ue specific only if we are not on the initialBWP (to be fixed to allow ue_Specific also on initialBWP
-  NR_CellGroupConfig_t *cg = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id];
   NR_BWP_UplinkDedicated_t *ubwpd=NULL;
 
   if (cg &&
@@ -1410,11 +1410,13 @@ int nr_acknack_scheduling(int mod_id,
   // Find the right timing_indicator value.
   int ind_found = -1;
   // while we are within the feedback limits
+  uint16_t *vrb_map_UL;
   while ((n_slots_frame + pucch->ul_slot - slot) % n_slots_frame <= max_fb_time) {
     // checking if in ul_slot the resources potentially to be assigned to this PUCCH are available
+    vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
     bool ret = test_acknack_vrb_occupation(sched_ctrl,
                                            pucch,
-                                           &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE],
+                                           vrb_map_UL,
                                            scc,
                                            pucch_Config,
                                            r_pucch,
@@ -1499,7 +1501,7 @@ int nr_acknack_scheduling(int mod_id,
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
   pucch->r_pucch=r_pucch;
 
-  uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
+  vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
   for (int l=0; l<pucch->nr_of_symb; l++) {
     uint16_t symb = SL_to_bitmap(pucch->start_symb+l, 1);
     int prb;

@@ -1209,13 +1209,6 @@ void pf_ul(module_id_t module_id,
       if (max_num_ue < 0)
         return;
 
-      sched_ctrl->cce_index = CCEIndex;
-      fill_pdcch_vrb_map(RC.nrmac[module_id],
-                         CC_id,
-                         &sched_ctrl->sched_pdcch,
-                         CCEIndex,
-                         sched_ctrl->aggregation_level);
-
       /* Save PUSCH field */
       /* we want to avoid a lengthy deduction of DMRS and other parameters in
        * every TTI if we can save it, so check whether dci_format, TDA, or
@@ -1237,6 +1230,13 @@ void pf_ul(module_id_t module_id,
               UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
         return;
       }
+
+      sched_ctrl->cce_index = CCEIndex;
+      fill_pdcch_vrb_map(RC.nrmac[module_id],
+                         CC_id,
+                         &sched_ctrl->sched_pdcch,
+                         CCEIndex,
+                         sched_ctrl->aggregation_level);
 
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = 9;
