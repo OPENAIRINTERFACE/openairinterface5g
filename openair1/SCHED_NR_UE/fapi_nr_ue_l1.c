@@ -234,20 +234,21 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
     dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
     dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
     dlsch0_harq->n_dmrs_cdm_groups = dlsch_config_pdu->n_dmrs_cdm_groups;
+    dlsch0_harq->dmrs_ports = dlsch_config_pdu->dmrs_ports;
     dlsch0_harq->mcs = dlsch_config_pdu->mcs;
     dlsch0_harq->rvidx = dlsch_config_pdu->rv;
     dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
     //get nrOfLayers from DCI info
     uint8_t Nl = 0;
-    for (int i = 0; i < 4; i++) {
-      if (dlsch_config_pdu->dmrs_ports[i] >= i) Nl += 1;
+    for (int i = 0; i < 12; i++) { // max 12 ports
+      if ((dlsch_config_pdu->dmrs_ports>>i)&0x01) Nl += 1;
     }
     dlsch0_harq->Nl = Nl;
     dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
     downlink_harq_process(dlsch0_harq, dlsch0->current_harq_pid, dlsch_config_pdu->ndi, dlsch_config_pdu->rv, dlsch0->rnti_type);
     if (dlsch0_harq->status != ACTIVE) {
-      // dlsch0_harq->status not ACTIVE due to false retransmission
-      // Reset the following flag to skip PDSCH procedures in that case and retrasmit harq status
+      // dlsch0_harq->status not ACTIVE may be due to false retransmission.
+      // Reset the following flag to skip PDSCH procedures in that case and retrasmit harq status.
       dlsch0->active = 0;
       update_harq_status(module_id,dlsch0->current_harq_pid,dlsch0_harq->ack);
     }

@@ -60,8 +60,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int minRXTXTIME,
                                      int do_csirs,
                                      int do_srs,
-                                     int initial_csi_index,
                                      int uid) {
+
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(secondaryCellGroup!=NULL,"secondaryCellGroup is null\n");
 
@@ -562,7 +562,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  }
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
 
- if (dl_antenna_ports > 1)// for MIMO, we use DMRS Config Type 2
+ if ((get_softmodem_params()->do_ra ||
+     get_softmodem_params()->phy_test) &&
+     dl_antenna_ports > 1) // for MIMO, we use DMRS Config Type 2 but only with OAI UE
    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type));
  else
    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
@@ -1058,7 +1060,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pdsch_servingcellconfig->pucch_Cell= NULL;
  pdsch_servingcellconfig->ext1=calloc(1,sizeof(*pdsch_servingcellconfig->ext1));
  pdsch_servingcellconfig->ext1->maxMIMO_Layers = calloc(1,sizeof(*pdsch_servingcellconfig->ext1->maxMIMO_Layers));
- *pdsch_servingcellconfig->ext1->maxMIMO_Layers = 2;
+ *pdsch_servingcellconfig->ext1->maxMIMO_Layers = dl_antenna_ports;
  pdsch_servingcellconfig->ext1->processingType2Enabled = NULL;
  
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig=NULL;
@@ -1079,7 +1081,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
    imres0->csi_IM_ResourceElementPattern->choice.pattern1->symbolLocation_p1 = 6;
    imres0->freqBand = calloc(1,sizeof(*imres0->freqBand));
    imres0->freqBand->startingRB = 0;
-   imres0->freqBand->nrofRBs = 108;
+   imres0->freqBand->nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
    imres0->periodicityAndOffset = calloc(1,sizeof(*imres0->periodicityAndOffset));
    imres0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
    imres0->periodicityAndOffset->choice.slots320 = 0;
@@ -1098,7 +1100,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  }
 
  csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
- csi_MeasConfig->csi_IM_ResourceSetToAddModList = NULL;
  csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
 
  config_csirs(servingcellconfigcommon, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, do_csirs);
@@ -1156,6 +1157,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
    NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1,sizeof(*csiim00));
    *csiim00 = 0;
    ASN_SEQUENCE_ADD(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
+   csires2->bwp_Id = 1;
+   csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
    ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
  }
 
@@ -1308,7 +1311,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            int minRXTXTIME,
                            int do_csirs,
                            int do_srs,
-                           int initial_csi_index,
                            int uid) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(reconfig!=NULL,"reconfig is null\n");
@@ -1326,7 +1328,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                                   minRXTXTIME,
                                   do_csirs,
                                   do_srs,
-                                  initial_csi_index,
                                   uid);
 
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);

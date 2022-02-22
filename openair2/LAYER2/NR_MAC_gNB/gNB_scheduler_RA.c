@@ -1360,7 +1360,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                                     nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                                     nrOfSymbols,
                                                     startSymbolIndex,
-                                                    mappingtype);
+                                                    mappingtype,
+                                                    1);
 
     int x_Overhead = 0;
     uint8_t tb_scaling = 0;
@@ -1609,7 +1610,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                             scc->dmrs_TypeA_Position,
                                             nrOfSymbols,
                                             startSymbolIndex,
-                                            mappingtype);
+                                            mappingtype,
+                                            1);
 
     uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
 
@@ -1650,14 +1652,23 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int rbSize = 0;
     uint8_t tb_scaling = 0;
     uint16_t *vrb_map = cc[CC_id].vrb_map;
+    // increase PRBs until we get to BWPSize or TBS is bigger than MAC PDU size
     do {
       rbSize++;
-      LOG_D(NR_MAC,"Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
+      LOG_D(NR_MAC,"Msg4 Allocation : RBloop Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
       harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
                            nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
                            rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
     } while (rbSize < BWPSize && harq->tb_size < ra->mac_pdu_length);
-
+    // increase mcs until we get a TBS that is big enough to fix the MAC PDU
+    do {
+      mcsIndex++;
+      LOG_D(NR_MAC,"Msg4 Allocation: MCSloop Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
+      harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
+                           nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
+                           rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
+    } while (harq->tb_size < ra->mac_pdu_length && mcsIndex<10);
+    AssertFatal(mcsIndex<10,"Cannot fit Msg4 in %d PRBs with QPSK\n",(int)BWPSize);
     int i = 0;
     while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {
       if (vrb_map[BWPStart + rbStart + i]&SL_to_bitmap(startSymbolIndex, nrOfSymbols)) {

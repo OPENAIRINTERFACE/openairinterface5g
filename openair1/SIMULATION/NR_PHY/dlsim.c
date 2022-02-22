@@ -271,17 +271,13 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  ps->nrOfLayers = g_nrOfLayers;
-
-  int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats ?
-      NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-
   nr_set_pdsch_semi_static(scc,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
                            /* tda = */ 2,
-                           dci_format,
+                           g_nrOfLayers,
+                           sched_ctrl,
                            ps);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
@@ -637,18 +633,18 @@ int main(int argc, char **argv)
         dmrs_arg[i] = atoi(argv[optind++]);
       }
       break;
-      
+
     case 'X':
       strncpy(gNBthreads, optarg, sizeof(gNBthreads));
       gNBthreads[sizeof(gNBthreads)-1]=0;
       break;
-      
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
              argv[0]);
       printf("-h This message\n");
-      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");  
+      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");
       //printf("-p Use extended prefix mode\n");
       //printf("-d Use TDD\n");
       printf("-n Number of frames to simulate\n");
@@ -837,11 +833,11 @@ int main(int argc, char **argv)
     fs = 61.44e6;
     bw = 40e6;
   }
-  else if (mu == 1 && N_RB_DL == 133) { 
+  else if (mu == 1 && N_RB_DL == 133) {
     fs = 61.44e6;
     bw = 50e6;
   }
-  else if (mu == 1 && N_RB_DL == 162) { 
+  else if (mu == 1 && N_RB_DL == 162) {
     fs = 61.44e6;
     bw = 60e6;
   }
