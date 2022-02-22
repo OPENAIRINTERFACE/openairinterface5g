@@ -32,7 +32,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
   abort();
 }
 
-boolean_t sdap_gnb_data(protocol_ctxt_t *ctxt_p,
+boolean_t sdap_data_req(protocol_ctxt_t *ctxt_p,
                         const srb_flag_t srb_flag,
                         const rb_id_t rb_id,
                         const mui_t mui,
@@ -41,6 +41,9 @@ boolean_t sdap_gnb_data(protocol_ctxt_t *ctxt_p,
                         unsigned char *const sdu_buffer,
                         const pdcp_transmission_mode_t pt_mode,
                         const uint32_t *sourceL2Id,
-                        const uint32_t *destinationL2Id) {
+                        const uint32_t *destinationL2Id,
+                        const uint8_t qfi,
+                        const boolean_t rqi,
+                        const int pdusession_id) {
 abort();
 }

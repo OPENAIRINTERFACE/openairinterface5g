@@ -20,6 +20,8 @@ extern "C" {
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 //#include <openair1/PHY/phy_extern.h>
 
+static boolean_t is_gnb = false;
+
 #pragma pack(1)
 
 typedef struct Gtpv1uMsgHeader {
@@ -92,6 +94,7 @@ typedef struct {
   rnti_t rnti;
   ebi_t incoming_rb_id;
   gtpCallback callBack;
+  gtpCallbackSDAP callBackSDAP;
   int pdusession_id;
 } rntiData_t;
 
@@ -476,6 +479,8 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   inst->te2ue_mapping[incoming_teid].incoming_rb_id= incoming_bearer_id;
 
   inst->te2ue_mapping[incoming_teid].callBack=callBack;
+  
+  inst->te2ue_mapping[incoming_teid].callBackSDAP = sdap_data_req;
 
   inst->te2ue_mapping[incoming_teid].pdusession_id = (uint8_t)outgoing_bearer_id;
 
@@ -597,14 +602,14 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->outgoing_teid[0]);
   tcp_udp_port_t dstport=globGtp.instances[compatInst(instance)].get_dstport();
-
+  is_gnb = true;
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
                                     create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
                                     create_tunnel_req->outgoing_teid[i],
                                     create_tunnel_req->dst_addr[i], dstport,
-                                    sdap_data_req);
+                                    pdcp_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
     create_tunnel_resp->num_tunnels=create_tunnel_req->num_tunnels;
@@ -876,9 +881,6 @@ static int Gtpv1uHandleGpdu(int h,
   ctxt.enb_flag = 1;
   ctxt.instance = inst->addr.originInstance;
   ctxt.rnti = tunnel->second.rnti;
-  ctxt.sdap.qfi = qfi;
-  ctxt.sdap.rqi = rqi;
-  ctxt.sdap.pdusession_id = tunnel->second.pdusession_id;
   ctxt.frame = 0;
   ctxt.subframe = 0;
   ctxt.eNB_index = 0;
@@ -894,17 +896,34 @@ static int Gtpv1uHandleGpdu(int h,
   const uint32_t destinationL2Id=0;
   pthread_mutex_unlock(&globGtp.gtp_lock);
 
-  if ( !tunnel->second.callBack(&ctxt,
-                                srb_flag,
-                                rb_id,
-                                mui,
-                                confirm,
-                                sdu_buffer_size,
-                                sdu_buffer,
-                                mode,
-                                &sourceL2Id,
-                                &destinationL2Id) )
-    LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  if(is_gnb && qfi){
+    if ( !tunnel->second.callBackSDAP(&ctxt,
+                                      srb_flag,
+                                      rb_id,
+                                      mui,
+                                      confirm,
+                                      sdu_buffer_size,
+                                      sdu_buffer,
+                                      mode,
+                                      &sourceL2Id,
+                                      &destinationL2Id,
+                                      qfi,
+                                      rqi,
+                                      tunnel->second.pdusession_id) )
+      LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  } else {
+    if ( !tunnel->second.callBack(&ctxt,
+                                  srb_flag,
+                                  rb_id,
+                                  mui,
+                                  confirm,
+                                  sdu_buffer_size,
+                                  sdu_buffer,
+                                  mode,
+                                  &sourceL2Id,
+                                  &destinationL2Id) )
+      LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  }
 
   LOG_D(GTPU,"[%d] Received a %d bytes packet for: teid:%x\n", h,
         msgBufLen-offset,

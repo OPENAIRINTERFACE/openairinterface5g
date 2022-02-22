@@ -41,7 +41,10 @@ boolean_t sdap_data_req(protocol_ctxt_t *ctxt_p,
                         unsigned char *const sdu_buffer,
                         const pdcp_transmission_mode_t pt_mode,
                         const uint32_t *sourceL2Id,
-                        const uint32_t *destinationL2Id
+                        const uint32_t *destinationL2Id,
+                        const uint8_t qfi,
+                        const boolean_t rqi,
+                        const int pdusession_id
                        );
 
 /*
@@ -50,7 +53,11 @@ boolean_t sdap_data_req(protocol_ctxt_t *ctxt_p,
  * Uplink   - gNB
  * Downlink - nrUE
  */
-void sdap_data_ind(nr_pdcp_entity_t *pdcp_entity,
+void sdap_data_ind(rb_id_t pdcp_entity,
+                   int is_gnb,
+                   int has_sdap,
+                   int has_sdapULheader,
+                   int pdusession_id,
                    int rnti,
                    char *buf,
                    int size

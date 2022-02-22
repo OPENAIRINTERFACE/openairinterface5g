@@ -37,7 +37,6 @@
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
-#include "nr_pdcp_oai_api.h"
 
 #define TODO do { \
     printf("%s:%d:%s: todo\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -439,13 +438,13 @@ static void *enb_tun_read_thread(void *_)
 
     ctxt.rnti = rnti;
 
-    ctxt.sdap.qfi = 7;
-    ctxt.sdap.rqi = 0;
-    ctxt.sdap.pdusession_id = 10;
+    uint8_t qfi = 7;
+    boolean_t rqi = 0;
+    int pdusession_id = 10;
 
     sdap_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
-                      RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
-                      PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
+                  RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
+                  PDCP_TRANSMISSION_MODE_DATA, NULL, NULL, qfi, rqi, pdusession_id);
   }
 
   return NULL;
@@ -486,13 +485,13 @@ static void *ue_tun_read_thread(void *_)
 
     ctxt.rnti = rnti;
 
-    ctxt.sdap.dc = SDAP_HDR_UL_DATA_PDU;
-    ctxt.sdap.qfi = 7;
-    ctxt.sdap.pdusession_id = 10;
+    boolean_t dc = SDAP_HDR_UL_DATA_PDU;
+    uint8_t qfi = 7;
+    int pdusession_id = 10;
 
     sdap_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
-                      RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
-                      PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
+                  RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
+                  PDCP_TRANSMISSION_MODE_DATA, NULL, NULL, qfi, dc, pdusession_id);
   }
 
   return NULL;
@@ -622,7 +621,14 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
 
   if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
     LOG_D(PDCP, "IP packet received with size %d, to be sent to SDAP interface, UE rnti: %d\n", size, ue->rnti);
-    sdap_data_ind(entity, ue->rnti, buf, size);
+    sdap_data_ind(entity->rb_id,
+                  entity->is_gnb,
+                  entity->has_sdap,
+                  entity->has_sdapULheader,
+                  entity->pdusession_id,
+                  ue->rnti,
+                  buf,
+                  size);
   }
   else{
     for (i = 0; i < 5; i++) {
@@ -639,7 +645,14 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
     rb_found:
     {
       LOG_D(PDCP, "%s() (drb %d) sending message to SDAP size %d\n", __func__, rb_id, size);
-      sdap_data_ind(entity, ue->rnti, buf, size);
+      sdap_data_ind(rb_id,
+                    ue->drb[rb_id-1]->is_gnb,
+                    ue->drb[rb_id-1]->has_sdap,
+                    ue->drb[rb_id-1]->has_sdapULheader,
+                    ue->drb[rb_id-1]->pdusession_id,
+                    ue->rnti,
+                    buf,
+                    size);
     }
   }
 }
@@ -950,9 +963,9 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
       exit(-1);
     }
     pdusession_id = s->cnAssociation->choice.sdap_Config->pdu_Session;
-    has_sdap = 1;
     has_sdapULheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present ? 1 : 0;
     has_sdapDLheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present ? 1 : 0;
+    has_sdap = has_sdapULheader | has_sdapDLheader;
     is_sdap_DefaultDRB = s->cnAssociation->choice.sdap_Config->defaultDRB == true ? 1 : 0;
     mappedQFIs2Add = (NR_QFI_t*)s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.array[0]; 
     mappedQFIs2AddCount = s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.count;
@@ -989,7 +1002,8 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
 
-    new_nr_sdap_entity(rnti,
+    new_nr_sdap_entity(has_sdap,
+                       rnti,
                        pdusession_id,
                        is_sdap_DefaultDRB,
                        drb_id,
@@ -1438,11 +1452,9 @@ void nr_pdcp_tick(int frame, int subframe)
   }
 }
 
-nr_pdcp_entity_t *nr_pdcp_find_entity_sdap(int rnti, uint8_t sdap_drb_id){
-  nr_pdcp_ue_t *ue;
-  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
-  if(ue->drb[sdap_drb_id-1])
-   return ue->drb[sdap_drb_id-1];
-  
-  return NULL;
+/*
+ * For the SDAP API
+ */
+nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager(){
+    return nr_pdcp_ue_manager;
 }
