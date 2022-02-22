@@ -90,6 +90,9 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 rx_ind->pdu_list[j].pdu = CALLOC(tx_req_body->pdu_length, sizeof(*rx_ind->pdu_list[j].pdu));
                 memcpy(rx_ind->pdu_list[j].pdu, tx_req_body->pdu, tx_req_body->pdu_length * sizeof(*rx_ind->pdu_list[j].pdu));
                 rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
+                /* TODO: Implement channel modeling to abstract TA and CQI. For now,
+                   we hard code the values below since they are set in L1 and we are
+                   abstracting L1. */
                 rx_ind->pdu_list[j].timing_advance = 31;
                 rx_ind->pdu_list[j].ul_cqi = 255;
                 char buffer[1024];
@@ -204,6 +207,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
           }
         }
       }
+      dl_config->number_pdus = 0;
     }
 
   }

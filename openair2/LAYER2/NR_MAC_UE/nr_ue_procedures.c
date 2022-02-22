@@ -3810,8 +3810,11 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       rar = (NR_MAC_RAR *) (dlsch_buffer + n_subheaders + (n_subPDUs - 1) * sizeof(NR_MAC_RAR));
       ra->RA_RAPID_found = 1;
       if (get_softmodem_params()->emulate_l1) {
-        LOG_I(NR_MAC, "If we found the RAR, the other PDUs are for other UEs and we dont need to process. "
-                      "Only save rx_indication_body[%d] as only PDU in RX_indication\n", pdu_id);
+        /* When we are emulating L1 with multiple UEs, the rx_indication will have
+           multiple RAR PDUs. The code would previously handle each of these PDUs,
+           but it should only be handling the single RAR that matches the current
+           UE. */
+        LOG_I(NR_MAC, "RAR PDU found for our UE with PDU index %d\n", pdu_id);
         dl_info->rx_ind->number_pdus = 1;
         if (pdu_id != 0) {
           memcpy(&dl_info->rx_ind->rx_indication_body[0],
