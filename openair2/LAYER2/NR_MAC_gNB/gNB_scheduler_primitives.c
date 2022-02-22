@@ -513,8 +513,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
 {
   bool reset_dmrs = false;
 
-  NR_BWP_DownlinkDedicated_t *bwpd;
-
+  NR_BWP_DownlinkDedicated_t *bwpd = NULL;
   if (bwp && bwp->bwp_Dedicated) {
     bwpd = bwp->bwp_Dedicated;
   } else {
