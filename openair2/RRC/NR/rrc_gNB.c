@@ -187,6 +187,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 			   rrc->carrier.pdsch_AntennaPorts,
 			   rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           rrc->carrier.minRXTXTIME,
 			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
 			   &rrc->carrier.mib,
 			   0,
@@ -300,6 +301,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
 			     rrc->carrier.pdsch_AntennaPorts,
 			     rrc->carrier.pusch_AntennaPorts,
 			     rrc->carrier.sib1_tda,
+                             rrc->carrier.minRXTXTIME,
 			     NULL,
                              NULL,
 			     0,
@@ -493,6 +495,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->carrier.pdsch_AntennaPorts,
                          rrc_instance_p->carrier.pusch_AntennaPorts,
                          rrc_instance_p->carrier.sib1_tda,
+                         rrc_instance_p->carrier.minRXTXTIME,
                          (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
                          &rrc_instance_p->carrier.mib,
                          0,
@@ -950,8 +953,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     DRB_config->pdcp_Config->drb->outOfOrderDelivery = NULL;
     DRB_config->pdcp_Config->moreThanOneRLC = NULL;
 
-    DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
-    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
+    DRB_config->pdcp_Config->t_Reordering = NULL; /*calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
+    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms10;*/
     DRB_config->pdcp_Config->ext1 = NULL;
 
     if (rrc->security.do_drb_integrity) {
@@ -1259,6 +1262,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            rrc->carrier.pdsch_AntennaPorts,
                            rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
+                           rrc->carrier.minRXTXTIME,
                            NULL,
                            NULL,
                            0,
