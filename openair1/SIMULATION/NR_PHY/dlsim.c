@@ -781,6 +781,9 @@ int main(int argc, char **argv)
   pdsch_AntennaPorts.N1 = n_tx;
   pdsch_AntennaPorts.N2 = 1;
   pdsch_AntennaPorts.XP = 1;
+  gNB->ap_N1 = pdsch_AntennaPorts.N1;
+  gNB->ap_N2 = pdsch_AntennaPorts.N2;
+  gNB->ap_XP = pdsch_AntennaPorts.XP;
 
   fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, pdsch_AntennaPorts, 6, 0, 0, 0, 0);
 
