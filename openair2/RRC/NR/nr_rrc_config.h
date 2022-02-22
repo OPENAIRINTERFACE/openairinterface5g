@@ -115,8 +115,8 @@ void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc);
 void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay);
 void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   NR_CSI_MeasConfig_t *csi_MeasConfig,
-                  int num_dl_antenna_ports,
                   int uid,
+                  int num_dl_antenna_ports,
                   int curr_bwp,
                   int do_csirs);
 

@@ -83,8 +83,8 @@ void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_sl
 
 void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   NR_CSI_MeasConfig_t *csi_MeasConfig,
-                  int num_dl_antenna_ports,
                   int uid,
+                  int num_dl_antenna_ports,
                   int curr_bwp,
                   int do_csirs) {
 
