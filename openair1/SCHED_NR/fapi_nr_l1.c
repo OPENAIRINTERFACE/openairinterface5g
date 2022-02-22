@@ -166,6 +166,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       res = pullTpool(gNB->L1_tx_free, gNB->threadPool);
       processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
 
+      merge_meas(&gNB->phy_proc_tx, &msgTx->phy_proc_tx);
+
       msgTx->num_pdsch_slot=0;
       msgTx->num_dl_pdcch=0;
       msgTx->num_ul_pdcch=number_ul_dci_pdu;
