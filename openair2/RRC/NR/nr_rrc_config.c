@@ -158,7 +158,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
     *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
     nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
     set_csirs_periodicity(nzpcsi0, uid, nb_slots_per_period);
-    nzpcsi0->qcl_InfoPeriodicCSI_RS = NULL;
+    nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS));
+    *nzpcsi0->qcl_InfoPeriodicCSI_RS = 0;
     ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
   }
   else {

@@ -1636,30 +1636,30 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     UE_info->mac_stats[UE_id].ulsch_current_bytes = sched_pusch->tb_size;
     sched_ctrl->last_ul_frame = sched_pusch->frame;
     sched_ctrl->last_ul_slot = sched_pusch->slot;
-    if (sched_pusch->rbSize > 5) 
-      LOG_D(NR_MAC,
-            "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
-            frame,
-            slot,
-            rnti,
-            sched_pusch->frame,
-            sched_pusch->slot,
-            sched_ctrl->aggregation_level,
-            sched_pusch->rbStart,
-            sched_pusch->rbSize,
-            ps->startSymbolIndex,
-            ps->nrOfSymbols,
-            ps->ul_dmrs_symb_pos,
-            sched_pusch->mcs,
-            sched_pusch->tb_size,
-            harq_id,
-            cur_harq->round,
-            nr_rv_round_map[cur_harq->round],
-            cur_harq->ndi,
-            sched_ctrl->estimated_ul_buffer,
-            sched_ctrl->sched_ul_bytes,
-            sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes,
-            sched_ctrl->tpc0);
+
+    LOG_D(NR_MAC,
+          "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
+          frame,
+          slot,
+          rnti,
+          sched_pusch->frame,
+          sched_pusch->slot,
+          sched_ctrl->aggregation_level,
+          sched_pusch->rbStart,
+          sched_pusch->rbSize,
+          ps->startSymbolIndex,
+          ps->nrOfSymbols,
+          ps->ul_dmrs_symb_pos,
+          sched_pusch->mcs,
+          sched_pusch->tb_size,
+          harq_id,
+          cur_harq->round,
+          nr_rv_round_map[cur_harq->round],
+          cur_harq->ndi,
+          sched_ctrl->estimated_ul_buffer,
+          sched_ctrl->sched_ul_bytes,
+          sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes,
+          sched_ctrl->tpc0);
 
 
     /* PUSCH in a later slot, but corresponding DCI now! */

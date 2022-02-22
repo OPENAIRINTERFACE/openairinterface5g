@@ -211,6 +211,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 #endif
 
     stop_meas(&gNB->dlsch_layer_mapping_stats);
+
     /// Resource mapping
     
     // Non interleaved VRB to PRB mapping
@@ -228,6 +229,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     for (int nl=0; nl<rel15->nrOfLayers; nl++) {
 
       int dmrs_port = get_dmrs_port(nl,rel15->dmrsPorts);
+
       // DMRS params for this dmrs port
       get_Wt(Wt, dmrs_port, dmrs_Type);
       get_Wf(Wf, dmrs_port, dmrs_Type);

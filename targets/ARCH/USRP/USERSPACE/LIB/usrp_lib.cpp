@@ -694,7 +694,6 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
     }
-  }
 
   if (samples_received < nsamps) {
     LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
@@ -1096,7 +1095,7 @@ extern "C" {
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
- //   s->usrp->set_rx_dc_offset(true);
+    s->usrp->set_rx_dc_offset(true);
   }
 
   if (device->type==USRP_N300_DEV) {

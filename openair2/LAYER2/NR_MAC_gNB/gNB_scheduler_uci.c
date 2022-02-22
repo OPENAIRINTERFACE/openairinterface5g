@@ -280,7 +280,6 @@ void compute_li_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
   }
 }
 
-
 void get_n1n2_o1o2_singlepanel(int *n1, int *n2, int *o1, int *o2,
                                struct NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo *morethantwo) {
 
@@ -547,7 +546,6 @@ void compute_cqi_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
     AssertFatal(1==0,"Sub-band CQI reporting not yet supported");
 }
 
-
 //!TODO : same function can be written to handle csi_resources
 void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP){
   uint8_t csi_report_id = 0;
@@ -700,7 +698,7 @@ void nr_csi_meas_reporting(int Mod_idP,
     const NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
     AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
                 "NO CSI report configuration available");
-    NR_PUCCH_Config_t *pucch_Config;
+    NR_PUCCH_Config_t *pucch_Config = NULL;
     if (sched_ctrl->active_ubwp) {
       pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
     } else if (RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id] &&
@@ -711,7 +709,6 @@ void nr_csi_meas_reporting(int Mod_idP,
              RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
       pucch_Config = RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
     }
-
 
     for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
       NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
@@ -735,7 +732,7 @@ void nr_csi_meas_reporting(int Mod_idP,
         if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource)
           break;
       AssertFatal(res_index < n,
-                  "CSI pucch resource %d not found among PUCCH resources\n",pucchcsires->pucch_Resource);
+                  "CSI pucch resource %ld not found among PUCCH resources\n", pucchcsires->pucch_Resource);
 
       // find free PUCCH that is in order with possibly existing PUCCH
       // schedulings (other CSI, SR)
@@ -924,13 +921,10 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   uint8_t idx = 0;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  int bwp_id  = sched_ctrl->active_bwp ? 1 : 0;
+  int bwp_id  = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
   NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
-  NR_BWP_Downlink_t *bwp = bwp_id>0 ? 
-                           sched_ctrl->active_bwp:
-                           NULL;
+  NR_BWP_Downlink_t *bwp = bwp_id>0 ? sched_ctrl->active_bwp : NULL;
 
-                               
   //bwp indicator
   int n_dl_bwp=0;
   if (CellGroup->spCellConfig->spCellConfigDedicated &&
@@ -942,7 +936,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   int better_rsrp_reported = -140-(-0); /*minimum_measured_RSRP_value - minimum_differntail_RSRP_value*///considering the minimum RSRP value as better RSRP initially
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;
