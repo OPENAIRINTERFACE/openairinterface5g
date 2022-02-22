@@ -2357,20 +2357,25 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
     NR_CSI_IM_Resource_t *imcsi;
     int period, offset;
     NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-    int mu = mac->DLbwp[dl_bwp_id-1] ?
-      mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
-      mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing;
+
+    NR_BWP_t *genericParameters = NULL;
+    if(dl_bwp_id > 0 && mac->DLbwp[dl_bwp_id-1]) {
+      genericParameters = &mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters;
+    } else {
+      genericParameters = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+    }
+
+    int mu = genericParameters->subcarrierSpacing;
+    uint16_t bwp_size = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    uint16_t bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
     for (int id = 0; id < csi_measconfig->csi_IM_ResourceToAddModList->list.count; id++){
       imcsi = csi_measconfig->csi_IM_ResourceToAddModList->list.array[id];
       csi_period_offset(NULL,imcsi->periodicityAndOffset,&period,&offset);
       if((frame*nr_slots_per_frame[mu]+slot-offset)%period == 0) {
         fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csiim_config_pdu.csiim_config_rel15;
-        const NR_BWP_Downlink_t *dlbwp = mac->DLbwp[dl_bwp_id-1];
-        const int locationAndBandwidth = dlbwp != NULL ? dlbwp->bwp_Common->genericParameters.locationAndBandwidth:
-                                         mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth;
-        csiim_config_pdu->bwp_size = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE);
-        csiim_config_pdu->bwp_start = NRRIV2PRBOFFSET(locationAndBandwidth, MAX_BWP_SIZE);
+        csiim_config_pdu->bwp_size = bwp_size;
+        csiim_config_pdu->bwp_start = bwp_start;
         csiim_config_pdu->subcarrier_spacing = mu;
         csiim_config_pdu->start_rb = imcsi->freqBand->startingRB;
         csiim_config_pdu->nr_of_rbs = imcsi->freqBand->nrofRBs;
@@ -2418,9 +2423,17 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
     NR_NZP_CSI_RS_Resource_t *nzpcsi;
     int period, offset;
     NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-    int mu = mac->DLbwp[dl_bwp_id-1] ?
-      mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
-      mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing;
+
+    NR_BWP_t *genericParameters = NULL;
+    if(dl_bwp_id > 0 && mac->DLbwp[dl_bwp_id-1]) {
+      genericParameters = &mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters;
+    } else {
+      genericParameters = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+    }
+
+    int mu = genericParameters->subcarrierSpacing;
+    uint16_t bwp_size = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    uint16_t bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
     for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
       nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
@@ -2428,14 +2441,9 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
       if((frame*nr_slots_per_frame[mu]+slot-offset)%period == 0) {
         LOG_D(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n",frame,slot);
         fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csirs_config_pdu.csirs_config_rel15;
-
         NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
-
-        const NR_BWP_Downlink_t *dlbwp = mac->DLbwp[dl_bwp_id-1];
-        const int locationAndBandwidth = dlbwp != NULL ? dlbwp->bwp_Common->genericParameters.locationAndBandwidth:
-                                         mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth;
-        csirs_config_pdu->bwp_size = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE);
-        csirs_config_pdu->bwp_start = NRRIV2PRBOFFSET(locationAndBandwidth, MAX_BWP_SIZE);
+        csirs_config_pdu->bwp_size = bwp_size;
+        csirs_config_pdu->bwp_start = bwp_start;
         csirs_config_pdu->subcarrier_spacing = mu;
         csirs_config_pdu->start_rb = resourceMapping.freqBand.startingRB;
         csirs_config_pdu->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
