@@ -243,7 +243,7 @@ int aw2s_startstreaming(openair0_device *device) {
     tx1= (openair0_cfg->tx_num_channels > 1) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxNRFDD : ORI_ObjectType_TxNRTDD, 1, NULL) : NULL;
     tx2= (openair0_cfg->tx_num_channels > 2) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxNRFDD : ORI_ObjectType_TxNRTDD, 2, NULL) : NULL;
     tx3= (openair0_cfg->tx_num_channels > 3) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_TxNRFDD : ORI_ObjectType_TxNRTDD, 3, NULL) : NULL;
-    rx0= ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxEUtraFDD : ORI_ObjectType_RxEUtraTDD, 0, NULL);
+    rx0= ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxNRFDD : ORI_ObjectType_RxNRTDD, 0, NULL);
     rx1= (openair0_cfg->rx_num_channels > 1) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxNRFDD : ORI_ObjectType_RxNRTDD, 1, NULL) : NULL;
     rx2= (openair0_cfg->rx_num_channels > 2) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxNRFDD : ORI_ObjectType_RxNRTDD, 2, NULL) : NULL;
     rx3= (openair0_cfg->rx_num_channels > 3) ? ORI_FindObject(ori, openair0_cfg->duplex_mode == duplex_mode_FDD ?ORI_ObjectType_RxNRFDD : ORI_ObjectType_RxNRTDD, 3, NULL) : NULL;
@@ -259,8 +259,10 @@ int aw2s_startstreaming(openair0_device *device) {
       (rx1 == NULL && openair0_cfg->rx_num_channels > 1) || 
       (rx2 == NULL && openair0_cfg->rx_num_channels > 2) || 
       (rx3 == NULL && openair0_cfg->rx_num_channels > 3) || 
-      link == NULL) return (-1);
-
+      link == NULL) {
+         printf("tx0 %p, tx1 %p, tx2 %p, tx3 %p, rx0 %p, rx1 %p, rx2 %p, rx3 %p\n",tx0,tx1,tx2,tx3,rx0,rx1,rx2,rx3); 
+         return (-1);
+  }
  /*******************************************************************
    * UNLOCK Link 
    *******************************************************************/
@@ -415,7 +417,7 @@ int aw2s_startstreaming(openair0_device *device) {
          (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
          tx0->fst != ORI_FST_Operational || 
          (openair0_cfg->tx_num_channels > 1 && tx1->fst != ORI_FST_Operational))
-  {}	
+  {}*/	
   // test RX interface 
   uint64_t TS;
   char temp_rx[1024] __attribute__((aligned(32)));
@@ -604,7 +606,7 @@ int aw2s_oriinit(openair0_device *device) {
   result = ORI_ObjectCreation(ori, txTypeRef, txParams, txParamList, num_txparams, txParamResult, &tx0, &RE_result);
   if(RE_result != ORI_Result_SUCCESS)
     {
-      printf("ORI_ObjectCreation (txParams0.TxEUtra/NRFDD/TDD) failed with error: %s (%s,%s,%s,%s,%s,%s\n", ORI_Result_Print(RE_result),
+      printf("ORI_ObjectCreation (txParams0.TxEUtra/NR/FDD/TDD) failed with error: %s (%s,%s,%s,%s,%s,%s\n", ORI_Result_Print(RE_result),
 	ORI_Result_Print(txParamResult[0]),
         ORI_Result_Print(txParamResult[1]),
         ORI_Result_Print(txParamResult[2]),
@@ -614,7 +616,7 @@ int aw2s_oriinit(openair0_device *device) {
       aw2s_oricleanup(device);
       return -1;
     }
-  printf("ORI_ObjectCreation (txParams0.TxEUtra/NRFDD/TDD): %s\n", ORI_Result_Print(RE_result));
+  printf("ORI_ObjectCreation (txParams0.TxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
 
 
   /* Create tx1 */
@@ -631,11 +633,11 @@ int aw2s_oriinit(openair0_device *device) {
     result = ORI_ObjectCreation(ori, txTypeRef, txParams, txParamList, num_txparams, txParamResult, &tx1, &RE_result);
     if(RE_result != ORI_Result_SUCCESS)
       {
-        printf("ORI_ObjectCreation (txParams1.TxEUtra/NRFDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        printf("ORI_ObjectCreation (txParams1.TxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
         aw2s_oricleanup(device);
         return -1;
       }
-    printf("ORI_ObjectCreation (txParams1.TxEUtra/NRFDD/TDD): %s\n", ORI_Result_Print(RE_result));
+    printf("ORI_ObjectCreation (txParams1.TxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
   }
 
   if (openair0_cfg->tx_num_channels > 2) {
@@ -651,11 +653,11 @@ int aw2s_oriinit(openair0_device *device) {
     result = ORI_ObjectCreation(ori, txTypeRef, txParams, txParamList, num_txparams, txParamResult, &tx2, &RE_result);
     if(RE_result != ORI_Result_SUCCESS)
       {
-        printf("ORI_ObjectCreation (txParams1.TxEUtraFDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        printf("ORI_ObjectCreation (txParams2.TxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
         aw2s_oricleanup(device);
         return -1;
       }
-    printf("ORI_ObjectCreation (txParams1.TxEUtraFDD/TDD): %s\n", ORI_Result_Print(RE_result));
+    printf("ORI_ObjectCreation (txParams2.TxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
   }
   if (openair0_cfg->tx_num_channels == 4) {
     ORI_Object_s * tx3;
@@ -670,7 +672,7 @@ int aw2s_oriinit(openair0_device *device) {
     result = ORI_ObjectCreation(ori, txTypeRef, txParams, txParamList, num_txparams, txParamResult, &tx3, &RE_result);
     if(RE_result != ORI_Result_SUCCESS)
       {
-        printf("ORI_ObjectCreation (txParams1.TxEUtra/NRFDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        printf("ORI_ObjectCreation (txParams3.TxEUtra/NRFDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
         aw2s_oricleanup(device);
         return -1;
       }
@@ -688,7 +690,8 @@ int aw2s_oriinit(openair0_device *device) {
                                            (openair0_cfg->nr_flag == 0 ? ORI_ObjectType_RxEUtraTDD : ORI_ObjectType_RxNRTDD)};
   ORI_ObjectParams_u rxParams;
   ORI_ObjectParam_e rxParamList[5] = { ORI_ObjectParam_SigPath_antPort, ORI_ObjectParam_SigPath_axcW, ORI_ObjectParam_SigPath_axcB,
-				       ORI_ObjectParam_SigPath_chanBW, ORI_ObjectParam_SigPath_earfcn };
+				       ORI_ObjectParam_SigPath_chanBW, 
+                                       openair0_cfg->nr_flag == 0 ? ORI_ObjectParam_SigPath_earfcn : ORI_ObjectParam_SigPath_AWS_arfcn};
   ORI_Result_e rxParamResult[5];
   int num_rxparams = 5;
   /* Create rx0 */
@@ -783,11 +786,11 @@ int aw2s_oriinit(openair0_device *device) {
   
     if(result != ORI_Result_SUCCESS)
       {
-        printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        printf("ORI_ObjectCreation (rxParams2.RxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
         aw2s_oricleanup(device);
         return -1;
       }
-    printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
+    printf("ORI_ObjectCreation (rxParams2.RxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
   }
   if (openair0_cfg->rx_num_channels > 3) {  
     /* Create rx3 */
@@ -806,11 +809,11 @@ int aw2s_oriinit(openair0_device *device) {
   
     if(result != ORI_Result_SUCCESS)
       {
-        printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
+        printf("ORI_ObjectCreation (rxParams3.RxEUtra/NR/FDD/TDD) failed with error: %s\n", ORI_Result_Print(result));
         aw2s_oricleanup(device);
         return -1;
       }
-    printf("ORI_ObjectCreation (rxParams1.RxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
+    printf("ORI_ObjectCreation (rxParams3.RxEUtra/NR/FDD/TDD): %s\n", ORI_Result_Print(RE_result));
   }
   /* Create link */
 
@@ -827,14 +830,14 @@ int aw2s_oriinit(openair0_device *device) {
   result = ORI_ObjectParamModify(ori,link,linkParams,linkParamList,3,linkParamResult,&RE_result);
   if(result != ORI_Result_SUCCESS)
     {
-      printf("ORI_ObjectParamModify (linkParams) failed with error: %s\n", ORI_Result_Print(result));
+      printf("ORI_ObjectParamModify (linkParams) failed with error: %s\n", ORI_Result_Print(RE_result));
       aw2s_oricleanup(device);
       return -1;
     }
   result = ORI_ObjectStateModification(ori, link, ORI_AST_Locked, &RE_result);
   if(result != ORI_Result_SUCCESS)
     {
-      printf("ORI_ObjectStateModify failed with error: %s\n", ORI_Result_Print(result));
+      printf("ORI_ObjectStateModify failed with error: %s\n", ORI_Result_Print(RE_result));
       aw2s_oricleanup(device);
       return -1;
     }
@@ -850,7 +853,7 @@ int aw2s_oriinit(openair0_device *device) {
   result = ORI_ObjectParamReport(ori, NULL, 0, ORI_ObjectParam_All, &RE_result);
   if(result != ORI_Result_SUCCESS)
     {
-      printf("ORI_ObjectParamReport failed with error: %s\n", ORI_Result_Print(result));
+      printf("ORI_ObjectParamReport failed with error: %s\n", ORI_Result_Print(RE_result));
       aw2s_oricleanup(device);
       return -1;
     }
@@ -869,7 +872,7 @@ int aw2s_oriinit(openair0_device *device) {
   result = ORI_ObjectStateReport(ori, NULL, 0, ORI_StateType_All, ORI_EventDrivenReport_True, &RE_result);
   if(result != ORI_Result_SUCCESS)
     {
-      printf("ORI_ObjectStateReport failed with error: %s\n", ORI_Result_Print(result));
+      printf("ORI_ObjectStateReport failed with error: %s\n", ORI_Result_Print(RE_result));
       aw2s_oricleanup(device);
       return -1;
     }
@@ -893,7 +896,7 @@ int aw2s_oriinit(openair0_device *device) {
   result = ORI_ObjectFaultReport(ori, NULL, 0, ORI_EventDrivenReport_True, &RE_result);
   if(result != ORI_Result_SUCCESS)
     {
-      printf("ORI_ObjectFaultReport failed with error: %s\n", ORI_Result_Print(result));
+      printf("ORI_ObjectFaultReport failed with error: %s\n", ORI_Result_Print(RE_result));
       aw2s_oricleanup(device);
       return -1;
     }
