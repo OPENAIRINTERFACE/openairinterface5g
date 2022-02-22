@@ -511,7 +511,6 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               NR_UE_sched_ctrl_t *sched_ctrl,
                               NR_pdsch_semi_static_t *ps)
 {
-  ps->time_domain_allocation = tda;
   bool reset_dmrs = false;
 
   NR_BWP_DownlinkDedicated_t *bwpd;
