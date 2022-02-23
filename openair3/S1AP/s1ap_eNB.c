@@ -56,7 +56,6 @@
 #include "s1ap_eNB_itti_messaging.h"
 
 #include "s1ap_eNB_ue_context.h" // test, to be removed
-#include "msc.h"
 
 #include "assertions.h"
 #include "conversions.h"
@@ -507,7 +506,6 @@ void s1ap_eNB_init(void) {
   S1AP_DEBUG("Starting S1AP layer\n");
   s1ap_eNB_prepare_internal_data();
   itti_mark_task_ready(TASK_S1AP);
-  MSC_START_USE();
 }
 
 void *s1ap_eNB_process_itti_msg(void *notUsed) {

@@ -51,7 +51,6 @@
 
 #include "assertions.h"
 #include "conversions.h"
-#include "msc.h"
 
 static
 int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
@@ -1025,14 +1024,6 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
       case S1AP_UE_S1AP_IDs_PR_uE_S1AP_ID_pair:
         enb_ue_s1ap_id = ie->value.choice.UE_S1AP_IDs.choice.uE_S1AP_ID_pair.eNB_UE_S1AP_ID;
         mme_ue_s1ap_id = ie->value.choice.UE_S1AP_IDs.choice.uE_S1AP_ID_pair.mME_UE_S1AP_ID;
-        MSC_LOG_RX_MESSAGE(
-          MSC_S1AP_ENB,
-          MSC_S1AP_MME,
-          NULL,0,
-          "0 UEContextRelease/%s eNB_ue_s1ap_id "S1AP_UE_ID_FMT" mme_ue_s1ap_id "S1AP_UE_ID_FMT" len %u",
-          s1ap_direction2String(pdu->present - 1),
-          enb_ue_s1ap_id,
-          mme_ue_s1ap_id);
 
         if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                          enb_ue_s1ap_id)) == NULL) {
@@ -1042,12 +1033,6 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
                      enb_ue_s1ap_id);
           return -1;
         } else {
-          MSC_LOG_TX_MESSAGE(
-            MSC_S1AP_ENB,
-            MSC_RRC_ENB,
-            NULL,0,
-            "0 S1AP_UE_CONTEXT_RELEASE_COMMAND/%d eNB_ue_s1ap_id "S1AP_UE_ID_FMT" ",
-            enb_ue_s1ap_id);
           message_p    = itti_alloc_new_message(TASK_S1AP, 0, S1AP_UE_CONTEXT_RELEASE_COMMAND);
 
           if (ue_desc_p->mme_ue_s1ap_id == 0) { // case of Detach Request and switch off from RRC_IDLE mode

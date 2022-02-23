@@ -48,7 +48,6 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
-#include "msc.h"
 #include "PHY/defs_common.h"
 #include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"

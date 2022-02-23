@@ -505,7 +505,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   load_dftslib();
 
-  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_gNB][MOD %02"PRIu8"][]\n", gNB->Mod_id);
   crcTableInit();
   init_scrambling_luts();
   init_pucch2_luts();

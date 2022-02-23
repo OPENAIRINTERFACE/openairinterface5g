@@ -139,7 +139,12 @@ gtpv1u_create_s1u_tunnel(
   return 0;
 }
 
-int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
+int gtpv1u_delete_ngu_tunnel( const instance_t instance,
+			      gtpv1u_gnb_delete_tunnel_req_t *req) {
   return 0;
 }
 
@@ -725,7 +730,7 @@ int main(int argc, char **argv)
   pdsch_AntennaPorts.N2 = 1;
   pdsch_AntennaPorts.XP = 1;
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, pdsch_AntennaPorts, 0, 0, 0, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, pdsch_AntennaPorts, 0, 0, 0, 0);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 

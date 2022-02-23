@@ -44,7 +44,6 @@
 
 #include "m2ap_itti_messaging.h"
 
-#include "msc.h"
 #include "assertions.h"
 #include "conversions.h"
 
@@ -255,15 +254,6 @@ int eNB_send_MBMS_SCHEDULING_INFORMATION_RESPONSE(instance_t instance, m2ap_mbms
 
 
   LOG_D(M2AP,"pdu.present %d\n",pdu.present);
- // MSC_LOG_TX_MESSAGE(
- // MSC_M2AP_eNB,
- // MSC_M2AP_MCE,
- // (const char *)buffer,
- // len,
- // MSC_AS_TIME_FMT" M2_SETUP_REQUEST initiatingMessage MCEname %s",
- // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- // m2ap_eNB_data_p->ENBname);
-
   m2ap_eNB_itti_send_sctp_data_req(instance, m2ap_enb_data_g->assoc_id, buffer, len, 0);
   return 0;
 }
@@ -359,14 +349,6 @@ int eNB_send_MBMS_SESSION_START_RESPONSE(instance_t instance, m2ap_session_start
 
 
   LOG_D(M2AP,"pdu.present %d\n",pdu.present);
- // MSC_LOG_TX_MESSAGE(
- // MSC_M2AP_eNB,
- // MSC_M2AP_MCE,
- // (const char *)buffer,
- // len,
- // MSC_AS_TIME_FMT" M2_SETUP_REQUEST initiatingMessage MCEname %s",
- // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- // m2ap_eNB_data_p->ENBname);
 
   m2ap_eNB_itti_send_sctp_data_req(instance, m2ap_enb_data_g->assoc_id, buffer, len, 0);
   return 0;
@@ -531,14 +513,6 @@ int eNB_send_MBMS_SESSION_STOP_RESPONSE(instance_t instance, m2ap_session_stop_r
 
 
   LOG_D(M2AP,"pdu.present %d\n",pdu.present);
- // MSC_LOG_TX_MESSAGE(
- // MSC_M2AP_eNB,
- // MSC_M2AP_MCE,
- // (const char *)buffer,
- // len,
- // MSC_AS_TIME_FMT" M2_SETUP_REQUEST initiatingMessage MCEname %s",
- // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- // m2ap_eNB_data_p->ENBname);
 
   m2ap_eNB_itti_send_sctp_data_req(instance, m2ap_enb_data_g->assoc_id, buffer, len, 0);
   return 0;
@@ -700,15 +674,6 @@ int eNB_send_M2_SETUP_REQUEST(m2ap_eNB_instance_t *instance_p, m2ap_eNB_data_t* 
 
 
   LOG_D(M2AP,"pdu.present %d\n",pdu.present);
- // MSC_LOG_TX_MESSAGE(
- // MSC_M2AP_eNB,
- // MSC_M2AP_MCE,
- // (const char *)buffer,
- // len,
- // MSC_AS_TIME_FMT" M2_SETUP_REQUEST initiatingMessage MCEname %s",
- // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- // m2ap_eNB_data_p->ENBname);
-
 
 //  buffer = &bytes[0];
 //  len = 40;
@@ -826,15 +791,6 @@ int eNB_handle_M2_SETUP_RESPONSE(instance_t instance,
    //for (int i=0;i<num_cells_to_activate;i++)  
    //  AssertFatal(M2AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
 
-   //MSC_LOG_RX_MESSAGE(
-   // MSC_M2AP_eNB,
-   // MSC_M2AP_CU,
-   // 0,
-   // 0,
-   // MSC_AS_TIME_FMT" eNB_handle_M2_SETUP_RESPONSE successfulOutcome assoc_id %d",
-   // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-   // assoc_id);
- 
    //LOG_D(M2AP, "Sending M2AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
    //      assoc_id,ENB_MOeNBLE_ID_TO_INSTANCE(assoc_id));
    //itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p2);
@@ -880,15 +836,6 @@ int eNB_handle_M2_SETUP_FAILURE(instance_t instance,
    //for (int i=0;i<num_cells_to_activate;i++)  
    //  AssertFatal(M2AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
 
-   //MSC_LOG_RX_MESSAGE(
-   // MSC_M2AP_eNB,
-   // MSC_M2AP_CU,
-   // 0,
-   // 0,
-   // MSC_AS_TIME_FMT" eNB_handle_M2_SETUP_RESPONSE successfulOutcome assoc_id %d",
-   // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-   // assoc_id);
- 
    //LOG_D(M2AP, "Sending M2AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
    //      assoc_id,ENB_MOeNBLE_ID_TO_INSTANCE(assoc_id));
 
@@ -1025,15 +972,6 @@ int eNB_send_eNB_CONFIGURATION_UPDATE(instance_t instance, m2ap_enb_configuratio
 
 
   LOG_D(M2AP,"pdu.present %d\n",pdu.present);
- // MSC_LOG_TX_MESSAGE(
- // MSC_M2AP_eNB,
- // MSC_M2AP_MCE,
- // (const char *)buffer,
- // len,
- // MSC_AS_TIME_FMT" M2_SETUP_REQUEST initiatingMessage MCEname %s",
- // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- // m2ap_eNB_data_p->ENBname);
-
 
 //  buffer = &bytes[0];
 //  len = 40;
@@ -1086,15 +1024,6 @@ int eNB_handle_eNB_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
    //for (int i=0;i<num_cells_to_activate;i++)  
    //  AssertFatal(M2AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
 
-   //MSC_LOG_RX_MESSAGE(
-   // MSC_M2AP_eNB,
-   // MSC_M2AP_CU,
-   // 0,
-   // 0,
-   // MSC_AS_TIME_FMT" eNB_handle_M2_SETUP_RESPONSE successfulOutcome assoc_id %d",
-   // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-   // assoc_id);
- 
    //LOG_D(M2AP, "Sending M2AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
    //      assoc_id,ENB_MOeNBLE_ID_TO_INSTANCE(assoc_id));
 

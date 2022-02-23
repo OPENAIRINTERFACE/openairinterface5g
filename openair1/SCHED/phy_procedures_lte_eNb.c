@@ -43,7 +43,6 @@
 #include <nfapi/oai_integration/nfapi_pnf.h>
 
 #include "assertions.h"
-#include "msc.h"
 
 #include <time.h>
 
