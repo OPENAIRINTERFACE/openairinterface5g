@@ -955,6 +955,17 @@ static void save_pdsch_pdu_for_crnti(nfapi_nr_dl_tti_request_t *dl_tti_request)
   }
 }
 
+static uint16_t get_message_id(const uint8_t *buffer, ssize_t len)
+{
+  if (len < 4)
+    return 0;
+
+  // Unpack 2 bytes message_id from buffer.
+  uint16_t v;
+  memcpy(&v, buffer + 2, sizeof(v));
+  return ntohs(v);
+}
+
 void *nrue_standalone_pnf_task(void *context)
 {
   struct sockaddr_in server_address;
@@ -998,14 +1009,22 @@ void *nrue_standalone_pnf_task(void *context)
         abort();
       }
     }
-    else if (len == sizeof(nr_phy_channel_params_t))
+    else if (get_message_id((const uint8_t *)buffer, len) == 0x0FFF) // 0x0FFF : channel info identifier.
     {
       nr_phy_channel_params_t *ch_info = CALLOC(1, sizeof(*ch_info));
       memcpy(ch_info, buffer, sizeof(*ch_info));
 
-      slot_rnti_mcs[NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot)].sinr = ch_info->sinr;
-      LOG_D(NR_PHY, "Received_SINR = %f, sfn:slot %d:%d\n",
-            ch_info->sinr, NFAPI_SFNSLOT2SFN(ch_info->sfn_slot), NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot));
+      if (ch_info->nb_of_sinrs > 1)
+        LOG_W(NR_PHY, "Expecting at most one SINR.\n");
+
+      // TODO: Update sinr field of slot_rnti_mcs to be array.
+      for (int i = 0; i < ch_info->nb_of_sinrs; ++i)
+      {
+        slot_rnti_mcs[NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot)].sinr = ch_info->sinr[i];
+
+        LOG_D(NR_PHY, "Received_SINR[%d] = %f, sfn:slot %d:%d\n",
+              i, ch_info->sinr[i], NFAPI_SFNSLOT2SFN(ch_info->sfn_slot), NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot));
+      }
 
       if (!put_queue(&nr_chan_param_queue, ch_info))
       {
