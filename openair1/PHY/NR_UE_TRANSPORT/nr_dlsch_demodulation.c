@@ -1027,7 +1027,6 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
               ((int16_t*)&rho128[2])[5] +
               ((int16_t*)&rho128[2])[7])/16;
 
-            dl_ch128+=3;
             dl_ch128_2+=3;
             rho128+=3;
           }
@@ -1037,6 +1036,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
             avg_rho_im[aarx][aatx*nb_aatx+atx] = 16*avg_rho_im[aarx][aatx*nb_aatx+atx]/(nb_rb*12);
             //printf("rho[rx]%d tx%d tx%d = Re: %d Im: %d\n",aarx, aatx,atx, avg_rho_re[aarx][aatx*nb_aatx+atx], avg_rho_im[aarx][aatx*nb_aatx+atx]);
           }
+          dl_ch128+=3;
         }
       }
     }
