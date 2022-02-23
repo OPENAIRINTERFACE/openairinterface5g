@@ -57,7 +57,6 @@
 #include "ngap_gNB_itti_messaging.h"
 
 #include "ngap_gNB_ue_context.h" // test, to be removed
-#include "msc.h"
 
 #include "assertions.h"
 #include "conversions.h"
@@ -273,7 +272,6 @@ void ngap_gNB_init(void) {
   NGAP_DEBUG("Starting NGAP layer\n");
   ngap_gNB_prepare_internal_data();
   itti_mark_task_ready(TASK_NGAP);
-  MSC_START_USE();
 }
 
 void *ngap_gNB_process_itti_msg(void *notUsed) {

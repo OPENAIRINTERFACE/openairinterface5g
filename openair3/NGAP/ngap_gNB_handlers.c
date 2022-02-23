@@ -48,7 +48,6 @@
 
 #include "assertions.h"
 #include "conversions.h"
-#include "msc.h"
 #include "NGAP_NonDynamic5QIDescriptor.h"
 
 static
@@ -1208,14 +1207,6 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
       case NGAP_UE_NGAP_IDs_PR_uE_NGAP_ID_pair:
         gnb_ue_ngap_id = ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair->rAN_UE_NGAP_ID;
         asn_INTEGER2ulong(&(ie->value.choice.UE_NGAP_IDs.choice.uE_NGAP_ID_pair->aMF_UE_NGAP_ID), &amf_ue_ngap_id);
-        MSC_LOG_RX_MESSAGE(
-          MSC_NGAP_GNB,
-          MSC_NGAP_AMF,
-          NULL,0,
-          "0 UEContextRelease/%s gNB_ue_ngap_id "NGAP_UE_ID_FMT" amf_ue_ngap_id "NGAP_UE_ID_FMT" len %u",
-          ngap_direction2String(pdu->present - 1),
-          gnb_ue_ngap_id,
-          amf_ue_ngap_id);
 
         if ((ue_desc_p = ngap_gNB_get_ue_context(amf_desc_p->ngap_gNB_instance,
                          gnb_ue_ngap_id)) == NULL) {
@@ -1225,12 +1216,6 @@ int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
                      gnb_ue_ngap_id);
           return -1;
         } else {
-          MSC_LOG_TX_MESSAGE(
-            MSC_NGAP_GNB,
-            MSC_RRC_GNB,
-            NULL,0,
-            "0 NGAP_UE_CONTEXT_RELEASE_COMMAND/%d gNB_ue_ngap_id "NGAP_UE_ID_FMT" ",
-            gnb_ue_ngap_id);
           message_p    = itti_alloc_new_message(TASK_NGAP, 0, NGAP_UE_CONTEXT_RELEASE_COMMAND);
 
           if (ue_desc_p->amf_ue_ngap_id == 0) { // case of Detach Request and switch off from RRC_IDLE mode
