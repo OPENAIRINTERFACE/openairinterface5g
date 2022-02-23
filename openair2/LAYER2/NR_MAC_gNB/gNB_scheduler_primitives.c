@@ -584,7 +584,11 @@ void nr_set_pdsch_semi_static(module_id_t module_id,
     SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
   }
 
-  const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
+  const long f = ((bwp || bwpd) &&
+                  sched_ctrl->search_space &&
+                  sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
+                 sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+
   int dci_format;
   if (sched_ctrl->search_space) {
     dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
