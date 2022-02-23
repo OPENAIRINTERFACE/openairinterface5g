@@ -48,7 +48,6 @@
 #include "ngap_gNB_ue_context.h"
 #include "ngap_gNB_nas_procedures.h"
 #include "ngap_gNB_management_procedures.h"
-#include "msc.h"
 
 //------------------------------------------------------------------------------
 int ngap_gNB_handle_nas_first_req(
@@ -312,14 +311,6 @@ int ngap_gNB_handle_nas_first_req(
   }
 
   ue_desc_p->tx_stream = amf_desc_p->nextstream;
-  MSC_LOG_TX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      (const char *)NULL,
-      0,
-      MSC_AS_TIME_FMT" initialUEMessage initiatingMessage gNB_ue_ngap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_desc_p->gNB_ue_ngap_id);
   /* Send encoded message over sctp */
   ngap_gNB_itti_send_sctp_data_req(instance_p->instance, amf_desc_p->assoc_id,
                                    buffer, length, ue_desc_p->tx_stream);
@@ -371,14 +362,6 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
 
   if ((ue_desc_p = ngap_gNB_get_ue_context(ngap_gNB_instance,
                    gnb_ue_ngap_id)) == NULL) {
-    MSC_LOG_RX_DISCARDED_MESSAGE(
-        MSC_NGAP_GNB,
-        MSC_NGAP_AMF,
-        NULL,
-        0,
-        MSC_AS_TIME_FMT" downlinkNASTransport  gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-        gnb_ue_ngap_id,
-        amf_ue_ngap_id);
     NGAP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context gNB_UE_NGAP_ID: 0x%lx\n",
                assoc_id,
                gnb_ue_ngap_id);
@@ -409,15 +392,6 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
         return -1;
     }
   }
-
-  MSC_LOG_RX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      NULL,
-      0,
-      MSC_AS_TIME_FMT" downlinkNASTransport  gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-      assoc_id,
-      amf_ue_ngap_id);
 
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_DownlinkNASTransport_IEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_NAS_PDU, true);
@@ -532,15 +506,6 @@ int ngap_gNB_nas_uplink(instance_t instance, ngap_uplink_nas_t *ngap_uplink_nas_
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      (const char *)NULL,
-      0,
-      MSC_AS_TIME_FMT" uplinkNASTransport initiatingMessage gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_p->gNB_ue_ngap_id,
-      ue_context_p->amf_ue_ngap_id);
   /* UE associated signalling -> use the allocated stream */
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    ue_context_p->amf_ref->assoc_id, buffer,
@@ -571,10 +536,6 @@ int ngap_gNB_nas_non_delivery_ind(instance_t instance,
     /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
     NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: %08x\n",
               ngap_nas_non_delivery_ind->gNB_ue_ngap_id);
-    MSC_LOG_EVENT(
-        MSC_NGAP_GNB,
-        MSC_AS_TIME_FMT" Sent of NAS_NON_DELIVERY_IND to AMF failed, no context for gNB_ue_ngap_id %08x",
-        ngap_nas_non_delivery_ind->gNB_ue_ngap_id);
     return -1;
   }
 
@@ -621,21 +582,9 @@ int ngap_gNB_nas_non_delivery_ind(instance_t instance,
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     NGAP_ERROR("Failed to encode NAS NON delivery indication\n");
     /* Encode procedure has failed... */
-    MSC_LOG_EVENT(
-        MSC_NGAP_GNB,
-        MSC_AS_TIME_FMT" Sent of NAS_NON_DELIVERY_IND to AMF failed (encoding)");
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      (const char *)buffer,
-      length,
-      MSC_AS_TIME_FMT" NASNonDeliveryIndication initiatingMessage gNB_ue_ngap_id %u amf_ue_ngap_id %lu",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_p->gNB_ue_ngap_id,
-      ue_context_p->amf_ue_ngap_id);
   /* UE associated signalling -> use the allocated stream */
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    ue_context_p->amf_ref->assoc_id, buffer,
@@ -868,15 +817,6 @@ int ngap_gNB_initial_ctxt_resp(
     return -1;
   }
 
-    MSC_LOG_TX_MESSAGE(
-        MSC_NGAP_GNB,
-        MSC_NGAP_AMF,
-        (const char *)buffer,
-        length,
-        MSC_AS_TIME_FMT" InitialContextSetup successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-        0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-        initial_ctxt_resp_p->gNB_ue_ngap_id,
-        ue_context_p->amf_ue_ngap_id);
     /* UE associated signalling -> use the allocated stream */
     LOG_I(NR_RRC,"Send message to sctp: NGAP_InitialContextSetupResponse\n");
     ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
@@ -961,15 +901,6 @@ int ngap_gNB_ue_capabilities(instance_t instance,
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      (const char *)buffer,
-      length,
-      MSC_AS_TIME_FMT" UECapabilityInfoIndication initiatingMessage gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_cap_info_ind_p->gNB_ue_ngap_id,
-      ue_context_p->amf_ue_ngap_id);
   /* UE associated signalling -> use the allocated stream */
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    ue_context_p->amf_ref->assoc_id, buffer,
@@ -1179,15 +1110,6 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
       return -1;
   }
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      (const char *)buffer,
-      length,
-      MSC_AS_TIME_FMT" PduSession Setup successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      pdusession_setup_resp_p->gNB_ue_ngap_id,
-      ue_context_p->amf_ue_ngap_id);
   /* UE associated signalling -> use the allocated stream */
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    ue_context_p->amf_ref->assoc_id, buffer,
@@ -1353,15 +1275,6 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      (const char *)buffer,
-      length,
-      MSC_AS_TIME_FMT" E_RAN Modify successful Outcome gNB_ue_ngap_id %u amf_ue_ngap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      pdusession_modify_resp_p->gNB_ue_ngap_id,
-      ue_context_p->amf_ue_ngap_id);
   /* UE associated signalling -> use the allocated stream */
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    ue_context_p->amf_ref->assoc_id, buffer,
@@ -1464,15 +1377,6 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_NGAP_GNB,
-      MSC_NGAP_AMF,
-      (const char *)buffer,
-      length,
-      MSC_AS_TIME_FMT" E_RAN Release successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %lu",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      pdusession_release_resp_p->gNB_ue_ngap_id,
-      (uint64_t)ue_context_p->amf_ue_ngap_id);
   /* UE associated signalling -> use the allocated stream */
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
                                    ue_context_p->amf_ref->assoc_id, buffer,

@@ -60,7 +60,7 @@
 
         <testCase id="000014">
                 <class>DeployGenObject</class>
-                <desc>Deploy OAI 4G NR-UE RF sim (FDD 05MHz)</desc>
+                <desc>Deploy OAI 4G LTE-UE RF sim (FDD 05MHz)</desc>
                 <yaml_path>yaml_files/4g_rfsimulator_fdd_05MHz_noS1</yaml_path>
                 <services>oai_ue0</services>
                 <nb_healthy>2</nb_healthy>

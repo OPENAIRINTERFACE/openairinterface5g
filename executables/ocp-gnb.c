@@ -93,7 +93,6 @@ time_stats_t softmodem_stats_rx_sf; // total rx time
 // not used but needed for link
 openair0_config_t openair0_cfg[MAX_CARDS];
 uint16_t slot_ahead=6;
-msc_interface_t msc_interface;
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 int flexran_agent_start(mid_t mod_id) {
