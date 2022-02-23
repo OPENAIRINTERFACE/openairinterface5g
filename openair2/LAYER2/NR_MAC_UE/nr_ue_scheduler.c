@@ -2457,6 +2457,11 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
             && (resourceMapping.density.choice.dot5 == NR_CSI_RS_ResourceMapping__density__dot5_evenPRBs))
           csirs_config_pdu->freq_density--;
         csirs_config_pdu->scramb_id = nzpcsi->scramblingID;
+        csirs_config_pdu->power_control_offset = nzpcsi->powerControlOffset + 8;
+        if (nzpcsi->powerControlOffsetSS)
+          csirs_config_pdu->power_control_offset_ss = *nzpcsi->powerControlOffsetSS;
+        else
+          csirs_config_pdu->power_control_offset_ss = 1; // 0 dB
         switch(resourceMapping.frequencyDomainAllocation.present){
           case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row1:
             csirs_config_pdu->row = 1;
