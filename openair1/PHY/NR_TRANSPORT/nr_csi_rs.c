@@ -33,6 +33,25 @@ void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
                         uint16_t cell_id,
                         int slot){
 
+#ifdef NR_CSIRS_DEBUG
+  LOG_I(NR_PHY, "csi_params.bwp_size = %i\n", csi_params.bwp_size);
+  LOG_I(NR_PHY, "csi_params.bwp_start = %i\n", csi_params.bwp_start);
+  LOG_I(NR_PHY, "csi_params.subcarrier_spacing = %i\n", csi_params.subcarrier_spacing);
+  LOG_I(NR_PHY, "csi_params.cyclic_prefix = %i\n", csi_params.cyclic_prefix);
+  LOG_I(NR_PHY, "csi_params.start_rb = %i\n", csi_params.start_rb);
+  LOG_I(NR_PHY, "csi_params.nr_of_rbs = %i\n", csi_params.nr_of_rbs);
+  LOG_I(NR_PHY, "csi_params.csi_type = %i (0:TRS, 1:CSI-RS NZP, 2:CSI-RS ZP)\n", csi_params.csi_type);
+  LOG_I(NR_PHY, "csi_params.row = %i\n", csi_params.row);
+  LOG_I(NR_PHY, "csi_params.freq_domain = %i\n", csi_params.freq_domain);
+  LOG_I(NR_PHY, "csi_params.symb_l0 = %i\n", csi_params.symb_l0);
+  LOG_I(NR_PHY, "csi_params.symb_l1 = %i\n", csi_params.symb_l1);
+  LOG_I(NR_PHY, "csi_params.cdm_type = %i\n", csi_params.cdm_type);
+  LOG_I(NR_PHY, "csi_params.freq_density = %i (0: dot5 (even RB), 1: dot5 (odd RB), 2: one, 3: three)\n", csi_params.freq_density);
+  LOG_I(NR_PHY, "csi_params.scramb_id = %i\n", csi_params.scramb_id);
+  LOG_I(NR_PHY, "csi_params.power_control_offset = %i\n", csi_params.power_control_offset);
+  LOG_I(NR_PHY, "csi_params.power_control_offset_ss = %i\n", csi_params.power_control_offset_ss);
+#endif
+
   NR_DL_FRAME_PARMS frame_parms=gNB->frame_parms;
   int32_t **txdataF = gNB->common_vars.txdataF;
   int txdataF_offset = slot*frame_parms.samples_per_slot_wCP;
