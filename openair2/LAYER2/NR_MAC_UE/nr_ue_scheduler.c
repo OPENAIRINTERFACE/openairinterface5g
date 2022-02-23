@@ -2445,6 +2445,7 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
         csirs_config_pdu->bwp_size = bwp_size;
         csirs_config_pdu->bwp_start = bwp_start;
         csirs_config_pdu->subcarrier_spacing = mu;
+        csirs_config_pdu->cyclic_prefix = genericParameters->cyclicPrefix ? *genericParameters->cyclicPrefix : 0;
         csirs_config_pdu->start_rb = resourceMapping.freqBand.startingRB;
         csirs_config_pdu->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
         csirs_config_pdu->csi_type = 1; // NZP-CSI-RS
