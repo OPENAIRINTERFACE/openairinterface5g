@@ -1149,6 +1149,8 @@ void set_r_pucch_parms(int rsetindex,
                        int *nr_of_symbols,
                        int *start_symbol_index) {
 
+  // procedure described in 38.213 section 9.2.1
+
   int prboffset = r_pucch/default_pucch_csset[rsetindex];
   int prboffsetm8 = (r_pucch-8)/default_pucch_csset[rsetindex];
 

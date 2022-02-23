@@ -1282,8 +1282,7 @@ int nr_acknack_scheduling(int mod_id,
              cg->spCellConfig &&
              cg->spCellConfig->spCellConfigDedicated &&
              cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-             cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
-             cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+             cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
     pucch_Config = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
   NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?

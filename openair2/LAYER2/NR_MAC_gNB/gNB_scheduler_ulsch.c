@@ -1091,7 +1091,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   /* Mark the corresponding RBs as used */
   n_rb_sched -= sched_pusch->rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-    rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] -= SL_to_bitmap(sched_ctrl->pusch_semi_static.startSymbolIndex, sched_ctrl->pusch_semi_static.nrOfSymbols);
+    rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= SL_to_bitmap(sched_ctrl->pusch_semi_static.startSymbolIndex, sched_ctrl->pusch_semi_static.nrOfSymbols);
   return true;
 }
 
@@ -1256,7 +1256,7 @@ void pf_ul(module_id_t module_id,
       /* Mark the corresponding RBs as used */
       n_rb_sched -= sched_pusch->rbSize;
       for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] -= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
 
       continue;
     }
@@ -1389,7 +1389,7 @@ void pf_ul(module_id_t module_id,
 
     n_rb_sched -= sched_pusch->rbSize;
     for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-      rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] -= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+      rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
   }
 }
 
