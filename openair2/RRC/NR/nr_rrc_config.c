@@ -973,7 +973,8 @@ static void set_ul_mcs_table(const NR_UE_NR_Capability_t *cap,
     }
   }
   if (supported) {
-    if(pusch_Config->transformPrecoder == NULL) {
+    if(pusch_Config->transformPrecoder == NULL ||
+       *pusch_Config->transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) {
       if(pusch_Config->mcs_Table == NULL)
         pusch_Config->mcs_Table = calloc(1, sizeof(*pusch_Config->mcs_Table));
       *pusch_Config->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
