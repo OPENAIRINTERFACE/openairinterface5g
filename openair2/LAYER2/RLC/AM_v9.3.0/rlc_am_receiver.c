@@ -24,7 +24,6 @@
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "assertions.h"
-#include "msc.h"
 #include "rlc.h"
 #include "rlc_am.h"
 #include "list.h"

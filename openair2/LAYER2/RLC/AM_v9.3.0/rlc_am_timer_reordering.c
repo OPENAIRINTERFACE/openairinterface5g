@@ -28,7 +28,6 @@
 #include "rlc_am.h"
 # include "LAYER2/MAC/mac_extern.h"
 #include "common/utils//LOG/log.h"
-#include "msc.h"
 //-----------------------------------------------------------------------------
 void
 rlc_am_check_timer_reordering(
@@ -63,12 +62,6 @@ rlc_am_check_timer_reordering(
       //     - if VR(H) > VR(MS):
       //         - start t-Reordering;
       //         - set VR(X) to VR(H).
-
-#if MESSAGE_CHART_GENERATOR_RLC_MAC
-      MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                             "0 "PROTOCOL_RLC_AM_MSC_FMT" t_reordering timed out",\
-                             PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
-#endif
 
       //AssertFatal (rlc_pP->vr_x != RLC_SN_UNDEFINED, "RLC AM TReordering Expiry vrX not defined LcId=%d\n", rlc_pP->channel_id);
       if(rlc_pP->vr_x == RLC_SN_UNDEFINED){
@@ -153,11 +146,6 @@ rlc_am_stop_and_reset_timer_reordering(
   rlc_pP->t_reordering.ms_time_out     = 0;
   rlc_pP->t_reordering.ms_start        = 0;
   rlc_pP->t_reordering.timed_out       = 0;
-#if MESSAGE_CHART_GENERATOR_RLC_MAC
-    MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                  "0 "PROTOCOL_RLC_AM_MSC_FMT" t_reordering stopped & reseted",\
-                  PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
-#endif
 }
 //-----------------------------------------------------------------------------
 void
@@ -175,11 +163,6 @@ rlc_am_start_timer_reordering(
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] STARTED (TIME-OUT = %5u ms)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->t_reordering.ms_time_out);
-#if MESSAGE_CHART_GENERATOR_RLC_MAC
-      MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                             "0 "PROTOCOL_RLC_AM_MSC_FMT" t_reordering started (TO %u ms)",\
-                             PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP), rlc_pP->t_reordering.ms_time_out);
-#endif
     } else {
     LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] NOT STARTED, CAUSE CONFIGURED 0 ms\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));

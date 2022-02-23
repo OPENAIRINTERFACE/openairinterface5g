@@ -910,7 +910,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Deploy_Run_PhySim':
 					PHYSIM.Deploy_PhySim(HTML, RAN)
 				elif action == 'DeployGenObject':
-					CONTAINERS.DeployGenObject(HTML)
+					CONTAINERS.DeployGenObject(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'UndeployGenObject':

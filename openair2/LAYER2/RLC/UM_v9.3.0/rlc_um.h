@@ -56,28 +56,13 @@
           rLC_Pp->rb_id,\
           __FUNCTION__
 
-#define PROTOCOL_RLC_UM_MSC_FMT "[RNTI %" PRIx16 " %s %02ld]"
-#define PROTOCOL_RLC_UM_MSC_ARGS(CTXT_Pp, rLC_Pp) \
-        CTXT_Pp->rnti,\
-          (rLC_Pp->is_data_plane) ? "DRB UM" : "SRB UM",\
-          rLC_Pp->rb_id
-
 #if defined(TRACE_RLC_MUTEX)
 #define RLC_UM_MUTEX_LOCK(mUTEX, cTXT, rLC) \
 	do {\
       int pmtl_rc = pthread_mutex_trylock(mUTEX);\
 	  if (pmtl_rc != 0){\
         if (pmtl_rc == EBUSY) {\
-          MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                       "0 " PROTOCOL_RLC_UM_MSC_FMT " Warning try lock %s busy",\
-                       PROTOCOL_RLC_UM_MSC_ARGS(cTXT,rLC),\
-                       #mUTEX);\
           pthread_mutex_lock(mUTEX);\
-        } else {\
-            MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                       "0 " PROTOCOL_RLC_UM_MSC_FMT " Error try lock %s %d",\
-                       PROTOCOL_RLC_UM_MSC_ARGS(cTXT,rLC),\
-                       #mUTEX, pmtl_rc);\
         }\
       }\
 	} while (0);
