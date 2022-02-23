@@ -106,7 +106,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
   int                 Ncp            = cfg->subframe_config.dl_cyclic_prefix_type.value;
   int                 p_eNB          = cfg->rf_config.tx_antenna_ports.value;
   uint32_t            dl_CarrierFreq = cfg->nfapi_config.earfcn.value;
-  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,eNB_tx_antenna_ports %d,Ncp %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
+  LOG_A(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,eNB_tx_antenna_ports %d,Ncp %d,DL freq %u,phich_config.resource %d, phich_config.duration %d)\n",
         Mod_id, CC_id, eutra_band, dl_Bandwidth, ul_Bandwidth, Nid_cell, p_eNB,Ncp,dl_CarrierFreq,
         cfg->phich_config.phich_resource.value,
         cfg->phich_config.phich_duration.value);
@@ -415,10 +415,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
         fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset
        );
-  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02"PRIu8"][]\n", eNB->Mod_id);
   LOG_I (PHY, "[eNB %" PRIu8 "] Initializing DL_FRAME_PARMS : N_RB_DL %" PRIu8 ", PHICH Resource %d, PHICH Duration %d\n",
          eNB->Mod_id, fp->N_RB_DL, fp->phich_config_common.phich_resource, fp->phich_config_common.phich_duration);
-  LOG_D (PHY, "[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02" PRIu8 "][]\n", eNB->Mod_id);
   crcTableInit();
   lte_gold (fp, eNB->lte_gold_table, fp->Nid_cell);
   generate_pcfich_reg_mapping (fp);

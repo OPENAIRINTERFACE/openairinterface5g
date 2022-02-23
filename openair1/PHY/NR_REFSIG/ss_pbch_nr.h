@@ -65,6 +65,7 @@
 /* SS/PBCH parameters */
 #define  N_RB_SS_PBCH_BLOCK           (20)
 #define  NB_SYMBOLS_PBCH              (3)
+#define  NR_N_SYMBOLS_SSB             (4)
 
 #define  IQ_SIZE                      (sizeof(int16_t) * 2)        /* I and Q are alternatively stored into buffers */
 #define  N_SYMB_SLOT                  (14)

@@ -40,7 +40,6 @@
 
 #include "x2ap_eNB_itti_messaging.h"
 
-#include "msc.h"
 #include "assertions.h"
 #include "conversions.h"
 
@@ -259,8 +258,6 @@ int x2ap_eNB_generate_x2_setup_request(
     X2AP_ERROR("Failed to encode X2 setup request\n");
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
 
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
 
@@ -486,8 +483,6 @@ int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_instance_t *instance_p, x2ap_eN
 
   x2ap_eNB_data_p->state = X2AP_ENB_STATE_READY;
 
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/successfulOutcome assoc_id %u", x2ap_eNB_data_p->assoc_id);
-
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
 
   return ret;
@@ -541,11 +536,6 @@ int x2ap_eNB_generate_x2_setup_failure(instance_t instance,
     X2AP_ERROR("Failed to encode X2 setup failure\n");
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB,
-                      MSC_X2AP_TARGET_ENB, NULL, 0,
-                      "0 X2Setup/unsuccessfulOutcome  assoc_id %u cause %u value %u",
-                      assoc_id, cause_type, cause_value);
 
   x2ap_eNB_itti_send_sctp_data_req(instance, assoc_id, buffer, len, 0);
 
@@ -732,8 +722,6 @@ int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_instance_t *instance_p, x2ap
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Handover/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
-
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 1);
 
   return ret;
@@ -846,8 +834,6 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, 
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Handover/successfulOutcome assoc_id %u", x2ap_eNB_data_p->assoc_id);
-
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 1);
 
   return ret;
@@ -907,8 +893,6 @@ int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_instance_t *instance_p, x2
     abort();
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2UEContextRelease/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
 
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 1);
 
@@ -991,8 +975,6 @@ int x2ap_eNB_generate_x2_handover_cancel (x2ap_eNB_instance_t *instance_p, x2ap_
     abort();
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2HandoverCancel/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
 
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 1);
 
@@ -1089,8 +1071,6 @@ int x2ap_eNB_generate_senb_addition_request (x2ap_eNB_instance_t *instance_p, x2
     abort();
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2SeNBAdditionRequest/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
 
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 1);
 
@@ -1367,8 +1347,6 @@ MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
-
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
 
   return ret;
@@ -1578,8 +1556,6 @@ int x2ap_eNB_generate_ENDC_x2_setup_response(
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
-
   x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
 
   return ret;
@@ -1734,9 +1710,9 @@ int x2ap_eNB_generate_ENDC_x2_SgNB_addition_request(
         X2AP_ERROR("Failed to encode ENDC X2 SgNB_addition request message\n");
         return -1;
     }
+    # if 0 // TODO: Sanitizer complains we are trying to access this after free.
 	free(ie->value.choice.MeNBtoSgNBContainer.buf);
-    MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
-
+    #endif
     x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
 
 	return ret;
@@ -1841,8 +1817,6 @@ int x2ap_gNB_generate_ENDC_x2_SgNB_addition_request_ACK( x2ap_eNB_instance_t *in
 	        X2AP_ERROR("Failed to encode ENDC X2 SgNB_addition request message\n");
 	        return -1;
 	    }
-
-	    MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2Setup/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
 
 	    x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 0);
 

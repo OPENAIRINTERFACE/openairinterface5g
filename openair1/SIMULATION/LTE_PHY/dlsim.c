@@ -634,7 +634,7 @@ int main(int argc, char **argv) {
   //  num_layers = 1;
   perfect_ce = 0;
   static paramdef_t options[] = {
-    { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, strptr:NULL, defintval:0, TYPE_INT, 0, NULL, NULL },
+    { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, iptr:&awgn_flag, defintval:0, TYPE_INT, 0, NULL, NULL },
     { "Abstx", "Turns on calibration mode for abstraction.", PARAMFLAG_BOOL, iptr:&abstx,  defintval:0, TYPE_INT, 0 },
     { "bTDD", "Set the tdd configuration mode",0, iptr:&tdd_config,  defintval:3, TYPE_INT, 0 },
     { "BnbRBs", "The LTE bandwith in RBs (100 is 20MHz)",0, iptr:&N_RB_DL,  defintval:25, TYPE_INT, 0 },
@@ -1234,7 +1234,7 @@ int main(int argc, char **argv) {
       break;
   }
 
-  for (k=0; k<NUMBER_OF_UE_MAX; k++) {
+  for (k=0; k<NUMBER_OF_DLSCH_MAX; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0; i<2; i++) {
       eNB->dlsch[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
@@ -1245,6 +1245,17 @@ int main(int argc, char **argv) {
       }
 
       eNB->dlsch[k][i]->rnti = n_rnti+k;
+    }
+  }
+  
+  for (int i=0;i<NUMBER_OF_ULSCH_MAX; i++) {
+    
+    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH %d/%d\n",i,NUMBER_OF_ULSCH_MAX);
+    eNB->ulsch[i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,eNB->frame_parms.N_RB_UL, 0);
+    
+    if (!eNB->ulsch[i]) {
+      LOG_E(PHY,"Can't get eNB ulsch structures\n");
+      exit(-1);
     }
   }
 
@@ -1815,12 +1826,12 @@ int main(int argc, char **argv) {
         if (t_rx > 2000 )
           n_rx_dropped++;
 
-        appendVarArray(table_tx, &t_tx);
-        appendVarArray(table_tx_ifft, &t_tx_ifft);
-        appendVarArray(table_rx, &t_rx );
-        appendVarArray(table_rx_fft, &t_rx_fft );
-        appendVarArray(table_rx_demod, &t_rx_demod );
-        appendVarArray(table_rx_dec, &t_rx_dec );
+        appendVarArray(&table_tx, &t_tx);
+        appendVarArray(&table_tx_ifft, &t_tx_ifft);
+        appendVarArray(&table_rx, &t_rx );
+        appendVarArray(&table_rx_fft, &t_rx_fft );
+        appendVarArray(&table_rx_demod, &t_rx_demod );
+        appendVarArray(&table_rx_dec, &t_rx_dec );
       }   //trials
 
       // round_trials[0]: number of code word : goodput the protocol

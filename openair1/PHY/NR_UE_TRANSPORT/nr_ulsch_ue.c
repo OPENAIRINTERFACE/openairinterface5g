@@ -45,6 +45,7 @@
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
+#include <openair2/UTIL/OPT/opt.h>
 
 //#define DEBUG_PUSCH_MAPPING
 //#define DEBUG_MAC_PDU
@@ -52,12 +53,12 @@
 
 //extern int32_t uplink_counter;
 
-void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint32_t size,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out) {
-
+void nr_pusch_codeword_scrambling_uci(uint8_t *in,
+                                      uint32_t size,
+                                      uint32_t Nid,
+                                      uint32_t n_RNTI,
+                                      uint32_t* out)
+{
   uint8_t reset, b_idx;
   uint32_t x1, x2, s=0, temp_out;
 
@@ -88,7 +89,19 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
       *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
     //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);
   }
+}
 
+void nr_pusch_codeword_scrambling(uint8_t *in,
+                                  uint32_t size,
+                                  uint32_t Nid,
+                                  uint32_t n_RNTI,
+                                  bool uci_on_pusch,
+                                  uint32_t* out)
+{
+  if (uci_on_pusch)
+    nr_pusch_codeword_scrambling_uci(in, size, Nid, n_RNTI, out);
+  else
+    nr_codeword_scrambling(in, size, 0, Nid, n_RNTI, out);
 }
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
@@ -105,7 +118,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   int16_t **tx_layers;
   int32_t **txdataF;
-  int8_t Wf[2], Wt[2], l_prime[2], delta;
+  int8_t Wf[2], Wt[2];
+  int l_prime[2], delta;
   uint8_t nb_dmrs_re_per_rb;
   int ap, i;
   int sample_offsetF, N_RE_prime;
@@ -162,8 +176,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                               nb_dmrs_re_per_rb, number_dmrs_symbols, mod_order, Nl);
     
 
+    trace_NRpdu(DIRECTION_UPLINK,
+		ulsch_ue->harq_processes[harq_pid]->a,
+		ulsch_ue->harq_processes[harq_pid]->pusch_pdu.pusch_data.tb_size,
+		0, WS_C_RNTI, rnti, frame, slot, 0, 0);
+
     if (nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G) == -1)
       return;
+
 
     ///////////
     ////////////////////////////////////////////////////////////////////
@@ -179,6 +199,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                  available_bits,
                                  ulsch_ue->Nid_cell,
                                  rnti,
+                                 false,
                                  scrambled_output[cwd_index]); // assume one codeword for the moment
 
 
@@ -411,7 +432,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         if (is_dmrs == 1) {
           // if transform precoding is enabled
           if (pusch_pdu->transform_precoding == 0) {
-          
+
             ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[2*dmrs_idx]) >> 15;
             ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[(2*dmrs_idx) + 1]) >> 15;
           

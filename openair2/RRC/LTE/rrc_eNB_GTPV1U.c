@@ -32,7 +32,6 @@
 # include "RRC/LTE/MESSAGES/asn1_msg.h"
 # include "rrc_eNB_GTPV1U.h"
 # include "rrc_eNB_UE_context.h"
-# include "msc.h"
 
 
 #include "asn1_conversions.h"
@@ -77,15 +76,6 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 	    create_tunnel_resp_pP->enb_addr.length);
     }
 
-	MSC_LOG_RX_MESSAGE(
-			  MSC_RRC_ENB,
-			  MSC_GTPU_ENB,
-			  NULL,0,
-			  MSC_AS_TIME_FMT" CREATE_TUNNEL_RESP RNTI %"PRIx16" ntuns %u ebid %u enb-s1u teid %u",
-			  0,0,rnti,
-			  create_tunnel_resp_pP->num_tunnels,
-			  ue_context_p->ue_context.enb_gtp_ebi[0],
-			  ue_context_p->ue_context.enb_gtp_teid[0]);
         (void)rnti; /* avoid gcc warning "set but not used" */
     return 0;
   } else {
@@ -210,7 +200,7 @@ boolean_t gtpv_data_req_new (
       GTPV1U_ENB_END_MARKER_REQ(msg).offset = GTPU_HEADER_OVERHEAD_MAX;
       LOG_I(GTPU, "Send End Marker to GTPV1-U at frame %d and subframe %d \n", ctxt->frame,ctxt->subframe);
       itti_send_msg_to_task(TASK_GTPV1_U, ENB_MODULE_ID_TO_INSTANCE(ctxt->module_id), msg);
-      return NW_GTPV1U_OK;
+      return 0;
   }
   
   /* target enb */
@@ -225,7 +215,7 @@ boolean_t gtpv_data_req_new (
       gtpv1u_enb_delete_tunnel_req_t delete_tunnel_req;
       memset(&delete_tunnel_req, 0, sizeof(delete_tunnel_req));
       delete_tunnel_req.rnti = ctxt->rnti;
-      gtpv1u_delete_x2u_tunnel(ctxt->module_id, &delete_tunnel_req, GTPV1U_TARGET_ENB);
+      gtpv1u_delete_x2u_tunnel(ctxt->module_id, &delete_tunnel_req);
       return true;
     } else {
       /* data packet */
@@ -261,23 +251,33 @@ boolean_t gtpv_data_req_new (
 
 void rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(
   module_id_t enb_mod_idP,
-  const rrc_eNB_ue_context_t* const ue_context_pP
+  rrc_eNB_ue_context_t*  ue_context_pP
 )
 {
   if (!ue_context_pP) {
     LOG_W(RRC, "[eNB] In %s: invalid UE\n", __func__);
     return;
   }
+  eNB_RRC_UE_t *ue = &ue_context_pP->ue_context;
   gtpv1u_enb_delete_tunnel_req_t tmp={0};
 
-  tmp.rnti = ue_context_pP->ue_context.rnti;
+  tmp.rnti = ue->rnti;
   tmp.from_gnb = 0;
-  tmp.num_erab = ue_context_pP->ue_context.nb_of_e_rabs;
-  for (int e_rab = 0; e_rab < ue_context_pP->ue_context.nb_of_e_rabs; e_rab++) {
-    const rb_id_t gtp_ebi = ue_context_pP->ue_context.enb_gtp_ebi[e_rab];
+  tmp.num_erab = ue->nb_of_e_rabs;
+  for (int e_rab = 0; e_rab < ue->nb_of_e_rabs; e_rab++) {
+    const rb_id_t gtp_ebi = ue->enb_gtp_ebi[e_rab];
     tmp.eps_bearer_id[e_rab] = gtp_ebi;
   }
-  gtpv1u_delete_s1u_tunnel(enb_mod_idP,&tmp); 
+  gtpv1u_delete_s1u_tunnel(enb_mod_idP,&tmp);
+  if ( ue->ue_release_timer_rrc > 0
+       && (ue->handover_info == NULL ||
+	   (ue->handover_info->state != HO_RELEASE &&
+	    ue->handover_info->state != HO_CANCEL
+	   )
+       )
+    )
+    ue->ue_release_timer_rrc = ue->ue_release_timer_thres_rrc;
+  
 }
 
 

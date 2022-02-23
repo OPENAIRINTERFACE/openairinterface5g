@@ -31,6 +31,7 @@
 #include <assertions.h>
 #include <LOG/log.h>
 #include <common/utils/system.h>
+//#include <stdatomic.h>
 
 #ifdef DEBUG
   #define THREADINIT   PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
@@ -50,7 +51,7 @@
                                     AssertFatal(ret==0,"ret=%d\n",ret);}
 #define condbroadcast(signal) {int ret=pthread_cond_broadcast(&signal); \
                                AssertFatal(ret==0,"ret=%d\n",ret);}
-#define condsignal(signal)    {int ret=pthread_cond_broadcast(&signal); \
+#define condsignal(signal)    {int ret=pthread_cond_signal(&signal); \
                                AssertFatal(ret==0,"ret=%d\n",ret);}
 #define tpool_nbthreads(tpool)   (tpool.nbThreads)
 typedef struct notifiedFIFO_elt_s {
@@ -130,7 +131,7 @@ static inline void pushNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf, notifiedFIF
 static inline void pushNotifiedFIFO(notifiedFIFO_t *nf, notifiedFIFO_elt_t *msg) {
   mutexlock(nf->lockF);
   pushNotifiedFIFO_nothreadSafe(nf,msg);
-  condbroadcast(nf->notifF);
+  condsignal(nf->notifF);
   mutexunlock(nf->lockF);
 }
 
@@ -141,7 +142,7 @@ static inline  notifiedFIFO_elt_t *pullNotifiedFIFO_nothreadSafe(notifiedFIFO_t 
   notifiedFIFO_elt_t *ret=nf->outF;
 
   if (nf->outF==nf->outF->next)
-    LOG_E(TMR,"Circular list in thread pool: push several times the same buffer is forbidden\n");
+    LOG_E(UTIL,"Circular list in thread pool: push several times the same buffer is forbidden\n");
 
   nf->outF=nf->outF->next;
 

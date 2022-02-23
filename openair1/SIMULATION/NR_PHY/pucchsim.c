@@ -56,8 +56,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 double cpuf;
 //uint8_t nfapi_mode = 0;
 uint16_t NB_UE_INST = 1;
-uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
-uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 // needed for some functions
 PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
@@ -689,8 +688,8 @@ int main(int argc, char **argv)
           ack_nack_errors+=((actual_payload^payload_received)&1) + (((actual_payload^payload_received)&2)>>1);
       }
       else if (format==2) {
-        nfapi_nr_uci_pucch_pdu_format_2_3_4_t uci_pdu;
-        nfapi_nr_pucch_pdu_t pucch_pdu;
+        nfapi_nr_uci_pucch_pdu_format_2_3_4_t uci_pdu={0};
+        nfapi_nr_pucch_pdu_t pucch_pdu={0};
         pucch_pdu.rnti = 0x1234;
         pucch_pdu.subcarrier_spacing    = 1;
         pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;

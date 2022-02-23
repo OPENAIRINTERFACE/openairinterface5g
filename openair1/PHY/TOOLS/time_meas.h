@@ -115,7 +115,24 @@ static inline uint32_t rdtsc_oai(void) {
 #define CPUMEAS_DISABLE  0
 #define CPUMEAS_ENABLE   1
 #define CPUMEAS_GETSTATE 2
-int cpumeas(int action);
+static inline int cpumeas(int action) {
+  switch (action) {
+    case CPUMEAS_ENABLE:
+      opp_enabled = 1;
+      break;
+
+    case CPUMEAS_DISABLE:
+      opp_enabled = 0;
+      break;
+
+    case CPUMEAS_GETSTATE:
+    default:
+      break;
+  }
+
+  return opp_enabled;
+}
+
 static inline void start_meas(time_stats_t *ts) {
   if (opp_enabled) {
     if (ts->meas_flag==0) {
@@ -125,6 +142,7 @@ static inline void start_meas(time_stats_t *ts) {
     } else {
       ts->in = rdtsc_oai();
     }
+    if ((ts->trials&16383)<10) ts->max=0;
   }
 }
 
@@ -159,6 +177,16 @@ static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts) {
     dst_ts->diff=src_ts->diff;
     dst_ts->max=src_ts->max;
   }
+}
+
+static inline void merge_meas(time_stats_t *dst_ts, time_stats_t *src_ts)
+{
+  if (!opp_enabled)
+    return;
+  dst_ts->trials += src_ts->trials;
+  dst_ts->diff += src_ts->diff;
+  if (src_ts->max > dst_ts->max)
+    dst_ts->max = src_ts->max;
 }
 
 extern notifiedFIFO_t measur_fifo;

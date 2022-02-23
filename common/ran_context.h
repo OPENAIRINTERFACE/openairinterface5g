@@ -42,17 +42,11 @@
 //#include "ENB_APP/enb_config.h"
 #include "flexran_agent_defs.h"
 
-#include "gtpv1u.h"
-#include "NwGtpv1u.h"
-#include "NwGtpv1uMsg.h"
-#include "NwGtpv1uPrivate.h"
-#include "gtpv1u_eNB_defs.h"
-#include "gtpv1u_gNB_defs.h"
-
 #include "PHY/defs_L1_NB_IoT.h"
 #include "RRC/LTE/defs_NB_IoT.h"
 #include "RRC/LTE/rrc_defs.h"
 #include "RRC/NR/nr_rrc_defs.h"
+#include <openair3/ocp-gtpu/gtpv1u_eNB_task.h>
 
 
 typedef struct {
@@ -110,8 +104,6 @@ typedef struct {
   struct gNB_MAC_INST_s **nrmac;
   /// GTPu descriptor 
   gtpv1u_data_t *gtpv1u_data_g;
-  /// NR GTPu descriptor 
-  nr_gtpv1u_data_t *nr_gtpv1u_data_g;
   /// RU descriptors. These describe what each radio unit is supposed to do and contain the necessary functions for fronthaul interfaces
   struct RU_t_s **ru;
   /// Mask to indicate fronthaul setup status of RU (hard-limit to 64 RUs)

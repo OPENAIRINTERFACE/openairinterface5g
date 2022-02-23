@@ -42,14 +42,14 @@
 	<testCase id="030161">
 		<class>Initialize_eNB</class>
 		<desc>Initialize DU (FDD/Band7/20MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/du.band7.tm1.100PRB.usrpb210.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/du.band7.tm1.100PRB.usrpb210.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 	</testCase>
 
 	<testCase id="030162">
 		<class>Initialize_eNB</class>
 		<desc>Initialize CU (FDD/Band7/20MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/cu.band7.tm1.100PRB.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/cu.band7.tm1.100PRB.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 	</testCase>
 

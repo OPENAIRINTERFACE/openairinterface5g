@@ -947,7 +947,7 @@ void nr_dlsch_64qam_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
 
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,6,subframe,symbol);
+    pbch_pss_sss_adjust=adjust_G2(frame_parms->Ncp,frame_parms->frame_type, frame_parms->N_RB_DL,&rb_alloc,6,subframe,symbol);
 
     if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
       amp_tmp = 0x1fff;//dlsch0->sqrt_rho_b; already taken into account

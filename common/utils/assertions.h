@@ -25,21 +25,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <platform_types.h>
+#include "backtrace.h"
 
-#if defined(ENB_MODE)
-# define display_backtrace()
-#else
-# include "backtrace.h"
-#endif
-
-void output_log_mem(void);
-#define _Assert_Exit_                           \
-    fprintf(stderr, "\nExiting execution\n");   \
-    display_backtrace();                        \
-    fflush(stdout);                             \
-    fflush(stderr);                             \
-    abort();
+#define _Assert_Exit_							\
+  if (getenv("gdbStacks")) {						\
+    char tmp [1000];							\
+    sprintf(tmp,"gdb -ex='set confirm off' -ex 'thread apply all bt' -ex q -p %d < /dev/null", getpid());  \
+    __attribute__((unused)) int dummy=system(tmp);						\
+  }									\
+  fprintf(stderr, "\nExiting execution\n");				\
+  fflush(stdout);							\
+  fflush(stderr);							\
+  abort();
 
 #define _Assert_(cOND, aCTION, fORMAT, aRGS...)             \
 do {                                                        \

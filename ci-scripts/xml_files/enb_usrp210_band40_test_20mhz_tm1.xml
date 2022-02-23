@@ -37,7 +37,7 @@
 	<testCase id="030124">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (TDD/Band40/20MHz/info)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.100PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.100PRB.FairScheduler.usrpb210.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030201">

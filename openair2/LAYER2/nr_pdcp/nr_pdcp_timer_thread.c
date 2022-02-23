@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#define _GNU_SOURCE
 #include "nr_pdcp_timer_thread.h"
 
 #include <stdlib.h>
@@ -33,6 +34,7 @@ static volatile uint64_t timer_thread_curtime = 0;
 
 static void *nr_pdcp_timer_thread(void *_nr_pdcp_ue_manager)
 {
+  pthread_setname_np(pthread_self(),"pdcp_timer");
   nr_pdcp_ue_manager_t *nr_pdcp_ue_manager = (nr_pdcp_ue_manager_t *)_nr_pdcp_ue_manager;
   nr_pdcp_ue_t         **ue_list;
   int                  ue_count;

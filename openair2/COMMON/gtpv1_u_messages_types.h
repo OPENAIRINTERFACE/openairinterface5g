@@ -28,10 +28,6 @@
 #define GTPV1U_MAX_BEARERS_PER_UE max_val_LTE_DRB_Identity
 #define NR_GTPV1U_MAX_BEARERS_PER_UE max_val_NR_DRB_Identity
 
-#define GTPV1U_ENB_UPDATE_TUNNEL_REQ(mSGpTR)  (mSGpTR)->ittiMsg.Gtpv1uUpdateTunnelReq
-#define GTPV1U_ENB_UPDATE_TUNNEL_RESP(mSGpTR) (mSGpTR)->ittiMsg.Gtpv1uUpdateTunnelResp
-#define GTPV1U_ENB_DELETE_TUNNEL_REQ(mSGpTR)  (mSGpTR)->ittiMsg.Gtpv1uDeleteTunnelReq
-#define GTPV1U_ENB_DELETE_TUNNEL_RESP(mSGpTR) (mSGpTR)->ittiMsg.Gtpv1uDeleteTunnelResp
 #define GTPV1U_ENB_TUNNEL_DATA_IND(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataInd
 #define GTPV1U_ENB_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataReq
 #define GTPV1U_ENB_DATA_FORWARDING_REQ(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uDataForwardingReq
@@ -39,11 +35,8 @@
 #define GTPV1U_ENB_END_MARKER_REQ(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerReq
 #define GTPV1U_ENB_END_MARKER_IND(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerInd
 
-#define GTPV1U_ENB_S1_REQ(mSGpTR)    (mSGpTR)->ittiMsg.gtpv1uS1Req
+#define GTPV1U_REQ(mSGpTR)    (mSGpTR)->ittiMsg.gtpv1uReq
 
-#define GTPV1U_GNB_DELETE_TUNNEL_REQ(mSGpTR)  (mSGpTR)->ittiMsg.NRGtpv1uDeleteTunnelReq
-#define GTPV1U_GNB_DELETE_TUNNEL_RESP(mSGpTR) (mSGpTR)->ittiMsg.NRGtpv1uDeleteTunnelResp
-#define GTPV1U_GNB_NG_REQ(mSGpTR)             (mSGpTR)->ittiMsg.gtpv1uNGReq
 #define GTPV1U_GNB_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.NRGtpv1uTunnelDataReq
 
 #define GTPV1U_ALL_TUNNELS_TEID (teid_t)0xFFFFFFFF
@@ -174,25 +167,23 @@ typedef struct gtpv1u_enb_end_marker_ind_s {
 } gtpv1u_enb_end_marker_ind_t;
 
 typedef struct {
-  in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
-  tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
-  char                  addrStr[256];
-  char                  portStr[256];
-} Gtpv1uS1Req;
+  in_addr_t             localAddr;
+  tcp_udp_port_t        localPort;
+  char                  localAddrStr[256];
+  char                  localPortStr[256];
+} Gtpv1uReq;
 
-typedef struct {
-  in_addr_t             gnb_ip_address_for_NGu_up;
-  tcp_udp_port_t        gnb_port_for_NGu_up;
-  char                  addrStr[256];
-  char                  portStr[256];
-} Gtpv1uNGReq;
+
 typedef struct gtpv1u_gnb_create_tunnel_req_s {
   rnti_t                 rnti;
   int                    num_tunnels;
-  teid_t                 upf_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
+  //teid_t                 upf_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
+  teid_t                 outgoing_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];
   pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
   ebi_t                  incoming_rb_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
-  transport_layer_addr_t upf_addr[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  //ebi_t                  outgoing_rb_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  //transport_layer_addr_t upf_addr[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  transport_layer_addr_t dst_addr[NR_GTPV1U_MAX_BEARERS_PER_UE];
 } gtpv1u_gnb_create_tunnel_req_t;
 
 typedef struct gtpv1u_gnb_create_tunnel_resp_s {
@@ -203,7 +194,6 @@ typedef struct gtpv1u_gnb_create_tunnel_resp_s {
   pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
   transport_layer_addr_t gnb_addr;
 } gtpv1u_gnb_create_tunnel_resp_t;
-
 typedef struct gtpv1u_gnb_delete_tunnel_req_s {
   rnti_t                 rnti;
   uint8_t                num_pdusession;
@@ -215,7 +205,6 @@ typedef struct gtpv1u_gnb_delete_tunnel_resp_s {
   uint8_t                status;               ///< Status of NGU endpoint deleteion (Failed = 0xFF or Success = 0x0)
   teid_t                 gnb_NGu_teid;         ///< local NGU Tunnel Endpoint Identifier to be deleted
 } gtpv1u_gnb_delete_tunnel_resp_t;
-
 typedef struct gtpv1u_gnb_tunnel_data_req_s {
   uint8_t               *buffer;
   uint32_t               length;

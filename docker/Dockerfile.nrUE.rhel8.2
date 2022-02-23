@@ -76,6 +76,8 @@ COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv_5Gue.so \
     /usr/local/lib/
 
 COPY --from=nr-ue-base \
@@ -95,6 +97,9 @@ COPY --from=nr-ue-base \
     /lib64/libboost_atomic.so.1.66.0 \
     /lib64/libboost_timer.so.1.66.0 \
     /lib64/libboost_regex.so.1.66.0 \
+    /lib64/libicudata.so.60 \
+    /lib64/libicui18n.so.60 \
+    /lib64/libicuuc.so.60 \
     /lib64/
 
 # Now we are copying from builder-image the UHD files.

@@ -115,12 +115,6 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
     }
   }
 
-  if (ue->rx_offset < 0)
-    ue->rx_offset += frame_parms->samples_per_frame;
-
-  if (ue->rx_offset >= frame_parms->samples_per_frame)
-    ue->rx_offset -= frame_parms->samples_per_frame;
-
 #ifdef DEBUG_PHY
   LOG_D(PHY,"AbsSubframe %d: diff = %i, rx_offset (final) = %i : clear = %d, max_pos = %d, max_pos_fil = %d, max_val = %d, sync_pos %d\n",
         subframe,

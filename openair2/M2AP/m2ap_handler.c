@@ -44,7 +44,6 @@
 #include "m2ap_MCE_interface_management.h"
 #include "m2ap_eNB_interface_management.h"
 
-#include "msc.h"
 #include "assertions.h"
 #include "conversions.h"
 

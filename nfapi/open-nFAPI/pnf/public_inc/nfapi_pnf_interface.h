@@ -800,6 +800,7 @@ int nfapi_pnf_p7_harq_ind(nfapi_pnf_p7_config_t* config, nfapi_harq_indication_t
  * \return 0 means success, -1 means failure
  */
 int nfapi_pnf_p7_crc_ind(nfapi_pnf_p7_config_t* config, nfapi_crc_indication_t* ind);
+int nfapi_pnf_p7_nr_crc_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_crc_indication_t* ind);
 
 /*! Send the RX.indication
  * \param config A pointer to a PNF P7 config
@@ -807,6 +808,7 @@ int nfapi_pnf_p7_crc_ind(nfapi_pnf_p7_config_t* config, nfapi_crc_indication_t* 
  * \return 0 means success, -1 means failure
  */
 int nfapi_pnf_p7_rx_ind(nfapi_pnf_p7_config_t* config, nfapi_rx_indication_t* ind);
+int nfapi_pnf_p7_nr_rx_data_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_rx_data_indication_t* ind);
 
 /*! Send the RACH.indication
  * \param config A pointer to a PNF P7 config
@@ -821,6 +823,7 @@ int nfapi_pnf_p7_rach_ind(nfapi_pnf_p7_config_t* config, nfapi_rach_indication_t
  * \return 0 means success, -1 means failure
  */
 int nfapi_pnf_p7_srs_ind(nfapi_pnf_p7_config_t* config, nfapi_srs_indication_t* ind);
+int nfapi_pnf_p7_nr_srs_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_srs_indication_t* ind);
 
 /*! Send the SR.indication
  * \param config A pointer to a PNF P7 config
@@ -842,6 +845,7 @@ int nfapi_pnf_p7_cqi_ind(nfapi_pnf_p7_config_t* config, nfapi_cqi_indication_t* 
  * \return 0 means success, -1 means failure
  */
 int nfapi_pnf_p7_lbt_dl_ind(nfapi_pnf_p7_config_t* config, nfapi_lbt_dl_indication_t* ind);
+int nfapi_pnf_p7_nr_uci_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_uci_indication_t* ind);
 
 /*! Send the NB_HARQ.indication
  * \param config A pointer to a PNF P7 config
@@ -856,6 +860,7 @@ int nfapi_pnf_p7_nb_harq_ind(nfapi_pnf_p7_config_t* config, nfapi_nb_harq_indica
  * \return 0 means success, -1 means failure
  */
 int nfapi_pnf_p7_nrach_ind(nfapi_pnf_p7_config_t* config, nfapi_nrach_indication_t* ind);
+int nfapi_pnf_p7_nr_rach_ind(nfapi_pnf_p7_config_t* config, nfapi_nr_rach_indication_t* ind);
 
 
 /*! Send a vendor exntesion message

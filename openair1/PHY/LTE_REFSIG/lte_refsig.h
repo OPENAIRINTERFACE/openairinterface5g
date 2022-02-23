@@ -36,8 +36,7 @@
 \param reset resets the generator
 \return 32 bits of the gold sequence
 */
-uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
-
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 /*!\brief This function generates the LTE Gold sequence (36-211, Sec 7.2), specifically for DL reference signals.
 @param frame_parms LTE DL Frame parameters

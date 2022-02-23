@@ -96,20 +96,6 @@ typedef struct {
   uint32_t subframe;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// Concatenated sequences
-  uint8_t *e;
-  /// LDPC-code outputs
-  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
-  /// Interleaver outputs
-  uint8_t *f;
-  /// Number of code segments
-  uint32_t C;
-  /// Number of bits in "small" code segments
-  uint32_t K;
-  /// Number of "Filler" bits
-  uint32_t F;
-  /// Encoder BG
-  uint8_t BG;
   /// LDPC lifting size
   uint32_t Z;
 } NR_DL_gNB_HARQ_t;
@@ -412,6 +398,16 @@ typedef struct {
 } NR_gNB_PUCCH_t;
 
 typedef struct {
+  uint8_t active;
+  /// Frame where current SRS pdu was received
+  uint32_t frame;
+  /// Slot where current SRS pdu was received
+  uint32_t slot;
+  /// ULSCH PDU
+  nfapi_nr_srs_pdu_t srs_pdu;
+} NR_gNB_SRS_t;
+
+typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
@@ -608,6 +604,8 @@ typedef struct gNB_L1_proc_t_s {
   pthread_t L1_stats_thread;
   /// pthread structure for printing time meas
   pthread_t process_stats_thread;
+  /// pthread structure for reordering L1 tx thread messages
+  pthread_t pthread_tx_reorder;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// flag to indicate first TX transmission
@@ -765,11 +763,11 @@ typedef struct PHY_VARS_gNB_s {
   //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
   uint16_t num_pdsch_rnti[80];
   NR_gNB_PBCH        pbch;
-  nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
+  NR_gNB_SRS_t       *srs[NUMBER_OF_NR_SRS_MAX];
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
@@ -783,14 +781,14 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_UCI_STATS_t uci_stats[NUMBER_OF_NR_UCI_STATS_MAX];
   t_nrPolar_params    *uci_polarParams;
 
+  /// SRS variables
+  nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
+
   uint8_t pbch_configured;
   char gNB_generate_rar;
 
   // PUCCH0 Look-up table for cyclic-shifts
   NR_gNB_PUCCH0_LUT_t pucch0_lut;
-  /// NR synchronization sequences
-  int16_t d_pss[NR_PSS_LENGTH];
-  int16_t d_sss[NR_SSS_LENGTH];
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch_dmrs[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
@@ -858,8 +856,7 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t *phy_proc_tx_0;
-  time_stats_t *phy_proc_tx_1;
+  time_stats_t *phy_proc_tx[2];
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*
@@ -868,6 +865,9 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;
+  time_stats_t dlsch_resource_mapping_stats;
+  time_stats_t dlsch_layer_mapping_stats;
+  time_stats_t dlsch_precoding_stats;
   time_stats_t tinput;
   time_stats_t tprep;
   time_stats_t tparity;
@@ -879,6 +879,7 @@ typedef struct PHY_VARS_gNB_s {
 
   time_stats_t rx_pusch_stats;
   time_stats_t ul_indication_stats;
+  time_stats_t schedule_response_stats;
   time_stats_t ulsch_decoding_stats;
   time_stats_t ulsch_rate_unmatching_stats;
   time_stats_t ulsch_ldpc_decoding_stats;
@@ -897,11 +898,13 @@ typedef struct PHY_VARS_gNB_s {
   */
   notifiedFIFO_t *respDecode;
   notifiedFIFO_t *resp_L1;
-  notifiedFIFO_t *resp_L1_tx;
+  notifiedFIFO_t *L1_tx_free;
+  notifiedFIFO_t *L1_tx_filled;
+  notifiedFIFO_t *L1_tx_out;
   notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;
-  uint8_t pusch_proc_threads;
+  uint8_t thread_pool_size;
   int number_of_nr_dlsch_max;
   int number_of_nr_ulsch_max;
   void * scopeData;
@@ -962,12 +965,14 @@ typedef struct processingData_L1tx {
   int slot;
   openair0_timestamp timestamp_tx;
   PHY_VARS_gNB *gNB;
-  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
-  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu;
+  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
+  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
   NR_gNB_CSIRS_t csirs_pdu[NUMBER_OF_NR_CSIRS_MAX];
   NR_gNB_DLSCH_t *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];
   NR_gNB_SSB_t ssb[64];
   uint16_t num_pdsch_slot;
+  int num_dl_pdcch;
+  int num_ul_pdcch;
   time_stats_t phy_proc_tx;
 } processingData_L1tx_t;
 
