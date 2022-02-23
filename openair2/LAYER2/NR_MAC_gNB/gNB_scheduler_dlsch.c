@@ -495,7 +495,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                         DL_SCH_LCID_DCCH,
                                                         0,
                                                         0);
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0) {
+    if ((sched_ctrl->lcid_mask&(1<<4)) > 0) {  
        start_meas(&RC.nrmac[module_id]->rlc_status_ind);
        sched_ctrl->rlc_status[DL_SCH_LCID_DTCH] = mac_rlc_status_ind(module_id,
                                                                     rnti,
@@ -510,13 +510,13 @@ void nr_store_dlsch_buffer(module_id_t module_id,
        stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
     }
     if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
-      lcid = DL_SCH_LCID_DCCH;
-    }
+      lcid = DL_SCH_LCID_DCCH;       
+    } 
     else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
     {
-      lcid = DL_SCH_LCID_DCCH1;
+      lcid = DL_SCH_LCID_DCCH1;       
     }else{
-      lcid = DL_SCH_LCID_DTCH;
+      lcid = DL_SCH_LCID_DTCH;       
     }
                                                       
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
@@ -600,6 +600,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize &&
            (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbSize++;
+
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -608,6 +609,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
                                  retInfo->tb_size,
+                                 1, /* minimum of 1RB: need to find exact TBS, don't preclude any number */
                                  rbSize,
                                  &new_tbs,
                                  &new_rbSize);
@@ -744,9 +746,6 @@ void pf_dl(module_id_t module_id,
       set_dl_mcs(sched_pdsch,sched_ctrl,&mac->dl_max_mcs,ps->mcsTableIdx);
       sched_pdsch->mcs = get_mcs_from_bler(module_id, /* CC_id = */ 0, frame, slot, UE_id);
       layers[UE_id] = set_dl_nrOfLayers(sched_ctrl);
-
-      // uint32_t tbs = pf_tbs[ps->mcsTableIdx][sched_pdsch->mcs]; // for nrOfLayers = 1
-
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
@@ -757,7 +756,6 @@ void pf_dl(module_id_t module_id,
                                     0 /* N_PRB_oh, 0 for initialBWP */,
                                     0 /* tb_scaling */,
                                     layers[UE_id]) >> 3;
-
       coeff_ue[UE_id] = (float) tbs / thr_ue[UE_id];
       LOG_D(NR_MAC,"b %d, thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
             b, UE_id, thr_ue[UE_id], tbs, UE_id, coeff_ue[UE_id]);
@@ -766,8 +764,9 @@ void pf_dl(module_id_t module_id,
     }
   }
 
+  const int min_rbSize = 5;
   /* Loop UE_sched to find max coeff and allocate transmission */
-  while (max_num_ue > 0 && n_rb_sched > 0 && UE_sched.head >= 0) {
+  while (max_num_ue > 0 && n_rb_sched >= min_rbSize && UE_sched.head >= 0) {
 
     /* Find max coeff from UE_sched*/
     int *max = &UE_sched.head; /* assume head is max */
@@ -827,9 +826,6 @@ void pf_dl(module_id_t module_id,
       LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
-    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
-    max_num_ue--;
-    if (max_num_ue < 0) return;
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
@@ -843,8 +839,13 @@ void pf_dl(module_id_t module_id,
             frame,
             slot);
       mac->pdcch_cand[cid]--;
-      return;
+      continue;
     }
+
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE
+     * and PUCCH */
+    max_num_ue--;
+    AssertFatal(max_num_ue >= 0, "Illegal max_num_ue %d\n", max_num_ue);
 
     sched_ctrl->cce_index = CCEIndex;
 
@@ -886,6 +887,7 @@ void pf_dl(module_id_t module_id,
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                   sched_ctrl->num_total_bytes + oh,
+                  min_rbSize,
                   max_rbSize,
                   &TBS,
                   &rbSize);

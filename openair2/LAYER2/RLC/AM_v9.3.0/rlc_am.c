@@ -27,7 +27,6 @@
 //-----------------------------------------------------------------------------
 
 #include "assertions.h"
-#include "msc.h"
 #include "hashtable.h"
 #include "rlc_am.h"
 #include "rlc_am_segment.h"
@@ -238,17 +237,6 @@ void config_req_rlc_am_asn1 (
         (config_am_pP->ul_AM_RLC.t_PollRetransmit<LTE_T_PollRetransmit_spare5) &&
         (config_am_pP->dl_AM_RLC.t_Reordering<32) &&
         (config_am_pP->dl_AM_RLC.t_StatusProhibit<LTE_T_StatusProhibit_spare2) ) {
-      MSC_LOG_RX_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-        NULL,
-        0,
-        MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_PollRetx %u t_Reord %u t_StatusPro %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p),
-        PollRetransmit_tab[config_am_pP->ul_AM_RLC.t_PollRetransmit],
-        am_t_Reordering_tab[config_am_pP->dl_AM_RLC.t_Reordering],
-        t_StatusProhibit_tab[config_am_pP->dl_AM_RLC.t_StatusProhibit]);
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" CONFIG_REQ (max_retx_threshold=%d poll_pdu=%d poll_byte=%d t_poll_retransmit=%d t_reord=%d t_status_prohibit=%d)\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
             maxRetxThreshold_tab[config_am_pP->ul_AM_RLC.maxRetxThreshold],
@@ -267,14 +255,6 @@ void config_req_rlc_am_asn1 (
                        am_t_Reordering_tab[config_am_pP->dl_AM_RLC.t_Reordering],
                        t_StatusProhibit_tab[config_am_pP->dl_AM_RLC.t_StatusProhibit]);
     } else {
-      MSC_LOG_RX_DISCARDED_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-        NULL,
-        0,
-        MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p));
       LOG_D(RLC,
             PROTOCOL_RLC_AM_CTXT_FMT"ILLEGAL CONFIG_REQ (max_retx_threshold=%ld poll_pdu=%ld poll_byte=%ld t_poll_retransmit=%ld t_reord=%ld t_status_prohibit=%ld), RLC-AM NOT CONFIGURED\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
@@ -537,27 +517,6 @@ rlc_am_mac_status_indication (
     }
   }
 
-  if (MESSAGE_CHART_GENERATOR) {
-    MSC_LOG_RX_MESSAGE(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_MAC_ENB:MSC_MAC_UE,
-      NULL,0,
-      MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" STATUS-IND %u",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc));
-    MSC_LOG_TX_MESSAGE(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_MAC_ENB:MSC_MAC_UE,
-      NULL,0,
-      MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" STATUS-RESP BO:%u/n%u(%u)  %s sdu remain %u",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc),
-      status_resp.buffer_occupancy_in_bytes,
-      status_resp.buffer_occupancy_in_pdus,rlc->nb_sdu,
-      (status_resp.head_sdu_is_segmented)?"sdu seg":"sdu not seg",
-      status_resp.head_sdu_remaining_size_to_send);
-  }
-
   if (LOG_DEBUGFLAG(DEBUG_RLC)) {
     LOG_UI(RLC, PROTOCOL_RLC_AM_CTXT_FMT" MAC_STATUS_INDICATION (DATA) -> %d bytes\n",
            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc),
@@ -610,7 +569,7 @@ rlc_am_mac_data_request (
 
   data_req.rlc_info.rlc_protocol_state = l_rlc_p->protocol_state;
 
-  if ( (MESSAGE_CHART_GENERATOR || LOG_DEBUGFLAG(DEBUG_RLC))&& data_req.data.nb_elements > 0) {
+  if ( (LOG_DEBUGFLAG(DEBUG_RLC))&& data_req.data.nb_elements > 0) {
     tb_p = data_req.data.head;
 
     while (tb_p != NULL) {
@@ -619,39 +578,6 @@ rlc_am_mac_data_request (
 
       if ((((struct mac_tb_req *) (tb_p->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
         if (rlc_am_get_data_pdu_infos(ctxt_pP,l_rlc_p,rlc_am_pdu_sn_10_p, tb_size_in_bytes, &pdu_info) >= 0) {
-          if (MESSAGE_CHART_GENERATOR) {
-            message_string_size = 0;
-            message_string_size += sprintf(&message_string[message_string_size],
-                                           MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" DATA SN %u size %u RF %u P %u FI %u",
-                                           MSC_AS_TIME_ARGS(ctxt_pP),
-                                           PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p),
-                                           pdu_info.sn,
-                                           tb_size_in_bytes,
-                                           pdu_info.rf,
-                                           pdu_info.p,
-                                           pdu_info.fi);
-
-            if (pdu_info.rf) {
-              message_string_size += sprintf(&message_string[message_string_size], " LSF %u\n", pdu_info.lsf);
-              message_string_size += sprintf(&message_string[message_string_size], " SO %u\n", pdu_info.so);
-            }
-
-            if (pdu_info.e) {
-              message_string_size += sprintf(&message_string[message_string_size], "| HE:");
-
-              for (index=0; index < pdu_info.num_li; index++) {
-                message_string_size += sprintf(&message_string[message_string_size], " LI %u", pdu_info.li_list[index]);
-              }
-            }
-
-            MSC_LOG_TX_MESSAGE(
-              (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-              (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_UE:MSC_RLC_ENB,
-              (char *)rlc_am_pdu_sn_10_p,
-              tb_size_in_bytes,
-              message_string);
-          }
-
           if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
             message_string_size = 0;
             message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
@@ -723,34 +649,6 @@ rlc_am_mac_data_request (
         if (rlc_am_get_control_pdu_infos(rlc_am_pdu_sn_10_p, &tb_size_in_bytes, &l_rlc_p->control_pdu_info) >= 0) {
           tb_size_in_bytes   = ((struct mac_tb_req *) (tb_p->data))->tb_size; //tb_size_in_bytes modified by rlc_am_get_control_pdu_infos!
 
-          if (MESSAGE_CHART_GENERATOR ) {
-            message_string_size = 0;
-            message_string_size += sprintf(&message_string[message_string_size],
-                                           MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" STATUS ACK_SN %u",
-                                           MSC_AS_TIME_ARGS(ctxt_pP),
-                                           PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p),
-                                           l_rlc_p->control_pdu_info.ack_sn);
-
-            for (num_nack = 0; num_nack < l_rlc_p->control_pdu_info.num_nack; num_nack++) {
-              if (l_rlc_p->control_pdu_info.nack_list[num_nack].e2) {
-                message_string_size += sprintf(&message_string[message_string_size], "  NACK SN %u SO START %u SO END %u",
-                                               l_rlc_p->control_pdu_info.nack_list[num_nack].nack_sn,
-                                               l_rlc_p->control_pdu_info.nack_list[num_nack].so_start,
-                                               l_rlc_p->control_pdu_info.nack_list[num_nack].so_end);
-              } else {
-                message_string_size += sprintf(&message_string[message_string_size], "  NACK SN %u",
-                                               l_rlc_p->control_pdu_info.nack_list[num_nack].nack_sn);
-              }
-            }
-
-            MSC_LOG_TX_MESSAGE(
-              (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-              (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_UE:MSC_RLC_ENB,
-              (char *)rlc_am_pdu_sn_10_p,
-              tb_size_in_bytes,
-              message_string);
-          }
-
           if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
             message_string_size = 0;
             message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
@@ -780,7 +678,7 @@ rlc_am_mac_data_request (
 
       tb_p = tb_p->next;
     } /* while */
-  } /* MESSAGE_CHART_GENERATOR && data_req.data.nb_elements > 0 */
+  } /* data_req.data.nb_elements > 0 */
 
   data_req.buffer_occupancy_in_pdus = 0;
   return data_req;
@@ -812,7 +710,7 @@ rlc_am_mac_data_indication (
   (void)index;
   (void)l_rlc_p; /* avoid gcc warning "unused variable" */
 
-  if ( LOG_DEBUGFLAG(DEBUG_RLC) || MESSAGE_CHART_GENERATOR ) {
+  if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
     if (data_indP.data.nb_elements > 0) {
       tb_p = data_indP.data.head;
 
@@ -822,39 +720,6 @@ rlc_am_mac_data_indication (
 
         if ((((struct mac_tb_ind *) (tb_p->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
           if (rlc_am_get_data_pdu_infos(ctxt_pP,l_rlc_p,rlc_am_pdu_sn_10_p, tb_size_in_bytes, &pdu_info) >= 0) {
-            if (MESSAGE_CHART_GENERATOR) {
-              message_string_size = 0;
-              message_string_size += sprintf(&message_string[message_string_size],
-                                             MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" DATA SN %u size %u RF %u P %u FI %u",
-                                             MSC_AS_TIME_ARGS(ctxt_pP),
-                                             PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p),
-                                             pdu_info.sn,
-                                             tb_size_in_bytes,
-                                             pdu_info.rf,
-                                             pdu_info.p,
-                                             pdu_info.fi);
-
-              if (pdu_info.rf) {
-                message_string_size += sprintf(&message_string[message_string_size], " LSF %u\n", pdu_info.lsf);
-                message_string_size += sprintf(&message_string[message_string_size], " SO %u\n", pdu_info.so);
-              }
-
-              if (pdu_info.e) {
-                message_string_size += sprintf(&message_string[message_string_size], "| HE:");
-
-                for (index=0; index < pdu_info.num_li; index++) {
-                  message_string_size += sprintf(&message_string[message_string_size], " LI %u", pdu_info.li_list[index]);
-                }
-              }
-
-              MSC_LOG_RX_MESSAGE(
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_UE:MSC_RLC_ENB,
-                (char *)rlc_am_pdu_sn_10_p,
-                tb_size_in_bytes,
-                message_string);
-            }
-
             if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
               message_string_size += sprintf(&message_string[message_string_size], "Bearer	: %ld\n", l_rlc_p->rb_id);
               message_string_size += sprintf(&message_string[message_string_size], "PDU size	: %u\n", tb_size_in_bytes);
@@ -923,34 +788,6 @@ rlc_am_mac_data_indication (
           }
         } else {
           if (rlc_am_get_control_pdu_infos(rlc_am_pdu_sn_10_p, &tb_size_in_bytes, &l_rlc_p->control_pdu_info) >= 0) {
-            if (MESSAGE_CHART_GENERATOR) {
-              message_string_size = 0;
-              message_string_size += sprintf(&message_string[message_string_size],
-                                             MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" STATUS size ACK_SN %u",
-                                             MSC_AS_TIME_ARGS(ctxt_pP),
-                                             PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p),
-                                             l_rlc_p->control_pdu_info.ack_sn);
-
-              for (num_nack = 0; num_nack < l_rlc_p->control_pdu_info.num_nack; num_nack++) {
-                if (l_rlc_p->control_pdu_info.nack_list[num_nack].e2) {
-                  message_string_size += sprintf(&message_string[message_string_size], "  NACK SN %u SO START %u SO END %u",
-                                                 l_rlc_p->control_pdu_info.nack_list[num_nack].nack_sn,
-                                                 l_rlc_p->control_pdu_info.nack_list[num_nack].so_start,
-                                                 l_rlc_p->control_pdu_info.nack_list[num_nack].so_end);
-                } else {
-                  message_string_size += sprintf(&message_string[message_string_size], "  NACK SN %u",
-                                                 l_rlc_p->control_pdu_info.nack_list[num_nack].nack_sn);
-                }
-              }
-
-              MSC_LOG_RX_MESSAGE(
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_UE:MSC_RLC_ENB,
-                (char *)rlc_am_pdu_sn_10_p,
-                tb_size_in_bytes,
-                message_string);
-            }
-
             if ( LOG_DEBUGFLAG(DEBUG_RLC)) {
               message_string_size = 0;
               message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
@@ -1009,16 +846,6 @@ rlc_am_data_req (
     mui         = ((struct rlc_am_data_req *) (sdu_pP->data))->mui;
     data_offset = ((struct rlc_am_data_req *) (sdu_pP->data))->data_offset;
     data_size   = ((struct rlc_am_data_req *) (sdu_pP->data))->data_size;
-    MSC_LOG_RX_MESSAGE(
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-      (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-      (const char *)(&sdu_pP->data[data_offset]),
-      data_size,
-      MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" DATA-REQ size %u mui %u",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p),
-      data_size,
-      mui);
 
     if (LOG_DEBUGFLAG(DEBUG_RLC)) {
       message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %ld\n", l_rlc_p->rb_id);
@@ -1094,22 +921,6 @@ rlc_am_data_req (
             l_rlc_p->vt_s);
     }
   } else {
-    if( MESSAGE_CHART_GENERATOR) {
-      mui   = ((struct rlc_am_data_req *) (sdu_pP->data))->mui;
-      data_offset = ((struct rlc_am_data_req *) (sdu_pP->data))->data_offset;
-      data_size   = ((struct rlc_am_data_req *) (sdu_pP->data))->data_size;
-      MSC_LOG_RX_DISCARDED_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-        (const char *)(&sdu_pP->data[data_offset]),
-        data_size,
-        MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" DATA-REQ size %u mui %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, l_rlc_p),
-        data_size,
-        mui);
-    }
-
     LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ BUFFER FULL, NB SDU %d current_sdu_index=%d next_sdu_index=%d size_input_sdus_buffer=%d vtA=%d vtS=%d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
           l_rlc_p->nb_sdu,

@@ -192,7 +192,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     }
 #endif
     
-    start_meas(&gNB->dlsch_layer_mapping_stats);
+    start_meas(&gNB->dlsch_layer_mapping_stats); 
     /// Layer mapping
     nr_layer_mapping(mod_symbs,
 		     rel15->nrOfLayers,
@@ -210,7 +210,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
       }
 #endif
 
-    stop_meas(&gNB->dlsch_layer_mapping_stats);
+    stop_meas(&gNB->dlsch_layer_mapping_stats); 
 
     /// Resource mapping
     
@@ -225,6 +225,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
 	   start_sc, rel15->StartSymbolIndex, rel15->rbSize, nb_re,rel15->nrOfLayers);
 #endif
+
     start_meas(&gNB->dlsch_resource_mapping_stats);
     for (int nl=0; nl<rel15->nrOfLayers; nl++) {
 
@@ -326,8 +327,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 ] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
               printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
-                     dmrs_idx, l, k, k_prime, n, txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1)],
-                     txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
+                     dmrs_idx, l, k, k_prime, n, txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)],
+                     txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
 #endif
               dmrs_idx++;
               k_prime++;
@@ -340,8 +341,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (beta_ptrs*amp*mod_ptrs[(ptrs_idx<<1) + 1])>> 15;
 #ifdef DEBUG_DLSCH_MAPPING
               printf("ptrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d, mod_ptrs: %d %d\n",
-                     ptrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + (2*txdataF_offset)],
-                     ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 + (2*txdataF_offset)],mod_ptrs[ptrs_idx<<1],mod_ptrs[(ptrs_idx<<1)+1]);
+                     ptrs_idx, l, k, k_prime, n, ((int16_t*)txdataF_precoding[nl])[((l*frame_parms->ofdm_symbol_size + k)<<1)],
+                     ((int16_t*)txdataF_precoding[nl])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1],mod_ptrs[ptrs_idx<<1],mod_ptrs[(ptrs_idx<<1)+1]);
 #endif
               ptrs_idx++;
             }
@@ -351,8 +352,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * tx_layers[nl][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
               printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-                     m, l, k, txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1)],
-                     txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
+                     m, l, k, txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)],
+                     txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
 #endif
               m++;
             }
@@ -402,13 +403,13 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 #ifdef DEBUG_DLSCH_MAPPING
               if ((i&1) > 0)
                   printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-                       m, l, start_sc+(i>>1), txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + start_sc+(i>>1))<<1)],
-                  txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + start_sc+(i>>1))<<1) + 1]);
+                         m, l, start_sc+(i>>1), txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + start_sc+(i>>1))<<1)],
+                         txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + start_sc+(i>>1))<<1) + 1]);
 #endif
               /* handle this, mute RE */
               /*else {
-                txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) ] = 0;
-                txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
+                txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) ] = 0;
+                txdataF_precoding[anl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
               }*/
             } //RE loop, first part
             m+=upper_limit;
@@ -420,19 +421,19 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 #ifdef DEBUG_DLSCH_MAPPING
                  if ((i&1) > 0)
                    printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-                          m, l, i>>1, txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + (i>>1))<<1) ],
-                          txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + (i>>1))<<1) + 1]);
+                          m, l, i>>1, txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + (i>>1))<<1) ],
+                          txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + (i>>1))<<1) + 1]);
 #endif
                  /* handle this, mute RE */
                  /*else {
-                   txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = 0;
-                   txdataF_precoding[ap][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
+                   txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = 0;
+                   txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
                  }*/
                } //RE loop, second part
-            } //
+            } // 
             m+=remaining_re;
           } // N_RB_DL even
-        } // no DMRS/PTRS in symbol
+        } // no DMRS/PTRS in symbol  
       } // symbol loop
     }// layer loop
     stop_meas(&gNB->dlsch_resource_mapping_stats);

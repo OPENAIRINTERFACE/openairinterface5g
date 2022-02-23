@@ -139,7 +139,12 @@ gtpv1u_create_s1u_tunnel(
   return 0;
 }
 
-int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
+int gtpv1u_delete_ngu_tunnel( const instance_t instance,
+			      gtpv1u_gnb_delete_tunnel_req_t *req) {
   return 0;
 }
 
@@ -644,7 +649,7 @@ int main(int argc, char **argv)
   else if (N_RB_UL == 106) bandwidth = 40;
   else if (N_RB_UL == 32) bandwidth = 50;
   else { printf("Add N_RB_UL %d\n",N_RB_UL); exit(-1); }
-  LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);
+  LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
   if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
 
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,

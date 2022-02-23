@@ -41,7 +41,6 @@
 #include "x2ap_eNB_management_procedures.h"
 #include "x2ap_eNB_generate_messages.h"
 
-#include "msc.h"
 #include "assertions.h"
 #include "conversions.h"
 #include "X2AP_FreqBandNrItem.h"

@@ -461,6 +461,7 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
                    uint32_t bytes,
+                   uint16_t nb_rb_min,
                    uint16_t nb_rb_max,
                    uint32_t *tbs,
                    uint16_t *nb_rb)
@@ -476,7 +477,7 @@ bool nr_find_nb_rb(uint16_t Qm,
     return true;
 
   /* is the minimum enough? */
-  *nb_rb = 5;
+  *nb_rb = nb_rb_min;
   *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
   if (bytes <= *tbs)
     return true;
@@ -484,7 +485,7 @@ bool nr_find_nb_rb(uint16_t Qm,
   /* perform binary search to allocate all bytes within a TBS up to nb_rb_max
    * RBs */
   int hi = nb_rb_max;
-  int lo = 1;
+  int lo = nb_rb_min;
   for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
     const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
     if (bytes == TBS) {
@@ -573,7 +574,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   }
   else {
     LOG_D(NR_MAC,"checking layers\n");
-    if (ps->nrOfLayers != layers) {
+    if (ps->nrOfLayers != layers || ps->numDmrsCdmGrpsNoData == 0) {
       reset_dmrs = true;
       ps->nrOfLayers = layers;
       set_dl_dmrs_ports(ps);
@@ -581,6 +582,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
   }
 
   ps->N_PRB_DMRS = ps->numDmrsCdmGrpsNoData * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
+
   if (reset_dmrs) {
     ps->dl_dmrs_symb_pos = fill_dmrs_mask(bwpd ? bwpd->pdsch_Config->choice.setup : NULL, scc->dmrs_TypeA_Position, ps->nrOfSymbols, ps->startSymbolIndex, ps->mapping_type, ps->frontloaded_symb);
     ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);

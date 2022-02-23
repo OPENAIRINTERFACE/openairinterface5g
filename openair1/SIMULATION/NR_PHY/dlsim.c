@@ -175,7 +175,12 @@ gtpv1u_update_ngu_tunnel(
   return 0;
 }
 
-int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
+int gtpv1u_delete_ngu_tunnel( const instance_t instance,
+			      gtpv1u_gnb_delete_tunnel_req_t *req) {
   return 0;
 }
 
@@ -633,12 +638,12 @@ int main(int argc, char **argv)
         dmrs_arg[i] = atoi(argv[optind++]);
       }
       break;
-
+      
     case 'X':
       strncpy(gNBthreads, optarg, sizeof(gNBthreads));
       gNBthreads[sizeof(gNBthreads)-1]=0;
       break;
-
+      
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -1213,7 +1218,7 @@ int main(int argc, char **argv)
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
-        
+
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,

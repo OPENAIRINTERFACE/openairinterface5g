@@ -110,9 +110,6 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc_gNB_ue_context_t         *const ue_context_pP,
                          const protocol_ctxt_t        *const ctxt_pP );
 
-void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
-                       const protocol_ctxt_t        *const ctxt_pP );
-
 void
 rrc_gNB_generate_RRCSetup(
     const protocol_ctxt_t        *const ctxt_pP,
