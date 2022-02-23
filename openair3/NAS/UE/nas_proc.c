@@ -46,7 +46,6 @@ Description NAS procedure call manager
 
 #include "esm_main.h"
 #include "esm_sap.h"
-#include "msc.h"
 
 #include <stdio.h>  // sprintf
 

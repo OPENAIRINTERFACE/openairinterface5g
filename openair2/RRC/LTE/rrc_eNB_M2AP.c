@@ -32,7 +32,6 @@
 # include "RRC/LTE/MESSAGES/asn1_msg.h"
 # include "rrc_eNB_M2AP.h"
 //# include "rrc_eNB_UE_context.h"
-# include "msc.h"
 #   include "asn1_conversions.h"
 #   include "intertask_interface.h"
 # include "common/ran_context.h"
