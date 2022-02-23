@@ -37,7 +37,6 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
-#include "msc.h"
 
 #include "PHY/types.h"
 
@@ -596,12 +595,6 @@ int main( int argc, char **argv ) {
   printf("ITTI init\n");
   itti_init(TASK_MAX, tasks_info);
 
-  // initialize mscgen log after ITTI
-  if (get_softmodem_params()->start_msc) {
-    load_module_shlib("msc",NULL,0,&msc_interface);
-  }
-
-  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   ue_id_g = (node_number == 0) ? 0 : node_number-2; //ue_id_g = 0, 1, ...,
   if(node_number == 0)

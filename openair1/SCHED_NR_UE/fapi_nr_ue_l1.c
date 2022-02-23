@@ -284,13 +284,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
             dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
             dlsch0_harq->n_dmrs_cdm_groups = dlsch_config_pdu->n_dmrs_cdm_groups;
+            dlsch0_harq->dmrs_ports = dlsch_config_pdu->dmrs_ports;
             dlsch0_harq->mcs = dlsch_config_pdu->mcs;
             dlsch0_harq->rvidx = dlsch_config_pdu->rv;
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             //get nrOfLayers from DCI info
             uint8_t Nl = 0;
-            for (i = 0; i < 4; i++) {
-              if (dlsch_config_pdu->dmrs_ports[i] >= i) Nl += 1;
+            for (i = 0; i < 12; i++) { // max 12 ports
+              if ((dlsch_config_pdu->dmrs_ports>>i)&0x01) Nl += 1;
             }
             dlsch0_harq->Nl = Nl;
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
@@ -308,7 +309,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->nEpreRatioOfPDSCHToPTRS = dlsch_config_pdu->nEpreRatioOfPDSCHToPTRS;
             dlsch0_harq->PTRSReOffset = dlsch_config_pdu->PTRSReOffset;
             dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
-            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n",
+                  dlsch0->g_pucch, dlsch0_harq->mcs);
           }
         }
       }
