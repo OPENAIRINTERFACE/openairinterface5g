@@ -66,8 +66,8 @@
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 4G CoreNetwork</desc>
                 <yaml_path>yaml_files/4g_rfsimulator_fdd_05MHz</yaml_path>
-                <services>oai_hss oai_mme oai_spgwc oai_spgwu trf_gen</services>
-                <nb_healthy>6</nb_healthy>
+                <services>oai_hss redis magma_mme oai_spgwc oai_spgwu trf_gen</services>
+                <nb_healthy>7</nb_healthy>
         </testCase>
 
         <testCase id="000013">
@@ -75,15 +75,15 @@
                 <desc>Deploy OAI 4G eNB RF sim (FDD 05MHz)</desc>
                 <yaml_path>yaml_files/4g_rfsimulator_fdd_05MHz</yaml_path>
                 <services>enb</services>
-                <nb_healthy>7</nb_healthy>
+                <nb_healthy>8</nb_healthy>
         </testCase>
 
         <testCase id="000014">
                 <class>DeployGenObject</class>
-                <desc>Deploy OAI 4G NR-UE RF sim (FDD 05MHz)</desc>
+                <desc>Deploy OAI 4G LTE-UE RF sim (FDD 05MHz)</desc>
                 <yaml_path>yaml_files/4g_rfsimulator_fdd_05MHz</yaml_path>
                 <services>oai_ue0</services>
-                <nb_healthy>8</nb_healthy>
+                <nb_healthy>9</nb_healthy>
         </testCase>
 
         <testCase id="020011">

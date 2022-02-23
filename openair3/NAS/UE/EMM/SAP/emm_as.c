@@ -61,7 +61,6 @@ Description Defines the EMMAS Service Access Point that provides
 #if  defined(NAS_BUILT_IN_UE)
 # include "nas_itti_messaging.h"
 #endif
-#include "msc.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
