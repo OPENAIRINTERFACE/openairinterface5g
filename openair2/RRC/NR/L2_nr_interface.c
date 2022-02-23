@@ -34,7 +34,6 @@
 #include "nr_rrc_extern.h"
 #include "common/utils/LOG/log.h"
 #include "pdcp.h"
-#include "msc.h"
 #include "common/ran_context.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
@@ -172,16 +171,6 @@ nr_rrc_data_req(
     return FALSE;
   }
 
-  MSC_LOG_TX_MESSAGE(
-    ctxt_pP->enb_flag ? MSC_RRC_GNB : MSC_RRC_UE,
-    ctxt_pP->enb_flag ? MSC_PDCP_ENB : MSC_PDCP_UE,
-    buffer_pP,
-    sdu_sizeP,
-    MSC_AS_TIME_FMT"RRC_DCCH_DATA_REQ UE %x MUI %d size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ctxt_pP->rnti,
-    muiP,
-    sdu_sizeP);
   MessageDef *message_p;
   // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
   uint8_t *message_buffer;
@@ -388,10 +377,10 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
 }
 
 void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
-                            const int CC_idP,
-                            const frame_t frameP,
-                            const sub_frame_t subframeP,
-                            const rnti_t rntiP) {
+                               const int CC_idP,
+                               const frame_t frameP,
+                               const sub_frame_t subframeP,
+                               const rnti_t rntiP) {
   struct rrc_gNB_ue_context_s *ue_context_p = NULL;
   ue_context_p = rrc_gNB_get_ue_context(
                    RC.nrrrc[Mod_instP],

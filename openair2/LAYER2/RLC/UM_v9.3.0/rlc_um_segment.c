@@ -27,7 +27,6 @@
 //-----------------------------------------------------------------------------
 #include <assert.h>
 #include "assertions.h"
-#include "msc.h"
 #include "list.h"
 #include "rlc_um.h"
 #include "rlc_primitives.h"

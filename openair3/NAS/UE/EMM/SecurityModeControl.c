@@ -63,7 +63,6 @@ Description Defines the security mode control EMM procedure executed by the
 
 # include "assertions.h"
 #include "secu_defs.h"
-#include "msc.h"
 #include "SecurityModeControl.h"
 
 #if  defined(NAS_BUILT_IN_UE)

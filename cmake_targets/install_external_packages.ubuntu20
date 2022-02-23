@@ -409,7 +409,6 @@ check_install_ubuntu_packages() {
 	      libxml2 \
 	      libxml2-dev  \
 	      libxslt1-dev \
-	      mscgen  \
 	      octave-signal \
 	      openssh-client \
 	      openssh-server \
