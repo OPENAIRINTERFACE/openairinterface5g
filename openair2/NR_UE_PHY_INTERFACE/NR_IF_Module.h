@@ -45,13 +45,16 @@
 #define NUM_SINR 100
 #define NUM_BLER_COL 13
 #define NUM_NFAPI_SLOT 20
+#define NR_NUM_LAYER 1
 
 typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
 
 typedef struct nr_phy_channel_params_t
 {
     uint16_t sfn_slot;
-    float sinr;
+    uint16_t message_id;
+    uint16_t nb_of_sinrs;
+    float sinr[NR_NUM_LAYER];
     // Incomplete, need all channel parameters
 } nr_phy_channel_params_t;
 
