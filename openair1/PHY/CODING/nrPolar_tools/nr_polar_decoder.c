@@ -268,7 +268,7 @@ int8_t polar_decoder(double *input,
 
       if (decoderIterationCheck==0) {
         //perror("[SCL polar decoder] All list entries have failed the CRC checks.");
-        return(-1);
+        polarReturn(-1);
       }
 
       nonFrozenBit++;
@@ -301,7 +301,8 @@ int8_t polar_decoder(double *input,
    * Return bits.
    */
   nr_byte2bit_uint8_32(polarParams->nr_polar_A, polarParams->payloadBits, out);
-  return(0);
+
+  polarReturn 0;
 }
 
 int8_t polar_decoder_dci(double *input,
@@ -532,7 +533,7 @@ int8_t polar_decoder_dci(double *input,
 
       if (decoderIterationCheck==0) {
         //perror("[SCL polar decoder] All list entries have failed the CRC checks.");
-        return(-1);
+        polarReturn -1;
       }
 
       nonFrozenBit++;
@@ -565,7 +566,8 @@ int8_t polar_decoder_dci(double *input,
    * Return bits.
    */
   nr_byte2bit_uint8_32(polarParams->nr_polar_A, polarParams->payloadBits, out);
-  return(0);
+
+  polarReturn 0;
 }
 
 void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
@@ -705,5 +707,6 @@ uint32_t polar_decoder_int16(int16_t *input,
          rxcrc,polarParams->payloadBits);
 #endif
   out[0]=Ar;
-  return(crc^rxcrc);
+
+  polarReturn crc^rxcrc;
 }

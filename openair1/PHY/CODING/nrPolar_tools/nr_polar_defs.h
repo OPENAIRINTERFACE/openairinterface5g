@@ -81,6 +81,7 @@ struct nrPolar_params {
   //messageType: 0=PBCH, 1=DCI, -1=UCI
 
   struct nrPolar_params *nextPtr __attribute__((aligned(16)));
+  bool busy;
   uint32_t idx;
   uint8_t n_max;
   uint8_t i_il;
@@ -344,4 +345,11 @@ static inline void nr_polar_deinterleaver(uint8_t *input,
 	for (int i=0; i<size; i++) output[pattern[i]]=input[i];
 }
 void delete_decoder_tree(t_nrPolar_params *);
+
+#define polarReturn                          \
+pthread_mutex_lock(&PolarListMutex);            \
+currentPtr->busy=false;                         \
+pthread_mutex_unlock(&PolarListMutex);          \
+return
+
 #endif

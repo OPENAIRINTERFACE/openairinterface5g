@@ -60,10 +60,10 @@ void polar_encoder(uint32_t *in,
      */
     //Calculate CRC.
     nr_matrix_multiplication_uint8_1D_uint8_2D(polarParams->nr_polar_A,
-    										   polarParams->crc_generator_matrix,
-											   polarParams->nr_polar_crc,
-											   polarParams->payloadBits,
-											   polarParams->crcParityBits);
+                                               polarParams->crc_generator_matrix,
+                                               polarParams->nr_polar_crc,
+                                               polarParams->payloadBits,
+                                               polarParams->crcParityBits);
 
     for (uint8_t i = 0; i < polarParams->crcParityBits; i++)
       polarParams->nr_polar_crc[i] = (polarParams->nr_polar_crc[i] % 2);
@@ -153,6 +153,9 @@ void polar_encoder(uint32_t *in,
 
 #endif
   nr_byte2bit_uint8_32(polarParams->nr_polar_E, polarParams->encoderLength, out);
+
+  polarReturn;
+
 }
 
 void polar_encoder_dci(uint32_t *in,
@@ -256,6 +259,7 @@ void polar_encoder_dci(uint32_t *in,
   printf("\n[polar_encoder_dci] out: ");
   for (int i = 0; i < outputInd; i++) printf("[%d]->0x%08x\t", i, out[i]);
 #endif
+  polarReturn;
 }
 
 static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void *in,void *out) __attribute__((always_inline));
@@ -698,4 +702,7 @@ void polar_encoder_fast(uint64_t *A,
   }
   memset((void*)out,0,polarParams->encoderLength>>3);
   polar_rate_matching(polarParams,(void *)D, out);
+
+  polarReturn;
+
 }
