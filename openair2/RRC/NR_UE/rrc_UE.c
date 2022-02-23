@@ -1358,7 +1358,6 @@ static void rrc_ue_generate_RRCSetupComplete(
   uint8_t size;
   const char *nas_msg;
   int   nas_msg_length;
-  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
  if (AMF_MODE_ENABLED) {
 #if defined(ITTI_SIM)
