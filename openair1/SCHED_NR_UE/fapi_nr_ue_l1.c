@@ -305,13 +305,11 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
             break;
           case FAPI_NR_DL_CONFIG_TYPE_CSI_IM:
-            LOG_I(PHY,"Received CSI-IM PDU at FAPI\n");
             csiim_config_pdu = &dl_config->dl_config_list[i].csiim_config_pdu.csiim_config_rel15;
             memcpy((void*)&(csiim_vars->csiim_config_pdu), (void*)csiim_config_pdu, sizeof(fapi_nr_dl_config_csiim_pdu_rel15_t));
             csirs_vars->active = true;
             break;
           case FAPI_NR_DL_CONFIG_TYPE_CSI_RS:
-            LOG_I(PHY,"Received CSI-RS PDU at FAPI\n");
             csirs_config_pdu = &dl_config->dl_config_list[i].csirs_config_pdu.csirs_config_rel15;
             memcpy((void*)&(csirs_vars->csirs_config_pdu), (void*)csirs_config_pdu, sizeof(fapi_nr_dl_config_csirs_pdu_rel15_t));
             csirs_vars->active = true;

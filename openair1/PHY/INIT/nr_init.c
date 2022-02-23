@@ -573,7 +573,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
 
   for (int i=0; i<gNB->number_of_nr_ulsch_max; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
+    LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
 
     for (int j=0; j<2; j++) {
       // ULSCH for data

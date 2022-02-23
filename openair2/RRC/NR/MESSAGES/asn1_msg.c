@@ -1419,7 +1419,7 @@ void fill_initial_SpCellConfig(int uid,
       imres0->csi_IM_ResourceElementPattern->choice.pattern1->symbolLocation_p1 = 6;
       imres0->freqBand = calloc(1,sizeof(*imres0->freqBand));
       imres0->freqBand->startingRB = 0;
-      imres0->freqBand->nrofRBs = 108;
+      imres0->freqBand->nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
       imres0->periodicityAndOffset = calloc(1,sizeof(*imres0->periodicityAndOffset));
       imres0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
       imres0->periodicityAndOffset->choice.slots320 = 0;

@@ -1641,6 +1641,18 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
  }
 
+  // do procedures for CSI-IM
+  if ((ue->csiim_vars[gNB_id]) && (ue->csiim_vars[gNB_id]->active == 1)) {
+    nr_ue_csi_im_procedures(ue, proc, gNB_id);
+    ue->csiim_vars[gNB_id]->active = 0;
+  }
+
+  // do procedures for CSI-RS
+  if ((ue->csirs_vars[gNB_id]) && (ue->csirs_vars[gNB_id]->active == 1)) {
+    nr_ue_csi_rs_procedures(ue, proc, gNB_id);
+    ue->csirs_vars[gNB_id]->active = 0;
+  }
+
   start_meas(&ue->generic_stat);
 
   if (nr_slot_rx==9) {

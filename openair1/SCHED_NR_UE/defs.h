@@ -418,6 +418,9 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 			   UE_nr_rxtx_proc_t *proc,
                            int n_ss);
 
+int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);
+
+int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);
 
 #endif
 
