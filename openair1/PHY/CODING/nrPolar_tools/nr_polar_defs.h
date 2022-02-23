@@ -346,9 +346,10 @@ static inline void nr_polar_deinterleaver(uint8_t *input,
 }
 void delete_decoder_tree(t_nrPolar_params *);
 
+extern pthread_mutex_t PolarListMutex;
 #define polarReturn                          \
 pthread_mutex_lock(&PolarListMutex);            \
-currentPtr->busy=false;                         \
+polarParams->busy=false;                         \
 pthread_mutex_unlock(&PolarListMutex);          \
 return
 

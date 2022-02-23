@@ -35,7 +35,7 @@
 
 #define PolarKey ((messageType<<24)|(messageLength<<8)|aggregation_level)
 static t_nrPolar_params * PolarList=NULL;
-static pthread_mutex_t PolarListMutex=PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t PolarListMutex=PTHREAD_MUTEX_INITIALIZER;
 
 static int intcmp(const void *p1,const void *p2) {
   return(*(int16_t *)p1 > *(int16_t *)p2);

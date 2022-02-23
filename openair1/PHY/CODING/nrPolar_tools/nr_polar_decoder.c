@@ -64,7 +64,7 @@ int8_t polar_decoder(double *input,
                      uint8_t aggregation_level
                      )
 {
-  const t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
+  t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
   //Assumes no a priori knowledge.
   uint8_t bit[polarParams->N][polarParams->n+1][2*listSize];
   memset(bit,0,sizeof bit);
@@ -312,7 +312,7 @@ int8_t polar_decoder_dci(double *input,
                          int8_t messageType,
                          uint16_t messageLength,
                          uint8_t aggregation_level ) {
-    const t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
+  t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
 
   uint8_t bit[polarParams->N][polarParams->n+1][2*listSize];
   memset(bit,0,sizeof bit);
@@ -610,7 +610,7 @@ uint32_t polar_decoder_int16(int16_t *input,
                              uint16_t messageLength,
                              uint8_t aggregation_level )
 {
-    const t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
+  t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
   nr_polar_rate_matching_int16(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
 
