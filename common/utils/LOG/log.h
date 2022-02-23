@@ -212,7 +212,6 @@ typedef enum {
   PERF,
   OIP,
   CLI,
-  MSC,
   OCM,
   UDP_,
   GTPU,

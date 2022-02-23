@@ -53,7 +53,6 @@ Description Defines the detach related EMM procedure executed by the
 
 #include "emm_sap.h"
 #include "esm_sap.h"
-#include "msc.h"
 
 #include <stdlib.h> // free
 

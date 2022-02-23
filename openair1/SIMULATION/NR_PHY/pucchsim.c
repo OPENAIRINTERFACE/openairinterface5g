@@ -688,8 +688,8 @@ int main(int argc, char **argv)
           ack_nack_errors+=((actual_payload^payload_received)&1) + (((actual_payload^payload_received)&2)>>1);
       }
       else if (format==2) {
-        nfapi_nr_uci_pucch_pdu_format_2_3_4_t uci_pdu;
-        nfapi_nr_pucch_pdu_t pucch_pdu;
+        nfapi_nr_uci_pucch_pdu_format_2_3_4_t uci_pdu={0};
+        nfapi_nr_pucch_pdu_t pucch_pdu={0};
         pucch_pdu.rnti = 0x1234;
         pucch_pdu.subcarrier_spacing    = 1;
         pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;

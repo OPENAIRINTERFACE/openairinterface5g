@@ -48,7 +48,6 @@ Description Defines the identification EMM procedure executed by the
 #include "emmData.h"
 
 #include "emm_sap.h"
-#include "msc.h"
 #include "user_defs.h"
 
 #include <stdlib.h> // malloc, free

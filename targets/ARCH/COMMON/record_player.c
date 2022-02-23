@@ -58,10 +58,9 @@ int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_
     // Use mmap for IQ files for systems with less than 6GB total RAM
     sysinfo(&systeminfo);
 
-    if (systeminfo.totalram < 6144000000) {
-      (*recplay_state)->use_mmap = 0;
-    } else {
-      (*recplay_state)->use_mmap = 1;
+    if (systeminfo.totalram < 6144000000 && ((*recplay_conf)->use_mmap == 1)) {
+	  LOG_W(HW,"System with %f GB of mem (<6GB), mmap usage disabled\n",systeminfo.totalram/10E9);
+      (*recplay_conf)->use_mmap = 0;
     }
   } else { /* record player enabled */
     free(*recplay_conf);
