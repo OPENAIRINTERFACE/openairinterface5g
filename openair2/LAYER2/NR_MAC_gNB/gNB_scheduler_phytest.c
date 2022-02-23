@@ -165,7 +165,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                                     scc->dmrs_TypeA_Position,
                                                     NrOfSymbols,
                                                     StartSymbolIndex,
-                                                    mappingtype);
+                                                    mappingtype, 1);
 
     /*
     AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");
@@ -278,12 +278,11 @@ void nr_preprocessor_phytest(module_id_t module_id,
               UE_id);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
-  const long f = sched_ctrl->active_bwp ? sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
-  if (ps->time_domain_allocation != tda)
-    nr_set_pdsch_semi_static(
-        scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, f, ps);
+
+  if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
+    nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, target_dl_Nl, sched_ctrl, ps);
 
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -527,11 +526,13 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
                                       sched_ctrl->coreset,
                                       Y);
 
-  if (sched_ctrl->cce_index < 0) {
+  if (CCEIndex < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
     nr_mac->pdcch_cand[cid]--;
     return false;
   }
+
+  sched_ctrl->cce_index = CCEIndex;
 
   const int mcs = target_ul_mcs;
   NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;

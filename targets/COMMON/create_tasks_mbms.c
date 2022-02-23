@@ -28,7 +28,6 @@
     #include "sctp_eNB_task.h"
     #include "x2ap_eNB.h"
     #include "s1ap_eNB.h"
-    #include "udp_eNB_task.h"
     #include "gtpv1u_eNB_task.h"
     #include "m2ap_eNB.h"
     #include "m2ap_MCE.h"
@@ -75,46 +74,10 @@ int create_tasks_mbms(uint32_t enb_nb) {
   rc = itti_create_task (TASK_MCE_APP, MCE_app_task, NULL);
   AssertFatal(rc >= 0, "Create task for MCE APP failed\n");
 
-  
-//  LOG_I(ENB_APP, "Creating ENB_APP eNB Task\n");
-//  rc = itti_create_task (TASK_ENB_APP, eNB_app_task, NULL);
-//  AssertFatal(rc >= 0, "Create task for eNB APP failed\n");
-//
-//  LOG_I(RRC,"Creating RRC eNB Task\n");
-//  rc = itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL);
-//  AssertFatal(rc >= 0, "Create task for RRC eNB failed\n");
-//
-//  if (EPC_MODE_ENABLED) {
-//    rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
-//    AssertFatal(rc >= 0, "Create task for SCTP failed\n");
-//  }
-// rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
-//    AssertFatal(rc >= 0, "Create task for SCTP failed\n");
-//
-//
-//  if (EPC_MODE_ENABLED && !NODE_IS_DU(type)) {
-//    rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
-//    AssertFatal(rc >= 0, "Create task for S1AP failed\n");
-//    if (!(get_softmodem_params()->emulate_rf)){
-//      rc = itti_create_task(TASK_UDP, udp_eNB_task, NULL);
-//      AssertFatal(rc >= 0, "Create task for UDP failed\n");
-//    }
-//    rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
-//    AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
-//    if (is_x2ap_enabled()) {
-//      rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
-//      AssertFatal(rc >= 0, "Create task for X2AP failed\n");
-//    } else {
-//      LOG_I(X2AP, "X2AP is disabled.\n");
-//    }
-//  }
-////
     if(!EPC_MODE_ENABLED){
    // rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
    // AssertFatal(rc >= 0, "Create task for SCTP failed\n");
-    rc = itti_create_task(TASK_UDP, udp_eNB_task, NULL);
-      AssertFatal(rc >= 0, "Create task for UDP failed\n");
-    rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
+    rc = itti_create_task(TASK_GTPV1_U, gtpv1uTask, NULL);
     AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
     }
 ///

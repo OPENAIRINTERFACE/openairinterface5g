@@ -812,7 +812,6 @@ void *nas_nrue_task(void *args_p)
 
   ue_security_key=(ue_sa_security_key_t **)calloc(1,sizeof(ue_sa_security_key_t*)*NB_UE_INST);
   itti_mark_task_ready (TASK_NAS_NRUE);
-  MSC_START_USE();
   
   while(1) {
     // Wait for a message or an event

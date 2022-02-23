@@ -440,7 +440,7 @@ rb_found:
 	req->rnti=ue->rnti;
 	req->rab_id=rb_id+4;
 	LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
-	itti_send_msg_to_task(OCP_GTPV1_U, DUuniqInstance, msg);      
+	itti_send_msg_to_task(TASK_GTPV1_U, DUuniqInstance, msg);      
 	return;
       }
     }

@@ -35,7 +35,6 @@
 
 #include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
-#include "msc.h"
 
 
 //------------------------------------------------------------------------------
@@ -210,10 +209,6 @@ void rrc_eNB_remove_ue_context(
   }
 
   RB_REMOVE(rrc_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_pP);
-  MSC_LOG_EVENT(
-    MSC_RRC_ENB,
-    "0 Removed UE %"PRIx16" ",
-    ue_context_pP->ue_context.rnti);
   rrc_eNB_free_mem_UE_context(ctxt_pP, ue_context_pP);
   uid_linear_allocator_free(rrc_instance_pP, ue_context_pP->local_uid);
   free(ue_context_pP);

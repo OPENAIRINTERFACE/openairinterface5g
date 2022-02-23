@@ -78,7 +78,7 @@ typedef struct {
 #define CONFIG_HLP_SF_LOOPS     "Number of loops to replay of the entire subframes file"
 #define CONFIG_HLP_SF_RDELAY    "Delay in microseconds to read a subframe in replay mode"
 #define CONFIG_HLP_SF_WDELAY    "Delay in microseconds to write a subframe in replay mode"
-
+#define CONFIG_HLP_USE_MMAP     "In replay mode, map iq file in memory before replaying"
 /* keyword strings for config options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_OPT_SF_FILE      "subframes-file"
 #define CONFIG_OPT_SF_REC       "subframes-record"
@@ -87,7 +87,7 @@ typedef struct {
 #define CONFIG_OPT_SF_LOOPS     "subframes-loops"
 #define CONFIG_OPT_SF_RDELAY    "subframes-read-delay"
 #define CONFIG_OPT_SF_WDELAY    "subframes-write-delay"
-
+#define CONFIG_OPT_USE_MMAP     "use-mmap"
 #define DEVICE_RECPLAY_SECTION "device.recplay"
 /* For information only - the macro is not usable in C++ */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -95,13 +95,14 @@ typedef struct {
 /*   optname                     helpstr                paramflags                      XXXptr                           defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define DEVICE_RECPLAY_PARAMS_DESC {  \
-    {CONFIG_OPT_SF_FILE,      CONFIG_HLP_SF_FILE, 0,              strptr:(char **)((*recplay_conf)->u_sf_filename),       defstrval:DEF_SF_FILE,            TYPE_STRING,   1024}, \
-    {CONFIG_OPT_SF_REC,       CONFIG_HLP_SF_REC,  PARAMFLAG_BOOL,   uptr:&(u_sf_record),                                  defuintval:0,                TYPE_UINT,   0}, \
-    {CONFIG_OPT_SF_REP,       CONFIG_HLP_SF_REP,  PARAMFLAG_BOOL,   uptr:&(u_sf_replay),                                  defuintval:0,                TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_FILE,      CONFIG_HLP_SF_FILE,   0,                strptr:(char **)((*recplay_conf)->u_sf_filename),   defstrval:DEF_SF_FILE,           TYPE_STRING,   1024}, \
+    {CONFIG_OPT_SF_REC,       CONFIG_HLP_SF_REC,    PARAMFLAG_BOOL,   uptr:&(u_sf_record),                                defuintval:0,                    TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_REP,       CONFIG_HLP_SF_REP,    PARAMFLAG_BOOL,   uptr:&(u_sf_replay),                                defuintval:0,                    TYPE_UINT,   0}, \
     {CONFIG_OPT_SF_MAX,       CONFIG_HLP_SF_MAX,    0,                uptr:&((*recplay_conf)->u_sf_max),                  defintval:DEF_NB_SF,             TYPE_UINT,   0}, \
     {CONFIG_OPT_SF_LOOPS,     CONFIG_HLP_SF_LOOPS,  0,                uptr:&((*recplay_conf)->u_sf_loops),                defintval:DEF_SF_NB_LOOP,        TYPE_UINT,   0}, \
     {CONFIG_OPT_SF_RDELAY,    CONFIG_HLP_SF_RDELAY, 0,                uptr:&((*recplay_conf)->u_sf_read_delay),           defintval:DEF_SF_DELAY_READ,     TYPE_UINT,   0}, \
     {CONFIG_OPT_SF_WDELAY,    CONFIG_HLP_SF_WDELAY, 0,                uptr:&((*recplay_conf)->u_sf_write_delay),          defintval:DEF_SF_DELAY_WRITE,    TYPE_UINT,   0}, \
+    {CONFIG_OPT_USE_MMAP,     CONFIG_HLP_USE_MMAP,  PARAMFLAG_BOOL,   uptr:&((*recplay_conf)->use_mmap),                  defuintval:1,                    TYPE_UINT,   0}, \
   }/*! \brief Record Player Configuration and state */
 typedef struct {
   char            u_sf_filename[1024];              // subframes file path
@@ -109,10 +110,10 @@ typedef struct {
   unsigned int    u_sf_loops ;           // number of loops in replay mode
   unsigned int    u_sf_read_delay;   // read delay in replay mode
   unsigned int    u_sf_write_delay ; // write delay in replay mode
+  unsigned int    use_mmap; // default is to use mmap
 } recplay_conf_t;
 
 typedef struct {
-  int             use_mmap; // default is to use mmap
   size_t          mapsize;
   FILE            *pFile;
   int             fd;
