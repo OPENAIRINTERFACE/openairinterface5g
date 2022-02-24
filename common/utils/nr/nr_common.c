@@ -231,7 +231,6 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
   }
 }
 
-
 void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
 
   uint8_t count=0, start=0, start_set=0;
@@ -482,6 +481,7 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
 
   return i;
 }
+
 
 int get_subband_size(int NPRB,int size) {
   // implements table  5.2.1.4-2 from 36.214

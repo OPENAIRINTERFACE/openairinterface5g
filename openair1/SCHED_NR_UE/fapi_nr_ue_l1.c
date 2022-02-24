@@ -147,8 +147,11 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 rx_ind->pdu_list[j].pdu = CALLOC(tx_req_body->pdu_length, sizeof(*rx_ind->pdu_list[j].pdu));
                 memcpy(rx_ind->pdu_list[j].pdu, tx_req_body->pdu, tx_req_body->pdu_length * sizeof(*rx_ind->pdu_list[j].pdu));
                 rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
+                /* TODO: Implement channel modeling to abstract TA and CQI. For now,
+                   we hard code the values below since they are set in L1 and we are
+                   abstracting L1. */
                 rx_ind->pdu_list[j].timing_advance = 31;
-                rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+                rx_ind->pdu_list[j].ul_cqi = 255;
               }
 
               crc_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_CRC_INDICATION;
@@ -357,13 +360,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
             dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
             dlsch0_harq->n_dmrs_cdm_groups = dlsch_config_pdu->n_dmrs_cdm_groups;
+            dlsch0_harq->dmrs_ports = dlsch_config_pdu->dmrs_ports;
             dlsch0_harq->mcs = dlsch_config_pdu->mcs;
             dlsch0_harq->rvidx = dlsch_config_pdu->rv;
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             //get nrOfLayers from DCI info
             uint8_t Nl = 0;
-            for (i = 0; i < 4; i++) {
-              if (dlsch_config_pdu->dmrs_ports[i] >= i) Nl += 1;
+            for (i = 0; i < 12; i++) { // max 12 ports
+              if ((dlsch_config_pdu->dmrs_ports>>i)&0x01) Nl += 1;
             }
             dlsch0_harq->Nl = Nl;
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
@@ -381,7 +385,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->nEpreRatioOfPDSCHToPTRS = dlsch_config_pdu->nEpreRatioOfPDSCHToPTRS;
             dlsch0_harq->PTRSReOffset = dlsch_config_pdu->PTRSReOffset;
             dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
-            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n",
+                  dlsch0->g_pucch, dlsch0_harq->mcs);
           }
         }
       }
@@ -409,6 +414,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         /* PUCCH */
         fapi_nr_ul_config_pucch_pdu *pucch_config_pdu;
         LOG_D(PHY, "%d.%d ul B ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+        /* SRS */
+        fapi_nr_ul_config_srs_pdu *srs_config_pdu;
 
         switch (pdu_type){
 
@@ -482,6 +489,15 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         case (FAPI_NR_UL_CONFIG_TYPE_DONE):
           pdu_done++; // count the no of pdu processed
           LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+        break;
+
+        case (FAPI_NR_UL_CONFIG_TYPE_SRS):
+          // srs config pdu
+          srs_config_pdu = &ul_config->ul_config_list[i].srs_config_pdu;
+          memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->srs_config_pdu), (void*)srs_config_pdu, sizeof(fapi_nr_ul_config_srs_pdu));
+          PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->active = true;
+          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+          pdu_done++;
         break;
 
         default:

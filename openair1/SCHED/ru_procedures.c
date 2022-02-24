@@ -69,7 +69,6 @@
 
 #include "assertions.h"
 #include "common/utils/system.h"
-#include "msc.h"
 
 #include <time.h>
 

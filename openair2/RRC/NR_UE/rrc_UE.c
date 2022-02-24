@@ -2164,17 +2164,6 @@ nr_rrc_ue_establish_srb2(
      nr_derive_key_up_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPint);
 
-     MSC_LOG_TX_MESSAGE(
-	 MSC_RRC_UE,
-	 MSC_PDCP_UE,
-	 NULL,
-	 0,
-	 MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security %X)",
-	 MSC_AS_TIME_ARGS(ctxt_pP),
-	 ctxt_pP->rnti,
-	 NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-	 (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4));
-
        // Refresh DRBs
         nr_rrc_pdcp_config_asn1_req(ctxt_pP,
                                     NULL,

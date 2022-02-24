@@ -28,7 +28,7 @@
 	<TestCaseRequestedList>
  041000
  000002
- 010000
+ 011000
  000001
  051000
  000001
@@ -42,12 +42,12 @@
  000001
  071004
  000001
- 010002
- 080000
+ 011002
+ 081000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="010000">
+	<testCase id="011000">
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
 		<id>nrmodule2_quectel</id>
@@ -55,7 +55,7 @@
 	</testCase>
 
 
-	<testCase id="010002">
+	<testCase id="011002">
 		<class>Terminate_UE</class>
 		<desc>Terminate Quectel</desc>
 		<id>nrmodule2_quectel</id>
@@ -151,7 +151,7 @@
 
 
 
-	<testCase id="080000">
+	<testCase id="081000">
 		<class>Terminate_eNB</class>
 		<desc>Terminate gNB</desc>
 		<eNB_instance>0</eNB_instance>

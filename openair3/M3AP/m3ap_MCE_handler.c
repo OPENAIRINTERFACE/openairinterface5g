@@ -44,7 +44,6 @@
 //#include "m3ap_MME_interface_management.h"
 #include "m3ap_MCE_interface_management.h"
 
-#include "msc.h"
 #include "assertions.h"
 #include "conversions.h"
 

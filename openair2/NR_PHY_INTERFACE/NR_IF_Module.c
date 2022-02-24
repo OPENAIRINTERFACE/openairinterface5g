@@ -225,13 +225,10 @@ static void free_unqueued_nfapi_indications(nfapi_nr_rach_indication_t *rach_ind
   {
     for(int i = 0; i < rach_ind->number_of_pdus; i++)
     {
-      free(rach_ind->pdu_list[i].preamble_list);
-      rach_ind->pdu_list[i].preamble_list = NULL;
+      free_and_zero(rach_ind->pdu_list[i].preamble_list);
     }
-    free(rach_ind->pdu_list);
-    rach_ind->pdu_list = NULL;
-    free(rach_ind);
-    rach_ind = NULL;
+    free_and_zero(rach_ind->pdu_list);
+    free_and_zero(rach_ind);
   }
   if (uci_ind && uci_ind->num_ucis > 0)
   {
@@ -239,40 +236,31 @@ static void free_unqueued_nfapi_indications(nfapi_nr_rach_indication_t *rach_ind
       switch (uci_ind->uci_list[i].pdu_type) {
         case NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE:
           if (uci_ind->uci_list[i].pucch_pdu_format_0_1.harq) {
-            free(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
-            uci_ind->uci_list[i].pucch_pdu_format_0_1.harq->harq_list = NULL;
+            free_and_zero(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq->harq_list);
           }
-          free(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq);
-          uci_ind->uci_list[i].pucch_pdu_format_0_1.harq = NULL;
-          free(uci_ind->uci_list[i].pucch_pdu_format_0_1.sr);
-          uci_ind->uci_list[i].pucch_pdu_format_0_1.sr = NULL;
+          free_and_zero(uci_ind->uci_list[i].pucch_pdu_format_0_1.harq);
+          free_and_zero(uci_ind->uci_list[i].pucch_pdu_format_0_1.sr);
           break;
 
         case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE:
-          free(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.harq.harq_payload);
-          free(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.csi_part1.csi_part1_payload);
-          free(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.csi_part2.csi_part2_payload);
+          free_and_zero(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.harq.harq_payload);
+          free_and_zero(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.csi_part1.csi_part1_payload);
+          free_and_zero(uci_ind->uci_list[i].pucch_pdu_format_2_3_4.csi_part2.csi_part2_payload);
           break;
       }
     }
-    free(uci_ind->uci_list);
-    uci_ind->uci_list = NULL;
-    free(uci_ind);
-    uci_ind = NULL;
+    free_and_zero(uci_ind->uci_list);
+    free_and_zero(uci_ind);
   }
   if (rx_ind && rx_ind->number_of_pdus > 0)
   {
-    free(rx_ind->pdu_list);
-    rx_ind->pdu_list = NULL;
-    free(rx_ind);
-    rx_ind = NULL;
+    free_and_zero(rx_ind->pdu_list);
+    free_and_zero(rx_ind);
   }
   if (crc_ind && crc_ind->number_crcs > 0)
   {
-    free(crc_ind->crc_list);
-    crc_ind->crc_list = NULL;
-    free(crc_ind);
-    crc_ind = NULL;
+    free_and_zero(crc_ind->crc_list);
+    free_and_zero(crc_ind);
   }
 }
 
@@ -321,73 +309,61 @@ static void match_crc_rx_pdu(nfapi_nr_rx_data_indication_t *rx_ind, nfapi_nr_crc
               "Invalid number of crc_ind->number_crcs %d or rx_ind->number_of_pdus %d\n",
               crc_ind->number_crcs, rx_ind->number_of_pdus);
   if (crc_ind->number_crcs > rx_ind->number_of_pdus) {
+    int num_unmatched_crcs = 0;
     nfapi_nr_crc_indication_t *crc_ind_unmatched = calloc(1, sizeof(*crc_ind_unmatched));
     crc_ind_unmatched->header = crc_ind->header;
     crc_ind_unmatched->sfn = crc_ind->sfn;
     crc_ind_unmatched->slot = crc_ind->slot;
-    crc_ind_unmatched->number_crcs = 0;
-    crc_ind_unmatched->crc_list = NULL;
+    crc_ind_unmatched->number_crcs = crc_ind->number_crcs - rx_ind->number_of_pdus;
+    crc_ind_unmatched->crc_list = calloc(crc_ind_unmatched->number_crcs, sizeof(nfapi_nr_crc_t));
     for (int i = 0; i < crc_ind->number_crcs; i++) {
       if (!rx_ind_has_rnti(rx_ind, crc_ind->crc_list[i].rnti)) {
           LOG_I(NR_MAC, "crc_ind->crc_list[%d].rnti %x does not match any rx_ind pdu rnti\n",
                 i, crc_ind->crc_list[i].rnti);
-          crc_ind_unmatched->number_crcs++;
-          if (crc_ind_unmatched->crc_list == NULL) {
-            crc_ind_unmatched->crc_list = malloc(sizeof(nfapi_nr_crc_t));
-          }
-          else {
-            crc_ind_unmatched->crc_list = realloc(crc_ind_unmatched->crc_list,
-                                                  sizeof(nfapi_nr_crc_t) * crc_ind_unmatched->number_crcs);
-          }
-          crc_ind_unmatched->crc_list[crc_ind_unmatched->number_crcs - 1] = crc_ind->crc_list[i];
+          crc_ind_unmatched->crc_list[num_unmatched_crcs] = crc_ind->crc_list[i];
+          num_unmatched_crcs++;
           remove_crc_pdu(crc_ind, i);
       }
       if (crc_ind->number_crcs == rx_ind->number_of_pdus) {
         break;
       }
     }
-    AssertFatal(crc_ind_unmatched->number_crcs > 0, "The nubmer of unmatched crc_ind pdus %d <= 0\n",
-                crc_ind_unmatched->number_crcs);
+    AssertFatal(crc_ind_unmatched->number_crcs == num_unmatched_crcs, "crc_ind num_pdus %d doesnt match %d\n",
+                crc_ind_unmatched->number_crcs, num_unmatched_crcs);
     if (!requeue(&gnb_crc_ind_queue, crc_ind_unmatched))
     {
       LOG_E(NR_PHY, "requeue failed for crc_ind_unmatched.\n");
-      free(crc_ind_unmatched);
-      crc_ind_unmatched = NULL;
+      free_and_zero(crc_ind_unmatched->crc_list);
+      free_and_zero(crc_ind_unmatched);
     }
   }
   else if (crc_ind->number_crcs < rx_ind->number_of_pdus) {
+    int num_unmatched_rxs = 0;
     nfapi_nr_rx_data_indication_t *rx_ind_unmatched = calloc(1, sizeof(*rx_ind_unmatched));
     rx_ind_unmatched->header = rx_ind->header;
     rx_ind_unmatched->sfn = rx_ind->sfn;
     rx_ind_unmatched->slot = rx_ind->slot;
-    rx_ind_unmatched->number_of_pdus = 0;
-    rx_ind_unmatched->pdu_list = NULL;
+    rx_ind_unmatched->number_of_pdus = rx_ind->number_of_pdus - crc_ind->number_crcs;
+    rx_ind_unmatched->pdu_list = calloc(rx_ind_unmatched->number_of_pdus, sizeof(nfapi_nr_pdu_t));
     for (int i = 0; i < rx_ind->number_of_pdus; i++) {
       if (!crc_ind_has_rnti(crc_ind, rx_ind->pdu_list[i].rnti)) {
         LOG_I(NR_MAC, "rx_ind->pdu_list[%d].rnti %d does not match any crc_ind pdu rnti\n",
               i, rx_ind->pdu_list[i].rnti);
-        rx_ind_unmatched->number_of_pdus++;
-        if (rx_ind_unmatched->pdu_list == NULL) {
-          rx_ind_unmatched->pdu_list = malloc(sizeof(nfapi_nr_rx_data_pdu_t));
-        }
-        else {
-          rx_ind_unmatched->pdu_list = realloc(rx_ind_unmatched->pdu_list,
-                                             sizeof(nfapi_nr_rx_data_pdu_t) * rx_ind_unmatched->number_of_pdus);
-        }
-        rx_ind_unmatched->pdu_list[rx_ind_unmatched->number_of_pdus - 1] = rx_ind->pdu_list[i];
+        rx_ind_unmatched->pdu_list[num_unmatched_rxs] = rx_ind->pdu_list[i];
+        num_unmatched_rxs++;
         remove_rx_pdu(rx_ind, i);
       }
       if (rx_ind->number_of_pdus == crc_ind->number_crcs) {
         break;
       }
     }
-    AssertFatal(rx_ind_unmatched->number_of_pdus > 0, "The nubmer of unmatched rx_ind pdus %d <= 0\n",
-                rx_ind_unmatched->number_of_pdus);
+    AssertFatal(rx_ind_unmatched->number_of_pdus == num_unmatched_rxs, "rx_ind num_pdus %d doesnt match %d\n",
+                rx_ind_unmatched->number_of_pdus, num_unmatched_rxs);
     if (!requeue(&gnb_rx_ind_queue, rx_ind_unmatched))
     {
       LOG_E(NR_PHY, "requeue failed for rx_ind_unmatched.\n");
-      free(rx_ind_unmatched);
-      rx_ind_unmatched = NULL;
+      free_and_zero(rx_ind_unmatched->pdu_list);
+      free_and_zero(rx_ind_unmatched);
     }
   }
   else {
@@ -420,17 +396,19 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   if (get_softmodem_params()->emulate_l1)
   {
     if (gnb_rach_ind_queue.num_items > 0) {
-      LOG_I(NR_MAC, "gnb_rach_ind_queue size = %zu\n", gnb_rach_ind_queue.num_items);
+      LOG_D(NR_MAC, "gnb_rach_ind_queue size = %zu\n", gnb_rach_ind_queue.num_items);
       rach_ind = get_queue(&gnb_rach_ind_queue);
+      AssertFatal(rach_ind->number_of_pdus > 0, "Invalid number of PDUs\n");
       UL_info->rach_ind = *rach_ind;
     }
     if (gnb_uci_ind_queue.num_items > 0) {
-      LOG_I(NR_MAC, "gnb_uci_ind_queue size = %zu\n", gnb_uci_ind_queue.num_items);
+      LOG_D(NR_MAC, "gnb_uci_ind_queue size = %zu\n", gnb_uci_ind_queue.num_items);
       uci_ind = get_queue(&gnb_uci_ind_queue);
+      AssertFatal(uci_ind->num_ucis > 0, "Invalid number of PDUs\n");
       UL_info->uci_ind = *uci_ind;
     }
     if (gnb_rx_ind_queue.num_items > 0 && gnb_crc_ind_queue.num_items > 0) {
-      LOG_I(NR_MAC, "gnb_rx_ind_queue size = %zu and gnb_crc_ind_queue size = %zu\n",
+      LOG_D(NR_MAC, "gnb_rx_ind_queue size = %zu and gnb_crc_ind_queue size = %zu\n",
             gnb_rx_ind_queue.num_items, gnb_crc_ind_queue.num_items);
       rx_ind = get_queue(&gnb_rx_ind_queue);
       int sfn_slot = NFAPI_SFNSLOT2HEX(rx_ind->sfn, rx_ind->slot);
@@ -443,11 +421,12 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
         requeue(&gnb_rx_ind_queue, rx_ind);
       }
       else {
+        AssertFatal(rx_ind->number_of_pdus > 0, "Invalid number of PDUs\n");
+        AssertFatal(crc_ind->number_crcs > 0, "Invalid number of PDUs\n");
+        if (crc_ind->number_crcs != rx_ind->number_of_pdus)
+          match_crc_rx_pdu(rx_ind, crc_ind);
         UL_info->rx_ind = *rx_ind;
         UL_info->crc_ind = *crc_ind;
-        if (crc_ind->number_crcs != rx_ind->number_of_pdus) {
-          match_crc_rx_pdu(&UL_info->rx_ind, &UL_info->crc_ind);
-        }
       }
     }
   }

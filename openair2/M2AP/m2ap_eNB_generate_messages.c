@@ -39,7 +39,6 @@
 
 #include "m2ap_itti_messaging.h"
 
-#include "msc.h"
 #include "assertions.h"
 #include "conversions.h"
 
@@ -169,15 +168,6 @@
 //
 // 
 //  LOG_W(M2AP,"pdu.present %d\n",pdu.present);
-// // MSC_LOG_TX_MESSAGE(
-// // MSC_M2AP_eNB,
-// // MSC_M2AP_MCE,
-// // (const char *)buffer,
-// // len,
-// // MSC_AS_TIME_FMT" M2_SETUP_REQUEST initiatingMessage MCEname %s",
-// // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-// // m2ap_eNB_data_p->ENBname);
-//
 //  m2ap_eNB_itti_send_sctp_data_req(instance_p, m2ap_eNB_data_p->assoc_id, buffer, len, 0);
 //
 //  return 0;
@@ -315,8 +305,6 @@
 //
 //  m2ap_eNB_data_p->state = M2AP_ENB_STATE_READY;
 //
-//  //MSC_LOG_TX_MESSAGE (MSC_M2AP_SRC_ENB, MSC_M2AP_TARGET_ENB, NULL, 0, "0 M2Setup/successfulOutcome assoc_id %u", m2ap_eNB_data_p->assoc_id);
-//
 //  m2ap_eNB_itti_send_sctp_data_req(instance_p->instance, m2ap_eNB_data_p->assoc_id, buffer, len, 0);
 //
 //  return ret;
@@ -370,11 +358,6 @@
 //    M2AP_ERROR("Failed to encode M2 setup failure\n");
 //    return -1;
 //  }
-//
-//  //MSC_LOG_TX_MESSAGE (MSC_M2AP_SRC_ENB,
-//  //                    MSC_M2AP_TARGET_ENB, NULL, 0,
-//  //                    "0 M2Setup/unsuccessfulOutcome  assoc_id %u cause %u value %u",
-//  //                    assoc_id, cause_type, cause_value);
 //
 //  m2ap_eNB_itti_send_sctp_data_req(instance, assoc_id, buffer, len, 0);
 //
@@ -561,8 +544,6 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //    return -1;
 //  }
 //
-//  MSC_LOG_TX_MESSAGE (MSC_M2AP_SRC_ENB, MSC_M2AP_TARGET_ENB, NULL, 0, "0 X2Handover/initiatingMessage assoc_id %u", m2ap_eNB_data_p->assoc_id);
-//
 //  m2ap_eNB_itti_send_sctp_data_req(instance_p->instance, m2ap_eNB_data_p->assoc_id, buffer, len, 1);
 //
 //  return ret;
@@ -654,8 +635,6 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //    return -1;
 //  }
 //
-//  MSC_LOG_TX_MESSAGE (MSC_M2AP_SRC_ENB, MSC_M2AP_TARGET_ENB, NULL, 0, "0 X2Handover/successfulOutcome assoc_id %u", m2ap_eNB_data_p->assoc_id);
-//
 //  m2ap_eNB_itti_send_sctp_data_req(instance_p->instance, m2ap_eNB_data_p->assoc_id, buffer, len, 1);
 //
 //  return ret;
@@ -715,8 +694,6 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //    abort();
 //    return -1;
 //  }
-//
-//  MSC_LOG_TX_MESSAGE (MSC_M2AP_SRC_ENB, MSC_M2AP_TARGET_ENB, NULL, 0, "0 X2UEContextRelease/initiatingMessage assoc_id %u", m2ap_eNB_data_p->assoc_id);
 //
 //  m2ap_eNB_itti_send_sctp_data_req(instance_p->instance, m2ap_eNB_data_p->assoc_id, buffer, len, 1);
 //
@@ -799,8 +776,6 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //    abort();
 //    return -1;
 //  }
-//
-//  MSC_LOG_TX_MESSAGE (MSC_M2AP_SRC_ENB, MSC_M2AP_TARGET_ENB, NULL, 0, "0 X2HandoverCancel/initiatingMessage assoc_id %u", m2ap_eNB_data_p->assoc_id);
 //
 //  m2ap_eNB_itti_send_sctp_data_req(instance_p->instance, m2ap_eNB_data_p->assoc_id, buffer, len, 1);
 //

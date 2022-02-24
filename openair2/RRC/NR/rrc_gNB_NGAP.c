@@ -33,17 +33,15 @@
 #include "rrc_eNB_S1AP.h"
 #include "gnb_config.h"
 #include "common/ran_context.h"
-#include "gtpv1u.h"
 
 #include "asn1_conversions.h"
 #include "intertask_interface.h"
 #include "pdcp.h"
 #include "pdcp_primitives.h"
 
-#include "msc.h"
-
 #include "gtpv1u_eNB_task.h"
 #include "gtpv1u_gNB_task.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "RRC/NR/rrc_gNB_GTPV1U.h"
 
@@ -453,14 +451,6 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
       ue_context_pP->ue_context.ue_guami.amf_set_id = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_set_id;
       ue_context_pP->ue_context.ue_guami.amf_pointer = NGAP_NAS_FIRST_REQ(message_p).ue_identity.guami.amf_pointer;
 
-      MSC_LOG_TX_MESSAGE(MSC_NGAP_GNB,
-                          MSC_NGAP_AMF,
-                          (const char *)&message_p->ittiMsg.ngap_nas_first_req,
-                          sizeof(ngap_nas_first_req_t),
-                          MSC_AS_TIME_FMT" NGAP_NAS_FIRST_REQ gNB %u UE %x",
-                          MSC_AS_TIME_ARGS(ctxt_pP),
-                          ctxt_pP->module_id,
-                          ctxt_pP->rnti);
       LOG_I(NGAP, "[gNB %d] Build NGAP_NAS_FIRST_REQ adding in s_TMSI: GUAMI amf_set_id %u amf_region_id %u ue %x\n",
             ctxt_pP->module_id,
             NGAP_NAS_FIRST_REQ (message_p).ue_identity.guami.amf_set_id,
@@ -636,16 +626,6 @@ rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(
     }
   }
 
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_GNB,
-    MSC_S1AP_ENB,
-    (const char *)&NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p),
-    sizeof(ngap_initial_context_setup_resp_t),
-    MSC_AS_TIME_FMT" INITIAL_CONTEXT_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_id_rnti,
-    NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).gNB_ue_ngap_id,
-    pdu_sessions_done, pdu_sessions_failed);
   NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_pdusessions = pdu_sessions_done;
   NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_pdusessions_failed = pdu_sessions_failed;
   itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
@@ -794,15 +774,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
             gNB_ue_ngap_id);
 
     if (ue_context_p == NULL) {
-        MSC_LOG_RX_MESSAGE(
-            MSC_RRC_GNB,
-            MSC_NGAP_GNB,
-            NULL,
-            0,
-            MSC_AS_TIME_FMT" DOWNLINK-NAS UE initial id %u gNB_ue_ngap_id %u",
-            0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-            ue_initial_id,
-            gNB_ue_ngap_id);
         /* Can not associate this message to an UE index, send a failure to NGAP and discard it! */
         MessageDef *msg_fail_p;
         LOG_W(NR_RRC, "[gNB %ld] In NGAP_DOWNLINK_NAS: unknown UE from NGAP ids (%d, %u)\n", instance, ue_initial_id, gNB_ue_ngap_id);
@@ -811,15 +782,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.length = NGAP_DOWNLINK_NAS (msg_p).nas_pdu.length;
         NGAP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.buffer = NGAP_DOWNLINK_NAS (msg_p).nas_pdu.buffer;
         // TODO add failure cause when defined!
-        MSC_LOG_TX_MESSAGE(
-            MSC_RRC_ENB,
-            MSC_NGAP_GNB,
-            (const char *)NULL,
-            0,
-            MSC_AS_TIME_FMT" NGAP_NAS_NON_DELIVERY_IND UE initial id %u gNB_ue_ngap_id %u (ue ctxt !found)",
-            0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-            ue_initial_id,
-            gNB_ue_ngap_id);
         itti_send_msg_to_task (TASK_NGAP, instance, msg_fail_p);
         return (-1);
     } else {
@@ -830,15 +792,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
             ue_context_p->ue_context.gNB_ue_ngap_id = NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id;
         }
 
-        MSC_LOG_RX_MESSAGE(
-            MSC_RRC_GNB,
-            MSC_NGAP_GNB,
-            (const char *)NULL,
-            0,
-            MSC_AS_TIME_FMT" DOWNLINK-NAS UE initial id %u gNB_ue_ngap_id %u",
-            0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-            ue_initial_id,
-            NGAP_DOWNLINK_NAS (msg_p).gNB_ue_ngap_id);
         /* Create message for PDCP (DLInformationTransfer_t) */
         length = do_NR_DLInformationTransfer (
                 instance,
@@ -997,16 +950,6 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
   if ((pdu_sessions_done > 0) ) {
     LOG_I(NR_RRC,"NGAP_PDUSESSION_SETUP_RESP: sending the message: nb_of_pdusessions %d, total pdu_sessions %d, index %d\n",
           ue_context_pP->ue_context.nb_of_pdusessions, ue_context_pP->ue_context.setup_pdu_sessions, pdusession);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_GNB,
-      MSC_NGAP_GNB,
-      (const char *)&NGAP_PDUSESSION_SETUP_RESP (msg_p),
-      sizeof(ngap_pdusession_setup_resp_t),
-      MSC_AS_TIME_FMT" PDUSESSION_SETUP_RESP UE %X gNB_ue_ngap_id %u pdu_sessions:%u succ %u fail",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_pP->ue_id_rnti,
-      NGAP_PDUSESSION_SETUP_RESP (msg_p).gNB_ue_ngap_id,
-      pdu_sessions_done, pdu_sessions_failed);
     itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
   }
 
@@ -1126,12 +1069,6 @@ rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
   if (ue_context_pP == NULL) {
     LOG_E(RRC, "[gNB] In NGAP_UE_CONTEXT_RELEASE_REQ: invalid UE\n");
   } else {
-    MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
-                       MSC_NGAP_GNB,
-                       NULL,
-                       0,
-                       "0 NGAP_UE_CONTEXT_RELEASE_REQ gNB_ue_ngap_id 0x%06"PRIX32" ",
-                       ue_context_pP->ue_context.gNB_ue_ngap_id);
     MessageDef *msg_context_release_req_p = NULL;
     msg_context_release_req_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_REQ);
     NGAP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).gNB_ue_ngap_id    = ue_context_pP->ue_context.gNB_ue_ngap_id;
@@ -1204,14 +1141,6 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
     LOG_W(NR_RRC, "[gNB %ld] In NGAP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from gNB_ue_ngap_id (%u)\n",
           instance,
           gNB_ue_ngap_id);
-    MSC_LOG_EVENT(MSC_RRC_GNB, "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" context not found",
-                  gNB_ue_ngap_id);
-    MSC_LOG_TX_MESSAGE(MSC_RRC_GNB,
-                       MSC_NGAP_GNB,
-                       NULL,
-                       0,
-                       "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" ",
-                       gNB_ue_ngap_id);
     msg_complete_p = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
     NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).gNB_ue_ngap_id = gNB_ue_ngap_id;
     itti_send_msg_to_task(TASK_NGAP, instance, msg_complete_p);
@@ -1235,9 +1164,6 @@ rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(
 void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(
   instance_t instance,
   uint32_t   gNB_ue_ngap_id) {
-  MSC_LOG_TX_MESSAGE(MSC_RRC_GNB, MSC_NGAP_GNB, NULL, 0,
-                     "0 NGAP_UE_CONTEXT_RELEASE_COMPLETE gNB_ue_ngap_id 0x%06"PRIX32" ",
-                     gNB_ue_ngap_id);
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
   NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = gNB_ue_ngap_id;
   itti_send_msg_to_task(TASK_NGAP, instance, msg);
@@ -1395,7 +1321,6 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
   protocol_ctxt_t                 ctxt;
   pdusession_release_t            pdusession_release_params[NGAP_MAX_PDUSESSION];
   uint8_t                         nb_pdusessions_torelease;
-  MessageDef                     *msg_delete_tunnels_p = NULL;
   uint8_t xid;
   int i, pdusession;
   uint8_t b_existed,is_existed;
@@ -1473,20 +1398,18 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
     } else {
       //gtp tunnel delete
       LOG_I(NR_RRC, "gtp tunnel delete \n");
-      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_GNB, 0, GTPV1U_GNB_DELETE_TUNNEL_REQ);
-      memset(&GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-      GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+      gtpv1u_gnb_delete_tunnel_req_t req={0};
+      req.rnti = ue_context_p->ue_context.rnti;
 
       for(i = 0; i < NB_RB_MAX; i++) {
         if(xid == ue_context_p->ue_context.pduSession[i].xid) {
-          GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).pdusession_id[GTPV1U_GNB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_pdusession++] = ue_context_p->ue_context.gnb_gtp_psi[i];
+          req.pdusession_id[req.num_pdusession++] = ue_context_p->ue_context.gnb_gtp_psi[i];
           ue_context_p->ue_context.gnb_gtp_teid[i] = 0;
           memset(&ue_context_p->ue_context.gnb_gtp_addrs[i], 0, sizeof(ue_context_p->ue_context.gnb_gtp_addrs[i]));
           ue_context_p->ue_context.gnb_gtp_psi[i]  = 0;
         }
       }
-
-      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
+      gtpv1u_delete_ngu_tunnel(instance, &req);
       //NGAP_PDUSESSION_RELEASE_RESPONSE
       rrc_gNB_send_NGAP_PDUSESSION_RELEASE_RESPONSE(&ctxt, ue_context_p, xid);
       LOG_I(NR_RRC, "Send PDU Session Release Response \n");

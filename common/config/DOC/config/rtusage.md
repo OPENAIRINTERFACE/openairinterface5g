@@ -65,7 +65,6 @@ To get help on supported parameters you can use specific options:
     -R: Enable online log
     -g: Set the global log level, valide options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))
     --telnetsrv: Start embedded telnet server
-    --msc: Enable the MSC tracing utility
 --------------------------------------------------------------------
 
 [LIBCONFIG] loader: 2/2 parameters successfully set, (2 to default value)
