@@ -30,7 +30,6 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <assertions.h>
-#include <LOG/log.h>
 #include <common/utils/system.h>
 //#include <stdatomic.h>
 
@@ -103,13 +102,9 @@ static inline void *NotifiedFifoData(notifiedFIFO_elt_t *elt) {
 }
 
 static inline void delNotifiedFIFO_elt(notifiedFIFO_elt_t *elt) {
-  if (elt->malloced) {
-    elt->malloced=false;
-    free(elt);
-  } else
-    printf("delNotifiedFIFO on something not allocated by newNotifiedFIFO\n");
-
-  //LOG_W(UTIL,"delNotifiedFIFO on something not allocated by newNotifiedFIFO\n");
+  AssertFatal(elt->malloced, "delNotifiedFIFO on something not allocated by newNotifiedFIFO\n");
+  elt->malloced=false;
+  free(elt);
 }
 
 static inline void initNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf) {
@@ -148,8 +143,7 @@ static inline  notifiedFIFO_elt_t *pullNotifiedFIFO_nothreadSafe(notifiedFIFO_t 
 
   notifiedFIFO_elt_t *ret=nf->outF;
 
-  if (nf->outF==nf->outF->next)
-    LOG_E(UTIL,"Circular list in thread pool: push several times the same buffer is forbidden\n");
+  AssertFatal(nf->outF != nf->outF->next,"Circular list in thread pool: push several times the same buffer is forbidden\n");
 
   nf->outF=nf->outF->next;
 
