@@ -168,7 +168,7 @@ clean_all_files() {
  rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
  rm -rf $dir/ran_build $dir/ran_build_noLOG
  rm -rf $dir/lte-simulators/build 
- rm -rf $dir/phy_simulators/build $dir/nas_sim_tools/build 
+ rm -rf $dir/nas_sim_tools/build 
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
  rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
@@ -756,6 +756,7 @@ check_install_oai_software() {
 	libidn11-dev \
 	libmysqlclient-dev  \
 	libpython2.7-dev \
+        libreadline-dev \
 	libsctp1  \
 	libsctp-dev  \
 	libssl-dev  \
@@ -764,7 +765,6 @@ check_install_oai_software() {
 	libxml2 \
 	libxml2-dev  \
 	libxslt1-dev \
-	mscgen  \
 	octave-signal \
 	openssh-client \
 	openssh-server \
@@ -792,7 +792,7 @@ check_install_oai_software() {
       fi
       $SUDO $INSTALLER install -y python-epdb vim-common
     else
-      $SUDO $INSTALLER install -y mscgen pydb
+      $SUDO $INSTALLER install -y pydb
     fi
 
     $SUDO $INSTALLER install -y \
@@ -842,6 +842,7 @@ check_install_oai_software() {
       patch \
       psmisc \
       python \
+      readline-devel \
       subversion \
       xmlstarlet \
       python-pip \

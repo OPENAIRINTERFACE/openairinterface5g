@@ -119,12 +119,12 @@
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/30Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 30M -t 60</iperf_args>
+		<desc>iperf (DL/40Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 40M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>idefix</id>
-		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
-		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+		<iperf_packetloss_threshold>20</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>85</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 

@@ -30,7 +30,6 @@
   #include "intertask_interface.h"
 #endif
 #include "assertions.h"
-#include "msc.h"
 #include "rlc_um.h"
 #include "list.h"
 #include "rlc_primitives.h"
@@ -166,7 +165,6 @@ rlc_um_rx (const protocol_ctxt_t *const ctxt_pP, void *argP, struct mac_data_ind
   char  message_string[10000];
   mem_block_t        *tb_p;
   int16_t               tb_size_in_bytes;
-  size_t              message_string_size = 0;
   rlc_um_pdu_info_t   pdu_info;
   int index;
   int                 octet_index;
@@ -183,38 +181,15 @@ rlc_um_rx (const protocol_ctxt_t *const ctxt_pP, void *argP, struct mac_data_ind
       LOG_I(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,l_rlc_p));
 
-      if (data_indP.data.nb_elements > 0 && MESSAGE_CHART_GENERATOR) {
+      if (data_indP.data.nb_elements > 0) {
         tb_p = data_indP.data.head;
 
         while (tb_p != NULL) {
           tb_size_in_bytes   = ((struct mac_tb_ind *) (tb_p->data))->size;
           rlc_um_get_pdu_infos(ctxt_pP,l_rlc_p,(rlc_um_pdu_sn_10_t *) ((struct mac_tb_ind *) (tb_p->data))->data_ptr, tb_size_in_bytes, &pdu_info, l_rlc_p->rx_sn_length);
-          message_string_size = 0;
-          message_string_size += sprintf(&message_string[message_string_size],
-                                         MSC_AS_TIME_FMT" "PROTOCOL_RLC_UM_MSC_FMT"DATA SN %u size %u FI %u",
-                                         MSC_AS_TIME_ARGS(ctxt_pP),
-                                         PROTOCOL_RLC_UM_MSC_ARGS(ctxt_pP, l_rlc_p),
-                                         pdu_info.sn,
-                                         tb_size_in_bytes,
-                                         pdu_info.fi);
-
-          if (pdu_info.e) {
-            message_string_size += sprintf(&message_string[message_string_size], "| HE:");
-
-            for (index=0; index < pdu_info.num_li; index++) {
-              message_string_size += sprintf(&message_string[message_string_size], " LI %u", pdu_info.li_list[index]);
-            }
-          }
-
-          MSC_LOG_RX_DISCARDED_MESSAGE(
-            (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-            (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_UE:MSC_RLC_ENB,
-            (const char *)pdu_info.payload,
-            tb_size_in_bytes,
-            message_string);
           tb_p = tb_p->next;
         }
-      }/*MESSAGE_CHART_GENERATOR*/
+      }
 
       list_free (&data_indP.data);
       break;
@@ -237,7 +212,7 @@ rlc_um_rx (const protocol_ctxt_t *const ctxt_pP, void *argP, struct mac_data_ind
       // - enters the LOCAL_SUSPEND state.
       data_indP.tb_size = data_indP.tb_size >> 3;
 
-      if (data_indP.data.nb_elements > 0 && (MESSAGE_CHART_GENERATOR || LOG_DEBUGFLAG(DEBUG_RLC))) {
+      if (data_indP.data.nb_elements > 0 && (LOG_DEBUGFLAG(DEBUG_RLC))) {
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" MAC_DATA_IND %d TBs\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,l_rlc_p),
               data_indP.data.nb_elements);
@@ -250,32 +225,6 @@ rlc_um_rx (const protocol_ctxt_t *const ctxt_pP, void *argP, struct mac_data_ind
                                tb_size_in_bytes,
                                &pdu_info,
                                l_rlc_p->rx_sn_length);
-
-          if (MESSAGE_CHART_GENERATOR) {
-            message_string_size = 0;
-            message_string_size += sprintf(&message_string[message_string_size],
-                                           MSC_AS_TIME_FMT" "PROTOCOL_RLC_UM_MSC_FMT"DATA SN %u size %u FI %u",
-                                           MSC_AS_TIME_ARGS(ctxt_pP),
-                                           PROTOCOL_RLC_UM_MSC_ARGS(ctxt_pP, l_rlc_p),
-                                           pdu_info.sn,
-                                           tb_size_in_bytes,
-                                           pdu_info.fi);
-
-            if (pdu_info.e) {
-              message_string_size += sprintf(&message_string[message_string_size], "| HE:");
-
-              for (index=0; index < pdu_info.num_li; index++) {
-                message_string_size += sprintf(&message_string[message_string_size], " LI  %u", pdu_info.li_list[index]);
-              }
-            }
-
-            MSC_LOG_RX_MESSAGE(
-              (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-              (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_UE:MSC_RLC_ENB,
-              (char *)pdu_info.payload,
-              tb_size_in_bytes,
-              message_string);
-          }
 
           if (LOG_DEBUGFLAG(DEBUG_RLC)) {
             message_string_size = 0;
@@ -483,89 +432,61 @@ rlc_um_mac_data_request (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP,cons
         continue;
       }
 
-      if (MESSAGE_CHART_GENERATOR || LOG_DEBUGFLAG(DEBUG_RLC) ) {
+      if (LOG_DEBUGFLAG(DEBUG_RLC) ) {
         rlc_um_get_pdu_infos(ctxt_pP, l_rlc_p,(rlc_um_pdu_sn_10_t *) ((struct mac_tb_req *) (tb_p->data))->data_ptr, tb_size_in_bytes, &pdu_info, l_rlc_p->rx_sn_length);
 
-        if(MESSAGE_CHART_GENERATOR) {
-          message_string_size = 0;
-          message_string_size += sprintf(&message_string[message_string_size],
-                                         MSC_AS_TIME_FMT" "PROTOCOL_RLC_UM_MSC_FMT" DATA SN %u size %u FI %u",
-                                         MSC_AS_TIME_ARGS(ctxt_pP),
-                                         PROTOCOL_RLC_UM_MSC_ARGS(ctxt_pP, l_rlc_p),
-                                         pdu_info.sn,
-                                         tb_size_in_bytes,
-                                         pdu_info.fi);
+        message_string_size = 0;
+        message_string_size += sprintf(&message_string[message_string_size], "Bearer	  : %ld\n", l_rlc_p->rb_id);
+        message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
+        message_string_size += sprintf(&message_string[message_string_size], "Header size : %u\n", pdu_info.header_size);
+        message_string_size += sprintf(&message_string[message_string_size], "Payload size: %u\n", pdu_info.payload_size);
+        message_string_size += sprintf(&message_string[message_string_size], "PDU type    : RLC UM DATA IND: UMD PDU\n\n");
+        message_string_size += sprintf(&message_string[message_string_size], "Header	  :\n");
+        message_string_size += sprintf(&message_string[message_string_size], "  FI	  : %u\n", pdu_info.fi);
+        message_string_size += sprintf(&message_string[message_string_size], "  E	  : %u\n", pdu_info.e);
+        message_string_size += sprintf(&message_string[message_string_size], "  SN	  : %u\n", pdu_info.sn);
 
-          if (pdu_info.e) {
-            message_string_size += sprintf(&message_string[message_string_size], "|HE:");
+        if (pdu_info.e) {
+          message_string_size += sprintf(&message_string[message_string_size], "\nHeader extension  : \n");
 
-            for (index=0; index < pdu_info.num_li; index++) {
-              message_string_size += sprintf(&message_string[message_string_size], " LI %u", pdu_info.li_list[index]);
-            }
+          for (index=0; index < pdu_info.num_li; index++) {
+            message_string_size += sprintf(&message_string[message_string_size], "  LI        : %u\n", pdu_info.li_list[index]);
           }
-
-          MSC_LOG_TX_MESSAGE(
-            (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-            (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_UE:MSC_RLC_ENB,
-            (const char *)pdu_info.payload,
-            pdu_info.payload_size,
-            message_string);
         }
 
-        if(LOG_DEBUGFLAG(DEBUG_RLC)) {
-          message_string_size = 0;
-          message_string_size += sprintf(&message_string[message_string_size], "Bearer	  : %ld\n", l_rlc_p->rb_id);
-          message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
-          message_string_size += sprintf(&message_string[message_string_size], "Header size : %u\n", pdu_info.header_size);
-          message_string_size += sprintf(&message_string[message_string_size], "Payload size: %u\n", pdu_info.payload_size);
-          message_string_size += sprintf(&message_string[message_string_size], "PDU type    : RLC UM DATA IND: UMD PDU\n\n");
-          message_string_size += sprintf(&message_string[message_string_size], "Header	  :\n");
-          message_string_size += sprintf(&message_string[message_string_size], "  FI	  : %u\n", pdu_info.fi);
-          message_string_size += sprintf(&message_string[message_string_size], "  E	  : %u\n", pdu_info.e);
-          message_string_size += sprintf(&message_string[message_string_size], "  SN	  : %u\n", pdu_info.sn);
+        message_string_size += sprintf(&message_string[message_string_size], "\nPayload  : \n");
+        message_string_size += sprintf(&message_string[message_string_size], "------+-------------------------------------------------|\n");
+        message_string_size += sprintf(&message_string[message_string_size], "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
+        message_string_size += sprintf(&message_string[message_string_size], "------+-------------------------------------------------|\n");
 
-          if (pdu_info.e) {
-            message_string_size += sprintf(&message_string[message_string_size], "\nHeader extension  : \n");
-
-            for (index=0; index < pdu_info.num_li; index++) {
-              message_string_size += sprintf(&message_string[message_string_size], "  LI        : %u\n", pdu_info.li_list[index]);
-            }
-          }
-
-          message_string_size += sprintf(&message_string[message_string_size], "\nPayload  : \n");
-          message_string_size += sprintf(&message_string[message_string_size], "------+-------------------------------------------------|\n");
-          message_string_size += sprintf(&message_string[message_string_size], "      |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
-          message_string_size += sprintf(&message_string[message_string_size], "------+-------------------------------------------------|\n");
-
-          for (octet_index = 0; octet_index < pdu_info.payload_size; octet_index++) {
-            if ((octet_index % 16) == 0) {
-              if (octet_index != 0) {
-                message_string_size += sprintf(&message_string[message_string_size], " |\n");
-              }
-
-              message_string_size += sprintf(&message_string[message_string_size], " %04d |", octet_index);
+        for (octet_index = 0; octet_index < pdu_info.payload_size; octet_index++) {
+          if ((octet_index % 16) == 0) {
+            if (octet_index != 0) {
+              message_string_size += sprintf(&message_string[message_string_size], " |\n");
             }
 
-            /*
-             * Print every single octet in hexadecimal form
-             */
-            message_string_size += sprintf(&message_string[message_string_size], " %02x", pdu_info.payload[octet_index]);
-            /*
-             * Align newline and pipes according to the octets in groups of 2
-             */
+            message_string_size += sprintf(&message_string[message_string_size], " %04d |", octet_index);
           }
 
           /*
-           * Append enough spaces and put final pipe
+           * Print every single octet in hexadecimal form
            */
-          for (index = octet_index; index < 16; ++index) {
-            message_string_size += sprintf(&message_string[message_string_size], "   ");
-          }
+          message_string_size += sprintf(&message_string[message_string_size], " %02x", pdu_info.payload[octet_index]);
+          /*
+           * Align newline and pipes according to the octets in groups of 2
+           */
+        }
 
-          message_string_size += sprintf(&message_string[message_string_size], " |\n");
-          LOG_UI(RLC, "%s\n", message_string);
-        } /*LOG_DEBUGFLAG(DEBUG_RLC) */
-      } /* MESSAGE_CHART_GENERATOR || LOG_DEBUGFLAG(DEBUG_RLC) */
+        /*
+         * Append enough spaces and put final pipe
+         */
+        for (index = octet_index; index < 16; ++index) {
+          message_string_size += sprintf(&message_string[message_string_size], "   ");
+        }
+
+        message_string_size += sprintf(&message_string[message_string_size], " |\n");
+        LOG_UI(RLC, "%s\n", message_string);
+      } /* LOG_DEBUGFLAG(DEBUG_RLC) */
 
       tb_p = tb_p->next;
     } /* while (tb_p != NULL) */
@@ -607,15 +528,6 @@ rlc_um_data_req (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP, mem_block_t
   //rlc_p->next_sdu_index = (rlc_p->next_sdu_index + 1) % rlc_p->size_input_sdus_buffer;
   rlc_p->stat_tx_pdcp_sdu   += 1;
   rlc_p->stat_tx_pdcp_bytes += ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size;
-  MSC_LOG_RX_MESSAGE(
-    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-    NULL,
-    0,
-    MSC_AS_TIME_FMT" "PROTOCOL_RLC_UM_MSC_FMT" DATA-REQ size %u",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    PROTOCOL_RLC_UM_MSC_ARGS(ctxt_pP, rlc_p),
-    ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size);
 
   if (LOG_DEBUGFLAG(DEBUG_RLC) ) {
     data_offset = sizeof (struct rlc_um_data_req_alloc);
@@ -659,14 +571,6 @@ rlc_um_data_req (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP, mem_block_t
   rlc_p->buffer_occupancy += ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size;
   list_add_tail_eurecom(sdu_pP, &rlc_p->input_sdus);
   RLC_UM_MUTEX_UNLOCK(&rlc_p->lock_input_sdus);
-
-  if (MESSAGE_CHART_GENERATOR) {
-    if (rlc_p->buffer_occupancy > 4096) {
-      MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                    "0 "PROTOCOL_RLC_AM_MSC_FMT" BO %u bytes",\
-                    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_p), rlc_p->buffer_occupancy);
-    }
-  }
 
   LOG_T(RLC, PROTOCOL_RLC_UM_CTXT_FMT" BO %d , NB SDU %d\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),

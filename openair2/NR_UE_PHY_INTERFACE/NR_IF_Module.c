@@ -30,6 +30,10 @@
  * \warning
  */
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "PHY/defs_nr_UE.h"
 #include "NR_IF_Module.h"
 #include "NR_MAC_UE/mac_proto.h"

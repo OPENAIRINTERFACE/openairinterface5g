@@ -44,7 +44,6 @@
 #include "s1ap_common.h"
 #include "play_scenario_s1ap_eNB_defs.h"
 #include "play_scenario.h"
-#include "msc.h"
 //------------------------------------------------------------------------------
 s1ap_eNB_internal_data_t s1ap_eNB_internal_data;
 RB_GENERATE(s1ap_mme_map, s1ap_eNB_mme_data_s, entry, et_s1ap_eNB_compare_assoc_id);
@@ -1084,7 +1083,6 @@ void *et_s1ap_eNB_task(void *arg)
   et_s1ap_eNB_prepare_internal_data();
 
   itti_mark_task_ready(TASK_S1AP);
-  MSC_START_USE();
 
   while (1) {
     itti_receive_msg(TASK_S1AP, &received_msg);

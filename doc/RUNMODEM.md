@@ -89,6 +89,8 @@ At the UE the --phy-test flag will
 
 ```bash sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test```
 
+In phy-test mode it is possible to mimic the reception of UE Capabilities at gNB by passing through the command line parameter `--uecap_file` the location and file name of the input UE Capability file, e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
+
 ### Launch UE in another window
 
 ```bash sudo ./nr-uesoftmodem --phy-test [--rrc_config_path ../../../ci-scripts/rrc-files]```
@@ -122,6 +124,8 @@ gNB on machine 1:
 
 `sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra`
 
+In do-ra mode it is possible to mimic the reception of UE Capabilities at gNB by passing through the command line parameter `--uecap_file` the location and file name of the input UE Capability file, e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
+
 UE on machine 2:
 
 `sudo ./nr-uesoftmodem --do-ra`
@@ -151,6 +155,14 @@ At the UE the --sa flag will:
   4) 5G-NR RRC Reconfiguration
   5) Start Downlink and Uplink Data Transfer
 
+Command line parameters for UE in --sa mode:
+- `C` : downlink carrier frequency in Hz (default value 0)
+- `CO` : uplink frequency offset for FDD in Hz (default value 0)
+- `numerology` : numerology index (default value 1)
+- `r` : bandwidth in terms of RBs (default value 106)
+- `band` : NR band number (default value 78)
+- `s` : SSB start subcarrier (default value 512)
+
 ### Run OAI in SA mode
 
 From the `cmake_targets/ran_build/build` folder:
@@ -161,31 +173,29 @@ gNB on machine 1:
 
 UE on machine 2:
 
-`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 -s 516 --sa`
 
 With the RF simulator (on the same machine):
 
 `sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa`
 
-`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 -s 516 --rfsim --sa`
+
+where `-r` sets the transmission bandwidth configuration in terms of RBs, `-C` sets the downlink carrier frequency and `-s` sets the SSB start subcarrier.
+
+Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabilities input file (path location + filename), e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
 
 ## IF setup with OAI
 
-The -C and --CO flags can be used together at UE side to set custom downlink and uplink FR1 arbitrary frequencies for the IF equipment.
+OAI is also compatible with Intermediate Frequency (IF) equipment. This allows to use RF front-end that with arbitrary frequencies bands that do not comply with the standardised 3GPP NR bands. 
 
-In order to run this setup, the following flags are needed at the UE side:
+To configure the IF frequencies it is necessary to use two command-line options at UE side:
+- `if_freq`, downlink frequency in Hz
+- `if_freq_off`, uplink frequency offset in Hz
 
-`-C` 
-
-`--CO`
-
-and the following parameters must be configured in the RUs section of the gNB configuration file:
-
-`if_freq`
-
-`if_offset`
-
-The values must be given in Hz.
+Accordingly, the following parameters must be configured in the RUs section of the gNB configuration file:
+- `if_freq`
+- `if_offset`
 
 ### Run OAI with custom DL/UL arbitrary frequencies
 
@@ -199,7 +209,7 @@ gNB on machine 1:
 
 UE on machine 2:
 
-`sudo ./nr-uesoftmodem -C 2169080000 --CO -400000000`
+`sudo ./nr-uesoftmodem --if_freq 2169080000 --if_freq_off -400000000`
 
 
 

@@ -32,8 +32,6 @@
 ################################
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
 source $THIS_SCRIPT_PATH/build_helper
-declare -i g_run_msc_gen=0
-declare    g_msc_dir="/tmp"
 
 
 function help()
@@ -55,7 +53,6 @@ function help()
   echo_error "  -M, --target-dl-mcs       mcs       Downlink target MCS."
   echo_error "  -n, --T-no-wait                     don't wait for tracer, start immediately"
   echo_error "  -p, --T-port              port      use given port"
-  echo_error "  -m, --mscgen                        directory Generate mscgen output files in a directory"
   echo_error "  -s, --show-stdout                   Do not redirect stdout and stderr to file /tmp/lte_softmodem.stdout.txt."
   echo_error "  -S, --enable-missed-slot            Continue execution in case of missed slot."
   echo_error "  -T, --target-ul-mcs       mcs       Uplink target MCS."
@@ -68,30 +65,10 @@ function help()
 }
 
 
-function do_msc_gen()
-{
-  cd $g_msc_dir
-  last_created_file=`ls -t mscgen* | head -1 | tr -d ':'`
-  $OPENAIR_DIR/targets/SCRIPTS/msc_gen.py
-  sync
-  last_created_file2=`ls -t mscgen* | head -1 | tr -d ':'`
-        
-  if [ x"$last_created_file" != x"$last_created_file2" ]; then
-    if [ -f ./$last_created_file2/oai_mscgen_page_0.png ]; then 
-      command -v eog 2>/dev/null &&  eog ./$last_created_file2/oai_mscgen_page_0.png
-    fi
-  fi 
-
-}
-
-
 function control_c()
 # run if user hits control-c
 {
   echo_warning "\nExiting by ctrl+c\n"
-  if [ $g_run_msc_gen -eq 1 ]; then 
-    do_msc_gen
-  fi
   exit $?
 }
 
@@ -152,18 +129,6 @@ function main()
             echo "setting  --rf-config-file to $rf_config_file"
             exe_arguments="$exe_arguments --rf-config-file=$rf_config_file"
 	fi 
-        ;;      
-      -m | --mscgen)
-        g_msc_dir=$2
-        # can omit file name if last arg on the line
-        if [ -d  "$g_msc_dir" ]; then
-          echo "setting mscgen log files to dir: $g_msc_dir"
-          g_run_msc_gen=1
-          shift 2;
-        else
-          echo_error "Mscgen log dir does not exist"
-          exit -1
-        fi
         ;;      
       -M | --target-dl-mcs)
         echo "setting target dl MCS to $2"
@@ -250,9 +215,6 @@ function main()
       gdb -n -x ~/.gdb_lte_softmodem 2>&1 > /tmp/gdb_lte_softmodem.stdout.txt
     else
       gdb -n -x ~/.gdb_lte_softmodem 
-    fi
-    if [ $g_run_msc_gen -eq 1 ]; then 
-      do_msc_gen
     fi
   fi
 }
