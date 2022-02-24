@@ -452,9 +452,6 @@ typedef struct {
   int                   sub_frame_start;
   ///
   int                   sub_frame_step;
-  ///
-  unsigned long long    gotIQs;
-
 } UE_rxtx_proc_NB_IoT_t;
 
 /// Context data structure for eNB subframe processing

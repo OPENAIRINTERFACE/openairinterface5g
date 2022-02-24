@@ -27,11 +27,18 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <unistd.h>
 #include <sys/syscall.h>
 #include <assertions.h>
 #include <LOG/log.h>
 #include <common/utils/system.h>
 //#include <stdatomic.h>
+
+static __inline__ uint64_t rdtsc(void) {
+  uint32_t a, d;
+  __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
+  return (((uint64_t)d)<<32) | ((uint64_t)a);
+}
 
 #ifdef DEBUG
   #define THREADINIT   PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
