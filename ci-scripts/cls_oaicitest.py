@@ -55,6 +55,7 @@ import constants as CONST
 import sshconnection
 
 import cls_module_ue
+import cls_amarisoft_ue
 import cls_ci_ueinfra		#class defining the multi Ue infrastrucure
 
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
@@ -418,49 +419,62 @@ class OaiCiTest():
 			for job in multi_jobs:
 				job.join()
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-		else: #if an ID is specified, it is a module from the yaml infrastructure file
-			#RH
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.ue_trace=ue_trace
-			is_module=Module_UE.CheckCMProcess(EPC.Type)
-			if is_module:
-				Module_UE.EnableTrace()
-				time.sleep(5)
+		else: #if an ID is specified, it is a UE from the yaml infrastructure file
+			ue_kind = InfraUE.ci_ue_infra[self.ue_id]['Kind']
+			logging.debug("Detected UE Kind : " + ue_kind)
 
-				# Looping attach / detach / wait to be successful at least once
-				cnt = 0
-				status = -1
-				while cnt < 4:
-					Module_UE.Command("wup")
-					logging.debug("Waiting for IP address to be assigned")
-					time.sleep(20)
-					logging.debug("Retrieve IP address")
-					status=Module_UE.GetModuleIPAddress()
-					if status==0:
-						cnt = 10
-					else:
-						cnt += 1
-						Module_UE.Command("detach")
+			#case it is a quectel module (only 1 at a time supported at the moment)
+			if ue_kind == 'quectel':
+				Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+				Module_UE.ue_trace=ue_trace
+				is_module=Module_UE.CheckCMProcess(EPC.Type)
+				if is_module:
+					Module_UE.EnableTrace()
+					time.sleep(5)
+
+					# Looping attach / detach / wait to be successful at least once
+					cnt = 0
+					status = -1
+					while cnt < 4:
+						Module_UE.Command("wup")
+						logging.debug("Waiting for IP address to be assigned")
 						time.sleep(20)
+						logging.debug("Retrieve IP address")
+						status=Module_UE.GetModuleIPAddress()
+						if status==0:
+							cnt = 10
+						else:
+							cnt += 1
+							Module_UE.Command("detach")
+							time.sleep(20)
 
-				if cnt == 10 and status == 0:
-					HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
-					logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
-					#execute additional commands from yaml file after UE attach
-					SSH = sshconnection.SSHConnection()
-					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					if hasattr(Module_UE,'StartCommands'):
-						for startcommand in Module_UE.StartCommands:
-							cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand
-							SSH.command(cmd,'\$',5)
-					SSH.close()
-					#check that the MTU is as expected / requested
-					Module_UE.CheckModuleMTU()
-				else: #status==-1 failed to retrieve IP address
-					HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-					return
-			
+					if cnt == 10 and status == 0:
+						HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
+						logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
+						#execute additional commands from yaml file after UE attach
+						SSH = sshconnection.SSHConnection()
+						SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+						if hasattr(Module_UE,'StartCommands'):
+							for startcommand in Module_UE.StartCommands:
+								cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand
+								SSH.command(cmd,'\$',5)
+						SSH.close()
+						#check that the MTU is as expected / requested
+						Module_UE.CheckModuleMTU()
+					else: #status==-1 failed to retrieve IP address
+						HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+						return
+
+			#case it is a amarisoft ue (only 1 at a time supported at the moment)
+			elif ue_kind == 'amarisoft':
+				AS_UE = cls_amarisoft_ue.AS_UE(InfraUE.ci_ue_infra[self.ue_id])
+				AS_UE.RunScenario()
+				AS_UE.WaitEndScenario()
+				AS_UE.KillASUE()
+
+			else:
+				logging.debug("Incorrect UE Kind was detected")								
 
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
@@ -1569,16 +1583,24 @@ class OaiCiTest():
 			SSH = sshconnection.SSHConnection()
 			# Launch ping on the EPC side (true for ltebox and old open-air-cn)
 			# But for OAI-Rel14-CUPS, we launch from python executor
+			ping_status = 0
 			launchFromEpc = True
 			launchFromModule = False
+			launchFromASUE = False
 			if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
 				launchFromEpc = False
 			#if module, ping from module to EPC
 			if self.ue_id!='':
-				launchFromEpc = False
-				launchfromModule = True
-
-			ping_time = re.findall("-c (\d+)",str(self.ping_args))
+				if (re.match('amarisoft', self.ue_id, re.IGNORECASE)):
+					logging.debug("Ping analysis from amarisoft scenario")
+					launchFromEpc = False
+					launchFromASUE = True
+				else:
+					launchFromEpc = False
+					launchFromModule = True
+			#no ping args for ASUE
+			if self.ping_args!='':
+				ping_time = re.findall("-c (\d+)",str(self.ping_args))
 
 			if launchFromEpc:
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
@@ -1596,14 +1618,14 @@ class OaiCiTest():
 				#copy the ping log file to have it locally for analysis (ping stats)
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')				
 			else:
-				if launchfromModule == False:
+				if (launchFromModule == False) and (launchFromASUE == False):
 					#ping log file is on the python executor
 					cmd = 'ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 > ping_' + self.testCase_id + '_' + device_id + '.log' 
 					message = cmd + '\n'
 					logging.debug(cmd)
 					ret = subprocess.run(cmd, shell=True)
 					ping_status = ret.returncode
-					#copy the ping log file to an other folder for log collection (source and destination are EPC)
+					#copy the ping log file to an other folder for log collection (source and desti				elif (launchfromModule == True) and (launchfromASUE == False): #launch from Modulenation are EPC)
 					SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'ping_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
                 	#copy the ping log file to have it locally for analysis (ping stats)
 					logging.debug(EPC.SourceCodePath + 'ping_' + self.testCase_id + '_' + device_id + '.log')
@@ -1613,7 +1635,8 @@ class OaiCiTest():
 					#cat is executed on EPC
 					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 					ping_log_file='/scripts/ping_' + self.testCase_id + '_' + device_id + '.log'
-				else: #launch from Module
+
+				elif (launchFromModule == True) and (launchFromASUE == False): #launch from Module
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 					#target address is different depending on EPC type
 					if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
@@ -1625,13 +1648,25 @@ class OaiCiTest():
 					#ping from module NIC rather than IP address to make sure round trip is over the air	
 					cmd = 'ping -I ' + Module_UE.UENetwork  + ' ' + self.ping_args + ' ' +  Target  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
 					SSH.command(cmd,'\$',int(ping_time[0])*1.5)
+
 					#copy the ping log file to have it locally for analysis (ping stats)
 					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'ping_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 
 					#cat is executed locally 
 					SSH.command('cat ping_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', 5)
 					ping_log_file='ping_' + self.testCase_id + '_' + self.ue_id + '.log'
-					ping_status=0
+
+				elif (launchFromASUE == True): 
+					#ping was already executed when running scenario
+					#we only need to retrieve ping log file, whose location is in the ci_ueinfra.yaml
+					logging.debug("Get Ping log from AS server : " + Module_UE.Ping)
+					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, Module_UE.Ping, '.')
+					path,ping_log_file = os.path.split(Module_UE.Ping)
+					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+					SSH.command('cat ' + Module_UE.Ping, '\#', 5)
+
+				else:
+					ping_status=-1
 
 			# TIMEOUT CASE
 			if ping_status < 0:
@@ -1679,28 +1714,30 @@ class OaiCiTest():
 
 			#adding extra ping stats from local file
 			#ping_log_file variable is defined above in this function, depending on device/ue
-			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
-			ping_stat=GetPingTimeAnalysis(RAN,ping_log_file,self.ping_rttavg_threshold)
 			ping_stat_msg=''
-			if (ping_stat!=-1) and (len(ping_stat)!=0):
-				ping_stat_msg+='Ping stats before removing largest value : \n'
-				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_0'])) + 'ms \n'
-				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_0'])) + 'ms \n'
-				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_0'])) + 'ms \n'
-				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_0'])) + 'ms \n'
-				ping_stat_msg+='Max Index   : ' + str(ping_stat['max_loc']) + '\n'
-				ping_stat_msg+='Ping stats after removing largest value : \n'
-				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_1'])) + 'ms \n'
-				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_1'])) + 'ms \n'
-				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_1'])) + 'ms \n'
-				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_1'])) + 'ms \n'
+			if launchFromASUE == False : #skip in case of AS UE (for the moment)
+				logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
+				ping_stat=GetPingTimeAnalysis(RAN,ping_log_file,self.ping_rttavg_threshold)
+
+				if (ping_stat!=-1) and (len(ping_stat)!=0):
+					ping_stat_msg+='Ping stats before removing largest value : \n'
+					ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_0'])) + 'ms \n'
+					ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_0'])) + 'ms \n'
+					ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_0'])) + 'ms \n'
+					ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_0'])) + 'ms \n'
+					ping_stat_msg+='Max Index   : ' + str(ping_stat['max_loc']) + '\n'
+					ping_stat_msg+='Ping stats after removing largest value : \n'
+					ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_1'])) + 'ms \n'
+					ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_1'])) + 'ms \n'
+					ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_1'])) + 'ms \n'
+					ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_1'])) + 'ms \n'
 
 			#building html message
 			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg + '\n'  + ping_stat_msg
 
 			#checking packet loss compliance
 			packetLossOK = True
-			if packetloss is not None:
+			if (packetloss is not None) :
 				if float(packetloss) > float(self.ping_packetloss_threshold):
 					qMsg += '\nPacket Loss too high'
 					logging.debug('\u001B[1;37;41m Packet Loss too high; Target: '+ self.ping_packetloss_threshold + '%\u001B[0m')
@@ -1728,6 +1765,7 @@ class OaiCiTest():
 			lock.release()
 			SSH.close()
 		except:
+			logging.debug('exit from Ping_Common except')
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def PingNoS1_wrong_exit(self, qMsg,HTML):
@@ -1855,11 +1893,21 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 				return
-		else:
-			self.UEIPAddresses=[]
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.GetModuleIPAddress()
-			self.UEIPAddresses.append(Module_UE.UEIPAddress)
+		else: #if an ID is specified, it is a UE from the yaml infrastructure file
+			ue_kind = InfraUE.ci_ue_infra[self.ue_id]['Kind']
+			logging.debug("Detected UE Kind : " + ue_kind)
+
+			if ue_kind == 'quectel':
+				self.UEIPAddresses=[]
+				Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+				Module_UE.GetModuleIPAddress()
+				self.UEIPAddresses.append(Module_UE.UEIPAddress)
+			elif ue_kind == 'amarisoft':
+				self.UEIPAddresses=['AS UE IP']
+				Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+			else:
+				logging.debug("Incorrect UE Kind was detected")	
+
 		logging.debug(self.UEIPAddresses)
 		multi_jobs = []
 		i = 0
@@ -1870,6 +1918,7 @@ class OaiCiTest():
 				device_id = self.UEDevices[i]
 			else:
 				device_id = Module_UE.ID + "-" + Module_UE.Kind 
+				logging.debug(device_id)
 			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,Module_UE,RAN,))
 			p.daemon = True
 			p.start()
@@ -3447,16 +3496,23 @@ class OaiCiTest():
 				job.join()
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		else: #if an ID is specified, it is a module from the yaml infrastructure file
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.ue_trace=ue_trace
-			Module_UE.Command("detach")	
-			Module_UE.DisableTrace()
-			Module_UE.DisableCM()
-			archive_destination=Module_UE.LogCollect()
-			if Module_UE.ue_trace=='yes':
-				HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)
+			ue_kind = InfraUE.ci_ue_infra[self.ue_id]['Kind']
+			logging.debug("Detected UE Kind : " + ue_kind)
+			if ue_kind == 'quectel':
+				Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
+				Module_UE.ue_trace=ue_trace
+				Module_UE.Command("detach")
+				Module_UE.DisableTrace()
+				Module_UE.DisableCM()
+				archive_destination=Module_UE.LogCollect()
+				if Module_UE.ue_trace=='yes':
+					HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)
+				else:
+					HTML.CreateHtmlTestRow('QLog trace is disabled', 'OK', CONST.ALL_PROCESSES_OK)
+			elif ue_kind == 'amarisoft':
+				HTML.CreateHtmlTestRow('AS UE is already terminated', 'OK', CONST.ALL_PROCESSES_OK)
 			else:
-				HTML.CreateHtmlTestRow('QLog trace is disabled', 'OK', CONST.ALL_PROCESSES_OK)			
+				logging.debug("Incorrect UE Kind was detected")
 
 	def TerminateOAIUE(self,HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS):
 		SSH = sshconnection.SSHConnection()
