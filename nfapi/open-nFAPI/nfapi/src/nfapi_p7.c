@@ -1893,15 +1893,23 @@ static uint8_t pack_tx_data_pdu_list_value(void *tlv, uint8_t **ppWritePackedMsg
 
     switch(value->TLVs[i].tag) {
       case 0: {
-        if(!pusharray32(value->TLVs[i].value.direct, 16384, value->TLVs[i].length, ppWritePackedMsg, end))
+        if (!pusharray32(value->TLVs[i].value.direct, sizeof(value->TLVs[i].value.direct) / sizeof(uint32_t),
+                        value->TLVs[i].length / sizeof(uint32_t), ppWritePackedMsg, end)) {
+          NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s():%d. value->TLVs[i].length %d \n",
+                      __FUNCTION__, __LINE__, value->TLVs[i].length);
           return 0;
+        }
 
         break;
       }
 
       case 1: {
-        if(!pusharray32(value->TLVs[i].value.ptr, value->TLVs[i].length, value->TLVs[i].length, ppWritePackedMsg, end))
+        if (!pusharray32(value->TLVs[i].value.ptr, value->TLVs[i].length / sizeof(uint32_t),
+                         value->TLVs[i].length / sizeof(uint32_t), ppWritePackedMsg, end)) {
+          NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s():%d. value->TLVs[i].length %d \n",
+                      __FUNCTION__, __LINE__, value->TLVs[i].length);
           return 0;
+        }
 
         break;
       }
@@ -3181,32 +3189,36 @@ return 1;
 static uint8_t pack_nr_uci_pucch_0_1(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end) {
 	nfapi_nr_uci_pucch_pdu_format_0_1_t* value = (nfapi_nr_uci_pucch_pdu_format_0_1_t*)tlv;
 
-	if(!(push8(value->pduBitmap, ppWritePackedMsg, end) &&
-	 	 push32(value->handle, ppWritePackedMsg, end) &&
-		 push16(value->rnti, ppWritePackedMsg, end) &&
-		 push8(value->pucch_format, ppWritePackedMsg, end) &&
-		 push8(value->ul_cqi, ppWritePackedMsg, end) &&
-		 push16(value->timing_advance, ppWritePackedMsg, end) &&
-		 push16(value->rssi, ppWritePackedMsg, end)
-		 ))
-		  return 0;
+	if (!push8(value->pduBitmap, ppWritePackedMsg, end))
+		return 0;
+	if (!push32(value->handle, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->rnti, ppWritePackedMsg, end))
+		return 0;
+	if (!push8(value->pucch_format, ppWritePackedMsg, end))
+		return 0;
+	if (!push8(value->ul_cqi, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->timing_advance, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->rssi, ppWritePackedMsg, end))
+		return 0;
 	if (value->pduBitmap & 0x01) { //SR
-		if (!(push8(value->sr->sr_indication, ppWritePackedMsg, end) &&
-		 push8(value->sr->sr_confidence_level, ppWritePackedMsg, end)
-		 ))
-		  return 0;
+		if (!push8(value->sr->sr_indication, ppWritePackedMsg, end))
+			return 0;
+		if (!push8(value->sr->sr_confidence_level, ppWritePackedMsg, end))
+			return 0;
 	}
 
 	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
-		if (!(push8(value->harq->num_harq, ppWritePackedMsg, end) &&
-		 push8(value->harq->harq_confidence_level, ppWritePackedMsg, end)
-		 ))
+		if (!push8(value->harq->num_harq, ppWritePackedMsg, end))
+			return 0;
+		if (!push8(value->harq->harq_confidence_level, ppWritePackedMsg, end))
 			return 0;
 		for (int i = 0; i < value->harq->num_harq; i++)
 		{
-			if (!(push8(value->harq->harq_list[i].harq_value, ppWritePackedMsg, end)
-			))
-			        return 0;
+			if (!push8(value->harq->harq_list[i].harq_value, ppWritePackedMsg, end))
+				return 0;
 		}
 	}
 
@@ -5533,14 +5545,18 @@ static uint8_t unpack_tx_data_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t 
 
     switch(pNfapiMsg->TLVs[i].tag) {
       case 0: {
-        if(!pullarray32(ppReadPackedMsg, pNfapiMsg->TLVs[i].value.direct, 16384, pNfapiMsg->TLVs[i].length, end))
+        if (!pullarray32(ppReadPackedMsg, pNfapiMsg->TLVs[i].value.direct,
+                        sizeof(pNfapiMsg->TLVs[i].value.direct) / sizeof(uint32_t),
+                        pNfapiMsg->TLVs[i].length / sizeof(uint32_t), end))
           return 0;
 
         break;
       }
 
       case 1: {
-        if(!pullarray32(ppReadPackedMsg, pNfapiMsg->TLVs[i].value.ptr, pNfapiMsg->TLVs[i].length, pNfapiMsg->TLVs[i].length, end))
+        if (!pullarray32(ppReadPackedMsg,pNfapiMsg->TLVs[i].value.ptr,
+                        pNfapiMsg->TLVs[i].length / sizeof(uint32_t),
+                        pNfapiMsg->TLVs[i].length / sizeof(uint32_t), end))
           return 0;
 
         break;

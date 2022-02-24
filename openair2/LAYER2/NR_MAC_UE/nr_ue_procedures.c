@@ -1334,10 +1334,18 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   // FIXME k0 != 0 currently not taken into consideration
   current_harq->dl_frame = frame;
   current_harq->dl_slot = slot;
-  mac->nr_ue_emul_l1.active_harq_sfn_slot = NFAPI_SFNSLOT2HEX(frame, (slot + data_toul_fb));
+  if (get_softmodem_params()->emulate_l1) {
+    int scs = get_softmodem_params()->numerology;
+    int slots_per_frame = nr_slots_per_frame[scs];
+    slot += data_toul_fb;
+    if (slot >= slots_per_frame) {
+      frame = (frame + 1) % 1024;
+      slot %= slots_per_frame;
+    }
+  }
 
   LOG_D(NR_PHY,"Setting harq_status for harq_id %d, dl %d.%d, sched ul %d.%d\n",
-        harq_id, frame, slot, frame, (slot + data_toul_fb));
+        harq_id, current_harq->dl_frame, current_harq->dl_slot, frame, slot);
 }
 
 
@@ -1819,7 +1827,8 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size) {
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup &&
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList &&
          mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL)) {
-      if (uci_size <= 2) {
+      // PUCCH with format0 can be up to 3 bits (2 ack/nacks + 1 sr is 3 max bits)
+      if (uci_size <= 3) {
         pucch_resource_set_id = 0;
         return (pucch_resource_set_id);
         break;
@@ -2020,11 +2029,17 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
         sched_frame = current_harq->dl_frame;
         if (sched_slot>=slots_per_frame){
           sched_slot %= slots_per_frame;
-          sched_frame++;
+          sched_frame = (sched_frame + 1) % 1024;
         }
+        AssertFatal(sched_slot < slots_per_frame, "sched_slot was calculated incorrect %d\n", sched_slot);
         LOG_D(PHY,"HARQ pid %d is active for %d.%d (dl_slot %d, feedback_to_ul %d, is_common %d\n",dl_harq_pid, sched_frame,sched_slot,current_harq->dl_slot,current_harq->feedback_to_ul,current_harq->is_common);
         /* check if current tx slot should transmit downlink acknowlegment */
         if (sched_frame == frame && sched_slot == slot) {
+          if (get_softmodem_params()->emulate_l1) {
+            mac->nr_ue_emul_l1.harq[dl_harq_pid].active = true;
+            mac->nr_ue_emul_l1.harq[dl_harq_pid].active_dl_harq_sfn = frame;
+            mac->nr_ue_emul_l1.harq[dl_harq_pid].active_dl_harq_slot = slot;
+          }
 
           if (current_harq->dai > NR_DL_MAX_DAI) {
             LOG_E(MAC,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
