@@ -1944,7 +1944,7 @@ void create_nr_list(NR_list_t *list, int len)
   list->head = -1;
   list->next = malloc(len * sizeof(*list->next));
   LOG_W(NR_MAC, "NR list->next %p\n", list->next);
-  AssertFatal(list->next, "cannot calloc() memory for NR_list_t->next\n");
+  AssertFatal(list->next, "cannot malloc() memory for NR_list_t->next\n");
   for (int i = 0; i < len; ++i)
     list->next[i] = -1;
   list->tail = -1;
