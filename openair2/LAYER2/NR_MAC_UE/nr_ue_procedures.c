@@ -1335,14 +1335,12 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   current_harq->dl_frame = frame;
   current_harq->dl_slot = slot;
   if (get_softmodem_params()->emulate_l1) {
-    uint8_t scs = get_softmodem_params()->numerology;
+    int scs = get_softmodem_params()->numerology;
     int slots_per_frame = nr_slots_per_frame[scs];
-    if (data_toul_fb + slot >= slots_per_frame) {
+    slot += data_toul_fb;
+    if (slot >= slots_per_frame) {
       frame = (frame + 1) % 1024;
-      slot = (data_toul_fb + slot) - slots_per_frame;
-    }
-    else {
-      slot = data_toul_fb + slot;
+      slot %= slots_per_frame;
     }
   }
 
@@ -2031,7 +2029,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
         sched_frame = current_harq->dl_frame;
         if (sched_slot>=slots_per_frame){
           sched_slot %= slots_per_frame;
-          sched_frame  = (sched_frame + 1) % 1024;
+          sched_frame = (sched_frame + 1) % 1024;
         }
         AssertFatal(sched_slot < slots_per_frame, "sched_slot was calculated incorrect %d\n", sched_slot);
         LOG_D(PHY,"HARQ pid %d is active for %d.%d (dl_slot %d, feedback_to_ul %d, is_common %d\n",dl_harq_pid, sched_frame,sched_slot,current_harq->dl_slot,current_harq->feedback_to_ul,current_harq->is_common);
