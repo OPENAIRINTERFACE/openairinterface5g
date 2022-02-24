@@ -35,7 +35,7 @@
 //#define DEBUG_PDSCH
 //#define DEBUG_PDCCH
 //#define DEBUG_CH
-#define DEBUG_PRS_CHEST
+//#define DEBUG_PRS_CHEST
 extern short nr_qpsk_mod_table[8];
 
 int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
@@ -399,7 +399,7 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
                    frame_params->ofdm_symbol_size,
                    &tdoa[l],
                    &ch_pwr[l]);
-    LOG_I(PHY, "TDoA for PRS symbol %d ==> %d, Channel power %.1f dB\n", l, tdoa[l]-(frame_params->ofdm_symbol_size>>1), 10*log10(ch_pwr[l]));
+    LOG_I(PHY, "TDoA for PRS symbol %d ==> %d / %d samples, Channel power %.1f dB\n", l, tdoa[l]-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr[l]));
   } //for l
 
 #ifdef DEBUG_PRS_CHEST
