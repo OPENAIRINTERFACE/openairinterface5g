@@ -262,9 +262,10 @@ int nr_process_mac_pdu(module_id_t module_idP,
         	//38.321 section 6.1.3.1
         	//variable length
                 /* Several checks have been added to this function to
-                   ensure that the casting of the pduP is possible. There
-                   is an actual bug here, but it has not been resolved. This
-                   means that the scheduled transport block size is invalid. */
+                   ensure that the casting of the pduP is possible. There seems
+                   to be a partial PDU at the end of this buffer, so here
+                   we gracefully ignore that by returning 0. See:
+                   https://gitlab.eurecom.fr/oai/openairinterface5g/-/issues/534 */
                 if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
                         return 0;
         	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
