@@ -130,6 +130,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   nr_generate_modulation_table();
+  gNB->pdcch_gold_init = cfg->cell_config.phy_cell_id.value;
   nr_init_pdcch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
   nr_init_pbch_interleaver(gNB->nr_pbch_interleaver);
 
@@ -142,17 +143,21 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     AssertFatal(pdsch_dmrs[slot]!=NULL, "NR init: pdsch_dmrs for slot %d - malloc failed\n", slot);
 
     for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_MAX_NB_CODEWORDS*sizeof(uint32_t *));
+      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(2*sizeof(uint32_t *));
       AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
-      for (int q=0; q<NR_MAX_NB_CODEWORDS; q++) {
+      for (int q=0; q<2; q++) {
         pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
-        AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
+        AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d nscid %d - malloc failed\n", slot, symb, q);
       }
     }
   }
 
-  nr_init_pdsch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
+
+  for (int nscid = 0; nscid < 2; nscid++) {
+    gNB->pdsch_gold_init[nscid] = cfg->cell_config.phy_cell_id.value;
+    nr_init_pdsch_dmrs(gNB, nscid, cfg->cell_config.phy_cell_id.value);
+  }
 
   //PUSCH DMRS init
   gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(2*sizeof(uint32_t ***));
@@ -193,6 +198,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
+  gNB->csi_gold_init = cfg->cell_config.phy_cell_id.value;
   nr_init_csi_rs(gNB, cfg->cell_config.phy_cell_id.value);
 
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
