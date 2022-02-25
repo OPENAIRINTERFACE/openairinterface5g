@@ -574,6 +574,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
                                       nr_slot_rx,
                                       aatx /*p*/,
                                       m,
+                                      dlsch0_harq->nscid,
+                                      dlsch0_harq->dlDmrsScramblingId,
                                       BWPStart,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
                                       pdsch_nb_rb);
@@ -1470,6 +1472,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                                     gNB_id,
                                     nr_slot_rx,
                                     l,
+                                    pdcch_vars->pdcch_config[n_ss].coreset.pdcch_dmrs_scrambling_id,
                                     fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
                                     coreset_nb_rb);
 

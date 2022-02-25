@@ -310,10 +310,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         nr_gold_pdcch(ue,fp->Nid_cell);
 
         // compute the scrambling IDs for PDSCH DMRS
-        for (int i=0; i<2; i++)
-          ue->scramblingID[i]=fp->Nid_cell;
-
-        nr_gold_pdsch(ue,ue->scramblingID);
+        for (int i=0; i<2; i++) {
+          ue->scramblingID_dlsch[i]=fp->Nid_cell;
+          nr_gold_pdsch(ue, i, ue->scramblingID_dlsch[i]);
+        }
 
         // initialize the pusch dmrs
         uint16_t N_n_scid[2] = {fp->Nid_cell,fp->Nid_cell};
@@ -509,6 +509,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                       0,
                                       pdcch_vars->slot,
                                       l,
+                                      fp->Nid_cell,
                                       fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
                                       coreset_nb_rb);
 

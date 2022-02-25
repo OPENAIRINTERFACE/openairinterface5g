@@ -303,6 +303,8 @@ typedef struct {
   uint16_t ptrs_symbols;
   // PTRS symbol index, to be updated every PTRS symbol within a slot.
   uint8_t ptrs_symbol_index;
+  uint8_t nscid;
+  uint16_t dlDmrsScramblingId;
   /// PDU BITMAP 
   uint16_t pduBitmap;
 } NR_DL_UE_HARQ_t;

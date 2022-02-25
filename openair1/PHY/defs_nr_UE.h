@@ -859,7 +859,7 @@ typedef struct {
   uint32_t ****nr_gold_pdsch[NUMBER_OF_CONNECTED_eNB_MAX];
 
   // Scrambling IDs used in PDSCH DMRS
-  uint16_t scramblingID[2];
+  uint16_t scramblingID_dlsch[2];
 
   /// PDCCH DMRS
   uint32_t ***nr_gold_pdcch[NUMBER_OF_CONNECTED_eNB_MAX];
