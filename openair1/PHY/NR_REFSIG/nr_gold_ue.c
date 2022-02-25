@@ -103,7 +103,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
 }
 
 void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
-                        uint16_t *N_n_scid,
+                        uint16_t N_n_scid,
                         uint8_t n_scid)
 {
   uint32_t x1, x2, n;
@@ -116,7 +116,7 @@ void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
     for (symb=0; symb<fp->symbols_per_slot; symb++) {
 
       reset = 1;
-      x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid[n_scid]<<1)+1) +((N_n_scid[n_scid]<<1)+n_scid));
+      x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid<<1)+1) +((N_n_scid<<1)+n_scid));
 
       for (n=0; n<NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD; n++) {
         pusch_dmrs[slot][symb][0][n] = lte_gold_generic(&x1, &x2, reset);

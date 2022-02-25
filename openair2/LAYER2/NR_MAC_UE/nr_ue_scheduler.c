@@ -732,6 +732,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                          ? pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup : pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
     }
 
+    pusch_config_pdu->scid = 0;
+    pusch_config_pdu->ul_dmrs_scrambling_id = mac->physCellId;
+    if(*dci_format == NR_UL_DCI_FORMAT_0_1)
+      pusch_config_pdu->scid = dci->dmrs_sequence_initialization.val;
+
     /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
 
     if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
@@ -756,6 +761,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
       LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d \n", pusch_config_pdu->num_dmrs_cdm_grps_no_data,
                 pusch_config_pdu->dfts_ofdm.low_papr_group_number);
+    }
+    else {
+      if (pusch_config_pdu->scid == 0 &&
+          NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID0)
+        pusch_config_pdu->ul_dmrs_scrambling_id = *NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID0;
+      if (pusch_config_pdu->scid == 1 &&
+          NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID1)
+        pusch_config_pdu->ul_dmrs_scrambling_id = *NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID1;
     }
 
     /* TRANSFORM PRECODING --------------------------------------------------------------------------------------------------------*/
