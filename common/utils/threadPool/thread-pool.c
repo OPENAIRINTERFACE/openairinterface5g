@@ -72,11 +72,11 @@ void *one_thread(void *arg) {
   do {
     notifiedFIFO_elt_t *elt=pullNotifiedFifoRemember(&tp->incomingFifo, myThread);
 
-    if (tp->measurePerf) elt->startProcessingTime=rdtsc();
+    if (tp->measurePerf) elt->startProcessingTime=rdtsc_oai();
 
     elt->processingFunc(NotifiedFifoData(elt));
 
-    if (tp->measurePerf) elt->endProcessingTime=rdtsc();
+    if (tp->measurePerf) elt->endProcessingTime=rdtsc_oai();
 
     if (elt->reponseFifo) {
       // Check if the job is still alive, else it has been aborted

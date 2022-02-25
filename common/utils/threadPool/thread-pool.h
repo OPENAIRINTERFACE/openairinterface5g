@@ -29,15 +29,9 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/syscall.h>
-#include <assertions.h>
-#include <common/utils/system.h>
-//#include <stdatomic.h>
-
-static __inline__ uint64_t rdtsc(void) {
-  uint32_t a, d;
-  __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
-  return (((uint64_t)d)<<32) | ((uint64_t)a);
-}
+#include "assertions.h"
+#include "common/utils/time_meas.h"
+#include "common/utils/system.h"
 
 #ifdef DEBUG
   #define THREADINIT   PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
@@ -66,10 +60,10 @@ typedef struct notifiedFIFO_elt_s {
   struct notifiedFIFO_s *reponseFifo;
   void (*processingFunc)(void *);
   bool malloced;
-  uint64_t creationTime;
-  uint64_t startProcessingTime;
-  uint64_t endProcessingTime;
-  uint64_t returnTime;
+  OAI_CPUTIME_TYPE creationTime;
+  OAI_CPUTIME_TYPE startProcessingTime;
+  OAI_CPUTIME_TYPE endProcessingTime;
+  OAI_CPUTIME_TYPE returnTime;
   void *msgData;
 }  notifiedFIFO_elt_t;
 
@@ -225,18 +219,18 @@ typedef struct thread_pool {
 } tpool_t;
 
 static inline void pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg) {
-  if (t->measurePerf) msg->creationTime=rdtsc();
+  if (t->measurePerf) msg->creationTime=rdtsc_oai();
 
   if ( t->activated)
     pushNotifiedFIFO(&t->incomingFifo, msg);
   else {
     if (t->measurePerf)
-      msg->startProcessingTime=rdtsc();
+      msg->startProcessingTime=rdtsc_oai();
 
     msg->processingFunc(NotifiedFifoData(msg));
 
     if (t->measurePerf)
-      msg->endProcessingTime=rdtsc();
+      msg->endProcessingTime=rdtsc_oai();
 
     if (msg->reponseFifo)
       pushNotifiedFIFO(msg->reponseFifo, msg);
@@ -247,7 +241,7 @@ static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_
   notifiedFIFO_elt_t *msg= pullNotifiedFIFO(responseFifo);
   AssertFatal(t->traceFd, "Thread pool used while not initialized");
   if (t->measurePerf)
-    msg->returnTime=rdtsc();
+    msg->returnTime=rdtsc_oai();
 
   if (t->traceFd > 0)
     if(write(t->traceFd, msg, sizeof(*msg)));
@@ -262,7 +256,7 @@ static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpo
     return NULL;
 
   if (t->measurePerf)
-    msg->returnTime=rdtsc();
+    msg->returnTime=rdtsc_oai();
 
   if (t->traceFd)
     if(write(t->traceFd, msg, sizeof(*msg)));
