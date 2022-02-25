@@ -178,7 +178,7 @@ static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts) {
   }
 }
 
-static inline void merge_meas(time_stats_t *dst_ts, time_stats_t *src_ts)
+static inline void merge_meas(time_stats_t *dst_ts, const time_stats_t *src_ts)
 {
   if (!opp_enabled)
     return;

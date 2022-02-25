@@ -973,7 +973,6 @@ typedef struct processingData_L1tx {
   uint16_t num_pdsch_slot;
   int num_dl_pdcch;
   int num_ul_pdcch;
-  time_stats_t phy_proc_tx;
 } processingData_L1tx_t;
 
 #endif

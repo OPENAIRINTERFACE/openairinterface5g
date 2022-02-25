@@ -169,6 +169,18 @@ static inline  notifiedFIFO_elt_t *pollNotifiedFIFO(notifiedFIFO_t *nf) {
   return ret;
 }
 
+static inline time_stats_t exec_time_stats_NotifiedFIFO(const notifiedFIFO_elt_t* elt)
+{
+  time_stats_t ts = {0};
+  ts.in = elt->startProcessingTime;
+  ts.diff = elt->endProcessingTime - ts.in;
+  ts.p_time = ts.diff;
+  ts.diff_square = ts.diff * ts.diff;
+  ts.max = ts.diff;
+  ts.trials = 1;
+  return ts;
+}
+
 // This function aborts all messages matching the key
 // If the queue is used in thread pools, it doesn't cancels already running processing
 // because the message has already been picked

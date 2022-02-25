@@ -999,7 +999,6 @@ int main(int argc, char **argv)
   msgDataTx->slot = slot;
   msgDataTx->frame = frame;
   memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-  reset_meas(&msgDataTx->phy_proc_tx);
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
