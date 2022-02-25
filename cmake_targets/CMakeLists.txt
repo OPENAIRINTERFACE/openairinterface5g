@@ -1276,6 +1276,7 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${OPENAIR_DIR}/common/utils/time_meas.c
 )
 
 set(SECU_OSA_SRC
@@ -1539,7 +1540,6 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/TOOLS/dB_routines.c
   ${OPENAIR1_DIR}/PHY/TOOLS/sqrt.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   )
 
@@ -1676,7 +1676,6 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/TOOLS/dB_routines.c
   ${OPENAIR1_DIR}/PHY/TOOLS/sqrt.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${PHY_POLARSRC}
   ${PHY_SMALLBLOCKSRC}
@@ -1730,7 +1729,6 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/TOOLS/dB_routines.c
   ${OPENAIR1_DIR}/PHY/TOOLS/sqrt.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
   #  ${OPENAIR1_DIR}/SIMULATION/NR_UE_PHY/unit_tests/src/pucch_uci_test.c

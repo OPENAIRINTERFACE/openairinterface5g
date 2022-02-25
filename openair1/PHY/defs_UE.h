@@ -59,7 +59,7 @@
 #include "defs_common.h"
 #include "impl_defs_top.h"
 
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "platform_types.h"
