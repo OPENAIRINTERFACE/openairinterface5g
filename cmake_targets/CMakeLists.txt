@@ -2852,42 +2852,6 @@ target_link_libraries (nr-softmodem ${T_LIB})
 
 add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 
-add_executable(ocp-gnb
-  ${rrc_h}
-  ${nr_rrc_h}
-  ${s1ap_h}
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_DIR}/executables/ocp-gnb.c
-  ${OPENAIR_DIR}/executables/softmodem-common.c
-  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  ${OPENAIR_TARGETS}/ARCH/COMMON/record_player.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${PHY_INTERFACE_DIR}/queue_t.c
-  ${XFORMS_SOURCE_NR}
-  ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
-  ${XFORMSINTERFACE_SOURCE}
-  )
-
-target_link_libraries (ocp-gnb
-  -Wl,--start-group
-  UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
-  ITTI ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB
-  NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB SIMU_COMMON
-  -Wl,--end-group z dl)
-
-target_link_libraries (ocp-gnb ${LIBXML2_LIBRARIES} )
-target_link_libraries (ocp-gnb pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
-target_link_libraries (ocp-gnb ${LIB_LMS_LIBRARIES})
-target_link_libraries (ocp-gnb ${T_LIB})
-add_dependencies(ocp-gnb ldpc_orig ldpc_optim ldpc_optim8seg ldpc params_libconfig rfsimulator oai_usrpdevif rfsimulator nrscope)
-
-
 # nr-uesoftmodem is  UE implementation
 #######################################
 
@@ -2931,7 +2895,6 @@ add_dependencies( nr-uesoftmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 if (CUDA_FOUND)
    add_dependencies( nr-uesoftmodem ldpc_cuda)
    add_dependencies( nr-softmodem ldpc_cuda)
-   add_dependencies( ocp-gnb ldpc_cuda)
 endif (CUDA_FOUND)
 ###################################"
 # Addexecutables for tests
