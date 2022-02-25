@@ -762,10 +762,10 @@ int main(int argc, char **argv)
 
   init_nr_ue_transport(UE, 0);
 
-  // initialize the pusch dmrs
-  uint16_t N_n_scid[2] = {frame_parms->Nid_cell,frame_parms->Nid_cell};
-  int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
-  nr_init_pusch_dmrs(UE, N_n_scid, n_scid);
+  for(int n_scid = 0; n_scid<2; n_scid++) {
+    UE->scramblingID_ulsch[n_scid] = frame_parms->Nid_cell;
+    nr_init_pusch_dmrs(UE, frame_parms->Nid_cell, n_scid);
+  }
 
   //Configure UE
   NR_UE_RRC_INST_t rrcue;
