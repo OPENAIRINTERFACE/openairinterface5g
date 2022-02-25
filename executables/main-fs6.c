@@ -947,7 +947,7 @@ void phy_procedures_eNB_TX_fromsplit(uint8_t *bufferZone, int nbBlocks, PHY_VARS
   memcpy(eNB->pbch_pdu,hDL(bufferZone)->pbch_pdu, 4);
 
   // Remove all scheduled DL, we will populate from the CU sending
-  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+  for (int UE_id=0; UE_id<NUMBER_OF_DLSCH_MAX; UE_id++) {
     LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
 
     if ( dlsch0 && dlsch0->rnti>0 ) {
