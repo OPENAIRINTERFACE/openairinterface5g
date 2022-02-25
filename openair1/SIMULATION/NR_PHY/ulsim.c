@@ -68,6 +68,12 @@
 #include <openair3/ocp-gtpu/gtp_itf.h>
 //#define DEBUG_ULSIM
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in nr_ulsim, not finished yet */
+  return "detect_leaks=0";
+}
+
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -760,12 +766,12 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
-  if (init_nr_ue_signal(UE, 1, 0) != 0) {
+  if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }
 
-  init_nr_ue_transport(UE, 0);
+  init_nr_ue_transport(UE);
 
   // initialize the pusch dmrs
   uint16_t N_n_scid[2] = {frame_parms->Nid_cell,frame_parms->Nid_cell};
