@@ -3118,38 +3118,6 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
 
 endforeach(myExe)
 
-add_executable(test_epc_generate_scenario
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/generate_scenario.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/generate_scenario.h
-  ${OPENAIR2_DIR}/ENB_APP/enb_config.h
-  ${OPENAIR2_DIR}/COMMON/commonDef.h
-  ${OPENAIR2_DIR}/COMMON/messages_def.h
-  ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
-  )
-target_link_libraries (test_epc_generate_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB PHY LFDS ITTI L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} CONFIG_LIB
-  )
-
-add_executable(test_epc_play_scenario
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_decode.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_display.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_fsm.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_parse.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_s1ap.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_s1ap_compare_ie.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_s1ap_eNB_defs.h
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_sctp.c
-  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario.h
-  ${OPENAIR2_DIR}/COMMON/commonDef.h
-  ${OPENAIR2_DIR}/COMMON/messages_def.h
-  )
-target_include_directories(test_epc_play_scenario PUBLIC /usr/local/share/asn1c)
-target_link_libraries (test_epc_play_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB PHY_NR_COMMON PHY_COMMON PHY PHY_UE LFDS ITTI -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} CONFIG_LIB
-  )
-
-
 #unitary tests for Core NEtwork pieces
 #################################
 foreach(myExe s1ap
