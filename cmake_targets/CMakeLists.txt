@@ -1281,54 +1281,15 @@ add_library(HASHTABLE
 include_directories(${OPENAIR_DIR}/common/utils/hashtable)
 
 set(UTIL_SRC
-  #  ${OPENAIR2_DIR}/UTIL/CLI/cli.c
-  #  ${OPENAIR2_DIR}/UTIL/CLI/cli_cmd.c
-  #  ${OPENAIR2_DIR}/UTIL/CLI/cli_server.c
-  ${OPENAIR2_DIR}/UTIL/FIFO/pad_list.c
   ${OPENAIR2_DIR}/UTIL/LISTS/list.c
   ${OPENAIR2_DIR}/UTIL/LISTS/list2.c
   ${OPENAIR_DIR}/common/utils/LOG/log.c
   ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
-  #  ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
-  #  ${OPENAIR2_DIR}/UTIL/OCG/OCG.c
-  #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_create_dir.c
-  #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_detect_file.c
-  #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_generate_report.c
-  #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_parse_filename.c
-  #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_parse_XML.c
-  #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_save_XML.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/common.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/grid.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/job.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/mobility_parser.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/omg.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/omg_hashtable.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/rwalk.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/rwp.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/static.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/steadystaterwp.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/trace.c
-  #  ${OPENAIR2_DIR}/UTIL/OMG/trace_hashtable.c
   ${OPENAIR2_DIR}/UTIL/OPT/probe.c
-  #  ${OPENAIR2_DIR}/UTIL/OTG/otg_tx.c
-  #  ${OPENAIR2_DIR}/UTIL/OTG/otg.c
-  #  ${OPENAIR2_DIR}/UTIL/OTG/otg_kpi.c
-  #  ${OPENAIR2_DIR}/UTIL/OTG/otg_models.c
-  #  ${OPENAIR2_DIR}/UTIL/OTG/otg_form.c
-  #  ${OPENAIR2_DIR}/UTIL/OTG/otg_rx.c
-  )
+)
 add_library(UTIL ${UTIL_SRC})
 add_dependencies(UTIL rrc_flag)
-
-#set(OMG_SUMO_SRC
-#  ${OPENAIR2_DIR}/UTIL/OMG/client_traci_OMG.c
-#  ${OPENAIR2_DIR}/UTIL/OMG/id_manager.c
-#  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
-#  ${OPENAIR2_DIR}/UTIL/OMG/socket_traci_OMG.c
-#  ${OPENAIR2_DIR}/UTIL/OMG/storage_traci_OMG.c
-#  )
-#add_library(OMG_SUMO ${OMG_SUMO_SRC})
 
 set(SECU_OSA_SRC
   ${OPENAIR2_DIR}/UTIL/OSA/osa_key_deriver.c

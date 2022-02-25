@@ -33,7 +33,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include <types.h>
 #include "assertions.h"
 #include "common/utils/LOG/log.h"
 #include "PHY/TOOLS/time_meas.h"

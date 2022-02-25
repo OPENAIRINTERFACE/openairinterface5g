@@ -35,7 +35,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include <types.h>
 #include "defs.h"
 #include "assertions.h"
 #include "openair1/PHY/CODING/nrLDPC_defs.h"
