@@ -100,27 +100,23 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint8_t nscid, uint32_t Nid)
 }
 
 
-void nr_gold_pusch(PHY_VARS_gNB* gNB, uint32_t *Nid) {
+void nr_gold_pusch(PHY_VARS_gNB* gNB, int nscid, uint32_t nid) {
 
   unsigned char ns;
   unsigned int n,x1,x2;
-  int nscid, reset;
-  unsigned int nid;
+  int reset;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   unsigned short l;
 
-  for (nscid=0; nscid<2; nscid++) {
-    nid = Nid[nscid];
-    for (ns=0; ns<fp->slots_per_frame; ns++) {
-      for (l=0; l<fp->symbols_per_slot; l++) {
-        reset = 1;
-        x2 = ((1<<17) * (fp->symbols_per_slot*ns+l+1) * ((nid<<1)+1) +((nid<<1)+nscid));
-        LOG_D(PHY,"DMRS slot %d, symb %d x2 %x\n",ns,l,x2);
+  for (ns=0; ns<fp->slots_per_frame; ns++) {
+    for (l=0; l<fp->symbols_per_slot; l++) {
+      reset = 1;
+      x2 = ((1<<17) * (fp->symbols_per_slot*ns+l+1) * ((nid<<1)+1) +((nid<<1)+nscid));
+      LOG_D(PHY,"DMRS slot %d, symb %d x2 %x\n",ns,l,x2);
 
-        for (n=0; n<NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD; n++) {
-          gNB->nr_gold_pusch_dmrs[nscid][ns][l][n] = lte_gold_generic(&x1, &x2, reset);
-          reset = 0;
-        }
+      for (n=0; n<NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD; n++) {
+        gNB->nr_gold_pusch_dmrs[nscid][ns][l][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
       }
     }
   }

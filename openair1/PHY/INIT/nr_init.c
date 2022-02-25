@@ -179,9 +179,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-  uint32_t Nid_pusch[2] = {cfg->cell_config.phy_cell_id.value,cfg->cell_config.phy_cell_id.value};
-  LOG_D(PHY,"Initializing PUSCH DMRS Gold sequence with (%x,%x)\n",Nid_pusch[0],Nid_pusch[1]);
-  nr_gold_pusch(gNB, &Nid_pusch[0]);
+  for (int nscid=0; nscid<2; nscid++) {
+    gNB->pusch_gold_init[nscid] = cfg->cell_config.phy_cell_id.value;
+    nr_gold_pusch(gNB, nscid, gNB->pusch_gold_init[nscid]);
+  }
 
   //CSI RS init
   gNB->nr_gold_csi_rs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));

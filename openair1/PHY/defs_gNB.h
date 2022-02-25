@@ -850,6 +850,7 @@ typedef struct PHY_VARS_gNB_s {
   int csi_gold_init;
   int pdcch_gold_init;
   int pdsch_gold_init[2];
+  int pusch_gold_init[2];
 
   int pucch0_thres;
   int pusch_thres;
