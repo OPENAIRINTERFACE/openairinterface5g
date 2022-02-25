@@ -134,8 +134,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int gNB_id;
   int th_id;
   uint32_t ****pusch_dmrs;
-  uint16_t N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig
-  int n_scid;
   abstraction_flag = 0;
   LOG_I(PHY, "Initializing UE vars (abstraction %u) for gNB TXant %u, UE RXant %u\n", abstraction_flag, fp->nb_antennas_tx, fp->nb_antennas_rx);
   phy_init_nr_top(ue);
@@ -191,7 +189,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   ///////////
   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   pusch_dmrs             = ue->nr_gold_pusch_dmrs;
-  n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
 
   for (slot=0; slot<fp->slots_per_frame; slot++) {
     pusch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t **));
@@ -208,7 +205,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     }
   }
 
-  nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -271,9 +267,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     }
   }
 
-  ue->scramblingID_pdcch = fp->Nid_cell;
-  nr_gold_pdcch(ue,fp->Nid_cell);
-
   //PDSCH DMRS init (eNB offset = 0)
   ue->nr_gold_pdsch[0] = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   uint32_t ****pdsch_dmrs = ue->nr_gold_pdsch[0];
@@ -292,12 +285,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       }
     }
   }
-
-  // initializing the scrambling IDs for PDSCH DMRS
-  for (int i=0; i<2; i++)
-    ue->scramblingID[i]=fp->Nid_cell;
-
-  nr_gold_pdsch(ue,ue->scramblingID);
 
   // DLSCH
   for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
