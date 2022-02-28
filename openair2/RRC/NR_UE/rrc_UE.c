@@ -2719,9 +2719,9 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
       AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
                    enc_rval.failed_type->name, enc_rval.encoded);
 
-      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
         xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
-      }
+      //}
 
       LOG_I(NR_RRC, "UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 #ifdef ITTI_SIM

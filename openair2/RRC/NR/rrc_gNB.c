@@ -2512,17 +2512,27 @@ rrc_gNB_decode_dcch(
                 NR_UECapabilityInformation__criticalExtensions_PR_ueCapabilityInformation ) {
           struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList =
               ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
-
+          if(ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList!=NULL){
+          LOG_I(NR_RRC, "ue_CapabilityRAT_ContainerList is present \n");
           req->cu_to_du_rrc_information = calloc(1,sizeof(cu_to_du_rrc_information_t));
           req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = calloc(1,4096);
           asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
               NULL,
-              (void *)ue_CapabilityRAT_ContainerList,
+              (void *)ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList,//ue_CapabilityRAT_ContainerList,
               req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
               4096);
           AssertFatal (enc_rval.encoded > 0, "ASN1 ue_CapabilityRAT_ContainerList encoding failed (%s, %jd)!\n",
                              enc_rval.failed_type->name, enc_rval.encoded);
           req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = (enc_rval.encoded+7)>>3;
+          LOG_I(NR_RRC, "Printing content of UE capabilityRANContainerList: \n");
+          for(int i=0; i<req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length; i++){
+            printf("%x ", *(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList+i));
+          }
+          printf("\n");
+          }
+          else{
+            LOG_I(NR_RRC, "ue_CapabilityRAT_ContainerList is not present \n");
+          }
         }
         itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
       }
@@ -2994,7 +3004,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
 
 
   if(req->cu_to_du_rrc_information!=NULL){
-    if(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
+    /*if(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
       LOG_I(NR_RRC, "Length of ue_CapabilityRAT_ContainerList is: %d \n", (int) req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
       struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList;
       asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
@@ -3078,7 +3088,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
           //TODO
         }
       }
-    }
+    }*/
   }
 
   NR_CellGroupConfig_t *cellGroupConfig;
