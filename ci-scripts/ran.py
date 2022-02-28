@@ -39,6 +39,7 @@ import time
 from multiprocessing import Process, Lock, SimpleQueue
 import yaml
 
+
 #-----------------------------------------------------------
 # OAI Testing modules
 #-----------------------------------------------------------
@@ -758,7 +759,7 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 15)
 		mySSH.close()
 
-	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
+	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML, checkers={}):
 		if (not os.path.isfile('./' + eNBlogFile)):
 			return -1
 		enb_log_file = open('./' + eNBlogFile, 'r')
@@ -819,6 +820,8 @@ class RANManagement():
 		gnb_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': [], 'Detected UL Failure on PUSCH':[]}
 		nodeB_prefix_found = False
 		RealTimeProcessingIssue = False
+		DLRetxIssue = False
+		ULRetxIssue = False
 	
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
@@ -1117,13 +1120,55 @@ class RANManagement():
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
 
-			#ulsch and dlsch statistics
+			#ulsch and dlsch statistics and checkers
+			#print statistics into html
 			if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
+				#for each dictionary key, generate the msg for html as information
 				statMsg=''
-				for key in dlsch_ulsch_stats: #for each dictionary key
+				for key in dlsch_ulsch_stats: 
 					statMsg += dlsch_ulsch_stats[key] + '\n' 
 					logging.debug(dlsch_ulsch_stats[key])
 				htmleNBFailureMsg += statMsg
+
+			#checker
+			if (len(dlsch_ulsch_stats)!=0) and (len(checkers)!=0):
+				if 'd_retx_th' in checkers:
+					checkers['d_retx_th'] = [float(x) for x in checkers['d_retx_th'].split(',')]
+					dlsch_checker_status = list(0 for i in checkers['d_retx_th'])#status 0 / -1
+					d_perc_retx = list(0 for i in checkers['d_retx_th'])#results in %
+
+				if 'u_retx_th' in checkers:
+					checkers['u_retx_th'] = [float(x) for x in checkers['u_retx_th'].split(',')]
+					ulsch_checker_status = list(0 for i in checkers['u_retx_th'])
+					u_perc_retx = list(0 for i in checkers['u_retx_th'])
+
+				#ul and dl retransmissions checkers
+				#NOTICE:  DL and UL regex are different 
+
+				if ('dlsch_rounds' in dlsch_ulsch_stats) and ('d_retx_th' in checkers):
+					tmp=re.match(r'^.*dlsch_rounds\s+(\d+)\/(\d+)\/(\d+)\/(\d+),\s+dlsch_errors\s+(\d+)',dlsch_ulsch_stats['dlsch_rounds'])
+					if tmp is not None :
+						#captures the different groups from the regex
+						retx_data=[float(x) for x in tmp.groups()]
+						for i in range(0,len(d_perc_retx)):
+							#case where numerator > denumerator with denum ==0 is disregarded, cannot hapen in principle, will lead to 0%
+							d_perc_retx[i] = 0 if (retx_data[i] == 0)  else 100*retx_data[i+1]/retx_data[i]
+							#treating % > 100 , % > requirement
+							if (d_perc_retx[i] > 100) or (d_perc_retx[i] > checkers['d_retx_th'][i]): dlsch_checker_status[i] = -1
+					if -1 in dlsch_checker_status:
+						DLRetxIssue = True
+
+				if ('ulsch_rounds' in dlsch_ulsch_stats)  and ('u_retx_th' in checkers):
+					tmp=re.match(r'^.*ulsch_rounds\s+(\d+)\/(\d+)\/(\d+)\/(\d+),\s+.*,\s+ulsch_errors\s+(\d+)',dlsch_ulsch_stats['ulsch_rounds'])
+					if tmp is not None :
+						retx_data=[float(x) for x in tmp.groups()]
+						for i in range(0,len(d_perc_retx)):
+							u_perc_retx[i] = 0 if (retx_data[i] == 0) else 100*retx_data[i+1]/retx_data[i]
+							if (u_perc_retx[i] > 100) or (u_perc_retx[i] > checkers['u_retx_th'][i]): ulsch_checker_status[i] = -1
+					if -1 in ulsch_checker_status:
+						ULRetxIssue = True
+
+
 
 			#real time statistics
 			datalog_rt_stats['Data']={}
@@ -1173,6 +1218,22 @@ class RANManagement():
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg			
+
+		if DLRetxIssue:
+			retx_checker_status_str = ''
+			for status in dlsch_checker_status : retx_checker_status_str+=str(status)+ ' '
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with too many retransmissions / errors issue in DL ! \u001B[0m')
+			logging.debug('\u001B[1;37;41m Status : ' + retx_checker_status_str + ' \u001B[0m')
+			htmleNBFailureMsg += 'Fail due to retransmissions / errors issue in DL, status : ' + retx_checker_status_str + '\n'
+			global_status = CONST.ENB_RETX_ISSUE
+
+		if ULRetxIssue:
+			retx_checker_status_str = ''
+			for status in ulsch_checker_status : retx_checker_status_str+=str(status)+ ' '
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with too many retransmissions / errors issue in UL ! \u001B[0m')
+			logging.debug('\u001B[1;37;41m Status : ' + retx_checker_status_str + ' \u001B[0m')
+			htmleNBFailureMsg += 'Fail due to retransmissions / errors issue in UL, status : ' + retx_checker_status_str + '\n'
+			global_status = CONST.ENB_RETX_ISSUE
 
 		if RealTimeProcessingIssue:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with real time processing issue! \u001B[0m')
