@@ -35,7 +35,6 @@
 #include "f1ap_du_ue_context_management.h"
 #include "f1ap_du_rrc_message_transfer.h"
 #include "f1ap_du_task.h"
-#include "proto_agent.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
@@ -103,7 +102,7 @@ static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, c
   strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
   sprintf(tmp.originService, "%d", DUport);
   sprintf(tmp.destinationService, "%d", CUport);
-  return ocp_gtpv1Init(tmp);
+  return gtpv1Init(tmp);
 }
 
 void *F1AP_DU_task(void *arg) {

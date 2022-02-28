@@ -636,7 +636,7 @@ class Containerize():
 				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + self.eNB_logFile[self.eNB_instance], self.eNBSourceCodePath + '/cmake_targets/')
 		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 
-	def DeployGenObject(self, HTML):
+	def DeployGenObject(self, HTML, RAN, UE):
 		self.exitStatus = 0
 		logging.info('\u001B[1m Checking Services to deploy\u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose config --services'
@@ -679,12 +679,15 @@ class Containerize():
 		healthy = 0
 		while (count < 10):
 			count += 1
+			containerStatus = []
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			healthy = 0
 			for state in deployStatus.split('\n'):
-				res = re.search('Up \(healthy\)', state)
-				if res is not None:
+				if re.search('Up \(healthy\)', state) is not None:
 					healthy += 1
+				if re.search('rfsim4g-db-init.*Exit 0', state) is not None:
+					subprocess.check_output('docker rm -f rfsim4g-db-init || true', shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				containerStatus.append(state)
 			if healthy == self.nb_healthy[0]:
 				count = 100
 			else:
@@ -694,27 +697,41 @@ class Containerize():
 			if self.tsharkStarted == False:
 				logging.debug('Starting tshark on public network')
 				self.CaptureOnDockerNetworks()
-				self.tsharkStarted = True
 			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
+			for cState in containerStatus:
+				logging.debug(cState)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
 		else:
-			self.exitStatus = 1
 			HTML.CreateHtmlTestRow('Could not deploy in time', 'KO', CONST.ALL_PROCESSES_OK)
+			for cState in containerStatus:
+				logging.debug(cState)
 			logging.error('\u001B[1m Deploying OAI Object(s) FAILED\u001B[0m')
+			HTML.testCase_id = 'AUTO-UNDEPLOY'
+			UE.testCase_id = 'AUTO-UNDEPLOY'
+			HTML.desc = 'Automatic Undeployment'
+			UE.desc = 'Automatic Undeployment'
+			UE.ShowTestID()
+			self.UndeployGenObject(HTML, RAN, UE)
+			self.exitStatus = 1
 
 	def CaptureOnDockerNetworks(self):
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml config | grep com.docker.network.bridge.name | sed -e "s@^.*name: @@"'
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-		cmd = 'sudo nohup tshark -f "not tcp and not arp and not port 53 and not host archive.ubuntu.com and not host security.ubuntu.com and not port 2152"'
+		if re.search('4g.*rfsimulator', self.yamlPath[0]) is not None:
+			cmd = 'sudo nohup tshark -f "(host 192.168.61.11 and icmp) or (not host 192.168.61.11 and not host 192.168.61.30 and not arp and not port 53 and not port 2152)"'
+		elif re.search('5g.*rfsimulator', self.yamlPath[0]) is not None:
+			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not host 192.168.71.150 and not arp and not port 53 and not port 2152 and not port 2153)"'
+		else:
+			return
 		for name in networkNames.split('\n'):
-			res = re.search('rfsim', name)
-			if res is not None:
+			if re.search('rfsim', name) is not None:
 				cmd += ' -i ' + name
 		cmd += ' -w /tmp/capture_'
 		ymlPath = self.yamlPath[0].split('/')
 		cmd += ymlPath[1] + '.pcap > /tmp/tshark.log 2>&1 &'
 		logging.debug(cmd)
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		self.tsharkStarted = True
 
 	def UndeployGenObject(self, HTML, RAN, UE):
 		self.exitStatus = 0
@@ -745,7 +762,11 @@ class Containerize():
 				cName = res.group('container_name')
 				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
 				logging.debug(cmd)
-				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				if re.search('magma-mme', cName) is not None:
+					cmd = 'cd ' + self.yamlPath[0] + ' && docker cp -L ' + cName + ':/var/log/mme.log ' + cName + '-full.log'
+					logging.debug(cmd)
+					subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		fullStatus = True
 		if anyLogs:
 			cmd = 'mkdir -p '+ logPath + ' && cp ' + self.yamlPath[0] + '/*.log ' + logPath

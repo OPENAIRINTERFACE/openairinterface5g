@@ -54,7 +54,6 @@
 #include <string.h>
 #include <math.h>
 #include "common_lib.h"
-#include "msc.h"
 #include <common/utils/LOG/log.h>
 #include "assertions.h"
 

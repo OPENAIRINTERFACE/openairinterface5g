@@ -49,7 +49,6 @@
 #include "s1ap_common.h"
 #include "play_scenario_s1ap_eNB_defs.h"
 #include "play_scenario.h"
-#include "msc.h"
 //------------------------------------------------------------------------------
 extern et_scenario_t  *g_scenario;
 extern uint32_t        g_constraints;

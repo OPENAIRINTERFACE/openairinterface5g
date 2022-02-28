@@ -648,57 +648,56 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
        AssertFatal(1==0,"Shouldn't be here\n");
   }
 
-    samples_received=0;
-    while (samples_received != nsamps) {
+  samples_received=0;
+  while (samples_received != nsamps) {
 
-      if (cc>1) {
+    if (cc>1) {
       // receive multiple channels (e.g. RF A and RF B)
-        std::vector<void *> buff_ptrs;
+      std::vector<void *> buff_ptrs;
 
-        for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
-
-        samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
-      } else {
+      for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
+      samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+    } else {
       // receive a single channel (e.g. from connector RF A)
 
-        samples_received += s->rx_stream->recv((void*)((int32_t*)buff_tmp[0]+samples_received),
-                                               nsamps-samples_received, s->rx_md);
-      }
-      if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
-        break;
-
-      if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
-        printf("sleep...\n"); //usleep(100);
-      }
+      samples_received += s->rx_stream->recv((void*)((int32_t*)buff_tmp[0]+samples_received),
+                                             nsamps-samples_received, s->rx_md);
     }
-    if (samples_received == nsamps) s->wait_for_first_pps=0;
+    if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
+      break;
 
-    // bring RX data into 12 LSBs for softmodem RX
-    for (int i=0; i<cc; i++) {
-      for (int j=0; j<nsamps2; j++) {
+    if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
+      printf("sleep...\n"); //usleep(100);
+    }
+  }
+  if (samples_received == nsamps) s->wait_for_first_pps=0;
+
+  // bring RX data into 12 LSBs for softmodem RX
+  for (int i=0; i<cc; i++) {
+    for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-        // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
+      // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
-        if ((((uintptr_t) buff[i])&0x1F)==0) {
-          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
-        } else {
-          ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
-          ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
-        }
+      if ((((uintptr_t) buff[i])&0x1F)==0) {
+        ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
+      } else {
+        ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
+        ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
+      }
 
 #else
-        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
+      ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
 #endif
 #elif defined(__arm__)
-        ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
+      ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
-      }
     }
+  }
 
-    if (samples_received < nsamps) {
-      LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
-    }
+  if (samples_received < nsamps) {
+    LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
+  }
 
   if ( s->rx_md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE)
     LOG_E(HW, "%s\n", s->rx_md.to_pp_string(true).c_str());

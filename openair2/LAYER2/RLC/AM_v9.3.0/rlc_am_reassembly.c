@@ -30,7 +30,6 @@
 #include "list.h"
 //#include "LAYER2/MAC/extern.h"
 #include "common/utils/LOG/log.h"
-#include "msc.h"
 
 //-----------------------------------------------------------------------------
 inline void
@@ -152,16 +151,6 @@ rlc_am_send_sdu (
 #if !ENABLE_ITTI
       RLC_AM_MUTEX_UNLOCK(&rlc_pP->lock_input_sdus);
 #endif
-      MSC_LOG_TX_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-        (const char *)(rlc_pP->output_sdu_in_construction->data),
-        rlc_pP->output_sdu_size_to_write,
-        MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" DATA-IND size %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP),
-        rlc_pP->output_sdu_size_to_write
-      );
       rlc_data_ind (ctxt_pP,
                     BOOL_NOT(rlc_pP->is_data_plane),
                     MBMS_FLAG_NO,

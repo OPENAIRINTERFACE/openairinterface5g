@@ -175,7 +175,12 @@ gtpv1u_update_ngu_tunnel(
   return 0;
 }
 
-int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
+int gtpv1u_delete_ngu_tunnel( const instance_t instance,
+			      gtpv1u_gnb_delete_tunnel_req_t *req) {
   return 0;
 }
 
@@ -271,17 +276,13 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  ps->nrOfLayers = g_nrOfLayers;
-
-  int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats ?
-      NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-
   nr_set_pdsch_semi_static(scc,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
                            /* tda = */ 2,
-                           dci_format,
+                           g_nrOfLayers,
+                           sched_ctrl,
                            ps);
 
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
@@ -777,7 +778,8 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 6, 0, 0, 0, 0);
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 6, 0, 0, 0);
+
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);
@@ -796,9 +798,9 @@ int main(int argc, char **argv)
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, scc, NULL, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, 6, scc, NULL, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, scc, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, 6, scc, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
@@ -1216,7 +1218,7 @@ int main(int argc, char **argv)
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
-        
+
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,

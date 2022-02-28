@@ -296,16 +296,6 @@ int MME_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
   //AssertFatal(MME_MBMS_M3AP_ID!=-1,"MME_MBMS_M3AP_ID was not sent\n");
   //AssertFatal(MCE_MBMS_M3AP_ID!=-1,"MCE_MBMS_M3AP_ID was not sent\n");
   ////M3AP_SESSION_START_RESP(msg_p).
-////  MSC_LOG_RX_MESSAGE(
-////    MSC_M3AP_MME,
-////    MSC_M3AP_MCE,
-  //      //return 0;
-////    0,
-////    0,
-////    MSC_AS_TIME_FMT" MME_handle_M2_SESSION_START_RESPONSE successfulOutcome assoc_id %d",
-////    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-////    assoc_id);
-////
   // LOG_W(M3AP, "Sending M3AP_SESSION_START_RESP ITTI message to MCE_APP with assoc_id (%d->%d)\n",
   //       assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
   itti_send_msg_to_task(TASK_MME_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_g);
@@ -434,14 +424,6 @@ int MME_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
   //AssertFatal(MME_MBMS_M3AP_ID!=-1,"MME_MBMS_M3AP_ID was not sent\n");
   //AssertFatal(MCE_MBMS_M3AP_ID!=-1,"MCE_MBMS_M3AP_ID was not sent\n");
  // M3AP_SESSION_STOP_RESP(msg_p).
- // MSC_LOG_RX_MESSAGE(
- //   MSC_M3AP_MME,
- //   MSC_M3AP_MCE,
- //   0,
- //   0,
- //   MSC_AS_TIME_FMT" MME_handle_M2_SESSION_STOP_RESPONSE successfulOutcome assoc_id %d",
- //   0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- //   assoc_id);
 
  //  LOG_D(M3AP, "Sending M3AP_SESSION_START_RESP ITTI message to MCE_APP with assoc_id (%d->%d)\n",
  //        assoc_id,MCE_MODULE_ID_TO_INSTANCE(assoc_id));
@@ -628,15 +610,6 @@ int MME_handle_M3_SETUP_REQUEST(instance_t instance,
     *m3ap_mme_data_from_mce = M3AP_SETUP_REQ(message_p);
     //printf("m3ap_mme_data_from_mce->assoc_id %d %d\n",m3ap_mme_data_from_mce->assoc_id,assoc_id);
 //
-////  MSC_LOG_TX_MESSAGE(
-////  MSC_M3AP_MME,
-////  MSC_RRC_MCE,
-////  0,
-////  0,
-////  MSC_AS_TIME_FMT" MME_handle_M3_SETUP_REQUEST",
-////  0,0//MSC_AS_TIME_ARGS(ctxt_pP),
-////  );
-////
     itti_send_msg_to_task(TASK_MME_APP, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
 //  if (num_mbms_available > 0) {
 //    itti_send_msg_to_task(TASK_MME_APP, MCE_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -1086,16 +1059,6 @@ int MME_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance,
   //AssertFatal(MME_MBMS_M3AP_ID!=-1,"MME_MBMS_M3AP_ID was not sent\n");
   //AssertFatal(MCE_MBMS_M3AP_ID!=-1,"MCE_MBMS_M3AP_ID was not sent\n");
   ////M3AP_SESSION_START_RESP(msg_p).
-////  MSC_LOG_RX_MESSAGE(
-////    MSC_M3AP_MME,
-////    MSC_M3AP_MCE,
-  //      //return 0;
-////    0,
-////    0,
-////    MSC_AS_TIME_FMT" MME_handle_M2_SESSION_START_RESPONSE successfulOutcome assoc_id %d",
-////    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-////    assoc_id);
-////
   // LOG_W(M3AP, "Sending M3AP_SESSION_START_RESP ITTI message to MCE_APP with assoc_id (%d->%d)\n",
   //       assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
   itti_send_msg_to_task(TASK_MME_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_g);
