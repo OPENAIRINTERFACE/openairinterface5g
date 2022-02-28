@@ -1125,12 +1125,13 @@ class RANManagement():
 			datalog_rt_stats['Data']={}
 			if len(real_time_stats)!=0: #check if dictionary is not empty
 				for k in real_time_stats:
-					tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
+					tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+(?P<count>\d+);\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
 					if tmp is not None:
 						metric=tmp.group('metric')
 						avg=float(tmp.group('avg'))
 						max=float(tmp.group('max'))
-						datalog_rt_stats['Data'][metric]=["{:.0f}".format(avg),"{:.0f}".format(max),"{:.2f}".format(avg/datalog_rt_stats['Ref'][metric])]
+						count=float(tmp.group('count'))
+						datalog_rt_stats['Data'][metric]=["{:.0f}".format(avg),"{:.0f}".format(max),"{:d}".format(count),"{:.2f}".format(avg/datalog_rt_stats['Ref'][metric])]
 				#once all metrics are collected, store the data as a class attribute to build a dedicated HTML table afterward
 				self.datalog_rt_stats=datalog_rt_stats
 				#check if there is a fail => will render the test as failed
