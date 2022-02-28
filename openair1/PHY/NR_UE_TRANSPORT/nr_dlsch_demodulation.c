@@ -2017,7 +2017,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     int32_t *rxF        = &rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
 
     if (pilots == 0) { //data symbol only
-      if (start_re + nb_rb_pdsch * NR_NB_SC_PER_RB < frame_parms->ofdm_symbol_size) {
+      if (start_re + nb_rb_pdsch * NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) {
         memcpy((void*)rxF_ext, (void*)&rxF[start_re], nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
       } else {
         int neg_length = frame_parms->ofdm_symbol_size - start_re;
