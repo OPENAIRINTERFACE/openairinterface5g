@@ -1130,7 +1130,7 @@ class RANManagement():
 						metric=tmp.group('metric')
 						avg=float(tmp.group('avg'))
 						max=float(tmp.group('max'))
-						count=float(tmp.group('count'))
+						count=int(tmp.group('count'))
 						datalog_rt_stats['Data'][metric]=["{:.0f}".format(avg),"{:.0f}".format(max),"{:d}".format(count),"{:.2f}".format(avg/datalog_rt_stats['Ref'][metric])]
 				#once all metrics are collected, store the data as a class attribute to build a dedicated HTML table afterward
 				self.datalog_rt_stats=datalog_rt_stats
