@@ -2006,7 +2006,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                 "n_dmrs_cdm_groups %d is illegal\n",n_dmrs_cdm_groups);
   }
 
-  const unsigned short start_re = frame_parms->first_carrier_offset + start_rb * NR_NB_SC_PER_RB;
+  const unsigned short start_re = (frame_parms->first_carrier_offset + start_rb * NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
   const int8_t validDmrsEst     = get_valid_dmrs_idx_for_channel_est(dlDmrsSymbPos, symbol);
 
   for (unsigned char aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
