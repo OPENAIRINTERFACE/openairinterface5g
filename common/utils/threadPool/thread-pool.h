@@ -60,10 +60,10 @@ typedef struct notifiedFIFO_elt_s {
   struct notifiedFIFO_s *reponseFifo;
   void (*processingFunc)(void *);
   bool malloced;
-  OAI_CPUTIME_TYPE creationTime;
-  OAI_CPUTIME_TYPE startProcessingTime;
-  OAI_CPUTIME_TYPE endProcessingTime;
-  OAI_CPUTIME_TYPE returnTime;
+  oai_cputime_t creationTime;
+  oai_cputime_t startProcessingTime;
+  oai_cputime_t endProcessingTime;
+  oai_cputime_t returnTime;
   void *msgData;
 }  notifiedFIFO_elt_t;
 
@@ -96,9 +96,12 @@ static inline void *NotifiedFifoData(notifiedFIFO_elt_t *elt) {
 }
 
 static inline void delNotifiedFIFO_elt(notifiedFIFO_elt_t *elt) {
-  AssertFatal(elt->malloced, "delNotifiedFIFO on something not allocated by newNotifiedFIFO\n");
-  elt->malloced=false;
-  free(elt);
+  if (elt->malloced) {
+    elt->malloced = false;
+    free(elt);
+  }
+  /* it is allowed to call delNotifiedFIFO_elt when the memory is managed by
+   * the caller */
 }
 
 static inline void initNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf) {

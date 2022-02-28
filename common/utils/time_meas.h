@@ -36,9 +36,9 @@ extern int opp_enabled;
 extern double cpu_freq_GHz  __attribute__ ((aligned(32)));;
 // structure to store data to compute cpu measurment
 #if defined(__x86_64__) || defined(__i386__)
-  #define OAI_CPUTIME_TYPE long long
+  typedef long long oai_cputime_t;
 #elif defined(__arm__)
-  #define OAI_CPUTIME_TYPE uint32_t
+  typedef uint32_t oai_cputime_t;
 #else
   #error "building on unsupported CPU architecture"
 #endif
@@ -53,17 +53,17 @@ typedef void(*meas_printfunc_t)(const char* format, ...);
 typedef struct {
   int               msgid;                  /*!< \brief message id, as defined by TIMESTAT_MSGID_X macros */
   int               timestat_id;            /*!< \brief points to the time_stats_t entry in cpumeas table */
-  OAI_CPUTIME_TYPE  ts;                     /*!< \brief time stamp */
+  oai_cputime_t  ts;                        /*!< \brief time stamp */
   meas_printfunc_t  displayFunc;            /*!< \brief function to call when DISPLAY message is received*/
 } time_stats_msg_t;
 
 struct notifiedFIFO_elt_s;
 typedef struct time_stats {
-  OAI_CPUTIME_TYPE in;      /*!< \brief time at measure starting point */
-  OAI_CPUTIME_TYPE diff;     /*!< \brief average difference between time at starting point and time at endpoint*/
-  OAI_CPUTIME_TYPE p_time; /*!< \brief absolute process duration */
-  OAI_CPUTIME_TYPE diff_square; /*!< \brief process duration square */
-  OAI_CPUTIME_TYPE max;      /*!< \brief maximum difference between time at starting point and time at endpoint*/
+  oai_cputime_t in;          /*!< \brief time at measure starting point */
+  oai_cputime_t diff;        /*!< \brief average difference between time at starting point and time at endpoint*/
+  oai_cputime_t p_time;      /*!< \brief absolute process duration */
+  oai_cputime_t diff_square; /*!< \brief process duration square */
+  oai_cputime_t max;         /*!< \brief maximum difference between time at starting point and time at endpoint*/
   int trials;                /*!< \brief number of start point - end point iterations */
   int meas_flag;             /*!< \brief 1: stop_meas not called (consecutive calls of start_meas) */
   char *meas_name;           /*!< \brief name to use when printing the measure (not used for PHY simulators)*/

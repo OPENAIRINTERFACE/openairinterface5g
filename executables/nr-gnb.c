@@ -423,7 +423,7 @@ void init_gNB_Tpool(int inst) {
     s_offset += 3;
   }
   if (getenv("noThreads")) strcpy(pool, "n");
-  initTpool(pool, gNB->threadPool, true);
+  initTpool(pool, gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
   // ULSCH decoder result FIFO
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   initNotifiedFIFO(gNB->respDecode);
