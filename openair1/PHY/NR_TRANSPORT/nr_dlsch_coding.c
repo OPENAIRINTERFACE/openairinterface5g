@@ -50,49 +50,48 @@
 //#define DEBUG_DLSCH_FREE 1
 
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB, NR_DL_FRAME_PARMS* frame_parms) {
+void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, 
+                    uint16_t N_RB,
+                    const NR_DL_FRAME_PARMS* frame_parms) {
 
   NR_gNB_DLSCH_t *dlsch = *dlschptr;
 
   int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*max_layers;
 
-  if (dlsch) {
-    if (N_RB != 273) {
-      a_segments = a_segments*N_RB;
-      a_segments = a_segments/273 +1;
-    }
-    
-#ifdef DEBUG_DLSCH_FREE
-    LOG_D(PHY,"Freeing dlsch %p\n",dlsch);
-#endif
-    NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
-    
-    if (harq->b) {
-      free16(harq->b, a_segments * 1056);
-      harq->b = NULL;
-#ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing harq->b (%p)\n", harq->b);
-#endif
-    }
-    
-#ifdef DEBUG_DLSCH_FREE
-    LOG_D(PHY, "Freeing dlsch process %d c (%p)\n", i, harq->c);
-#endif
-    
-    for (int r = 0; r < a_segments; r++) {
-#ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing dlsch process %d c[%d] (%p)\n", i, r, harq->c[r]);
-#endif
-      
-      if (harq->c[r]) {
-	free16(harq->c[r], 1056);
-	harq->c[r] = NULL;
-      }
-    }
-    free16(dlsch, sizeof(NR_gNB_DLSCH_t));
-    *dlschptr = NULL;
+  if (N_RB != 273) {
+    a_segments = a_segments*N_RB;
+    a_segments = a_segments/273 +1;
   }
+
+  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
+  if (harq->b) {
+    free16(harq->b, a_segments * 1056);
+    harq->b = NULL;
+  }
+  for (int r = 0; r < a_segments; r++) {
+    free(harq->c[r]);
+    harq->c[r] = NULL;
+  }
+  free(harq->pdu);
+
+  for (int aa = 0; aa < 64; aa++)
+    free(dlsch->calib_dl_ch_estimates[aa]);
+  free(dlsch->calib_dl_ch_estimates);
+
+  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
+  for (int q=0; q<nb_codewords; q++)
+    free(dlsch->mod_symbs[q]);
+
+  for (int layer = 0; layer < NR_MAX_NB_LAYERS; layer++) {
+    free(dlsch->txdataF[layer]);
+    for (int aa = 0; aa < 64; aa++)
+      free(dlsch->ue_spec_bf_weights[layer][aa]);
+    free(dlsch->ue_spec_bf_weights[layer]);
+  }
+
+  free(dlsch);
+  *dlschptr = NULL;
 }
 
 NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,

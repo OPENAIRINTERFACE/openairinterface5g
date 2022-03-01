@@ -79,9 +79,11 @@ void init_dlsch_tpool(uint8_t num_dlsch_threads) {
   free(params);
 }
 
-void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
+
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr, uint16_t N_RB_DL) {
 
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;
+
   NR_UE_DLSCH_t *dlsch=*dlschptr;
 
   if (dlsch) {
@@ -112,7 +114,8 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
   }
 }
 
-NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_ldpc_iterations,uint16_t N_RB_DL, uint8_t abstraction_flag) {
+
+NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_ldpc_iterations,uint16_t N_RB_DL) {
 
   NR_UE_DLSCH_t *dlsch;
   uint8_t exit_flag = 0;
@@ -150,18 +153,16 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
         else
           exit_flag=3;
 
-        if (abstraction_flag == 0) {
-          dlsch->harq_processes[i]->c = (uint8_t **)malloc16(a_segments*sizeof(uint8_t *));
-          dlsch->harq_processes[i]->p_nrLDPC_procBuf = (t_nrLDPC_procBuf **)malloc16(a_segments*sizeof(t_nrLDPC_procBuf *));
-          for (int r=0; r<a_segments; r++) {
-            dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
-            dlsch->harq_processes[i]->c[r] = (uint8_t *)malloc16(1056);
+        dlsch->harq_processes[i]->c = (uint8_t **)malloc16(a_segments*sizeof(uint8_t *));
+        dlsch->harq_processes[i]->p_nrLDPC_procBuf = (t_nrLDPC_procBuf **)malloc16(a_segments*sizeof(t_nrLDPC_procBuf *));
+        for (int r=0; r<a_segments; r++) {
+          dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
+          dlsch->harq_processes[i]->c[r] = (uint8_t *)malloc16(1056);
 
-            if (dlsch->harq_processes[i]->c[r])
-              memset(dlsch->harq_processes[i]->c[r],0,1056);
-            else
-              exit_flag=2;
-          }
+          if (dlsch->harq_processes[i]->c[r])
+            memset(dlsch->harq_processes[i]->c[r],0,1056);
+          else
+            exit_flag=2;
         }
       } else {
         exit_flag=1;

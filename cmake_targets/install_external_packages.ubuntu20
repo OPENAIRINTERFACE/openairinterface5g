@@ -86,6 +86,7 @@ check_supported_distribution() {
         "ubuntu20.04") return 0 ;;
         "ubuntu20.10") return 0 ;;
         "ubuntu21.04") return 0 ;;
+        "ubuntu21.10") return 0 ;;
     esac
     return 1
 }

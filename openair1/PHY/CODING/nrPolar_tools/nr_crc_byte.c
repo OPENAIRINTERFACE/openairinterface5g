@@ -29,12 +29,13 @@ uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits){
 	uint8_t crcPolynomialSize = 24;
 	uint8_t temp1[crcPolynomialSize], temp2[crcPolynomialSize];
 
-	uint8_t **crc_generator_matrix = malloc(payloadSizeBits * sizeof(uint8_t *));
+	uint8_t **crc_generator_matrix = malloc(payloadSizeBits*sizeof(uint8_t *) + payloadSizeBits*crcPolynomialSize*sizeof(uint8_t));
 	if (crc_generator_matrix)
 	  for (int i = 0; i < payloadSizeBits; i++)
-		  crc_generator_matrix[i] = malloc(crcPolynomialSize * sizeof(uint8_t));
+	    crc_generator_matrix[i] = ((uint8_t*)&crc_generator_matrix[payloadSizeBits])+i*crcPolynomialSize;
 
-	for (int i = 0; i < crcPolynomialSize; i++) crc_generator_matrix[payloadSizeBits-1][i]=crcPolynomialPattern[i+1];
+	for (int i = 0; i < crcPolynomialSize; i++)
+	  crc_generator_matrix[payloadSizeBits-1][i]=crcPolynomialPattern[i+1];
 
 	for (int i = payloadSizeBits-2; i >= 0; i--){
 		for (int j = 0; j < crcPolynomialSize-1; j++) temp1[j]=crc_generator_matrix[i+1][j+1];
