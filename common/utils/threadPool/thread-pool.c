@@ -97,7 +97,7 @@ void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name
   char *measr=getenv("threadPoolMeasurements");
   pool->measurePerf=performanceMeas;
   // force measurement if the output is defined
-  pool->measurePerf=measr!=NULL;
+  pool->measurePerf |= measr!=NULL;
 
   if (measr) {
     mkfifo(measr,0666);
