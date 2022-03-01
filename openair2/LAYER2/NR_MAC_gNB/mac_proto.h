@@ -455,6 +455,11 @@ void find_SSB_and_RO_available(module_id_t module_idP);
 
 void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
 
+uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
+                      int layers,
+                      int N1, int N2,
+                      int codebook_mode);
+
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 NR_UE_sched_ctrl_t *sched_ctrl,
                 uint8_t *target_mcs,

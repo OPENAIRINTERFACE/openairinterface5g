@@ -1174,6 +1174,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->StartSymbolIndex = ps->startSymbolIndex;
     pdsch_pdu->NrOfSymbols = ps->nrOfSymbols;
 
+    // Precoding
+    if (sched_ctrl->set_pmi) {
+      int report_id = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id;
+      nr_csi_report_t *csi_report = &UE_info->csi_report_template[UE_id][report_id];
+      pdsch_pdu->precodingAndBeamforming.prg_size = pdsch_pdu->rbSize;
+      pdsch_pdu->precodingAndBeamforming.prgs_list[0].pm_idx = set_pm_index(sched_ctrl,
+                                                                            nrOfLayers,
+                                                                            csi_report->N1,
+                                                                            csi_report->N2,
+                                                                            csi_report->codebook_mode);
+    }
+
     NR_PDSCH_Config_t *pdsch_Config=NULL;
     if (bwp &&
         bwp->bwp_Dedicated &&

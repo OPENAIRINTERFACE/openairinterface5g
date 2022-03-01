@@ -136,7 +136,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
         }
       }
 
-      int max_mimo_layers =(CSI_RS_antenna_ports<NR_MAX_NB_LAYERS) ? CSI_RS_antenna_ports : NR_MAX_NB_LAYERS;
+      int max_mimo_layers = (CSI_RS_antenna_ports<NR_MAX_NB_LAYERS) ? CSI_RS_antenna_ports : NR_MAX_NB_LAYERS;
 
       gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(max_mimo_layers* sizeof(int32_t **));
       int32_t ***mat = gNB->nr_mimo_precoding_matrix;
@@ -236,7 +236,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                 if((llb != ll) || (mmb != mm) || ((N1 == 1) && (N2 == 1))){
                   pmiq += 1;
                   mat[1][pmiq] = (int32_t *)malloc16((2*N1*N2)*(2)*sizeof(int32_t));
-                  LOG_I(PHY, "layer 2 Codebook pmiq = %d\n",pmiq);
+                  LOG_D(PHY, "layer 2 Codebook pmiq = %d\n",pmiq);
                   for(int j_col=0; j_col<2; j_col++) {
                     if (j_col==0) {
                       llc = llb;
@@ -320,7 +320,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                   if((llb != ll) || (mmb != mm)){
                     pmiq += 1;
                     mat[2][pmiq] = (int32_t *)malloc16((2*N1*N2)*(3)*sizeof(int32_t));
-                    LOG_I(PHY, "layer 3 Codebook pmiq = %d\n",pmiq);
+                    LOG_D(PHY, "layer 3 Codebook pmiq = %d\n",pmiq);
                     for(int j_col=0; j_col<3; j_col++) {
                       if (j_col==0) {
                         llc = llb;
@@ -411,7 +411,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
                   if((llb != ll) || (mmb != mm)){
                     pmiq += 1;
                     mat[3][pmiq] = (int32_t *)malloc16((2*N1*N2)*4*sizeof(int32_t));
-                    LOG_I(PHY, "layer 4 pmiq = %d\n",pmiq);
+                    LOG_D(PHY, "layer 4 pmiq = %d\n",pmiq);
                     for(int j_col=0; j_col<4; j_col++) {
                       if (j_col==0) {
                         llc = llb;

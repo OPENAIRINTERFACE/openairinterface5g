@@ -145,6 +145,25 @@ uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
 
 }
 
+
+uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
+                      int layers,
+                      int N1, int N2,
+                      int codebook_mode) {
+
+  int x1 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1;
+  int x2 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2;
+  int antenna_ports = (N1*N2)<<1;
+
+  sched_ctrl->set_pmi = false;
+
+  if (antenna_ports == 2)
+    return x2;
+  else
+    AssertFatal(1==0,"More than 2 antenna ports not yet supported\n");
+}
+
+
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 NR_UE_sched_ctrl_t *sched_ctrl,
                 uint8_t *target_mcs,
@@ -186,7 +205,7 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
         }
       }
     }
-    sched_ctrl->set_mcs = FALSE;
+    sched_ctrl->set_mcs = false;
   }
 }
 
@@ -2147,7 +2166,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
-    sched_ctrl->set_mcs = TRUE;
+    sched_ctrl->set_mcs = true;
+    sched_ctrl->set_pmi = false;
     sched_ctrl->lcid_mask = 0;
     if (!get_softmodem_params()->phy_test && !get_softmodem_params()->do_ra && !get_softmodem_params()->sa) {
       sched_ctrl->lcid_mask = 1<<DL_SCH_LCID_DTCH;
