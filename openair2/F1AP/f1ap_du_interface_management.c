@@ -481,14 +481,6 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   for (int i=0; i<num_cells_to_activate; i++)
     AssertFatal(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
 
-  MSC_LOG_RX_MESSAGE(
-    MSC_F1AP_DU,
-    MSC_F1AP_CU,
-    0,
-    0,
-    MSC_AS_TIME_FMT" DU_handle_F1_SETUP_RESPONSE successfulOutcome assoc_id %d",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    assoc_id);
   LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message\n");
   itti_send_msg_to_task(TASK_F1APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
   return 0;
@@ -910,14 +902,6 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
   LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
   F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).num_cells_to_activate = num_cells_to_activate;
-  MSC_LOG_RX_MESSAGE(
-    MSC_F1AP_DU,
-    MSC_F1AP_CU,
-    0,
-    0,
-    MSC_AS_TIME_FMT" DU_handle_GNB_CU_CONFIGURATION_UPDATE initiatingMessage assoc_id %d",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    assoc_id);
   LOG_D(F1AP, "Sending F1AP_GNB_CU_CONFIGURATION_UPDATE ITTI message \n");
   itti_send_msg_to_task(TASK_F1APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
   return 0;

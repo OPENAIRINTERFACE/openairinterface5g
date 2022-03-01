@@ -55,42 +55,39 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB) {
   NR_gNB_DLSCH_t *dlsch = *dlschptr;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (dlsch) {
-    if (N_RB != 273) {
-      a_segments = a_segments*N_RB;
-      a_segments = a_segments/273 +1;
-    }
-    
-#ifdef DEBUG_DLSCH_FREE
-    LOG_D(PHY,"Freeing dlsch %p\n",dlsch);
-#endif
-    NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
-    
-    if (harq->b) {
-      free16(harq->b, a_segments * 1056);
-      harq->b = NULL;
-#ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing harq->b (%p)\n", harq->b);
-#endif
-    }
-    
-#ifdef DEBUG_DLSCH_FREE
-    LOG_D(PHY, "Freeing dlsch process %d c (%p)\n", i, harq->c);
-#endif
-    
-    for (r = 0; r < a_segments; r++) {
-#ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing dlsch process %d c[%d] (%p)\n", i, r, harq->c[r]);
-#endif
-      
-      if (harq->c[r]) {
-	free16(harq->c[r], 1056);
-	harq->c[r] = NULL;
-      }
-    }
-    free16(dlsch, sizeof(NR_gNB_DLSCH_t));
-    *dlschptr = NULL;
+  if (N_RB != 273) {
+    a_segments = a_segments*N_RB;
+    a_segments = a_segments/273 +1;
   }
+
+  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
+  if (harq->b) {
+    free16(harq->b, a_segments * 1056);
+    harq->b = NULL;
+  }
+  for (r = 0; r < a_segments; r++) {
+    free(harq->c[r]);
+    harq->c[r] = NULL;
+  }
+  free(harq->pdu);
+
+  for (int aa = 0; aa < 64; aa++)
+    free(dlsch->calib_dl_ch_estimates[aa]);
+  free(dlsch->calib_dl_ch_estimates);
+
+  for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
+    free(dlsch->mod_symbs[q]);
+
+  for (int layer = 0; layer < NR_MAX_NB_LAYERS; layer++) {
+    free(dlsch->txdataF_precoding[layer]);
+    free(dlsch->txdataF[layer]);
+    for (int aa = 0; aa < 64; aa++)
+      free(dlsch->ue_spec_bf_weights[layer][aa]);
+    free(dlsch->ue_spec_bf_weights[layer]);
+  }
+
+  free(dlsch);
+  *dlschptr = NULL;
 }
 
 NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,

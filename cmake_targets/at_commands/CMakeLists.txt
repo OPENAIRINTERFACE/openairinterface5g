@@ -409,7 +409,6 @@ set(emm_HDR
 add_library(emm ${emm_SRC} ${emm_HDR})
 
 target_include_directories(emm PRIVATE 
-                     ${OPENAIR_DIR}/common/utils/msc 
                      ${OPENAIR_DIR}/common/utils
                      ${OPENAIR_DIR}/openair2/COMMON
                      ${OPENAIR_NAS_DIR}/UE
@@ -693,7 +692,6 @@ include_directories(
                      ${OPENAIR_TARGETS}/COMMON
                      ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_DIR}/common/utils
-                     ${OPENAIR_DIR}/common/utils/msc 
                      ${OPENAIR3_DIR}/COMMON 
                      ${OPENAIR3_DIR}/SECU 
                      ${OPENAIR_NAS_DIR}/src 

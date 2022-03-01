@@ -193,7 +193,7 @@ int main (int argc, const char* argv[])
   printf("INFO\t: %s - The RRC Simulator is now connected to %s/%s (%d)\n",
          __FUNCTION__, mhost, mport, socket_get_fd(_as_simulator_mme_sid));
 
-  MSCGEN("[MSC_NEW][%s][AS=%s]\n", getTime(), _as_id);
+  printf("[%s][AS=%s]\n", getTime(), _as_id);
 
   /*
    * Set up signal handler
@@ -325,7 +325,7 @@ static void* _as_simulator_ue_mngr(void* args)
 
   printf("INFO\t: %s - UE connection manager started\n", __FUNCTION__);
 
-  MSCGEN("[MSC_NEW][%s][NAS-UE=%s]\n", getTime(), _ue_id);
+  printf("[%s][NAS-UE=%s]\n", getTime(), _ue_id);
 
   /* Receiving loop */
   while (_as_simulator_ue_is_running) {
@@ -407,7 +407,7 @@ static void* _as_simulator_mme_mngr(void* args)
 
   printf("INFO\t: %s - MME connection manager started\n", __FUNCTION__);
 
-  MSCGEN("[MSC_NEW][%s][NAS-MME=%s]\n", getTime(), _mme_id);
+  printf("[%s][NAS-MME=%s]\n", getTime(), _mme_id);
 
   /* Receiving loop */
   while (_as_simulator_mme_is_running) {

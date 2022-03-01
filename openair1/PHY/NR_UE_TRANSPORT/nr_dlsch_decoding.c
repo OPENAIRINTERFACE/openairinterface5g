@@ -79,7 +79,7 @@ void init_dlsch_tpool(uint8_t num_dlsch_threads) {
   free(params);
 }
 
-void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr, uint16_t N_RB_DL) {
   int i,r;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
   NR_UE_DLSCH_t *dlsch=*dlschptr;
@@ -131,7 +131,7 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr,uint8_t N_RB_DL) {
   }
 }
 
-NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_ldpc_iterations,uint16_t N_RB_DL, uint8_t abstraction_flag) {
+NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_ldpc_iterations,uint16_t N_RB_DL) {
   NR_UE_DLSCH_t *dlsch;
   uint8_t exit_flag = 0,i,r;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
@@ -167,30 +167,28 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
         else
           exit_flag=3;
 
-        if (abstraction_flag == 0) {
-          for (r=0; r<a_segments; r++) {
-            dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
-            dlsch->harq_processes[i]->c[r] = (uint8_t *)malloc16(1056);
+        for (r=0; r<a_segments; r++) {
+          dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
+          dlsch->harq_processes[i]->c[r] = (uint8_t *)malloc16(1056);
 
-            if (dlsch->harq_processes[i]->c[r])
-              memset(dlsch->harq_processes[i]->c[r],0,1056);
-            else
-              exit_flag=2;
+          if (dlsch->harq_processes[i]->c[r])
+            memset(dlsch->harq_processes[i]->c[r],0,1056);
+          else
+            exit_flag=2;
 
-            dlsch->harq_processes[i]->d[r] = (short *)malloc16((5*8448)*sizeof(short));
+          dlsch->harq_processes[i]->d[r] = (short *)malloc16((5*8448)*sizeof(short));
 
-            if (dlsch->harq_processes[i]->d[r])
-              memset(dlsch->harq_processes[i]->d[r],0,(5*8448)*sizeof(short));
-            else
-              exit_flag=2;
+          if (dlsch->harq_processes[i]->d[r])
+            memset(dlsch->harq_processes[i]->d[r],0,(5*8448)*sizeof(short));
+          else
+            exit_flag=2;
 
-            dlsch->harq_processes[i]->w[r] = (short *)malloc16((5*8448)*sizeof(short));
+          dlsch->harq_processes[i]->w[r] = (short *)malloc16((5*8448)*sizeof(short));
 
-            if (dlsch->harq_processes[i]->w[r])
-              memset(dlsch->harq_processes[i]->w[r],0,(5*8448)*sizeof(short));
-            else
-              exit_flag=2;
-          }
+          if (dlsch->harq_processes[i]->w[r])
+            memset(dlsch->harq_processes[i]->w[r],0,(5*8448)*sizeof(short));
+          else
+            exit_flag=2;
         }
       } else {
         exit_flag=1;
