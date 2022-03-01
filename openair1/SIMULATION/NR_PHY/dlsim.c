@@ -87,6 +87,9 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
+/* dummy constant */
+NR_UE_RRC_INST_t *NR_UE_rrc_inst;
+
 double cpuf;
 char *uecap_file;
 
@@ -238,6 +241,8 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             sdu_size_t      sdu2_lenP) {
   return 0;
 }
+
+nr_bler_struct nr_bler_data[NR_NUM_MCS];
 
 void processSlotTX(void *arg) {}
 
