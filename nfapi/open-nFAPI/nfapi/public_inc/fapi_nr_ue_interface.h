@@ -444,7 +444,7 @@ typedef struct {
   uint8_t pucch_resource_id;
   uint8_t pdsch_to_harq_feedback_time_ind;
   uint8_t n_dmrs_cdm_groups;
-  uint8_t dmrs_ports[10];
+  uint16_t dmrs_ports;
   uint8_t n_front_load_symb;
   uint8_t tci_state;
   fapi_nr_dl_srs_config_t srs_config;

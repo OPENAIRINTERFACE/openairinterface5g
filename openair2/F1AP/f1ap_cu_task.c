@@ -35,7 +35,6 @@
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "f1ap_cu_ue_context_management.h"
 #include "f1ap_cu_task.h"
-#include "proto_agent.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
@@ -47,7 +46,7 @@ static instance_t cu_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
   strncpy(tmp.destinationHost, IPaddrs->remote_addr, sizeof(tmp.destinationHost)-1);
   sprintf(tmp.originService, "%d",  IPaddrs->my_portd);
   sprintf(tmp.destinationService, "%d",  IPaddrs->remote_portd);
-  return ocp_gtpv1Init(tmp);
+  return gtpv1Init(tmp);
 }
 
 static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind,

@@ -26,6 +26,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include "common/config/config_userapi.h"
+#include "common/utils/load_module_shlib.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h"
 #include "PHY/types.h"
@@ -372,7 +373,7 @@ int main(int argc, char **argv)
 
 
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  RC.gNB[0] = calloc(1, sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
 
@@ -400,7 +401,7 @@ int main(int argc, char **argv)
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
   //phy_init_nr_top(frame_parms);
-  if (init_nr_ue_signal(UE, 1, 0) != 0) {
+  if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation.\n");
     exit(-1);
   }
@@ -408,7 +409,7 @@ int main(int argc, char **argv)
   for (sf = 0; sf < 2; sf++) {
     for (i = 0; i < 2; i++) {
 
-        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
+        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8);
 
         if (!UE->ulsch[sf][0][i]) {
           printf("Can't get ue ulsch structures.\n");
@@ -454,45 +455,38 @@ int main(int argc, char **argv)
   rel15_ul->pusch_data.tb_size  = TBS/8;
   ///////////////////////////////////////////////////
 
-  double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
-  short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
-  short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
+  double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
+  short channel_output_fixed[16 * 68 * 384];
+  short channel_output_uncoded[16 * 68 * 384];
   unsigned int errors_bit_uncoded = 0;
-  unsigned char *estimated_output_bit;
-  unsigned char *test_input_bit;
   unsigned int errors_bit = 0;
 
-  test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-  estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-
-  unsigned char *test_input;
-  test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
-
-  for (i = 0; i < TBS / 8; i++)
-    test_input[i] = (unsigned char) rand();
+  unsigned char test_input_bit[16 * 68 * 384];
+  unsigned char estimated_output_bit[16 * 68 * 384];
 
   /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
   ///////////
   NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+  DevAssert(harq_process_ul_ue);
 
   N_PRB_oh   = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   N_RE_prime = NR_NB_SC_PER_RB*nb_symb_sch - nb_re_dmrs - N_PRB_oh;
 
-  if (harq_process_ul_ue) {
+  harq_process_ul_ue->pusch_pdu.rnti = n_rnti;
+  harq_process_ul_ue->pusch_pdu.mcs_index = Imcs;
+  harq_process_ul_ue->pusch_pdu.nrOfLayers = Nl;
+  harq_process_ul_ue->pusch_pdu.rb_size = nb_rb;
+  harq_process_ul_ue->pusch_pdu.nr_of_symbols = nb_symb_sch;
+  harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
+  harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
+  harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS/8;
+  unsigned char *test_input = harq_process_ul_ue->a;
 
-    harq_process_ul_ue->pusch_pdu.rnti = n_rnti;
-    harq_process_ul_ue->pusch_pdu.mcs_index = Imcs;
-    harq_process_ul_ue->pusch_pdu.nrOfLayers = Nl;
-    harq_process_ul_ue->pusch_pdu.rb_size = nb_rb;
-    harq_process_ul_ue->pusch_pdu.nr_of_symbols = nb_symb_sch;
-    harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
-    harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
-    harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS/8;
-    harq_process_ul_ue->a = &test_input[0];
-
-  }
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
+
+  for (i = 0; i < TBS / 8; i++)
+    test_input[i] = (unsigned char) rand();
 
 #ifdef DEBUG_NR_ULSCHSIM
   for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%hhu \n",test_input[i]);
@@ -620,12 +614,28 @@ int main(int argc, char **argv)
     printf("\n");
   }
 
+  for (sf = 0; sf < 2; sf++)
+    for (i = 0; i < 2; i++)
+      free_nr_ue_ulsch(&UE->ulsch[sf][0][i], N_RB_UL);
+  term_nr_ue_signal(UE, 1);
+  free(UE);
+
+  phy_free_nr_gNB(gNB);
+  free(gNB->threadPool);
+  free(gNB->respDecode);
+  free(RC.gNB[0]);
+  free(RC.gNB);
+
+  free_channel_desc_scm(gNB2UE);
 
   if (output_fd)
     fclose(output_fd);
 
   if (input_fd)
     fclose(input_fd);
+
+  loader_reset();
+  logTerm();
 
   return (n_errors);
 }

@@ -100,16 +100,14 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 uint8_t do_RRCReject(uint8_t Mod_id,
                      uint8_t *const buffer);
 
-void fill_initial_SpCellConfig(rnti_t rnti,
-                               int uid,
-                               NR_SpCellConfig_t *SpCellConfig,
-                               NR_ServingCellConfigCommon_t *scc,
+void fill_initial_SpCellConfig(int uid,
+			       NR_SpCellConfig_t *SpCellConfig,
+			       NR_ServingCellConfigCommon_t *scc,
                                rrc_gNB_carrier_data_t *carrier);
 
-void fill_initial_cellGroupConfig(rnti_t rnti,
-                                  int uid,
-                                  NR_CellGroupConfig_t *cellGroupConfig,
-                                  NR_ServingCellConfigCommon_t *scc,
+void fill_initial_cellGroupConfig(int uid,
+				  NR_CellGroupConfig_t *cellGroupConfig,
+				  NR_ServingCellConfigCommon_t *scc,
                                   rrc_gNB_carrier_data_t *carrier);
 
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup);

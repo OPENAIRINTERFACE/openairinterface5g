@@ -369,7 +369,7 @@ gtpv1u_create_s1u_tunnel(), delete tunnel, ... functions are called inside the o
 # New GTP
 ## initialization
 
-ocp_gtpv1uTask(): this creates only the thread, doesn't configure anything
+gtpv1uTask(): this creates only the thread, doesn't configure anything
 gtpv1Init(): creates a listening socket to Linux for a given reception and select a local IP address
 
 ## newGtpuCreateTunnel()   

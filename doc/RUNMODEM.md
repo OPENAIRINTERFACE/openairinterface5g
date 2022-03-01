@@ -155,6 +155,14 @@ At the UE the --sa flag will:
   4) 5G-NR RRC Reconfiguration
   5) Start Downlink and Uplink Data Transfer
 
+Command line parameters for UE in --sa mode:
+- `C` : downlink carrier frequency in Hz (default value 0)
+- `CO` : uplink frequency offset for FDD in Hz (default value 0)
+- `numerology` : numerology index (default value 1)
+- `r` : bandwidth in terms of RBs (default value 106)
+- `band` : NR band number (default value 78)
+- `s` : SSB start subcarrier (default value 512)
+
 ### Run OAI in SA mode
 
 From the `cmake_targets/ran_build/build` folder:
@@ -179,21 +187,15 @@ Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabi
 
 ## IF setup with OAI
 
-The -C and --CO flags can be used together at UE side to set custom downlink and uplink FR1 arbitrary frequencies for the IF equipment.
+OAI is also compatible with Intermediate Frequency (IF) equipment. This allows to use RF front-end that with arbitrary frequencies bands that do not comply with the standardised 3GPP NR bands. 
 
-In order to run this setup, the following flags are needed at the UE side:
+To configure the IF frequencies it is necessary to use two command-line options at UE side:
+- `if_freq`, downlink frequency in Hz
+- `if_freq_off`, uplink frequency offset in Hz
 
-`-C` 
-
-`--CO`
-
-and the following parameters must be configured in the RUs section of the gNB configuration file:
-
-`if_freq`
-
-`if_offset`
-
-The values must be given in Hz.
+Accordingly, the following parameters must be configured in the RUs section of the gNB configuration file:
+- `if_freq`
+- `if_offset`
 
 ### Run OAI with custom DL/UL arbitrary frequencies
 
@@ -207,7 +209,7 @@ gNB on machine 1:
 
 UE on machine 2:
 
-`sudo ./nr-uesoftmodem -C 2169080000 --CO -400000000`
+`sudo ./nr-uesoftmodem --if_freq 2169080000 --if_freq_off -400000000`
 
 
 

@@ -90,8 +90,11 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 rx_ind->pdu_list[j].pdu = CALLOC(tx_req_body->pdu_length, sizeof(*rx_ind->pdu_list[j].pdu));
                 memcpy(rx_ind->pdu_list[j].pdu, tx_req_body->pdu, tx_req_body->pdu_length * sizeof(*rx_ind->pdu_list[j].pdu));
                 rx_ind->pdu_list[j].rnti = pusch_config_pdu->rnti;
-                rx_ind->pdu_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
-                rx_ind->pdu_list[j].ul_cqi = scheduled_response->tx_request->tx_config.ul_cqi;
+                /* TODO: Implement channel modeling to abstract TA and CQI. For now,
+                   we hard code the values below since they are set in L1 and we are
+                   abstracting L1. */
+                rx_ind->pdu_list[j].timing_advance = 31;
+                rx_ind->pdu_list[j].ul_cqi = 255;
                 char buffer[1024];
                 hexdump(rx_ind->pdu_list[j].pdu, rx_ind->pdu_list[j].pdu_length, buffer, sizeof(buffer));
                 LOG_D(NR_MAC, "Hexdump of pdu %s before queuing rx_ind\n",
@@ -113,7 +116,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 crc_ind->crc_list[j].num_cb = pusch_config_pdu->pusch_data.num_cb;
                 crc_ind->crc_list[j].rnti = pusch_config_pdu->rnti;
                 crc_ind->crc_list[j].tb_crc_status = 0;
-                crc_ind->crc_list[j].timing_advance = scheduled_response->tx_request->tx_config.timing_advance;
+                crc_ind->crc_list[j].timing_advance = 31;
                 crc_ind->crc_list[j].ul_cqi = 255;
               }
 
@@ -204,6 +207,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
           }
         }
       }
+      dl_config->number_pdus = 0;
     }
 
   }
@@ -284,6 +288,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->dlDmrsSymbPos = dlsch_config_pdu->dlDmrsSymbPos;
             dlsch0_harq->dmrsConfigType = dlsch_config_pdu->dmrsConfigType;
             dlsch0_harq->n_dmrs_cdm_groups = dlsch_config_pdu->n_dmrs_cdm_groups;
+            dlsch0_harq->dmrs_ports = dlsch_config_pdu->dmrs_ports;
             dlsch0_harq->mcs = dlsch_config_pdu->mcs;
             dlsch0_harq->rvidx = dlsch_config_pdu->rv;
             dlsch0_harq->nscid = dlsch_config_pdu->nscid;
@@ -291,8 +296,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
             //get nrOfLayers from DCI info
             uint8_t Nl = 0;
-            for (i = 0; i < 4; i++) {
-              if (dlsch_config_pdu->dmrs_ports[i] >= i) Nl += 1;
+            for (i = 0; i < 12; i++) { // max 12 ports
+              if ((dlsch_config_pdu->dmrs_ports>>i)&0x01) Nl += 1;
             }
             dlsch0_harq->Nl = Nl;
             dlsch0_harq->mcs_table=dlsch_config_pdu->mcs_table;
@@ -310,7 +315,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             dlsch0_harq->nEpreRatioOfPDSCHToPTRS = dlsch_config_pdu->nEpreRatioOfPDSCHToPTRS;
             dlsch0_harq->PTRSReOffset = dlsch_config_pdu->PTRSReOffset;
             dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
-            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
+            LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n",
+                  dlsch0->g_pucch, dlsch0_harq->mcs);
           }
         }
       }
