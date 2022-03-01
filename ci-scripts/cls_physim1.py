@@ -246,7 +246,7 @@ class PhySim:
 		isFinished = False
 		# doing a deep copy!
 		tmpPodNames = podNames.copy()
-		while(count < 32 and isFinished == False):
+		while(count < 50 and isFinished == False):
 			time.sleep(60)
 			for podName in tmpPodNames:
 				mySSH.command2(f'oc logs --tail=1 {podName} 2>&1', 6, silent=True)

@@ -168,10 +168,10 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   }
 
   // initialize all signal buffers
-  init_nr_ue_signal(ue, nb_connected_gNB, abstraction_flag);
+  init_nr_ue_signal(ue, nb_connected_gNB);
 
   // intialize transport
-  init_nr_ue_transport(ue, abstraction_flag);
+  init_nr_ue_transport(ue);
 
   // init N_TA offset
   init_N_TA_offset(ue);
