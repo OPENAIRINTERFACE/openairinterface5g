@@ -97,7 +97,8 @@ class RANManagement():
 		self.eNB_Trace = '' #if 'yes', Tshark will be launched at initialization
 		self.eNB_Stats = '' #if 'yes', Statistics Monitor will be launched at initialization		
 		self.USRPIPAddress = ''
-
+		#checkers from xml
+		self.ran_checkers={}
 
 
 #-----------------------------------------------------------
@@ -680,7 +681,7 @@ class RANManagement():
 			mySSH.close()
 			mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/' + extracted_log_file, '.')
 			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
-			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file, HTML)
+			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file, HTML, self.ran_checkers)
 			HTML.CreateHtmlTestRow(self.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 			self.eNBLogFiles[int(self.eNB_instance)] = ''
 		else:
@@ -713,7 +714,7 @@ class RANManagement():
 					#
 					mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + fileToAnalyze, self.eNBSourceCodePath + '/cmake_targets/')
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + fileToAnalyze)
-				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze, HTML)
+				logStatus = self.AnalyzeLogFile_eNB(fileToAnalyze, HTML, self.ran_checkers)
 				if (logStatus < 0):
 					HTML.CreateHtmlTestRow('N/A', 'KO', logStatus)
 					#display rt stats for gNB only

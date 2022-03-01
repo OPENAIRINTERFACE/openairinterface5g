@@ -199,6 +199,14 @@ def GetParametersFromXML(action):
 		else:
 			RAN.eNB_serverId[RAN.eNB_instance]=eNB_serverId
 
+		#retx checkers
+		string_field=test.findtext('d_retx_th')
+		if (string_field is not None):
+			RAN.ran_checkers['d_retx_th'] = [float(x) for x in string_field.split(',')]
+		string_field=test.findtext('u_retx_th')
+		if (string_field is not None):
+			RAN.ran_checkers['u_retx_th'] = [float(x) for x in string_field.split(',')]
+
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
 		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):

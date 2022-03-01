@@ -3128,7 +3128,7 @@ class OaiCiTest():
 				fileCheck = re.search('enb_', str(RAN.eNBLogFiles[0]))
 				if fileCheck is not None:
 					SSH.copyin(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath + '/cmake_targets/' + RAN.eNBLogFiles[0], '.')
-					logStatus = RAN.AnalyzeLogFile_eNB(RAN.eNBLogFiles[0])
+					logStatus = RAN.AnalyzeLogFile_eNB(RAN.eNBLogFiles[0],HTML, RAN.ran_checkers)
 					if logStatus < 0:
 						result = logStatus
 					RAN.eNBLogFiles[0]=''
