@@ -486,7 +486,7 @@ class HTMLManagement():
 			# TestRow 
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td colspan="3" bgcolor = "lightcyan" >' + k  + ' </td>\n')				
-			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + DataLog['Data'][k][0] + '; ' + DataLog['Data'][k][1] + '; ' + DataLog['Data'][k][2] + ' </td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + DataLog['Data'][k][0] + '; ' + DataLog['Data'][k][1] + '; ' + DataLog['Data'][k][2] + ' </td>\n')
 			if float(DataLog['Data'][k][3])> DataLog['Threshold'][k]:
 				self.htmlFile.write('        <th bgcolor = "red" >' + DataLog['Data'][k][3]  + ' (Ref = ' + str(DataLog['Ref'][k]) + ' ; Thres = '   +str(DataLog['Threshold'][k])+') ' + '</th>\n')
 			else:
