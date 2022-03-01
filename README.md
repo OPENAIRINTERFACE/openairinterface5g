@@ -21,29 +21,6 @@
 
 # OpenAirInterface License #
 
-### Included Fixes: ###
-- Ease of use of gprof and address sanitizer for debugging purposes
-- Updated json files to allow for GDB, real-time debugging capabilities
-- Updated logging features to minimally log only key connection milestones. This imroves scalability of multiple UEs.
-- Updated logging to include time stamp for timing analysis
-- Updated memory allocation procedures to correct size requirements
-- Added debugging features to handle signal terminations
-- nfapi.c pullarray8 fix invalid pointer math
-- Overlapping destination and source memory in memcpy, so updated to memmove to check for this bug
-- Advanced error checking mechanisms in critical pack and unpack functions
-- Created option for CPU assignment to UE to improve scalability
-- Added EPC integration to allow multiple individual UE entities to each have their USIM information parced by the executables
-- Updated random value seeds to minimize probability of error in generation of random values
-- Enables capability round robin scheduler if desired
-- Enables capability real time scheduler if desired
-- Added new standalone functions to the UE phy-layer (phy_stub_ue.c) to incorporate individual UE entities
-- Updated sending and packing functions in UE (lte_ue.c) to incorporate new standalone changes
-- Incorporated semaphores to control timing of incoming downlink packets
-- Implemented new queuing system to handle message exchange from UE to eNB and vice versa
-- Updated global value in nFAPI for size of subframe
-- Updated global value to increase scalability in system
-
-
 # Where to Start #
 
  *  [The implemented features](./doc/FEATURE_SET.md)
