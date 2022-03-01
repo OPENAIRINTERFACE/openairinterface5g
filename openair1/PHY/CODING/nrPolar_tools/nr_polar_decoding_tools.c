@@ -36,51 +36,25 @@
 
 //#define DEBUG_NEW_IMPL 1
 
-void updateLLR(double ***llr,
-			   uint8_t **llrU,
-			   uint8_t ***bit,
-			   uint8_t **bitU,
-			   uint8_t listSize,
-			   uint16_t row,
-			   uint16_t col,
-			   uint16_t xlen,
-			   uint8_t ylen)
-{
-	uint16_t offset = (xlen/(pow(2,(ylen-col-1))));
-	for (uint8_t i=0; i<listSize; i++) {
-		if (( (row) % (2*offset) ) >= offset ) {
-			if(bitU[row-offset][col]==0) updateBit(bit, bitU, listSize, (row-offset), col, xlen, ylen);
-			if(llrU[row-offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row-offset), (col+1), xlen, ylen);
-			if(llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen);
-			llr[row][col][i] = (pow((-1),bit[row-offset][col][i])*llr[row-offset][col+1][i]) + llr[row][col+1][i];
-		} else {
-			if(llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen);
-			if(llrU[row+offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row+offset), (col+1), xlen, ylen);
-			computeLLR(llr, row, col, i, offset);
-		}
-	}
-	llrU[row][col]=1;
 
-	//	printf("LLR (a %f, b %f): llr[%d][%d] %f\n",32*a,32*b,col,row,32*llr[col][row]);
-}
-
-void updateBit(uint8_t ***bit,
-			   uint8_t **bitU,
-			   uint8_t listSize,
-			   uint16_t row,
-			   uint16_t col,
-			   uint16_t xlen,
-			   uint8_t ylen)
+static inline void updateBit(uint8_t listSize,
+			     uint16_t row,
+			     uint16_t col,
+			     uint16_t xlen,
+			     uint8_t ylen,
+			     int zlen,
+			     uint8_t bit[xlen][ylen][zlen],
+			     uint8_t bitU[xlen][ylen])
 {
 	uint16_t offset = ( xlen/(pow(2,(ylen-col))) );
 
 	for (uint8_t i=0; i<listSize; i++) {
 		if (( (row) % (2*offset) ) >= offset ) {
-			if (bitU[row][col-1]==0) updateBit(bit, bitU, listSize, row, (col-1), xlen, ylen);
+		  if (bitU[row][col-1]==0) updateBit(listSize, row, (col-1), xlen, ylen, zlen, bit, bitU);
 			bit[row][col][i] = bit[row][col-1][i];
 		} else {
-			if (bitU[row][col-1]==0) updateBit(bit, bitU, listSize, row, (col-1), xlen, ylen);
-			if (bitU[row+offset][col-1]==0) updateBit(bit, bitU, listSize, (row+offset), (col-1), xlen, ylen);
+		  if (bitU[row][col-1]==0) updateBit(listSize, row, (col-1), xlen, ylen, zlen, bit, bitU);
+		  if (bitU[row+offset][col-1]==0) updateBit(listSize, (row+offset), (col-1), xlen, ylen, zlen, bit, bitU);
 			bit[row][col][i] = ( (bit[row][col-1][i]+bit[row+offset][col-1][i]) % 2);
 		}
 	}
@@ -88,11 +62,60 @@ void updateBit(uint8_t ***bit,
 	bitU[row][col]=1;
 }
 
+static inline void computeLLR(uint16_t row,
+			      uint16_t col,
+			      uint8_t i,
+			      uint16_t offset,
+			      int xlen,
+			      int ylen,
+			      int zlen,
+			      double llr[xlen][ylen][zlen])
+{
+  double a = llr[row][col + 1][i];
+  double b = llr[row + offset][col + 1][i];
+  llr[row][col][i] = log((exp(a + b) + 1) / (exp(a) + exp(b))); //eq. (8a)
+}
+
+
+void updateLLR(uint8_t listSize,
+	       uint16_t row,
+	       uint16_t col,
+	        uint16_t xlen,
+	       uint8_t ylen,
+	       int zlen,
+	       double  llr[xlen][ylen][zlen],
+	       uint8_t llrU[xlen][ylen],
+	       uint8_t bit[xlen][ylen][zlen],
+	       uint8_t bitU[xlen][ylen]
+	       )
+{
+	uint16_t offset = (xlen/(pow(2,(ylen-col-1))));
+	for (uint8_t i=0; i<listSize; i++) {
+		if (( (row) % (2*offset) ) >= offset ) {
+		  if(bitU[row-offset][col]==0) updateBit(listSize, (row-offset), col, xlen, ylen, zlen, bit, bitU);
+		  if(llrU[row-offset][col+1]==0) updateLLR(listSize, (row-offset), (col+1), xlen, ylen, zlen, llr, llrU, bit, bitU );
+		  if(llrU[row][col+1]==0) updateLLR(listSize, row, (col+1), xlen, ylen, zlen, llr, llrU, bit, bitU);
+			llr[row][col][i] = (pow((-1),bit[row-offset][col][i])*llr[row-offset][col+1][i]) + llr[row][col+1][i];
+		} else {
+		  if(llrU[row][col+1]==0) updateLLR(listSize, row, (col+1), xlen, ylen, zlen, llr, llrU, bit, bitU );
+		  if(llrU[row+offset][col+1]==0) updateLLR(listSize, (row+offset), (col+1), xlen, ylen, zlen, llr, llrU, bit, bitU );
+		  computeLLR(row, col, i, offset, xlen, ylen, zlen, llr);
+		}
+	}
+	llrU[row][col]=1;
+
+	//	printf("LLR (a %f, b %f): llr[%d][%d] %f\n",32*a,32*b,col,row,32*llr[col][row]);
+}
+
 void updatePathMetric(double *pathMetric,
-		              double ***llr,
-					  uint8_t listSize,
-					  uint8_t bitValue,
-					  uint16_t row)
+		      uint8_t listSize,
+		      uint8_t bitValue,
+		      uint16_t row,
+		      int xlen,
+		      int ylen,
+		      int zlen,
+		      double llr[xlen][ylen][zlen]
+		      )
 {
 	int8_t multiplier = (2*bitValue) - 1;
 	for (uint8_t i=0; i<listSize; i++)
@@ -101,11 +124,14 @@ void updatePathMetric(double *pathMetric,
 }
 
 void updatePathMetric2(double *pathMetric,
-					   double ***llr,
-					   uint8_t listSize,
-					   uint16_t row)
+		       uint8_t listSize,
+		       uint16_t row,
+		       int xlen,
+		       int ylen,
+		       int zlen,
+		       double llr[xlen][ylen][zlen])
 {
-	double *tempPM = malloc(sizeof(double) * listSize);
+	double tempPM[listSize];
 	memcpy(tempPM, pathMetric, (sizeof(double) * listSize));
 
 	uint8_t bitValue = 0;
@@ -118,47 +144,7 @@ void updatePathMetric2(double *pathMetric,
 	for (uint8_t i = listSize; i < 2*listSize; i++)
 		pathMetric[i] = tempPM[(i-listSize)] + log(1 + exp(multiplier * llr[row][0][(i-listSize)])); //eq. (11b)
 
-	free(tempPM);
 }
-
-void computeLLR(double ***llr,
-				uint16_t row,
-				uint16_t col,
-				uint8_t i,
-				uint16_t offset)
-{
-	double a = llr[row][col + 1][i];
-	double b = llr[row + offset][col + 1][i];
-	llr[row][col][i] = log((exp(a + b) + 1) / (exp(a) + exp(b))); //eq. (8a)
-}
-
-void updateCrcChecksum(uint8_t **crcChecksum,
-					   uint8_t **crcGen,
-					   uint8_t listSize,
-					   uint32_t i2,
-					   uint8_t len)
-{
-	for (uint8_t i = 0; i < listSize; i++) {
-		for (uint8_t j = 0; j < len; j++) {
-			crcChecksum[j][i] = ( (crcChecksum[j][i] + crcGen[i2][j]) % 2 );
-		}
-	}
-}
-
-void updateCrcChecksum2(uint8_t **crcChecksum,
-						uint8_t **crcGen,
-						uint8_t listSize,
-						uint32_t i2,
-						uint8_t len)
-{
-	for (uint8_t i = 0; i < listSize; i++) {
-		for (uint8_t j = 0; j < len; j++) {
-			crcChecksum[j][i+listSize] = ( (crcChecksum[j][i] + crcGen[i2][j]) % 2 );
-		}
-	}
-}
-
-
 
 decoder_node_t *new_decoder_node(int first_leaf_index, int level) {
 
@@ -220,6 +206,23 @@ decoder_node_t *add_nodes(int level, int first_leaf_index, t_nrPolar_params *pol
 #endif
 
   return(new_node);
+}
+
+void delete_nodes(decoder_node_t * n) {
+  if (n) {
+    if(n->left)
+      delete_nodes(n->left);
+    if(n->right)
+      delete_nodes(n->right);
+    free(n->alpha);
+    free(n->beta);
+    free(n);
+  }
+}
+
+void delete_decoder_tree(t_nrPolar_params *polarParams) {
+  if (polarParams->tree.root)
+    delete_nodes(polarParams->tree.root);
 }
 
 void build_decoder_tree(t_nrPolar_params *polarParams)

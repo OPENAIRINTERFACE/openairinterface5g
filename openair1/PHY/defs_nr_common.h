@@ -387,8 +387,6 @@ struct NR_DL_FRAME_PARMS {
   uint8_t N_ssb;
   /// SSB index
   uint8_t ssb_index;
-  /// PBCH polar encoder params
-  t_nrPolar_params pbch_polar_params;
   /// OFDM symbol offset divisor for UL
   uint32_t ofdm_offset_divisor;
 };

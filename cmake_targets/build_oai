@@ -39,34 +39,24 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 XFORMS="True"
 SKIP_SHARED_LIB_FLAG="False"
-UE_EXPANSION="False"
 PRINT_STATS="False"
-VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER=""
-CPU_AFFINITY_FLAG_USER="False" #Only valid when low-latency flag is set to False
 REL="Rel15"
 HW="None"
 TP="Ethernet"
 EPC=0
 VERBOSE_CI=0
 VERBOSE_COMPILE=0
-CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
+BUILD_DIR=ran_build
 BUILD_DOXYGEN=0
 BUILD_COVERITY_SCAN=0
-T_TRACER="True"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
-UE_AUTOTEST_TRACE="False"
-UE_DEBUG_TRACE="False"
-UE_TIMING_TRACE="False"
-USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
-ITTI_SIM="False"
-SANITIZE_ADDRESS="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
 RU=0
 trap handle_ctrl_c INT
@@ -82,6 +72,8 @@ Options
    Erase all files made by previous compilations, installations
 --clean-kernel
    Erase previously installed features in kernel: iptables, drivers, ...
+-d | --build-dir
+   Sets build directory (will be <oai-root>/cmake_targets/<build-dir>/build)
 -I | --install-external-packages
    Installs required packages such as LibXML, asn1.1 compiler, freediameter, ...
    This option will require root password
@@ -201,6 +193,9 @@ function main() {
             clean_kernel
             echo_info "Erased iptables config and removed modules from kernel"
             shift;;
+       -d | --build-dir)
+            BUILD_DIR=$2
+            shift;;
        -I | --install-external-packages)
             INSTALL_EXTERNAL=1
             echo_info "Will install external packages"
@@ -275,7 +270,7 @@ function main() {
             echo_info "Will compile NR UE"
             shift;;
        --mu)
-            UE_EXPANSION="True"
+            CMAKE_CMD="$CMAKE_CMD -DUE_EXPANSION=True -DPRE_SCD_THREAD=True"
             echo_info "Will compile with UE_EXPANSION"
             shift;;
        --UE-conf-nvram)
@@ -299,7 +294,9 @@ function main() {
                 *)
                     echo_fatal "Unknown HW type $HW: exit..."
             esac
-			echo_info "Setting hardware to: $HW"
+            echo_info "Setting hardware to: $HW"
+            #CMAKE_CMD="$CMAKE_CMD -DRF_BOARD=\"${HW}\""
+            CMAKE_CMD="$CMAKE_CMD -DRF_BOARD=${HW}"
             shift 2;;
        -t | --transport)
 	    TP=$2
@@ -323,7 +320,7 @@ function main() {
             shift 2;;
        -V | --vcd)
             echo_info "Setting gtk-wave output"
-            VCD_TIMING=1
+            CMAKE_CMD="$CMAKE_CMD -DENABLE_VCD_FIFO=True"
             EXE_ARGUMENTS="$EXE_ARGUMENTS -V"
             shift;;
        -x | --xforms)
@@ -348,8 +345,8 @@ function main() {
             echo_info "Will compile with verbose instructions"
             shift;;
        --cflags_processor)
-            CFLAGS_PROCESSOR_USER=$2
-            echo_info "Setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
+            CMAKE_CMD="$CMAKE_CMD -DCFLAGS_PROCESSOR_USER=\"$2\""
+            echo_info "Setting CPU FLAGS from USER to: $2"
             shift 2;;
        --build-doxygen)
 	        BUILD_DOXYGEN=1
@@ -361,22 +358,26 @@ function main() {
             shift;;
        --disable-deadline)
             DEADLINE_SCHEDULER_FLAG_USER="False"
+            CMAKE_CMD="$CMAKE_CMD -DDEADLINE_SCHEDULER=False"
             echo_info "Disabling the usage of deadline scheduler"
             shift 1;;
        --enable-deadline)
             DEADLINE_SCHEDULER_FLAG_USER="True"
+            CMAKE_CMD="$CMAKE_CMD -DDEADLINE_SCHEDULER=True"
             echo_info "Enabling the usage of deadline scheduler"
             shift 1;;
        --enable-cpu-affinity)
             CPU_AFFINITY_FLAG_USER="True"
+            CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=True"
             echo_info "Enabling CPU Affinity (only valid when not using deadline scheduler)"
             shift 1;;
        --disable-cpu-affinity)
             CPU_AFFINITY_FLAG_USER="False"
+            CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=False"
             echo_info "Disabling CPU Affinity (only valid when not using deadline scheduler)"
             shift 1;;
        --disable-T-Tracer)
-            T_TRACER="False"
+            CMAKE_CMD="$CMAKE_CMD -DT_TRACER=False"
             echo_info "Disabling the T tracer"
             shift 1;;
        --disable-hardware-dependency)
@@ -384,15 +385,15 @@ function main() {
             DISABLE_HARDWARE_DEPENDENCY="True"
             shift 1;;
        --ue-autotest-trace)
-            UE_AUTOTEST_TRACE="True"
+            CMAKE_CMD="$CMAKE_CMD -DUE_AUTOTEST_TRACE=True"
             echo_info "Enabling autotest specific trace for UE"
             shift 1;;
        --ue-trace)
-            UE_DEBUG_TRACE="True"
+            CMAKE_CMD="$CMAKE_CMD -DUE_DEBUG_TRACE=False"
             echo_info "Enabling UE trace for debug"
             shift 1;;
        --ue-timing)
-            UE_TIMING_TRACE="True"
+            CMAKE_CMD="$CMAKE_CMD -DUE_TIMING_TRACE=True"
             echo_info "Enabling UE timing trace"
             shift 1;;
        --uhd-images-dir)
@@ -423,24 +424,20 @@ function main() {
               fi
             fi
             shift 2;;		
-        --usrp-recplay)
-            USRP_REC_PLAY="True"
-            echo_info "Enabling USRP record playback mode"
-            shift 1;;
         -k | --skip-shared-libraries)
             SKIP_SHARED_LIB_FLAG="True"
             echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
             shift;;
-    --ninja)
-        CMAKE_CMD="$CMAKE_CMD -GNinja"
-	MAKE_CMD=ninja
-	shift;;
-    --sanitize-address | -fsanitize=address)
-        SANITIZE_ADDRESS=True
-        shift;;
-      --ittiSIM)
+        --ninja)
+            CMAKE_CMD="$CMAKE_CMD -GNinja"
+            MAKE_CMD=ninja
+            shift;;
+        --sanitize-address | -fsanitize=address)
+            CMAKE_CMD="$CMAKE_CMD -DSANITIZE_ADDRESS=True"
+            shift;;
+        --ittiSIM)
             ittiSIM=1
-            ITTI_SIM="True"
+            CMAKE_CMD="$CMAKE_CMD -DITTI_SIM=True"
             echo_info "Will compile itti simulator"
             shift;;
         -h | --help)
@@ -465,9 +462,6 @@ function main() {
           echo_fatal "Did NOT find cov-build in PATH!"
       fi
   fi
-
-  CMAKE_CMD="$CMAKE_CMD .."
-  echo_info "CMAKE_CMD=$CMAKE_CMD"
 
   ########################################################
   # Check validity of HW and TP parameters for eNB / gNB #
@@ -508,6 +502,7 @@ function main() {
   #Disable CPU Affinity for deadline scheduler
   if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
      CPU_AFFINITY_FLAG_USER="False"
+     CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=False"
   fi
 
   echo_info "Flags for Deadline scheduler: $DEADLINE_SCHEDULER_FLAG_USER"
@@ -585,46 +580,13 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
-  if [ "$T_TRACER" =  "False" ] ; then
-      build_dir=ran_build_noLOG
-  else
-      build_dir=ran_build  
-  fi
 
-  [ "$CLEAN" = "1" ] && rm -rf $DIR/$build_dir/build
-  mkdir -p $DIR/$build_dir/build
+  [ "$CLEAN" = "1" ] && rm -rf $DIR/$BUILD_DIR/build
+  mkdir -p $DIR/$BUILD_DIR/build
 
-# configuration module libraries, one currently available, using libconfig 
-  config_libconfig_shlib=params_libconfig
-  
-  # first generate the CMakefile in the right directory
-  # softmodem compilation
-  
-  cmake_file=$DIR/$build_dir/CMakeLists.txt
-  echo "cmake_minimum_required(VERSION 2.8)"                             >  $cmake_file
-  echo "project (OpenAirInterface)"                                    >> $cmake_file
-  echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
-  echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )"       >> $cmake_file
-  echo "set ( UE_EXPANSION $UE_EXPANSION )"                             >> $cmake_file
-  #    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"                            >> $cmake_file
-  echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"                           >> $cmake_file
-  echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"                            >> $cmake_file
-  echo "set ( RF_BOARD \"${HW}\")"                                      >> $cmake_file
-  echo "set ( TRANSP_PRO \"${TP}\")"                                    >> $cmake_file
-  echo "set ( PACKAGE_NAME \"${exec}\")"                                >> $cmake_file
-  echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )" >> $cmake_file
-  echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"             >> $cmake_file
-  echo "set ( T_TRACER $T_TRACER )"                                     >> $cmake_file
-  echo "set ( UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE )"                   >> $cmake_file
-  echo "set ( UE_DEBUG_TRACE $UE_DEBUG_TRACE )"                         >> $cmake_file
-  echo "set ( UE_TIMING_TRACE $UE_TIMING_TRACE )"                       >> $cmake_file
-  echo "set ( USRP_REC_PLAY $USRP_REC_PLAY )"                           >> $cmake_file
-  echo "set ( SKIP_SHARED_LIB_FLAG $SKIP_SHARED_LIB_FLAG )"             >> $cmake_file
-  echo "set ( ITTI_SIM $ITTI_SIM )"                                     >> $cmake_file
-  echo "set ( SANITIZE_ADDRESS $SANITIZE_ADDRESS )"                     >> $cmake_file
-  echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file
-  cd  $DIR/$build_dir/build
-  eval $CMAKE_CMD
+  cd  $DIR/$BUILD_DIR/build
+  echo_info "running $CMAKE_CMD"
+  eval $CMAKE_CMD ../..
 
   execlist=""
   if [ "$eNB" = "1" ] ; then
@@ -653,7 +615,7 @@ function main() {
   for f in $execlist ; do
       echo_info "Compiling $f..."
       compilations \
-          $build_dir $f \
+          $BUILD_DIR $f \
           $f $dbin/$f.$REL
   done
   
@@ -662,13 +624,16 @@ function main() {
   
   if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
       echo_info "Building shared libraries common to UE and gNB"
+
+      # configuration module libraries, one currently available, using libconfig
+      config_libconfig_shlib=params_libconfig
       
       compilations \
-          $build_dir $config_libconfig_shlib \
+          $BUILD_DIR $config_libconfig_shlib \
           lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
       
       compilations \
-          $build_dir coding \
+          $BUILD_DIR coding \
           libcoding.so $dbin/libcoding.so
       
   fi
@@ -681,7 +646,7 @@ function main() {
     then
       echo_info "Building ue_ip module"
       compilations \
-        $build_dir ue_ip \
+        $BUILD_DIR ue_ip \
         CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
     else
       echo_info "Bypassing ue_ip build"
@@ -698,7 +663,7 @@ function main() {
     mkdir -p $DIR/nas_sim_tools/build
     cd $DIR/nas_sim_tools/build
 
-    eval $CMAKE_CMD
+    eval $CMAKE_CMD ..
     compilations \
       nas_sim_tools usim \
       usim $dbin/usim
@@ -712,16 +677,16 @@ function main() {
     # generate USIM data
     if [ -f $dbin/conf2uedata ]; then
       install_nas_tools $conf_nvram_path $gen_nvram_path "$dlog/conf2uedata.txt"
-      echo_info "Copying UE specific part to $DIR/$build_dir/build"
-      cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$build_dir/build
-      cp -Rvf $dbin/.ue.nvram0 $DIR/$build_dir/build
-      cp -Rvf $dbin/.usim.nvram0 $DIR/$build_dir/build
+      echo_info "Copying UE specific part to $DIR/$BUILD_DIR/build"
+      cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$BUILD_DIR/build
+      cp -Rvf $dbin/.ue.nvram0 $DIR/$BUILD_DIR/build
+      cp -Rvf $dbin/.usim.nvram0 $DIR/$BUILD_DIR/build
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
   fi
 
-  cd  $DIR/$build_dir/build
+  cd  $DIR/$BUILD_DIR/build
   
   ##################
   # PHY simulators #
@@ -739,9 +704,6 @@ function main() {
     compilations \
       ran_build coding \
       libcoding.so $dbin/libcoding.so
-#    compilations \
-#	   lte-simulators $config_libconfig_shlib \
-#	   lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
   fi
 
   ###################
@@ -763,14 +725,14 @@ function main() {
   if [ "$HW" = "EXMIMO" ] ; then
     echo_info "Compiling Express MIMO 2 board drivers"
     compilations \
-      $build_dir openair_rf \
+      $BUILD_DIR openair_rf \
       CMakeFiles/openair_rf/openair_rf.ko $dbin/openair_rf.ko
     compilations \
-	  $build_dir updatefw \
+	  $BUILD_DIR updatefw \
 	  updatefw $dbin/updatefw
     echo_info "Compiling oarf tools. The logfile for compilation is here: $dlog/oarf.txt"
-    make -C $OPENAIR_DIR/cmake_targets/$build_dir/build oarf > $dlog/oarf.txt 2>&1
-    cp $OPENAIR_DIR/cmake_targets/$build_dir/build/*.oct $dbin
+    make -C $OPENAIR_DIR/cmake_targets/$BUILD_DIR/build oarf > $dlog/oarf.txt 2>&1
+    cp $OPENAIR_DIR/cmake_targets/$BUILD_DIR/build/*.oct $dbin
     if [ -s $dbin/oarf_config_exmimo.oct ] ; then
 	  echo_success "oarf tools compiled"
     else
@@ -785,7 +747,7 @@ function main() {
   if [ ! -z "$BUILD_OPTLIB" ] ; then 
      for oklib in $BUILD_OPTLIB ; do
          compilations \
-             $build_dir $oklib \
+             $BUILD_DIR $oklib \
              lib${oklib}.so $dbin/lib${oklib}.so
      done
   fi
@@ -859,7 +821,7 @@ function main() {
           # link liboai_device.so with the selected RF device library
           if [ "$HW" == "EXMIMO" ] ; then
               compilations \
-                  $build_dir oai_exmimodevif \
+                  $BUILD_DIR oai_exmimodevif \
                   liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
 
               ln -sf liboai_exmimodevif.so liboai_device.so
@@ -867,7 +829,7 @@ function main() {
               echo_info "liboai_device.so is linked to EXMIMO device library"
           elif [ "$HW" == "OAI_USRP" ] ; then
               compilations \
-                  $build_dir oai_usrpdevif \
+                  $BUILD_DIR oai_usrpdevif \
                   liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
 
               ln -sf liboai_usrpdevif.so liboai_device.so
@@ -876,7 +838,7 @@ function main() {
           elif [ "$HW" == "OAI_BLADERF" ] ; then
               if [ -f "/usr/include/libbladeRF.h" ] ; then
                   compilations \
-                      $build_dir oai_bladerfdevif \
+                      $BUILD_DIR oai_bladerfdevif \
                       liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
               fi
 
@@ -886,7 +848,7 @@ function main() {
           elif [ "$HW" == "OAI_LMSSDR" ] ; then
 #              if [ -f "/usr/include/libbladeRF.h" ] ; then
                   compilations \
-                      $build_dir oai_lmssdrdevif \
+                      $BUILD_DIR oai_lmssdrdevif \
                       liboai_lmssdrdevif.so $dbin/liboai_lmssdrdevif.so.$REL
 #              fi
 
@@ -895,7 +857,7 @@ function main() {
               echo_info "liboai_device.so is linked to LMSSDR device library"	 
           elif [ "$HW" == "OAI_IRIS" ] ; then
               compilations \
-                  $build_dir oai_irisdevif \
+                  $BUILD_DIR oai_irisdevif \
                   liboai_irisdevif.so $dbin/liboai_irisdevif.so.$REL
 
               ln -s liboai_irisdevif.so liboai_device.so
@@ -915,7 +877,7 @@ function main() {
               echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library for Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
           elif [ "$HW" == "OAI_AW2SORI" ] ; then
 	      compilations \
-		  $build_dir aw2sori_transpro \
+		  $BUILD_DIR aw2sori_transpro \
                   libaw2sori_transpro.so $dbin/libaw2sori_transpro.so.$REL 
 
               ln -sf libaw2sori_transpro.so libthirdparty_transpro.so
@@ -930,12 +892,12 @@ function main() {
       if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
           echo_info "Compiling rfsimulator"
           compilations \
-              $build_dir rfsimulator \
+              $BUILD_DIR rfsimulator \
               librfsimulator.so $dbin/librfsimulator.so.$REL
 
           echo_info "Compiling tcp_bridge_oai"
           compilations \
-              $build_dir tcp_bridge_oai \
+              $BUILD_DIR tcp_bridge_oai \
               libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
       fi
 
@@ -946,7 +908,7 @@ function main() {
           rm -f $dbin/liboai_transpro.so
 	  if [ "$TP" == "Ethernet" ]; then
               compilations \
-		  $build_dir oai_eth_transpro \
+		  $BUILD_DIR oai_eth_transpro \
 		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
               ln -sf liboai_eth_transpro.so liboai_transpro.so
               ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
@@ -954,7 +916,7 @@ function main() {
 	  fi
 	  if [ "$TP" == "benetel4g" ]; then
               compilations \
-		  $build_dir benetel_4g \
+		  $BUILD_DIR benetel_4g \
 		  libbenetel_4g.so $dbin/libbenetel_4g.$REL
               ln -sf libbenetel_4g.so liboai_transpro.so
               ln -sf $dbin/libbenetel_4g.so.$REL $dbin/liboai_transpro.so
@@ -962,7 +924,7 @@ function main() {
 	  fi
 	  if [ "$TP" == "benetel5g" ]; then
               compilations \
-		  $build_dir benetel_5g \
+		  $BUILD_DIR benetel_5g \
 		  libbenetel_5g.so $dbin/libbenetel_5g.$REL
               ln -sf libbenetel_5g.so liboai_transpro.so
               ln -sf $dbin/libbenetel_5g.so.$REL $dbin/liboai_transpro.so
@@ -983,7 +945,7 @@ function main() {
     [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/doxygen/build
     mkdir -p $OPENAIR_DIR/cmake_targets/doxygen/build
     cd $OPENAIR_DIR/cmake_targets/doxygen/build
-    eval $CMAKE_CMD
+    eval $CMAKE_CMD ..
     make doc
     ) >& $doxygen_log
   fi
