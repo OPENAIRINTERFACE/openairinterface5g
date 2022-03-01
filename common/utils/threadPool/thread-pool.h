@@ -175,6 +175,8 @@ static inline  notifiedFIFO_elt_t *pollNotifiedFIFO(notifiedFIFO_t *nf) {
 static inline time_stats_t exec_time_stats_NotifiedFIFO(const notifiedFIFO_elt_t* elt)
 {
   time_stats_t ts = {0};
+  if (elt->startProcessingTime == 0 && elt->endProcessingTime == 0)
+    return ts; /* no measurements done */
   ts.in = elt->startProcessingTime;
   ts.diff = elt->endProcessingTime - ts.in;
   ts.p_time = ts.diff;
