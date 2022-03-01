@@ -593,6 +593,7 @@ void init_pdcp(void) {
   
   if (!get_softmodem_params()->nsa) {
     if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+      pdcp_layer_init();
       nr_pdcp_module_init(pdcp_initmask, 0);
     }
   } else {

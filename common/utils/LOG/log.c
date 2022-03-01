@@ -411,6 +411,16 @@ int register_log_component(char *name,
   return computed_compidx;
 }
 
+static void unregister_all_log_components(void)
+{
+  log_component_t* lc = &g_log->log_component[0];
+  while (lc->name) {
+    free((char *)lc->name); // defined as const, but assigned through strdup()
+    free(lc->filelog_name);
+    lc++;
+  }
+}
+
 int isLogInitDone (void)
 {
   if (g_log == NULL)
@@ -500,6 +510,12 @@ int logInit (void)
   g_log->flag =  g_log->flag | FLAG_INITIALIZED;
   printf("log init done\n");
   return 0;
+}
+
+void logTerm(void)
+{
+  unregister_all_log_components();
+  free_and_zero(g_log);
 }
 
 #include <sys/syscall.h>
