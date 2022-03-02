@@ -335,8 +335,10 @@ void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 uint8_t get_nr_prach_duration(uint8_t prach_format);
 
-void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
+void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
+                        int32_t **dataF,
                         int16_t amp,
+                        uint32_t **gold_csi_rs,
                         nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
                         uint16_t cell_id,
                         int slot);
