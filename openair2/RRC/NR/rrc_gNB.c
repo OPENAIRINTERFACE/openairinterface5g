@@ -98,6 +98,7 @@
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair2/X2AP/x2ap_eNB.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include <openair2/RRC/NR/nr_rrc_proto.h>
 
 #include "BIT_STRING.h"
 #include "assertions.h"
