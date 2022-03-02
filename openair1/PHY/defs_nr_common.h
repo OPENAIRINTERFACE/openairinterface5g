@@ -268,6 +268,7 @@ typedef struct {
   uint32_t ***nr_gold_csi_rs;
   uint16_t sc_list_length;
   uint16_t sc_list[6 * NR_MAX_NB_RB];
+  int32_t **csi_rs_received_signal;
 } nr_csi_rs_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;

@@ -27,37 +27,52 @@
 //#define NR_CSIRS_DEBUG
 
 
+void nr_init_csi_rs(NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Nid) {
+  uint32_t x1, x2;
+  uint8_t reset;
+  for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
+    for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
+      reset = 1;
+      x2 = ((1<<10) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
+      for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
+        csi_rs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }
+    }
+  }
+}
+
 void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
                         int32_t **dataF,
                         int16_t amp,
                         nr_csi_rs_info_t *nr_csi_rs_info,
-                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
+                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
                         uint16_t cell_id,
                         int slot){
 
 #ifdef NR_CSIRS_DEBUG
-  LOG_I(NR_PHY, "csi_params.bwp_size = %i\n", csi_params.bwp_size);
-  LOG_I(NR_PHY, "csi_params.bwp_start = %i\n", csi_params.bwp_start);
-  LOG_I(NR_PHY, "csi_params.subcarrier_spacing = %i\n", csi_params.subcarrier_spacing);
-  LOG_I(NR_PHY, "csi_params.cyclic_prefix = %i\n", csi_params.cyclic_prefix);
-  LOG_I(NR_PHY, "csi_params.start_rb = %i\n", csi_params.start_rb);
-  LOG_I(NR_PHY, "csi_params.nr_of_rbs = %i\n", csi_params.nr_of_rbs);
-  LOG_I(NR_PHY, "csi_params.csi_type = %i (0:TRS, 1:CSI-RS NZP, 2:CSI-RS ZP)\n", csi_params.csi_type);
-  LOG_I(NR_PHY, "csi_params.row = %i\n", csi_params.row);
-  LOG_I(NR_PHY, "csi_params.freq_domain = %i\n", csi_params.freq_domain);
-  LOG_I(NR_PHY, "csi_params.symb_l0 = %i\n", csi_params.symb_l0);
-  LOG_I(NR_PHY, "csi_params.symb_l1 = %i\n", csi_params.symb_l1);
-  LOG_I(NR_PHY, "csi_params.cdm_type = %i\n", csi_params.cdm_type);
-  LOG_I(NR_PHY, "csi_params.freq_density = %i (0: dot5 (even RB), 1: dot5 (odd RB), 2: one, 3: three)\n", csi_params.freq_density);
-  LOG_I(NR_PHY, "csi_params.scramb_id = %i\n", csi_params.scramb_id);
-  LOG_I(NR_PHY, "csi_params.power_control_offset = %i\n", csi_params.power_control_offset);
-  LOG_I(NR_PHY, "csi_params.power_control_offset_ss = %i\n", csi_params.power_control_offset_ss);
+  LOG_I(NR_PHY, "csi_params->bwp_size = %i\n", csi_params->bwp_size);
+  LOG_I(NR_PHY, "csi_params->bwp_start = %i\n", csi_params->bwp_start);
+  LOG_I(NR_PHY, "csi_params->subcarrier_spacing = %i\n", csi_params->subcarrier_spacing);
+  LOG_I(NR_PHY, "csi_params->cyclic_prefix = %i\n", csi_params->cyclic_prefix);
+  LOG_I(NR_PHY, "csi_params->start_rb = %i\n", csi_params->start_rb);
+  LOG_I(NR_PHY, "csi_params->nr_of_rbs = %i\n", csi_params->nr_of_rbs);
+  LOG_I(NR_PHY, "csi_params->csi_type = %i (0:TRS, 1:CSI-RS NZP, 2:CSI-RS ZP)\n", csi_params->csi_type);
+  LOG_I(NR_PHY, "csi_params->row = %i\n", csi_params->row);
+  LOG_I(NR_PHY, "csi_params->freq_domain = %i\n", csi_params->freq_domain);
+  LOG_I(NR_PHY, "csi_params->symb_l0 = %i\n", csi_params->symb_l0);
+  LOG_I(NR_PHY, "csi_params->symb_l1 = %i\n", csi_params->symb_l1);
+  LOG_I(NR_PHY, "csi_params->cdm_type = %i\n", csi_params->cdm_type);
+  LOG_I(NR_PHY, "csi_params->freq_density = %i (0: dot5 (even RB), 1: dot5 (odd RB), 2: one, 3: three)\n", csi_params->freq_density);
+  LOG_I(NR_PHY, "csi_params->scramb_id = %i\n", csi_params->scramb_id);
+  LOG_I(NR_PHY, "csi_params->power_control_offset = %i\n", csi_params->power_control_offset);
+  LOG_I(NR_PHY, "csi_params->power_control_offset_ss = %i\n", csi_params->power_control_offset_ss);
 #endif
 
   int dataF_offset = slot*frame_parms.samples_per_slot_wCP;
   uint32_t **nr_gold_csi_rs = nr_csi_rs_info->nr_gold_csi_rs[slot];
   int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1] __attribute__((aligned(16)));;
-  uint16_t b = csi_params.freq_domain;
+  uint16_t b = csi_params->freq_domain;
   uint16_t n, csi_bw, csi_start, p, k, l, mprime, na, kpn, csi_length;
   uint8_t size, ports, kprime, lprime, i, gs;
   uint8_t j[16], k_n[6], koverline[16], loverline[16];
@@ -71,10 +86,10 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 
   // pre-computed for scrambling id equel to cell id
   // if the scrambling id is not the cell id we need to re-initialize the rs
-  if (csi_params.scramb_id != cell_id) {
+  if (csi_params->scramb_id != cell_id) {
     uint8_t reset;
     uint32_t x1, x2;
-    uint32_t Nid = csi_params.scramb_id;
+    uint32_t Nid = csi_params->scramb_id;
     for (uint8_t symb=0; symb<frame_parms.symbols_per_slot; symb++) {
       reset = 1;
       x2 = ((1<<10) * (frame_parms.symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
@@ -85,7 +100,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
   }
 
-  switch (csi_params.row) {
+  switch (csi_params->row) {
   // implementation of table 7.4.1.5.3-1 of 38.211
   // lprime and kprime are the max value of l' and k'
   case 1:
@@ -103,7 +118,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = 0;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[0] + (i<<2);
     }
     break;
@@ -123,7 +138,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = 0;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[0];
     }
     break;
@@ -143,7 +158,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = 0;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[0];
     }
     break;
@@ -163,7 +178,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[0] + (i<<1);
     }
     break;
@@ -183,7 +198,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0 + i;
+      loverline[i] = csi_params->symb_l0 + i;
       koverline[i] = k_n[0];
     }
     break;
@@ -202,7 +217,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[i];
     }
     break;
@@ -221,7 +236,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0 + (i>>1);
+      loverline[i] = csi_params->symb_l0 + (i>>1);
       koverline[i] = k_n[i%2];
     }
     break;
@@ -240,7 +255,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[i];
     }
     break;
@@ -259,7 +274,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[i];
     }
     break;
@@ -278,7 +293,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[i];
     }
     break;
@@ -297,7 +312,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0 + (i>>2);
+      loverline[i] = csi_params->symb_l0 + (i>>2);
       koverline[i] = k_n[i%4];
     }
     break;
@@ -316,7 +331,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[i];
     }
     break;
@@ -336,9 +351,9 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     for (i=0; i<size; i++) {
       j[i] = i;
       if (i<6)
-        loverline[i] = csi_params.symb_l0 + i/3;
+        loverline[i] = csi_params->symb_l0 + i/3;
       else
-        loverline[i] = csi_params.symb_l1 + i/9;
+        loverline[i] = csi_params->symb_l1 + i/9;
       koverline[i] = k_n[i%3];
     }
     break;
@@ -358,9 +373,9 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     for (i=0; i<size; i++) {
       j[i] = i;
       if (i<3)
-        loverline[i] = csi_params.symb_l0;
+        loverline[i] = csi_params->symb_l0;
       else
-        loverline[i] = csi_params.symb_l1;
+        loverline[i] = csi_params->symb_l1;
       koverline[i] = k_n[i%3];
     }
     break;
@@ -379,7 +394,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[i];
     }
     break;
@@ -399,9 +414,9 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     for (i=0; i<size; i++) {
       j[i] = i;
       if (i<8)
-        loverline[i] = csi_params.symb_l0 + (i>>2);
+        loverline[i] = csi_params->symb_l0 + (i>>2);
       else
-        loverline[i] = csi_params.symb_l1 + (i/12);
+        loverline[i] = csi_params->symb_l1 + (i/12);
       koverline[i] = k_n[i%4];
     }
     break;
@@ -421,9 +436,9 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     for (i=0; i<size; i++) {
       j[i] = i;
       if (i<4)
-        loverline[i] = csi_params.symb_l0;
+        loverline[i] = csi_params->symb_l0;
       else
-        loverline[i] = csi_params.symb_l1;
+        loverline[i] = csi_params->symb_l1;
       koverline[i] = k_n[i%4];
     }
     break;
@@ -442,17 +457,17 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
     for (i=0; i<size; i++) {
       j[i] = i;
-      loverline[i] = csi_params.symb_l0;
+      loverline[i] = csi_params->symb_l0;
       koverline[i] = k_n[i];
     }
     break;
 
   default:
-    AssertFatal(0==1, "Row %d is not valid for CSI Table 7.4.1.5.3-1\n", csi_params.row);
+    AssertFatal(0==1, "Row %d is not valid for CSI Table 7.4.1.5.3-1\n", csi_params->row);
   }
 
 #ifdef NR_CSIRS_DEBUG
-  printf(" row %d, n. of ports %d\n k' ",csi_params.row,ports);
+  printf(" row %d, n. of ports %d\n k' ",csi_params->row,ports);
   for (kp=0; kp<=kprime; kp++)
     printf("%d, ",kp);
   printf("l' ");
@@ -469,7 +484,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 
 
   // setting the frequency density from its index
-  switch (csi_params.freq_density) {
+  switch (csi_params->freq_density) {
   
   case 0:
     rho = 0.5;
@@ -501,7 +516,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 #endif
 
   // CDM group size from CDM type index
-  switch (csi_params.cdm_type) {
+  switch (csi_params->cdm_type) {
   
   case 0:
     gs = 1;
@@ -524,17 +539,17 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
   }
 
   // according to 38.214 5.2.2.3.1 last paragraph
-  if (csi_params.start_rb<csi_params.bwp_start)
-    csi_start = csi_params.bwp_start;
+  if (csi_params->start_rb<csi_params->bwp_start)
+    csi_start = csi_params->bwp_start;
   else 
-    csi_start = csi_params.start_rb;
-  if (csi_params.nr_of_rbs > (csi_params.bwp_start+csi_params.bwp_size-csi_start))
-    csi_bw = csi_params.bwp_start+csi_params.bwp_size-csi_start;
+    csi_start = csi_params->start_rb;
+  if (csi_params->nr_of_rbs > (csi_params->bwp_start+csi_params->bwp_size-csi_start))
+    csi_bw = csi_params->bwp_start+csi_params->bwp_size-csi_start;
   else
-    csi_bw = csi_params.nr_of_rbs;
+    csi_bw = csi_params->nr_of_rbs;
 
   if (rho < 1) {
-    if (csi_params.freq_density == 0)
+    if (csi_params->freq_density == 0)
       csi_length = (((csi_bw + csi_start)>>1)<<kprime)<<1;
     else
       csi_length = ((((csi_bw + csi_start)>>1)<<kprime)+1)<<1;
@@ -548,14 +563,14 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 
 
   // TRS
-  if (csi_params.csi_type == 0) {
+  if (csi_params->csi_type == 0) {
     // ???
   }
 
   // NZP CSI RS
-  if (csi_params.csi_type == 1) {
+  if (csi_params->csi_type == 1) {
     // assuming amp is the amplitude of SSB channels
-    switch (csi_params.power_control_offset_ss) {
+    switch (csi_params->power_control_offset_ss) {
     case 0:
       beta = (amp*ONE_OVER_SQRT2_Q15)>>15;
       break;
@@ -573,14 +588,14 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
 
     for (lp=0; lp<=lprime; lp++){
-      symb = csi_params.symb_l0;
+      symb = csi_params->symb_l0;
       nr_modulation(nr_gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
-      if ((csi_params.row == 5) || (csi_params.row == 7) || (csi_params.row == 11) || (csi_params.row == 13) || (csi_params.row == 16))
+      if ((csi_params->row == 5) || (csi_params->row == 7) || (csi_params->row == 11) || (csi_params->row == 13) || (csi_params->row == 16))
         nr_modulation(nr_gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
-      if ((csi_params.row == 14) || (csi_params.row == 13) || (csi_params.row == 16) || (csi_params.row == 17)) {
-        symb = csi_params.symb_l1;
+      if ((csi_params->row == 14) || (csi_params->row == 13) || (csi_params->row == 16) || (csi_params->row == 17)) {
+        symb = csi_params->symb_l1;
         nr_modulation(nr_gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
-        if ((csi_params.row == 13) || (csi_params.row == 16))
+        if ((csi_params->row == 13) || (csi_params->row == 16))
           nr_modulation(nr_gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
       }
     }
@@ -590,7 +605,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 
   // resource mapping according to 38.211 7.4.1.5.3
   for (n=csi_start; n<(csi_start+csi_bw); n++) {
-   if ( (csi_params.freq_density > 1) || (csi_params.freq_density == (n%2))) {  // for freq density 0.5 checks if even or odd RB
+   if ( (csi_params->freq_density > 1) || (csi_params->freq_density == (n%2))) {  // for freq density 0.5 checks if even or odd RB
     for (int ji=0; ji<size; ji++) { // loop over CDM groups
       for (int s=0 ; s<gs; s++)  { // loop over each CDM group size
         p = s+j[ji]*gs; // port index
@@ -620,7 +635,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
                 wt = -1;
             }
             // ZP CSI RS
-            if (csi_params.csi_type == 2) {
+            if (csi_params->csi_type == 2) {
               ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*dataF_offset)] = 0;
               ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)] = 0;
             }

@@ -353,6 +353,22 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     csirs_vars[gNB_id]->active = false;
     srs_vars[gNB_id]->active = false;
 
+    ue->nr_csi_rs_info = (nr_csi_rs_info_t *)malloc16_clear(sizeof(nr_csi_rs_info_t));
+    ue->nr_csi_rs_info->nr_gold_csi_rs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+    AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs!=NULL, "NR init: csi reference signal malloc failed\n");
+    for (int slot=0; slot<fp->slots_per_frame; slot++) {
+      ue->nr_csi_rs_info->nr_gold_csi_rs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+      AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs[slot]!=NULL, "NR init: csi reference signal for slot %d - malloc failed\n", slot);
+      for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+        ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb] = (uint32_t *)malloc16(NR_MAX_CSI_RS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
+      }
+    }
+    ue->nr_csi_rs_info->csi_rs_received_signal = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+    for (i=0; i<fp->nb_antennas_rx; i++) {
+      ue->nr_csi_rs_info->csi_rs_received_signal[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
+    }
+
     ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
     ue->nr_srs_info->srs_generated_signal = (int32_t *) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
     ue->nr_srs_info->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));

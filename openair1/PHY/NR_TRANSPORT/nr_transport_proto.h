@@ -339,7 +339,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
                         int32_t **dataF,
                         int16_t amp,
                         nr_csi_rs_info_t *nr_csi_rs_info,
-                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
+                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
                         uint16_t cell_id,
                         int slot);
 

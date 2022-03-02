@@ -36,6 +36,7 @@
 #include "nr_transport_proto_ue.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/nr/nr_common.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 
 
 //#define NR_CSIRS_DEBUG
@@ -70,6 +71,14 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   LOG_I(NR_PHY, "csirs_config_pdu->power_control_offset = %i\n", csirs_config_pdu->power_control_offset);
   LOG_I(NR_PHY, "csirs_config_pdu->power_control_offset_ss = %i\n", csirs_config_pdu->power_control_offset_ss);
 #endif
+
+  nr_generate_csi_rs(ue->frame_parms,
+                     ue->nr_csi_rs_info->csi_rs_received_signal,
+                     AMP,
+                     ue->nr_csi_rs_info,
+                     (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *) csirs_config_pdu,
+                     ue->frame_parms.first_carrier_offset,
+                     proc->nr_slot_rx);
 
   return 0;
 }

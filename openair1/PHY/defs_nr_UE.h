@@ -986,6 +986,9 @@ typedef struct {
   /// SRS variables
   nr_srs_info_t *nr_srs_info;
 
+  /// CSI-RS variables
+  nr_csi_rs_info_t *nr_csi_rs_info;
+
   //#if defined(UPGRADE_RAT_NR)
 #if 1
   SystemInformationBlockType1_nr_t systemInformationBlockType1_nr;
