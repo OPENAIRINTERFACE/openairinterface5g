@@ -109,7 +109,9 @@ typedef enum {
   RFSIMULATOR,
   MAX_RF_DEV_TYPE
 } dev_type_t;
-#define DEVTYPE_NAMES {"","EXMIMO","USRP B200","USRP X300","USRP N300","BLADERF","LMSSDR","IRIS","No HW","ADRV9371_ZC706","UEDv2", "RFSIMULATOR"} 
+/* list of names of devices, needs to match dev_type_t */
+extern const char* devtype_names[MAX_RF_DEV_TYPE];
+
 /*!\brief transport protocol types
  */
 typedef enum {
@@ -537,7 +539,7 @@ extern "C"
 
 
 /*! \brief get device name from device type */
-char *get_devname(int devtype);
+const char *get_devname(int devtype);
 /*! \brief Initialize openair RF target. It returns 0 if OK */
 int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg);
 /*! \brief Initialize transport protocol . It returns 0 if OK */
