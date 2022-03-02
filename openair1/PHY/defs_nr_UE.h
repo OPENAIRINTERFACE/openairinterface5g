@@ -226,11 +226,6 @@ typedef struct {
 } NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
-  /// TX buffers for multiple layers
-  int32_t **txdataF_layers;
-  } NR_UE_PUSCH;
-
-typedef struct {
   bool active[2];
   fapi_nr_ul_config_pucch_pdu pucch_pdu[2];
   } NR_UE_PUCCH;
@@ -819,7 +814,6 @@ typedef struct {
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_SRS       *srs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
-  NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PUCCH     *pucch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_LAYERS>4 ? 2:1]; // two RxTx Threads
   NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];

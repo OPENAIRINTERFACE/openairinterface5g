@@ -102,7 +102,10 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr, uint16_t N_RB_DL) {
         for (int r=0; r<a_segments; r++) {
           free16(dlsch->harq_processes[i]->c[r],1056);
           dlsch->harq_processes[i]->c[r] = NULL;
+          nrLDPC_free_mem(dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
         }
+        free16(dlsch->harq_processes[i]->c,a_segments);
+        free16(dlsch->harq_processes[i]->p_nrLDPC_procBuf,a_segments);
 
         free16(dlsch->harq_processes[i],sizeof(NR_DL_UE_HARQ_t));
         dlsch->harq_processes[i] = NULL;

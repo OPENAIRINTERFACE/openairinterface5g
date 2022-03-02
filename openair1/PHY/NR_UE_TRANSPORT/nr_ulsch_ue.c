@@ -114,7 +114,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
 
   uint32_t available_bits;
-  int16_t **tx_layers;
   int32_t **txdataF;
   int8_t Wf[2], Wt[2];
   int l_prime[2], delta;
@@ -123,7 +122,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int sample_offsetF, N_RE_prime;
 
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
-  NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
 
   int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   uint16_t number_dmrs_symbols = 0;
@@ -253,7 +251,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////ULSCH layer mapping/////////////////////////
   ///////////
 
-  tx_layers = (int16_t **)pusch_ue->txdataF_layers;
+  int16_t **tx_layers = (int16_t **)malloc16_clear(Nl*sizeof(int16_t *));
+  for (int nl=0; nl<Nl; nl++)
+    tx_layers[nl] = (int16_t *)malloc16_clear((available_bits<<1)/mod_order*sizeof(int16_t));
 
   nr_ue_layer_mapping((int16_t *)d_mod,
                       Nl,
@@ -336,6 +336,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   else
     memcpy(y, tx_layers[0], (available_bits/mod_order)*sizeof(int32_t));
   
+  for (int nl = 0; nl < Nl; nl++)
+    free_and_zero(tx_layers[nl]);
+  free_and_zero(tx_layers);
 
   /////////////////////////ULSCH RE mapping/////////////////////////
   ///////////

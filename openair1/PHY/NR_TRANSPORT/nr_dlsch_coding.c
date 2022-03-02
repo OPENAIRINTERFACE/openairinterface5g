@@ -73,6 +73,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
     free(harq->c[r]);
     harq->c[r] = NULL;
   }
+  free(harq->c);
   free(harq->pdu);
 
   for (int aa = 0; aa < 64; aa++)
@@ -82,6 +83,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
   int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
   for (int q=0; q<nb_codewords; q++)
     free(dlsch->mod_symbs[q]);
+  free(dlsch->mod_symbs);
 
   for (int layer = 0; layer < max_layers; layer++) {
     free(dlsch->txdataF[layer]);
@@ -89,6 +91,8 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
       free(dlsch->ue_spec_bf_weights[layer][aa]);
     free(dlsch->ue_spec_bf_weights[layer]);
   }
+  free(dlsch->txdataF);
+  free(dlsch->ue_spec_bf_weights);
 
   free(dlsch);
   *dlschptr = NULL;

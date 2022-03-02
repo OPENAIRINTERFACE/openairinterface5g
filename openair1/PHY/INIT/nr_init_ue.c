@@ -155,23 +155,6 @@ void phy_term_nr_ue__PDSCH(NR_UE_PDSCH* pdsch, const NR_DL_FRAME_PARMS *const fp
   free_and_zero(pdsch->dl_ch_ptrs_estimates_ext);
 }
 
-void phy_init_nr_ue_PUSCH(NR_UE_PUSCH *const pusch,
-                          const NR_DL_FRAME_PARMS *const fp) {
-  AssertFatal( pusch, "pusch==0" );
-  int max_pusch_length = fp->N_RB_UL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*fp->nb_antennas_tx;
-  pusch->txdataF_layers = (int32_t **)malloc16_clear(fp->nb_antennas_tx*sizeof(int32_t *));
-  for (int i=0; i<fp->nb_antennas_tx; i++) {
-    pusch->txdataF_layers[i] = (int32_t *)malloc16_clear(max_pusch_length*sizeof(int32_t));
-  }
-}
-
-void phy_term_nr_ue_PUSCH(NR_UE_PUSCH *pusch,
-                          const NR_DL_FRAME_PARMS* fp)
-{
-  for (int i = 0; i < fp->nb_antennas_tx; i++)
-    free_and_zero(pusch->txdataF_layers[i]);
-}
-
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 {
   // create shortcuts
@@ -214,15 +197,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   }
   // init NR modulation lookup tables
   nr_generate_modulation_table();
-
-  /////////////////////////PUSCH init/////////////////////////
-  ///////////
-  for (th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-    for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
-      ue->pusch_vars[th_id][gNB_id] = (NR_UE_PUSCH *)malloc16(sizeof(NR_UE_PUSCH));
-      phy_init_nr_ue_PUSCH( ue->pusch_vars[th_id][gNB_id], fp );
-    }
-  }
 
   /////////////////////////PUCCH init/////////////////////////
   ///////////
@@ -514,8 +488,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
     for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
-      phy_term_nr_ue_PUSCH(ue->pusch_vars[th_id][gNB_id],fp);
-      free_and_zero(ue->pusch_vars[th_id][gNB_id]);
       free_and_zero(ue->pucch_vars[th_id][gNB_id]);
     }
   }
@@ -640,6 +612,7 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       free_and_zero(ue->nr_srs_info->srs_estimated_channel_time[i]);
       free_and_zero(ue->nr_srs_info->srs_estimated_channel_time_shifted[i]);
     }
+    free_and_zero(ue->nr_srs_info->sc_list);
     free_and_zero(ue->nr_srs_info->srs_generated_signal);
     free_and_zero(ue->nr_srs_info->noise_power);
     free_and_zero(ue->nr_srs_info->srs_received_signal);

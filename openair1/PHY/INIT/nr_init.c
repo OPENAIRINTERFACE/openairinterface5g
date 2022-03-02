@@ -364,6 +364,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i]);
     }
+    free_and_zero(gNB->nr_srs_info[id]->sc_list);
     free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal);
     free_and_zero(gNB->nr_srs_info[id]->noise_power);
     free_and_zero(gNB->nr_srs_info[id]->srs_received_signal);
@@ -572,9 +573,10 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
   msg->num_pdsch_slot = 0;
 
+  int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int i=0; i<gNB->number_of_nr_dlsch_max; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,gNB->number_of_nr_dlsch_max);
-    for (int j=0; j<2; j++) {
+    for (int j=0; j<num_cw; j++) {
       msg->dlsch[i][j] = new_gNB_dlsch(fp,1,16,NSOFT,0,grid_size);
       AssertFatal(msg->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
     }
@@ -586,8 +588,9 @@ void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg)
   const NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   const nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   const uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
+  int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int i=0; i<gNB->number_of_nr_dlsch_max; i++)
-    for (int j=0; j<2; j++)
+    for (int j=0; j<num_cw; j++)
       free_gNB_dlsch(&msg->dlsch[i][j], grid_size, fp);
 }
 
