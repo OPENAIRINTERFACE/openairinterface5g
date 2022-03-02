@@ -784,6 +784,9 @@ typedef struct PHY_VARS_gNB_s {
   /// SRS variables
   nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
 
+  /// CSI-RS variables
+  nr_csi_rs_info_t *nr_csi_rs_info[NUMBER_OF_NR_CSIRS_MAX];
+
   uint8_t pbch_configured;
   char gNB_generate_rar;
 
@@ -807,9 +810,6 @@ typedef struct PHY_VARS_gNB_s {
 
   // Mask of occupied RBs, per symbol and PRB
   uint32_t rb_mask_ul[14][9];
-
-  /// CSI  RS sequence
-  uint32_t ***nr_gold_csi_rs;
 
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_NR_SR_MAX];

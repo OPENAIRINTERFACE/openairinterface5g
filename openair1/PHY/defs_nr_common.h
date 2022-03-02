@@ -264,6 +264,12 @@ typedef struct {
   uint32_t *noise_power;
 } nr_srs_info_t;
 
+typedef struct {
+  uint32_t ***nr_gold_csi_rs;
+  uint16_t sc_list_length;
+  uint16_t sc_list[6 * NR_MAX_NB_RB];
+} nr_csi_rs_info_t;
+
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
 typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);

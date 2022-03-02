@@ -177,22 +177,21 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"Initializing PUSCH DMRS Gold sequence with (%x,%x)\n",Nid_pusch[0],Nid_pusch[1]);
   nr_gold_pusch(gNB, &Nid_pusch[0]);
 
-  //CSI RS init
-  gNB->nr_gold_csi_rs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
-  uint32_t ***csi_rs = gNB->nr_gold_csi_rs;
-  AssertFatal(csi_rs!=NULL, "NR init: csi reference signal malloc failed\n");
-
-  for (int slot=0; slot<fp->slots_per_frame; slot++) {
-    csi_rs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
-    AssertFatal(csi_rs[slot]!=NULL, "NR init: csi reference signal for slot %d - malloc failed\n", slot);
-
-    for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      csi_rs[slot][symb] = (uint32_t *)malloc16(NR_MAX_CSI_RS_INIT_LENGTH_DWORD*sizeof(uint32_t));
-      AssertFatal(csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
+  // CSI RS init
+  for (int id=0; id<NUMBER_OF_NR_CSIRS_MAX; id++) {
+    gNB->nr_csi_rs_info[id] = (nr_csi_rs_info_t *)malloc16_clear(sizeof(nr_csi_rs_info_t));
+    gNB->nr_csi_rs_info[id]->nr_gold_csi_rs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+    AssertFatal(gNB->nr_csi_rs_info[id]->nr_gold_csi_rs!=NULL, "NR init: csi reference signal malloc failed\n");
+    for (int slot=0; slot<fp->slots_per_frame; slot++) {
+      gNB->nr_csi_rs_info[id]->nr_gold_csi_rs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+      AssertFatal(gNB->nr_csi_rs_info[id]->nr_gold_csi_rs[slot]!=NULL, "NR init: csi reference signal for slot %d - malloc failed\n", slot);
+      for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+        gNB->nr_csi_rs_info[id]->nr_gold_csi_rs[slot][symb] = (uint32_t *)malloc16(NR_MAX_CSI_RS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        AssertFatal(gNB->nr_csi_rs_info[id]->nr_gold_csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
+      }
     }
+    nr_init_csi_rs(&gNB->frame_parms, gNB->nr_csi_rs_info[id]->nr_gold_csi_rs, cfg->cell_config.phy_cell_id.value);
   }
-
-  nr_init_csi_rs(gNB, cfg->cell_config.phy_cell_id.value);
 
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
@@ -335,13 +334,16 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   }
   free_and_zero(pusch_dmrs);
 
-  uint32_t ***csi_rs = gNB->nr_gold_csi_rs;
-  for (int slot = 0; slot < fp->slots_per_frame; slot++) {
-    for (int symb = 0; symb < fp->symbols_per_slot; symb++)
-      free_and_zero(csi_rs[slot][symb]);
-    free_and_zero(csi_rs[slot]);
+  for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
+    uint32_t ***csi_rs = gNB->nr_csi_rs_info[id]->nr_gold_csi_rs;
+    for (int slot = 0; slot < fp->slots_per_frame; slot++) {
+      for (int symb = 0; symb < fp->symbols_per_slot; symb++)
+        free_and_zero(csi_rs[slot][symb]);
+      free_and_zero(csi_rs[slot]);
+    }
+    free_and_zero(csi_rs);
+    free_and_zero(gNB->nr_csi_rs_info[id]);
   }
-  free_and_zero(csi_rs);
 
   for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
     for (int i = 0; i < Prx; i++){

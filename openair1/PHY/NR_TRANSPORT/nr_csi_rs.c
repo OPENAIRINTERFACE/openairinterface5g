@@ -30,7 +30,7 @@
 void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
                         int32_t **dataF,
                         int16_t amp,
-                        uint32_t **gold_csi_rs,
+                        nr_csi_rs_info_t *nr_csi_rs_info,
                         nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
                         uint16_t cell_id,
                         int slot){
@@ -55,6 +55,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 #endif
 
   int dataF_offset = slot*frame_parms.samples_per_slot_wCP;
+  uint32_t **nr_gold_csi_rs = nr_csi_rs_info->nr_gold_csi_rs[slot];
   int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1] __attribute__((aligned(16)));;
   uint16_t b = csi_params.freq_domain;
   uint16_t n, csi_bw, csi_start, p, k, l, mprime, na, kpn, csi_length;
@@ -78,7 +79,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
       reset = 1;
       x2 = ((1<<10) * (frame_parms.symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
       for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
-        gold_csi_rs[symb][n] = lte_gold_generic(&x1, &x2, reset);
+        nr_gold_csi_rs[symb][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
     }
@@ -573,14 +574,14 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 
     for (lp=0; lp<=lprime; lp++){
       symb = csi_params.symb_l0;
-      nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
+      nr_modulation(nr_gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
       if ((csi_params.row == 5) || (csi_params.row == 7) || (csi_params.row == 11) || (csi_params.row == 13) || (csi_params.row == 16))
-        nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
+        nr_modulation(nr_gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
       if ((csi_params.row == 14) || (csi_params.row == 13) || (csi_params.row == 16) || (csi_params.row == 17)) {
         symb = csi_params.symb_l1;
-        nr_modulation(gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
+        nr_modulation(nr_gold_csi_rs[symb+lp], csi_length, DMRS_MOD_ORDER, mod_csi[symb+lp]);
         if ((csi_params.row == 13) || (csi_params.row == 16))
-          nr_modulation(gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
+          nr_modulation(nr_gold_csi_rs[symb+1], csi_length, DMRS_MOD_ORDER, mod_csi[symb+1]);
       }
     }
   }
