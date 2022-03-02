@@ -1136,8 +1136,8 @@ class RANManagement():
 				self.datalog_rt_stats=datalog_rt_stats
 				#check if there is a fail => will render the test as failed
 				for k in datalog_rt_stats['Data']:
-					if float(datalog_rt_stats['Data'][k][2])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
-						logging.debug('\u001B[1;30;43m datalog_rt_stats metric ' + k + '=' + datalog_rt_stats['Data'][k][2] + ' > threshold ' + str(datalog_rt_stats['Threshold'][k]) + ' \u001B[0m')
+					if float(datalog_rt_stats['Data'][k][3])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
+						logging.debug('\u001B[1;30;43m datalog_rt_stats metric ' + k + '=' + datalog_rt_stats['Data'][k][3] + ' > threshold ' + str(datalog_rt_stats['Threshold'][k]) + ' \u001B[0m')
 						RealTimeProcessingIssue = True
 			else:
 				statMsg = 'No real time stats found in the log file\n'
