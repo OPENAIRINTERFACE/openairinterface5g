@@ -785,9 +785,9 @@ int main(int argc, char **argv)
   prepare_scd(scd);
 
   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts;
-  pdsch_AntennaPorts.N1 = n_tx;
+  pdsch_AntennaPorts.N1 = n_tx>1 ? n_tx>>1 : 1;
   pdsch_AntennaPorts.N2 = 1;
-  pdsch_AntennaPorts.XP = 1;
+  pdsch_AntennaPorts.XP = n_tx>1 ? 2 : 1;
   gNB->ap_N1 = pdsch_AntennaPorts.N1;
   gNB->ap_N2 = pdsch_AntennaPorts.N2;
   gNB->ap_XP = pdsch_AntennaPorts.XP;
@@ -819,7 +819,6 @@ int main(int argc, char **argv)
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   phy_init_nr_gNB(gNB,0,1);
-  init_codebook_gNB(gNB);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = &RC.nrmac[0]->UE_info;
   UE_info->num_UEs=1;

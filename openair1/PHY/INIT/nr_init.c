@@ -144,8 +144,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
       //Table 5.2.2.2.1-5:
       //Codebook for 1-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
-      int pmiq_size = N1*O1*N2*O2*4+1;
-      mat[0] = (int32_t **)malloc16(pmiq_size*sizeof(int32_t *));
+      gNB->pmiq_size[0] = N1*O1*N2*O2*4+1;
+      mat[0] = (int32_t **)malloc16(gNB->pmiq_size[0]*sizeof(int32_t *));
 
       //pmi=0 corresponds to unit matrix
       mat[0][0] = (int32_t *)calloc(2*N1*N2,sizeof(int32_t));
@@ -202,19 +202,19 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
       //Compute the code book size for generating 2 layers out of Tx antenna ports
 
       //pmi_size is computed as follows
-      pmiq_size = 1;//1 for unity matrix
+      gNB->pmiq_size[1] = 1;//1 for unity matrix
       for(int llb=0; llb<N1*O1; llb++) { //i_1_1
         for (int mmb=0; mmb<N2*O2; mmb++) { //i_1_2
           for(int ll=0; ll<N1*O1; ll++) { //i_1_1
             for (int mm=0; mm<N2*O2; mm++) { //i_1_2
               for (int nn=0; nn<2; nn++) {
-                if((llb != ll) || (mmb != mm) || ((N1 == 1) && (N2 == 1))) pmiq_size += 1;
+                if((llb != ll) || (mmb != mm) || ((N1 == 1) && (N2 == 1))) gNB->pmiq_size[1] += 1;
               }
             }
           }
         }
       }
-      mat[1] = (int32_t **)malloc16(pmiq_size*sizeof(int32_t *));
+      mat[1] = (int32_t **)malloc16(gNB->pmiq_size[1]*sizeof(int32_t *));
 
       //pmi=0 corresponds to unit matrix
       mat[1][0] = (int32_t *)calloc((2*N1*N2)*(2),sizeof(int32_t));
@@ -287,19 +287,19 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
       if(max_mimo_layers>=3) {
 
         //pmi_size is computed as follows
-        pmiq_size = 1;//unity matrix
+        gNB->pmiq_size[2] = 1;//unity matrix
         for(int llb=0; llb<N1*O1; llb++) { //i_1_1
           for (int mmb=0; mmb<N2*O2; mmb++) { //i_1_2
             for(int ll=0; ll<N1*O1; ll++) { //i_1_1
               for (int mm=0; mm<N2*O2; mm++) { //i_1_2
                 for (int nn=0; nn<2; nn++) {
-                  if((llb != ll) || (mmb != mm)) pmiq_size += 1;
+                  if((llb != ll) || (mmb != mm)) gNB->pmiq_size[2] += 1;
                 }
               }
             }
           }
         }
-        mat[2] = (int32_t **)malloc16(pmiq_size*sizeof(int32_t *));
+        mat[2] = (int32_t **)malloc16(gNB->pmiq_size[2]*sizeof(int32_t *));
         //pmi=0 corresponds to unit matrix
         mat[2][0] = (int32_t *)calloc((2*N1*N2)*(3),sizeof(int32_t));
         for(int j_col=0; j_col<3; j_col++) { //3 layers
@@ -376,20 +376,20 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
       //Codebook for 4-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
       if(max_mimo_layers>=4) {
         //pmi_size is computed as follows
-        pmiq_size = 1;//unity matrix
+        gNB->pmiq_size[3] = 1;//unity matrix
         for(int llb=0; llb<N1*O1; llb++) { //i_1_1
           for (int mmb=0; mmb<N2*O2; mmb++) { //i_1_2
             for(int ll=0; ll<N1*O1; ll++) { //i_1_1
               for (int mm=0; mm<N2*O2; mm++) { //i_1_2
                 for (int nn=0; nn<2; nn++) {
-                  if((llb != ll) || (mmb != mm)) pmiq_size += 1;
+                  if((llb != ll) || (mmb != mm)) gNB->pmiq_size[3] += 1;
                 }
               }
             }
           }
         }
 
-        mat[3] = (int32_t **)malloc16(pmiq_size*sizeof(int32_t *));
+        mat[3] = (int32_t **)malloc16(gNB->pmiq_size[3]*sizeof(int32_t *));
         //pmi=0 corresponds to unit matrix
         mat[3][0] = (int32_t *)calloc((2*N1*N2)*(4),sizeof(int32_t));
         for(int j_col=0; j_col<4; j_col++) { //4 layers
@@ -509,6 +509,9 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   init_scrambling_luts();
   init_pucch2_luts();
   load_nrLDPClib(NULL);
+
+  init_codebook_gNB(gNB);
+
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
   //PDCCH DMRS init
@@ -705,6 +708,15 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   const int Prx = gNB->gNB_config.carrier_config.num_rx_ant.value;
   const int max_ul_mimo_layers = 4; // taken from phy_init_nr_gNB()
   const int n_buf = Prx * max_ul_mimo_layers;
+
+  int max_dl_mimo_layers =(fp->nb_antennas_tx<NR_MAX_NB_LAYERS) ? fp->nb_antennas_tx : NR_MAX_NB_LAYERS;
+  for (int nl = 0; nl < max_dl_mimo_layers; nl++) {
+    for(int size = 0; size < gNB->pmiq_size[nl]; size++) {
+      free_and_zero(gNB->nr_mimo_precoding_matrix[nl][size]);
+    }
+    free_and_zero(gNB->nr_mimo_precoding_matrix[nl]);
+  }
+  free_and_zero(gNB->nr_mimo_precoding_matrix);
 
   uint32_t ***pdcch_dmrs = gNB->nr_gold_pdcch_dmrs;
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {

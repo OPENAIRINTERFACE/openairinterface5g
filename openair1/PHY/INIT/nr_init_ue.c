@@ -59,7 +59,6 @@ void phy_init_nr_ue_PDSCH(NR_UE_PDSCH *const pdsch,
                            const NR_DL_FRAME_PARMS *const fp) {
   AssertFatal( pdsch, "pdsch==0" );
 
-  //pdsch->layer_llr[0] = (int16_t *)malloc16_clear( (8*(3*8*6144))*sizeof(int16_t) );
   pdsch->llr128 = (int16_t **)malloc16_clear( sizeof(int16_t *) );
   // FIXME! no further allocation for (int16_t*)pdsch->llr128 !!! expect SIGSEGV
   // FK, 11-3-2015: this is only as a temporary pointer, no memory is stored there
@@ -130,8 +129,10 @@ void phy_term_nr_ue__PDSCH(NR_UE_PDSCH* pdsch, const NR_DL_FRAME_PARMS *const fp
     free_and_zero(pdsch->rho[i]);
   }
   free_and_zero(pdsch->pmi_ext);
-  free_and_zero(pdsch->llr[0]);
-  free_and_zero(pdsch->layer_llr[0]);
+  for (int i=0; i<NR_MAX_NB_CODEWORDS; i++)
+    free_and_zero(pdsch->llr[i]);
+  for (int i=0; i<NR_MAX_NB_LAYERS; i++)
+    free_and_zero(pdsch->layer_llr[i]);
   free_and_zero(pdsch->llr128);
   free_and_zero(pdsch->rxdataF_ext);
   free_and_zero(pdsch->rxdataF_uespec_pilots);
@@ -426,13 +427,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     pbch_vars[gNB_id]->decoded_output = (uint8_t *)malloc16_clear(64);
   }
 
-  // initialization for the last instance of pdsch_vars (used for MU-MIMO)
-  for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-    ue->pdsch_vars[th_id][gNB_id] = malloc16_clear(sizeof(NR_UE_PDSCH));
-    ue->pdsch_vars[th_id][gNB_id]->llr[1] = malloc16_clear((8*(3*8*8448))*sizeof(int16_t));
-    ue->pdsch_vars[th_id][gNB_id]->layer_llr[1] = malloc16_clear((8*(3*8*8448))*sizeof(int16_t));
-  }
-
   ue->sinr_CQI_dB = (double *) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
   ue->init_averaging = 1;
 
@@ -517,8 +511,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
 
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr_shifts);
-      free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr[1]);
-      free_and_zero(ue->pdsch_vars[th_id][gNB_id]->layer_llr[1]);
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr128_2ndstream);
       phy_term_nr_ue__PDSCH(ue->pdsch_vars[th_id][gNB_id], fp);
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]);
@@ -592,13 +584,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     free_and_zero(ue->prach_vars[gNB_id]->prachF);
     free_and_zero(ue->prach_vars[gNB_id]->prach);
     free_and_zero(ue->prach_vars[gNB_id]);
-  }
-
-  const int gNB_id = ue->n_connected_gNB;
-  for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-    free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr[1]);
-    free_and_zero(ue->pdsch_vars[th_id][gNB_id]->layer_llr[1]);
-    free_and_zero(ue->pdsch_vars[th_id][gNB_id]);
   }
 
   free_and_zero(ue->sinr_CQI_dB);
