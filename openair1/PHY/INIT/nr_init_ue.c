@@ -378,7 +378,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       ue->pdcch_vars[th_id][gNB_id]->wbar                = (int16_t *)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
       ue->pdcch_vars[th_id][gNB_id]->e_rx                = (int16_t *)malloc16_clear( 4*2*100*12 );
       ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp        = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-      ue->pdcch_vars[th_id][gNB_id]->dl_ch_rho_ext       = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
       ue->pdcch_vars[th_id][gNB_id]->rho                 = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
       ue->pdcch_vars[th_id][gNB_id]->rxdataF_ext         = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
       ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates_ext = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
@@ -396,7 +395,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
           //  size_t num = 7*2*fp->N_RB_DL*12;
           size_t num = 4*273*12;  // 4 symbols, 100 PRBs, 12 REs per PRB
           ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp[idx]        = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
-          ue->pdcch_vars[th_id][gNB_id]->dl_ch_rho_ext[idx]       = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
           ue->pdcch_vars[th_id][gNB_id]->rxdataF_ext[idx]         = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
           ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates_ext[idx] = (int32_t *)malloc16_clear(sizeof(int32_t) * num);
         }
@@ -517,37 +515,11 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
     // PDSCH
     for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-      for (int k = 0; k < 8; k++) { //harq_pid
-        for (int l = 0; l < 8; l++) { //round
-          for (int i = 0; i < fp->nb_antennas_rx; i++) {
-            for (int j = 0; j < 4; j++) { //frame_parms->nb_antennas_tx; j++)
-              const int idx = j * fp->nb_antennas_rx + i;
-              free_and_zero(ue->pdsch_vars[th_id][gNB_id]->dl_ch_rho_ext[k][l][idx]);
-              free_and_zero(ue->pdsch_vars[th_id][gNB_id]->rxdataF_comp1[k][l][idx]);
-              free_and_zero(ue->pdsch_vars[th_id][gNB_id]->dl_ch_mag1[k][l][idx]);
-              free_and_zero(ue->pdsch_vars[th_id][gNB_id]->dl_ch_magb1[k][l][idx]);
-            }
-          }
 
-          free_and_zero(ue->pdsch_vars[th_id][gNB_id]->rxdataF_comp1[k][l]);
-          free_and_zero(ue->pdsch_vars[th_id][gNB_id]->dl_ch_rho_ext[k][l]);
-          free_and_zero(ue->pdsch_vars[th_id][gNB_id]->dl_ch_mag1[k][l]);
-          free_and_zero(ue->pdsch_vars[th_id][gNB_id]->dl_ch_magb1[k][l]);
-        }
-      }
-
-      for (int i = 0; i < fp->nb_antennas_rx; i++) {
-        for (int j = 0; j < 4; j++) {
-          const int idx = (j*fp->nb_antennas_rx)+i;
-          free_and_zero(ue->pdsch_vars[th_id][gNB_id]->dl_ch_rho2_ext[idx]);
-        }
-      }
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr_shifts);
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr[1]);
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]->layer_llr[1]);
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr128_2ndstream);
-      free_and_zero(ue->pdsch_vars[th_id][gNB_id]->dl_ch_rho2_ext);
-
       phy_term_nr_ue__PDSCH(ue->pdsch_vars[th_id][gNB_id], fp);
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]);
     }
@@ -559,7 +531,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
           free_and_zero(ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates[idx]);
           free_and_zero(ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates_time[idx]);
           free_and_zero(ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp[idx]);
-          free_and_zero(ue->pdcch_vars[th_id][gNB_id]->dl_ch_rho_ext[idx]);
           free_and_zero(ue->pdcch_vars[th_id][gNB_id]->rxdataF_ext[idx]);
           free_and_zero(ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates_ext[idx]);
         }
@@ -570,7 +541,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->wbar);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->e_rx);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp);
-      free_and_zero(ue->pdcch_vars[th_id][gNB_id]->dl_ch_rho_ext);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->rho);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->rxdataF_ext);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->dl_ch_estimates_ext);
