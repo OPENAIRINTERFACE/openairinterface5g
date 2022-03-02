@@ -98,7 +98,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
-    uint32_t scrambled_output[rel15->NrOfCodewords][encoded_length>>5];
+    uint32_t scrambled_output[rel15->NrOfCodewords][(encoded_length>>5)+1];
     int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
@@ -120,8 +120,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
-    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * rel15->nrOfLayers] __attribute__((aligned(32)));
-    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * rel15->nrOfLayers);
+    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * Qm * rel15->nrOfLayers] __attribute__((aligned(32)));
+    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * Qm * rel15->nrOfLayers);
     start_meas(dlsch_encoding_stats);
 
     if (nr_dlsch_encoding(gNB,
@@ -146,20 +146,18 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     }
     printf("\n");
 #endif
-    
-    
-    
+
     /// scrambling
     start_meas(dlsch_scrambling_stats);
-    for (int q=0; q<rel15->NrOfCodewords; q++)
-      memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
-    for (int q=0; q<rel15->NrOfCodewords; q++)
+    for (int q=0; q<rel15->NrOfCodewords; q++) {
+      memset((void*)scrambled_output[q], 0, ((encoded_length>>5)+1)*sizeof(uint32_t));
       nr_pdsch_codeword_scrambling(output,
                                    encoded_length,
                                    q,
                                    rel15->dataScramblingId,
                                    rel15->rnti,
                                    scrambled_output[q]);
+    }
     
     stop_meas(dlsch_scrambling_stats);
 #ifdef DEBUG_DLSCH

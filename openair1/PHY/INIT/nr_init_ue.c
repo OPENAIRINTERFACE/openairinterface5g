@@ -165,9 +165,10 @@ void phy_init_nr_ue_PUSCH(NR_UE_PUSCH *const pusch,
   }
 }
 
-void phy_term_nr_ue_PUSCH(NR_UE_PUSCH *pusch)
+void phy_term_nr_ue_PUSCH(NR_UE_PUSCH *pusch,
+                          const NR_DL_FRAME_PARMS* fp)
 {
-  for (int i = 0; i < NR_MAX_NB_LAYERS; i++)
+  for (int i = 0; i < fp->nb_antennas_tx; i++)
     free_and_zero(pusch->txdataF_layers[i]);
 }
 
@@ -513,7 +514,7 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
     for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
-      phy_term_nr_ue_PUSCH(ue->pusch_vars[th_id][gNB_id]);
+      phy_term_nr_ue_PUSCH(ue->pusch_vars[th_id][gNB_id],fp);
       free_and_zero(ue->pusch_vars[th_id][gNB_id]);
       free_and_zero(ue->pucch_vars[th_id][gNB_id]);
     }

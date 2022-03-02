@@ -83,7 +83,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
   for (int q=0; q<nb_codewords; q++)
     free(dlsch->mod_symbs[q]);
 
-  for (int layer = 0; layer < NR_MAX_NB_LAYERS; layer++) {
+  for (int layer = 0; layer < max_layers; layer++) {
     free(dlsch->txdataF[layer]);
     for (int aa = 0; aa < 64; aa++)
       free(dlsch->ue_spec_bf_weights[layer][aa]);
