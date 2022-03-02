@@ -55,7 +55,6 @@
 #include <string.h>
 #include <math.h>
 #include "common_lib.h"
-#include "msc.h"
 
 #include "defs_common.h"
 #include "impl_defs_top.h"

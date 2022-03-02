@@ -415,10 +415,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         fp->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig,
         fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset
        );
-  LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02"PRIu8"][]\n", eNB->Mod_id);
   LOG_I (PHY, "[eNB %" PRIu8 "] Initializing DL_FRAME_PARMS : N_RB_DL %" PRIu8 ", PHICH Resource %d, PHICH Duration %d\n",
          eNB->Mod_id, fp->N_RB_DL, fp->phich_config_common.phich_resource, fp->phich_config_common.phich_duration);
-  LOG_D (PHY, "[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02" PRIu8 "][]\n", eNB->Mod_id);
   crcTableInit();
   lte_gold (fp, eNB->lte_gold_table, fp->Nid_cell);
   generate_pcfich_reg_mapping (fp);

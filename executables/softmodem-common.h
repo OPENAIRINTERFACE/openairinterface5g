@@ -171,21 +171,17 @@ extern int usrp_tx_thread;
 #define CONFIG_HLP_NSA           "Enable NSA mode \n"
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
-#define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
-#define CONFIG_HLP_MSC           "Enable the MSC tracing utility \n"
 #define CONFIG_FLOG_OPT          "R"
 #define CONFIG_LOGL_OPT          "g"
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for LOG utility                                                              */
 /*   optname                        helpstr       paramflags        XXXptr                              defXXXval            type           numelt */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define START_MSC                softmodem_params.start_msc
 #define CMDLINE_LOGPARAMS_DESC {  \
     {CONFIG_FLOG_OPT ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,           defintval:1,         TYPE_INT,      0},     \
     {CONFIG_LOGL_OPT ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,                    defintval:0,         TYPE_UINT,     0},     \
 	{"telnetsrv",                CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,               defintval:0,         TYPE_UINT,     0},     \
-    {"msc",                      CONFIG_HLP_MSC,  PARAMFLAG_BOOL,   uptr:&START_MSC,                     defintval:0,         TYPE_UINT,     0},     \
 	{"log-mem",                  NULL,            0,                strptr:(char **)&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
 	{"telnetclt",                NULL,            0,                uptr:&start_telnetclt,               defstrval:NULL,      TYPE_UINT,     0},     \
   }
@@ -250,7 +246,6 @@ typedef struct {
   int            chain_offset;
   int            numerology;
   int            band;
-  unsigned int   start_msc;
   uint32_t       clock_source;
   uint32_t       timing_source;
   int            hw_timing_advance;

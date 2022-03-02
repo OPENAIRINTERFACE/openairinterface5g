@@ -43,7 +43,10 @@
 
 void polar_encoder(uint32_t *in,
                    uint32_t *out,
-                   const t_nrPolar_params *polarParams) {
+                   int8_t messageType,
+                   uint16_t messageLength,
+                   uint8_t aggregation_level) {
+  t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, false);
   if (1) {//polarParams->idx == 0 || polarParams->idx == 1) { //PBCH or PDCCH
     /*
     uint64_t B = (((uint64_t)*in)&((((uint64_t)1)<<32)-1)) | (((uint64_t)crc24c((uint8_t*)in,polarParams->payloadBits)>>8)<<polarParams->payloadBits);
@@ -57,10 +60,10 @@ void polar_encoder(uint32_t *in,
      */
     //Calculate CRC.
     nr_matrix_multiplication_uint8_1D_uint8_2D(polarParams->nr_polar_A,
-    										   polarParams->crc_generator_matrix,
-											   polarParams->nr_polar_crc,
-											   polarParams->payloadBits,
-											   polarParams->crcParityBits);
+                                               polarParams->crc_generator_matrix,
+                                               polarParams->nr_polar_crc,
+                                               polarParams->payloadBits,
+                                               polarParams->crcParityBits);
 
     for (uint8_t i = 0; i < polarParams->crcParityBits; i++)
       polarParams->nr_polar_crc[i] = (polarParams->nr_polar_crc[i] % 2);
@@ -150,12 +153,19 @@ void polar_encoder(uint32_t *in,
 
 #endif
   nr_byte2bit_uint8_32(polarParams->nr_polar_E, polarParams->encoderLength, out);
+
+  polarReturn;
+
 }
 
 void polar_encoder_dci(uint32_t *in,
                        uint32_t *out,
-                       const t_nrPolar_params *polarParams,
-                       uint16_t n_RNTI) {
+                       uint16_t n_RNTI,
+                       int8_t messageType,
+                       uint16_t messageLength,
+                       uint8_t aggregation_level) {
+  t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, false);
+
 #ifdef DEBUG_POLAR_ENCODER_DCI
   printf("[polar_encoder_dci] in: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n", in[0], in[1], in[2], in[3]);
 #endif
@@ -249,6 +259,7 @@ void polar_encoder_dci(uint32_t *in,
   printf("\n[polar_encoder_dci] out: ");
   for (int i = 0; i < outputInd; i++) printf("[%d]->0x%08x\t", i, out[i]);
 #endif
+  polarReturn;
 }
 
 static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void *in,void *out) __attribute__((always_inline));
@@ -334,7 +345,7 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
   AssertFatal(polarParams->N==512 || polarParams->N==256 || polarParams->N==128,"N = %d, not done yet\n",polarParams->N);
   // build G bit vectors for information bit positions and convert the bit as bytes tables in nr_polar_kronecker_power_matrices.c to 64 bit packed vectors.
   // keep only rows of G which correspond to information/crc bits
-  polarParams->G_N_tab = (uint64_t **)malloc((polarParams->K + polarParams->n_pc) * sizeof(int64_t *));
+  polarParams->G_N_tab = (uint64_t **)calloc((polarParams->K + polarParams->n_pc),sizeof(int64_t *));
   int k=0;
 
   for (int i=0; i<polarParams->N; i++) {
@@ -418,11 +429,14 @@ void polar_encoder_fast(uint64_t *A,
                         void *out,
                         int32_t crcmask,
                         uint8_t ones_flag,
-                        const t_nrPolar_params *polarParams) {
+                        int8_t messageType,
+                        uint16_t messageLength,
+                        uint8_t aggregation_level) {
+                        
+  t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, false);
   //  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->payloadBits < 65, "payload bits = %d > 64, is not supported yet\n",polarParams->payloadBits);
-  uint64_t B[4]= {0,0,0,0},Cprime[4]= {0,0,0,0};
   int bitlen = polarParams->payloadBits;
   // append crc
   AssertFatal(bitlen<129,"support for payloads <= 128 bits\n");
@@ -451,9 +465,12 @@ void polar_encoder_fast(uint64_t *A,
     A32_flip[1+offset]=((uint8_t *)&Aprime)[2];
     A32_flip[2+offset]=((uint8_t *)&Aprime)[1];
     A32_flip[3+offset]=((uint8_t *)&Aprime)[0];
-    if      (polarParams->crcParityBits == 24) tcrc = (uint64_t)(((crcmask^(crc24c(A32_flip,8*offset+bitlen)>>8)))&0xffffff);
-    else if (polarParams->crcParityBits == 11) tcrc = (uint64_t)(((crcmask^(crc11(A32_flip,bitlen)>>21)))&0x7ff);
-    else if (polarParams->crcParityBits == 6) tcrc = (uint64_t)(((crcmask^(crc6(A32_flip,bitlen)>>26)))&0x3f);
+    if      (polarParams->crcParityBits == 24)
+      tcrc = (uint64_t)(((crcmask^(crc24c(A32_flip,8*offset+bitlen)>>8)))&0xffffff);
+    else if (polarParams->crcParityBits == 11)
+      tcrc = (uint64_t)(((crcmask^(crc11(A32_flip,bitlen)>>21)))&0x7ff);
+    else if (polarParams->crcParityBits == 6)
+      tcrc = (uint64_t)(((crcmask^(crc6(A32_flip,bitlen)>>26)))&0x3f);
   } else if (bitlen<=64) {
     uint8_t A64_flip[8+offset];
     if (ones_flag) {
@@ -470,8 +487,10 @@ void polar_encoder_fast(uint64_t *A,
     A64_flip[5+offset]=((uint8_t *)&Aprime)[2];
     A64_flip[6+offset]=((uint8_t *)&Aprime)[1];
     A64_flip[7+offset]=((uint8_t *)&Aprime)[0];
-    if (polarParams->crcParityBits == 24)      tcrc = (uint64_t)((crcmask^(crc24c(A64_flip,8*offset+bitlen)>>8)))&0xffffff;
-    else if (polarParams->crcParityBits == 11) tcrc = (uint64_t)((crcmask^(crc11(A64_flip,bitlen)>>21)))&0x7ff;
+    if (polarParams->crcParityBits == 24)
+      tcrc = (uint64_t)((crcmask^(crc24c(A64_flip,8*offset+bitlen)>>8)))&0xffffff;
+    else if (polarParams->crcParityBits == 11)
+      tcrc = (uint64_t)((crcmask^(crc11(A64_flip,bitlen)>>21)))&0x7ff;
   }
   else if (bitlen<=128) {
     uint8_t A128_flip[16+offset];
@@ -481,38 +500,37 @@ void polar_encoder_fast(uint64_t *A,
       A128_flip[2] = 0xff;
     }
     uint128_t Aprime= (uint128_t)(((uint128_t)*A)<<(128-bitlen));
-    A128_flip[0+offset]=((uint8_t*)&Aprime)[15];	  A128_flip[1+offset]=((uint8_t*)&Aprime)[14];
-    A128_flip[2+offset]=((uint8_t*)&Aprime)[13];	  A128_flip[3+offset]=((uint8_t*)&Aprime)[12];
-    A128_flip[4+offset]=((uint8_t*)&Aprime)[11];	  A128_flip[5+offset]=((uint8_t*)&Aprime)[10];
-    A128_flip[6+offset] =((uint8_t*)&Aprime)[9];	  A128_flip[7+offset] =((uint8_t*)&Aprime)[8];
-    A128_flip[8+offset] =((uint8_t*)&Aprime)[7];	  A128_flip[9+offset] =((uint8_t*)&Aprime)[6];
-    A128_flip[10+offset]=((uint8_t*)&Aprime)[5];	  A128_flip[11+offset]=((uint8_t*)&Aprime)[4];
-    A128_flip[12+offset]=((uint8_t*)&Aprime)[3];	  A128_flip[13+offset]=((uint8_t*)&Aprime)[2];
-    A128_flip[14+offset]=((uint8_t*)&Aprime)[1];	  A128_flip[15+offset]=((uint8_t*)&Aprime)[0];
-    if (polarParams->crcParityBits == 24) tcrc = (uint64_t)((crcmask^(crc24c(A128_flip,8*offset+bitlen)>>8)))&0xffffff;
-    else if (polarParams->crcParityBits == 11) tcrc = (uint64_t)((crcmask^(crc11(A128_flip,bitlen)>>21)))&0x7ff;
+    for (int i=0; i<16 ; i++)
+      A128_flip[i+offset]=((uint8_t*)&Aprime)[15-i];
+    if (polarParams->crcParityBits == 24)
+      tcrc = (uint64_t)((crcmask^(crc24c(A128_flip,8*offset+bitlen)>>8)))&0xffffff;
+    else if (polarParams->crcParityBits == 11)
+      tcrc = (uint64_t)((crcmask^(crc11(A128_flip,bitlen)>>21)))&0x7ff;
   }
 
   int n;
   // this is number of quadwords in the bit string
-  int quadwlen = (polarParams->K>>6);
-
-  if ((polarParams->K&63) > 0) quadwlen++;
+  int quadwlen = (polarParams->K+63)/64;
 
   // Create the B bit string as
   // 0, 0, ..., 0, a'_0, a'_1, ..., a'_A-1, p_0, p_1, ..., p_{N_parity-1}
 
   //??? b_{N'-1} b_{N'-2} ... b_{N'-A} b_{N'-A-1} ... b_{N'-A-Nparity} = a_{N-1} a_{N-2} ... a_{N-A} p_{N_parity-1} ... p_0
-
-  for (n=0; n<quadwlen; n++) if (n==0) B[n] = (A[n] << polarParams->crcParityBits) | tcrc;
-                             else      B[n] = (A[n] << polarParams->crcParityBits) | (A[n-1]>>(64-polarParams->crcParityBits));
+  uint64_t B[4]= {0};
+  B[0] = (A[0] << polarParams->crcParityBits) | tcrc;
+  for (n=1; n<quadwlen; n++)
+    if ((bitlen+63)/64 > n)
+      B[n] = (A[n] << polarParams->crcParityBits) | (A[n-1]>>(64-polarParams->crcParityBits));
+    else
+      B[n] = (A[n-1]>>(64-polarParams->crcParityBits));
 
   uint8_t *Bbyte = (uint8_t *)B;
 
   // for each byte of B, lookup in corresponding table for 64-bit word corresponding to that byte and its position
+  uint64_t Cprime[4]= {0};
   if (polarParams->K<65)
     Cprime[0] = polarParams->cprime_tab0[0][Bbyte[0]] |
-                polarParams->cprime_tab0[1][Bbyte[1]] |
+      polarParams->cprime_tab0[1][Bbyte[1]] |
                 polarParams->cprime_tab0[2][Bbyte[2]] |
                 polarParams->cprime_tab0[3][Bbyte[3]] |
                 polarParams->cprime_tab0[4][Bbyte[4]] |
@@ -684,4 +702,7 @@ void polar_encoder_fast(uint64_t *A,
   }
   memset((void*)out,0,polarParams->encoderLength>>3);
   polar_rate_matching(polarParams,(void *)D, out);
+
+  polarReturn;
+
 }

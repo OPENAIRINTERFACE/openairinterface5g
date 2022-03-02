@@ -57,12 +57,12 @@ extern const uint8_t table_7_3_1_1_2_21[19][4];
 extern const uint8_t table_7_3_1_1_2_22[6][5];
 extern const uint8_t table_7_3_1_1_2_23[5][6];
 extern const uint8_t table_7_3_2_3_3_1[12][5];
-extern const uint8_t table_7_3_2_3_3_2_oneCodeword[31][6];
+extern const uint8_t table_7_3_2_3_3_2_oneCodeword[31][10];
 extern const uint8_t table_7_3_2_3_3_2_twoCodeword[4][10];
-extern const uint8_t table_7_3_2_3_3_3_oneCodeword[24][5];
+extern const uint8_t table_7_3_2_3_3_3_oneCodeword[24][7];
 extern const uint8_t table_7_3_2_3_3_3_twoCodeword[2][7];
-extern const uint8_t table_7_3_2_3_3_4_oneCodeword[58][6];
-extern const uint8_t table_7_3_2_3_3_4_twoCodeword[6][10];
+extern const uint8_t table_7_3_2_3_3_4_oneCodeword[58][14];
+extern const uint8_t table_7_3_2_3_3_4_twoCodeword[6][14];
 
 extern const uint16_t table_7_2_1[16];
 
