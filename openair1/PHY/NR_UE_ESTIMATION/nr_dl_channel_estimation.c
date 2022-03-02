@@ -361,6 +361,10 @@ int nr_prs_channel_estimation(PHY_VARS_NR_UE *ue,
       idftsizeidx = IDFT_512;
       break;
 
+    case 768:
+      idftsizeidx = IDFT_768;
+      break;
+
     case 1024:
       idftsizeidx = IDFT_1024;
       break;
@@ -827,6 +831,10 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
     case 512:
       idftsizeidx = IDFT_512;
+      break;
+
+    case 768:
+      idftsizeidx = IDFT_768;
       break;
 
     case 1024:
