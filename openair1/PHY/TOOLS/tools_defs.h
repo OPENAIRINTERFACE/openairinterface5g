@@ -262,6 +262,7 @@ void dft98304(int16_t *x,int16_t *y,uint8_t scale_flag);
 void idft64(int16_t *x,int16_t *y,uint8_t scale_flag);
 void idft128(int16_t *x,int16_t *y,uint8_t scale_flag);
 void idft256(int16_t *x,int16_t *y,uint8_t scale_flag);
+void idft384(int16_t *x,int16_t *y,uint8_t scale_flag);
 void idft512(int16_t *x,int16_t *y,uint8_t scale_flag);
 void idft768(int16_t *x,int16_t *y,uint8_t scale_flag);
 void idft1024(int16_t *x,int16_t *y,uint8_t scale_flag);
@@ -324,14 +325,14 @@ adftfunc_t dft_ftab[]={
 #endif
 
 typedef enum idft_size_idx {
-	IDFT_128,   IDFT_256,  IDFT_512,   IDFT_768,   IDFT_1024,  IDFT_1536,  IDFT_2048,  IDFT_3072,  IDFT_4096,
+	IDFT_128,   IDFT_256,  IDFT_384,   IDFT_512,   IDFT_768,   IDFT_1024,  IDFT_1536,  IDFT_2048,  IDFT_3072,  IDFT_4096,
 	IDFT_6144,  IDFT_8192, IDFT_9216,  IDFT_12288, IDFT_18432, IDFT_24576, IDFT_36864, IDFT_49152, 
 	IDFT_73728, IDFT_98304, 
 	IDFT_SIZE_IDXTABLESIZE
 } idft_size_idx_t;
 #ifdef OAIDFTS_MAIN
 aidftfunc_t idft_ftab[]={
-	idft128,   idft256,  idft512,   idft768,   idft1024,  idft1536,  idft2048,  idft3072,  idft4096,
+	idft128,   idft256,  idft384,   idft512,   idft768,   idft1024,  idft1536,  idft2048,  idft3072,  idft4096,
 	idft6144,  idft8192, idft9216,  idft12288, idft18432, idft24576, idft36864, idft49152,
 	idft73728, idft98304
 };

@@ -383,6 +383,12 @@ typedef struct {
   int32_t **ptrs_re_per_slot;
 } NR_UE_PDSCH;
 
+typedef struct {
+  prs_data_t prs_cfg;
+  int32_t **prs_ch_estimates;
+  int32_t **prs_ch_estimates_time;
+} NR_UE_PRS;
+
 #define NR_PDCCH_DEFS_NR_UE
 #define NR_NBR_CORESET_ACT_BWP      3  // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP  10 // The number of SearchSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
@@ -823,9 +829,7 @@ typedef struct {
   NR_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_gNB_MAX];
-  prs_data_t prs_cfg;
-  int32_t **prs_ch_estimates;
-  int32_t **prs_ch_estimates_time;
+  NR_UE_PRS       *prs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   
   //Paging parameters
   uint32_t              IMSImod1024;

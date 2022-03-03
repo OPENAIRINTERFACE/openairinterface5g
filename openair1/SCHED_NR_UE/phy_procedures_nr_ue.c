@@ -1661,20 +1661,20 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     }
 
 /*
-    ue->prs_cfg.PRSResourceSetPeriod[0]=40; // PRS resource slot period
-    ue->prs_cfg.PRSResourceSetPeriod[1]=0;  // resource slot offset
-    ue->prs_cfg.SymbolStart=7;		
-    ue->prs_cfg.NumPRSSymbols=4;
-    ue->prs_cfg.NumRB=fp->N_RB_DL;
-    ue->prs_cfg.RBOffset=0;
-    ue->prs_cfg.CombSize=4;
-    ue->prs_cfg.REOffset=0;
-    ue->prs_cfg.PRSResourceOffset=0;
-    ue->prs_cfg.PRSResourceRepetition=1;
-    ue->prs_cfg.PRSResourceTimeGap=1;
-    ue->prs_cfg.NPRSID=0;
+    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[0]=40; // PRS resource slot period
+    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[1]=0;  // resource slot offset
+    ue->prs_vars[gNB_id]->prs_cfg.SymbolStart=7;		
+    ue->prs_vars[gNB_id]->prs_cfg.NumPRSSymbols=4;
+    ue->prs_vars[gNB_id]->prs_cfg.NumRB=fp->N_RB_DL;
+    ue->prs_vars[gNB_id]->prs_cfg.RBOffset=0;
+    ue->prs_vars[gNB_id]->prs_cfg.CombSize=4;
+    ue->prs_vars[gNB_id]->prs_cfg.REOffset=0;
+    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceOffset=0;
+    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceRepetition=1;
+    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceTimeGap=1;
+    ue->prs_vars[gNB_id]->prs_cfg.NPRSID=0;
 */
-    for(int j = ue->prs_cfg.SymbolStart; j < (ue->prs_cfg.SymbolStart + ue->prs_cfg.NumPRSSymbols); j++)
+    for(int j = ue->prs_vars[gNB_id]->prs_cfg.SymbolStart; j < (ue->prs_vars[gNB_id]->prs_cfg.SymbolStart + ue->prs_vars[gNB_id]->prs_cfg.NumPRSSymbols); j++)
     {
             nr_slot_fep(ue,
                         proc,
@@ -1683,7 +1683,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     }
 
     //PRS channel estimation
-    nr_prs_channel_estimation(ue,proc,fp);
+    nr_prs_channel_estimation(gNB_id,ue,proc,fp);
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
