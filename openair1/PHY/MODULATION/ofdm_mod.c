@@ -149,8 +149,16 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     idftsize = IDFT_256;
     break;
 
+  case 384:
+    idftsize = IDFT_384;
+    break;
+
   case 512:
     idftsize = IDFT_512;
+    break;
+
+  case 768:
+    idftsize = IDFT_768;
     break;
 
   case 1024:

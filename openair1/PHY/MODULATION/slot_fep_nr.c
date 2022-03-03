@@ -43,6 +43,9 @@ dft_size_idx_t get_dft_size_idx(uint16_t ofdm_symbol_size)
   case 256:
     return DFT_256;
 
+  case 384:
+    return DFT_384;
+
   case 512:
     return DFT_512;
 

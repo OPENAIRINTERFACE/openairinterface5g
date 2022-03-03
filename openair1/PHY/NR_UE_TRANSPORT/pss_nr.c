@@ -74,6 +74,10 @@ idft_size_idx_t get_idft(int ofdm_symbol_size)
       return IDFT_256;
       break;
 
+    case 384:
+      return IDFT_384;
+      break;
+
     case 512:
       return IDFT_512;
       break;
@@ -139,8 +143,16 @@ dft_size_idx_t get_dft(int ofdm_symbol_size)
       return DFT_256;
       break;
 
+    case 384:
+      return DFT_384;
+      break;
+
     case 512:
       return DFT_512;
+      break;
+
+    case 768:
+      return DFT_768;
       break;
 
     case 1024:
