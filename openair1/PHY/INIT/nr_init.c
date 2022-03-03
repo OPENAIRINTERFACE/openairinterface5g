@@ -710,13 +710,14 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   const int n_buf = Prx * max_ul_mimo_layers;
 
   int max_dl_mimo_layers =(fp->nb_antennas_tx<NR_MAX_NB_LAYERS) ? fp->nb_antennas_tx : NR_MAX_NB_LAYERS;
-  for (int nl = 0; nl < max_dl_mimo_layers; nl++) {
-    for(int size = 0; size < gNB->pmiq_size[nl]; size++) {
-      free_and_zero(gNB->nr_mimo_precoding_matrix[nl][size]);
+  if (fp->nb_antennas_tx>1) {
+    for (int nl = 0; nl < max_dl_mimo_layers; nl++) {
+      for(int size = 0; size < gNB->pmiq_size[nl]; size++)
+        free_and_zero(gNB->nr_mimo_precoding_matrix[nl][size]);
+      free_and_zero(gNB->nr_mimo_precoding_matrix[nl]);
     }
-    free_and_zero(gNB->nr_mimo_precoding_matrix[nl]);
+    free_and_zero(gNB->nr_mimo_precoding_matrix);
   }
-  free_and_zero(gNB->nr_mimo_precoding_matrix);
 
   uint32_t ***pdcch_dmrs = gNB->nr_gold_pdcch_dmrs;
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
