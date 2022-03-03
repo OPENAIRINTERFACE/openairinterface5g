@@ -117,7 +117,7 @@ void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
 
       reset = 1;
       x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid<<1)+1) +((N_n_scid<<1)+n_scid));
-
+      LOG_D(PHY,"DMRS slot %d, symb %d x2 %x\n",slot,symb,x2);
       for (n=0; n<NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD; n++) {
         pusch_dmrs[slot][symb][0][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
