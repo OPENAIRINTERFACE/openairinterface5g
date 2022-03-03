@@ -34,6 +34,22 @@ typedef struct Gtpv1uMsgHeader {
   teid_t teid;
 } __attribute__((packed)) Gtpv1uMsgHeaderT;
 
+//TS 38.425, Figure 5.5.2.2-1
+typedef struct DlDataDeliveryStatus_flags {
+  uint8_t LPR:1;                    //Lost packet report
+  uint8_t FFI:1;                    //Final Frame Ind
+  uint8_t deliveredPdcpSn:1;        //Highest Delivered NR PDCP SN Ind
+  uint8_t transmittedPdcpSn:1;      //Highest Transmitted NR PDCP SN Ind
+  uint8_t pduType:4;                //PDU type
+  uint8_t CR:1;                     //Cause Report
+  uint8_t deliveredReTxPdcpSn:1;    //Delivered retransmitted NR PDCP SN Ind
+  uint8_t reTxPdcpSn:1;             //Retransmitted NR PDCP SN Ind
+  uint8_t DRI:1;                    //Data Rate Indication
+  uint8_t deliveredPdcpSnRange:1;   //Delivered NR PDCP SN Range Ind
+  uint8_t spare:3;
+  uint32_t drbBufferSize;            //Desired buffer size for the data radio bearer
+} __attribute__((packed)) DlDataDeliveryStatus_flagsT;
+
 #pragma pack()
 
 // TS 29.060, table 7.1 defines the possible message types
@@ -59,12 +75,14 @@ typedef struct ocp_gtpv1u_bearer_s {
 
 typedef struct {
   map<int, ocp_gtpv1u_bearer_t> bearers;
+  teid_t outgoing_teid;
 } teidData_t;
 
 typedef struct {
   rnti_t rnti;
   ebi_t incoming_rb_id;
   gtpCallback callBack;
+  teid_t outgoing_teid;
 } rntiData_t;
 
 class gtpEndPoint {
@@ -109,14 +127,16 @@ instance_t legacyInstanceMapping=0;
   
   
   static int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, int msgType, teid_t teid, uint8_t *Msg,int msgLen,
-                                   bool seqNumFlag, bool  npduNumFlag, bool extHdrFlag, int seqNum, int npduNum, int extHdrType) {
-  AssertFatal(extHdrFlag==false,"Not developped");
+                                   bool seqNumFlag, bool  npduNumFlag, bool extHdrFlag, int seqNum, int npduNum, int extHdrType,
+                                   uint8_t *extensionHeader_buffer, uint8_t extensionHeader_length) {
+  LOG_D(GTPU, "Peer IP:%u peer port:%u outgoing teid:%u \n", peerIp, peerPort, teid);
+  //AssertFatal(extHdrFlag==false,"Not developped");
   int headerAdditional=0;
 
   if ( seqNumFlag || npduNumFlag || extHdrFlag)
     headerAdditional=4;
 
-  int fullSize=GTPV1U_HEADER_SIZE+headerAdditional+msgLen;
+  int fullSize=GTPV1U_HEADER_SIZE+headerAdditional+msgLen+extensionHeader_length;
   uint8_t buffer[fullSize];
   Gtpv1uMsgHeaderT      *msgHdr = (Gtpv1uMsgHeaderT *)buffer ;
   // N should be 0 for us (it was used only in 2G and 3G)
@@ -128,20 +148,42 @@ instance_t legacyInstanceMapping=0;
   msgHdr->PT=1;
   msgHdr->version=1;
   msgHdr->msgType=msgType;
-  msgHdr->msgLength=htons(msgLen);
+  msgHdr->msgLength=htons(msgLen+extensionHeader_length);
 
   if ( seqNumFlag || extHdrFlag || npduNumFlag)
-    msgHdr->msgLength+=4;
+    msgHdr->msgLength+=htons(4);
 
   msgHdr->teid=htonl(teid);
 
   if(seqNumFlag || extHdrFlag || npduNumFlag) {
-    *((uint16_t *) (buffer+8)) = seqNumFlag ? htons(seqNum) : 0x0000;
-    *((uint8_t *) (buffer+10)) = npduNumFlag ? htons(npduNum) : 0x00;
-    *((uint8_t *) (buffer+11)) = extHdrFlag ? htons(extHdrType) : 0x00;
+    *((uint16_t *) (buffer+8)) = seqNumFlag ? seqNum : 0x0000;
+    *((uint8_t *) (buffer+10)) = npduNumFlag ? npduNum : 0x00;
+    *((uint8_t *) (buffer+11)) = extHdrFlag ? extHdrType : 0x00;
+
+    /**(buffer+8) = seqNumFlag ? htons(seqNum) : 0x0000;
+    *(buffer+10) = npduNumFlag ? htons(npduNum) : 0x00;
+    *(buffer+11) = extHdrFlag ? htons(extHdrType) : 0x00;
+    *(buffer+11) = extHdrType;*/
   }
 
-  memcpy(buffer+GTPV1U_HEADER_SIZE+headerAdditional, Msg, msgLen);
+  if(extHdrFlag){
+    while (extHdrType){
+      if (extensionHeader_length > 0 && extHdrType == 0x84){
+        memcpy(buffer+GTPV1U_HEADER_SIZE+headerAdditional, extensionHeader_buffer, extensionHeader_length);
+        LOG_D(GTPU, "Extension Header for DDD added. The length is: %d, extension header type is: %x \n", extensionHeader_length, *((uint8_t *) (buffer+11))); 
+        extHdrType = extensionHeader_buffer[extensionHeader_length -1];
+        LOG_D(GTPU, "Next extension header type is: %x \n", *((uint8_t *) (buffer+11)));
+      }
+      else {
+        LOG_W(GTPU, "Extension header type not supported, returning... \n");
+        return GTPNOK;
+      }
+    }
+  }
+  if (Msg!= NULL){
+    memcpy(buffer+GTPV1U_HEADER_SIZE+headerAdditional+extensionHeader_length, Msg, msgLen);
+  }
+
   // Fix me: add IPv6 support, using flag ipVersion
   static struct sockaddr_in to= {0};
   to.sin_family      = AF_INET;
@@ -196,9 +238,9 @@ static void gtpv1uSend(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req, b
   gtpv1uCreateAndSendMsg(compatInst(instance),
                          tmp.outgoing_ip_addr,
                          tmp.outgoing_port,
-			 GTP_GPDU,
+                         GTP_GPDU,
                          tmp.teid_outgoing,
-                         buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0) ;
+                         buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0, NULL, 0) ;
 }
 
 static void gtpv1uSend2(instance_t instance, gtpv1u_gnb_tunnel_data_req_t *req, bool seqNumFlag, bool npduNumFlag) {
@@ -239,9 +281,9 @@ static void gtpv1uSend2(instance_t instance, gtpv1u_gnb_tunnel_data_req_t *req, 
   gtpv1uCreateAndSendMsg(compatInst(instance),
                          tmp.outgoing_ip_addr,
                          tmp.outgoing_port,
-			 GTP_GPDU,
+                         GTP_GPDU,
                          tmp.teid_outgoing,
-                         buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0) ;
+                         buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0, NULL, 0) ;
 }
 
 static void gtpv1uEndTunnel(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req) {
@@ -444,6 +486,8 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   inst->te2ue_mapping[incoming_teid].rnti=rnti;
 
   inst->te2ue_mapping[incoming_teid].incoming_rb_id= incoming_bearer_id;
+
+  inst->te2ue_mapping[incoming_teid].outgoing_teid= outgoing_teid;
 
   inst->te2ue_mapping[incoming_teid].callBack=callBack;
 
@@ -664,7 +708,7 @@ static int Gtpv1uHandleEchoReq(int h,
   
   return gtpv1uCreateAndSendMsg(h, peerIp, peerPort, GTP_ECHO_RSP, ntohl(msgHdr->teid),
 			 recovery, sizeof recovery,
-			 1, 0, 0, seq, 0, 0);
+			 1, 0, 0, seq, 0, 0, NULL, 0);
 
 }
 
@@ -787,9 +831,24 @@ static int Gtpv1uHandleGpdu(int h,
   if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
     offset+=4;
   
+  uint32_t NR_PDCP_PDU_SN = 0;
   //Consider the length of 1 or more extension headers that can be present in the GTP-U PDU
   if(msgHdr->E) {
-    while (msgBuf[offset]!=0) {
+    while (msgBuf[offset]!=0){
+      if(msgBuf[offset-1] == 0x84){ //Extension header corresponding to NR-RAN container type
+        uint8_t PDU_type = (msgBuf[offset+1]>>4) & 0x0f;
+        if (PDU_type == 0){ //DL USER Data Format
+          if((msgBuf[offset+2]>>2)& 0x3){ //"Report delivered" and "User data existence flags" enabled (TS 38.425, 5.4)
+            /*Store the NR PDCP PDU SN for which a delivery status report shall be generated once the
+             *PDU gets forwarded to the lower layers*/
+            NR_PDCP_PDU_SN = msgBuf[offset+3] << 16 | msgBuf[offset+4] << 8 | msgBuf[offset+5];
+            LOG_D(GTPU, " NR_PDCP_PDU_SN: %u \n",  NR_PDCP_PDU_SN);
+          }
+        }
+        else{
+          LOG_W(GTPU, "NR-RAN container type: %d not supported \n", PDU_type);
+        }
+      }
       LOG_D(GTPU, "Extension header length in multiple of 4 bytes is: %d \n", msgBuf[offset]);
       offset+=msgBuf[offset]*4 -1;
      }
@@ -830,6 +889,41 @@ static int Gtpv1uHandleGpdu(int h,
                                 &sourceL2Id,
                                 &destinationL2Id) )
     LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  if(NR_PDCP_PDU_SN > 0 && NR_PDCP_PDU_SN %5 ==0){
+    LOG_D (GTPU, "Create and send DL DATA Delivery status for the previously received PDU, NR_PDCP_PDU_SN: %u \n", NR_PDCP_PDU_SN);
+    /*Total size of DDD_status PDU = 1 octet to report extension header length
+     * size of mandatory part + 3 octets for highest transmitted/delivered PDCP SN
+     * 1 octet for padding + 1 octet for next extension header type,
+     * according to TS 38.425: Fig. 5.5.2.2-1 and section 5.5.3.24*/
+    extensionHeader_t *extensionHeader;
+    extensionHeader = (extensionHeader_t *) calloc(1, sizeof(extensionHeader_t)) ;
+    extensionHeader->buffer[0] = (1+sizeof(DlDataDeliveryStatus_flagsT)+3+1+1)/4;
+    DlDataDeliveryStatus_flagsT DlDataDeliveryStatus;
+    DlDataDeliveryStatus.deliveredPdcpSn = 0;
+    DlDataDeliveryStatus.transmittedPdcpSn= 1; 
+    DlDataDeliveryStatus.pduType = 1;
+    DlDataDeliveryStatus.drbBufferSize = htonl(1000000); //hardcoded for now but normally we should extract it from RLC
+    memcpy(extensionHeader->buffer+1, &DlDataDeliveryStatus, sizeof(DlDataDeliveryStatus_flagsT));
+    uint8_t offset = sizeof(DlDataDeliveryStatus_flagsT)+1;
+
+    extensionHeader->buffer[offset] =   (NR_PDCP_PDU_SN >> 16) & 0xff;
+    extensionHeader->buffer[offset+1] = (NR_PDCP_PDU_SN >> 8) & 0xff;
+    extensionHeader->buffer[offset+2] = NR_PDCP_PDU_SN & 0xff;
+    LOG_D(GTPU, "Octets reporting NR_PDCP_PDU_SN, extensionHeader->buffer[offset]: %u, extensionHeader->buffer[offset+1]:%u, extensionHeader->buffer[offset+2]:%u \n", extensionHeader->buffer[offset], extensionHeader->buffer[offset+1],extensionHeader->buffer[offset+2]);
+    extensionHeader->buffer[offset+3] = 0x00; //Padding octet
+    extensionHeader->buffer[offset+4] = 0x00; //No more extension headers
+    /*Total size of DDD_status PDU = size of mandatory part +
+     * 3 octets for highest transmitted/delivered PDCP SN +
+     * 1 octet for padding + 1 octet for next extension header type,
+     * according to TS 38.425: Fig. 5.5.2.2-1 and section 5.5.3.24*/
+    extensionHeader->length  = 1+sizeof(DlDataDeliveryStatus_flagsT)+3+1+1;
+    gtpv1uCreateAndSendMsg(h,
+        peerIp,
+        peerPort,
+        GTP_GPDU,
+        inst->te2ue_mapping[ntohl(msgHdr->teid)].outgoing_teid,
+        NULL, 0, false, false, true, 0, 0, 0x84, extensionHeader->buffer, extensionHeader->length) ;
+  }
 
   LOG_D(GTPU,"[%d] Received a %d bytes packet for: teid:%x\n", h,
         msgBufLen-offset,
