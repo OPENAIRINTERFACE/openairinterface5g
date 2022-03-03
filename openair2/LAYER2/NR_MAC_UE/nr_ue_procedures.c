@@ -865,12 +865,14 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     int mappingtype = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType : ((dlsch_config_pdu_1_0->start_symbol <= 3)? typeA: typeB);
 
-    struct NR_DMRS_DownlinkConfig *dl_dmrs_config = (mappingtype == typeA) ?
-                                                    mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup :
-                                                    mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+    struct NR_DMRS_DownlinkConfig *dl_dmrs_config = NULL;
+    if(mac->DLbwp[0])
+      dl_dmrs_config = (mappingtype == typeA) ?
+                       mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup :
+                       mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
 
     dlsch_config_pdu_1_0->nscid = 0;
-    if(mac->DLbwp[0] && dl_dmrs_config->scramblingID0)
+    if(dl_dmrs_config && dl_dmrs_config->scramblingID0)
       dlsch_config_pdu_1_0->dlDmrsScramblingId = *dl_dmrs_config->scramblingID0;
     else
       dlsch_config_pdu_1_0->dlDmrsScramblingId = mac->physCellId;
@@ -881,7 +883,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                                          dlsch_config_pdu_1_0->number_symbols,
                                                          dlsch_config_pdu_1_0->start_symbol,
                                                          mappingtype, 1);
-    dlsch_config_pdu_1_0->dmrsConfigType = (mac->DLbwp[0] != NULL) ?
+    dlsch_config_pdu_1_0->dmrsConfigType = (dl_dmrs_config != NULL) ?
                                            (dl_dmrs_config->dmrs_Type == NULL ? 0 : 1) : 0;
 
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
