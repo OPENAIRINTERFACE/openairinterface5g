@@ -1023,6 +1023,9 @@ extern "C" {
       device->type=USRP_N300_DEV;
       usrp_master_clock = 122.88e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+
+      if ( 0 != system("sysctl -w net.core.rmem_max=62500000 net.core.wmem_max=62500000") )
+        LOG_W(HW,"Can't set kernel parameters for N3x0\n");
     }
 
     if (device_adds[0].get("type") == "x300") {
