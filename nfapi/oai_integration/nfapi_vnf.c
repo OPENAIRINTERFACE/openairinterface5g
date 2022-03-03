@@ -787,8 +787,8 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
           if (ind_pdu->harq) {
             uci_ind_pdu->harq = CALLOC(1, sizeof(*uci_ind_pdu->harq));
             AssertFatal(uci_ind_pdu->harq != NULL, "Memory not allocated for uci_ind_pdu->harq in phy_nr_uci_indication.");
-
             *uci_ind_pdu->harq = *ind_pdu->harq;
+
             uci_ind_pdu->harq->harq_list = CALLOC(uci_ind_pdu->harq->num_harq, sizeof(*uci_ind_pdu->harq->harq_list));
             AssertFatal(uci_ind_pdu->harq->harq_list != NULL, "Memory not allocated for uci_ind_pdu->harq->harq_list in phy_nr_uci_indication.");
             for (int j = 0; j < uci_ind_pdu->harq->num_harq; j++)
@@ -800,6 +800,7 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
         case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
           nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_ind_pdu = &uci_ind->uci_list[i].pucch_pdu_format_2_3_4;
           nfapi_nr_uci_pucch_pdu_format_2_3_4_t *ind_pdu = &ind->uci_list[i].pucch_pdu_format_2_3_4;
+          *uci_ind_pdu = *ind_pdu;
           if (ind_pdu->harq.harq_payload) {
             uci_ind_pdu->harq.harq_payload = CALLOC(1, sizeof(*uci_ind_pdu->harq.harq_payload));
             AssertFatal(uci_ind_pdu->harq.harq_payload != NULL, "Memory not allocated for uci_ind_pdu->harq.harq_payload in phy_nr_uci_indication.");

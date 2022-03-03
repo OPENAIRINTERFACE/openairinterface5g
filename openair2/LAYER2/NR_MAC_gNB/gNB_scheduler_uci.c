@@ -1650,13 +1650,9 @@ int nr_acknack_scheduling(int mod_id,
   /* we need to find a new PUCCH occasion */
 
   /*(Re)Inizialization of timing information*/
-  /* TODO: This is something of a hack. The last condition in the
-     if statement below was added. OAI is looking into this and is
-     expected to provide a solution. Without the hack, the gNB will
-     incorrectly schedule more than 2 ACK/nACKs in a single SFN/Slot. */
   if ((pucch->frame == 0 && pucch->ul_slot == 0) ||
       ((pucch->frame*n_slots_frame + pucch->ul_slot) <
-       (frame * n_slots_frame + slot)) && (frame != 1023)) {
+      (frame*n_slots_frame + slot))) {
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
