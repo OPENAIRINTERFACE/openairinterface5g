@@ -742,15 +742,9 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
 
-      NR_BWP_t *genericParameters = NULL;
-      if(sched_ctrl->active_ubwp) {
-        genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
-      } else if(scc) {
-        genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-      } else {
-        NR_SIB1_t *sib1 = RC.nrmac[Mod_idP]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-        genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-      }
+      NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                                 scc,
+                                                                 RC.nrmac[Mod_idP]->common_channels[0].sib1 ? RC.nrmac[Mod_idP]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
       int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 
@@ -1762,15 +1756,9 @@ int nr_acknack_scheduling(int mod_id,
     pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
 
-  NR_BWP_t *genericParameters = NULL;
-  if(sched_ctrl->active_ubwp) {
-    genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
-  } else if(scc) {
-    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  } else {
-    NR_SIB1_t *sib1 = RC.nrmac[mod_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-  }
+  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                             (NR_ServingCellConfigCommon_t *)scc,
+                                                             RC.nrmac[mod_id]->common_channels[0].sib1 ? RC.nrmac[mod_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
   int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 

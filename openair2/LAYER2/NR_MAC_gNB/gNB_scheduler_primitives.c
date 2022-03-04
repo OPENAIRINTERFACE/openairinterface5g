@@ -226,6 +226,34 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
   }
 }
 
+NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
+                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
+                                       NR_SIB1_t *sib1) {
+  NR_BWP_t *genericParameters = NULL;
+  if (active_bwp) {
+    genericParameters = &active_bwp->bwp_Common->genericParameters;
+  } else if (ServingCellConfigCommon) {
+    genericParameters = &ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+  } else {
+    genericParameters = &sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+  }
+  return genericParameters;
+}
+
+NR_BWP_t *get_ul_bwp_genericParameters(NR_BWP_Uplink_t *active_ubwp,
+                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
+                                       NR_SIB1_t *sib1) {
+  NR_BWP_t *genericParameters = NULL;
+  if (active_ubwp) {
+    genericParameters = &active_ubwp->bwp_Common->genericParameters;
+  } else if (ServingCellConfigCommon) {
+    genericParameters = &ServingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  } else {
+    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+  }
+  return genericParameters;
+}
+
 NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
                                      NR_ServingCellConfigCommon_t *scc,
                                      void *bwp,
@@ -936,15 +964,9 @@ void config_uldci(module_id_t module_id,
                   int n_ubwp,
                   int bwp_id) {
 
-  NR_BWP_t *genericParameters = NULL;
-  if(ubwp) {
-    genericParameters = &ubwp->bwp_Common->genericParameters;
-  } else if(scc) {
-    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-  }
+  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters((NR_BWP_Uplink_t *)ubwp,
+                                                             (NR_ServingCellConfigCommon_t *)scc,
+                                                             RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
   const int bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
@@ -1149,15 +1171,9 @@ void nr_configure_pucch(module_id_t module_id,
   else
     pucch_pdu->hopping_id = *scc->physCellId;
 
-  NR_BWP_t *genericParameters = NULL;
-  if (bwp) {
-    genericParameters = &bwp->bwp_Common->genericParameters;
-  } else if (scc) {
-    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-  }
+  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(bwp,
+                                                             scc,
+                                                             RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
   pucch_pdu->bwp_size  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   pucch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);

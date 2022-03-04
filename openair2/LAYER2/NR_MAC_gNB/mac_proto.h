@@ -300,6 +300,14 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  nr_dci_format_t format,
                  int bwp_id);
 
+NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
+                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
+                                       NR_SIB1_t *sib1);
+
+NR_BWP_t *get_ul_bwp_genericParameters(NR_BWP_Uplink_t *active_ubwp,
+                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
+                                       NR_SIB1_t *sib1);
+
 /* find coreset within the search space */
 NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
                                      NR_ServingCellConfigCommon_t *scc,

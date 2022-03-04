@@ -990,15 +990,9 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                     cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
                                     cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
-  NR_BWP_t *genericParameters = NULL;
-  if (sched_ctrl->active_ubwp) {
-    genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
-  } else if (scc) {
-    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-  }
+  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                             (NR_ServingCellConfigCommon_t *)scc,
+                                                             RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
   int rbStart = 0; // wrt BWP start
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
@@ -1163,15 +1157,9 @@ void pf_ul(module_id_t module_id,
     LOG_D(NR_MAC,"pf_ul: preparing UL scheduling for UE %d\n",UE_id);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-    NR_BWP_t *genericParameters = NULL;
-    if (sched_ctrl->active_ubwp) {
-      genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
-    } else if (scc) {
-      genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-    } else {
-      NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-      genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-    }
+    NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                               scc,
+                                                               RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
     int rbStart = 0; // wrt BWP start
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
@@ -1365,15 +1353,9 @@ void pf_ul(module_id_t module_id,
                                       && cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
-    NR_BWP_t *genericParameters = NULL;
-    if (sched_ctrl->active_ubwp) {
-      genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
-    } else if (scc) {
-      genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-    } else {
-      NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-      genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-    }
+    NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                               scc,
+                                                               RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
     int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
@@ -1513,15 +1495,9 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
 
-  NR_BWP_t *genericParameters = NULL;
-  if (sched_ctrl->active_ubwp) {
-    genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
-  } else if (scc) {
-    genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-  }
+  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                             scc,
+                                                             RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
   const uint16_t bwpStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
@@ -1763,15 +1739,9 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->handle = 0; //not yet used
 
     /* FAPI: BWP */
-    NR_BWP_t *genericParameters = NULL;
-    if (sched_ctrl->active_ubwp) {
-      genericParameters = &sched_ctrl->active_ubwp->bwp_Common->genericParameters;
-    } else if (scc) {
-      genericParameters = &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-    } else {
-      NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-      genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-    }
+    NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                               scc,
+                                                               RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
 
     pusch_pdu->bwp_size  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     pusch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
