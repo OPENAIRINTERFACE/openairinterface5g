@@ -68,6 +68,12 @@
 #include <openair3/ocp-gtpu/gtp_itf.h>
 //#define DEBUG_ULSIM
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in nr_ulsim, not finished yet */
+  return "detect_leaks=0";
+}
+
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -760,28 +766,17 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
-  //phy_init_nr_top(frame_parms);
-  if (init_nr_ue_signal(UE, 1, 0) != 0) {
+  if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }
 
-  //nr_init_frame_parms_ue(&UE->frame_parms);
-  init_nr_ue_transport(UE, 0);
+  init_nr_ue_transport(UE);
 
-  /*
-  for (int sf = 0; sf < 2; sf++) {
-    for (i = 0; i < 2; i++) {
-
-        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
-
-        if (!UE->ulsch[sf][0][i]) {
-          printf("Can't get ue ulsch structures\n");
-          exit(-1);
-        }
-    }
-  }
-  */
+  // initialize the pusch dmrs
+  uint16_t N_n_scid[2] = {frame_parms->Nid_cell,frame_parms->Nid_cell};
+  int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
+  nr_init_pusch_dmrs(UE, N_n_scid, n_scid);
 
   //Configure UE
   NR_UE_RRC_INST_t rrcue;

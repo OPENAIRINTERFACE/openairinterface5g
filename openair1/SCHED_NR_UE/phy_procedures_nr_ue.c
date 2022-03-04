@@ -576,6 +576,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
                                       get_dmrs_port(aatx,dlsch0_harq->dmrs_ports),
                                       m,
                                       BWPStart,
+                                      dlsch0_harq->dmrsConfigType,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
                                       pdsch_nb_rb);
 #if 0
@@ -610,7 +611,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
       dual_stream_UE = 0;
       gNB_id_i = gNB_id+1;
       i_mod = 0;
-      if (( m==first_symbol_with_data ) && (m<4))
+      if (m==first_symbol_with_data)
         first_symbol_flag = 1;
       else
         first_symbol_flag = 0;
