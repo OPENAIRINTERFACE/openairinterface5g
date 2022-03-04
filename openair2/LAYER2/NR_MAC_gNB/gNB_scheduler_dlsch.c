@@ -404,13 +404,9 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   const NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   int max_allowed_mcs = (mcs_table == 1) ? 27 : 28;
-  int max_mcs = nrmac->dl_max_mcs;
 
-  if (nrmac->dl_max_mcs>max_allowed_mcs)
-    max_mcs = max_allowed_mcs;
-
-  NR_DL_bler_stats_t *bler_stats = &nrmac->UE_info.UE_sched_ctrl[UE_id].dl_bler_stats;
-
+  NR_UE_sched_ctrl_t *sched_ctrl = &nrmac->UE_info.UE_sched_ctrl[UE_id];
+  NR_DL_bler_stats_t *bler_stats = &sched_ctrl->dl_bler_stats;
   /* first call: everything is zero. Initialize to sensible default */
   if (bler_stats->last_frame_slot == 0 && bler_stats->mcs == 0) {
     bler_stats->last_frame_slot = frame * n + slot;
@@ -458,6 +454,7 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   if (bler_stats->rd2_bler > nrmac->dl_rd2_bler_threshold && old_mcs > 6) {
     new_mcs -= 2;
   } else if (bler_stats->rd2_bler < nrmac->dl_rd2_bler_threshold) {*/
+  const int max_mcs = min(max_allowed_mcs, min(sched_ctrl->dl_max_mcs, nrmac->dl_max_mcs));
   if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < max_mcs && dtx > 9)
     new_mcs += 1;
   else if (bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6)
@@ -772,7 +769,6 @@ void pf_dl(module_id_t module_id,
         continue;
 
       /* Calculate coeff */
-      set_dl_mcs(sched_pdsch,sched_ctrl,&mac->dl_max_mcs,ps->mcsTableIdx);
       sched_pdsch->mcs = get_mcs_from_bler(module_id, /* CC_id = */ 0, frame, slot, UE_id, ps->mcsTableIdx);
       layers[UE_id] = set_dl_nrOfLayers(sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
