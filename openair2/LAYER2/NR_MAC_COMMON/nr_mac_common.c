@@ -315,21 +315,21 @@ void get_info_from_tda_tables(int default_abc,
                               int tda,
                               int dmrs_TypeA_Position,
                               int normal_CP,
+                              bool *is_mapping_typeA,
                               int *startSymbolIndex,
                               int *nrOfSymbols) {
   int k0 = 0;
-  int is_mapping_typeA = 1;
   switch(default_abc){
     case 1:
       if (normal_CP){
         if (dmrs_TypeA_Position){
-          is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][0];
+          *is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][0];
           k0 = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][1];
           *startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][2];
           *nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][3];
         }
         else{
-          is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][0];
+          *is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][0];
           k0 = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][1];
           *startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][2];
           *nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][3];
@@ -337,13 +337,13 @@ void get_info_from_tda_tables(int default_abc,
       }
       else{
         if (dmrs_TypeA_Position){
-          is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][0];
+          *is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][0];
           k0 = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][1];
           *startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][2];
           *nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][3];
         }
         else{
-          is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][0];
+          *is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][0];
           k0 = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][1];
           *startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][2];
           *nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][3];
@@ -352,13 +352,13 @@ void get_info_from_tda_tables(int default_abc,
       break;
     case 2:
       if (dmrs_TypeA_Position){
-        is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][0];
+        *is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][0];
         k0 = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][1];
         *startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][2];
         *nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][3];
       }
       else{
-        is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][0];
+        *is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][0];
         k0 = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][1];
         *startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][2];
         *nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][3];
@@ -366,13 +366,13 @@ void get_info_from_tda_tables(int default_abc,
       break;
     case 3:
       if (dmrs_TypeA_Position){
-        is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][0];
+        *is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][0];
         k0 = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][1];
         *startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][2];
         *nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][3];
       }
       else{
-        is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][0];
+        *is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][0];
         k0 = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][1];
         *startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][2];
         *nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][3];
@@ -382,7 +382,6 @@ void get_info_from_tda_tables(int default_abc,
      AssertFatal(1==0,"Invalid default time domaing allocation type\n");
   }
   AssertFatal(k0==0,"Only k0 = 0 is supported\n");
-  AssertFatal(is_mapping_typeA==1,"Only mapping type A is currently supported\n");
 }
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
@@ -2721,6 +2720,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       LOG_D(NR_MAC,"DAI1 nbits %d\n",dci_pdu->dai[0].nbits);
       // 2nd DAI
       if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig && 
+          cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup &&
           cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) { //TODO not sure about that
         dci_pdu->dai[1].nbits = 2;
         size += dci_pdu->dai[1].nbits;
@@ -2991,7 +2991,8 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         dci_pdu->srs_request.nbits = 3;
       size += dci_pdu->srs_request.nbits;
       // CBGTI
-      if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig&&
+      if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig &&
+          cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup &&
           cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
         uint8_t maxCBGperTB = (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
         long *maxCWperDCI_rrc = pdsch_Config->maxNrofCodeWordsScheduledByDCI;
@@ -3336,65 +3337,65 @@ uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i
 
 
 void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
-                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
+                       struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAndOffset,
                        int *period, int *offset) {
 
-  if(nzpcsi != NULL) {
+  if(periodicityAndOffset != NULL) {
 
-    NR_CSI_ResourcePeriodicityAndOffset_PR p_and_o = nzpcsi->periodicityAndOffset->present;
+    NR_CSI_ResourcePeriodicityAndOffset_PR p_and_o = periodicityAndOffset->present;
 
     switch(p_and_o){
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots4:
         *period = 4;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots4;
+        *offset = periodicityAndOffset->choice.slots4;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots5:
         *period = 5;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots5;
+        *offset = periodicityAndOffset->choice.slots5;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots8:
         *period = 8;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots8;
+        *offset = periodicityAndOffset->choice.slots8;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots10:
         *period = 10;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots10;
+        *offset = periodicityAndOffset->choice.slots10;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots16:
         *period = 16;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots16;
+        *offset = periodicityAndOffset->choice.slots16;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots20:
         *period = 20;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots20;
+        *offset = periodicityAndOffset->choice.slots20;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots32:
         *period = 32;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots32;
+        *offset = periodicityAndOffset->choice.slots32;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots40:
         *period = 40;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots40;
+        *offset = periodicityAndOffset->choice.slots40;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots64:
         *period = 64;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots64;
+        *offset = periodicityAndOffset->choice.slots64;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots80:
         *period = 80;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots80;
+        *offset = periodicityAndOffset->choice.slots80;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots160:
         *period = 160;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots160;
+        *offset = periodicityAndOffset->choice.slots160;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots320:
         *period = 320;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots320;
+        *offset = periodicityAndOffset->choice.slots320;
         break;
       case NR_CSI_ResourcePeriodicityAndOffset_PR_slots640:
         *period = 640;
-        *offset = nzpcsi->periodicityAndOffset->choice.slots640;
+        *offset = periodicityAndOffset->choice.slots640;
         break;
     default:
       AssertFatal(1==0,"No periodicity and offset found in CSI resource");
