@@ -290,7 +290,7 @@ NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
   }
 }
 
-NR_SearchSpace_t *get_searchspace(module_id_t module_id,
+NR_SearchSpace_t *get_searchspace(NR_SIB1_t *sib1,
                                   NR_ServingCellConfigCommon_t *scc,
                                   NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                                   NR_SearchSpace__searchSpaceType_PR target_ss) {
@@ -301,7 +301,6 @@ NR_SearchSpace_t *get_searchspace(module_id_t module_id,
   } else if(scc) {
     n = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.count;
   } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
     n = sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.count;
   }
 
@@ -312,7 +311,6 @@ NR_SearchSpace_t *get_searchspace(module_id_t module_id,
     } else if(scc) {
       ss = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.array[i];
     } else {
-      NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
       ss = sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.array[i];
     }
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
@@ -546,7 +544,7 @@ bool nr_find_nb_rb(uint16_t Qm,
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
 
-void nr_set_pdsch_semi_static(module_id_t module_id,
+void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
                               const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
@@ -595,7 +593,6 @@ void nr_set_pdsch_semi_static(module_id_t module_id,
     } else if(scc) {
       tdaList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     } else {
-      NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
       tdaList = sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     }
     AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
@@ -651,7 +648,7 @@ void nr_set_pdsch_semi_static(module_id_t module_id,
   LOG_D(NR_MAC,"bwpd0 %p, bwpd %p : Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",bwpd0,bwpd,ps->N_PRB_DMRS,ps->dl_dmrs_symb_pos,ps->N_DMRS_SLOT);
 }
 
-void nr_set_pusch_semi_static(module_id_t module_id,
+void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
                               const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
                               const NR_BWP_UplinkDedicated_t *ubwpd,
@@ -668,7 +665,6 @@ void nr_set_pusch_semi_static(module_id_t module_id,
   } else if(scc) {
     tdaList = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
     tdaList = sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   }
 
@@ -952,7 +948,7 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
 
 }
 
-void config_uldci(module_id_t module_id,
+void config_uldci(const NR_SIB1_t *sib1,
                   const NR_BWP_Uplink_t *ubwp,
 		              const NR_BWP_UplinkDedicated_t *ubwpd,
                   const NR_ServingCellConfigCommon_t *scc,
@@ -966,7 +962,7 @@ void config_uldci(module_id_t module_id,
 
   NR_BWP_t *genericParameters = get_ul_bwp_genericParameters((NR_BWP_Uplink_t *)ubwp,
                                                              (NR_ServingCellConfigCommon_t *)scc,
-                                                             RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
+                                                             (NR_SIB1_t *)sib1);
 
   const int bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
@@ -1091,7 +1087,7 @@ int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
 }
 
 // This function configures pucch pdu fapi structure
-void nr_configure_pucch(module_id_t module_id,
+void nr_configure_pucch(NR_SIB1_t *sib1,
                         nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *CellGroup,
@@ -1141,7 +1137,6 @@ void nr_configure_pucch(module_id_t module_id,
   } else if(scc) {
     pucch_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup;
   } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
     pucch_ConfigCommon =  sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.pucch_ConfigCommon->choice.setup;
   }
 
@@ -1171,9 +1166,7 @@ void nr_configure_pucch(module_id_t module_id,
   else
     pucch_pdu->hopping_id = *scc->physCellId;
 
-  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(bwp,
-                                                             scc,
-                                                             RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
+  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(bwp,scc, sib1);
 
   pucch_pdu->bwp_size  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   pucch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
@@ -2247,8 +2240,9 @@ int get_ul_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
 //------------------------------------------------------------------------------
 int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup)
 {
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_idP]->common_channels[0].ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
+  gNB_MAC_INST *nr_mac = RC.nrmac[mod_idP];
+  NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[0].ServingCellConfigCommon;
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
   LOG_I(NR_MAC, "[gNB %d] Adding UE with rnti 0x%04x (num_UEs %d)\n",
         mod_idP,
         rntiP,
@@ -2307,7 +2301,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       &sched_ctrl->active_bwp->bwp_Common->genericParameters:
       &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
     const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
-    sched_ctrl->search_space = get_searchspace(mod_idP, scc,
+    sched_ctrl->search_space = get_searchspace(nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                                               scc,
                                                sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
                                                target_ss);
     sched_ctrl->coreset = get_coreset(mod_idP, scc,

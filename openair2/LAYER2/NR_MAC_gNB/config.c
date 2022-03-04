@@ -654,7 +654,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
         genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       }
-      sched_ctrl->search_space = get_searchspace(Mod_idP, scc, bwpd, target_ss);
+      sched_ctrl->search_space = get_searchspace(sib1 ? sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
       sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
       sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
                                                     sched_ctrl->search_space,

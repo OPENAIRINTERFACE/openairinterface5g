@@ -980,8 +980,9 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                 int harq_pid)
 {
   const int CC_id = 0;
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+  const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[CC_id].ServingCellConfigCommon;
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
   NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
@@ -1018,7 +1019,14 @@ bool allocate_ul_retransmission(module_id_t module_id,
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(module_id, scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(nr_mac->common_channels[0].sib1 ? (const NR_SIB1_t *)nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                               scc,
+                               sched_ctrl->active_ubwp,
+                               ubwpd,
+                               dci_format,
+                               tda,
+                               num_dmrs_cdm_grps_no_data,
+                               ps);
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -1030,7 +1038,14 @@ bool allocate_ul_retransmission(module_id_t module_id,
       rbSize++;
     NR_pusch_semi_static_t temp_ps;
     int dci_format = get_dci_format(sched_ctrl);
-    nr_set_pusch_semi_static(module_id, scc, sched_ctrl->active_ubwp,ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    nr_set_pusch_semi_static(nr_mac->common_channels[0].sib1 ? (const NR_SIB1_t *)nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                             scc,
+                             sched_ctrl->active_ubwp,
+                             ubwpd,
+                             dci_format,
+                             tda,
+                             num_dmrs_cdm_grps_no_data,
+                             &temp_ps);
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -1262,7 +1277,14 @@ void pf_ul(module_id_t module_id,
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-        nr_set_pusch_semi_static(module_id, scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+        nr_set_pusch_semi_static(nrmac->common_channels[0].sib1 ? (const NR_SIB1_t *)nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                                 scc,
+                                 sched_ctrl->active_ubwp,
+                                 ubwpd,
+                                 dci_format,
+                                 tda,
+                                 num_dmrs_cdm_grps_no_data,
+                                 ps);
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = 9;
       update_ul_ue_R_Qm(sched_pusch, ps);
@@ -1385,7 +1407,14 @@ void pf_ul(module_id_t module_id,
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-      nr_set_pusch_semi_static(module_id, scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      nr_set_pusch_semi_static(nrmac->common_channels[0].sib1 ? (const NR_SIB1_t *)nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                               scc,
+                               sched_ctrl->active_ubwp,
+                               ubwpd,
+                               dci_format,
+                               tda,
+                               num_dmrs_cdm_grps_no_data,
+                               ps);
     update_ul_ue_R_Qm(sched_pusch, ps);
 
     /* Calculate the current scheduling bytes and the necessary RBs */
@@ -1892,7 +1921,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       n_ubwp = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
     }
 
-    config_uldci(module_id,
+    config_uldci(nr_mac->common_channels[0].sib1 ? (const NR_SIB1_t *)nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
                  sched_ctrl->active_ubwp,
                  ubwpd,
                  scc,

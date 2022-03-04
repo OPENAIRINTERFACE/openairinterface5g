@@ -86,7 +86,11 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   else {
     target_ss = NR_SearchSpace__searchSpaceType_PR_common;
   }
-  NR_SearchSpace_t *search_space = get_searchspace(module_id, scc, bwp ? bwp->bwp_Dedicated : NULL, target_ss);
+  NR_SearchSpace_t *search_space = get_searchspace(nrmac->common_channels[0].sib1 ? nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                                                   scc,
+                                                   bwp ? bwp->bwp_Dedicated : NULL,
+                                                   target_ss);
+
   NR_ControlResourceSet_t *coreset = get_coreset(module_id, scc, bwp ? bwp->bwp_Dedicated : NULL, search_space, target_ss);
   // get coreset symbol "map"
   const uint16_t symb_coreset = (1 << coreset->duration) - 1;
@@ -554,8 +558,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 int UE_id,
                                 int current_harq_pid) {
 
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+  const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
@@ -606,13 +611,29 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
     if (ps->time_domain_allocation != tda)
-      nr_set_pdsch_semi_static(module_id, scc, cg, sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, ps);
+      nr_set_pdsch_semi_static(nr_mac->common_channels[0].sib1 ? (const NR_SIB1_t *)nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                               scc,
+                               cg,
+                               sched_ctrl->active_bwp,
+                               bwpd,
+                               tda,
+                               ps->nrOfLayers,
+                               sched_ctrl,
+                               ps);
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
 
     NR_pdsch_semi_static_t temp_ps = *ps;
-    nr_set_pdsch_semi_static(module_id, scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
+    nr_set_pdsch_semi_static(nr_mac->common_channels[0].sib1 ? (const NR_SIB1_t *)nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                             scc,
+                             UE_info->CellGroup[UE_id],
+                             sched_ctrl->active_bwp,
+                             bwpd,
+                             tda,
+                             ps->nrOfLayers,
+                             sched_ctrl,
+                             &temp_ps);
     while (rbStart < bwpSize &&
            !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbStart++;
@@ -898,7 +919,15 @@ void pf_dl(module_id_t module_id,
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
     if (ps->nrOfLayers != layers[UE_id] || ps->time_domain_allocation != tda)
-      nr_set_pdsch_semi_static(module_id, scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, layers[UE_id], sched_ctrl, ps);
+      nr_set_pdsch_semi_static(mac->common_channels[0].sib1 ? (const NR_SIB1_t *)mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+                               scc,
+                               UE_info->CellGroup[UE_id],
+                               sched_ctrl->active_bwp,
+                               bwpd,
+                               tda,
+                               layers[UE_id],
+                               sched_ctrl,
+                               ps);
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     // Freq-demain allocation
