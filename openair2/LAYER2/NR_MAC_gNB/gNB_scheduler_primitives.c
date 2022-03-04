@@ -254,6 +254,21 @@ NR_BWP_t *get_ul_bwp_genericParameters(NR_BWP_Uplink_t *active_ubwp,
   return genericParameters;
 }
 
+NR_PDSCH_TimeDomainResourceAllocationList_t *get_pdsch_TimeDomainAllocationList(const NR_BWP_Downlink_t *active_bwp,
+                                                                                const NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
+                                                                                const NR_SIB1_t *sib1) {
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = NULL;
+  if (active_bwp) {
+    tdaList = active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  } else if (ServingCellConfigCommon) {
+    tdaList = ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  } else {
+    tdaList = sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  }
+  return tdaList;
+}
+
+
 NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
                                      NR_ServingCellConfigCommon_t *scc,
                                      void *bwp,
@@ -587,14 +602,7 @@ void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
   if (ps->time_domain_allocation != tda) {
     reset_dmrs = true;
     ps->time_domain_allocation = tda;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = NULL;
-    if(bwp) {
-      tdaList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    } else if(scc) {
-      tdaList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    } else {
-      tdaList = sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    }
+    NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = get_pdsch_TimeDomainAllocationList(bwp, scc, sib1);
     AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
     ps->mapping_type = tdaList->list.array[tda]->mappingType;
     if (pdsch_Config) {

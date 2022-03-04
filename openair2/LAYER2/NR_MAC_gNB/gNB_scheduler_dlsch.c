@@ -95,18 +95,12 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   // get coreset symbol "map"
   const uint16_t symb_coreset = (1 << coreset->duration) - 1;
 
-  /* check that TDA index 0 fits into DL and does not overlap CORESET */
-  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = NULL;
-  if (bwp) {
-    tdaList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-  } else if (scc) {
-    tdaList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-  } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-    tdaList = sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-  }
-
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = get_pdsch_TimeDomainAllocationList(bwp,
+                                                                                            scc,
+                                                                                            nrmac->common_channels[0].sib1 ? (const NR_SIB1_t *)nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL);
   AssertFatal(tdaList->list.count >= 1, "need to have at least one TDA for DL slots\n");
+
+  /* check that TDA index 0 fits into DL and does not overlap CORESET */
   const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_DL = tdaList->list.array[0];
   AssertFatal(!tdaP_DL->k0 || *tdaP_DL->k0 == 0,
               "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
