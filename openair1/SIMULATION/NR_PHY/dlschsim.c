@@ -658,10 +658,15 @@ int main(int argc, char **argv)
 
 	if (ouput_vcd)
         vcd_signal_dumper_close();
+    end_configmodule();
+    if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
+       exit_fun("[NR_DLSCHSIM] Error, configuration module init 2 failed\n");
+    }
+    logInit();
+    loader_reset();
+    logTerm();
+    free_configmodule();
 
-  loader_reset();
-  logTerm();
-
-	return (n_errors);
+    return (n_errors);
 }
 

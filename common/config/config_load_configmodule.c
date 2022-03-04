@@ -250,46 +250,46 @@ configmodule_interface_t *load_configmodule(int argc,
     modeparams=cfgmode;
     cfgmode=strdup(CONFIG_LIBCONFIGFILE);
   }
-
-  cfgptr = calloc(sizeof(configmodule_interface_t),1);
+  if (cfgptr == NULL) {
+    cfgptr = calloc(sizeof(configmodule_interface_t),1);
   /* argv_info is used to memorize command line options which have been recognized */
   /* and to detect unrecognized command line options which might have been specified */
-  cfgptr->argv_info = calloc(sizeof(int32_t), argc+10);
+    cfgptr->argv_info = calloc(sizeof(int32_t), argc+10);
   /* argv[0] is the exec name, always Ok */
-  cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
+    cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
 
   /* when OoptIdx is >0, -O option has been detected at position OoptIdx 
    *  we must memorize arv[OoptIdx is Ok                                  */ 
-  if (OoptIdx >= 0) {
-    cfgptr->argv_info[OoptIdx] |= CONFIG_CMDLINEOPT_PROCESSED;
-    cfgptr->argv_info[OoptIdx+1] |= CONFIG_CMDLINEOPT_PROCESSED;
-  }
-
-  cfgptr->rtflags = cfgptr->rtflags | tmpflags;
-  cfgptr->argc   = argc;
-  cfgptr->argv   = argv;
-  cfgptr->cfgmode=strdup(cfgmode);
-  cfgptr->num_cfgP=0;
-  atoken=strtok_r(modeparams,":",&strtokctx);
-
-  while ( cfgptr->num_cfgP< CONFIG_MAX_OOPT_PARAMS && atoken != NULL) {
-    /* look for debug level in the config parameters, it is common to all config mode
-       and will be removed from the parameter array passed to the shared module */
-    char *aptr;
-    aptr=strcasestr(atoken,"dbgl");
-
-    if (aptr != NULL) {
-      cfgptr->rtflags = cfgptr->rtflags | strtol(aptr+4,NULL,0);
-    } else {
-      cfgptr->cfgP[cfgptr->num_cfgP] = strdup(atoken);
-      cfgptr->num_cfgP++;
+    if (OoptIdx >= 0) {
+      cfgptr->argv_info[OoptIdx] |= CONFIG_CMDLINEOPT_PROCESSED;
+      cfgptr->argv_info[OoptIdx+1] |= CONFIG_CMDLINEOPT_PROCESSED;
     }
 
-    atoken = strtok_r(NULL,":",&strtokctx);
+    cfgptr->rtflags = cfgptr->rtflags | tmpflags;
+    cfgptr->argc   = argc;
+    cfgptr->argv   = argv;
+    cfgptr->cfgmode=strdup(cfgmode);
+    cfgptr->num_cfgP=0;
+    atoken=strtok_r(modeparams,":",&strtokctx);
+
+    while ( cfgptr->num_cfgP< CONFIG_MAX_OOPT_PARAMS && atoken != NULL) {
+    /* look for debug level in the config parameters, it is common to all config mode
+       and will be removed from the parameter array passed to the shared module */
+      char *aptr;
+      aptr=strcasestr(atoken,"dbgl");
+
+      if (aptr != NULL) {
+        cfgptr->rtflags = cfgptr->rtflags | strtol(aptr+4,NULL,0);
+      } else {
+        cfgptr->cfgP[cfgptr->num_cfgP] = strdup(atoken);
+        cfgptr->num_cfgP++;
+      }
+
+      atoken = strtok_r(NULL,":",&strtokctx);
+    }
+
+    printf("[CONFIG] get parameters from %s ",cfgmode);
   }
-
-  printf("[CONFIG] get parameters from %s ",cfgmode);
-
   for (i=0; i<cfgptr->num_cfgP; i++) {
     printf("%s ",cfgptr->cfgP[i]);
   }
@@ -339,6 +339,7 @@ void end_configmodule(void) {
     pthread_mutex_lock(&cfgptr->memBlocks_mutex);
     printf ("[CONFIG] free %u config value pointers\n",cfgptr->numptrs);
 
+    int n=0;
     for(int i=0; i<cfgptr->numptrs ; i++) {
       if (cfgptr->oneBlock[i].ptrs != NULL && cfgptr->oneBlock[i].ptrsAllocated== true && cfgptr->oneBlock[i].toFree) {
         free(cfgptr->oneBlock[i].ptrs);
@@ -358,13 +359,23 @@ void free_configmodule(void) {
     end_configmodule();
 
     if( cfgptr->cfgmode != NULL) free(cfgptr->cfgmode);
-
-    printf ("[CONFIG] free %i config parameter pointers\n",cfgptr->num_cfgP);
+    int n=0;
+    for(int i=0; i<cfgptr->numptrs ; i++) {
+      if (cfgptr->ptrs[i] != NULL) {
+        free(cfgptr->ptrs[i]);
+        cfgptr->ptrs[i]=NULL;
+	    cfgptr->ptrsAllocated[i] = false;
+	    n++;
+      }
+    }
+    printf ("[CONFIG] %u/%u persistent config value pointers have been released\n",n,cfgptr->numptrs); 
+    cfgptr->numptrs=0;
+    printf ("[CONFIG] free %i config module parameter pointers\n",cfgptr->num_cfgP);
 
     for (int i=0; i<cfgptr->num_cfgP; i++) {
       if ( cfgptr->cfgP[i] != NULL) free(cfgptr->cfgP[i]);
     }
-
+    free(cfgptr->argv_info);
     free(cfgptr);
     cfgptr=NULL;
   }

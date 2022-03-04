@@ -120,7 +120,15 @@ extern configmodule_interface_t *cfgptr;
 
 #define CONFIG_ENABLECMDLINEONLY  (1<<1)
 extern configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags);
+/* free ressources used to read parameters, keep memory 
+ * allocated for parameters values which has been defined with the PARAMFLAG_NOFREE flag
+ * should be used as soon as there is no need to read parameters but doesn't prevent
+ * a new config module init
+*/
 extern void end_configmodule(void);
+/* free all config module memory, to be used at end of program as
+ * it will free parameters values even those specified with the PARAMFLAG_NOFREE flag */
+extern void free_configmodule(void);
 #define CONFIG_PRINTF_ERROR(f, x... ) if (isLogInitDone ()) { LOG_E(ENB_APP,f,x);} else {printf(f,x);}; if ( !CONFIG_ISFLAGSET(CONFIG_NOABORTONCHKF) ) exit_fun("exit because configuration failed\n");
 
 
