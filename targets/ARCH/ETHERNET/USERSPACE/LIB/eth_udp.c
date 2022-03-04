@@ -297,7 +297,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 #endif
 
     
-    // bring TX data into 12 LSBs for softmodem RX
+    // bring TX data into 12 MSBs 
   for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
@@ -389,9 +389,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 }
       
 
-#define NOSHIFT 1
-
-int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void *buff, int nsamps, int *cc) {
+int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uint32_t **buff, int nsamps, int packet_idx,int *cc) {
   
   int bytes_received=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
@@ -402,41 +400,25 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
   static int packet_cnt=0;
   int payload_size = UDP_PACKET_SIZE_BYTES(nsamps);
 
-#if defined(__x86_64__) || defined(__i386__)
-#ifdef __AVX2__
-    int nsamps2 = (payload_size>>5)+1;
-  __m256i temp_rx[nsamps2];
-  char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;
-#else
-    int nsamps2 = (payload_size>>4)+1;
-  __m128i temp_rx[nsamps2];
-  char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;  
-#endif
-#elif defined(__arm__) || defined(__aarch64__)
-  int nsamps2 = (payload_size>>4)+1;
-  int16x8_t temp_rx[nsamps2];
-  char *temp_rx0 = ((char *)&temp_rx[1])-APP_HEADER_SIZE_BYTES;  
-#else
-#error Unsupported CPU architecture device cannot be built
-  int nsamps2 = (payload_size>>2)+1;
-  int32_t temp_rx[payload_size>>2];
-  char* *temp_rx0 = ((char *)&temp_rx[1]) - APP_HEADER_SIZE_BYTES;  
-#endif
+  int nsamps2 = (payload_size>>2)+(APP_HEADER_SIZE_BYTES>>2);
+  int32_t temp_rx[nsamps2+1];
+  char *temp_rx0 = ((char *)&temp_rx[1+(APP_HEADER_SIZE_BYTES>>2)]) - APP_HEADER_SIZE_BYTES;  
   
   eth->rx_nsamps=nsamps;
 
   bytes_received=0;
   block_cnt=0;
   AssertFatal(eth->compression == NO_COMPRESS, "IF5 compression not supported for now\n");
-  
+ 
   while(bytes_received < payload_size) {
   again:
+//    LOG_I(PHY,"temp_rx0 %p, temp_rx[0] %p temp_rx[APP_HEADER_SIZE_BYTES>>2] %p APP_HEADER_SIZE_BYTES %ld\n",temp_rx0,&temp_rx[0],&temp_rx[APP_HEADER_SIZE_BYTES>>2],APP_HEADER_SIZE_BYTES); 
     bytes_received +=recvfrom(eth->sockfdd,
-			      temp_rx0,
+			      (void*)temp_rx0,
 			      payload_size,
 			      rcvfrom_flag,
 			      (struct sockaddr *)&eth->dest_addrd,
-			      (socklen_t *)&eth->addr_len);
+			      (socklen_t *)&eth->addr_len); 
     packet_cnt++;
     if (bytes_received ==-1) {
       eth->num_rx_errors++;
@@ -473,22 +455,9 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
     eth->rx_count++;
   }	 
 
-#ifdef NOSHIFT
-  memcpy(buff,(void*)(temp_rx+1),payload_size); 
-#else
-  // populate receive buffer in lower 12-bits from 16-bit representation
-  for (int j=1; j<nsamps2; j++) {
-#if defined(__x86_64__) || defined(__i386__)
-#ifdef __AVX2__
-       ((__m256i *)buff)[j-1] = _mm256_srai_epi16(temp_rx[j],2);
-#else
-       ((__m128i *)buff)[j-1] = _mm_srai_epi16(temp_rx[j],2);
-#endif
-#elif defined(__arm__)
-       ((int16x8_t *)buff)[j] = vshrq_n_s16(temp_rx[i][j],2);
-#endif
-  }
-#endif
+  if (buff) memcpy((void*)(buff[*cc]+packet_idx*nsamps),
+                    (void*)(temp_rx+1),
+                    nsamps<<2); 
   
   return (payload_size>>2);
 }

@@ -250,7 +250,6 @@ int aw2s_startstreaming(openair0_device *device) {
 
   }
   ORI_Object_s *link= ORI_FindObject(ori, ORI_ObjectType_ORILink, 0, NULL);
-
   if (tx0 == NULL || 
       (tx1 == NULL && openair0_cfg->tx_num_channels > 1) || 
       (tx2 == NULL && openair0_cfg->tx_num_channels > 2) ||
@@ -335,7 +334,7 @@ int aw2s_startstreaming(openair0_device *device) {
     printf("\n\n\n========================================================\n");
 
     /* Put Tx3 into service */
-   result = ORI_ObjectStateModification(ori, tx1, ORI_AST_Unlocked, &RE_result);
+   result = ORI_ObjectStateModification(ori, tx3, ORI_AST_Unlocked, &RE_result);
     if(result != ORI_Result_SUCCESS)
       {
         printf("ORI_ObjectStateModify failed with error: %s\n", ORI_Result_Print(result));
@@ -402,7 +401,7 @@ int aw2s_startstreaming(openair0_device *device) {
   if (rx3) {
     printf("\n\n\n========================================================\n");
 
-    /* Put Rx1 into service */
+    /* Put Rx3 into service */
     result = ORI_ObjectStateModification(ori, rx3, ORI_AST_Unlocked, &RE_result);
     if(result != ORI_Result_SUCCESS)
       {
@@ -412,33 +411,45 @@ int aw2s_startstreaming(openair0_device *device) {
       }
     printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
   }
-  /*
+/*  
   while (rx0->fst != ORI_FST_Operational || 
          (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
-         tx0->fst != ORI_FST_Operational || 
-         (openair0_cfg->tx_num_channels > 1 && tx1->fst != ORI_FST_Operational))
-  {}*/	
+         (openair0_cfg->rx_num_channels > 2 && rx2->fst != ORI_FST_Operational) || 
+         (openair0_cfg->rx_num_channels > 3 && rx3->fst != ORI_FST_Operational))  
+  {}
+*/	
   // test RX interface 
   uint64_t TS;
-  char temp_rx[1024] __attribute__((aligned(32)));
+  int64_t deltaTS,olddeltaTS=-1;
   int aid,r0=0,r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
   int r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
   int r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;
 
   int i;
   int Npackets=1024000;
+  openair0_timestamp oldTS=0;
+  int fhjumps=0;
   for (i=0;i<Npackets;i++) {
     device->trx_read_func2(device,
                            (openair0_timestamp*)&TS,
-                           (void*)temp_rx,
+                           NULL,
                            256,
+                           0,
                            &aid);
     if (aid == 0) r0=1;
     if (aid == 1) r1=1;
     if (aid == 2) r2=1;
     if (aid == 3) r3=1;
+    if (aid==0) {
+      deltaTS = TS-oldTS;
+      oldTS=TS;
+      if (deltaTS != olddeltaTS && olddeltaTS > 0) {
+          fhjumps++;
+      }
+      if (i>0) olddeltaTS = deltaTS;
+    }
   }
-  if (r0==1 && r1==1 && r2==1 && r3==1) printf("Streaming started, returning to OAI\n");
+  if (r0==1 && r1==1 && r2==1 && r3==1) printf("Streaming started, returning to OAI, fghjumps %d\n",fhjumps);
   else {
     printf("Didn't get anything from one antenna port after %d packets %d,%d,%d,%d\n",Npackets,r0,r1,r2,r3);
     return(-1);

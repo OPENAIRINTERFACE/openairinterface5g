@@ -302,7 +302,11 @@ void fh_if5_south_in(RU_t *ru,
                      int *tti) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
-  recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_RRH_GW_UL);
+  nfapi_nr_config_request_scf_t *cfg = &ru->config;
+  int is_rx=1;
+  int slot_type = nr_slot_select(cfg,*frame,*tti);
+  if (slot_type == NR_DOWNLINK_SLOT) is_rx=0;
+  recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_RRH_GW_UL,is_rx);
   if (proc->first_rx == 1) ru->ts_offset = proc->timestamp_rx;
   proc->frame_rx    = ((proc->timestamp_rx-ru->ts_offset) / (fp->samples_per_subframe*10))&1023;
   proc->tti_rx = fp->get_slot_from_timestamp(proc->timestamp_rx-ru->ts_offset,fp);
@@ -475,7 +479,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   RU_proc_t *proc        = &ru->proc;
   int tti_tx,frame_tx;
   openair0_timestamp timestamp_tx;
-  recv_IF5(ru, &timestamp_tx, *slot, IF5_RRH_GW_DL);
+  recv_IF5(ru, &timestamp_tx, *slot, IF5_RRH_GW_DL,1);
   //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
   frame_tx    = (timestamp_tx / (fp->samples_per_subframe*10))&1023;
   uint32_t idx_sf = timestamp_tx / fp->samples_per_subframe;
@@ -1363,6 +1367,8 @@ void *ru_thread( void *param ) {
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
+    continue;
+
     if (initial_wait == 1 && proc->frame_rx < 300 && ru->fh_south_in == rx_rf) {
        if (proc->frame_rx>0 && ((proc->frame_rx % 100) == 0) && proc->tti_rx==0) {
           LOG_I(PHY,"delay processing to let RX stream settle, frame %d (trials %d)\n",proc->frame_rx,ru->rx_fhaul.trials);
@@ -1413,6 +1419,8 @@ void *ru_thread( void *param ) {
         int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
         uint8_t prachStartSymbol,N_dur;
         if (prach_id>=0) {
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );
+
           T(T_GNB_PHY_PRACH_INPUT_SIGNAL, T_INT(proc->frame_rx), T_INT(proc->tti_rx), T_INT(0),
             T_BUFFER(&ru->common.rxdata[0][fp->get_samples_slot_timestamp(proc->tti_rx-1,fp,0)]/*-ru->N_TA_offset*/, fp->get_samples_per_slot(proc->tti_rx,fp)*4*2));
           N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
@@ -1443,6 +1451,7 @@ void *ru_thread( void *param ) {
           }
 
           free_nr_ru_prach_entry(ru,prach_id);
+          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );
         }
       }
     }
@@ -1458,6 +1467,7 @@ void *ru_thread( void *param ) {
     syncMsg->timestamp_tx = proc->timestamp_tx;
     res->key = proc->tti_rx;
     pushTpool(gNB->threadPool, res);
+
   }
 
   printf( "Exiting ru_thread \n");

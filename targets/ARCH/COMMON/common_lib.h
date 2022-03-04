@@ -411,12 +411,13 @@ struct openair0_device_t {
    * was received.
    * \param device the hardware to use
    * \param[out] ptimestamp the time at which the first sample was received.
-   * \param[out] buff A pointers to a buffer for received samples. The buffer must be large enough to hold the number of samples \ref nsamps.
+   * \param[out] buff A pointer to a buffer[ant_id][] for received samples. The buffer[ant_id] must be large enough to hold the number of samples \ref nsamps * the number of packets.
    * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
+   * \param packet_idx offset into
    * \param antenna_id Index of antenna from which samples were received
    * \returns the number of sample read
    */
-  int (*trx_read_func2)(openair0_device *device, openair0_timestamp *ptimestamp, void *buff, int nsamps,int *antenna_id);
+  int (*trx_read_func2)(openair0_device *device, openair0_timestamp *ptimestamp, uint32_t **buff, int nsamps,int packet_idx,int *antenna_id);
 
   /*! \brief print the device statistics
    * \param device the hardware to use

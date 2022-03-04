@@ -1052,7 +1052,7 @@ static inline int64_t clock_difftime_ns(struct timespec start, struct timespec e
 void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seqno, uint16_t packet_type) {      
   
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
-  int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
+  int32_t *txp[ru->nb_tx], *rxp[ru->nb_rx]; 
   int32_t *tx_buffer=NULL;
   uint16_t packet_id=0, i=0;
 
@@ -1106,7 +1106,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
 
       NR_DL_FRAME_PARMS *nrfp = ru->nr_frame_parms;
 
-      int offset,siglen,factor=1;
+      int offset,siglen,factor_n=1,factor_d=1;
       if (nrfp) {
          offset = nrfp->get_samples_slot_timestamp(tti,nrfp,0);
          siglen = nrfp->get_samples_per_slot(tti,nrfp);
@@ -1117,11 +1117,13 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
       }
 
       if (ru->openair0_cfg.nr_flag==1) {
-         if (nrfp->N_RB_DL <= 162 && nrfp->N_RB_DL >= 106) factor = 2;
-         else if (nrfp->N_RB_DL < 106) factor=4;
+         if (nrfp->N_RB_DL <= 162 && nrfp->N_RB_DL > 106)      {factor_n=1; factor_d=2;}  // 61.44 Ms/s
+         else if (nrfp->N_RB_DL <= 106 && nrfp->N_RB_DL > 51 ) {factor_n=3; factor_d=4;} // 46.08 Ms/s
+         else if (nrfp->N_RB_DL == 51 )  {factor_n=1; factor_d=1;} // 30.72 Ms/s
+         else AssertFatal(1==0,"N_RB_DL %d not supported yet\n",nrfp->N_RB_DL); 
       }
       else {
-         factor = 30720/spsf;
+         factor_n = 30720/spsf;
       }
       for (i=0; i < ru->nb_tx; i++)
         txp[i] = (int32_t*)&ru->common.txdata[i][offset];
@@ -1132,7 +1134,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
           clock_gettime( CLOCK_MONOTONIC, &start_comp);
           ru->ifdevice.trx_write_func2(&ru->ifdevice,
-	  			       (proc_timestamp + packet_id*spp_eth-600)*factor,
+	  			       ((proc_timestamp + packet_id*spp_eth-600)*factor_n)/factor_d,
 				       (void*)txp[aid],
 				       spp_eth,
 				       aid,
@@ -1181,7 +1183,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
       }
 */
     } else if (eth->compression == NO_COMPRESS) {
-      for (i=0; i < fp->nb_antennas_rx; i++)
+      for (i=0; i < ru->nb_rx; i++)
         rxp[i] = (void*)&ru->common.rxdata[i][tti*fp->samples_per_tti];
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
@@ -1192,12 +1194,12 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
 				    (proc_timestamp + packet_id*spp_eth),
 				    (void**)rxp,
 				    spp_eth,
-				    fp->nb_antennas_rx,
+				    ru->nb_rx,
 				    0);
         clock_gettime( CLOCK_MONOTONIC, &end_comp);
         LOG_D(HW,"[SF %d] IF_Write_Time: %"PRId64"\n",tti,clock_difftime_ns(start_comp, end_comp));
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );            
-        for (i=0; i < fp->nb_antennas_rx; i++)
+        for (i=0; i < ru->nb_rx; i++)
           rxp[i] += spp_eth;
 
       }    
@@ -1211,7 +1213,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
   return;  		    
 }
 
-void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t packet_type) {
+void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t packet_type,int is_rx) {
 
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
   int32_t *txp[ru->nb_tx], *rxp[ru->nb_rx]; 
@@ -1225,6 +1227,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
   openair0_timestamp timestamp[ru->nb_rx*spsf / spp_eth];
   long timein[ru->nb_rx*spsf/spp_eth];
   long timeout[ru->nb_rx*spsf/spp_eth];
+  long aid_list[ru->nb_rx*spsf/spp_eth];
   struct timespec if_time;
  
   memset(timestamp, 0, sizeof(timestamp));
@@ -1271,7 +1274,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
 */
     } else if (eth->compression == NO_COMPRESS) {
       int subframe = tti;
-      for (i=0; i < fp->nb_antennas_tx; i++)
+      for (i=0; i < ru->nb_tx; i++)
         txp[i] = (void*)&ru->common.txdata[i][subframe*fp->samples_per_tti];
     
       for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
@@ -1282,11 +1285,11 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
 				   &timestamp[packet_id],
 				   (void**)txp,
 				   spp_eth,
-				   fp->nb_antennas_tx);
+				   ru->nb_tx);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
         LOG_D(HW,"[SF %d] IF_Read_Time: %"PRId64"\n",subframe,clock_difftime_ns(start_decomp, end_decomp));
         //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );  
-        for (i=0; i < fp->nb_antennas_tx; i++)
+        for (i=0; i < ru->nb_tx; i++)
           txp[i] += spp_eth;
 
       }
@@ -1329,12 +1332,11 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
       }
 */
     } else if (eth->compression == NO_COMPRESS) {
-      int16_t temp_rx[spp_eth*2] __attribute__((aligned(32)));
+      //int16_t temp_rx[spp_eth*2] __attribute__((aligned(32)));
       NR_DL_FRAME_PARMS *nrfp = ru->nr_frame_parms;
 
       int offset,siglen;
-      int factor=1;
-      int ts_offset;
+      int factor_n=1,factor_d=1;
       if (nrfp) {
          offset =  nrfp->get_samples_slot_timestamp(tti,nrfp,0);
          siglen = nrfp->get_samples_per_slot(tti,nrfp);
@@ -1344,13 +1346,12 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
          siglen = spsf;
       }
       if (ru->openair0_cfg.nr_flag==1) { // This check if RRU knows about NR numerologies
-         if (nrfp->N_RB_DL <= 162 && nrfp->N_RB_DL >= 106) factor = 2;
-         else if (nrfp->N_RB_DL < 106) factor=4;
-         ts_offset = 64;
+         if (nrfp->N_RB_DL <= 162 && nrfp->N_RB_DL > 106) factor_n = 2;
+         else if (nrfp->N_RB_DL <= 106 && nrfp->N_RB_DL > 51) {factor_d=3;factor_n=4;}
+         else if (nrfp->N_RB_DL == 51) {factor_n=1;factor_d=1;}
       }
       else {
-         factor = 30720/spsf;
-         ts_offset = 256;
+         factor_d = 30720/spsf;
       }
       for (i=0; i < ru->nb_rx; i++)
         rxp[i] = &ru->common.rxdata[i][offset];
@@ -1365,19 +1366,21 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
         timein[packet_id] = if_time.tv_nsec;
         ru->ifdevice.trx_read_func2(&ru->ifdevice,
 				   &timestamp[packet_id],
-				   (void*)temp_rx,
+				   (is_rx>0) ? rxp : NULL,
 				   spp_eth,
+                                   packet_id,
 				   &aid);
         clock_gettime( CLOCK_MONOTONIC, &if_time);
         timeout[packet_id] = if_time.tv_nsec;
-        timestamp[packet_id] /= factor; // for LTE this is the sample rate reduction w.r.t 30.72, for NR 122.88
-        LOG_D(PHY,"TTI %d: factor = %d Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld, \n",tti,factor,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
+        timestamp[packet_id] = (timestamp[packet_id]*factor_n)/factor_d; 
+        aid_list[packet_id] = aid;
+        //LOG_D(PHY,"TTI %d: factor = %d/%d Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld, \n",tti,factor_n,factor_d,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
 
         if (aid==0) {
            if (firstTS==1) firstTS=0;
-           else if (oldTS + ts_offset != timestamp[packet_id]) {
-              LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu, timein %lu, timeout %lu\n",(long long unsigned int)oldTS,(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[packet_id]-oldTS,timein[packet_id],timeout[packet_id]); 
-              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d TS %llu, timein %lu, timeout %lu\n",i,(long long unsigned int)timestamp[i],timein[i],timeout[i]);
+           else if (oldTS + spp_eth != timestamp[packet_id]) {
+              LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu, timediff %ld\n",(long long unsigned int)oldTS,(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[packet_id]-oldTS,-timein[packet_id]+timeout[packet_id]); 
+              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d aid %d TS %llu, timediff %ld\n",i,aid_list[i],(long long unsigned int)timestamp[i],-timein[i]+timeout[i]);
               AssertFatal(1==0,"fronthaul problem\n");
            }
 
@@ -1388,12 +1391,12 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
         // HYPOTHESIS: first packet per subframe has lowest timestamp of subframe
         // should detect out of order and act accordingly ....
         AssertFatal(aid==0 || aid==1 || aid==2 || aid==3,"aid %d != 0,1,2 or 3\n",aid);
-        LOG_D(PHY,"rxp[%d] %p, dest %p, offset %d (%llu,%llu)\n",aid,rxp[aid],rxp[aid]+(timestamp[packet_id]-timestamp[0]),(int)(timestamp[packet_id]-timestamp[0]),(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[0]);
-        memcpy((void*)(rxp[aid]+(timestamp[packet_id]-timestamp[0])),
-               (void*)temp_rx,
-               spp_eth<<2);
+        //LOG_D(PHY,"rxp[%d] %p, dest %p, offset %d (%llu,%llu)\n",aid,rxp[aid],rxp[aid]+(timestamp[packet_id]-timestamp[0]),(int)(timestamp[packet_id]-timestamp[0]),(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[0]);
+        //memcpy((void*)(rxp[aid]+(timestamp[packet_id]-timestamp[0])),
+        //       (void*)temp_rx,
+        //       spp_eth<<2);
         clock_gettime( CLOCK_MONOTONIC, &end_decomp);
-        LOG_D(HW,"[TTI %d] IF_Read_Time: %"PRId64"\n",tti,clock_difftime_ns(start_decomp, end_decomp));
+        //LOG_D(HW,"[TTI %d] IF_Read_Time: %"PRId64"\n",tti,clock_difftime_ns(start_decomp, end_decomp));
         //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 0 );            
 
       }

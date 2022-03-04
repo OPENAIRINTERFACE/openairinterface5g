@@ -145,10 +145,10 @@ int trx_eth_start(openair0_device *device)
         if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
     }
     /* apply additional configuration */
-    if(ethernet_tune (device, SND_BUF_SIZE,2000000000)!=0)  return -1;
-    if(ethernet_tune (device, RCV_BUF_SIZE,2000000000)!=0)  return -1;
-    if(ethernet_tune (device, KERNEL_SND_BUF_MAX_SIZE, 200000000)!=0)  return -1;
-    if(ethernet_tune (device, KERNEL_RCV_BUF_MAX_SIZE, 200000000)!=0)  return -1;
+    if(ethernet_tune (device, SND_BUF_SIZE,67108864)!=0)  return -1;
+    if(ethernet_tune (device, RCV_BUF_SIZE,67108864)!=0)  return -1;
+    if(ethernet_tune (device, KERNEL_SND_BUF_MAX_SIZE, 67108864)!=0)  return -1;
+    if(ethernet_tune (device, KERNEL_RCV_BUF_MAX_SIZE, 67108864)!=0)  return -1;
 
 
     return 0;
@@ -357,7 +357,7 @@ int ethernet_tune(openair0_device *device,
         }
         break;
     case KERNEL_RCV_BUF_MAX_SIZE:
-      ret=snprintf(system_cmd,sizeof(system_cmd),"sysctl -w net.core.rmem_max=%d",value);
+      ret=snprintf(system_cmd,sizeof(system_cmd),"sysctl -w net.core.rmem_max=%d;sysctl -w net.core.rmem_default=%d",value,value);
       if (ret > 0) {
 	ret=system(system_cmd);
 	if (ret == -1) {
@@ -371,7 +371,7 @@ int ethernet_tune(openair0_device *device,
       }
       break;
     case KERNEL_SND_BUF_MAX_SIZE:
-      ret=snprintf(system_cmd,sizeof(system_cmd),"sysctl -w net.core.wmem_max=%d",value);
+      ret=snprintf(system_cmd,sizeof(system_cmd),"sysctl -w net.core.wmem_max=%d;sysctl -w net.core.wmem_default=%d;sysctl -w net.core.netdev_max_backlog=416384;sysctl -w net.core.optmem_max=524288;",value,value);
       if (ret > 0) {
 	ret=system(system_cmd);
 	if (ret == -1) {
