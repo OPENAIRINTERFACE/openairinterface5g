@@ -840,6 +840,7 @@ typedef struct gNB_MAC_INST_s {
 
   bool first_MIB;
   NR_bler_options_t dl_bler;
+  NR_bler_options_t ul_bler;
   uint8_t harq_round_max;
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
