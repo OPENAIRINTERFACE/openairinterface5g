@@ -608,7 +608,7 @@ void RCconfig_nr_prs(void)
   uint16_t  j;
 
   paramdef_t PRS_Params[] = PRS_PARAMS_DESC;
-  paramlist_def_t PRS_ParamList = {GNB_CONFIG_STRING_PRS_CONFIG,NULL,0};
+  paramlist_def_t PRS_ParamList = {CONFIG_STRING_PRS_CONFIG,NULL,0};
 
   if (RC.gNB == NULL) {
     RC.gNB                       = (PHY_VARS_gNB **)malloc((1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB*));
@@ -640,24 +640,29 @@ void RCconfig_nr_prs(void)
       RC.gNB[j]->prs_cfg.PRSResourceOffset        = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_OFFSET].uptr);
       RC.gNB[j]->prs_cfg.PRSResourceRepetition    = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_REPETITION].uptr);
       RC.gNB[j]->prs_cfg.PRSResourceTimeGap       = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_TIME_GAP].uptr);
+      RC.gNB[j]->prs_cfg.NPRSID                   = *(PRS_ParamList.paramarray[j][PRS_ID].uptr);
 
-      LOG_I(NR_PHY, "PRS Config for gNB_ID %d\n", j);
-      LOG_I(NR_PHY, "PRSResourceSetPeriod0 %d\n", RC.gNB[j]->prs_cfg.PRSResourceSetPeriod[0]);
-      LOG_I(NR_PHY, "PRSResourceSetPeriod1 %d\n", RC.gNB[j]->prs_cfg.PRSResourceSetPeriod[1]);
-      LOG_I(NR_PHY, "SymbolStart %d\n", RC.gNB[j]->prs_cfg.SymbolStart);
-      LOG_I(NR_PHY, "NumPRSSymbols %d\n", RC.gNB[j]->prs_cfg.NumPRSSymbols);
-      LOG_I(NR_PHY, "NumRB %d\n", RC.gNB[j]->prs_cfg.NumRB);
-      LOG_I(NR_PHY, "RBOffset %d\n", RC.gNB[j]->prs_cfg.RBOffset);
-      LOG_I(NR_PHY, "CombSize %d\n", RC.gNB[j]->prs_cfg.CombSize);
-      LOG_I(NR_PHY, "REOffset %d\n", RC.gNB[j]->prs_cfg.REOffset);
-      LOG_I(NR_PHY, "PRSResourceOffset %d\n", RC.gNB[j]->prs_cfg.PRSResourceOffset);
-      LOG_I(NR_PHY, "PRSResourceRepetition %d\n", RC.gNB[j]->prs_cfg.PRSResourceRepetition);
-      LOG_I(NR_PHY, "PRSResourceTimeGap %d\n", RC.gNB[j]->prs_cfg.PRSResourceTimeGap);
+      LOG_I(PHY, "--------------------------\n");
+      LOG_I(PHY, "PRS Config for gNB_ID %d\n", j);
+      LOG_I(PHY, "--------------------------\n");
+      LOG_I(PHY, "PRSResourceSetPeriod0 %d\n", RC.gNB[j]->prs_cfg.PRSResourceSetPeriod[0]);
+      LOG_I(PHY, "PRSResourceSetPeriod1 %d\n", RC.gNB[j]->prs_cfg.PRSResourceSetPeriod[1]);
+      LOG_I(PHY, "SymbolStart %d\n", RC.gNB[j]->prs_cfg.SymbolStart);
+      LOG_I(PHY, "NumPRSSymbols %d\n", RC.gNB[j]->prs_cfg.NumPRSSymbols);
+      LOG_I(PHY, "NumRB %d\n", RC.gNB[j]->prs_cfg.NumRB);
+      LOG_I(PHY, "RBOffset %d\n", RC.gNB[j]->prs_cfg.RBOffset);
+      LOG_I(PHY, "CombSize %d\n", RC.gNB[j]->prs_cfg.CombSize);
+      LOG_I(PHY, "REOffset %d\n", RC.gNB[j]->prs_cfg.REOffset);
+      LOG_I(PHY, "PRSResourceOffset %d\n", RC.gNB[j]->prs_cfg.PRSResourceOffset);
+      LOG_I(PHY, "PRSResourceRepetition %d\n", RC.gNB[j]->prs_cfg.PRSResourceRepetition);
+      LOG_I(PHY, "PRSResourceTimeGap %d\n", RC.gNB[j]->prs_cfg.PRSResourceTimeGap);
+      LOG_I(PHY, "NPRS_ID %d\n", RC.gNB[j]->prs_cfg.NPRSID);
+      LOG_I(PHY, "--------------------------\n");
     } // for j
   }
   else
   {
-    LOG_I(NR_PHY,"No " GNB_CONFIG_STRING_PRS_CONFIG " configuration found\n");
+    LOG_I(NR_PHY,"No " CONFIG_STRING_PRS_CONFIG " configuration found\n");
   }
 }
 

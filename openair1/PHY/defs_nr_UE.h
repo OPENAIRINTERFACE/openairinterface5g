@@ -829,7 +829,7 @@ typedef struct {
   NR_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_gNB_MAX];
-  NR_UE_PRS       *prs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_PRS       *prs_vars[NR_MAX_PRS_COMB_SIZE];
   
   //Paging parameters
   uint32_t              IMSImod1024;

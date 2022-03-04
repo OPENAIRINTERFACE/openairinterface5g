@@ -35,8 +35,26 @@
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+/* PRS configuration section names   */
+#define CONFIG_STRING_PRS_LIST                              "PRSs"
+#define CONFIG_STRING_PRS_CONFIG                            "prs_config"
+
+
+/* Global parameters */
+#define CONFIG_STRING_ACTIVE_GNBs                         "Active_gNBs"
+/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            PRS configuration parameters                                                                             */
+/*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
+/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define PRS_GLOBAL_PARAMS_DESC { \
+{CONFIG_STRING_ACTIVE_GNBs,                          NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0}          \
+}
+
+#define PRS_ACTIVE_GNBS_IDX                              0
+/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 
 /* PRS configuration parameters names   */
+#define CONFIG_STRING_GNB_ID                                "gNB_id"
 #define CONFIG_STRING_PRS_RESOURCE_SET_PERIOD0              "PRSResourceSetPeriod0"
 #define CONFIG_STRING_PRS_RESOURCE_SET_PERIOD1              "PRSResourceSetPeriod1"
 #define CONFIG_STRING_PRS_SYMBOL_START                      "SymbolStart"
@@ -56,32 +74,34 @@
 /*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define PRS_PARAMS_DESC { \
-{CONFIG_STRING_PRS_RESOURCE_SET_PERIOD0,           NULL,      0,         uptr:NULL,           defintval:40,              TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_RESOURCE_SET_PERIOD1,           NULL,      0,         uptr:NULL,           defintval:0,               TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_SYMBOL_START,                   NULL,      0,         uptr:NULL,           defintval:7,               TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_NUM_SYMBOLS,                    NULL,      0,         uptr:NULL,           defintval:4,               TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_NUM_RB,                         NULL,      0,         uptr:NULL,           defintval:106,             TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_RB_OFFSET,                      NULL,      0,         uptr:NULL,           defintval:0,               TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_COMB_SIZE,                      NULL,      0,         uptr:NULL,           defintval:4,               TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_RE_OFFSET,                      NULL,      0,         uptr:NULL,           defintval:0,               TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_RESOURCE_OFFSET,                NULL,      0,         uptr:NULL,           defintval:0,               TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_RESOURCE_REPETITION,            NULL,      0,         uptr:NULL,           defintval:1,               TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_RESOURCE_TIME_GAP,              NULL,      0,         uptr:NULL,           defuintval:1,              TYPE_UINT,     0},         \
-{CONFIG_STRING_PRS_ID,                             NULL,      0,         uptr:NULL,           defintval:0,               TYPE_UINT,     0}          \
+{CONFIG_STRING_GNB_ID,                             NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_RESOURCE_SET_PERIOD0,           NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_RESOURCE_SET_PERIOD1,           NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_SYMBOL_START,                   NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_NUM_SYMBOLS,                    NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_NUM_RB,                         NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_RB_OFFSET,                      NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_COMB_SIZE,                      NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_RE_OFFSET,                      NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_RESOURCE_OFFSET,                NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_RESOURCE_REPETITION,            NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_RESOURCE_TIME_GAP,              NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0},         \
+{CONFIG_STRING_PRS_ID,                             NULL,      0,         uptr:NULL,           defuintval:0,               TYPE_UINT,     0}          \
 }
 
-#define PRS_RESOURCE_SET_PERIOD0                     0
-#define PRS_RESOURCE_SET_PERIOD1                     1
-#define PRS_SYMBOL_START                             2
-#define PRS_NUM_SYMBOLS                              3
-#define PRS_NUM_RB                                   4
-#define PRS_RB_OFFSET                                5
-#define PRS_COMB_SIZE                                6
-#define PRS_RE_OFFSET                                7
-#define PRS_RESOURCE_OFFSET                          8
-#define PRS_RESOURCE_REPETITION                      9
-#define PRS_RESOURCE_TIME_GAP                        10
-#define PRS_ID                                       11
+#define PRS_GNB_ID                                   0
+#define PRS_RESOURCE_SET_PERIOD0                     1
+#define PRS_RESOURCE_SET_PERIOD1                     2
+#define PRS_SYMBOL_START                             3
+#define PRS_NUM_SYMBOLS                              4
+#define PRS_NUM_RB                                   5
+#define PRS_RB_OFFSET                                6
+#define PRS_COMB_SIZE                                7
+#define PRS_RE_OFFSET                                8
+#define PRS_RESOURCE_OFFSET                          9
+#define PRS_RESOURCE_REPETITION                      10
+#define PRS_RESOURCE_TIME_GAP                        11
+#define PRS_ID                                       12
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif

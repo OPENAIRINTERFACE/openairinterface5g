@@ -406,7 +406,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                      frame_params->ofdm_symbol_size,
                      &tdoa[l],
                      &ch_pwr[l]);
-      LOG_I(PHY, "[gNB %d][Rx %d] TDoA for PRS symbol %d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, l, tdoa[l]-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr[l]));
+      LOG_I(PHY, "[gNB %d][Rx %d] TDoA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, l, tdoa[l]-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr[l]));
     } // for rxAnt
   } //for l
 

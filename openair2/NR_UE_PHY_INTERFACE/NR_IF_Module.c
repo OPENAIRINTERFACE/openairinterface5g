@@ -1279,40 +1279,60 @@ void RCconfig_nr_ue_L1(void) {
 void RCconfig_nrUE_prs(void *cfg)
 {
   int j = 0, gNB_id = 0;
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
   PHY_VARS_NR_UE *ue = (PHY_VARS_NR_UE *)cfg;
-  paramdef_t PRS_Params[] = PRS_PARAMS_DESC;
-  paramlist_def_t PRS_ParamList = {GNB_CONFIG_STRING_PRS_CONFIG,NULL,0};
-  config_getlist( &PRS_ParamList,PRS_Params,sizeof(PRS_Params)/sizeof(paramdef_t), NULL);
-  printf("Inside RCconfig_nrUE_prs\n");
 
-  if (PRS_ParamList.numelt > 0) {
-      ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[0]  = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD0].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[1]  = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD1].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.SymbolStart              = *(PRS_ParamList.paramarray[j][PRS_SYMBOL_START].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.NumPRSSymbols            = *(PRS_ParamList.paramarray[j][PRS_NUM_SYMBOLS].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.NumRB                    = *(PRS_ParamList.paramarray[j][PRS_NUM_RB].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.RBOffset                 = *(PRS_ParamList.paramarray[j][PRS_RB_OFFSET].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.CombSize                 = *(PRS_ParamList.paramarray[j][PRS_COMB_SIZE].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.REOffset                 = *(PRS_ParamList.paramarray[j][PRS_RE_OFFSET].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.PRSResourceOffset        = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_OFFSET].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.PRSResourceRepetition    = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_REPETITION].uptr);
-      ue->prs_vars[gNB_id]->prs_cfg.PRSResourceTimeGap       = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_TIME_GAP].uptr);
+  paramlist_def_t gParamList = {CONFIG_STRING_PRS_LIST,NULL,0};
+  paramdef_t gParams[] = PRS_GLOBAL_PARAMS_DESC;
+  config_getlist( &gParamList,gParams,sizeof(gParams)/sizeof(paramdef_t), NULL);
+  int num_gnbs = *(gParamList.paramarray[j][PRS_ACTIVE_GNBS_IDX].uptr);
 
-      LOG_I(NR_PHY, "PRS Config for at nrUE %d\n", 0);
-      LOG_I(NR_PHY, "PRSResourceSetPeriod0 %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[0]);
-      LOG_I(NR_PHY, "PRSResourceSetPeriod1 %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[1]);
-      LOG_I(NR_PHY, "SymbolStart %d\n", ue->prs_vars[gNB_id]->prs_cfg.SymbolStart);
-      LOG_I(NR_PHY, "NumPRSSymbols %d\n", ue->prs_vars[gNB_id]->prs_cfg.NumPRSSymbols);
-      LOG_I(NR_PHY, "NumRB %d\n", ue->prs_vars[gNB_id]->prs_cfg.NumRB);
-      LOG_I(NR_PHY, "RBOffset %d\n", ue->prs_vars[gNB_id]->prs_cfg.RBOffset);
-      LOG_I(NR_PHY, "CombSize %d\n", ue->prs_vars[gNB_id]->prs_cfg.CombSize);
-      LOG_I(NR_PHY, "REOffset %d\n", ue->prs_vars[gNB_id]->prs_cfg.REOffset);
-      LOG_I(NR_PHY, "PRSResourceOffset %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceOffset);
-      LOG_I(NR_PHY, "PRSResourceRepetition %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceRepetition);
-      LOG_I(NR_PHY, "PRSResourceTimeGap %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceTimeGap);
-  }
-  else
+  paramlist_def_t PRS_ParamList = {{0},NULL,0};
+  for(int i = 0; i < num_gnbs; i++)
   {
-    LOG_I(NR_PHY,"No " GNB_CONFIG_STRING_PRS_CONFIG " configuration found\n");
+    paramdef_t PRS_Params[] = PRS_PARAMS_DESC;
+    sprintf(PRS_ParamList.listname, "%s%i", CONFIG_STRING_PRS_CONFIG, i);
+
+    sprintf(aprefix, "%s.[%i]", CONFIG_STRING_PRS_LIST, 0);
+    config_getlist( &PRS_ParamList,PRS_Params,sizeof(PRS_Params)/sizeof(paramdef_t), aprefix);
+
+    if (PRS_ParamList.numelt > 0) {
+      for (j = 0; j < PRS_ParamList.numelt; j++) {
+        gNB_id                                                 = *(PRS_ParamList.paramarray[j][PRS_GNB_ID].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[0]  = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD0].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[1]  = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD1].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.SymbolStart              = *(PRS_ParamList.paramarray[j][PRS_SYMBOL_START].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.NumPRSSymbols            = *(PRS_ParamList.paramarray[j][PRS_NUM_SYMBOLS].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.NumRB                    = *(PRS_ParamList.paramarray[j][PRS_NUM_RB].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.RBOffset                 = *(PRS_ParamList.paramarray[j][PRS_RB_OFFSET].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.CombSize                 = *(PRS_ParamList.paramarray[j][PRS_COMB_SIZE].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.REOffset                 = *(PRS_ParamList.paramarray[j][PRS_RE_OFFSET].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.PRSResourceOffset        = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_OFFSET].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.PRSResourceRepetition    = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_REPETITION].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.PRSResourceTimeGap       = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_TIME_GAP].uptr);
+        ue->prs_vars[gNB_id]->prs_cfg.NPRSID                   = *(PRS_ParamList.paramarray[j][PRS_ID].uptr);
+
+        LOG_I(PHY, "--------------------------\n");
+        LOG_I(PHY, "PRS Config for gNB_id %d\n", gNB_id);
+        LOG_I(PHY, "--------------------------\n");
+        LOG_I(PHY, "PRSResourceSetPeriod0 %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[0]);
+        LOG_I(PHY, "PRSResourceSetPeriod1 %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[1]);
+        LOG_I(PHY, "SymbolStart %d\n", ue->prs_vars[gNB_id]->prs_cfg.SymbolStart);
+        LOG_I(PHY, "NumPRSSymbols %d\n", ue->prs_vars[gNB_id]->prs_cfg.NumPRSSymbols);
+        LOG_I(PHY, "NumRB %d\n", ue->prs_vars[gNB_id]->prs_cfg.NumRB);
+        LOG_I(PHY, "RBOffset %d\n", ue->prs_vars[gNB_id]->prs_cfg.RBOffset);
+        LOG_I(PHY, "CombSize %d\n", ue->prs_vars[gNB_id]->prs_cfg.CombSize);
+        LOG_I(PHY, "REOffset %d\n", ue->prs_vars[gNB_id]->prs_cfg.REOffset);
+        LOG_I(PHY, "PRSResourceOffset %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceOffset);
+        LOG_I(PHY, "PRSResourceRepetition %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceRepetition);
+        LOG_I(PHY, "PRSResourceTimeGap %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceTimeGap);
+        LOG_I(PHY, "NPRS_ID %d\n", ue->prs_vars[gNB_id]->prs_cfg.NPRSID);
+        LOG_I(PHY, "--------------------------\n");
+      }
+    }
+    else
+    {
+      LOG_I(NR_PHY,"No %s configuration found\n", PRS_ParamList.listname);
+    }
   }
 }
