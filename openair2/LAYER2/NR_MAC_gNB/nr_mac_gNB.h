@@ -627,6 +627,7 @@ typedef struct {
 
   /// Estimation of HARQ from BLER
   NR_bler_stats_t dl_bler_stats;
+  NR_bler_stats_t ul_bler_stats;
 
   uint16_t ta_frame;
   int16_t ta_update;

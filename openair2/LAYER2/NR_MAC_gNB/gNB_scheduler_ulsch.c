@@ -1174,10 +1174,11 @@ void pf_ul(module_id_t module_id,
     const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
+    const NR_mac_dir_stats_t *stats = &UE_info->mac_stats[UE_id].ul;
 
     /* Calculate throughput */
     const float a = 0.0005f; // corresponds to 200ms window
-    const uint32_t b = UE_info->mac_stats[UE_id].ul.current_bytes;
+    const uint32_t b = stats->current_bytes;
     ul_thr_ue[UE_id] = (1 - a) * ul_thr_ue[UE_id] + a * b;
 
     /* Check if retransmission is necessary */
@@ -1208,6 +1209,10 @@ void pf_ul(module_id_t module_id,
     if ((B == 0 && !do_sched) || (sched_ctrl->rrc_processing_timer > 0)) {
       continue;
     }
+
+    const NR_bler_options_t *bo = &nrmac->ul_bler;
+    const int max_mcs = bo->max_mcs; /* no per-user maximum MCS yet */
+    sched_pusch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->ul_bler_stats, max_mcs, frame);
 
     /* Schedule UE on SR or UL inactivity and no data (otherwise, will be scheduled
      * based on data to transmit) */
@@ -1284,7 +1289,7 @@ void pf_ul(module_id_t module_id,
                          sched_ctrl->aggregation_level);
 
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
-      sched_pusch->mcs = nrmac->min_grant_mcs;
+      sched_pusch->mcs = min(nrmac->min_grant_mcs, sched_pusch->mcs);
       update_ul_ue_R_Qm(sched_pusch, ps);
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
@@ -1310,7 +1315,6 @@ void pf_ul(module_id_t module_id,
     add_tail_nr_list(&UE_sched, UE_id);
 
     /* Calculate coefficient*/
-    sched_pusch->mcs = nrmac->min_grant_mcs;
     const uint32_t tbs = ul_pf_tbs[ps->mcs_table][sched_pusch->mcs];
     coeff_ue[UE_id] = (float) tbs / ul_thr_ue[UE_id];
     LOG_D(NR_MAC,"b %d, ul_thr_ue[%d] %f, tbs %d, coeff_ue[%d] %f\n",
