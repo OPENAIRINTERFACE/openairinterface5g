@@ -1307,16 +1307,6 @@ rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
   if (pdu_sessions_done > 0 || pdu_sessions_failed > 0) {
     LOG_D(NR_RRC,"NGAP_PDUSESSION_MODIFY_RESP: sending the message: nb_of_pdusessions %d, total pdu session %d, index %d\n",
           ue_context_pP->ue_context.nb_of_modify_pdusessions, ue_context_pP->ue_context.setup_pdu_sessions, i);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_GNB,
-      MSC_NGAP_GNB,
-      (const char *)&NGAP_PDUSESSION_MODIFY_RESP(msg_p),
-      sizeof(ngap_pdusession_modify_resp_t),
-      MSC_AS_TIME_FMT" PDUSESSION_MODIFY_RESP UE %X gNB_ue_ngap_id %u pdu_sessions:%u succ %u fail",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_pP->ue_id_rnti,
-      NGAP_PDUSESSION_MODIFY_RESP(msg_p).gNB_ue_ngap_id,
-      pdu_sessions_done, pdu_sessions_failed);
     itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
   } else {
     itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
