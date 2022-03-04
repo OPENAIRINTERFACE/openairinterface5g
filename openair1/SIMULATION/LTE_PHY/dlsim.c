@@ -64,6 +64,13 @@
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void feptx_prec(RU_t *ru, int frame, int subframe);
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in nr_ulsim, not finished yet */
+  return "detect_leaks=0";
+}
+
+
 double cpuf;
 #define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
@@ -140,7 +147,7 @@ void do_OFDM_mod_l(int32_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_
 }
 
 void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR, int tx_lev,int hold_channel,int abstx, int num_rounds, int trials, int round, channel_desc_t *eNB2UE[4],
-                double *s_re[2],double *s_im[2],double *r_re[2],double *r_im[2],FILE *csv_fd) {
+                double *s_re[NB_ANTENNAS_TX],double *s_im[NB_ANTENNAS_TX],double *r_re[NB_ANTENNAS_RX],double *r_im[NB_ANTENNAS_RX],FILE *csv_fd) {
   int i,u;
   int aa,aarx,aatx;
   double channelx,channely;
@@ -1538,9 +1545,9 @@ int main(int argc, char **argv) {
               LOG_M("txsig0.m","txs0", &ru->common.txdata[0][subframe* eNB->frame_parms.samples_per_tti], eNB->frame_parms.samples_per_tti,1,1);
 
               if (transmission_mode<7) {
-                LOG_M("txsigF0.m","txsF0x", &ru->common.txdataF_BF[0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+                LOG_M("txsigF0.m","txsF0x", &ru->common.txdataF_BF[0][0],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
               } else if (transmission_mode == 7) {
-                LOG_M("txsigF0.m","txsF0", &ru->common.txdataF_BF[5][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+                LOG_M("txsigF0.m","txsF0", &ru->common.txdataF_BF[5][0],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
                 LOG_M("txsigF0_BF.m","txsF0_BF", &ru->common.txdataF_BF[0][0],eNB->frame_parms.ofdm_symbol_size,1,1);
               }
             }

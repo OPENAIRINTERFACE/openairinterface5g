@@ -6481,7 +6481,7 @@ void dump_dlsch2(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t subframe,unsigned int *c
   sprintf(fname,"dlsch%d_rxF_r%d_uespec0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_uespec0",eNB_id,round);
   LOG_M(fname,vname,ue->pdsch_vars[ue->current_thread_id[subframe]][eNB_id]->rxdataF_uespec_pilots[0],
-        12*(ue->frame_parms.N_RB_DL)*NSYMB,1,1);
+        12*(ue->frame_parms.N_RB_DL),1,1);
   /*
     LOG_M("dlsch%d_ch_ext01.m","dl01_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*NSYMB,1,1);
     LOG_M("dlsch%d_ch_ext10.m","dl10_ch0_ext",pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*NSYMB,1,1);

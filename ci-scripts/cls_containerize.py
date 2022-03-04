@@ -106,6 +106,9 @@ class Containerize():
 		self.registrySvrId = ''
 		self.testSvrId = ''
 
+		#checkers from xml
+		self.ran_checkers={}
+
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
@@ -624,7 +627,7 @@ class Containerize():
 		else:
 			if containerToKill:
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + self.eNB_logFile[self.eNB_instance])
-				logStatus = RAN.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance], HTML)
+				logStatus = RAN.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance], HTML, self.ran_checkers)
 			else:
 				logStatus = 0
 			if (logStatus < 0):
@@ -788,9 +791,10 @@ class Containerize():
 					continue
 
 				logging.debug('\u001B[1m Analyzing xNB logfile ' + filename + ' \u001B[0m')
-				logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML)
+				logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML, self.ran_checkers)
 				if (logStatus < 0):
 					fullStatus = False
+					self.exitStatus = 1
 					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
 				else:
 					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)

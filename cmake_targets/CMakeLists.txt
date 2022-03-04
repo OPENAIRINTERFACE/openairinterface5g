@@ -21,8 +21,10 @@
 
 # Author: laurent THOMAS, Lionel GAUTHIER
 
-cmake_minimum_required (VERSION 3.0)
+cmake_minimum_required (VERSION 2.8)
+project (OpenAirInterface LANGUAGES C CXX)
 
+include("macros.cmake")
 
 # System packages that are required
 # We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
@@ -48,6 +50,7 @@ include_directories(${CRYPTO_INCLUDE_DIRS})
 #uhd 4.0 and iris installs by default in /usr/local
 include_directories("/usr/local/include/")
 #use native cmake method as this package is not in pkg-config
+add_list2_option(RF_BOARD "None" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU" "EXMIMO")
 if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
   include_directories(${LIBBOOST_INCLUDE_DIR})
@@ -184,106 +187,6 @@ else (CUDA_FOUND)
    message ("No CUDA tool installed")
 endif ()
 
-
-###########################################
-# macros to define options as there is numerous options in oai
-################################################
-macro(add_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  add_definitions("-D${name}=${value}")
-endmacro(add_option)
-
-macro(add_boolean_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY TYPE BOOL)
-  if (${value})
-    add_definitions("-D${name}")
-  endif (${value})
-endmacro(add_boolean_option)
-
-macro(add_integer_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  add_definitions("-D${name}=${value}")
-endmacro(add_integer_option)
-
-macro(add_list1_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${name}=${value}")
-  endif()
-endmacro(add_list1_option)
-
-macro(add_list2_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${value}=1")
-  endif()
-endmacro(add_list2_option)
-
-macro(add_list_string_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${name}=\"${value}\"")
-  endif()
-endmacro(add_list_string_option)
-
-# this function should produce the same value as the macro MAKE_VERSION defined in the C code (file types.h)
-function(make_version VERSION_VALUE)
-  math(EXPR RESULT "0")
-  foreach (ARG ${ARGN})
-    math(EXPR RESULT "${RESULT} * 16 + ${ARG}")
-  endforeach()
-  set(${VERSION_VALUE} "${RESULT}" PARENT_SCOPE)
-endfunction()
-
-macro(compile_asn1 asn1Source asn1cCmd ResultFlag)
-   # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-   execute_process(COMMAND ${asn1cCmd}  ${asn1Source} RESULT_VARIABLE ret)
-
-   if (NOT ${ret} STREQUAL 0)
-      message(FATAL_ERROR "${ret}: error")
-   endif (NOT ${ret} STREQUAL 0)
-
-   add_custom_target (
-     ${ResultFlag} ALL
-     ${asn1cCmd} ${asn1Source}
-     DEPENDS ${asn1Source}
-   )
-endmacro(compile_asn1)
-
 ####################################################
 # compilation flags
 #############################################
@@ -341,10 +244,10 @@ set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11")
 
 
-
+add_boolean_option(SANITIZE_ADDRESS False "enable the address sanitizer (ASan)")
 if (SANITIZE_ADDRESS)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -static-libasan -fno-common")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -static-libasan -fno-common")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-common")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer -fno-common")
 endif ()
 
 add_definitions("-DASN_DISABLE_OER_SUPPORT")
@@ -786,9 +689,6 @@ add_library(F1AP ${F1AP_C_FILES} )
 add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
-add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU")
-
-add_list2_option(TRANSP_PRO "None" "Transport protocol type" "None" "ETHERNET")
 #NOKIA config enhancement
 set (CONFIG_ROOTDIR
   ${OPENAIR_DIR}/common/config

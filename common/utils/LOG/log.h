@@ -302,6 +302,7 @@ extern "C" {
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
+void logTerm (void);
 int  isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
 void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
