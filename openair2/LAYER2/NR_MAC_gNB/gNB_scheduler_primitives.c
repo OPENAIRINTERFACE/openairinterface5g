@@ -532,6 +532,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
       ps->mcsTableIdx = 2;
   }
   else ps->mcsTableIdx = 0;
+  LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
 
   NR_PDSCH_Config_t *pdsch_Config;
   if (bwp &&
