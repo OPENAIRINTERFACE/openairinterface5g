@@ -643,6 +643,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned char nscid,
                                 unsigned short scrambling_id,
                                 unsigned short BWPStart,
+                                uint8_t config_type,
                                 unsigned short bwp_start_subcarrier,
                                 unsigned short nb_rb_pdsch)
 {
@@ -653,10 +654,6 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int16_t ch_l[2],ch_r[2],ch[2],*pil,*rxF,*dl_ch;
   int16_t *fl=NULL,*fm=NULL,*fr=NULL,*fml=NULL,*fmr=NULL,*fmm=NULL,*fdcl=NULL,*fdcr=NULL,*fdclh=NULL,*fdcrh=NULL, *frl=NULL, *frr=NULL;
   int ch_offset,symbol_offset;
-
-  NR_UE_DLSCH_t  **dlsch = ue->dlsch[proc->thread_id][gNB_id];
-  const unsigned char harq_pid = dlsch[0]->current_harq_pid;
-  NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
   uint8_t nushift;
   int **dl_ch_estimates  =ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
@@ -679,7 +676,6 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   if (is_SI) {
     rb_offset -= BWPStart;
   }
-  uint8_t config_type = dlsch0_harq->dmrsConfigType;
   int8_t delta = get_delta(p, config_type);
 
   // checking if re-initialization of scrambling IDs is needed
