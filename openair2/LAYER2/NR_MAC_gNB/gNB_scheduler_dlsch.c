@@ -979,6 +979,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
+
+  //if (slot==7 || slot == 17) return;
+
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
 
