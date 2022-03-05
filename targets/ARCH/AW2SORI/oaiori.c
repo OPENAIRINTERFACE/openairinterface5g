@@ -417,7 +417,7 @@ int aw2s_startstreaming(openair0_device *device) {
          (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
          tx0->fst != ORI_FST_Operational || 
          (openair0_cfg->tx_num_channels > 1 && tx1->fst != ORI_FST_Operational))
-  {}*/	
+  {}*/  	
   // test RX interface 
   uint64_t TS;
   char temp_rx[2048] __attribute__((aligned(32)));
