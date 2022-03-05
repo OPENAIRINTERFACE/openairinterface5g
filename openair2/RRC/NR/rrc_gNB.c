@@ -1155,6 +1155,8 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                 NULL,
                                 dedicatedNAS_MessageList,
                                 NULL,
+                                NULL,
+                                NULL,
                                 NULL);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
