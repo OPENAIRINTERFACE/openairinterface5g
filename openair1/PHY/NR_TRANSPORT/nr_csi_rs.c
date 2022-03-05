@@ -601,6 +601,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
   }
 
+  bzero(nr_csi_rs_info->k_list_length,NR_SYMBOLS_PER_SLOT*sizeof(uint16_t));
   uint16_t start_sc = frame_parms.first_carrier_offset;
 
   // resource mapping according to 38.211 7.4.1.5.3
@@ -634,6 +635,10 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
               else
                 wt = -1;
             }
+
+            nr_csi_rs_info->map_list[l][nr_csi_rs_info->k_list_length[l]] = k;
+            nr_csi_rs_info->k_list_length[l]++;
+
             // ZP CSI RS
             if (csi_params->csi_type == 2) {
               ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*dataF_offset)] = 0;

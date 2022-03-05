@@ -266,8 +266,9 @@ typedef struct {
 
 typedef struct {
   uint32_t ***nr_gold_csi_rs;
-  uint16_t sc_list_length;
-  uint16_t sc_list[6 * NR_MAX_NB_RB];
+  uint16_t k_list_length[NR_SYMBOLS_PER_SLOT];
+  uint16_t map_list[NR_SYMBOLS_PER_SLOT][NR_MAX_CSI_RS_LENGTH];
+  int32_t **csi_rs_generated_signal;
   int32_t **csi_rs_received_signal;
 } nr_csi_rs_info_t;
 
