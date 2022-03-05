@@ -50,10 +50,6 @@ memleak:openair1/PHY/CODING/TESTBENCH/ltetest.c
 invalidPrintfArgType_sint:openair1/PHY/CODING/TESTBENCH/pdcch_test.c
 //
 //-----------------------------------------------------------------------------
-// oaisim deprecated, remove?
-doubleFree:openair3/TEST/oaisim_mme_list_benchmark.c
-//
-//-----------------------------------------------------------------------------
 // is itti analyzer deprecated
 nullPointer:common/utils/itti_analyzer/itti_analyzer.c
 nullPointerRedundantCheck:common/utils/itti_analyzer/libbuffers/buffers.c
