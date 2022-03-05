@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-5gnr</htmlTabRef>
-        <htmlTabName>Testing 5G NR RF sim - Monolithic gNB</htmlTabName>
+        <htmlTabRef>rfsim-5gnr-tdd</htmlTabRef>
+        <htmlTabName>Testing 5G NR RF sim - Monolithic TDD gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <repeatCount>4</repeatCount>
         <TestCaseRequestedList>
@@ -109,6 +109,8 @@
                 <class>UndeployGenObject</class>
                 <desc>Undeploy all OAI 5G stack</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <d_retx_th>5,0,0,0</d_retx_th>
+                <u_retx_th>5,0,0,0</u_retx_th>
         </testCase>
 
 </testCaseList>

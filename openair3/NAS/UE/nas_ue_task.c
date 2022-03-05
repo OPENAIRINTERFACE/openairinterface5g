@@ -29,12 +29,9 @@
 # include "user_api.h"
 # include "nas_parser.h"
 # include "nas_proc.h"
-# include "msc.h"
 # include "memory.h"
 
 #include "nas_user.h"
-#include <common/utils/msc/msc.h>
-
 // FIXME make command line option for NAS_UE_AUTOSTART
 # define NAS_UE_AUTOSTART 1
 
@@ -97,7 +94,6 @@ void *nas_ue_task(void *args_p)
   nas_user_container_t *users=args_p;
 
   itti_mark_task_ready (TASK_NAS_UE);
-  MSC_START_USE();
   LOG_I(NAS, "ue_idx_standalone val:: %u\n", ue_idx_standalone);
   /* Initialize UE NAS (EURECOM-NAS) */
   // Intead of for loop for standalone mode

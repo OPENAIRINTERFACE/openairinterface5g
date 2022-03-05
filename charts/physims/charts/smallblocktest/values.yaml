@@ -33,7 +33,9 @@ podSecurityContext:
 
 securityContext:
   privileged: true
-  # capabilities:
+  capabilities:
+    add:
+      - SYS_CAP_PTRACE
   #   drop:
   #   - ALL
   # readOnlyRootFilesystem: true

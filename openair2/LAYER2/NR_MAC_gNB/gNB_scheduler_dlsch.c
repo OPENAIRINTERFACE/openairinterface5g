@@ -62,9 +62,22 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
 
   /* there is a mixed slot only when in TDD */
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
+  lte_frame_type_t frame_type = nrmac->common_channels->frame_type;
+  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd =
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-  const int symb_dlMixed = tdd ? (1 << tdd->nrofDownlinkSymbols) - 1 : 0;
+
+  int symb_dlMixed = 0;
+  int nr_mix_slots = 0;
+  int nr_slots_period = n;
+  if (tdd) {
+    symb_dlMixed = (1 << tdd->nrofDownlinkSymbols) - 1;
+    nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
+    nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+  }
+  else
+    // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
+    AssertFatal(nrmac->common_channels->frame_type == FDD,"Dynamic TDD not handled yet\n");
 
   int target_ss;
   if (bwp) {
@@ -97,7 +110,7 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
 
   /* check that TDA index 1 fits into DL part of mixed slot, if it exists */
   int tdaMi = -1;
-  if (tdaList->list.count > 1) {
+  if (frame_type == TDD && tdaList->list.count > 1) {
     const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
     AssertFatal(!tdaP_Mi->k0 || *tdaP_Mi->k0 == 0,
                 "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
@@ -120,17 +133,13 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
     }
   }
 
-  const uint8_t slots_per_frame[5] = {10, 20, 40, 80, 160};
-  const int n = slots_per_frame[*scc->ssbSubcarrierSpacing];
   nrmac->preferred_dl_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_dl_tda[bwp_id]));
 
-  const int nr_mix_slots = tdd ? tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0 : 0;
-  const int nr_slots_period = tdd ? tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + nr_mix_slots : n;
   for (int i = 0; i < n; ++i) {
     nrmac->preferred_dl_tda[bwp_id][i] = -1;
-    if (!tdd || i % nr_slots_period < tdd->nrofDownlinkSlots)
+    if (frame_type == FDD || i % nr_slots_period < tdd->nrofDownlinkSlots)
       nrmac->preferred_dl_tda[bwp_id][i] = 0;
-    else if (tdd && nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
+    else if (nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
       nrmac->preferred_dl_tda[bwp_id][i] = tdaMi;
     LOG_D(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
   }
@@ -590,6 +599,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize &&
            (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbSize++;
+
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -598,6 +608,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
                                  retInfo->tb_size,
+                                 1, /* minimum of 1RB: need to find exact TBS, don't preclude any number */
                                  rbSize,
                                  &new_tbs,
                                  &new_rbSize);
@@ -752,8 +763,9 @@ void pf_dl(module_id_t module_id,
     }
   }
 
+  const int min_rbSize = 5;
   /* Loop UE_sched to find max coeff and allocate transmission */
-  while (max_num_ue > 0 && n_rb_sched > 0 && UE_sched.head >= 0) {
+  while (max_num_ue > 0 && n_rb_sched >= min_rbSize && UE_sched.head >= 0) {
 
     /* Find max coeff from UE_sched*/
     int *max = &UE_sched.head; /* assume head is max */
@@ -813,9 +825,6 @@ void pf_dl(module_id_t module_id,
       LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
-    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
-    max_num_ue--;
-    if (max_num_ue < 0) return;
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
@@ -829,8 +838,13 @@ void pf_dl(module_id_t module_id,
             frame,
             slot);
       mac->pdcch_cand[cid]--;
-      return;
+      continue;
     }
+
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE
+     * and PUCCH */
+    max_num_ue--;
+    AssertFatal(max_num_ue >= 0, "Illegal max_num_ue %d\n", max_num_ue);
 
     sched_ctrl->cce_index = CCEIndex;
 
@@ -846,6 +860,7 @@ void pf_dl(module_id_t module_id,
     AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+
     if (ps->nrOfLayers != layers[UE_id] ||
         ps->time_domain_allocation != tda)
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, layers[UE_id], sched_ctrl, ps);
@@ -873,6 +888,7 @@ void pf_dl(module_id_t module_id,
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                   sched_ctrl->num_total_bytes + oh,
+                  min_rbSize,
                   max_rbSize,
                   &TBS,
                   &rbSize);
@@ -900,7 +916,10 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+  const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
+  if (!RC.nrmac[module_id]->preferred_dl_tda[bwp_id])
+    return;
+  const int tda = RC.nrmac[module_id]->preferred_dl_tda[bwp_id][slot];
   int startSymbolIndex, nrOfSymbols;
   const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_bwp ?
       sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :

@@ -54,8 +54,6 @@
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
-#include "proto_agent.h"
-
 #include "m3ap_MCE.h"
 
 

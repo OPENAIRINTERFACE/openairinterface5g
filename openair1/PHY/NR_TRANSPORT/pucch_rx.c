@@ -62,6 +62,11 @@ NR_gNB_PUCCH_t *new_gNB_pucch(void){
     return (pucch);
 }
 
+void free_gNB_pucch(NR_gNB_PUCCH_t *pucch)
+{
+  free_and_zero(pucch);
+}
+
 int nr_find_pucch(uint16_t rnti,
                   int frame,
                   int slot,
@@ -1533,7 +1538,6 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   }
   else { // polar coded case
 
-    t_nrPolar_params *currentPtr = nr_polar_params(2,nb_bit,pucch_pdu->prb_size,1,&gNB->uci_polarParams);
     __m64 *rp_re[Prx2][2];
     __m64 *rp2_re[Prx2][2];
     __m64 *rp_im[Prx2][2];
@@ -1660,7 +1664,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       } // half_prb
     } // symb
     // run polar decoder on llrs
-    decoderState = polar_decoder_int16((int16_t*)llrs, decodedPayload, 0, currentPtr);
+    decoderState = polar_decoder_int16((int16_t*)llrs, decodedPayload, 0, 2,nb_bit,pucch_pdu->prb_size);
     LOG_D(PHY,"UCI decoderState %d, payload[0] %llu\n",decoderState,(unsigned long long)decodedPayload[0]);
     if (decoderState>0) decoderState=1;
     corr_dB = dB_fixed64(corr);

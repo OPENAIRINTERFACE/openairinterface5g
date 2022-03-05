@@ -420,7 +420,7 @@ int aw2s_startstreaming(openair0_device *device) {
   {}*/	
   // test RX interface 
   uint64_t TS;
-  char temp_rx[1024] __attribute__((aligned(32)));
+  char temp_rx[2048] __attribute__((aligned(32)));
   int aid,r0=0,r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
   int r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
   int r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;

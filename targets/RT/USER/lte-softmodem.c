@@ -34,13 +34,9 @@
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
 
-#include <common/utils/msc/msc.h>
-
-
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
-#include "msc.h"
 
 #include "PHY/types.h"
 
@@ -498,8 +494,6 @@ static void init_pdcp(void) {
       pdcp_set_rlc_data_req_func(rlc_data_req);
       pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
     }
-  } else {
-    pdcp_set_pdcp_data_ind_func(proto_agent_send_pdcp_data_ind);
   }
 }
 
@@ -554,13 +548,7 @@ int main ( int argc, char **argv )
   cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
   itti_init(TASK_MAX, tasks_info);
-  // allows to forward in wireshark L2 protocol for decoding
-  // initialize mscgen log after ITTI
-  if (get_softmodem_params()->start_msc) {
-    load_module_shlib("msc",NULL,0,&msc_interface);
-  }
 
-  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   // to make a graceful exit when ctrl-c is pressed
   set_softmodem_sighandler();

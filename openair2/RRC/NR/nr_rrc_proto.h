@@ -114,9 +114,6 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc_gNB_ue_context_t         *const ue_context_pP,
                          const protocol_ctxt_t        *const ctxt_pP );
 
-void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
-                       const protocol_ctxt_t        *const ctxt_pP );
-
 void
 rrc_gNB_generate_RRCSetup(
     const protocol_ctxt_t        *const ctxt_pP,
@@ -211,3 +208,24 @@ void
 rrc_gNB_generate_dedicatedRRCReconfiguration(
     const protocol_ctxt_t     *const ctxt_pP,
     rrc_gNB_ue_context_t      *ue_context_pP);
+
+rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const NR_DRB_ToAddModList_t   * const drb2add_listP,
+    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+
+boolean_t nr_rrc_pdcp_config_asn1_req(
+  const protocol_ctxt_t *const  ctxt_pP,
+  NR_SRB_ToAddModList_t  *const srb2add_list,
+  NR_DRB_ToAddModList_t  *const drb2add_list,
+  NR_DRB_ToReleaseList_t *const drb2release_list,
+  const uint8_t                   security_modeP,
+  uint8_t                  *const kRRCenc,
+  uint8_t                  *const kRRCint,
+  uint8_t                  *const kUPenc,
+  uint8_t                  *const kUPint
+  ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
+  ,rb_id_t                 *const defaultDRB,
+  struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);

@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <math.h>
+#include <nr-uesoftmodem.h>
 
 #include "PHY/defs_nr_UE.h"
 
@@ -439,33 +440,10 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
 void free_context_pss_nr(void)
 {
   for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) {
-
-    if (primary_synchro_time_nr[i] != NULL) {
-      free(primary_synchro_time_nr[i]);
-      primary_synchro_time_nr[i] = NULL;
-    }
-    else {
-      LOG_E(PHY,"Fatal memory deallocation problem \n");
-      assert(0);
-    }
-
-    if (primary_synchro_nr[i] != NULL) {
-      free(primary_synchro_nr[i]);
-      primary_synchro_nr[i] = NULL;
-    }
-    else {
-      LOG_E(PHY,"Fatal memory deallocation problem \n");
-      assert(0);
-    }
-
-    if (pss_corr_ue[i] != NULL) {
-      free(pss_corr_ue[i]);
-      pss_corr_ue[i] = NULL;
-    }
-    else {
-      LOG_E(PHY,"Fatal memory deallocation problem \n");
-      assert(0);
-    }
+    free_and_zero(primary_synchro_nr[i]);
+    free_and_zero(primary_synchro_nr2[i]);
+    free_and_zero(primary_synchro_time_nr[i]);
+    free_and_zero(pss_corr_ue[i]);
   }
 }
 

@@ -71,7 +71,6 @@
 
 #include "pdcp.h"
 #include "plmn_data.h"
-#include "msc.h"
 #include <common/utils/system.h>
 
 #include "intertask_interface.h"
@@ -1390,16 +1389,6 @@ rrc_ue_process_radioResourceConfigDedicated(
     uint8_t *kUPenc = NULL;
     derive_key_up_enc(UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
                       UE_rrc_inst[ctxt_pP->module_id].kenb, &kUPenc);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_UE,
-      MSC_PDCP_UE,
-      NULL,
-      0,
-      MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security %X)",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ctxt_pP->rnti,
-      UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm |
-      (UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm << 4));
     // Refresh DRBs
     rrc_pdcp_config_asn1_req(ctxt_pP,
                              (LTE_SRB_ToAddModList_t *)NULL,

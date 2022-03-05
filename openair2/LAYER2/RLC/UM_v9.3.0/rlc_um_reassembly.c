@@ -35,7 +35,6 @@
 #include "list.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "common/utils/LOG/log.h"
-#include "msc.h"
 
 //-----------------------------------------------------------------------------
 inline void
@@ -116,17 +115,6 @@ rlc_um_send_sdu (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
     if (rlc_pP->output_sdu_size_to_write > 0) {
       rlc_pP->stat_rx_pdcp_sdu += 1;
       rlc_pP->stat_rx_pdcp_bytes += rlc_pP->output_sdu_size_to_write;
-
-      MSC_LOG_TX_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-        (const char*)(rlc_pP->output_sdu_in_construction->data),
-        rlc_pP->output_sdu_size_to_write,
-        MSC_AS_TIME_FMT" "PROTOCOL_RLC_UM_MSC_FMT" DATA-IND size %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        PROTOCOL_RLC_UM_MSC_ARGS(ctxt_pP,rlc_pP),
-        rlc_pP->output_sdu_size_to_write
-      );
 
 #if TEST_RLC_UM
 #if TRACE_RLC_UM_DISPLAY_ASCII_DATA
