@@ -504,10 +504,10 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   nr_pbch_unscrambling(nr_ue_pbch_vars, pbch_e_rx, frame_parms->Nid_cell, nushift, M, NR_POLAR_PBCH_E,
 		       0, 0,  pbch_a_prime, &pbch_a_interleaved);
   //polar decoding de-rate matching
-
-  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&pbch_a_prime,0,
+  uint64_t tmp=0;
+  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t *)&tmp,0,
                                      NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
-
+  pbch_a_prime=tmp;
   if(decoderState)
     return(decoderState);
 

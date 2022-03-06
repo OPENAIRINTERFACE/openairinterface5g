@@ -680,24 +680,20 @@ int ngap_gNB_initial_ctxt_resp(
 
       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.present = NGAP_UPTransportLayerInformation_PR_gTPTunnel;
     
-      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel = (NGAP_GTPTunnel_t *)calloc(1, sizeof(NGAP_GTPTunnel_t)); 
-      GTP_TEID_TO_ASN1(initial_ctxt_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->gTP_TEID);
+      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel = (NGAP_GTPTunnel_t *)calloc(1, sizeof(NGAP_GTPTunnel_t));
+      struct NGAP_GTPTunnel *tmp=pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel;
+      GTP_TEID_TO_ASN1(initial_ctxt_resp_p->pdusessions[i].gtp_teid, &tmp->gTP_TEID);
 
-      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf = malloc(initial_ctxt_resp_p->pdusessions[i].gNB_addr.length);
+      tmp->transportLayerAddress.buf = malloc(initial_ctxt_resp_p->pdusessions[i].gNB_addr.length);
 
-      memcpy(pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf,
+      memcpy(tmp->transportLayerAddress.buf,
              initial_ctxt_resp_p->pdusessions[i].gNB_addr.buffer,
              initial_ctxt_resp_p->pdusessions[i].gNB_addr.length);
-      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.size = initial_ctxt_resp_p->pdusessions[i].gNB_addr.length;
-      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.bits_unused = 0;
+      tmp->transportLayerAddress.size = initial_ctxt_resp_p->pdusessions[i].gNB_addr.length;
+      tmp->transportLayerAddress.bits_unused = 0;
 
-      NGAP_DEBUG("initial_ctxt_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld \n",
-                 item->pDUSessionID,
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[0],
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[1],
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[2],
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[3],
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.size);
+      NGAP_DEBUG("initial_ctxt_resp_p: pdusession ID %ld\n",
+                 item->pDUSessionID);
 
       /* associatedQosFlowList. number of 1? */
       for(int j=0; j < initial_ctxt_resp_p->pdusessions[i].nb_of_qos_flow; j++) {
@@ -987,24 +983,25 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.present = NGAP_UPTransportLayerInformation_PR_gTPTunnel;
       pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel =
                 calloc(1, sizeof(struct NGAP_GTPTunnel));
+      struct NGAP_GTPTunnel *tmp=pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel;
+      GTP_TEID_TO_ASN1(pdusession_setup_resp_p->pdusessions[i].gtp_teid, &tmp->gTP_TEID);
+      if (pdusession_setup_resp_p->pdusessions[i].gNB_addr.length) {
+        tmp->transportLayerAddress.buf = malloc(pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
 
-      GTP_TEID_TO_ASN1(pdusession_setup_resp_p->pdusessions[i].gtp_teid, &pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->gTP_TEID);
+        memcpy(tmp->transportLayerAddress.buf,
+               pdusession_setup_resp_p->pdusessions[i].gNB_addr.buffer,
+               pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
+        tmp->transportLayerAddress.size = pdusession_setup_resp_p->pdusessions[i].gNB_addr.length;
+        tmp->transportLayerAddress.bits_unused = 0;
 
-      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf = malloc(pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
-
-      memcpy(pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf,
-             pdusession_setup_resp_p->pdusessions[i].gNB_addr.buffer,
-             pdusession_setup_resp_p->pdusessions[i].gNB_addr.length);
-      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.size = pdusession_setup_resp_p->pdusessions[i].gNB_addr.length;
-      pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.bits_unused = 0;
-
-      NGAP_DEBUG("pdusession_setup_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld \n",
-                 item->pDUSessionID,
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[0],
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[1],
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[2],
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.buf[3],
-                 pdusessionTransfer_p->dLQosFlowPerTNLInformation.uPTransportLayerInformation.choice.gTPTunnel->transportLayerAddress.size);
+        NGAP_DEBUG("pdusession_setup_resp_p: pdusession ID %ld, gnb_addr %d.%d.%d.%d, SIZE %ld \n",
+                   item->pDUSessionID,
+                   tmp->transportLayerAddress.buf[0],
+                   tmp->transportLayerAddress.buf[1],
+                   tmp->transportLayerAddress.buf[2],
+                   tmp->transportLayerAddress.buf[3],
+                   tmp->transportLayerAddress.size);
+      }
 
       /* associatedQosFlowList. number of 1? */
       for(int j=0; j < pdusession_setup_resp_p->pdusessions[i].nb_of_qos_flow; j++) {
