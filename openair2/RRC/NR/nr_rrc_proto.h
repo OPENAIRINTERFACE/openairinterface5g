@@ -84,6 +84,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int do_srs,
                                      int uid);
 
+
 void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   NR_CSI_MeasConfig_t *csi_MeasConfig,
                   int dl_antenna_ports,
