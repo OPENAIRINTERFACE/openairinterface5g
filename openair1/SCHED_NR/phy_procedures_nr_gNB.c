@@ -699,6 +699,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           gNB->uci_pdu_list[num_ucis].pdu_size = sizeof(nfapi_nr_uci_pucch_pdu_format_2_3_4_t);
           nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu_format2 = &gNB->uci_pdu_list[num_ucis].pucch_pdu_format_2_3_4;
 
+          LOG_D(PHY,"%d.%d Calling nr_decode_pucch2\n",frame_rx,slot_rx);
           nr_decode_pucch2(gNB,
                            slot_rx,
                            uci_pdu_format2,

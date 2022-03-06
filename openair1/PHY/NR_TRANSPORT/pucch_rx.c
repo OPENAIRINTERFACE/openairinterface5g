@@ -104,6 +104,8 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
   pucch->frame = frame;
   pucch->slot = slot;
   pucch->active = 1;
+  if (pucch->pucch_pdu.format_type > 0) LOG_D(PHY,"Programming PUCCH[%d] for %d.%d, format %d, nb_harq %d, nb_sr %d, nb_csi %d\n",id,
+                                          pucch->frame,pucch->slot,pucch->pucch_pdu.format_type,pucch->pucch_pdu.bit_len_harq,pucch->pucch_pdu.sr_flag,pucch->pucch_pdu.bit_len_csi_part1);
   memcpy((void*)&pucch->pucch_pdu, (void*)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
 }
 

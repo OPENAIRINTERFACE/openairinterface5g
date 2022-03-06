@@ -1225,6 +1225,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
       }
     }
     AssertFatal(res_found==1,"No PUCCH resource found corresponding to id %ld\n",*resource_id);
+    LOG_D(NR_MAC,"Configure pucch: pucch_pdu->format_type %d pucch_pdu->bit_len_harq %d, pucch->pdu->bit_len_csi %d\n",pucch_pdu->format_type,pucch_pdu->bit_len_harq,pucch_pdu->bit_len_csi_part1);
   }
   else { // this is the default PUCCH configuration, PUCCH format 0 or 1
     LOG_D(NR_MAC,"pucch_acknak: Filling default PUCCH configuration from Tables (r_pucch %d, bwp %p)\n",r_pucch,bwp);

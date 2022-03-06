@@ -1051,7 +1051,7 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
    nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
    nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-   nzpcsi0->periodicityAndOffset->choice.slots320 = 0;
+   nzpcsi0->periodicityAndOffset->choice.slots320 = 20;
    nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS)); 
    *nzpcsi0->qcl_InfoPeriodicCSI_RS=0;
    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
@@ -1596,7 +1596,7 @@ void fill_initial_SpCellConfig(int uid,
      csirep1->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
      csirep1->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep1->reportConfigType.choice.periodic));
      csirep1->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-     csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 8 + (20 * uid) % 320;
+     csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (8 + (20 * uid)) % 320;
      ASN_SEQUENCE_ADD(&csirep1->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
      csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI;
      csirep1->reportQuantity.choice.cri_RI_PMI_CQI=(NULL_t)0;
@@ -1655,7 +1655,7 @@ void fill_initial_SpCellConfig(int uid,
    csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
    csirep2->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep2->reportConfigType.choice.periodic));
    csirep2->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-   csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 28 + (20 * uid) % 320;
+   csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (28 + (20 * uid)) % 320;
    ASN_SEQUENCE_ADD(&csirep2->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
    csirep2->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP;
    csirep2->reportQuantity.choice.cri_RSRP=(NULL_t)0;
