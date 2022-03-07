@@ -337,6 +337,22 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
         // for a correct computation of frame number to sync with the one decoded at MIB we need to take into account in which of the n_frames we got sync
         ue->init_sync_frame = n_frames - 1 - is;
+
+        // compute the scramblingID_pdcch and the gold pdcch
+        ue->scramblingID_pdcch = fp->Nid_cell;
+        nr_gold_pdcch(ue,fp->Nid_cell);
+
+        // compute the scrambling IDs for PDSCH DMRS
+        for (int i=0; i<2; i++)
+          ue->scramblingID[i]=fp->Nid_cell;
+
+        nr_gold_pdsch(ue,ue->scramblingID);
+
+        // initialize the pusch dmrs
+        uint16_t N_n_scid[2] = {fp->Nid_cell,fp->Nid_cell};
+        int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
+        nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
+
         // we also need to take into account the shift by samples_per_frame in case the if is true
         if (ue->ssb_offset < sync_pos_frame){
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;

@@ -62,8 +62,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
-//#include "PHY/TOOLS/time_meas.h"
-
 #include "intertask_interface.h"
 
 #include "PHY/INIT/phy_init.h"
@@ -593,6 +591,7 @@ void init_pdcp(void) {
   
   if (!get_softmodem_params()->nsa) {
     if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+      pdcp_layer_init();
       nr_pdcp_module_init(pdcp_initmask, 0);
     }
   } else {
