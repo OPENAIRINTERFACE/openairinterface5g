@@ -1044,7 +1044,7 @@ next_pdu:
 set_end_different_sdu:
   /* don't go more than rx_highest_status - 1 */
   if (sn_compare_rx(entity, entity->rx_highest_status, cur->sn) <= 0) {
-    ret.so_end = (entity->rx_highest_status - 1 + entity->sn_modulus) %
+    ret.sn_end = (entity->rx_highest_status - 1 + entity->sn_modulus) %
                       entity->sn_modulus;
     ret.so_end   = 0xffff;
     return ret;
@@ -1305,9 +1305,8 @@ static int missing_size(nr_rlc_entity_am_t *entity, missing_data_t *m,
   missing_data_t m_nack;
 
   /* be careful to limit a range to 255 SNs, that is: cut if needed */
-  sn_count = m->sn_end - m->sn_start + 1;
-  if (sn_count < 0)
-    sn_count += entity->sn_modulus;
+  sn_count = (m->sn_end - m->sn_start + entity->sn_modulus)
+              % entity->sn_modulus + 1;
 
   sn_start = m->sn_start;
 
