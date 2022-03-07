@@ -87,10 +87,10 @@ AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB]= {0};
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB]= {0};
 void flexran_agent_slice_update(mid_t module_idP) {
 }
-int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p) {
+int proto_agent_start(mid_t mod_id, const cudu_params_t *p) {
   return 0;
 }
-void proto_agent_stop(mod_id_t mod_id) {
+void proto_agent_stop(mid_t mod_id) {
 }
 
 static void *ru_thread( void *param );

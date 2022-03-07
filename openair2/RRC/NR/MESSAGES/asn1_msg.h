@@ -110,6 +110,10 @@ void fill_initial_cellGroupConfig(int uid,
 				  NR_ServingCellConfigCommon_t *scc,
                                   rrc_gNB_carrier_data_t *carrier);
 
+void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
+                            rrc_gNB_carrier_data_t *carrier,
+                            NR_UE_NR_Capability_t *uecap);
+
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup);
 
 uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
@@ -145,6 +149,8 @@ int16_t do_RRCReconfiguration(
     NR_SDAP_Config_t             *sdap_config,
     NR_MeasConfig_t              *meas_config,
     struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
+    rrc_gNB_ue_context_t         *const ue_context_pP,
+    rrc_gNB_carrier_data_t       *carrier,
     NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig,
     NR_CellGroupConfig_t         *cellGroupConfig);
 

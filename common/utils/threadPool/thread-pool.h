@@ -27,11 +27,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <unistd.h>
 #include <sys/syscall.h>
-#include <assertions.h>
-#include <LOG/log.h>
-#include <common/utils/system.h>
-//#include <stdatomic.h>
+#include "assertions.h"
+#include "common/utils/time_meas.h"
+#include "common/utils/system.h"
 
 #ifdef DEBUG
   #define THREADINIT   PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
@@ -60,10 +60,10 @@ typedef struct notifiedFIFO_elt_s {
   struct notifiedFIFO_s *reponseFifo;
   void (*processingFunc)(void *);
   bool malloced;
-  uint64_t creationTime;
-  uint64_t startProcessingTime;
-  uint64_t endProcessingTime;
-  uint64_t returnTime;
+  oai_cputime_t creationTime;
+  oai_cputime_t startProcessingTime;
+  oai_cputime_t endProcessingTime;
+  oai_cputime_t returnTime;
   void *msgData;
 }  notifiedFIFO_elt_t;
 
@@ -97,12 +97,11 @@ static inline void *NotifiedFifoData(notifiedFIFO_elt_t *elt) {
 
 static inline void delNotifiedFIFO_elt(notifiedFIFO_elt_t *elt) {
   if (elt->malloced) {
-    elt->malloced=false;
+    elt->malloced = false;
     free(elt);
-  } else
-    printf("delNotifiedFIFO on something not allocated by newNotifiedFIFO\n");
-
-  //LOG_W(UTIL,"delNotifiedFIFO on something not allocated by newNotifiedFIFO\n");
+  }
+  /* it is allowed to call delNotifiedFIFO_elt when the memory is managed by
+   * the caller */
 }
 
 static inline void initNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf) {
@@ -141,8 +140,7 @@ static inline  notifiedFIFO_elt_t *pullNotifiedFIFO_nothreadSafe(notifiedFIFO_t 
 
   notifiedFIFO_elt_t *ret=nf->outF;
 
-  if (nf->outF==nf->outF->next)
-    LOG_E(UTIL,"Circular list in thread pool: push several times the same buffer is forbidden\n");
+  AssertFatal(nf->outF != nf->outF->next,"Circular list in thread pool: push several times the same buffer is forbidden\n");
 
   nf->outF=nf->outF->next;
 
@@ -172,6 +170,20 @@ static inline  notifiedFIFO_elt_t *pollNotifiedFIFO(notifiedFIFO_t *nf) {
   notifiedFIFO_elt_t *ret=pullNotifiedFIFO_nothreadSafe(nf);
   mutexunlock(nf->lockF);
   return ret;
+}
+
+static inline time_stats_t exec_time_stats_NotifiedFIFO(const notifiedFIFO_elt_t* elt)
+{
+  time_stats_t ts = {0};
+  if (elt->startProcessingTime == 0 && elt->endProcessingTime == 0)
+    return ts; /* no measurements done */
+  ts.in = elt->startProcessingTime;
+  ts.diff = elt->endProcessingTime - ts.in;
+  ts.p_time = ts.diff;
+  ts.diff_square = ts.diff * ts.diff;
+  ts.max = ts.diff;
+  ts.trials = 1;
+  return ts;
 }
 
 // This function aborts all messages matching the key
@@ -224,18 +236,18 @@ typedef struct thread_pool {
 } tpool_t;
 
 static inline void pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg) {
-  if (t->measurePerf) msg->creationTime=rdtsc();
+  if (t->measurePerf) msg->creationTime=rdtsc_oai();
 
   if ( t->activated)
     pushNotifiedFIFO(&t->incomingFifo, msg);
   else {
     if (t->measurePerf)
-      msg->startProcessingTime=rdtsc();
+      msg->startProcessingTime=rdtsc_oai();
 
     msg->processingFunc(NotifiedFifoData(msg));
 
     if (t->measurePerf)
-      msg->endProcessingTime=rdtsc();
+      msg->endProcessingTime=rdtsc_oai();
 
     if (msg->reponseFifo)
       pushNotifiedFIFO(msg->reponseFifo, msg);
@@ -246,7 +258,7 @@ static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_
   notifiedFIFO_elt_t *msg= pullNotifiedFIFO(responseFifo);
   AssertFatal(t->traceFd, "Thread pool used while not initialized");
   if (t->measurePerf)
-    msg->returnTime=rdtsc();
+    msg->returnTime=rdtsc_oai();
 
   if (t->traceFd > 0)
     if(write(t->traceFd, msg, sizeof(*msg)));
@@ -261,7 +273,7 @@ static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpo
     return NULL;
 
   if (t->measurePerf)
-    msg->returnTime=rdtsc();
+    msg->returnTime=rdtsc_oai();
 
   if (t->traceFd)
     if(write(t->traceFd, msg, sizeof(*msg)));

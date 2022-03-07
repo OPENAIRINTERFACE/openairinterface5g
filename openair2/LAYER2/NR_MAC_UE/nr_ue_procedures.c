@@ -470,6 +470,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
 						      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
 						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      int *mapping_type,
 						      uint8_t time_domain_ind,
                                                       int default_abc,
                                                       bool use_default){
@@ -547,13 +548,15 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
     }
     else {// Default configuration from tables
 
+      bool is_typeA;
       get_info_from_tda_tables(default_abc,
                                time_domain_ind,
                                dmrs_typeA_pos,
                                1, // normal CP
+                               &is_typeA,
                                &sliv_S,
                                &sliv_L);
-
+      *mapping_type = is_typeA? typeA : typeB;
       dlsch_config_pdu->number_symbols = sliv_L;
       dlsch_config_pdu->start_symbol = sliv_S;
     }
@@ -859,12 +862,17 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     else if (mac->scc_SIB && mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup)
       pdsch_TimeDomainAllocationList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
 
+    int mappingtype;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,NULL,dlsch_config_pdu_1_0,dci->time_domain_assignment.val,default_abc,rnti==SI_RNTI) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,
+                                                       NULL,dlsch_config_pdu_1_0,&mappingtype,
+                                                       dci->time_domain_assignment.val,
+                                                       default_abc,rnti==SI_RNTI) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
-    int mappingtype = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType : ((dlsch_config_pdu_1_0->start_symbol <= 3)? typeA: typeB);
+    if(pdsch_TimeDomainAllocationList && rnti!=SI_RNTI)
+      mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
 
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
@@ -1056,13 +1064,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
+    int mappingtype;
     NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = choose_dl_tda_list(pdsch_Config,bwpc->pdsch_ConfigCommon->choice.setup);
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,NULL,dlsch_config_pdu_1_1,dci->time_domain_assignment.val,0,false) < 0) {
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,
+                                                       NULL,dlsch_config_pdu_1_1,&mappingtype,
+                                                       dci->time_domain_assignment.val,0,false) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
-
-    int mappingtype = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType : ((dlsch_config_pdu_1_1->start_symbol <= 3)? typeA: typeB);
+    if(pdsch_TimeDomainAllocationList)
+      mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
 
     dlsch_config_pdu_1_1->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? NFAPI_NR_DMRS_TYPE1 : NFAPI_NR_DMRS_TYPE2;
 
@@ -2407,7 +2418,7 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
                       "CSI resource not found among PUCCH resources\n");
 
           pucch->resource_indicator = found;
-          csi_bits = nr_get_csi_payload(mac, pucch, csi_measconfig);
+          csi_bits += nr_get_csi_payload(mac, pucch, csi_report_id, csi_measconfig);
         }
       }
       else
@@ -2421,31 +2432,30 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
 
 uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch,
+                           int csi_report_id,
                            NR_CSI_MeasConfig_t *csi_MeasConfig) {
 
   int n_csi_bits = 0;
 
   AssertFatal(csi_MeasConfig->csi_ReportConfigToAddModList->list.count>0,"No CSI Report configuration available\n");
 
-  for (int csi_report_id=0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
-    struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
-    NR_CSI_ResourceConfigId_t csi_ResourceConfigId = csi_reportconfig->resourcesForChannelMeasurement;
-    switch(csi_reportconfig->reportQuantity.present) {
-      case NR_CSI_ReportConfig__reportQuantity_PR_none:
-        break;
-      case NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP:
-        n_csi_bits += get_ssb_rsrp_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
-        break;
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
-      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
-        AssertFatal(1==0,"Measurement report based on CSI-RS not availalble\n");
-      default:
-        AssertFatal(1==0,"Invalid CSI report quantity type %d\n",csi_reportconfig->reportQuantity.present);
-    }
+  struct NR_CSI_ReportConfig *csi_reportconfig = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+  NR_CSI_ResourceConfigId_t csi_ResourceConfigId = csi_reportconfig->resourcesForChannelMeasurement;
+  switch(csi_reportconfig->reportQuantity.present) {
+    case NR_CSI_ReportConfig__reportQuantity_PR_none:
+      break;
+    case NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP:
+      n_csi_bits = get_ssb_rsrp_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
+      break;
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
+      AssertFatal(1==0,"Measurement report based on CSI-RS not availalble\n");
+    default:
+      AssertFatal(1==0,"Invalid CSI report quantity type %d\n",csi_reportconfig->reportQuantity.present);
   }
   return (n_csi_bits);
 }
