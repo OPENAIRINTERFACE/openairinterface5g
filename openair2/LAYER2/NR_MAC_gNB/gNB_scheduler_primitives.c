@@ -532,6 +532,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
       ps->mcsTableIdx = 2;
   }
   else ps->mcsTableIdx = 0;
+  LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
 
   NR_PDSCH_Config_t *pdsch_Config;
   if (bwp &&
@@ -1943,7 +1944,6 @@ void create_nr_list(NR_list_t *list, int len)
 {
   list->head = -1;
   list->next = malloc(len * sizeof(*list->next));
-  LOG_W(NR_MAC, "NR list->next %p\n", list->next);
   AssertFatal(list->next, "cannot malloc() memory for NR_list_t->next\n");
   for (int i = 0; i < len; ++i)
     list->next[i] = -1;
@@ -2278,8 +2278,16 @@ void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
       add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
     create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
     create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
+  } else if (sched_ctrl->available_dl_harq.len == nrofHARQ) {
+    LOG_D(NR_MAC, "nrofHARQ %d already configured\n", nrofHARQ);
   } else {
+    const int old_nrofHARQ = sched_ctrl->available_dl_harq.len;
+    AssertFatal(nrofHARQ > old_nrofHARQ,
+                "cannot resize HARQ list to be smaller (nrofHARQ %d, old_nrofHARQ %d)\n",
+                nrofHARQ, old_nrofHARQ);
     resize_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
+    for (int harq = old_nrofHARQ; harq < nrofHARQ; harq++)
+      add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
     resize_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
     resize_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
   }
@@ -2491,11 +2499,11 @@ void nr_csirs_scheduling(int Mod_idP,
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
         NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
-        csi_period_offset(NULL,nzpcsi,&period,&offset);
+        csi_period_offset(NULL,nzpcsi->periodicityAndOffset,&period,&offset);
 
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
-          LOG_I(MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
+          LOG_D(MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
           memset((void*)dl_tti_csirs_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -2539,7 +2547,7 @@ void nr_csirs_scheduling(int Mod_idP,
             case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
               csirs_pdu_rel15->row = 2;
               csirs_pdu_rel15->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]>>4)&0x0f) |
-                                             ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<8)&0xff0));
+                                             ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<4)&0xff0));
               for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
                 vrb_map[rb+csirs_pdu_rel15->bwp_start] |= SL_to_bitmap(csirs_pdu_rel15->symb_l0, 1);
               break;
@@ -2554,6 +2562,7 @@ void nr_csirs_scheduling(int Mod_idP,
               // determining the row of table 7.4.1.5.3-1 in 38.211
               switch(resourceMapping.nrofPorts){
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p1:
+                  AssertFatal(1==0,"Resource with 1 CSI port shouldn't be within other rows\n");
                   break;
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p2:
                   csirs_pdu_rel15->row = 3;
