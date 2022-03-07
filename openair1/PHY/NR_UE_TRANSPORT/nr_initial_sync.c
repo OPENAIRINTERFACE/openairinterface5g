@@ -343,13 +343,13 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         nr_gold_pdcch(ue,fp->Nid_cell);
 
         // compute the scrambling IDs for PDSCH DMRS
-        for (int i=0; i<2; i++) {
+        for (int i=0; i<NR_NB_NSCID; i++) {
           ue->scramblingID_dlsch[i]=fp->Nid_cell;
           nr_gold_pdsch(ue, i, ue->scramblingID_dlsch[i]);
         }
 
         // initialize the pusch dmrs
-        for (int i=0; i<2; i++) {
+        for (int i=0; i<NR_NB_NSCID; i++) {
           ue->scramblingID_ulsch[i]=fp->Nid_cell;
           nr_init_pusch_dmrs(ue, ue->scramblingID_ulsch[i], i);
         }

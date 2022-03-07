@@ -142,10 +142,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     AssertFatal(pdsch_dmrs[slot]!=NULL, "NR init: pdsch_dmrs for slot %d - malloc failed\n", slot);
 
     for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(2*sizeof(uint32_t *));
+      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_NB_NSCID*sizeof(uint32_t *));
       AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
-      for (int q=0; q<2; q++) {
+      for (int q=0; q<NR_NB_NSCID; q++) {
         pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
         AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d nscid %d - malloc failed\n", slot, symb, q);
       }
@@ -153,17 +153,17 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
 
-  for (int nscid = 0; nscid < 2; nscid++) {
+  for (int nscid = 0; nscid < NR_NB_NSCID; nscid++) {
     gNB->pdsch_gold_init[nscid] = cfg->cell_config.phy_cell_id.value;
     nr_init_pdsch_dmrs(gNB, nscid, cfg->cell_config.phy_cell_id.value);
   }
 
   //PUSCH DMRS init
-  gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(2*sizeof(uint32_t ***));
+  gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(NR_NB_NSCID*sizeof(uint32_t ***));
 
   uint32_t ****pusch_dmrs = gNB->nr_gold_pusch_dmrs;
 
-  for(int nscid=0; nscid<2; nscid++) {
+  for(int nscid=0; nscid<NR_NB_NSCID; nscid++) {
     pusch_dmrs[nscid] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
     AssertFatal(pusch_dmrs[nscid]!=NULL, "NR init: pusch_dmrs for nscid %d - malloc failed\n", nscid);
 
@@ -178,7 +178,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-  for (int nscid=0; nscid<2; nscid++) {
+  for (int nscid=0; nscid<NR_NB_NSCID; nscid++) {
     gNB->pusch_gold_init[nscid] = cfg->cell_config.phy_cell_id.value;
     nr_gold_pusch(gNB, nscid, gNB->pusch_gold_init[nscid]);
   }
