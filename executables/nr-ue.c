@@ -18,7 +18,8 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
+#define _GNU_SOURCE 
+#include <pthread.h>
 #include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/phy_extern_nr_ue.h"
@@ -166,10 +167,10 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   }
 
   // initialize all signal buffers
-  init_nr_ue_signal(ue, nb_connected_gNB, abstraction_flag);
+  init_nr_ue_signal(ue, nb_connected_gNB);
 
   // intialize transport
-  init_nr_ue_transport(ue, abstraction_flag);
+  init_nr_ue_transport(ue);
 
   // init N_TA offset
   init_N_TA_offset(ue);
@@ -765,9 +766,9 @@ void processSlotRX(void *arg) {
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
-    uint64_t a=rdtsc();
+    uint64_t a=rdtsc_oai();
     phy_procedures_nrUE_RX(UE, proc, gNB_id, get_nrUE_params()->nr_dlsch_parallel, &rxtxD->txFifo);
-    LOG_D(PHY, "In %s: slot %d, time %lu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc()-a)/3500);
+    LOG_D(PHY, "In %s: slot %d, time %llu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc_oai()-a)/3500);
 #endif
 
     if(IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa){

@@ -29,6 +29,7 @@
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/load_module_shlib.h"
 #include "T.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
@@ -355,7 +356,7 @@ int main(int argc, char **argv)
 	}
 
 	RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
-	RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+	RC.gNB[0] = calloc(1, sizeof(PHY_VARS_gNB));
 	gNB = RC.gNB[0];
 	gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
 	initTpool(gNBthreads, gNB->threadPool, true);
@@ -412,7 +413,7 @@ int main(int argc, char **argv)
 	memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
 	//phy_init_nr_top(frame_parms);
-	if (init_nr_ue_signal(UE, 1, 0) != 0) {
+	if (init_nr_ue_signal(UE, 1) != 0) {
 		printf("Error at UE NR initialisation\n");
 		exit(-1);
 	}
@@ -421,8 +422,7 @@ int main(int argc, char **argv)
 	//init_nr_ue_transport(UE, 0);
 	for (int sf = 0; sf < 2; sf++) {
 		for (i = 0; i < 2; i++) {
-			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL,
-					0);
+			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL);
 
 			if (!UE->dlsch[sf][0][i]) {
 				printf("Can't get ue dlsch structures\n");
@@ -433,8 +433,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	UE->dlsch_SI[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
-	UE->dlsch_ra[0] = new_nr_ue_dlsch(1, 1, Nsoft, 5, N_RB_DL, 0);
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
   processingData_L1tx_t msgDataTx;
   init_DLSCH_struct(gNB, &msgDataTx);
@@ -472,16 +470,13 @@ int main(int argc, char **argv)
 	rel15->dlDmrsSymbPos = 4;
 	rel15->mcsIndex[0] = Imcs;
         rel15->numDmrsCdmGrpsNoData = 1;
-	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
-	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
-	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
+	double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
+	short channel_output_fixed[16 * 68 * 384];
 	//unsigned char *estimated_output;
-	unsigned char *estimated_output_bit;
-	unsigned char *test_input_bit;
 	unsigned int errors_bit = 0;
-	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	unsigned char test_input_bit[16 * 68 * 384];
 	//estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	unsigned char estimated_output_bit[16 * 68 * 384];
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
@@ -495,9 +490,10 @@ int main(int argc, char **argv)
 	harq_process->dlDmrsSymbPos = 4;
 	harq_process->n_dmrs_cdm_groups = 1;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
+
 	unsigned char *test_input;
 	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
-
+	//unsigned char test_input[TBS / 8]  __attribute__ ((aligned(16)));
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
 
@@ -554,12 +550,6 @@ int main(int argc, char **argv)
 						   i,modulated_input[i],
 						   i,channel_output_fixed[i]);
 */
-
-				//Uncoded BER
-				if (channel_output_fixed[i] < 0)
-					channel_output_uncoded[i] = 1;  //QPSK demod
-				else
-					channel_output_uncoded[i] = 0;
 			}
 
 #ifdef DEBUG_CODER
@@ -641,12 +631,22 @@ int main(int argc, char **argv)
 	 }
 	 }*/
 
-	for (i = 0; i < 2; i++) {
-		printf("gNB %d\n", i);
-		free_gNB_dlsch(&(msgDataTx.dlsch[0][i]),N_RB_DL);
-		printf("UE %d\n", i);
-		free_nr_ue_dlsch(&(UE->dlsch[0][0][i]),N_RB_DL);
-	}
+  free(test_input);
+
+  free_channel_desc_scm(gNB2UE);
+
+  reset_DLSCH_struct(gNB, &msgDataTx);
+
+  phy_free_nr_gNB(gNB);
+  free(gNB->threadPool);
+  free(RC.gNB[0]);
+  free(RC.gNB);
+
+  for (int sf = 0; sf < 2; sf++)
+    for (int i = 0; i < 2; i++)
+      free_nr_ue_dlsch(&UE->dlsch[sf][0][i], N_RB_DL);
+  term_nr_ue_signal(UE, 1);
+  free(UE);
 
 	for (i = 0; i < 2; i++) {
 		free(s_re[i]);
@@ -670,6 +670,9 @@ int main(int argc, char **argv)
 
 	if (ouput_vcd)
         vcd_signal_dumper_close();
+
+  loader_reset();
+  logTerm();
 
 	return (n_errors);
 }

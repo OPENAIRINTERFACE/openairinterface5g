@@ -69,7 +69,7 @@
 #include "nfapi_interface.h"
 #include "PHY_INTERFACE/IF_Module.h"
 
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 
 #include "PHY/defs_common.h" // for PRACH_RESOURCES_t
 #include "PHY/LTE_TRANSPORT/transport_common.h"

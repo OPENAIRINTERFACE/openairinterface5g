@@ -55,6 +55,59 @@ int sum(uint8_t *b, int s) {
   return sum;
 }
 
+
+extern double cpuf;
+
+typedef struct m {
+  uint64_t iterations;
+  uint64_t sum;
+  uint64_t maxArray[11];
+} Meas;
+
+int cmpint(const void *a, const void *b)
+{
+  uint64_t *aa=(uint64_t *)a;
+  uint64_t *bb=(uint64_t *)b;
+  return (int)(*aa-*bb);
+}
+
+static inline void printMeas(char *txt,
+                                    Meas *M,
+                                                        int period)
+{
+  if (M->iterations%period == 0 ) {
+    char txt2[512];
+    sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " max=%"
+            PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n",
+            txt,
+            M->sum/M->iterations,
+            M->iterations,
+            M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
+            M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
+#if T_TRACER
+    LOG_W(PHY,"%s",txt2);
+#else
+    printf("%s",txt2);
+#endif
+  }
+}
+
+void updateTimes(uint64_t start, Meas *M, int period, char *txt)
+{
+  if (start!=0) {
+    uint64_t end=rdtsc_oai();
+    long long diff=(end-start)/(cpuf*1000);
+    M->maxArray[0]=diff;
+    M->sum+=diff;
+    M->iterations++;
+    qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
+    printMeas(txt,M,period);
+  }
+}
+
+#define initStaticTime(a) static __thread uint64_t a={0}
+#define pickStaticTime(a) do { a=rdtsc_oai(); } while (0)
+#define initRefTimes(a) static __thread Meas a= {0}
 static inline int cmpintRev(const void *a, const void *b) {
   uint64_t *aa=(uint64_t *)a;
   uint64_t *bb=(uint64_t *)b;
@@ -82,7 +135,7 @@ static inline void printMeas2(char *txt, Meas *M, int period, bool MaxMin) {
 
 static inline void updateTimesReset(uint64_t start, Meas *M, int period, bool MaxMin, char *txt) {
   if (start!=0) {
-    uint64_t end=rdtsc();
+    uint64_t end=rdtsc_oai();
     long long diff=(end-start)/(cpuf*1000);
     M->maxArray[0]=diff;
     M->sum+=diff;
@@ -107,7 +160,7 @@ static inline void updateTimesReset(uint64_t start, Meas *M, int period, bool Ma
 
 static inline void measTransportTime(uint64_t DuSend, uint64_t CuMicroSec, Meas *M, int period, bool MaxMin, char *txt) {
   if (DuSend!=0) {
-    uint64_t end=rdtsc();
+    uint64_t end=rdtsc_oai();
     long long diff=(end-DuSend)/(cpuf*1000)-CuMicroSec;
     M->maxArray[0]=diff;
     M->sum+=diff;
@@ -894,7 +947,7 @@ void phy_procedures_eNB_TX_fromsplit(uint8_t *bufferZone, int nbBlocks, PHY_VARS
   memcpy(eNB->pbch_pdu,hDL(bufferZone)->pbch_pdu, 4);
 
   // Remove all scheduled DL, we will populate from the CU sending
-  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
+  for (int UE_id=0; UE_id<NUMBER_OF_DLSCH_MAX; UE_id++) {
     LTE_eNB_DLSCH_t *dlsch0 = eNB->dlsch[UE_id][0];
 
     if ( dlsch0 && dlsch0->rnti>0 ) {
@@ -1463,7 +1516,7 @@ void DL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t  DuClock, uint64_t start
   }
 
   hDL(bufferZone)->DuClock=DuClock;
-  hDL(bufferZone)->CuSpentMicroSec=(rdtsc()-startCycle)/(cpuf*1000);
+  hDL(bufferZone)->CuSpentMicroSec=(rdtsc_oai()-startCycle)/(cpuf*1000);
   updateTimesReset(startCycle, &CUprocessing, 1000,  true,"CU entire processing from recv to send");
   sendSubFrame(&sockFS6, bufferZone, sizeof(fs6_dl_t), CTsentCUv0 );
   return;
@@ -1476,7 +1529,7 @@ void UL_cu_fs6(RU_t *ru, L1_rxtx_proc_t *proc, uint64_t *TS, uint64_t *DuClock, 
   pickStaticTime(begingWait);
   int nb_blocks=receiveSubFrame(&sockFS6, bufferZone, sizeof(bufferZone), CTsentDUv0 );
   * DuClock=hUDP(bufferZone)->senderClock;
-  * startProcessing=rdtsc();
+  * startProcessing=rdtsc_oai();
   updateTimesReset(begingWait, &fullLoop, 1000, false, "CU wait DU");
 
   if (nb_blocks ==0) {

@@ -55,11 +55,10 @@
 #include <unistd.h>
 
 #include "common_lib.h"
-#include "msc.h"
 #include "defs_common.h"
 #include "defs_RU.h"
 #include "impl_defs_top.h"
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 //#include "PHY/CODING/coding_defs.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "platform_types.h"
@@ -203,7 +202,7 @@ typedef struct {
   int repetition_number[4];
 } LTE_eNB_PRACH;
 
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "PHY/LTE_TRANSPORT/transport_eNB.h"

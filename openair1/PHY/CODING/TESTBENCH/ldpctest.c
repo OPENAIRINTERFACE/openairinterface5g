@@ -25,6 +25,7 @@
 #include <string.h>
 #include "assertions.h"
 #include "SIMULATION/TOOLS/sim.h"
+#include "common/utils/load_module_shlib.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 //#include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/PHY/CODING/nrLDPC_decoder_LYC/nrLDPC_decoder_LYC.h"
@@ -118,15 +119,13 @@ int test_ldpc(short No_iteration,
   //short test_input[block_length];
   unsigned char *test_input[MAX_NUM_NR_DLSCH_SEGMENTS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
   //short *c; //padded codeword
-  unsigned char *estimated_output[MAX_NUM_DLSCH_SEGMENTS];
-  unsigned char *estimated_output_bit[MAX_NUM_DLSCH_SEGMENTS];
-  unsigned char *test_input_bit;
+  unsigned char estimated_output[MAX_NUM_DLSCH_SEGMENTS][block_length];
+  memset(estimated_output, 0, sizeof(estimated_output));
   unsigned char *channel_input[MAX_NUM_DLSCH_SEGMENTS];
-  unsigned char *channel_output_uncoded[MAX_NUM_DLSCH_SEGMENTS];
   unsigned char *channel_input_optim[MAX_NUM_DLSCH_SEGMENTS];
-  double *channel_output;
-  double *modulated_input[MAX_NUM_DLSCH_SEGMENTS];
-  char *channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS];
+  //double channel_output[68 * 384];
+  double modulated_input[MAX_NUM_DLSCH_SEGMENTS][68 * 384] = { 0 };
+  char channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS][68  * 384] = { 0 };
   unsigned int i,j,trial=0;
   short BG=0,nrows=0;//,ncols;
   int no_punctured_columns,removed_bit;
@@ -155,24 +154,12 @@ int test_ldpc(short No_iteration,
   // generate input block
   for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
     test_input[j]=(unsigned char *)malloc16(sizeof(unsigned char) * block_length/8);
+    memset(test_input[j], 0, sizeof(unsigned char) * block_length / 8);
     channel_input[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
+    memset(channel_input[j], 0, sizeof(unsigned char) * 68 * 384);
     channel_input_optim[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
-    channel_output_uncoded[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
-    estimated_output[j] = (unsigned char*) malloc16(sizeof(unsigned char) * block_length);
-    estimated_output_bit[j] = (unsigned char*) malloc16(sizeof(unsigned char) * block_length);
-    modulated_input[j] = (double *)malloc16(sizeof(double) * 68*384);
-    channel_output_fixed[j]  =  (char *)malloc16(sizeof( char) * 68*384);
+    memset(channel_input_optim[j], 0, sizeof(unsigned char) * 68 * 384);
   }
-  //modulated_input = (double *)malloc(sizeof(double) * 68*384);
-  //channel_output  = (double *)malloc(sizeof(double) * 68*384);
-  //channel_output_fixed  = (char *)malloc16(sizeof(char) * 68*384);
-  //modulated_input = (double *)calloc(68*384, sizeof(double));
-  channel_output  =  (double *)calloc(68*384, sizeof(double));
-  //channel_output_fixed  =  (double *)calloc(68*384, sizeof(double));
-  //channel_output_fixed  =  (unsigned char*)calloc(68*384, sizeof(unsigned char*));
-  //estimated_output = (unsigned char*) malloc16(sizeof(unsigned char) * block_length);///8);
-  //estimated_output_bit = (unsigned char*) malloc16(sizeof(unsigned char) * block_length);
-  test_input_bit = (unsigned char*) malloc16(sizeof(unsigned char) * block_length);
 
   reset_meas(&time);
   reset_meas(time_optim);
@@ -319,7 +306,6 @@ int test_ldpc(short No_iteration,
         for (i = 0; i < block_length+(nrows-no_punctured_columns) * Zc - removed_bit; i++)
           if (channel_input[j][i]!=channel_input_optim[j][i]) {
             printf("differ in seg %u pos %u (%u,%u)\n", j, i, channel_input[j][i], channel_input_optim[j][i]);
-            free(channel_output);
             return (-1);
           }
       //else{
@@ -367,12 +353,9 @@ int test_ldpc(short No_iteration,
         //channel_output_fixed[i] = (char)quantize(1,channel_output_fixed[i],qbits);
 
         //Uncoded BER
-        if (channel_output_fixed[j][i]<0)
-            channel_output_uncoded[j][i]=1;  //QPSK demod
-        else
-            channel_output_uncoded[j][i]=0;
+        unsigned char channel_output_uncoded = channel_output_fixed[j][i]<0 ? 1 /* QPSK demod */ : 0;
 
-        if (channel_output_uncoded[j][i] != channel_input_optim[j][i-2*Zc])
+        if (channel_output_uncoded != channel_input_optim[j][i-2*Zc])
 	  *errors_bit_uncoded = (*errors_bit_uncoded) + 1;
 
 	}
@@ -423,12 +406,10 @@ int test_ldpc(short No_iteration,
 
       for (i=0; i<block_length; i++)
         {
-          estimated_output_bit[j][i] = (estimated_output[j][i/8]&(1<<(i&7)))>>(i&7);
-          test_input_bit[i] = (test_input[j][i/8]&(1<<(i&7)))>>(i&7); // Further correct for multiple segments
-          if (estimated_output_bit[j][i] != test_input_bit[i])
-          {
+          unsigned char estoutputbit = (estimated_output[j][i/8]&(1<<(i&7)))>>(i&7);
+          unsigned char inputbit = (test_input[j][i/8]&(1<<(i&7)))>>(i&7); // Further correct for multiple segments
+          if (estoutputbit != inputbit)
             *errors_bit = (*errors_bit) + 1;
-          }
         }
 
       //if (*errors == 1000)
@@ -460,17 +441,8 @@ int test_ldpc(short No_iteration,
   for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
     free(test_input[j]);
     free(channel_input[j]);
-    free(channel_output_uncoded[j]);
     free(channel_input_optim[j]);
-    free(modulated_input[j]);
-    free(channel_output_fixed[j]);
-    free(estimated_output[j]);
-    free(estimated_output_bit[j]);
   }
-  //free(modulated_input);
-  free(channel_output);
-  //free(channel_output_fixed);
-  //free(estimated_output);
 
   nrLDPC_free_mem(p_nrLDPC_procBuf);
 
@@ -727,6 +699,9 @@ int main(int argc, char *argv[])
     i=i+1;
   }
   fclose(fd);
+
+  loader_reset();
+  logTerm();
 
   return(0);
 }

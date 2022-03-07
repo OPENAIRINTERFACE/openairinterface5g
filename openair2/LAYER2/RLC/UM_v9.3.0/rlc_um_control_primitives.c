@@ -32,7 +32,6 @@
 
 #include "rlc_um_control_primitives.h"
 #include "LTE_T-Reordering.h"
-#include "msc.h"
 
 //-----------------------------------------------------------------------------
 void config_req_rlc_um (
@@ -173,15 +172,6 @@ void config_req_rlc_um_asn1 (
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
                 rlc_p->rb_id,
                 ul_rlc_pP->sn_FieldLength);
-          MSC_LOG_RX_DISCARDED_MESSAGE(
-            (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-            (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-            NULL,
-            0,
-            MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ UL sn_FieldLength %u",
-            MSC_AS_TIME_ARGS(ctxt_pP),
-            PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-            ul_rlc_pP->sn_FieldLength);
           return;
       }
     }
@@ -201,15 +191,6 @@ void config_req_rlc_um_asn1 (
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
                 rlc_p->rb_id,
                 dl_rlc_pP->sn_FieldLength);
-          MSC_LOG_RX_DISCARDED_MESSAGE(
-            (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-            (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-            NULL,
-            0,
-            MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ DL sn_FieldLength %u",
-            MSC_AS_TIME_ARGS(ctxt_pP),
-            PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-            dl_rlc_pP->sn_FieldLength);
           return;
       }
 
@@ -220,15 +201,6 @@ void config_req_rlc_um_asn1 (
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
               rlc_p->rb_id,
               dl_rlc_pP->t_Reordering);
-        MSC_LOG_RX_DISCARDED_MESSAGE(
-          (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-          (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-          NULL,
-          0,
-          MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u",
-          MSC_AS_TIME_ARGS(ctxt_pP),
-          PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-          dl_rlc_pP->t_Reordering);
         return;
       }
     }
@@ -239,34 +211,12 @@ void config_req_rlc_um_asn1 (
                        ul_sn_FieldLength,
                        dl_sn_FieldLength,
                        mbms_flagP);
-      MSC_LOG_RX_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-        NULL,
-        0,
-        MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u rx snfl %u tx snfl %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-        t_Reordering,
-        ul_sn_FieldLength,
-        dl_sn_FieldLength);
     } else {
       rlc_um_configure(ctxt_pP,rlc_p,
                        t_Reordering,
                        dl_sn_FieldLength,
                        ul_sn_FieldLength,
                        mbms_flagP);
-      MSC_LOG_RX_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-        NULL,
-        0,
-        MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u rx snfl %u tx snfl %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-        t_Reordering,
-        dl_sn_FieldLength,
-        ul_sn_FieldLength);
     }
   }
 }

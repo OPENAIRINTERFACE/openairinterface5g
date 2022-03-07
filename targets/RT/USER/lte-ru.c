@@ -48,7 +48,6 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
-#include "msc.h"
 #include "PHY/defs_common.h"
 #include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"
@@ -62,7 +61,6 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "targets/ARCH/COMMON/common_lib.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
-//#include "PHY/TOOLS/time_meas.h"
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h */
 static int DEFBANDS[] = {7};

@@ -388,7 +388,6 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   // Calculate number of PRB_DMRS
   uint8_t N_PRB_DMRS = gNB_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
   uint16_t dmrs_length = get_num_dmrs(dlDmrsSymbPos);
-
   LOG_D(MAC,"dlDmrsSymbPos %x\n",dlDmrsSymbPos);
   int rbSize = 0;
   uint32_t TBS = 0;
@@ -613,16 +612,16 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
       int startSymbolIndex = 0;
       int nrOfSymbols = 0;
+      bool is_typeA;
 
       get_info_from_tda_tables(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern,
                                time_domain_allocation,
                                gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
-                               1, &startSymbolIndex, &nrOfSymbols);
+                               1, &is_typeA,
+                               &startSymbolIndex, &nrOfSymbols);
 
-      // TODO: There are exceptions to this in table 5.1.2.1.1-4,5 (Default time domain allocation tables B, C)
-      int mappingtype = (startSymbolIndex <= 3)? typeA: typeB;
-
-      uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype);
+      int mappingtype = is_typeA? typeA: typeB;
+      uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype, 1);
 
       // Configure sched_ctrlCommon for SIB1
       uint32_t TBS = schedule_control_sib1(module_idP, CC_id,

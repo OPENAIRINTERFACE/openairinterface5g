@@ -44,7 +44,6 @@
 
 #include "m3ap_itti_messaging.h"
 
-#include "msc.h"
 #include "assertions.h"
 #include "conversions.h"
 
@@ -149,15 +148,7 @@ int MCE_send_MBMS_SESSION_START_RESPONSE(instance_t instance, m3ap_session_start
 //
 //
 //  LOG_W(M3AP,"pdu.present %d\n",pdu.present);
-// // MSC_LOG_TX_MESSAGE(
-// // MSC_M3AP_MCE,
-// // MSC_M3AP_MCE,
-// // (const char *)buffer,
-// // len,
-// // MSC_AS_TIME_FMT" M3_SETUP_REQUEST initiatingMessage MCEname %s",
-// // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-// // m3ap_MCE_data_p->MCEname);
-//
+
    m3ap_MCE_itti_send_sctp_data_req(instance, m3ap_mce_data_g->assoc_id, buffer, len, 0);
   return 0;
 }
@@ -318,14 +309,6 @@ int MCE_send_MBMS_SESSION_STOP_RESPONSE(instance_t instance, m3ap_session_start_
 
 
   LOG_D(M3AP,"pdu.present %d\n",pdu.present);
- // MSC_LOG_TX_MESSAGE(
- // MSC_M3AP_MCE,
- // MSC_M3AP_MCE,
- // (const char *)buffer,
- // len,
- // MSC_AS_TIME_FMT" M3_SETUP_REQUEST initiatingMessage MCEname %s",
- // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- // m3ap_MCE_data_p->MCEname);
 
   m3ap_MCE_itti_send_sctp_data_req(instance, m3ap_mce_data_g->assoc_id, buffer, len, 0);
   return 0;
@@ -425,14 +408,6 @@ int MCE_send_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance, m3ap_mbms_session
 
 
   LOG_D(M3AP,"pdu.present %d\n",pdu.present);
- // MSC_LOG_TX_MESSAGE(
- // MSC_M3AP_MCE,
- // MSC_M3AP_MCE,
- // (const char *)buffer,
- // len,
- // MSC_AS_TIME_FMT" M3_SETUP_REQUEST initiatingMessage MCEname %s",
- // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- // m3ap_MCE_data_p->MCEname);
 
   m3ap_MCE_itti_send_sctp_data_req(instance, m3ap_mce_data_g->assoc_id, buffer, len, 0);
   return 0;
@@ -646,14 +621,6 @@ int MCE_send_M3_SETUP_REQUEST(m3ap_MCE_instance_t *instance_p, m3ap_MCE_data_t *
 //
 //
 //  LOG_W(M3AP,"pdu.present %d\n",pdu.present);
-// // MSC_LOG_TX_MESSAGE(
-// // MSC_M3AP_MCE,
-// // MSC_M3AP_MCE,
-// // (const char *)buffer,
-// // len,
-// // MSC_AS_TIME_FMT" M3_SETUP_REQUEST initiatingMessage MCEname %s",
-// // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-// // m3ap_MCE_data_p->MCEname);
 //
 //
 ////  buffer = &bytes[0];
@@ -725,15 +692,6 @@ int MCE_handle_M3_SETUP_RESPONSE(instance_t instance,
    //for (int i=0;i<num_cells_to_activate;i++)  
    //  AssertFatal(M3AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
 
-   //MSC_LOG_RX_MESSAGE(
-   // MSC_M3AP_MCE,
-   // MSC_M3AP_CU,
-   // 0,
-   // 0,
-   // MSC_AS_TIME_FMT" MCE_handle_M3_SETUP_RESPONSE successfulOutcome assoc_id %d",
-   // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-   // assoc_id);
- 
    //LOG_D(M3AP, "Sending M3AP_SETUP_RESP ITTI message to MCE_APP with assoc_id (%d->%d)\n",
    //      assoc_id,MCE_MOMCELE_ID_TO_INSTANCE(assoc_id));
    itti_send_msg_to_task(TASK_MCE_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
