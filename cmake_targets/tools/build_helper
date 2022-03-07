@@ -765,7 +765,6 @@ check_install_oai_software() {
 	libxml2 \
 	libxml2-dev  \
 	libxslt1-dev \
-	mscgen  \
 	octave-signal \
 	openssh-client \
 	openssh-server \
@@ -793,7 +792,7 @@ check_install_oai_software() {
       fi
       $SUDO $INSTALLER install -y python-epdb vim-common
     else
-      $SUDO $INSTALLER install -y mscgen pydb
+      $SUDO $INSTALLER install -y pydb
     fi
 
     $SUDO $INSTALLER install -y \

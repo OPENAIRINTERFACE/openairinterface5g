@@ -47,14 +47,6 @@ Description Defines constants and functions used by the AS simulator
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
 
-/*
- * Constansts used for MSCGEN (Message Sequence Chart Generator)
- */
-#define MSCGEN(args...) fprintf(stderr, ##args);
-#define _ue_id    "UE"
-#define _mme_id   "MME"
-#define _as_id    "AS"
-
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/

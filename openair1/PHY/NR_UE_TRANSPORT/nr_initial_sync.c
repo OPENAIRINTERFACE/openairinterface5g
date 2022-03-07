@@ -31,8 +31,6 @@
 */
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_extern_nr_ue.h"
-#include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
@@ -46,7 +44,6 @@
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
-#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 extern openair0_config_t openair0_cfg[];
 //static  nfapi_nr_config_request_t config_t;
@@ -196,11 +193,11 @@ char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 
 int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                     PHY_VARS_NR_UE *ue,
-                    int n_frames, int sa,
-                    int dlsch_parallel)
+                    int n_frames, int sa)
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
+  int32_t accumulated_freq_offset = 0;
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
   double im, re;
@@ -249,22 +246,30 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     LOG_I(PHY,"sync_pos %d ssb_offset %d \n",sync_pos,ue->ssb_offset);
 #endif
 
+     accumulated_freq_offset += ue->common_vars.freq_offset;
+
     // digital compensation of FFO for SSB symbols
-    if (ue->UE_fo_compensation){  
-	double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
-	double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
+    if (ue->UE_fo_compensation){
+      double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
+      double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
 
-	int start = is*fp->samples_per_frame+ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
-  	int end = start + 4*(fp->ofdm_symbol_size + fp->nb_prefix_samples);  // loop over samples in 4 symbols (ssb size), including prefix  
+      // In SA we need to perform frequency offset correction until the end of buffer because we need to decode SIB1
+      // and we do not know yet in which slot it goes.
 
-	for(int n=start; n<end; n++){  	
-	  for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
-		re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
-		im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
-		((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
-		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
-	  }
-	}
+      // start for offset correction
+      int start = sa ? is*fp->samples_per_frame : is*fp->samples_per_frame + ue->ssb_offset;
+
+      // loop over samples
+      int end = sa ? n_frames*fp->samples_per_frame-1 : start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+
+      for(int n=start; n<end; n++){
+        for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
+          re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
+          im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
+          ((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle)));
+          ((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+        }
+      }
     }
 
     /* check that SSS/PBCH block is continuous inside the received buffer */
@@ -290,7 +295,34 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
       LOG_I(PHY,"Calling sss detection (normal CP)\n");
 #endif
 
-      rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp);
+      int freq_offset_sss = 0;
+      rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss);
+
+      accumulated_freq_offset += freq_offset_sss;
+
+      // digital compensation of FFO for SSB symbols
+      if (ue->UE_fo_compensation){
+        double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
+        double off_angle = -2*M_PI*s_time*freq_offset_sss;   // offset rotation angle compensation per sample
+
+        // In SA we need to perform frequency offset correction until the end of buffer because we need to decode SIB1
+        // and we do not know yet in which slot it goes.
+
+        // start for offset correction
+        int start = sa ? is*fp->samples_per_frame : is*fp->samples_per_frame + ue->ssb_offset;
+
+        // loop over samples
+        int end = sa ? n_frames*fp->samples_per_frame-1 : start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+
+        for(int n=start; n<end; n++){
+          for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
+            re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
+            im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
+            ((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle)));
+            ((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+          }
+        }
+      }
 
       nr_gold_pbch(ue);
       ret = nr_pbch_detection(proc, ue, 1);  // start pbch detection at first symbol after pss
@@ -305,6 +337,22 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
         // for a correct computation of frame number to sync with the one decoded at MIB we need to take into account in which of the n_frames we got sync
         ue->init_sync_frame = n_frames - 1 - is;
+
+        // compute the scramblingID_pdcch and the gold pdcch
+        ue->scramblingID_pdcch = fp->Nid_cell;
+        nr_gold_pdcch(ue,fp->Nid_cell);
+
+        // compute the scrambling IDs for PDSCH DMRS
+        for (int i=0; i<2; i++)
+          ue->scramblingID[i]=fp->Nid_cell;
+
+        nr_gold_pdsch(ue,ue->scramblingID);
+
+        // initialize the pusch dmrs
+        uint16_t N_n_scid[2] = {fp->Nid_cell,fp->Nid_cell};
+        int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
+        nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
+
         // we also need to take into account the shift by samples_per_frame in case the if is true
         if (ue->ssb_offset < sync_pos_frame){
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;
@@ -528,8 +576,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                          SI_PDSCH,
                                          ue->dlsch_SI[gnb_id],
                                          NULL,
-                                         &ue->dlsch_SI_errors[gnb_id],
-                                         dlsch_parallel);
+                                         &ue->dlsch_SI_errors[gnb_id]);
 
           // deactivate dlsch once dlsch proc is done
           ue->dlsch_SI[gnb_id]->active = 0;
@@ -538,6 +585,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     }
     if (dec == false) // sib1 not decoded
       ret = -1;
+
+    ue->common_vars.freq_offset = accumulated_freq_offset;
   }
   //  exit_fun("debug exit");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);

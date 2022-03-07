@@ -106,6 +106,8 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
                               uint8_t abstraction_flag,
                               uint16_t N_RB);
 
+void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB);
+
 /** \brief This function is the top-level entry point to PUSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
     - channel compensation (matched filtering)
@@ -296,6 +298,7 @@ int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, find_type_t type);
 int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
 
 NR_gNB_PUCCH_t *new_gNB_pucch(void);
+void free_gNB_pucch(NR_gNB_PUCCH_t *pucch);
 
 void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
@@ -307,6 +310,25 @@ int nr_find_pucch(uint16_t rnti,
                   int slot,
                   PHY_VARS_gNB *gNB);
 
+NR_gNB_SRS_t *new_gNB_srs(void);
+void free_gNB_srs(NR_gNB_SRS_t *srs);
+
+int nr_find_srs(uint16_t rnti,
+                int frame,
+                int slot,
+                PHY_VARS_gNB *gNB);
+
+void nr_fill_srs(PHY_VARS_gNB *gNB,
+                 int frame,
+                 int slot,
+                 nfapi_nr_srs_pdu_t *srs_pdu);
+
+int nr_get_srs_signal(PHY_VARS_gNB *gNB,
+                      int frame,
+                      int slot,
+                      nfapi_nr_srs_pdu_t *srs_pdu,
+                      nr_srs_info_t *nr_srs_info,
+                      int32_t **srs_received_signal);
 
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);

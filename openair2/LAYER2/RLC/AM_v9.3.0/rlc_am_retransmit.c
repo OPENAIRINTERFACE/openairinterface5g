@@ -28,7 +28,6 @@
 #include "rlc.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "common/utils/LOG/log.h"
-#include "msc.h"
 //-----------------------------------------------------------------------------
 boolean_t rlc_am_nack_pdu (
   const protocol_ctxt_t* const  ctxt_pP,

@@ -55,7 +55,7 @@
 
 /* PHY */
 #include "PHY/defs_gNB.h"
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 
 /* Interface */
 #include "nfapi_nr_interface_scf.h"
@@ -378,6 +378,12 @@ typedef struct NR_sched_pusch {
   int time_domain_allocation;
 } NR_sched_pusch_t;
 
+typedef struct NR_sched_srs {
+  int frame;
+  int slot;
+  bool srs_scheduled;
+} NR_sched_srs_t;
+
 /* PDSCH semi-static configuratio: as long as the TDA/DMRS/mcsTable remains the
  * same, there is no need to recalculate all S/L or DMRS-related parameters
  * over and over again.  Hence, we store them in this struct for easy
@@ -385,7 +391,8 @@ typedef struct NR_sched_pusch {
 typedef struct NR_pdsch_semi_static {
   int time_domain_allocation;
   uint8_t numDmrsCdmGrpsNoData;
-
+  uint8_t frontloaded_symb;
+  int mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;
   uint8_t nrOfLayers;
@@ -471,6 +478,7 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t pmi_x2;
   uint8_t wb_cqi_1tb;
   uint8_t wb_cqi_2tb;
+  uint8_t cqi_table;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -481,11 +489,8 @@ typedef struct CRI_SSB_RSRP {
 } CRI_SSB_RSRP_t;
 
 struct CSI_Report {
-  NR_CSI_Report_Config_PR present;
-  union Config_CSI_Report {
-    struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
-    struct CRI_SSB_RSRP ssb_cri_report;
-  } choice;
+  struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
+  struct CRI_SSB_RSRP ssb_cri_report;
 };
 
 #define MAX_SR_BITLEN 8
@@ -498,12 +503,13 @@ typedef struct {
 }L1_RSRP_bitlen_t;
 
 typedef struct{
+  uint8_t ri_restriction;
   uint8_t cri_bitlen;
   uint8_t ri_bitlen;
-  uint8_t li_bitlen;
-  uint8_t pmi_x1_bitlen;
-  uint8_t pmi_x2_bitlen;
-  uint8_t cqi_bitlen;
+  uint8_t li_bitlen[8];
+  uint8_t pmi_x1_bitlen[8];
+  uint8_t pmi_x2_bitlen[8];
+  uint8_t cqi_bitlen[8];
 } CSI_Meas_bitlen_t;
 
 typedef struct nr_csi_report {
@@ -565,8 +571,11 @@ typedef struct {
 
   /// PUSCH semi-static configuration: is not cleared across TTIs
   NR_pusch_semi_static_t pusch_semi_static;
-  /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
+  /// Sched PUSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pusch_t sched_pusch;
+
+  /// Sched SRS: scheduling decisions
+  NR_sched_srs_t sched_srs;
 
   /// uplink bytes that are currently scheduled
   int sched_ul_bytes;
@@ -609,9 +618,11 @@ typedef struct {
   int pusch_consecutive_dtx_cnt;
   int pucch_consecutive_dtx_cnt;
   int ul_failure;
-  struct CSI_Report CSI_report[MAX_CSI_REPORTS];
+  struct CSI_Report CSI_report;
   bool SR;
-
+  bool update_pdsch_ps;
+  bool update_pusch_ps;
+  bool set_mcs;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
@@ -664,7 +675,6 @@ typedef struct {
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_list_t list;
   int num_UEs;
-
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
@@ -708,6 +718,7 @@ typedef struct gNB_MAC_INST_s {
   int                             ssb_SubcarrierOffset;
   /// SIB1 Time domain allocation
   int                             sib1_tda;
+  int                             minRXTXTIMEpdsch;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)

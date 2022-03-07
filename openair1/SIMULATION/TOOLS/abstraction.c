@@ -33,11 +33,26 @@
 // NEW code with lookup table for sin/cos based on delay profile (TO BE TESTED)
 
 double **cos_lut=NULL,* *sin_lut=NULL;
+static int freq_channel_init = 0;
+static int n_samples_max = 0;
 
 
 //#if 1
 
-
+void term_freq_channel(void)
+{
+  for (int f = -(n_samples_max >> 1); f <= n_samples_max >> 1; f++) {
+    const int idx = f + (n_samples_max >> 1);
+    if (cos_lut[idx])
+      free_and_zero(cos_lut[idx]);
+    if (sin_lut[idx])
+      free_and_zero(sin_lut[idx]);
+  }
+  free_and_zero(cos_lut);
+  free_and_zero(sin_lut);
+  freq_channel_init = 0;
+  n_samples_max = 0;
+}
 
 int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples,int scs) {
   double delta_f,freq;  // 90 kHz spacing
@@ -78,8 +93,6 @@ int freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples,int scs) 
   int16_t f,f2,d;
   uint8_t aarx,aatx,l;
   double *clut,*slut;
-  static int freq_channel_init=0;
-  static int n_samples_max=0;
 
   // do some error checking
   // n_samples has to be a odd number because we assume the spectrum is symmetric around the DC and includes the DC

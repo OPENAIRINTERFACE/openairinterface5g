@@ -107,6 +107,8 @@
 #define MAX_NUM_NR_ULSCH_SEGMENTS 34
 #define MAX_NR_ULSCH_PAYLOAD_BYTES (MAX_NUM_NR_ULSCH_SEGMENTS*1056)
 
+#define MAX_NUM_NR_SRS_SYMBOLS 4
+
 #define MAX_NUM_NR_CHANNEL_BITS (14*273*12*8)  // 14 symbols, 273 RB
 #define MAX_NUM_NR_RE (14*273*12)
 #define NR_RX_NB_TH 1
@@ -249,6 +251,19 @@ typedef struct {
   uint8_t init_msg1;
 } NR_PRACH_RESOURCES_t;
 
+typedef struct {
+  uint16_t sc_list_length;
+  uint16_t sc_list[6 * NR_MAX_NB_RB];
+  uint8_t srs_generated_signal_bits;
+  int32_t *srs_generated_signal;
+  int32_t **srs_received_signal;
+  int32_t **srs_ls_estimated_channel;
+  int32_t **srs_estimated_channel_freq;
+  int32_t **srs_estimated_channel_time;
+  int32_t **srs_estimated_channel_time_shifted;
+  uint32_t *noise_power;
+} nr_srs_info_t;
+
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
 typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);
@@ -372,8 +387,6 @@ struct NR_DL_FRAME_PARMS {
   uint8_t N_ssb;
   /// SSB index
   uint8_t ssb_index;
-  /// PBCH polar encoder params
-  t_nrPolar_params pbch_polar_params;
   /// OFDM symbol offset divisor for UL
   uint32_t ofdm_offset_divisor;
 };

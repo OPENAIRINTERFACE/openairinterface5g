@@ -62,7 +62,6 @@ typedef struct {
 
   int sub_frame_start;
   int sub_frame_step;
-  unsigned long long gotIQs;
   uint8_t decoder_thread_available1;
   int dci_err_cnt;
 } UE_nr_rxtx_proc_t;

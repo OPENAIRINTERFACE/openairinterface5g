@@ -122,7 +122,7 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/impl_defs_top_NB_IoT.h"
 #include "PHY/impl_defs_lte_NB_IoT.h"
 
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 //#include "PHY/CODING/defs.h"
 #include "PHY/CODING/defs_NB_IoT.h"
 #include "openair2/PHY_INTERFACE/IF_Module_NB_IoT.h"
@@ -452,9 +452,6 @@ typedef struct {
   int                   sub_frame_start;
   ///
   int                   sub_frame_step;
-  ///
-  unsigned long long    gotIQs;
-
 } UE_rxtx_proc_NB_IoT_t;
 
 /// Context data structure for eNB subframe processing

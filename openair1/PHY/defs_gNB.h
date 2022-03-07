@@ -398,6 +398,16 @@ typedef struct {
 } NR_gNB_PUCCH_t;
 
 typedef struct {
+  uint8_t active;
+  /// Frame where current SRS pdu was received
+  uint32_t frame;
+  /// Slot where current SRS pdu was received
+  uint32_t slot;
+  /// ULSCH PDU
+  nfapi_nr_srs_pdu_t srs_pdu;
+} NR_gNB_SRS_t;
+
+typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
@@ -757,6 +767,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
+  NR_gNB_SRS_t       *srs[NUMBER_OF_NR_SRS_MAX];
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
@@ -768,7 +779,10 @@ typedef struct PHY_VARS_gNB_s {
   /// statistics for ULSCH measurement collection
   NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
   NR_gNB_UCI_STATS_t uci_stats[NUMBER_OF_NR_UCI_STATS_MAX];
-  t_nrPolar_params    *uci_polarParams;
+  t_nrPolar_params    **polarParams;
+
+  /// SRS variables
+  nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
 
   uint8_t pbch_configured;
   char gNB_generate_rar;
@@ -842,7 +856,7 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t *phy_proc_tx[2];
+  time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*
@@ -959,7 +973,6 @@ typedef struct processingData_L1tx {
   uint16_t num_pdsch_slot;
   int num_dl_pdcch;
   int num_ul_pdcch;
-  time_stats_t phy_proc_tx;
 } processingData_L1tx_t;
 
 #endif

@@ -32,9 +32,6 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "nr_transport_proto_ue.h"
-//#include "SCHED/defs.h"
-//#include "PHY/defs.h"
-//#include "extern.h"
 #include "PHY/sse_intrin.h"
 #include "T.h"
 #include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
@@ -934,12 +931,12 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
       for (aatx=0; aatx<nb_aatx; aatx++) {
-        dl_ch128      = (__m128i *)&dl_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*nb_rb*12];
 
         for (atx=0; atx<nb_aatx; atx++) {
           avg_rho_re[aarx][aatx*nb_aatx+atx] = 0;
           avg_rho_im[aarx][aatx*nb_aatx+atx] = 0;
           rho128        = (__m128i *)&rho[aarx][aatx*nb_aatx+atx][symbol*nb_rb*12];
+          dl_ch128      = (__m128i *)&dl_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*nb_rb*12];
           dl_ch128_2    = (__m128i *)&dl_ch_estimates_ext[atx*frame_parms->nb_antennas_rx+aarx][symbol*nb_rb*12];
 
           for (rb=0; rb<nb_rb_0; rb++) {

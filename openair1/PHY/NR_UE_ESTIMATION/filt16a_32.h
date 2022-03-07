@@ -182,4 +182,15 @@ extern short filt8_avlip4[8];
 extern short filt8_avlip5[8];
 
 extern short filt8_avlip6[8];
+
+/*Comb size 2*/
+extern short filt8_start[8];
+extern short filt8_middle2[8];
+extern short filt8_middle4[8];
+extern short filt8_end[8];
+
+/*Comb size 4*/
+extern short filt16_start[16];
+extern short filt16_middle4[16];
+extern short filt16_end[16];
 #endif

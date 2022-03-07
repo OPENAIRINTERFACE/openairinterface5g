@@ -68,19 +68,18 @@ static int iqplayer_loadfile(openair0_device *device, openair0_config_t *openair
     exit(-1);
   }
   
-  if (s->use_mmap) {
+  if (c->use_mmap) {
     // use mmap
       s->mapsize=sb.st_size;
       LOG_I(HW,"Loading subframes using mmap() from %s size=%lu bytes ...\n",c->u_sf_filename, (uint64_t)sb.st_size );
       void *mptr = mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, s->fd, 0) ;
-      s->ms_sample = (iqrec_t *) ( mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, s->fd, 0) + sizeof(iqfile_header_t));
-
       if (mptr != MAP_FAILED) {
+        s->ms_sample = (iqrec_t *) ( mptr + sizeof(iqfile_header_t));      
         parse_iqfile_header(device, (iqfile_header_t *)mptr);
         s->ms_sample = (iqrec_t *)((char *)mptr + sizeof(iqfile_header_t));
         LOG_I(HW,"Loaded %u subframes.\n",s->nbSamplesBlocks );
       } else {
-        LOG_E(HW,"Cannot mmap file, exiting.\n");
+        LOG_E(HW,"Cannot mmap file, exiting, errnor %s\n",strerror(errno));
         close(s->fd);
         exit(-1);
       }
@@ -108,7 +107,7 @@ static int iqplayer_loadfile(openair0_device *device, openair0_config_t *openair
         if (lseek(s->fd,sizeof(iqfile_header_t), SEEK_SET) == 0) {
           LOG_I(HW,"Initial seek at beginning of the file\n" );
         } else {
-          LOG_I(HW,"Problem initial seek at beginning of the file\n");
+          LOG_I(HW,"Problem initial seek at beginning of the file, %s\n",strerror(errno));
         }
       } else {
         LOG_E(HW,"Cannot read header in %s exiting.\n",c->u_sf_filename );
@@ -134,11 +133,10 @@ static int trx_iqplayer_start(openair0_device *device) {
 static void trx_iqplayer_end(openair0_device *device) {
   if (device == NULL)
     return;
-
   if (device->recplay_state == NULL)
     return;
   
-  if (device->recplay_state->use_mmap) {
+  if (device->openair0_cfg->recplay_conf->use_mmap) {
     if (device->recplay_state->ms_sample != MAP_FAILED) {
       munmap(device->recplay_state->ms_sample, device->recplay_state->mapsize);
       }
@@ -201,21 +199,22 @@ static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimes
     LOG_I(HW,"go back at the beginning of IQ file");
     device->recplay_state->currentPtr=(uint8_t *)device->recplay_state->ms_sample;
 
-    if (!s->use_mmap) {
-      if (lseek(device->recplay_state->fd, 0, SEEK_SET) != 0) {
-        LOG_E(HW, "Problem seeking at the beginning of IQ file");
-      }
+    if (!(device->openair0_cfg->recplay_conf->use_mmap) ) {
+      close(device->recplay_state->fd);
+      iqplayer_loadfile(device, device->openair0_cfg);
+ //       LOG_E(HW, "Problem seeking at the beginning of IQ file %s\n",strerror(errno));
+      
     }
   }
 
-  if (!s->use_mmap) {
+  if (!(device->openair0_cfg->recplay_conf->use_mmap)) {
     // read sample from file
     if (read(s->fd, s->ms_sample, sizeof(iqrec_t)) != sizeof(iqrec_t)) {
-      LOG_E(HW,"pb reading iqfile at index %lu\n",sizeof(iqrec_t)*s->curSamplesBlock );
+      LOG_E(HW,"pb reading iqfile at index %lu %s\n",sizeof(iqrec_t)*s->curSamplesBlock, strerror(errno) );
       exit(-1);
     } else {
       if (read(s->fd, s->ms_sample+1, s->ms_sample->nbBytes) !=  s->ms_sample->nbBytes) {
-        LOG_E(HW,"pb reading iqfile at index %lu\n",sizeof(iqrec_t)*s->curSamplesBlock );
+        LOG_E(HW,"pb reading iqfile at index %lu %s\n",sizeof(iqrec_t)*s->curSamplesBlock, strerror(errno) );
         exit(-1);
       }
     }
@@ -225,7 +224,9 @@ static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimes
   AssertFatal(curHeader->header==BELL_LABS_IQ_HEADER,"" );
   // the current timestamp is the stored timestamp until we wrap on input
   // USRP shifts 1 sample time to time
-  AssertFatal(s->wrap_count !=0 || abs(curHeader->ts-s->currentTs) < 5 ,"");
+  if (s->wrap_count !=0 && device->openair0_cfg->recplay_conf->use_mmap)
+    AssertFatal( abs(curHeader->ts-s->currentTs) < 5 ,
+              "wrap_count=%li, ts %lu %lu",s->wrap_count,curHeader->ts,s->currentTs);
   AssertFatal(nsamps*4==curHeader->nbBytes,"");
   *ptimestamp = s->currentTs;
   memcpy(buff[0], curHeader+1, nsamps*4);
@@ -233,7 +234,7 @@ static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimes
   // Prepare for next read
   s->currentTs+=nsamps;
 
-  if (s->use_mmap)
+  if (device->openair0_cfg->recplay_conf->use_mmap)
     s->currentPtr+=sizeof(iqrec_t)+s->ms_sample->nbBytes;
 
   struct timespec req;

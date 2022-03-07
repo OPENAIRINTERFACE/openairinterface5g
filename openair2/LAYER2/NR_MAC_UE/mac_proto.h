@@ -214,6 +214,7 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
 
 uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch,
+                           int csi_report_id,
                            NR_CSI_MeasConfig_t *csi_MeasConfig);
 
 uint8_t get_rsrp_index(int rsrp);
@@ -271,6 +272,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
                                                       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      int *mappingtype,
                                                       uint8_t time_domain_ind,
                                                       int default_abc,
                                                       bool use_default);
@@ -283,9 +285,9 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
                       uint8_t *ulsch_buffer,
                       uint16_t buflen);
 
-int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
-                         int nrofDownlinkSlots, int nrofDownlinkSymbols,
-                         int nrofUplinkSlots,   int nrofUplinkSymbols);
+void set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
+                          int mu,
+                          NR_TDD_UL_DL_ConfigCommon_t *tdd_config);
 
 void set_harq_status(NR_UE_MAC_INST_t *mac,
                      uint8_t pucch_id,
@@ -350,6 +352,8 @@ and fills the PRACH PDU per each FD occasion.
 */
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id);
 void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id);
+void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot);
+void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot);
 
 /* \brief This function schedules the Msg3 transmission
 @param

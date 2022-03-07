@@ -76,24 +76,30 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                                      NR_ServingCellConfig_t *servingcellconfigdedicated,
                                      NR_CellGroupConfig_t *secondaryCellGroup,
+                                     NR_UE_NR_Capability_t *uecap,
                                      int scg_id,
                                      int servCellIndex,
                                      int dl_antenna_ports,
                                      int minRXTXTIMEpdsch,
                                      int do_csirs,
-                                     int initial_csi_index,
+                                     int do_srs,
                                      int uid);
 
-void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon, NR_CSI_MeasConfig_t *csi_MeasConfig, int dl_antenna_ports, int do_csirs);
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig,
+                  int dl_antenna_ports,
+                  int curr_bwp,
+                  int do_csirs);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_ServingCellConfig_t *servingcellconfigdedicated,
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
+                           NR_UE_NR_Capability_t *uecap,
                            int dl_antenna_ports,
                            int minRXTXTIMEpdsch,
                            int do_csirs,
-                           int initial_csi_index,
+                           int do_srs,
                            int uid);
 
 void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
@@ -109,9 +115,6 @@ int generate_CG_Config(gNB_RRC_INST *rrc,
 void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc_gNB_ue_context_t         *const ue_context_pP,
                          const protocol_ctxt_t        *const ctxt_pP );
-
-void apply_pdcp_config(rrc_gNB_ue_context_t         *const ue_context_pP,
-                       const protocol_ctxt_t        *const ctxt_pP );
 
 void
 rrc_gNB_generate_RRCSetup(
@@ -207,3 +210,24 @@ void
 rrc_gNB_generate_dedicatedRRCReconfiguration(
     const protocol_ctxt_t     *const ctxt_pP,
     rrc_gNB_ue_context_t      *ue_context_pP);
+
+rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
+    const NR_SRB_ToAddModList_t   * const srb2add_listP,
+    const NR_DRB_ToAddModList_t   * const drb2add_listP,
+    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
+    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
+    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+
+boolean_t nr_rrc_pdcp_config_asn1_req(
+  const protocol_ctxt_t *const  ctxt_pP,
+  NR_SRB_ToAddModList_t  *const srb2add_list,
+  NR_DRB_ToAddModList_t  *const drb2add_list,
+  NR_DRB_ToReleaseList_t *const drb2release_list,
+  const uint8_t                   security_modeP,
+  uint8_t                  *const kRRCenc,
+  uint8_t                  *const kRRCint,
+  uint8_t                  *const kUPenc,
+  uint8_t                  *const kUPint
+  ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
+  ,rb_id_t                 *const defaultDRB,
+  struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
