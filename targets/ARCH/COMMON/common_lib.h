@@ -92,6 +92,8 @@ typedef enum {
   USRP_X300_DEV,
   /*!\brief device is USRP N300/N310*/
   USRP_N300_DEV,
+  /*!\brief device is USRP X400/X410*/
+  USRP_X400_DEV,
   /*!\brief device is BLADE RF*/
   BLADERF_DEV,
   /*!\brief device is LMSSDR (SoDeRa)*/
