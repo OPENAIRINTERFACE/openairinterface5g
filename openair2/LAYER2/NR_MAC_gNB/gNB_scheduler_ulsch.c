@@ -1018,7 +1018,8 @@ bool allocate_ul_retransmission(module_id_t module_id,
 
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
+        || sched_ctrl->update_pusch_ps) {
       nr_set_pusch_semi_static(nr_mac->common_channels[0].sib1 ? (const NR_SIB1_t *)nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
                                scc,
                                sched_ctrl->active_ubwp,
@@ -1027,6 +1028,8 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                tda,
                                num_dmrs_cdm_grps_no_data,
                                ps);
+      sched_ctrl->update_pusch_ps = false;
+    }
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -1276,7 +1279,8 @@ void pf_ul(module_id_t module_id,
       const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
-          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
+          || sched_ctrl->update_pusch_ps) {
         nr_set_pusch_semi_static(nrmac->common_channels[0].sib1 ? (const NR_SIB1_t *)nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
                                  scc,
                                  sched_ctrl->active_ubwp,
@@ -1285,6 +1289,8 @@ void pf_ul(module_id_t module_id,
                                  tda,
                                  num_dmrs_cdm_grps_no_data,
                                  ps);
+        sched_ctrl->update_pusch_ps = false;
+      }
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = 9;
       update_ul_ue_R_Qm(sched_pusch, ps);
@@ -1406,7 +1412,8 @@ void pf_ul(module_id_t module_id,
     const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
+        || sched_ctrl->update_pusch_ps) {
       nr_set_pusch_semi_static(nrmac->common_channels[0].sib1 ? (const NR_SIB1_t *)nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
                                scc,
                                sched_ctrl->active_ubwp,
@@ -1415,6 +1422,8 @@ void pf_ul(module_id_t module_id,
                                tda,
                                num_dmrs_cdm_grps_no_data,
                                ps);
+      sched_ctrl->update_pusch_ps = false;
+    }
     update_ul_ue_R_Qm(sched_pusch, ps);
 
     /* Calculate the current scheduling bytes and the necessary RBs */
