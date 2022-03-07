@@ -533,6 +533,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
       ps->mcsTableIdx = 2;
   }
   else ps->mcsTableIdx = 0;
+  LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
 
   NR_PDSCH_Config_t *pdsch_Config=NULL;
   if (bwpd) pdsch_Config = bwpd->pdsch_Config->choice.setup;
@@ -1939,7 +1940,6 @@ void create_nr_list(NR_list_t *list, int len)
 {
   list->head = -1;
   list->next = malloc(len * sizeof(*list->next));
-  LOG_W(NR_MAC, "NR list->next %p\n", list->next);
   AssertFatal(list->next, "cannot malloc() memory for NR_list_t->next\n");
   for (int i = 0; i < len; ++i)
     list->next[i] = -1;
@@ -2279,8 +2279,16 @@ void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
       add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
     create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
     create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
+  } else if (sched_ctrl->available_dl_harq.len == nrofHARQ) {
+    LOG_D(NR_MAC, "nrofHARQ %d already configured\n", nrofHARQ);
   } else {
+    const int old_nrofHARQ = sched_ctrl->available_dl_harq.len;
+    AssertFatal(nrofHARQ > old_nrofHARQ,
+                "cannot resize HARQ list to be smaller (nrofHARQ %d, old_nrofHARQ %d)\n",
+                nrofHARQ, old_nrofHARQ);
     resize_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
+    for (int harq = old_nrofHARQ; harq < nrofHARQ; harq++)
+      add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
     resize_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
     resize_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
   }
