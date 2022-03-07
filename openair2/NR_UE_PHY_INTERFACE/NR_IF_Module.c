@@ -1494,8 +1494,8 @@ static inline bool is_channel_modeling(void)
      Replace with a command line option to enable/disable channel modeling.
      The LTE UE will crash when channel modeling is conducted for NSA
      mode. It does not crash for LTE mode. We have not implemented channel
-     modeling for NSA mode yet. For now, we ensure only do do chanel modeling
-     in LTE mode. */
+     modeling for NSA mode yet. For now, we ensure only do do channel modeling
+     in LTE/NR mode. */
   return get_softmodem_params()->node_number == 0 && !get_softmodem_params()->nsa;
 }
 
@@ -1506,13 +1506,11 @@ static bool should_drop_transport_block(int slot, uint16_t rnti)
     return false;
   }
 
-  /* We want to avoid dropping setup messages because this would be pathological.
-     This assumes were in standalone_pnf mode where
-     UE_rrc_inst[0] is module_id = 0 and Info[0] is eNB_index = 0. */
-  NR_UE_STATE_t state = NR_UE_rrc_inst[0].Info[0].State;
-  if (state < NR_RRC_CONNECTED)
+  /* We want to avoid dropping setup messages because this would be pathological. */
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+  if (mac->ra.ra_state < RA_SUCCEEDED)
   {
-    LOG_I(NR_MAC, "Not dropping because state: %d", state);
+    LOG_I(NR_MAC, "Not dropping because MAC state: %d", mac->ra.ra_state);
     return false;
   }
 
@@ -1522,7 +1520,7 @@ static bool should_drop_transport_block(int slot, uint16_t rnti)
   int num_pdus = slot_rnti_mcs[slot].num_pdus;
   assert(slot < 20 && slot >= 0);
   LOG_I(NR_MAC, "rnti: %x  num_pdus %d state %d slot %u sinr %f\n",
-        rnti, num_pdus, state, slot, slot_rnti_mcs[slot].sinr);
+        rnti, num_pdus, mac->ra.ra_state, slot, slot_rnti_mcs[slot].sinr);
   assert(num_pdus > 0);
   CHECK_INDEX(slot_rnti_mcs[slot].rnti, num_pdus);
   CHECK_INDEX(slot_rnti_mcs[slot].mcs, num_pdus);
