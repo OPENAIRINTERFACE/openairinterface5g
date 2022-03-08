@@ -1914,6 +1914,8 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                          NULL,
                                          NULL,
                                          NULL,
+                                         NULL,
+                                         NULL,
                                          masterCellGroup);
 
   nr_rrc_data_req(ctxt_pP,

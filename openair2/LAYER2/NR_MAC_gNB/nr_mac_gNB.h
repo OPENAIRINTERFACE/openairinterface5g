@@ -645,8 +645,6 @@ typedef struct {
   bool update_pdsch_ps;
   bool update_pusch_ps;
   bool set_mcs;
-  bool update_pdsch_ps;
-  bool update_pusch_ps;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
