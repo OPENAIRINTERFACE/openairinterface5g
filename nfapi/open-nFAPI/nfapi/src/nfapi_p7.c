@@ -1583,14 +1583,21 @@ static uint8_t pack_ul_config_request_body_value(void *tlv, uint8_t **ppWritePac
 static uint8_t pack_ul_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t *config) {
   nfapi_nr_ul_tti_request_t *pNfapiMsg = (nfapi_nr_ul_tti_request_t *)msg;
 
-  if (!(push16(pNfapiMsg->SFN, ppWritePackedMsg, end) &&
-        push16(pNfapiMsg->Slot, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->n_pdus, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->rach_present, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->n_ulsch, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->n_ulcch, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->n_group, ppWritePackedMsg, end) ))
+  if (!push16(pNfapiMsg->SFN, ppWritePackedMsg, end))
     return 0;
+  if (!push16(pNfapiMsg->Slot, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->n_pdus, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->n_group, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->rach_present, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->n_ulsch, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->n_ulcch, ppWritePackedMsg, end))
+    return 0;
+
 
   for(int i=0; i<pNfapiMsg->n_pdus; i++) {
     if(!pack_ul_tti_pdu_list_value(&pNfapiMsg->pdus_list[i], ppWritePackedMsg, end))
@@ -4655,14 +4662,19 @@ static uint8_t unpack_ul_tti_groups_list_value(uint8_t **ppReadPackedMsg, uint8_
 static uint8_t unpack_ul_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t *config) {
   nfapi_nr_ul_tti_request_t *pNfapiMsg = (nfapi_nr_ul_tti_request_t *)msg;
 
-  if (!(
-        pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end) &&
-        pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->n_pdus, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->n_group, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->rach_present, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->n_ulcch, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->n_ulsch, end) ))
+  if (!pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end))
+    return 0;
+  if (!pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_pdus, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_group, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->rach_present, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_ulcch, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_ulsch, end))
     return 0;
 
   for(int i=0; i< pNfapiMsg->n_pdus; i++) {
