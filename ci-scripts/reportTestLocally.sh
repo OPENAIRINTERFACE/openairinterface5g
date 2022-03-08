@@ -756,7 +756,7 @@ function report_test {
         EPC_CONFIGS=("noS1")
         TRANS_MODES=("tdd")
         FR_MODE=("SA")
-        BW_CASES=(106)
+        BW_CASES=(106 24)
         for CN_CONFIG in ${EPC_CONFIGS[@]}
         do
           for TMODE in ${TRANS_MODES[@]}

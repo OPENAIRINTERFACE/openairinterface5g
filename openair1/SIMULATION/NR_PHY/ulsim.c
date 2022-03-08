@@ -689,7 +689,6 @@ int main(int argc, char **argv)
   notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,NULL);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   msgDataTx->slot = -1;
-  gNB->phy_proc_tx[0] = &msgDataTx->phy_proc_tx;
   //gNB_config = &gNB->gNB_config;
 
   //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
@@ -731,7 +730,8 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0, 0, 0);
+  // TODO do a UECAP for phy-sim
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, NULL, 0, 1, n_tx, 0, 0, 0, 0);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 

@@ -156,7 +156,7 @@ int receiveSubFrame(UDPsock_t *sock, void *bufferZone,  int bufferSize, uint16_t
 int sendSubFrame(UDPsock_t *sock, void *bufferZone, ssize_t secondHeaderSize, uint16_t contentType) {
   commonUDP_t *UDPheader=(commonUDP_t *)bufferZone ;
   UDPheader->contentType=contentType;
-  UDPheader->senderClock=rdtsc();
+  UDPheader->senderClock=rdtsc_oai();
   int nbBlocks=UDPheader->nbBlocks;
   int blockId=0;
 
