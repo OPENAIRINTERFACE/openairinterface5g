@@ -128,7 +128,7 @@ typedef enum UE_STATE_NR_e {
 #define MAX_MEAS_ID                                   7
 
 #define PAYLOAD_SIZE_MAX                              1024
-#define RRC_BUF_SIZE                                  512
+#define RRC_BUF_SIZE                                  1024
 #define UNDEF_SECURITY_MODE                           0xff
 #define NO_SECURITY_MODE                              0x20
 
