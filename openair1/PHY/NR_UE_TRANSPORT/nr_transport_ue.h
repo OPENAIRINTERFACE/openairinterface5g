@@ -180,6 +180,8 @@ typedef struct {
   uint8_t *b;
   /// Pointers to transport block segments
   uint8_t **c;
+  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
+  int16_t **d;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// MCS table for this DLSCH
