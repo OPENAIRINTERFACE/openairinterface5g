@@ -2443,12 +2443,22 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
     LOG_D(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n",frame,slot);
     fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csirs_config_pdu.csirs_config_rel15;
     NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
-    csirs_config_pdu->bwp_size = bwp_size;
-    csirs_config_pdu->bwp_start = bwp_start;
     csirs_config_pdu->subcarrier_spacing = mu;
     csirs_config_pdu->cyclic_prefix = genericParameters->cyclicPrefix ? *genericParameters->cyclicPrefix : 0;
-    csirs_config_pdu->start_rb = resourceMapping.freqBand.startingRB;
-    csirs_config_pdu->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
+
+    // According to last paragraph of TS 38.214 5.2.2.3.1
+    if (resourceMapping.freqBand.startingRB < bwp_start) {
+      csirs_config_pdu->start_rb = bwp_start;
+    } else {
+      csirs_config_pdu->start_rb = resourceMapping.freqBand.startingRB;
+    }
+    if (resourceMapping.freqBand.nrofRBs > (bwp_start + bwp_size - csirs_config_pdu->start_rb)) {
+      csirs_config_pdu->nr_of_rbs = bwp_start + bwp_size - csirs_config_pdu->start_rb;
+    } else {
+      csirs_config_pdu->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
+    }
+    AssertFatal(csirs_config_pdu->nr_of_rbs >= 24, "CSI-RS has %d RBs, but the minimum is 24\n", csirs_config_pdu->nr_of_rbs);
+
     csirs_config_pdu->csi_type = 1; // NZP-CSI-RS
     csirs_config_pdu->symb_l0 = resourceMapping.firstOFDMSymbolInTimeDomain;
     if (resourceMapping.firstOFDMSymbolInTimeDomain2)

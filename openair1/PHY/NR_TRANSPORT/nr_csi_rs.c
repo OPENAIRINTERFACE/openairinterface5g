@@ -51,8 +51,6 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
                         int slot){
 
 #ifdef NR_CSIRS_DEBUG
-  LOG_I(NR_PHY, "csi_params->bwp_size = %i\n", csi_params->bwp_size);
-  LOG_I(NR_PHY, "csi_params->bwp_start = %i\n", csi_params->bwp_start);
   LOG_I(NR_PHY, "csi_params->subcarrier_spacing = %i\n", csi_params->subcarrier_spacing);
   LOG_I(NR_PHY, "csi_params->cyclic_prefix = %i\n", csi_params->cyclic_prefix);
   LOG_I(NR_PHY, "csi_params->start_rb = %i\n", csi_params->start_rb);
@@ -73,7 +71,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
   uint32_t **nr_gold_csi_rs = nr_csi_rs_info->nr_gold_csi_rs[slot];
   int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1] __attribute__((aligned(16)));;
   uint16_t b = csi_params->freq_domain;
-  uint16_t n, csi_bw, csi_start, p, k, l, mprime, na, kpn, csi_length;
+  uint16_t n, p, k, l, mprime, na, kpn;
   uint8_t size, ports, kprime, lprime, i, gs;
   uint8_t j[16], k_n[6], koverline[16], loverline[16];
   int found = 0;
@@ -538,27 +536,19 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     AssertFatal(0==1, "Invalid cdm type index for CSI\n");
   }
 
-  // according to 38.214 5.2.2.3.1 last paragraph
-  if (csi_params->start_rb<csi_params->bwp_start)
-    csi_start = csi_params->bwp_start;
-  else 
-    csi_start = csi_params->start_rb;
-  if (csi_params->nr_of_rbs > (csi_params->bwp_start+csi_params->bwp_size-csi_start))
-    csi_bw = csi_params->bwp_start+csi_params->bwp_size-csi_start;
-  else
-    csi_bw = csi_params->nr_of_rbs;
-
+  uint16_t csi_length;
   if (rho < 1) {
-    if (csi_params->freq_density == 0)
-      csi_length = (((csi_bw + csi_start)>>1)<<kprime)<<1;
-    else
-      csi_length = ((((csi_bw + csi_start)>>1)<<kprime)+1)<<1;
+    if (csi_params->freq_density == 0) {
+      csi_length = (((csi_params->start_rb + csi_params->nr_of_rbs)>>1)<<kprime)<<1;
+    } else {
+      csi_length = ((((csi_params->start_rb + csi_params->nr_of_rbs)>>1)<<kprime)+1)<<1;
+    }
+  } else {
+    csi_length = (((uint16_t) rho*(csi_params->start_rb + csi_params->nr_of_rbs))<<kprime)<<1;
   }
-  else
-    csi_length = (((uint16_t) rho*(csi_bw + csi_start))<<kprime)<<1;
 
 #ifdef NR_CSIRS_DEBUG
-    printf(" start rb %d, n. rbs %d, csi length %d\n",csi_start,csi_bw,csi_length);
+    printf(" start rb %d, nr of rbs %d, csi length %d\n", csi_params->start_rb, csi_params->nr_of_rbs, csi_length);
 #endif
 
 
@@ -605,7 +595,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
   uint16_t start_sc = frame_parms.first_carrier_offset;
 
   // resource mapping according to 38.211 7.4.1.5.3
-  for (n=csi_start; n<(csi_start+csi_bw); n++) {
+  for (n=csi_params->start_rb; n<(csi_params->start_rb+csi_params->nr_of_rbs); n++) {
    if ( (csi_params->freq_density > 1) || (csi_params->freq_density == (n%2))) {  // for freq density 0.5 checks if even or odd RB
     for (int ji=0; ji<size; ji++) { // loop over CDM groups
       for (int s=0 ; s<gs; s++)  { // loop over each CDM group size

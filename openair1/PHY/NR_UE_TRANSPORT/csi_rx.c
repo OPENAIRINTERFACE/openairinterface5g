@@ -91,8 +91,6 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu = (fapi_nr_dl_config_csirs_pdu_rel15_t*)&ue->csirs_vars[gNB_id]->csirs_config_pdu;
 
 #ifdef NR_CSIRS_DEBUG
-  LOG_I(NR_PHY, "csirs_config_pdu->bwp_size = %i\n", csirs_config_pdu->bwp_size);
-  LOG_I(NR_PHY, "csirs_config_pdu->bwp_start = %i\n", csirs_config_pdu->bwp_start);
   LOG_I(NR_PHY, "csirs_config_pdu->subcarrier_spacing = %i\n", csirs_config_pdu->subcarrier_spacing);
   LOG_I(NR_PHY, "csirs_config_pdu->cyclic_prefix = %i\n", csirs_config_pdu->cyclic_prefix);
   LOG_I(NR_PHY, "csirs_config_pdu->start_rb = %i\n", csirs_config_pdu->start_rb);
