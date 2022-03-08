@@ -2029,20 +2029,23 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
   if (SpCellConfig == NULL) return;
 
-  NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
+  NR_ServingCellConfigCommon_t *scc = carrier ? carrier->servingcellconfigcommon : NULL;
 
-  NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
-  set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
-                   uecap, bwp_Dedicated, scc);
-
-  struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-  if (DL_BWP_list) {
-    for (int i=0; i<DL_BWP_list->list.count; i++){
-      NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
-      int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-      set_dl_mcs_table(scs, uecap, bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
+  // Set DL MCS table
+  if(scc) {
+    NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+    set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
+                     uecap, bwp_Dedicated, scc);
+    struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+    if (DL_BWP_list) {
+      for (int i=0; i<DL_BWP_list->list.count; i++){
+        NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
+        int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+        set_dl_mcs_table(scs, uecap, bwp->bwp_Dedicated, scc);
+      }
     }
   }
+
 }
 
 
@@ -2522,7 +2525,7 @@ int16_t do_RRCReconfiguration(
     if(cellGroupConfig!=NULL){
       update_cellGroupConfig(cellGroupConfig,
                              carrier,
-                             ue_context_pP->ue_context.UE_Capability_nr);
+                             ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL);
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
           NULL,
           (void *)cellGroupConfig,
