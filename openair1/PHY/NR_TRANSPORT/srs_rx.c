@@ -49,6 +49,11 @@ NR_gNB_SRS_t *new_gNB_srs(void){
   return (srs);
 }
 
+void free_gNB_srs(NR_gNB_SRS_t *srs)
+{
+  free_and_zero(srs);
+}
+
 int nr_find_srs(uint16_t rnti,
                 int frame,
                 int slot,

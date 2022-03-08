@@ -55,7 +55,7 @@
 
 /* PHY */
 #include "PHY/defs_gNB.h"
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 
 /* Interface */
 #include "nfapi_nr_interface_scf.h"
@@ -642,6 +642,8 @@ typedef struct {
   int ul_failure;
   struct CSI_Report CSI_report;
   bool SR;
+  bool update_pdsch_ps;
+  bool update_pusch_ps;
   bool set_mcs;
   bool update_pdsch_ps;
   bool update_pusch_ps;

@@ -31,11 +31,14 @@ RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
 COPY . .
 
+#only install address sanitizer for this container, the others don't need it
+RUN yum install -y libasan
+
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --phy_simulators --ninja --verbose-ci
+    ./build_oai --phy_simulators --ninja --verbose-ci --sanitize-address
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-physim
@@ -85,6 +88,7 @@ COPY --from=phy-sim-build \
     /lib64/liblapack.so.3 \
     /lib64/libexslt.so.0 \
     /lib64/libxslt.so.1 \
+    /usr/lib64/libasan.so.5 \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
     /oai-ran/cmake_targets/ran_build/build/libSIMU.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc.so \

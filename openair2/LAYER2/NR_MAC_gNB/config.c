@@ -631,15 +631,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       sched_ctrl->update_pdsch_ps = true;
       sched_ctrl->update_pusch_ps = true;
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-      if (sched_ctrl->available_dl_harq.len == 0) {
+      if (get_softmodem_params()->sa) {
         // add all available DL HARQ processes for this UE in SA
         create_dl_harq_list(sched_ctrl, pdsch);
-      }
-      else {
-        const int nrofHARQ = pdsch && pdsch->nrofHARQ_ProcessesForPDSCH ?
-                             get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
-        AssertFatal(sched_ctrl->available_dl_harq.len==nrofHARQ,
-                    "Reconfiguration of available harq processes not yet supported\n");
       }
       // update coreset/searchspace
       void *bwpd = NULL;
