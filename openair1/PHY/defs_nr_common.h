@@ -268,8 +268,12 @@ typedef struct {
   uint32_t ***nr_gold_csi_rs;
   uint16_t k_list_length[NR_SYMBOLS_PER_SLOT];
   uint16_t map_list[NR_SYMBOLS_PER_SLOT][NR_MAX_CSI_RS_LENGTH];
+  uint8_t csi_rs_generated_signal_bits;
   int32_t **csi_rs_generated_signal;
   int32_t **csi_rs_received_signal;
+  int32_t **csi_rs_ls_estimated_channel;
+  int32_t **csi_rs_estimated_channel_freq;
+  uint32_t *noise_power;
 } nr_csi_rs_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;

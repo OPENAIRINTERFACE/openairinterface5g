@@ -79,6 +79,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
   uint8_t fi = 0;
   double rho, alpha;
   uint32_t beta = amp;
+  nr_csi_rs_info->csi_rs_generated_signal_bits = log2_approx(amp);
 
   AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
 
@@ -639,7 +640,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
               ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
             }
 #ifdef NR_CSIRS_DEBUG
-            printf("l,k (%d %d)  seq. index %d \t port %d \t (%d,%d)\n",l,k,mprime,p+3000,
+            printf("l,k (%d,%d)  seq. index %d \t port %d \t (%d,%d)\n",l,k,mprime,p+3000,
                    ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*dataF_offset)],
                    ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)]);
 #endif

@@ -63,13 +63,55 @@ int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
 #ifdef NR_CSIRS_DEBUG
         int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
         int16_t *tx_csi_rs_signal = (int16_t*)&nr_csi_rs_info->csi_rs_generated_signal[ant][symbol_offset+dataF_offset];
-        LOG_I(NR_PHY, "l,k (%d %d) \t tx (%d,%d) \t rx (%d,%d)\n",
+        LOG_I(NR_PHY, "l,k (%2d,%3d) |\ttx (%4d,%4d)\trx (%4d,%4d)\n",
               symb,
               nr_csi_rs_info->map_list[symb][k_id],
               tx_csi_rs_signal[k<<1],
               tx_csi_rs_signal[(k<<1)+1],
               rx_csi_rs_signal[k<<1],
               rx_csi_rs_signal[(k<<1)+1]);
+#endif
+      }
+    }
+  }
+
+  return 0;
+}
+
+int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
+                                 UE_nr_rxtx_proc_t *proc,
+                                 nr_csi_rs_info_t *nr_csi_rs_info,
+                                 int32_t **csi_rs_generated_signal,
+                                 int32_t **csi_rs_received_signal,
+                                 int32_t **csi_rs_estimated_channel_freq,
+                                 uint32_t *noise_power) {
+
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
+  int16_t ls_estimated[2];
+
+  for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
+    for(int symb = 0; symb < NR_SYMBOLS_PER_SLOT; symb++) {
+
+      uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
+      int16_t *tx_csi_rs_signal = (int16_t*)&nr_csi_rs_info->csi_rs_generated_signal[ant][symbol_offset+dataF_offset];
+      int16_t *rx_csi_rs_signal = (int16_t*)&csi_rs_received_signal[ant][symbol_offset];
+
+      for(int k_id = 0; k_id<nr_csi_rs_info->k_list_length[symb]; k_id++) {
+        uint16_t k = nr_csi_rs_info->map_list[symb][k_id];
+        ls_estimated[0] = (int16_t)(((int32_t)tx_csi_rs_signal[k<<1]*rx_csi_rs_signal[k<<1] + (int32_t)tx_csi_rs_signal[(k<<1)+1]*rx_csi_rs_signal[(k<<1)+1])>>nr_csi_rs_info->csi_rs_generated_signal_bits);
+        ls_estimated[1] = (int16_t)(((int32_t)tx_csi_rs_signal[k<<1]*rx_csi_rs_signal[(k<<1)+1] - (int32_t)tx_csi_rs_signal[(k<<1)+1]*rx_csi_rs_signal[k<<1])>>nr_csi_rs_info->csi_rs_generated_signal_bits);
+
+#ifdef NR_CSIRS_DEBUG
+        LOG_I(NR_PHY, "l,k (%2d,%3d) |\ttx (%4d,%4d)\trx (%4d,%4d)\tls (%4d,%4d)\n",
+              symb,
+              nr_csi_rs_info->map_list[symb][k_id],
+              tx_csi_rs_signal[k<<1],
+              tx_csi_rs_signal[(k<<1)+1],
+              rx_csi_rs_signal[k<<1],
+              rx_csi_rs_signal[(k<<1)+1],
+              ls_estimated[0],
+              ls_estimated[1]);
 #endif
       }
     }
@@ -117,5 +159,12 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   nr_get_csi_rs_signal(ue, proc, ue->nr_csi_rs_info, ue->nr_csi_rs_info->csi_rs_received_signal);
 
+  nr_csi_rs_channel_estimation(ue,
+                               proc,
+                               ue->nr_csi_rs_info,
+                               ue->nr_csi_rs_info->csi_rs_generated_signal,
+                               ue->nr_csi_rs_info->csi_rs_received_signal,
+                               ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
+                               ue->nr_csi_rs_info->noise_power);
   return 0;
 }
