@@ -107,8 +107,8 @@ int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
       uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
       int16_t *rx_signal = (int16_t*)&rxdataF[ant][symbol_offset];
       int16_t *rx_csi_rs_signal = (int16_t*)&csi_rs_received_signal[ant][symbol_offset];
-      for(int k_id = 0; k_id<nr_csi_rs_info->k_list_length[symb]; k_id++) {
-        uint16_t k = nr_csi_rs_info->map_list[symb][k_id];
+      for(int k_id = 0; k_id<nr_csi_rs_info->k_list_length; k_id++) {
+        uint16_t k = nr_csi_rs_info->map_list[k_id];
         rx_csi_rs_signal[k<<1] = rx_signal[k<<1];
         rx_csi_rs_signal[(k<<1)+1] = rx_signal[(k<<1)+1];
 
@@ -117,7 +117,7 @@ int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
         int16_t *tx_csi_rs_signal = (int16_t*)&nr_csi_rs_info->csi_rs_generated_signal[ant][symbol_offset+dataF_offset];
         LOG_I(NR_PHY, "l,k (%2d,%3d) |\ttx (%4d,%4d)\trx (%4d,%4d)\n",
               symb,
-              nr_csi_rs_info->map_list[symb][k_id],
+              nr_csi_rs_info->map_list[k_id],
               tx_csi_rs_signal[k<<1],
               tx_csi_rs_signal[(k<<1)+1],
               rx_csi_rs_signal[k<<1],
@@ -155,15 +155,15 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
       int16_t *rx_csi_rs_signal = (int16_t*)&csi_rs_received_signal[ant][symbol_offset];
       int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant][symbol_offset];
 
-      for(int k_id = 0; k_id<nr_csi_rs_info->k_list_length[symb]; k_id++) {
-        uint16_t k = nr_csi_rs_info->map_list[symb][k_id];
+      for(int k_id = 0; k_id<nr_csi_rs_info->k_list_length; k_id++) {
+        uint16_t k = nr_csi_rs_info->map_list[k_id];
         csi_rs_ls_estimated_channel[k<<1] = (int16_t)(((int32_t)tx_csi_rs_signal[k<<1]*rx_csi_rs_signal[k<<1] + (int32_t)tx_csi_rs_signal[(k<<1)+1]*rx_csi_rs_signal[(k<<1)+1])>>nr_csi_rs_info->csi_rs_generated_signal_bits);
         csi_rs_ls_estimated_channel[(k<<1)+1] = (int16_t)(((int32_t)tx_csi_rs_signal[k<<1]*rx_csi_rs_signal[(k<<1)+1] - (int32_t)tx_csi_rs_signal[(k<<1)+1]*rx_csi_rs_signal[k<<1])>>nr_csi_rs_info->csi_rs_generated_signal_bits);
 
 #ifdef NR_CSIRS_DEBUG
         LOG_I(NR_PHY, "l,k (%2d,%3d) |\ttx (%4d,%4d)\trx (%4d,%4d)\tls (%4d,%4d)\n",
               symb,
-              nr_csi_rs_info->map_list[symb][k_id],
+              nr_csi_rs_info->map_list[k_id],
               tx_csi_rs_signal[k<<1],
               tx_csi_rs_signal[(k<<1)+1],
               rx_csi_rs_signal[k<<1],

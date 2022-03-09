@@ -592,7 +592,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
   }
 
-  bzero(nr_csi_rs_info->k_list_length,NR_SYMBOLS_PER_SLOT*sizeof(uint16_t));
+  nr_csi_rs_info->k_list_length = 0;
   uint16_t start_sc = frame_parms.first_carrier_offset;
 
   // resource mapping according to 38.211 7.4.1.5.3
@@ -603,7 +603,9 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
         p = s+j[ji]*gs; // port index
         for (kp=0; kp<=kprime; kp++) { // loop over frequency resource elements within a group
           k = (start_sc+(n*NR_NB_SC_PER_RB)+koverline[ji]+kp)%(frame_parms.ofdm_symbol_size);  // frequency index of current resource element
-          // wf according to tables 7.4.5.3-2 to 7.4.5.3-5 
+          nr_csi_rs_info->map_list[nr_csi_rs_info->k_list_length] = k;
+          nr_csi_rs_info->k_list_length++;
+          // wf according to tables 7.4.5.3-2 to 7.4.5.3-5
           if (kp == 0)
             wf = 1;
           else
@@ -626,9 +628,6 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
               else
                 wt = -1;
             }
-
-            nr_csi_rs_info->map_list[l][nr_csi_rs_info->k_list_length[l]] = k;
-            nr_csi_rs_info->k_list_length[l]++;
 
             // ZP CSI RS
             if (csi_params->csi_type == 2) {
