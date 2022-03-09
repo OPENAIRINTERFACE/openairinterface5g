@@ -417,7 +417,7 @@ int main(int argc, char **argv)
   for (sf = 0; sf < 2; sf++) {
     for (i = 0; i < 2; i++) {
 
-        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8);
+        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, frame_parms);
 
         if (!UE->ulsch[sf][0][i]) {
           printf("Can't get ue ulsch structures.\n");
@@ -628,7 +628,7 @@ int main(int argc, char **argv)
 
   for (sf = 0; sf < 2; sf++)
     for (i = 0; i < 2; i++)
-      free_nr_ue_ulsch(&UE->ulsch[sf][0][i], N_RB_UL);
+      free_nr_ue_ulsch(&UE->ulsch[sf][0][i], N_RB_UL, frame_parms);
   term_nr_ue_signal(UE, 1);
   free(UE);
 
