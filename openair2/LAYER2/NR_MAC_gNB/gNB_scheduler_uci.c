@@ -1551,7 +1551,6 @@ bool test_acknack_vrb_occupation(NR_UE_sched_ctrl_t *sched_ctrl,
   }
 
   // verifying occupation of PRBs for ACK/NACK on dedicated pucch
-  bool ret = true;
   for (int l=0; l<pucch->nr_of_symb; l++) {
     uint16_t symb = SL_to_bitmap(pucch->start_symb+l, 1);
     int prb;
@@ -1560,11 +1559,11 @@ bool test_acknack_vrb_occupation(NR_UE_sched_ctrl_t *sched_ctrl,
     else
       prb = pucch->prb_start;
     if ((vrb_map_UL[bwp_start+prb] & symb) != 0) {
-      ret = false;
+      return false;
       break;
     }
   }
-  return ret;
+  return true;
 }
 
 
