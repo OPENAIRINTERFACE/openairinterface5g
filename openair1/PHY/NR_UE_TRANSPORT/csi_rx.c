@@ -173,6 +173,36 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
 #endif
       }
     }
+
+    /// Channel interpolation
+
+    int16_t ls_estimated[2];
+    for (int k_id = 0; k_id < nr_csi_rs_info->k_list_length; k_id++) {
+
+      uint16_t k = nr_csi_rs_info->map_list[k_id];
+
+      // There are many possibilities to allocate the CSI-RS in time, which would take the implementation of many filters.
+      // In this approach, the LS for each symbol would be different, and it would be necessary to interpolate each symbol
+      // on the frequency as well. To reduce this complexity, and lower the processing time, we will assume that the
+      // slot duration is less than the channel coherence time. Therefore, the LS of each symbol (for the same subcarrier)
+      // would be the same, and it will only be necessary to do the frequency interpolation for 1 symbol, as the result
+      // for the others would be the same.
+      int Nsymb = 0;
+      int32_t sum_csi_rs_ls_real = 0;
+      int32_t sum_csi_rs_ls_imag = 0;
+      for (int symb = 0; symb < NR_SYMBOLS_PER_SLOT; symb++) {
+        if (!is_csi_rs_in_symbol(*csirs_config_pdu, symb)) {
+          continue;
+        }
+        Nsymb++;
+        uint64_t symbol_offset = symb * frame_parms->ofdm_symbol_size;
+        int16_t *csi_rs_ls_estimated_channel = (int16_t *) &nr_csi_rs_info->csi_rs_ls_estimated_channel[ant][symbol_offset];
+        sum_csi_rs_ls_real += csi_rs_ls_estimated_channel[k << 1];
+        sum_csi_rs_ls_imag += csi_rs_ls_estimated_channel[(k << 1) + 1];
+      }
+      ls_estimated[0] = (int16_t) (sum_csi_rs_ls_real / Nsymb);
+      ls_estimated[1] = (int16_t) (sum_csi_rs_ls_imag / Nsymb);
+    }
   }
 
   return 0;
