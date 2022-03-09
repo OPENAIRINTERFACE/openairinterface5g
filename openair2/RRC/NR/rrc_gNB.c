@@ -3004,9 +3004,9 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
 
 
   if(req->cu_to_du_rrc_information!=NULL){
-    /*if(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
+    if(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
       LOG_I(NR_RRC, "Length of ue_CapabilityRAT_ContainerList is: %d \n", (int) req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
-      struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList;
+      struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList = NULL;
       asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
           &asn_DEF_NR_UE_CapabilityRAT_ContainerList,
           (void **)&ue_CapabilityRAT_ContainerList,
@@ -3088,7 +3088,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
           //TODO
         }
       }
-    }*/
+    }
   }
 
   NR_CellGroupConfig_t *cellGroupConfig;
