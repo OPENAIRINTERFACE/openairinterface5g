@@ -41,8 +41,57 @@
 
 //#define NR_CSIRS_DEBUG
 
+bool is_csi_rs_in_symbol(fapi_nr_dl_config_csirs_pdu_rel15_t csirs_config_pdu, int symbol) {
+
+  bool ret = false;
+
+  // 38.211-Table 7.4.1.5.3-1: CSI-RS locations within a slot
+  switch(csirs_config_pdu.row){
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 6:
+    case 9:
+      if(symbol == csirs_config_pdu.symb_l0) {
+        ret = true;
+      }
+      break;
+    case 5:
+    case 7:
+    case 8:
+    case 10:
+    case 11:
+    case 12:
+      if(symbol == csirs_config_pdu.symb_l0 || symbol == (csirs_config_pdu.symb_l0+1) ) {
+        ret = true;
+      }
+      break;
+    case 13:
+    case 14:
+    case 16:
+    case 17:
+      if(symbol == csirs_config_pdu.symb_l0 || symbol == (csirs_config_pdu.symb_l0+1) ||
+          symbol == csirs_config_pdu.symb_l1 || symbol == (csirs_config_pdu.symb_l1+1)) {
+        ret = true;
+      }
+      break;
+    case 15:
+    case 18:
+      if(symbol == csirs_config_pdu.symb_l0 || symbol == (csirs_config_pdu.symb_l0+1) || symbol == (csirs_config_pdu.symb_l0+2) ) {
+        ret = true;
+      }
+      break;
+    default:
+      AssertFatal(0==1, "Row %d is not valid for CSI Table 7.4.1.5.3-1\n", csirs_config_pdu.row);
+  }
+
+  return ret;
+}
+
 int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
                          UE_nr_rxtx_proc_t *proc,
+                         fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                          nr_csi_rs_info_t *nr_csi_rs_info,
                          int32_t **csi_rs_received_signal) {
 
@@ -52,6 +101,9 @@ int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
     memset(csi_rs_received_signal[ant], 0, frame_parms->samples_per_frame_wCP*sizeof(int32_t));
     for(int symb = 0; symb < NR_SYMBOLS_PER_SLOT; symb++) {
+      if(!is_csi_rs_in_symbol(*csirs_config_pdu,  symb)) {
+        continue;
+      }
       uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
       int16_t *rx_signal = (int16_t*)&rxdataF[ant][symbol_offset];
       int16_t *rx_csi_rs_signal = (int16_t*)&csi_rs_received_signal[ant][symbol_offset];
@@ -80,6 +132,7 @@ int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
 
 int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
                                  UE_nr_rxtx_proc_t *proc,
+                                 fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                                  nr_csi_rs_info_t *nr_csi_rs_info,
                                  int32_t **csi_rs_generated_signal,
                                  int32_t **csi_rs_received_signal,
@@ -88,19 +141,24 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
-  int16_t ls_estimated[2];
 
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
-    for(int symb = 0; symb < NR_SYMBOLS_PER_SLOT; symb++) {
 
+    /// LS channel estimation
+
+    for(int symb = 0; symb < NR_SYMBOLS_PER_SLOT; symb++) {
+      if(!is_csi_rs_in_symbol(*csirs_config_pdu,  symb)) {
+        continue;
+      }
       uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
       int16_t *tx_csi_rs_signal = (int16_t*)&nr_csi_rs_info->csi_rs_generated_signal[ant][symbol_offset+dataF_offset];
       int16_t *rx_csi_rs_signal = (int16_t*)&csi_rs_received_signal[ant][symbol_offset];
+      int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant][symbol_offset];
 
       for(int k_id = 0; k_id<nr_csi_rs_info->k_list_length[symb]; k_id++) {
         uint16_t k = nr_csi_rs_info->map_list[symb][k_id];
-        ls_estimated[0] = (int16_t)(((int32_t)tx_csi_rs_signal[k<<1]*rx_csi_rs_signal[k<<1] + (int32_t)tx_csi_rs_signal[(k<<1)+1]*rx_csi_rs_signal[(k<<1)+1])>>nr_csi_rs_info->csi_rs_generated_signal_bits);
-        ls_estimated[1] = (int16_t)(((int32_t)tx_csi_rs_signal[k<<1]*rx_csi_rs_signal[(k<<1)+1] - (int32_t)tx_csi_rs_signal[(k<<1)+1]*rx_csi_rs_signal[k<<1])>>nr_csi_rs_info->csi_rs_generated_signal_bits);
+        csi_rs_ls_estimated_channel[k<<1] = (int16_t)(((int32_t)tx_csi_rs_signal[k<<1]*rx_csi_rs_signal[k<<1] + (int32_t)tx_csi_rs_signal[(k<<1)+1]*rx_csi_rs_signal[(k<<1)+1])>>nr_csi_rs_info->csi_rs_generated_signal_bits);
+        csi_rs_ls_estimated_channel[(k<<1)+1] = (int16_t)(((int32_t)tx_csi_rs_signal[k<<1]*rx_csi_rs_signal[(k<<1)+1] - (int32_t)tx_csi_rs_signal[(k<<1)+1]*rx_csi_rs_signal[k<<1])>>nr_csi_rs_info->csi_rs_generated_signal_bits);
 
 #ifdef NR_CSIRS_DEBUG
         LOG_I(NR_PHY, "l,k (%2d,%3d) |\ttx (%4d,%4d)\trx (%4d,%4d)\tls (%4d,%4d)\n",
@@ -110,8 +168,8 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
               tx_csi_rs_signal[(k<<1)+1],
               rx_csi_rs_signal[k<<1],
               rx_csi_rs_signal[(k<<1)+1],
-              ls_estimated[0],
-              ls_estimated[1]);
+              csi_rs_ls_estimated_channel[k<<1],
+              csi_rs_ls_estimated_channel[(k<<1)+1]);
 #endif
       }
     }
@@ -157,10 +215,15 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                      ue->frame_parms.first_carrier_offset,
                      proc->nr_slot_rx);
 
-  nr_get_csi_rs_signal(ue, proc, ue->nr_csi_rs_info, ue->nr_csi_rs_info->csi_rs_received_signal);
+  nr_get_csi_rs_signal(ue,
+                       proc,
+                       csirs_config_pdu,
+                       ue->nr_csi_rs_info,
+                       ue->nr_csi_rs_info->csi_rs_received_signal);
 
   nr_csi_rs_channel_estimation(ue,
                                proc,
+                               csirs_config_pdu,
                                ue->nr_csi_rs_info,
                                ue->nr_csi_rs_info->csi_rs_generated_signal,
                                ue->nr_csi_rs_info->csi_rs_received_signal,

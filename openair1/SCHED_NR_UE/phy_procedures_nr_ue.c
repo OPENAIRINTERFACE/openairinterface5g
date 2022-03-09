@@ -1356,52 +1356,6 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
   }
 }
 
-void nr_slot_fep_csi_rs(PHY_VARS_NR_UE *ue,
-                        UE_nr_rxtx_proc_t *proc,
-                        fapi_nr_dl_config_csirs_pdu_rel15_t csirs_config_pdu,
-                        int slot) {
-
-  // 38.211-Table 7.4.1.5.3-1: CSI-RS locations within a slot
-  switch(csirs_config_pdu.row){
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-    case 6:
-    case 9:
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l0, slot);
-      break;
-    case 5:
-    case 7:
-    case 8:
-    case 10:
-    case 11:
-    case 12:
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l0, slot);
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l0+1, slot);
-      break;
-    case 13:
-    case 14:
-    case 16:
-    case 17:
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l0, slot);
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l0+1, slot);
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l1, slot);
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l1+1, slot);
-      break;
-    case 15:
-    case 18:
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l0, slot);
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l0+1, slot);
-      nr_slot_fep(ue, proc, csirs_config_pdu.symb_l0+2, slot);
-      break;
-    default:
-      AssertFatal(0==1, "Row %d is not valid for CSI Table 7.4.1.5.3-1\n", csirs_config_pdu.row);
-  }
-
-}
-
-
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
@@ -1694,7 +1648,11 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   // do procedures for CSI-RS
   if ((ue->csirs_vars[gNB_id]) && (ue->csirs_vars[gNB_id]->active == 1)) {
-    nr_slot_fep_csi_rs(ue, proc, ue->csirs_vars[gNB_id]->csirs_config_pdu, nr_slot_rx);
+    for(int symb = 0; symb < NR_SYMBOLS_PER_SLOT; symb++) {
+      if(is_csi_rs_in_symbol(ue->csirs_vars[gNB_id]->csirs_config_pdu,symb)) {
+        nr_slot_fep(ue, proc, symb, nr_slot_rx);
+      }
+    }
     nr_ue_csi_rs_procedures(ue, proc, gNB_id);
     ue->csirs_vars[gNB_id]->active = 0;
   }
