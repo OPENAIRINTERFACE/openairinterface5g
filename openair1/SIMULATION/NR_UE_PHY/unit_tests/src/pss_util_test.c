@@ -71,7 +71,7 @@ static  nfapi_config_request_t *config =&config_t;
 /*************** FUNCTIONS ****************************************/
 
 //void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms);
-int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_eNB, uint8_t abstraction_flag);
+int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_eNB);
 
 /*******************************************************************
 *
@@ -248,7 +248,7 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
 
   //phy_init_nr_top(frame_parms);
 
-  if (init_nr_ue_signal(PHY_vars_UE, 1, 0) != 0) {
+  if (init_nr_ue_signal(PHY_vars_UE, 1) != 0) {
     LOG_E(PHY,"Error at UE NR initialisation : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
     return (0);
   }

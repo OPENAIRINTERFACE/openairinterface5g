@@ -219,8 +219,7 @@ void nr_init_pbch_interleaver(uint8_t *interleaver) {
       *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_ssb++);
 }
 
-int nr_generate_pbch(NR_gNB_PBCH *pbch,
-		     nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
+int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
                      uint8_t *interleaver,
                      int32_t *txdataF,
                      int16_t amp,
@@ -239,6 +238,8 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   uint64_t a_reversed=0;
   LOG_D(PHY, "PBCH generation started\n");
   ///Payload generation
+  NR_gNB_PBCH m_pbch;
+  NR_gNB_PBCH *pbch = &m_pbch;
   memset((void *)pbch, 0, sizeof(NR_gNB_PBCH));
   pbch->pbch_a=0;
   uint8_t ssb_index = ssb_pdu->ssb_pdu_rel15.SsbBlockIndex;
@@ -298,8 +299,8 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   /// CRC, coding and rate matching
   polar_encoder_fast (&a_reversed, (void*)pbch->pbch_e, 0, 0,
-                      nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,0,NULL)
-                     );
+                      NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
+
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
 

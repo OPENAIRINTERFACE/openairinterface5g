@@ -155,6 +155,11 @@ def GetParametersFromXML(action):
 	elif action == 'Initialize_eNB':
 		RAN.eNB_Trace=test.findtext('eNB_Trace')
 		RAN.eNB_Stats=test.findtext('eNB_Stats')
+		datalog_rt_stats_file=test.findtext('rt_stats_cfg')
+		if datalog_rt_stats_file is None:
+			RAN.datalog_rt_stats_file='datalog_rt_stats.default.yaml'
+		else:
+			RAN.datalog_rt_stats_file=datalog_rt_stats_file
 		RAN.Initialize_eNB_args=test.findtext('Initialize_eNB_args')
 		eNB_instance=test.findtext('eNB_instance')
 		USRPIPAddress=test.findtext('USRP_IPAddress')
@@ -308,7 +313,7 @@ def GetParametersFromXML(action):
 			CiTestObj.ue_id = ""
 		else:
 			CiTestObj.ue_id = ue_id
-		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only	
+		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only
 		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
 		iperf_bitrate_threshold = test.findtext('iperf_bitrate_threshold')
 		if (iperf_bitrate_threshold is None):
@@ -396,6 +401,12 @@ def GetParametersFromXML(action):
 		string_field=test.findtext('nb_healthy')
 		if (string_field is not None):
 			CONTAINERS.nb_healthy[0] = int(string_field)
+		string_field=test.findtext('d_retx_th')
+		if (string_field is not None):
+			CONTAINERS.ran_checkers['d_retx_th']= string_field
+		string_field=test.findtext('u_retx_th')
+		if (string_field is not None):
+			CONTAINERS.ran_checkers['u_retx_th']= string_field
 
 	elif action == 'PingFromContainer':
 		string_field = test.findtext('container_name')
@@ -905,19 +916,19 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Deploy_Run_PhySim':
 					PHYSIM.Deploy_PhySim(HTML, RAN)
 				elif action == 'DeployGenObject':
-					CONTAINERS.DeployGenObject(HTML)
+					CONTAINERS.DeployGenObject(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'UndeployGenObject':
-					CONTAINERS.UndeployGenObject(HTML, RAN)
+					CONTAINERS.UndeployGenObject(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'PingFromContainer':
-					CONTAINERS.PingFromContainer(HTML)
+					CONTAINERS.PingFromContainer(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'IperfFromContainer':
-					CONTAINERS.IperfFromContainer(HTML)
+					CONTAINERS.IperfFromContainer(HTML, RAN)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				else:

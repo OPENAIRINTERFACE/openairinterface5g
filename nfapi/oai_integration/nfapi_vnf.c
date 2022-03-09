@@ -200,7 +200,6 @@ void install_nr_schedule_handlers(NR_IF_Module_t *if_inst);
 void install_schedule_handlers(IF_Module_t *if_inst);
 extern int single_thread_flag;
 extern uint16_t sf_ahead;
-extern uint16_t slot_ahead;
 
 void oai_create_enb(void) {
   int bodge_counter=0;
@@ -459,6 +458,7 @@ int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
   //wait.tv_nsec = 0;
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
+  AssertFatal(gNB->if_inst->sl_ahead==6,"gNB->if_inst->sl_ahead %d : This is hard-coded to 6 in nfapi P7!!!\n",gNB->if_inst->sl_ahead);
   if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
     LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB RXTX thread %d (IC %d)\n", L1_proc->slot_rx&1,L1_proc->instance_cnt );
     exit_fun( "error locking mutex_rxtx" );
@@ -485,11 +485,11 @@ int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti,
   // we want to generate subframe (n+N), so TS_tx = TX_rx+N*samples_per_tti,
   // and proc->subframe_tx = proc->subframe_rx+sf_ahead
-  L1_proc->timestamp_tx = proc->timestamp_rx + (slot_ahead *fp->samples_per_subframe);
+  L1_proc->timestamp_tx = proc->timestamp_rx + (gNB->if_inst->sl_ahead *fp->samples_per_subframe);
   L1_proc->frame_rx     = proc->frame_rx;
   L1_proc->slot_rx      = proc->slot_rx;
-  L1_proc->frame_tx     = (L1_proc->slot_rx > (19-slot_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-  L1_proc->slot_tx      = (L1_proc->slot_rx + slot_ahead)%20;
+  L1_proc->frame_tx     = (L1_proc->slot_rx > (19-gNB->if_inst->sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+  L1_proc->slot_tx      = (L1_proc->slot_rx + gNB->if_inst->sl_ahead)%20;
 
   //LOG_I(PHY, "sfn/sf:%d%d proc[rx:%d%d] rx:%d%d] About to wake rxtx thread\n\n", sfn, slot, proc->frame_rx, proc->slot_rx, L1_proc->frame_rx, L1_proc->slot_rx);
   //NFAPI_TRACE(NFAPI_TRACE_INFO, "\nEntering wake_gNB_rxtx sfn %d slot %d\n",L1_proc->frame_rx,L1_proc->slot_rx);

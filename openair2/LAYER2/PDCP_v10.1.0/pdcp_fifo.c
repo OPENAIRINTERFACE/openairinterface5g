@@ -58,7 +58,6 @@ extern int otg_enabled;
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "platform_constants.h"
-#include "msc.h"
 #include "pdcp.h"
 
 #include "assertions.h"
@@ -85,8 +84,6 @@ extern struct msghdr nas_msg_rx;
 
 
 #  include "gtpv1u_eNB_task.h"
-#  include "gtpv1u_eNB_defs.h"
-
 
 extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint8_t  rab_idP, uint8_t *buffer_pP, uint32_t buf_lenP, uint32_t buf_offsetP);
 uint16_t ue_id_g; // Global variable to identify the ID for each UE. It is updated in main() of lte-uesoftmodem.c
@@ -343,12 +340,6 @@ int pdcp_fifo_read_input_mbms_sdus_fromtun (const protocol_ctxt_t *const  ctxt_p
       LOG_D(PDCP, "[FRAME %5u][UE][IP][INSTANCE %ld][RB %ld][--- PDCP_DATA_REQ / %d Bytes --->][PDCP][MOD %u][UE %04x][RB %ld]\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
             ctxt.rnti, rab_id);
-      MSC_LOG_RX_MESSAGE((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-                         (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-                         NULL, 0,
-                         MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-                         MSC_AS_TIME_ARGS(ctxt_pP),
-                         ctxt.instance, rab_id, rab_id, len);
       pdcp_data_req(
                 &ctxt,
                 SRB_FLAG_NO,
@@ -368,14 +359,6 @@ int pdcp_fifo_read_input_mbms_sdus_fromtun (const protocol_ctxt_t *const  ctxt_p
       //              , NULL, NULL
       //             );
     } else {
-      MSC_LOG_RX_DISCARDED_MESSAGE(
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-        (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-        NULL,
-        0,
-        MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-        MSC_AS_TIME_ARGS(ctxt_pP),
-        ctxt.instance, rab_id, rab_id, len);
       LOG_D(PDCP,
             "[FRAME %5u][UE][IP][INSTANCE %ld][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %04x][RB %ld] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
             ctxt.frame, ctxt.instance, rab_id, len, ctxt.module_id,
@@ -566,17 +549,6 @@ int pdcp_fifo_read_input_sdus_fromnetlinksock (const protocol_ctxt_t *const  ctx
                   (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) ? NULL : &pdcp_read_header_g.destinationL2Id
                 );
               } else { /* else of h_rc == HASH_TABLE_OK */
-                MSC_LOG_RX_DISCARDED_MESSAGE(
-                  (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-                  (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-                  NULL,
-                  0,
-                  MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-                  MSC_AS_TIME_ARGS(ctxt_pP),
-                  pdcp_read_header_g.inst,
-                  pdcp_read_header_g.rb_id,
-                  rab_id,
-                  pdcp_read_header_g.data_size);
                 LOG_D(PDCP,
                       "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %ld] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
                       ctxt.frame,
@@ -739,17 +711,6 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
                     ctxt.module_id,
                     ctxt.rnti,
                     rab_id);
-              MSC_LOG_RX_MESSAGE(
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-                NULL,
-                0,
-                MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-                MSC_AS_TIME_ARGS(ctxt_pP),
-                pc5s_header->inst,
-                pc5s_header->rb_id,
-                rab_id,
-                pc5s_header->data_size);
             /* pointers to pc5s_header fields possibly not aligned because pc5s_header points to a packed structure
              * Using these possibly unaligned pointers in a function call may trigger alignment errors at run time and
              * gcc, from v9,  now warns about it. fix these warnings by using  local variables
@@ -771,17 +732,6 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
               pc5s_header->sourceL2Id = sourceL2Id;
               pc5s_header->destinationL2Id=destinationL2Id;             
             } else { /* else of h_rc == HASH_TABLE_OK */
-              MSC_LOG_RX_DISCARDED_MESSAGE(
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-                (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-                NULL,
-                0,
-                MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
-                MSC_AS_TIME_ARGS(ctxt_pP),
-                pc5s_header->inst,
-                pc5s_header->rb_id,
-                rab_id,
-                pc5s_header->data_size);
               LOG_D(PDCP,
                     "[FRAME %5u][UE][IP][INSTANCE %u][RB %ld][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %ld] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
                     ctxt.frame,
@@ -803,16 +753,6 @@ void pdcp_fifo_read_input_sdus_frompc5s (const protocol_ctxt_t *const  ctxt_pP) 
                   ctxt.module_id,
                   ctxt.rnti,
                   DEFAULT_RAB_ID);
-            MSC_LOG_RX_MESSAGE(
-              (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
-              (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_IP_ENB:MSC_IP_UE,
-              NULL,0,
-              MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u default rab %u size %u",
-              MSC_AS_TIME_ARGS(ctxt_pP),
-              pc5s_header->inst,
-              pc5s_header->rb_id,
-              DEFAULT_RAB_ID,
-              pc5s_header->data_size);
             /* pointers to pc5s_header fields possibly not aligned because pc5s_header points to a packed structure
              * Using these possibly unaligned pointers in a function call may trigger alignment errors at run time and
              * gcc, from v9,  now warns about it. fix these warnings by using  local variables

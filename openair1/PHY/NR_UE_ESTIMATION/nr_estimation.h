@@ -72,6 +72,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned short p,
                                 unsigned char symbol,
                                 unsigned short BWPStart,
+                                uint8_t config_type,
                                 unsigned short bwp_start_subcarrier,
                                 unsigned short nb_rb_pdsch);
 

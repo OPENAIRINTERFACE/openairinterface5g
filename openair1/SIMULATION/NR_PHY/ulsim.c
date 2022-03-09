@@ -68,6 +68,12 @@
 #include <openair3/ocp-gtpu/gtp_itf.h>
 //#define DEBUG_ULSIM
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in nr_ulsim, not finished yet */
+  return "detect_leaks=0";
+}
+
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -139,7 +145,12 @@ gtpv1u_create_s1u_tunnel(
   return 0;
 }
 
-int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
+int gtpv1u_delete_ngu_tunnel( const instance_t instance,
+			      gtpv1u_gnb_delete_tunnel_req_t *req) {
   return 0;
 }
 
@@ -244,7 +255,6 @@ nrUE_params_t *get_nrUE_params(void) {
 // needed for some functions
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
-//const uint8_t nr_rv_round_map[4] = {0, 2, 1, 3}; 
 
 channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
 
@@ -670,13 +680,15 @@ int main(int argc, char **argv)
   char tp_param[] = "n";
   initTpool(tp_param, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
-  gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->resp_L1_tx);
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,NULL);
+  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initNotifiedFIFO(gNB->L1_tx_free);
+  initNotifiedFIFO(gNB->L1_tx_filled);
+  initNotifiedFIFO(gNB->L1_tx_out);
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,NULL);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   msgDataTx->slot = -1;
-  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
-  pushNotifiedFIFO(gNB->resp_L1_tx,msgL1Tx); // to unblock the process in the beginning
   //gNB_config = &gNB->gNB_config;
 
   //memset((void *)&gNB->UL_INFO,0,sizeof(gNB->UL_INFO));
@@ -718,7 +730,8 @@ int main(int argc, char **argv)
 
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 0, 0, 0, 0);
+  // TODO do a UECAP for phy-sim
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, NULL, 0, 1, n_tx, 0, 0, 0, 0);
 
   // xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);
 
@@ -729,9 +742,9 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, 6, scc, &rrc.carrier.mib,0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, 6, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -753,28 +766,17 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
-  //phy_init_nr_top(frame_parms);
-  if (init_nr_ue_signal(UE, 1, 0) != 0) {
+  if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }
 
-  //nr_init_frame_parms_ue(&UE->frame_parms);
-  init_nr_ue_transport(UE, 0);
+  init_nr_ue_transport(UE);
 
-  /*
-  for (int sf = 0; sf < 2; sf++) {
-    for (i = 0; i < 2; i++) {
-
-        UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
-
-        if (!UE->ulsch[sf][0][i]) {
-          printf("Can't get ue ulsch structures\n");
-          exit(-1);
-        }
-    }
-  }
-  */
+  // initialize the pusch dmrs
+  uint16_t N_n_scid[2] = {frame_parms->Nid_cell,frame_parms->Nid_cell};
+  int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
+  nr_init_pusch_dmrs(UE, N_n_scid, n_scid);
 
   //Configure UE
   NR_UE_RRC_INST_t rrcue;
@@ -1118,6 +1120,7 @@ int main(int argc, char **argv)
       }
 
       // prepare ULSCH/PUSCH reception
+      pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
       nr_schedule_response(Sched_INFO);
 
       // --------- setting parameters for UE --------

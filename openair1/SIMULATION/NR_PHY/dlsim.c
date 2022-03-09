@@ -73,6 +73,12 @@
 #include <executables/softmodem-common.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in nr_ulsim, not finished yet */
+  return "detect_leaks=0";
+}
+
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
@@ -175,7 +181,12 @@ gtpv1u_update_ngu_tunnel(
   return 0;
 }
 
-int ocp_gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
+  return 0;
+}
+
+int gtpv1u_delete_ngu_tunnel( const instance_t instance,
+			      gtpv1u_gnb_delete_tunnel_req_t *req) {
   return 0;
 }
 
@@ -430,7 +441,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:m:w:T:U:qX:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:q:m:w:T:U:X:")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -596,16 +607,17 @@ int main(int argc, char **argv)
     case 'b':
       g_rbSize = atoi(optarg);
       break;
+
     case 'D':
       dlsch_threads = atoi(optarg);
-      break;    
+      break;
+
     case 'e':
       g_mcsIndex = atoi(optarg);
       break;
 
     case 'q':
-      g_mcsTableIdx = 1;
-      get_softmodem_params()->use_256qam_table = 1;
+      g_mcsTableIdx = atoi(optarg);
       break;
 
     case 'm':
@@ -669,7 +681,7 @@ int main(int argc, char **argv)
       printf("-c Start symbol for PDSCH (fixed for now)\n");
       printf("-j Number of symbols for PDSCH (fixed for now)\n");
       printf("-e MSC index\n");
-      printf("-q Use 2nd MCS table (256 QAM table) for PDSCH\n");
+      printf("-q MCS Table index\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
@@ -770,10 +782,14 @@ int main(int argc, char **argv)
   fill_scc_sim(rrc.carrier.servingcellconfigcommon,&ssb_bitmap,N_RB_DL,N_RB_DL,mu,mu);
   ssb_bitmap = 1;// Enable only first SSB with index ssb_indx=0
   fix_scc(scc,ssb_bitmap);
-
   prepare_scd(scd);
 
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, 0, 1, n_tx, 6, 0, 0, 0);
+  NR_UE_NR_Capability_t* UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
+  prepare_sim_uecap(UE_Capability_nr,scc,mu,
+                    N_RB_DL,g_mcsTableIdx);
+
+  // TODO do a UECAP for phy-sim
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, UE_Capability_nr, 0, 1, n_tx, 6, 0, 0, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);
@@ -792,9 +808,9 @@ int main(int argc, char **argv)
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, scc, NULL, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, 6, scc, NULL, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, scc, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, 6, scc, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
@@ -911,16 +927,25 @@ int main(int argc, char **argv)
                       
   UE->perfect_ce = 0;
 
-  if (init_nr_ue_signal(UE, 1, 0) != 0)
+  if (init_nr_ue_signal(UE, 1) != 0)
   {
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }
 
-  init_nr_ue_transport(UE,0);
+  init_nr_ue_transport(UE);
 
   nr_gold_pbch(UE);
-  nr_gold_pdcch(UE,0);
+
+  // compute the scramblingID_pdcch and the gold pdcch
+  UE->scramblingID_pdcch = frame_parms->Nid_cell;
+  nr_gold_pdcch(UE, frame_parms->Nid_cell);
+
+  // compute the scrambling IDs for PDSCH DMRS
+  for (int i = 0; i < 2; i++)
+    UE->scramblingID[i] = frame_parms->Nid_cell;
+
+  nr_gold_pdsch(UE, UE->scramblingID);
 
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
@@ -980,18 +1005,19 @@ int main(int argc, char **argv)
 
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   initTpool(gNBthreads, gNB->threadPool, true);
-  gNB->resp_L1_tx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->resp_L1_tx);
+  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  initNotifiedFIFO(gNB->L1_tx_free);
+  initNotifiedFIFO(gNB->L1_tx_filled);
+  initNotifiedFIFO(gNB->L1_tx_out);
   // we create 2 threads for L1 tx processing
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->resp_L1_tx,processSlotTX);
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,processSlotTX);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   init_DLSCH_struct(gNB, msgDataTx);
   msgDataTx->slot = slot;
   msgDataTx->frame = frame;
   memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-  reset_meas(&msgDataTx->phy_proc_tx);
-  gNB->phy_proc_tx_0 = &msgDataTx->phy_proc_tx;
-  pushTpool(gNB->threadPool,msgL1Tx);
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
@@ -1046,8 +1072,6 @@ int main(int argc, char **argv)
         
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
 
-        memset(RC.nrmac[0]->cce_list[1][0],0,MAX_NUM_CCE*sizeof(int));
-        memset(RC.nrmac[0]->cce_list[1][1],0,MAX_NUM_CCE*sizeof(int));
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
@@ -1055,7 +1079,7 @@ int main(int argc, char **argv)
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
         for (int i=0; i<MAX_NUM_CORESET; i++)
-          gNB_mac->UE_info.num_pdcch_cand[0][i] = 0;
+          gNB_mac->pdcch_cand[i] = 0;
       
         if (css_flag == 0) {
           nr_schedule_ue_spec(0, frame, slot);
@@ -1070,6 +1094,7 @@ int main(int argc, char **argv)
         Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[slot];
         Sched_INFO.UL_dci_req  = NULL;
         Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
+        pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx);
         nr_schedule_response(&Sched_INFO);
 
         /* PTRS values for DLSIM calculations   */
@@ -1096,7 +1121,7 @@ int main(int argc, char **argv)
         else
           phy_procedures_gNB_TX(msgDataTx,frame,slot,1);
             
-        int txdataF_offset = (slot%2) * frame_parms->samples_per_slot_wCP;
+        int txdataF_offset = slot * frame_parms->samples_per_slot_wCP;
         
         if (n_trials==1) {
           LOG_M("txsigF0.m","txsF0=", &gNB->common_vars.txdataF[0][txdataF_offset+2*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
@@ -1303,10 +1328,10 @@ int main(int argc, char **argv)
     printf("\n");
 
     if (print_perf==1) {
-      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, TBS %d)\n",
+      printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, block %d)\n",
 	     1000>>*scc->ssbSubcarrierSpacing, g_rbSize, g_mcsIndex,
 	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3);
-      printDistribution(gNB->phy_proc_tx_0,table_tx,"PHY proc tx");
+      printDistribution(&gNB->phy_proc_tx,table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");
       printStatIndent3(&gNB->tinput,"DLSCH LDPC input processing time");

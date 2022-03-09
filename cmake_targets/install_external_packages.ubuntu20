@@ -24,6 +24,7 @@
 # authors Laurent Thomas
 #
 #######################################
+
 if [ ! -f /etc/os-release ]; then
     echo "No /etc/os-release file found. You're likely on an unsupported distro."
     exit 1
@@ -85,6 +86,7 @@ check_supported_distribution() {
         "ubuntu20.04") return 0 ;;
         "ubuntu20.10") return 0 ;;
         "ubuntu21.04") return 0 ;;
+        "ubuntu21.10") return 0 ;;
     esac
     return 1
 }
@@ -134,7 +136,6 @@ clean_all_files() {
     rm -rf "$dir"/ran_build/build
     rm -rf "$dir"/ran_build_noLOG/build
     rm -rf "$dir"/lte-simulators/build 
-    rm -rf "$dir"/phy_simulators/build
     rm -rf "$dir"/nas_sim_tools/build 
     rm -rf "$dir"/oaisim_build_oai/build
     rm -rf "$dir"/oaisim_build_oai/CMakeLists.txt
@@ -409,7 +410,6 @@ check_install_ubuntu_packages() {
 	      libxml2 \
 	      libxml2-dev  \
 	      libxslt1-dev \
-	      mscgen  \
 	      octave-signal \
 	      openssh-client \
 	      openssh-server \
@@ -472,7 +472,7 @@ if ! check_supported_distribution; then
     echo_error "Your distribution $(get_distribution_release) is not supported by oai !"
     exit 1
 fi
-
+set_openair_env
 echo_info "Installing packages"
 check_install_ubuntu_packages
 

@@ -229,7 +229,7 @@ int test_srs_periodicity(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc)
         for (int slot_tx = 0; slot_tx < frame_parms->slots_per_frame; slot_tx++) {
           proc->frame_tx   = frame_tx;
           proc->nr_slot_tx = slot_tx;
-          if (ue_srs_procedure_nr( ue, proc, 0) == 0)  {
+          if (ue_srs_procedures_nr( ue, proc, 0) == 0)  {
             printf("test_srs_periodicity srs at frame %d slot %d \n", frame_tx, slot_tx);
           }
         }

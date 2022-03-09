@@ -36,6 +36,7 @@
  000002
  070000
  070001
+ 070002
  000001
  010002
  080001
@@ -79,6 +80,7 @@
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
 		<eNB_Stats>yes</eNB_Stats>
+		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
 		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
 	</testCase>
 
@@ -130,6 +132,16 @@
 		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
+
+	<testCase id="070002">
+		<class>Iperf</class>
+		<desc>iperf (BIDIR TCP)(10 sec)(single-ue profile)</desc>
+		<iperf_args>-t 10 --bidir</iperf_args>
+		<direction>BIDIR</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
 
 
 	<testCase id="080000">

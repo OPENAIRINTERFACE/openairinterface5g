@@ -36,7 +36,7 @@
 
 #include "common_lib.h"
 #include "openairinterface5g_limits.h"
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 #include "defs_common.h"
 #include "nfapi_nr_interface_scf.h"
 
@@ -506,6 +506,10 @@ typedef struct RU_t_s {
   int att_tx;
   /// flag to indicate precoding operation in RU
   int do_precoding;
+  /// TX processing advance in subframes (for LTE)
+  int sf_ahead;
+  /// TX processing advance in slots (for NR)
+  int sl_ahead;
   /// FAPI confiuration
   nfapi_nr_config_request_scf_t  config;
   /// Frame parameters

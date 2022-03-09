@@ -55,6 +55,7 @@ def main():
                              "rcc.band40.tm1.25PRB": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gnb.band78.tm1.fr1.106PRB.usrpb210.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gnb.band78.sa.fr1.106PRB.usrpn310.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+                             "gnb.sa.band66.fr1.106PRB.usrpn300.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gNB_SA_CU.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gNB_SA_DU.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue.nfapi": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',

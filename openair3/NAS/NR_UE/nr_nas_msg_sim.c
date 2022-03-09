@@ -674,7 +674,7 @@ void decodeDownlinkNASTransport(as_nas_info_t *initialNasMsg, uint8_t * pdu_buff
     sprintf(baseNetAddress, "%d.%d", *(pdu_buffer + 39),*(pdu_buffer + 40));
     int third_octet = *(pdu_buffer + 41);
     int fourth_octet = *(pdu_buffer + 42);
-    LOG_I(NAS, "Received PDU Session Establishment Accept\n");
+    LOG_A(NAS, "Received PDU Session Establishment Accept\n");
     nas_config(1,third_octet,fourth_octet,"ue");
   } else {
     LOG_E(NAS, "Received unexpected message in DLinformationTransfer %d\n", msg_type);
@@ -812,7 +812,6 @@ void *nas_nrue_task(void *args_p)
 
   ue_security_key=(ue_sa_security_key_t **)calloc(1,sizeof(ue_sa_security_key_t*)*NB_UE_INST);
   itti_mark_task_ready (TASK_NAS_NRUE);
-  MSC_START_USE();
   
   while(1) {
     // Wait for a message or an event

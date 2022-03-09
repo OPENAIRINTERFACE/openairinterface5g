@@ -106,6 +106,9 @@ class Containerize():
 		self.registrySvrId = ''
 		self.testSvrId = ''
 
+		#checkers from xml
+		self.ran_checkers={}
+
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
@@ -506,6 +509,7 @@ class Containerize():
 #			mySSH.command('sed -i -e "s/FLEXRAN_ENABLED:.*$/FLEXRAN_ENABLED: \'no\'/" ci-docker-compose.yml', '\$', 2)
 #			mySSH.command('sed -i -e "s/CI_FLEXRAN_CTL_IP_ADDR/127.0.0.1/" ci-docker-compose.yml', '\$', 2)
 		# Currently support only one
+		mySSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 15)
 		mySSH.command('docker-compose --file ci-docker-compose.yml config --services | sed -e "s@^@service=@" 2>&1', '\$', 10)
 		result = re.search('service=(?P<svc_name>[a-zA-Z0-9\_]+)', mySSH.getBefore())
 		if result is not None:
@@ -623,7 +627,7 @@ class Containerize():
 		else:
 			if containerToKill:
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + self.eNB_logFile[self.eNB_instance])
-				logStatus = RAN.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance], HTML)
+				logStatus = RAN.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance], HTML, self.ran_checkers)
 			else:
 				logStatus = 0
 			if (logStatus < 0):
@@ -635,7 +639,7 @@ class Containerize():
 				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + self.eNB_logFile[self.eNB_instance], self.eNBSourceCodePath + '/cmake_targets/')
 		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 
-	def DeployGenObject(self, HTML):
+	def DeployGenObject(self, HTML, RAN, UE):
 		self.exitStatus = 0
 		logging.info('\u001B[1m Checking Services to deploy\u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose config --services'
@@ -678,12 +682,15 @@ class Containerize():
 		healthy = 0
 		while (count < 10):
 			count += 1
+			containerStatus = []
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			healthy = 0
 			for state in deployStatus.split('\n'):
-				res = re.search('Up \(healthy\)', state)
-				if res is not None:
+				if re.search('Up \(healthy\)', state) is not None:
 					healthy += 1
+				if re.search('rfsim4g-db-init.*Exit 0', state) is not None:
+					subprocess.check_output('docker rm -f rfsim4g-db-init || true', shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				containerStatus.append(state)
 			if healthy == self.nb_healthy[0]:
 				count = 100
 			else:
@@ -693,29 +700,43 @@ class Containerize():
 			if self.tsharkStarted == False:
 				logging.debug('Starting tshark on public network')
 				self.CaptureOnDockerNetworks()
-				self.tsharkStarted = True
 			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
+			for cState in containerStatus:
+				logging.debug(cState)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
 		else:
-			self.exitStatus = 1
 			HTML.CreateHtmlTestRow('Could not deploy in time', 'KO', CONST.ALL_PROCESSES_OK)
+			for cState in containerStatus:
+				logging.debug(cState)
 			logging.error('\u001B[1m Deploying OAI Object(s) FAILED\u001B[0m')
+			HTML.testCase_id = 'AUTO-UNDEPLOY'
+			UE.testCase_id = 'AUTO-UNDEPLOY'
+			HTML.desc = 'Automatic Undeployment'
+			UE.desc = 'Automatic Undeployment'
+			UE.ShowTestID()
+			self.UndeployGenObject(HTML, RAN, UE)
+			self.exitStatus = 1
 
 	def CaptureOnDockerNetworks(self):
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml config | grep com.docker.network.bridge.name | sed -e "s@^.*name: @@"'
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-		cmd = 'sudo nohup tshark -f "not tcp and not arp and not port 53 and not host archive.ubuntu.com and not host security.ubuntu.com and not port 2152"'
+		if re.search('4g.*rfsimulator', self.yamlPath[0]) is not None:
+			cmd = 'sudo nohup tshark -f "(host 192.168.61.11 and icmp) or (not host 192.168.61.11 and not host 192.168.61.30 and not arp and not port 53 and not port 2152)"'
+		elif re.search('5g.*rfsimulator', self.yamlPath[0]) is not None:
+			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not host 192.168.71.150 and not arp and not port 53 and not port 2152 and not port 2153)"'
+		else:
+			return
 		for name in networkNames.split('\n'):
-			res = re.search('rfsim', name)
-			if res is not None:
+			if re.search('rfsim', name) is not None:
 				cmd += ' -i ' + name
 		cmd += ' -w /tmp/capture_'
 		ymlPath = self.yamlPath[0].split('/')
 		cmd += ymlPath[1] + '.pcap > /tmp/tshark.log 2>&1 &'
 		logging.debug(cmd)
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		self.tsharkStarted = True
 
-	def UndeployGenObject(self, HTML, RAN):
+	def UndeployGenObject(self, HTML, RAN, UE):
 		self.exitStatus = 0
 		ymlPath = self.yamlPath[0].split('/')
 		logPath = '../cmake_targets/log/' + ymlPath[1]
@@ -744,14 +765,18 @@ class Containerize():
 				cName = res.group('container_name')
 				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
 				logging.debug(cmd)
-				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				if re.search('magma-mme', cName) is not None:
+					cmd = 'cd ' + self.yamlPath[0] + ' && docker cp -L ' + cName + ':/var/log/mme.log ' + cName + '-full.log'
+					logging.debug(cmd)
+					subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		fullStatus = True
 		if anyLogs:
 			cmd = 'mkdir -p '+ logPath + ' && cp ' + self.yamlPath[0] + '/*.log ' + logPath
 			logging.debug(cmd)
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
-			# Analyzing log file!
+			# Analyzing log file(s)!
 			listOfPossibleRanContainers = ['enb', 'gnb', 'cu', 'du']
 			for container in listOfPossibleRanContainers:
 				filename = self.yamlPath[0] + '/rfsim?g-oai-' + container + '.log'
@@ -766,13 +791,34 @@ class Containerize():
 					continue
 
 				logging.debug('\u001B[1m Analyzing xNB logfile ' + filename + ' \u001B[0m')
-				# For the moment just assume this exists
-				logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML)
+				logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML, self.ran_checkers)
 				if (logStatus < 0):
 					fullStatus = False
+					self.exitStatus = 1
 					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
 				else:
 					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+
+			listOfPossibleUeContainers = ['lte-ue*', 'nr-ue*']
+			for container in listOfPossibleUeContainers:
+				filename = self.yamlPath[0] + '/rfsim?g-oai-' + container + '.log'
+				cmd = 'ls ' + filename
+				containerStatus = True
+				try:
+					lsStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+					filename = str(lsStatus).strip()
+				except:
+					containerStatus = False
+				if not containerStatus:
+					continue
+
+				logging.debug('\u001B[1m Analyzing UE logfile ' + filename + ' \u001B[0m')
+				logStatus = UE.AnalyzeLogFile_UE(filename, HTML, RAN)
+				if (logStatus < 0):
+					fullStatus = False
+					HTML.CreateHtmlTestRow('UE log Analysis', 'KO', logStatus)
+				else:
+					HTML.CreateHtmlTestRow('UE log Analysis', 'OK', CONST.ALL_PROCESSES_OK)
 
 			cmd = 'rm ' + self.yamlPath[0] + '/*.log'
 			logging.debug(cmd)
@@ -789,6 +835,7 @@ class Containerize():
 				cmd = 'sudo rm /tmp/capture_' + ymlPath[1] + '.pcap'
 				logging.debug(cmd)
 				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+				self.tsharkStarted = False
 
 		logging.debug('\u001B[1m Undeploying \u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml down'
@@ -814,7 +861,7 @@ class Containerize():
 			HTML.CreateHtmlTestRow('n/a', 'KO', CONST.ALL_PROCESSES_OK)
 			logging.info('\u001B[1m Undeploying OAI Object(s) FAIL\u001B[0m')
 
-	def PingFromContainer(self, HTML):
+	def PingFromContainer(self, HTML, RAN, UE):
 		self.exitStatus = 0
 		ymlPath = self.yamlPath[0].split('/')
 		logPath = '../cmake_targets/log/' + ymlPath[1]
@@ -828,17 +875,17 @@ class Containerize():
 
 		result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', deployStatus)
 		if result is None:
-			self.PingExit(HTML, False, 'Packet Loss Not Found')
+			self.PingExit(HTML, RAN, UE, False, 'Packet Loss Not Found')
 			return
 
 		packetloss = result.group('packetloss')
 		if float(packetloss) == 100:
-			self.PingExit(HTML, False, 'Packet Loss is 100%')
+			self.PingExit(HTML, RAN, UE, False, 'Packet Loss is 100%')
 			return
 
 		result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', deployStatus)
 		if result is None:
-			self.PingExit(HTML, False, 'Ping RTT_Min RTT_Avg RTT_Max Not Found!')
+			self.PingExit(HTML, RAN, UE, False, 'Ping RTT_Min RTT_Avg RTT_Max Not Found!')
 			return
 
 		rtt_min = result.group('rtt_min')
@@ -860,7 +907,7 @@ class Containerize():
 			packetLossOK = False
 		elif float(packetloss) > 0:
 			message += '\nPacket Loss is not 0%'
-		self.PingExit(HTML, packetLossOK, message)
+		self.PingExit(HTML, RAN, UE, packetLossOK, message)
 
 		if packetLossOK:
 			logging.debug('\u001B[1;37;44m ping result \u001B[0m')
@@ -870,7 +917,7 @@ class Containerize():
 			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
 			logging.info('\u001B[1m Ping Test PASS\u001B[0m')
 
-	def PingExit(self, HTML, status, message):
+	def PingExit(self, HTML, RAN, UE, status, message):
 		html_queue = SimpleQueue()
 		html_cell = '<pre style="background-color:white">UE\n' + message + '</pre>'
 		html_queue.put(html_cell)
@@ -885,10 +932,10 @@ class Containerize():
 			logging.debug('----------------------------------------')
 			HTML.testCase_id = 'AUTO-UNDEPLOY'
 			HTML.desc = 'Automatic Un-Deployment'
-			self.UndeployGenObject(HTML)
+			self.UndeployGenObject(HTML, RAN, UE)
 			self.exitStatus = 1
 
-	def IperfFromContainer(self, HTML):
+	def IperfFromContainer(self, HTML, RAN):
 		self.exitStatus = 0
 
 		ymlPath = self.yamlPath[0].split('/')

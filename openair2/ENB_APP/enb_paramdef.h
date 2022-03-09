@@ -99,6 +99,10 @@ typedef enum {
 #define CONFIG_STRING_RU_IF_FREQUENCY             "if_freq"
 #define CONFIG_STRING_RU_IF_FREQ_OFFSET           "if_offset"
 #define CONFIG_STRING_RU_DO_PRECODING             "do_precoding"
+#define CONFIG_STRING_RU_SF_AHEAD                 "sf_ahead"
+#define CONFIG_STRING_RU_SL_AHEAD                 "sl_ahead"
+#define CONFIG_STRING_RU_NR_FLAG                  "nr_flag"
+#define CONFIG_STRING_RU_NR_SCS_FOR_RASTER        "nr_scs_for_raster"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -129,6 +133,10 @@ typedef enum {
 #define RU_IF_FREQUENCY               26
 #define RU_IF_FREQ_OFFSET             27
 #define RU_DO_PRECODING               28
+#define RU_SF_AHEAD                   29
+#define RU_SL_AHEAD                   30 
+#define RU_NR_FLAG                    31 
+#define RU_NR_SCS_FOR_RASTER          32
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
@@ -163,6 +171,10 @@ typedef enum {
     {CONFIG_STRING_RU_IF_FREQUENCY,                NULL,       0,       u64ptr:NULL,     defuintval:0,            TYPE_UINT64,      0}, \
     {CONFIG_STRING_RU_IF_FREQ_OFFSET,              NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_DO_PRECODING,                NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_SF_AHEAD,                    NULL,       0,       iptr:NULL,       defintval:4,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_SL_AHEAD,                    NULL,       0,       iptr:NULL,       defintval:6,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_NR_FLAG,                     NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_NR_SCS_FOR_RASTER,           NULL,       0,       iptr:NULL,       defintval:1,             TYPE_INT,         0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/

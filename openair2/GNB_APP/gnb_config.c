@@ -31,6 +31,7 @@
 #include <inttypes.h>
 
 #include "common/utils/LOG/log.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
 #include "gnb_config.h"
@@ -47,7 +48,6 @@
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
-#include "PHY/phy_extern.h"
 #include "PHY/INIT/phy_init.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
@@ -346,9 +346,16 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   // prepare DL Allocation lists
   nr_rrc_config_dl_tda(scc);
 
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity > 320 ) {
-    free(scc->tdd_UL_DL_ConfigurationCommon->pattern2);
-    scc->tdd_UL_DL_ConfigurationCommon->pattern2=NULL;
+  lte_frame_type_t frame_type = get_frame_type((int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  if (frame_type == FDD) {
+    ASN_STRUCT_FREE(asn_DEF_NR_TDD_UL_DL_ConfigCommon, scc->tdd_UL_DL_ConfigurationCommon);
+    scc->tdd_UL_DL_ConfigurationCommon = NULL;
+  } else { // TDD
+    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity > 320 ) {
+      free(scc->tdd_UL_DL_ConfigurationCommon->pattern2);
+      scc->tdd_UL_DL_ConfigurationCommon->pattern2 = NULL;
+    }
+
   }
 
   if ((int)*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing == -1) {
@@ -451,7 +458,7 @@ void fix_scd(NR_ServingCellConfig_t *scd) {
     for (int i = scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.count-1; i >= 0; i--) {
       if ((*scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.array[i] < 1)
           || (*scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS->choice.setup->frequencyDensity->list.array[i] > 276)) {
-        LOG_I(RRC, "DL PTRS frequencyDensity %d not set. Assuming PTRS not present! \n", i);
+        LOG_I(NR_RRC, "DL PTRS frequencyDensity %d not set. Assuming PTRS not present! \n", i);
         free(scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS);
         scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS = NULL;
         break;
@@ -651,7 +658,7 @@ void RCconfig_NR_L1(void) {
 	      RC.gNB[j]->Mod_id  = j;
       }
 
-      RC.gNB[j]->pusch_proc_threads = *(L1_ParamList.paramarray[j][L1_PUSCH_PROC_THREADS].uptr);
+      RC.gNB[j]->thread_pool_size   = *(L1_ParamList.paramarray[j][L1_THREAD_POOL_SIZE].uptr);
       RC.gNB[j]->ofdm_offset_divisor = *(L1_ParamList.paramarray[j][L1_OFDM_OFFSET_DIVISOR].uptr);
       RC.gNB[j]->pucch0_thres       = *(L1_ParamList.paramarray[j][L1_PUCCH0_DTX_THRESHOLD].uptr);
       RC.gNB[j]->prach_thres        = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD].uptr);
@@ -810,6 +817,9 @@ void RCconfig_nr_macrlc() {
       RC.nrmac[j]->dl_bler_target_lower = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_BLER_TARGET_LOWER_IDX].dblptr);
       RC.nrmac[j]->dl_rd2_bler_threshold = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_RD2_BLER_THRESHOLD_IDX].dblptr);
       RC.nrmac[j]->dl_max_mcs = *(MacRLC_ParamList.paramarray[j][MACRLC_DL_MAX_MCS_IDX].u8ptr);
+      RC.nrmac[j]->harq_round_max = *(MacRLC_ParamList.paramarray[j][MACRLC_HARQ_ROUND_MAX_IDX].u8ptr);
+      RC.nrmac[j]->min_grant_prb = *(MacRLC_ParamList.paramarray[j][MACRLC_MIN_GRANT_PRB_IDX].u8ptr);
+      RC.nrmac[j]->min_grant_mcs = *(MacRLC_ParamList.paramarray[j][MACRLC_MIN_GRANT_MCS_IDX].u8ptr);
       RC.nrmac[j]->num_ulprbbl = num_prbbl;
       memcpy(RC.nrmac[j]->ulprbbl,prbbl,275*sizeof(prbbl[0]));
     }//  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
@@ -992,8 +1002,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   if (num_gnbs>0) {
 
-
-
     // Output a list of all gNBs. ////////// Identification parameters
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
     
@@ -1089,6 +1097,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
     rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
 
+    rrc->um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
       
     } else if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
@@ -1149,20 +1158,22 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 		      (NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l] == 3),"BAD MNC DIGIT LENGTH %d",
 		      NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l]);
 	}
-        printf("SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
+        LOG_I(GNB_APP,"SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
-        printf("pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
+        LOG_I(GNB_APP,"pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
-        printf("pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
+        LOG_I(GNB_APP,"pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
-        printf("minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
+        LOG_I(GNB_APP,"minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIME = *GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr;
+        LOG_I(RRC,"SIB1 TDA %d\n",*GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
-        printf("Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
+        LOG_I(GNB_APP,"Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_CSIRS = *GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr;
+        printf("Do SRS %d\n",*GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).do_SRS = *GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr;
         NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
         NRRRC_CONFIGURATION_REQ (msg_p).scd = scd;
-
 	  
       }//
     }//End for (k=0; k <num_gnbs ; k++)
@@ -1214,7 +1225,7 @@ int RCconfig_nr_gtpu(void ) {
     GTPV1U_REQ(message).localPort = port;
     strcpy(GTPV1U_REQ(message).localAddrStr,address);
     sprintf(GTPV1U_REQ(message).localPortStr,"%d", port);
-    itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+    itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
   } else
     LOG_E(GTPU,"invalid address for NGU or S1U\n");
   
@@ -2061,6 +2072,7 @@ void configure_gnb_du_mac(int inst) {
                         rrc->configuration.pdsch_AntennaPorts,
                         rrc->configuration.pusch_AntennaPorts,
                         rrc->configuration.sib1_tda,
+                        rrc->configuration.minRXTXTIME,
                         rrc->configuration.scc,
                         NULL,
                         0,
