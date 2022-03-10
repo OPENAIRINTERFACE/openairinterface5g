@@ -187,92 +187,8 @@ else (CUDA_FOUND)
    message ("No CUDA tool installed")
 endif ()
 
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(dpdk DEFAULT_MSG)
-
-###########################################
-# macros to define options as there is numerous options in oai
-################################################
-macro(add_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  add_definitions("-D${name}=${value}")
-endmacro(add_option)
-
-macro(add_boolean_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY TYPE BOOL)
-  if (${value})
-    add_definitions("-D${name}")
-  endif (${value})
-endmacro(add_boolean_option)
-
-macro(add_integer_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  add_definitions("-D${name}=${value}")
-endmacro(add_integer_option)
-
-macro(add_list1_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${name}=${value}")
-  endif()
-endmacro(add_list1_option)
-
-macro(add_list2_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${value}=1")
-  endif()
-endmacro(add_list2_option)
-
-macro(add_list_string_option name val helpstr)
-  if(DEFINED ${name})
-    set(value ${${name}})
-  else(DEFINED ${name})
-    set(value ${val})
-  endif()
-  set(${name} ${value} CACHE STRING "${helpstr}")
-  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
-  if(NOT "${value}" STREQUAL "False")
-    add_definitions("-D${name}=\"${value}\"")
-  endif()
-endmacro(add_list_string_option)
-
-# this function should produce the same value as the macro MAKE_VERSION defined in the C code (file types.h)
-function(make_version VERSION_VALUE)
-  math(EXPR RESULT "0")
-  foreach (ARG ${ARGN})
-    math(EXPR RESULT "${RESULT} * 16 + ${ARG}")
-  endforeach()
-  set(${VERSION_VALUE} "${RESULT}" PARENT_SCOPE)
-endfunction()
+#INCLUDE(FindPackageHandleStandardArgs)
+#FIND_PACKAGE_HANDLE_STANDARD_ARGS(dpdk DEFAULT_MSG)
 
 ####################################################
 # compilation flags
@@ -867,7 +783,7 @@ set_target_properties(tcp_bridge_oai PROPERTIES COMPILE_FLAGS "-fvisibility=hidd
 ######################################################################
 
 
-#include_directories ("/usr/include/dpdk")
+include_directories ("/usr/include/dpdk")
 
 set(HWLIB_BENETEL_4G_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/benetel/4g/benetel.c
@@ -3072,9 +2988,7 @@ add_executable(nr_ulsim
   ${SHLIB_LOADER_SOURCES}
   )
 
-add_dependencies( nr_ulsim ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
-
-if(EXISTS  "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd1.so")
+if(EXISTS  "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd.so")
 add_dependencies( nr_ulsim ldpc_offload)
 endif ()
 
