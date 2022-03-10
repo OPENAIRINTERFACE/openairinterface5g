@@ -681,7 +681,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     }
     else{
       LOG_D(NR_MAC,"[UE %d] Detected DTX : increasing UE TX power\n",UE_id);
-      //UE_scheduling_control->tpc0 = 3;
+      UE_scheduling_control->tpc0 = 3;
     }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
@@ -1336,8 +1336,7 @@ void pf_ul(module_id_t module_id,
     uint16_t max_rbSize = 1;
     while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
       max_rbSize++;
-    max_rbSize=50;
-
+    
     if (rbStart + min_rb >= bwpSize) {
       LOG_W(NR_MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
 	    UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
