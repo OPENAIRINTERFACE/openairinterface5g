@@ -881,6 +881,38 @@ static bool nr_UE_is_to_be_scheduled(const NR_ServingCellConfigCommon_t *scc,
   return has_data || sched_ctrl->SR || high_inactivity;
 }
 
+int estimate_nr_ue_tx_power(int mu, uint32_t tbs, int rb)
+{
+  /* TODO: delta_mcs? */
+
+  const int bw_factor = 10 * log10(rb << mu);
+  return bw_factor;
+}
+
+int nr_ue_max_rbSize_phr(int mu, const NR_UE_sched_ctrl_t *sched_ctrl, uint16_t minRb, uint16_t *maxRb, uint8_t *mcs)
+{
+  AssertFatal(*maxRb >= minRb, "illegal maxRb %d < minRb %d\n", *maxRb, minRb);
+  AssertFatal(*mcs >= 0 && *mcs <= 28, "illegal MCS %d\n", *mcs);
+
+  const int ph = sched_ctrl->ph;
+  //const int pcmax = sched_ctrl->pcmax;
+
+  int tx_power = estimate_nr_ue_tx_power(mu, /* unused tbs */ 0, *maxRb);
+  while (ph < tx_power && *maxRb >= minRb) {
+    (*maxRb)--;
+    tx_power = estimate_nr_ue_tx_power(mu, /* unused tbs */ 0, *maxRb);
+  }
+
+  while (ph < tx_power && *mcs > 6) {
+    (*mcs)--;
+    tx_power = estimate_nr_ue_tx_power(mu, /* unused tbs */ 0, *maxRb);
+  }
+
+  if (ph < tx_power)
+    LOG_W(NR_MAC, "PH %d < tx_power %d (RBs %d, MCS %d)\n", ph, tx_power, *maxRb, *mcs);
+  return tx_power;
+}
+
 static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
 				       frame_t frame,
 				       sub_frame_t slot,
@@ -1347,6 +1379,10 @@ void pf_ul(module_id_t module_id,
     }
     else
       LOG_D(NR_MAC,"allocating UL data for RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d)\n", iterator->UE->rnti,rbStart,min_rb,bwpSize);
+
+    /* reduce max_rbSize according to PHR */
+    const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+    const int tx_power = nr_ue_max_rbSize_phr(mu, sched_ctrl, min_rbSize, &max_rbSize, &sched_pusch->mcs);
 
     /* Calculate the current scheduling bytes and the necessary RBs */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
