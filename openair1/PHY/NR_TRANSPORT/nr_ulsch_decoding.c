@@ -584,7 +584,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   Kr_bytes = Kr>>3;
   offset = 0;
 
-  if ((enable_ldpc_offload)&& (dtx_det==0)) {
+  //if ((enable_ldpc_offload)&& (dtx_det==0)) 
+  if (enable_ldpc_offload){ 
+    //  if (dtx_det==0) {
     
   if (harq_process->C == 1) {
     if (A > 3824)
@@ -603,7 +605,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
   memset(harq_process->c[r],0,Kr_bytes);
 
-  //if ((dtx_det==0)&&(pusch_pdu->pusch_data.rv_index==0)){
+  if ((dtx_det==0)&&(pusch_pdu->pusch_data.rv_index==0)){
   //if (dtx_det==0){
   if (mcs >9){
   memcpy((&z_ol[0]),ulsch_llr+r_offset,E*sizeof(short));
@@ -702,11 +704,11 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
         printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
         }
   	*/ 
-  /*}
+  }
   else{
     dtx_det = 0;
     no_iteration_ldpc = ulsch->max_ldpc_iterations+1;
-    }*/
+    }
 
 	bool decodeSuccess = (no_iteration_ldpc <= ulsch->max_ldpc_iterations);
         if (decodeSuccess) { 
@@ -721,7 +723,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 	  LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
 	  break; //don't even attempt to decode other segments
 	}  	
-  }
+	 }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
 
