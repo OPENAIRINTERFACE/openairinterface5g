@@ -94,7 +94,7 @@ int load_nrLDPClib_offload(void) {
 				     25344,
 				     8,
 				     l, 
-				     llrProcBuf, 0)>0,
+				     llrProcBuf, 0)>=0,
 	      "error loading LDPC decoder offload library\n");
 
 
