@@ -357,7 +357,6 @@
 #include <arpa/inet.h>
 #include "T.h"
 #include "common/ran_context.h"
-#include "msc.h"
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)

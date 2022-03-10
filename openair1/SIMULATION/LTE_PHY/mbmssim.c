@@ -121,7 +121,6 @@ void do_OFDM_mod_l(int32_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    //    printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
     if (frame_parms->Ncp == 1)
       PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
                    &txdata[aa][slot_offset],         // output
@@ -1971,12 +1970,12 @@ int main(int argc, char **argv) {
         if (t_rx > 2000 )
           n_rx_dropped++;
 
-        appendVarArray(table_tx, &t_tx);
-        appendVarArray(table_tx_ifft, &t_tx_ifft);
-        appendVarArray(table_rx, &t_rx );
-        appendVarArray(table_rx_fft, &t_rx_fft );
-        appendVarArray(table_rx_demod, &t_rx_demod );
-        appendVarArray(table_rx_dec, &t_rx_dec );
+        appendVarArray(&table_tx, &t_tx);
+        appendVarArray(&table_tx_ifft, &t_tx_ifft);
+        appendVarArray(&table_rx, &t_rx );
+        appendVarArray(&table_rx_fft, &t_rx_fft );
+        appendVarArray(&table_rx_demod, &t_rx_demod );
+        appendVarArray(&table_rx_dec, &t_rx_dec );
       }   //trials
 
       // round_trials[0]: number of code word : goodput the protocol

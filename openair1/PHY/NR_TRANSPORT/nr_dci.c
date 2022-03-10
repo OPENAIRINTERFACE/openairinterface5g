@@ -66,12 +66,11 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-void nr_generate_dci(PHY_VARS_gNB *gNB,
-                        nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
-                        uint32_t **gold_pdcch_dmrs,
-                        int32_t *txdataF,
-                        int16_t amp,
-                        NR_DL_FRAME_PARMS *frame_parms) {
+void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
+                     uint32_t **gold_pdcch_dmrs,
+                     int32_t *txdataF,
+                     int16_t amp,
+                     NR_DL_FRAME_PARMS *frame_parms) {
 
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1] __attribute__((aligned(16))); // 3 for the max coreset duration
   uint16_t cset_start_sc;
@@ -84,7 +83,8 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   int n_rb;
   
   // compute rb_offset and n_prb based on frequency allocation
-  nr_fill_cce_list(gNB,0,pdcch_pdu_rel15);
+  nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
+  nr_fill_cce_list(cce_list,0,pdcch_pdu_rel15);
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
   cset_start_sc = frame_parms->first_carrier_offset + (pdcch_pdu_rel15->BWPStart + rb_offset) * NR_NB_SC_PER_RB;
 
@@ -130,11 +130,8 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     uint16_t Nid    = dci_pdu->ScramblingId;
     uint16_t scrambling_RNTI = dci_pdu->ScramblingRNTI;
 
-    t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, 
-						   dci_pdu->PayloadSizeBits,
-						   dci_pdu->AggregationLevel,
-						   0,NULL);
-    polar_encoder_fast((uint64_t*)dci_pdu->Payload, (void*)encoder_output, n_RNTI,1,currentPtr);
+    polar_encoder_fast((uint64_t*)dci_pdu->Payload, (void*)encoder_output, n_RNTI, 1, 
+                       NR_POLAR_DCI_MESSAGE_TYPE, dci_pdu->PayloadSizeBits, dci_pdu->AggregationLevel);
 #ifdef DEBUG_CHANNEL_CODING
     printf("polar rnti %x,length %d, L %d\n",n_RNTI, dci_pdu->PayloadSizeBits,pdcch_pdu_rel15->dci_pdu->AggregationLevel);
     printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
@@ -175,7 +172,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     int reg_list_order[NR_MAX_PDCCH_AGG_LEVEL] = {};
     for (int p = 0; p < NR_MAX_PDCCH_AGG_LEVEL; p++) {
       for(int p2 = 0; p2 < dci_pdu->AggregationLevel; p2++) {
-        if(gNB->cce_list[d][p2].reg_list[0].reg_idx == p * NR_NB_REG_PER_CCE) {
+        if(cce_list[d][p2].reg_list[0].reg_idx == p * NR_NB_REG_PER_CCE) {
           reg_list_order[reg_list_index] = p2;
           reg_list_index++;
           break;
@@ -191,7 +188,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
         for (int reg_in_cce_idx = 0; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx++) {
 
-          k = cset_start_sc + gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].start_sc_idx;
+          k = cset_start_sc + cce_list[d][cce_idx].reg_list[reg_in_cce_idx].start_sc_idx;
 
           if (k >= frame_parms->ofdm_symbol_size)
             k -= frame_parms->ofdm_symbol_size;
@@ -200,9 +197,9 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
           // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
           if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
-            dmrs_idx = (gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx) * 3;
+            dmrs_idx = (cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx) * 3;
           else
-            dmrs_idx = (gNB->cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx + rb_offset) * 3;
+            dmrs_idx = (cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx + rb_offset) * 3;
 
           k_prime = 0;
 
@@ -250,21 +247,16 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   } // for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++)
 }
 
-void nr_generate_dci_top(PHY_VARS_gNB *gNB,
-			    nfapi_nr_dl_tti_pdcch_pdu *pdcch_pdu,
-			    nfapi_nr_dl_tti_pdcch_pdu *ul_dci_pdu,
-                            uint32_t **gold_pdcch_dmrs,
-                            int32_t *txdataF,
-                            int16_t amp,
-                            NR_DL_FRAME_PARMS *frame_parms) {
+void nr_generate_dci_top(processingData_L1tx_t *msgTx,
+                         uint32_t **gold_pdcch_dmrs,
+                         int32_t *txdataF,
+                         int16_t amp,
+                         NR_DL_FRAME_PARMS *frame_parms) {
 
-  AssertFatal(pdcch_pdu!=NULL || ul_dci_pdu!=NULL,"At least one pointer has to be !NULL\n");
+  for (int i=0; i<msgTx->num_ul_pdcch; i++)
+    nr_generate_dci(&msgTx->ul_pdcch_pdu[i].pdcch_pdu.pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+  for (int i=0; i<msgTx->num_dl_pdcch; i++)
+    nr_generate_dci(&msgTx->pdcch_pdu[i].pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
 
-  if (pdcch_pdu) {
-    nr_generate_dci(gNB,&pdcch_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
-  }
-  if (ul_dci_pdu) {
-    nr_generate_dci(gNB,&ul_dci_pdu->pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
-  }
 }
 

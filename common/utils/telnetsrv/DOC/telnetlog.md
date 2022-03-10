@@ -62,7 +62,6 @@ component                 verbosity  level  enabled
 16              PERF:    medium      info  N
 17               OIP:    medium      info  N
 18               CLI:    medium      info  N
-19               MSC:    medium      info  N
 20               OCM:    medium      info  N
 21               UDP:    medium      info  N
 22            GTPV1U:    medium      info  N

@@ -396,6 +396,7 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
 {
   database_event_format f;
   int i;
+
   d->ul_rnti             = -1;
   d->ul_frame            = -1;
   d->ul_subframe         = -1;

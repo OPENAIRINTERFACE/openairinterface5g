@@ -345,14 +345,18 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                           setup_e_rabs;
   /* Number of e_rab to be setup in the list */
   uint8_t                            nb_of_e_rabs;
-  /* Total number of pdu session already setup in the list */
-  uint8_t                           setup_pdu_sessions;
-  /* Number of pdu session to be setup in the list */
-  uint8_t                            nb_of_pdusessions;
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  /* Total number of pdu session already setup in the list */
+  uint8_t                            setup_pdu_sessions;
+  /* Number of pdu session to be setup in the list */
+  uint8_t                            nb_of_pdusessions;
+  /* Number of e_rab to be modified in the list */
+  uint8_t                            nb_of_modify_pdusessions;
+  uint8_t                            nb_of_failed_pdusessions;
+  pdu_session_param_t                modify_pdusession[NR_NB_RB_MAX];
   /* list of e_rab to be setup by RRC layers */
   /* list of pdu session to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
@@ -451,13 +455,13 @@ typedef struct {
   int pusch_AntennaPorts;
   int minRXTXTIME;
   int do_CSIRS;
+  int do_SRS;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_PDCCH_ConfigSIB1_t                     *pdcch_ConfigSIB1;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   NR_SRB_INFO                               Srb0;
-  int                                       initial_csi_index[MAX_NR_RRC_UE_CONTEXTS];
   int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;

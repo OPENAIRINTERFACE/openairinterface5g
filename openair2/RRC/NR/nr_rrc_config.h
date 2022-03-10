@@ -119,5 +119,13 @@ void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time)
 void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs);
 void schedulingrequest_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
                               NR_PUCCH_Config_t *pucch_Config);
+void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+                      NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
+                      NR_ServingCellConfigCommon_t *scc);
+void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
+                       NR_ServingCellConfigCommon_t *scc,
+                       int numerology,
+                       int rbsize,
+                       int mcs_table);
 
 #endif

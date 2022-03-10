@@ -34,14 +34,9 @@
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
 
-#include "rt_wrapper.h"
-#include <common/utils/msc/msc.h>
-
-
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
-#include "msc.h"
 
 #include "PHY/types.h"
 
@@ -80,7 +75,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-//#include "PHY/TOOLS/time_meas.h"
 
 
 #include "create_tasks.h"
@@ -500,8 +494,6 @@ static void init_pdcp(void) {
       pdcp_set_rlc_data_req_func(rlc_data_req);
       pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
     }
-  } else {
-    pdcp_set_pdcp_data_ind_func(proto_agent_send_pdcp_data_ind);
   }
 }
 
@@ -518,13 +510,6 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main ( int argc, char **argv )
 {
-  set_priority(79);
-  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
-  {
-    fprintf(stderr, "mlockall: %s\n", strerror(errno));
-    return EXIT_FAILURE;
-  }
-
   int i;
   int CC_id = 0;
   int ru_id;
@@ -537,8 +522,8 @@ int main ( int argc, char **argv )
   }
 
   mode = normal_txrx;
-  set_latency_target();
   logInit();
+  set_latency_target();
   printf("Reading in command-line options\n");
   get_options ();
 
@@ -563,23 +548,14 @@ int main ( int argc, char **argv )
   cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
   itti_init(TASK_MAX, tasks_info);
-  // allows to forward in wireshark L2 protocol for decoding
-  // initialize mscgen log after ITTI
-  if (get_softmodem_params()->start_msc) {
-    load_module_shlib("msc",NULL,0,&msc_interface);
-  }
 
-  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   // to make a graceful exit when ctrl-c is pressed
   set_softmodem_sighandler();
-  check_clock();
 #ifndef PACKAGE_VERSION
 #  define PACKAGE_VERSION "UNKNOWN-EXPERIMENTAL"
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-  printf("Runtime table\n");
-  fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
 
   /* Read configuration */
   if (RC.nb_inst > 0) {

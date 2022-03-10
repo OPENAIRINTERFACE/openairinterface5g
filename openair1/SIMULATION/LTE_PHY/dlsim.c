@@ -64,6 +64,13 @@
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void feptx_prec(RU_t *ru, int frame, int subframe);
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in nr_ulsim, not finished yet */
+  return "detect_leaks=0";
+}
+
+
 double cpuf;
 #define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
@@ -122,7 +129,6 @@ void do_OFDM_mod_l(int32_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    //    printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
     if (frame_parms->Ncp == 1)
       PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
                    &txdata[aa][slot_offset],         // output
@@ -140,7 +146,7 @@ void do_OFDM_mod_l(int32_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_
 }
 
 void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR, int tx_lev,int hold_channel,int abstx, int num_rounds, int trials, int round, channel_desc_t *eNB2UE[4],
-                double *s_re[2],double *s_im[2],double *r_re[2],double *r_im[2],FILE *csv_fd) {
+                double *s_re[NB_ANTENNAS_TX],double *s_im[NB_ANTENNAS_TX],double *r_re[NB_ANTENNAS_RX],double *r_im[NB_ANTENNAS_RX],FILE *csv_fd) {
   int i,u;
   int aa,aarx,aatx;
   double channelx,channely;
@@ -1234,7 +1240,7 @@ int main(int argc, char **argv) {
       break;
   }
 
-  for (k=0; k<NUMBER_OF_UE_MAX; k++) {
+  for (k=0; k<NUMBER_OF_DLSCH_MAX; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0; i<2; i++) {
       eNB->dlsch[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
@@ -1245,6 +1251,17 @@ int main(int argc, char **argv) {
       }
 
       eNB->dlsch[k][i]->rnti = n_rnti+k;
+    }
+  }
+  
+  for (int i=0;i<NUMBER_OF_ULSCH_MAX; i++) {
+    
+    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH %d/%d\n",i,NUMBER_OF_ULSCH_MAX);
+    eNB->ulsch[i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,eNB->frame_parms.N_RB_UL, 0);
+    
+    if (!eNB->ulsch[i]) {
+      LOG_E(PHY,"Can't get eNB ulsch structures\n");
+      exit(-1);
     }
   }
 
@@ -1527,9 +1544,9 @@ int main(int argc, char **argv) {
               LOG_M("txsig0.m","txs0", &ru->common.txdata[0][subframe* eNB->frame_parms.samples_per_tti], eNB->frame_parms.samples_per_tti,1,1);
 
               if (transmission_mode<7) {
-                LOG_M("txsigF0.m","txsF0x", &ru->common.txdataF_BF[0][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+                LOG_M("txsigF0.m","txsF0x", &ru->common.txdataF_BF[0][0],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
               } else if (transmission_mode == 7) {
-                LOG_M("txsigF0.m","txsF0", &ru->common.txdataF_BF[5][subframe*nsymb*eNB->frame_parms.ofdm_symbol_size],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
+                LOG_M("txsigF0.m","txsF0", &ru->common.txdataF_BF[5][0],nsymb*eNB->frame_parms.ofdm_symbol_size,1,1);
                 LOG_M("txsigF0_BF.m","txsF0_BF", &ru->common.txdataF_BF[0][0],eNB->frame_parms.ofdm_symbol_size,1,1);
               }
             }
@@ -1815,12 +1832,12 @@ int main(int argc, char **argv) {
         if (t_rx > 2000 )
           n_rx_dropped++;
 
-        appendVarArray(table_tx, &t_tx);
-        appendVarArray(table_tx_ifft, &t_tx_ifft);
-        appendVarArray(table_rx, &t_rx );
-        appendVarArray(table_rx_fft, &t_rx_fft );
-        appendVarArray(table_rx_demod, &t_rx_demod );
-        appendVarArray(table_rx_dec, &t_rx_dec );
+        appendVarArray(&table_tx, &t_tx);
+        appendVarArray(&table_tx_ifft, &t_tx_ifft);
+        appendVarArray(&table_rx, &t_rx );
+        appendVarArray(&table_rx_fft, &t_rx_fft );
+        appendVarArray(&table_rx_demod, &t_rx_demod );
+        appendVarArray(&table_rx_dec, &t_rx_dec );
       }   //trials
 
       // round_trials[0]: number of code word : goodput the protocol

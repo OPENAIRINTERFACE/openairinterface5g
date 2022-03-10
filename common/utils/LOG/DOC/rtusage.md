@@ -7,9 +7,9 @@ All logging facility parameters are defined in the log_config section. Some para
 
 | name | type | default | description |
 |:---:|:---:|:---:|:----|
-| `global_log_level` | `pre-defined string of char` | `info` |  Allows printing of messages up to the specified  level. Available levels, from lower to higher are `error`,`warn`,`info`,`debug`,`trace` |
+| `global_log_level` | `pre-defined string of char` | `info` |  Allows printing of messages up to the specified  level. Available levels, from lower to higher are `error`,`warn`,`analysis`,`info`,`debug`,`trace` |
 | `global_log_online` | `boolean` | 1 (=true) | If false, all console messages are discarded, whatever their level |
-| `global_log_options` | `list of pre-defined string of char` |  |  3 options can be specified to trigger the information added in the header of the message:  `nocolor`, disable color usage in log messages, usefull when redirecting logs to a file, where escape sequences used for color selection can be annoying, `level`, add a one letter level id in the message header (T,D,I,W,E for trace, debug, info, warning, error),`thread`, add the thread name in the message header, `function`, adds the function name, `line_num`, adds the line number, `time` adds the time since process starts|
+| `global_log_options` | `list of pre-defined string of char` |  |  5 options can be specified to trigger the information added in the header of the message:  `nocolor`, disable color usage in log messages, usefull when redirecting logs to a file, where escape sequences used for color selection can be annoying, `level`, add a one letter level id in the message header (T,D,I,A,W,E for trace, debug, info, analysis, warning, error),`thread`, add the thread name in the message header, `thread_id`, adds the thread ID in the message header, `function`, adds the function name, `line_num`, adds the line number, `time` adds the time since process starts|
 
 ### Component specific parameters
 | name | type | default | description |
@@ -49,7 +49,6 @@ The list of components defined within oai can be retrieved from the  [config mod
 [CONFIG] log_config.perf_log_level set to default value "info"
 [CONFIG] log_config.oip_log_level set to default value "info"
 [CONFIG] log_config.cli_log_level set to default value "info"
-[CONFIG] log_config.msc_log_level set to default value "info"
 [CONFIG] log_config.ocm_log_level set to default value "info"
 [CONFIG] log_config.udp_log_level set to default value "info"
 [CONFIG] log_config.gtpv1u_log_level set to default value "info"
@@ -108,8 +107,6 @@ The list of components defined within oai can be retrieved from the  [config mod
 [CONFIG] log_config.oip_log_infile set to default value
 [CONFIG] cli_log_infile: 0
 [CONFIG] log_config.cli_log_infile set to default value
-[CONFIG] msc_log_infile: 0
-[CONFIG] log_config.msc_log_infile set to default value
 [CONFIG] ocm_log_infile: 0
 [CONFIG] log_config.ocm_log_infile set to default value
 [CONFIG] udp_log_infile: 0

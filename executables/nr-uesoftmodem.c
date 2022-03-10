@@ -61,7 +61,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-//#include "PHY/TOOLS/time_meas.h"
 
 #include "intertask_interface.h"
 
@@ -84,6 +83,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "executables/thread-common.h"
 
 #include "nr_nas_msg_sim.h"
+#include <openair1/PHY/MODULATION/nr_modulation.h>
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
@@ -421,11 +421,11 @@ int main( int argc, char **argv ) {
   get_options (); //Command-line options specific for NRUE
 
   get_common_options(SOFTMODEM_5GUE_BIT);
-  init_tpools(nrUE_params.nr_dlsch_parallel);
   CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 #if T_TRACER
   T_Config_Init();
 #endif
+  init_tpools(nrUE_params.nr_dlsch_parallel);
   //randominit (0);
   set_taus_seed (0);
 
@@ -513,7 +513,7 @@ int main( int argc, char **argv ) {
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
-    configure_linux();
+    set_latency_target();
     mlockall(MCL_CURRENT | MCL_FUTURE);
 
     if(IS_SOFTMODEM_DOSCOPE) {

@@ -55,42 +55,39 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB) {
   NR_gNB_DLSCH_t *dlsch = *dlschptr;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
 
-  if (dlsch) {
-    if (N_RB != 273) {
-      a_segments = a_segments*N_RB;
-      a_segments = a_segments/273 +1;
-    }
-    
-#ifdef DEBUG_DLSCH_FREE
-    LOG_D(PHY,"Freeing dlsch %p\n",dlsch);
-#endif
-    NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
-    
-    if (harq->b) {
-      free16(harq->b, a_segments * 1056);
-      harq->b = NULL;
-#ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing harq->b (%p)\n", harq->b);
-#endif
-    }
-    
-#ifdef DEBUG_DLSCH_FREE
-    LOG_D(PHY, "Freeing dlsch process %d c (%p)\n", i, harq->c);
-#endif
-    
-    for (r = 0; r < a_segments; r++) {
-#ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing dlsch process %d c[%d] (%p)\n", i, r, harq->c[r]);
-#endif
-      
-      if (harq->c[r]) {
-	free16(harq->c[r], 1056);
-	harq->c[r] = NULL;
-      }
-    }
-    free16(dlsch, sizeof(NR_gNB_DLSCH_t));
-    *dlschptr = NULL;
+  if (N_RB != 273) {
+    a_segments = a_segments*N_RB;
+    a_segments = a_segments/273 +1;
   }
+
+  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
+  if (harq->b) {
+    free16(harq->b, a_segments * 1056);
+    harq->b = NULL;
+  }
+  for (r = 0; r < a_segments; r++) {
+    free(harq->c[r]);
+    harq->c[r] = NULL;
+  }
+  free(harq->pdu);
+
+  for (int aa = 0; aa < 64; aa++)
+    free(dlsch->calib_dl_ch_estimates[aa]);
+  free(dlsch->calib_dl_ch_estimates);
+
+  for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
+    free(dlsch->mod_symbs[q]);
+
+  for (int layer = 0; layer < NR_MAX_NB_LAYERS; layer++) {
+    free(dlsch->txdataF_precoding[layer]);
+    free(dlsch->txdataF[layer]);
+    for (int aa = 0; aa < 64; aa++)
+      free(dlsch->ue_spec_bf_weights[layer][aa]);
+    free(dlsch->ue_spec_bf_weights[layer]);
+  }
+
+  free(dlsch);
+  *dlschptr = NULL;
 }
 
 NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
@@ -108,7 +105,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     a_segments = a_segments/273 +1;
   }
 
-  uint16_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+  uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
   NR_gNB_DLSCH_t *dlsch = malloc16(sizeof(NR_gNB_DLSCH_t));
   AssertFatal(dlsch, "cannot allocate dlsch\n");
   bzero(dlsch,sizeof(NR_gNB_DLSCH_t));
@@ -254,7 +251,7 @@ void ldpc8blocks( void *p) {
 #ifdef DEBUG_DLSCH_CODING
 
     for (int i =0; i<16; i++)
-      printf("output ratematching e[%d]= %d r_offset %u\n", i,harq->e[i+r_offset], r_offset);
+      printf("output ratematching e[%d]= %d r_offset %u\n", i,e[i], r_offset);
 
 #endif
     nr_interleaving_ldpc(E,
@@ -294,8 +291,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
 
-  if ( dlsch->rnti != SI_RNTI )
-    trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, dlsch->rnti, frame, slot,0, 0);
+  if ( rel15->rnti != SI_RNTI)
+    trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
 
   NR_gNB_SCH_STATS_t *stats=NULL;
   int first_free=-1;
@@ -370,11 +367,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     //d_tmp[r] = &harq->d[r][0];
     //channel_input[r] = &harq->d[r][0];
 #ifdef DEBUG_DLSCH_CODING
-    LOG_D(PHY,"Encoder: B %d F %d \n",harq->B, impp->F);
+    LOG_D(PHY,"Encoder: B %d F %d \n",harq->B, impp.F);
     LOG_D(PHY,"start ldpc encoder segment %d/%d\n",r,impp.n_segments);
     LOG_D(PHY,"input %d %d %d %d %d \n", harq->c[r][0], harq->c[r][1], harq->c[r][2],harq->c[r][3], harq->c[r][4]);
 
-    for (int cnt =0 ; cnt < 22*(*Zc)/8; cnt ++) {
+    for (int cnt =0 ; cnt < 22*(*impp.Zc)/8; cnt ++) {
       LOG_D(PHY,"%d ", harq->c[r][cnt]);
     }
 
@@ -405,6 +402,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     notifiedFIFO_elt_t *req=pullTpool(&nf, gNB->threadPool);
     delNotifiedFIFO_elt(req);
     nbJobs--;
+
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
   return 0;

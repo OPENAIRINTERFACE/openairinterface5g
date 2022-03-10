@@ -36,8 +36,6 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 #include <common/utils/assertions.h>
 
-#include "msc.h"
-
 #include "common/ran_context.h"
 
 #include "common/config/config_userapi.h"
@@ -546,7 +544,7 @@ int main( int argc, char **argv )
 #endif
 
   logInit();
-  //configure_linux();
+  //set_latency_target();
   printf("Reading in command-line options\n");
   get_options ();
 
@@ -572,9 +570,6 @@ int main( int argc, char **argv )
 
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, tasks_info);
-  // initialize mscgen log after ITTI
-  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
-
 
   init_opt();
 

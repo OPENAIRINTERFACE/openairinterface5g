@@ -27,6 +27,7 @@
 #include <sys/mman.h>
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/load_module_shlib.h"
 #include "common/ran_context.h" 
 #include "common/utils/nr/nr_common.h"
 #include "PHY/types.h"
@@ -63,8 +64,7 @@ uint16_t NB_UE_INST = 1;
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
 
-uint8_t const nr_rv_round_map[4] = {0, 2, 1, 3};
-uint8_t const nr_rv_round_map_ue[4] = {0, 2, 1, 3};
+uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 uint64_t get_softmodem_optmask(void) {return 0;}
 softmodem_params_t *get_softmodem_params(void) {return 0;}
@@ -91,8 +91,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             PDSCH_t pdsch,
                             NR_UE_DLSCH_t *dlsch0,
                             NR_UE_DLSCH_t *dlsch1,
-                            int *dlsch_errors,
-                            uint8_t dlsch_parallel) {
+                            int *dlsch_errors) {
   return false;
 }
 
@@ -204,15 +203,15 @@ int main(int argc, char **argv)
 
   float target_error_rate = 0.01;
 
+  int seed = 0;
+
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_PBCHSIM] Error, configuration module init failed\n");
   }
 
-  randominit(0);
-
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:o:s:S:t:x:y:z:M:N:F:GR:dP:IL:m:")) != -1) {
+  while ((c = getopt (argc, argv, "F:g:hIL:m:M:n:N:o:P:r:R:s:S:x:y:z:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -228,6 +227,14 @@ int main(int argc, char **argv)
     /*case 'd':
       frame_type = 1;
       break;*/
+
+    case 'F':
+      input_fd = fopen(optarg,"r");
+      if (input_fd==NULL) {
+        printf("Problem with filename %s. Exiting.\n", optarg);
+        exit(-1);
+      }
+      break;
 
     case 'g':
       switch((char)*optarg) {
@@ -266,16 +273,40 @@ int main(int argc, char **argv)
 
       break;
 
-    /*case 'i':
+    /*
+    case 'i':
       interf1=atoi(optarg);
       break;
+    */
 
+    case 'I':
+      run_initial_sync=1;
+      target_error_rate=0.1;
+      break;
+
+    /*
     case 'j':
       interf2=atoi(optarg);
       break;*/
 
+    case 'L':
+      loglvl = atoi(optarg);
+      break;
+
+    case 'm':
+      mu = atoi(optarg);
+      break;
+
+    case 'M':
+      SSB_positions = atoi(optarg);
+      break;
+
     case 'n':
       n_trials = atoi(optarg);
+      break;
+
+    case 'N':
+      Nid_cell = atoi(optarg);
       break;
 
     case 'o':
@@ -283,6 +314,34 @@ int main(int argc, char **argv)
 #ifdef DEBUG_NR_PBCHSIM
       printf("Setting CFO to %f Hz\n",cfo);
 #endif
+      break;
+
+    /*case 'p':
+      extended_prefix_flag=1;
+      break;*/
+
+    case 'P':
+      pbch_phase = atoi(optarg);
+      if (pbch_phase>3)
+        printf("Illegal PBCH phase (0-3) got %d\n",pbch_phase);
+      break;
+
+    /*
+    case 'r':
+      ricean_factor = pow(10,-.1*atof(optarg));
+      if (ricean_factor>1) {
+        printf("Ricean factor must be between 0 and 1\n");
+        exit(-1);
+      }
+      break;
+    */
+
+    case 'r':
+      seed = atoi(optarg);
+      break;
+
+    case 'R':
+      N_RB_DL = atoi(optarg);
       break;
 
     case 's':
@@ -305,19 +364,7 @@ int main(int argc, char **argv)
       Td= atof(optarg);
       break;
       */
-    /*case 'p':
-      extended_prefix_flag=1;
-      break;*/
 
-      /*
-      case 'r':
-      ricean_factor = pow(10,-.1*atof(optarg));
-      if (ricean_factor>1) {
-        printf("Ricean factor must be between 0 and 1\n");
-        exit(-1);
-      }
-      break;
-      */
     case 'x':
       transmission_mode=atoi(optarg);
 
@@ -330,98 +377,57 @@ int main(int argc, char **argv)
 
     case 'y':
       n_tx=atoi(optarg);
-
       if ((n_tx==0) || (n_tx>2)) {
-    	printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
+        printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
         exit(-1);
       }
-
       break;
 
     case 'z':
       n_rx=atoi(optarg);
-
       if ((n_rx==0) || (n_rx>2)) {
-    	printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
+        printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
         exit(-1);
       }
-
-      break;
-
-    case 'M':
-      SSB_positions = atoi(optarg);
-      break;
-
-    case 'N':
-      Nid_cell = atoi(optarg);
-      break;
-
-    case 'R':
-      N_RB_DL = atoi(optarg);
-      break;
-
-    case 'F':
-      input_fd = fopen(optarg,"r");
-
-      if (input_fd==NULL) {
-        printf("Problem with filename %s. Exiting.\n", optarg);
-        exit(-1);
-      }
-
-      break;
-
-    case 'P':
-      pbch_phase = atoi(optarg);
-
-      if (pbch_phase>3)
-        printf("Illegal PBCH phase (0-3) got %d\n",pbch_phase);
-
-      break;
-      
-    case 'I':
-      run_initial_sync=1;
-      target_error_rate=0.1;
-      break;
-
-    case 'L':
-      loglvl = atoi(optarg);
-      break;
-
-    case 'm':
-      mu = atoi(optarg);
       break;
 
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
+      printf("%s -F input_filename -g channel_mod -h(elp) -I(nitial sync) -L log_lvl -n n_frames -M SSBs -n frames -N cell_id -o FO -P phase -r seed -R RBs -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant\n",
              argv[0]);
-      printf("-h This message\n");
-      //printf("-p Use extended prefix mode\n");
+      //printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
+      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       //printf("-d Use TDD\n");
-      printf("-n Number of frames to simulate\n");
-      printf("-m Numerology index\n");
-      printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
-      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
-      printf("-t Delay spread for multipath channel\n");
+      //printf("-f Output filename (.txt format) for Pe/SNR results\n");
+      printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
+      printf("-h This message\n");
+      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
+      printf("-I run initial sync with target error rate 0.1\n");
+      //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      printf("-L set the log level (-1 disable, 0 error, 1 warning, 2 info, 3 debug, 4 trace)\n");
+      printf("-m Numerology index\n");
+      printf("-M Multiple SSB positions in burst\n");
+      printf("-n Number of frames to simulate\n");
+      printf("-N Nid_cell\n");
+      printf("-o Carrier frequency offset in Hz\n");
+      //printf("-O oversampling factor (1,2,4,8,16)\n");
+      //printf("-p Use extended prefix mode\n");
+      printf("-P PBCH phase, allowed values 0-3\n");
+      printf("-r set the random number generator seed (default: 0 = current time)\n");
+      printf("-R N_RB_DL\n");
+      printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if not -S given. If -n 1, then just SNR is simulated\n");
+      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
+      //printf("-t Delay spread for multipath channel\n");
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-      //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
-      printf("-o Carrier frequency offset in Hz\n");
-      printf("-M Multiple SSB positions in burst\n");
-      printf("-N Nid_cell\n");
-      printf("-R N_RB_DL\n");
-      printf("-O oversampling factor (1,2,4,8,16)\n");
-      printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
-      //printf("-f Output filename (.txt format) for Pe/SNR results\n");
-      printf("-F Input filename (.txt format) for RX conformance testing\n");
       exit (-1);
       break;
     }
   }
+
+  randominit(seed);
 
   logInit();
   set_glog(loglvl);
@@ -433,12 +439,13 @@ int main(int argc, char **argv)
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
-  RC.gNB[0] = malloc(sizeof(PHY_VARS_gNB));
+  RC.gNB[0] = malloc16_clear(sizeof(*(RC.gNB[0])));
   gNB = RC.gNB[0];
   gNB->ofdm_offset_divisor = UINT_MAX;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
+  frame_parms->nb_antenna_ports_gNB = n_tx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
   frame_parms->nushift = Nid_cell%4;
@@ -528,19 +535,13 @@ int main(int argc, char **argv)
 
   for (i=0; i<2; i++) {
 
-    s_re[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(s_re[i],frame_length_complex_samples*sizeof(double));
-    s_im[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(s_im[i],frame_length_complex_samples*sizeof(double));
+    s_re[i] = malloc16_clear(frame_length_complex_samples*sizeof(double));
+    s_im[i] = malloc16_clear(frame_length_complex_samples*sizeof(double));
 
-    r_re[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(r_re[i],frame_length_complex_samples*sizeof(double));
-    r_im[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(r_im[i],frame_length_complex_samples*sizeof(double));
-
+    r_re[i] = malloc16_clear(frame_length_complex_samples*sizeof(double));
+    r_im[i] = malloc16_clear(frame_length_complex_samples*sizeof(double));
     printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
-    txdata[i] = malloc(frame_length_complex_samples*sizeof(int));
-    bzero(r_re[i],frame_length_complex_samples*sizeof(int));
+    txdata[i] = malloc16_clear(frame_length_complex_samples*sizeof(int));
   }
 
   if (pbch_file_fd!=NULL) {
@@ -549,8 +550,8 @@ int main(int argc, char **argv)
 
 
   //configure UE
-  UE = malloc(sizeof(PHY_VARS_NR_UE));
-  memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
+  UE = malloc16_clear(sizeof(*UE));
+  memcpy(&UE->frame_parms,frame_parms,sizeof(UE->frame_parms));
   //phy_init_nr_top(UE); //called from init_nr_ue_signal
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      UE->is_synchronized = 1;
@@ -560,7 +561,7 @@ int main(int argc, char **argv)
   if(eps!=0.0)
 	UE->UE_fo_compensation = 1; // if a frequency offset is set then perform fo estimation and compensation
 
-  if (init_nr_ue_signal(UE, 1, 0) != 0) {
+  if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }
@@ -656,13 +657,6 @@ int main(int argc, char **argv)
 		  	  	  	  	    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
   printf("txlev %d (%f)\n",txlev,10*log10(txlev));*/
 
-
-  for (i=0; i<frame_length_complex_samples; i++) {
-    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-      r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-      r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
-    }
-  }
   
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
@@ -670,6 +664,14 @@ int main(int argc, char **argv)
     n_errors_payload = 0;
 
     for (trial=0; trial<n_trials; trial++) {
+
+      for (i=0; i<frame_length_complex_samples; i++) {
+        for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+          r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+          r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+        }
+      }
+
       // multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
@@ -698,13 +700,11 @@ int main(int argc, char **argv)
            0.0,  // IQ imbalance (dB),
 	   0.0); // IQ phase imbalance (rad)
 
-   
       for (i=0; i<frame_length_complex_samples; i++) {
-	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-	  
-	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	}
+        for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+          ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+          ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+        }
       }
 
       if (n_trials==1) {
@@ -714,7 +714,7 @@ int main(int argc, char **argv)
       }
       if (UE->is_synchronized == 0) {
 	UE_nr_rxtx_proc_t proc={0};
-	ret = nr_initial_sync(&proc, UE, 1, 0, 0);
+	ret = nr_initial_sync(&proc, UE, 1, 0);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }
@@ -776,6 +776,15 @@ int main(int argc, char **argv)
 
   } // NSR
 
+  free_channel_desc_scm(gNB2UE);
+
+  phy_free_nr_gNB(gNB);
+  free(RC.gNB[0]);
+  free(RC.gNB);
+
+  term_nr_ue_signal(UE, 1);
+  free(UE);
+
   for (i=0; i<2; i++) {
     free(s_re[i]);
     free(s_im[i]);
@@ -795,6 +804,9 @@ int main(int argc, char **argv)
 
   if (input_fd)
     fclose(input_fd);
+
+  loader_reset();
+  logTerm();
 
   return(n_errors);
 

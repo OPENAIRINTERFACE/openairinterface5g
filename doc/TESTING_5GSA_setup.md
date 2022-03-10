@@ -169,8 +169,7 @@ MACRLCs = (
 
 
 At the point of writing this document the control-plane exchanges between the CU and the DU over *F1-C* interface, as well as some IP traffic tests over *F1-U* have been validated using the OAI gNB/nrUE in RFSIMULATOR mode. 
-
-*These extensions are not yet fully integrated into develop branch, as they are under merge request. Until they get fully integrated, the CU/DU functionalities can be tested in [NR_F1C_F1U_extensions](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tree/NR_F1C_F1U_extensions) branch.* 
+ 
 
 ## 1.2  OAI 5G Core Network installation and configuration
 The instructions for the installation of OAI CN components (AMF, SMF, NRF, UPF) using `docker-compose` can be found [here](https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed/-/blob/master/README.md).
@@ -264,12 +263,12 @@ the gNB can be launched in 2 modes:
     1. Launch the CU component:
     ```bash
     sudo RFSIMULATOR=server ./nr-softmodem --rfsim --sa \
-        -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/cu_gnb.conf
+        -O ../../../ci-scripts/conf_files/gNB_SA_CU.conf
     ```
     2. Launch the DU component:
     ```bash
     sudo RFSIMULATOR=server ./nr-softmodem --rfsim --sa \
-        -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/du_gnb.conf
+        -O ../../../ci-scripts/conf_files/gNB_SA_DU.conf
     ```
 
 - To launch the OAI UE (valid in `monolithic` gNB and `CU/DU split` gNB):

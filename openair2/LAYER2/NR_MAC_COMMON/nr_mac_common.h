@@ -41,7 +41,7 @@ uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype_fromDCI);
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype_fromDCI,int length);
 
 int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slot_t slotP);
 
@@ -119,6 +119,8 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
+uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset);
+
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,
                                            NR_MIB_t *mib,
@@ -138,6 +140,7 @@ void get_info_from_tda_tables(int default_abc,
                               int tda,
                               int dmrs_TypeA_Position,
                               int normal_CP,
+                              bool *is_mapping_typeA,
                               int *startSymbolIndex,
                               int *nrOfSymbols);
 
@@ -158,7 +161,7 @@ int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
 
 void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
-                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
+                       struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAndOffset,
                        int *period, int *offset);
 
 void reverse_n_bits(uint8_t *value, uint16_t bitlen);
@@ -174,8 +177,6 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,
                         uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
                         uint8_t NrOfSymbols);
-
-uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype);
 
 /* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
 @param    *pusch_config,   pointer to pusch config

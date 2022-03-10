@@ -50,24 +50,23 @@
     \brief This function frees memory allocated for a particular DLSCH at UE
     @param dlsch Pointer to DLSCH to be removed
 */
-void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch,uint8_t N_RB_DL);
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch, uint16_t N_RB_DL);
 
 
-/** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
+/** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft)
     \brief This function allocates structures for a particular DLSCH at UE
     @returns Pointer to DLSCH to be removed
     @param Kmimo Kmimo factor from 36-212/36-213
     @param Mdlharq Maximum number of HARQ rounds (36-212/36-213)
     @param Nsoft Soft-LLR buffer size from UE-Category
     @params N_RB_DL total number of resource blocks (determine the operating BW)
-    @param abstraction_flag Flag to indicate abstracted interface
 */
-NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint16_t N_RB_DL, uint8_t abstraction_flag);
+NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint16_t N_RB_DL);
 
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch,unsigned char N_RB_UL);
+void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch, uint16_t N_RB_UL);
 
-NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
+NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids);
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
@@ -1055,14 +1054,15 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   @param[in] size, of input bits
   @param[in] Nid, cell id
   @param[in] n_RNTI, CRNTI
+  @param[in] uci_on_pusch whether UCI placeholder bits need to be scrambled (true -> no optimized scrambling)
   @param[out] out, the scrambled bits
 */
-
 void nr_pusch_codeword_scrambling(uint8_t *in,
-                         uint32_t size,
-                         uint32_t Nid,
-                         uint32_t n_RNTI,
-                         uint32_t* out);
+                                  uint32_t size,
+                                  uint32_t Nid,
+                                  uint32_t n_RNTI,
+                                  bool uci_on_pusch,
+                                  uint32_t* out);
 
 /** \brief Perform the following functionalities:
     - encoding
@@ -1423,8 +1423,7 @@ void generate_RIV_tables(void);
 int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                     PHY_VARS_NR_UE *phy_vars_ue, 
                     int n_frames,
-                    int sa,
-                    int dlsch_parallel);
+                    int sa);
 
 /*!
   \brief This function gets the carrier frequencies either from FP or command-line-set global variables, depending on the availability of the latter

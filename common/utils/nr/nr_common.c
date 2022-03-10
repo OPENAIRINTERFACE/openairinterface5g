@@ -36,6 +36,27 @@
 
 const char *duplex_mode[]={"FDD","TDD"};
 
+int tables_5_3_2[5][11] = {
+  {25, 52, 79, 106, 133, 160, 216, 270, -1, -1, -1}, // 15 FR1
+  {11, 24, 38, 51, 65, 78, 106, 133, 162, 217, 273}, // 30 FR1
+  {-1, 11, 18, 24, 31, 38, 51, 65, 79, 107, 135},    // 60 FR1
+  {66, 132, 264, -1 , -1, -1, -1, -1, -1, -1, -1},   // 60 FR2
+  {32, 66, 132, 264, -1, -1, -1, -1, -1, -1, -1}     // 120FR2
+};
+
+int get_supported_band_index(int scs, int band, int n_rbs){
+
+  int scs_index = scs;
+  if (band>256)
+    scs_index++;
+  for (int i=0; i<11; i++) {
+    if(n_rbs == tables_5_3_2[scs][i])
+      return i;
+  }
+  return (-1); // not found
+}
+
+
 // Table 5.2-1 NR operating bands in FR1 & FR2 (3GPP TS 38.101)
 // Table 5.4.2.3-1 Applicable NR-ARFCN per operating band in FR1 & FR2 (3GPP TS 38.101)
 // Notes:
@@ -230,7 +251,6 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
       break;
   }
 }
-
 
 void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
 
@@ -483,6 +503,7 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
   return i;
 }
 
+
 int get_subband_size(int NPRB,int size) {
   // implements table  5.2.1.4-2 from 36.214
   //
@@ -498,6 +519,12 @@ int get_subband_size(int NPRB,int size) {
   if (NPRB<275) return (size==0 ? 16 : 32);
   AssertFatal(1==0,"Shouldn't get here, NPRB %d\n",NPRB);
  
+}
+
+
+// from start symbol index and nb or symbols to symbol occupation bitmap in a slot
+uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols) {
+ return ((1<<nrOfSymbols)-1)<<startSymbolIndex;
 }
 
 int get_SLIV(uint8_t S, uint8_t L) {

@@ -58,7 +58,6 @@ CPU Freq is 3.092986
 [0m[0m[TMR]   Starting itti queue: TASK_RRC_UE as task 31
 [0m[0m[TMR]   Starting itti queue: TASK_NAS_UE as task 32
 [0m[0m[TMR]   Starting itti queue: TASK_RAL_UE as task 33
-[0m[0m[TMR]   Starting itti queue: TASK_MSC as task 34
 [0m[0m[TMR]   Starting itti queue: TASK_GTPV1_U as task 35
 [0m[0m[TMR]   Starting itti queue: TASK_UDP as task 36
 [0m[0m[TMR]   Starting itti queue: TASK_CU_F1 as task 37

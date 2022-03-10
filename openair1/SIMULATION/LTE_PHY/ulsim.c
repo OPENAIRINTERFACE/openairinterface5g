@@ -58,6 +58,12 @@
 #include "common/ran_context.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in ulsim, not finished yet */
+  return "detect_leaks=0";
+}
+
 double cpuf;
 #define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
@@ -334,10 +340,10 @@ int main(int argc, char **argv) {
   double s_re1[30720],s_im1[30720],r_re1[30720],r_im1[30720];
   double r_re2[30720],r_im2[30720];
   double r_re3[30720],r_im3[30720];
-  double *s_re[2]= {s_re0,s_re1};
-  double *s_im[2]= {s_im0,s_im1};
-  double *r_re[4]= {r_re0,r_re1,r_re2,r_re3};
-  double *r_im[4]= {r_im0,r_im1,r_im2,r_im3};
+  double *s_re[NB_ANTENNAS_TX]= {s_re0,s_re1, NULL, NULL};
+  double *s_im[NB_ANTENNAS_TX]= {s_im0,s_im1, NULL, NULL};
+  double *r_re[NB_ANTENNAS_RX]= {r_re0,r_re1,r_re2,r_re3};
+  double *r_im[NB_ANTENNAS_RX]= {r_im0,r_im1,r_im2,r_im3};
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
   int cqi_error,cqi_errors,ack_errors,cqi_crc_falsepositives,cqi_crc_falsenegatives;
@@ -743,7 +749,7 @@ int main(int argc, char **argv) {
   UE2eNB->max_Doppler = maxDoppler;
 
   // NN: N_RB_UL has to be defined in ulsim
-  for (int k=0; k<NUMBER_OF_UE_MAX; k++) eNB->ulsch[k] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
+  for (int k=0; k<NUMBER_OF_ULSCH_MAX; k++) eNB->ulsch[k] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
 
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
   printf("ULSCH %p\n",UE->ulsch[0]);
@@ -1279,14 +1285,14 @@ int main(int argc, char **argv) {
           n_rx_dropped++;
 
         if (trials < 1000) {
-         appendVarArray(table_tx, &t_tx);
-         appendVarArray(table_tx_ifft, &t_tx_ifft);
-         appendVarArray(table_tx_mod, &t_tx_mod );
-         appendVarArray(table_tx_enc, &t_tx_enc );
-         appendVarArray(table_rx, &t_rx );
-         appendVarArray(table_rx_fft, &t_rx_fft );
-         appendVarArray(table_rx_demod, &t_rx_demod );
-         appendVarArray(table_rx_dec, &t_rx_dec );
+         appendVarArray(&table_tx, &t_tx);
+         appendVarArray(&table_tx_ifft, &t_tx_ifft);
+         appendVarArray(&table_tx_mod, &t_tx_mod );
+         appendVarArray(&table_tx_enc, &t_tx_enc );
+         appendVarArray(&table_rx, &t_rx );
+         appendVarArray(&table_rx_fft, &t_rx_fft );
+         appendVarArray(&table_rx_demod, &t_rx_demod );
+         appendVarArray(&table_rx_dec, &t_rx_dec );
        }
       }   //trials
 
