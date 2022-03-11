@@ -1034,6 +1034,8 @@ void fill_initial_SpCellConfig(int uid,
   pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
   pucch_Config->resourceToReleaseList = NULL;
   config_pucch_resset0(pucch_Config, uid, curr_bwp, NULL);
+  config_pucch_resset1(pucch_Config, NULL);
+  set_pucch_power_config(pucch_Config, carrier->do_CSIRS);
 
   initialUplinkBWP->pusch_Config = calloc(1,sizeof(*initialUplinkBWP->pusch_Config));
   initialUplinkBWP->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
@@ -1409,11 +1411,6 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
 
   if (SpCellConfig == NULL) return;
-
-  NR_BWP_UplinkDedicated_t *initialUplinkBWP = SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
-  NR_PUCCH_Config_t *pucch_Config = initialUplinkBWP->pucch_Config->choice.setup;
-  config_pucch_resset1(pucch_Config, uecap);
-  set_pucch_power_config(pucch_Config, carrier->do_CSIRS);
 
   NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
 
