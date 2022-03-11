@@ -777,7 +777,7 @@ typedef struct PHY_VARS_gNB_s {
   /// statistics for ULSCH measurement collection
   NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
   NR_gNB_UCI_STATS_t uci_stats[NUMBER_OF_NR_UCI_STATS_MAX];
-  t_nrPolar_params    *uci_polarParams;
+  t_nrPolar_params    **polarParams;
 
   /// SRS variables
   nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
@@ -854,7 +854,7 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t *phy_proc_tx[2];
+  time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*
@@ -971,7 +971,6 @@ typedef struct processingData_L1tx {
   uint16_t num_pdsch_slot;
   int num_dl_pdcch;
   int num_ul_pdcch;
-  time_stats_t phy_proc_tx;
 } processingData_L1tx_t;
 
 #endif

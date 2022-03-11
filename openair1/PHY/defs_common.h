@@ -54,12 +54,11 @@
 #include <string.h>
 #include <math.h>
 #include "common_lib.h"
-#include "msc.h"
 #include <common/utils/LOG/log.h>
 #include "assertions.h"
 
 //#include <complex.h>
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 #include "platform_types.h"
 #define MAX_NUM_RU_PER_eNB 64
 

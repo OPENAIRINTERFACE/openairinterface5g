@@ -54,7 +54,6 @@
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
-#include "proto_agent.h"
 
 int RCconfig_MME(void ) {
   //int               num_enbs                      = 0;

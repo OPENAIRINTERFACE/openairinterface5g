@@ -365,8 +365,9 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->ssb_table.ssb_mask_list[1].ssb_mask.tl.tag = NFAPI_NR_CONFIG_SSB_MASK_TAG;
   cfg->num_tlv+=2;
 
+  // logical antenna ports
   cfg->carrier_config.num_tx_ant.value = pdsch_AntennaPorts;
-  AssertFatal(pdsch_AntennaPorts > 0 && pdsch_AntennaPorts < 13, "pdsch_AntennaPorts in 1...12\n");
+  AssertFatal(pdsch_AntennaPorts > 0 && pdsch_AntennaPorts < 33, "pdsch_AntennaPorts in 1...32\n");
   cfg->carrier_config.num_tx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_TX_ANT_TAG;
 
   int num_ssb=0;
@@ -626,16 +627,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
       const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+      sched_ctrl->update_pdsch_ps = true;
+      sched_ctrl->update_pusch_ps = true;
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-      if (sched_ctrl->available_dl_harq.len == 0) {
+      if (get_softmodem_params()->sa) {
         // add all available DL HARQ processes for this UE in SA
         create_dl_harq_list(sched_ctrl, pdsch);
-      }
-      else {
-        const int nrofHARQ = pdsch && pdsch->nrofHARQ_ProcessesForPDSCH ?
-                             get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
-        AssertFatal(sched_ctrl->available_dl_harq.len==nrofHARQ,
-                    "Reconfiguration of available harq processes not yet supported\n");
       }
       // update coreset/searchspace
       void *bwpd = NULL;

@@ -28,7 +28,6 @@
   #include "sctp_eNB_task.h"
   #include "x2ap_eNB.h"
   #include "s1ap_eNB.h"
-  #include "udp_eNB_task.h"
   #include "gtpv1u_eNB_task.h"
   #if ENABLE_RAL
     #include "lteRALue.h"
@@ -67,11 +66,7 @@ int create_tasks(uint32_t enb_nb) {
   if (EPC_MODE_ENABLED && !NODE_IS_DU(type) && ! ( split73==SPLIT73_DU ) ) {
     rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for S1AP failed\n");
-    if (!(get_softmodem_params()->emulate_rf)){
-      rc = itti_create_task(TASK_UDP, udp_eNB_task, NULL);
-      AssertFatal(rc >= 0, "Create task for UDP failed\n");
-    }
-    rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
+    rc = itti_create_task(TASK_GTPV1_U, gtpv1uTask, NULL);
     AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
   }
 
@@ -91,7 +86,7 @@ int create_tasks(uint32_t enb_nb) {
     rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
     AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
     // DU is now GTP-U instead of protobuf
-    rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
+    rc = itti_create_task(TASK_GTPV1_U, gtpv1uTask, NULL);
     AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
   }
 

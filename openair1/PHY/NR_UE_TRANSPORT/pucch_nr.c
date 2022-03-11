@@ -850,7 +850,7 @@ static inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_
   printf("\t\t [nr_pucch2_3_4_scrambling] scrambling M_bit=%d bits\n", M_bit);
 #endif
 }
-void nr_uci_encoding(uint64_t payload,
+static void nr_uci_encoding(uint64_t payload,
                      uint8_t nr_bit,
                      int fmt,
                      uint8_t is_pi_over_2_bpsk_enabled,
@@ -946,12 +946,10 @@ void nr_uci_encoding(uint64_t payload,
     AssertFatal(nrofPRB<=16,"Number of PRB >16\n");
   } else if (A>=12) {
     AssertFatal(A<65,"Polar encoding not supported yet for UCI with more than 64 bits\n");
-    t_nrPolar_params *currentPtr = nr_polar_params(NR_POLAR_UCI_PUCCH_MESSAGE_TYPE, 
-						   A, 
-						   nrofPRB,
-						   1,
-						   NULL);
-    polar_encoder_fast(&payload, b, 0,0,currentPtr);
+    polar_encoder_fast(&payload, b, 0,0,
+                       NR_POLAR_UCI_PUCCH_MESSAGE_TYPE, 
+                       A, 
+                       nrofPRB);
   }
   
 }

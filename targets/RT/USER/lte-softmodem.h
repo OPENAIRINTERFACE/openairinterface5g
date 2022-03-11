@@ -23,14 +23,12 @@
 #include "../../ARCH/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
-#include "msc.h"
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
 #include "flexran_agent.h"
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#include "proto_agent.h"
 #include "executables/softmodem-common.h"
 
 

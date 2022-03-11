@@ -92,18 +92,7 @@ Tools available:
 
 1) itti_analyser (list messages exchanged between protocol layers)
 2) xforms (Layer 1)
-3) mscgen (under construction, but can give some results now)
-    (http://www.mcternan.me.uk/mscgen/)
-    We use the software to generate sequence diagrams
-    with traces generated during the execution of the eNB.
-    After the enb execution:
-    yang@yang:...$ cd /tmp
-    yang@yang:/tmp$ /home/yang/openair4G/trunk/targets/SCRIPTS/msc_gen.py
-    The results are located in the current directory (/tmp in this example) in a folder. The name of the folder 
-    is the current date (for example: 2015-04-08_20.34.10).
-    The results are input files for the mscgen tool containing events or messages and the 
-    corresponding generated png files.
-4) vcd (timing mesurements)
+3) vcd (timing mesurements)
 
 
 
