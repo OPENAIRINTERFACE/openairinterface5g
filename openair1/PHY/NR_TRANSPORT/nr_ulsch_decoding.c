@@ -42,6 +42,7 @@
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED_NR/sched_nr.h"
+#include "SCHED_NR/fapi_nr_l1.h"
 #include "defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
@@ -408,7 +409,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int8_t   l_ol [68*384];
   __m128i *pv_ol128 = (__m128i*)&z_ol;
   __m128i *pl_ol128 = (__m128i*)&l_ol;
-  int no_iteration_ldpc;
+  int no_iteration_ldpc = 2;
   int length_dec;
   uint8_t crc_type;
   int K_bits_F;
@@ -623,6 +624,11 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 			Qm,
  			(int8_t*)&pl_ol128[0],
 			llrProcBuf, 1);
+  if (ret<0) {
+    LOG_E(PHY,"ulsch_decoding.c: Problem in LDPC decoder offload\n");
+    no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+    return 1;
+  }
   }
   else{
     K_bits_F = Kr-harq_process->F;
@@ -650,7 +656,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
       LOG_E(PHY,"ulsch_decoding.c: Problem in rate_matching\n");
       no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
-      return;
+      return 1;
     } 
 
     //set first 2*Z_c bits to zeros
@@ -674,10 +680,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 				       p_procTime);
 
   }
-  /*if (ret<0) {
-    no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
-  }
-  else {*/
     
     for (int m=0; m < Kr>>3; m ++) {
       harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
@@ -708,8 +710,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   else{
     dtx_det = 0;
     no_iteration_ldpc = ulsch->max_ldpc_iterations+1;
-    }
-
+  }
 	bool decodeSuccess = (no_iteration_ldpc <= ulsch->max_ldpc_iterations);
         if (decodeSuccess) { 
 		memcpy(harq_process->b+offset,
@@ -723,7 +724,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 	  LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
 	  break; //don't even attempt to decode other segments
 	}  	
-	 }
+  }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
 
