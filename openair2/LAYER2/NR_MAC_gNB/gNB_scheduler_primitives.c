@@ -156,7 +156,8 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
     uint16_t target_coderate,target_qm;
     if (cqi_idx>0) {
       int cqi_table = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.cqi_table;
-      AssertFatal(cqi_table == mcs_table_idx, "Indices of MCS tables don't correspond\n");
+      if (cqi_table != mcs_table_idx) 
+       LOG_W(NR_MAC,"Indices of MCS tables don't correspond yet, cri_ri_li_pmi_cqi_report.cqi_table %d, mcs_table_index %d\n",cqi_table,mcs_table_idx);
       switch (cqi_table) {
         case 0:
           target_qm = cqi_table1[cqi_idx][0];

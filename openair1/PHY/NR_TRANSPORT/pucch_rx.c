@@ -1178,9 +1178,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
     }
   }
-#ifdef DEBUG_NR_PUCCH_RX
-  printf("Decoding pucch2 for %d symbols, %d PRB\n",pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
-#endif
+  LOG_D(PHY,"Decoding pucch2 for %d symbols, %d PRB, nb_harq %d, nb_sr %d, nb_csi %d/%d\n",
+        pucch_pdu->nr_of_symbols,pucch_pdu->prb_size,
+        pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,pucch_pdu->bit_len_csi_part1,pucch_pdu->bit_len_csi_part2);
 
   int nc_group_size=1; // 2 PRB
   int ngroup = prb_size_ext/nc_group_size/2;
