@@ -1162,7 +1162,6 @@ void nr_DRB_preconfiguration(uint16_t crnti)
 
   drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
   *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
-  drb_ToAddMod->pdcp_Config->t_Reordering = NULL;
   drb_ToAddMod->pdcp_Config->ext1 = NULL;
 
   ASN_SEQUENCE_ADD(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
