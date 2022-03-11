@@ -36,7 +36,7 @@
 //#define DEBUG_PDCCH
 //#define DEBUG_CH
 //#define DEBUG_PRS_CHEST
-//#define DEBUG_PRS_PRINTS
+#define DEBUG_PRS_PRINTS
 extern short nr_qpsk_mod_table[8];
 
 int nr_prs_channel_estimation(uint8_t gNB_id,
@@ -60,13 +60,16 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   uint8_t rxAnt = 0, idx = prs_cfg->NPRSID;
   int16_t ch[2] = {0}, *rxF, *pil, *fl,*fm, *fmm, *fml, *fmr, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
   int16_t k_prime = 0, k = 0, re_offset = 0, second_half = 0;
-  int16_t *ch_freq  = (int16_t *)malloc16(frame_params->ofdm_symbol_size*sizeof(int32_t));
-  int32_t *ch_time  = (int32_t *)malloc16(frame_params->ofdm_symbol_size*sizeof(int32_t));
+  int16_t *ch_freq  = (int16_t *)malloc16_clear(frame_params->ofdm_symbol_size*sizeof(int32_t));
+  int32_t *ch_time  = (int32_t *)malloc16_clear(frame_params->ofdm_symbol_size*sizeof(int32_t));
   AssertFatal(((ch_freq != NULL) || (ch_time != NULL)), "nr_prs_channel_estimation: channel estimate buffer initialization failed!!");
   int16_t *ch_init = ch_freq;
   
   int32_t tdoa[NR_MAX_NUM_PRS_SYMB]   = {0};
   int32_t ch_pwr[NR_MAX_NUM_PRS_SYMB] = {0};
+#ifdef DEBUG_PRS_CHEST
+  char filename[128] = {0}, varname[128] = {0};
+#endif
 
   for(int l = prs_cfg->SymbolStart; l < prs_cfg->SymbolStart+prs_cfg->NumPRSSymbols; l++)
   {
@@ -84,11 +87,8 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
       k_prime = k_prime_table[3][symInd];
     }
    
-    //re_offset
-    k = re_offset = (prs_cfg->REOffset+k_prime) % prs_cfg->CombSize + prs_cfg->RBOffset*12 + frame_params->first_carrier_offset;
-  
 #ifdef DEBUG_PRS_PRINTS 
-    printf("[gNB %d] PRS config l %d k_prime %d, k %d :\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", gNB_id, l, k_prime, k, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
+    printf("[gNB %d] PRS config l %d k_prime %d:\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", gNB_id, l, k_prime, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
 #endif
     // Pilots generation and modulation
     for (int m = 0; m < (12/prs_cfg->CombSize)*prs_cfg->NumRB; m++) 
@@ -100,6 +100,9 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
      
     for (rxAnt=0; rxAnt < frame_params->nb_antennas_rx; rxAnt++)
     {
+      // calculate RE offset
+      k = re_offset = (prs_cfg->REOffset+k_prime) % prs_cfg->CombSize + prs_cfg->RBOffset*12 + frame_params->first_carrier_offset;
+
       // Channel estimation and interpolation
       pil       = (int16_t *)&mod_prs[0];
       rxF       = (int16_t *)&rxdataF[rxAnt][l*frame_params->ofdm_symbol_size + k];
@@ -128,7 +131,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
             break;
 
           default:
-            LOG_I(PHY, "nr=prs channel_estimation: k_prime=%d -> ERROR\n",k_prime);
+            LOG_I(PHY, "%s: ERROR!! Invalid k_prime=%d for PRS comb_size %d, symbol %d\n",__FUNCTION__, k_prime, prs_cfg->CombSize, l);
             return(-1);
             break;
         }
@@ -252,7 +255,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
             break;
 
           default:
-            LOG_I(PHY, "nr=prs channel_estimation: k_prime=%d -> ERROR\n",k_prime);
+            LOG_I(PHY, "%s: ERROR!! Invalid k_prime=%d for PRS comb_size %d, symbol %d\n",__FUNCTION__, k_prime, prs_cfg->CombSize, l);
             return(-1);
             break;
         }
@@ -331,8 +334,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
       }
       else
       {
-        LOG_I(PHY, "NR_PRS UE Channel EStimation: CombSize other than 2 and 4 are NOT supported currently! Returning");
-        return(0);
+        AssertFatal((prs_cfg->CombSize == 2)||(prs_cfg->CombSize == 4), "[NR_PRS Channel EStimation] CombSize other than 2 and 4 are NOT supported currently. Exiting!!!");
       }
 
       //reset channel pointer
@@ -341,7 +343,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
       for (int rb = 0; rb < prs_cfg->NumRB; rb++)
       {
         printf("================================================================\n");
-        printf("\t\t   Resource Block %d\n", rb);
+        printf("\t\t[gNB %d][Rx %d][PRS symb %d, RB %d]\n", gNB_id, rxAnt, l, rb);
         printf("================================================================\n");
         idx = (12*rb)<<1;
         printf("%4d %4d  %4d %4d  %4d %4d  %4d %4d  %4d %4d  %4d %4d\n", ch_freq[idx], ch_freq[idx+1], ch_freq[idx+2], ch_freq[idx+3], ch_freq[idx+4], ch_freq[idx+5], ch_freq[idx+6], ch_freq[idx+7], ch_freq[idx+8], ch_freq[idx+9], ch_freq[idx+10], ch_freq[idx+11]);
@@ -396,7 +398,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
         break;
 
       default:
-        LOG_I(PHY, "unsupported ofdm symbol size \n");
+        LOG_I(PHY, "%s: unsupported ofdm symbol size \n", __FUNCTION__);
         assert(0);
       }
 
@@ -417,21 +419,32 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     } // for rxAnt
   } //for l
 
+  for (rxAnt=0; rxAnt < frame_params->nb_antennas_rx; rxAnt++)
+  {
 #ifdef DEBUG_PRS_CHEST
-  LOG_M("PRSpilot.m", "prs_loc", &mod_prs[0], prs_cfg->NumRB*(12/prs_cfg->CombSize),1,1); 
-  LOG_M("rxSigF.m","rxF",&rxdataF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
-  LOG_M("prsEstF.m","prs_chestF",&prs_chestF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
-  LOG_M("prsEstT.m","prs_chestT",&prs_chestT[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
+    sprintf(filename, "%s%i%s", "PRSpilot_", rxAnt, ".m");
+    LOG_M(filename, "prs_loc", &mod_prs[0], prs_cfg->NumRB*(12/prs_cfg->CombSize),1,1);
+    sprintf(filename, "%s%i%s", "rxSigF_", rxAnt, ".m");
+    sprintf(varname, "%s%i", "rxF_", rxAnt);
+    LOG_M(filename, varname, &rxdataF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
+    sprintf(filename, "%s%i%s", "prsChestF_", rxAnt, ".m");
+    sprintf(varname, "%s%i", "prsChF_", rxAnt);
+    LOG_M(filename, varname, &prs_chestF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
+    sprintf(filename, "%s%i%s", "prsChestT_", rxAnt, ".m");
+    sprintf(varname, "%s%i", "prsChT_", rxAnt);
+    LOG_M(filename, varname, &prs_chestT[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
 #endif
 
-  // T tracer dump
-  T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(0),
-    T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
-    T_INT(0), T_BUFFER(&prs_chestF[0][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
+    // T tracer dump
+    T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(0),
+      T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
+      T_INT(rxAnt), T_BUFFER(&prs_chestF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
 
-  T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
-    T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
-    T_INT(0), T_BUFFER(&prs_chestT[0][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
+    T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
+      T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
+      T_INT(rxAnt), T_BUFFER(&prs_chestT[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
+
+  }
 
   free(ch_freq);
   free(ch_time);
