@@ -41,6 +41,7 @@
 #include <per_encoder.h>
 #include <nr/nr_common.h>
 
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "asn1_msg.h"
 #include "../nr_rrc_proto.h"
 #include "RRC/NR/nr_rrc_extern.h"

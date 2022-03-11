@@ -110,13 +110,10 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
   //TODO change to accomodate for SRS
 
   lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
-  int temp_min_delay; 
+  int temp_min_delay = 6; // k2 = 2 or 3 won'r work as well as higher values
   if(frame_type==TDD && scc->tdd_UL_DL_ConfigurationCommon) {
-  
+
     switch (scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
-      default:
-        temp_min_delay = 6;
-        break;
       case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2p5:  // 30kHz SCS
       case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2:    // 60kHz SCS
       case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms1p25: // 60kHz SCS
@@ -127,7 +124,6 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
         break;
     }
   }
-
 
   int k2 = (min_fb_delay<temp_min_delay)?temp_min_delay:min_fb_delay;
 
