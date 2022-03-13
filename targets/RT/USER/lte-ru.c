@@ -48,7 +48,6 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
-#include "msc.h"
 #include "PHY/defs_common.h"
 #include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"
@@ -62,7 +61,6 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "targets/ARCH/COMMON/common_lib.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
-//#include "PHY/TOOLS/time_meas.h"
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h */
 static int DEFBANDS[] = {7};
@@ -3071,7 +3069,7 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
       ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
-      ru[j]->sf_ahead                          = *(RUParamList.paramarray[j][RU_SF_AHEAD_IDX].uptr);
+      ru[j]->sf_ahead                          = *(RUParamList.paramarray[j][RU_SF_AHEAD].uptr);
       *ru_mask= (*ru_mask)|(1<<j);
     }// j=0..num_rus
   } 

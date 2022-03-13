@@ -44,7 +44,6 @@
 #include <string.h>
 #include <math.h>
 #include "common_lib.h"
-#include "msc.h"
 #include "fapi_nr_ue_interface.h"
 #include "assertions.h"
 
@@ -97,7 +96,7 @@
 
 #include "impl_defs_top.h"
 #include "impl_defs_nr.h"
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "platform_types.h"
@@ -815,7 +814,6 @@ typedef struct {
 
   fapi_nr_config_request_t nrUE_config;
 
-  t_nrPolar_params *polarList;
   NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX+1]; // two RxTx Threads
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];

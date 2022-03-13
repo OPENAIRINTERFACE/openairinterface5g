@@ -722,7 +722,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt++;
         UE_info->mac_stats[UE_id].ulsch_DTX++;
       }
-      if (UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
+      if (!get_softmodem_params()->phy_test && UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
          LOG_W(NR_MAC,"%d.%d Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
                frameP,slotP,UE_info->UE_sched_ctrl[UE_id].pusch_consecutive_dtx_cnt);
          UE_info->UE_sched_ctrl[UE_id].ul_failure = 1;
@@ -999,8 +999,11 @@ bool allocate_ul_retransmission(module_id_t module_id,
 
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
+        || sched_ctrl->update_pusch_ps) {
       nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      sched_ctrl->update_pusch_ps = false;
+    }
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -1021,6 +1024,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.num_dmrs_symb,
                                  retInfo->tb_size,
+                                 1, /* minimum of 1RB: need to find exact TBS, don't preclude any number */
                                  rbSize,
                                  &new_tbs,
                                  &new_rbSize);
@@ -1035,9 +1039,6 @@ bool allocate_ul_retransmission(module_id_t module_id,
     retInfo->rbSize = new_rbSize;
     retInfo->time_domain_allocation = tda;
     sched_ctrl->pusch_semi_static = temp_ps;
-
-    // Get previous PUSCH filed info
-    sched_ctrl->sched_pusch = *retInfo;
   }
 
   /* Find a free CCE */
@@ -1239,8 +1240,11 @@ void pf_ul(module_id_t module_id,
       const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
-          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
+          || sched_ctrl->update_pusch_ps) {
         nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+        sched_ctrl->update_pusch_ps = false;
+      }
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = nrmac->min_grant_mcs;
       update_ul_ue_R_Qm(sched_pusch, ps);
@@ -1276,8 +1280,9 @@ void pf_ul(module_id_t module_id,
   }
 
 
+  const int min_rbSize = 5;
   /* Loop UE_sched to find max coeff and allocate transmission */
-  while (UE_sched.head >= 0 && max_num_ue> 0 && n_rb_sched > 0) {
+  while (UE_sched.head >= 0 && max_num_ue> 0 && n_rb_sched >= min_rbSize) {
     /* Find max coeff */
     int *max = &UE_sched.head; /* Find max coeff: assume head is max */
     int *p = &UE_sched.next[*max];
@@ -1323,8 +1328,7 @@ void pf_ul(module_id_t module_id,
 
     /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
     max_num_ue--;
-    if (max_num_ue < 0)
-      return;
+    AssertFatal(max_num_ue >= 0, "Illegal max_num_ue %d\n", max_num_ue);
 
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
     NR_BWP_UplinkDedicated_t *ubwpd= cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
@@ -1356,8 +1360,11 @@ void pf_ul(module_id_t module_id,
     const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
+        || sched_ctrl->update_pusch_ps) {
       nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
+      sched_ctrl->update_pusch_ps = false;
+    }
     update_ul_ue_R_Qm(sched_pusch, ps);
 
     /* Calculate the current scheduling bytes and the necessary RBs */
@@ -1371,6 +1378,7 @@ void pf_ul(module_id_t module_id,
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->num_dmrs_symb,
                   B,
+                  min_rbSize,
                   max_rbSize,
                   &TBS,
                   &rbSize);

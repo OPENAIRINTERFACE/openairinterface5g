@@ -30,6 +30,10 @@
  * \warning
  */
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "PHY/defs_nr_UE.h"
 #include "NR_IF_Module.h"
 #include "NR_MAC_UE/mac_proto.h"
@@ -292,11 +296,11 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
 {
     NR_UE_MAC_INST_t *mac = get_mac_inst(dl_info->module_id);
     mac->nr_ue_emul_l1.expected_sib = false;
-    memset(mac->nr_ue_emul_l1.index_has_sib, 0, sizeof(*mac->nr_ue_emul_l1.index_has_sib));
+    memset(mac->nr_ue_emul_l1.index_has_sib, 0, sizeof(mac->nr_ue_emul_l1.index_has_sib));
     mac->nr_ue_emul_l1.expected_rar = false;
-    memset(mac->nr_ue_emul_l1.index_has_rar, 0, sizeof(*mac->nr_ue_emul_l1.index_has_rar));
+    memset(mac->nr_ue_emul_l1.index_has_rar, 0, sizeof(mac->nr_ue_emul_l1.index_has_rar));
     mac->nr_ue_emul_l1.expected_dci = false;
-    memset(mac->nr_ue_emul_l1.index_has_dci, 0, sizeof(*mac->nr_ue_emul_l1.index_has_dci));
+    memset(mac->nr_ue_emul_l1.index_has_dci, 0, sizeof(mac->nr_ue_emul_l1.index_has_dci));
     int pdu_idx = 0;
 
     int num_pdus = dl_tti_request->dl_tti_request_body.nPDUs;
@@ -420,7 +424,7 @@ static void copy_tx_data_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi
 
     if (!dl_info->rx_ind)
     {
-        dl_info->rx_ind = CALLOC(1, sizeof(fapi_nr_rx_indication_t));
+        dl_info->rx_ind = CALLOC(num_pdus, sizeof(fapi_nr_rx_indication_t));
     }
     AssertFatal(dl_info->rx_ind != NULL, "%s: Out of memory in calloc", __FUNCTION__);
     fapi_nr_rx_indication_t *rx_ind = dl_info->rx_ind;
@@ -1034,7 +1038,8 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
 int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
 
-  dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
+  if (get_softmodem_params()->emulate_l1)
+    dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid = g_harq_pid;
 
   update_harq_status(dl_info->module_id,
                      dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid,

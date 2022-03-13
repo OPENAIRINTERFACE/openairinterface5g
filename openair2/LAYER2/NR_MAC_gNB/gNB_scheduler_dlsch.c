@@ -393,11 +393,16 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 
 #define BLER_UPDATE_FRAME 10
 #define BLER_FILTER 0.9f
-int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t slot, int UE_id)
+int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t slot, int UE_id, int mcs_table)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[mod_id];
   const NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+
+  int max_allowed_mcs = (mcs_table == 1) ? 27 : 28;
+  int max_mcs = nrmac->dl_max_mcs;
+  if (nrmac->dl_max_mcs>max_allowed_mcs)
+    max_mcs = max_allowed_mcs;
 
   NR_DL_bler_stats_t *bler_stats = &nrmac->UE_info.UE_sched_ctrl[UE_id].dl_bler_stats;
   /* first call: everything is zero. Initialize to sensible default */
@@ -444,7 +449,7 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   if (bler_stats->rd2_bler > nrmac->dl_rd2_bler_threshold && old_mcs > 6) {
     new_mcs -= 2;
   } else if (bler_stats->rd2_bler < nrmac->dl_rd2_bler_threshold) {*/
-  if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < nrmac->dl_max_mcs && dtx > 9)
+  if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < max_mcs && dtx > 9)
     new_mcs += 1;
   else if (bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6)
     new_mcs -= 1;
@@ -586,8 +591,10 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda)
-      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, ps);
+    if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
+      nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, ps);
+      sched_ctrl->update_pdsch_ps = false;
+    }
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -599,6 +606,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     while (rbStart + rbSize < bwpSize &&
            (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbSize++;
+
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -607,6 +615,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                  temp_ps.nrOfSymbols,
                                  temp_ps.N_PRB_DMRS * temp_ps.N_DMRS_SLOT,
                                  retInfo->tb_size,
+                                 1, /* minimum of 1RB: need to find exact TBS, don't preclude any number */
                                  rbSize,
                                  &new_tbs,
                                  &new_rbSize);
@@ -741,7 +750,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       set_dl_mcs(sched_pdsch,sched_ctrl,&mac->dl_max_mcs,ps->mcsTableIdx);
-      sched_pdsch->mcs = get_mcs_from_bler(module_id, /* CC_id = */ 0, frame, slot, UE_id);
+      sched_pdsch->mcs = get_mcs_from_bler(module_id, /* CC_id = */ 0, frame, slot, UE_id, ps->mcsTableIdx);
       layers[UE_id] = set_dl_nrOfLayers(sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -761,8 +770,9 @@ void pf_dl(module_id_t module_id,
     }
   }
 
+  const int min_rbSize = 5;
   /* Loop UE_sched to find max coeff and allocate transmission */
-  while (max_num_ue > 0 && n_rb_sched > 0 && UE_sched.head >= 0) {
+  while (max_num_ue > 0 && n_rb_sched >= min_rbSize && UE_sched.head >= 0) {
 
     /* Find max coeff from UE_sched*/
     int *max = &UE_sched.head; /* assume head is max */
@@ -822,9 +832,6 @@ void pf_dl(module_id_t module_id,
       LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, UE_id, rnti);
       continue;
     }
-    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
-    max_num_ue--;
-    if (max_num_ue < 0) return;
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
@@ -838,8 +845,13 @@ void pf_dl(module_id_t module_id,
             frame,
             slot);
       mac->pdcch_cand[cid]--;
-      return;
+      continue;
     }
+
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE
+     * and PUCCH */
+    max_num_ue--;
+    AssertFatal(max_num_ue >= 0, "Illegal max_num_ue %d\n", max_num_ue);
 
     sched_ctrl->cce_index = CCEIndex;
 
@@ -855,9 +867,13 @@ void pf_dl(module_id_t module_id,
     AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+
     if (ps->nrOfLayers != layers[UE_id] ||
-        ps->time_domain_allocation != tda)
+        ps->time_domain_allocation != tda ||
+        sched_ctrl->update_pdsch_ps) {
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, layers[UE_id], sched_ctrl, ps);
+      sched_ctrl->update_pdsch_ps = false;
+    }
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     // Freq-demain allocation
@@ -882,6 +898,7 @@ void pf_dl(module_id_t module_id,
                   ps->nrOfSymbols,
                   ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                   sched_ctrl->num_total_bytes + oh,
+                  min_rbSize,
                   max_rbSize,
                   &TBS,
                   &rbSize);
@@ -991,6 +1008,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
+
+  //if (slot==7 || slot == 17) return;
+
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
 

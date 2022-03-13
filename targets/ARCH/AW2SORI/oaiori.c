@@ -414,6 +414,7 @@ int aw2s_startstreaming(openair0_device *device) {
 /*  
   while (rx0->fst != ORI_FST_Operational || 
          (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
+<<<<<<< HEAD
          (openair0_cfg->rx_num_channels > 2 && rx2->fst != ORI_FST_Operational) || 
          (openair0_cfg->rx_num_channels > 3 && rx3->fst != ORI_FST_Operational))  
   {}
@@ -421,6 +422,14 @@ int aw2s_startstreaming(openair0_device *device) {
   // test RX interface 
   uint64_t TS;
   int64_t deltaTS,olddeltaTS=-1;
+=======
+         tx0->fst != ORI_FST_Operational || 
+         (openair0_cfg->tx_num_channels > 1 && tx1->fst != ORI_FST_Operational))
+  {}*/  	
+  // test RX interface 
+  uint64_t TS;
+  char temp_rx[2048] __attribute__((aligned(32)));
+>>>>>>> tdd25period_for_MR
   int aid,r0=0,r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
   int r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
   int r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;

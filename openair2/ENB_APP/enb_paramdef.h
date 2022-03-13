@@ -172,7 +172,7 @@ typedef enum {
     {CONFIG_STRING_RU_IF_FREQ_OFFSET,              NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_DO_PRECODING,                NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_SF_AHEAD,                    NULL,       0,       iptr:NULL,       defintval:4,             TYPE_INT,         0}, \
-    {CONFIG_STRING_RU_SL_AHEAD,                    NULL,       0,       iptr:NULL,       defintval:4,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_SL_AHEAD,                    NULL,       0,       iptr:NULL,       defintval:6,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_NR_FLAG,                     NULL,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_NR_SCS_FOR_RASTER,           NULL,       0,       iptr:NULL,       defintval:1,             TYPE_INT,         0}, \
   }

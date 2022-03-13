@@ -62,6 +62,11 @@ NR_gNB_PUCCH_t *new_gNB_pucch(void){
     return (pucch);
 }
 
+void free_gNB_pucch(NR_gNB_PUCCH_t *pucch)
+{
+  free_and_zero(pucch);
+}
+
 int nr_find_pucch(uint16_t rnti,
                   int frame,
                   int slot,
@@ -99,6 +104,8 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
   pucch->frame = frame;
   pucch->slot = slot;
   pucch->active = 1;
+  if (pucch->pucch_pdu.format_type > 0) LOG_D(PHY,"Programming PUCCH[%d] for %d.%d, format %d, nb_harq %d, nb_sr %d, nb_csi %d\n",id,
+                                          pucch->frame,pucch->slot,pucch->pucch_pdu.format_type,pucch->pucch_pdu.bit_len_harq,pucch->pucch_pdu.sr_flag,pucch->pucch_pdu.bit_len_csi_part1);
   memcpy((void*)&pucch->pucch_pdu, (void*)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
 }
 
@@ -1171,9 +1178,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
     }
   }
-#ifdef DEBUG_NR_PUCCH_RX
-  printf("Decoding pucch2 for %d symbols, %d PRB\n",pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
-#endif
+  LOG_D(PHY,"Decoding pucch2 for %d symbols, %d PRB, nb_harq %d, nb_sr %d, nb_csi %d/%d\n",
+        pucch_pdu->nr_of_symbols,pucch_pdu->prb_size,
+        pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,pucch_pdu->bit_len_csi_part1,pucch_pdu->bit_len_csi_part2);
 
   int nc_group_size=1; // 2 PRB
   int ngroup = prb_size_ext/nc_group_size/2;
@@ -1533,7 +1540,6 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   }
   else { // polar coded case
 
-    t_nrPolar_params *currentPtr = nr_polar_params(2,nb_bit,pucch_pdu->prb_size,1,&gNB->uci_polarParams);
     __m64 *rp_re[Prx2][2];
     __m64 *rp2_re[Prx2][2];
     __m64 *rp_im[Prx2][2];
@@ -1660,7 +1666,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       } // half_prb
     } // symb
     // run polar decoder on llrs
-    decoderState = polar_decoder_int16((int16_t*)llrs, decodedPayload, 0, currentPtr);
+    decoderState = polar_decoder_int16((int16_t*)llrs, decodedPayload, 0, 2,nb_bit,pucch_pdu->prb_size);
     LOG_D(PHY,"UCI decoderState %d, payload[0] %llu\n",decoderState,(unsigned long long)decodedPayload[0]);
     if (decoderState>0) decoderState=1;
     corr_dB = dB_fixed64(corr);

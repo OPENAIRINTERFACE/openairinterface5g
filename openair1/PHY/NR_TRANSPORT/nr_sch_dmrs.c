@@ -92,6 +92,5 @@ uint8_t get_l0(uint16_t dlDmrsSymbPos) {
     if ((mask&1) == 1) break;
     mask>>=1;
   }
-  AssertFatal(l0 < 4,"impossible l0 %d, dlDmrsSymbPos %x\n",l0,dlDmrsSymbPos);
   return (l0);
 }

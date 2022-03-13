@@ -101,13 +101,6 @@ typedef struct {
 
 static rlc_data_req_queue q;
 
-extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
-    const NR_SRB_ToAddModList_t   * const srb2add_listP,
-    const NR_DRB_ToAddModList_t   * const drb2add_listP,
-    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
-    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
-
 static void *rlc_data_req_thread(void *_)
 {
   int i;
@@ -678,7 +671,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       clock_gettime(CLOCK_REALTIME, &time_request);
       LOG_D(PDCP, "%s() (drb %d) Time %lu.%lu sending message to gtp size %d\n", __func__, rb_id, time_request.tv_sec,time_request.tv_nsec,
                                                                                          size-offset);
-      itti_send_msg_to_task(TASK_VARIABLE, INSTANCE_DEFAULT, message_p);
+      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
    }
   }
 }
@@ -732,7 +725,7 @@ rb_found:
     LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
 	  __func__, rb_id, size);
     extern instance_t CUuniqInstance;
-    itti_send_msg_to_task(TASK_VARIABLE, CUuniqInstance, message_p);
+    itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
   } else {
     
     memblock = get_free_mem_block(size, __FUNCTION__);

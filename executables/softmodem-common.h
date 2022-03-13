@@ -120,7 +120,6 @@ extern "C"
 #define TIMING_SOURCE       softmodem_params.timing_source
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
-#define USE_256QAM_TABLE    softmodem_params.use_256qam_table
 #define PRB_INTERPOLATION   softmodem_params.prb_interpolation
 #define NFAPI               softmodem_params.nfapi
 #define NSA                 softmodem_params.nsa
@@ -158,34 +157,29 @@ extern int usrp_tx_thread;
     {"basicsim",             CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&basicsim,                     defintval:0,           TYPE_INT,    0},                     \
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
-    {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
     {"nsa",                  CONFIG_HLP_NSA,          PARAMFLAG_BOOL, iptr:&NSA,                          defintval:0,           TYPE_INT,    0},                     \
     {"node-number",          NULL,                    0,              u16ptr:&NODE_NUMBER,                defuintval:0,          TYPE_UINT16, 0},                     \
     {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,              iptr:&usrp_tx_thread,               defstrval:0,           TYPE_INT,    0},                     \
     {"do-prb-interpolation", CONFIG_HLP_PRBINTER,     PARAMFLAG_BOOL, iptr:&PRB_INTERPOLATION,            defintval:0,           TYPE_INT,    0},                     \
     {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
     {"non-stop",             CONFIG_HLP_NONSTOP,      PARAMFLAG_BOOL, iptr:&NON_STOP,                     defintval:0,           TYPE_INT,    0},                     \
-    {"emulate-l1",           CONFIG_L1_EMULATOR,      PARAMFLAG_BOOL, iptr:&EMULATE_L1,                   defintval:0,           TYPE_INT,    0},                     \
+    {"emulate-l1",           CONFIG_L1_EMULATOR,      PARAMFLAG_BOOL, iptr:&EMULATE_L1,                   defintval:0,           TYPE_INT,    0}                      \
   }
 
 #define CONFIG_HLP_NSA           "Enable NSA mode \n"
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
-#define CONFIG_HLP_LOGV          "Set the global log verbosity \n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
-#define CONFIG_HLP_MSC           "Enable the MSC tracing utility \n"
 #define CONFIG_FLOG_OPT          "R"
 #define CONFIG_LOGL_OPT          "g"
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for LOG utility                                                              */
 /*   optname                        helpstr       paramflags        XXXptr                              defXXXval            type           numelt */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define START_MSC                softmodem_params.start_msc
 #define CMDLINE_LOGPARAMS_DESC {  \
     {CONFIG_FLOG_OPT ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,           defintval:1,         TYPE_INT,      0},     \
     {CONFIG_LOGL_OPT ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,                    defintval:0,         TYPE_UINT,     0},     \
 	{"telnetsrv",                CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,               defintval:0,         TYPE_UINT,     0},     \
-    {"msc",                      CONFIG_HLP_MSC,  PARAMFLAG_BOOL,   uptr:&START_MSC,                     defintval:0,         TYPE_UINT,     0},     \
 	{"log-mem",                  NULL,            0,                strptr:(char **)&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
 	{"telnetclt",                NULL,            0,                uptr:&start_telnetclt,               defstrval:NULL,      TYPE_UINT,     0},     \
   }
@@ -250,12 +244,10 @@ typedef struct {
   int            chain_offset;
   int            numerology;
   int            band;
-  unsigned int   start_msc;
   uint32_t       clock_source;
   uint32_t       timing_source;
   int            hw_timing_advance;
   uint32_t       send_dmrs_sync;
-  int            use_256qam_table;
   int            prb_interpolation;
   uint8_t        nfapi;
   int            nsa;

@@ -351,6 +351,7 @@ int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
 /* Functions to manage an NR_list_t */
 void dump_nr_list(NR_list_t *listP);
 void create_nr_list(NR_list_t *listP, int len);
+void resize_nr_list(NR_list_t *list, int new_len);
 void destroy_nr_list(NR_list_t *list);
 void add_nr_list(NR_list_t *listP, int id);
 void remove_nr_list(NR_list_t *listP, int id);
@@ -473,6 +474,7 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
                    uint32_t bytes,
+                   uint16_t nb_rb_min,
                    uint16_t nb_rb_max,
                    uint32_t *tbs,
                    uint16_t *nb_rb);

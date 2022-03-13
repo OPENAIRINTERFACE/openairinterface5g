@@ -445,19 +445,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
                 "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
     /* fill in slot/frame numbers: slot is fixed, frame will be updated by scheduler
-       extern sf_ahead is initialized in ru_thread but that function is not executed yet here*/
-    const uint16_t sf_ahead = (uint16_t) ceil((float)6/(0x01<<(*scc->ssbSubcarrierSpacing)));
-    const uint16_t sl_ahead = sf_ahead * (0x01<<(*scc->ssbSubcarrierSpacing));
-    /* consider that scheduler runs sl_ahead: the first sl_ahead slots are
-     * already "in the past" and thus we put frame 1 instead of 0!*/
+     * consider that scheduler runs sl_ahead: the first sl_ahead slots are
+     * already "in the past" and thus we put frame 1 instead of 0! */
     for (int i = 0; i < n; ++i) {
       nfapi_nr_ul_tti_request_t *req = &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][i];
-      /* consider that scheduler runs sl_ahead: the first sl_ahead slots are
-       * already "in the past" and thus we put frame 1 instead of 0!  Note that
-       * variable sl_ahead seems to not be correctly initialized, but I leave
-       * it for information purposes here (the fix would always put 0, what
-       * happens now, too) */
-      req->SFN = i < RC.nrmac[Mod_idP]->if_inst->sl_ahead;
+      req->SFN = i < (RC.nrmac[Mod_idP]->if_inst->sl_ahead-1);
       req->Slot = i;
     }
     RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
@@ -516,8 +508,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD,"Dynamic TDD not handled yet\n");
 
     for (int slot = 0; slot < n; ++slot) {
-      if (RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD || (slot % nr_slots_period) != 0) /*slot != 0)*/
-        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dlmix_slots) << (slot % 64);
+      if (RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD ||
+          (slot != 0))
+        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
       RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
 
       LOG_I(NR_MAC, "In %s: slot %d DL %d UL %d\n",
@@ -633,16 +626,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
       const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+      sched_ctrl->update_pdsch_ps = true;
+      sched_ctrl->update_pusch_ps = true;
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-      if (sched_ctrl->available_dl_harq.len == 0) {
+      if (get_softmodem_params()->sa) {
         // add all available DL HARQ processes for this UE in SA
         create_dl_harq_list(sched_ctrl, pdsch);
-      }
-      else {
-        const int nrofHARQ = pdsch && pdsch->nrofHARQ_ProcessesForPDSCH ?
-                             get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
-        AssertFatal(sched_ctrl->available_dl_harq.len==nrofHARQ,
-                    "Reconfiguration of available harq processes not yet supported\n");
       }
       // update coreset/searchspace
       void *bwpd = NULL;
@@ -681,7 +670,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   
-    
   return(0);
 
 }// END rrc_mac_config_req_gNB

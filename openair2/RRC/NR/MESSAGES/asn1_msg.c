@@ -41,6 +41,7 @@
 #include <per_encoder.h>
 #include <nr/nr_common.h>
 
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "asn1_msg.h"
 #include "../nr_rrc_proto.h"
 #include "RRC/NR/nr_rrc_extern.h"
@@ -1004,6 +1005,62 @@ long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
   return c_srs;
 }
 
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig,
+                  int dl_antenna_ports,
+                  int curr_bwp,
+                  int do_csirs) {
+
+ if (do_csirs) {
+   csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
+   NR_NZP_CSI_RS_Resource_t *nzpcsi0 = calloc(1,sizeof(*nzpcsi0));
+   nzpcsi0->nzp_CSI_RS_ResourceId = 0;
+   NR_CSI_RS_ResourceMapping_t resourceMapping;
+   switch (dl_antenna_ports) {
+     case 1:
+       resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2;
+       resourceMapping.frequencyDomainAllocation.choice.row2.buf = calloc(2, sizeof(uint8_t));
+       resourceMapping.frequencyDomainAllocation.choice.row2.size = 2;
+       resourceMapping.frequencyDomainAllocation.choice.row2.bits_unused = 4;
+       resourceMapping.frequencyDomainAllocation.choice.row2.buf[0] = 0;
+       resourceMapping.frequencyDomainAllocation.choice.row2.buf[1] = 16;
+       resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p1;
+       resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_noCDM;
+       break;
+     case 2:
+       resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other;
+       resourceMapping.frequencyDomainAllocation.choice.other.buf = calloc(2, sizeof(uint8_t));
+       resourceMapping.frequencyDomainAllocation.choice.other.size = 1;
+       resourceMapping.frequencyDomainAllocation.choice.other.bits_unused = 2;
+       resourceMapping.frequencyDomainAllocation.choice.other.buf[0] = 4;
+       resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p2;
+       resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_fd_CDM2;
+       break;
+     default:
+       AssertFatal(1==0,"Number of ports not yet supported\n");
+   }
+   resourceMapping.firstOFDMSymbolInTimeDomain = 6;
+   resourceMapping.firstOFDMSymbolInTimeDomain2 = NULL;
+   resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
+   resourceMapping.density.choice.one = (NULL_t)0;
+   resourceMapping.freqBand.startingRB = 0;
+   resourceMapping.freqBand.nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
+   nzpcsi0->resourceMapping = resourceMapping;
+   nzpcsi0->powerControlOffset = 0;
+   nzpcsi0->powerControlOffsetSS=calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
+   *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
+   nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
+   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
+   nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
+   nzpcsi0->periodicityAndOffset->choice.slots320 = 20;
+   nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS)); 
+   *nzpcsi0->qcl_InfoPeriodicCSI_RS=0;
+   ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
+ }
+ else
+   csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = NULL;
+}
+
 void fill_initial_SpCellConfig(int uid,
                                NR_SpCellConfig_t *SpCellConfig,
                                NR_ServingCellConfigCommon_t *scc,
@@ -1540,7 +1597,7 @@ void fill_initial_SpCellConfig(int uid,
      csirep1->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
      csirep1->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep1->reportConfigType.choice.periodic));
      csirep1->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-     csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 8 + (20 * uid) % 320;
+     csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (8 + (20 * uid)) % 320;
      ASN_SEQUENCE_ADD(&csirep1->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
      csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI;
      csirep1->reportQuantity.choice.cri_RI_PMI_CQI=(NULL_t)0;
@@ -1599,7 +1656,7 @@ void fill_initial_SpCellConfig(int uid,
    csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
    csirep2->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep2->reportConfigType.choice.periodic));
    csirep2->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-   csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 28 + (20 * uid) % 320;
+   csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (28 + (20 * uid)) % 320;
    ASN_SEQUENCE_ADD(&csirep2->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
    csirep2->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP;
    csirep2->reportQuantity.choice.cri_RSRP=(NULL_t)0;
@@ -1714,6 +1771,30 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig_drb);
   ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig_drb);
 }
+
+void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
+                            rrc_gNB_carrier_data_t *carrier,
+                            NR_UE_NR_Capability_t *uecap) {
+
+  NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
+  if (SpCellConfig == NULL) return;
+
+  NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
+
+  NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+  set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
+                   uecap, SpCellConfig, bwp_Dedicated, scc);
+
+  struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+  if (DL_BWP_list) {
+    for (int i=0; i<DL_BWP_list->list.count; i++){
+      NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
+      int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
+      set_dl_mcs_table(scs, uecap, SpCellConfig,bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
+    }
+  }
+}
+
 
 void fill_initial_cellGroupConfig(int uid,
                                   NR_CellGroupConfig_t *cellGroupConfig,
@@ -2134,6 +2215,8 @@ int16_t do_RRCReconfiguration(
     NR_SDAP_Config_t             *sdap_config,
     NR_MeasConfig_t              *meas_config,
     struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
+    rrc_gNB_ue_context_t         *const ue_context_pP,
+    rrc_gNB_carrier_data_t       *carrier,
     NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig,
     NR_CellGroupConfig_t         *cellGroupConfig)
 //------------------------------------------------------------------------------
@@ -2170,15 +2253,6 @@ int16_t do_RRCReconfiguration(
       ie->radioBearerConfig->srb3_ToRelease    = NULL;
       ie->radioBearerConfig->drb_ToReleaseList = DRB_releaseList;
     }
-    /******************** Secondary Cell Group ********************/
-    // rrc_gNB_carrier_data_t *carrier = &(gnb_rrc_inst->carrier);
-    // fill_default_secondaryCellGroup( carrier->servingcellconfigcommon,
-    //                                  ue_context_pP->ue_context.secondaryCellGroup,
-    //                                  1,
-    //                                  1,
-    //                                  carrier->pdsch_AntennaPorts,
-    //                                  carrier->initial_csi_index[ue_context_p->local_uid + 1],
-    //                                  ue_context_pP->local_uid);
 
     /******************** Meas Config ********************/
     // measConfig
@@ -2194,6 +2268,9 @@ int16_t do_RRCReconfiguration(
     }
 
     if(cellGroupConfig!=NULL){
+      update_cellGroupConfig(cellGroupConfig,
+                             carrier,
+                             ue_context_pP->ue_context.UE_Capability_nr);
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
           NULL,
           (void *)cellGroupConfig,
