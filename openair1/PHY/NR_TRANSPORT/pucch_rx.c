@@ -282,23 +282,35 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
   int n2;
 
+  int nb_re_pucch = 12*pucch_pdu->prb_size;  // prb size is 1
+  int32_t rp[frame_parms->nb_antennas_rx][2][nb_re_pucch],*tmp_rp;
+
   for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
     l2 = l+pucch_pdu->start_symbol_index;
+
     re_offset[l] = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
     if (re_offset[l]>= frame_parms->ofdm_symbol_size)
       re_offset[l]-=frame_parms->ofdm_symbol_size;
-  
-    AssertFatal(re_offset[l]+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
-    int16_t *r;
+
     for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      r=(int16_t*)&rxdataF[aa][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[l]];
+      tmp_rp = &rxdataF[aa][soffset + l2*frame_parms->ofdm_symbol_size];
+      if(re_offset[l] + nb_re_pucch > frame_parms->ofdm_symbol_size) {
+        int neg_length = frame_parms->ofdm_symbol_size-re_offset[l];
+        int pos_length = nb_re_pucch-neg_length;
+        memcpy1((void*)rp[aa][l],(void*)&tmp_rp[re_offset[l]],neg_length*sizeof(int32_t));
+        memcpy1((void*)&rp[aa][l][neg_length],(void*)tmp_rp,pos_length*sizeof(int32_t));
+      }
+      else
+        memcpy1((void*)rp[aa][l],(void*)&tmp_rp[re_offset[l]],nb_re_pucch*sizeof(int32_t));
+
+      int16_t *r = (int16_t*)&rp[aa][l];
       n2=0;
       for (n=0;n<12;n++,n2+=2) {
         xr[aa][l][n2]  +=(int16_t)(((int32_t)x_re[l][n]*r[n2]+(int32_t)x_im[l][n]*r[n2+1])>>15);
         xr[aa][l][n2+1]+=(int16_t)(((int32_t)x_re[l][n]*r[n2+1]-(int32_t)x_im[l][n]*r[n2])>>15);
 #ifdef DEBUG_NR_PUCCH_RX
         printf("x (%d,%d), r%d.%d (%d,%d), xr (%d,%d)\n",
-	               x_re[l][n],x_im[l][n],l2,re_offset[l],r[n2],r[n2+1],xr[aa][l][n2],xr[aa][l][n2+1]);
+               x_re[l][n],x_im[l][n],l2,re_offset[l],r[n2],r[n2+1],xr[aa][l][n2],xr[aa][l][n2+1]);
 #endif
       }
     }
@@ -395,9 +407,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
   int SNRtimes10,sigenergy=0;
   for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
-    sigenergy += signal_energy_nodc(&rxdataF[aa][soffset+
-                                                 (pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size)+
-                                                 re_offset[0]],12);
+    sigenergy += signal_energy_nodc(rp[aa][0],12);
   SNRtimes10 = xrtmag_dBtimes10-(10*max_n0);
   int cqi;
   if (SNRtimes10 < -640) cqi=0;
