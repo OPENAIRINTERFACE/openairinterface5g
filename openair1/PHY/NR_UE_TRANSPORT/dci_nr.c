@@ -817,6 +817,10 @@ void nr_pdcch_unscrambling(int16_t *z,
     if (((s >> (i % 32)) & 1) == 1) z2[i] = -z[i];
     else z2[i]=z[i];
   }
+  printf("Encoded Payload (length:%d dwords):\n", length>>5);
+    
+    for (int i=0; i<length>>5; i++)
+      printf("[%d]->0x%08x \t", i, z2[i]);
 }
 
 
@@ -868,6 +872,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
     int L = rel15->L[j];
 
     // Loop over possible DCI lengths
+    
     for (int k = 0; k < rel15->num_dci_options; k++) {
       // skip this candidate if we've already found one with the
       // same rnti and format at a different aggregation level
@@ -902,8 +907,8 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                          NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L);
 
       n_rnti = rel15->rnti;
-      LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d)\n",
-            proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length);
+      LOG_D(PHY, "(%i.%i) dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d,payload %llx )\n",
+            proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length, *(unsigned long long*)dci_estimation);
       if (crc == n_rnti) {
         LOG_D(PHY, "(%i.%i) Received dci indication (rnti %x,dci format %s,n_CCE %d,payloadSize %d,payload %llx)\n",
               proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length,*(unsigned long long*)dci_estimation);

@@ -2092,6 +2092,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
               pucch->is_common = current_harq->is_common;
               current_harq->active = false;
               current_harq->ack_received = false;
+	      LOG_D(PHY,"%d.%d Sent %d ack on harq pid %d\n", frame, slot, current_harq->ack, dl_harq_pid);
             }
           }
         }

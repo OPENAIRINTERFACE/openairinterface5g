@@ -93,9 +93,6 @@ extern uint16_t sf_ahead;
 
 void ue_stub_rx_handler(unsigned int, char *);
 
-int32_t **rxdata;
-int32_t **txdata;
-
 int timer_subframe = 0;
 int timer_frame = 0;
 SF_ticking *phy_stub_ticking = NULL;
@@ -2498,23 +2495,18 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue,
     AssertFatal( phy_vars_ue[CC_id] !=0, "");
     frame_parms = &(phy_vars_ue[CC_id]->frame_parms);
     // replace RX signal buffers with mmaped HW versions
-    rxdata = (int32_t **)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t *) );
-    txdata = (int32_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t *) );
-
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
       LOG_I(PHY, "Mapping UE CC_id %d, rx_ant %d, freq %lu on card %d, chain %d\n",
             CC_id, i, downlink_frequency[CC_id][i], phy_vars_ue[CC_id]->rf_map.card, (phy_vars_ue[CC_id]->rf_map.chain)+i );
       free( phy_vars_ue[CC_id]->common_vars.rxdata[i] );
-      rxdata[i] = (int32_t *)malloc16_clear( 307200*sizeof(int32_t) );
-      phy_vars_ue[CC_id]->common_vars.rxdata[i] = rxdata[i]; // what about the "-N_TA_offset" ? // N_TA offset for TDD
+      phy_vars_ue[CC_id]->common_vars.rxdata[i] = malloc16_clear( 307200*sizeof(int32_t) ); // what about the "-N_TA_offset" ? // N_TA offset for TDD
     }
 
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
       LOG_I(PHY, "Mapping UE CC_id %d, tx_ant %d, freq %lu on card %d, chain %d\n",
             CC_id, i, downlink_frequency[CC_id][i], phy_vars_ue[CC_id]->rf_map.card, (phy_vars_ue[CC_id]->rf_map.chain)+i );
       free( phy_vars_ue[CC_id]->common_vars.txdata[i] );
-      txdata[i] = (int32_t *)malloc16_clear( 307200*sizeof(int32_t) );
-      phy_vars_ue[CC_id]->common_vars.txdata[i] = txdata[i];
+      phy_vars_ue[CC_id]->common_vars.txdata[i] = malloc16_clear( 307200*sizeof(int32_t) );
     }
 
     // rxdata[x] points now to the same memory region as phy_vars_ue[CC_id]->common_vars.rxdata[x]
