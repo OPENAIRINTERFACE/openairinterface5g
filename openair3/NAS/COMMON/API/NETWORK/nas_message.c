@@ -1096,7 +1096,8 @@ static int _nas_message_decrypt(
               "Unknown security header type %u", security_header_type);
     LOG_FUNC_RETURN (0);
   };
-
+  LOG_FUNC_RETURN (0);
+  
 }
 
 /****************************************************************************

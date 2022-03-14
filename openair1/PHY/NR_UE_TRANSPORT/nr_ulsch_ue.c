@@ -128,7 +128,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
 
   uint8_t  num_of_codewords = 1; // tmp assumption
-  int      Nid_cell = 0;
   int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   uint16_t number_dmrs_symbols = 0;
 
@@ -153,7 +152,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
     if (start_sc >= frame_parms->ofdm_symbol_size)
       start_sc -= frame_parms->ofdm_symbol_size;
 
-    ulsch_ue->Nid_cell    = Nid_cell;
+    ulsch_ue->Nid_cell    = frame_parms->Nid_cell;
 
     for (int i = start_symbol; i < start_symbol + number_of_symbols; i++) {
       if((ul_dmrs_symb_pos >> i) & 0x01)
@@ -391,7 +390,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
           // Perform this on gold sequence, not required when SC FDMA operation is done,
 	        LOG_D(PHY,"DMRS in symbol %d\n",l);
           nr_modulation(pusch_dmrs[l][0], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
-        
+
         } else {
           dmrs_idx = 0;
         }

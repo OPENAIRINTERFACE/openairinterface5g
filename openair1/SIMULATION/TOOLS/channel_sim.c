@@ -40,7 +40,6 @@
 #include "PHY_INTERFACE/phy_interface_extern.h"
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OPT/opt.h" // to test OPT
-#include "UTIL/FIFO/types.h"
 
 #define RF
 
