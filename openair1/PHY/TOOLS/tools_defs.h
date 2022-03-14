@@ -218,6 +218,7 @@ void dft600(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft648(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft720(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft768(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft768p(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft864(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft900(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft960(int16_t *x,int16_t *y,uint8_t scale_flag);
@@ -301,7 +302,7 @@ typedef enum DFT_size_idx {
 	DFT_12,    DFT_24,    DFT_36,   DFT_48,     DFT_60,   DFT_72,   DFT_96,
 	DFT_108,   DFT_120,   DFT_128,  DFT_144,    DFT_180,  DFT_192,  DFT_216,   DFT_240,
 	DFT_256,   DFT_288,   DFT_300,  DFT_324,    DFT_360,  DFT_384,  DFT_432,   DFT_480,
-	DFT_512,   DFT_540,   DFT_576,  DFT_600,    DFT_648,  DFT_720,  DFT_768,   DFT_864,
+	DFT_512,   DFT_540,   DFT_576,  DFT_600,    DFT_648,  DFT_720,  DFT_768,   DFT_768P, DFT_864,
 	DFT_900,   DFT_960,   DFT_972,  DFT_1024,   DFT_1080, DFT_1152, DFT_1200,  DFT_1296,
 	DFT_1440,  DFT_1500,  DFT_1536, DFT_1620,   DFT_1728, DFT_1800, DFT_1920,  DFT_1944,
 	DFT_2048,  DFT_2160,  DFT_2304, DFT_2400,   DFT_2592, DFT_2700, DFT_2880,  DFT_2916,
@@ -315,7 +316,7 @@ adftfunc_t dft_ftab[]={
 	dft12,    dft24,    dft36,    dft48,    dft60,   dft72,   dft96,
 	dft108,   dft120,   dft128,   dft144,   dft180,  dft192,  dft216,   dft240,
 	dft256,   dft288,   dft300,   dft324,   dft360,  dft384,  dft432,   dft480,
-	dft512,   dft540,   dft576,   dft600,   dft648,  dft720,  dft768,   dft864,
+	dft512,   dft540,   dft576,   dft600,   dft648,  dft720,  dft768,   dft768p, dft864,
 	dft900,   dft960,   dft972,   dft1024,  dft1080, dft1152, dft1200,  dft1296,
 	dft1440,  dft1500,  dft1536,  dft1620,  dft1728, dft1800, dft1920,  dft1944,
 	dft2048,  dft2160,  dft2304,  dft2400,  dft2592, dft2700, dft2880,  dft2916,
