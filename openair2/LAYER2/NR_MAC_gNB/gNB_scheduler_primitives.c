@@ -228,7 +228,7 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
 
 NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
                                        NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                       NR_SIB1_t *sib1) {
+                                       const NR_SIB1_t *sib1) {
   NR_BWP_t *genericParameters = NULL;
   if (active_bwp) {
     genericParameters = &active_bwp->bwp_Common->genericParameters;
@@ -242,7 +242,7 @@ NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
 
 NR_BWP_t *get_ul_bwp_genericParameters(NR_BWP_Uplink_t *active_ubwp,
                                        NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                       NR_SIB1_t *sib1) {
+                                       const NR_SIB1_t *sib1) {
   NR_BWP_t *genericParameters = NULL;
   if (active_ubwp) {
     genericParameters = &active_ubwp->bwp_Common->genericParameters;
@@ -305,7 +305,7 @@ NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
   }
 }
 
-NR_SearchSpace_t *get_searchspace(NR_SIB1_t *sib1,
+NR_SearchSpace_t *get_searchspace(const NR_SIB1_t *sib1,
                                   NR_ServingCellConfigCommon_t *scc,
                                   NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                                   NR_SearchSpace__searchSpaceType_PR target_ss) {
@@ -1096,7 +1096,7 @@ int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
 }
 
 // This function configures pucch pdu fapi structure
-void nr_configure_pucch(NR_SIB1_t *sib1,
+void nr_configure_pucch(const NR_SIB1_t *sib1,
                         nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *CellGroup,
@@ -2309,7 +2309,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       &sched_ctrl->active_bwp->bwp_Common->genericParameters:
       &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
     const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
-    sched_ctrl->search_space = get_searchspace(nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL,
+    const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+    sched_ctrl->search_space = get_searchspace(sib1,
                                                scc,
                                                sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
                                                target_ss);

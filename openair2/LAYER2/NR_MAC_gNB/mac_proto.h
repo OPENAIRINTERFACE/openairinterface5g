@@ -242,7 +242,7 @@ int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
                           NR_BWP_UplinkDedicated_t *bwpd,
                           int CCEIndex);
 
-void nr_configure_pucch(NR_SIB1_t *sib1,
+void nr_configure_pucch(const NR_SIB1_t *sib1,
                         nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *CellGroup,
@@ -302,11 +302,11 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
 
 NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
                                        NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                       NR_SIB1_t *sib1);
+                                       const NR_SIB1_t *sib1);
 
 NR_BWP_t *get_ul_bwp_genericParameters(NR_BWP_Uplink_t *active_ubwp,
                                        NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                       NR_SIB1_t *sib1);
+                                       const NR_SIB1_t *sib1);
 
 NR_PDSCH_TimeDomainResourceAllocationList_t *get_pdsch_TimeDomainAllocationList(const NR_BWP_Downlink_t *active_bwp,
                                                                                 const NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
@@ -320,7 +320,7 @@ NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
                                      NR_SearchSpace__searchSpaceType_PR ss_type);
 
 /* find a search space within a BWP */
-NR_SearchSpace_t *get_searchspace(NR_SIB1_t *sib1,
+NR_SearchSpace_t *get_searchspace(const NR_SIB1_t *sib1,
                                   NR_ServingCellConfigCommon_t *scc,
                                   NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                                   NR_SearchSpace__searchSpaceType_PR target_ss);
