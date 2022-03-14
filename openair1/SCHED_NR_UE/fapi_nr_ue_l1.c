@@ -368,7 +368,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
           current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
           NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch0->harq_processes[current_harq_pid];
-          harq_process_ul_ue->status = 0;
 
           if (harq_process_ul_ue){
 
@@ -384,14 +383,15 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                 if ((tx_req_body->pdu_index == i) && (tx_req_body->pdu_length > 0)) {
                   LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
                   memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
-                  harq_process_ul_ue->status = ACTIVE;
-                  ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
-                  pdu_done++;
-                  LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
                   break;
                 }
               }
             }
+
+            harq_process_ul_ue->status = ACTIVE;
+            ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+            pdu_done++;
+            LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
 
           } else {
 
