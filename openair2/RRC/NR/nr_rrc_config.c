@@ -286,7 +286,52 @@ void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs) {
   ASN_SEQUENCE_ADD(&pucch_Config->spatialRelationInfoToAddModList->list,pucchspatial);
 }
 
-void schedulingrequest_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
+void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig,
+                            NR_ServingCellConfigCommon_t *scc) {
+
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  int sr_slot = 0;
+  if(tdd)
+    sr_slot = tdd->nrofDownlinkSlots; // SR in the first uplink slot
+
+  schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
+
+  if(sr_slot<10){
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10;
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl10 = sr_slot;
+    return;
+  }
+  if(sr_slot<20){
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl20;
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl20 = sr_slot;
+    return;
+  }
+  if(sr_slot<40){
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 = sr_slot;
+    return;
+  }
+  if(sr_slot<80){
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl80;
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl80 = sr_slot;
+    return;
+  }
+  if(sr_slot<160){
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl160;
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl160 = sr_slot;
+    return;
+  }
+  if(sr_slot<320){
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320;
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl320 = sr_slot;
+    return;
+  }
+  schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640;
+  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl640 = sr_slot;
+}
+
+void schedulingrequest_config(NR_ServingCellConfigCommon_t *scc,
+                              NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
                               NR_PUCCH_Config_t *pucch_Config) {
 
   mac_CellGroupConfig->schedulingRequestConfig = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
@@ -306,9 +351,9 @@ void schedulingrequest_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
   NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig = calloc(1,sizeof(*schedulingRequestResourceConfig));
   schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
   schedulingRequestResourceConfig->schedulingRequestID = 0;
-  schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
-  schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10;
-  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl10 = 7;
+
+  set_SR_periodandoffset(schedulingRequestResourceConfig, scc);
+
   schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
   *schedulingRequestResourceConfig->resource = *pucchressetid;
   ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);

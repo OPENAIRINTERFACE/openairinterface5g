@@ -117,7 +117,8 @@ void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp
 void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, NR_UE_NR_Capability_t *uecap);
 void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time);
 void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs);
-void schedulingrequest_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
+void schedulingrequest_config(NR_ServingCellConfigCommon_t *scc,
+                              NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
                               NR_PUCCH_Config_t *pucch_Config);
 void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
