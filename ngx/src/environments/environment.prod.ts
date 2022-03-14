@@ -4,7 +4,5 @@
 
 export const environment = {
   production: true,
-  backend: 'https://lsd.nutridata.io/api',
-  // backend: 'https://lsdapi.herokuapp.com',
-  WORKER_CLIENT_ID: '126536035414-pav49qj5h49rctdrj35ok4amqjnjje1m.apps.googleusercontent.com',
+  backend: 'http://localhost:3000/api' //FIXME
 };

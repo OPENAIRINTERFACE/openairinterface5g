@@ -1,0 +1,8 @@
+<h1 mat-dialog-title>Status</h1>
+
+<mat-form-field *ngIf="commandsCtrls$ | async as commands">
+  <mat-label>Command</mat-label>
+  <mat-select [formControl]="selectedCtrl!.nameFC" [value]="selectedCtrl!.nameFC.value">
+    <mat-option *ngFor="let command of commands" [value]="command">{{ command }}</mat-option>
+  </mat-select>
+</mat-form-field>

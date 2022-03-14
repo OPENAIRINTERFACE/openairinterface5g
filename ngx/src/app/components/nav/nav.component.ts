@@ -1,8 +1,7 @@
-import { Component } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Component } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map, shareReplay } from 'rxjs/operators';
-import { UserService } from 'src/app/services/user.service';
 import { LoadingService } from 'src/app/services/loading.service';
 
 @Component({
@@ -17,5 +16,5 @@ export class NavComponent {
   );
 
   constructor(
-    public loadingService: LoadingService, public userService: UserService, private breakpointObserver: BreakpointObserver) { }
+    public loadingService: LoadingService, private breakpointObserver: BreakpointObserver) { }
 }
