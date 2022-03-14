@@ -400,6 +400,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uin
   static int packet_cnt=0;
   int payload_size = UDP_PACKET_SIZE_BYTES(nsamps);
 
+  // we need a temporary storage buffer since the antenna ID is in the packet
   int nsamps2 = (payload_size>>2)+(APP_HEADER_SIZE_BYTES>>2);
   int32_t temp_rx[nsamps2+1];
   char *temp_rx0 = ((char *)&temp_rx[1+(APP_HEADER_SIZE_BYTES>>2)]) - APP_HEADER_SIZE_BYTES;  
@@ -446,9 +447,8 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uin
     } else {
       /* store the timestamp value from packet's header */
       *timestamp =  *(openair0_timestamp *)(temp_rx0 + ECPRICOMMON_BYTES+ECPRIPCID_BYTES);
-      // convert TS to samples, /3 for 30.72 Ms/s, /6 for 15.36 Ms/s, /12 for 7.68 Ms/s, etc.
+      // convert TS to samples, /6 for AW2S @ 30.72 Ms/s, this is converted for other sample rates in OAI application
       *timestamp = *timestamp/6;
-      // handle 1.4,3,5,10,15 MHz cases
       *cc        = *(uint16_t*)(temp_rx0 + ECPRICOMMON_BYTES);
     }
     eth->rx_actual_nsamps=payload_size>>2;

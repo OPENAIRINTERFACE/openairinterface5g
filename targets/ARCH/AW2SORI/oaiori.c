@@ -221,6 +221,42 @@ int aw2s_oricleanup(openair0_device *device) {
   return(0);
 }
 
+typedef struct fhstate_s {
+  int Npackets;
+  openair0_timestamp olddeltaTS;
+  openair0_timestamp oldTS;
+  int fhjumps;
+  openair0_device *device;
+  int r0;
+  int r1;
+  int r2;
+  int r3;
+} fhstate_t;
+
+  openair0_timestamp TS;
+  int64_t deltaTS,olddeltaTS=-1;
+  int aid,r0=0;
+  r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
+  for (i=0;i<fhstate->Npackets;i++) {
+    device->trx_read_func2(fhstate->device,
+                           fhstate->TS,
+                           NULL,
+                           256,
+                           0,
+                           &aid);
+    if (aid == 0) fhstate->r0=1;
+    if (aid == 1) fhstate->r1=1;
+    if (aid == 2) fhstate->r2=1;
+    if (aid == 3) fhstate->r3=1;
+    if (aid==0) {
+      deltaTS = TS-oldTS;
+      fhstate-> oldTS=TS;
+      if (deltaTS != fhstate->olddeltaTS && fhstate->olddeltaTS > 0) {
+          fhstate->fhjumps++;
+      }
+      if (i>0) fhstate->olddeltaTS = deltaTS;
+    }
+  }
 int aw2s_startstreaming(openair0_device *device) {
 
   ORI_s *               ori = (ORI_s*)device->thirdparty_priv;
@@ -414,7 +450,6 @@ int aw2s_startstreaming(openair0_device *device) {
 /*  
   while (rx0->fst != ORI_FST_Operational || 
          (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
-<<<<<<< HEAD
          (openair0_cfg->rx_num_channels > 2 && rx2->fst != ORI_FST_Operational) || 
          (openair0_cfg->rx_num_channels > 3 && rx3->fst != ORI_FST_Operational))  
   {}
@@ -422,45 +457,43 @@ int aw2s_startstreaming(openair0_device *device) {
   // test RX interface 
   uint64_t TS;
   int64_t deltaTS,olddeltaTS=-1;
-=======
-         tx0->fst != ORI_FST_Operational || 
-         (openair0_cfg->tx_num_channels > 1 && tx1->fst != ORI_FST_Operational))
-  {}*/  	
-  // test RX interface 
-  uint64_t TS;
-  char temp_rx[2048] __attribute__((aligned(32)));
->>>>>>> tdd25period_for_MR
   int aid,r0=0,r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
   int r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
   int r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;
 
   int i;
-  int Npackets=1024000;
-  openair0_timestamp oldTS=0;
-  int fhjumps=0;
-  for (i=0;i<Npackets;i++) {
-    device->trx_read_func2(device,
+  fhstate_t fhstate;
+
+  fhstate.Npackets=1024000;
+  fhstate.oldTS=0;
+  fhstate.fhjumps=0;
+  fhstate.r0=0;
+  fhstate.r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
+  fhstate.r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
+  fhstate.r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;
+  for (i=0;i<fhstate->Npackets;i++) {
+    device->trx_read_func2(fhstate->device,
                            (openair0_timestamp*)&TS,
                            NULL,
                            256,
                            0,
                            &aid);
-    if (aid == 0) r0=1;
-    if (aid == 1) r1=1;
-    if (aid == 2) r2=1;
-    if (aid == 3) r3=1;
+    if (aid == 0) fhstate->r0=1;
+    if (aid == 1) fhstate->r1=1;
+    if (aid == 2) fhstate->r2=1;
+    if (aid == 3) fhstate->r3=1;
     if (aid==0) {
-      deltaTS = TS-oldTS;
-      oldTS=TS;
-      if (deltaTS != olddeltaTS && olddeltaTS > 0) {
-          fhjumps++;
+      deltaTS = TS-fhstate->oldTS;
+      fhstate->oldTS=TS;
+      if (deltaTS != fhstate->olddeltaTS && fhstate->olddeltaTS > 0) {
+          fhstate->fhjumps++;
       }
-      if (i>0) olddeltaTS = deltaTS;
+      if (i>0) fhstate->olddeltaTS = deltaTS;
     }
   }
-  if (r0==1 && r1==1 && r2==1 && r3==1) printf("Streaming started, returning to OAI, fghjumps %d\n",fhjumps);
+  if (fhstate.r0==1 && fhstate.r1==1 && fhstate.r2==1 && fhstate.r3==1) printf("Streaming started, returning to OAI, fhjumps %d\n",fhjumps);
   else {
-    printf("Didn't get anything from one antenna port after %d packets %d,%d,%d,%d\n",Npackets,r0,r1,r2,r3);
+    printf("Didn't get anything from one antenna port after %d packets %d,%d,%d,%d\n",fhstate.Npackets,fhstate.r0,fhstate.r1,fhstate.r2,fhstater3);
     return(-1);
   }
   return(0);
