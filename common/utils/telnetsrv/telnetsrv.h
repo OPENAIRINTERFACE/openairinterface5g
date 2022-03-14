@@ -155,4 +155,7 @@ void set_sched(pthread_t tid, int pid,int priority);
 void set_affinity(pthread_t tid, int pid, int coreid);
 extern int get_phybsize(void); 
 #endif
+#ifdef WEBSERVERCODE
+extern telnetsrv_params_t *get_telnetsrv_params(void);
+#endif
 #endif

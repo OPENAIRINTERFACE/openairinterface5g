@@ -88,6 +88,7 @@ void get_common_options(uint32_t execmask) {
   uint32_t online_log_messages=0;
   uint32_t glog_level=0 ;
   uint32_t start_telnetsrv = 0, start_telnetclt = 0;
+  uint32_t start_websrv = 0;
   uint32_t noS1 = 0, nokrnmod = 1, nonbiot = 0;
   uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
   char *logmem_filename = NULL;
@@ -117,6 +118,10 @@ void get_common_options(uint32_t execmask) {
     set_softmodem_optmask(SOFTMODEM_TELNETCLT_BIT);
   }
 
+  if (start_telnetsrv) {
+    load_module_shlib("websrv",NULL,0,NULL);
+  }
+  
   if (logmem_filename != NULL && strlen(logmem_filename) > 0) {
     log_mem_filename = &logmem_filename[0];
     log_mem_flag = 1;
