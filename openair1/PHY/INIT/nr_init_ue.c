@@ -373,7 +373,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       ue->nr_csi_rs_info->csi_rs_generated_signal[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
       ue->nr_csi_rs_info->csi_rs_received_signal[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
       ue->nr_csi_rs_info->csi_rs_ls_estimated_channel[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
-      ue->nr_csi_rs_info->csi_rs_estimated_channel_freq[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
+      ue->nr_csi_rs_info->csi_rs_estimated_channel_freq[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size * sizeof(int32_t));
     }
 
     ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));

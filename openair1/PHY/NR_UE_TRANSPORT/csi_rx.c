@@ -37,6 +37,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/nr/nr_common.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
+#include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
 
 
 //#define NR_CSIRS_DEBUG
@@ -177,9 +178,12 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
     /// Channel interpolation
 
     int16_t ls_estimated[2];
+    memset(csi_rs_estimated_channel_freq[ant], 0, frame_parms->ofdm_symbol_size*sizeof(int32_t));
+
     for (int k_id = 0; k_id < nr_csi_rs_info->k_list_length; k_id++) {
 
       uint16_t k = nr_csi_rs_info->map_list[k_id];
+      int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant][k];
 
       // There are many possibilities to allocate the CSI-RS in time, which would take the implementation of many filters.
       // In this approach, the LS for each symbol would be different, and it would be necessary to interpolate each symbol
@@ -202,7 +206,34 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
       }
       ls_estimated[0] = (int16_t) (sum_csi_rs_ls_real / Nsymb);
       ls_estimated[1] = (int16_t) (sum_csi_rs_ls_imag / Nsymb);
+
+      if( (k_id == 0) || (k_id > 0 && k < nr_csi_rs_info->map_list[k_id-1]) ) { // First occupied subcarrier case or Start of OFDM symbol case
+        multadd_real_vector_complex_scalar(filt24_start, ls_estimated, csi_rs_estimated_channel16, 24);
+      } else if( (k_id < nr_csi_rs_info->k_list_length-1 && nr_csi_rs_info->map_list[k_id+1] < k) ||
+                 (k_id == nr_csi_rs_info->k_list_length-1) ) { // End of OFDM symbol case or Last occupied subcarrier case
+        multadd_real_vector_complex_scalar(filt24_end, ls_estimated, csi_rs_estimated_channel16 - 3*sizeof(uint64_t), 24);
+      } else { // Middle case
+        multadd_real_vector_complex_scalar(filt24_middle, ls_estimated, csi_rs_estimated_channel16 - 3*sizeof(uint64_t), 24);
+      }
     }
+
+#ifdef NR_CSIRS_DEBUG
+
+    uint64_t symbol_offset = csirs_config_pdu->symb_l0*frame_parms->ofdm_symbol_size;
+    int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant][symbol_offset];
+    int16_t *csi_rs_estimated_channel16 = (int16_t*)&nr_csi_rs_info->csi_rs_estimated_channel_freq[ant][0];
+
+    for(int k = 0; k<frame_parms->ofdm_symbol_size; k++) {
+      LOG_I(NR_PHY, "(%4d) |\tls (%4d,%4d)\tint (%4d,%4d)\n",
+            k,
+            csi_rs_ls_estimated_channel[k<<1],
+            csi_rs_ls_estimated_channel[(k<<1)+1],
+            csi_rs_estimated_channel16[k<<1],
+            csi_rs_estimated_channel16[(k<<1)+1]);
+    }
+
+#endif
+
   }
 
   return 0;
