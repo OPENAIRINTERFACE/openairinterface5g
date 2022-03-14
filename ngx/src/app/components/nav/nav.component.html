@@ -1,0 +1,53 @@
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav #drawer class="sidenav" fixedInViewport [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
+    [mode]="(isHandset$ | async) ? 'over' : 'side'" [opened]="(isHandset$ | async) === false">
+    <mat-nav-list>
+      <a mat-list-item routerLink="/bookings" routerLinkActive="active">Month</a>
+      <a mat-list-item routerLink="/year" routerLinkActive="active">Year</a>
+      <a mat-list-item routerLink="/messages" routerLinkActive="active">Autosend</a>
+      <a mat-list-item routerLink="/cleaners" routerLinkActive="active">Cleaners</a>
+      <a mat-list-item routerLink="/user" routerLinkActive="active">Calendars</a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar>
+      <mat-toolbar-row fxLayout="row" fxLayoutAlign="space-between center">
+
+        <ng-template #not_loading>
+          <button mat-icon-button (click)="drawer.toggle()">
+            <mat-icon>menu</mat-icon>
+          </button>
+          <h1>LSD</h1>
+        </ng-template>
+        <ng-template #loading>
+          <mat-progress-spinner mode="indeterminate" diameter="40">
+          </mat-progress-spinner>
+        </ng-template>
+        <div fxLayout="row" fxLayoutAlign="start center">
+          <ng-container *ngIf="loadingService.isLoading$ | async; then loading; else not_loading">
+          </ng-container>
+        </div>
+
+        <ng-template #notAuthenticated>
+          <button mat-raised-button color="primary" *ngIf="(userService.isAuthenticated$ | async) === false"
+            (click)="userService.login()">
+            login
+          </button>
+        </ng-template>
+        <ng-template #authenticated>
+          <a id="email">{{ userService.email }}</a>
+          <button mat-raised-button color="warn" href="#" (click)="userService.logout()">
+            logout
+          </button>
+        </ng-template>
+        <ng-container *ngIf="userService.isAuthenticated$ | async; then authenticated; else notAuthenticated"
+          fxLayout="row">
+        </ng-container>
+
+      </mat-toolbar-row>
+    </mat-toolbar>
+
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,22 @@
+<h1 mat-dialog-title>New Cleaner</h1>
+<div mat-dialog-content>
+  <mat-form-field>
+    <mat-label>Name</mat-label>
+    <input input matInput [formControl]="cleanerCtrl.nameFC" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Email</mat-label>
+    <input input matInput [formControl]="cleanerCtrl.emailFC" />
+  </mat-form-field>
+
+  <mat-form-field>
+    <mat-label>Rate</mat-label>
+    <input input matInput [formControl]="cleanerCtrl.rateFC" />
+  </mat-form-field>
+</div>
+
+<div mat-dialog-actions>
+  <button mat-button (click)="onNoClick()">Cancel</button>
+  <button mat-button [mat-dialog-close]="cleanerCtrl" cdkFocusInitial>Ok</button>
+</div>

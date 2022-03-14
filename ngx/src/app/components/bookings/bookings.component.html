@@ -1,0 +1,226 @@
+<div class="grid-container">
+
+
+  <div fxLayout="row" fxLayoutAlign="space-between">
+    <div fxLayout="row" fxLayoutAlign="start end">
+      <button mat-icon-button (click)="onRefresh()" [disabled]="loadingService.isLoading$ | async">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-icon-button (click)="onNew()" [disabled]="loadingService.isLoading$ | async">
+        <mat-icon>add</mat-icon>
+      </button>
+      <button mat-icon-button (click)="onToday()" [disabled]="isToday">
+        <mat-icon>today</mat-icon>
+      </button>
+    </div>
+
+    <div fxLayout="row" fxLayoutAlign="space-around end">
+      <button mat-icon-button (click)="onPrevious()">
+        <mat-icon>skip_previous</mat-icon>
+      </button>
+      <p>{{ month }}</p>
+      <button mat-icon-button (click)="onNext()">
+        <mat-icon>skip_next</mat-icon>
+      </button>
+    </div>
+
+    <div fxLayout="row" fxLayoutAlign="end end">
+      <button mat-icon-button (click)="onSync()" [disabled]="loadingService.isLoading$ | async">
+        <mat-icon>sync</mat-icon>
+      </button>
+      <button mat-icon-button (click)="onSend()">
+        <mat-icon>send</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <mat-grid-list *ngIf="monthly$ | async as monthly" cols="5" rowHeight="150px">
+    <mat-grid-tile [colspan]="1" [rowspan]="1">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>{{ monthly.nights }} nights</mat-card-title>
+        </mat-card-header>
+        <mat-card-content fxLAyoutAlign="center center" class="dashboard-card-content">
+          <h1> {{ monthly.occupation }}%</h1>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="1">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>Brut</mat-card-title>
+        </mat-card-header>
+        <mat-card-content fxLayoutAlign="center center" class="dashboard-card-content">
+          <h1>{{ monthly.brut }}€</h1>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="1">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>Cleanings</mat-card-title>
+        </mat-card-header>
+        <mat-card-content fxLayoutAlign="center center" fxLAyoutAlign="center center" class="dashboard-card-content">
+          <h1>{{ monthly.cleanings }}€</h1>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="1">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>Net</mat-card-title>
+        </mat-card-header>
+        <mat-card-content fxLayoutAlign="center center" fxLAyoutAlign="center center" class="dashboard-card-content">
+          <h1>{{ monthly.net }}€</h1>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="1" [rowspan]="1">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>Night Rate</mat-card-title>
+        </mat-card-header>
+        <mat-card-content fxLayoutAlign="center center" fxLAyoutAlign="center center" class="dashboard-card-content">
+          <h1>{{ monthly.nightRate }}€</h1>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+    <mat-grid-tile [colspan]="5" [rowspan]="10">
+      <div fxLayout="column" fxLayoutAlign="start" fxFlexFill>
+        <div *ngIf="bookingsCtrls$ | async as bookingsCtrls">
+          <!-- <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator> -->
+
+          <mat-table mat-table [dataSource]="bookingsCtrls" multiTemplateDataRows class="mat-elevation-z8">
+            <ng-container matColumnDef="title">
+              <mat-header-cell *matHeaderCellDef>
+                <h2>Booking</h2>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let bookingCtrl" [formGroup]="bookingCtrl" fxLayout="column"
+                fxLayoutAlign="start start">
+                <h3>{{ bookingCtrl.shortName }}</h3>
+                <div fxLayout="row">
+                  <button mat-icon-button (click)="onSubmit(bookingCtrl)" [disabled]="bookingCtrl.pristine">
+                    <mat-icon>save</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="onDelete(bookingCtrl)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="nights">
+              <mat-header-cell *matHeaderCellDef>
+                <h2>Nights</h2>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let bookingCtrl" [formGroup]="bookingCtrl" fxLayout="column"
+                fxLayoutAlign="start start">
+                <mat-form-field>
+                  <mat-label>Guest name</mat-label>
+                  <input input matInput [formControl]="bookingCtrl.guestCtrl.givenFC" />
+                </mat-form-field>
+                <mat-form-field fxFlexFill>
+                  <mat-label>Nights</mat-label>
+                  <mat-date-range-input [rangePicker]="picker">
+                    <input matStartDate [formControl]="bookingCtrl.rangeCtrl.startDayFC" />
+                    <input matEndDate [formControl]="bookingCtrl.rangeCtrl.endDayFC" />
+                  </mat-date-range-input>
+                  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                  <mat-date-range-picker #picker></mat-date-range-picker>
+                </mat-form-field>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="platform">
+              <mat-header-cell *matHeaderCellDef fxLayout="column" fxLayoutAlign="start start">
+                <h2>Platform</h2>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let bookingCtrl" [formGroup]="bookingCtrl" fxLayout="column"
+                fxLayoutAlign="start start">
+                <mat-form-field>
+                  <mat-label>Platform</mat-label>
+                  <mat-select [formControl]="bookingCtrl.platformFC" [value]="bookingCtrl.platformFC.value">
+                    <mat-option *ngFor="let platform of platformValues" [value]="platform">{{ platform }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>Amount</mat-label>
+                  <input input matInput [formControl]="bookingCtrl.amountFC" />
+                </mat-form-field>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="checkinout">
+              <mat-header-cell *matHeaderCellDef>
+                <h2>Check-In/Out</h2>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let bookingCtrl" [formGroup]="bookingCtrl" fxLayout="column"
+                fxLayoutAlign="start start">
+                <mat-form-field>
+                  <mat-label>Check-In</mat-label>
+                  <input input matInput [formControl]="bookingCtrl.rangeCtrl.checkinFC" [ngxTimepicker]="checkin" />
+                  <ngx-material-timepicker #checkin> </ngx-material-timepicker>
+                </mat-form-field>
+                <mat-form-field>
+                  <mat-label>Check-Out</mat-label>
+                  <input input matInput [formControl]="bookingCtrl.rangeCtrl.checkoutFC" [ngxTimepicker]="checkout" />
+                  <ngx-material-timepicker #checkout> </ngx-material-timepicker>
+                </mat-form-field>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="autosend">
+              <mat-header-cell *matHeaderCellDef>
+                <h2>Autosend</h2>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let bookingCtrl" [formGroup]="bookingCtrl" fxLayout="column"
+                fxLayoutAlign="start start">
+                <mat-form-field>
+                  <mat-label>State</mat-label>
+                  <mat-select [formControl]="bookingCtrl.stateFC" [value]="bookingCtrl.stateFC.value">
+                    <mat-option *ngFor="let state of stateValues" [value]="state">{{ state }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field fxFlexFill>
+                  <mat-label>Guest email</mat-label>
+                  <input input matInput [formControl]="bookingCtrl.guestCtrl.emailFC" />
+                </mat-form-field>
+              </mat-cell>
+            </ng-container>
+
+            <ng-container matColumnDef="cleaner">
+              <mat-header-cell *matHeaderCellDef fxLayout="column" fxLayoutAlign="start start">
+                <h2>Cleaning</h2>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let bookingCtrl" [formGroup]="bookingCtrl" fxLayout="column"
+                fxLayoutAlign="start start">
+
+                <mat-slide-toggle *ngIf="cleaners.length" [checked]="(bookingCtrl.cleaningCtrl)"
+                  (change)="onChange(bookingCtrl)">Planned
+                </mat-slide-toggle>
+
+                <div *ngIf="bookingCtrl.cleaningCtrl">
+                  <p>{{ bookingCtrl.cleaningCtrl.api().hours }} hours</p>
+
+                  <mat-form-field *ngIf="bookingCtrl.cleaningCtrl">
+                    <mat-label>Cleaner</mat-label>
+                    <mat-select [formControl]="bookingCtrl.cleaningCtrl.cleanerEmailFC"
+                      [value]="bookingCtrl.cleaningCtrl.cleanerEmailFC.value">
+                      <mat-option *ngFor="let cleaner of cleaners" [value]="cleaner.email">{{ cleaner.name }}
+                      </mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="DISPLAYED_COLUMNS"></mat-header-row>
+            <mat-row *matRowDef="let bookingCtrl; columns: DISPLAYED_COLUMNS" (keydown.enter)="onSubmit(bookingCtrl)">
+            </mat-row>
+          </mat-table>
+        </div>
+      </div>
+    </mat-grid-tile>
+  </mat-grid-list>
+
+</div>

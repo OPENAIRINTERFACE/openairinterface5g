@@ -10,7 +10,8 @@
             "request": "launch",
             "program": "${workspaceFolder}/cmake_targets/ran_build/build/lte-softmodem",
             "args": [
-                "-O", "../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf",
+                "-O",
+                "../ci-scripts/conf_files/rcc.band7.tm1.nfapi.conf",
                 "--noS1"
             ],
             "stopAtEntry": false,
@@ -25,6 +26,44 @@
                     "text": "-enable-pretty-printing",
                     "ignoreFailures": true
                 }
+            ]
+        },
+        {
+            "name": "Launch Chrome (4200 ng serve)",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:4200",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
+            "name": "Launch Firefox (4200 ng serve)",
+            "type": "firefox",
+            "request": "launch",
+            "reAttach": true,
+            "url": "http://localhost:4200",
+            "pathMappings": [
+                {
+                    "url": "webpack:///src",
+                    "path": "${workspaceFolder}/src"
+                }
+            ]
+        },
+        {
+            "name": "Launch Chrome (localhost)",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost",
+            "webRoot": "${workspaceFolder}",
+            "sourceMapPathOverrides": {
+                "webpack:/*": "${webRoot}/*",
+                "/./*": "${webRoot}/*",
+                "/src/*": "${webRoot}/*",
+                "/*": "*",
+                "/./~/*": "${webRoot}/node_modules/*"
+            },
+            "trace": true,
+            "runtimeArgs": [
+                "--remote-debugging-port=9222"
             ]
         }
     ]

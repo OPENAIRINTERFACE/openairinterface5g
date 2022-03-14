@@ -1,0 +1,107 @@
+stages:
+  - install
+  - build
+  - publish
+  - deploy
+
+variables:
+  TRION_CLI_VERSION: 12.2.4
+
+.install:
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm
+      - node_modules
+    policy: pull
+  only:
+    - master
+    - dev
+
+#
+#jobs
+#
+
+install:
+  stage: install
+  extends: .install
+  image: trion/ng-cli:${TRION_CLI_VERSION}
+  script:
+    - npm ci
+  cache:
+    policy: pull-push
+  only:
+    changes:
+      - package-lock.json
+
+build:
+  stage: build
+  extends: .install
+  image: trion/ng-cli-karma:${TRION_CLI_VERSION}
+  script:
+    - npm run lint
+    - npm run build
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - dist/lsd-ngx
+
+on-gitlab:
+  stage: publish
+  dependencies:
+    - build
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  before_script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+  script:
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile Dockerfile --destination $CI_REGISTRY_IMAGE/$CI_COMMIT_BRANCH:latest
+  only:
+    - dev
+    - master
+
+on-heroku:
+  stage: publish
+  dependencies:
+    - build
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: [""]
+  before_script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"registry.heroku.com\":{\"username\":\"_\",\"password\":\"$HEROKU_API_KEY\"}}}" > /kaniko/.docker/config.json
+  script:
+    - /kaniko/executor --context $CI_PROJECT_DIR --dockerfile Dockerfile --destination registry.heroku.com/$HEROKU_APP_NAME/web
+  only:
+    - dev
+
+herokuapp:
+  stage: deploy
+  image: node:lts-alpine
+  before_script:
+    - apk update && apk add curl bash
+    - rm -rf /var/cache/apk/*
+    - curl https://cli-assets.heroku.com/install.sh | sh
+  script:
+    - heroku container:release web --app $HEROKU_APP_NAME
+  environment:
+    name: heroku-dev
+    url: https://lsdngx.herokuapp.com
+  only:
+    - dev
+
+on-gke:
+  stage: deploy
+  image: alpine/k8s:1.20.7
+  script:
+    - kubectl config use-context lsd5/k8s:gke-agent
+    - kubectl apply -f k8s/manifest.yaml --namespace=$NAMESPACE
+  environment:
+    name: gke-master
+    url: https://lsd.nutridata.io
+  only:
+    - master

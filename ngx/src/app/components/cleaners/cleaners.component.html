@@ -1,0 +1,49 @@
+<form *ngIf="userService.userCtrl$ | async as userCtrl" [formGroup]="userCtrl" fxLayout="column"
+  fxLayoutAlign="space-around" class="grid-container">
+  <div fxLayout="row" fxLayoutAlign="space-between center">
+    <div fxLayout="row" fxLayoutAlign="start start">
+      <button mat-icon-button (click)="onRefresh()" [disabled]="loadingService.isLoading$ | async">
+        <mat-icon>refresh</mat-icon>
+      </button>
+      <button mat-icon-button (click)="onSubmit(userCtrl)" [disabled]="userCtrl.pristine">
+        <mat-icon>save</mat-icon>
+      </button>
+    </div>
+
+    <button mat-icon-button (click)="onNew()">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+
+  <mat-grid-list cols="2" rowHeight="350px">
+    <mat-grid-tile *ngFor="let cleanerCtrl of cleanersCtrls(userCtrl)" [colspan]="1" [rowspan]="1">
+      <mat-card class="dashboard-card">
+        <mat-card-header fxLayout="row" fxLayoutAlign="space-between center">
+          <mat-card-title> {{ cleanerCtrl.nameFC.value }} </mat-card-title>
+          <button mat-icon-button (click)="onDelete(cleanerCtrl)" fxFlexAlign="end">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-card-header>
+        <mat-card-content fxLayout="column" fxLayoutAlign="space-around start" class="dashboard-card-content">
+          <mat-form-field fxFlexFill>
+            <mat-label>Name</mat-label>
+            <input input matInput [formControl]="cleanerCtrl.nameFC" />
+          </mat-form-field>
+
+          <mat-form-field fxFlexFill>
+            <mat-label>Email</mat-label>
+            <input input matInput [formControl]="cleanerCtrl.emailFC" />
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Rate</mat-label>
+            <input input matInput [formControl]="cleanerCtrl.rateFC" />
+            <span matSuffix>/hour</span>
+          </mat-form-field>
+
+          <mat-slide-toggle [formControl]="cleanerCtrl.defaultFC">default</mat-slide-toggle>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+  </mat-grid-list>
+</form>
