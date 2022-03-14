@@ -7,7 +7,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "lsdngx": {
+    "ngx": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:application": {
@@ -77,10 +77,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "lsdngx:build:production"
+              "browserTarget": "ngx:build:production"
             },
             "development": {
-              "browserTarget": "lsdngx:build:development"
+              "browserTarget": "ngx:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -88,7 +88,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "lsdngx:build"
+            "browserTarget": "ngx:build"
           }
         },
         "lint": {
@@ -103,5 +103,5 @@
       }
     }
   },
-  "defaultProject": "lsdngx"
+  "defaultProject": "ngx"
 }
