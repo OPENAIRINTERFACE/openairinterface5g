@@ -25,13 +25,13 @@ import { AppComponent } from './app.component';
 import { ErrorDialogComponent } from './components/error-dialog/error-dialog.component';
 import { InterceptorProviders } from './interceptors/interceptors';
 import { LoadingService } from './services/loading.service';
+import { CommandsComponent } from './components/commands/commands.component';
+import { CommandsApi } from './api/commands.api';
+import { MatSidenavModule } from '@angular/material/sidenav';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { ReactiveFormsModule } from '@angular/forms';
-import { CommandsComponent } from './components/commands/commands.component';
-import { CommandsApi } from './api/commands.api';
-import { MatSidenavModule } from '@angular/material/sidenav';
 
 @NgModule({
   declarations: [
@@ -40,6 +40,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
     ErrorDialogComponent
   ],
   imports: [
+    MatSidenavModule,
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
@@ -56,7 +57,6 @@ import { MatSidenavModule } from '@angular/material/sidenav';
     MatDatepickerModule,
     MatNativeDateModule,
     MatToolbarModule,
-    MatSidenavModule,
     MatListModule,
     MatTableModule,
     MatPaginatorModule,
@@ -66,7 +66,8 @@ import { MatSidenavModule } from '@angular/material/sidenav';
     MatSlideToggleModule,
     MatGridListModule,
     MatCardModule,
-    MatMenuModule
+    MatMenuModule,
+    MatSidenavModule,
   ],
   providers: [
     // services

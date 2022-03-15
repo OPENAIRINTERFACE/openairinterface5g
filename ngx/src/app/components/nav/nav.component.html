@@ -9,6 +9,7 @@
 
   <mat-sidenav-content>
     <mat-toolbar>
+
       <mat-toolbar-row fxLayout="row" fxLayoutAlign="space-between center">
 
         <ng-template #not_loading>
@@ -17,20 +18,16 @@
           </button>
           <h1>OAI SoftModem</h1>
         </ng-template>
+
         <ng-template #loading>
           <mat-progress-spinner mode="indeterminate" diameter="40"> </mat-progress-spinner>
         </ng-template>
+
         <div fxLayout="row" fxLayoutAlign="start center">
           <ng-container *ngIf="loadingService.isLoading$ | async; then loading; else not_loading">
           </ng-container>
         </div>
 
-        <ng-container fxLayout="row">
-          <a id="email">{{ userService.email }}</a>
-          <button mat-raised-button color="warn" href="#" (click)="userService.logout()">
-            logout
-          </button>
-        </ng-container>
 
       </mat-toolbar-row>
     </mat-toolbar>
