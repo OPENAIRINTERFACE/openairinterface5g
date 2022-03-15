@@ -54,6 +54,12 @@
   return U_CALLBACK_CONTINUE;
 }
 
+int websrv_callback_get_softmodemcmd(const struct _u_request * request, struct _u_response * response, void * user_data) {
+	char *cmd = (char *)user_data;
+	LOG_I(UTIL,"websrv received  %s command request\n", cmd);
+	return U_CALLBACK_CONTINUE;
+}
+
 int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct _u_response * response, void * user_data) {
   char *cfgfile=CONFIG_GETCONFFILE ;
   char *execfunc=get_softmodem_function(NULL);
@@ -68,8 +74,11 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
 	  LOG_E(UTIL,"websrv cannot encode status info\n");
   }
 
-  char cmdnames[8192]="?";
+  json_t *cmdnames = json_array();
   for (int i=0; telnetparams->CmdParsers[i].var != NULL && telnetparams->CmdParsers[i].cmd != NULL; i++) {
+	  json_t *acmd =json_string( telnetparams->CmdParsers[i].module);
+	  json_array_append(cmdnames, acmd);
+	  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", "oaisoftmodem",telnetparams->CmdParsers[i].module , 0, &websrv_callback_get_softmodemcmd, telnetparams->CmdParsers[i].module );
  //     client_printf("   module %i = %s:\n",i,telnetparams.CmdParsers[i].module);
 
  //     for(j=0; telnetparams.CmdParsers[i].var[j].varvalptr != NULL ; j++) {
@@ -82,8 +91,8 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
  //                     telnetparams.CmdParsers[i].module,telnetparams.CmdParsers[i].cmd[j].cmdname,
  //                     telnetparams.CmdParsers[i].cmd[j].helpstr);
  //     }
-    }  
-  json_t *cmds = json_pack("{s[s]}","menu_cmds", cmdnames);
+    }
+  json_t *cmds = json_pack("{so}","menu_cmds", cmdnames);
   if (cmds==NULL) {
 	  LOG_E(UTIL,"websrv cannot encode cmds\n");
   }  
