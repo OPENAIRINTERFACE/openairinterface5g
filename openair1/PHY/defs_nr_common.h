@@ -94,6 +94,7 @@
 
 #define NR_MAX_NB_RBG 18
 #define NR_MAX_NB_LAYERS 2 // 8 // SU-MIMO (3GPP TS 38.211 V15.4.0 section 7.3.1.3)
+#define NR_MAX_NB_PORTS 32
 #define NR_MAX_NB_CODEWORDS 2
 #define NR_MAX_NB_HARQ_PROCESSES 16
 #define NR_MAX_PDSCH_ENCODED_LENGTH (NR_MAX_NB_RB*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS) // 8 is the maximum modulation order (it was 950984 before !!)
@@ -265,14 +266,20 @@ typedef struct {
 } nr_srs_info_t;
 
 typedef struct {
+  uint8_t N_cdm_groups;
+  uint8_t CDM_group_size;
+  uint8_t kprime;
+  uint8_t lprime;
+  uint8_t N_ports;
+  uint8_t j[16];
+  uint8_t koverline[16];
+  uint8_t loverline[16];
   uint32_t ***nr_gold_csi_rs;
-  uint16_t k_list_length;
-  uint16_t map_list[NR_MAX_CSI_RS_LENGTH];
   uint8_t csi_rs_generated_signal_bits;
   int32_t **csi_rs_generated_signal;
   int32_t **csi_rs_received_signal;
-  int32_t **csi_rs_ls_estimated_channel;
-  int32_t **csi_rs_estimated_channel_freq;
+  int32_t ***csi_rs_ls_estimated_channel;
+  int32_t ***csi_rs_estimated_channel_freq;
   uint32_t *noise_power;
 } nr_csi_rs_info_t;
 
