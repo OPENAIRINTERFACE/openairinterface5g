@@ -1,0 +1,15 @@
+set(WEBSRVROOT ${OPENAIR_DIR}/common/utils/websrv )
+
+set(WEBSRV_SOURCE
+    ${WEBSRVROOT}/websrv.c
+    )
+    
+add_library(websrv MODULE ${WEBSRV_SOURCE} )
+target_link_libraries(websrv PRIVATE ulfius jansson)
+
+
+install(TARGETS websrv DESTINATION bin)
+
+if (EXISTS "${OPENAIR_BUILD_DIR}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_BUILD_DIR}/ran_build/build")
+     install(TARGETS websrv DESTINATION ${OPENAIR_BUILD_DIR}/ran_build/build)
+endif (EXISTS "${OPENAIR_BUILD_DIR}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_BUILD_DIR}/ran_build/build")

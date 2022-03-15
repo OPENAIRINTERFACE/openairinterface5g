@@ -901,3 +901,7 @@ int telnetsrv_getfarray(loader_shlibfunc_t  **farray) {
   (*farray)[1].fptr=(int (*)(void) )poll_telnetcmdq; 
   return ( 2);
 }
+/* for webserver interface, needs access to some telnet server paramaters */
+telnetsrv_params_t *get_telnetsrv_params(void) {
+  return &telnetparams;
+}
