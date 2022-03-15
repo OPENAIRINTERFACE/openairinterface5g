@@ -1105,8 +1105,8 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     UE_nr_rxtx_proc_t *proc,
-                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
-
+                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+		    int16_t e_rx[4*2*100*12]);
 
 /*! \brief Extract PSS and SSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1667,7 +1667,8 @@ uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
 
 #include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
-uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
+uint8_t nr_dci_decoding_procedure(int16_t e_rx[4*2*100*12],
+				  PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
                                   fapi_nr_dci_indication_t *dci_ind,
                                   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);

@@ -611,9 +611,6 @@ typedef struct {
   /// \brief \f$\overline{w}\f$ from 36-211.
   /// - first index: ? [0..48*N_RB_DL[
   int16_t *wbar;
-  /// \brief PDCCH/DCI e-sequence (input to rate matching).
-  /// - first index: ? [0..96*N_RB_DL[
-  int16_t *e_rx;
   /// Total number of PDU errors (diagnostic mode)
   uint32_t dci_errors;
   /// Total number of PDU received

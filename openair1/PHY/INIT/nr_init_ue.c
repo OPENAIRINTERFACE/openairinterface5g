@@ -404,7 +404,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       ue->pdcch_vars[th_id][gNB_id]->llr                 = (int16_t *)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
       ue->pdcch_vars[th_id][gNB_id]->llr16               = (int16_t *)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
       ue->pdcch_vars[th_id][gNB_id]->wbar                = (int16_t *)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-      ue->pdcch_vars[th_id][gNB_id]->e_rx                = (int16_t *)malloc16_clear( 4*2*100*12 );
       ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp        = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
       ue->pdcch_vars[th_id][gNB_id]->dl_ch_rho_ext       = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
       ue->pdcch_vars[th_id][gNB_id]->rho                 = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
@@ -574,7 +573,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->llr);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->llr16);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->wbar);
-      free_and_zero(ue->pdcch_vars[th_id][gNB_id]->e_rx);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->rxdataF_comp);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->dl_ch_rho_ext);
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]->rho);

@@ -83,7 +83,7 @@ char nr_dci_format_string[8][30] = {
 //static const int16_t conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
 
 
-void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
+static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
                                        uint32_t *z,
                                        uint8_t coreset_time_dur,
                                        uint8_t start_symbol,
@@ -685,7 +685,8 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     UE_nr_rxtx_proc_t *proc,
-                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
+                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+		    int16_t e_rx[4*2*100*12] ) {
 
   uint32_t frame = proc->frame_rx;
   uint32_t slot  = proc->nr_slot_rx;
@@ -772,7 +773,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
   LOG_D(PHY,"we enter nr_pdcch_demapping_deinterleaving(), number of candidates %d\n",rel15->number_of_candidates);
   nr_pdcch_demapping_deinterleaving((uint32_t *) pdcch_vars->llr,
-                                    (uint32_t *) pdcch_vars->e_rx,
+                                    (uint32_t *) e_rx,
                                     rel15->coreset.duration,
                                     rel15->coreset.StartSymbolIndex,
                                     n_rb,
@@ -791,7 +792,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
 
 
-void nr_pdcch_unscrambling(int16_t *z,
+void nr_pdcch_unscrambling(int16_t e_rx[4*2*100*12],
                            uint16_t scrambling_RNTI,
                            uint32_t length,
                            uint16_t pdcch_DMRS_scrambling_id,
@@ -814,13 +815,15 @@ void nr_pdcch_unscrambling(int16_t *z,
       reset = 0;
     }
 
-    if (((s >> (i % 32)) & 1) == 1) z2[i] = -z[i];
-    else z2[i]=z[i];
+    if (((s >> (i % 32)) & 1) == 1)
+      z2[i] = -e_rx[i];
+    else
+      z2[i]=e_rx[i];
   }
-  printf("Encoded Payload (length:%d dwords):\n", length>>5);
+  printf("Encoded Payload (length:%d dwords):\n", length);
     
-    for (int i=0; i<length>>5; i++)
-      printf("[%d]->0x%08x \t", i, z2[i]);
+    for (int i=0; i<length; i++)
+      printf("[%d]->0x%x \t", i, z2[i]);
 }
 
 
@@ -855,7 +858,8 @@ static uint16_t nr_dci_false_detection(uint64_t *dci,
   return x;
 }
 
-uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
+uint8_t nr_dci_decoding_procedure(int16_t e_rx[4*2*100*12],
+				  PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
                                   fapi_nr_dci_indication_t *dci_ind,
                                   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
@@ -891,10 +895,10 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
       LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d, length %d, format %s\n",
             j, rel15->number_of_candidates, CCEind, e_rx_cand_idx, L, dci_length,nr_dci_format_string[rel15->dci_format_options[k]]);
 
-      nr_pdcch_unscrambling(&pdcch_vars->e_rx[e_rx_cand_idx], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
+      nr_pdcch_unscrambling(&e_rx[e_rx_cand_idx], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
 
 #ifdef DEBUG_DCI_DECODING
-      uint32_t *z = (uint32_t *) &pdcch_vars->e_rx[e_rx_cand_idx];
+      uint32_t *z = (uint32_t *) &e_rx[e_rx_cand_idx];
       for (int index_z = 0; index_z < L*6; index_z++){
         for (int i=0; i<9; i++) {
           LOG_D(PHY,"z[%d]=(%d,%d) \n", (9*index_z + i), *(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]));
