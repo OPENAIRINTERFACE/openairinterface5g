@@ -592,7 +592,6 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
   }
 
-  nr_csi_rs_info->N_ports = 0;
   uint16_t start_sc = frame_parms.first_carrier_offset;
 
   // resource mapping according to 38.211 7.4.1.5.3
@@ -600,12 +599,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
    if ( (csi_params->freq_density > 1) || (csi_params->freq_density == (n%2))) {  // for freq density 0.5 checks if even or odd RB
     for (int ji=0; ji<size; ji++) { // loop over CDM groups
       for (int s=0 ; s<gs; s++)  { // loop over each CDM group size
-
         p = s+j[ji]*gs; // port index
-        if(nr_csi_rs_info->N_ports<(p+1)) {
-          nr_csi_rs_info->N_ports = p+1;
-        }
-
         for (kp=0; kp<=kprime; kp++) { // loop over frequency resource elements within a group
           k = (start_sc+(n*NR_NB_SC_PER_RB)+koverline[ji]+kp)%(frame_parms.ofdm_symbol_size);  // frequency index of current resource element
           // wf according to tables 7.4.5.3-2 to 7.4.5.3-5
@@ -656,6 +650,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
   nr_csi_rs_info->CDM_group_size = gs;
   nr_csi_rs_info->kprime = kprime;
   nr_csi_rs_info->lprime = lprime;
+  nr_csi_rs_info->N_ports = ports;
   memcpy(nr_csi_rs_info->j,j,16*sizeof(uint8_t));
   memcpy(nr_csi_rs_info->koverline,koverline,16*sizeof(uint8_t));
   memcpy(nr_csi_rs_info->loverline,loverline,16*sizeof(uint8_t));
