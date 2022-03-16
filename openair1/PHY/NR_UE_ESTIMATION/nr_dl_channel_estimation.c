@@ -36,7 +36,7 @@
 //#define DEBUG_PDCCH
 //#define DEBUG_CH
 //#define DEBUG_PRS_CHEST
-#define DEBUG_PRS_PRINTS
+//#define DEBUG_PRS_PRINTS
 extern short nr_qpsk_mod_table[8];
 
 int nr_prs_channel_estimation(uint8_t gNB_id,
@@ -436,11 +436,11 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 #endif
 
     // T tracer dump
-    T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(0),
+    T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(gNB_id),
       T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
       T_INT(rxAnt), T_BUFFER(&prs_chestF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
 
-    T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(0),
+    T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(gNB_id),
       T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
       T_INT(rxAnt), T_BUFFER(&prs_chestT[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
 

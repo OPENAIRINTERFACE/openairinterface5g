@@ -1674,7 +1674,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     ue->prs_vars[gNB_id]->prs_cfg.PRSResourceTimeGap=1;
     ue->prs_vars[gNB_id]->prs_cfg.NPRSID=0;
 */
-    for(int j = ue->prs_vars[gNB_id]->prs_cfg.SymbolStart; j < (ue->prs_vars[gNB_id]->prs_cfg.SymbolStart + ue->prs_vars[gNB_id]->prs_cfg.NumPRSSymbols); j++)
+    for(int j = ue->prs_start_symb; j < ue->prs_end_symb; j++)
     {
             nr_slot_fep(ue,
                         proc,
@@ -1683,7 +1683,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     }
 
     //PRS channel estimation
-    nr_prs_channel_estimation(gNB_id,ue,proc,fp);
+    for(int gIdx = 0; gIdx < ue->prs_active_gNBs; gIdx++)
+      nr_prs_channel_estimation(gIdx,ue,proc,fp);
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
