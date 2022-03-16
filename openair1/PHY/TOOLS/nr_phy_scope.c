@@ -37,7 +37,7 @@
 const FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 const FL_COLOR water_colors[4] = {FL_BLUE,FL_GREEN,FL_YELLOW,FL_RED};
 
-typedef struct complex16 scopeSample_t;
+typedef c16_t scopeSample_t;
 #define SquaredNorm(VaR) ((VaR).r*(VaR).r+(VaR).i*(VaR).i)
 
 typedef struct {

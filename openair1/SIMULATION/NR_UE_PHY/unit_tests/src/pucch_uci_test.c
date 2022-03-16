@@ -1239,7 +1239,7 @@ int main(int argc, char *argv[])
   uint8_t nb_antennas_tx = 1;
   uint8_t nb_antennas_rx = 1;
   uint8_t frame_type = FDD;
-  uint8_t N_RB_DL=100;
+  int N_RB_DL=100;
   lte_prefix_type_t extended_prefix_flag = NORMAL;
   int Nid_cell[] = {(3*1+3)};
   VOID_PARAMETER argc;

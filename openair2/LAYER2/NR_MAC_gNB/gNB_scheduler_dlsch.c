@@ -1320,12 +1320,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   current_harq_pid);
 
       T(T_GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
-        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_INT(harq->round), T_BUFFER(harq->tb, TBS));
+        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_INT(harq->round), T_BUFFER(harq->transportBlock, TBS));
     } else { /* initial transmission */
 
       LOG_D(NR_MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
 
-      uint8_t *buf = (uint8_t *) harq->tb;
+      uint8_t *buf = (uint8_t *) harq->transportBlock;
 
       /* first, write all CEs that might be there */
       int written = nr_write_ce_dlsch_pdu(module_id,
@@ -1334,8 +1334,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                           255, // no drx
                                           NULL); // contention res id
       buf += written;
-      int size = TBS - written;
-      DevAssert(size >= 0);
+      uint8_t* bufEnd = buf + TBS - written;
+      DevAssert(TBS > written);
 
       /* next, get RLC data */
 
@@ -1345,18 +1345,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
       start_meas(&gNB_mac->rlc_data_req);
       if (sched_ctrl->num_total_bytes > 0) {
         tbs_size_t len = 0;
-        while (size > 3) {
+        while (bufEnd-buf > sizeof(NR_MAC_SUBHEADER_LONG) + 1 ) {
           // we do not know how much data we will get from RLC, i.e., whether it
           // will be longer than 256B or not. Therefore, reserve space for long header, then
           // fetch data, then fill real length
           NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
-          buf += 3;
-          size -= 3;
-
           /* limit requested number of bytes to what preprocessor specified, or
            * such that TBS is full */
-          const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
-
+          const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer,
+                                                   bufEnd-buf-+sizeof(NR_MAC_SUBHEADER_LONG));
           len = mac_rlc_data_req(module_id,
                                  rnti,
                                  module_id,
@@ -1365,12 +1362,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                  MBMS_FLAG_NO,
                                  lcid,
                                  ndata,
-                                 (char *)buf,
+                                 (char *)buf+sizeof(NR_MAC_SUBHEADER_LONG),
                                  0,
                                  0);
-
+          
           LOG_D(NR_MAC,
-                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
+                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %ld)\n",
                 frame,
                 slot,
                 rnti,
@@ -1378,59 +1375,45 @@ void nr_schedule_ue_spec(module_id_t module_id,
                 lcid < 4 ? "DCCH" : "DTCH",
                 lcid,
                 ndata,
-                size);
+                bufEnd-buf-+sizeof(NR_MAC_SUBHEADER_LONG));
           if (len == 0)
             break;
 
           header->R = 0;
           header->F = 1;
           header->LCID = lcid;
-          header->L1 = (len >> 8) & 0xff;
-          header->L2 = len & 0xff;
-          size -= len;
-          buf += len;
+          header->L = htons(len);
+          buf += len+sizeof(NR_MAC_SUBHEADER_LONG);
           dlsch_total_bytes += len;
-        }
-        if (len == 0) {
-          /* RLC did not have data anymore, mark buffer as unused */
-          buf -= 3;
-          size += 3;
         }
       }
       else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
         /* we will need the large header, phy-test typically allocates all
          * resources and fills to the last byte below */
-        NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
-        buf += 3;
-        size -= 3;
-        DevAssert(size > 0);
-        LOG_D(NR_MAC, "Configuring DL_TX in %d.%d: TBS %d with %d B of random data\n", frame, slot, TBS, size);
-        // fill dlsch_buffer with random data
-        for (int i = 0; i < size; i++)
-          buf[i] = lrand48() & 0xff;
-        header->R = 0;
-        header->F = 1;
-        header->LCID = DL_SCH_LCID_PADDING;
-        header->L1 = (size >> 8) & 0xff;
-        header->L2 = size & 0xff;
-        size -= size;
-        buf += size;
-        dlsch_total_bytes += size;
+        LOG_D(NR_MAC, "Configuring DL_TX in %d.%d: TBS %d of random data\n", frame, slot, TBS);
+        if (bufEnd-buf > sizeof(NR_MAC_SUBHEADER_LONG) ) {
+          NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
+          // fill dlsch_buffer with random data
+          header->R = 0;
+          header->F = 1;
+          header->LCID = DL_SCH_LCID_PADDING;
+          buf += sizeof(NR_MAC_SUBHEADER_LONG);
+          header->L = htons(bufEnd-buf);
+          dlsch_total_bytes += bufEnd-buf;
+          for (; buf < bufEnd; buf++) 
+            *buf = lrand48() & 0xff;
+        }
       }
       stop_meas(&gNB_mac->rlc_data_req);
 
       // Add padding header and zero rest out if there is space left
-      if (size > 0) {
+      if (bufEnd-buf > 0) {
         NR_MAC_SUBHEADER_FIXED *padding = (NR_MAC_SUBHEADER_FIXED *) buf;
         padding->R = 0;
         padding->LCID = DL_SCH_LCID_PADDING;
-        size -= 1;
         buf += 1;
-        while (size > 0) {
-          *buf = 0;
-          buf += 1;
-          size -= 1;
-        }
+        memset(buf,0,bufEnd-buf);
+        buf=bufEnd;
       }
 
       UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
@@ -1455,7 +1438,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       }
 
       T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
-        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(harq->tb, TBS));
+        T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(harq->transportBlock, TBS));
     }
 
     const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
@@ -1464,7 +1447,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     tx_req->PDU_index  = pduindex;
     tx_req->num_TLV = 1;
     tx_req->TLVs[0].length = TBS + 2;
-    memcpy(tx_req->TLVs[0].value.direct, harq->tb, TBS);
+    memcpy(tx_req->TLVs[0].value.direct, harq->transportBlock, TBS);
     gNB_mac->TX_req[CC_id].Number_of_PDUs++;
     gNB_mac->TX_req[CC_id].SFN = frame;
     gNB_mac->TX_req[CC_id].Slot = slot;

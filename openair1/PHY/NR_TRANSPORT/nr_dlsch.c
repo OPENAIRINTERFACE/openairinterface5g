@@ -98,7 +98,6 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
-    uint32_t scrambled_output[rel15->NrOfCodewords][(encoded_length>>5)+1];
     int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
@@ -125,7 +124,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     start_meas(dlsch_encoding_stats);
 
     if (nr_dlsch_encoding(gNB,
-                          harq->pdu, frame, slot, dlsch, frame_parms,output,tinput,tprep,tparity,toutput,
+                          frame, slot, harq, frame_parms,output,tinput,tprep,tparity,toutput,
                           dlsch_rate_matching_stats,
                           dlsch_interleaving_stats,
                           dlsch_segmentation_stats) == -1)
@@ -148,46 +147,41 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 #endif
 
     /// scrambling
-    start_meas(dlsch_scrambling_stats);
     for (int q=0; q<rel15->NrOfCodewords; q++) {
-      memset((void*)scrambled_output[q], 0, ((encoded_length>>5)+1)*sizeof(uint32_t));
+      uint32_t scrambled_output[encoded_length];
+      start_meas(dlsch_scrambling_stats);
       nr_pdsch_codeword_scrambling(output,
                                    encoded_length,
                                    q,
                                    rel15->dataScramblingId,
                                    rel15->rnti,
-                                   scrambled_output[q]);
-    }
-    
-    stop_meas(dlsch_scrambling_stats);
+                                   scrambled_output);
+      stop_meas(dlsch_scrambling_stats);
+
 #ifdef DEBUG_DLSCH
-    printf("PDSCH scrambling:\n");
-    for (int i=0; i<encoded_length>>8; i++) {
-      for (int j=0; j<8; j++)
-	printf("0x%08x\t", scrambled_output[0][(i<<3)+j]);
-      printf("\n");
-    }
+      printf("PDSCH scrambling:\n");
+      for (int i=0; i<encoded_length>>8; i++) {
+        for (int j=0; j<8; j++)
+          printf("0x%08x\t", scrambled_output[(i<<3)+j]);
+        printf("\n");
+      }
 #endif
-    
-    /// Modulation
     start_meas(dlsch_modulation_stats);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_MODULATION, 1);
-    for (int q=0; q<rel15->NrOfCodewords; q++)
-      nr_modulation(scrambled_output[q],
+      nr_modulation(scrambled_output,
 		    encoded_length,
 		    Qm,
 		    mod_symbs[q]);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_MODULATION, 0);
     stop_meas(dlsch_modulation_stats);
 #ifdef DEBUG_DLSCH
-    printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_re);
-    for (int i=0; i<nb_re>>3; i++) {
-      for (int j=0; j<8; j++) {
-	printf("%d %d\t", mod_symbs[0][((i<<3)+j)<<1], mod_symbs[0][(((i<<3)+j)<<1)+1]);
+      printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_re);
+      for (int i=0; i<nb_re>>3; i++) {
+        for (int j=0; j<8; j++) {
+          printf("%d %d\t", mod_symbs[0][((i<<3)+j)<<1], mod_symbs[0][(((i<<3)+j)<<1)+1]);
+        }
+        printf("\n");
       }
-      printf("\n");
-    }
 #endif
+    }
     
     start_meas(&gNB->dlsch_layer_mapping_stats); 
     /// Layer mapping

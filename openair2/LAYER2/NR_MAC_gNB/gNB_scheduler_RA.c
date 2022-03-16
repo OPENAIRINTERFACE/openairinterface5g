@@ -1619,7 +1619,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     harq->feedback_slot = pucch->ul_slot;
     harq->feedback_frame = pucch->frame;
 
-    uint8_t *buf = (uint8_t *) harq->tb;
+    uint8_t *buf = (uint8_t *) harq->transportBlock;
     // Bytes to be transmitted
     if (harq->round == 0) {
       if (ra->msg3_dcch_dtch) {
@@ -1866,11 +1866,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(ra->rnti),
-      T_INT(frameP), T_INT(slotP), T_INT(current_harq_pid), T_BUFFER(harq->tb, harq->tb_size));
+      T_INT(frameP), T_INT(slotP), T_INT(current_harq_pid), T_BUFFER(harq->transportBlock, harq->tb_size));
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
-    memcpy(tx_req->TLVs[0].value.direct, harq->tb, sizeof(uint8_t) * harq->tb_size);
+    memcpy(tx_req->TLVs[0].value.direct, harq->transportBlock, sizeof(uint8_t) * harq->tb_size);
     tx_req->PDU_length =  harq->tb_size;
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;

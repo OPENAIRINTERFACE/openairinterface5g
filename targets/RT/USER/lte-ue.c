@@ -1941,7 +1941,7 @@ void write_dummy(PHY_VARS_UE *UE,  openair0_timestamp timestamp) {
   // we have to write to tell explicitly to the eNB, else it will wait for us forever
   // we write the next subframe (always write in future of what we received)
   //
-  struct complex16 v= {0};
+  c16_t v= {0};
   void *samplesVoid[UE->frame_parms.nb_antennas_tx];
   
   for ( int i=0; i < UE->frame_parms.nb_antennas_tx; i++)

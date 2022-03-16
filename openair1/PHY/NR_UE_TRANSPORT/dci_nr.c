@@ -820,10 +820,6 @@ void nr_pdcch_unscrambling(int16_t e_rx[4*2*100*12],
     else
       z2[i]=e_rx[i];
   }
-  printf("Encoded Payload (length:%d dwords):\n", length);
-    
-    for (int i=0; i<length; i++)
-      printf("[%d]->0x%x \t", i, z2[i]);
 }
 
 
@@ -898,7 +894,7 @@ uint8_t nr_dci_decoding_procedure(int16_t e_rx[4*2*100*12],
       nr_pdcch_unscrambling(&e_rx[e_rx_cand_idx], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
 
 #ifdef DEBUG_DCI_DECODING
-      uint32_t *z = (uint32_t *) &e_rx[e_rx_cand_idx];
+      uint32_t *z = (uint32_t *) &pdcch_vars->e_rx[e_rx_cand_idx];
       for (int index_z = 0; index_z < L*6; index_z++){
         for (int i=0; i<9; i++) {
           LOG_D(PHY,"z[%d]=(%d,%d) \n", (9*index_z + i), *(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]));

@@ -1065,7 +1065,7 @@ void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nac
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
-  NR_UE_L2_STATE_t ret;
+  NR_UE_L2_STATE_t ret=0;
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
