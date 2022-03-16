@@ -93,9 +93,6 @@ THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
 uint32_t N_RB_DL = 106;
 
-/* dummy constant */
-NR_UE_RRC_INST_t *NR_UE_rrc_inst;
-
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;

@@ -117,7 +117,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                   "Too many ul_config pdus %d", ul_config->number_pdus);
       for (int i = 0; i < ul_config->number_pdus; ++i)
       {
-        LOG_I(NR_PHY, "In %s: processing type %d PDU of %d total UL PDUs (ul_config %p) \n",
+        LOG_D(NR_PHY, "In %s: processing type %d PDU of %d total UL PDUs (ul_config %p) \n",
               __FUNCTION__, ul_config->ul_config_list[i].pdu_type, ul_config->number_pdus, ul_config);
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type;
@@ -218,7 +218,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
             uci_ind->uci_list = CALLOC(uci_ind->num_ucis, sizeof(*uci_ind->uci_list));
             for (int j = 0; j < uci_ind->num_ucis; j++)
             {
-              LOG_I(NR_MAC, "ul_config->ul_config_list[%d].pucch_config_pdu.n_bit = %d\n", i, ul_config->ul_config_list[i].pucch_config_pdu.n_bit);
+              LOG_D(NR_MAC, "ul_config->ul_config_list[%d].pucch_config_pdu.n_bit = %d\n", i, ul_config->ul_config_list[i].pucch_config_pdu.n_bit);
               if (ul_config->ul_config_list[i].pucch_config_pdu.n_bit > 3 && mac->nr_ue_emul_l1.num_csi_reports > 0)
               {
                 uci_ind->uci_list[j].pdu_type = NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE;
@@ -265,7 +265,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
               }
             }
 
-            LOG_I(NR_PHY, "Sending UCI with %d PDUs in sfn.slot %d/%d\n",
+            LOG_D(NR_PHY, "Sending UCI with %d PDUs in sfn.slot %d/%d\n",
                   uci_ind->num_ucis, uci_ind->sfn, uci_ind->slot);
             NR_UL_IND_t ul_info = {
                 .uci_ind = *uci_ind,
@@ -276,7 +276,7 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
           }
 
           default:
-            LOG_I(NR_MAC, "Unknown ul_config->pdu_type %d\n", pdu_type);
+            LOG_W(NR_MAC, "Unknown ul_config->pdu_type %d\n", pdu_type);
           break;
         }
       }
