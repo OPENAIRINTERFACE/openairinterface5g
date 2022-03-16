@@ -130,7 +130,7 @@ int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
               int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
               uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*nr_csi_rs_info->CDM_group_size;
               int16_t *tx_csi_rs_signal = (int16_t*)&nr_csi_rs_info->csi_rs_generated_signal[port_tx][symbol_offset+dataF_offset];
-              LOG_I(NR_PHY, "l,k (%2d,%3d) |\tport_tx %d (%4d,%4d)\tant_rx %d (%4d,%4d)\n",
+              LOG_I(NR_PHY, "l,k (%2d,%4d) |\tport_tx %d (%4d,%4d)\tant_rx %d (%4d,%4d)\n",
                     symb,
                     k,
                     port_tx+3000,
@@ -148,6 +148,34 @@ int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
   }
 
   return 0;
+}
+
+int get_wf(int kp, int s) {
+  int wf = 0;
+  if (kp == 0) {
+    wf = 1;
+  } else {
+    wf = -2*(s%2)+1;
+  }
+  return wf;
+}
+
+int get_wt(int lp, int s) {
+  int wt = 0;
+  if (s < 2) {
+    wt = 1;
+  } else if (s < 4) {
+    wt = -2*(lp%2)+1;
+  } else if (s < 6) {
+    wt = -2*(lp/2)+1;
+  } else {
+    if ((lp == 0) || (lp == 3)) {
+      wt = 1;
+    } else {
+      wt = -1;
+    }
+  }
+  return wt;
 }
 
 int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
@@ -223,8 +251,6 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
       memset(csi_rs_estimated_channel_freq[ant_rx][port_tx], 0, frame_parms->ofdm_symbol_size*sizeof(int32_t));
     }
 
-    int16_t ls_estimated[2];
-
     for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
 
       // for freq density 0.5 checks if even or odd RB
@@ -232,52 +258,55 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
         continue;
       }
 
-      // TODO: Extend this to multiple antenna ports
-      int cdm_id = 0;
-      int s = 0;
-      int kp = 0;
-      int lp = 0;
+      int16_t ls_estimated[nr_csi_rs_info->N_ports][2];
+      for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+        memset(ls_estimated[port_tx], 0, 2*sizeof(int16_t));
+      }
 
-      uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*nr_csi_rs_info->CDM_group_size;
+      for (int cdm_id = 0; cdm_id < nr_csi_rs_info->N_cdm_groups; cdm_id++) {
+        for (int s = 0; s < nr_csi_rs_info->CDM_group_size; s++)  {
+          uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*nr_csi_rs_info->CDM_group_size;
+          for (int kp = 0; kp <= nr_csi_rs_info->kprime; kp++) {
+            uint16_t k = (frame_parms->first_carrier_offset + (rb*NR_NB_SC_PER_RB)+nr_csi_rs_info->koverline[cdm_id] + kp) % frame_parms->ofdm_symbol_size;
+            for (int lp = 0; lp <= nr_csi_rs_info->lprime; lp++) {
+              uint16_t symb = lp + nr_csi_rs_info->loverline[cdm_id];
+              uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
+              int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant_rx][port_tx][symbol_offset];
+              int w = get_wf(kp,s)*get_wt(lp,s);
+              ls_estimated[port_tx][0] += (int16_t) w*csi_rs_ls_estimated_channel[k<<1];
+              ls_estimated[port_tx][1] += (int16_t) w*csi_rs_ls_estimated_channel[(k<<1)+1];
+            }
+          }
+        }
+      }
 
-      uint16_t k = (frame_parms->first_carrier_offset + (rb*NR_NB_SC_PER_RB)+nr_csi_rs_info->koverline[cdm_id] + kp) % frame_parms->ofdm_symbol_size;
-      uint16_t symb = lp + nr_csi_rs_info->loverline[cdm_id];
-      uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
-
-      int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant_rx][port_tx][symbol_offset];
-      int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][k];
-
-      ls_estimated[0] = (int16_t) csi_rs_ls_estimated_channel[k<<1];
-      ls_estimated[1] = (int16_t) csi_rs_ls_estimated_channel[(k<<1)+1];
-
-      if( (k == 0) || (k == frame_parms->first_carrier_offset) ) { // Start of OFDM symbol case or first occupied subcarrier case
-        multadd_real_vector_complex_scalar(filt24_start, ls_estimated, csi_rs_estimated_channel16, 24);
-      } else if( ( (k + NR_NB_SC_PER_RB) >= frame_parms->ofdm_symbol_size) ||
+      uint16_t k = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
+      for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+        int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][k];
+        if( (k == 0) || (k == frame_parms->first_carrier_offset) ) { // Start of OFDM symbol case or first occupied subcarrier case
+          multadd_real_vector_complex_scalar(filt24_start, ls_estimated[port_tx], csi_rs_estimated_channel16, 24);
+        } else if( ( (k + NR_NB_SC_PER_RB) >= frame_parms->ofdm_symbol_size) ||
                    (rb == (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs-1)) ) { // End of OFDM symbol case or Last occupied subcarrier case
-        multadd_real_vector_complex_scalar(filt24_end, ls_estimated, csi_rs_estimated_channel16 - 3*sizeof(uint64_t), 24);
-      } else { // Middle case
-        multadd_real_vector_complex_scalar(filt24_middle, ls_estimated, csi_rs_estimated_channel16 - 3*sizeof(uint64_t), 24);
+          multadd_real_vector_complex_scalar(filt24_end, ls_estimated[port_tx], csi_rs_estimated_channel16 - 3*sizeof(uint64_t), 24);
+        } else { // Middle case
+          multadd_real_vector_complex_scalar(filt24_middle, ls_estimated[port_tx], csi_rs_estimated_channel16 - 3*sizeof(uint64_t), 24);
+        }
       }
     }
 
 #ifdef NR_CSIRS_DEBUG
 
-    int cdm_id = 0;
-    int s = 0;
-    int lp = 0;
-    uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*nr_csi_rs_info->CDM_group_size;
-    uint16_t symb = lp + nr_csi_rs_info->loverline[cdm_id];
-    uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
-    int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant_rx][port_tx][symbol_offset];
-    int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][0];
-
+    uint64_t symbol_offset = csirs_config_pdu->symb_l0*frame_parms->ofdm_symbol_size;
     for(int k = 0; k<frame_parms->ofdm_symbol_size; k++) {
-      LOG_I(NR_PHY, "(%4d) |\tls (%4d,%4d)\tint (%4d,%4d)\n",
-            k,
-            csi_rs_ls_estimated_channel[k<<1],
-            csi_rs_ls_estimated_channel[(k<<1)+1],
-            csi_rs_estimated_channel16[k<<1],
-            csi_rs_estimated_channel16[(k<<1)+1]);
+      LOG_I(NR_PHY, "(k = %4d) |\t", k);
+      for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+        printf("Channel port_tx %d --> ant_rx %d : ", port_tx+3000, ant_rx);
+        int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant_rx][port_tx][symbol_offset];
+        printf("ls (%4d,%4d), ", csi_rs_ls_estimated_channel[k<<1], csi_rs_ls_estimated_channel[(k<<1)+1]);
+        int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][0];
+        printf("int (%4d,%4d) | ", csi_rs_estimated_channel16[k<<1], csi_rs_estimated_channel16[(k<<1)+1]);
+      }
+      printf("\n");
     }
 
 #endif
