@@ -1746,6 +1746,18 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
 
   NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
 
+  // Config CSI-RS
+  NR_CSI_MeasConfig_t *csi_MeasConfig;
+  if(!SpCellConfig->spCellConfigDedicated->csi_MeasConfig) {
+    csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
+    SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
+  }
+  else
+    csi_MeasConfig = SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+
+  int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+  config_csirs(scc, csi_MeasConfig, uid, carrier->pdsch_AntennaPorts, curr_bwp, carrier->do_CSIRS);
+
   // Set DL MCS table
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
@@ -1758,13 +1770,8 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
       set_dl_mcs_table(scs, uecap, bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
     }
   }
-
-  // Config CSI-RS
-  NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
-  SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
-  int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-  config_csirs(scc, csi_MeasConfig, uid, carrier->pdsch_AntennaPorts, curr_bwp, carrier->do_CSIRS);
 }
+
 
 void fill_initial_cellGroupConfig(int uid,
                                   NR_CellGroupConfig_t *cellGroupConfig,
