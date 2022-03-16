@@ -283,7 +283,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int n2;
 
   int nb_re_pucch = 12*pucch_pdu->prb_size;  // prb size is 1
-  int32_t rp[frame_parms->nb_antennas_rx][2][nb_re_pucch],*tmp_rp;
+  int32_t rp[frame_parms->nb_antennas_rx][pucch_pdu->nr_of_symbols][nb_re_pucch],*tmp_rp;
 
   for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
     l2 = l+pucch_pdu->start_symbol_index;
@@ -305,7 +305,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
       int16_t *r = (int16_t*)&rp[aa][l];
       n2=0;
-      for (n=0;n<12;n++,n2+=2) {
+      for (n=0;n<nb_re_pucch;n++,n2+=2) {
         xr[aa][l][n2]  +=(int16_t)(((int32_t)x_re[l][n]*r[n2]+(int32_t)x_im[l][n]*r[n2+1])>>15);
         xr[aa][l][n2+1]+=(int16_t)(((int32_t)x_re[l][n]*r[n2+1]-(int32_t)x_im[l][n]*r[n2])>>15);
 #ifdef DEBUG_NR_PUCCH_RX

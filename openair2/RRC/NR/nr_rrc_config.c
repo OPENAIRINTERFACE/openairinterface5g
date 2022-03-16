@@ -37,6 +37,7 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        int rbsize,
                        int mcs_table) {
 
+  NR_Phy_Parameters_t *phy_Parameters = &cap->phy_Parameters;
   int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
   NR_BandNR_t *nr_bandnr = CALLOC(1,sizeof(NR_BandNR_t));
   nr_bandnr->bandNR = band;
@@ -50,8 +51,8 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
       *bandNRinfo->pdsch_256QAM_FR2 = NR_BandNR__pdsch_256QAM_FR2_supported;
     }
     else{
-      cap->phy_Parameters.phy_ParametersFR1 = CALLOC(1,sizeof(*cap->phy_Parameters.phy_ParametersFR1));
-      NR_Phy_ParametersFR1_t *phy_fr1 = cap->phy_Parameters.phy_ParametersFR1;
+      phy_Parameters->phy_ParametersFR1 = CALLOC(1,sizeof(*phy_Parameters->phy_ParametersFR1));
+      NR_Phy_ParametersFR1_t *phy_fr1 = phy_Parameters->phy_ParametersFR1;
       phy_fr1->pdsch_256QAM_FR1 = CALLOC(1,sizeof(*phy_fr1->pdsch_256QAM_FR1));
       *phy_fr1->pdsch_256QAM_FR1 = NR_Phy_ParametersFR1__pdsch_256QAM_FR1_supported;
     }
@@ -73,6 +74,9 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
     ASN_SEQUENCE_ADD(&fs->featureSetsDownlinkPerCC->list,
                      fs_cc);
   }
+
+  phy_Parameters->phy_ParametersFRX_Diff = CALLOC(1,sizeof(*phy_Parameters->phy_ParametersFRX_Diff));
+  phy_Parameters->phy_ParametersFRX_Diff->pucch_F0_2WithoutFH = NULL;
 }
 
 void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
