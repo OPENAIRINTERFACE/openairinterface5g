@@ -46,7 +46,10 @@ typedef struct {
      int priority;                        // server running priority
      unsigned int   listenport;           // ip port the telnet server is listening on
      unsigned int   listenaddr;           // ip address the telnet server is listening on
-     unsigned int   listenstdin;          // enable command input from stdin    
+     unsigned int   listenstdin;          // enable command input from stdin
+     char *url;                           // url for the main (initial) web page 
+     char *certfile;                      // cert file
+     char *keyfile;                       // key file    
 } websrv_params_t;
 
 
