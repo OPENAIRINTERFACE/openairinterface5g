@@ -997,8 +997,6 @@ include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/S1AP")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
-include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
-include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
 include_directories("${OPENAIR2_DIR}/UTIL/MEM")
 include_directories("${OPENAIR2_DIR}/UTIL/LISTS")
 include_directories("${OPENAIR2_DIR}/UTIL/FIFO")
@@ -1013,8 +1011,29 @@ include_directories("${OPENAIR2_DIR}/UTIL/OMV")
 include_directories("${OPENAIR2_DIR}/RRC/LTE/MESSAGES")
 include_directories("${OPENAIR_DIR}")
 
-# Utilities Library
+# flexran
 ################
+# Make lfds as a own source code (even if it is a outside library)
+# only user: Flexran, please don't use lfds in any other component
+###################################################################
+
+set(lfds7 ${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/src/)
+file(GLOB lfds7_queue ${lfds7}/lfds700_queue/*.c)
+file(GLOB lfds7_ring ${lfds7}/lfds700_ringbuffer/*.c)
+file(GLOB lfds7_qbss ${lfds7}/lfds700_queue_bounded_singleconsumer_singleproducer/*.c)
+file(GLOB lfds7_stack ${lfds7}/lfds700_stack/*.c)
+file(GLOB lfds7_freelist ${lfds7}/lfds700_freelist/*.c)
+file(GLOB lfds7_btree ${lfds7}/lfds700_btree_addonly_unbalanced/*.c)
+file(GLOB lfds7_hash ${lfds7}/lfds700_hash_addonly/*.c)
+file(GLOB lfds7_ordered_list ${lfds7}/lfds700_list_addonly_ordered_singlylinked/*.c)
+file(GLOB lfds7_unordered_list ${lfds7}/lfds700_list_addonly_singlylinked_unordered/*.c)
+file(GLOB lfds7_misc ${lfds7}/lfds700_misc/*.c)
+
+add_library(LFDS7
+  ${lfds7_queue} ${lfds7_ring} ${lfds7_qbss} ${lfds7_stack} ${lfds7_freelist} ${lfds7_btree} ${lfds7_hash} ${lfds7_ordered_list} ${lfds7_unordered_list} ${lfds7_misc}
+)
+
+target_include_directories(LFDS7 PRIVATE "${lfds7}")
 # set the version of protobuf messages, V3 not supported yet
 add_list1_option(FLPT_VERSION V2 "FLPT MSG  protobuf  grammar version" V2 V3)
 
@@ -1062,6 +1081,9 @@ add_library(FLPT_MSG
   ${FLPT_OAI_generated}
   ${FLPT_source}
   )
+target_link_libraries(FLPT_MSG LFDS7)
+add_dependencies(FLPT_MSG LFDS7)
+
 set(FLPT_MSG_LIB FLPT_MSG)
 #message("prpt c dir is : ${FLPT_C_DIR}")
 include_directories (${FLPT_C_DIR})
@@ -1073,6 +1095,7 @@ add_library(ASYNC_IF
   ${OPENAIR2_DIR}/UTIL/ASYNC_IF/ringbuffer_queue.c
   )
 set(ASYNC_IF_LIB ASYNC_IF)
+target_include_directories(ASYNC_IF PRIVATE "${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
 include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
 
 add_library(FLEXRAN_AGENT
@@ -1095,7 +1118,9 @@ add_library(FLEXRAN_AGENT
   ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac_slice_verification.c
   ${OPENAIR2_DIR}/ENB_APP/flexran_agent_app.c
   )
-add_dependencies(FLEXRAN_AGENT rrc_flag)
+add_dependencies(FLEXRAN_AGENT rrc_flag ASYNC_IF)
+target_link_libraries(FLEXRAN_AGENT ASYNC_IF LFDS7)
+target_include_directories(FLEXRAN_AGENT PRIVATE "${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
 set(FLEXRAN_AGENT_LIB FLEXRAN_AGENT)
 add_library(flapp_sample SHARED
   ${OPENAIR2_DIR}/ENB_APP/flexran_apps/sample.c
@@ -1158,6 +1183,10 @@ include_directories (${FSPT_C_DIR})
 set(PROTOBUF_LIB "protobuf-c")
 
 #set(PROTOBUF_LIB "protobuf") #for Cpp
+
+###########
+# Utilities
+###############
 
 add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/hashtable/hashtable.c
@@ -1781,7 +1810,6 @@ set(L2_SRC
   ${PDCP_DIR}/pdcp_primitives.c
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
-  ${PDCP_DIR}/pdcp_netlink.c
   ${OPENAIR2_DIR}/LAYER2/openair2_proc.c
 #  ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_eNB.c
@@ -1836,7 +1864,6 @@ set(L2_SRC_UE
   ${PDCP_DIR}/pdcp_primitives.c
   ${PDCP_DIR}/pdcp_util.c
   ${PDCP_DIR}/pdcp_security.c
-  ${PDCP_DIR}/pdcp_netlink.c
   ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_common.c
   ${RRC_DIR}/L2_interface_common.c
@@ -2377,43 +2404,6 @@ add_library(LIB_5GNAS_GNB
   )
 target_link_libraries(LIB_5GNAS_GNB SECU_CN ${CRYPTO_LIBRARIES})
 
-# Make lfds as a own source code (even if it is a outside library)
-# For better intergration with compilation flags & structure of cmake
-###################################################################
-set(lfds ${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/src/)
-file(GLOB lfds_queue ${lfds}/lfds611_queue/*.c)
-file(GLOB lfds_ring ${lfds}/lfds611_ringbuffer/*.c)
-file(GLOB lfds_slist ${lfds}/lfds611_slist/*.c)
-file(GLOB lfds_stack ${lfds}/lfds611_stack/*.c)
-file(GLOB lfds_freelist ${lfds}/lfds611_freelist/*.c)
-
-include_directories(${lfds})
-add_library(LFDS
-  ${lfds_queue} ${lfds_ring} ${lfds_slist} ${lfds_stack} ${lfds_freelist}
-  ${lfds}/lfds611_liblfds/lfds611_liblfds_abstraction_test_helpers.c
-  ${lfds}/lfds611_liblfds/lfds611_liblfds_aligned_free.c
-  ${lfds}/lfds611_liblfds/lfds611_liblfds_aligned_malloc.c
-  ${lfds}/lfds611_abstraction/lfds611_abstraction_free.c
-  ${lfds}/lfds611_abstraction/lfds611_abstraction_malloc.c
-)
-
-set(lfds7 ${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/src/)
-file(GLOB lfds7_queue ${lfds7}/lfds700_queue/*.c)
-file(GLOB lfds7_ring ${lfds7}/lfds700_ringbuffer/*.c)
-file(GLOB lfds7_qbss ${lfds7}/lfds700_queue_bounded_singleconsumer_singleproducer/*.c)
-file(GLOB lfds7_stack ${lfds7}/lfds700_stack/*.c)
-file(GLOB lfds7_freelist ${lfds7}/lfds700_freelist/*.c)
-file(GLOB lfds7_btree ${lfds7}/lfds700_btree_addonly_unbalanced/*.c)
-file(GLOB lfds7_hash ${lfds7}/lfds700_hash_addonly/*.c)
-file(GLOB lfds7_ordered_list ${lfds7}/lfds700_list_addonly_ordered_singlylinked/*.c)
-file(GLOB lfds7_unordered_list ${lfds7}/lfds700_list_addonly_singlylinked_unordered/*.c)
-file(GLOB lfds7_misc ${lfds7}/lfds700_misc/*.c)
-
-include_directories(${lfds7})
-add_library(LFDS7
-  ${lfds7_queue} ${lfds7_ring} ${lfds7_qbss} ${lfds7_stack} ${lfds7_freelist} ${lfds7_btree} ${lfds7_hash} ${lfds7_ordered_list} ${lfds7_unordered_list} ${lfds7_misc}
-)
-
 add_library(SIMU_COMMON
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/random_channel.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/rangen_double.c
@@ -2603,8 +2593,8 @@ add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag oai_iqplayer)
 target_link_libraries (lte-softmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U F1AP_LIB F1AP SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
-  PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB LFDS7
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB}
+  PHY_COMMON PHY PHY_RU  L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
+  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
@@ -2643,8 +2633,8 @@ target_link_libraries (ocp-enb
   -Wl,--start-group
 
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
-  PHY_COMMON PHY PHY_RU LFDS L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB LFDS7 SIMU_COMMON
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB}
+  PHY_COMMON PHY PHY_RU L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU_COMMON
+  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB}  ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
 target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${LIB_LMS_LIBRARIES} ${T_LIB})
 
@@ -2701,8 +2691,8 @@ target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB
   SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
-  PHY_UE PHY_RU LFDS L2_UE L2_LTE LFDS7 SIMU_COMMON SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${ATLAS_LIBRARIES}
+  PHY_UE PHY_RU L2_UE L2_LTE SIMU_COMMON SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
+  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB}  ${ATLAS_LIBRARIES}
   -Wl,--end-group z dl)
 
 target_link_libraries (lte-uesoftmodem ${LIBXML2_LIBRARIES})
@@ -2740,8 +2730,8 @@ add_executable(nr-softmodem
 
 target_link_libraries (nr-softmodem
   -Wl,--start-group
-  UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
-  ITTI ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB
+  UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECU_CN SECU_OSA
+  ITTI ${FLPT_MSG_LIB} ${FLEXRAN_AGENT_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${FSPT_MSG_LIB}
   -Wl,--end-group z dl)
@@ -2780,11 +2770,11 @@ add_executable(nr-uesoftmodem
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
-  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
+  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB MISC_NFAPI_NR_LIB S1AP_LIB S1AP_ENB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
+  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ATLAS_LIBRARIES}
   NFAPI_USER_LIB S1AP_LIB S1AP_ENB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB}
+  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB}
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
@@ -2812,7 +2802,7 @@ add_executable(dlsim_tm4
   ${T_SOURCE}
   )
 target_link_libraries (dlsim_tm4
-  -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY LFDS ITTI -Wl,--end-group
+  -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY ITTI -Wl,--end-group
   pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES} ${T_LIB}
   )
 
@@ -2976,7 +2966,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${NFAPI_USER_DIR}/nfapi.c
     )
   target_link_libraries (${myExe}
-    -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU LFDS ITTI LFDS7 -Wl,--end-group
+    -Wl,--start-group SIMU_COMMON SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU ITTI -Wl,--end-group
     pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} ${T_LIB} dl
     )
 
@@ -2998,7 +2988,7 @@ foreach(myExe s1ap
     ${OPENAIR3_DIR}/TEST/test_${myExe}.c
     )
   target_link_libraries (test_${myExe}
-    -Wl,--start-group SECU_CN UTIL LFDS -Wl,--end-group m rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} CONFIG_LIB
+    -Wl,--start-group SECU_CN UTIL -Wl,--end-group m rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} CONFIG_LIB
     )
 endforeach(myExe)
 
@@ -3019,12 +3009,12 @@ if (${T_TRACER})
         ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP
         params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
         oai_eth_transpro oai_mobipass tcp_bridge tcp_bridge_oai
-        coding FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE UTIL OMG_SUMO
+        coding FLPT_MSG FLEXRAN_AGENT HASHTABLE UTIL OMG_SUMO
         SECU_OSA SECU_CN SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL
         NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_VNF_LIB NFAPI_USER_LIB
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX
         L2 L2_LTE L2_NR L2_LTE_NR L2_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON MAC_NR MAC_UE_NR NGAP_GNB
-        CN_UTILS GTPV1U SCTP_CLIENT MME_APP LIB_NAS_UE NB_IoT LFDS LFDS7 SIMU_COMMON SIMU SIMU_ETH OPENAIR0_LIB
+        CN_UTILS GTPV1U SCTP_CLIENT MME_APP LIB_NAS_UE NB_IoT SIMU_COMMON SIMU SIMU_ETH OPENAIR0_LIB
         ldpc_orig ldpc_optim ldpc_optim8seg ldpc dfts)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
@@ -3128,8 +3118,8 @@ add_executable(nr-ittisim
 
 target_link_libraries (nr-ittisim
   -Wl,--start-group
-  UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
-  ITTI ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${RAL_LIB} ${NAS_SIM_LIB} RRC_LIB NR_RRC_LIB
+  UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECU_CN SECU_OSA
+  ITTI ${FLPT_MSG_LIB} ${FLEXRAN_AGENT_LIB} ${RAL_LIB} ${NAS_SIM_LIB} RRC_LIB NR_RRC_LIB
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${FSPT_MSG_LIB}
   PHY_NR_UE SCHED_NR_UE_LIB NR_L2_UE
