@@ -1313,7 +1313,7 @@ void RCconfig_nrUE_prs(void *cfg)
         ue->prs_vars[gNB_id]->prs_cfg.NPRSID                   = *(PRS_ParamList.paramarray[j][PRS_ID].uptr);
 
         LOG_I(PHY, "--------------------------\n");
-        LOG_I(PHY, "PRS Config for gNB_id %d\n", gNB_id);
+        LOG_I(PHY, "PRS Config for gNB_id %d @ %p\n", gNB_id, &ue->prs_vars[gNB_id]->prs_cfg);
         LOG_I(PHY, "--------------------------\n");
         LOG_I(PHY, "PRSResourceSetPeriod0 %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[0]);
         LOG_I(PHY, "PRSResourceSetPeriod1 %d\n", ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[1]);

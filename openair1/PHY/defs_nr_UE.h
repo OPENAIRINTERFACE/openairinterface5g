@@ -387,6 +387,7 @@ typedef struct {
   prs_data_t prs_cfg;
   int32_t **prs_ch_estimates;
   int32_t **prs_ch_estimates_time;
+  int64_t reserved;
 } NR_UE_PRS;
 
 #define NR_PDCCH_DEFS_NR_UE
