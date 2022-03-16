@@ -2,9 +2,9 @@
 /* eslint-disable no-shadow */
 /* eslint-disable eqeqeq */
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Component, OnInit } from '@angular/core';
-import { Observable, of } from 'rxjs';
-import { map, mergeMap, tap } from 'rxjs/operators';
+import { Component } from '@angular/core';
+import { Observable } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { CommandsApi } from 'src/app/api/commands.api';
 import { CommandCtrl } from 'src/app/controls/command.control';
 import { LoadingService } from 'src/app/services/loading.service';
@@ -22,7 +22,6 @@ export class CommandsComponent {
 
   constructor(
     public commandsApi: CommandsApi,
-    public autoSendApi: CommandsApi,
     public loadingService: LoadingService,
   ) {
     this.commandsCtrls$ = this.commandsApi.readCommands$().pipe(

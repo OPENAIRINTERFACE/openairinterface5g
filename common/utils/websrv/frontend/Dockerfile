@@ -1,6 +1,6 @@
 FROM nginx:alpine
 
-COPY dist/lsd-ngx /usr/share/nginx/html/
+COPY dist/softmodem-ngx /usr/share/nginx/html/
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

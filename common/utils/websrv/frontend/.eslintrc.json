@@ -10,7 +10,7 @@
       ],
       "parserOptions": {
         "project": [
-          "ngx/tsconfig.json"
+          "openairinterface5g/common/utils/websrv/frontend/tsconfig.json"
         ],
         "createDefaultProgram": true
       },
