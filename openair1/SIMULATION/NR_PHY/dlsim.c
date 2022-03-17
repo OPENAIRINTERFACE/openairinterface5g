@@ -87,9 +87,6 @@ PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
-/* dummy constant */
-NR_UE_RRC_INST_t *NR_UE_rrc_inst;
-
 double cpuf;
 char *uecap_file;
 
