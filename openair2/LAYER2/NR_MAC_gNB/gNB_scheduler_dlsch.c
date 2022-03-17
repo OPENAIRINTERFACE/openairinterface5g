@@ -598,9 +598,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
-    NR_pdsch_semi_static_t temp_ps;
-    temp_ps.nrOfLayers = 1;
-    nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd,tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
+    NR_pdsch_semi_static_t temp_ps = *ps;
+    nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
     while (rbStart < bwpSize &&
            !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbStart++;
