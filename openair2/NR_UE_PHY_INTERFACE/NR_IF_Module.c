@@ -640,12 +640,9 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
         if (!put_queue(&nr_ul_tti_req_queue, ul_tti_req))
         {
             LOG_E(NR_PHY, "put_queue failed for ul_tti_req.\n");
-            free(ul_tti_req);
-            ul_tti_req = NULL;
         }
         return;
     }
-    free(ul_tti_req);
 }
 
 static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_config_request_t *dl_config)
@@ -710,20 +707,29 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         slot = dl_tti_request->Slot;
         LOG_I(NR_PHY, "[%d, %d] dl_tti_request\n", frame, slot);
         copy_dl_tti_req_to_dl_info(&mac->dl_info, dl_tti_request);
+        free_and_zero(dl_tti_request);
     }
     /* This checks if the previously recevied DCI matches our current RNTI
        value. The assumption is that if the DCI matches our RNTI, then the
        incoming tx_data_request is also destined for the current UE. If the
        RAR hasn't been processed yet, we do not want to be filtering the
        tx_data_requests. */
-    if (tx_data_request && (mac->nr_ue_emul_l1.expected_sib ||
-                            mac->nr_ue_emul_l1.expected_rar ||
-                            mac->nr_ue_emul_l1.expected_dci))
+    if (tx_data_request)
     {
-        frame = tx_data_request->SFN;
-        slot = tx_data_request->Slot;
-        LOG_I(NR_PHY, "[%d, %d] PDSCH in tx_request\n", frame, slot);
-        copy_tx_data_req_to_dl_info(&mac->dl_info, tx_data_request);
+        if (mac->nr_ue_emul_l1.expected_sib ||
+            mac->nr_ue_emul_l1.expected_rar ||
+            mac->nr_ue_emul_l1.expected_dci)
+        {
+            frame = tx_data_request->SFN;
+            slot = tx_data_request->Slot;
+            LOG_I(NR_PHY, "[%d, %d] PDSCH in tx_request\n", frame, slot);
+            copy_tx_data_req_to_dl_info(&mac->dl_info, tx_data_request);
+        }
+        else
+        {
+            LOG_D(NR_MAC, "Unexpected tx_data_req\n");
+        }
+        free_and_zero(tx_data_request);
     }
     else if (ul_dci_request)
     {
@@ -731,6 +737,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         slot = ul_dci_request->Slot;
         LOG_I(NR_PHY, "[%d, %d] ul_dci_request\n", frame, slot);
         copy_ul_dci_data_req_to_dl_info(&mac->dl_info, ul_dci_request);
+        free_and_zero(ul_dci_request);
     }
     else if (ul_tti_request)
     {
@@ -738,6 +745,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         slot = ul_tti_request->Slot;
         LOG_D(NR_PHY, "[%d, %d] ul_tti_request\n", frame, slot);
         copy_ul_tti_data_req_to_dl_info(&mac->dl_info, ul_tti_request);
+        free_and_zero(ul_tti_request);
     }
     else
     {
@@ -771,7 +779,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                           mac->scc->tdd_UL_DL_ConfigurationCommon :
                           mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
                           ul_info.slot_tx,
-                          mac->frame_type))
+                          mac->frame_type) && mac->ra.ra_state != RA_SUCCEEDED)
         {
             nr_ue_scheduler(NULL, &ul_info);
             nr_ue_prach_scheduler(ul_info.module_id, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);

@@ -380,9 +380,11 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     }
     if (slot_ind) {
       sfn_slot = *slot_ind;
+      free_and_zero(slot_ind);
     }
     else if (ch_info) {
       sfn_slot = ch_info->sfn_slot;
+      free_and_zero(ch_info);
     }
 
     frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
@@ -465,10 +467,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       pdcp_run(&ctxt);
     }
     process_queued_nr_nfapi_msgs(mac, sfn_slot);
-    free(slot_ind);
-    slot_ind = NULL;
-    free(ch_info);
-    ch_info = NULL;
   }
   return NULL;
 }
