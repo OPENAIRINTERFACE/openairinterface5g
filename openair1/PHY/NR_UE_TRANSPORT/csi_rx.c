@@ -178,6 +178,21 @@ int get_wt(int lp, int s) {
   return wt;
 }
 
+uint32_t calc_power_csirs(uint16_t *x, fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu) {
+  uint64_t sum_x = 0;
+  uint64_t sum_x2 = 0;
+  uint16_t size = 0;
+  for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
+    if (csirs_config_pdu->freq_density <= 1 && csirs_config_pdu->freq_density != (rb % 2)) {
+      continue;
+    }
+    sum_x = sum_x + x[rb-csirs_config_pdu->start_rb];
+    sum_x2 = sum_x2 + x[rb]*x[rb-csirs_config_pdu->start_rb];
+    size++;
+  }
+  return sum_x2/size - (sum_x/size)*(sum_x/size);
+}
+
 int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
                                  UE_nr_rxtx_proc_t *proc,
                                  fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
@@ -189,6 +204,7 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
+  *noise_power = 0;
 
   for (int ant_rx = 0; ant_rx < frame_parms->nb_antennas_rx; ant_rx++) {
 
@@ -289,21 +305,52 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
       }
     }
 
+    /// Power noise estimation
+    uint16_t noise_real[frame_parms->nb_antennas_rx][nr_csi_rs_info->N_ports][csirs_config_pdu->nr_of_rbs];
+    uint16_t noise_imag[frame_parms->nb_antennas_rx][nr_csi_rs_info->N_ports][csirs_config_pdu->nr_of_rbs];
+    for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
+      if (csirs_config_pdu->freq_density <= 1 && csirs_config_pdu->freq_density != (rb % 2)) {
+        continue;
+      }
+      uint16_t k = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
+      for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+        int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant_rx][port_tx][k];
+        int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][k];
+        noise_real[ant_rx][port_tx][rb-csirs_config_pdu->start_rb] = abs(csi_rs_ls_estimated_channel[0]-csi_rs_estimated_channel16[0]);
+        noise_imag[ant_rx][port_tx][rb-csirs_config_pdu->start_rb] = abs(csi_rs_ls_estimated_channel[1]-csi_rs_estimated_channel16[1]);
+      }
+    }
+    for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+      *noise_power += (calc_power_csirs(noise_real[ant_rx][port_tx], csirs_config_pdu) + calc_power_csirs(noise_imag[ant_rx][port_tx],csirs_config_pdu));
+    }
+
 #ifdef NR_CSIRS_DEBUG
     for(int k = 0; k<frame_parms->ofdm_symbol_size; k++) {
+      int rb = k >= frame_parms->first_carrier_offset ?
+               (k - frame_parms->first_carrier_offset)/NR_NB_SC_PER_RB :
+               (k + frame_parms->ofdm_symbol_size - frame_parms->first_carrier_offset)/NR_NB_SC_PER_RB;
       LOG_I(NR_PHY, "(k = %4d) |\t", k);
       for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
-        printf("Channel port_tx %d --> ant_rx %d : ", port_tx+3000, ant_rx);
         int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant_rx][port_tx][0];
-        printf("ls (%4d,%4d), ", csi_rs_ls_estimated_channel[k<<1], csi_rs_ls_estimated_channel[(k<<1)+1]);
         int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][0];
-        printf("int (%4d,%4d) | ", csi_rs_estimated_channel16[k<<1], csi_rs_estimated_channel16[(k<<1)+1]);
+        printf("Channel port_tx %d --> ant_rx %d : ls (%4d,%4d), int (%4d,%4d), noise (%4d,%4d) |",
+               port_tx+3000, ant_rx,
+               csi_rs_ls_estimated_channel[k<<1], csi_rs_ls_estimated_channel[(k<<1)+1],
+               csi_rs_estimated_channel16[k<<1], csi_rs_estimated_channel16[(k<<1)+1],
+               rb >= csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs ? 0 : noise_real[ant_rx][port_tx][rb-csirs_config_pdu->start_rb],
+               rb >= csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs ? 0 : noise_imag[ant_rx][port_tx][rb-csirs_config_pdu->start_rb]);
       }
       printf("\n");
     }
 #endif
 
   }
+
+  *noise_power /= (frame_parms->nb_antennas_rx*nr_csi_rs_info->N_ports);
+
+#ifdef NR_CSIRS_DEBUG
+  LOG_I(NR_PHY, "Noise power estimation based on CSI-RS: %i\n", *noise_power);
+#endif
 
   return 0;
 }
