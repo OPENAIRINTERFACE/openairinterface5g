@@ -402,29 +402,10 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       }
     }
 
-    // PBCH
-    pbch_vars[gNB_id]->rxdataF_ext         = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    pbch_vars[gNB_id]->rxdataF_comp        = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-    pbch_vars[gNB_id]->dl_ch_estimates     = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-    pbch_vars[gNB_id]->dl_ch_estimates_ext = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-    pbch_vars[gNB_id]->dl_ch_estimates_time = (int32_t **)malloc16_clear( 4*fp->nb_antennas_rx*sizeof(int32_t *) );
-    pbch_vars[gNB_id]->llr                 = (int16_t *)malloc16_clear( 1920 ); //
+    // RACH
     prach_vars[gNB_id]->prachF             = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
     prach_vars[gNB_id]->prach              = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
 
-    for (i=0; i<fp->nb_antennas_rx; i++) {
-      pbch_vars[gNB_id]->rxdataF_ext[i]    = (int32_t *)malloc16_clear( sizeof(int32_t)*20*12*4 );
-
-      for (j=0; j<4; j++) {//fp->nb_antennas_tx;j++) {
-        int idx = (j*fp->nb_antennas_rx)+i;
-        pbch_vars[gNB_id]->rxdataF_comp[idx]        = (int32_t *)malloc16_clear( sizeof(int32_t)*20*12*4 );
-        pbch_vars[gNB_id]->dl_ch_estimates[idx]     = (int32_t *)malloc16_clear( sizeof(int32_t)*7*2*sizeof(int)*(fp->ofdm_symbol_size) );
-        pbch_vars[gNB_id]->dl_ch_estimates_time[idx]= (int32_t *)malloc16_clear( sizeof(int32_t)*7*2*sizeof(int)*(fp->ofdm_symbol_size) );
-        pbch_vars[gNB_id]->dl_ch_estimates_ext[idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*20*12*4 );
-      }
-    }
-
-    pbch_vars[gNB_id]->decoded_output = (uint8_t *)malloc16_clear(64);
   }
 
   ue->sinr_CQI_dB = (double *) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
@@ -560,25 +541,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
     free_and_zero(ue->srs_vars[gNB_id]);
 
-    for (int i = 0; i < fp->nb_antennas_rx; i++) {
-      free_and_zero(ue->pbch_vars[gNB_id]->rxdataF_ext[i]);
-
-      for (int j = 0; j < 4; j++) {
-        int idx = (j*fp->nb_antennas_rx)+i;
-        free_and_zero(ue->pbch_vars[gNB_id]->rxdataF_comp[idx]);
-        free_and_zero(ue->pbch_vars[gNB_id]->dl_ch_estimates[idx]);
-        free_and_zero(ue->pbch_vars[gNB_id]->dl_ch_estimates_time[idx]);
-        free_and_zero(ue->pbch_vars[gNB_id]->dl_ch_estimates_ext[idx]);
-      }
-    }
-
-    free_and_zero(ue->pbch_vars[gNB_id]->rxdataF_ext);
-    free_and_zero(ue->pbch_vars[gNB_id]->rxdataF_comp);
-    free_and_zero(ue->pbch_vars[gNB_id]->dl_ch_estimates);
-    free_and_zero(ue->pbch_vars[gNB_id]->dl_ch_estimates_ext);
-    free_and_zero(ue->pbch_vars[gNB_id]->dl_ch_estimates_time);
-    free_and_zero(ue->pbch_vars[gNB_id]->llr);
-    free_and_zero(ue->pbch_vars[gNB_id]->decoded_output);
     free_and_zero(ue->pbch_vars[gNB_id]);
 
     free_and_zero(ue->prach_vars[gNB_id]->prachF);

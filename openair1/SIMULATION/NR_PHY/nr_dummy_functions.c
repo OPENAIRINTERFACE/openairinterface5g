@@ -1,5 +1,6 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 
+
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req)             { return(0);  }
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req)                            { return(0);  }
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req)       { return(0);  }
@@ -35,4 +36,5 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
-                           UE_nr_rxtx_proc_t *proc) {}
+                           UE_nr_rxtx_proc_t *proc,
+			   void * typeSpecific ) {}
