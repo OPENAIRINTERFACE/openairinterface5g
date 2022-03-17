@@ -174,13 +174,13 @@ function check_on_vm_build {
     fi
 
     # If we were building the FlexRan Controller, flag-touch for basic-simulator to continue
-    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
-    then
-        if [[ $STATUS -eq 0 ]]
-        then
-            touch $JENKINS_WKSP/flexran/flexran_build_complete.txt
-        fi
-    fi
+    #if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    #then
+    #    if [[ $STATUS -eq 0 ]]
+    #    then
+    #        touch $JENKINS_WKSP/flexran/flexran_build_complete.txt
+    #    fi
+    #fi
 
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then

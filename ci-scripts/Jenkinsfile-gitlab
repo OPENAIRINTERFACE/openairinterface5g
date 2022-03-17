@@ -159,16 +159,6 @@ pipeline {
             }
         }
 
-        stage ("Start VM -- basic-sim") {
-            steps {
-              lock (vmResource) {
-                timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
-                }
-              }
-            }
-        }
-
         stage ("Start VM -- gnb-usrp") {
             steps {
               lock (vmResource) {
@@ -211,15 +201,6 @@ pipeline {
         
         stage ("Variant Builds") {
             parallel {
-                stage ("Build basic simulator") {
-                    steps {
-                        gitlabCommitStatus(name: "Build basic-sim") {
-                            timeout (time: 45, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                            }
-                        }
-                    }
-                }
                 stage ("Build 5G gNB-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build gNB-USRP") {
@@ -270,9 +251,9 @@ pipeline {
                     script {
                         dir ('archives') {
                             if (fileExists('red_hat')) {
-                                sh "zip -r -qq vm_build_logs.zip basic_sim enb_eth ue_eth gnb_usrp nr_ue_usrp red_hat"
+                                sh "zip -r -qq vm_build_logs.zip enb_eth ue_eth gnb_usrp nr_ue_usrp red_hat"
                             } else {
-                                sh "zip -r -qq vm_build_logs.zip basic_sim enb_eth ue_eth gnb_usrp nr_ue_usrp"
+                                sh "zip -r -qq vm_build_logs.zip enb_eth ue_eth gnb_usrp nr_ue_usrp"
                             }
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
@@ -316,26 +297,6 @@ pipeline {
                                     timeout (time: 20, unit: 'MINUTES') {
                                         try {
                                             sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant flexran-rtc --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                                        } catch (Exception e) {
-                                          currentBuild.result = 'FAILURE'
-                                        }
-                                    }
-                                }
-                              }
-                            }
-                        }
-                        stage ("Test basic simulator") {
-                            when {
-                                expression {doMandatoryTests}
-                            }
-                            steps {
-                              lock (vmResource) {
-                                script {
-                                    timeout (time: 30, unit: 'MINUTES') {
-                                        try {
-                                            gitlabCommitStatus(name: "Test basic-sim") {
-                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                                            }
                                         } catch (Exception e) {
                                           currentBuild.result = 'FAILURE'
                                         }
@@ -581,7 +542,7 @@ pipeline {
                     script {
                       if (doMandatoryTests) {
                         dir ('archives') {
-                            sh "if [ -d basic_sim/test ] || [ -d rf_sim/test ] || [ -d l2_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
+                            sh "if [ -d rf_sim/test ] || [ -d l2_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
                         }
                         if(fileExists('archives/vm_tests_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
