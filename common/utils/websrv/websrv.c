@@ -29,6 +29,7 @@
  * \note
  * \warning
  */
+ #include <libgen.h>
  #include <jansson.h>
  #include <ulfius.h>
  #include "common/config/config_userapi.h"
@@ -92,6 +93,37 @@ static void callback_stream_free(void * cls) {
   }
 }
 
+FILE *websrv_getfile(char *filename, struct _u_response * response) {
+    FILE *f = fopen (filename, "rb");
+  int length;
+  
+  if (f) {
+    fseek (f, 0, SEEK_END);
+    length = ftell (f);
+    fseek (f, 0, SEEK_SET);
+    LOG_I(UTIL,"websrv sending %d bytes from %s\n", length, filename);
+  } else {
+    LOG_E(UTIL,"websrv couldn't open %s\n",filename);
+    return NULL;
+  }
+  
+  int ust=ulfius_add_header_to_response(response,"content-type" ,"text/html");
+  if (ust != U_OK){
+	  ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
+	  LOG_E(UTIL,"websrv cannot set response header type ulfius error %d \n",ust);
+      fclose(f);
+      return NULL;
+  }
+  
+  ust=ulfius_set_stream_response(response, 200, callback_stream, callback_stream_free, length, 1024, f);
+  if(ust != U_OK) {
+    LOG_E(UTIL,"websrv ulfius_set_stream_response error %d\n",ust);
+    fclose(f);
+    return NULL;
+  }
+  return f;  
+    
+}
 
 /* callback processing main ((initial) url (<address>/<websrvparams.url> */
 int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_response * response, void * user_data) {
@@ -124,6 +156,20 @@ int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_res
 }
 
  int websrv_callback_default (const struct _u_request * request, struct _u_response * response, void * user_data) {
+  LOG_I(UTIL,"Requested file is: %s\n",request->http_url);
+  char *tmpurl = strdup(websrvparams.url);
+  char *srvdir = dirname(tmpurl);
+  if (srvdir==NULL) {
+      LOG_E(UTIL,"Cannot extract dir name from %s requested file is %s\n",websrvparams.url,request->http_url); 
+      return U_CALLBACK_ERROR;
+  }
+  char *fpath = malloc( strlen(request->http_url)+strlen(srvdir)+2);
+  sprintf(fpath,"%s/%s",srvdir, request->http_url);
+  FILE *f = websrv_getfile(fpath,response) ;
+  free(fpath);
+  free(tmpurl);
+  if (f == NULL)
+    return U_CALLBACK_ERROR;
   return U_CALLBACK_CONTINUE;
 }
 
