@@ -1,13 +1,14 @@
+<!-- <div *ngIf="infos$ | async as infos"> -->
+
 <h1 mat-dialog-title>Status</h1>
+<p> config_file: {{ infos.display_status.config_file }}</p>
+<p> executable_function: {{ infos.display_status.executable_function }}</p>
 
-<div *ngIf="infos$ | async as infos">
-  <p> config_file: {{ infos.display_status.config_file }}</p>
-  <p> executable_function: {{ infos.display_status.executable_function }}</p>
-
-  <mat-form-field>
-    <mat-label>Command</mat-label>
-    <mat-select [formControl]="selectedCmd!.value" [value]="selectedCmd!.value">
-      <mat-option *ngFor="let control of infos.cmdsFA.controls" [value]="control.value">{{ control.value }}</mat-option>
-    </mat-select>
-  </mat-form-field>
-</div>
+<h1 mat-dialog-title>Commands</h1>
+<mat-form-field>
+  <mat-label>Command</mat-label>
+  <mat-select [formControl]="selectedCmd?.value" [value]="selectedCmd?.value">
+    <mat-option *ngFor="let control of infos.cmdsFA.controls" [value]="control.value">{{ control.value }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
