@@ -267,6 +267,15 @@ void init_meas(void) {
   AssertFatal(rt==0, "couldn't create cpu measurment thread: %s\n",strerror(errno));
 }
 
+void send_meas(time_stats_t *ts, int msgid) {
+    if (MEASURE_ENABLED(ts) ) {
+      ts->tstatptr->timestat_id=ts->meas_index;
+      ts->tstatptr->msgid = msgid ;
+      ts->tstatptr->ts = rdtsc_oai();
+      pushNotifiedFIFO(&measur_fifo, ts->tpoolmsg);
+    }
+  }
+
 void end_meas(void) {
     notifiedFIFO_elt_t *nfe = newNotifiedFIFO_elt(sizeof(time_stats_msg_t),0,NULL,NULL);
 	time_stats_msg_t *msg = (time_stats_msg_t *)NotifiedFifoData(nfe);

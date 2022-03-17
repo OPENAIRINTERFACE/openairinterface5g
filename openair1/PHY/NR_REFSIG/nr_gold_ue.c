@@ -64,7 +64,7 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
 
       reset = 1;
       x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
-      x2 = (x2tmp0+(nid<<1))%(1<<31);  //cinit
+      x2 = (x2tmp0+(nid<<1))%(1U<<31);  //cinit
       
       for (n=0; n<NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD; n++) {
         ue->nr_gold_pdcch[0][ns][l][n] = lte_gold_generic(&x1, &x2, reset);
@@ -82,16 +82,13 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
   unsigned int x1,x2,x2tmp0;
   uint8_t reset;
 
-  /// to be updated from higher layer
-  //unsigned short lbar = 0;
-
   for (int ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
 
     for (int l=0; l<ue->frame_parms.symbols_per_slot; l++) {
 
       reset = 1;
       x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
-      x2 = (x2tmp0+(nid<<1)+nscid)%(1<<31);  //cinit
+      x2 = (x2tmp0+(nid<<1)+nscid)%(1U<<31);  //cinit
       LOG_D(PHY,"UE DMRS slot %d, symb %d, x2 %x, nscid %d\n",ns,l,x2,nscid);
 
       for (int n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
