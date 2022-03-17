@@ -3,10 +3,11 @@
 /* eslint-disable eqeqeq */
 /* eslint-disable @typescript-eslint/naming-convention */
 import { Component } from '@angular/core';
+import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { CommandsApi } from 'src/app/api/commands.api';
-import { CommandCtrl } from 'src/app/controls/command.control';
+import { InfosCtrl } from 'src/app/controls/infos.control';
 import { LoadingService } from 'src/app/services/loading.service';
 
 
@@ -17,23 +18,16 @@ import { LoadingService } from 'src/app/services/loading.service';
 })
 export class CommandsComponent {
 
-  commandsCtrls$: Observable<CommandCtrl[]>
-  selectedCtrl?: CommandCtrl
+  infos$: Observable<InfosCtrl>
+  selectedCmd?: FormControl
 
   constructor(
     public commandsApi: CommandsApi,
     public loadingService: LoadingService,
   ) {
-    this.commandsCtrls$ = this.commandsApi.readCommands$().pipe(
-      map((docs) => docs.map((doc) => new CommandCtrl(doc))),
+    this.infos$ = this.commandsApi.readInfos$().pipe(
+      map((doc) => new InfosCtrl(doc)),
     );
-  }
-
-  onSubmit(control: CommandCtrl) {
-    this.commandsApi.runCommand$(control.api()).pipe(
-      // take(1),
-      tap(() => control.markAsPristine())
-    ).subscribe();
   }
 
 }

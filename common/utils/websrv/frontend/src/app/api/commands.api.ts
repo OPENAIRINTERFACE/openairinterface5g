@@ -2,24 +2,17 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 
-export interface IOption {
-    key: string;
-    value: number;
-}
-export interface ICommand {
-    name: string;
-    options: IOption[];
-}
-
 export interface IStatus {
-    infos: string;
+    config_file: string;
+    executable_function: string;
 }
 
-export interface ILog {
-    text: string;
+export interface IInfos {
+    display_status: IStatus;
+    menu_cmds: string[];
 }
 
-const route = '/commands';
+const route = '/oaisoftmodem';
 
 @Injectable({
     providedIn: 'root',
@@ -27,11 +20,41 @@ const route = '/commands';
 export class CommandsApi {
     constructor(private httpClient: HttpClient) { }
 
-    public readCommands$ = () => this.httpClient.get<ICommand[]>(environment.backend + route + '/list');
-
-    public readStatus$ = () => this.httpClient.get<IStatus>(environment.backend + route + '/status');
-
-    public runCommand$ = (command: ICommand) => this.httpClient.post<ICommand>(environment.backend + route, command);
-
-    public readLogs$ = () => this.httpClient.get<IStatus>(environment.backend + route + '/logs');
+    public readInfos$ = () => this.httpClient.get<IInfos>(environment.backend + route);
 }
+
+
+// FRANCOIS_BODY = {
+//     "main_oai softmodem": [
+//         {
+//             "display_status": [
+//                 { "Config file": "../../../ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf" },
+//                 { "Executable function": "gnb" }
+//             ]
+//         },
+//         {
+//             "menu_cmds": [
+//                 "telnet",
+//                 "softmodem",
+//                 "loader",
+//                 "measur",
+//                 "rfsimu"
+//             ]
+//         }
+//     ]
+// }
+
+// YASS_BODY = {
+//     display_status: {
+//         config_file: '../../../ ci - scripts / conf_files / gnb.band78.sa.fr1.106PRB.usrpn310.conf',
+//         executable_function: "gnb"
+
+//     },
+//     menu_cmds: [
+//         "telnet",
+//         "softmodem",
+//         "loader",
+//         "measur",
+//         "rfsimu"
+//     ]
+// }
