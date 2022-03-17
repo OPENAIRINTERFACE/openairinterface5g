@@ -49,17 +49,92 @@
   {"listenport",                   "<local port>\n",                0,                 uptr:&(websrvparams.listenport),      defuintval:8090,                TYPE_UINT,      0 },
   {"priority",                     "<scheduling policy (0-99)\n",   0,                 iptr:&websrvparams.priority,          defuintval:0,                   TYPE_INT,       0 },
   {"debug",                        "<debug level>\n",               0,                 uptr:&websrvparams.dbglvl,            defuintval:0,                   TYPE_UINT,      0 },
+  {"url",                          "<server url>\n",                0,                 strptr:&websrvparams.url,             defstrval:"index.html",         TYPE_STRING,    0 }, 
+  {"cert",                         "<cert file>\n",                 0,                 strptr:&websrvparams.certfile,        defstrval:NULL,                 TYPE_STRING,    0 }, 
+  {"key",                          "<key file>\n",                  0,                 strptr:&websrvparams.keyfile,         defstrval:NULL,                 TYPE_STRING,    0 },
 };
+
+
+char * websrv_read_file(const char * filename) {
+  char * buffer = NULL;
+  long length;
+  FILE * f = fopen (filename, "rb");
+  if (f != NULL) {
+    fseek (f, 0, SEEK_END);
+    length = ftell (f);
+    fseek (f, 0, SEEK_SET);
+    buffer = malloc (length + 1);
+    if (buffer != NULL) {
+      int rlen = fread (buffer, 1, length, f);
+      if (rlen !=length) {
+        free(buffer);
+        LOG_E(UTIL,"websrv couldn't read %s_\n",filename);
+        return NULL;
+      }
+      buffer[length] = '\0';
+    }
+    fclose (f);
+  }
+  return buffer;
+}
+/* callbacks to send static streams */
+static ssize_t callback_stream(void * cls, uint64_t pos, char * buf, size_t max) {
+  if (cls != NULL) {
+    return fread (buf, sizeof(char), max, (FILE *)cls);
+  } else {
+    return U_STREAM_END;
+  }
+}
+
+static void callback_stream_free(void * cls) {
+  if (cls != NULL) {
+    fclose((FILE *)cls);
+  }
+}
+
+
+/* callback processing main ((initial) url (<address>/<websrvparams.url> */
+int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_response * response, void * user_data) {
+  LOG_I(UTIL,"Requested file is: %s\n",request->http_url);  
+  FILE *f = fopen (websrvparams.url, "rb");
+  int length;
+  
+  if (f) {
+    fseek (f, 0, SEEK_END);
+    length = ftell (f);
+    fseek (f, 0, SEEK_SET);
+    LOG_I(UTIL,"websrv sending %d bytes from %s\n", length, websrvparams.url);
+  } else {
+    LOG_E(UTIL,"websrv couldn't open %s\n",websrvparams.url);
+    return U_CALLBACK_ERROR;
+  }
+  
+  int ust=ulfius_add_header_to_response(response,"content-type" ,"text/html");
+  if (ust != U_OK){
+	  ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
+	  LOG_E(UTIL,"websrv cannot set response header type ulfius error %d \n",ust);
+  }
+  
+  ust=ulfius_set_stream_response(response, 200, callback_stream, callback_stream_free, length, 1024, f);
+  if(ust != U_OK) {
+    LOG_E(UTIL,"websrv ulfius_set_stream_response error %d\n",ust);
+    return U_CALLBACK_ERROR;
+  }
+  return U_CALLBACK_CONTINUE;
+}
+
  int websrv_callback_default (const struct _u_request * request, struct _u_response * response, void * user_data) {
   return U_CALLBACK_CONTINUE;
 }
 
+/* callback processing module url (<address>/oaisoftmodem/module)*/
 int websrv_callback_get_softmodemcmd(const struct _u_request * request, struct _u_response * response, void * user_data) {
 	char *cmd = (char *)user_data;
 	LOG_I(UTIL,"websrv received  %s command request\n", cmd);
 	return U_CALLBACK_CONTINUE;
 }
 
+/* callback processing initial url (<address>/oaisoftmodem)*/
 int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct _u_response * response, void * user_data) {
   char *cfgfile=CONFIG_GETCONFFILE ;
   char *execfunc=get_softmodem_function(NULL);
@@ -121,7 +196,6 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
    
   memset(&websrvparams,0,sizeof(websrvparams));
   config_get( websrvoptions,sizeof(websrvoptions)/sizeof(paramdef_t),"websrv");
-  // Set the framework port number
   websrvparams.instance = malloc(sizeof(struct _u_instance));
   
   
@@ -138,6 +212,7 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
   websrvparams.instance->max_post_body_size = 1024;
   
   // Endpoint list declaration
+  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", websrvparams.url, NULL, 0, &websrv_callback_get_mainurl, NULL);
   ulfius_add_endpoint_by_val(websrvparams.instance, "GET", "oaisoftmodem", NULL, 0, &websrv_callback_get_softmodeminfo, NULL);
  //ulfius_add_endpoint_by_val(&instance, "GET", "softmodem", "", 0, &callback_get_empty_response, NULL);
  // ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, "/multiple/:multiple/:multiple/:not_multiple", 0, &callback_all_test_foo, NULL);
@@ -152,17 +227,21 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
   ulfius_set_default_endpoint(websrvparams.instance, &websrv_callback_default, NULL);
   
   // Start the framework
-//  if (argc == 4 && o_strcmp("-secure", argv[1]) == 0) {
-    // If command-line options are -secure <key_file> <cert_file>, then open an https connection
-//    char * key_pem = read_file(argv[2]), * cert_pem = read_file(argv[3]);
-//    ret = ulfius_start_secure_framework(&instance, key_pem, cert_pem);
- //   o_free(key_pem);
- //   o_free(cert_pem);
- // } else {
-    // Open an http connection
+  ret=U_ERROR;
+  if (websrvparams.keyfile!=NULL && websrvparams.certfile!=NULL) {
+    char * key_pem = websrv_read_file(websrvparams.keyfile);
+    char * cert_pem = websrv_read_file(websrvparams.certfile);
+    if ( key_pem == NULL && cert_pem != NULL) {
+      ret = ulfius_start_secure_framework(websrvparams.instance, key_pem, cert_pem);
+      free(key_pem);
+      free(cert_pem);
+    } else {
+      LOG_E(UTIL,"Unable to load key %s and cert %s_\n",websrvparams.keyfile,websrvparams.certfile);
+    }
+  } else {
     ret = ulfius_start_framework(websrvparams.instance);
- // }
-  
+  }
+
   if (ret == U_OK) {
     LOG_I(UTIL, "Web server started on port %d", websrvparams.instance->port);
   } else {
