@@ -1305,14 +1305,8 @@ void fill_initial_SpCellConfig(int uid,
   NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
   pucchspatial->pucch_SpatialRelationInfoId = 1;
   pucchspatial->servingCellId = NULL;
-  if(carrier->do_CSIRS) {
-    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
-    pucchspatial->referenceSignal.choice.csi_RS_Index = 0;
-  }
-  else {
-    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
-    pucchspatial->referenceSignal.choice.ssb_Index = 0;
-  }
+  pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
+  pucchspatial->referenceSignal.choice.ssb_Index = 0;
   pucchspatial->pucch_PathlossReferenceRS_Id = 0;
   pucchspatial->p0_PUCCH_Id = 1;
   pucchspatial->closedLoopIndex = NR_PUCCH_SpatialRelationInfo__closedLoopIndex_i0;
@@ -1616,11 +1610,6 @@ void fill_initial_SpCellConfig(int uid,
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->present = NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup;
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
 
-  if (carrier->do_CSIRS) {
-    SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
-    fill_default_csi_MeasConfig(uid, SpCellConfig->spCellConfigDedicated->csi_MeasConfig, scc, carrier);
- }
-
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
   pdsch_servingcellconfig->xOverhead = NULL;
   pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = calloc(1, sizeof(*pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH));
@@ -1733,16 +1722,23 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
 
   // Config CSI-RS
-  NR_CSI_MeasConfig_t *csi_MeasConfig;
-  if(!SpCellConfig->spCellConfigDedicated->csi_MeasConfig) {
-    csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
-    SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
+  if (carrier->do_CSIRS) {
+    struct NR_PUCCH_Config__spatialRelationInfoToAddModList *spatialRelationInfoToAddModList = calloc(1,sizeof(*spatialRelationInfoToAddModList));
+    NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
+    pucchspatial->pucch_SpatialRelationInfoId = 1;
+    pucchspatial->servingCellId = NULL;
+    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
+    pucchspatial->referenceSignal.choice.csi_RS_Index = 0;
+    pucchspatial->pucch_PathlossReferenceRS_Id = 0;
+    pucchspatial->p0_PUCCH_Id = 1;
+    pucchspatial->closedLoopIndex = NR_PUCCH_SpatialRelationInfo__closedLoopIndex_i0;
+    ASN_SEQUENCE_ADD(&spatialRelationInfoToAddModList->list,pucchspatial);
+    SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->spatialRelationInfoToAddModList = spatialRelationInfoToAddModList;
+    if(!SpCellConfig->spCellConfigDedicated->csi_MeasConfig) {
+      SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
+    }
+    fill_default_csi_MeasConfig(uid, SpCellConfig->spCellConfigDedicated->csi_MeasConfig, scc, carrier);
   }
-  else
-    csi_MeasConfig = SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
-
-  int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-  config_csirs(scc, csi_MeasConfig, uid, carrier->pdsch_AntennaPorts, curr_bwp, carrier->do_CSIRS);
 
   // Set DL MCS table
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
@@ -1757,7 +1753,6 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
     }
   }
 }
-
 
 void fill_initial_cellGroupConfig(int uid,
                                   NR_CellGroupConfig_t *cellGroupConfig,
