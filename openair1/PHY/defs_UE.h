@@ -837,6 +837,7 @@ typedef struct {
   /// RF and Interface devices per CC
 
   openair0_device rfdevice;
+  void *scopeData;
 } PHY_VARS_UE;
 
 /* this structure is used to pass both UE phy vars and

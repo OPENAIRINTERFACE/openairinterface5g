@@ -146,17 +146,23 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 
     start_meas(&ue->dlsch_channel_estimation_stats);
   // computing channel estimation for selected best ssb
+    const int estimateSz=7*2*frame_parms->ofdm_symbol_size;
+    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
+    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][estimateSz];
     for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-      nr_pbch_channel_estimation(ue,proc,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
+      nr_pbch_channel_estimation(ue,estimateSz, dl_ch_estimates, dl_ch_estimates_time, 
+                                 proc,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
     stop_meas(&ue->dlsch_channel_estimation_stats);
-
+    fapiPbch_t result;
     ret = nr_rx_pbch(ue,
                      proc,
-                     ue->pbch_vars[0],
+                     estimateSz, dl_ch_estimates,
+		     ue->pbch_vars[0],
                      frame_parms,
                      0,
                      temp_ptr->i_ssb,
-                     SISO);
+                     SISO,
+		     &result);
 
     temp_ptr=temp_ptr->next_ssb;
   }

@@ -654,40 +654,6 @@ typedef struct {
 #define PBCH_A 24
 
 typedef struct {
-  /// \brief Pointers to extracted PBCH symbols in frequency-domain.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..287] (hard coded)
-  int32_t **rxdataF_ext;
-  /// \brief Pointers to extracted and compensated PBCH symbols in frequency-domain.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..287] (hard coded)
-  int32_t **rxdataF_comp;
-  /// \brief Hold the channel estimates in frequency domain.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
-  int32_t **dl_ch_estimates;
-  /// \brief Pointers to downlink channel estimates in frequency-domain extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..287] (hard coded)
-  int32_t **dl_ch_estimates_ext;
-  /// \brief Hold the channel estimates in time domain (used for tracking).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: samples? [0..2*ofdm_symbol_size[
-  int32_t **dl_ch_estimates_time;
-  int log2_maxh;
-  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint32_t pbch_a_interleaved;
-  uint32_t pbch_a_prime;
-  uint8_t pbch_e[NR_POLAR_PBCH_E];
-  int16_t  demod_pbch_e[NR_POLAR_PBCH_E];
-  /// \brief Pointer to PBCH llrs.
-  /// - first index: ? [0..1919] (hard coded)
-  int16_t *llr;
-  /// \brief Pointer to PBCH decoded output.
-  /// - first index: ? [0..63] (hard coded)
-  uint8_t *decoded_output;
-  /// \brief PBCH additional bits
-  uint8_t xtra_byte;
   /// \brief Total number of PDU errors.
   uint32_t pdu_errors;
   /// \brief Total number of PDU errors 128 frames ago.
@@ -695,7 +661,7 @@ typedef struct {
   /// \brief Total number of consecutive PDU errors.
   uint32_t pdu_errors_conseq;
   /// \brief FER (in percent) .
-  uint32_t pdu_fer;
+  //uint32_t pdu_fer;
 } NR_UE_PBCH;
 
 typedef struct {
@@ -1088,7 +1054,7 @@ typedef struct {
 #endif
   
   int dl_stats[5];
-
+  void* scopeData;
 } PHY_VARS_NR_UE;
 
 /* this structure is used to pass both UE phy vars and
