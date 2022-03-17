@@ -1041,20 +1041,6 @@ void fill_default_csi_MeasConfig(int uid,
     csi_MeasConfig->csi_IM_ResourceSetToAddModList = NULL;
   }
 
-  csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
-  csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
-
-  csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
-  NR_NZP_CSI_RS_ResourceSet_t *nzpcsirs0 = calloc(1,sizeof(*nzpcsirs0));
-  nzpcsirs0->nzp_CSI_ResourceSetId = 0;
-  NR_NZP_CSI_RS_ResourceId_t *nzpid0 = calloc(1,sizeof(*nzpid0));
-  *nzpid0 = 0;
-  ASN_SEQUENCE_ADD(&nzpcsirs0->nzp_CSI_RS_Resources,nzpid0);
-  nzpcsirs0->repetition = NULL;
-  nzpcsirs0->aperiodicTriggeringOffset = NULL;
-  nzpcsirs0->trs_Info = NULL;
-  ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,nzpcsirs0);
-
   csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
 
   config_csirs(scc, csi_MeasConfig, uid, carrier->pdsch_AntennaPorts, curr_bwp, carrier->do_CSIRS);
