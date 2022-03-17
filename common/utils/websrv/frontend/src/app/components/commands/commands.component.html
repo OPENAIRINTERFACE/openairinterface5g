@@ -1,14 +1,20 @@
-<!-- <div *ngIf="infos$ | async as infos"> -->
+<div *ngIf="infos$ | async as infos">
 
-<h1 mat-dialog-title>Status</h1>
-<p> config_file: {{ infos.display_status.config_file }}</p>
-<p> executable_function: {{ infos.display_status.executable_function }}</p>
+  <h1 mat-dialog-title>Status</h1>
+  <p> config_file: {{ infos.display_status.config_file }}</p>
+  <p> executable_function: {{ infos.display_status.executable_function }}</p>
 
-<h1 mat-dialog-title>Commands</h1>
-<mat-form-field>
-  <mat-label>Command</mat-label>
-  <mat-select [formControl]="selectedCmd?.value" [value]="selectedCmd?.value">
-    <mat-option *ngFor="let control of infos.cmdsFA.controls" [value]="control.value">{{ control.value }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+  <h1 mat-dialog-title>Commands</h1>
+  <div fxLaypout="row">
+    <mat-form-field>
+      <mat-label>Command</mat-label>
+      <mat-select [formControl]="selected" [value]="selected?.value">
+        <mat-option *ngFor="let control of infos.cmdsFA.controls" [value]="control.value">{{ control.value }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-raised-button color="primary" [disabled]="!selected" (click)="onSubmit()">
+      submit
+    </button>
+  </div>
+</div>

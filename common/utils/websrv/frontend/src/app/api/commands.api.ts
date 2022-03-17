@@ -21,6 +21,8 @@ export class CommandsApi {
     constructor(private httpClient: HttpClient) { }
 
     public readInfos$ = () => this.httpClient.get<IInfos>(environment.backend + route);
+
+    public runCommand$ = (cmdName: string) => this.httpClient.post<string>(environment.backend + route, cmdName);
 }
 
 

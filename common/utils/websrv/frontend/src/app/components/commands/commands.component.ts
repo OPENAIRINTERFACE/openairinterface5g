@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/member-ordering */
-/* eslint-disable no-shadow */
-/* eslint-disable eqeqeq */
-/* eslint-disable @typescript-eslint/naming-convention */
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormControl } from '@angular/forms';
+import { Observable } from 'rxjs/internal/Observable';
+import { map } from 'rxjs/internal/operators/map';
 import { CommandsApi } from 'src/app/api/commands.api';
 import { InfosCtrl } from 'src/app/controls/infos.control';
 import { LoadingService } from 'src/app/services/loading.service';
@@ -16,33 +14,50 @@ import { LoadingService } from 'src/app/services/loading.service';
 })
 export class CommandsComponent {
 
-  // infos$: Observable<InfosCtrl>
-  infos: InfosCtrl
+  infos$: Observable<InfosCtrl>
+  // infos: InfosCtrl
 
-  selectedCmd?: FormControl
+  selected = new FormControl()
 
   constructor(
     public commandsApi: CommandsApi,
     public loadingService: LoadingService,
   ) {
-    // this.infos$ = this.commandsApi.readInfos$().pipe(
-    //   map((doc) => new InfosCtrl(doc)),
-    // );
+    this.infos$ = this.commandsApi.readInfos$().pipe(
+      map((doc) => new InfosCtrl(doc)),
+    );
 
-    this.infos = new InfosCtrl({
-      display_status: {
-        config_file: '../../../ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf',
-        executable_function: "gnb"
-      },
-      menu_cmds: [
-        "telnet",
-        "softmodem",
-        "loader",
-        "measur",
-        "rfsimu"
-      ]
-    })
+    // this.infos = new InfosCtrl({
+    //   display_status: {
+    //     config_file: '../../../ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf',
+    //     executable_function: "gnb"
+    //   },
+    //   menu_cmds: [
+    //     "telnet",
+    //     "softmodem",
+    //     "loader",
+    //     "measur",
+    //     "rfsimu"
+    //   ]
+    // })
 
-    // console.log(JSON.stringify(this.infos, null, 2))
+    // const BODY_JSON = {
+    //   "display_status": {
+    //     "config_file": '../../../ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf',
+    //     "executable_function": "gnb"
+    //   },
+    //   "menu_cmds": [
+    //     "telnet",
+    //     "softmodem",
+    //     "loader",
+    //     "measur",
+    //     "rfsimu"
+    //   ]
+    // }
+
+  }
+
+  onSubmit() {
+    this.commandsApi.runCommand$(this.selected.value).subscribe();
   }
 }

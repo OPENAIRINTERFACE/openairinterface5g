@@ -1,5 +1,3 @@
-/* eslint-disable no-shadow */
-
 import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { IInfos, IStatus } from '../api/commands.api';
 

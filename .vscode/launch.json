@@ -33,20 +33,7 @@
             "type": "chrome",
             "request": "launch",
             "url": "http://localhost:4200",
-            "webRoot": "${workspaceFolder}"
-        },
-        {
-            "name": "Launch Firefox (4200 ng serve)",
-            "type": "firefox",
-            "request": "launch",
-            "reAttach": true,
-            "url": "http://localhost:4200",
-            "pathMappings": [
-                {
-                    "url": "webpack:///src",
-                    "path": "${workspaceFolder}/src"
-                }
-            ]
+            "webRoot": "${workspaceFolder}/common/utils/websrv/frontend"
         },
         {
             "name": "Launch Chrome (localhost)",

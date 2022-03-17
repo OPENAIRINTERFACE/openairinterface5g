@@ -24,13 +24,6 @@
           <ng-container *ngIf="loadingService.isLoading$ | async; then loading; else not_loading">
           </ng-container>
         </div>
-
-        <div #notAuthenticated>
-          <button mat-raised-button color="primary">
-            login
-          </button>
-        </div>
-
       </mat-toolbar-row>
     </mat-toolbar>
 
