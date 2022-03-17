@@ -54,6 +54,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   int32_t **rxdataF      = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
   uint32_t **nr_gold_prs = ue->nr_gold_prs[proc->nr_slot_rx];
   prs_data_t *prs_cfg    = &ue->prs_vars[gNB_id]->prs_cfg;
+  prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_meas;
   int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_ch_estimates;
   int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_ch_estimates_time;
   
@@ -64,9 +65,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   int32_t *ch_time  = (int32_t *)malloc16_clear(frame_params->ofdm_symbol_size*sizeof(int32_t));
   AssertFatal(((ch_freq != NULL) || (ch_time != NULL)), "nr_prs_channel_estimation: channel estimate buffer initialization failed!!");
   int16_t *ch_init = ch_freq;
-  
-  int32_t tdoa[NR_MAX_NUM_PRS_SYMB]   = {0};
-  int32_t ch_pwr[NR_MAX_NUM_PRS_SYMB] = {0};
+  int32_t ch_pwr= 0;
 #ifdef DEBUG_PRS_CHEST
   char filename[128] = {0}, varname[128] = {0};
 #endif
@@ -409,13 +408,23 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
       // rearrange impulse response
       memcpy((int16_t *)&prs_chestT[rxAnt][l*frame_params->ofdm_symbol_size], &ch_time[frame_params->ofdm_symbol_size>>1], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
       memcpy((int16_t *)&prs_chestT[rxAnt][l*frame_params->ofdm_symbol_size + (frame_params->ofdm_symbol_size>>1)], &ch_time[0], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
-
+      
       // peak estimator
       peak_estimator(&prs_chestT[rxAnt][l*frame_params->ofdm_symbol_size],
                      frame_params->ofdm_symbol_size,
-                     &tdoa[l],
-                     &ch_pwr[l]);
-      LOG_I(PHY, "[gNB %d][Rx %d] TDoA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, l, tdoa[l]-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr[l]));
+                     &prs_meas[rxAnt][l].dl_toa,
+                     &ch_pwr);
+      LOG_I(PHY, "[gNB %d][Rx %d][sfn %d][slot %d] ToA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, l, prs_meas[rxAnt][l].dl_toa-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr));
+
+      //prs measurements
+      prs_meas[rxAnt][l].gNB_id     = 0; 
+      prs_meas[rxAnt][l].timestamp  = 0; 
+      prs_meas[rxAnt][l].sfn        = proc->frame_rx; 
+      prs_meas[rxAnt][l].slot       = proc->nr_slot_rx; 
+      prs_meas[rxAnt][l].symbol     = l; 
+      prs_meas[rxAnt][l].rxAnt_idx  = rxAnt; 
+      prs_meas[rxAnt][l].snr        = 0; 
+      prs_meas[rxAnt][l].dl_aoa     = 0; 
     } // for rxAnt
   } //for l
 
@@ -436,6 +445,10 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 #endif
 
     // T tracer dump
+    T(T_UE_PHY_INPUT_SIGNAL, T_INT(gNB_id),
+      T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
+      T_INT(rxAnt), T_BUFFER(&rxdataF[rxAnt][0], frame_params->samples_per_slot_wCP*sizeof(int32_t)));
+
     T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(gNB_id),
       T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
       T_INT(rxAnt), T_BUFFER(&prs_chestF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));

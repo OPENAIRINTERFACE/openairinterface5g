@@ -377,20 +377,33 @@ struct NR_DL_FRAME_PARMS {
 // PRS structures prototype
 typedef struct {
     uint16_t PRSResourceSetPeriod[2]; //[slot period, slot offset]
-    uint8_t PRSResourceOffset; // array if more than one resource sets.slot offset (0...511) (default 0)
-    uint8_t PRSResourceRepetition;// slot offset (1 (default), 2, 4, 6, 8, 16, 32)
-    uint8_t PRSResourceTimeGap; // slot offset (1 (default), 2, 4, 6, 8, 16, 32)
-    uint8_t NumRB; //number of RBs in freq domain a scalar =< 275 RB
-    uint8_t NumPRSSymbols; //number of PRS symbols in time domain
-    uint8_t SymbolStart; //starting OFDM symbol of PRS resource in time domain
-    uint8_t RBOffset; //Starting PRB index of all PRS resources in a PRS resource set.
-    uint8_t CombSize; //RE density of all PRS resources in a PRS resource set. i∈{2,4,6,12}
-    uint8_t REOffset; //Starting RE offset in the first OFDM symbol of each PRS resource in a PRS resource set.
+    uint8_t  PRSResourceOffset; // array if more than one resource sets.slot offset (0...511) (default 0)
+    uint8_t  PRSResourceRepetition;// slot offset (1 (default), 2, 4, 6, 8, 16, 32)
+    uint8_t  PRSResourceTimeGap; // slot offset (1 (default), 2, 4, 6, 8, 16, 32)
+    uint8_t  NumRB; //number of RBs in freq domain a scalar =< 275 RB
+    uint8_t  NumPRSSymbols; //number of PRS symbols in time domain
+    uint8_t  SymbolStart; //starting OFDM symbol of PRS resource in time domain
+    uint8_t  RBOffset; //Starting PRB index of all PRS resources in a PRS resource set.
+    uint8_t  CombSize; //RE density of all PRS resources in a PRS resource set. i∈{2,4,6,12}
+    uint8_t  REOffset; //Starting RE offset in the first OFDM symbol of each PRS resource in a PRS resource set.
     uint32_t MutingPattern1[2]; //Muting bit pattern option-1, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32.
     uint32_t MutingPattern2[2];
-    uint8_t MutingBitRepetition;
+    uint8_t  MutingBitRepetition;
     uint16_t NPRSID;
 } prs_data_t; //32bytes
+
+typedef struct {
+    int8_t  gNB_id;
+    int32_t timestamp;
+    int32_t sfn;
+    int8_t  slot;
+    int8_t  symbol;
+    int8_t  rxAnt_idx;
+    int32_t dl_toa;
+    int32_t dl_aoa;
+    int32_t snr;
+    int32_t reserved;
+} prs_meas_t;
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)

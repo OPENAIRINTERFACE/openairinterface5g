@@ -387,7 +387,8 @@ typedef struct {
   prs_data_t prs_cfg;
   int32_t **prs_ch_estimates;
   int32_t **prs_ch_estimates_time;
-  int64_t reserved;
+  int32_t reserved;
+  prs_meas_t **prs_meas;
 } NR_UE_PRS;
 
 #define NR_PDCCH_DEFS_NR_UE
@@ -831,9 +832,9 @@ typedef struct {
   NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRS       *prs_vars[NR_MAX_PRS_COMB_SIZE];
-  uint16_t        prs_active_gNBs;
-  uint8_t         prs_start_symb;
-  uint8_t         prs_end_symb;
+  uint16_t         prs_active_gNBs;
+  uint8_t          prs_start_symb;
+  uint8_t          prs_end_symb;
   
   //Paging parameters
   uint32_t              IMSImod1024;
