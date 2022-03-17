@@ -55,8 +55,6 @@ extern RAN_CONTEXT_t RC;
 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
-//uint8_t mac_pdu[MAX_NR_DLSCH_PAYLOAD_BYTES];
-
 /*Scheduling of DLSCH with associated DCI in common search space
  * current version has only a DCI for type 1 PDCCH for C_RNTI*/
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,

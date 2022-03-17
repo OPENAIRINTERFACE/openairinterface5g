@@ -18,7 +18,8 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#define _GNU_SOURCE 
+
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
