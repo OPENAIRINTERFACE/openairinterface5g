@@ -38,6 +38,7 @@ void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_sl
 
   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
   int ideal_period = nb_slots_per_period*MAX_MOBILES_PER_GNB;
+
   if (ideal_period<5) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots4;
     nzpcsi0->periodicityAndOffset->choice.slots4 = nb_slots_per_period*uid;
