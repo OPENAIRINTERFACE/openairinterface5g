@@ -1932,11 +1932,11 @@ function run_test_on_vm {
                 echo "SA test NOT OK"
                 echo "try_cnt = " $try_cnt
                 try_cnt=$((try_cnt+1))
-                SA_106PRB_STATUS = -1
+                SA_106PRB_STATUS=-1
             else
                 echo "SA test OK"
                 try_cnt=$((try_cnt+10))
-                SA_106PRB_STATUS = 0
+                SA_106PRB_STATUS=0
             fi
         done
         ########### end SA test
@@ -2015,11 +2015,11 @@ function run_test_on_vm {
                 echo "SA test NOT OK"
                 echo "try_cnt = " $try_cnt
                 try_cnt=$((try_cnt+1))
-                SA_24PRB_STATUS = -1
+                SA_24PRB_STATUS=-1
             else
                 echo "SA test OK"
                 try_cnt=$((try_cnt+10))
-                SA_24PRB_STATUS = 0
+                SA_24PRB_STATUS=0
             fi
         done
         ########### end SA test
