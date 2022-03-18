@@ -136,16 +136,6 @@ pipeline {
                         // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
                         sh "./ci-scripts/checkCodingFormattingRules.sh"
                     }
-                    // With Mosaic 5G being part of OSA and making all it's repositories public
-                    // No need to pass credentials to clone flexran-rtc
-                    if (doMandatoryTests) {
-                        sh "mkdir flexran"
-                        dir ('flexran') {
-                            sh "git clone https://gitlab.eurecom.fr/flexran/flexran-rtc.git . > ../git_clone.log 2>&1"
-                            sh "git checkout develop >> ../git_clone.log 2>&1"
-                            sh "zip -r -qq flexran.zip ."
-                        }
-                    }
                 }
             }
             post {
@@ -287,24 +277,6 @@ pipeline {
             parallel {
                 stage ("VM-based tests") {
                     stages {
-                        stage ("Build Flexran Controller") {
-                            when {
-                                expression {doMandatoryTests}
-                            }
-                            steps {
-                              lock (vmResource) {
-                                script {
-                                    timeout (time: 20, unit: 'MINUTES') {
-                                        try {
-                                            sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant flexran-rtc --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                                        } catch (Exception e) {
-                                          currentBuild.result = 'FAILURE'
-                                        }
-                                    }
-                                }
-                              }
-                            }
-                        }
                         stage ("Test L1 simulator") {
                             when {
                                 expression {doMandatoryTests}

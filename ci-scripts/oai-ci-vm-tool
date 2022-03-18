@@ -174,7 +174,14 @@ function variant__v1__enb_usrp {
     BUILD_OPTIONS="--eNB -w USRP --mu"
     VM_MEMORY=3072
 }
-    
+
+function variant__v2__basic_sim {
+    NB_PATTERN_FILES=11
+    BUILD_OPTIONS="--eNB --UE"
+    VM_MEMORY=8192
+    RUN_OPTIONS="complex"
+}
+
 function variant__v3__phy_sim {
     NB_PATTERN_FILES=11
     BUILD_OPTIONS="--phy_simulators"

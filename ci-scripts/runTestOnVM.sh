@@ -1292,6 +1292,11 @@ function run_test_on_vm {
         echo "This VM test type is no longer supported in the pipeline framework"
         return
     fi
+    if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-basic-sim.* ))  ]]
+    then
+        echo "This VM test type is no longer supported in the pipeline framework"
+        return
+    fi
     if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
     then
         ENB_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#enb-ethernet#"`
