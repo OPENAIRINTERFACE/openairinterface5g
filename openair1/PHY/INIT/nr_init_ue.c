@@ -639,8 +639,10 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
     }
 
-    for (int i = 0; i < fp->nb_antennas_rx; i++) {
+    for (int i=0; i<NR_MAX_NB_PORTS; i++) {
       free_and_zero(ue->nr_csi_rs_info->csi_rs_generated_signal[i]);
+    }
+    for (int i = 0; i < fp->nb_antennas_rx; i++) {
       free_and_zero(ue->nr_csi_rs_info->csi_rs_received_signal[i]);
       for (int j=0; j<NR_MAX_NB_PORTS; j++) {
         free_and_zero(ue->nr_csi_rs_info->csi_rs_ls_estimated_channel[i][j]);
@@ -679,6 +681,8 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     free_and_zero(ue->nr_srs_info->srs_estimated_channel_time_shifted);
     free_and_zero(ue->nr_srs_info);
 
+    free_and_zero(ue->csiim_vars[gNB_id]);
+    free_and_zero(ue->csirs_vars[gNB_id]);
     free_and_zero(ue->srs_vars[gNB_id]);
 
     free_and_zero(ue->pbch_vars[gNB_id]);
