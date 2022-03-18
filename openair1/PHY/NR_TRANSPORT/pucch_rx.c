@@ -287,8 +287,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
       c16_t *r=(c16_t*)&rxdataF[aa][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[l]];
       for (n=0;n<12;n++) {
-        xr[aa][l][n].r +=(int32_t)x_re[l][n]*r[n].r+(int32_t)x_im[l][n]*r[n].i;
-        xr[aa][l][n].i +=(int32_t)x_re[l][n]*r[n].i-(int32_t)x_im[l][n]*r[n].r;
+        xr[aa][l][n].r += (int32_t)x_re[l][n] * r[n].r + (int32_t)x_im[l][n] * r[n].i;
+        xr[aa][l][n].i += (int32_t)x_re[l][n] * r[n].i - (int32_t)x_im[l][n] * r[n].r;
 #ifdef DEBUG_NR_PUCCH_RX
         printf("x (%d,%d), r%d.%d (%d,%d), xr (%lld,%lld)\n",
 	       x_re[l][n],x_im[l][n],l2,re_offset[l],r[n].r,r[n].i,xr[aa][l][n].r,xr[aa][l][n].i);
@@ -317,12 +317,12 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
         corr_re[aa][l]=0;
         corr_im[aa][l]=0;
-        for (n=0;n<12;n++) {
-          corr_re[aa][l]+=xr[aa][l][n].r*idft12_re[seq_index][n]+xr[aa][l][n].i*idft12_im[seq_index][n];
-          corr_im[aa][l]+=xr[aa][l][n].r*idft12_im[seq_index][n]-xr[aa][l][n].i*idft12_re[seq_index][n];
+        for (n = 0; n < 12; n++) {
+          corr_re[aa][l] += xr[aa][l][n].r * idft12_re[seq_index][n] + xr[aa][l][n].i * idft12_im[seq_index][n];
+          corr_im[aa][l] += xr[aa][l][n].r * idft12_im[seq_index][n] - xr[aa][l][n].i * idft12_re[seq_index][n];
         }
-	corr_re[aa][l]>>=15;
-	corr_im[aa][l]>>=15;
+	corr_re[aa][l] >>= 15;
+	corr_im[aa][l] >>= 15;
       }
     }
     LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%ld,%ld)=>%f\n",

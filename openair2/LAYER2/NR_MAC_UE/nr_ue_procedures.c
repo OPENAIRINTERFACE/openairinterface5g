@@ -2092,7 +2092,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
               pucch->is_common = current_harq->is_common;
               current_harq->active = false;
               current_harq->ack_received = false;
-	      LOG_D(PHY,"%d.%d Sent %d ack on harq pid %d\n", frame, slot, current_harq->ack, dl_harq_pid);
+	      LOG_D(PHY,"%4d.%2d Sent %d ack on harq pid %d\n", frame, slot, current_harq->ack, dl_harq_pid);
             }
           }
         }
@@ -3497,7 +3497,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
                   return;
                 getMacLen(pduP, &mac_len, &mac_subheader_len);
-                LOG_D(NR_MAC, "[UE %d] Frame %d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, rx_lcid, gNB_index, mac_len);
+                LOG_D(NR_MAC, "[UE %d] %4d.%2d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, slot, rx_lcid, gNB_index, mac_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
                     LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);

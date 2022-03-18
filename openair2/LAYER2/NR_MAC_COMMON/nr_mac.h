@@ -118,14 +118,14 @@ typedef struct {
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
 
 static inline void getMacLen(uint8_t* pdu, uint16_t *mac_ce_len, uint16_t *mac_subheader_len) {
-  NR_MAC_SUBHEADER_SHORT *s=(NR_MAC_SUBHEADER_SHORT*) pdu;
-  NR_MAC_SUBHEADER_LONG *l=(NR_MAC_SUBHEADER_LONG*) pdu;
+  NR_MAC_SUBHEADER_SHORT *s = (NR_MAC_SUBHEADER_SHORT*) pdu;
+  NR_MAC_SUBHEADER_LONG *l = (NR_MAC_SUBHEADER_LONG*) pdu;
   if (s->F) {
-    *mac_subheader_len=sizeof(*l);
-    *mac_ce_len=ntohs(l->L);
+    *mac_subheader_len = sizeof(*l);
+    *mac_ce_len = ntohs(l->L);
   } else {
-    *mac_subheader_len=sizeof(*s);
-    *mac_ce_len=s->L;
+    *mac_subheader_len = sizeof(*s);
+    *mac_ce_len = s->L;
   }
 }
     
