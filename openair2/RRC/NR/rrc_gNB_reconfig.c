@@ -60,6 +60,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int minRXTXTIME,
                                      int do_csirs,
                                      int do_srs,
+                                     bool force_256qam_off,
                                      int uid) {
 
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
@@ -605,7 +606,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup1=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rateMatchPatternGroup2=NULL;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->rbg_Size=NR_PDSCH_Config__rbg_Size_config1;
- set_dl_mcs_table(bwp->bwp_Common->genericParameters.subcarrierSpacing, uecap, bwp->bwp_Dedicated, servingcellconfigcommon);
+ set_dl_mcs_table(bwp->bwp_Common->genericParameters.subcarrierSpacing, force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, servingcellconfigcommon);
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI));
  *bwp->bwp_Dedicated->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI = NR_PDSCH_Config__maxNrofCodeWordsScheduledByDCI_n1;
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
@@ -1347,6 +1348,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            int minRXTXTIME,
                            int do_csirs,
                            int do_srs,
+                           bool force_256qam_off,
                            int uid) {
   AssertFatal(servingcellconfigcommon!=NULL,"servingcellconfigcommon is null\n");
   AssertFatal(reconfig!=NULL,"reconfig is null\n");
@@ -1364,6 +1366,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                                   minRXTXTIME,
                                   do_csirs,
                                   do_srs,
+                                  force_256qam_off,
                                   uid);
 
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)secondaryCellGroup);

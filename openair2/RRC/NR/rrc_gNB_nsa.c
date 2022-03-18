@@ -240,29 +240,20 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                           cipher_algo,
                           NR_SecurityConfig__keyToUse_secondary);
   }
-  if (ue_context_p->ue_context.spCellConfig) {
-    fill_default_reconfig(carrier->servingcellconfigcommon,
-                          ue_context_p->ue_context.spCellConfig->spCellConfigDedicated,
-                          reconfig_ies,
-                          ue_context_p->ue_context.secondaryCellGroup,
-                          ue_context_p->ue_context.UE_Capability_nr,
-                          carrier->pdsch_AntennaPorts,
-                          carrier->minRXTXTIME,
-                          carrier->do_CSIRS,
-                          carrier->do_SRS,
-                          ue_context_p->local_uid);
-  } else {
-    fill_default_reconfig(carrier->servingcellconfigcommon,
-                          NULL,
-                          reconfig_ies,
-                          ue_context_p->ue_context.secondaryCellGroup,
-                          ue_context_p->ue_context.UE_Capability_nr,
-                          carrier->pdsch_AntennaPorts,
-                          carrier->minRXTXTIME,
-                          carrier->do_CSIRS,
-                          carrier->do_SRS,
-                          ue_context_p->local_uid);
-  }
+  NR_ServingCellConfig_t *scc = ue_context_p->ue_context.spCellConfig
+      ? ue_context_p->ue_context.spCellConfig->spCellConfigDedicated
+      : NULL;
+  fill_default_reconfig(carrier->servingcellconfigcommon,
+                        scc,
+                        reconfig_ies,
+                        ue_context_p->ue_context.secondaryCellGroup,
+                        ue_context_p->ue_context.UE_Capability_nr,
+                        carrier->pdsch_AntennaPorts,
+                        carrier->minRXTXTIME,
+                        carrier->do_CSIRS,
+                        carrier->do_SRS,
+                        carrier->force_256qam_off,
+                        ue_context_p->local_uid);
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
