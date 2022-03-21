@@ -2604,6 +2604,11 @@ void nr_csirs_scheduling(int Mod_idP,
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    if (sched_ctrl->rrc_processing_timer > 0) {
+      continue;
+    }
+
     NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
 
     if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
@@ -2791,6 +2796,23 @@ void nr_csirs_scheduling(int Mod_idP,
   }
 }
 
+void nr_mac_update_timers(module_id_t module_id,
+                          frame_t frame,
+                          sub_frame_t slot) {
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  const NR_list_t *UE_list = &UE_info->list;
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->rrc_processing_timer > 0) {
+      sched_ctrl->rrc_processing_timer--;
+      if (sched_ctrl->rrc_processing_timer == 0) {
+        LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %d\n", frame, slot, UE_id);
+        sched_ctrl->update_pdsch_ps = true;
+        sched_ctrl->update_pusch_ps = true;
+      }
+    }
+  }
+}
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,
