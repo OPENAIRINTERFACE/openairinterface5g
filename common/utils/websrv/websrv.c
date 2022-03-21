@@ -57,7 +57,7 @@
 
 void websrv_printjson(char * label, json_t *jsonobj){
 	char *jstr = json_dumps(jsonobj,0);
-	LOG_I(UTIL,"%s:%s\n", label, (jstr==NULL)?"??":jstr);
+	LOG_I(UTIL,"%s:%s\n", label, (jstr==NULL)?"??\n":jstr);
 }
 
 char * websrv_read_file(const char * filename) {
@@ -110,8 +110,13 @@ FILE *websrv_getfile(char *filename, struct _u_response * response) {
     LOG_E(UTIL,"websrv couldn't open %s\n",filename);
     return NULL;
   }
-  
-  int ust=ulfius_add_header_to_response(response,"content-type" ,"text/html");
+
+  char *content_type="text/html";
+  size_t nl = strlen(filename);
+  if ( nl >= 3 && !strcmp(filename + nl - 3, "css"))
+     content_type="text/css";
+
+  int ust=ulfius_add_header_to_response(response,"content-type" ,content_type);
   if (ust != U_OK){
 	  ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
 	  LOG_E(UTIL,"websrv cannot set response header type ulfius error %d \n",ust);
@@ -159,19 +164,72 @@ int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_res
 
 /* callback processing module url (<address>/oaisoftmodem/module)*/
 int websrv_callback_get_softmodemcmd(const struct _u_request * request, struct _u_response * response, void * user_data) {
-	char *cmd = (char *)user_data;
-	LOG_I(UTIL,"websrv received  %s command request\n", cmd);
+	char *module=NULL;
+	telnetsrv_params_t *telnetparams= get_telnetsrv_params();
+	int r=sscanf(request->http_url+1,"%*[^/]/%*[^/]/%m[^/]",&module);
+	if (module == NULL || r!=1) {
+	  LOG_E(UTIL,"websrv received  %s request, couldn't parse module r=%i\n",request->http_url,r );
+	  return(U_CALLBACK_ERROR);
+    }
+	LOG_I(UTIL,"websrv received  %s module request\n", module);
+	json_t *moduleactions = json_array();
+    for (int i=0; telnetparams->CmdParsers[i].var != NULL && telnetparams->CmdParsers[i].cmd != NULL; i++) {
+	  if ( strcmp(telnetparams->CmdParsers[i].module,module)==0) {
+        for(int j=0; telnetparams->CmdParsers[i].var[j].varvalptr != NULL ; j++) {
+		  char*strval=telnet_getvarvalue(i, j);
+		  char *strbool="N";
+		  json_t *oneaction =json_pack("{s:s,s:s,s:s,s:s}","type","variable","name",telnetparams->CmdParsers[i].var[j].varname,"value",strval,"modifiable",strbool);
+          if (oneaction==NULL) {
+	        LOG_E(UTIL,"websrv cannot encode oneaction %s/%s\n",module,telnetparams->CmdParsers[i].var[j].varname);
+          } else {
+	        websrv_printjson("oneaction",oneaction);
+          }   
+		  free(strval);
+          json_array_append(moduleactions , oneaction);
+        }
+        if (moduleactions==NULL) {
+	      LOG_E(UTIL,"websrv cannot encode moduleactions response for %s\n",module);
+        } else {
+	      websrv_printjson("moduleactions",moduleactions);
+        }
+	    json_t *modulesubcom = json_array();
+        for(int j=0; telnetparams->CmdParsers[i].cmd[j].cmdfunc != NULL ; j++) {
+		  json_t *jsstr=json_string(telnetparams->CmdParsers[i].cmd[j].cmdname);
+		  json_array_append(modulesubcom , jsstr);
+        }
+        if (modulesubcom==NULL) {
+	      LOG_E(UTIL,"websrv cannot encode modulesubcom response for %s\n",module);
+        } else {
+	      websrv_printjson("modulesubcom",modulesubcom);
+        }        
+        json_t *subc=json_pack("{s:s,s:o}","type","subcommand","name",modulesubcom);
+        json_array_append(moduleactions , subc);
+        if (moduleactions!=NULL) {
+	      websrv_printjson("moduleactions",moduleactions);
+        }        
+        free(module);
+        int us=ulfius_add_header_to_response(response,"content-type" ,"application/json");
+        if (us != U_OK){
+	      ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
+	      LOG_E(UTIL,"websrv cannot set response header type ulfius error %d \n",us);
+        }   
+        us=ulfius_set_json_body_response(response, 200, moduleactions);
+        if (us != U_OK){
+	      ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_set_json_body_response)");
+	      LOG_E(UTIL,"websrv cannot set body response ulfius error %d \n",us);
+        }        
+      }
+    }	
 	return U_CALLBACK_CONTINUE;
 }
 
 /* callback processing initial url (<address>/oaisoftmodem)*/
 int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct _u_response * response, void * user_data) {
+  telnetsrv_params_t *telnetparams= get_telnetsrv_params();
   char *cfgfile=CONFIG_GETCONFFILE ;
   char *execfunc=get_softmodem_function(NULL);
-  telnetsrv_params_t *telnetparams;
   
-  
-  telnetparams = get_telnetsrv_params();
+
 
   json_t *cmdnames = json_array();
   for (int i=0; telnetparams->CmdParsers[i].var != NULL && telnetparams->CmdParsers[i].cmd != NULL; i++) {
@@ -237,7 +295,9 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
   websrvparams.instance->max_post_body_size = 1024;
   
   // Endpoint list declaration
+  //1: load the frontend code: files contained in the websrvparams.url directory
   ulfius_add_endpoint_by_val(websrvparams.instance, "GET", websrvparams.url, NULL, 0, &websrv_callback_get_mainurl, NULL);
+  //2: build the first page, when receiving the "oaisoftmodem" url 
   ulfius_add_endpoint_by_val(websrvparams.instance, "GET", "oaisoftmodem", NULL, 0, &websrv_callback_get_softmodeminfo, NULL);
  //ulfius_add_endpoint_by_val(&instance, "GET", "softmodem", "", 0, &callback_get_empty_response, NULL);
  // ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, "/multiple/:multiple/:multiple/:not_multiple", 0, &callback_all_test_foo, NULL);

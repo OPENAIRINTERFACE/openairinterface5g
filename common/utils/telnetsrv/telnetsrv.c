@@ -344,6 +344,50 @@ int history_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
 /*
 generic commands available for all modules loaded by the server
 */
+char *telnet_getvarvalue(int moduleindex, int varindex) {
+	    char *val;
+        switch(telnetparams.CmdParsers[moduleindex].var[varindex].vartype) {
+          case TELNET_VARTYPE_INT32:
+            val=malloc(64);
+            snprintf(val,64,"%i",*(int32_t *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            break;
+
+          case TELNET_VARTYPE_INT64:
+            val=malloc(128);
+            snprintf(val,128,"%lli",(long long)*(int64_t *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            break;
+
+          case TELNET_VARTYPE_INT16:
+            val=malloc(16);
+            snprintf(val,16,"%hi",*(short *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            break;
+
+          case TELNET_VARTYPE_INT8:
+            val=malloc(16);
+            snprintf(val,16,"%i",(int)(*(int8_t *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr)));
+            break;
+            
+          case TELNET_VARTYPE_UINT:
+            val=malloc(64);
+            snprintf(val,64,"%u",*(unsigned int *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            break;
+            
+          case TELNET_VARTYPE_DOUBLE:
+            val=malloc(32);
+            snprintf(val,32,"%g\n",*(double *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            break;
+
+          case TELNET_VARTYPE_STRING:
+            val = strdup(*(char **)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            break;
+
+          default:
+            val=malloc(64);
+            snprintf(val,64,"ERR:%s var %i unknown type",telnetparams.CmdParsers[moduleindex].module,varindex);
+            break;
+        }	
+    return val;
+}
 
 int setgetvar(int moduleindex,char getorset,char *params) {
   int n,i;
@@ -357,42 +401,10 @@ int setgetvar(int moduleindex,char getorset,char *params) {
       if (n > 0 && (getorset == 'g' || getorset == 'G')) {
         client_printf("%s, %s = ", telnetparams.CmdParsers[moduleindex].module,
                       telnetparams.CmdParsers[moduleindex].var[i].varname );
-
-        switch(telnetparams.CmdParsers[moduleindex].var[i].vartype) {
-          case TELNET_VARTYPE_INT32:
-            client_printf("%i\n",*(int32_t *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
-            break;
-
-          case TELNET_VARTYPE_INT64:
-            client_printf("%lli\n",*(int64_t *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
-            break;
-
-          case TELNET_VARTYPE_INT16:
-            client_printf("%hi\n",*(short *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
-            break;
-
-          case TELNET_VARTYPE_INT8:
-            client_printf("%i\n",(int)(*(int8_t *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr)));
-            break;
-            
-          case TELNET_VARTYPE_UINT:
-            client_printf("%u\n",*(unsigned int *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
-            break;
-            
-          case TELNET_VARTYPE_DOUBLE:
-            client_printf("%g\n",*(double *)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
-            break;
-
-          case TELNET_VARTYPE_STRING:
-            client_printf("\"%s\"\n",*(char **)(telnetparams.CmdParsers[moduleindex].var[i].varvalptr));
-            break;
-
-          default:
-            client_printf("unknown type\n");
-            break;
-        }
+        char *strval=telnet_getvarvalue(moduleindex, i);
+        client_printf("%s\n",strval);
+        free(strval);
       }
-
       if (n > 1 && (getorset == 's' || getorset == 'S')) {
         client_printf("%s, %s set to \n", telnetparams.CmdParsers[moduleindex].module,
                       telnetparams.CmdParsers[moduleindex].var[i].varname);

@@ -53,6 +53,7 @@ int loader_show_cmd(char *buff, int debug, telnet_printfunc_t prnt)
    if (debug > 0)
        prnt( "loader_show_cmd received %s\n",buff);
 
+    
       if (strcasestr(buff,"params") != NULL) {
           prnt( "loader parameters:\n");
           prnt( "   Main executable build version: \"%s\"\n", loader_data.mainexec_buildversion);

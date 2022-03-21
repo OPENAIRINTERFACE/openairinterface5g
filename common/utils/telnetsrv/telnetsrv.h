@@ -157,5 +157,6 @@ extern int get_phybsize(void);
 #endif
 #ifdef WEBSERVERCODE
 extern telnetsrv_params_t *get_telnetsrv_params(void);
+extern char *telnet_getvarvalue(int moduleindex, int varindex);
 #endif
 #endif
