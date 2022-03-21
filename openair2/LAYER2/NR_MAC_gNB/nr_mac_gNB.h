@@ -806,7 +806,7 @@ typedef struct gNB_MAC_INST_s {
   uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
-  int pdsch_antenna_ports;
+  int xp_pdsch_antenna_ports;
 
   bool first_MIB;
   double dl_bler_target_upper;

@@ -464,10 +464,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     LOG_I(NR_MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
-    RC.nrmac[Mod_idP]->pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
+    int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
+    RC.nrmac[Mod_idP]->xp_pdsch_antenna_ports = pdsch_AntennaPorts.XP;
     config_common(Mod_idP,
                   ssb_SubcarrierOffset,
-                  RC.nrmac[Mod_idP]->pdsch_antenna_ports,
+                  num_pdsch_antenna_ports,
                   pusch_AntennaPorts,
 		  scc);
     LOG_D(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);

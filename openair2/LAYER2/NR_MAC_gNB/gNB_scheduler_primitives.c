@@ -149,12 +149,13 @@ uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
 uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int layers,
                       int N1, int N2,
-                      int config_file_ant_ports,
+                      int xp_pdsch_antenna_ports,
                       int codebook_mode) {
 
   int antenna_ports = (N1*N2)<<1;
-  if (antenna_ports!=config_file_ant_ports)
-    return 0; //identity matrix
+  if (xp_pdsch_antenna_ports == 1 &&
+      antenna_ports>1)
+    return 0; //identity matrix (basic 5G configuration handled by PMI report is with XP antennas)
 
   int x1 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1;
   int x2 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2;
