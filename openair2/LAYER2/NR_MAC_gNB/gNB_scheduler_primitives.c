@@ -149,11 +149,16 @@ uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
 uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int layers,
                       int N1, int N2,
+                      int config_file_ant_ports,
                       int codebook_mode) {
+
+  int antenna_ports = (N1*N2)<<1;
+  if (antenna_ports!=config_file_ant_ports)
+    return 0; //identity matrix
 
   int x1 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1;
   int x2 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2;
-  int antenna_ports = (N1*N2)<<1;
+  LOG_D(NR_MAC,"PMI report: x1 %d x2 %d\n",x1,x2);
 
   sched_ctrl->set_pmi = false;
 

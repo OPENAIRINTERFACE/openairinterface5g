@@ -40,7 +40,7 @@ void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
+                   int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
@@ -458,6 +458,7 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
 uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int layers,
                       int N1, int N2,
+                      int config_file_ant_ports,
                       int codebook_mode);
 
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,

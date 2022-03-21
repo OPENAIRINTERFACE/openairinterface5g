@@ -1183,6 +1183,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                             nrOfLayers,
                                                                             csi_report->N1,
                                                                             csi_report->N2,
+                                                                            gNB_mac->pdsch_antenna_ports,
                                                                             csi_report->codebook_mode);
     }
 
