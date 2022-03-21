@@ -1176,6 +1176,10 @@ void pf_ul(module_id_t module_id,
     if (B == 0 && !do_sched)
       continue;
 
+    if (sched_ctrl->rrc_processing_info.rrc_processing_timer > 0) {
+      continue;
+    }
+
     /* Schedule UE on SR or UL inactivity and no data (otherwise, will be scheduled
      * based on data to transmit) */
     if (B == 0 && do_sched) {

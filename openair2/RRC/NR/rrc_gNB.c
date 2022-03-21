@@ -166,17 +166,17 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 
   if (NODE_IS_MONOLITHIC(rrc->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
-			   rrc->carrier.ssb_SubcarrierOffset,
-			   rrc->carrier.pdsch_AntennaPorts,
-			   rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+                           rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
                            rrc->carrier.minRXTXTIME,
-			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
-			   &rrc->carrier.mib,
-			   0,
-			   0, // WIP hardcoded rnti
-			   (NR_CellGroupConfig_t *)NULL
-			   );
+                           (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+                           &rrc->carrier.mib,
+                           0,
+                           0, // WIP hardcoded rnti
+                           (NR_CellGroupConfig_t *)NULL,
+                           false);
   }
 
   /* set flag to indicate that cell information is configured. This is required
@@ -279,17 +279,18 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc_gNB_ue_context_t         *const ue_context_pP,
                          const protocol_ctxt_t        *const ctxt_pP ) {
 
-      rrc_mac_config_req_gNB(rrc->module_id,
-			     rrc->carrier.ssb_SubcarrierOffset,
-			     rrc->carrier.pdsch_AntennaPorts,
-			     rrc->carrier.pusch_AntennaPorts,
-			     rrc->carrier.sib1_tda,
-                             rrc->carrier.minRXTXTIME,
-			     NULL,
-                             NULL,
-			     0,
-			     ue_context_pP->ue_context.rnti,
-			     get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
+  rrc_mac_config_req_gNB(rrc->module_id,
+                         rrc->carrier.ssb_SubcarrierOffset,
+                         rrc->carrier.pdsch_AntennaPorts,
+                         rrc->carrier.pusch_AntennaPorts,
+                         rrc->carrier.sib1_tda,
+                         rrc->carrier.minRXTXTIME,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL,
+                         false);
 
       nr_rrc_rlc_config_asn1_req(ctxt_pP,
                                  ue_context_pP->ue_context.SRB_configList,
@@ -474,8 +475,8 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          &rrc_instance_p->carrier.mib,
                          0,
                          ue_context_pP->ue_context.rnti,
-                         (NR_CellGroupConfig_t *)NULL
-			 );
+                         (NR_CellGroupConfig_t *)NULL,
+                         false);
 
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
@@ -729,6 +730,19 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Reconfiguration\n");
+
+  rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         NULL,
+                         true);
 
   /* Free all NAS PDUs */
   for (int i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -988,7 +1002,20 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 &rrc->carrier,
                                 NULL,
                                 cellGroupConfig);
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
+
+  rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         NULL,
+                         true);
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -1162,6 +1189,19 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                 NULL);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
+  rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         NULL,
+                         true);
+
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_modify_pdusessions; i++) {
     if (ue_context_pP->ue_context.modify_pdusession[i].param.nas_pdu.buffer != NULL) {
@@ -1262,8 +1302,20 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                NULL);
 
   ue_context_pP->ue_context.pdu_session_release_command_flag = 1;
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
-              "[MSG] RRC Reconfiguration\n");
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
+
+  rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         NULL,
+                         true);
 
   /* Free all NAS PDUs */
   if (nas_length > 0) {
@@ -1371,8 +1423,8 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            NULL,
                            0,
                            ue_context_pP->ue_context.rnti,
-                           ue_context_pP->ue_context.masterCellGroup
-                           );
+                           ue_context_pP->ue_context.masterCellGroup,
+                           false);
     LOG_D(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
                                SRB_configList, // NULL,
@@ -1811,8 +1863,20 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                                 NULL,
                                 NULL,
                                 NULL);
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
-              "[MSG] RRC Reconfiguration\n");
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
+
+  rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                         0,
+                         0,
+                         0,
+                         0,
+                         0,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         NULL,
+                         true);
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {

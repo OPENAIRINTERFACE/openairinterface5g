@@ -434,9 +434,10 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int minRXTXTIMEpdsch,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
-	                   int add_ue,
+                           int add_ue,
                            uint32_t rnti,
-	                   NR_CellGroupConfig_t *CellGroup) {
+                           NR_CellGroupConfig_t *CellGroup,
+                           bool rrc_reconfiguration_running) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -663,9 +664,22 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       sched_ctrl->maxL = 2;
     }
   }
+
+  if (rrc_reconfiguration_running) {
+    const int UE_id = find_nr_UE_id(Mod_idP,rnti);
+    if (UE_id >= 0) {
+      NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+      NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+      if (sched_ctrl->rrc_processing_info.rrc_processing_timer == 0) {
+        sched_ctrl->rrc_processing_info.rrc_processing_timer = 1;
+        LOG_I(NR_MAC, "Activating RRC processing timer for UE: %d\n", UE_id);
+      }
+    }
+  }
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   
     
-  return(0);
+  return 0;
 
 }// END rrc_mac_config_req_gNB
