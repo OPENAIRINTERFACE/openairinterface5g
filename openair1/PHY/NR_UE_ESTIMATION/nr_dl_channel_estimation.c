@@ -29,6 +29,7 @@
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "filt16a_32.h"
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 //#define DEBUG_PDSCH
 //#define DEBUG_PDCCH
@@ -43,7 +44,6 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              NR_UE_SSB *current_ssb)
 {
   int pilot[200] __attribute__((aligned(16)));
-  unsigned char aarx;
   unsigned short k;
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF;
@@ -77,7 +77,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   // generate pilot
   nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
-  for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+  for (int aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
     int re_offset = ssb_offset;
     pil   = (int16_t *)&pilot[0];
@@ -197,6 +197,9 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
+			       int estimateSz,
+			       struct complex16 dl_ch_estimates [][estimateSz],
+			       struct complex16 dl_ch_estimates_time [][estimateSz],
                                UE_nr_rxtx_proc_t *proc,
                                uint8_t gNB_id,
                                unsigned char Ns,
@@ -206,16 +209,14 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                uint8_t n_hf)
 {
   int pilot[200] __attribute__((aligned(16)));
-  unsigned char aarx,p;
   unsigned short k;
   unsigned int pilot_cnt;
-  int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
+  int16_t *pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
   //int slot_pbch;
 
   uint8_t nushift;
-  int **dl_ch_estimates  =ue->pbch_vars[gNB_id]->dl_ch_estimates;
-  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
   nushift =  ue->frame_parms.Nid_cell%4;
   ue->frame_parms.nushift = nushift;
@@ -269,17 +270,57 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     break;
   }
 
+  idft_size_idx_t idftsizeidx;
+  
+  switch (ue->frame_parms.ofdm_symbol_size) {
+  case 128:
+    idftsizeidx = IDFT_128;
+    break;
+    
+  case 256:
+    idftsizeidx = IDFT_256;
+    break;
+    
+  case 512:
+    idftsizeidx = IDFT_512;
+    break;
+    
+  case 1024:
+    idftsizeidx = IDFT_1024;
+    break;
+    
+  case 1536:
+    idftsizeidx = IDFT_1536;
+    break;
+    
+  case 2048:
+    idftsizeidx = IDFT_2048;
+    break;
+    
+  case 3072:
+    idftsizeidx = IDFT_3072;
+    break;
+    
+  case 4096:
+    idftsizeidx = IDFT_4096;
+    break;
+    
+  default:
+    printf("unsupported ofdm symbol size \n");
+    assert(0);
+  }
+  
   // generate pilot
   nr_pbch_dmrs_rx(dmrss,ue->nr_gold_pbch[n_hf][ssb_index], &pilot[0]);
 
-  for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
+  for (int aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
     int re_offset = ssb_offset;
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+re_offset)];
     dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
 
-    memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
+    memset(dl_ch,0,sizeof(*dl_ch)*(ue->frame_parms.ofdm_symbol_size));
 
 #ifdef DEBUG_CH
     printf("pbch ch est pilot addr %p RB_DL %d\n",&pilot[0], ue->frame_parms.N_RB_DL);
@@ -289,6 +330,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 #endif
 
     // Treat first 2 pilots specially (left edge)
+    int16_t ch[2];
     ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
     ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
@@ -402,62 +444,18 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
     }
 
-    idft_size_idx_t idftsizeidx;
-
-    switch (ue->frame_parms.ofdm_symbol_size) {
-    case 128:
-      idftsizeidx = IDFT_128;
-      break;
-
-    case 256:
-      idftsizeidx = IDFT_256;
-      break;
-
-    case 512:
-      idftsizeidx = IDFT_512;
-      break;
-
-    case 1024:
-      idftsizeidx = IDFT_1024;
-      break;
-
-    case 1536:
-      idftsizeidx = IDFT_1536;
-      break;
-
-    case 2048:
-      idftsizeidx = IDFT_2048;
-      break;
-
-    case 3072:
-      idftsizeidx = IDFT_3072;
-      break;
-
-    case 4096:
-      idftsizeidx = IDFT_4096;
-      break;
-
-    default:
-      printf("unsupported ofdm symbol size \n");
-      assert(0);
-    }
-
     if( dmrss == 2) // update time statistics for last PBCH symbol
     {
       // do ifft of channel estimate
-      for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
-        for (p=0; p<ue->frame_parms.nb_antenna_ports_gNB; p++) {
-          if (ue->pbch_vars[gNB_id]->dl_ch_estimates[(p*ue->frame_parms.nb_antennas_rx)+aarx])
-          {
-            LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d ch_offset %d\n", Ns, proc->thread_id, symbol, ch_offset);
-            idft(idftsizeidx,
-                 (int16_t*) &ue->pbch_vars[gNB_id]->dl_ch_estimates[(p*ue->frame_parms.nb_antennas_rx)+aarx][ch_offset],
-                 (int16_t*) ue->pbch_vars[gNB_id]->dl_ch_estimates_time[(p*ue->frame_parms.nb_antennas_rx)+aarx],1);
-          }
-        }
-    }
-
-  }
+      LOG_D(PHY,"Channel Impulse Computation Slot %d Symbol %d ch_offset %d\n", Ns, symbol, ch_offset);
+      idft(idftsizeidx,
+	   (int16_t*) &dl_ch_estimates[aarx][ch_offset],
+	   (int16_t*) dl_ch_estimates_time[aarx],
+	   1);
+}
+}
+  if (dmrss == 2)
+    UEscopeCopy(ue, pbchDlChEstimateTime, (void*)dl_ch_estimates_time, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx, idftsizeidx);
   return(0);
 }
 

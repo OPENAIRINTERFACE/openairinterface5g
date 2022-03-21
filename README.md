@@ -21,6 +21,15 @@
 
 # OpenAirInterface License #
 
+ *  [OAI License Model](http://www.openairinterface.org/?page_id=101)
+ *  [OAI License v1.1 on our website](http://www.openairinterface.org/?page_id=698)
+
+It is distributed under **OAI Public License V1.1**.
+
+The license information is distributed under [LICENSE](LICENSE) file in the same directory.
+
+Please see [NOTICE](NOTICE.md) file for third party software that is included in the sources.
+
 # Where to Start #
 
  *  [The implemented features](./doc/FEATURE_SET.md)
