@@ -589,9 +589,6 @@ typedef struct gNB_L1_proc_t_s {
   int instance_cnt_te;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-
-  // instance count for over-the-air gNB synchronization
-  int instance_cnt_synch;
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
   /// pthread structure for eNB single processing thread

@@ -3175,7 +3175,8 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
     const size_t num_plmn_data = sizeof(plmn_data) / sizeof(plmn_data[0]);
     for (size_t plmn_ind = 0;; ++plmn_ind) {
       if (plmn_ind == num_plmn_data) {
-        LOG_E( RRC, "Did not find name from internal table for %u %u\n", mcc, mnc);
+        LOG_W( RRC, "Did not find operator name from internal table for MCC %0*d, MNC %0*d\n",
+               mccdigits, mcc, mncdigits, mnc);
         break;
       }
       if ((plmn_data[plmn_ind].mcc == mcc) && (plmn_data[plmn_ind].mnc == mnc)) {

@@ -168,19 +168,6 @@ typedef struct {
   struct sched_param sched_param_ue;
   /// pthread descriptor main UE thread
   pthread_t pthread_ue;
-  /// \brief Instance count for synch thread.
-  /// \internal This variable is protected by \ref mutex_synch.
-  int instance_cnt_synch;
-  /// pthread attributes for synch processing thread
-  pthread_attr_t attr_synch;
-  /// scheduling parameters for synch thread
-  struct sched_param sched_param_synch;
-  /// pthread descriptor synch thread
-  pthread_t pthread_synch;
-  /// condition variable for UE synch thread;
-  pthread_cond_t cond_synch;
-  /// mutex for UE synch thread
-  pthread_mutex_t mutex_synch;
   /// instance count for eNBs
   int instance_cnt_eNBs;
   /// set of scheduling variables RXn-TXnp4 threads
@@ -833,7 +820,6 @@ typedef struct {
   pthread_mutex_t timer_mutex;
   pthread_cond_t timer_cond;
   int instance_cnt_timer;
-
   /// RF and Interface devices per CC
 
   openair0_device rfdevice;

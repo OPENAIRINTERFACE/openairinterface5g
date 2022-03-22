@@ -654,17 +654,15 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].rx_freq[0],
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
-        if (UE->mode != loop_through_memory) {
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
-          //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-          //UE->rfdevice.trx_stop_func(&UE->rfdevice);
-          // sleep(1);
-          /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
-            LOG_E(HW,"Could not start the device\n");
-            oai_exit=1;
-            }*/
-        }
-
+        UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+        //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
+        //UE->rfdevice.trx_stop_func(&UE->rfdevice);
+        // sleep(1);
+        /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
+          LOG_E(HW,"Could not start the device\n");
+          oai_exit=1;
+          }*/
+        
         if (UE->UE_scan_carrier == 1) {
           UE->UE_scan_carrier = 0;
         } else {
@@ -683,8 +681,7 @@ static void UE_synch(void *arg) {
 
           LOG_I(PHY, "Initial sync failed: trying carrier off %d Hz\n", freq_offset);
 
-          if (UE->mode != loop_through_memory)
-            UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
         }
 
         break;
@@ -729,7 +726,7 @@ void processSlotTX(void *arg) {
       stop_meas(&UE->ue_ul_indication_stats);
     }
 
-    if ((UE->mode != loop_through_memory) && (rxtxD->ue_sched_mode != NOT_PUSCH)) {
+    if (rxtxD->ue_sched_mode != NOT_PUSCH) {
       phy_procedures_nrUE_TX(UE,proc,0);
     }
   }
@@ -873,7 +870,7 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
     *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
       int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
-      // we write before read becasue gNB waits for UE to write and both executions halt
+      // we write before read because gNB waits for UE to write and both executions halt
       // this happens here as the read size is samples_per_subframe which is very much larger than samp_per_slot
       if (IS_SOFTMODEM_RFSIM) dummyWrite(UE,*timestamp, unitTransfer);
       AssertFatal(unitTransfer ==
