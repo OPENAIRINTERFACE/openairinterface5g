@@ -1123,7 +1123,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         tx_req.number_of_pdus = 0;
 
         for (int j = 0; j < ul_config->number_pdus; j++) {
-          uint8_t *ulsch_input_buffer = &(ulsch_input_buffer_array[tx_req.number_of_pdus][MAX_ULSCH_PAYLOAD_BYTES]);
+          uint8_t *ulsch_input_buffer = ulsch_input_buffer_array[tx_req.number_of_pdus];
 
           fapi_nr_ul_config_request_pdu_t *ulcfg_pdu = &ul_config->ul_config_list[j];
 
