@@ -1307,8 +1307,13 @@ void fill_initial_SpCellConfig(int uid,
   NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
   pucchspatial->pucch_SpatialRelationInfoId = 1;
   pucchspatial->servingCellId = NULL;
-  pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
-  pucchspatial->referenceSignal.choice.ssb_Index = 0;
+
+  // TODO: Remove this if
+  if(!carrier->do_CSIRS) {
+    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
+    pucchspatial->referenceSignal.choice.ssb_Index = 0;
+  }
+
   pucchspatial->pucch_PathlossReferenceRS_Id = 0;
   pucchspatial->p0_PUCCH_Id = 1;
   pucchspatial->closedLoopIndex = NR_PUCCH_SpatialRelationInfo__closedLoopIndex_i0;
@@ -1575,13 +1580,13 @@ void fill_initial_SpCellConfig(int uid,
   bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
 
   bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
- *bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
- bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation = NR_PDSCH_Config__resourceAllocation_resourceAllocationType1;
- bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
- bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
- bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize =
-   calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize));
- *bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
+  *bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
+  bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation = NR_PDSCH_Config__resourceAllocation_resourceAllocationType1;
+  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
+  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
+  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize =
+      calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize));
+  *bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
 
   bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
   NR_TCI_State_t *tcic;
@@ -1601,6 +1606,25 @@ void fill_initial_SpCellConfig(int uid,
   NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = calloc(1,sizeof(*pdsch_servingcellconfig));
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->present = NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup;
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
+
+  // TODO: Delete this code and calls in update_cellGroupConfig()
+  if (carrier->do_CSIRS) {
+    struct NR_PUCCH_Config__spatialRelationInfoToAddModList *spatialRelationInfoToAddModList = calloc(1,sizeof(*spatialRelationInfoToAddModList));
+    NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
+    pucchspatial->pucch_SpatialRelationInfoId = 1;
+    pucchspatial->servingCellId = NULL;
+    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
+    pucchspatial->referenceSignal.choice.csi_RS_Index = 0;
+    pucchspatial->pucch_PathlossReferenceRS_Id = 0;
+    pucchspatial->p0_PUCCH_Id = 1;
+    pucchspatial->closedLoopIndex = NR_PUCCH_SpatialRelationInfo__closedLoopIndex_i0;
+    ASN_SEQUENCE_ADD(&spatialRelationInfoToAddModList->list,pucchspatial);
+    SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->spatialRelationInfoToAddModList = spatialRelationInfoToAddModList;
+    if(!SpCellConfig->spCellConfigDedicated->csi_MeasConfig) {
+      SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
+    }
+    fill_default_csi_MeasConfig(uid, SpCellConfig->spCellConfigDedicated->csi_MeasConfig, scc, carrier);
+  }
 
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
   pdsch_servingcellconfig->xOverhead = NULL;
@@ -1709,6 +1733,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
 
   // Config CSI-RS
+  /*
   if (carrier->do_CSIRS) {
     struct NR_PUCCH_Config__spatialRelationInfoToAddModList *spatialRelationInfoToAddModList = calloc(1,sizeof(*spatialRelationInfoToAddModList));
     NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
@@ -1726,6 +1751,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
     }
     fill_default_csi_MeasConfig(uid, SpCellConfig->spCellConfigDedicated->csi_MeasConfig, scc, carrier);
   }
+  */
 
   // Set DL MCS table
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
