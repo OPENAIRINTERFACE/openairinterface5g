@@ -82,6 +82,11 @@
 #define DAQ_AGC_OFF 0
 
 
+typedef struct {
+  uint8_t decoded_output[64];
+  uint8_t xtra_byte;
+} fapiPbch_t;
+
 /** @addtogroup _PHY_PROCEDURES_
  * @{
  */
@@ -395,7 +400,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
-                           UE_nr_rxtx_proc_t *proc);
+                           UE_nr_rxtx_proc_t *proc,
+			   void * typeSpecific);
 
 bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,

@@ -395,19 +395,6 @@ int main(int argc, char **argv)
 		load_pbch_desc(pbch_file_fd);
 	}
 
-	/*  for (int k=0; k<2; k++) {
-	 // Create transport channel structures for 2 transport blocks (MIMO)
-	 for (i=0; i<2; i++) {
-	 gNB->dlsch[k][i] = new_gNB_dlsch(Kmimo,8,Nsoft,0,frame_parms,gNB_config);
-
-	 if (!gNB->dlsch[k][i]) {
-	 printf("Can't get eNB dlsch structures\n");
-	 exit(-1);
-	 }
-	 gNB->dlsch[k][i]->Nsoft = 10;
-	 gNB->dlsch[k][i]->rnti = n_rnti+k;
-	 }
-	 }*/
 	//configure UE
 	UE = malloc(sizeof(PHY_VARS_NR_UE));
 	memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
@@ -420,10 +407,10 @@ int main(int argc, char **argv)
 
 	//nr_init_frame_parms_ue(&UE->frame_parms);
 	//init_nr_ue_transport(UE, 0);
+        int num_codeword = NR_MAX_NB_LAYERS > 4? 2:1;
 	for (int sf = 0; sf < 2; sf++) {
-		for (i = 0; i < 2; i++) {
+		for (i = 0; i < num_codeword; i++) {
 			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL);
-
 			if (!UE->dlsch[sf][0][i]) {
 				printf("Can't get ue dlsch structures\n");
 				exit(-1);
@@ -434,8 +421,8 @@ int main(int argc, char **argv)
 	}
 
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
-  processingData_L1tx_t msgDataTx;
-  init_DLSCH_struct(gNB, &msgDataTx);
+        processingData_L1tx_t msgDataTx;
+        init_DLSCH_struct(gNB, &msgDataTx);
 	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
@@ -642,8 +629,9 @@ int main(int argc, char **argv)
   free(RC.gNB[0]);
   free(RC.gNB);
 
+  int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int sf = 0; sf < 2; sf++)
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < num_cw; i++)
       free_nr_ue_dlsch(&UE->dlsch[sf][0][i], N_RB_DL);
   term_nr_ue_signal(UE, 1);
   free(UE);

@@ -72,10 +72,10 @@ unsigned int crcbit (unsigned char * inputptr,
   unsigned int i, crc = 0, c;
 
   while (octetlen-- > 0) {
-    c = (*inputptr++) << 24;
+    c = ((unsigned int)(*inputptr++)) << 24;
 
     for (i = 8; i != 0; i--) {
-      if ((1 << 31) & (c ^ crc))
+      if ((1U << 31) & (c ^ crc))
         crc = (crc << 1) ^ poly;
       else
         crc <<= 1;
