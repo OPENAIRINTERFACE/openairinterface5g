@@ -691,7 +691,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* retransmissions: directly allocate */
   *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pdsch.rbSize; rb++)
-    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] -= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] ^= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
   return true;
 }
 
@@ -910,7 +910,7 @@ void pf_dl(module_id_t module_id,
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-      rballoc_mask[rb + sched_pdsch->rbStart] -= slbitmap;
+      rballoc_mask[rb + sched_pdsch->rbStart] ^= slbitmap;
   }
 }
 

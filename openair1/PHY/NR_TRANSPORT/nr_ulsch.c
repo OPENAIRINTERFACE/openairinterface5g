@@ -42,15 +42,14 @@ int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
   AssertFatal(gNB!=NULL,"gNB is null\n");
   for (i=0; i<gNB->number_of_nr_ulsch_max; i++) {
     AssertFatal(gNB->ulsch[i]!=NULL,"gNB->ulsch[%d] is null\n",i);
-    AssertFatal(gNB->ulsch[i][0]!=NULL,"gNB->ulsch[%d][0] is null\n",i);
-    LOG_D(PHY,"searching for rnti %x : ulsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,gNB->ulsch[i][0]->harq_mask,gNB->ulsch[i][0]->rnti,first_free_index);
-    if ((gNB->ulsch[i][0]->harq_mask >0) &&
-        (gNB->ulsch[i][0]->rnti==rnti))       return i;
-    else if ((gNB->ulsch[i][0]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+    LOG_D(PHY,"searching for rnti %x : ulsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,gNB->ulsch[i]->harq_mask,gNB->ulsch[i]->rnti,first_free_index);
+    if ((gNB->ulsch[i]->harq_mask >0) &&
+        (gNB->ulsch[i]->rnti==rnti))       return i;
+    else if ((gNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
   }
   if (type == SEARCH_EXIST) return -1;
   if (first_free_index != -1)
-    gNB->ulsch[first_free_index][0]->rnti = 0;
+    gNB->ulsch[first_free_index]->rnti = 0;
   return first_free_index;
 }
 
@@ -64,7 +63,7 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   AssertFatal( (ulsch_id>=0) && (ulsch_id<gNB->number_of_nr_ulsch_max),
               "illegal or no ulsch_id found!!! rnti %04x ulsch_id %d\n",ulsch_pdu->rnti,ulsch_id);
 
-  NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id][0];
+  NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id];
   int harq_pid = ulsch_pdu->pusch_data.harq_process_id;
   ulsch->rnti = ulsch_pdu->rnti;
   //ulsch->rnti_type;

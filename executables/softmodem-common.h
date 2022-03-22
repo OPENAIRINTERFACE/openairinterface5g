@@ -99,6 +99,7 @@ extern "C"
 #define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 #define CONFIG_HLP_NFAPI         "Change the nFAPI mode for NR\n"
 #define CONFIG_L1_EMULATOR       "Run in L1 emulated mode (disable PHY layer)\n"
+#define CONFIG_HLP_CONTINUOUS_TX "perform continuous transmission, even in TDD mode (to work around USRP issues)\n"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                          */
@@ -126,6 +127,7 @@ extern "C"
 #define NODE_NUMBER         softmodem_params.node_number
 #define NON_STOP            softmodem_params.non_stop
 #define EMULATE_L1          softmodem_params.emulate_l1
+#define CONTINUOUS_TX       softmodem_params.continuous_tx
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -163,7 +165,8 @@ extern int usrp_tx_thread;
     {"do-prb-interpolation", CONFIG_HLP_PRBINTER,     PARAMFLAG_BOOL, iptr:&PRB_INTERPOLATION,            defintval:0,           TYPE_INT,    0},                     \
     {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
     {"non-stop",             CONFIG_HLP_NONSTOP,      PARAMFLAG_BOOL, iptr:&NON_STOP,                     defintval:0,           TYPE_INT,    0},                     \
-    {"emulate-l1",           CONFIG_L1_EMULATOR,      PARAMFLAG_BOOL, iptr:&EMULATE_L1,                   defintval:0,           TYPE_INT,    0}                      \
+    {"emulate-l1",           CONFIG_L1_EMULATOR,      PARAMFLAG_BOOL, iptr:&EMULATE_L1,                   defintval:0,           TYPE_INT,    0},                     \
+    {"continuous-tx",        CONFIG_HLP_CONTINUOUS_TX,PARAMFLAG_BOOL, iptr:&CONTINUOUS_TX,                defintval:0,           TYPE_INT,    0},                     \
   }
 
 #define CONFIG_HLP_NSA           "Enable NSA mode \n"
@@ -254,6 +257,7 @@ typedef struct {
   uint16_t       node_number;
   int            non_stop;
   int            emulate_l1;
+  int            continuous_tx;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);
