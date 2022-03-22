@@ -86,16 +86,17 @@ void nr_rf_card_config_freq(openair0_config_t *openair0_cfg,
   uint8_t cc_id      = 0;
   PHY_VARS_NR_UE *ue = PHY_vars_UE_g[mod_id][cc_id];
   int rf_chain       = ue->rf_map.chain;
+  double freq_scale  = (double)(dl_carrier + freq_offset) / dl_carrier;
 
   for (int i = rf_chain; i < rf_chain + 4; i++) {
 
     if (i < openair0_cfg->rx_num_channels)
-      openair0_cfg->rx_freq[i + rf_chain] = dl_carrier + freq_offset;
+      openair0_cfg->rx_freq[i + rf_chain] = dl_carrier * freq_scale;
     else
       openair0_cfg->rx_freq[i] = 0.0;
 
     if (i<openair0_cfg->tx_num_channels)
-      openair0_cfg->tx_freq[i] = ul_carrier + freq_offset;
+      openair0_cfg->tx_freq[i] = ul_carrier * freq_scale;
     else
       openair0_cfg->tx_freq[i] = 0.0;
 
