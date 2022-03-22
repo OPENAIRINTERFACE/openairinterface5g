@@ -451,7 +451,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
                               0);
           break;
 
-        case UL_SCH_LCID_DTCH:
+        case UL_SCH_LCID_DTCH ... (UL_SCH_LCID_DTCH + 28):
           //  check if LCID is valid at current time.
 	  if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
 	    return 0;
