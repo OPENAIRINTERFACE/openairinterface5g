@@ -801,7 +801,7 @@ int main(int argc, char **argv)
 
   unsigned char harq_pid = 0;
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
+  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id];
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
   NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
@@ -810,7 +810,7 @@ int main(int argc, char **argv)
 
   nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 
-  NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
+  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0];
 
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
@@ -1045,8 +1045,8 @@ int main(int argc, char **argv)
     memset((void*)roundStats,0,50*sizeof(roundStats[0]));
     while (round<max_rounds && crc_status) {
       round_trials[round][snrRun]++;
-      ulsch_ue[0]->harq_processes[harq_pid]->round = round;
-      gNB->ulsch[0][0]->harq_processes[harq_pid]->round = round;
+      ulsch_ue->harq_processes[harq_pid]->round = round;
+      gNB->ulsch[0]->harq_processes[harq_pid]->round = round;
       rv_index = nr_rv_round_map[round];
 
       UE_proc.thread_id = 0;
@@ -1187,7 +1187,7 @@ int main(int argc, char **argv)
 
       //nr_fill_ulsch(gNB,frame,slot,pusch_pdu); // Not needed as its its already filled as apart of "nr_schedule_response(Sched_INFO);"
 
-      for (int i=0;i<(TBS/8);i++) ulsch_ue[0]->harq_processes[harq_pid]->a[i]=i&0xff;
+      for (int i=0;i<(TBS/8);i++) ulsch_ue->harq_processes[harq_pid]->a[i]=i&0xff;
       if (input_fd == NULL) {
 
         // set FAPI parameters for UE, put them in the scheduled response and call
@@ -1449,8 +1449,8 @@ int main(int argc, char **argv)
 	}
         ////////////////////////////////////////////////////////////
 
-	if ((gNB->ulsch[0][0]->last_iteration_cnt >=
-	    gNB->ulsch[0][0]->max_ldpc_iterations+1) || ul_proc_error == 1) {
+	if ((gNB->ulsch[0]->last_iteration_cnt >=
+	    gNB->ulsch[0]->max_ldpc_iterations+1) || ul_proc_error == 1) {
 	  error_flag = 1; 
 	  n_errors[round][snrRun]++;
 	  crc_status = 1;
@@ -1475,8 +1475,8 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < available_bits; i++) {
 	  
-	  if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
-	     ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
+	  if(((ulsch_ue->harq_processes[harq_pid]->f[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) ||
+	     ((ulsch_ue->harq_processes[harq_pid]->f[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
 	    {
 	      /*if(errors_scrambling == 0)
 		printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);*/
@@ -1494,7 +1494,7 @@ int main(int argc, char **argv)
     for (i = 0; i < TBS; i++) {
       
       estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
-      test_input_bit[i]       = (ulsch_ue[0]->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
+      test_input_bit[i]       = (ulsch_ue->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
       
       if (estimated_output_bit[i] != test_input_bit[i]) {
 	/*if(errors_decoding == 0)
@@ -1503,13 +1503,13 @@ int main(int argc, char **argv)
       }
     }
     if (n_trials == 1) {
-      for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
-	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
-	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
+      for (int r=0;r<ulsch_ue->harq_processes[harq_pid]->C;r++)
+	for (int i=0;i<ulsch_ue->harq_processes[harq_pid]->K>>3;i++) {
+	  if ((ulsch_ue->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) printf("************");
 	    /*printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
-	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
+	    i,ulsch_ue->harq_processes[harq_pid]->c[r][i],
 	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
+	    ulsch_ue->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
 	}
     }
     if (errors_decoding > 0 && error_flag == 0) {
