@@ -203,8 +203,8 @@ static int sync_to_gps(openair0_device *device) {
 
       //Set to GPS time
       uhd::time_spec_t gps_time = uhd::time_spec_t(time_t(s->usrp->get_mboard_sensor("gps_time", mboard).to_int()));
-      //s->usrp->set_time_next_pps(gps_time+1.0, mboard);
-      s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+      s->usrp->set_time_next_pps(gps_time+1.0, mboard);
+      //s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
       //Wait for it to apply
       //The wait is 2 seconds because N-Series has a known issue where
       //the time at the last PPS does not properly update at the PPS edge
@@ -215,10 +215,10 @@ static int sync_to_gps(openair0_device *device) {
       uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps(mboard);
       std::cout << "USRP time: " << (boost::format("%0.9f") % time_last_pps.get_real_secs()) << std::endl;
       std::cout << "GPSDO time: " << (boost::format("%0.9f") % gps_time.get_real_secs()) << std::endl;
-      //if (gps_time.get_real_secs() == time_last_pps.get_real_secs())
-      //    std::cout << std::endl << "SUCCESS: USRP time synchronized to GPS time" << std::endl << std::endl;
-      //else
-      //    std::cerr << std::endl << "ERROR: Failed to synchronize USRP time to GPS time" << std::endl << std::endl;
+      if (gps_time.get_real_secs() == time_last_pps.get_real_secs())
+          std::cout << std::endl << "SUCCESS: USRP time synchronized to GPS time" << std::endl << std::endl;
+      else
+          std::cerr << std::endl << "ERROR: Failed to synchronize USRP time to GPS time" << std::endl << std::endl;
     }
 
     if (num_gps_locked == num_mboards and num_mboards > 1) {
