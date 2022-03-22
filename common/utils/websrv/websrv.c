@@ -249,7 +249,6 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
  //                     telnetparams.CmdParsers[i].cmd[j].helpstr);
  //     }
     }
-    
   json_t *body=json_pack("{s:{s:s,s:s},s:o}",
                          "display_status", "config_file", cfgfile, "executable_function", execfunc,
                          "menu_cmds", cmdnames);

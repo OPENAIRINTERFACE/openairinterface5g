@@ -1,15 +1,47 @@
+if ( "${OPENAIR_CMAKE}" STREQUAL "")
+  message( FATAL_ERROR "oai Environment variables not set")
+endif ( "${OPENAIR_CMAKE}" STREQUAL "")
 set(WEBSRVROOT ${OPENAIR_DIR}/common/utils/websrv )
+# websrv dependencies
+#set( ULFIUS "")
+find_library(ULFIUS NAMES "libulfius.so" REQUIRED NO_CACHE)
+if ("${ULFIUS}" STREQUAL "")
+  message( FATAL_ERROR "ulfius library (https://github.com/babelouest/ulfius) not found, install libulfius-dev (ubuntu) ")
+endif("${ULFIUS}" STREQUAL "")
 
+#set (NPM "")
+find_program(NPM NAMES npm NO_CACHE)
+if ("${NPM}" STREQUAL "")
+  message( ERROR " npm is not installed, frontend won't be built. Possibly install npm, package is available for ubuntu and fedora")
+endif("${NPM}" STREQUAL "")
+
+# build the backend ( the embedded web server)
 set(WEBSRV_SOURCE
     ${WEBSRVROOT}/websrv.c
     )
-    
 add_library(websrv MODULE ${WEBSRV_SOURCE} )
 target_link_libraries(websrv PRIVATE ulfius jansson)
 
 
-install(TARGETS websrv DESTINATION bin)
+# build the frontend ( loaded from web server by browsers)
+add_custom_target (
+websrvfront_installjsdep
+WORKING_DIRECTORY ${WEBSRVROOT}/frontend
+COMMAND npm install
+DEPENDS ${WEBSRVROOT}/frontend/package-lock.json
+)
 
-if (EXISTS "${OPENAIR_BUILD_DIR}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_BUILD_DIR}/ran_build/build")
-     install(TARGETS websrv DESTINATION ${OPENAIR_BUILD_DIR}/ran_build/build)
-endif (EXISTS "${OPENAIR_BUILD_DIR}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_BUILD_DIR}/ran_build/build")
+add_custom_target (
+websrvfront
+WORKING_DIRECTORY ${WEBSRVROOT}/frontend
+COMMAND npm run build
+DEPENDS websrvfront_installjsdep
+)
+#install built files, required at exec time
+install(TARGETS websrv DESTINATION bin)
+if (EXISTS "${OPENAIR_CMAKE}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_CMAKE}/ran_build/build")
+     add_custom_command(TARGET websrvfront
+                   POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/frontend/dist/softmodem-ngx ${OPENAIR_CMAKE}/ran_build/build/websrv 
+                              COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/frontend/dist/softmodem-ngx ${OPENAIR_TARGETS}/bin/websrv 
+                   COMMENT "Moving frontend files to:\n    ${OPENAIR_CMAKE}/ran_build/build/websrv\n    ${OPENAIR_TARGETS}/bin/websrv" )
+endif (EXISTS "${OPENAIR_CMAKE}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_CMAKE}/ran_build/build")

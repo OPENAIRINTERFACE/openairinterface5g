@@ -50,6 +50,10 @@ telnetshell_cmddef_t loader_cmdarray[] = {
 /*-------------------------------------------------------------------------------------*/
 int loader_show_cmd(char *buff, int debug, telnet_printfunc_t prnt)
 {
+   if (buff == NULL) {
+	   prnt("ERROR wrong loader SHOW command...\n");
+	   return 0;
+   }
    if (debug > 0)
        prnt( "loader_show_cmd received %s\n",buff);
 
