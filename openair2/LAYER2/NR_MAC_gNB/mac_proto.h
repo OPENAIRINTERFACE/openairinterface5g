@@ -297,6 +297,14 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  int bwp_id,
                  NR_ControlResourceSetId_t controlResourceSetId);
 
+void set_r_pucch_parms(int rsetindex,
+                       int r_pucch,
+                       int bwp_size,
+                       int *prb_start,
+                       int *second_hop_prb,
+                       int *nr_of_symbols,
+                       int *start_symbol_index);
+
 /* find coreset within the search space */
 NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
                                      NR_ServingCellConfigCommon_t *scc,

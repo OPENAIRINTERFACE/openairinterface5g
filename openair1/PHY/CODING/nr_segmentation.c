@@ -63,11 +63,6 @@ int32_t nr_segmentation(unsigned char *input_buffer,
 #endif
   }
 
-  if ((*C)>MAX_NUM_NR_DLSCH_SEGMENTS) {
-    LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
-    return(-1);
-  }
-
   // Find K+
   Kprime = Bprime/(*C);
 
