@@ -50,24 +50,23 @@
     \brief This function frees memory allocated for a particular DLSCH at UE
     @param dlsch Pointer to DLSCH to be removed
 */
-void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch,uint8_t N_RB_DL);
+void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch, uint16_t N_RB_DL);
 
 
-/** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
+/** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft)
     \brief This function allocates structures for a particular DLSCH at UE
     @returns Pointer to DLSCH to be removed
     @param Kmimo Kmimo factor from 36-212/36-213
     @param Mdlharq Maximum number of HARQ rounds (36-212/36-213)
     @param Nsoft Soft-LLR buffer size from UE-Category
     @params N_RB_DL total number of resource blocks (determine the operating BW)
-    @param abstraction_flag Flag to indicate abstracted interface
 */
-NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint16_t N_RB_DL, uint8_t abstraction_flag);
+NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint16_t N_RB_DL);
 
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch,unsigned char N_RB_UL);
+void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch, uint16_t N_RB_UL);
 
-NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
+NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids);
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
@@ -1156,12 +1155,15 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
 */
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
+		const int estimateSz,
+		struct complex16 dl_ch_estimates[][estimateSz],
                 NR_UE_PBCH *nr_ue_pbch_vars,
                 NR_DL_FRAME_PARMS *frame_parms,
                 uint8_t eNB_id,
                 uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
-                NR_UE_PDCCH_CONFIG *phy_pdcch_config);
+                NR_UE_PDCCH_CONFIG *phy_pdcch_config,
+                fapiPbch_t* result);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
 		              PHY_VARS_NR_UE *ue,

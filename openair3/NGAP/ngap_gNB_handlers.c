@@ -1614,13 +1614,6 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
     return -1;
   }
 
-  /* PDUSession Resource modify request = UE-related procedure -> stream != 0 */
-  if (stream == 0) {
-    NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
-               assoc_id, stream);
-    return -1;
-  }
-
   ue_desc_p->rx_stream = stream;
 
   if (ue_desc_p->amf_ue_ngap_id != amf_ue_ngap_id) {
@@ -1702,14 +1695,20 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
         switch(pdusessionTransfer_ies->id) {
           /* optional PDUSessionAggregateMaximumBitRate */
           case NGAP_ProtocolIE_ID_id_PDUSessionAggregateMaximumBitRate:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_PDUSessionAggregateMaximumBitRate\n");
             break;
         
           /* optional UL-NGU-UP-TNLModifyList */
           case NGAP_ProtocolIE_ID_id_UL_NGU_UP_TNLModifyList:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_UL_NGU_UP_TNLModifyList\n");
             break;
             
           /* optional NetworkInstance */
           case NGAP_ProtocolIE_ID_id_NetworkInstance:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_NetworkInstance\n");
             break;
 
           /* optional QosFlowAddOrModifyRequestList */
@@ -1729,6 +1728,12 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
                 /* Set the QOS informations */
                 NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
                 if(qosFlowItem_p->qosFlowLevelQosParameters) {
+                  if (qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.present == NGAP_QosCharacteristics_PR_nonDynamic5QI) {
+                    NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].fiveQI =
+                      qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.choice.nonDynamic5QI->fiveQI;
+                  } else if (qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.present == NGAP_QosCharacteristics_PR_dynamic5QI) {
+                    // TODO
+                  }
                   NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
                     qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.priorityLevelARP;
                   NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
@@ -1742,14 +1747,20 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
 
           /* optional QosFlowToReleaseList */
           case NGAP_ProtocolIE_ID_id_QosFlowToReleaseList:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_QosFlowToReleaseList\n");
             break;
 
           /* optional AdditionalUL-NGU-UP-TNLInformation */
           case NGAP_ProtocolIE_ID_id_AdditionalUL_NGU_UP_TNLInformation:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_AdditionalUL_NGU_UP_TNLInformation\n");
             break;
 
           /* optional CommonNetworkInstance */
           case NGAP_ProtocolIE_ID_id_CommonNetworkInstance:
+            // TODO
+            NGAP_ERROR("Cant' handle NGAP_ProtocolIE_ID_id_CommonNetworkInstance\n");
             break;
             
           default:

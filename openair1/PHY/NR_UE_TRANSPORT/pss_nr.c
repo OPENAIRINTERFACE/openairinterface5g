@@ -440,33 +440,10 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
 void free_context_pss_nr(void)
 {
   for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) {
-
-    if (primary_synchro_time_nr[i] != NULL) {
-      free(primary_synchro_time_nr[i]);
-      primary_synchro_time_nr[i] = NULL;
-    }
-    else {
-      LOG_E(PHY,"Fatal memory deallocation problem \n");
-      assert(0);
-    }
-
-    if (primary_synchro_nr[i] != NULL) {
-      free(primary_synchro_nr[i]);
-      primary_synchro_nr[i] = NULL;
-    }
-    else {
-      LOG_E(PHY,"Fatal memory deallocation problem \n");
-      assert(0);
-    }
-
-    if (pss_corr_ue[i] != NULL) {
-      free(pss_corr_ue[i]);
-      pss_corr_ue[i] = NULL;
-    }
-    else {
-      LOG_E(PHY,"Fatal memory deallocation problem \n");
-      assert(0);
-    }
+    free_and_zero(primary_synchro_nr[i]);
+    free_and_zero(primary_synchro_nr2[i]);
+    free_and_zero(primary_synchro_time_nr[i]);
+    free_and_zero(pss_corr_ue[i]);
   }
 }
 
@@ -884,7 +861,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
           /* perform correlation of rx data and pss sequence ie it is a dot product */
           result  = dot_product64((short*)primary_synchro_time_nr[pss_index], 
-				  (short*) &(rxdata[ar][n+is*frame_parms->samples_per_frame]), 
+				  (short*)&(rxdata[ar][n+is*frame_parms->samples_per_frame]), 
 				  frame_parms->ofdm_symbol_size, 
 				  shift);
 	  pss_corr_ue[pss_index][n] += abs64(result);

@@ -51,6 +51,7 @@
 
 static char                    *grouptypes[] = {"ltestats","cpustats"};
 static double                  cpufreq;
+extern notifiedFIFO_t          measur_fifo;
 #define TELNET_NUM_MEASURTYPES (sizeof(grouptypes)/sizeof(char *))
 
 #define HDR "---------------------------------"

@@ -85,10 +85,6 @@ end
 This tuto for 5G gNB design, with Open Cells main
 {: .text-center}
 
-# Top file: executables/ocp-gnb.c
-
-the function main() initializes the data from configuration file
-
 # The main thread is in ru_thread()
 The infinite loop:
 ## rx_rf()
