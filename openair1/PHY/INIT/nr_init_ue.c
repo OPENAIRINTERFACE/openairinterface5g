@@ -337,6 +337,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     csirs_vars[gNB_id]->active = false;
     srs_vars[gNB_id]->active = false;
 
+    // ceil((NB_RB*8(max allocation per RB)*2(QPSK))/32)
+    int csi_dmrs_init_length =  ((fp->N_RB_DL<<4)>>5)+1;
+
     ue->nr_csi_rs_info = (nr_csi_rs_info_t *)malloc16_clear(sizeof(nr_csi_rs_info_t));
     ue->nr_csi_rs_info->nr_gold_csi_rs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
     AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs!=NULL, "NR init: csi reference signal malloc failed\n");
@@ -344,7 +347,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       ue->nr_csi_rs_info->nr_gold_csi_rs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
       AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs[slot]!=NULL, "NR init: csi reference signal for slot %d - malloc failed\n", slot);
       for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-        ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb] = (uint32_t *)malloc16(NR_MAX_CSI_RS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb] = (uint32_t *)malloc16(csi_dmrs_init_length*sizeof(uint32_t));
         AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
       }
     }
