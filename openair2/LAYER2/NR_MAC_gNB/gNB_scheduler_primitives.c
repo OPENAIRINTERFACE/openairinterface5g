@@ -2254,10 +2254,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
                                                   scc,
                                                   genericParameters,
                                                   NULL);
-
-    sched_ctrl->rrc_processing_info.rrc_processing_timer = 0;
-    sched_ctrl->rrc_processing_info.rrc_processing_delay = 10<<genericParameters->subcarrierSpacing; // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
     if (ubwpList) AssertFatal(ubwpList->list.count == 1,
 			      "uplinkBWP_ToAddModList has %d BWP!\n",

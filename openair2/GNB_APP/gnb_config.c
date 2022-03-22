@@ -2051,8 +2051,8 @@ void configure_gnb_du_mac(int inst) {
                         NULL,
                         0,
                         0, // rnti
-                        (NR_CellGroupConfig_t *)NULL,
-                        false);
+                        (NR_CellGroupConfig_t *)NULL
+                        );
 }
 
 

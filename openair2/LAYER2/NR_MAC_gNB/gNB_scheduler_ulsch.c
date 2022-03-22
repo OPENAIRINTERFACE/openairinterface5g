@@ -1180,7 +1180,7 @@ void pf_ul(module_id_t module_id,
     if (B == 0 && !do_sched)
       continue;
 
-    if (sched_ctrl->rrc_processing_info.rrc_processing_timer > 0) {
+    if (nr_rrc_disabled_mac_scheduling(module_id, frame, slot, UE_info->rnti[UE_id])) {
       continue;
     }
 

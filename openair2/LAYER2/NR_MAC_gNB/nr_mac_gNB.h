@@ -553,11 +553,6 @@ typedef struct NR_UE_ul_harq {
   NR_sched_pusch_t sched_pusch;
 } NR_UE_ul_harq_t;
 
-typedef struct NR_RRC_processing_info {
-  uint32_t rrc_processing_timer;
-  uint32_t rrc_processing_delay;
-} NR_RRC_processing_info_t;
-
 /*! \brief scheduling control information set through an API */
 #define MAX_CSI_REPORTS 48
 typedef struct {
@@ -569,9 +564,6 @@ typedef struct {
   NR_SearchSpace_t *search_space;
   NR_ControlResourceSet_t *coreset;
   NR_sched_pdcch_t sched_pdcch;
-
-  /// Timer for RRC processing procedures
-  NR_RRC_processing_info_t rrc_processing_info;
 
   /// CCE index and Aggr. Level are shared for PUSCH/PDSCH allocation decisions
   /// corresponding to the sched_pusch/sched_pdsch structures below
