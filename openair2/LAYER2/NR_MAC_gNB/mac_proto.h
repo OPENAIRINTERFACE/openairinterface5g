@@ -300,6 +300,14 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  nr_dci_format_t format,
                  int bwp_id);
 
+void set_r_pucch_parms(int rsetindex,
+                       int r_pucch,
+                       int bwp_size,
+                       int *prb_start,
+                       int *second_hop_prb,
+                       int *nr_of_symbols,
+                       int *start_symbol_index);
+
 NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
                                        NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
                                        const NR_SIB1_t *sib1);

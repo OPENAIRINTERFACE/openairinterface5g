@@ -202,7 +202,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     pdsch_vars = ue->pdsch_vars[proc->thread_id];
     dlsch = ue->dlsch[proc->thread_id][gNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-    dlsch1_harq = dlsch[1]->harq_processes[harq_pid];
+    if (NR_MAX_NB_LAYERS>4)
+      dlsch1_harq = dlsch[1]->harq_processes[harq_pid];
     beamforming_mode = ue->transmission_mode[gNB_id] < 7 ? 0 :ue->transmission_mode[gNB_id];
     break;
 
