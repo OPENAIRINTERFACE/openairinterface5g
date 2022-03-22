@@ -58,7 +58,6 @@ void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *
                              struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
                              NR_UE_sched_ctrl_t *sched_ctrl) {
 
-
   if (rlc_bearer2add_list)
   // keep lcids
     for (int i=0;i<rlc_bearer2add_list->list.count;i++) {
@@ -433,9 +432,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int minRXTXTIMEpdsch,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
-	                   int add_ue,
+                           int add_ue,
                            uint32_t rnti,
-	                   NR_CellGroupConfig_t *CellGroup) {
+                           NR_CellGroupConfig_t *CellGroup) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -645,6 +644,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       }
       else
         AssertFatal(1==0,"Either initial BWP or active BWP should always be present\n");
+
       sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
       sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
       sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
@@ -654,16 +654,17 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                                                     genericParameters,
                                                     NULL);
       sched_ctrl->maxL = 2;
+
       if (CellGroup->spCellConfig &&
           CellGroup->spCellConfig->spCellConfigDedicated &&
           CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
-          CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup
-        )
-      compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, Mod_idP);
+          CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
+        compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, Mod_idP);
+      }
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
-  
+
   return(0);
 
 }// END rrc_mac_config_req_gNB

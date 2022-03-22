@@ -668,6 +668,16 @@ typedef struct {
 
 typedef struct {
   bool active;
+  fapi_nr_dl_config_csiim_pdu_rel15_t csiim_config_pdu;
+} NR_UE_CSI_IM;
+
+typedef struct {
+  bool active;
+  fapi_nr_dl_config_csirs_pdu_rel15_t csirs_config_pdu;
+} NR_UE_CSI_RS;
+
+typedef struct {
+  bool active;
   fapi_nr_ul_config_srs_pdu srs_config_pdu;
 } NR_UE_SRS;
 
@@ -779,6 +789,8 @@ typedef struct {
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_CSI_IM    *csiim_vars[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_CSI_RS    *csirs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_SRS       *srs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PUCCH     *pucch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_LAYERS>4 ? 2:1]; // two RxTx Threads
@@ -933,6 +945,9 @@ typedef struct {
 
   /// SRS variables
   nr_srs_info_t *nr_srs_info;
+
+  /// CSI-RS variables
+  nr_csi_rs_info_t *nr_csi_rs_info;
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1

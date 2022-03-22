@@ -560,9 +560,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  }
  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
 
- if ((get_softmodem_params()->do_ra ||
-     get_softmodem_params()->phy_test) &&
-     dl_antenna_ports > 1) // for MIMO, we use DMRS Config Type 2 but only with OAI UE
+ if ((get_softmodem_params()->do_ra || get_softmodem_params()->phy_test) && dl_antenna_ports > 1) // for MIMO, we use DMRS Config Type 2 but only with OAI UE
    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=calloc(1,sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type));
  else
    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
@@ -1064,24 +1062,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
  csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
 
- if (do_csirs) {
-   csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
-   NR_NZP_CSI_RS_ResourceSet_t *nzpcsirs0 = calloc(1,sizeof(*nzpcsirs0));
-   nzpcsirs0->nzp_CSI_ResourceSetId = 0;
-   NR_NZP_CSI_RS_ResourceId_t *nzpid0 = calloc(1,sizeof(*nzpid0));
-   *nzpid0 = 0;
-   ASN_SEQUENCE_ADD(&nzpcsirs0->nzp_CSI_RS_Resources,nzpid0);
-   nzpcsirs0->repetition = NULL;
-   nzpcsirs0->aperiodicTriggeringOffset = NULL;
-   nzpcsirs0->trs_Info = NULL;
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,nzpcsirs0);
- }
- else
-   csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = NULL;
-
- csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
-
- config_csirs(servingcellconfigcommon, csi_MeasConfig,dl_antenna_ports,curr_bwp,do_csirs);
+ config_csirs(servingcellconfigcommon, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, do_csirs);
 
  csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
@@ -1100,9 +1081,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);
 
  csi_MeasConfig->csi_ResourceConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ResourceConfigToAddModList));
+ csi_MeasConfig->csi_ResourceConfigToReleaseList = NULL;
 
  if (do_csirs) {
-   csi_MeasConfig->csi_ResourceConfigToReleaseList = NULL;
    NR_CSI_ResourceConfig_t *csires0 = calloc(1,sizeof(*csires0));
    csires0->csi_ResourceConfigId=0;
    csires0->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
@@ -1280,9 +1261,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->servingCellMO=NULL;
 
 }
-
-
-
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_ServingCellConfig_t *servingcellconfigdedicated,

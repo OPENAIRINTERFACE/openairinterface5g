@@ -354,6 +354,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
         nr_gold_pdsch(ue,ue->scramblingID);
 
+        nr_init_csi_rs(fp, ue->nr_csi_rs_info->nr_gold_csi_rs, fp->Nid_cell);
+
         // initialize the pusch dmrs
         uint16_t N_n_scid[2] = {fp->Nid_cell,fp->Nid_cell};
         int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization

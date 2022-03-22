@@ -599,7 +599,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
     NR_pdsch_semi_static_t temp_ps = *ps;
-    nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd,tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
+    nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
     while (rbStart < bwpSize &&
            !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbStart++;
@@ -724,7 +724,7 @@ void pf_dl(module_id_t module_id,
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
-    layers[UE_id] = ps->nrOfLayers; // initialization of layers to the previous value in the strcuture
+    layers[UE_id] = ps->nrOfLayers; // initialization of layers to the previous value in the structure
 
     /* Calculate Throughput */
     const float a = 0.0005f; // corresponds to 200ms window
@@ -868,9 +868,7 @@ void pf_dl(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-    if (ps->nrOfLayers != layers[UE_id] ||
-        ps->time_domain_allocation != tda ||
-        sched_ctrl->update_pdsch_ps) {
+    if (ps->nrOfLayers != layers[UE_id] || ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, layers[UE_id], sched_ctrl, ps);
       sched_ctrl->update_pdsch_ps = false;
     }
@@ -1008,8 +1006,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
-
-  //if (slot==7 || slot == 17) return;
 
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
@@ -1384,7 +1380,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             break;
           struct timespec time_request;
           clock_gettime(CLOCK_REALTIME, &time_request);
-          if (lcid>=4)           
+          if (lcid>=4)
                 LOG_D(NR_MAC,
                 "%4d.%2d [UE %04x]: Time %lu.%lu:  %d bytes %s %d -> DLSCH (ndata %lu, remaining size %lu)\n",
                 frame,

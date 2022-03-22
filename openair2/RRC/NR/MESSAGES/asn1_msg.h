@@ -112,6 +112,7 @@ void fill_initial_cellGroupConfig(int uid,
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             rrc_gNB_carrier_data_t *carrier,
+                            int uid,
                             NR_UE_NR_Capability_t *uecap);
 
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup,int use_rlc_um_for_drb);

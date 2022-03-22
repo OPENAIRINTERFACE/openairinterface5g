@@ -932,7 +932,7 @@ bool nr_UE_is_to_be_scheduled(module_id_t mod_id, int CC_id, int UE_id, frame_t 
   }
   else {
     num_slots_per_period = n;
-    last_ul_slot = sched_ctrl->last_ul_slot; 
+    last_ul_slot = sched_ctrl->last_ul_slot;
   }
 
   last_ul_sched = sched_ctrl->last_ul_frame * n + last_ul_slot;

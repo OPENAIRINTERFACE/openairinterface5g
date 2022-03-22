@@ -163,7 +163,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                                     scc->dmrs_TypeA_Position,
                                                     NrOfSymbols,
                                                     StartSymbolIndex,
-                                                    mappingtype, 1);
+                                                    mappingtype,
+                                                    1);
 
     /*
     AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");
