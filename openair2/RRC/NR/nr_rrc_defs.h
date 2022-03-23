@@ -96,6 +96,9 @@ typedef struct nr_uid_linear_allocator_s {
 #define PROTOCOL_NR_RRC_CTXT_FMT                   PROTOCOL_CTXT_FMT
 #define PROTOCOL_NR_RRC_CTXT_ARGS(CTXT_Pp)         PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
 
+// Delay to take in consideration for sl_ahead value
+#define TX_SL_AHEAD_DELAY 3
+
 // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
 #define NR_RRC_PROCESSING_DELAY_MS  10
 
