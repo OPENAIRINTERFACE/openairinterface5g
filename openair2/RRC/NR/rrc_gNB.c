@@ -140,11 +140,13 @@ void openair_nr_rrc_on(const protocol_ctxt_t *const ctxt_pP) {
   RC.nrrrc[ctxt_pP->module_id]->carrier.Srb0.Active = 1;
 }
 
-void enable_nr_rrc_processing_timer(rrc_gNB_ue_context_t *ue_context_pP,
-                                   NR_SubcarrierSpacing_t subcarrierSpacing,
-                                   uint32_t delay_ms) {
+void enable_nr_rrc_processing_timer(module_id_t module_id,
+                                    rrc_gNB_ue_context_t *ue_context_pP,
+                                    NR_SubcarrierSpacing_t subcarrierSpacing,
+                                    uint32_t delay_ms) {
   ue_context_pP->ue_context.nr_rrc_processing_timer = 1;
   ue_context_pP->ue_context.nr_rrc_processing_delay = delay_ms << subcarrierSpacing;
+  nr_rrc_mac_schedule_ue_enabled(module_id, ue_context_pP->ue_context.rnti, false);
 }
 
 ///---------------------------------------------------------------------------------------------------------------///
@@ -731,7 +733,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 ue_p->masterCellGroup);
 
-  enable_nr_rrc_processing_timer(ue_context_pP,
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
                                  rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                  NR_RRC_PROCESSING_DELAY_MS);
 
@@ -998,7 +1001,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 NULL,
                                 cellGroupConfig);
 
-  enable_nr_rrc_processing_timer(ue_context_pP,
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
                                  rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                  NR_RRC_PROCESSING_DELAY_MS);
 
@@ -1175,7 +1179,8 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                 NULL,
                                 NULL);
 
-  enable_nr_rrc_processing_timer(ue_context_pP,
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
                                  RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                  NR_RRC_PROCESSING_DELAY_MS);
 
@@ -1280,7 +1285,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                NULL,
                                NULL);
 
-  enable_nr_rrc_processing_timer(ue_context_pP,
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
                                  RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                  NR_RRC_PROCESSING_DELAY_MS);
 
@@ -1834,7 +1840,8 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                                 NULL,
                                 NULL);
 
-  enable_nr_rrc_processing_timer(ue_context_pP,
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
                                  RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
                                  NR_RRC_PROCESSING_DELAY_MS);
 
@@ -3460,6 +3467,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
       ue_context_p->ue_context.nr_rrc_processing_timer++;
       if(ue_context_p->ue_context.nr_rrc_processing_timer >= ue_context_p->ue_context.nr_rrc_processing_delay) {
         ue_context_p->ue_context.nr_rrc_processing_timer = 0;
+        nr_rrc_mac_schedule_ue_enabled(ctxt_pP->module_id, ue_context_p->ue_context.rnti, true);
       }
     }
 

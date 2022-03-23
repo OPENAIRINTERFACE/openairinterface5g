@@ -392,20 +392,3 @@ void nr_mac_gNB_rrc_ul_failure_reset(const module_id_t Mod_instP,
     LOG_W(RRC,"Frame %d, Subframe %d: UL failure reset: UE %x unknown \n",frameP,subframeP,rntiP);
   }
 }
-
-bool nr_rrc_disabled_mac_scheduling(const module_id_t Mod_instP,
-                                     const frame_t frameP,
-                                     const sub_frame_t subframeP,
-                                     const rnti_t rntiP) {
-  bool ret = false;
-  struct rrc_gNB_ue_context_s *ue_context_p = NULL;
-  ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_instP], rntiP);
-  if (ue_context_p != NULL) {
-    if(ue_context_p->ue_context.nr_rrc_processing_timer > 0) {
-      ret = true;
-    }
-  } else {
-    LOG_W(RRC,"Frame %d, Subframe %d: UE 0x%04x unknown \n",frameP,subframeP,rntiP);
-  }
-  return ret;
-}

@@ -1177,10 +1177,7 @@ void pf_ul(module_id_t module_id,
     const bool do_sched = nr_UE_is_to_be_scheduled(module_id, 0, UE_id, sched_pusch->frame, sched_pusch->slot);
 
     LOG_D(NR_MAC,"pf_ul: do_sched UE %d => %s\n",UE_id,do_sched ? "yes" : "no");
-    if (B == 0 && !do_sched)
-      continue;
-
-    if (nr_rrc_disabled_mac_scheduling(module_id, frame, slot, UE_info->rnti[UE_id])) {
+    if ( (B == 0 && !do_sched) || (sched_ctrl->schedule_enabled == false) ) {
       continue;
     }
 

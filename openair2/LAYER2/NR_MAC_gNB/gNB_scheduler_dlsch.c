@@ -518,7 +518,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       lcid = DL_SCH_LCID_DCCH;       
     } else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0) {
       lcid = DL_SCH_LCID_DCCH1;       
-    } else if (!nr_rrc_disabled_mac_scheduling(module_id, frame, slot, rnti)) {
+    } else if (sched_ctrl->schedule_enabled == true) {
       lcid = DL_SCH_LCID_DTCH;       
     } else {
       continue;
