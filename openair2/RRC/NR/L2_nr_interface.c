@@ -401,7 +401,7 @@ bool nr_rrc_disabled_mac_scheduling(const module_id_t Mod_instP,
   struct rrc_gNB_ue_context_s *ue_context_p = NULL;
   ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_instP], rntiP);
   if (ue_context_p != NULL) {
-    if(ue_context_p->ue_context.rrc_processing_timer > 0) {
+    if(ue_context_p->ue_context.nr_rrc_processing_timer > 0) {
       ret = true;
     }
   } else {

@@ -140,6 +140,13 @@ void openair_nr_rrc_on(const protocol_ctxt_t *const ctxt_pP) {
   RC.nrrrc[ctxt_pP->module_id]->carrier.Srb0.Active = 1;
 }
 
+void enable_nr_rrc_processing_timer(rrc_gNB_ue_context_t *ue_context_pP,
+                                   NR_SubcarrierSpacing_t subcarrierSpacing,
+                                   uint32_t delay_ms) {
+  ue_context_pP->ue_context.nr_rrc_processing_timer = 1;
+  ue_context_pP->ue_context.nr_rrc_processing_delay = delay_ms << subcarrierSpacing;
+}
+
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
@@ -724,9 +731,10 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 ue_p->masterCellGroup);
 
-  int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-  ue_context_pP->ue_context.rrc_processing_timer = 1;
-  ue_context_pP->ue_context.rrc_processing_delay = NR_RRC_PROCESSING_DELAY_MS<<common_scs;
+  enable_nr_rrc_processing_timer(ue_context_pP,
+                                 rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
+
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Reconfiguration\n");
@@ -990,9 +998,9 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 NULL,
                                 cellGroupConfig);
 
-  int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-  ue_context_pP->ue_context.rrc_processing_timer = 1;
-  ue_context_pP->ue_context.rrc_processing_delay = NR_RRC_PROCESSING_DELAY_MS<<common_scs;
+  enable_nr_rrc_processing_timer(ue_context_pP,
+                                 rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
 
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
@@ -1167,9 +1175,9 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                 NULL,
                                 NULL);
 
-  int common_scs  = RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-  ue_context_pP->ue_context.rrc_processing_timer = 1;
-  ue_context_pP->ue_context.rrc_processing_delay = NR_RRC_PROCESSING_DELAY_MS<<common_scs;
+  enable_nr_rrc_processing_timer(ue_context_pP,
+                                 RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
@@ -1272,9 +1280,10 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                NULL,
                                NULL);
 
-  int common_scs  = RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-  ue_context_pP->ue_context.rrc_processing_timer = 1;
-  ue_context_pP->ue_context.rrc_processing_delay = NR_RRC_PROCESSING_DELAY_MS<<common_scs;
+  enable_nr_rrc_processing_timer(ue_context_pP,
+                                 RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
+
   ue_context_pP->ue_context.pdu_session_release_command_flag = 1;
 
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
@@ -1825,9 +1834,9 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                                 NULL,
                                 NULL);
 
-  int common_scs  = RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-  ue_context_pP->ue_context.rrc_processing_timer = 1;
-  ue_context_pP->ue_context.rrc_processing_delay = NR_RRC_PROCESSING_DELAY_MS<<common_scs;
+  enable_nr_rrc_processing_timer(ue_context_pP,
+                                 RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
 
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
@@ -3447,10 +3456,10 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
       }
     }
 
-    if (ue_context_p->ue_context.rrc_processing_timer > 0) {
-      ue_context_p->ue_context.rrc_processing_timer++;
-      if(ue_context_p->ue_context.rrc_processing_timer >= ue_context_p->ue_context.rrc_processing_delay) {
-        ue_context_p->ue_context.rrc_processing_timer = 0;
+    if (ue_context_p->ue_context.nr_rrc_processing_timer > 0) {
+      ue_context_p->ue_context.nr_rrc_processing_timer++;
+      if(ue_context_p->ue_context.nr_rrc_processing_timer >= ue_context_p->ue_context.nr_rrc_processing_delay) {
+        ue_context_p->ue_context.nr_rrc_processing_timer = 0;
       }
     }
 

@@ -376,8 +376,8 @@ typedef struct gNB_RRC_UE_s {
   //GTPV1 F1-U TUNNELS
   uint32_t                           incoming_teid[S1AP_MAX_E_RAB];
 
-  uint32_t                           rrc_processing_timer;
-  uint32_t                           rrc_processing_delay;
+  uint32_t                           nr_rrc_processing_timer;
+  uint32_t                           nr_rrc_processing_delay;
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
