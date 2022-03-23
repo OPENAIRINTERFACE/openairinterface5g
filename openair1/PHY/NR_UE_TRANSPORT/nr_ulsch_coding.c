@@ -318,7 +318,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
       printf("start ldpc encoder segment %d/%d\n",r,harq_process->C);
       printf("input %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
       for (int cnt =0 ; cnt < 22*(*pz)/8; cnt ++){
-      printf("%d ", harq_process->c[r][cnt]);
+        printf("%d ", harq_process->c[r][cnt]);
       }
       printf("\n");
 

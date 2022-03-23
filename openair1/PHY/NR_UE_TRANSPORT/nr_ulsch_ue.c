@@ -114,7 +114,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
 
-  uint32_t available_bits;
   int8_t Wf[2], Wt[2];
   int l_prime[2], delta;
   uint8_t nb_dmrs_re_per_rb;
@@ -183,7 +182,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////ULSCH scrambling/////////////////////////
   ///////////
 
-  available_bits = G;
+  uint32_t available_bits = G;
   uint32_t scrambled_output[(available_bits>>5)+1];
   memset(scrambled_output, 0, ((available_bits>>5)+1)*sizeof(uint32_t));
 
@@ -200,7 +199,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////ULSCH modulation/////////////////////////
   ///////////
 
-  int max_num_re = number_of_symbols*nb_rb*NR_NB_SC_PER_RB;
+  int max_num_re = Nl*number_of_symbols*nb_rb*NR_NB_SC_PER_RB;
   int32_t d_mod[max_num_re] __attribute__ ((aligned(16)));
 
   nr_modulation(scrambled_output, // assume one codeword for the moment
@@ -340,7 +339,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////ULSCH RE mapping/////////////////////////
   ///////////
 
-  int encoded_length = frame_parms->N_RB_UL*number_of_symbols*NR_NB_SC_PER_RB*mod_order*Nl;
+  int encoded_length = frame_parms->N_RB_UL*14*NR_NB_SC_PER_RB*mod_order*Nl;
   int16_t **tx_precoding = (int16_t **)malloc16_clear(Nl*sizeof(int16_t *));
   for (int nl=0; nl<Nl; nl++)
     tx_precoding[nl] = (int16_t *)malloc16_clear((encoded_length<<1)*sizeof(int16_t));
