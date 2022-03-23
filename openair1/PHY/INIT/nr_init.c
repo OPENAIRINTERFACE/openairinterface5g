@@ -331,10 +331,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(pdcch_dmrs);
 
   uint32_t ****pdsch_dmrs = gNB->nr_gold_pdsch_dmrs;
-  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
     for (int symb = 0; symb < fp->symbols_per_slot; symb++) {
-      for (int q = 0; q < nb_codewords; q++)
+      for (int q = 0; q < NR_NB_NSCID; q++)
         free_and_zero(pdsch_dmrs[slot][symb][q]);
       free_and_zero(pdsch_dmrs[slot][symb]);
     }
