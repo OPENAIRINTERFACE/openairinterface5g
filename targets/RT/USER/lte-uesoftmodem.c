@@ -465,7 +465,7 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
       openair0_cfg[card].rx_gain[i] = rxgain - rx_gain_off;
       openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f, tune_offset %.0f\n",
+      printf("Card %d, channel %d, Setting tx_gain %.0f, rx_gain %.0f, tx_freq %.0f, rx_freq %.0f, tune_offset %.0f\n",
              card,i, openair0_cfg[card].tx_gain[i],
              openair0_cfg[card].rx_gain[i],
              openair0_cfg[card].tx_freq[i],
