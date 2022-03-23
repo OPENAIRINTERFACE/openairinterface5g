@@ -1013,7 +1013,7 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
   return nr_ue_decode_mib(module_id,
 			  cc_id,
 			  gNB_index,
-        phy_data,
+			  phy_data,
 			  additional_bits,
 			  ssb_length,  //  Lssb = 64 is not support    
 			  ssb_index,

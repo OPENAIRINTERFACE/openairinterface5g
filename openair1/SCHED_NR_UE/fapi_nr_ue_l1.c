@@ -286,6 +286,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu;
+      fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config;
 
       for (int i = 0; i < dl_config->number_pdus; ++i){
         AssertFatal(dl_config->number_pdus < FAPI_NR_DL_CONFIG_LIST_NUM,"dl_config->number_pdus %d out of bounds\n",dl_config->number_pdus);
@@ -299,7 +300,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
               phy_pdcch_config = (NR_UE_PDCCH_CONFIG *)scheduled_response->phy_data;
               phy_pdcch_config->nb_search_space = 0;
             }
-            fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
+            pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
             memcpy((void*)&phy_pdcch_config->pdcch_config[phy_pdcch_config->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
             phy_pdcch_config->nb_search_space = phy_pdcch_config->nb_search_space + 1;
             phy_pdcch_config->sfn = scheduled_response->frame;

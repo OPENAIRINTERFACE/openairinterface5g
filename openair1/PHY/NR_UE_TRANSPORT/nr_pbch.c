@@ -391,12 +391,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 uint8_t gNB_id,
                 uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
-<<<<<<< HEAD
-                NR_UE_PDCCH_CONFIG *phy_pdcch_config) {
-
-=======
+                NR_UE_PDCCH_CONFIG *phy_pdcch_config,
                 fapiPbch_t *result) {
->>>>>>> oai-eurecom/develop
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
   int max_h=0;
   int symbol;
