@@ -1181,10 +1181,6 @@ void pf_ul(module_id_t module_id,
       continue;
     }
 
-    if(sched_ctrl->bwp_switch_info.bwp_switch_state == BWP_SWITCH_RUNNING) {
-      continue;
-    }
-
     /* Schedule UE on SR or UL inactivity and no data (otherwise, will be scheduled
      * based on data to transmit) */
     if (B == 0 && do_sched) {

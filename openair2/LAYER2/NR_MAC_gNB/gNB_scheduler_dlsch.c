@@ -518,7 +518,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       lcid = DL_SCH_LCID_DCCH;       
     } else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0) {
       lcid = DL_SCH_LCID_DCCH1;       
-    } else if ( (sched_ctrl->bwp_switch_info.bwp_switch_state != BWP_SWITCH_RUNNING) || (sched_ctrl->schedule_enabled == true) ) {
+    } else if (sched_ctrl->schedule_enabled == true) {
       lcid = DL_SCH_LCID_DTCH;
     } else {
       continue;
@@ -1015,14 +1015,16 @@ void nr_bwp_switch(module_id_t module_id,
     case BWP_SWITCH_TO_START:
       LOG_W(NR_MAC,"(%d.%d) [UE_id %d] Schedule BWP switch from bwp_id %ld to %d\n",
             frame, slot, UE_id, UE_info->UE_sched_ctrl[UE_id].active_bwp->bwp_Id, bwp_id);
-      sched_ctrl->bwp_switch_info.bwp_switch_timer = 0;
       sched_ctrl->bwp_switch_info.bwp_switch_state = BWP_SWITCH_RUNNING;
+      sched_ctrl->bwp_switch_info.bwp_switch_slot = slot;
       nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE_info->rnti[UE_id], bwp_id);
       break;
 
     case BWP_SWITCH_RUNNING:
-      sched_ctrl->bwp_switch_info.bwp_switch_timer++;
-      if(sched_ctrl->bwp_switch_info.bwp_switch_timer == sched_ctrl->bwp_switch_info.bwp_switch_delay) {
+      // The BWP switching takes at least 10+6 ms (3GPP TS 38.331 Section 12)
+      // gNB needs time to schedule and send RRCReconfiguration message
+      // Therefore, we wait for the same slot in next frame (10 ms) before update bwp_id in the gNB
+      if (sched_ctrl->bwp_switch_info.bwp_switch_slot == slot) {
         const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id] ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated : NULL;
         const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig ? servingCellConfig->downlinkBWP_ToAddModList : NULL;
         const int bwp_id = servingCellConfig && servingCellConfig->firstActiveDownlinkBWP_Id ?

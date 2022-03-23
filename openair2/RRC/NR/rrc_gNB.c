@@ -743,7 +743,14 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 ue_p->masterCellGroup);
 
-  enable_nr_rrc_processing_timer(ctxt_pP->module_id, ue_context_pP, TX_SL_AHEAD_DELAY + NR_RRC_PROCESSING_DELAY_MS);
+  uint32_t delay_ms = TX_SL_AHEAD_DELAY + NR_RRC_PROCESSING_DELAY_MS;
+  if (ue_p->masterCellGroup &&
+      ue_p->masterCellGroup->spCellConfig &&
+      ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated &&
+      ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+    delay_ms += NR_RRC_BWP_SWITCH_DELAY_MS;
+  }
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id, ue_context_pP, delay_ms);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
@@ -1008,7 +1015,14 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 NULL,
                                 cellGroupConfig);
 
-  enable_nr_rrc_processing_timer(ctxt_pP->module_id, ue_context_pP, TX_SL_AHEAD_DELAY + NR_RRC_PROCESSING_DELAY_MS);
+  uint32_t delay_ms = TX_SL_AHEAD_DELAY + NR_RRC_PROCESSING_DELAY_MS;
+  if (cellGroupConfig &&
+      cellGroupConfig->spCellConfig &&
+      cellGroupConfig->spCellConfig->spCellConfigDedicated &&
+      cellGroupConfig->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+    delay_ms += NR_RRC_BWP_SWITCH_DELAY_MS;
+  }
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id, ue_context_pP, delay_ms);
 
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
@@ -1913,6 +1927,8 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                          NULL,
                                          NULL,
                                          masterCellGroup);
+
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id, ue_context_pP, TX_SL_AHEAD_DELAY + NR_RRC_PROCESSING_DELAY_MS + NR_RRC_BWP_SWITCH_DELAY_MS);
 
   nr_rrc_data_req(ctxt_pP,
                   DCCH,

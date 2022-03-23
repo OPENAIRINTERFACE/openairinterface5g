@@ -414,7 +414,13 @@ void nr_mac_gNB_enable_rrc_processing_timer_req(const module_id_t Mod_instP, con
   ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_instP], rntiP);
   if (ue_context_p != NULL) {
     ue_context_p->ue_context.nr_rrc_processing_timer = 1;
-    ue_context_p->ue_context.nr_rrc_processing_delay = NR_RRC_PROCESSING_DELAY_MS;
+    uint32_t delay_ms = NR_RRC_PROCESSING_DELAY_MS;
+    if (ue_context_p->ue_context.masterCellGroup &&
+        ue_context_p->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&
+        ue_context_p->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+      delay_ms += NR_RRC_BWP_SWITCH_DELAY_MS;
+    }
+    ue_context_p->ue_context.nr_rrc_processing_delay = delay_ms;
   } else {
     LOG_D(RRC,"%s: Unknown RNTI 0x%04x\n", __FUNCTION__, rntiP);
   }

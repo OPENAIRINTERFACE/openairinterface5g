@@ -566,8 +566,7 @@ typedef enum {
 typedef struct NR_BWP_switch_info {
   NR_BWP_Id_t current_bwp;
   NR_BWP_Id_t next_bwp;
-  int bwp_switch_timer;
-  uint8_t bwp_switch_delay;
+  sub_frame_t bwp_switch_slot;
   NR_BWP_switch_states_t bwp_switch_state;
 } NR_BWP_switch_info_t;
 
