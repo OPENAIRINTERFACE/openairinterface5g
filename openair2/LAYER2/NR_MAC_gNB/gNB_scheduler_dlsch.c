@@ -514,16 +514,16 @@ void nr_store_dlsch_buffer(module_id_t module_id,
                                                                     0);
        stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
     }
-    if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0) {
+    if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0) {
       lcid = DL_SCH_LCID_DCCH;       
     } else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0) {
       lcid = DL_SCH_LCID_DCCH1;       
-    } else if (sched_ctrl->bwp_switch_info.bwp_switch_state != BWP_SWITCH_RUNNING) {
+    } else if ( (sched_ctrl->bwp_switch_info.bwp_switch_state != BWP_SWITCH_RUNNING) || (sched_ctrl->schedule_enabled == true) ) {
       lcid = DL_SCH_LCID_DTCH;
     } else {
       continue;
     }
-                                                      
+
     sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
     //later multiplex here. Just select DCCH/SRB before DTCH/DRB
     sched_ctrl->lcid_to_schedule = lcid;

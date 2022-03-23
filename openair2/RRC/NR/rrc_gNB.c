@@ -161,6 +161,15 @@ void openair_nr_rrc_on(const protocol_ctxt_t *const ctxt_pP) {
   RC.nrrrc[ctxt_pP->module_id]->carrier.Srb0.Active = 1;
 }
 
+void enable_nr_rrc_processing_timer(module_id_t module_id,
+                                    rrc_gNB_ue_context_t *ue_context_pP,
+                                    NR_SubcarrierSpacing_t subcarrierSpacing,
+                                    uint32_t delay_ms) {
+  ue_context_pP->ue_context.nr_rrc_processing_timer = 1;
+  ue_context_pP->ue_context.nr_rrc_processing_delay = delay_ms << subcarrierSpacing;
+  nr_rrc_mac_schedule_ue_enabled(module_id, ue_context_pP->ue_context.rnti, false);
+}
+
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
@@ -187,17 +196,16 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 
   if (NODE_IS_MONOLITHIC(rrc->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
-			   rrc->carrier.ssb_SubcarrierOffset,
-			   rrc->carrier.pdsch_AntennaPorts,
-			   rrc->carrier.pusch_AntennaPorts,
+                           rrc->carrier.ssb_SubcarrierOffset,
+                           rrc->carrier.pdsch_AntennaPorts,
+                           rrc->carrier.pusch_AntennaPorts,
                            rrc->carrier.sib1_tda,
                            rrc->carrier.minRXTXTIME,
-			   (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
-			   &rrc->carrier.mib,
-			   0,
-			   0, // WIP hardcoded rnti
-			   (NR_CellGroupConfig_t *)NULL
-			   );
+                           (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+                           &rrc->carrier.mib,
+                           0,
+                           0, // WIP hardcoded rnti
+                           (NR_CellGroupConfig_t *)NULL);
   }
 
   /* set flag to indicate that cell information is configured. This is required
@@ -301,17 +309,17 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc_gNB_ue_context_t         *const ue_context_pP,
                          const protocol_ctxt_t        *const ctxt_pP ) {
 
-      rrc_mac_config_req_gNB(rrc->module_id,
-			     rrc->carrier.ssb_SubcarrierOffset,
-			     rrc->carrier.pdsch_AntennaPorts,
-			     rrc->carrier.pusch_AntennaPorts,
-			     rrc->carrier.sib1_tda,
-                             rrc->carrier.minRXTXTIME,
-			     NULL,
-                             NULL,
-			     0,
-			     ue_context_pP->ue_context.rnti,
-			     get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
+  rrc_mac_config_req_gNB(rrc->module_id,
+                         rrc->carrier.ssb_SubcarrierOffset,
+                         rrc->carrier.pdsch_AntennaPorts,
+                         rrc->carrier.pusch_AntennaPorts,
+                         rrc->carrier.sib1_tda,
+                         rrc->carrier.minRXTXTIME,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
 
       nr_rrc_rlc_config_asn1_req(ctxt_pP,
                                  ue_context_pP->ue_context.SRB_configList,
@@ -371,6 +379,11 @@ rrc_gNB_generate_RRCSetup(
   AssertFatal(ret>0,"Error generating RRCSetup for RRCSetupRequest\n");
 
   ue_p->Srb0.Tx_buffer.payload_size = ret;
+
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -487,6 +500,11 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 
   ue_p->Srb0.Tx_buffer.payload_size = ret;
 
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 rrc_instance_p->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
+
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
               ue_p->Srb0.Tx_buffer.payload_size,
@@ -506,8 +524,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          &rrc_instance_p->carrier.mib,
                          0,
                          ue_context_pP->ue_context.rnti,
-                         (NR_CellGroupConfig_t *)NULL
-			 );
+                         (NR_CellGroupConfig_t *)NULL);
 
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
@@ -757,6 +774,11 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 &rrc->carrier,
                                 NULL,
                                 ue_p->masterCellGroup);
+
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
@@ -1020,7 +1042,13 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 &rrc->carrier,
                                 NULL,
                                 cellGroupConfig);
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
+
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
+
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -1192,6 +1220,12 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                 NULL,
                                 NULL,
                                 NULL);
+
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
+
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
   /* Free all NAS PDUs */
@@ -1293,9 +1327,14 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                NULL,
                                NULL);
 
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
+
   ue_context_pP->ue_context.pdu_session_release_command_flag = 1;
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
-              "[MSG] RRC Reconfiguration\n");
+
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
   /* Free all NAS PDUs */
   if (nas_length > 0) {
@@ -1403,8 +1442,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            NULL,
                            0,
                            ue_context_pP->ue_context.rnti,
-                           ue_context_pP->ue_context.masterCellGroup
-                           );
+                           ue_context_pP->ue_context.masterCellGroup);
     LOG_D(NR_RRC,"Configuring RLC DRBs/SRBs for UE %x\n",ue_context_pP->ue_context.rnti);
     nr_rrc_rlc_config_asn1_req(ctxt_pP,
                                SRB_configList, // NULL,
@@ -1843,8 +1881,13 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                                 NULL,
                                 NULL,
                                 NULL);
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
-              "[MSG] RRC Reconfiguration\n");
+
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
+
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -3501,6 +3544,15 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
                 get_ul_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr));
       }
     }
+
+    if (ue_context_p->ue_context.nr_rrc_processing_timer > 0) {
+      ue_context_p->ue_context.nr_rrc_processing_timer++;
+      if(ue_context_p->ue_context.nr_rrc_processing_timer >= ue_context_p->ue_context.nr_rrc_processing_delay) {
+        ue_context_p->ue_context.nr_rrc_processing_timer = 0;
+        nr_rrc_mac_schedule_ue_enabled(ctxt_pP->module_id, ue_context_p->ue_context.rnti, true);
+      }
+    }
+
     if (ue_context_p->ue_context.ul_failure_timer > 0) {
       ue_context_p->ue_context.ul_failure_timer++;
 

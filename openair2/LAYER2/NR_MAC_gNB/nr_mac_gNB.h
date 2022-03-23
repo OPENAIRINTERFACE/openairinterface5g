@@ -668,6 +668,8 @@ typedef struct {
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
+  /// Flag to indicate if MAC scheduling is enabled or disabled by RRC (e.g. during RRC processing time)
+  bool schedule_enabled;
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
