@@ -408,3 +408,14 @@ void nr_mac_gNB_rrc_ul_failure_reset(const module_id_t Mod_instP,
     LOG_W(RRC,"Frame %d, Subframe %d: UL failure reset: UE %x unknown \n",frameP,subframeP,rntiP);
   }
 }
+
+void nr_mac_gNB_enable_rrc_processing_timer_req(const module_id_t Mod_instP, const rnti_t rntiP) {
+  struct rrc_gNB_ue_context_s *ue_context_p = NULL;
+  ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_instP], rntiP);
+  if (ue_context_p != NULL) {
+    ue_context_p->ue_context.nr_rrc_processing_timer = 1;
+    ue_context_p->ue_context.nr_rrc_processing_delay = NR_RRC_PROCESSING_DELAY_MS;
+  } else {
+    LOG_D(RRC,"%s: Unknown RNTI 0x%04x\n", __FUNCTION__, rntiP);
+  }
+}
