@@ -353,6 +353,11 @@ rrc_gNB_generate_RRCSetup(
 						  masterCellGroup_from_DU,
 						  scc,&rrc->carrier);
 
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
+
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
               ue_p->Srb0.Tx_buffer.payload_size,
@@ -462,6 +467,11 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 						  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
 						  NULL,
 						  scc,&rrc_instance_p->carrier);
+
+  enable_nr_rrc_processing_timer(ctxt_pP->module_id,
+                                 ue_context_pP,
+                                 rrc_instance_p->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                                 NR_RRC_PROCESSING_DELAY_MS);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
