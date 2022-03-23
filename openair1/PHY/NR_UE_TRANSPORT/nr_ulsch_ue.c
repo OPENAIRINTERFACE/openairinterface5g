@@ -122,8 +122,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int sample_offsetF, N_RE_prime;
 
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
-  NR_UE_PUSCH *pusch_ue = UE->pusch_vars[thread_id][gNB_id];
-  int16_t **tx_precoding = (int16_t **)pusch_ue->txdataF_precoding;
   int32_t **txdataF = UE->common_vars.txdataF;
 
   int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
@@ -333,13 +331,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 #endif
 
   }
-  else
-    memcpy(y, tx_layers[0], (available_bits/mod_order)*sizeof(int32_t));
   
-  for (int nl = 0; nl < Nl; nl++)
-    free_and_zero(tx_layers[nl]);
-  free_and_zero(tx_layers);
-
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -348,6 +340,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////ULSCH RE mapping/////////////////////////
   ///////////
 
+  int encoded_length = frame_parms->N_RB_UL*number_of_symbols*NR_NB_SC_PER_RB*mod_order*Nl;
+  int16_t **tx_precoding = (int16_t **)malloc16_clear(Nl*sizeof(int16_t *));
+  for (int nl=0; nl<Nl; nl++)
+    tx_precoding[nl] = (int16_t *)malloc16_clear((encoded_length<<1)*sizeof(int16_t));
 
   for (int nl=0; nl < Nl; nl++) {
     uint8_t k_prime = 0;
@@ -553,6 +549,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   NR_UL_UE_HARQ_t *harq_process_ulsch=NULL;
   harq_process_ulsch = UE->ulsch[thread_id][gNB_id]->harq_processes[harq_pid];
   harq_process_ulsch->status = SCH_IDLE;
+
+  for (int nl = 0; nl < Nl; nl++) {
+    free_and_zero(tx_layers[nl]);
+    free_and_zero(tx_precoding[nl]);
+  }
+  free_and_zero(tx_layers);
+  free_and_zero(tx_precoding);
 
   ///////////
   ////////////////////////////////////////////////////////////////////////

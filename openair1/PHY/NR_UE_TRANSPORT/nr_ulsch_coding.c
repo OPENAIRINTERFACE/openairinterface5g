@@ -149,8 +149,8 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, NR_DL_
     DevAssert(ulsch->harq_processes[i]->b);
     bzero(ulsch->harq_processes[i]->b,ulsch_bytes);
 
-    ulsch->harq_processes[i]->c = malloc16(a_segments);
-    ulsch->harq_processes[i]->d = malloc16(a_segments);
+    ulsch->harq_processes[i]->c = malloc16(a_segments*sizeof(uint8_t *));
+    ulsch->harq_processes[i]->d = malloc16(a_segments*sizeof(uint16_t *));
     for (int r = 0; r < a_segments; r++) {
       // account for filler in first segment and CRCs for multiple segment case
       ulsch->harq_processes[i]->c[r] = malloc16(8448);

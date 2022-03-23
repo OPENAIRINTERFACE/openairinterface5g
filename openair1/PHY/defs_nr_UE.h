@@ -226,11 +226,6 @@ typedef struct {
 } NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
-  /// TX buffers for UE-spec transmission
-  int32_t *txdataF_precoding[NR_MAX_NB_LAYERS];
-  } NR_UE_PUSCH;
-
-typedef struct {
   bool active[2];
   fapi_nr_ul_config_pucch_pdu pucch_pdu[2];
   } NR_UE_PUCCH;
@@ -792,9 +787,6 @@ typedef struct {
   NR_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_gNB_MAX];
-
-  // to be removed again possibly
-  NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
 
   //Paging parameters
   uint32_t              IMSImod1024;

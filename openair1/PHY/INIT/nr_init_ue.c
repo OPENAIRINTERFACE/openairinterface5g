@@ -155,23 +155,6 @@ void phy_term_nr_ue__PDSCH(NR_UE_PDSCH* pdsch, const NR_DL_FRAME_PARMS *const fp
   free_and_zero(pdsch->dl_ch_ptrs_estimates_ext);
 }
 
-void phy_init_nr_ue_PUSCH(NR_UE_PUSCH *const pusch,
-                          const NR_DL_FRAME_PARMS *const fp) {
-  AssertFatal( pusch, "pusch==0" );
-
-  int max_encoded_length = fp->N_RB_UL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS;
-
-  for (int i=0; i<NR_MAX_NB_LAYERS; i++) {
-    pusch->txdataF_precoding[i] = (int32_t *)malloc16_clear((max_encoded_length)*sizeof(int32_t *));
-  }
-}
-
-void phy_term_nr_ue_PUSCH(NR_UE_PUSCH *pusch)
-{
-  for (int i = 0; i < NR_MAX_NB_LAYERS; i++)
-    free_and_zero(pusch->txdataF_precoding[i]);
-}
-
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 {
   // create shortcuts

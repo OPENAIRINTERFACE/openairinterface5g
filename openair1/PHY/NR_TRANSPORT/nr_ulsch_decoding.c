@@ -110,9 +110,9 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL)
     
     ulsch->harq_processes[i] = (NR_UL_gNB_HARQ_t *)malloc16_clear(sizeof(NR_UL_gNB_HARQ_t));
     ulsch->harq_processes[i]->b = (uint8_t*)malloc16_clear(ulsch_bytes);
-    ulsch->harq_processes[i]->c = (uint8_t**)malloc16_clear(a_segments);
-    ulsch->harq_processes[i]->d = (int16_t**)malloc16_clear(a_segments);
-    ulsch->harq_processes[i]->p_nrLDPC_procBuf = (t_nrLDPC_procBuf **)malloc16_clear(a_segments);
+    ulsch->harq_processes[i]->c = (uint8_t**)malloc16_clear(a_segments*sizeof(uint8_t *));
+    ulsch->harq_processes[i]->d = (int16_t**)malloc16_clear(a_segments*sizeof(int16_t *));
+    ulsch->harq_processes[i]->p_nrLDPC_procBuf = (t_nrLDPC_procBuf **)malloc16_clear(a_segments*sizeof(t_nrLDPC_procBuf *));
     for (r=0; r<a_segments; r++) {
       ulsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
       ulsch->harq_processes[i]->c[r] = (uint8_t*)malloc16_clear(8448*sizeof(uint8_t));
