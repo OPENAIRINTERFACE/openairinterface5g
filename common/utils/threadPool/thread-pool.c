@@ -72,11 +72,11 @@ void *one_thread(void *arg) {
   do {
     notifiedFIFO_elt_t *elt=pullNotifiedFifoRemember(&tp->incomingFifo, myThread);
 
-    if (tp->measurePerf) elt->startProcessingTime=rdtsc();
+    if (tp->measurePerf) elt->startProcessingTime=rdtsc_oai();
 
     elt->processingFunc(NotifiedFifoData(elt));
 
-    if (tp->measurePerf) elt->endProcessingTime=rdtsc();
+    if (tp->measurePerf) elt->endProcessingTime=rdtsc_oai();
 
     if (elt->reponseFifo) {
       // Check if the job is still alive, else it has been aborted
@@ -97,7 +97,7 @@ void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name
   char *measr=getenv("threadPoolMeasurements");
   pool->measurePerf=performanceMeas;
   // force measurement if the output is defined
-  pool->measurePerf=measr!=NULL;
+  pool->measurePerf |= measr!=NULL;
 
   if (measr) {
     mkfifo(measr,0666);

@@ -79,10 +79,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
     NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
-    uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
     int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
     int16_t **tx_layers = (int16_t**)dlsch->txdataF;
-    int16_t **txdataF_precoding = (int16_t**)dlsch->txdataF_precoding;
     int8_t Wf[2], Wt[2], l0, l_prime, l_overline, delta;
     uint8_t dmrs_Type = rel15->dmrsConfigType;
     int nb_re_dmrs;
@@ -100,6 +98,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
+    uint32_t scrambled_output[rel15->NrOfCodewords][(encoded_length>>5)+1];
     int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
@@ -121,8 +120,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
-    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
-    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * Qm * rel15->nrOfLayers] __attribute__((aligned(32)));
+    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * Qm * rel15->nrOfLayers);
     start_meas(dlsch_encoding_stats);
 
     if (nr_dlsch_encoding(gNB,
@@ -147,20 +146,18 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     }
     printf("\n");
 #endif
-    
-    
-    
+
     /// scrambling
     start_meas(dlsch_scrambling_stats);
-    for (int q=0; q<rel15->NrOfCodewords; q++)
-      memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
-    for (int q=0; q<rel15->NrOfCodewords; q++)
+    for (int q=0; q<rel15->NrOfCodewords; q++) {
+      memset((void*)scrambled_output[q], 0, ((encoded_length>>5)+1)*sizeof(uint32_t));
       nr_pdsch_codeword_scrambling(output,
                                    encoded_length,
                                    q,
                                    rel15->dataScramblingId,
                                    rel15->rnti,
                                    scrambled_output[q]);
+    }
     
     stop_meas(dlsch_scrambling_stats);
 #ifdef DEBUG_DLSCH
@@ -219,6 +216,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
       start_sc -= frame_parms->ofdm_symbol_size;
 
     int txdataF_offset = slot*frame_parms->samples_per_slot_wCP;
+    int16_t **txdataF_precoding = (int16_t **)malloc16(rel15->nrOfLayers*sizeof(int16_t *));
+    for (int layer = 0; layer<rel15->nrOfLayers; layer++)
+      txdataF_precoding[layer] = (int16_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int16_t));
 
 #ifdef DEBUG_DLSCH_MAPPING
     printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
@@ -295,7 +295,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
           ptrs_symbol = is_ptrs_symbol(l,dlPtrsSymPos);
           if(ptrs_symbol) {
             /* PTRS QPSK Modulation for each OFDM symbol in a slot */
-            printf("Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
+            LOG_D(PHY,"Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
             nr_modulation(pdsch_dmrs[l][0], (n_ptrs<<1), DMRS_MOD_ORDER, mod_ptrs);
           }
         }
@@ -535,6 +535,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     else {
       LOG_D(PHY,"beam index for PDSCH allocation already taken\n");
     }
+    for (int layer = 0; layer<rel15->nrOfLayers; layer++)
+      free16(txdataF_precoding[layer],2*14*frame_parms->ofdm_symbol_size);
+    free16(txdataF_precoding,rel15->nrOfLayers);
   }// dlsch loop
 }
 

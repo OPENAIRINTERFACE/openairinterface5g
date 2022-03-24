@@ -815,11 +815,6 @@ static void *UE_thread_rxn_txnp4(void *arg)
       pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
     }
 
-    //printf("Processing sub frqme %d in %s\n", proc->subframe_rx, threadname);
-    initRefTimes(t2);
-    initRefTimes(t3);
-    pickTime(current);
-    updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
     // Process Rx data for one sub-frame
     lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
 
@@ -886,7 +881,6 @@ static void *UE_thread_rxn_txnp4(void *arg)
       if (UE->mode != loop_through_memory)
         phy_procedures_UE_S_TX(UE,0,0);
 
-    updateTimes(current, &t3, 10000, "Delay to process sub-frame (case 3)");
     proc->instance_cnt_rxtx--;
 
     if ( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
@@ -1470,12 +1464,6 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg)
         oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
       }
 
-      //Guessing that the next 4 lines are not needed for the phy_stub mode.
-      /*initRefTimes(t2);
-        initRefTimes(t3);
-        pickTime(current);
-        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");*/
-
       if (pthread_mutex_lock(&phy_stub_ticking->mutex_single_thread) != 0) {
         LOG_E( MAC, "[SCHED][UE] error locking mutex for ue_thread_id %d (mutex_single_thread)\n",ue_thread_id);
         exit_fun("nothing to add");
@@ -2023,8 +2011,18 @@ void *UE_thread(void *arg)
     
     if (is_synchronized == 0) {
       if (instance_cnt_synch < 0) {  // we can invoke the synch
-        // grab 10 ms of signal and wakeup synch thread
 
+	// we shift in time flow because the UE doesn't detect sync when frame alignment is not easy
+	for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
+            rxp[i] = (void *)&dummy_rx[i][0];
+	UE->rfdevice.trx_read_func(&UE->rfdevice,
+				   &timestamp,
+				   rxp,
+				   UE->frame_parms.samples_per_tti/2,
+				   UE->frame_parms.nb_antennas_rx);
+	
+        // grab 10 ms of signal and wakeup synch thread
+	
         if (UE->mode != loop_through_memory) {
           if (IS_SOFTMODEM_RFSIM ) {
 	    for(int sf=0; sf<10; sf++) {
@@ -2225,8 +2223,6 @@ void *UE_thread(void *arg)
               LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
           }
 
-          pickTime(gotIQs);
-
           /* no timeout in IS_SOFTMODEM_BASICSIM or IS_SOFTMODEM_RFSIM mode */
           if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) {
             ret = pthread_mutex_lock(&proc->mutex_rxtx);
@@ -2264,12 +2260,6 @@ void *UE_thread(void *arg)
             }
           }
 
-          //UE->proc.proc_rxtx[0].gotIQs=readTime(gotIQs);
-          //UE->proc.proc_rxtx[1].gotIQs=readTime(gotIQs);
-          for (th_id=0; th_id < RX_NB_TH; th_id++) {
-            UE->proc.proc_rxtx[th_id].gotIQs=readTime(gotIQs);
-          }
-
           proc->subframe_rx=sub_frame;
           proc->subframe_tx=(sub_frame+4)%10;
           proc->frame_tx = proc->frame_rx + (proc->subframe_rx>5?1:0);
@@ -2281,10 +2271,6 @@ void *UE_thread(void *arg)
           T(T_UE_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx%1024), T_INT(proc->subframe_rx));
           AssertFatal (pthread_cond_signal(&proc->cond_rxtx) ==0,"");
           AssertFatal(pthread_mutex_unlock(&proc->mutex_rxtx) ==0,"");
-          initRefTimes(t1);
-          initStaticTime(lastTime);
-          updateTimes(lastTime, &t1, 20000, "Delay between two IQ acquisitions (case 1)");
-          pickStaticTime(lastTime);
         } else {
           printf("Processing subframe %d",proc->subframe_rx);
           getchar();
