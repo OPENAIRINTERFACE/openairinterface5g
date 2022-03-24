@@ -1478,9 +1478,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  const NR_SIB1_t *sib1 = get_softmodem_params()->sa ?
-                          RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  NR_ServingCellConfigCommonSIB_t *scc_sib1 = get_softmodem_params()->sa ? sib1->servingCellConfigCommon : NULL;
+  const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+  NR_ServingCellConfigCommonSIB_t *scc_sib1 = sib1 ? sib1->servingCellConfigCommon : NULL;
 
   AssertFatal(scc!=NULL || scc_sib1!=NULL,"We need one serving cell config common\n");
 
