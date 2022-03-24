@@ -320,98 +320,16 @@ void nr_layer_mapping(int16_t **mod_symbs,
   }
 }
 
-void nr_ue_layer_mapping(NR_UE_ULSCH_t **ulsch_ue,
+void nr_ue_layer_mapping(int16_t *mod_symbs,
                          uint8_t n_layers,
                          uint16_t n_symbs,
-                         int16_t **tx_layers)
-{
-  int16_t *mod_symbs;
+                         int16_t **tx_layers) {
 
-  switch (n_layers) {
-
-    case 1:
-      mod_symbs = (int16_t *)ulsch_ue[0]->d_mod;
-      for (int i=0; i<n_symbs; i++) {
-        tx_layers[0][i<<1] = (mod_symbs[i<<1]*AMP)>>15;
-        tx_layers[0][(i<<1)+1] = (mod_symbs[(i<<1)+1]*AMP)>>15;
-      }
-      break;
-
-    case 2:
-    case 3:
-    case 4:
-      mod_symbs = (int16_t *)ulsch_ue[0]->d_mod;
-
-      for (int i=0; i<n_symbs/n_layers; i++) {
-        for (int l=0; l<n_layers; l++) {
-          tx_layers[l][i<<1] = (mod_symbs[(n_layers*i+l)<<1]*AMP)>>15;
-          tx_layers[l][(i<<1)+1] = (mod_symbs[((n_layers*i+l)<<1)+1]*AMP)>>15;
-        }
-      }
-      break;
-
-    case 5:
-      mod_symbs = (int16_t *)ulsch_ue[0]->d_mod;
-
-      for (int i=0; i<n_symbs>>1; i++)
-        for (int l=0; l<2; l++) {
-          tx_layers[l][i<<1] = (mod_symbs[((i<<1)+l)<<1]*AMP)>>15;
-          tx_layers[l][(i<<1)+1] = (mod_symbs[(((i<<1)+l)<<1)+1]*AMP)>>15;
-        }
-
-      mod_symbs = (int16_t *)ulsch_ue[1]->d_mod;
-
-      for (int i=0; i<n_symbs/3; i++)
-        for (int l=2; l<5; l++) {
-          tx_layers[l][i<<1] = (mod_symbs[(3*i+l)<<1]*AMP)>>15;
-          tx_layers[l][(i<<1)+1] = (mod_symbs[((3*i+l)<<1)+1]*AMP)>>15;
-      }
-      break;
-
-    case 6:
-      for (int q=0; q<2; q++) {
-        mod_symbs = (int16_t *)ulsch_ue[q]->d_mod;
-
-        for (int i=0; i<n_symbs/3; i++)
-          for (int l=0; l<3; l++) {
-            tx_layers[l][i<<1] = (mod_symbs[(3*i+l)<<1]*AMP)>>15;
-            tx_layers[l][(i<<1)+1] = (mod_symbs[((3*i+l)<<1)+1]*AMP)>>15;
-          }
-      }
-      break;
-
-    case 7:
-      mod_symbs = (int16_t *)ulsch_ue[1]->d_mod;
-
-      for (int i=0; i<n_symbs/3; i++)
-        for (int l=0; l<3; l++) {
-          tx_layers[l][i<<1] = (mod_symbs[(3*i+l)<<1]*AMP)>>15;
-          tx_layers[l][(i<<1)+1] = (mod_symbs[((3*i+l)<<1)+1]*AMP)>>15;
-        }
-
-      mod_symbs = (int16_t *)ulsch_ue[0]->d_mod;
-
-      for (int i=0; i<n_symbs/4; i++)
-        for (int l=3; l<7; l++) {
-          tx_layers[l][i<<1] = (mod_symbs[((i<<2)+l)<<1]*AMP)>>15;
-          tx_layers[l][(i<<1)+1] = (mod_symbs[(((i<<2)+l)<<1)+1]*AMP)>>15;
-        }
-      break;
-
-    case 8:
-      for (int q=0; q<2; q++) {
-        mod_symbs = (int16_t *)ulsch_ue[q]->d_mod;
-
-        for (int i=0; i<n_symbs>>2; i++)
-          for (int l=0; l<3; l++) {
-            tx_layers[l][i<<1] = (mod_symbs[((i<<2)+l)<<1]*AMP)>>15;
-            tx_layers[l][(i<<1)+1] = (mod_symbs[(((i<<2)+l)<<1)+1]*AMP)>>15;
-          }
-      }
-      break;
-
-    default:
-      AssertFatal(0, "Invalid number of layers %d\n", n_layers);
+  for (int i=0; i<n_symbs/n_layers; i++) {
+    for (int l=0; l<n_layers; l++) {
+      tx_layers[l][i<<1] = (mod_symbs[(n_layers*i+l)<<1]*AMP)>>15;
+      tx_layers[l][(i<<1)+1] = (mod_symbs[((n_layers*i+l)<<1)+1]*AMP)>>15;
+    }
   }
 }
 
