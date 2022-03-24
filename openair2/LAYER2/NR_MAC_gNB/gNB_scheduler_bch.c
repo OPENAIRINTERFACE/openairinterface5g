@@ -640,7 +640,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
 
       // Data to be transmitted
-      bzero(tx_req->TLVs[0].value.direct,MAX_NR_DLSCH_PAYLOAD_BYTES);
+      bzero(tx_req->TLVs[0].value.direct,MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*1056);
       memcpy(tx_req->TLVs[0].value.direct, sib1_payload, sib1_sdu_length);
 
       tx_req->PDU_length = TBS;

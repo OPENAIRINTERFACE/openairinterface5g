@@ -33,7 +33,7 @@ It is planned to enhance this simulator with the following functionalities:
 
 This simulator connects a eNodeB  and UEs through a nfapi interface, short-cutting the L1 layer. The objective of this simulator is to allow multi UEs simulation, with a large number of UEs (ideally up to 255 ) .Here to ease the platform setup, UEs are simulated via a single `lte-uesoftmodem` instance. Today the CI tests just with one UE and architecture has to be reviewed to allow a number of UE above about 16. This work is on-going.
 
-As for the rf simulator, no specific hardware is required. The [L2 nfapi simlator page](L2NFAPI.md) contains the detailed documentation.
+As for the rf simulator, no specific hardware is required. The [L2 nfapi simulator page](L2NFAPI.md) contains the detailed documentation.
 
 # L1 Simulator
 

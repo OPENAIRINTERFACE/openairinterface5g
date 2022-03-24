@@ -53,7 +53,7 @@ list2_init (list2_t * listP, char *nameP)
 {
   //-----------------------------------------------------------------------------
   if (nameP) {
-    strncpy( listP->name, nameP, LIST_NAME_MAX_CHAR );
+    strncpy( listP->name, nameP, LIST_NAME_MAX_CHAR-1 );
     listP->name[LIST_NAME_MAX_CHAR-1] = 0; // terminate string
   }
 
