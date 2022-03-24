@@ -881,31 +881,65 @@ static bool nr_UE_is_to_be_scheduled(const NR_ServingCellConfigCommon_t *scc,
   return has_data || sched_ctrl->SR || high_inactivity;
 }
 
-int estimate_nr_ue_tx_power(int mu, uint32_t tbs, int rb)
+int estimate_nr_ue_tx_power(int mu, uint32_t tbs_bits, int code_rate, int rb, int n_symbols)
 {
-  /* TODO: delta_mcs? */
+  /* see TS 38.213 Sec 7.1.1 */
+
+  const unsigned int CRC = (tbs_bits >> 3) > 3824 ? 24 : 16; /* from nr_dlsch_encoding(): 24 or 16 bits CRC */
+  const unsigned int B = tbs_bits + CRC;
+  unsigned int C;    /* number of code blocks */
+  unsigned int K;    /* total code block size */
+  unsigned int Zout; /* unused */
+  unsigned int F;    /* unused */
+  /* to scale MCS 20 and 26 in 214 Tab 5.1.3.1-2 (decimal and input 2* in * nr_target_code_rate_table2) */
+  const float targetCodeRate = code_rate < 1000 ? (float) code_rate / 1024.0f : (float) code_rate / 2048.0f;
+  const unsigned int BG = get_BG(tbs_bits, targetCodeRate);
+  const int32_t Kb = nr_segmentation(NULL, NULL, B, &C, &K, &Zout, &F, BG);
+  AssertFatal(Kb >= 0, "problem with segmentation for B %d BG %d\n", B, BG);
+
+  const unsigned int Nre = 12 * rb * n_symbols;
+  const unsigned int BPRE = C * K / Nre;
+  const float f = pow(2, (float) BPRE * 1.25);
+  const float beta = 1.0f;
+  const int delta_tf = 10 * log10((f - 1) * beta);
 
   const int bw_factor = 10 * log10(rb << mu);
-  return bw_factor;
+  LOG_D(NR_MAC, "estimated UE TX power %d (Nre %d C %d K %d Nre %d BPRE %d delta_tf %d rb %d bw_factor %d)\n",
+        bw_factor + delta_tf, Nre, C, K, Nre, BPRE, delta_tf, rb, bw_factor);
+  return bw_factor + delta_tf;
 }
 
-int nr_ue_max_rbSize_phr(int mu, const NR_UE_sched_ctrl_t *sched_ctrl, uint16_t minRb, uint16_t *maxRb, uint8_t *mcs)
+void update_ul_ue_R_Qm(int mcs, const NR_pusch_semi_static_t *ps, uint16_t *R, uint8_t *Qm)
+{
+  *R = nr_get_code_rate_ul(mcs, ps->mcs_table);
+  *Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
+
+  if (ps->pusch_Config && ps->pusch_Config->tp_pi2BPSK && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+    *R >>= 1;
+    *Qm <<= 1;
+  }
+}
+
+int nr_ue_max_mcs_min_rb(int mu, int ph, NR_pusch_semi_static_t *ps, uint16_t minRb, int tbs, uint16_t *maxRb, uint8_t *mcs)
 {
   AssertFatal(*maxRb >= minRb, "illegal maxRb %d < minRb %d\n", *maxRb, minRb);
   AssertFatal(*mcs >= 0 && *mcs <= 28, "illegal MCS %d\n", *mcs);
 
-  const int ph = sched_ctrl->ph;
-  //const int pcmax = sched_ctrl->pcmax;
+  const int tbs_bits = tbs << 3;
+  uint16_t R;
+  uint8_t Qm;
+  update_ul_ue_R_Qm(*mcs, ps, &R, &Qm);
 
-  int tx_power = estimate_nr_ue_tx_power(mu, /* unused tbs */ 0, *maxRb);
+  int tx_power = estimate_nr_ue_tx_power(mu, tbs_bits, R, *maxRb, ps->nrOfSymbols);
   while (ph < tx_power && *maxRb >= minRb) {
     (*maxRb)--;
-    tx_power = estimate_nr_ue_tx_power(mu, /* unused tbs */ 0, *maxRb);
+    tx_power = estimate_nr_ue_tx_power(mu, tbs_bits, R, *maxRb, ps->nrOfSymbols);
   }
 
   while (ph < tx_power && *mcs > 6) {
     (*mcs)--;
-    tx_power = estimate_nr_ue_tx_power(mu, /* unused tbs */ 0, *maxRb);
+    update_ul_ue_R_Qm(*mcs, ps, &R, &Qm);
+    tx_power = estimate_nr_ue_tx_power(mu, tbs_bits, R, *maxRb, ps->nrOfSymbols);
   }
 
   if (ph < tx_power)
@@ -1078,18 +1112,6 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
   return true;
 }
 
-void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static_t *ps)
-{
-  const int mcs = sched_pusch->mcs;
-  sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
-  sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-
-  if (ps->pusch_Config && ps->pusch_Config->tp_pi2BPSK && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
-    sched_pusch->R >>= 1;
-    sched_pusch->Qm <<= 1;
-  }
-}
-
 uint32_t ul_pf_tbs[3][29]; // pre-computed, approximate TBS values for PF coefficient
 typedef struct UEsched_s {
   float coef;
@@ -1260,7 +1282,7 @@ void pf_ul(module_id_t module_id,
 
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = min(nrmac->min_grant_mcs, sched_pusch->mcs);
-      update_ul_ue_R_Qm(sched_pusch, ps);
+      update_ul_ue_R_Qm(sched_pusch->mcs, ps, &sched_pusch->R, &sched_pusch->Qm);
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
       sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
@@ -1362,7 +1384,7 @@ void pf_ul(module_id_t module_id,
                                nrOfLayers,
                                ps);
     }
-    update_ul_ue_R_Qm(sched_pusch, ps);
+    update_ul_ue_R_Qm(sched_pusch->mcs, ps, &sched_pusch->R, &sched_pusch->Qm);
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
@@ -1380,12 +1402,15 @@ void pf_ul(module_id_t module_id,
     else
       LOG_D(NR_MAC,"allocating UL data for RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d)\n", iterator->UE->rnti,rbStart,min_rb,bwpSize);
 
-    /* reduce max_rbSize according to PHR */
-    const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-    const int tx_power = nr_ue_max_rbSize_phr(mu, sched_ctrl, min_rbSize, &max_rbSize, &sched_pusch->mcs);
-
-    /* Calculate the current scheduling bytes and the necessary RBs */
+    /* Calculate the current scheduling bytes */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
+
+    /* reduce max_rbSize according to PHR and BPRE */
+    const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+    nr_ue_max_mcs_min_rb(mu, sched_ctrl->ph, ps, min_rbSize, B, &max_rbSize, &sched_pusch->mcs);
+    if (sched_pusch->mcs < sched_ctrl->ul_bler_stats.mcs)
+      sched_ctrl->ul_bler_stats.mcs = sched_pusch->mcs; /* force estimated MCS down */
+
     uint16_t rbSize = 0;
     uint32_t TBS = 0;
 
