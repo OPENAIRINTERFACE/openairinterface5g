@@ -380,10 +380,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   float Coderate = (float) rel15->targetCodeRate[0] / 10240.0f;
   LOG_D(PHY,"DLSCH Coderate %f\n",Coderate);
 
-  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
-    impp.BG = 2;
-  else
-    impp.BG = 1;
+  impp.BG = get_BG(A, Coderate);
 
   start_meas(dlsch_segmentation_stats);
   impp.Kb = nr_segmentation(harq->b, harq->c, harq->B, &impp.n_segments, &impp.K, impp.Zc, &impp.F, impp.BG);
