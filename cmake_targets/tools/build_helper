@@ -106,10 +106,7 @@ check_supported_distribution() {
         "ubuntu21.04") return 0 ;;
         "ubuntu20.04") return 0 ;;
         "ubuntu18.04") return 0 ;;
-        "ubuntu17.10") return 0 ;;
-        "ubuntu17.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
-        "ubuntu14.04") return 0 ;;
         "fedora24")    return 0 ;;
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
@@ -473,10 +470,6 @@ install_bladerf_driver_from_source(){
 
 check_install_bladerf_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-        if [ "$(get_distribution_release)" == "ubuntu14.04" ] ; then
-            $SUDO add-apt-repository -y ppa:bladerf/bladerf
-            $SUDO apt-get update
-        fi
         $SUDO apt-get install -y  bladerf libbladerf-dev
         $SUDO apt-get install -y bladerf-firmware-fx3
         $SUDO apt-get install -y bladerf-fpga-hostedx40
@@ -579,7 +572,7 @@ check_install_additional_tools (){
   local optional_packages=""
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
     case "$(get_distribution_release)" in
-        "ubuntu14.04"| "ubuntu16.04"| "ubuntu17.04"| "ubuntu17.10"| "ubuntu18.04")
+        "ubuntu16.04"| "ubuntu18.04")
             optional_packages="python-dev python-pexpect python-numpy python-scipy python-matplotlib"
             ;;
         "ubuntu20.04"| "ubuntu21.04")
@@ -699,22 +692,8 @@ check_install_oai_software() {
     local LAPACK_TARGET="/usr/lib/atlas-base/atlas/liblapack.so"
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
-        "ubuntu14.04")
-            specific_packages="libtasn1-3-dev libgnutls-dev libatlas-dev iproute libconfig8-dev iptables-dev libgcrypt11-de python-pip pydb"
-            # For iperf3
-            $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
-            $SUDO apt-get update
-            ;;
         "ubuntu16.04")
             specific_packages="libtasn1-6-dev libgnutls-dev libatlas-dev iproute libconfig8-dev iptables-dev libgcrypt11-dev python-pip pydb"
-            ;;
-        "ubuntu17.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev libatlas-dev iproute libconfig8-dev iptables-dev libgcrypt11-dev python-pip pydb"
-            ;;
-        "ubuntu17.10")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute libconfig8-dev iptables-dev libgcrypt11-dev python-pip pydb"
-            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
-            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
         "ubuntu18.04")
             specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev iptables-dev libgcrypt11-dev python-pip pydb"
