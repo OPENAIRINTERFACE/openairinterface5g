@@ -143,9 +143,11 @@ void openair_nr_rrc_on(const protocol_ctxt_t *const ctxt_pP) {
 void enable_nr_rrc_processing_timer(module_id_t module_id,
                                     rrc_gNB_ue_context_t *ue_context_pP,
                                     uint32_t delay_ms) {
-  ue_context_pP->ue_context.nr_rrc_processing_timer = 1;
-  ue_context_pP->ue_context.nr_rrc_processing_delay = delay_ms;
-  nr_rrc_mac_schedule_ue_enabled(module_id, ue_context_pP->ue_context.rnti, false);
+  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[module_id]->node_type)) {
+    ue_context_pP->ue_context.nr_rrc_processing_timer = 1;
+    ue_context_pP->ue_context.nr_rrc_processing_delay = delay_ms;
+    nr_rrc_mac_schedule_ue_enabled(module_id, ue_context_pP->ue_context.rnti, false);
+  }
 }
 
 ///---------------------------------------------------------------------------------------------------------------///
