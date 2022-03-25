@@ -272,7 +272,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   x_im[1] = table_5_2_2_2_2_Im[u[1]];
 
   c64_t xr[frame_parms->nb_antennas_rx][pucch_pdu->nr_of_symbols][12]  __attribute__((aligned(32)));
-  memset(xr, 0, sizeof(xr));
   int64_t xrtmag=0,xrtmag_next=0;
   uint8_t maxpos=0;
   uint8_t index=0;
@@ -287,72 +286,65 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
       c16_t *r=(c16_t*)&rxdataF[aa][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[l]];
       for (n=0;n<12;n++) {
-        xr[aa][l][n].r += (int32_t)x_re[l][n] * r[n].r + (int32_t)x_im[l][n] * r[n].i;
-        xr[aa][l][n].i += (int32_t)x_re[l][n] * r[n].i - (int32_t)x_im[l][n] * r[n].r;
+        xr[aa][l][n].r = (int32_t)x_re[l][n] * r[n].r + (int32_t)x_im[l][n] * r[n].i;
+        xr[aa][l][n].i = (int32_t)x_re[l][n] * r[n].i - (int32_t)x_im[l][n] * r[n].r;
 #ifdef DEBUG_NR_PUCCH_RX
         printf("x (%d,%d), r%d.%d (%d,%d), xr (%lld,%lld)\n",
 	       x_re[l][n],x_im[l][n],l2,re_offset[l],r[n].r,r[n].i,xr[aa][l][n].r,xr[aa][l][n].i);
 #endif
       }
-      xr[aa][l][n].r>>=15;
-      xr[aa][l][n].i>>=15;
     }
   }
 
-  int64_t corr_re[frame_parms->nb_antennas_rx][2];
-  int64_t corr_im[frame_parms->nb_antennas_rx][2];
   //int32_t no_corr = 0;
   int seq_index = 0;
   int64_t temp;
 
   for(i=0;i<nr_sequences;i++){
-
-    for (int l=0;l<pucch_pdu->nr_of_symbols;l++) {
-      seq_index = (pucch_pdu->initial_cyclic_shift+
-		   mcs[i]+
-		   gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
+    c64_t corr[frame_parms->nb_antennas_rx][2];
+    for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+      for (int l=0;l<pucch_pdu->nr_of_symbols;l++) {
+        seq_index = (pucch_pdu->initial_cyclic_shift+
+                     mcs[i]+
+                     gNB->pucch0_lut.lut[cs_ind][slot][l+pucch_pdu->start_symbol_index])%12;
 #ifdef DEBUG_NR_PUCCH_RX
-      printf("PUCCH symbol %d seq %d, seq_index %d, mcs %d\n",l,i,seq_index,mcs[i]);
+        printf("PUCCH symbol %d seq %d, seq_index %d, mcs %d\n",l,i,seq_index,mcs[i]);
 #endif
-      for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-        corr_re[aa][l]=0;
-        corr_im[aa][l]=0;
+        corr[aa][l]=(c64_t){0};
         for (n = 0; n < 12; n++) {
-          corr_re[aa][l] += xr[aa][l][n].r * idft12_re[seq_index][n] + xr[aa][l][n].i * idft12_im[seq_index][n];
-          corr_im[aa][l] += xr[aa][l][n].r * idft12_im[seq_index][n] - xr[aa][l][n].i * idft12_re[seq_index][n];
+          corr[aa][l].r += xr[aa][l][n].r * idft12_re[seq_index][n] + xr[aa][l][n].i * idft12_im[seq_index][n];
+          corr[aa][l].i += xr[aa][l][n].r * idft12_im[seq_index][n] - xr[aa][l][n].i * idft12_re[seq_index][n];
         }
-	corr_re[aa][l] >>= 15;
-	corr_im[aa][l] >>= 15;
+	corr[aa][l].r >>= 31;
+	corr[aa][l].i >>= 31;
       }
     }
     LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%ld,%ld)=>%f\n",
-          mcs[i],seq_index,corr_re[0][0],corr_im[0][0],
-          10*log10((double)corr_re[0][0]*corr_re[0][0] + (double)corr_im[0][0]*corr_im[0][0]));
+          mcs[i],seq_index,corr[0][0].r,corr[0][0].i,
+          10*log10((double)squaredMod(corr[0][0])));
     if (pucch_pdu->nr_of_symbols==2)
        LOG_D(PHY,"PUCCH 2nd symbol IDFT[%d/%d] = (%ld,%ld)=>%f\n",
-             mcs[i],seq_index,corr_re[0][1],corr_im[0][1],
-             10*log10((double)corr_re[0][1]*corr_re[0][1] + (double)corr_im[0][1]*corr_im[0][1]));
+             mcs[i],seq_index,corr[0][1].r,corr[0][1].i,
+             10*log10((double)squaredMod(corr[0][1])));
     if (pucch_pdu->freq_hop_flag == 0) {
        if (pucch_pdu->nr_of_symbols==1) {// non-coherent correlation
           temp=0;
           for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
-             temp+=(int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0];
+            temp+=squaredMod(corr[aa][0]);
         } else {
-          int64_t corr_re2=0;
-          int64_t corr_im2=0;
           temp=0;
           for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-             corr_re2 = (int64_t)corr_re[aa][0]+corr_re[aa][1];
-             corr_im2 = (int64_t)corr_im[aa][0]+corr_im[aa][1];
-             // coherent combining of 2 symbols and then complex modulus for single-frequency case
-             temp+=corr_re2*corr_re2 + corr_im2*corr_im2;
+            c64_t corr2;
+            csum(corr2, corr[aa][0], corr[aa][1]);
+            // coherent combining of 2 symbols and then complex modulus for single-frequency case
+            temp+=corr2.r*corr2.r + corr2.i*corr2.i;
           }
         }
     } else if (pucch_pdu->freq_hop_flag == 1) {
       // full non-coherent combining of 2 symbols for frequency-hopping case
       temp=0;
       for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
-        temp += (int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0] + (int64_t)corr_re[aa][1]*corr_re[aa][1] + (int64_t)corr_im[aa][1]*corr_im[aa][1];
+        temp += squaredMod(corr[aa][0]) + squaredMod(corr[aa][1]);
     }
     else AssertFatal(1==0,"shouldn't happen\n");
 
@@ -364,9 +356,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_stats->current_pucch0_stat0 = 0;
       int64_t temp2=0,temp3=0;;
       for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-        temp2 += ((int64_t)corr_re[aa][0]*corr_re[aa][0] + (int64_t)corr_im[aa][0]*corr_im[aa][0]);
+        temp2 += squaredMod(corr[aa][0]);
         if (pucch_pdu->nr_of_symbols==2)
-	  temp3 += ((int64_t)corr_re[aa][1]*corr_re[aa][1] + (int64_t)corr_im[aa][1]*corr_im[aa][1]);
+	  temp3 += squaredMod(corr[aa][1]);
       }
       uci_stats->current_pucch0_stat0= dB_fixed64(temp2);
       if ( pucch_pdu->nr_of_symbols==2)

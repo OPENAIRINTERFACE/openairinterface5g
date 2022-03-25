@@ -63,6 +63,9 @@ typedef struct complex64 {
   int64_t r;
   int64_t i;
 } c64_t;
+
+#define squaredMod(a) ((a).r*(a).r+(a).i*(a).i)
+#define csum(res, i1, i2) (res).r=(i1).r+(i2).r ; (res).i=(i1).i+(i2).i  
 //cmult_sv.h
 
 /*!\fn void multadd_real_vector_complex_scalar(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N)
