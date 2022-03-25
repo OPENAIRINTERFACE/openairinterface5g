@@ -117,7 +117,7 @@ int test_ldpc(short No_iteration,
   sigma = 1.0/sqrt(2*SNR);
   opp_enabled=1;
   //short test_input[block_length];
-  unsigned char *test_input[MAX_NUM_NR_DLSCH_SEGMENTS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
+  unsigned char *test_input[MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
   //short *c; //padded codeword
   unsigned char estimated_output[MAX_NUM_DLSCH_SEGMENTS][block_length];
   memset(estimated_output, 0, sizeof(estimated_output));

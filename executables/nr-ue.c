@@ -18,7 +18,8 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-#define _GNU_SOURCE 
+
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
@@ -1126,9 +1127,8 @@ void *UE_thread(void *arg) {
     }
 
     int flags = 0;
-    int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH;
 
-    if (openair0_cfg[0].duplex_mode == duplex_mode_TDD) {
+    if (openair0_cfg[0].duplex_mode == duplex_mode_TDD && !get_softmodem_params()->continuous_tx) {
 
       uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
       int nrofUplinkSlots, nrofUplinkSymbols;
@@ -1140,8 +1140,9 @@ void *UE_thread(void *arg) {
         nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
         nrofUplinkSymbols = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
       }
-      uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSymbols != 0);
 
+      int slot_tx_usrp = slot_nr + DURATION_RX_TO_TX - NR_RX_NB_TH;
+      uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSymbols != 0);
       uint8_t first_tx_slot = tdd_period - num_UL_slots;
 
       if (slot_tx_usrp % tdd_period == first_tx_slot)
