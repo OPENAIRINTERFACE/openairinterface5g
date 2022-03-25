@@ -373,8 +373,7 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
 }
 
 
-int nr_rate_matching_ldpc(uint8_t Ilbrm,
-                          uint32_t Tbslbrm,
+int nr_rate_matching_ldpc(uint32_t Tbslbrm,
                           uint8_t BG,
                           uint16_t Z,
                           uint8_t *w,
@@ -395,7 +394,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   //Bit selection
   N = (BG==1)?(66*Z):(50*Z);
 
-  if (Ilbrm == 0)
+  if (Tbslbrm == 0)
       Ncb = N;
   else {
       Nref = 3*Tbslbrm/(2*C); //R_LBRM = 2/3
@@ -457,8 +456,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   return 0;
 }
 
-int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
-                             uint32_t Tbslbrm,
+int nr_rate_matching_ldpc_rx(uint32_t Tbslbrm,
                              uint8_t BG,
                              uint16_t Z,
                              int16_t *w,
@@ -484,7 +482,7 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
   //Bit selection
   N = (BG==1)?(66*Z):(50*Z);
 
-  if (Ilbrm == 0)
+  if (Tbslbrm == 0)
       Ncb = N;
   else {
       Nref = (3*Tbslbrm/(2*C)); //R_LBRM = 2/3

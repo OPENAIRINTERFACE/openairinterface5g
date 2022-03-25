@@ -292,8 +292,6 @@ void nr_processDLSegment(void* arg) {
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
 
-  uint8_t Ilbrm = 1;
-
   Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
   K_bits_F = Kr-harq_process->F;
@@ -329,8 +327,7 @@ void nr_processDLSegment(void* arg) {
           harq_process->round); */
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_IN);
 
-    if (nr_rate_matching_ldpc_rx(Ilbrm,
-                                 Tbslbrm,
+    if (nr_rate_matching_ldpc_rx(Tbslbrm,
                                  p_decoderParms->BG,
                                  p_decoderParms->Z,
                                  harq_process->d[r],

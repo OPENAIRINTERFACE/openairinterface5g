@@ -242,12 +242,10 @@ void ldpc8blocks( void *p) {
           mod_order,nb_rb);
 
     uint32_t Tbslbrm = rel15->maintenance_parms_v3.tbSizeLbrmBytes;
-    uint8_t Ilbrm = 1;
 
     uint8_t e[E];
     bzero (e, E);
-    nr_rate_matching_ldpc(Ilbrm,
-                          Tbslbrm,
+    nr_rate_matching_ldpc(Tbslbrm,
                           impp->BG,
                           *impp->Zc,
                           impp->d[rr],

@@ -188,7 +188,6 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   uint16_t Kr=0;
   uint32_t r_offset=0;
   uint32_t F=0;
-  uint8_t Ilbrm = 0;
   float Coderate = 0.0;
 
 ///////////
@@ -378,8 +377,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
     start_meas(&ue->ulsch_rate_matching_stats);
-    if (nr_rate_matching_ldpc(Ilbrm,
-                              0,
+    if (nr_rate_matching_ldpc(0,
                               harq_process->BG,
                               *pz,
                               harq_process->d[r],

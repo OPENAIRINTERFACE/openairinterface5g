@@ -246,8 +246,6 @@ void nr_processULSegment(void* arg) {
 
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
-  
-  uint8_t  Ilbrm    = 0;
 
   Kr = ulsch_harq->K;
   Kr_bytes = Kr>>3;
@@ -295,8 +293,7 @@ void nr_processULSegment(void* arg) {
 
   //start_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
 
-  if (nr_rate_matching_ldpc_rx(Ilbrm,
-                               0,
+  if (nr_rate_matching_ldpc_rx(rdata->tbslbrm,
                                p_decoderParms->BG,
                                p_decoderParms->Z,
                                ulsch_harq->d[r],
@@ -594,6 +591,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->offset = offset;
     rdata->ulsch = ulsch;
     rdata->ulsch_id = ULSCH_id;
+    rdata->tbslbrm = pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes;
     pushTpool(phy_vars_gNB->threadPool,req);
     phy_vars_gNB->nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",phy_vars_gNB->nbDecode);
