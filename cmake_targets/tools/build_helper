@@ -631,17 +631,17 @@ check_install_additional_tools (){
       valgrind  \
       vconfig	  \
       ctags \
-      ntpdate \
+      ntpsec \
       iperf3 \
       wvdial \
       python-numpy \
       sshpass \
       nscd \
-      python2-paramiko \
+      python-paramiko \
       python-pyroute2 \
       python-netifaces \
-      python2-scipy \
-      python2-matplotlib"
+      python-scipy \
+      python-matplotlib"
   fi
     $SUDO $INSTALLER install -y $PACKAGE_LIST $optional_packages
 
