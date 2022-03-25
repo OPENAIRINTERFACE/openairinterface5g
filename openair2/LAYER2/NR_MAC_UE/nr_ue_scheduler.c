@@ -949,9 +949,10 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
       continue;
     }
 
-    NR_BWP_t ubwp = mac->ULbwp[0] ?
-                      mac->ULbwp[0]->bwp_Common->genericParameters :
-                      mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+    NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+    NR_BWP_t ubwp = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
+                    mac->ULbwp[ul_bwp_id-1]->bwp_Common->genericParameters :
+                    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters;
 
     uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
     uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
