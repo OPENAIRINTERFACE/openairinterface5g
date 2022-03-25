@@ -670,9 +670,6 @@ check_install_additional_tools (){
   fi
     $SUDO $INSTALLER install -y $PACKAGE_LIST $optional_packages
 
-    $SUDO rm -fr /opt/ssh
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
-
   #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
     $SUDO -H pip install paramiko
@@ -872,8 +869,6 @@ check_install_oai_software() {
   fi
 
     install_asn1c_from_source $1
-    $SUDO rm -fr /opt/ssh
-    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
 
 install_asn1c_from_source(){
