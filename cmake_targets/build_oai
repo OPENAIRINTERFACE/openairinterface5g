@@ -59,7 +59,6 @@ BUILD_ECLIPSE=0
 NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
 RU=0
-trap handle_ctrl_c INT
 
 function print_help() {
   echo_info "
