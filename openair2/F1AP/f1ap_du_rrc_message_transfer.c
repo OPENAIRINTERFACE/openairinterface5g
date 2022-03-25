@@ -56,6 +56,7 @@
 #include "intertask_interface.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
+#include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
 int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     uint32_t         assoc_id,
@@ -985,6 +986,16 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
         break;
     }
   }
+
+  f1ap_dl_rrc_message_t dl_rrc = {
+    .rrc_container_length = ie->value.choice.RRCContainer.size,
+    .rrc_container = ie->value.choice.RRCContainer.buf,
+    .rnti = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id),
+    .srb_id = srb_id
+  };
+  int rc = dl_rrc_message(instance, &dl_rrc);
+  if (rc == 0)
+    return 0; /* has been handled, otherwise continue below */
 
   // decode RRC Container and act on the message type
   AssertFatal(srb_id<3,"illegal srb_id\n");

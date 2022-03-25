@@ -196,6 +196,26 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   }
 }
 
+static void rrc_gNB_mac_rrc_init(gNB_RRC_INST *rrc)
+{
+  switch (rrc->node_type) {
+    case ngran_gNB_CU:
+      mac_rrc_dl_f1ap_init(&rrc->mac_rrc);
+      break;
+    case ngran_gNB_DU:
+      /* silently drop this, as we currently still need the RRC at the DU. As
+       * soon as this is not the case anymore, we can add the AssertFatal() */
+      //AssertFatal(1==0,"nothing to do for DU\n");
+      break;
+    case ngran_gNB:
+      mac_rrc_dl_direct_init(&rrc->mac_rrc);
+      break;
+    default:
+      AssertFatal(0 == 1, "Unknown node type %d\n", rrc->node_type);
+      break;
+  }
+}
+
 char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration) {
   protocol_ctxt_t      ctxt = { 0 };
   gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
@@ -203,13 +223,13 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_FMT" Init...\n",
         PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
-
   AssertFatal(rrc != NULL, "RC.nrrrc not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");
   rrc->module_id = gnb_mod_idP;
   rrc->Nb_ue = 0;
   rrc->carrier.Srb0.Active = 0;
+  rrc_gNB_mac_rrc_init(rrc);
   nr_uid_linear_allocator_init(&rrc->uid_allocator);
   RB_INIT(&rrc->rrc_ue_head);
   rrc->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
@@ -325,14 +345,14 @@ rrc_gNB_generate_RRCSetup(
 )
 //-----------------------------------------------------------------------------
 {
-  LOG_D(NR_RRC, "rrc_gNB_generate_RRCSetup \n");
-  MessageDef                    *message_p;
+  LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup for RNTI %04x\n", ctxt_pP->rnti);
 
   // T(T_GNB_RRC_SETUP,
   //   T_INT(ctxt_pP->module_id),
   //   T_INT(ctxt_pP->frame),
   //   T_INT(ctxt_pP->subframe),
   //   T_INT(ctxt_pP->rnti));
+
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   NR_ServingCellConfig_t *servingcellconfigdedicated = rrc->configuration.scd;
@@ -351,87 +371,22 @@ rrc_gNB_generate_RRCSetup(
               ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRC Setup\n");
 
-  switch (rrc->node_type) {
-    case ngran_gNB_CU:
-      // create an ITTI message
-      /* TODO: F1 IDs ar missing in RRC */
-      nr_rrc_pdcp_config_asn1_req(ctxt_pP,
-				  ue_context_pP->ue_context.SRB_configList,
-				  NULL,
-				  NULL,
-				  0,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL,
-				  NULL);
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
-      F1AP_DL_RRC_MESSAGE (message_p).rrc_container        =  (uint8_t *)ue_p->Srb0.Tx_buffer.Payload;
-      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
-      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-      F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue_p->rnti;
-      F1AP_DL_RRC_MESSAGE (message_p).srb_id               = CCCH;
-      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-      LOG_D(NR_RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+  // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
+  ue_context_pP->ue_context.ue_release_timer = 1;
+  // remove UE after 10 frames after RRCConnectionRelease is triggered
+  ue_context_pP->ue_context.ue_release_timer_thres = 1000;
 
-    break;
+  /* TODO: this should go through the E1 interface */
+  apply_pdcp_config(ue_context_pP,ctxt_pP);
 
-    case ngran_gNB_DU:
-      // nothing to do for DU
-      AssertFatal(1==0,"nothing to do for DU\n");
-      break;
-
-    case ngran_gNB:
-    {
-      // rrc_mac_config_req_gNB
-
-#ifdef ITTI_SIM
-      LOG_I(NR_RRC,
-            PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
-            PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-            ue_p->Srb0.Tx_buffer.payload_size);
-      uint8_t *message_buffer;
-      message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM,
-                ue_p->Srb0.Tx_buffer.payload_size);
-      memcpy (message_buffer, (uint8_t*)ue_p->Srb0.Tx_buffer.Payload, ue_p->Srb0.Tx_buffer.payload_size);
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_CCCH_DATA_IND);
-      GNB_RRC_CCCH_DATA_IND (message_p).sdu = message_buffer;
-      GNB_RRC_CCCH_DATA_IND (message_p).size  = ue_p->Srb0.Tx_buffer.payload_size;
-      itti_send_msg_to_task (TASK_RRC_UE_SIM, ctxt_pP->instance, message_p);
-#else
-      LOG_D(NR_RRC,
-	    PROTOCOL_NR_RRC_CTXT_UE_FMT" RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB\n",
-	    PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-      LOG_I(NR_RRC,
-	    PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
-	    PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-	    ue_p->Srb0.Tx_buffer.payload_size);
-      // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
-      ue_context_pP->ue_context.ue_release_timer = 1;
-      // remove UE after 10 frames after RRCConnectionRelease is triggered
-      ue_context_pP->ue_context.ue_release_timer_thres = 1000;
-      /* init timers */
-      //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
-
-      // configure MAC
-
-      apply_macrlc_config(rrc,ue_context_pP,ctxt_pP);
-
-      apply_pdcp_config(ue_context_pP,ctxt_pP);
-#endif
-    }
-    break;
-
-    default:
-      LOG_W(NR_RRC, "Unknown node type %d\n", rrc->node_type);
-      break;
-  }
+  f1ap_dl_rrc_message_t dl_rrc = {
+    .old_gNB_DU_ue_id = 0xFFFFFF,
+    .rrc_container = (uint8_t *)ue_p->Srb0.Tx_buffer.Payload,
+    .rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size,
+    .rnti = ue_p->rnti,
+    .srb_id = CCCH
+  };
+  rrc->mac_rrc.dl_rrc_message_transfer(ctxt_pP->module_id, &dl_rrc);
 }
 
 //-----------------------------------------------------------------------------
@@ -3041,67 +2996,7 @@ static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_
     rrc_gNB_get_ue_context(rrc, ctxt.rnti);
 
   if (req->srb_id == 0) {
-    NR_DL_CCCH_Message_t *dl_ccch_msg=NULL;
-    asn_dec_rval_t dec_rval;
-    dec_rval = uper_decode(NULL,
-                           &asn_DEF_NR_DL_CCCH_Message,
-                           (void **)&dl_ccch_msg,
-                           req->buf->data,
-                           req->buf->size,0,0);
-    AssertFatal(dec_rval.code == RC_OK, "could not decode F1AP message\n");
-
-    switch (dl_ccch_msg->message.choice.c1->present) {
-    case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
-      LOG_I(F1AP,"Received PR_NOTHING on DL-CCCH-Message\n");
-      break;
-
-    case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
-      LOG_I(F1AP,"Logical Channel DL-CCCH (SRB0), Received RRCReject\n");
-      break;
-
-    case NR_DL_CCCH_MessageType__c1_PR_rrcSetup: {
-      LOG_I(F1AP, "Logical Channel DL-CCCH (SRB0), Received RRCSetup RNTI %x\n",
-	    req->rnti);
-      // Get configuration
-      NR_RRCSetup_t *rrcSetup = dl_ccch_msg->message.choice.c1->choice.rrcSetup;
-      AssertFatal(rrcSetup!=NULL, "rrcSetup is null\n");
-      NR_RRCSetup_IEs_t *rrcSetup_ies = rrcSetup->criticalExtensions.choice.rrcSetup;
-      ue_context_p->ue_context.SRB_configList = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
-      AssertFatal(rrcSetup_ies->masterCellGroup.buf!=NULL,"masterCellGroup is null\n");
-      asn_dec_rval_t dec_rval;
-      dec_rval = uper_decode(NULL,
-			     &asn_DEF_NR_CellGroupConfig,
-			     (void **)&ue_context_p->ue_context.masterCellGroup,
-			     rrcSetup_ies->masterCellGroup.buf,
-			     rrcSetup_ies->masterCellGroup.size,0,0);
-      AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
-      apply_macrlc_config(rrc,ue_context_p,&ctxt);
-      gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-      AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
-      memcpy((void *)ue_p->Srb0.Tx_buffer.Payload,
-	     (void *)req->buf->data,
-	     req->buf->size); // ie->value.choice.RRCContainer.size
-      ue_p->Srb0.Tx_buffer.payload_size = req->buf->size;
-      break;
-    } // case
-      
-    case NR_DL_CCCH_MessageType__c1_PR_spare2:
-      LOG_I(F1AP,
-	    "Logical Channel DL-CCCH (SRB0), Received spare2\n");
-      break;
-      
-    case NR_DL_CCCH_MessageType__c1_PR_spare1:
-      LOG_I(F1AP,
-	    "Logical Channel DL-CCCH (SRB0), Received spare1\n");
-      break;
-      
-    default:
-      AssertFatal(1==0,
-		  "Unknown message\n");
-      break;
-    }// switch case
-    
-    return(0);
+    AssertFatal(0 == 1, "should pass through dl_rrc_message()\n");
   } else if (req->srb_id == 1) {
     NR_DL_DCCH_Message_t *dl_dcch_msg=NULL;
     asn_dec_rval_t dec_rval;

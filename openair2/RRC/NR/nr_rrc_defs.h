@@ -42,6 +42,7 @@
 #include "COMMON/platform_types.h"
 #include "RRC/LTE/rrc_defs.h"
 //#include "LAYER2/RLC/rlc.h"
+#include "mac_rrc_dl.h"
 
 //#include "COMMON/mac_rrc_primitives.h"
 
@@ -480,6 +481,11 @@ typedef struct {
   int do_drb_integrity;
 } nr_security_configuration_t;
 
+typedef struct nr_mac_rrc_dl_if_s {
+  /* TODO add other message types as necessary */
+  dl_rrc_message_transfer_func_t dl_rrc_message_transfer;
+} nr_mac_rrc_dl_if_t;
+
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
@@ -529,6 +535,8 @@ typedef struct gNB_RRC_INST_s {
 
   // security configuration (preferred algorithms)
   nr_security_configuration_t security;
+
+  nr_mac_rrc_dl_if_t mac_rrc;
 } gNB_RRC_INST;
 
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error

@@ -1872,6 +1872,8 @@ set(L2_NR_SRC
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
   ${NR_RRC_DIR}/L2_nr_interface.c
+  ${NR_RRC_DIR}/mac_rrc_dl_direct.c
+  ${NR_RRC_DIR}/mac_rrc_dl_f1ap.c
   ${NR_RRC_DIR}/nr_rrc_config.c
   ${NR_RRC_DIR}/rrc_gNB_nsa.c
   ${NR_RRC_DIR}/rrc_gNB_internode.c
@@ -1950,6 +1952,7 @@ set (MAC_NR_SRC
   ${NR_GNB_MAC_DIR}/gNB_scheduler_uci.c
   ${NR_GNB_MAC_DIR}/gNB_scheduler_srs.c
   ${NR_GNB_MAC_DIR}/gNB_scheduler_RA.c
+  ${NR_GNB_MAC_DIR}/mac_rrc_dl_handler.c
  )
 
 

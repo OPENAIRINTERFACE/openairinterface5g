@@ -23,6 +23,7 @@
 #define F1AP_MESSAGES_TYPES_H_
 
 #include "rlc.h"
+#include "s1ap_messages_types.h"
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
