@@ -573,19 +573,6 @@ function main() {
     check_install_additional_tools
   fi
 
-  
-  
-  echo_info "3. building the compilation directives ..."
-
-  DIR=$OPENAIR_DIR/cmake_targets
-
-  [ "$CLEAN" = "1" ] && rm -rf $DIR/$BUILD_DIR/build
-  mkdir -p $DIR/$BUILD_DIR/build
-
-  cd  $DIR/$BUILD_DIR/build
-  echo_info "running $CMAKE_CMD"
-  eval $CMAKE_CMD ../..
-
   execlist=""
   if [ "$eNB" = "1" ] ; then
       execlist="$execlist lte-softmodem"
@@ -605,10 +592,25 @@ function main() {
   if [ "$nrUE" = 1 ] ; then
       execlist="$execlist nr-uesoftmodem"
   fi
-  
   if [ "$ittiSIM" = "1" ] ; then
       execlist="$execlist nr-ittisim"
   fi
+
+  if [[ "$execlist" == "" && "$SIMUS_PHY" != "1" ]]; then
+    echo_success "installing dependencies successful"
+    exit
+  fi
+
+  echo_info "3. building the compilation directives ..."
+
+  DIR=$OPENAIR_DIR/cmake_targets
+
+  [ "$CLEAN" = "1" ] && rm -rf $DIR/$BUILD_DIR/build
+  mkdir -p $DIR/$BUILD_DIR/build
+
+  cd  $DIR/$BUILD_DIR/build
+  echo_info "running $CMAKE_CMD"
+  eval $CMAKE_CMD ../..
   
   for f in $execlist ; do
       echo_info "Compiling $f..."
