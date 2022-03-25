@@ -309,25 +309,28 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
 void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
 { 
 
+  
   switch(Qm) {
   case 2:
     {
-     int16_t *e1=e+(E/2);
-     int16_t *end=f+E-4;
-     while( f<end ){
-       *e++  = *f++;
-       *e1++ = *f++;
-       *e++  = *f++;
-       *e1++ = *f++;
-     }
+      AssertFatal(E%4==0,"");
+      int16_t *e1=e+(E/2);
+      int16_t *end=f+E-3;
+      while( f<end ){
+        *e++  = *f++;
+        *e1++ = *f++;
+        *e++  = *f++;
+        *e1++ = *f++;
+      }
     }
     break;
   case 4:
     {
+      AssertFatal(E%4==0,"");
       int16_t *e1=e+(E/4);
       int16_t *e2=e1+(E/4);
       int16_t *e3=e2+(E/4);
-      int16_t *end=f+E-4;
+      int16_t *end=f+E-3;
       while( f<end ){ 
         *e++  = *f++;
         *e1++ = *f++;
@@ -338,12 +341,13 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
     break;
   case 6:
     {
+      AssertFatal(E%6==0,"");
       int16_t *e1=e+(E/6);
       int16_t *e2=e1+(E/6);
       int16_t *e3=e2+(E/6);
       int16_t *e4=e3+(E/6);
       int16_t *e5=e4+(E/6);
-      int16_t *end=f+E-6;
+      int16_t *end=f+E-5;
      while( f<end ){ 
         *e++  = *f++;
         *e1++ = *f++;
@@ -356,6 +360,7 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
     break;
   case 8:
     {
+      AssertFatal(E%8==0,"zob");
       int16_t *e1=e+(E/8);
       int16_t *e2=e1+(E/8);
       int16_t *e3=e2+(E/8);
@@ -363,7 +368,7 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
       int16_t *e5=e4+(E/8);
       int16_t *e6=e5+(E/8);
       int16_t *e7=e6+(E/8);
-      int16_t *end=f+E-8;
+      int16_t *end=f+E-7;
       while( f<end ){
         *e++  = *f++;
         *e1++ = *f++;
