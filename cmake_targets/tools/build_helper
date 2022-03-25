@@ -107,7 +107,7 @@ check_supported_distribution() {
         "ubuntu20.04") return 0 ;;
         "ubuntu18.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
-        "fedora24")    return 0 ;;
+        "fedora35")    return 0 ;;
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
@@ -282,6 +282,11 @@ install_protobuf_c() {
   case "$(get_distribution_release)" in
     "ubuntu18.04" | "ubuntu20.04" | "ubuntu21.04")
       protobuf_packages="protobuf-c-compiler libprotobuf-c1 libprotobuf-c-dev"
+      ;;
+  esac
+  case "$OS_DISTRO" in
+    "rhel" | "centos" | "fedora") # in EPEL and Fedora repos (at least as of 35)
+      protobuf_packages="protobuf-c-compiler protobuf-c protobuf-c-devel"
       ;;
   esac
   if [[ "$protobuf_packages" == "" ]]; then
@@ -703,6 +708,8 @@ check_install_oai_software() {
 	texlive-latex-base \
 	ethtool \
 	flex  \
+        g++ \
+        gcc \
 	gdb  \
 	git \
 	graphviz \
@@ -756,8 +763,6 @@ check_install_oai_software() {
         $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
       fi
       $SUDO $INSTALLER install -y python-epdb vim-common
-    else
-      $SUDO $INSTALLER install -y pydb
     fi
 
     $SUDO $INSTALLER install -y \
@@ -769,6 +774,8 @@ check_install_oai_software() {
       doxygen \
       ethtool \
       flex \
+      g++ \
+      gcc \
       gdb \
       git \
       graphviz \
