@@ -343,10 +343,10 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     f1ap_initial_ul_rrc_message_t *msg = &F1AP_INITIAL_UL_RRC_MESSAGE(tmp);
 
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
-						    NULL,
-						    (void *)&cellGroupConfig,
-						    msg->du2cu_rrc_container,
-						    1024); //sizeof(msg->du2cu_rrc_container));
+                                                    NULL,
+                                                    (void *)&cellGroupConfig,
+                                                    msg->du2cu_rrc_container,
+                                                    F1AP_MAX_DU2CU_RRC_LENGTH);
 
     if (enc_rval.encoded == -1) {
       LOG_E(F1AP,"Could not encoded cellGroupConfig, failed element %s\n",enc_rval.failed_type->name);
