@@ -168,6 +168,8 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
           dlsch->harq_processes[i]->d[r] = (int16_t *)malloc16(5*8448*sizeof(int16_t));
           if (dlsch->harq_processes[i]->c[r])
             memset(dlsch->harq_processes[i]->c[r],0,1056);
+          if (dlsch->harq_processes[i]->d[r])
+            memset(dlsch->harq_processes[i]->d[r],0,5*8448);
           else
             exit_flag=2;
 
@@ -306,6 +308,7 @@ void nr_processDLSegment(void* arg) {
 
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_IN);
     int16_t w[E];
+    memset(w, 0, sizeof(w));
     nr_deinterleaving_ldpc(E,
                            Qm,
                            w, // [hna] w is e
@@ -324,12 +327,11 @@ void nr_processDLSegment(void* arg) {
           harq_process->rvidx,
           harq_process->round); */
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_IN);
-    int16_t d[5*8448];
     if (nr_rate_matching_ldpc_rx(Ilbrm,
                                  Tbslbrm,
                                  p_decoderParms->BG,
                                  p_decoderParms->Z,
-                                 d,
+                                 harq_process->d[r],
                                  w,
                                  harq_process->C,
                                  harq_process->rvidx,
@@ -351,7 +353,7 @@ void nr_processDLSegment(void* arg) {
       LOG_D(PHY,"decoder input(segment %u) :",r);
 
       for (int i=0; i<E; i++)
-        LOG_D(PHY,"%d : %d\n",i,d[i]);
+        LOG_D(PHY,"%d : %d\n",i,harq_process->d[r][i]);
 
       LOG_D(PHY,"\n");
     }
@@ -377,9 +379,9 @@ void nr_processDLSegment(void* arg) {
       //set Filler bits
       memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
       //Move coded bits before filler bits
-      memcpy((&z[0]+2*harq_process->Z),d,(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+      memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
       //skip filler bits
-      memcpy((&z[0]+Kr),d+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+      memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
 
       //Saturate coded bits before decoding into 8 bits values
       for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {

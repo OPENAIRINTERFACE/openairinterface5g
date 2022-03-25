@@ -483,7 +483,7 @@ int main(int argc, char **argv)
 	//unsigned char test_input[TBS / 8]  __attribute__ ((aligned(16)));
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
-
+        harq->pdu=test_input;
 	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_NR_DLSCHSIM
