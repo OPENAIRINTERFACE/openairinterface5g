@@ -2704,6 +2704,71 @@ void nr_csirs_scheduling(int Mod_idP,
   }
 }
 
+void nr_bwp_switch(module_id_t module_id,
+                   frame_t frame,
+                   sub_frame_t slot,
+                   int UE_id,
+                   int bwp_id) {
+
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+  switch(sched_ctrl->bwp_switch_info.bwp_switch_state) {
+
+    case BWP_SWITCH_TO_START:
+      LOG_W(NR_MAC,"(%d.%d) [UE_id %d] Schedule BWP switch from bwp_id %ld to %d\n",
+            frame, slot, UE_id, UE_info->UE_sched_ctrl[UE_id].active_bwp->bwp_Id, bwp_id);
+      sched_ctrl->bwp_switch_info.bwp_switch_state = BWP_SWITCH_RUNNING;
+      sched_ctrl->bwp_switch_info.bwp_switch_slot = slot;
+      nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE_info->rnti[UE_id], bwp_id);
+      break;
+
+    case BWP_SWITCH_RUNNING:
+      // The BWP switching takes at least 10+6 ms (3GPP TS 38.331 Section 12)
+      // gNB needs time to schedule and send RRCReconfiguration message
+      // Therefore, we wait for the same slot in next frame (10 ms) before update bwp_id in the gNB
+      if (sched_ctrl->bwp_switch_info.bwp_switch_slot == slot) {
+        const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id] ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated : NULL;
+        const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig ? servingCellConfig->downlinkBWP_ToAddModList : NULL;
+        const int bwp_id = servingCellConfig && servingCellConfig->firstActiveDownlinkBWP_Id ?
+                           *servingCellConfig->firstActiveDownlinkBWP_Id : 0;
+        sched_ctrl->active_bwp = bwpList && bwp_id > 0 ? bwpList->list.array[bwp_id - 1] : NULL;
+        const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
+        const int ubwp_id = servingCellConfig && servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id ?
+                            *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id : 0;
+        sched_ctrl->active_ubwp = ubwpList && ubwp_id > 0 ? ubwpList->list.array[ubwp_id - 1] : NULL;
+        sched_ctrl->bwp_switch_info.bwp_switch_state = BWP_SWITCH_INACTIVE;
+      }
+      break;
+
+    case BWP_SWITCH_INACTIVE:
+      break;
+
+    default:
+      AssertFatal(1==0,"Invalid bwp switch state\n");
+      break;
+  }
+}
+
+void schedule_nr_bwp_switch(module_id_t module_id,
+                            frame_t frame,
+                            sub_frame_t slot) {
+
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  const NR_list_t *UE_list = &UE_info->list;
+
+  // TODO: Implementation of a algorithm to perform:
+  //  - the BWP switch trigger: sched_ctrl->bwp_switch_info.bwp_switch_state = BWP_SWITCH_TO_START
+  //  - the BWP selection:      sched_ctrl->bwp_switch_info.next_bwp = bwp_id
+
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if(sched_ctrl->bwp_switch_info.bwp_switch_state > BWP_SWITCH_INACTIVE) {
+      nr_bwp_switch(module_id, frame, slot, UE_id, sched_ctrl->bwp_switch_info.next_bwp);
+    }
+  }
+
+}
 
 /*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
 					  nfapi_nr_coreset_t *coreset,
