@@ -749,7 +749,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
 
       uint32_t n_RS_Id = 0;
-      if (NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+      if (NR_DMRS_ulconfig->transformPrecodingEnabled &&
+          NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
         n_RS_Id = *NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity;
       else
         n_RS_Id = *mac->scc->physCellId;
