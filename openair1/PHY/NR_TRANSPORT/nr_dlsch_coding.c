@@ -69,6 +69,10 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
     free16(harq->b, a_segments * 1056);
     harq->b = NULL;
   }
+  if (harq->f) {
+    free16(harq->f, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+    harq->f = NULL;
+  }
   for (int r = 0; r < a_segments; r++) {
     free(harq->c[r]);
     harq->c[r] = NULL;
@@ -176,6 +180,10 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     AssertFatal(harq->c[r], "cannot allocate harq->c[%d]\n", r);
     bzero(harq->c[r], 8448);
   }
+
+  harq->f = malloc16(N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+  AssertFatal(harq->f, "cannot allocate harq->f\n");
+  bzero(harq->f, N_RB * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 
   return(dlsch);
 }
