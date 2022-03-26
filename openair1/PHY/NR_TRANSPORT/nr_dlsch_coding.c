@@ -301,7 +301,6 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
   impp.Zc = &dlsch->harq_process.Z;
-  float Coderate = 0.0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
 
@@ -364,10 +363,9 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     memcpy(harq->b, a, (A / 8) + 3); // using 3 bytes to mimic the case of 24 bit crc
   }
 
-  if (rel15->targetCodeRate[0]<1000)
-    Coderate = (float)rel15->targetCodeRate[0] /(float) 1024;
-  else  // to scale for mcs 20 and 26 in table 5.1.3.1-2 which are decimal and input 2* in nr_tbs_tools
-    Coderate = (float)rel15->targetCodeRate[0] /(float) 2048;
+  // target_code_rate in terms of 0.1 bits
+  float Coderate = (float) rel15->targetCodeRate[0] / (float) 10240;
+  LOG_D(PHY,"DLSCH Coderate %f\n",Coderate);
 
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
     impp.BG = 2;

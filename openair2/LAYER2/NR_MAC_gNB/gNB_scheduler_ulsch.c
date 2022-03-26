@@ -1709,7 +1709,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->cyclic_prefix = 0;
 
     /* FAPI: PUSCH information always included */
-    pusch_pdu->target_code_rate = sched_pusch->R;
+    uint16_t R = sched_pusch->R;
+    pusch_pdu->target_code_rate = (R>1024)?R*5:R*10;
     pusch_pdu->qam_mod_order = sched_pusch->Qm;
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = ps->mcs_table;

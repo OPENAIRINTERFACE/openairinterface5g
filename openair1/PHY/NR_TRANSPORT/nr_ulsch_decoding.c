@@ -423,13 +423,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     
   phy_vars_gNB->nbDecode = 0;
   harq_process->processedSegments = 0;
-
-  double   Coderate = 0.0;
   
   // ------------------------------------------------------------------
   uint16_t nb_rb          = pusch_pdu->rb_size;
   uint8_t Qm              = pusch_pdu->qam_mod_order;
-  uint16_t R              = pusch_pdu->target_code_rate;
   uint8_t mcs             = pusch_pdu->mcs_index;
   uint8_t n_layers        = pusch_pdu->nrOfLayers;
   // ------------------------------------------------------------------
@@ -458,12 +455,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   A   = (harq_process->TBS)<<3;
 
-  LOG_D(NR_PHY, "ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d, Coderate %d\n", harq_pid, A, G, mcs, n_layers, nb_rb, Qm, n_layers, R);
+  // target_code_rate in terms of 0.1 bits
+  float Coderate = (float) pusch_pdu->target_code_rate / (float) 10240;
 
-  if (R<1024)
-    Coderate = (float) R /(float) 1024;
-  else
-    Coderate = (float) R /(float) 2048;
+  LOG_D(NR_PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, n_layers %d, Coderate %f\n", harq_pid, A, G, mcs, n_layers, nb_rb, Qm, n_layers, Coderate);
   
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
     p_decParams->BG = 2;

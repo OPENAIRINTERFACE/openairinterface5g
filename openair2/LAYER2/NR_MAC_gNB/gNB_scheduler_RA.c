@@ -1085,13 +1085,14 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
     num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
 
-  int TBS = 0;
+  int R, TBS = 0;
   while(TBS<7) {  // TBS for msg3 is 7 bytes (except for RRCResumeRequest1 currently not implemented)
     mcsindex++;
-    pusch_pdu->target_code_rate = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
+    R = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
+    pusch_pdu->target_code_rate = (R>1024)?R*5:R*10;
     pusch_pdu->qam_mod_order = nr_get_Qm_ul(mcsindex,pusch_pdu->mcs_table);
     TBS = nr_compute_tbs(pusch_pdu->qam_mod_order,
-                         pusch_pdu->target_code_rate,
+                         R,
                          pusch_pdu->rb_size,
                          pusch_pdu->nr_of_symbols,
                          num_dmrs_symb*12, // nb dmrs set for no data in dmrs symbol
@@ -1402,7 +1403,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                            tb_scaling,  // tb scaling
 		           1)>>3;  // layers
 
-      pdsch_pdu_rel15->targetCodeRate[0] = R;
+      pdsch_pdu_rel15->targetCodeRate[0] = (R>1024)?R*5:R*10;
       pdsch_pdu_rel15->qamModOrder[0] = Qm;
       pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
       pdsch_pdu_rel15->TBSize[0] = TBS;
@@ -1763,7 +1764,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->SubcarrierSpacing = genericParameters->subcarrierSpacing;
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
-    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
+    int R = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
+    pdsch_pdu_rel15->targetCodeRate[0] = (R>1024)?R*5:R*10;
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;

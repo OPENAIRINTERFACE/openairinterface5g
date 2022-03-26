@@ -49,11 +49,6 @@ void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type);
 
 void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);
 
-
-uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
-
-uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
-
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint32_t size,
                                   uint8_t q,

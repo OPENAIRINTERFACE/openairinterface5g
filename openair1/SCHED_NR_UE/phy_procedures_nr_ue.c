@@ -788,8 +788,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             nb_symb_sch,
                             nr_slot_rx,
                             harq_pid,
-                            pdsch==PDSCH?1:0,
-                            dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
+                            pdsch==PDSCH?1:0);
 
     LOG_T(PHY,"dlsch decoding, ret = %d\n", ret);
 
@@ -865,8 +864,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                                nb_symb_sch,
                                nr_slot_rx,
                                harq_pid,
-                               pdsch==PDSCH?1:0,//proc->decoder_switch,
-                               dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+                               pdsch==PDSCH?1:0);//proc->decoder_switch
       LOG_T(PHY,"CW dlsch decoding, ret1 = %d\n", ret1);
 
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);

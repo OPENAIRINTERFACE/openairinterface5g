@@ -867,7 +867,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     rnti_types[rnti_type]);
 
   pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
-  pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+  uint16_t R = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+  pusch_config_pdu->target_code_rate = (R>1024)?R*5:R*10;
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
 
   if (pusch_config_pdu->target_code_rate == 0 || pusch_config_pdu->qam_mod_order == 0) {
@@ -886,14 +887,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   // Compute TBS
   pusch_config_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_config_pdu->qam_mod_order,
-                                                        pusch_config_pdu->target_code_rate,
+                                                        R,
                                                         pusch_config_pdu->rb_size,
                                                         pusch_config_pdu->nr_of_symbols,
                                                         nb_dmrs_re_per_rb*number_dmrs_symbols,
                                                         N_PRB_oh,
                                                         0, // TBR to verify tb scaling
-                                                        pusch_config_pdu->nrOfLayers)/8;
-
+                                                        pusch_config_pdu->nrOfLayers)>>3;
   return 0;
 
 }
