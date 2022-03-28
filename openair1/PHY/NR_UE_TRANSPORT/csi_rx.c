@@ -333,7 +333,7 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
       for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
         int16_t *csi_rs_ls_estimated_channel = (int16_t*)&nr_csi_rs_info->csi_rs_ls_estimated_channel[ant_rx][port_tx][0];
         int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][0];
-        printf("Channel port_tx %d --> ant_rx %d : ls (%4d,%4d), int (%4d,%4d), noise (%4d,%4d) |",
+        printf("Channel port_tx %d --> ant_rx %d : ls (%4d,%4d), int (%4d,%4d), noise (%4d,%4d) | ",
                port_tx+3000, ant_rx,
                csi_rs_ls_estimated_channel[k<<1], csi_rs_ls_estimated_channel[(k<<1)+1],
                csi_rs_estimated_channel16[k<<1], csi_rs_estimated_channel16[(k<<1)+1],

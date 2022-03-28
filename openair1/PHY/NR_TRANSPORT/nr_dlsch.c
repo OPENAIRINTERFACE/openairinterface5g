@@ -464,14 +464,34 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
             pmi = 0;//no precoding
 
           if (pmi == 0) {//unitary Precoding
-            if(ap<rel15->nrOfLayers)
-              memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
-                     (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + k)],
-                     NR_NB_SC_PER_RB*sizeof(int32_t));
-            else
-              memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
-                     0,
-                     NR_NB_SC_PER_RB*sizeof(int32_t));
+            if (k + NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) { // RB does not cross DC
+              if(ap<rel15->nrOfLayers)
+                memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                       (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + k)],
+                       NR_NB_SC_PER_RB*sizeof(int32_t));
+              else
+                memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                       0,
+                       NR_NB_SC_PER_RB*sizeof(int32_t));
+            } else { // RB does cross DC
+              int neg_length = frame_parms->ofdm_symbol_size - k;
+              int pos_length = NR_NB_SC_PER_RB - neg_length;
+              if (ap<rel15->nrOfLayers) {
+                memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                       (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + k)],
+                       neg_length*sizeof(int32_t));
+                memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset],
+                       (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size)],
+                       pos_length*sizeof(int32_t));
+              } else {
+                memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                       0,
+                       neg_length*sizeof(int32_t));
+                memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset],
+                       0,
+                       pos_length*sizeof(int32_t));
+              }
+            }
             k += NR_NB_SC_PER_RB;
             if (k >= frame_parms->ofdm_symbol_size) {
               k -= frame_parms->ofdm_symbol_size;

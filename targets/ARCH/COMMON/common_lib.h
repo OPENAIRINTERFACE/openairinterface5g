@@ -46,8 +46,6 @@
 #define OAI_THIRDPARTY_TP_LIBNAME        "thirdparty_transpro"
 /* name of shared library implementing the rf simulator */
 #define OAI_RFSIM_LIBNAME     "rfsimulator"
-/* name of shared library implementing the basic simulator */
-#define OAI_BASICSIM_LIBNAME  "tcp_bridge_oai"
 /* name of shared library implementing the iq player */
 #define OAI_IQPLAYER_LIBNAME  "oai_iqplayer"
 

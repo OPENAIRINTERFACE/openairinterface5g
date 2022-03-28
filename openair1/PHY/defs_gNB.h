@@ -783,7 +783,7 @@ typedef struct PHY_VARS_gNB_s {
   nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
 
   /// CSI-RS variables
-  nr_csi_rs_info_t *nr_csi_rs_info[NUMBER_OF_NR_CSIRS_MAX];
+  nr_csi_rs_info_t *nr_csi_rs_info;
 
   uint8_t pbch_configured;
   char gNB_generate_rar;
