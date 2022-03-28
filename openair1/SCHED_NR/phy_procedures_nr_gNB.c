@@ -178,7 +178,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     if (csirs->active == 1) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params = &csirs->csirs_pdu.csi_rs_pdu_rel15;
-      nr_generate_csi_rs(gNB->frame_parms, gNB->common_vars.txdataF, AMP, gNB->nr_csi_rs_info[i], csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
+      nr_generate_csi_rs(gNB->frame_parms, gNB->common_vars.txdataF, AMP, gNB->nr_csi_rs_info, csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
       csirs->active = 0;
     }
   }
