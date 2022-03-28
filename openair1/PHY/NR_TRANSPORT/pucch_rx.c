@@ -457,7 +457,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
     uci_pdu->harq->harq_list[1].harq_value = !(index&0x01);
     uci_pdu->harq->harq_list[0].harq_value = !((index>>1)&0x01);
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d (0 pass, 1 fail) and %d with confidence level %d (0 is good, 1 is bad), xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d,sync_pos %d\n",
+    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d and %d (0 pass, 1 fail) with confidence level %d (0 is good, 1 is bad), xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d,sync_pos %d\n",
           frame,slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,gNB->ulsch_stats[0].sync_pos);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));

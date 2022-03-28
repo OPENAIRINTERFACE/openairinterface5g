@@ -62,7 +62,7 @@ function build_on_vm {
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
     echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
-    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]]
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]] || [[ "$VM_NAME" == *"-basic-sim"* ]] || [[ "$VM_NAME" == *"-flexran-rtc"* ]]
     then
         echo "This VM type is no longer supported in the pipeline framework"
         return

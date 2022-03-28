@@ -624,15 +624,18 @@ void RCconfig_NR_L1(void) {
   config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
   char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr; 
   if (ulprbbl) LOG_I(NR_PHY,"PRB blacklist %s\n",ulprbbl);
-  char *pt = strtok(ulprbbl,",");
+  char *save = NULL;
+  char *pt = strtok_r(ulprbbl, ",", &save);
   int prbbl[275];
   int num_prbbl=0;
   memset(prbbl,0,275*sizeof(int));
 
   while (pt) {
-    prbbl[atoi(pt)] = 1;
+    const int rb = atoi(pt);
+    AssertFatal(rb < 275, "RB %d out of bounds (max 275)\n", rb);
+    prbbl[rb] = 0x3FFF; // all symbols taken
     LOG_I(NR_PHY,"Blacklisting prb %d\n",atoi(pt));
-    pt = strtok(NULL,",");
+    pt = strtok_r(NULL, ",", &save);
     num_prbbl++;
   }
 
@@ -736,15 +739,16 @@ void RCconfig_nr_macrlc() {
   
   config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
   char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr; 
-  char *pt = strtok(ulprbbl,",");
-  int prbbl[275];
+  char *save = NULL;
+  char *pt = strtok_r(ulprbbl, ",", &save);
+  uint16_t prbbl[275];
   int num_prbbl=0;
-  int prb;
-  memset(prbbl,0,275*sizeof(int));
+  memset(prbbl,0,sizeof(prbbl));
   while (pt) {
-    prb=atoi(pt); 
-    prbbl[prb] = 1;
-    pt = strtok(NULL,",");
+    const int prb = atoi(pt);
+    AssertFatal(prb < 275, "RB %d out of bounds (max 275)\n", prb);
+    prbbl[prb] = 0x3FFF; // all symbols taken
+    pt = strtok_r(NULL, ",", &save);
     num_prbbl++;
   }
   
@@ -1458,7 +1462,8 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
             
             //    NGAP_REGISTER_GNB_REQ (msg_p).enb_interface_name_for_NGU = strdup(enb_interface_name_for_NGU);
             cidr = *(NETParams[GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX].strptr);
-            address = strtok(cidr, "/");
+            char *save = NULL;
+            address = strtok_r(cidr, "/", &save);
             
             NGAP_REGISTER_GNB_REQ (msg_p).gnb_ip_address.ipv6 = 0;
             NGAP_REGISTER_GNB_REQ (msg_p).gnb_ip_address.ipv4 = 1;
@@ -1730,7 +1735,8 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
             }
 
             cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
-            address = strtok(cidr, "/");
+            char *save = NULL;
+            address = strtok_r(cidr, "/", &save);
             X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
             X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
             strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
