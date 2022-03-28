@@ -604,14 +604,13 @@ typedef struct {
 
   /// total amount of data awaiting for this UE
   uint32_t num_total_bytes;
+  uint16_t dl_pdus_total;
   /// per-LC status data
-  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
+  mac_rlc_status_resp_t rlc_status[NR_MAX_NUM_LCID];
 
   /// Estimation of HARQ from BLER
   NR_DL_bler_stats_t dl_bler_stats;
 
-  int lcid_mask;
-  int lcid_to_schedule;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -647,6 +646,12 @@ typedef struct {
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
+
+  /// number of active DL LCs
+  uint8_t dl_lc_num;
+  /// order in which DLSCH scheduler should allocate LCs
+  uint8_t dl_lc_ids[NR_MAX_NUM_LCID];
+
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
