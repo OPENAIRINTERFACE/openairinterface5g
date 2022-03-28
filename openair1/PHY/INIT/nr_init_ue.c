@@ -166,7 +166,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   NR_UE_CSI_RS **const csirs_vars        = ue->csirs_vars;
   NR_UE_SRS **const srs_vars             = ue->srs_vars;
 
-  int i,j,k,l,slot,symb,q;
+  int i,j,k,l,slot,symb;
   int gNB_id;
   int th_id;
 
