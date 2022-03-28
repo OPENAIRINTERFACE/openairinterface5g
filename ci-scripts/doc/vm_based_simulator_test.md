@@ -18,16 +18,14 @@
 2.  [Detailed Description](#2-detailed-description)
 3.  [Typical Usage](#3-typical-usage)
     1.  [Testing the physical simulators](#31-testing-the-physicals-simulators)
-    2.  [Testing the basic simulator](#32-testing-the-basic-simulator)
-    3.  [Testing the RF simulator](#33-testing-the-rf-simulator)
-    4.  [Testing the L2-nFAPI simulator](#33-testing-the-l2-nfapi-simulator)
+    2.  [Testing the RF simulator](#33-testing-the-rf-simulator)
+    3.  [Testing the L2-nFAPI simulator](#33-testing-the-l2-nfapi-simulator)
 
 # 1. Introduction #
 
-Currently 2 build variants can be directly tested:
+Currently 1 build variant can be directly tested:
 
 *  Physical Simulators
-*  Basic Simulator
 
 In addition, 2 build variants are used:
 
@@ -73,7 +71,6 @@ Options:
 
  # OpenAirInterface Build Variants
     --variant enb-usrp        OR -v1     ( build and test  )
-    --variant basic-sim       OR -v2     ( build and test  )
     --variant phy-sim         OR -v3     ( build and test  )
     --variant cppcheck        OR -v4     ( build and test  )
     --variant gnb-usrp        OR -v5     ( build and test  )
@@ -143,64 +140,7 @@ $ ./ci-scripts/oai-ci-vm-tool test --workspace /var/jenkins/workspace/RAN-CI-dev
 
 Note that the VM instance is destroyed. You do that when you are sure your test is passing.
 
-## 3.2. Testing the basic simulator ##
-
-```bash
-$ ./ci-scripts/oai-ci-vm-tool test --workspace /var/jenkins/workspace/RAN-CI-develop --variant basic-sim --job-name RAN-CI-develop --build-id 48
-15:11:13  ############################################################
-15:11:13  OAI CI VM script
-15:11:13  ############################################################
-15:11:13  VM_NAME             = RAN-CI-develop-b48-basic-sim
-15:11:13  VM_CMD_FILE         = RAN-CI-develop-b48-basic-sim_cmds.txt
-15:11:13  JENKINS_WKSP        = /var/jenkins/workspace/RAN-CI-develop
-15:11:13  ARCHIVES_LOC        = /var/jenkins/workspace/RAN-CI-develop/archives/basic_sim/test
-15:11:13  ############################################################
-15:11:13  Waiting for VM to be started
-15:11:13  ############################################################
-15:11:14  Warning: Permanently added '192.168.122.29' (ECDSA) to the list of known hosts.
-15:11:15  RAN-CI-develop-b48-basic-sim has for IP addr = 192.168.122.29
-15:11:15  ############################################################
-15:11:15  Test EPC on VM (RAN-CI-develop-b48-epc) will be using ltebox
-15:11:15  ############################################################
-15:11:15  EPC_VM_CMD_FILE     = RAN-CI-develop-b48-epc_cmds.txt
-15:11:15  ############################################################
-15:11:15  Creating test EPC VM (RAN-CI-develop-b48-epc) on Ubuntu Cloud Image base
-15:11:15  ############################################################
-15:11:18  Waiting for VM to be started
-15:13:25  Warning: Permanently added '192.168.122.156' (ECDSA) to the list of known hosts.
-15:13:25  RAN-CI-develop-b48-epc has for IP addr = 192.168.122.156
-15:13:25  Warning: Permanently added '192.168.122.156' (ECDSA) to the list of known hosts.
-15:13:25  ls: cannot access '/opt/ltebox/tools/start_ltebox': No such file or directory
-15:13:25  ############################################################
-15:13:25  Copying ltebox archives into EPC VM (RAN-CI-develop-b48-epc)
-15:13:25  ############################################################
-15:13:25  ############################################################
-15:13:25  Install EPC on EPC VM (RAN-CI-develop-b48-epc)
-15:13:25  ############################################################
-....
-15:24:39  ############################################################
-15:24:39  Terminate EPC
-15:24:39  ############################################################
-15:24:39  cd /opt/ltebox/tools
-15:24:39  sudo ./stop_ltebox
-15:24:40  sudo daemon --name=simulated_hss --stop
-15:24:40  sudo killall --signal SIGKILL hss_sim
-15:24:40  ############################################################
-15:24:40  Destroying VMs
-15:24:40  ############################################################
-15:24:41  # Host 192.168.122.29 found: line 18
-15:24:41  /home/eurecom/.ssh/known_hosts updated.
-15:24:41  Original contents retained as /home/eurecom/.ssh/known_hosts.old
-15:24:43  # Host 192.168.122.60 found: line 20
-15:24:43  /home/eurecom/.ssh/known_hosts updated.
-15:24:43  Original contents retained as /home/eurecom/.ssh/known_hosts.old
-15:24:43  ############################################################
-15:24:43  Checking run status
-15:24:43  ############################################################
-15:24:43  STATUS seems OK
-```
-
-## 3.3. Test the RF simulator ##
+## 3.2. Test the RF simulator ##
 
 ```bash
 ./ci-scripts/oai-ci-vm-tool test --workspace /var/jenkins/workspace/RAN-CI-develop --variant rf-sim --job-name RAN-CI-develop --build-id 48 --keep-vm-alive
@@ -209,7 +149,7 @@ $ ./ci-scripts/oai-ci-vm-tool test --workspace /var/jenkins/workspace/RAN-CI-dev
 15:24:45  STATUS seems OK
 ```
 
-## 3.4. Testing the L2-nFAPI simulator
+## 3.3. Testing the L2-nFAPI simulator
 
 ```bash
 ./ci-scripts/oai-ci-vm-tool test --workspace /var/jenkins/workspace/RAN-CI-develop --variant l2-sim --job-name RAN-CI-develop --build-id 48

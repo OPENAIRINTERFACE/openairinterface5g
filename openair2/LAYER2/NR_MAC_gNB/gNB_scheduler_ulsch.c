@@ -818,6 +818,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           UE_info->active[UE_id] = true;
 
+          process_CellGroup(ra->CellGroup, UE_scheduling_control);
+
         } else {
 
           LOG_A(NR_MAC,"[RAPROC] RA-Msg3 received (sdu_lenP %d)\n",sdu_lenP);
@@ -956,7 +958,7 @@ int next_list_entry_looped(NR_list_t *list, int UE_id)
 bool allocate_ul_retransmission(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
-                                uint8_t *rballoc_mask,
+                                uint16_t *rballoc_mask,
                                 int *n_rb_sched,
                                 int UE_id,
                                 int harq_pid)
@@ -977,13 +979,6 @@ bool allocate_ul_retransmission(module_id_t module_id,
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
   LOG_D(NR_MAC,"num_dmrs_cdm_grps_no_data %d, tbs %d\n",num_dmrs_cdm_grps_no_data, retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation) {
-    /* Check the resource is enough for retransmission */
-    while (rbStart < bwpSize && !rballoc_mask[rbStart])
-      rbStart++;
-    if (rbStart + retInfo->rbSize > bwpSize) {
-      LOG_W(NR_MAC, "cannot allocate retransmission of UE %d/RNTI %04x: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d\n", UE_id, UE_info->rnti[UE_id], rbStart, retInfo->rbSize, bwpSize);
-      return false;
-    }
     /* check whether we need to switch the TDA allocation since tha last
      * (re-)transmission */
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
@@ -997,18 +992,29 @@ bool allocate_ul_retransmission(module_id_t module_id,
       nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
       sched_ctrl->update_pusch_ps = false;
     }
+
+    /* Check the resource is enough for retransmission */
+    while (rbStart < bwpSize &&
+           !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+      rbStart++;
+    if (rbStart + retInfo->rbSize > bwpSize) {
+      LOG_W(NR_MAC, "cannot allocate retransmission of UE %d/RNTI %04x: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d\n", UE_id, UE_info->rnti[UE_id], rbStart, retInfo->rbSize, bwpSize);
+      return false;
+    }
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
   } else {
-    /* the retransmission will use a different time domain allocation, check
-     * that we have enough resources */
-    while (rbStart < bwpSize && !rballoc_mask[rbStart])
-      rbStart++;
-    int rbSize = 0;
-    while (rbStart + rbSize < bwpSize && rballoc_mask[rbStart + rbSize])
-      rbSize++;
     NR_pusch_semi_static_t temp_ps;
     int dci_format = get_dci_format(sched_ctrl);
     nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp,ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, &temp_ps);
+    /* the retransmission will use a different time domain allocation, check
+     * that we have enough resources */
+    while (rbStart < bwpSize &&
+           !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
+      rbStart++;
+    int rbSize = 0;
+    while (rbStart + rbSize < bwpSize &&
+           (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
+      rbSize++;
     uint32_t new_tbs;
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
@@ -1091,7 +1097,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   /* Mark the corresponding RBs as used */
   n_rb_sched -= sched_pusch->rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-    rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+    rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= SL_to_bitmap(sched_ctrl->pusch_semi_static.startSymbolIndex, sched_ctrl->pusch_semi_static.nrOfSymbols);
   return true;
 }
 
@@ -1115,7 +1121,7 @@ void pf_ul(module_id_t module_id,
            NR_list_t *UE_list,
            int max_num_ue,
            int n_rb_sched,
-           uint8_t *rballoc_mask) {
+           uint16_t *rballoc_mask) {
 
   const int CC_id = 0;
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
@@ -1209,21 +1215,6 @@ void pf_ul(module_id_t module_id,
       if (max_num_ue < 0)
         return;
 
-      LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d\n", min_rb, rbStart);
-      while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
-      if (rbStart + min_rb >= bwpSize) {
-        LOG_W(NR_MAC, "cannot allocate continuous UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
-              UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
-        return;
-      }
-
-      sched_ctrl->cce_index = CCEIndex;
-      fill_pdcch_vrb_map(RC.nrmac[module_id],
-                         CC_id,
-                         &sched_ctrl->sched_pdcch,
-                         CCEIndex,
-                         sched_ctrl->aggregation_level);
-
       /* Save PUSCH field */
       /* we want to avoid a lengthy deduction of DMRS and other parameters in
        * every TTI if we can save it, so check whether dci_format, TDA, or
@@ -1238,6 +1229,24 @@ void pf_ul(module_id_t module_id,
         nr_set_pusch_semi_static(scc, sched_ctrl->active_ubwp, ubwpd, dci_format, tda, num_dmrs_cdm_grps_no_data, ps);
         sched_ctrl->update_pusch_ps = false;
       }
+
+      LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d\n", min_rb, rbStart);
+      while (rbStart < bwpSize &&
+             !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+        rbStart++;
+      if (rbStart + min_rb >= bwpSize) {
+        LOG_W(NR_MAC, "cannot allocate continuous UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
+              UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
+        return;
+      }
+
+      sched_ctrl->cce_index = CCEIndex;
+      fill_pdcch_vrb_map(RC.nrmac[module_id],
+                         CC_id,
+                         &sched_ctrl->sched_pdcch,
+                         CCEIndex,
+                         sched_ctrl->aggregation_level);
+
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = 9;
       update_ul_ue_R_Qm(sched_pusch, ps);
@@ -1256,7 +1265,7 @@ void pf_ul(module_id_t module_id,
       /* Mark the corresponding RBs as used */
       n_rb_sched -= sched_pusch->rbSize;
       for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
 
       continue;
     }
@@ -1331,19 +1340,6 @@ void pf_ul(module_id_t module_id,
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
-    while (rbStart < bwpSize && !rballoc_mask[rbStart]) rbStart++;
-    sched_pusch->rbStart = rbStart;
-    uint16_t max_rbSize = 1;
-    while (rbStart + max_rbSize < bwpSize && rballoc_mask[rbStart + max_rbSize])
-      max_rbSize++;
-
-    if (rbStart + min_rb >= bwpSize) {
-      LOG_W(NR_MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
-	    UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
-      return;
-    }
-    else LOG_D(NR_MAC,"allocating UL data for UE %d/RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d\n",UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
-
     /* Save PUSCH field */
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
      * every TTI if we can save it, so check whether dci_format, TDA, or
@@ -1360,11 +1356,28 @@ void pf_ul(module_id_t module_id,
     }
     update_ul_ue_R_Qm(sched_pusch, ps);
 
+    while (rbStart < bwpSize &&
+           !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+      rbStart++;
+    sched_pusch->rbStart = rbStart;
+    uint16_t max_rbSize = 1;
+    while (rbStart + max_rbSize < bwpSize &&
+           (rballoc_mask[rbStart + max_rbSize]&&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+      max_rbSize++;
+
+    if (rbStart + min_rb >= bwpSize) {
+      LOG_W(NR_MAC, "cannot allocate UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
+	    UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
+      return;
+    }
+    else LOG_D(NR_MAC,"allocating UL data for UE %d/RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d\n",UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
+
+
     /* Calculate the current scheduling bytes and the necessary RBs */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
     uint16_t rbSize = 0;
     uint32_t TBS = 0;
-    
+
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
                   1, // layers
@@ -1391,7 +1404,7 @@ void pf_ul(module_id_t module_id,
 
     n_rb_sched -= sched_pusch->rbSize;
     for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-      rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] = 0;
+      rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
   }
 }
 
@@ -1474,11 +1487,9 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-  const uint16_t symb = ((1 << nrOfSymbols) - 1) << startSymbolIndex;
+  const uint16_t symb = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
 
   int st = 0, e = 0, len = 0;
-  for (int i = 0; i < bwpSize; i++) 
-    if (RC.nrmac[module_id]->ulprbbl[i] == 1) vrb_map_UL[i]=symb;
 
   for (int i = 0; i < bwpSize; i++) {
     while ((vrb_map_UL[bwpStart + i] & symb) != 0 && i < bwpSize)
@@ -1495,12 +1506,12 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   LOG_D(NR_MAC,"UL %d.%d : start_prb %d, end PRB %d\n",frame,slot,st,e);
   
-  uint8_t rballoc_mask[bwpSize];
+  uint16_t rballoc_mask[bwpSize];
 
   /* Calculate mask: if any RB in vrb_map_UL is blocked (1), the current RB will be 0 */
   for (int i = 0; i < bwpSize; i++)
-    rballoc_mask[i] = i >= st && i <= e;
-  LOG_D(NR_MAC,"%d.%d : UL start %d, end %d\n",frame,slot,st,e);
+    rballoc_mask[i] = (i >= st && i <= e)*SL_to_bitmap(startSymbolIndex, nrOfSymbols);
+
   /* proportional fair scheduling algorithm */
   pf_ul(module_id,
         frame,

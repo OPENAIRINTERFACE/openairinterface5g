@@ -106,7 +106,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
                               uint8_t abstraction_flag,
                               uint16_t N_RB);
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB);
+void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB, const NR_DL_FRAME_PARMS* frame_parms);
 
 /** \brief This function is the top-level entry point to PUSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
@@ -146,7 +146,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
-                            NR_gNB_ULSCH_t **ulsch_gNB,
+                            NR_gNB_ULSCH_t *ulsch_gNB,
                             uint8_t symbol,
                             uint8_t start_symbol,
                             uint16_t nb_rb,

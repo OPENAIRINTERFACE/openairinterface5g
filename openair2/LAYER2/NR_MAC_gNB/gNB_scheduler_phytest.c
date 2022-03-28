@@ -55,8 +55,6 @@ extern RAN_CONTEXT_t RC;
 
 //#define ENABLE_MAC_PAYLOAD_DEBUG 1
 
-//uint8_t mac_pdu[MAX_NR_DLSCH_PAYLOAD_BYTES];
-
 /*Scheduling of DLSCH with associated DCI in common search space
  * current version has only a DCI for type 1 PDCCH for C_RNTI*/
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
@@ -315,7 +313,9 @@ void nr_preprocessor_phytest(module_id_t module_id,
   }
 
   sched_ctrl->num_total_bytes = 0;
+  sched_ctrl->dl_lc_num = 1;
   const int lcid = DL_SCH_LCID_DTCH;
+  sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num - 1] = lcid;
   const uint16_t rnti = UE_info->rnti[UE_id];
   /* update sched_ctrl->num_total_bytes so that postprocessor schedules data,
    * if available */
@@ -330,7 +330,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                                     0,
                                                     0);
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-  sched_ctrl->lcid_to_schedule = lcid;
 
   uint8_t nr_of_candidates;
   for (int i=0; i<5; i++) {
@@ -482,9 +481,8 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
-  const uint16_t symb = ((1 << ps->nrOfSymbols) - 1) << ps->startSymbolIndex;
   for (int i = rbStart; i < rbStart + rbSize; ++i) {
-    if ((vrb_map_UL[i+BWPStart] & symb) != 0) {
+    if ((vrb_map_UL[i+BWPStart] & SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)) != 0) {
       LOG_E(MAC,
             "%s(): %4d.%2d RB %d is already reserved, cannot schedule UE\n",
             __func__,
@@ -562,6 +560,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
                      sched_ctrl->aggregation_level);
 
   for (int rb = rbStart; rb < rbStart + rbSize; rb++)
-    vrb_map_UL[rb+BWPStart] = 1;
+    vrb_map_UL[rb+BWPStart] |= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
   return true;
 }

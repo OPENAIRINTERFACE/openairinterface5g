@@ -1150,20 +1150,14 @@ void ulsch_common_procedures(PHY_VARS_UE *ue,
 
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
-  if (!IS_SOFTMODEM_BASICSIM) {
-    ulsch_start = (ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-
-                   ue->hw_timing_advance-
-                   ue->timing_advance-
-                   ue->N_TA_offset+5);
+  ulsch_start = ue->rx_offset + subframe_tx * frame_parms->samples_per_tti
+                - ue->hw_timing_advance - ue->timing_advance - ue->N_TA_offset + 5;
 
-    if(ulsch_start < 0)
-      ulsch_start = ulsch_start + (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
+  if(ulsch_start < 0)
+    ulsch_start = ulsch_start + (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
 
-    if (ulsch_start > (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti))
-      ulsch_start = ulsch_start % (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
-  } else { //this is the simulators case
-    ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-ue->N_TA_offset; //-ue->timing_advance;
-  }
+  if (ulsch_start > (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti))
+    ulsch_start = ulsch_start % (LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
 
   if (empty_subframe) {
     overflow = ulsch_start - 9*frame_parms->samples_per_tti;
@@ -1181,8 +1175,7 @@ void ulsch_common_procedures(PHY_VARS_UE *ue,
   }
 
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    int *Buff = IS_SOFTMODEM_BASICSIM ? &ue->common_vars.txdata[aa][ulsch_start] :dummy_tx_buffer;
-
+    int *Buff = dummy_tx_buffer;
     if (frame_parms->Ncp == 1) {
       PHY_ofdm_mod(&ue->common_vars.txdataF[aa][subframe_tx*nsymb*frame_parms->ofdm_symbol_size],
                    Buff,
@@ -1202,41 +1195,33 @@ void ulsch_common_procedures(PHY_VARS_UE *ue,
                         &ue->frame_parms);
     }
 
-    if (IS_SOFTMODEM_BASICSIM) {
-      apply_7_5_kHz(ue,&ue->common_vars.txdata[aa][ulsch_start],0);
-      apply_7_5_kHz(ue,&ue->common_vars.txdata[aa][ulsch_start],1);
-    } else {
-      apply_7_5_kHz(ue,dummy_tx_buffer,0);
-      apply_7_5_kHz(ue,dummy_tx_buffer,1);
+    apply_7_5_kHz(ue,dummy_tx_buffer,0);
+    apply_7_5_kHz(ue,dummy_tx_buffer,1);
+
+    overflow = ulsch_start - 9*frame_parms->samples_per_tti;
+
+    for (k=ulsch_start,l=0; k<cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti); k++,l++) {
+      ((short *)ue->common_vars.txdata[aa])[2*k] = ((short *)dummy_tx_buffer)[2*l];
+      ((short *)ue->common_vars.txdata[aa])[2*k+1] = ((short *)dummy_tx_buffer)[2*l+1];
     }
 
-    if (!(IS_SOFTMODEM_BASICSIM) ) {
-      overflow = ulsch_start - 9*frame_parms->samples_per_tti;
-
-      for (k=ulsch_start,l=0; k<cmin(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,ulsch_start+frame_parms->samples_per_tti); k++,l++) {
-        ((short *)ue->common_vars.txdata[aa])[2*k] = ((short *)dummy_tx_buffer)[2*l];
-        ((short *)ue->common_vars.txdata[aa])[2*k+1] = ((short *)dummy_tx_buffer)[2*l+1];
-      }
-
-      for (k=0; k<overflow; k++,l++) {
-        ((short *)ue->common_vars.txdata[aa])[2*k] = ((short *)dummy_tx_buffer)[2*l];
-        ((short *)ue->common_vars.txdata[aa])[2*k+1] = ((short *)dummy_tx_buffer)[2*l+1];
-      }
+    for (k=0; k<overflow; k++,l++) {
+      ((short *)ue->common_vars.txdata[aa])[2*k] = ((short *)dummy_tx_buffer)[2*l];
+      ((short *)ue->common_vars.txdata[aa])[2*k+1] = ((short *)dummy_tx_buffer)[2*l+1];
+    }
 
 #if defined(EXMIMO)
 
-      // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
-      for (k=ulsch_start - (frame_parms->samples_per_tti>>1) ; k<ulsch_start ; k++) {
-        if (k<0)
-          ue->common_vars.txdata[aa][k+frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-        else if (k>(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
-          ue->common_vars.txdata[aa][k-frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-        else
-          ue->common_vars.txdata[aa][k] &= 0xFFFEFFFE;
-      }
-
-#endif
+    // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
+    for (k=ulsch_start - (frame_parms->samples_per_tti>>1) ; k<ulsch_start ; k++) {
+      if (k<0)
+        ue->common_vars.txdata[aa][k+frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
+      else if (k>(frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
+        ue->common_vars.txdata[aa][k-frame_parms->samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
+      else
+        ue->common_vars.txdata[aa][k] &= 0xFFFEFFFE;
     }
+#endif
 
     /*
     only for debug
@@ -1314,14 +1299,7 @@ void ue_prach_procedures(PHY_VARS_UE *ue,
           ue->prach_resources[eNB_id]->ra_RNTI);
     ue->tx_total_RE[subframe_tx] = 96;
 
-    if (IS_SOFTMODEM_BASICSIM) {
-      ue->prach_vars[eNB_id]->amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
-                                    ue->tx_power_max_dBm,
-                                    ue->frame_parms.N_RB_UL,
-                                    6);
-    } else {
-      ue->prach_vars[eNB_id]->amp = AMP;
-    }
+    ue->prach_vars[eNB_id]->amp = AMP;
 
     if ((mode == calib_prach_tx) && (((proc->frame_tx&0xfffe)%100)==0))
       LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : PRACH TX power %d dBm, amp %d\n",
@@ -1688,14 +1666,10 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,
 
       ue->tx_total_RE[subframe_tx] = nb_rb*12;
 
-      if (IS_SOFTMODEM_BASICSIM) {
-        tx_amp = AMP;
-      } else {
-        tx_amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
-                            ue->tx_power_max_dBm,
-                            ue->frame_parms.N_RB_UL,
-                            nb_rb);
-      }
+      tx_amp = get_tx_amp(ue->tx_power_dBm[subframe_tx],
+                          ue->tx_power_max_dBm,
+                          ue->frame_parms.N_RB_UL,
+                          nb_rb);
 
       T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
         T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
@@ -1765,17 +1739,13 @@ void ue_srs_procedures(PHY_VARS_UE *ue,
       Po_SRS = ue->tx_power_max_dBm;
     }
 
-    if (IS_SOFTMODEM_BASICSIM) {
-      tx_amp = AMP;
+    if (ue->mac_enabled==1) {
+      tx_amp = get_tx_amp(Po_SRS,
+                          ue->tx_power_max_dBm,
+                          ue->frame_parms.N_RB_UL,
+                          nb_rb_srs);
     } else {
-      if (ue->mac_enabled==1) {
-        tx_amp = get_tx_amp(Po_SRS,
-                            ue->tx_power_max_dBm,
-                            ue->frame_parms.N_RB_UL,
-                            nb_rb_srs);
-      } else {
-        tx_amp = AMP;
-      }
+      tx_amp = AMP;
     }
 
     LOG_D(PHY,"SRS PROC; TX_MAX_POWER %d, Po_SRS %d, NB_RB_UL %d, NB_RB_SRS %d TX_AMPL %d\n",ue->tx_power_max_dBm,
@@ -2008,14 +1978,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,
       ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
       ue->tx_total_RE[subframe_tx] = 12;
 
-      if (IS_SOFTMODEM_BASICSIM) {
-        tx_amp = AMP;
-      } else {
-        tx_amp = get_tx_amp(Po_PUCCH,
-                            ue->tx_power_max_dBm,
-                            ue->frame_parms.N_RB_UL,
-                            1);
-      }
+      tx_amp = get_tx_amp(Po_PUCCH,
+                          ue->tx_power_max_dBm,
+                          ue->frame_parms.N_RB_UL,
+                          1);
 
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
         T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
@@ -2089,14 +2055,10 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,
       ue->tx_power_dBm[subframe_tx] = Po_PUCCH;
       ue->tx_total_RE[subframe_tx] = 12;
 
-      if (IS_SOFTMODEM_BASICSIM) {
-        tx_amp = AMP;
-      } else {
-        tx_amp =  get_tx_amp(Po_PUCCH,
-                             ue->tx_power_max_dBm,
-                             ue->frame_parms.N_RB_UL,
-                             1);
-      }
+      tx_amp =  get_tx_amp(Po_PUCCH,
+                           ue->tx_power_max_dBm,
+                           ue->frame_parms.N_RB_UL,
+                           1);
 
       T(T_UE_PHY_PUCCH_TX_POWER, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
         T_INT(tx_amp),T_INT(ue->dlsch[ue->current_thread_id[proc->subframe_rx]][eNB_id][0]->g_pucch),T_INT(get_PL(ue->Mod_id,ue->CC_id,eNB_id)));
@@ -2343,9 +2305,6 @@ void ue_measurement_procedures(uint16_t l,    // symbol index of each slot [0..6
   if (( (slot%2) == 0) && (l==(4-frame_parms->Ncp))) {
     // AGC
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_IN);
-
-    if (IS_SOFTMODEM_BASICSIM)
-      phy_adjust_gain (ue,dB_fixed(ue->measurements.rssi),0);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
     eNB_id = 0;

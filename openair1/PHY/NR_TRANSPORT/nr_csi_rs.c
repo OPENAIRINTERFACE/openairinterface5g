@@ -30,11 +30,12 @@
 void nr_init_csi_rs(NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Nid) {
   uint32_t x1, x2;
   uint8_t reset;
+  int csi_dmrs_init_length =  ((fp->N_RB_DL<<4)>>5)+1;
   for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
     for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
       reset = 1;
       x2 = ((1<<10) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
-      for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
+      for (uint32_t n=0; n<csi_dmrs_init_length; n++) {
         csi_rs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
@@ -69,7 +70,9 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 
   int dataF_offset = slot*frame_parms.samples_per_slot_wCP;
   uint32_t **nr_gold_csi_rs = nr_csi_rs_info->nr_gold_csi_rs[slot];
-  int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1] __attribute__((aligned(16)));;
+  //*8(max allocation per RB)*2(QPSK))
+  int csi_rs_length =  frame_parms.N_RB_DL<<4;
+  int16_t mod_csi[frame_parms.symbols_per_slot][csi_rs_length>>1] __attribute__((aligned(16)));
   uint16_t b = csi_params->freq_domain;
   uint16_t n, p, k, l, mprime, na, kpn;
   uint8_t size, ports, kprime, lprime, i, gs;
@@ -92,7 +95,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     for (uint8_t symb=0; symb<frame_parms.symbols_per_slot; symb++) {
       reset = 1;
       x2 = ((1<<10) * (frame_parms.symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
-      for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
+      for (uint32_t n=0; n<(csi_rs_length>>5)+1; n++) {
         nr_gold_csi_rs[symb][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
@@ -642,7 +645,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 #endif
           }
         }
-      }    
+      }
     }
    }
   }

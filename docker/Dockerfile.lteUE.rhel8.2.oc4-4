@@ -68,7 +68,6 @@ COPY --from=lte-ue-build /oai-ran/targets/bin/.usim.nvram0 .
 
 WORKDIR /usr/local/lib/
 COPY --from=lte-ue-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
-COPY --from=lte-ue-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
 COPY --from=lte-ue-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
 COPY --from=lte-ue-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
 COPY --from=lte-ue-build /oai-ran/targets/bin/libcoding.so .
@@ -105,7 +104,6 @@ RUN ldd /opt/oai-lte-ue/bin/conf2uedata
 RUN ldd /opt/oai-lte-ue/bin/nvram
 RUN ldd /opt/oai-lte-ue/bin/usim
 RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
-RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
 RUN ldd /usr/local/lib/librfsimulator.so.Rel15
 RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
 RUN ldd /usr/local/lib/libcoding.so
