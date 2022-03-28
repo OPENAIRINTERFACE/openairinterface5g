@@ -79,7 +79,9 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   NR_BWP_UplinkDedicated_t *ubwpd;
   ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
 
-  LOG_D(NR_MAC,"pucch_acknak: %d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch in %d.%d\n",frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
+  LOG_D(NR_MAC,"%d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch to be scheduled in %d.%d\n",
+        frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
+
   nr_configure_pucch(pucch_pdu,
                      scc,
                      UE_info->CellGroup[UE_id],
@@ -1878,12 +1880,13 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
         }
         curr_pucch->sr_flag = true;
       } else {
-        NR_sched_pucch_t sched_sr;
-        memset(&sched_sr, 0, sizeof(sched_sr));
-        sched_sr.frame = SFN;
-        sched_sr.ul_slot = slot;
-        sched_sr.resource_indicator = found;
-        sched_sr.sr_flag = true;
+        NR_sched_pucch_t sched_sr = {
+          .frame = SFN,
+          .ul_slot = slot,
+          .sr_flag = true,
+          .resource_indicator = found,
+          .r_pucch = -1
+        };
         nr_fill_nfapi_pucch(Mod_idP, SFN, slot, &sched_sr, UE_id);
       }
     }
