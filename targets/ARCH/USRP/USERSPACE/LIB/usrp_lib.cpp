@@ -273,18 +273,20 @@ static int sync_to_gps(openair0_device *device) {
 static int trx_usrp_start(openair0_device *device) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
 
-  // setup GPIO for TDD, GPIO(4) = ATR_RX
-  //set data direction register (DDR) to output
-  s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
-  //set lower 7 bits to be controlled automatically by ATR (the rest 5 bits are controlled manually)
-  s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0xfff);
-  //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
-  s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
-  // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
-  // (we use full duplex here, because our RX is on all the time - this might need to change later)
-  s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
-  // set the output pins to 1
-  s->usrp->set_gpio_attr("FP0", "OUT", 7<<7, 0xf80);
+  if (device->type != USRP_X400_DEV) {
+    // setup GPIO for TDD, GPIO(4) = ATR_RX
+    //set data direction register (DDR) to output
+    s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
+    //set lower 7 bits to be controlled automatically by ATR (the rest 5 bits are controlled manually)
+    s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0xfff);
+    //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
+    s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
+    // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
+    // (we use full duplex here, because our RX is on all the time - this might need to change later)
+    s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
+    // set the output pins to 1
+    s->usrp->set_gpio_attr("FP0", "OUT", 7<<7, 0xf80);
+  }
 
   s->wait_for_first_pps = 1;
   s->rx_count = 0;
@@ -847,8 +849,18 @@ rx_gain_calib_table_t calib_table_x310[] = {
   {-1,0}
 };
 
-/*! \brief USRPB210 RX calibration table */
+/*! \brief USRPn3xf RX calibration table */
 rx_gain_calib_table_t calib_table_n310[] = {
+  {3500000000.0,0.0},
+  {2660000000.0,0.0},
+  {2300000000.0,0.0},
+  {1880000000.0,0.0},
+  {816000000.0, 0.0},
+  {-1,0}
+};
+
+/*! \brief Empty RX calibration table */
+rx_gain_calib_table_t calib_table_none[] = {
   {3500000000.0,0.0},
   {2660000000.0,0.0},
   {2300000000.0,0.0},
@@ -1011,7 +1023,9 @@ extern "C" {
       device->type=USRP_N300_DEV;
       usrp_master_clock = 122.88e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-      //args += ", send_buff_size=33554432";
+
+      if ( 0 != system("sysctl -w net.core.rmem_max=62500000 net.core.wmem_max=62500000") )
+        LOG_W(HW,"Can't set kernel parameters for N3x0\n");
     }
 
     if (device_adds[0].get("type") == "x300") {
@@ -1023,6 +1037,13 @@ extern "C" {
       // USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
       if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
+    }
+
+    if (device_adds[0].get("type") == "x4xx") {
+      printf("Found USRP x400\n");
+      device->type = USRP_X400_DEV;
+      usrp_master_clock = 245.76e6;
+      args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
     }
 
     s->usrp = uhd::usrp::multi_usrp::make(args);
@@ -1102,8 +1123,13 @@ extern "C" {
     std::cerr << "-- Using calibration table: calib_table_n310" << std::endl;
   }
 
+  if (device->type == USRP_X400_DEV) {
+    openair0_cfg[0].rx_gain_calib_table = calib_table_none;
+    std::cerr << "-- Using calibration table: calib_table_none" << std::endl;
+  }
 
-  if (device->type==USRP_N300_DEV || device->type==USRP_X300_DEV) {
+
+  if (device->type==USRP_N300_DEV || device->type==USRP_X300_DEV || device->type==USRP_X400_DEV) {
     LOG_I(HW,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
     switch ((int)openair0_cfg[0].sample_rate) {

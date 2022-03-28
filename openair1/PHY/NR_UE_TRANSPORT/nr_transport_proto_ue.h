@@ -1152,11 +1152,14 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
 */
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
+		const int estimateSz,
+		struct complex16 dl_ch_estimates[][estimateSz],
                 NR_UE_PBCH *nr_ue_pbch_vars,
                 NR_DL_FRAME_PARMS *frame_parms,
                 uint8_t eNB_id,
                 uint8_t i_ssb,
-                MIMO_mode_t mimo_mode);
+                MIMO_mode_t mimo_mode,
+		fapiPbch_t* result);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
 		      PHY_VARS_NR_UE *ue,
@@ -1701,7 +1704,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              unsigned char i_mod,
 		unsigned char harq_pid);
 
-int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, uint8_t subframe);
+int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t slot);
 
 void dump_nrdlsch(PHY_VARS_NR_UE *ue,uint8_t gNB_id,uint8_t nr_slot_rx,unsigned int *coded_bits_per_codeword,int round,  unsigned char harq_pid);
 /**@}*/

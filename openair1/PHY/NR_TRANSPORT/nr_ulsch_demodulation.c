@@ -403,7 +403,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
 
 void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
-                            NR_gNB_ULSCH_t **ulsch_gNB,
+                            NR_gNB_ULSCH_t *ulsch_gNB,
                             uint8_t symbol,
                             uint8_t is_dmrs_symbol,
                             unsigned short nb_rb,
@@ -418,7 +418,7 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
 
   // Determine scaling amplitude based the symbol
 
-  ch_amp = 1024*8; //((pilots) ? (ulsch_gNB[0]->sqrt_rho_b) : (ulsch_gNB[0]->sqrt_rho_a));
+  ch_amp = 1024*8; //((pilots) ? (ulsch_gNB->sqrt_rho_b) : (ulsch_gNB->sqrt_rho_a));
 
   LOG_D(PHY,"Scaling PUSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n", symbol, ch_amp, is_dmrs_symbol, nb_rb, frame_parms->Ncp, symbol);
    // printf("Scaling PUSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
@@ -1177,7 +1177,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   int avgs = 0;
 
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu;
+  nfapi_nr_pusch_pdu_t *rel15_ul = &gNB->ulsch[ulsch_id]->harq_processes[harq_pid]->ulsch_pdu;
   int avg[frame_parms->nb_antennas_rx*rel15_ul->nrOfLayers];
 
   gNB->pusch_vars[ulsch_id]->dmrs_symbol = INVALID_VALUE;

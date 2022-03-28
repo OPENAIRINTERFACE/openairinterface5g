@@ -700,46 +700,53 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   nfapi_nr_config_request_scf_t *cfg = &ru->config;
   void *txp[ru->nb_tx];
   unsigned int txs;
-  int i,txsymb=fp->symbols_per_slot;
+  int i;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
     T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
-  int slot_type         = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
-  int prevslot_type     = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
-  int nextslot_type     = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
   int sf_extension = 0;
   int siglen=fp->get_samples_per_slot(slot,fp);
-  int flags=1;
+  int flags = 0;
 
-  //nr_subframe_t SF_type     = nr_slot_select(cfg,slot%fp->slots_per_frame);
-  if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT || IS_SOFTMODEM_RFSIM) {
-    if (cfg->cell_config.frame_duplex_type.value == TDD) {
-      if(slot_type == NR_MIXED_SLOT) {
-        txsymb = 0;
+  if (cfg->cell_config.frame_duplex_type.value == TDD && !get_softmodem_params()->continuous_tx) {
+    int slot_type = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
+    if(slot_type == NR_MIXED_SLOT) {
+      int txsymb = 0;
 
-        for(int symbol_count = 0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
-          if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value == 0)
-            txsymb++;
-        }
-
-        AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
-
-        if(slot%(fp->slots_per_subframe/2))
-          siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
-        else
-          siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
-
-        //+ ru->end_of_burst_delay;
-        flags = 3; // end of burst
+      for(int symbol_count = 0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
+        if (cfg->tdd_table.max_tdd_periodicity_list[slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config.value == 0)
+          txsymb++;
       }
 
-      if (slot_type == NR_DOWNLINK_SLOT && prevslot_type == NR_UPLINK_SLOT) {
+      AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
+
+      if(slot%(fp->slots_per_subframe/2))
+        siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      else
+        siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+
+      //+ ru->end_of_burst_delay;
+      flags = 3; // end of burst
+    } else if (slot_type == NR_DOWNLINK_SLOT) {
+      int prevslot_type = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
+      int nextslot_type = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
+      if (prevslot_type == NR_UPLINK_SLOT) {
         flags = 2; // start of burst
         sf_extension = ru->sf_extension;
-      }
-      if (slot_type == NR_DOWNLINK_SLOT && nextslot_type == NR_UPLINK_SLOT)
+      } else if (nextslot_type == NR_UPLINK_SLOT) {
         flags = 3; // end of burst
+      } else {
+        flags = 1; // middle of burst
+      }
     }
+  } else { // FDD
+    if (proc->first_tx == 1) {
+      flags = 2; // start of burst
+    } else {
+      flags = 1; // middle of burst
+    }
+  }
 
+  if (flags) {
     if (fp->freq_range==nr_FR2) {
       // the beam index is written in bits 8-10 of the flags
       // bit 11 enables the gpio programming

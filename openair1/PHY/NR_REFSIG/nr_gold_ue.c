@@ -57,6 +57,7 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
   unsigned char ns,l;
   unsigned int n,x1,x2,x2tmp0;
   uint8_t reset;
+  int pdcch_dmrs_init_length =  (((ue->frame_parms.N_RB_DL<<1)*3)>>5)+1;
 
   for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
 
@@ -64,9 +65,9 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
 
       reset = 1;
       x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
-      x2 = (x2tmp0+(nid<<1))%(1<<31);  //cinit
+      x2 = (x2tmp0+(nid<<1))%(1U<<31);  //cinit
       
-      for (n=0; n<NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD; n++) {
+      for (n=0; n<pdcch_dmrs_init_length; n++) {
         ue->nr_gold_pdcch[0][ns][l][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }    
@@ -77,28 +78,28 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
 void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
                    unsigned short *n_idDMRS)
 {
-  unsigned char l;
-  unsigned int n,x1,x2,x2tmp0,ns;
-  int nscid;
+
+  unsigned int x1,x2,x2tmp0;
   unsigned int nid;
   uint8_t reset;
-
+  int pdsch_dmrs_init_length =  ((ue->frame_parms.N_RB_DL*12)>>5)+1;
+  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
   /// to be updated from higher layer
   //unsigned short lbar = 0;
 
-  for (nscid=0; nscid<2; nscid++) {
-    for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
+  for (int nscid=0; nscid<nb_codewords; nscid++) {
+    for (int ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
 
       nid = n_idDMRS[nscid];
 
-      for (l=0; l<ue->frame_parms.symbols_per_slot; l++) {
+      for (int l=0; l<ue->frame_parms.symbols_per_slot; l++) {
 
         reset = 1;
         x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
-        x2 = (x2tmp0+(nid<<1)+nscid)%(1<<31);  //cinit
+        x2 = (x2tmp0+(nid<<1)+nscid)%(1U<<31);  //cinit
         LOG_D(PHY,"UE DMRS slot %d, symb %d, x2 %x, nscid %d\n",ns,l,x2,nscid);
 
-        for (n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
+        for (int n=0; n<pdsch_dmrs_init_length; n++) {
           ue->nr_gold_pdsch[0][ns][l][nscid][n] = lte_gold_generic(&x1, &x2, reset);
           reset = 0;
         }
@@ -112,9 +113,10 @@ void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
                         uint8_t n_scid)
 {
   uint32_t x1, x2, n;
-  uint8_t reset, slot, symb, q;
+  uint8_t reset, slot, symb;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
-  uint32_t ****pusch_dmrs = ue->nr_gold_pusch_dmrs;
+  uint32_t ***pusch_dmrs = ue->nr_gold_pusch_dmrs;
+  int pusch_dmrs_init_length =  ((fp->N_RB_UL*12)>>5)+1;
 
   for (slot=0; slot<fp->slots_per_frame; slot++) {
 
@@ -123,13 +125,10 @@ void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
       reset = 1;
       x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid[n_scid]<<1)+1) +((N_n_scid[n_scid]<<1)+n_scid));
 
-      for (n=0; n<NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD; n++) {
-        pusch_dmrs[slot][symb][0][n] = lte_gold_generic(&x1, &x2, reset);
+      for (n=0; n<pusch_dmrs_init_length; n++) {
+        pusch_dmrs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
-
-      for (q = 1; q < NR_MAX_NB_CODEWORDS; q++)
-        memcpy(pusch_dmrs[slot][symb][q],pusch_dmrs[slot][symb][0],sizeof(uint32_t)*NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD);
     }
   }
 }

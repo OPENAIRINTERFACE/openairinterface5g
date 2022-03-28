@@ -171,6 +171,8 @@ typedef struct {
   uint8_t msg3_round;
   /// Flag to indicate if Msg3 carries a DCCH or DTCH message
   bool msg3_dcch_dtch;
+  int msg3_startsymb;
+  int msg3_nrsymb;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4
@@ -327,6 +329,10 @@ typedef struct NR_sched_pucch {
   uint8_t timing_indicator;
   uint8_t resource_indicator;
   int r_pucch;
+  int prb_start;
+  int second_hop_prb;
+  int nr_of_symb;
+  int start_symb;
 } NR_sched_pucch_t;
 
 /* PUSCH semi-static configuration: as long as the TDA and DCI format remain
@@ -724,7 +730,7 @@ typedef struct gNB_MAC_INST_s {
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
   int num_ulprbbl;
-  int ulprbbl[275];
+  uint16_t ulprbbl[275];
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure
