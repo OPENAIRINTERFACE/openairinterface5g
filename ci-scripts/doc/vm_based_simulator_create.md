@@ -45,7 +45,6 @@ Mandatory Options:
 
  # OpenAirInterface Build Variants
     --variant enb-usrp        OR -v1     ( build and test  )
-    --variant basic-sim       OR -v2     ( build and test  )
     --variant phy-sim         OR -v3     ( build and test  )
     --variant cppcheck        OR -v4     ( build and test  )
     --variant gnb-usrp        OR -v5     ( build and test  )
