@@ -38,12 +38,13 @@ void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(void);
 
+void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl);
+
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
                    int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
-		   NR_ServingCellConfigCommon_t *scc
-		   );
+                   NR_ServingCellConfigCommon_t *scc);
 
 void nr_rrc_mac_schedule_ue_enabled(module_id_t module_id, rnti_t rnti, bool schedule_enabled);
 
