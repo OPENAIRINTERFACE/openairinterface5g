@@ -818,6 +818,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           UE_info->active[UE_id] = true;
 
+          process_CellGroup(ra->CellGroup, UE_scheduling_control);
+
         } else {
 
           LOG_A(NR_MAC,"[RAPROC] RA-Msg3 received (sdu_lenP %d)\n",sdu_lenP);
@@ -956,7 +958,7 @@ int next_list_entry_looped(NR_list_t *list, int UE_id)
 bool allocate_ul_retransmission(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
-                                uint8_t *rballoc_mask,
+                                uint16_t *rballoc_mask,
                                 int *n_rb_sched,
                                 int UE_id,
                                 int harq_pid)
@@ -1119,7 +1121,7 @@ void pf_ul(module_id_t module_id,
            NR_list_t *UE_list,
            int max_num_ue,
            int n_rb_sched,
-           uint8_t *rballoc_mask) {
+           uint16_t *rballoc_mask) {
 
   const int CC_id = 0;
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
@@ -1504,7 +1506,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   LOG_D(NR_MAC,"UL %d.%d : start_prb %d, end PRB %d\n",frame,slot,st,e);
   
-  uint8_t rballoc_mask[bwpSize];
+  uint16_t rballoc_mask[bwpSize];
 
   /* Calculate mask: if any RB in vrb_map_UL is blocked (1), the current RB will be 0 */
   for (int i = 0; i < bwpSize; i++)

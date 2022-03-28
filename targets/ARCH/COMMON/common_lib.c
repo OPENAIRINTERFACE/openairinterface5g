@@ -116,9 +116,6 @@ int load_lib(openair0_device *device,
   	  deflibname=OAI_IQPLAYER_LIBNAME;
   	  shlib_fdesc[0].fname="device_init";
   	  set_softmodem_optmask(SOFTMODEM_RECPLAY_BIT);  // softmodem has to know we use the iqplayer to workaround randomized algorithms
-  } else  if ( IS_SOFTMODEM_BASICSIM ) {
-	  deflibname=OAI_BASICSIM_LIBNAME;
-	  shlib_fdesc[0].fname="device_init";
   } else if (IS_SOFTMODEM_RFSIM && flag == RAU_LOCAL_RADIO_HEAD) {
 	  deflibname=OAI_RFSIM_LIBNAME;
 	  shlib_fdesc[0].fname="device_init";
