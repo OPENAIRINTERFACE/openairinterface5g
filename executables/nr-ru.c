@@ -604,7 +604,6 @@ void *emulatedRF_thread(void *param) {
 void rx_rf(RU_t *ru,int *frame,int *slot) {
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-  openair0_config_t *cfg   = &ru->openair0_cfg;
   void *rxp[ru->nb_rx];
   unsigned int rxs;
   int i;
@@ -654,13 +653,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
     }
   }
 
-  //compute system frame number (SFN) according to O-RAN-WG4-CUS.0-v02.00 (using alpha=beta=0)
-  // this assumes that the USRP has been synchronized to the GPS time
-  // OAI uses timestamps in sample time stored in int64_t, but it will fit in double precision for many years to come. 
-  double gps_sec = ((double) ts)/cfg->sample_rate; 
-  proc->frame_rx = ((int64_t) (gps_sec/0.01)) & 1023;   
-  
-  //proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
   proc->tti_rx = fp->get_slot_from_timestamp(proc->timestamp_rx,fp);
   // synchronize first reception to frame 0 subframe 0
   LOG_D(PHY,"RU %d/%d TS %llu , frame %d, slot %d.%d / %d\n",
