@@ -405,7 +405,7 @@ static int trx_usrp_write(openair0_device *device,
         if ((((uintptr_t) buff[i])&0x1F)==0) {
           buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
         }
-        else
+        else 
         {
           ((__m128i *)buff_tx[i])[2*j]   = _mm_slli_epi16(((__m128i *)buff[i])[2*j],4);
           ((__m128i *)buff_tx[i])[2*j+1] = _mm_slli_epi16(((__m128i *)buff[i])[2*j+1],4);
@@ -696,10 +696,15 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 
         if ((((uintptr_t) buff[i])&0x1F)==0) {
           ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
-        } else {
+        } else if ((((uintptr_t) buff[i])&0x0F)==0) {
           ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
           ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
-        }
+        }  else {
+	  ((__m64 *)buff[i])[4*j]   = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j],rxshift);
+	  ((__m64 *)buff[i])[4*j+1] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+1],rxshift);
+	  ((__m64 *)buff[i])[4*j+2] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+2],rxshift);
+	  ((__m64 *)buff[i])[4*j+3] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+3],rxshift);
+	}
 
 #else
         ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
