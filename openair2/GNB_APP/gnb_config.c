@@ -1176,8 +1176,10 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
         NRRRC_CONFIGURATION_REQ (msg_p).sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
         LOG_I(RRC,"Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_CSIRS = *GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr;
-        printf("Do SRS %d\n",*GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr);
+        LOG_I(RRC, "Do SRS %d\n",*GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_SRS = *GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr;
+        NRRRC_CONFIGURATION_REQ (msg_p).force_256qam_off = *GNBParamList.paramarray[i][GNB_FORCE256QAMOFF_IDX].iptr;
+        LOG_I(RRC, "256 QAM: %s\n", NRRRC_CONFIGURATION_REQ (msg_p).force_256qam_off ? "force off" : "may be on");
         NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
         NRRRC_CONFIGURATION_REQ (msg_p).scd = scd;
 	  
