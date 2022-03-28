@@ -313,7 +313,9 @@ void nr_preprocessor_phytest(module_id_t module_id,
   }
 
   sched_ctrl->num_total_bytes = 0;
+  sched_ctrl->dl_lc_num = 1;
   const int lcid = DL_SCH_LCID_DTCH;
+  sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num - 1] = lcid;
   const uint16_t rnti = UE_info->rnti[UE_id];
   /* update sched_ctrl->num_total_bytes so that postprocessor schedules data,
    * if available */
@@ -328,7 +330,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                                     0,
                                                     0);
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-  sched_ctrl->lcid_to_schedule = lcid;
 
   uint8_t nr_of_candidates;
   for (int i=0; i<5; i++) {

@@ -72,10 +72,6 @@ int generate_pss(int32_t **txdataF,
   a = (frame_parms->nb_antenna_ports_eNB == 1) ? amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
   //printf("[PSS] amp=%d, a=%d\n",amp,a);
 
-  if (IS_SOFTMODEM_BASICSIM)
-    /* a hack to remove at some point (the UE doesn't synch with 100 RBs) */
-    a = (frame_parms->nb_antenna_ports_eNB == 1) ? 4*amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
-
   Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
 
   for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {

@@ -818,6 +818,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           UE_info->active[UE_id] = true;
 
+          process_CellGroup(ra->CellGroup, UE_scheduling_control);
+
         } else {
 
           LOG_A(NR_MAC,"[RAPROC] RA-Msg3 received (sdu_lenP %d)\n",sdu_lenP);
