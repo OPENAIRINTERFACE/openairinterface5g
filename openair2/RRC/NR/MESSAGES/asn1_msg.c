@@ -1039,7 +1039,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
      default:
        AssertFatal(1==0,"Number of ports not yet supported\n");
    }
-   resourceMapping.firstOFDMSymbolInTimeDomain = 6;
+   // This programs CSI-RS in slot 0 symbol 13. Note: need to use a SIB1 configuration which leaves the last symbol free for CSI-RS.
+   resourceMapping.firstOFDMSymbolInTimeDomain = 13;
    resourceMapping.firstOFDMSymbolInTimeDomain2 = NULL;
    resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
    resourceMapping.density.choice.one = (NULL_t)0;
@@ -1052,7 +1053,7 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
    nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
    nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-   nzpcsi0->periodicityAndOffset->choice.slots320 = 20;
+   nzpcsi0->periodicityAndOffset->choice.slots320 = 0;
    nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS)); 
    *nzpcsi0->qcl_InfoPeriodicCSI_RS=0;
    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);

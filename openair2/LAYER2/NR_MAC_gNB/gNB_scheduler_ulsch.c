@@ -679,11 +679,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_scheduling_control->ta_update = timing_advance;
       UE_scheduling_control->raw_rssi = rssi;
       UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
-      LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+      LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d(SNRx10 %d) and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->pusch_snrx10,UE_scheduling_control->ta_update);
     }
     else{
       LOG_D(NR_MAC,"[UE %d] Detected DTX : increasing UE TX power\n",UE_id);
-      UE_scheduling_control->tpc0 = 3;
+      UE_scheduling_control->tpc0 = 1;
     }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
