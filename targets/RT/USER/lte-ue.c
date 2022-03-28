@@ -360,12 +360,6 @@ void init_UE(int nb_inst,
       }
     } else UE->N_TA_offset = 0;
 
-    if( IS_SOFTMODEM_BASICSIM)
-      /* this is required for the basic simulator in TDD mode
-       * TODO: find a proper cleaner solution
-       */
-      UE->N_TA_offset = 0;
-
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);
 
@@ -883,7 +877,7 @@ static void *UE_thread_rxn_txnp4(void *arg)
 
     proc->instance_cnt_rxtx--;
 
-    if ( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+    if (IS_SOFTMODEM_RFSIM) {
       if (pthread_cond_signal(&proc->cond_rxtx) != 0) abort();
     }
 
@@ -1998,12 +1992,6 @@ void *UE_thread(void *arg)
   log_scheduler(__func__);
 
   while (!oai_exit) {
-    if (IS_SOFTMODEM_BASICSIM)
-      while (!(UE->proc.instance_cnt_synch < 0)) {
-        printf("ue sync not ready\n");
-        usleep(500*1000);
-      }
-
     AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
     int instance_cnt_synch = UE->proc.instance_cnt_synch;
     int is_synchronized    = UE->is_synchronized;
@@ -2131,7 +2119,7 @@ void *UE_thread(void *arg)
         // update thread index for received subframe
         UE->current_thread_id[sub_frame] = thread_idx;
 
-        if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
+        if (IS_SOFTMODEM_RFSIM ) {
           int t;
 
           for (t = 0; t < 2; t++) {
@@ -2223,8 +2211,8 @@ void *UE_thread(void *arg)
               LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
           }
 
-          /* no timeout in IS_SOFTMODEM_BASICSIM or IS_SOFTMODEM_RFSIM mode */
-          if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM) {
+          /* no timeout in IS_SOFTMODEM_RFSIM mode */
+          if (IS_SOFTMODEM_RFSIM) {
             ret = pthread_mutex_lock(&proc->mutex_rxtx);
           } else {
             struct timespec tv;
