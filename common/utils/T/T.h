@@ -111,39 +111,8 @@ typedef struct {
 extern volatile int *T_freelist_head;
 extern T_cache_t *T_cache;
 extern int *T_active;
-/* When running the basic simulator, we may fill the T cache too fast.
- * Let's serialize write accesses to the T cache. For that, we use a
- * 'ticket' mechanism. To acquire a T slot the caller needs to own the
- * current active ticket. We also wait for the slot to be free if
- * it is already in use.
- */
-#if BASIC_SIMULATOR
-#  define T_GET_SLOT \
-  do { \
-    extern volatile uint64_t T_next_id; \
-    extern volatile uint64_t T_active_id; \
-    uint64_t id; \
-    /* get a ticket */ \
-    id = __sync_fetch_and_add(&T_next_id, 1); \
-    /* wait for our turn */ \
-    while (id != __sync_fetch_and_add(&T_active_id, 0)) /* busy wait */; \
-    /* this is our turn, try to acquire the slot until it's free */ \
-    do { \
-      T_LOCAL_busy = __sync_fetch_and_or(&T_cache[T_LOCAL_slot].busy, 0x01); \
-      if (T_LOCAL_busy & 0x01) usleep(100); \
-    } while (T_LOCAL_busy & 0x01); \
-    /* check that there are still some tickets */ \
-    if (__sync_fetch_and_add(&T_active_id, 0) == 0xffffffffffffffff) { \
-      printf("T: reached the end of times, bye...\n"); \
-      abort(); \
-    } \
-    /* free our ticket, which signals the next waiter that it's its turn */ \
-    (void)__sync_fetch_and_add(&T_active_id, 1); \
-  } while (0)
-#else
-#  define T_GET_SLOT \
+#define T_GET_SLOT \
   T_LOCAL_busy = __sync_fetch_and_or(&T_cache[T_LOCAL_slot].busy, 0x01);
-#endif
 
 /* used at header of Tn, allocates buffer */
 #define T_LOCAL_DATA \
