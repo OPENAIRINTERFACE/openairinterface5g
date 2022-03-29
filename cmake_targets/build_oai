@@ -59,6 +59,8 @@ BUILD_ECLIPSE=0
 NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
 RU=0
+CMAKE_C_FLAGS=()
+CMAKE_CXX_FLAGS=()
 
 function print_help() {
   echo_info "
@@ -182,6 +184,10 @@ function main() {
   until [ -z "$1" ]
   do
     case "$1" in
+       --archnative)
+            CMAKE_C_FLAGS+=("-march=native")
+            CMAKE_CXX_FLAGS+=("-march=native")
+            shift;;
        -c | --clean)
             CLEAN=1
             shift;;
@@ -609,6 +615,8 @@ function main() {
   mkdir -p $DIR/$BUILD_DIR/build
 
   cd  $DIR/$BUILD_DIR/build
+  if [[ ${#CMAKE_C_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_C_FLAGS=\"${CMAKE_C_FLAGS[*]}\""; fi
+  if [[ ${#CMAKE_CXX_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_CXX_FLAGS=\"${CMAKE_CXX_FLAGS[*]}\""; fi
   echo_info "running $CMAKE_CMD"
   eval $CMAKE_CMD ../..
   
