@@ -401,6 +401,12 @@ typedef struct NbIoTRrcConfigurationReq_s {
   long                    ue_TimersAndConstants_n311_NB;
 } NbIoTRrcConfigurationReq;
 
+typedef struct {
+  int N1;
+  int N2;
+  int XP;
+} rrc_pdsch_AntennaPorts_t;
+
 // gNB: GNB_APP -> RRC messages
 typedef struct NRRrcConfigurationReq_s {
   uint64_t                cell_identity;
@@ -413,7 +419,7 @@ typedef struct NRRrcConfigurationReq_s {
   NR_ServingCellConfig_t  *scd;
   int                     ssb_SubcarrierOffset;
   int                     sib1_tda;
-  int                     pdsch_AntennaPorts;
+  rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts;
   int                     pusch_AntennaPorts;
   int                     minRXTXTIME;
   int                     do_CSIRS;

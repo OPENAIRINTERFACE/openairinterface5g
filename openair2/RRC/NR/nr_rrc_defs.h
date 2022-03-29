@@ -424,7 +424,6 @@ typedef struct rrc_gNB_ue_context_s {
   struct gNB_RRC_UE_s   ue_context;
 } rrc_gNB_ue_context_t;
 
-
 typedef struct {
 
   // buffer that contains the encoded messages

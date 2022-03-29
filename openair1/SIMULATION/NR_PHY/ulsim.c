@@ -732,7 +732,7 @@ int main(int argc, char **argv)
 
   // TODO do a UECAP for phy-sim
   const gNB_RrcConfigurationReq conf = {
-    .pdsch_AntennaPorts = n_tx,
+    .pdsch_AntennaPorts = { .N1 = n_tx, .N2 = 1, .XP = 1 },
     .minRXTXTIME = 0,
     .do_CSIRS = 0,
     .do_SRS = 0,
@@ -749,9 +749,9 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, 6, scc, &rrc.carrier.mib,0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib,0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_rx, 0, 6, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;

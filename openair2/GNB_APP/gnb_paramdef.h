@@ -114,7 +114,9 @@ typedef enum {
 #define GNB_CONFIG_STRING_LOCAL_S_PORTD                 "local_s_portd"
 #define GNB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
 #define GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET           "ssb_SubcarrierOffset"
-#define GNB_CONFIG_STRING_PDSCHANTENNAPORTS             "pdsch_AntennaPorts"
+#define GNB_CONFIG_STRING_PDSCHANTENNAPORTS_N1          "pdsch_AntennaPorts_N1"
+#define GNB_CONFIG_STRING_PDSCHANTENNAPORTS_N2          "pdsch_AntennaPorts_N2"
+#define GNB_CONFIG_STRING_PDSCHANTENNAPORTS_XP          "pdsch_AntennaPorts_XP"
 #define GNB_CONFIG_STRING_PUSCHANTENNAPORTS             "pusch_AntennaPorts"
 #define GNB_CONFIG_STRING_SIB1TDA                       "sib1_tda"
 #define GNB_CONFIG_STRING_DOCSIRS                       "do_CSIRS"
@@ -147,7 +149,9 @@ typedef enum {
 {GNB_CONFIG_STRING_LOCAL_S_PORTD,                NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {GNB_CONFIG_STRING_REMOTE_S_PORTD,               NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {GNB_CONFIG_STRING_SSBSUBCARRIEROFFSET,          NULL,   0,            iptr:NULL,   defintval:31,                TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_PDSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_PDSCHANTENNAPORTS_N1, "horiz. log. antenna ports", 0, iptr:NULL, defintval:1,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_PDSCHANTENNAPORTS_N2, "vert. log. antenna ports", 0, iptr:NULL,  defintval:1,                 TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_PDSCHANTENNAPORTS_XP, "XP log. antenna ports",   0, iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_PUSCHANTENNAPORTS,            NULL,   0,            iptr:NULL,   defintval:1,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_SIB1TDA,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_DOCSIRS,                      NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
@@ -173,15 +177,17 @@ typedef enum {
 #define GNB_LOCAL_S_PORTD_IDX           12
 #define GNB_REMOTE_S_PORTD_IDX          13
 #define GNB_SSB_SUBCARRIEROFFSET_IDX    14
-#define GNB_PDSCH_ANTENNAPORTS_IDX      15
-#define GNB_PUSCH_ANTENNAPORTS_IDX      16
-#define GNB_SIB1_TDA_IDX                17
-#define GNB_DO_CSIRS_IDX                18
-#define GNB_DO_SRS_IDX                  19
-#define GNB_NRCELLID_IDX                20
-#define GNB_MINRXTXTIME_IDX             21
-#define GNB_ULPRBBLACKLIST_IDX          22
-#define GNB_FORCE256QAMOFF_IDX          23
+#define GNB_PDSCH_ANTENNAPORTS_N1_IDX   15
+#define GNB_PDSCH_ANTENNAPORTS_N2_IDX   16
+#define GNB_PDSCH_ANTENNAPORTS_XP_IDX   17
+#define GNB_PUSCH_ANTENNAPORTS_IDX      18
+#define GNB_SIB1_TDA_IDX                19
+#define GNB_DO_CSIRS_IDX                20
+#define GNB_DO_SRS_IDX                  21
+#define GNB_NRCELLID_IDX                22
+#define GNB_MINRXTXTIME_IDX             23
+#define GNB_ULPRBBLACKLIST_IDX          24
+#define GNB_FORCE256QAMOFF_IDX          25
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \
