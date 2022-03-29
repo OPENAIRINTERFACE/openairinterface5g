@@ -648,28 +648,29 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
 // Please keep it: useful for debugging
 #ifdef DEBUG_PDSCH_RX
-  char filename[40];
+  char filename[50];
   uint8_t aa = 0;
 
-  snprintf(filename, 40, "rxdataF0_symb_%d_nr_slot_rx_%d.m", symbol, nr_slot_rx);
+  snprintf(filename, 50, "rxdataF0_symb_%d_nr_slot_rx_%d.m", symbol, nr_slot_rx);
   write_output(filename, "rxdataF0", &common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][0], NR_SYMBOLS_PER_SLOT*frame_parms->ofdm_symbol_size, 1, 1);
 
-  snprintf(filename, 40, "dl_ch_estimates0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
+  snprintf(filename, 50, "dl_ch_estimates0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
   write_output(filename, "dl_ch_estimates", &pdsch_vars[gNB_id]->dl_ch_estimates[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->ofdm_symbol_size, 1, 1);
 
-  snprintf(filename, 40, "rxdataF_ext0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
+  snprintf(filename, 50, "rxdataF_ext0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
   write_output(filename, "rxdataF_ext", &pdsch_vars[gNB_id]->rxdataF_ext[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->N_RB_DL*NR_NB_SC_PER_RB, 1, 1);
 
-  snprintf(filename, 40, "dl_ch_estimates_ext0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
+  snprintf(filename, 50, "dl_ch_estimates_ext0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
   write_output(filename, "dl_ch_estimates_ext00", &pdsch_vars[gNB_id]->dl_ch_estimates_ext[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->N_RB_DL*NR_NB_SC_PER_RB, 1, 1);
 
-  snprintf(filename, 40, "rxdataF_comp0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
+  snprintf(filename, 50, "rxdataF_comp0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
   write_output(filename, "rxdataF_comp00", &pdsch_vars[gNB_id]->rxdataF_comp0[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->N_RB_DL*NR_NB_SC_PER_RB, 1, 1);
-
+/*
   for (int i=0; i < 2; i++){
-    snprintf(filename, 40,  "llr%d_symb_%d_nr_slot_rx_%d.m", i, symbol, nr_slot_rx);
+    snprintf(filename, 50,  "llr%d_symb_%d_nr_slot_rx_%d.m", i, symbol, nr_slot_rx);
     write_output(filename,"llr",  &pdsch_vars[gNB_id]->llr[i][0], (NR_SYMBOLS_PER_SLOT*nb_rb*NR_NB_SC_PER_RB*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm), 1, 0);
   }
+*/
 #endif
 
 #if T_TRACER
@@ -889,9 +890,11 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
         mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
 
         rxdataF_comp128[1] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-        //print_shorts("rx:",(int16_t*)&rxdataF128[1]);
-        //print_shorts("ch:",(int16_t*)&dl_ch128[1]);
-        //print_shorts("pack:",(int16_t*)&rxdataF_comp128[1]);
+#ifdef DEBUG_DLSCH_DEMOD
+        print_shorts("rx:",(int16_t*)&rxdataF128[1]);
+        print_shorts("ch:",(int16_t*)&dl_ch128[1]);
+        print_shorts("pack:",(int16_t*)&rxdataF_comp128[1]);
+#endif
 
         // multiply by conjugated channel
         mmtmpD0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
@@ -907,9 +910,11 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
         mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
 
         rxdataF_comp128[2] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-        //print_shorts("rx:",(int16_t*)&rxdataF128[2]);
-        //print_shorts("ch:",(int16_t*)&dl_ch128[2]);
-        //print_shorts("pack:",(int16_t*)&rxdataF_comp128[2]);
+#ifdef DEBUG_DLSCH_DEMOD
+        print_shorts("rx:",(int16_t*)&rxdataF128[2]);
+        print_shorts("ch:",(int16_t*)&dl_ch128[2]);
+        print_shorts("pack:",(int16_t*)&rxdataF_comp128[2]);
+#endif
 
         dl_ch128+=3;
         dl_ch_mag128+=3;
@@ -1994,87 +1999,88 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                            NR_DL_FRAME_PARMS *frame_parms,
                                            uint16_t dlDmrsSymbPos)
 {
-
-  unsigned short k,rb;
-  unsigned char nushift,i,aarx;
-  int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
-
-  int8_t validDmrsEst = 0; //store last DMRS Symbol index
-
-  unsigned char j=0;
-
-  if (config_type==NFAPI_NR_DMRS_TYPE1) {
+  if (config_type == NFAPI_NR_DMRS_TYPE1) {
     AssertFatal(n_dmrs_cdm_groups == 1 || n_dmrs_cdm_groups == 2,
                 "n_dmrs_cdm_groups %d is illegal\n",n_dmrs_cdm_groups);
-    nushift = n_dmrs_cdm_groups -1;//delta in Table 7.4.1.1.2-1
-
   } else {
     AssertFatal(n_dmrs_cdm_groups == 1 || n_dmrs_cdm_groups == 2 || n_dmrs_cdm_groups == 3,
                 "n_dmrs_cdm_groups %d is illegal\n",n_dmrs_cdm_groups);
-    nushift = (n_dmrs_cdm_groups -1)<<1;//delta in Table 7.4.1.1.2-2
-    }
+  }
 
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+  const unsigned short start_re = (frame_parms->first_carrier_offset + start_rb * NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
+  const int8_t validDmrsEst     = get_valid_dmrs_idx_for_channel_est(dlDmrsSymbPos, symbol);
 
-    k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
+  for (unsigned char aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
 
-    validDmrsEst = get_valid_dmrs_idx_for_channel_est(dlDmrsSymbPos,symbol);
+    int32_t *dl_ch0     = &dl_ch_estimates[aarx][validDmrsEst * frame_parms->ofdm_symbol_size];
+    int32_t *dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * nb_rb_pdsch * NR_NB_SC_PER_RB];
+    int32_t *rxF_ext    = &rxdataF_ext[aarx][symbol * nb_rb_pdsch * NR_NB_SC_PER_RB];
+    int32_t *rxF        = &rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
 
-    dl_ch0     = &dl_ch_estimates[aarx][(validDmrsEst*(frame_parms->ofdm_symbol_size))];
+    if (pilots == 0) { //data symbol only
+      if (start_re + nb_rb_pdsch * NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) {
+        memcpy((void*)rxF_ext, (void*)&rxF[start_re], nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
+      } else {
+        int neg_length = frame_parms->ofdm_symbol_size - start_re;
+        int pos_length = nb_rb_pdsch * NR_NB_SC_PER_RB - neg_length;
 
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_rb_pdsch*12)];
-
-    rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
-    rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
-    
-    for (rb = 0; rb < nb_rb_pdsch; rb++) {
-      if (k>=frame_parms->ofdm_symbol_size) {
-        k = k-frame_parms->ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
+        memcpy((void*)rxF_ext, (void*)&rxF[start_re], neg_length * sizeof(int32_t));
+        memcpy((void*)&rxF_ext[neg_length], (void*)rxF, pos_length * sizeof(int32_t));
       }
-      if (pilots==0) {
-        memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
-        memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));
-        dl_ch0_ext+=12;
-        rxF_ext+=12;
-      } else {//the symbol contains DMRS
-        j=0;
-        if (config_type==NFAPI_NR_DMRS_TYPE1){
-          if (nushift == 0) {//data is multiplexed
-            for (i = (1-nushift); i<12; i+=2) {
-              rxF_ext[j]=rxF[i];
-              dl_ch0_ext[j]=dl_ch0[i];
-              j++;
-            }
-            dl_ch0_ext+=6;
-            rxF_ext+=6;
-          }
-        } else {//NFAPI_NR_DMRS_TYPE2
-          for (i = (2+nushift); i<6; i++) {
-            rxF_ext[j]=rxF[i];
-            dl_ch0_ext[j]=dl_ch0[i];
-            j++;
-          }
-          for (i = (8+nushift); i<12; i++) {
-            rxF_ext[j]=rxF[i];
-            dl_ch0_ext[j]=dl_ch0[i];
-            j++;
-          }
-          dl_ch0_ext+= j;
-          rxF_ext+= j;
+      memcpy((void*)dl_ch0_ext, (void*)dl_ch0, nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
+    }
+    else if (config_type == NFAPI_NR_DMRS_TYPE1){
+      if (n_dmrs_cdm_groups == 1) { //data is multiplexed
+        unsigned short k = start_re;
+        for (unsigned short j = 0; j < 6*nb_rb_pdsch; j += 3) {
+          rxF_ext[j]      = rxF[k+1];
+          rxF_ext[j+1]    = rxF[k+3];
+          rxF_ext[j+2]    = rxF[k+5];
+          dl_ch0_ext[j]   = dl_ch0[1];
+          dl_ch0_ext[j+1] = dl_ch0[3];
+          dl_ch0_ext[j+2] = dl_ch0[5];
+          dl_ch0 += 6;
+          k += 6;
+          if (k >= frame_parms->ofdm_symbol_size)
+            k -= frame_parms->ofdm_symbol_size;
         }
       }
-
-      dl_ch0+=12;
-      rxF+=12;
-      k+=12;
-      if (k>=frame_parms->ofdm_symbol_size) {
-        k = k-(frame_parms->ofdm_symbol_size);
-        rxF = &rxdataF[aarx][k+(symbol*(frame_parms->ofdm_symbol_size))];
+    }
+    else {//NFAPI_NR_DMRS_TYPE2
+      if (n_dmrs_cdm_groups == 1) { //data is multiplexed
+        unsigned short k = start_re;
+        for (unsigned short j = 0; j < 8*nb_rb_pdsch; j += 4) {
+          rxF_ext[j]      = rxF[k+2];
+          rxF_ext[j+1]    = rxF[k+3];
+          rxF_ext[j+2]    = rxF[k+4];
+          rxF_ext[j+3]    = rxF[k+5];
+          dl_ch0_ext[j]   = dl_ch0[2];
+          dl_ch0_ext[j+1] = dl_ch0[3];
+          dl_ch0_ext[j+2] = dl_ch0[4];
+          dl_ch0_ext[j+3] = dl_ch0[5];
+          dl_ch0 += 6;
+          k += 6;
+          if (k >= frame_parms->ofdm_symbol_size)
+            k -= frame_parms->ofdm_symbol_size;
+        }
+      }
+      else if (n_dmrs_cdm_groups == 2) { //data is multiplexed
+        unsigned short k = start_re;
+        for (unsigned short j = 0; j < 4*nb_rb_pdsch; j += 2) {
+          rxF_ext[j]      = rxF[k+4];
+          rxF_ext[j+1]    = rxF[k+5];
+          dl_ch0_ext[j]   = dl_ch0[4];
+          dl_ch0_ext[j+1] = dl_ch0[5];
+          dl_ch0 += 6;
+          k += 6;
+          if (k >= frame_parms->ofdm_symbol_size)
+            k -= frame_parms->ofdm_symbol_size;
+        }
       }
     }
   }
-  return(nb_rb_pdsch);
+
+  return nb_rb_pdsch;
 }
 
 unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,

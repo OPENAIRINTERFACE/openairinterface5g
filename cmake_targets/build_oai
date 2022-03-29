@@ -894,11 +894,6 @@ function main() {
           compilations \
               $BUILD_DIR rfsimulator \
               librfsimulator.so $dbin/librfsimulator.so.$REL
-
-          echo_info "Compiling tcp_bridge_oai"
-          compilations \
-              $BUILD_DIR tcp_bridge_oai \
-              libtcp_bridge_oai.so $dbin/libtcp_bridge_oai.so.$REL
       fi
 
       #build transport protocol libraries (currently only ETHERNET is available)
