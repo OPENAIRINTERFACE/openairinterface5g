@@ -34,7 +34,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
- #include <libgen.h>
+#include <time.h>
+#include <libgen.h>
 
 
 #include "config_libconfig.h"
@@ -87,8 +88,115 @@ int read_intarray(paramdef_t *cfgoptions,config_setting_t *setting, char *cfgpat
 
   return cfgoptions->numelt;
 }
+int config_libconfig_setparams(paramdef_t *cfgoptions, int numoptions, config_setting_t * asetting) {
+ int status;
+ int errors=0;
+ 
+ for(int i=0; i<numoptions; i++) {
+	status=CONFIG_FALSE;
+    switch(cfgoptions[i].type) {
+      case TYPE_STRING:
+        //status=config_setting_set_string (asetting, *cfgoptions[i].strptr;
+        break;
 
+      case TYPE_STRINGLIST:
+        break;
 
+      case TYPE_UINT8:
+      case TYPE_INT8:
+      case TYPE_UINT16:
+      case TYPE_INT16:
+      case TYPE_UINT32:
+      case TYPE_INT32:
+      case TYPE_MASK:
+        status=config_setting_set_int(asetting, (int)*(cfgoptions[i].iptr) );
+        break;
+
+      case TYPE_UINT64:
+      case TYPE_INT64:
+        status=config_setting_set_int64(asetting, (int64_t)*(cfgoptions[i].i64ptr) );
+        break;
+
+      case TYPE_UINTARRAY:
+      case TYPE_INTARRAY:
+
+        break;
+
+      case TYPE_DOUBLE:
+        status=config_setting_set_float(asetting, (double)*(cfgoptions[i].dblptr) );
+        break;
+
+      case TYPE_IPV4ADDR:
+        break;
+
+      case TYPE_LIST:
+        break;
+
+      default:
+        fprintf(stderr,"[LIBCONFIG] %s type %i  not supported\n",cfgoptions[i].optname ,cfgoptions[i].type);
+        status=CONFIG_FALSE;
+        break;
+    } /* switch on param type */
+    if (status != CONFIG_TRUE) {
+		errors++;
+		fprintf(stderr,"[LIBCONFIG] Error creating setting %i: %s type %i\n",i,cfgoptions[i].optname ,cfgoptions[i].type);
+	}	
+  }
+  if (errors ==0) {
+	  print_params("[LIBCONFIG], %i settings set successfully ",numoptions);
+  } else {
+	  fprintf(stderr,"[LIBCONFIG] ...%i/%i settings creation errors \n",errors,numoptions);
+  }
+  return errors;
+}
+
+int  config_libconfig_set(paramdef_t *cfgoptions, int numoptions, char *prefix ) {
+  char *tokctx1=NULL;
+  int listidx=-1;
+  char *prefixbck=NULL;
+  char *prefix_elem1=NULL;
+  config_setting_t * asetting = config_root_setting (&(libconfig_privdata.runtcfg));	 
+  if (prefix != NULL) {
+	 prefixbck=strdup(prefix);
+	 prefix_elem1 = strtok_r(prefixbck, ".", &tokctx1);
+  }
+  int n1=0;
+  
+  while (prefix_elem1 != NULL) {
+	n1+=strlen(prefix_elem1)+1;
+	char *prefix_elem2 = ( n1<strlen(prefix) ) ? prefix_elem1+n1 : "";
+	
+	if (prefix_elem2[0] != '[') {
+	  config_setting_t *tmpset = config_setting_lookup(asetting,prefix_elem1);
+	  if (tmpset == NULL)
+	    asetting = config_setting_add (asetting, prefix_elem1, CONFIG_TYPE_GROUP);
+	  else
+	    asetting = tmpset;
+    } else {
+	  listidx=(int)strtol(prefix_elem2,NULL,10);
+	  config_setting_t *tmpset = config_setting_lookup(asetting,prefix_elem1);
+	  if (tmpset == NULL)
+	    asetting = config_setting_add (asetting, prefix_elem1, CONFIG_TYPE_LIST);
+	  else
+	     asetting = tmpset;
+//	  tmpset = 
+	}
+	if (asetting == NULL) {
+		fprintf(stderr,"[LIBCONFIG] Error creating setting %s %s %i\n",prefix_elem1,prefix_elem2,listidx);
+		break;
+	}
+	prefix_elem1 = strtok_r(NULL, ".", &tokctx1);
+  }
+  free(prefixbck);
+  if (asetting != NULL) {
+    config_libconfig_setparams(cfgoptions, numoptions,asetting);
+    printf_params("[LIBCONFIG] %i settings added in group %s\n",numoptions,(prefix==NULL)?"":prefix);
+    return 0;
+  } else {
+    fprintf(stderr,"[LIBCONFIG] Error parsing %s params, skipped...\n",(prefix==NULL)?"":prefix);
+    return -1;
+  }
+} 
 
 
 int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
@@ -376,6 +484,12 @@ int config_libconfig_init(char *cfgP[], int numP) {
     free(tmppath);
     return -1;
   }
+  
+  /* possibly init a libconfig struct for saving really used params */
+  if( cfgptr->rtflags & CONFIG_SAVERUNCFG ) {
+	  config_init ( &(libconfig_privdata.runtcfg)); 
+//	  config_set_options (&(libconfig_privdata.runtcfg), CONFIG_OPTION_ALLOW_OVERRIDES, CONFIG_TRUE);
+  }
   free(tmppath);
   return 0;
 }
@@ -383,7 +497,22 @@ int config_libconfig_init(char *cfgP[], int numP) {
 
 void config_libconfig_end(void ) {
   config_destroy(&(libconfig_privdata.cfg));
-
+  if( cfgptr->rtflags & CONFIG_SAVERUNCFG ) {
+	  char *newcfgf = malloc( strlen( libconfig_privdata.configfile +20));
+	  time_t t = time(NULL);
+      struct tm tm = *localtime(&t);
+	  sprintf (newcfgf, "%s-run%d_%02d_%02d_%02d%02d",libconfig_privdata.configfile,
+	           tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, tm.tm_min);
+	  if ( config_write_file (&(libconfig_privdata.runtcfg) , newcfgf) != CONFIG_TRUE) {
+		 fprintf(stderr,"[LIBCONFIG] %s %d file %s - line %d: %s\n",__FILE__, __LINE__,
+            newcfgf, config_error_line(&(libconfig_privdata.runtcfg)),
+            config_error_text(&(libconfig_privdata.runtcfg)));
+      } else {
+		 printf("[LIBCONFIG] file %s created successfully\n", newcfgf);  
+	  }
+	  config_destroy(&(libconfig_privdata.runtcfg));
+	  free(newcfgf);
+  }
   if ( libconfig_privdata.configfile != NULL ) {
     free(libconfig_privdata.configfile);
     libconfig_privdata.configfile=NULL;

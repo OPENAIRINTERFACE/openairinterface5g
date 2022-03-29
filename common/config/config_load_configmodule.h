@@ -54,6 +54,7 @@
 #define CONFIG_DEBUGPTR       (1<<1)            // print memory allocation/free debug messages
 #define CONFIG_DEBUGCMDLINE   (1<<2)            // print command line processing messages
 #define CONFIG_NOABORTONCHKF  (1<<4)            // disable abort execution when parameter checking function fails
+#define CONFIG_SAVERUNCFG     (1<<5)            // create config file with running values, as after cfg file + command line processing
 #define CONFIG_NOEXITONHELP   (1<<19)           // do not exit after printing help
 #define CONFIG_HELP           (1<<20)           // print help message
 #define CONFIG_ABORT          (1<<21)           // config failed,abort execution 
@@ -61,6 +62,7 @@
 typedef int(*configmodule_initfunc_t)(char *cfgP[],int numP);
 typedef int(*configmodule_getfunc_t)(paramdef_t *,int numparams, char *prefix);
 typedef int(*configmodule_getlistfunc_t)(paramlist_def_t *, paramdef_t *,int numparams, char *prefix);
+typedef int(*configmodule_setfunc_t)(paramdef_t *cfgoptions, int numoptions, char *prefix );
 typedef void(*configmodule_endfunc_t)(void);
 typedef struct configmodule_interface {
   int      argc;
@@ -72,6 +74,7 @@ typedef struct configmodule_interface {
   configmodule_initfunc_t         init;
   configmodule_getfunc_t          get;
   configmodule_getlistfunc_t      getlist;
+  configmodule_setfunc_t          set;
   configmodule_endfunc_t          end;
   uint32_t numptrs;
   uint32_t rtflags;

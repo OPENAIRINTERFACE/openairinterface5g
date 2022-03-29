@@ -237,6 +237,9 @@ int config_get(paramdef_t *params, int numparams, char *prefix) {
 
     if (ret >= 0) {
       config_process_cmdline(params, numparams, prefix);
+      if ( cfgif->rtflags & CONFIG_SAVERUNCFG  ) {
+		 config_get_if()->set(params, numparams, prefix);
+      }
       config_execcheck(params, numparams, prefix);
     }
 
@@ -271,9 +274,11 @@ int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams
     char cfgpath[MAX_OPTNAME_SIZE*2 + 6]; /* prefix.listname.[listindex] */
 
     for (int i = 0; i < ParamList->numelt; ++i) {
-      // TODO config_process_cmdline?
       sprintf(cfgpath, "%s.[%i]", newprefix, i);
       config_process_cmdline(ParamList->paramarray[i],numparams,cfgpath);
+      if ( config_get_if()->rtflags & CONFIG_SAVERUNCFG  ) {
+		 config_get_if()->set(ParamList->paramarray[i], numparams,cfgpath );
+      }
       config_execcheck(ParamList->paramarray[i], numparams, cfgpath);
     }
 

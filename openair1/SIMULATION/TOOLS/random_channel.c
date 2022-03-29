@@ -1931,10 +1931,15 @@ static void display_channelmodel(channel_desc_t *cd,int debug, telnet_printfunc_
   }
 }
 
-
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   char *subcmd=NULL;
-  int s = sscanf(buff,"%ms\n",&subcmd);
+  int s;
+  if (buff == NULL) {
+	  subcmd = strdup(""); //enforce help display
+	  s=2;
+  } else {
+    s = sscanf(buff,"%ms\n",&subcmd);
+  }
 
   if (s>0) {
     if ( strcmp(subcmd,"predef") == 0) {

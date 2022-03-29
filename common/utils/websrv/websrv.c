@@ -177,7 +177,7 @@ int websrv_callback_get_softmodemcmd(const struct _u_request * request, struct _
 	  if ( strcmp(telnetparams->CmdParsers[i].module,module)==0) {
         for(int j=0; telnetparams->CmdParsers[i].var[j].varvalptr != NULL ; j++) {
 		  char*strval=telnet_getvarvalue(i, j);
-		  char *strbool="N";
+		  char *strbool="false";
 		  json_t *oneaction =json_pack("{s:s,s:s,s:s,s:s}","type","variable","name",telnetparams->CmdParsers[i].var[j].varname,"value",strval,"modifiable",strbool);
           if (oneaction==NULL) {
 	        LOG_E(UTIL,"websrv cannot encode oneaction %s/%s\n",module,telnetparams->CmdParsers[i].var[j].varname);

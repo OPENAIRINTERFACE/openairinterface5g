@@ -194,7 +194,10 @@ struct dirent *entry;
 
 int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt)
 {
-   
+   if (buf == NULL) {
+	   prnt("ERROR wrong softmodem SHOW command...\n");
+	   return 0;
+  }   
    if (debug > 0)
        prnt(" proccmd_show received %s\n",buf);
    if (strcasestr(buf,"thread") != NULL) {
@@ -270,6 +273,10 @@ int bv1,bv2;
 int res;
 char sv1[64]; 
  
+   if (buf == NULL) {
+	   prnt("ERROR wrong thread command...\n");
+	   return 0;
+   }
    bv1=0;
    bv2=0;
    sv1[0]=0;
@@ -307,7 +314,7 @@ int proccmd_exit(char *buf, int debug, telnet_printfunc_t prnt)
 {
    if (debug > 0)
        prnt("process module received %s\n",buf);
-
+   end_configmodule();
    exit_fun("telnet server received exit command\n");
    return 0;
 }

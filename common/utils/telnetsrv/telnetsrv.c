@@ -501,7 +501,7 @@ int process_command(char *buf) {
   j = sscanf(buf,"%19s %19s %m[^\t\n]",modulename,cmd,&cmdb);
 
   if (telnetparams.telnetdbg > 0)
-    printf("process_command: %i words, module=%s cmd=%s, parameters= %s\n",j,modulename,cmd,cmdb);
+    printf("process_command: %i words, module=%s cmd=%s, parameters= %s\n",j,modulename,cmd,(cmdb==NULL)?"":cmdb);
 
   for (i=0; j>=2 && telnetparams.CmdParsers[i].var != NULL && telnetparams.CmdParsers[i].cmd != NULL; i++) {
     if ( (strncasecmp(telnetparams.CmdParsers[i].module,modulename,strlen(telnetparams.CmdParsers[i].module)) == 0)) {
@@ -522,7 +522,8 @@ int process_command(char *buf) {
           		cmddata->cmdfunc=(qcmdfunc_t)telnetparams.CmdParsers[i].cmd[k].cmdfunc;
           	    cmddata->prnt=client_printf;
           	    cmddata->debug=telnetparams.telnetdbg;
-          		cmddata->cmdbuff=strdup(cmdb);
+          	    if (cmdb != NULL)
+          		  cmddata->cmdbuff=strdup(cmdb);
           		pushNotifiedFIFO(telnetparams.CmdParsers[i].cmd[k].qptr, msg);
           	} else {
               telnetparams.CmdParsers[i].cmd[k].cmdfunc(cmdb, telnetparams.telnetdbg, client_printf);

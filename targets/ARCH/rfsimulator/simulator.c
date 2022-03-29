@@ -316,6 +316,15 @@ static void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg) {
   char *modelname=NULL;
   char *modeltype=NULL;
+  rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
+  if(t->channelmod==false) {
+	   prnt("ERROR channel modelisation disabled...\n");
+	   return 0;
+  }	  
+  if (buff == NULL) {
+	   prnt("ERROR wrong rfsimu setchannelmod command...\n");
+	   return 0;
+  }
   if (debug)
   	  prnt("rfsimu_setchanmod_cmd buffer \"%s\"\n",buff);
   int s = sscanf(buff,"%m[^ ] %ms\n",&modelname, &modeltype);

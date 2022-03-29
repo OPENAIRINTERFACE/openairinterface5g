@@ -88,10 +88,21 @@ int load_config_sharedlib(configmodule_interface_t *cfgptr) {
       st = -1;
     }
 
+    if ( cfgptr->rtflags & CONFIG_SAVERUNCFG  ) {
+      sprintf (fname,"config_%s_set",cfgptr->cfgmode);
+      cfgptr->set = dlsym(lib_handle,fname);
+
+      if (cfgptr->set == NULL ) {
+        printf("[CONFIG] %s %d no function %s for config mode %s\n",
+               __FILE__, __LINE__,fname, cfgptr->cfgmode);
+        st = -1;
+      }
+    }
+
     sprintf (fname,"config_%s_end",cfgptr->cfgmode);
     cfgptr->end = dlsym(lib_handle,fname);
 
-    if (cfgptr->getlist == NULL ) {
+    if (cfgptr->end == NULL ) {
       printf("[CONFIG] %s %d no function %s for config mode %s\n",
              __FILE__, __LINE__,fname, cfgptr->cfgmode);
     }
@@ -186,6 +197,7 @@ configmodule_interface_t *load_configmodule(int argc,
 					    uint32_t initflags)
 {
   char *cfgparam=NULL;
+  
   char *modeparams=NULL;
   char *cfgmode=NULL;
   char *strtokctx=NULL;
@@ -193,7 +205,8 @@ configmodule_interface_t *load_configmodule(int argc,
   uint32_t tmpflags=0;
   int i;
   int OoptIdx=-1;
-
+  int OWoptIdx=-1;
+  
   printf("CMDLINE: ");
   for (int i=0; i<argc; i++)
     printf("\"%s\" ", argv[i]);
@@ -208,7 +221,11 @@ configmodule_interface_t *load_configmodule(int argc,
       cfgparam = argv[i+1];
       OoptIdx=i;
     }
-
+    
+    char *OWopt = strstr(argv[i],"OW");
+    if ( OWopt == argv[i]+2)  {
+      OWoptIdx=i;
+    }
     if ( strstr(argv[i], "help_config") != NULL  ) {
       config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params),CONFIG_SECTIONNAME);
       exit(0);
@@ -258,6 +275,11 @@ configmodule_interface_t *load_configmodule(int argc,
   /* argv[0] is the exec name, always Ok */
   cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
 
+  /* a file with config parameters as defined after all processing will be created */
+  if (OWoptIdx >= 0) {
+    cfgptr->argv_info[OWoptIdx] |= CONFIG_CMDLINEOPT_PROCESSED;
+    cfgptr->rtflags |= CONFIG_SAVERUNCFG ;
+  }
   /* when OoptIdx is >0, -O option has been detected at position OoptIdx 
    *  we must memorize arv[OoptIdx is Ok                                  */ 
   if (OoptIdx >= 0) {
@@ -294,7 +316,6 @@ configmodule_interface_t *load_configmodule(int argc,
     printf("%s ",cfgptr->cfgP[i]);
   }
 
-  printf(", debug flags: 0x%08x\n",cfgptr->rtflags);
 
   if (strstr(cfgparam,CONFIG_CMDLINEONLY) == NULL) {
     i=load_config_sharedlib(cfgptr);
@@ -313,7 +334,10 @@ configmodule_interface_t *load_configmodule(int argc,
     cfgptr->getlist = config_cmdlineonly_getlist;
     cfgptr->end = (configmodule_endfunc_t)nooptfunc;
   }
-
+  
+  
+  printf("[CONFIG] debug flags: 0x%08x\n",cfgptr->rtflags);
+  
   if (modeparams != NULL) free(modeparams);
 
   if (cfgmode != NULL) free(cfgmode);
