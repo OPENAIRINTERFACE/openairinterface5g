@@ -3487,6 +3487,21 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
   }
   else if(req->ReconfigComplOutcome == RRCreconf_success){
     LOG_I(NR_RRC, "CU reporting RRC Reconfiguration success \n");
+    if(ue_context_p->ue_context.DRB_configList!=NULL){
+      LOG_I(NR_RRC, "Send first DDD buffer status reporting towards the CU through an ITTI message to gtp-u \n");
+      uint8_t drb_id = ue_context_p->ue_context.DRB_configList->list.array[0]->drb_Identity;
+      rnti_t rnti   = ue_context_p->ue_context.rnti;
+      LOG_I(NR_RRC, "Reported in DDD drb_id:%d, rnti:%d\n", drb_id, rnti);
+      MessageDef *msg = itti_alloc_new_message_sized(TASK_RRC_GNB, 0, GTPV1U_DU_BUFFER_REPORT_REQ,
+                                     sizeof(gtpv1u_gnb_tunnel_data_req_t));
+      gtpv1u_DU_buffer_report_req_t *req=&GTPV1U_DU_BUFFER_REPORT_REQ(msg);
+      req->pdusession_id = drb_id;
+      req->rnti = rnti;
+      req->buffer_availability = 1000000; //Hardcoding to be removed and read the actual RLC buffer availability instead
+      extern instance_t DUuniqInstance;
+      itti_send_msg_to_task(TASK_GTPV1_U, DUuniqInstance, msg);
+
+    }
   }
 
   /* Fill the UE context setup response ITTI message to send to F1AP */
