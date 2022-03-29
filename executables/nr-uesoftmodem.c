@@ -460,6 +460,24 @@ int main( int argc, char **argv ) {
     }
   }
 
+  int rc;
+  MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+  if ((rc = MQTTClient_create(&client, ADDRESS, CLIENTID,
+      MQTTCLIENT_PERSISTENCE_NONE, NULL)) != MQTTCLIENT_SUCCESS)
+  {
+       printf("Failed to create MQTT client, return code %d\n", rc);
+       exit(EXIT_FAILURE);
+  }
+
+  conn_opts.keepAliveInterval = 20;
+  conn_opts.cleansession = 1;
+  if ((rc = MQTTClient_connect(client, &conn_opts)) != MQTTCLIENT_SUCCESS)
+  {
+      printf("Failed to connect MQTT client, return code %d\n", rc);
+      exit(EXIT_FAILURE);
+  }
+
+
   NB_UE_INST=1;
   NB_INST=1;
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
@@ -544,6 +562,10 @@ int main( int argc, char **argv ) {
 
   if (ouput_vcd)
     vcd_signal_dumper_close();
+
+  if ((rc = MQTTClient_disconnect(client, 10000)) != MQTTCLIENT_SUCCESS)
+    printf("Failed to disconnect MQTT client, return code %d\n", rc);
+  MQTTClient_destroy(&client);
 
   return 0;
 }

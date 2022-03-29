@@ -69,6 +69,10 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 #ifdef DEBUG_PRS_CHEST
   char filename[128] = {0}, varname[128] = {0};
 #endif
+  int rc;
+  char payload[128] = {0};
+  MQTTClient_message pubmsg = MQTTClient_message_initializer;
+  MQTTClient_deliveryToken token;
 
   for(int l = prs_cfg->SymbolStart; l < prs_cfg->SymbolStart+prs_cfg->NumPRSSymbols; l++)
   {
@@ -416,6 +420,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                      &ch_pwr);
       LOG_I(PHY, "[gNB %d][Rx %d][sfn %d][slot %d] ToA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, l, prs_meas[rxAnt][l].dl_toa-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr));
 
+      sprintf(payload, "[gNB %d][Rx %d][sfn %d][slot %d] ToA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, l, prs_meas[rxAnt][l].dl_toa-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr));
       //prs measurements
       prs_meas[rxAnt][l].gNB_id     = 0; 
       prs_meas[rxAnt][l].timestamp  = 0; 
@@ -425,6 +430,17 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
       prs_meas[rxAnt][l].rxAnt_idx  = rxAnt; 
       prs_meas[rxAnt][l].snr        = 0; 
       prs_meas[rxAnt][l].dl_aoa     = 0; 
+
+      // publish MQTT message
+      pubmsg.payload = payload;
+      pubmsg.payloadlen = (int)strlen(payload);
+      pubmsg.qos = QOS;
+      pubmsg.retained = 0;
+      if ((rc = MQTTClient_publishMessage(client, TOPIC, &pubmsg, &token)) != MQTTCLIENT_SUCCESS)
+      {
+           printf("Failed to publish MQTT message, return code %d\n", rc);
+           exit(EXIT_FAILURE);
+      }
     } // for rxAnt
   } //for l
 

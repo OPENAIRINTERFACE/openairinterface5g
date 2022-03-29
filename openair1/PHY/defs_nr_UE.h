@@ -111,6 +111,15 @@
 #include <pthread.h>
 #include "targets/ARCH/COMMON/common_lib.h"
 
+#include "MQTTClient.h"
+#define ADDRESS     "tcp://mqtt.eclipseprojects.io:1883"
+#define CLIENTID    "OAI_PRS"
+#define TOPIC       "PRS_TOA"
+#define PAYLOAD     "Hello World! from Eurecom france"
+#define QOS         1
+MQTTClient client;
+
+
 /// Context data structure for gNB subframe processing
 typedef struct {
   /// Component Carrier index
