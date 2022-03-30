@@ -28,7 +28,8 @@
 * \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr, kroempa@gmail.com
 */
 
-#pragma once
+#ifndef __RRC_NR_MESSAGES_ASN1_MSG__H__
+#define __RRC_NR_MESSAGES_ASN1_MSG__H__
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -207,3 +208,4 @@ do_RRCReestablishmentComplete(
     uint8_t *buffer, size_t buffer_size,
     int64_t rrc_TransactionIdentifier);
 
+#endif  /* __RRC_NR_MESSAGES_ASN1_MSG__H__ */
