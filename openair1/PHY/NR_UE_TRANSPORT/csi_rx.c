@@ -443,7 +443,7 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
     // compute the conditional number
     for (int sc_idx=0; sc_idx < NR_NB_SC_PER_RB; sc_idx++) {
       int8_t csi_rs_estimated_denum_db = dB_fixed(nr_csi_rs_info->csi_rs_estimated_determ_fin[k + sc_idx]);
-      int8_t csi_rs_estimated_numer_db = dB_fixed(nr_csi_rs_info->csi_rs_estimated_numer_fin[k + k]);
+      int8_t csi_rs_estimated_numer_db = dB_fixed(nr_csi_rs_info->csi_rs_estimated_numer_fin[k + sc_idx]);
       int8_t cond_db = csi_rs_estimated_numer_db - csi_rs_estimated_denum_db;
       if (cond_db < cond_dB_threshold) {
         count++;
@@ -458,7 +458,7 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
     *rank_indicator = 1;
   }
 
-  LOG_I(NR_PHY, "count %i, RI = %i\n", *rank_indicator + 1);
+  LOG_I(NR_PHY, "RI = %i\n", *rank_indicator + 1);
 
   return 0;
 }
