@@ -447,7 +447,7 @@ int main(int argc, char **argv)
   rel15_ul->mcs_index           = Imcs;
   rel15_ul->pusch_data.rv_index = rvidx;
   rel15_ul->nrOfLayers          = Nl;
-  rel15_ul->target_code_rate    = (code_rate>1024)?code_rate*5:code_rate*10;
+  rel15_ul->target_code_rate    = code_rate;
   rel15_ul->pusch_data.tb_size  = TBS>>3;
   ///////////////////////////////////////////////////
 
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
   harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
   harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
   harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS>>3;
-  harq_process_ul_ue->pusch_pdu.target_code_rate = (code_rate>1024)?code_rate*5:code_rate*10;
+  harq_process_ul_ue->pusch_pdu.target_code_rate = code_rate;
   harq_process_ul_ue->pusch_pdu.qam_mod_order = mod_order;
   unsigned char *test_input = harq_process_ul_ue->a;
 

@@ -868,7 +868,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
   uint16_t R = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
-  pusch_config_pdu->target_code_rate = (R>1024)?R*5:R*10;
+  pusch_config_pdu->target_code_rate = R;
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
 
   if (pusch_config_pdu->target_code_rate == 0 || pusch_config_pdu->qam_mod_order == 0) {

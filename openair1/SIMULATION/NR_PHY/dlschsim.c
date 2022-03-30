@@ -429,11 +429,8 @@ int main(int argc, char **argv)
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	uint8_t is_crnti = 0;
 	unsigned int TBS = 8424;
-	unsigned int available_bits;
 	uint8_t nb_re_dmrs = 6;  // No data in dmrs symbol
 	uint16_t length_dmrs = 1;
-	unsigned char mod_order;
-        uint16_t rate;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
 	dlsch->rnti = 1;
@@ -441,9 +438,9 @@ int main(int argc, char **argv)
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
 	//    dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
-	mod_order = nr_get_Qm_dl(Imcs, mcs_table);
-        rate = nr_get_code_rate_dl(Imcs, mcs_table);
-	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
+	unsigned char mod_order = nr_get_Qm_dl(Imcs, mcs_table);
+        uint16_t rate = nr_get_code_rate_dl(Imcs, mcs_table);
+	unsigned int available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
 	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
@@ -452,7 +449,7 @@ int main(int argc, char **argv)
 	rel15->qamModOrder[0] = mod_order;
 	rel15->nrOfLayers     = Nl;
 	rel15->TBSize[0]      = TBS>>3;
-        rel15->targetCodeRate[0] = (rate>1024)?rate*5:rate*10;
+        rel15->targetCodeRate[0] = rate;
         rel15->NrOfCodewords = 1;
         rel15->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	rel15->dlDmrsSymbPos = 4;
@@ -473,7 +470,7 @@ int main(int argc, char **argv)
 	harq_process->nb_rb = nb_rb;
 	harq_process->Qm = mod_order;
 	harq_process->rvidx = rvidx;
-	harq_process->R = (rate>1024)?rate*5:rate*10;
+	harq_process->R = rate;
         harq_process->TBS = TBS;
 	harq_process->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	harq_process->dlDmrsSymbPos = 4;

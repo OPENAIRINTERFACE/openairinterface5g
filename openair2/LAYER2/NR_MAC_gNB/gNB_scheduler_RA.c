@@ -1403,7 +1403,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                            tb_scaling,  // tb scaling
 		           1)>>3;  // layers
 
-      pdsch_pdu_rel15->targetCodeRate[0] = (R>1024)?R*5:R*10;
+      pdsch_pdu_rel15->targetCodeRate[0] = R;
       pdsch_pdu_rel15->qamModOrder[0] = Qm;
       pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
       pdsch_pdu_rel15->TBSize[0] = TBS;
@@ -1765,7 +1765,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
     int R = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
-    pdsch_pdu_rel15->targetCodeRate[0] = (R>1024)?R*5:R*10;
+    pdsch_pdu_rel15->targetCodeRate[0] = R;
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;

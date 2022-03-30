@@ -117,8 +117,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
     int mcsIndex = 9;
-    int R = nr_get_code_rate_dl(mcsIndex,0);
-    pdsch_pdu_rel15->targetCodeRate[0] = (R>1024)?R*5:R*10;
+    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,0);
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = 0;

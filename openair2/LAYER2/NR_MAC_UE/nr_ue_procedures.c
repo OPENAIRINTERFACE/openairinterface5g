@@ -902,7 +902,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     dlsch_config_pdu_1_0->qamModOrder = nr_get_Qm_dl(dlsch_config_pdu_1_0->mcs, dlsch_config_pdu_1_0->mcs_table);
     int R = nr_get_code_rate_dl(dlsch_config_pdu_1_0->mcs, dlsch_config_pdu_1_0->mcs_table);
-    dlsch_config_pdu_1_0->targetCodeRate = (R>1024)?R*5:R*10;
+    dlsch_config_pdu_1_0->targetCodeRate = R;
     if (dlsch_config_pdu_1_0->targetCodeRate == 0 || dlsch_config_pdu_1_0->qamModOrder == 0) {
       LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
       return -1;
@@ -1307,7 +1307,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_1->mcs_table = (pdsch_Config->mcs_Table) ? (*pdsch_Config->mcs_Table + 1) : 0;
     dlsch_config_pdu_1_1->qamModOrder = nr_get_Qm_dl(dlsch_config_pdu_1_1->mcs, dlsch_config_pdu_1_1->mcs_table);
     int R = nr_get_code_rate_dl(dlsch_config_pdu_1_1->mcs, dlsch_config_pdu_1_1->mcs_table);
-    dlsch_config_pdu_1_1->targetCodeRate = (R>1024)?R*5:R*10;
+    dlsch_config_pdu_1_1->targetCodeRate = R;
     if (dlsch_config_pdu_1_1->targetCodeRate == 0 || dlsch_config_pdu_1_1->qamModOrder == 0) {
       LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
       return -1;

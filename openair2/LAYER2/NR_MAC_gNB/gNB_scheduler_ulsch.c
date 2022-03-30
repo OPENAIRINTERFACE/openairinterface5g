@@ -1534,7 +1534,7 @@ nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
       if (mcs > 27 && mcsTableIdx == 1)
         continue;
       const uint8_t Qm = nr_get_Qm_dl(mcs, mcsTableIdx);
-      const uint16_t R = nr_get_code_rate_dl(mcs, mcsTableIdx);
+      const uint16_t R = nr_get_code_rate_ul(mcs, mcsTableIdx);
       /* note: we do not update R/Qm based on low MCS or pi2BPSK */
       ul_pf_tbs[mcsTableIdx][mcs] = nr_compute_tbs(Qm,
                                                    R,
@@ -1709,8 +1709,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->cyclic_prefix = 0;
 
     /* FAPI: PUSCH information always included */
-    uint16_t R = sched_pusch->R;
-    pusch_pdu->target_code_rate = (R>1024)?R*5:R*10;
+    pusch_pdu->target_code_rate = sched_pusch->R;
     pusch_pdu->qam_mod_order = sched_pusch->Qm;
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = ps->mcs_table;
