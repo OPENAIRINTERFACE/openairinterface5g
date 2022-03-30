@@ -3156,10 +3156,12 @@ class OaiCiTest():
 		nrFoundDCI = 0
 		nrCRCOK = 0
 		mbms_messages = 0
+		nbPduSessAccept = 0
+		nbPduDiscard = 0
 		HTML.htmlUEFailureMsg=''
 		global_status = CONST.ALL_PROCESSES_OK
 		for line in ue_log_file.readlines():
-			result = re.search('nr_synchro_time', str(line))
+			result = re.search('nr_synchro_time|Starting NR UE soft modem', str(line))
 			if result is not None:
 				nrUEFlag = True
 			if nrUEFlag:
@@ -3172,6 +3174,15 @@ class OaiCiTest():
 				result = re.search('CRC OK', str(line))
 				if result is not None:
 					nrCRCOK += 1
+				result = re.search('Received PDU Session Establishment Accept', str(line))
+				if result is not None:
+					nbPduSessAccept += 1
+				result = re.search('warning: discard PDU, sn out of window', str(line))
+				if result is not None:
+					nbPduDiscard += 1
+				result = re.search('--nfapi 5 --node-number 2 --sa', str(line))
+				if result is not None:
+					frequency_found = True
 			result = re.search('Exiting OAI softmodem', str(line))
 			if result is not None:
 				exitSignalReceived = True
@@ -3302,20 +3313,28 @@ class OaiCiTest():
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if nrUEFlag:
 			if nrDecodeMib > 0:
-				statMsg = 'UE showed ' + str(nrDecodeMib) + ' MIB decode message(s)'
+				statMsg = 'UE showed ' + str(nrDecodeMib) + ' "MIB decode" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if nrFoundDCI > 0:
-				statMsg = 'UE showed ' + str(nrFoundDCI) + ' DCI found message(s)'
+				statMsg = 'UE showed ' + str(nrFoundDCI) + ' "DCI found" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if nrCRCOK > 0:
-				statMsg = 'UE showed ' + str(nrCRCOK) + ' PDSCH decoding message(s)'
+				statMsg = 'UE showed ' + str(nrCRCOK) + ' "PDSCH decoding" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if not frequency_found:
 				statMsg = 'NR-UE could NOT synch!'
 				logging.error('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
+			if nbPduSessAccept > 0:
+				statMsg = 'UE showed ' + str(nbPduSessAccept) + ' "Received PDU Session Establishment Accept" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
+			if nbPduDiscard > 0:
+				statMsg = 'UE showed ' + str(nbPduDiscard) + ' "warning: discard PDU, sn out of window" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
