@@ -355,6 +355,114 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
   return 0;
 }
 
+int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
+                            UE_nr_rxtx_proc_t *proc,
+                            fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
+                            nr_csi_rs_info_t *nr_csi_rs_info,
+                            int32_t ***csi_rs_estimated_channel_freq,
+                            uint8_t *rank_indicator) {
+
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  int16_t cond_dB_threshold = 0;
+  int count=0;
+  *rank_indicator = 0;
+
+  /* Example 2x2: Hh x H =
+  *            | conjch00 conjch10 | x | ch00 ch01 | = | conjch00*ch00+conjch10*ch10 conjch00*ch01+conjch10*ch11 |
+  *            | conjch01 conjch11 |   | ch10 ch11 |   | conjch01*ch00+conjch11*ch10 conjch01*ch01+conjch11*ch11 |
+  */
+
+  for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
+
+    if (csirs_config_pdu->freq_density <= 1 && csirs_config_pdu->freq_density != (rb % 2)) {
+      continue;
+    }
+    uint16_t k = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
+
+    // conjch x ch computation
+    for (int ant_rx_conjch = 0; ant_rx_conjch < frame_parms->nb_antennas_rx; ant_rx_conjch++) {
+      for(uint16_t port_tx_conjch = 0; port_tx_conjch < nr_csi_rs_info->N_ports; port_tx_conjch++) {
+        for (int ant_rx_ch = 0; ant_rx_ch < frame_parms->nb_antennas_rx; ant_rx_ch++) {
+          for(uint16_t port_tx_ch = 0; port_tx_ch < nr_csi_rs_info->N_ports; port_tx_ch++) {
+            nr_conjch0_mult_ch1(&csi_rs_estimated_channel_freq[ant_rx_conjch][port_tx_conjch][k],
+                                &csi_rs_estimated_channel_freq[ant_rx_ch][port_tx_ch][k],
+                                &nr_csi_rs_info->csi_rs_estimated_conjch_ch[ant_rx_conjch][port_tx_conjch][ant_rx_ch][port_tx_ch][k],
+                                1,
+                                0);
+          }
+        }
+      }
+    }
+
+    // construct Hh x H elements
+    nr_construct_HhH_elements(0 < frame_parms->nb_antennas_rx && 0 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[0][0][0][0][k] : NULL,
+                              0 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[0][1][0][1][k] : NULL,
+                              1 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[1][1][1][1][k] : NULL,
+                              1 < frame_parms->nb_antennas_rx && 0 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[1][0][1][0][k] : NULL,
+                              2 < frame_parms->nb_antennas_rx && 0 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[2][0][2][0][k] : NULL,
+                              2 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[2][1][2][1][k] : NULL,
+                              3 < frame_parms->nb_antennas_rx && 0 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[3][0][3][0][k] : NULL,
+                              3 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[3][1][3][1][k] : NULL,
+                              0 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[0][0][0][1][k] : NULL,
+                              0 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[0][1][0][0][k] : NULL,
+                              1 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[1][0][1][1][k] : NULL,
+                              1 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[1][1][1][0][k] : NULL,
+                              2 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[2][0][2][1][k] : NULL,
+                              2 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[2][1][2][0][k] : NULL,
+                              3 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[3][0][3][1][k] : NULL,
+                              3 < frame_parms->nb_antennas_rx && 1 < nr_csi_rs_info->N_ports ? &nr_csi_rs_info->csi_rs_estimated_conjch_ch[3][1][3][0][k] : NULL,
+                              &nr_csi_rs_info->csi_rs_estimated_A_MF[0][0][k],
+                              &nr_csi_rs_info->csi_rs_estimated_A_MF[0][1][k],
+                              &nr_csi_rs_info->csi_rs_estimated_A_MF[1][0][k],
+                              &nr_csi_rs_info->csi_rs_estimated_A_MF[1][1][k],
+                              1,
+                              0);
+
+    // compute the determinant of A_MF (denominator)
+    nr_det_HhH(&nr_csi_rs_info->csi_rs_estimated_A_MF[0][0][k],
+               &nr_csi_rs_info->csi_rs_estimated_A_MF[0][1][k],
+               &nr_csi_rs_info->csi_rs_estimated_A_MF[1][0][k],
+               &nr_csi_rs_info->csi_rs_estimated_A_MF[1][1][k],
+               &nr_csi_rs_info->csi_rs_estimated_determ_fin[k],
+               1,
+               0,
+               0);
+
+    // compute the square of A_MF (numerator)
+    squared_matrix_element(&nr_csi_rs_info->csi_rs_estimated_A_MF[0][0][k], &nr_csi_rs_info->csi_rs_estimated_A_MF_sq[0][0][k], 1);
+    squared_matrix_element(&nr_csi_rs_info->csi_rs_estimated_A_MF[0][1][k], &nr_csi_rs_info->csi_rs_estimated_A_MF_sq[0][1][k], 1);
+    squared_matrix_element(&nr_csi_rs_info->csi_rs_estimated_A_MF[1][0][k], &nr_csi_rs_info->csi_rs_estimated_A_MF_sq[1][0][k], 1);
+    squared_matrix_element(&nr_csi_rs_info->csi_rs_estimated_A_MF[1][1][k], &nr_csi_rs_info->csi_rs_estimated_A_MF_sq[1][1][k], 1);
+    numer(&nr_csi_rs_info->csi_rs_estimated_A_MF_sq[0][0][k],
+          &nr_csi_rs_info->csi_rs_estimated_A_MF_sq[0][1][k],
+          &nr_csi_rs_info->csi_rs_estimated_A_MF_sq[1][0][k],
+          &nr_csi_rs_info->csi_rs_estimated_A_MF_sq[1][1][k],
+          &nr_csi_rs_info->csi_rs_estimated_numer_fin[k],
+          1);
+
+    // compute the conditional number
+    for (int sc_idx=0; sc_idx < NR_NB_SC_PER_RB; sc_idx++) {
+      int8_t csi_rs_estimated_denum_db = dB_fixed(nr_csi_rs_info->csi_rs_estimated_determ_fin[k + sc_idx]);
+      int8_t csi_rs_estimated_numer_db = dB_fixed(nr_csi_rs_info->csi_rs_estimated_numer_fin[k + k]);
+      int8_t cond_db = csi_rs_estimated_numer_db - csi_rs_estimated_denum_db;
+      if (cond_db < cond_dB_threshold) {
+        count++;
+      } else {
+        count--;
+      }
+    }
+  }
+
+  // conditional number is lower than cond_dB_threshold in half on more REs
+  if (count > 0) {
+    *rank_indicator = 1;
+  }
+
+  LOG_I(NR_PHY, "count %i, RI = %i\n", *rank_indicator + 1);
+
+  return 0;
+}
+
 int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
   return 0;
 }
@@ -406,5 +514,20 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                                ue->nr_csi_rs_info->csi_rs_received_signal,
                                ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
                                ue->nr_csi_rs_info->noise_power);
+
+  if(ue->frame_parms.nb_antennas_rx == 1 || ue->nr_csi_rs_info->N_ports == 1) {
+    *ue->nr_csi_rs_info->rank_indicator = 0;
+  } else if(ue->frame_parms.nb_antennas_rx == 2 && ue->nr_csi_rs_info->N_ports == 2) {
+    nr_csi_rs_ri_estimation(ue,
+                            proc,
+                            csirs_config_pdu,
+                            ue->nr_csi_rs_info,
+                            ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
+                            ue->nr_csi_rs_info->rank_indicator);
+  } else {
+    LOG_D(NR_PHY, "Rank indicator computation is not implemented for %i x %i system\n",
+          ue->frame_parms.nb_antennas_rx, ue->nr_csi_rs_info->N_ports);
+  }
+
   return 0;
 }

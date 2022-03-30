@@ -43,6 +43,7 @@
 #define nr_slot_t lte_subframe_t
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
+#define NR_MAX_OFDM_SYMBOL_SIZE 4096
 
 #define NR_NB_SC_PER_RB 12
 #define NR_NB_REG_PER_CCE 6
@@ -260,7 +261,13 @@ typedef struct {
   int32_t **csi_rs_received_signal;
   int32_t ***csi_rs_ls_estimated_channel;
   int32_t ***csi_rs_estimated_channel_freq;
+  int32_t csi_rs_estimated_conjch_ch[4][4][4][4][NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));
+  int32_t csi_rs_estimated_A_MF[2][2][NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));
+  int32_t csi_rs_estimated_A_MF_sq[2][2][NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));
+  int32_t csi_rs_estimated_determ_fin[NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));
+  int32_t csi_rs_estimated_numer_fin[NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));
   uint32_t *noise_power;
+  uint8_t *rank_indicator;
 } nr_csi_rs_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
