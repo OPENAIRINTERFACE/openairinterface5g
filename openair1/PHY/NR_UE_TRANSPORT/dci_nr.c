@@ -42,6 +42,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/sse_intrin.h"
 #include "common/utils/nr/nr_common.h"
+#include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 #include "assertions.h"
 #include "T.h"
@@ -766,6 +767,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                   s,
                                   log2_maxh,
                                   n_rb); // log2_maxh+I0_shift
+
+    UEscopeCopy(ue, pdcchRxdataF_comp, rxdataF_comp, sizeof(struct complex16), frame_parms->nb_antennas_rx, rx_size);
+
     if (frame_parms->nb_antennas_rx > 1) {
       LOG_D(PHY,"we enter nr_pdcch_detection_mrc(frame_parms->nb_antennas_rx=%d)\n", frame_parms->nb_antennas_rx);
       nr_pdcch_detection_mrc(frame_parms, rx_size, rxdataF_comp,s);
@@ -779,6 +783,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                  llr,
                  s,
                  n_rb);
+
+    UEscopeCopy(ue, pdcchLlr, llr, sizeof(int16_t), 1, llr_size);
+
 #if T_TRACER
     
     //  T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
