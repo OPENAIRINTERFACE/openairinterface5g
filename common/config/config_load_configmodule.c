@@ -275,7 +275,7 @@ configmodule_interface_t *load_configmodule(int argc,
   /* argv[0] is the exec name, always Ok */
   cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
 
-  /* a file with config parameters as defined after all processing will be created */
+  /* When reuested _(_--OW or rtflag is 5), a file with config parameters, as defined after all processing, will be created */
   if (OWoptIdx >= 0) {
     cfgptr->argv_info[OWoptIdx] |= CONFIG_CMDLINEOPT_PROCESSED;
     cfgptr->rtflags |= CONFIG_SAVERUNCFG ;
@@ -322,7 +322,10 @@ configmodule_interface_t *load_configmodule(int argc,
 
     if (i ==  0) {
       printf("[CONFIG] config module %s loaded\n",cfgmode);
-      Config_Params[CONFIGPARAM_DEBUGFLAGS_IDX].uptr=&(cfgptr->rtflags);
+      int idx = config_paramidx_fromname(Config_Params, CONFIG_PARAMLENGTH(Config_Params), CONFIGP_DEBUGFLAGS);
+      Config_Params[idx].uptr=&(cfgptr->rtflags);
+      idx = config_paramidx_fromname(Config_Params, CONFIG_PARAMLENGTH(Config_Params), CONFIGP_TMPDIR);
+      Config_Params[idx].strptr=&(cfgptr->tmpdir);
       config_get(Config_Params,CONFIG_PARAMLENGTH(Config_Params), CONFIG_SECTIONNAME );
     } else {
       fprintf(stderr,"[CONFIG] %s %d config module \"%s\" couldn't be loaded\n", __FILE__, __LINE__,cfgmode);

@@ -80,6 +80,7 @@ typedef struct configmodule_interface {
   uint32_t rtflags;
   char     *ptrs[CONFIG_MAX_ALLOCATEDPTRS];
   bool ptrsAllocated[CONFIG_MAX_ALLOCATEDPTRS];
+  char *tmpdir;
 } configmodule_interface_t;
 
 #ifdef CONFIG_LOADCONFIG_MAIN
@@ -92,16 +93,19 @@ static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugfl
           incp parameter can be used to define the include path used for config files (@include directive)\n \
                          defaults is set to the path of the main config file.\n";
 
-#define CONFIG_SECTIONNAME "config"
-#define CONFIGPARAM_DEBUGFLAGS_IDX        0
+#define CONFIG_HELP_TMPDIR  "<Repository to create temporary file>"
 
+#define CONFIG_SECTIONNAME "config"
+#define CONFIGP_DEBUGFLAGS "debugflags"
+#define CONFIGP_TMPDIR     "tmpdir"
 
 static paramdef_t Config_Params[] = {
-  /*-----------------------------------------------------------------------------------------------------------------------*/
-  /*                                            config parameters for config module                                        */
-  /*   optname              helpstr           paramflags     XXXptr       defXXXval            type       numelt           */
-  /*-----------------------------------------------------------------------------------------------------------------------*/
-  {"debugflags",            config_helpstr,   0,             uptr:NULL,   defintval:0,        TYPE_MASK,  0},
+  /*--------------------------------------------------------------------------------------------------------------------------*/
+  /*                                            config parameters for config module                                           */
+  /*   optname              helpstr           paramflags         XXXptr                defXXXval            type       numelt */
+  /*--------------------------------------------------------------------------------------------------------------------------*/
+  {CONFIGP_DEBUGFLAGS,      config_helpstr,    0,                uptr:NULL,              defintval:0,     TYPE_MASK,   0},
+  {CONFIGP_TMPDIR,          CONFIG_HELP_TMPDIR,PARAMFLAG_NOFREE, strptr:NULL,            defstrval:"/tmp" ,TYPE_STRING, 0},
 };
 
 #else

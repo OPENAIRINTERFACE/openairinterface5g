@@ -91,14 +91,30 @@ int read_intarray(paramdef_t *cfgoptions,config_setting_t *setting, char *cfgpat
 int config_libconfig_setparams(paramdef_t *cfgoptions, int numoptions, config_setting_t * asetting) {
  int status;
  int errors=0;
+ int notused=0;
+ #define LIBCONFIG_NOTUSED_PARAMS "Not used? (NULL value ptr)"
  
  for(int i=0; i<numoptions; i++) {
 	status=CONFIG_FALSE;
+    config_setting_t * psetting;
     switch(cfgoptions[i].type) {
       case TYPE_STRING:
-        //status=config_setting_set_string (asetting, *cfgoptions[i].strptr;
+        psetting =config_setting_add(asetting,cfgoptions[i].optname,CONFIG_TYPE_STRING);
+        if (psetting!= NULL) {
+          char *value;
+          if (cfgoptions[i].strptr == NULL) {
+            notused++;
+            value=LIBCONFIG_NOTUSED_PARAMS;
+          } else {
+            if (cfgoptions[i].numelt == 0 ) {
+              value = *(cfgoptions[i].strptr);
+            } else {
+              value = (char *)(cfgoptions[i].strptr);
+            }
+          }
+          status=config_setting_set_string(psetting, value);
+        }  
         break;
-
       case TYPE_STRINGLIST:
         break;
 
@@ -109,12 +125,16 @@ int config_libconfig_setparams(paramdef_t *cfgoptions, int numoptions, config_se
       case TYPE_UINT32:
       case TYPE_INT32:
       case TYPE_MASK:
-        status=config_setting_set_int(asetting, (int)*(cfgoptions[i].iptr) );
+        psetting =config_setting_add(asetting,cfgoptions[i].optname,CONFIG_TYPE_INT);
+        if (psetting!= NULL)
+          status=config_setting_set_int(psetting, (int)*(cfgoptions[i].iptr) );
         break;
 
       case TYPE_UINT64:
       case TYPE_INT64:
-        status=config_setting_set_int64(asetting, (int64_t)*(cfgoptions[i].i64ptr) );
+        psetting =config_setting_add(asetting,cfgoptions[i].optname,CONFIG_TYPE_INT64);
+        if (psetting!= NULL)
+          status=config_setting_set_int64(psetting, (int64_t)*(cfgoptions[i].i64ptr) );
         break;
 
       case TYPE_UINTARRAY:
@@ -123,7 +143,9 @@ int config_libconfig_setparams(paramdef_t *cfgoptions, int numoptions, config_se
         break;
 
       case TYPE_DOUBLE:
-        status=config_setting_set_float(asetting, (double)*(cfgoptions[i].dblptr) );
+        psetting =config_setting_add(asetting,cfgoptions[i].optname,CONFIG_TYPE_FLOAT);
+        if (psetting!= NULL)      
+          status=config_setting_set_float(psetting, (double)*(cfgoptions[i].dblptr) );
         break;
 
       case TYPE_IPV4ADDR:
@@ -142,8 +164,11 @@ int config_libconfig_setparams(paramdef_t *cfgoptions, int numoptions, config_se
 		fprintf(stderr,"[LIBCONFIG] Error creating setting %i: %s type %i\n",i,cfgoptions[i].optname ,cfgoptions[i].type);
 	}	
   }
+  if (notused > 0)
+    printf_params("[LIBCONFIG], %i settings with NULL value pointer\n",notused);
+    
   if (errors ==0) {
-	  print_params("[LIBCONFIG], %i settings set successfully ",numoptions);
+	  printf_params("[LIBCONFIG], %i settings set successfully ",numoptions);
   } else {
 	  fprintf(stderr,"[LIBCONFIG] ...%i/%i settings creation errors \n",errors,numoptions);
   }
@@ -161,29 +186,39 @@ int  config_libconfig_set(paramdef_t *cfgoptions, int numoptions, char *prefix )
 	 prefix_elem1 = strtok_r(prefixbck, ".", &tokctx1);
   }
   int n1=0;
-  
+  /* parse the prefix , possibly creating groups, lists and list elements */
   while (prefix_elem1 != NULL) {
 	n1+=strlen(prefix_elem1)+1;
 	char *prefix_elem2 = ( n1<strlen(prefix) ) ? prefix_elem1+n1 : "";
-	
-	if (prefix_elem2[0] != '[') {
+/* prefix (the path to the parameter name) may contain groups and elements from a list, which are specified with [] */	
+	if (prefix_elem2[0] != '[') {  // not a list
 	  config_setting_t *tmpset = config_setting_lookup(asetting,prefix_elem1);
 	  if (tmpset == NULL)
 	    asetting = config_setting_add (asetting, prefix_elem1, CONFIG_TYPE_GROUP);
 	  else
 	    asetting = tmpset;
-    } else {
+    } else {                       // a list
 	  listidx=(int)strtol(prefix_elem2,NULL,10);
 	  config_setting_t *tmpset = config_setting_lookup(asetting,prefix_elem1);
 	  if (tmpset == NULL)
 	    asetting = config_setting_add (asetting, prefix_elem1, CONFIG_TYPE_LIST);
 	  else
 	     asetting = tmpset;
-//	  tmpset = 
+      if (asetting != NULL) {
+	     tmpset = config_setting_get_elem (asetting, listidx);
+         if (tmpset == NULL)
+           asetting = config_setting_add (asetting, NULL, CONFIG_TYPE_GROUP);
+         else
+           asetting = tmpset;
+      }
+      prefix_elem1 = strtok_r(NULL, ".", &tokctx1); //skip the [x] elements we already took care of it
+      if (prefix_elem1 == NULL) {
+          fprintf(stderr, "[LICONFIG] Error parsing %s__\n",prefix);
+          break;
+      }
 	}
 	if (asetting == NULL) {
 		fprintf(stderr,"[LIBCONFIG] Error creating setting %s %s %i\n",prefix_elem1,prefix_elem2,listidx);
-		break;
 	}
 	prefix_elem1 = strtok_r(NULL, ".", &tokctx1);
   }
@@ -498,10 +533,11 @@ int config_libconfig_init(char *cfgP[], int numP) {
 void config_libconfig_end(void ) {
   config_destroy(&(libconfig_privdata.cfg));
   if( cfgptr->rtflags & CONFIG_SAVERUNCFG ) {
+      char *fname=strdup(libconfig_privdata.configfile);
 	  char *newcfgf = malloc( strlen( libconfig_privdata.configfile +20));
 	  time_t t = time(NULL);
       struct tm tm = *localtime(&t);
-	  sprintf (newcfgf, "%s-run%d_%02d_%02d_%02d%02d",libconfig_privdata.configfile,
+	  sprintf (newcfgf, "%s/%s-run%d_%02d_%02d_%02d%02d",cfgptr->tmpdir,basename(fname),
 	           tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday, tm.tm_hour, tm.tm_min);
 	  if ( config_write_file (&(libconfig_privdata.runtcfg) , newcfgf) != CONFIG_TRUE) {
 		 fprintf(stderr,"[LIBCONFIG] %s %d file %s - line %d: %s\n",__FILE__, __LINE__,
@@ -511,6 +547,7 @@ void config_libconfig_end(void ) {
 		 printf("[LIBCONFIG] file %s created successfully\n", newcfgf);  
 	  }
 	  config_destroy(&(libconfig_privdata.runtcfg));
+      free(fname);
 	  free(newcfgf);
   }
   if ( libconfig_privdata.configfile != NULL ) {
