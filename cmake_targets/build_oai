@@ -64,9 +64,11 @@ CMAKE_CXX_FLAGS=()
 
 function print_help() {
   echo_info "
-This program installs OpenAirInterface Software
-You should have ubuntu 16.xx or 18.04 updated
-Options
+This script compiles OpenAirInterface Software, and can install dependencies
+for a number of distributions (Ubuntu 18-22, Fedora, RHEL7/8).
+Options:
+--arch-native
+   Passes -march=native to the compiler.
 -c | --clean
    Erase all files to make a rebuild from start
 -C | --clean-all
