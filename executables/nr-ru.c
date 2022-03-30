@@ -748,6 +748,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       // bit 11 enables the gpio programming
       // currently we switch beams every 10 slots (should = 1 TDD period in FR2) and we take the beam index of the first symbol of the first slot of this period
       int beam=0;
+      int BF_RST, BF_INC=-1, BF_RTN=0;
 
       if (slot%10==0) {
         if ( ru->common.beam_id && (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8)) {
@@ -755,6 +756,21 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
         }
       }
 
+      // reset condition
+      if(slot==0){
+	      BF_RST = 1;
+      } else{
+	      BF_RST = 0;
+      }
+
+      // beam increment condition. Here we are incrementing for every 10 slots
+      if(slot!=0 && slot%10==0){
+	      BF_INC = 1;
+      } else if(slot==0 || slot%10==1) {
+	      BF_INC = 0;
+      }
+
+      if(BF_INC!=-1) beam = BF_RST | BF_INC << 1 | BF_RTN << 2 | 8; 
       /*
       if (slot==0 || slot==40) beam=0|8;
       if (slot==10 || slot==50) beam=1|8;
