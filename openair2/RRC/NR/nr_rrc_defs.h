@@ -424,6 +424,11 @@ typedef struct rrc_gNB_ue_context_s {
   struct gNB_RRC_UE_s   ue_context;
 } rrc_gNB_ue_context_t;
 
+typedef struct {
+  int N1;
+  int N2;
+  int XP;
+} rrc_pdsch_AntennaPorts_t;
 
 typedef struct {
 
@@ -451,7 +456,7 @@ typedef struct {
   NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
   int ssb_SubcarrierOffset;
   int sib1_tda;
-  int pdsch_AntennaPorts;
+  rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts;
   int pusch_AntennaPorts;
   int minRXTXTIME;
   int do_CSIRS;
