@@ -173,17 +173,17 @@ extern int usrp_tx_thread;
 #define CONFIG_HLP_WEB           "Start embedded web server \n"
 #define CONFIG_FLOG_OPT          "R"
 #define CONFIG_LOGL_OPT          "g"
-/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            command line parameters for LOG utility                                                              */
-/*   optname                        helpstr       paramflags        XXXptr                              defXXXval            type           numelt */
-/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            command line parameters for LOG utility                                                                                     */
+/*   optname                        helpstr       paramflags                               XXXptr                              defXXXval            type           numelt */
+/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_LOGPARAMS_DESC {  \
-    {CONFIG_FLOG_OPT ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,           defintval:1,         TYPE_INT,      0},     \
-    {CONFIG_LOGL_OPT ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,                    defintval:0,         TYPE_UINT,     0},     \
-	{"telnetsrv",                CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,               defintval:0,         TYPE_UINT,     0},     \
-    {"websrv",                   CONFIG_HLP_WEB,  PARAMFLAG_BOOL,   uptr:&start_websrv,                  defintval:0,         TYPE_UINT,     0},     \
-	{"log-mem",                  NULL,            0,                strptr:(char **)&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
-	{"telnetclt",                NULL,            0,                uptr:&start_telnetclt,               defstrval:NULL,      TYPE_UINT,     0},     \
+    {CONFIG_FLOG_OPT ,           CONFIG_HLP_FLOG, 0,                                      uptr:&online_log_messages,           defintval:1,         TYPE_INT,      0},     \
+    {CONFIG_LOGL_OPT ,           CONFIG_HLP_LOGL, 0,                                      uptr:&glog_level,                    defintval:0,         TYPE_UINT,     0},     \
+	{"telnetsrv",                CONFIG_HLP_TELN, PARAMFLAG_BOOL|PARAMFLAG_CMDLINEONLY,   uptr:&start_telnetsrv,               defintval:0,         TYPE_UINT,     0},     \
+    {"websrv",                   CONFIG_HLP_WEB,  PARAMFLAG_BOOL|PARAMFLAG_CMDLINEONLY,   uptr:&start_websrv,                  defintval:0,         TYPE_UINT,     0},     \
+	{"log-mem",                  NULL,            0,                                      strptr:(char **)&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
+	{"telnetclt",                NULL,            0,                                      uptr:&start_telnetclt,               defstrval:NULL,      TYPE_UINT,     0},     \
   }
 
 

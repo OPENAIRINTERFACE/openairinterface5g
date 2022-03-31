@@ -95,10 +95,14 @@ int config_libconfig_setparams(paramdef_t *cfgoptions, int numoptions, config_se
  #define LIBCONFIG_NOTUSED_PARAMS "Not used? (NULL value ptr)"
  
  for(int i=0; i<numoptions; i++) {
+    if (cfgoptions[i].paramflags & PARAMFLAG_CMDLINEONLY) {
+      continue;
+      printf_params("[LIBCONFIG] setting %s.%s skipped (command line only) \n",(prefix==NULL)?"":prefix,cfgoptions[i].optname);
+    }
 	status=CONFIG_FALSE;
     config_setting_t * psetting;
     char *spath=malloc(((prefix==NULL)?0:strlen(prefix))+strlen(cfgoptions[i].optname)+10);
-    sprintf(spath,"%s.%s",prefix,cfgoptions[i].optname);
+    sprintf(spath,"%s%s%s",(prefix==NULL)?"":prefix, (prefix==NULL)?"":".", cfgoptions[i].optname);
     psetting = config_lookup(&(libconfig_privdata.runtcfg),spath);
     free(spath);
     if (psetting != NULL) {
