@@ -356,7 +356,7 @@ void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
     if (is_dmrs_symbol == 0) {
       //
       //rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
-      if (start_re + nb_re_pusch < frame_parms->ofdm_symbol_size) {
+      if (start_re + nb_re_pusch <= frame_parms->ofdm_symbol_size) {
         memcpy1((void*)rxF_ext,
                 (void*)&rxF[start_re*2],
                 nb_re_pusch*sizeof(int32_t));

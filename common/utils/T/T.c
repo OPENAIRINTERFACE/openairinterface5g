@@ -33,12 +33,6 @@ volatile int _T_freelist_head;
 volatile int *T_freelist_head = &_T_freelist_head;
 T_cache_t *T_cache;
 
-#if BASIC_SIMULATOR
-  /* global variables used by T_GET_SLOT, see in T.h */
-  volatile uint64_t T_next_id;
-  volatile uint64_t T_active_id;
-#endif
-
 static void get_message(int s) {
   char t;
   int l;
