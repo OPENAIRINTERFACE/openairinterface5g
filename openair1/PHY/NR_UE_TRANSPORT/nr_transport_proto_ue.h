@@ -851,10 +851,6 @@ void construct_HhH_elements(int *ch0conj_ch0,
                          int32_t *after_mf_11,
                          unsigned short nb_rb);
 
-void squared_matrix_element(int32_t *Hh_h_00,
-                            int32_t *Hh_h_00_sq,
-                            unsigned short nb_rb);
-
 void dlsch_channel_level_TM34_meas(int *ch00,
                                    int *ch01,
                                    int *ch10,
@@ -881,19 +877,33 @@ void nr_dlsch_detection_mrc(int **rxdataF_comp,
                             unsigned short nb_rb,
                             int length);
 
-void det_HhH(int32_t *after_mf_00,
-             int32_t *after_mf_01,
-             int32_t *after_mf_10,
-             int32_t *after_mf_11,
-             int32_t *det_fin_128,
-             unsigned short nb_rb);
+void nr_conjch0_mult_ch1(int *ch0,
+                         int *ch1,
+                         int32_t *ch0conj_ch1,
+                         unsigned short nb_rb,
+                         unsigned char output_shift0);
 
-void numer(int32_t *Hh_h_00_sq,
-           int32_t *Hh_h_01_sq,
-           int32_t *Hh_h_10_sq,
-           int32_t *Hh_h_11_sq,
-           int32_t *num_fin,
-           unsigned short nb_rb);
+void nr_a_sum_b(__m128i *input_x,
+                __m128i *input_y,
+                unsigned short nb_rb);
+
+void nr_det_A_MF_2x2(int32_t *a_mf_00,
+                     int32_t *a_mf_01,
+                     int32_t *a_mf_10,
+                     int32_t *a_mf_11,
+                     int32_t *det_fin,
+                     unsigned short nb_rb);
+
+void nr_squared_matrix_element(int32_t *a,
+                               int32_t *a_sq,
+                               unsigned short nb_rb);
+
+void nr_numer_2x2(int32_t *a_00_sq,
+                  int32_t *a_01_sq,
+                  int32_t *a_10_sq,
+                  int32_t *a_11_sq,
+                  int32_t *num_fin,
+                  unsigned short nb_rb);
 
 uint8_t rank_estimation_tm3_tm4(int *dl_ch_estimates_00,
                                 int *dl_ch_estimates_01,
