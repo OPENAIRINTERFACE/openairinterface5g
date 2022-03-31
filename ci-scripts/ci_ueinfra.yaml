@@ -31,7 +31,7 @@ nrmodule2_quectel:
   DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
   LogStore : /media/ci_qlogs  
   PLMN : 20897
-  UENetwork : wwan1
+  UENetwork : wwan0
   HostIPAddress : 192.168.18.189
   HostUsername : nrmodule2 
   HostPassword : linux 
