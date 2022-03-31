@@ -1494,7 +1494,8 @@ int start_rf(RU_t *ru) {
 }
 
 int stop_rf(RU_t *ru) {
-  ru->rfdevice.trx_end_func(&ru->rfdevice);
+  if (ru->rfdevice.trx_end_func )
+    ru->rfdevice.trx_end_func(&ru->rfdevice);
   return 0;
 }
 

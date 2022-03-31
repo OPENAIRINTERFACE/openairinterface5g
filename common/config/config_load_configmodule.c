@@ -316,7 +316,9 @@ configmodule_interface_t *load_configmodule(int argc,
     printf("%s ",cfgptr->cfgP[i]);
   }
 
-
+  if (cfgptr->rtflags & CONFIG_PRINTPARAMS) {
+	cfgptr->status = malloc(sizeof(configmodule_status_t));
+  }
   if (strstr(cfgparam,CONFIG_CMDLINEONLY) == NULL) {
     i=load_config_sharedlib(cfgptr);
 
@@ -357,6 +359,12 @@ configmodule_interface_t *load_configmodule(int argc,
 /* free memory allocated when reading parameters */
 /* config module could be initialized again after this call */
 void end_configmodule(void) {
+  if ( cfgptr->status && (cfgptr->rtflags & CONFIG_SAVERUNCFG)) {
+	 printf_params("[CONFIG] Runtime params creation status: %i null values, %i errors, %i successfull\n",
+	               cfgptr->status->num_err_nullvalue,
+	               cfgptr->status->num_err_write,
+	               cfgptr->status->num_write);
+  }
   if (cfgptr != NULL) {
     if (cfgptr->end != NULL) {
       printf ("[CONFIG] calling config module end function...\n");
@@ -382,7 +390,7 @@ void end_configmodule(void) {
 void free_configmodule(void) {
   if (cfgptr != NULL) {
     end_configmodule();
-
+    if( cfgptr->status != NULL) free(cfgptr->status);
     if( cfgptr->cfgmode != NULL) free(cfgptr->cfgmode);
 
     printf ("[CONFIG] free %i config parameter pointers\n",cfgptr->num_cfgP);

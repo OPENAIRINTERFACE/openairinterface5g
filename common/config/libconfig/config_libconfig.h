@@ -40,8 +40,6 @@ extern "C"
 
 #include "common/config/config_paramdesc.h"
 
-
-
  
 typedef struct libconfig_privatedata {
       char *configfile;

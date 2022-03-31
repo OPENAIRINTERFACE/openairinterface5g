@@ -64,6 +64,20 @@ typedef int(*configmodule_getfunc_t)(paramdef_t *,int numparams, char *prefix);
 typedef int(*configmodule_getlistfunc_t)(paramlist_def_t *, paramdef_t *,int numparams, char *prefix);
 typedef int(*configmodule_setfunc_t)(paramdef_t *cfgoptions, int numoptions, char *prefix );
 typedef void(*configmodule_endfunc_t)(void);
+typedef struct configmodule_status {
+	int num_paramgroups;
+	char ** paramgroups_names;
+	int num_err_nullvalue;
+	union {
+	  int num_err_read;
+	  int num_err_write;
+    };
+    union {
+	  int num_read;
+	  int num_write;
+    } ;
+}configmodule_status_t;
+
 typedef struct configmodule_interface {
   int      argc;
   char     **argv;
@@ -81,6 +95,7 @@ typedef struct configmodule_interface {
   char     *ptrs[CONFIG_MAX_ALLOCATEDPTRS];
   bool ptrsAllocated[CONFIG_MAX_ALLOCATEDPTRS];
   char *tmpdir;
+  configmodule_status_t *status;   // allocated in debug mode only
 } configmodule_interface_t;
 
 #ifdef CONFIG_LOADCONFIG_MAIN
