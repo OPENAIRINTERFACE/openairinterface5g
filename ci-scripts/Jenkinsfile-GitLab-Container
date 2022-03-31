@@ -242,7 +242,7 @@ pipeline {
           when { expression {doMandatoryTests} }
           steps {
             script {
-              triggerSlaveJob ('RAN-L2-Sim-Test-5G', 'Test-L2-Sim-Container-4G')
+              triggerSlaveJob ('RAN-L2-Sim-Test-5G', 'Test-L2-Sim-Container-5G')
             }
           }
           post {
