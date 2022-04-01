@@ -76,7 +76,8 @@ class Module_UE:
 			logging.debug('Starting ' + self.Process['Name'])
 			mySSH = sshconnection.SSHConnection()
 			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S ' + self.Process['Cmd'] + ' ' +  self.Process['Apn'][CNType]  + ' > /dev/null 2>&1 &','\$',5)
+			mySSH.command('echo ' + self.HostPassword + ' | sudo -S rm -f /tmp/quectel-cm.log','\$',5)
+			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S stdbuf -o0 ' + self.Process['Cmd'] + ' ' +  self.Process['Apn'][CNType]  + ' > /tmp/quectel-cm.log 2>&1 &','\$',5)
 			mySSH.close()
 			#checking the process
 			time.sleep(5)
