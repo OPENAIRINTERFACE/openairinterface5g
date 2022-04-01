@@ -79,10 +79,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
     NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
-    uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
     int16_t **mod_symbs = (int16_t**)dlsch->mod_symbs;
     int16_t **tx_layers = (int16_t**)dlsch->txdataF;
-    int16_t **txdataF_precoding = (int16_t**)dlsch->txdataF_precoding;
     int8_t Wf[2], Wt[2], l0, l_prime, l_overline, delta;
     uint8_t dmrs_Type = rel15->dmrsConfigType;
     int nb_re_dmrs;
@@ -100,6 +98,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
+    uint32_t scrambled_output[rel15->NrOfCodewords][(encoded_length>>5)+1];
     int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
 
     /* PTRS */
@@ -121,8 +120,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
-    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
-    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * Qm * rel15->nrOfLayers] __attribute__((aligned(32)));
+    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * Qm * rel15->nrOfLayers);
     start_meas(dlsch_encoding_stats);
 
     if (nr_dlsch_encoding(gNB,
@@ -147,20 +146,18 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     }
     printf("\n");
 #endif
-    
-    
-    
+
     /// scrambling
     start_meas(dlsch_scrambling_stats);
-    for (int q=0; q<rel15->NrOfCodewords; q++)
-      memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
-    for (int q=0; q<rel15->NrOfCodewords; q++)
+    for (int q=0; q<rel15->NrOfCodewords; q++) {
+      memset((void*)scrambled_output[q], 0, ((encoded_length>>5)+1)*sizeof(uint32_t));
       nr_pdsch_codeword_scrambling(output,
                                    encoded_length,
                                    q,
                                    rel15->dataScramblingId,
                                    rel15->rnti,
                                    scrambled_output[q]);
+    }
     
     stop_meas(dlsch_scrambling_stats);
 #ifdef DEBUG_DLSCH
@@ -219,6 +216,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
       start_sc -= frame_parms->ofdm_symbol_size;
 
     int txdataF_offset = slot*frame_parms->samples_per_slot_wCP;
+    int16_t **txdataF_precoding = (int16_t **)malloc16(rel15->nrOfLayers*sizeof(int16_t *));
+    for (int layer = 0; layer<rel15->nrOfLayers; layer++)
+      txdataF_precoding[layer] = (int16_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int16_t));
 
 #ifdef DEBUG_DLSCH_MAPPING
     printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
@@ -295,7 +295,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
           ptrs_symbol = is_ptrs_symbol(l,dlPtrsSymPos);
           if(ptrs_symbol) {
             /* PTRS QPSK Modulation for each OFDM symbol in a slot */
-            printf("Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
+            LOG_D(PHY,"Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
             nr_modulation(pdsch_dmrs[l][0], (n_ptrs<<1), DMRS_MOD_ORDER, mod_ptrs);
           }
         }
@@ -439,8 +439,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     // The same precoding matrix is applied on prg_size RBs, Thus
     //        pmi = prgs_list[rbidx/prg_size].pm_idx, rbidx =0,...,rbSize-1
     // The Precoding matrix:
-    // The Codebook Type I and Type II are not supported yet.
-    // We`adopt the precoding matrices of PUSCH for 4 layers.
+    // The Codebook Type I
     start_meas(&gNB->dlsch_precoding_stats);
 
     for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
@@ -457,59 +456,70 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
             pmi = 0;//no precoding
 
           if (pmi == 0) {//unitary Precoding
-            if(ap<rel15->nrOfLayers)
-              memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
-                     (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + k)],
-                     NR_NB_SC_PER_RB*sizeof(int32_t));
-            else
-              memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
-                     0,
-                     NR_NB_SC_PER_RB*sizeof(int32_t));
+            if (k + NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) { // RB does not cross DC
+              if(ap<rel15->nrOfLayers)
+                memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                       (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + k)],
+                       NR_NB_SC_PER_RB*sizeof(int32_t));
+              else
+                memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                       0,
+                       NR_NB_SC_PER_RB*sizeof(int32_t));
+            } else { // RB does cross DC
+              int neg_length = frame_parms->ofdm_symbol_size - k;
+              int pos_length = NR_NB_SC_PER_RB - neg_length;
+              if (ap<rel15->nrOfLayers) {
+                memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                       (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + k)],
+                       neg_length*sizeof(int32_t));
+                memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset],
+                       (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size)],
+                       pos_length*sizeof(int32_t));
+              } else {
+                memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                       0,
+                       neg_length*sizeof(int32_t));
+                memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset],
+                       0,
+                       pos_length*sizeof(int32_t));
+              }
+            }
             k += NR_NB_SC_PER_RB;
             if (k >= frame_parms->ofdm_symbol_size) {
               k -= frame_parms->ofdm_symbol_size;
             }
           }
           else {
-            //get the precoding matrix weights:
-            char *W_prec;
-            switch (frame_parms->nb_antennas_tx) {
-              case 1://1 antenna port
-                W_prec = nr_W_1l_2p[pmi][ap];
-                break;
-              case 2://2 antenna ports
-                if (rel15->nrOfLayers == 1)//1 layer
-                  W_prec = nr_W_1l_2p[pmi][ap];
-                else//2 layers
-                  W_prec = nr_W_2l_2p[pmi][ap];
-                break;
-              case 4://4 antenna ports
-                if (rel15->nrOfLayers == 1)//1 layer
-                  W_prec = nr_W_1l_4p[pmi][ap];
-                else if (rel15->nrOfLayers == 2)//2 layers
-                  W_prec = nr_W_2l_4p[pmi][ap];
-                else if (rel15->nrOfLayers == 3)//3 layers
-                  W_prec = nr_W_3l_4p[pmi][ap];
-                else//4 layers
-                  W_prec = nr_W_4l_4p[pmi][ap];
-                break;
-              default:
-                LOG_D(PHY,"Precoding 1,2, or 4 antenna ports are currently supported\n");
-                W_prec = nr_W_1l_2p[pmi][ap];
-                break;
-            }
-            for (int i=0; i<NR_NB_SC_PER_RB; i++) {
-              int32_t re_offset = l*frame_parms->ofdm_symbol_size + k;
-              int32_t precodatatx_F = nr_layer_precoder(txdataF_precoding, W_prec, rel15->nrOfLayers, re_offset);
-              ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[0];
-              ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[1];
-#ifdef DEBUG_DLSCH_MAPPING
-              printf("antenna %d\t l %d \t k %d \t txdataF: %d %d\n",
-                     ap, l, k, ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)],
-                     ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)]);
-#endif
-              if (++k >= frame_parms->ofdm_symbol_size) {
+            if(frame_parms->nb_antennas_tx==1){//no precoding matrix defined
+              memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + txdataF_offset + k],
+                     (void*)&txdataF_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + k)],
+                     NR_NB_SC_PER_RB*sizeof(int32_t));
+              k += NR_NB_SC_PER_RB;
+              if (k >= frame_parms->ofdm_symbol_size) {
                 k -= frame_parms->ofdm_symbol_size;
+              }
+            }
+            else {
+              //get the precoding matrix weights:
+              int32_t **mat = gNB->nr_mimo_precoding_matrix[rel15->nrOfLayers-1];
+              //i_row =0,...,dl_antenna_port
+              //j_col =0,...,nrOfLayers
+              //mat[pmi][i_rows*2+j_col]
+              int *W_prec;
+              W_prec = (int32_t *)&mat[pmi][ap*rel15->nrOfLayers];
+              for (int i=0; i<NR_NB_SC_PER_RB; i++) {
+                int32_t re_offset = l*frame_parms->ofdm_symbol_size + k;
+                int32_t precodatatx_F = nr_layer_precoder_cm(txdataF_precoding, W_prec, rel15->nrOfLayers, re_offset);
+                ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[0];
+                ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)] = ((int16_t *) &precodatatx_F)[1];
+  #ifdef DEBUG_DLSCH_MAPPING
+                printf("antenna %d\t l %d \t k %d \t txdataF: %d %d\n",
+                       ap, l, k, ((int16_t*)txdataF[ap])[(re_offset<<1) + (2*txdataF_offset)],
+                       ((int16_t*)txdataF[ap])[(re_offset<<1) + 1 + (2*txdataF_offset)]);
+  #endif
+                if (++k >= frame_parms->ofdm_symbol_size) {
+                  k -= frame_parms->ofdm_symbol_size;
+                }
               }
             }
           }
@@ -535,6 +545,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     else {
       LOG_D(PHY,"beam index for PDSCH allocation already taken\n");
     }
+    for (int layer = 0; layer<rel15->nrOfLayers; layer++)
+      free16(txdataF_precoding[layer],2*14*frame_parms->ofdm_symbol_size);
+    free16(txdataF_precoding,rel15->nrOfLayers);
   }// dlsch loop
 }
 

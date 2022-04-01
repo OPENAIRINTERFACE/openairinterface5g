@@ -861,7 +861,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
           /* perform correlation of rx data and pss sequence ie it is a dot product */
           result  = dot_product64((short*)primary_synchro_time_nr[pss_index], 
-				  (short*) &(rxdata[ar][n+is*frame_parms->samples_per_frame]), 
+				  (short*)&(rxdata[ar][n+is*frame_parms->samples_per_frame]), 
 				  frame_parms->ofdm_symbol_size, 
 				  shift);
 	  pss_corr_ue[pss_index][n] += abs64(result);

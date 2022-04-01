@@ -43,16 +43,31 @@
 //#include "targets/RT/USER/lte-softmodem.h"
 #include "executables/softmodem-common.h"
 
-char *get_devname(int devtype) {
-char *devnames[MAX_RF_DEV_TYPE]=DEVTYPE_NAMES;
+const char* devtype_names[MAX_RF_DEV_TYPE] = {
+  "",
+  "EXMIMO",
+  "USRP B200",
+  "USRP X300",
+  "USRP N300",
+  "USRP X400",
+  "BLADERF",
+  "LMSSDR",
+  "IRIS",
+  "No HW",
+  "ADRV9371_ZC706",
+  "UEDv2",
+  "RFSIMULATOR"
+};
+
+const char *get_devname(int devtype) {
   if (devtype < MAX_RF_DEV_TYPE && devtype !=MIN_RF_DEV_TYPE )
-  	  return devnames[devtype];
+    return devtype_names[devtype];
   return "none";
 }
 
 int set_device(openair0_device *device)
 {
-  char *devname = get_devname(device->type);
+  const char *devname = get_devname(device->type);
     if (strcmp(devname,"none") != 0) {
       LOG_I(HW,"[%s] has loaded %s device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"),devname);
     } else {
@@ -101,9 +116,6 @@ int load_lib(openair0_device *device,
   	  deflibname=OAI_IQPLAYER_LIBNAME;
   	  shlib_fdesc[0].fname="device_init";
   	  set_softmodem_optmask(SOFTMODEM_RECPLAY_BIT);  // softmodem has to know we use the iqplayer to workaround randomized algorithms
-  } else  if ( IS_SOFTMODEM_BASICSIM ) {
-	  deflibname=OAI_BASICSIM_LIBNAME;
-	  shlib_fdesc[0].fname="device_init";
   } else if (IS_SOFTMODEM_RFSIM && flag == RAU_LOCAL_RADIO_HEAD) {
 	  deflibname=OAI_RFSIM_LIBNAME;
 	  shlib_fdesc[0].fname="device_init";
