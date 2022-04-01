@@ -1,9 +1,13 @@
 import { Component } from '@angular/core';
 import { FormControl } from '@angular/forms';
+import { BehaviorSubject } from 'rxjs';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
-import { CommandsApi } from 'src/app/api/commands.api';
+import { tap } from 'rxjs/internal/operators/tap';
+import { CommandsApi, IOptionType, ISubCommands, IVariable } from 'src/app/api/commands.api';
+import { SubCmdCtrl } from 'src/app/controls/cmds.control';
 import { InfosCtrl } from 'src/app/controls/infos.control';
+import { VariableCtrl } from 'src/app/controls/variable.control';
 import { LoadingService } from 'src/app/services/loading.service';
 
 
@@ -14,10 +18,15 @@ import { LoadingService } from 'src/app/services/loading.service';
 })
 export class CommandsComponent {
 
-  infos$: Observable<InfosCtrl>
-  // infos: InfosCtrl
+  IOptionType = IOptionType;
 
-  selected = new FormControl()
+  infos$: Observable<InfosCtrl>
+  variables$ = new BehaviorSubject<VariableCtrl[]>([])
+  subcmds$: BehaviorSubject<SubCmdCtrl> | undefined
+
+  selectedCmd = new FormControl()
+  selectedSubCmd = new FormControl()
+  selectedVariable?: VariableCtrl
 
   constructor(
     public commandsApi: CommandsApi,
@@ -26,38 +35,22 @@ export class CommandsComponent {
     this.infos$ = this.commandsApi.readInfos$().pipe(
       map((doc) => new InfosCtrl(doc)),
     );
-
-    // this.infos = new InfosCtrl({
-    //   display_status: {
-    //     config_file: '../../../ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf',
-    //     executable_function: "gnb"
-    //   },
-    //   menu_cmds: [
-    //     "telnet",
-    //     "softmodem",
-    //     "loader",
-    //     "measur",
-    //     "rfsimu"
-    //   ]
-    // })
-
-    // const BODY_JSON = {
-    //   "display_status": {
-    //     "config_file": '../../../ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf',
-    //     "executable_function": "gnb"
-    //   },
-    //   "menu_cmds": [
-    //     "telnet",
-    //     "softmodem",
-    //     "loader",
-    //     "measur",
-    //     "rfsimu"
-    //   ]
-    // }
-
   }
 
-  onSubmit() {
-    this.commandsApi.runCommand$(this.selected.value).subscribe();
+  onCmdSubmit(subCmdName: string) {
+    this.commandsApi.runCommand$(subCmdName).subscribe();
+  }
+
+
+  onVarSubmit(varCtrl: VariableCtrl) {
+    this.commandsApi.setVariable$(varCtrl.api()).subscribe();
+  }
+
+  onSelect(cmdNameFC: FormControl) {
+    this.commandsApi.getOptions$(cmdNameFC.value).subscribe(opts => {
+      this.variables$.next(opts.filter(iopt => iopt.type === IOptionType.variable).map(iopt => new VariableCtrl(iopt as IVariable)))
+      const [subCmds] = opts.filter(iopt => iopt.type === IOptionType.subcommand)
+      this.subcmds$ = new BehaviorSubject<SubCmdCtrl>(new SubCmdCtrl(subCmds as ISubCommands))
+    })
   }
 }

@@ -12,6 +12,23 @@ export interface IInfos {
     menu_cmds: string[];
 }
 
+export enum IOptionType {
+    subcommand = "subcommand",
+    variable = "variable"
+}
+export interface IOption {
+    type: IOptionType;
+}
+
+export interface IVariable extends IOption {
+    name: string;
+    value: string;
+    modifiable: boolean;
+}
+export interface ISubCommands extends IOption {
+    name: string[];
+}
+
 const route = '/oaisoftmodem';
 
 @Injectable({
@@ -22,41 +39,10 @@ export class CommandsApi {
 
     public readInfos$ = () => this.httpClient.get<IInfos>(environment.backend + route);
 
-    public runCommand$ = (cmdName: string) => this.httpClient.post<string>(environment.backend + route, cmdName);
+    public getOptions$ = (cmdName: string) => this.httpClient.get<IOption[]>(environment.backend + route + '/module/' + cmdName);
+
+    public runCommand$ = (cmdName: string) => this.httpClient.post<string>(environment.backend + route + '/command/' + cmdName, {});
+
+    public setVariable$ = (variable: IVariable) => this.httpClient.post<string>(environment.backend + route + '/variable/' + variable.name, variable.value);
+
 }
-
-
-// FRANCOIS_BODY = {
-//     "main_oai softmodem": [
-//         {
-//             "display_status": [
-//                 { "Config file": "../../../ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.usrpn310.conf" },
-//                 { "Executable function": "gnb" }
-//             ]
-//         },
-//         {
-//             "menu_cmds": [
-//                 "telnet",
-//                 "softmodem",
-//                 "loader",
-//                 "measur",
-//                 "rfsimu"
-//             ]
-//         }
-//     ]
-// }
-
-// YASS_BODY = {
-//     display_status: {
-//         config_file: '../../../ ci - scripts / conf_files / gnb.band78.sa.fr1.106PRB.usrpn310.conf',
-//         executable_function: "gnb"
-
-//     },
-//     menu_cmds: [
-//         "telnet",
-//         "softmodem",
-//         "loader",
-//         "measur",
-//         "rfsimu"
-//     ]
-// }

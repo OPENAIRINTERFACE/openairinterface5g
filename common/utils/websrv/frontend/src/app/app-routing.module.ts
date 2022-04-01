@@ -3,7 +3,7 @@ import { Routes, RouterModule } from '@angular/router';
 import { CommandsComponent } from './components/commands/commands.component';
 
 const routes: Routes = [
-  { path: '', redirectTo: '/', pathMatch: 'full' },
+  { path: '', redirectTo: '/commands', pathMatch: 'full' },
   { path: 'commands', component: CommandsComponent },
   { path: '**', redirectTo: '' },
 ];
