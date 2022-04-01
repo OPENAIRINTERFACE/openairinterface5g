@@ -200,7 +200,7 @@ function main() {
             shift 2;;
        -d | --build-dir)
             BUILD_DIR=$2
-            shift;;
+            shift 2;;
        -I | --install-external-packages)
             INSTALL_EXTERNAL=1
             echo_info "Will install external packages"
