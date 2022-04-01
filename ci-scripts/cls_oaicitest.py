@@ -122,6 +122,7 @@ def GetPingTimeAnalysis(RAN,ping_log_file,ping_rttavg_threshold):
 		try:
 			mySSH = sshconnection.SSHConnection()
 			mySSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, ping_log_file+'.png', RAN.eNBSourceCodePath + '/cmake_targets/')
+			mySSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, ping_log_file, RAN.eNBSourceCodePath + '/cmake_targets/')
 		except:
 			logging.debug('\u001B[1;37;41m Ping PNG SCP to eNB FAILED\u001B[0m')
 
@@ -1598,7 +1599,7 @@ class OaiCiTest():
 			else:
 				if launchfromModule == False:
 					#ping log file is on the python executor
-					cmd = 'ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 > ping_' + self.testCase_id + '_' + device_id + '.log' 
+					cmd = 'ping ' + self.ping_args + ' ' + UE_IPAddress + ' > ping_' + self.testCase_id + '_' + device_id + '.log 2>&1'
 					message = cmd + '\n'
 					logging.debug(cmd)
 					ret = subprocess.run(cmd, shell=True)
@@ -1623,7 +1624,7 @@ class OaiCiTest():
 					else:
 						Target = EPC.IPAddress
 					#ping from module NIC rather than IP address to make sure round trip is over the air	
-					cmd = 'ping -I ' + Module_UE.UENetwork  + ' ' + self.ping_args + ' ' +  Target  + ' 2>&1 > ping_' + self.testCase_id + '_' + self.ue_id + '.log' 
+					cmd = 'ping -I ' + Module_UE.UENetwork  + ' ' + self.ping_args + ' ' +  Target  + ' > ping_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1'
 					SSH.command(cmd,'\$',int(ping_time[0])*1.5)
 					#copy the ping log file to have it locally for analysis (ping stats)
 					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'ping_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
@@ -2084,7 +2085,8 @@ class OaiCiTest():
 			statusQueue.put(UE_IPAddress)
 			statusQueue.put(report_msg)
 			logging.debug('\u001B[1;37;45m TCP Bidir Iperf Result (' + UE_IPAddress + ') \u001B[0m')
-			logging.debug('\u001B[1;35m    ' + report_msg + '\u001B[0m')
+			for rLine in report_msg.split('\n'):
+				logging.debug('\u001B[1;35m    ' + rLine + '\u001B[0m')
 			lock.release()
 		else:
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Could not analyze from Log file')
@@ -2379,10 +2381,12 @@ class OaiCiTest():
 			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 
 
-	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, Module_UE):
+	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, Module_UE, RAN):
+		SSH = sshconnection.SSHConnection()
+		server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
+		client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 		if (re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE)) or (re.match('OAICN5G', EPC.Type, re.IGNORECASE)):
 			#retrieve trf-gen container IP address
-			SSH = sshconnection.SSHConnection()
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 			SSH.command('docker inspect --format="TRF_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-trf-gen', '\$', 5)
 			result = re.search('TRF_IP_ADDR = (?P<trf_ip_addr>[0-9\.]+)', SSH.getBefore())
@@ -2404,20 +2408,18 @@ class OaiCiTest():
 			if self.iperf_direction=="DL":
 				logging.debug("Iperf for Module in DL mode detected")
 				##server side UE
-				server_filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm ' + server_filename
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u 2>&1 > ' + server_filename + ' &'
+				cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u -i 1 > ' + server_filename + ' 2>&1 &'
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 				##client side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 				#remove old client file in EPC.SourceCodePath
 				cmd = 'rm ' + EPC.SourceCodePath + '/' + client_filename 
 				SSH.command(cmd,'\$',5)
-				iperf_cmd = 'bin/iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > ' + client_filename
+				iperf_cmd = 'bin/iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' > ' + client_filename + ' 2>&1'
 				cmd = 'docker exec -w /iperf-2.0.13 -it prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',int(iperf_time)*5.0)
 				SSH.command('docker cp prod-trf-gen:/iperf-2.0.13/'+ client_filename + ' ' + EPC.SourceCodePath, '\$', 5)
@@ -2433,19 +2435,17 @@ class OaiCiTest():
 				logging.debug("Iperf for Module in UL mode detected")
 				#server side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 
-				iperf_cmd = 'echo $USER; nohup bin/iperf -s -u 2>&1 > ' + server_filename
+				iperf_cmd = 'echo $USER; nohup bin/iperf -s -u -i 1 > ' + server_filename + ' 2>&1'
 				cmd = 'docker exec -d -w /iperf-2.0.13 prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 
 				#client side UE
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 				cmd = 'rm '+ client_filename
 				SSH.command(cmd,'\$',5)
-				SSH.command('iperf -B ' + UE_IPAddress + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' 2>&1 > ' + client_filename, '\$', int(iperf_time)*5.0)
+				SSH.command('iperf -B ' + UE_IPAddress + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' > ' + client_filename + ' 2>&1', '\$', int(iperf_time)*5.0)
 				SSH.close()
 
 				#once client is done, retrieve the server file from container to EPC Host
@@ -2461,12 +2461,10 @@ class OaiCiTest():
 
 			elif self.iperf_direction=="BIDIR":
 				logging.debug("Iperf for Module in BIDIR mode detected")
-				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 
 				#server side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-				iperf_cmd = 'echo $USER; nohup /usr/local/bin/iperf3 -s 2>&1 > ' + server_filename
+				iperf_cmd = 'echo $USER; nohup /usr/local/bin/iperf3 -s -i 1 > ' + server_filename + ' 2>&1'
 				cmd = 'docker exec -d -w /iperf-2.0.13 prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',5)
 				SSH.close()
@@ -2475,7 +2473,7 @@ class OaiCiTest():
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm '+ client_filename
 				SSH.command(cmd,'\$',5)
-				SSH.command('iperf3 -B ' + UE_IPAddress + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' 2>&1 > ' + client_filename, '\$', int(iperf_time)*5.0)
+				SSH.command('iperf3 -B ' + UE_IPAddress + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' > ' + client_filename + ' 2>&1', '\$', int(iperf_time)*5.0)
 				SSH.close()
 
 				#once client is done, retrieve the server file from container to EPC Host
@@ -2498,8 +2496,6 @@ class OaiCiTest():
 				logging.debug("Incorrect or missing IPERF direction in XML")
 
 		else: 		#default is ltebox
-
-			SSH = sshconnection.SSHConnection()
 
 			#kill iperf processes before (in case there are still some remaining)
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
@@ -2524,14 +2520,14 @@ class OaiCiTest():
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log &' 
+				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u -i 1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1 &' 
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 				#client side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log' 
+				cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1' 
 				SSH.command(cmd,'\$',int(iperf_time)*5.0)
 				SSH.close()
 				#copy the 2 resulting files locally
@@ -2547,7 +2543,7 @@ class OaiCiTest():
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				cmd = 'rm iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup iperf -s -u 2>&1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log  &'
+				cmd = 'echo $USER; nohup iperf -s -u -i 1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1 &'
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 
@@ -2555,7 +2551,7 @@ class OaiCiTest():
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				SSH.command('/opt/iperf-2.0.10/iperf -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', int(iperf_time)*5.0)
+				SSH.command('/opt/iperf-2.0.10/iperf -c 192.172.0.1 ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1', '\$', int(iperf_time)*5.0)
 				SSH.close()
 
 				#copy the 2 resulting files locally
@@ -2566,15 +2562,13 @@ class OaiCiTest():
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
 			elif self.iperf_direction=="BIDIR":
 				logging.debug("Iperf for Module in BIDIR mode detected")
-				server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-				client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 
 
 				#server side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				cmd = 'rm ' + server_filename
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup iperf3 -s 2>&1 > '+server_filename+' &'
+				cmd = 'echo $USER; nohup iperf3 -s -i 1 > '+server_filename+' 2>&1 &'
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 
@@ -2582,7 +2576,7 @@ class OaiCiTest():
 				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 				cmd = 'rm ' + client_filename
 				SSH.command(cmd,'\$',5)
-				SSH.command('iperf3 -c 192.172.0.1 ' + self.iperf_args + ' 2>&1 > '+client_filename, '\$', int(iperf_time)*5.0)
+				SSH.command('iperf3 -c 192.172.0.1 ' + self.iperf_args + ' > '+client_filename + ' 2>&1', '\$', int(iperf_time)*5.0)
 				SSH.close()
 
 				#copy the 2 resulting files locally
@@ -2592,6 +2586,7 @@ class OaiCiTest():
 				self.Iperf_analyzeV2BIDIR(lock, UE_IPAddress, device_id, statusQueue, server_filename, client_filename)
 			else :
 				logging.debug("Incorrect or missing IPERF direction in XML")
+
 
 			#kill iperf processes after to be clean
 			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
@@ -2606,7 +2601,12 @@ class OaiCiTest():
 			cmd = 'killall --signal=SIGKILL iperf3'
 			SSH.command(cmd,'\$',5)
 			SSH.close()
-			return
+
+		# Copying to xNB server for Jenkins artifacting
+		if (os.path.isfile(server_filename)):
+			SSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, server_filename, RAN.eNBSourceCodePath + '/cmake_targets/')
+		if (os.path.isfile(client_filename)):
+			SSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, client_filename, RAN.eNBSourceCodePath + '/cmake_targets/')
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
 		try:
@@ -2804,12 +2804,12 @@ class OaiCiTest():
 				else:
 					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				# fromdos has to be called on the python executor not on ADB server
-				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 > /dev/null'
+				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log > /dev/null 2>&1'
 				try:
 					subprocess.run(cmd, shell=True)
 				except:
 					pass
-				cmd = 'dos2unix -o iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 > /dev/null'
+				cmd = 'dos2unix -o iperf_server_' + self.testCase_id + '_' + device_id + '.log > /dev/null 2>&1'
 				try:
 					subprocess.run(cmd, shell=True)
 				except:
@@ -2995,7 +2995,7 @@ class OaiCiTest():
         	#special quick and dirty treatment for modules, iperf to be restructured
 			if self.ue_id!="": #is module
 				device_id = Module_UE.ID + "-" + Module_UE.Kind
-				p = Process(target = self.Iperf_Module ,args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, Module_UE,))
+				p = Process(target = self.Iperf_Module ,args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, Module_UE, RAN, ))
 			else: #legacy code
 				p = Process(target = self.Iperf_common, args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, ))
 			p.daemon = True

@@ -24,7 +24,8 @@
     }
 */
 
-#pragma once
+#ifndef __OPENAIR2_PHY_INTERFACE_QUEUE_T__H__
+#define __OPENAIR2_PHY_INTERFACE_QUEUE_T__H__
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -62,3 +63,5 @@ typedef bool queue_matcher_t(void *wanted, void *candidate);
    Look only at the last `max_depth` items on the queue, at most.
    Returns the candidate item, or NULL if none matches */
 void *unqueue_matching(queue_t *q, size_t max_depth, queue_matcher_t *matcher, void *wanted);
+
+#endif  /* __OPENAIR2_PHY_INTERFACE_QUEUE_T__H__ */

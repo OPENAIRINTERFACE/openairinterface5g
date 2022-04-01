@@ -79,10 +79,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      NR_UE_NR_Capability_t *uecap,
                                      int scg_id,
                                      int servCellIndex,
-                                     rrc_pdsch_AntennaPorts_t dl_antenna_ports,
-                                     int minRXTXTIMEpdsch,
-                                     int do_csirs,
-                                     int do_srs,
+                                     const gNB_RrcConfigurationReq *configuration,
                                      int uid);
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
@@ -90,10 +87,7 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            NR_UE_NR_Capability_t *uecap,
-                           rrc_pdsch_AntennaPorts_t dl_antenna_ports,
-                           int minRXTXTIMEpdsch,
-                           int do_csirs,
-                           int do_srs,
+                           const gNB_RrcConfigurationReq *configuration,
                            int uid);
 
 void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
