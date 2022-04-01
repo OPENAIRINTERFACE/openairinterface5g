@@ -40,14 +40,14 @@ void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   int pdsch_AntennaPorts,
+                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
-                           int pdsch_AntennaPorts,
+                           rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
                            int minRXTXTIMEpdsch,
@@ -290,6 +290,14 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);
+
+void set_r_pucch_parms(int rsetindex,
+                       int r_pucch,
+                       int bwp_size,
+                       int *prb_start,
+                       int *second_hop_prb,
+                       int *nr_of_symbols,
+                       int *start_symbol_index);
 
 /* find coreset within the search space */
 NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,

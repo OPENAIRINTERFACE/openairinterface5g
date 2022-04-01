@@ -458,8 +458,6 @@ typedef struct RU_t_s {
   int emulate_rf;
   /// numerology index
   int numerology;
-  /// flag to indicate basicsim operation
-  int basicsim;
   /// flag to indicate the RU is in sync with a master reference
   int in_synch;
   /// timing offset

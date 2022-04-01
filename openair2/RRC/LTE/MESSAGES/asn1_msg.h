@@ -28,6 +28,9 @@
 * \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr
 */
 
+#ifndef __RRC_LTE_MESSAGES_ASN1_MSG__H__
+#define __RRC_LTE_MESSAGES_ASN1_MSG__H__
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h> /* for atoi(3) */
@@ -405,3 +408,5 @@ uint8_t do_SecurityModeCommand(
   const uint8_t Transaction_id,
   const uint8_t cipheringAlgorithm,
   const uint8_t integrityProtAlgorithm);
+
+#endif  /* __RRC_LTE_MESSAGES_ASN1_MSG__H__ */
