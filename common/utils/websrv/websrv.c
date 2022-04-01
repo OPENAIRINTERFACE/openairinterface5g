@@ -223,12 +223,9 @@ int websrv_callback_get_softmodemcmd(const struct _u_request * request, struct _
 	return U_CALLBACK_CONTINUE;
 }
 
-/* callback processing initial url (<address>/oaisoftmodem)*/
-int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct _u_response * response, void * user_data) {
+int websrv_callback_get_softmodemmodules(const struct _u_request * request, struct _u_response * response, void * user_data) {
   telnetsrv_params_t *telnetparams= get_telnetsrv_params();
-  char *cfgfile=CONFIG_GETCONFFILE ;
-  char *execfunc=get_softmodem_function(NULL);
-  
+
 
 
   json_t *cmdnames = json_array();
@@ -236,38 +233,60 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
 	  json_t *acmd =json_string( telnetparams->CmdParsers[i].module);
 	  json_array_append(cmdnames, acmd);
 	  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", "oaisoftmodem/module",telnetparams->CmdParsers[i].module , 0, &websrv_callback_get_softmodemcmd, telnetparams->CmdParsers[i].module );
- //     client_printf("   module %i = %s:\n",i,telnetparams.CmdParsers[i].module);
-
- //     for(j=0; telnetparams.CmdParsers[i].var[j].varvalptr != NULL ; j++) {
- //       client_printf("      %s [get set] %s <value>\n",
- //                     telnetparams.CmdParsers[i].module, telnetparams.CmdParsers[i].var[j].varname);
- //     }
-
- //     for(j=0; telnetparams.CmdParsers[i].cmd[j].cmdfunc != NULL ; j++) {
- //       client_printf("      %s %s %s\n",
- //                     telnetparams.CmdParsers[i].module,telnetparams.CmdParsers[i].cmd[j].cmdname,
- //                     telnetparams.CmdParsers[i].cmd[j].helpstr);
- //     }
     }
-  json_t *body=json_pack("{s:{s:s,s:s},s:o}",
-                         "display_status", "config_file", cfgfile, "executable_function", execfunc,
+  json_t *body=json_pack("{s:o}",
                          "menu_cmds", cmdnames);
   if (body==NULL) {
-	  LOG_E(UTIL,"websrv cannot encode body response\n");
+	  LOG_E(UTIL,"websrv cannot encode modules body response\n");
   } else {
-	  websrv_printjson("body",body);
+	  websrv_printjson("modules body",body);
   }
   
   int us=ulfius_add_header_to_response(response,"content-type" ,"application/json");
   if (us != U_OK){
 	  ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
-	  LOG_E(UTIL,"websrv cannot set response header type ulfius error %d \n",us);
+	  LOG_E(UTIL,"websrv cannot set modules response header type ulfius error %d \n",us);
   }  
   
   us=ulfius_set_json_body_response(response, 200, body);
   if (us != U_OK){
 	  ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_set_json_body_response)");
-	  LOG_E(UTIL,"websrv cannot set body response ulfius error %d \n",us);
+	  LOG_E(UTIL,"websrv cannot set modules body response ulfius error %d \n",us);
+  }
+//  ulfius_set_string_body_response(response, 200, cfgfile);
+  return U_CALLBACK_CONTINUE;
+}
+/* callback processing initial url (<address>/oaisoftmodem)*/
+int websrv_callback_get_softmodemstatus(const struct _u_request * request, struct _u_response * response, void * user_data) {
+  char *cfgfile=CONFIG_GETCONFFILE ;
+  char *execfunc=get_softmodem_function(NULL);
+  char *strbool="false";
+  json_t *moduleactions = json_array();
+  json_t *body1=json_pack("{s:s,s:s,s:s,s:s}","type","variable","name","config_file", "value",cfgfile, "modifiable",strbool);
+  if (body1==NULL) {
+	  LOG_E(UTIL,"websrv cannot encode status body1 response\n");
+  } else {
+	  websrv_printjson("status body1",body1);
+  }  
+  json_t *body2=json_pack("{s:s,s:s,s:s,s:s}","type","variable","name","config_file", "value",execfunc, "modifiable",strbool); 
+  if (body2==NULL) {
+	  LOG_E(UTIL,"websrv cannot encode status body1 response\n");
+  } else {
+	  websrv_printjson("status body2",body2);
+  } 
+  json_array_append(moduleactions , body1);
+  json_array_append(moduleactions , body2);
+  
+  int us=ulfius_add_header_to_response(response,"content-type" ,"application/json");
+  if (us != U_OK){
+	  ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
+	  LOG_E(UTIL,"websrv cannot set status response header type ulfius error %d \n",us);
+  }  
+  
+  us=ulfius_set_json_body_response(response, 200, moduleactions);
+  if (us != U_OK){
+	  ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_set_json_body_response)");
+	  LOG_E(UTIL,"websrv cannot set status body response ulfius error %d \n",us);
   }
 //  ulfius_set_string_body_response(response, 200, cfgfile);
   return U_CALLBACK_CONTINUE;
@@ -297,7 +316,8 @@ int websrv_callback_get_softmodeminfo(const struct _u_request * request, struct 
   //1: load the frontend code: files contained in the websrvparams.url directory
   ulfius_add_endpoint_by_val(websrvparams.instance, "GET", websrvparams.url, NULL, 0, &websrv_callback_get_mainurl, NULL);
   //2: build the first page, when receiving the "oaisoftmodem" url 
-  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", "oaisoftmodem", NULL, 0, &websrv_callback_get_softmodeminfo, NULL);
+  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", "oaisoftmodem", "status", 0, &websrv_callback_get_softmodemstatus, NULL);
+  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", "oaisoftmodem", "modules", 0, &websrv_callback_get_softmodemmodules, NULL);
  //ulfius_add_endpoint_by_val(&instance, "GET", "softmodem", "", 0, &callback_get_empty_response, NULL);
  // ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, "/multiple/:multiple/:multiple/:not_multiple", 0, &callback_all_test_foo, NULL);
  // ulfius_add_endpoint_by_val(&instance, "POST", PREFIX, NULL, 0, &callback_post_test, NULL);

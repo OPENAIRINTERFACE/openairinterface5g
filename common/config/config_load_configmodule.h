@@ -68,6 +68,7 @@ typedef struct configmodule_status {
 	int num_paramgroups;
 	char ** paramgroups_names;
 	int num_err_nullvalue;
+    int emptyla;	
 	union {
 	  int num_err_read;
 	  int num_err_write;

@@ -88,6 +88,8 @@ int processoption(paramdef_t *cfgoptions, char *value) {
         config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(tmpval)+1);
         sprintf(*(cfgoptions->strptr), "%s",tmpval);
       } else {
+		AssertFatal( ( strlen(*(cfgoptions->strptr)) < cfgoptions->numelt), "[CONFIG] Error: %s too long, %s value cannot exceed %i bytes\n",
+		             cfgoptions->optname,tmpval, cfgoptions->numelt) ;
         sprintf( (char *)(cfgoptions->strptr), "%s",tmpval);
       }
 
