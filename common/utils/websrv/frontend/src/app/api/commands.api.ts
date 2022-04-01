@@ -2,15 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 
-export interface IStatus {
-    config_file: string;
-    executable_function: string;
-}
-
-export interface IInfos {
-    display_status: IStatus;
-    menu_cmds: string[];
-}
 
 export enum IOptionType {
     subcommand = "subcommand",
@@ -37,7 +28,9 @@ const route = '/oaisoftmodem';
 export class CommandsApi {
     constructor(private httpClient: HttpClient) { }
 
-    public readInfos$ = () => this.httpClient.get<IInfos>(environment.backend + route);
+    public readStatus$ = () => this.httpClient.get<IVariable[]>(environment.backend + route + '/status/');
+
+    public readModules$ = () => this.httpClient.get<string[]>(environment.backend + route + '/modules/');
 
     public getOptions$ = (cmdName: string) => this.httpClient.get<IOption[]>(environment.backend + route + '/module/' + cmdName);
 

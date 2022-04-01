@@ -1,38 +1,45 @@
-<div *ngIf="infos$ | async as infos">
-
+<div *ngIf="status$ | async as statusVariables">
   <h1 mat-dialog-title>Status</h1>
-  <p> config_file: {{ infos.display_status.config_file }}</p>
-  <p> executable_function: {{ infos.display_status.executable_function }}</p>
-
-  <div *ngIf="infos$ | async as infos" fxLaypout="row">
-    <h1 mat-dialog-title>Commands</h1>
+  <div *ngFor="let status of statusVariables">
     <mat-form-field>
-      <mat-label>Command</mat-label>
-      <mat-select [formControl]="selectedCmd" [value]="selectedCmd?.value" (selectionChange)="onSelect(selectedCmd)">
-        <mat-option *ngFor="let control of infos.cmdsFA.controls" [value]="control.value">{{ control.value }}
-        </mat-option>
-      </mat-select>
+      <mat-label>{{ status.nameFC.value }}</mat-label>
+      <input input matInput [formControl]="status.valueFC" />
     </mat-form-field>
+    <button mat-raised-button color="primary" [disabled]="!status.modifiableFC.value" (click)="onVarSubmit(status)">
+      set
+    </button>
+  </div>
+</div>
 
-    <div *ngIf="variables$ | async as variables" fxLaypout="column">
-      <h1 mat-dialog-title>Variables</h1>
-      <div *ngFor="let variable of variables">
-        <mat-form-field>
-          <mat-label>{{ variable.nameFC.value }}</mat-label>
-          <input input matInput [formControl]="variable.valueFC" />
-        </mat-form-field>
-        <button mat-raised-button color="primary" [disabled]="!variable.modifiableFC.value"
-          (click)="onVarSubmit(variable)">
-          set
-        </button>
-      </div>
-    </div>
+<div *ngIf="cmds$ | async as cmds" fxLaypout="row">
+  <h1 mat-dialog-title>Commands</h1>
+  <mat-form-field>
+    <mat-label>Command</mat-label>
+    <mat-select [formControl]="selectedCmd" [value]="selectedCmd?.value" (selectionChange)="onSelect(selectedCmd)">
+      <mat-option *ngFor="let cmd of cmds" [value]="cmd">{{ cmd }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
 
-    <div *ngIf="subcmds$ | async as subcmds" fxLaypout="column" fxLayoutGap="10px">
-      <h1 mat-dialog-title>Sub-commands</h1>
-      <button *ngFor="let control of subcmds.namesFA.controls" mat-raised-button color="primary"
-        (click)="onCmdSubmit(control.value)">
-        {{ control.value }}
+  <div *ngIf="variables$ | async as variables" fxLaypout="column">
+    <h1 mat-dialog-title>Variables</h1>
+    <div *ngFor="let variable of variables">
+      <mat-form-field>
+        <mat-label>{{ variable.nameFC.value }}</mat-label>
+        <input input matInput [formControl]="variable.valueFC" />
+      </mat-form-field>
+      <button mat-raised-button color="primary" [disabled]="!variable.modifiableFC.value"
+        (click)="onVarSubmit(variable)">
+        set
       </button>
     </div>
   </div>
+
+  <div *ngIf="subcmds$ | async as subcmds" fxLaypout="column" fxLayoutGap="10px">
+    <h1 mat-dialog-title>Sub-commands</h1>
+    <button *ngFor="let control of subcmds.namesFA.controls" mat-raised-button color="primary"
+      (click)="onCmdSubmit(control.value)">
+      {{ control.value }}
+    </button>
+  </div>
+</div>

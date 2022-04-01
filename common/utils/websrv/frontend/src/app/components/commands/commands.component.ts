@@ -3,10 +3,8 @@ import { FormControl } from '@angular/forms';
 import { BehaviorSubject } from 'rxjs';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
-import { tap } from 'rxjs/internal/operators/tap';
 import { CommandsApi, IOptionType, ISubCommands, IVariable } from 'src/app/api/commands.api';
 import { SubCmdCtrl } from 'src/app/controls/cmds.control';
-import { InfosCtrl } from 'src/app/controls/infos.control';
 import { VariableCtrl } from 'src/app/controls/variable.control';
 import { LoadingService } from 'src/app/services/loading.service';
 
@@ -20,7 +18,8 @@ export class CommandsComponent {
 
   IOptionType = IOptionType;
 
-  infos$: Observable<InfosCtrl>
+  status$: Observable<VariableCtrl[]>
+  cmds$: Observable<string[]>
   variables$ = new BehaviorSubject<VariableCtrl[]>([])
   subcmds$: BehaviorSubject<SubCmdCtrl> | undefined
 
@@ -32,15 +31,16 @@ export class CommandsComponent {
     public commandsApi: CommandsApi,
     public loadingService: LoadingService,
   ) {
-    this.infos$ = this.commandsApi.readInfos$().pipe(
-      map((doc) => new InfosCtrl(doc)),
+    this.status$ = this.commandsApi.readStatus$().pipe(
+      map((ivars) => ivars.map(ivar => new VariableCtrl(ivar)))
     );
+
+    this.cmds$ = this.commandsApi.readModules$();
   }
 
   onCmdSubmit(subCmdName: string) {
     this.commandsApi.runCommand$(subCmdName).subscribe();
   }
-
 
   onVarSubmit(varCtrl: VariableCtrl) {
     this.commandsApi.setVariable$(varCtrl.api()).subscribe();
