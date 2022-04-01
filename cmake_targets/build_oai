@@ -72,6 +72,8 @@ Options
    Erase all files made by previous compilations, installations
 --clean-kernel
    Erase previously installed features in kernel: iptables, drivers, ...
+--cmake-opt
+   Pass the supplied option verbatim to cmake.
 -d | --build-dir
    Sets build directory (will be <oai-root>/cmake_targets/<build-dir>/build)
 -I | --install-external-packages
@@ -193,9 +195,12 @@ function main() {
             clean_kernel
             echo_info "Erased iptables config and removed modules from kernel"
             shift;;
+       --cmake-opt)
+            CMAKE_CMD="$CMAKE_CMD $2"
+            shift 2;;
        -d | --build-dir)
             BUILD_DIR=$2
-            shift;;
+            shift 2;;
        -I | --install-external-packages)
             INSTALL_EXTERNAL=1
             echo_info "Will install external packages"
