@@ -42,13 +42,13 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   int pdsch_AntennaPorts,
+                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
                    NR_ServingCellConfigCommon_t *scc);
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
-                           int pdsch_AntennaPorts,
+                           rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
                            int minRXTXTIMEpdsch,

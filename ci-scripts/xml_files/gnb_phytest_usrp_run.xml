@@ -35,7 +35,7 @@
 		<desc>Initialize gNB USRP</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test -q -U 787200 -T 106 -t 28 -D 130175 -m 28 -M 106 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<air_interface>NR</air_interface>
-		<USRP_IPAddress>192.168.30.2</USRP_IPAddress>
+		<USRP_IPAddress>192.168.20.2</USRP_IPAddress>
 	</testCase>
 
 	<testCase id="000001">

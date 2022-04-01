@@ -321,7 +321,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     ue_context_p->ue_context.Srb0.Active        = 1;
     RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[module_idP]->rrc_ue_head, ue_context_p);
 
-    fill_initial_cellGroupConfig(ue_context_p->local_uid,&cellGroupConfig,scc,&RC.nrrrc[module_idP]->carrier);
+    fill_initial_cellGroupConfig(ue_context_p->local_uid,&cellGroupConfig,scc, &RC.nrrrc[module_idP]->configuration);
 
     MessageDef* tmp=itti_alloc_new_message_sized(TASK_RRC_GNB, 0, F1AP_INITIAL_UL_RRC_MESSAGE, sizeof(f1ap_initial_ul_rrc_message_t) + sdu_lenP);
     f1ap_initial_ul_rrc_message_t *msg = &F1AP_INITIAL_UL_RRC_MESSAGE(tmp);
