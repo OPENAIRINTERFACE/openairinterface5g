@@ -1005,15 +1005,16 @@ long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
 void fill_default_csi_MeasConfig(int uid,
                                  NR_SetupRelease_CSI_MeasConfig_t	*setupRelease_csi_MeasConfig,
                                  NR_ServingCellConfigCommon_t *scc,
-                                 rrc_gNB_carrier_data_t *carrier) {
+                                 const gNB_RrcConfigurationReq* configuration) {
 
   int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+  int dl_antenna_ports = configuration->pdsch_AntennaPorts.N1 * configuration->pdsch_AntennaPorts.N2 * configuration->pdsch_AntennaPorts.XP;
 
   setupRelease_csi_MeasConfig->present = NR_SetupRelease_CSI_MeasConfig_PR_setup;
   NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
   setupRelease_csi_MeasConfig->choice.setup = csi_MeasConfig;
 
-  if (carrier->pdsch_AntennaPorts > 1) {
+  if (dl_antenna_ports > 1) {
     csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
     NR_CSI_IM_Resource_t *imres0 = calloc(1,sizeof(*imres0));
     imres0->csi_IM_ResourceId = 0;
@@ -1044,7 +1045,7 @@ void fill_default_csi_MeasConfig(int uid,
 
   csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
 
-  config_csirs(scc, csi_MeasConfig, uid, carrier->pdsch_AntennaPorts, curr_bwp, carrier->do_CSIRS);
+  config_csirs(scc, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, configuration->do_CSIRS);
 
   csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
   csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
@@ -1094,7 +1095,6 @@ void fill_default_csi_MeasConfig(int uid,
   csires0->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires0);
 
-
   NR_CSI_ResourceConfig_t *csires1 = calloc(1,sizeof(*csires1));
   csires1->csi_ResourceConfigId=1;
   csires1->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
@@ -1107,7 +1107,7 @@ void fill_default_csi_MeasConfig(int uid,
   csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires1);
 
-  if (carrier->pdsch_AntennaPorts > 1) {
+  if (dl_antenna_ports > 1) {
     NR_CSI_ResourceConfig_t *csires2 = calloc(1,sizeof(*csires2));
     csires2->csi_ResourceConfigId=2;
     csires2->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_csi_IM_ResourceSetList;
@@ -1125,7 +1125,7 @@ void fill_default_csi_MeasConfig(int uid,
   pucchcsires1->pucch_Resource=1;
   csi_MeasConfig->csi_ReportConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ReportConfigToAddModList));
   csi_MeasConfig->csi_ReportConfigToReleaseList = NULL;
-  if (carrier->pdsch_AntennaPorts > 1) {
+  if (dl_antenna_ports > 1) {
     LOG_I(NR_RRC,"Filling CSI Report Config for RI_PMI_CQI\n");
     NR_CSI_ReportConfig_t *csirep1 = calloc(1,sizeof(*csirep1));
     csirep1->reportConfigId=0;
@@ -1739,7 +1739,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
     if(!SpCellConfig->spCellConfigDedicated->csi_MeasConfig) {
       SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
     }
-    fill_default_csi_MeasConfig(uid, SpCellConfig->spCellConfigDedicated->csi_MeasConfig, scc, carrier);
+    fill_default_csi_MeasConfig(uid, SpCellConfig->spCellConfigDedicated->csi_MeasConfig, scc, configuration);
   }
 
   // Set DL MCS table
