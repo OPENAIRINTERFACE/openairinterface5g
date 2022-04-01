@@ -119,7 +119,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   int num_dl_antenna_ports,
                   int curr_bwp,
                   int do_csirs);
-void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+void set_dl_mcs_table(int scs,
+                      NR_UE_NR_Capability_t *cap,
                       NR_SpCellConfig_t *SpCellConfig,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                       NR_ServingCellConfigCommon_t *scc);

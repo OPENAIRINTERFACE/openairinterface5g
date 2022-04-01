@@ -1310,7 +1310,7 @@ void fill_initial_SpCellConfig(int uid,
   pucchspatial->servingCellId = NULL;
 
   // TODO: Remove this if
-  if(!carrier->do_CSIRS) {
+  if(!configuration->do_CSIRS) {
     pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
     pucchspatial->referenceSignal.choice.ssb_Index = 0;
   }
@@ -1609,7 +1609,7 @@ void fill_initial_SpCellConfig(int uid,
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
 
   // TODO: Delete this code and calls in update_cellGroupConfig()
-  if (carrier->do_CSIRS) {
+  if (configuration->do_CSIRS) {
     struct NR_PUCCH_Config__spatialRelationInfoToAddModList *spatialRelationInfoToAddModList = calloc(1,sizeof(*spatialRelationInfoToAddModList));
     NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
     pucchspatial->pucch_SpatialRelationInfoId = 1;
@@ -1624,7 +1624,7 @@ void fill_initial_SpCellConfig(int uid,
     if(!SpCellConfig->spCellConfigDedicated->csi_MeasConfig) {
       SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
     }
-    fill_default_csi_MeasConfig(uid, SpCellConfig->spCellConfigDedicated->csi_MeasConfig, scc, carrier);
+    fill_default_csi_MeasConfig(uid, SpCellConfig->spCellConfigDedicated->csi_MeasConfig, scc, configuration);
   }
 
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
@@ -1758,14 +1758,14 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   // Set DL MCS table
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
-                   configuration->force_256qam_off ? NULL : uecap, bwp_Dedicated, scc);
+                   configuration->force_256qam_off ? NULL : uecap, SpCellConfig, bwp_Dedicated, scc);
 
   struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
   if (DL_BWP_list) {
     for (int i=0; i<DL_BWP_list->list.count; i++){
       NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
       int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-      set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
+      set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, SpCellConfig, bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
     }
   }
 }
