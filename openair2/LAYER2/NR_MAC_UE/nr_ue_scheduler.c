@@ -2259,8 +2259,6 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
     .resource_indicator = -1,
     .initial_pucch_id = -1
   };
-  pucch.resource_indicator = -1;
-  pucch.initial_pucch_id = -1;
   uint16_t rnti = mac->crnti;  //FIXME not sure this is valid for all pucch instances
 
   // SR
