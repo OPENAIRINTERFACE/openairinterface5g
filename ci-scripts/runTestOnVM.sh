@@ -1899,7 +1899,7 @@ function run_test_on_vm {
             CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_sa_test.log
             #last argument = 2 is to enable --sa for SA test for 106PRB
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 2
-            if [ $NR_UE_SYNC -eq 0 ]
+            if [ $GNB_SYNC -eq 0 ] || [ $NR_UE_SYNC -eq 0 ]
             then
                 echo "Problem w/ gNB and NR-UE not syncing"
                 terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
@@ -1982,7 +1982,7 @@ function run_test_on_vm {
             CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_sa_test.log
             #last argument = 3 is to enable --sa for SA test for 24PRB
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 3
-            if [ $NR_UE_SYNC -eq 0 ]
+            if [ $GNB_SYNC -eq 0 ] || [ $NR_UE_SYNC -eq 0 ]
             then
                 echo "Problem w/ gNB and NR-UE not syncing"
                 terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
@@ -2070,7 +2070,7 @@ function run_test_on_vm {
             CURRENT_NR_UE_LOG_FILE=tdd_${PRB}prb_${CN_CONFIG}_ue_ra_fr2_test.log
             #last argument = 1 is to enable --do-ra for RA test
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 1
-            if [ $NR_UE_SYNC -eq 0 ]
+            if [ $GNB_SYNC -eq 0 ] || [ $NR_UE_SYNC -eq 0 ]
             then
                 echo "Problem w/ gNB and NR-UE not syncing"
                 terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
@@ -2172,7 +2172,7 @@ function run_test_on_vm {
             CURRENT_NR_UE_LOG_FILE=${TMODE}_${PRB}prb_${CN_CONFIG}_ue_ra_test.log
             #last argument = 1 is to enable --do-ra for RA test
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 1
-            if [ $NR_UE_SYNC -eq 0 ]
+            if [ $GNB_SYNC -eq 0 ] || [ $NR_UE_SYNC -eq 0 ]
             then
                 echo "Problem w/ gNB and NR-UE not syncing"
                 terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
@@ -2253,7 +2253,7 @@ function run_test_on_vm {
             echo "############################################################"
             CURRENT_NR_UE_LOG_FILE=${TMODE}_${PRB}prb_${CN_CONFIG}_ue.log
             start_rf_sim_nr_ue $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR $GNB_VM_IP_ADDR $CURRENT_NR_UE_LOG_FILE $PRB $FREQUENCY $S1_NOS1_CFG 0
-            if [ $NR_UE_SYNC -eq 0 ]
+            if [ $GNB_SYNC -eq 0 ] || [ $NR_UE_SYNC -eq 0 ]
             then
                 echo "Problem w/ gNB and NR-UE not syncing"
                 terminate_enb_ue_basic_sim $NR_UE_VM_CMDS $NR_UE_VM_IP_ADDR 2
