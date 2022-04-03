@@ -68,7 +68,6 @@ void nr_fill_dlsch(processingData_L1tx_t *msgTx,
 void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                        int frame,
                        int slot);
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB);
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 

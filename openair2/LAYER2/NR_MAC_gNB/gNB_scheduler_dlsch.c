@@ -393,11 +393,16 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
 
 #define BLER_UPDATE_FRAME 10
 #define BLER_FILTER 0.9f
-int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t slot, int UE_id)
+int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t slot, int UE_id, int mcs_table)
 {
   gNB_MAC_INST *nrmac = RC.nrmac[mod_id];
   const NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+
+  int max_allowed_mcs = (mcs_table == 1) ? 27 : 28;
+  int max_mcs = nrmac->dl_max_mcs;
+  if (nrmac->dl_max_mcs>max_allowed_mcs)
+    max_mcs = max_allowed_mcs;
 
   NR_DL_bler_stats_t *bler_stats = &nrmac->UE_info.UE_sched_ctrl[UE_id].dl_bler_stats;
   /* first call: everything is zero. Initialize to sensible default */
@@ -444,7 +449,7 @@ int get_mcs_from_bler(module_id_t mod_id, int CC_id, frame_t frame, sub_frame_t 
   if (bler_stats->rd2_bler > nrmac->dl_rd2_bler_threshold && old_mcs > 6) {
     new_mcs -= 2;
   } else if (bler_stats->rd2_bler < nrmac->dl_rd2_bler_threshold) {*/
-  if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < nrmac->dl_max_mcs && dtx > 9)
+  if (bler_stats->bler < nrmac->dl_bler_target_lower && old_mcs < max_mcs && dtx > 9)
     new_mcs += 1;
   else if (bler_stats->bler > nrmac->dl_bler_target_upper && old_mcs > 6)
     new_mcs -= 1;
@@ -466,76 +471,49 @@ void nr_store_dlsch_buffer(module_id_t module_id,
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-
     sched_ctrl->num_total_bytes = 0;
+    sched_ctrl->dl_pdus_total = 0;
 
-    int lcid; 
-    const uint16_t rnti = UE_info->rnti[UE_id];
-    LOG_D(NR_MAC,"UE %d/%x : lcid_mask %x\n",UE_id,rnti,sched_ctrl->lcid_mask);
-    if ((sched_ctrl->lcid_mask&(1<<2)) > 0)
-      sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1] = mac_rlc_status_ind(module_id,
+    /* loop over all activated logical channels */
+    // Note: DL_SCH_LCID_DCCH, DL_SCH_LCID_DCCH1, DL_SCH_LCID_DTCH
+    for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
+
+      const int lcid = sched_ctrl->dl_lc_ids[i];
+      const uint16_t rnti = UE_info->rnti[UE_id];
+      LOG_D(NR_MAC, "In %s: UE %d/%x: LCID %d\n", __FUNCTION__, UE_id, rnti, lcid);
+      start_meas(&RC.nrmac[module_id]->rlc_status_ind);
+      sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                         rnti,
                                                         module_id,
                                                           frame,
                                                         slot,
                                                         ENB_FLAG_YES,
                                                         MBMS_FLAG_NO,
-                                                        DL_SCH_LCID_DCCH1,
+                                                        lcid,
                                                         0,
                                                         0);
-    if ((sched_ctrl->lcid_mask&(1<<1)) > 0)
-       sched_ctrl->rlc_status[DL_SCH_LCID_DCCH] = mac_rlc_status_ind(module_id,
-                                                        rnti,
-                                                        module_id,
-                                                        frame,
-                                                        slot,
-                                                        ENB_FLAG_YES,
-                                                        MBMS_FLAG_NO,
-                                                        DL_SCH_LCID_DCCH,
-                                                        0,
-                                                        0);
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0) {  
-       start_meas(&RC.nrmac[module_id]->rlc_status_ind);
-       sched_ctrl->rlc_status[DL_SCH_LCID_DTCH] = mac_rlc_status_ind(module_id,
-                                                                    rnti,
-                                                                    module_id,
-                                                                    frame,
-                                                                    slot,
-                                                                    ENB_FLAG_YES,
-                                                                    MBMS_FLAG_NO,
-                                                                    DL_SCH_LCID_DTCH,
-                                                                    0,
-                                                                    0);
-       stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
-    }
-    if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
-      lcid = DL_SCH_LCID_DCCH;       
-    } 
-    else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
-    {
-      lcid = DL_SCH_LCID_DCCH1;       
-    }else{
-      lcid = DL_SCH_LCID_DTCH;       
-    }
-                                                      
-    sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-    //later multiplex here. Just select DCCH/SRB before DTCH/DRB
-    sched_ctrl->lcid_to_schedule = lcid;
+      stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
 
-    if (sched_ctrl->num_total_bytes == 0
-        && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
-      continue;
+      if (sched_ctrl->rlc_status[lcid].bytes_in_buffer == 0)
+        continue;
 
-    LOG_D(NR_MAC,
-          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
-          __func__,
-          frame,
-          slot,
-          lcid<4?"DCCH":"DTCH",
-          lcid,
-          sched_ctrl->rlc_status[lcid].bytes_in_buffer,
-          sched_ctrl->ta_apply);
+      sched_ctrl->dl_pdus_total += sched_ctrl->rlc_status[lcid].pdus_in_buffer;
+      sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+      LOG_D(MAC,
+            "[gNB %d][%4d.%2d] %s%d->DLSCH, RLC status for UE %d: %d bytes in buffer, total DL buffer size = %d bytes, %d total PDU bytes, %s TA command\n",
+            module_id,
+            frame,
+            slot,
+            lcid < 4 ? "DCCH":"DTCH",
+            lcid,
+            UE_id,
+            sched_ctrl->rlc_status[lcid].bytes_in_buffer,
+            sched_ctrl->num_total_bytes,
+            sched_ctrl->dl_pdus_total,
+            sched_ctrl->ta_apply ? "send":"do not send");
+    }
   }
 }
 
@@ -586,8 +564,10 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda)
-      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, ps);
+    if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
+      nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, ps);
+      sched_ctrl->update_pdsch_ps = false;
+    }
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -684,7 +664,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* retransmissions: directly allocate */
   *n_rb_sched -= sched_ctrl->sched_pdsch.rbSize;
   for (int rb = 0; rb < sched_ctrl->sched_pdsch.rbSize; rb++)
-    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] -= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+    rballoc_mask[rb + sched_ctrl->sched_pdsch.rbStart] ^= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
   return true;
 }
 
@@ -744,7 +724,7 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       set_dl_mcs(sched_pdsch,sched_ctrl,&mac->dl_max_mcs,ps->mcsTableIdx);
-      sched_pdsch->mcs = get_mcs_from_bler(module_id, /* CC_id = */ 0, frame, slot, UE_id);
+      sched_pdsch->mcs = get_mcs_from_bler(module_id, /* CC_id = */ 0, frame, slot, UE_id, ps->mcsTableIdx);
       layers[UE_id] = set_dl_nrOfLayers(sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -855,6 +835,10 @@ void pf_dl(module_id_t module_id,
                        CCEIndex,
                        sched_ctrl->aggregation_level);
 
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
+    max_num_ue--;
+    if (max_num_ue < 0) return;
+
     /* MCS has been set above */
 
     const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
@@ -863,8 +847,11 @@ void pf_dl(module_id_t module_id,
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
     if (ps->nrOfLayers != layers[UE_id] ||
-        ps->time_domain_allocation != tda)
+        ps->time_domain_allocation != tda ||
+        sched_ctrl->update_pdsch_ps) {
       nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, layers[UE_id], sched_ctrl, ps);
+      sched_ctrl->update_pdsch_ps = false;
+    }
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     // Freq-demain allocation
@@ -882,7 +869,12 @@ void pf_dl(module_id_t module_id,
     sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
-    const int oh = 3 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    // Fix me: currently, the RLC does not give us the total number of PDUs
+    // awaiting. Therefore, for the time being, we put a fixed overhead of 12
+    // (for 4 PDUs) and optionally + 2 for TA. Once RLC gives the number of
+    // PDUs, we replace with 3 * numPDUs
+    const int oh = 3 * 4 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    //const int oh = 3 * sched_ctrl->dl_pdus_total + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
     nr_find_nb_rb(sched_pdsch->Qm,
                   sched_pdsch->R,
                   ps->nrOfLayers,
@@ -900,7 +892,7 @@ void pf_dl(module_id_t module_id,
     /* transmissions: directly allocate */
     n_rb_sched -= sched_pdsch->rbSize;
     for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-      rballoc_mask[rb + sched_pdsch->rbStart] -= slbitmap;
+      rballoc_mask[rb + sched_pdsch->rbStart] ^= slbitmap;
   }
 }
 
@@ -1339,68 +1331,72 @@ void nr_schedule_ue_spec(module_id_t module_id,
       buf += written;
       int size = TBS - written;
       DevAssert(size >= 0);
-
       /* next, get RLC data */
 
-      // const int lcid = DL_SCH_LCID_DTCH;
-      const int lcid = sched_ctrl->lcid_to_schedule;
-      int dlsch_total_bytes = 0;
       start_meas(&gNB_mac->rlc_data_req);
       if (sched_ctrl->num_total_bytes > 0) {
-        tbs_size_t len = 0;
-        while (size > 3) {
-          // we do not know how much data we will get from RLC, i.e., whether it
-          // will be longer than 256B or not. Therefore, reserve space for long header, then
-          // fetch data, then fill real length
-          NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
-          buf += 3;
-          size -= 3;
 
-          /* limit requested number of bytes to what preprocessor specified, or
-           * such that TBS is full */
-          const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+        /* loop over all activated logical channels */
+        for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
 
-          len = mac_rlc_data_req(module_id,
-                                 rnti,
-                                 module_id,
-                                 frame,
-                                 ENB_FLAG_YES,
-                                 MBMS_FLAG_NO,
-                                 lcid,
-                                 ndata,
-                                 (char *)buf,
-                                 0,
-                                 0);
+          const int lcid = sched_ctrl->dl_lc_ids[i];
+          if (sched_ctrl->rlc_status[lcid].bytes_in_buffer == 0)
+            continue; // no data for this LC
 
-          LOG_D(NR_MAC,
-                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
-                frame,
-                slot,
-                rnti,
-                len,
-                lcid < 4 ? "DCCH" : "DTCH",
-                lcid,
-                ndata,
-                size);
-          if (len == 0)
-            break;
+          int dlsch_total_bytes = 0;
+          while (size > 3) {
+            // we do not know how much data we will get from RLC, i.e., whether it
+            // will be longer than 256B or not. Therefore, reserve space for long header, then
+            // fetch data, then fill real length
+            NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
+            buf += 3;
+            size -= 3;
 
-          header->R = 0;
-          header->F = 1;
-          header->LCID = lcid;
-          header->L1 = (len >> 8) & 0xff;
-          header->L2 = len & 0xff;
-          size -= len;
-          buf += len;
-          dlsch_total_bytes += len;
+            /* limit requested number of bytes to what preprocessor specified, or
+             * such that TBS is full */
+            const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+            tbs_size_t len = mac_rlc_data_req(module_id,
+                                              rnti,
+                                              module_id,
+                                              frame,
+                                              ENB_FLAG_YES,
+                                              MBMS_FLAG_NO,
+                                              lcid,
+                                              ndata,
+                                              (char *)buf,
+                                              0,
+                                              0);
+
+            LOG_D(NR_MAC,
+                  "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
+                  frame,
+                  slot,
+                  rnti,
+                  len,
+                  lcid < 4 ? "DCCH" : "DTCH",
+                  lcid,
+                  ndata,
+                  size);
+            if (len == 0) {
+              /* RLC did not have data anymore, mark buffer as unused */
+              buf -= 3;
+              size += 3;
+              break;
+            }
+
+            header->R = 0;
+            header->F = 1;
+            header->LCID = lcid;
+            header->L1 = (len >> 8) & 0xff;
+            header->L2 = len & 0xff;
+            size -= len;
+            buf += len;
+            dlsch_total_bytes += len;
+          }
+
+          UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
         }
-        if (len == 0) {
-          /* RLC did not have data anymore, mark buffer as unused */
-          buf -= 3;
-          size += 3;
-        }
-      }
-      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
+      } else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
         /* we will need the large header, phy-test typically allocates all
          * resources and fills to the last byte below */
         NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
@@ -1418,7 +1414,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
         header->L2 = size & 0xff;
         size -= size;
         buf += size;
-        dlsch_total_bytes += size;
       }
       stop_meas(&gNB_mac->rlc_data_req);
 
@@ -1438,7 +1433,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
       UE_info->mac_stats[UE_id].dlsch_current_bytes = TBS;
-      UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
 
       /* save retransmission information */
       harq->sched_pdsch = *sched_pdsch;

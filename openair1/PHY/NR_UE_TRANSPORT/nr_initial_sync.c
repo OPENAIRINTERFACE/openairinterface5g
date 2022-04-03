@@ -146,17 +146,23 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 
     start_meas(&ue->dlsch_channel_estimation_stats);
   // computing channel estimation for selected best ssb
+    const int estimateSz=7*2*frame_parms->ofdm_symbol_size;
+    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
+    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][estimateSz];
     for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-      nr_pbch_channel_estimation(ue,proc,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
+      nr_pbch_channel_estimation(ue,estimateSz, dl_ch_estimates, dl_ch_estimates_time, 
+                                 proc,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
     stop_meas(&ue->dlsch_channel_estimation_stats);
-
+    fapiPbch_t result;
     ret = nr_rx_pbch(ue,
                      proc,
-                     ue->pbch_vars[0],
+                     estimateSz, dl_ch_estimates,
+		     ue->pbch_vars[0],
                      frame_parms,
                      0,
                      temp_ptr->i_ssb,
-                     SISO);
+                     SISO,
+		     &result);
 
     temp_ptr=temp_ptr->next_ssb;
   }
@@ -337,6 +343,22 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
         // for a correct computation of frame number to sync with the one decoded at MIB we need to take into account in which of the n_frames we got sync
         ue->init_sync_frame = n_frames - 1 - is;
+
+        // compute the scramblingID_pdcch and the gold pdcch
+        ue->scramblingID_pdcch = fp->Nid_cell;
+        nr_gold_pdcch(ue,fp->Nid_cell);
+
+        // compute the scrambling IDs for PDSCH DMRS
+        for (int i=0; i<2; i++)
+          ue->scramblingID[i]=fp->Nid_cell;
+
+        nr_gold_pdsch(ue,ue->scramblingID);
+
+        // initialize the pusch dmrs
+        uint16_t N_n_scid[2] = {fp->Nid_cell,fp->Nid_cell};
+        int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
+        nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
+
         // we also need to take into account the shift by samples_per_frame in case the if is true
         if (ue->ssb_offset < sync_pos_frame){
           ue->rx_offset = fp->samples_per_frame - sync_pos_frame + ue->ssb_offset;

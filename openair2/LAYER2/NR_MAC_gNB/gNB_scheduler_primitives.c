@@ -557,6 +557,7 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
       ps->mcsTableIdx = 2;
   }
   else ps->mcsTableIdx = 0;
+  LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
 
   NR_PDSCH_Config_t *pdsch_Config;
   if (bwp &&
@@ -1259,27 +1260,56 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   else { // this is the default PUCCH configuration, PUCCH format 0 or 1
     LOG_D(NR_MAC,"pucch_acknak: Filling default PUCCH configuration from Tables (r_pucch %d, bwp %p)\n",r_pucch,bwp);
     int rsetindex = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
-    int prboffset = r_pucch/default_pucch_csset[rsetindex];
-    int prboffsetm8 = (r_pucch-8)/default_pucch_csset[rsetindex];
-    pucch_pdu->prb_start = (r_pucch>>3)==0 ?
-                           default_pucch_prboffset[rsetindex] + prboffset:
-                           pucch_pdu->bwp_size-1-default_pucch_prboffset[rsetindex]-prboffsetm8;
+    int prb_start, second_hop_prb, nr_of_symb, start_symb;
+    set_r_pucch_parms(rsetindex,
+                      r_pucch,
+                      pucch_pdu->bwp_size,
+                      &prb_start,
+                      &second_hop_prb,
+                      &nr_of_symb,
+                      &start_symb);
+
+    pucch_pdu->prb_start = prb_start;
     pucch_pdu->rnti = rnti;
     pucch_pdu->freq_hop_flag = 1;
-    pucch_pdu->second_hop_prb = (r_pucch>>3)==0?
-                                pucch_pdu->bwp_size-1-default_pucch_prboffset[rsetindex]-prboffset:
-                                default_pucch_prboffset[rsetindex] + prboffsetm8;
+    pucch_pdu->second_hop_prb = second_hop_prb;
     pucch_pdu->format_type = default_pucch_fmt[rsetindex];
     pucch_pdu->initial_cyclic_shift = r_pucch%default_pucch_csset[rsetindex];
     if (rsetindex==3||rsetindex==7||rsetindex==11) pucch_pdu->initial_cyclic_shift*=6;
     else if (rsetindex==1||rsetindex==2) pucch_pdu->initial_cyclic_shift*=3;
     else pucch_pdu->initial_cyclic_shift*=4;
-    pucch_pdu->nr_of_symbols = default_pucch_numbsymb[rsetindex];
-    pucch_pdu->start_symbol_index = default_pucch_firstsymb[rsetindex];
+    pucch_pdu->nr_of_symbols = nr_of_symb;
+    pucch_pdu->start_symbol_index = start_symb;
     if (pucch_pdu->format_type == 1) pucch_pdu->time_domain_occ_idx = 0; // check this!!
     pucch_pdu->sr_flag = O_sr;
     pucch_pdu->prb_size=1;
   }
+}
+
+
+void set_r_pucch_parms(int rsetindex,
+                       int r_pucch,
+                       int bwp_size,
+                       int *prb_start,
+                       int *second_hop_prb,
+                       int *nr_of_symbols,
+                       int *start_symbol_index) {
+
+  // procedure described in 38.213 section 9.2.1
+
+  int prboffset = r_pucch/default_pucch_csset[rsetindex];
+  int prboffsetm8 = (r_pucch-8)/default_pucch_csset[rsetindex];
+
+  *prb_start = (r_pucch>>3)==0 ?
+              default_pucch_prboffset[rsetindex] + prboffset:
+              bwp_size-1-default_pucch_prboffset[rsetindex]-prboffsetm8;
+
+  *second_hop_prb = (r_pucch>>3)==0?
+                   bwp_size-1-default_pucch_prboffset[rsetindex]-prboffset:
+                   default_pucch_prboffset[rsetindex] + prboffsetm8;
+
+  *nr_of_symbols = default_pucch_numbsymb[rsetindex];
+  *start_symbol_index = default_pucch_firstsymb[rsetindex];
 }
 
 
@@ -1967,12 +1997,43 @@ void dump_nr_list(NR_list_t *listP)
 void create_nr_list(NR_list_t *list, int len)
 {
   list->head = -1;
-  list->next = calloc(len, sizeof(*list->next));
-  AssertFatal(list, "cannot calloc() memory for NR_list_t->next\n");
+  list->next = malloc(len * sizeof(*list->next));
+  AssertFatal(list->next, "cannot malloc() memory for NR_list_t->next\n");
   for (int i = 0; i < len; ++i)
     list->next[i] = -1;
   list->tail = -1;
   list->len = len;
+}
+
+/*
+ * Resize an NR_list
+ */
+void resize_nr_list(NR_list_t *list, int new_len)
+{
+  if (new_len == list->len)
+    return;
+  if (new_len > list->len) {
+    /* list->head remains */
+    const int old_len = list->len;
+    int* n = realloc(list->next, new_len * sizeof(*list->next));
+    AssertFatal(n, "cannot realloc() memory for NR_list_t->next\n");
+    list->next = n;
+    for (int i = old_len; i < new_len; ++i)
+      list->next[i] = -1;
+    /* list->tail remains */
+    list->len = new_len;
+  } else { /* new_len < len */
+    AssertFatal(list->head < new_len, "shortened list head out of index %d (new len %d)\n", list->head, new_len);
+    AssertFatal(list->tail < new_len, "shortened list tail out of index %d (new len %d)\n", list->head, new_len);
+    for (int i = 0; i < list->len; ++i)
+      AssertFatal(list->next[i] < new_len, "shortened list entry out of index %d (new len %d)\n", list->next[i], new_len);
+    /* list->head remains */
+    int *n = realloc(list->next, new_len * sizeof(*list->next));
+    AssertFatal(n, "cannot realloc() memory for NR_list_t->next\n");
+    list->next = n;
+    /* list->tail remains */
+    list->len = new_len;
+  }
 }
 
 /*
@@ -2174,10 +2235,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
     sched_ctrl->set_mcs = true;
     sched_ctrl->set_pmi = false;
-    sched_ctrl->lcid_mask = 0;
-    if (!get_softmodem_params()->phy_test && !get_softmodem_params()->do_ra && !get_softmodem_params()->sa) {
-      sched_ctrl->lcid_mask = 1<<DL_SCH_LCID_DTCH;
-    }
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;
@@ -2231,10 +2288,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
 				       "no pdsch-ServingCellConfig found for UE %d\n",
 				       UE_id);
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-    // add DL HARQ processes for this UE only in NSA
-    // (SA still doesn't have information on nrofHARQ_ProcessesForPDSCH at this stage)
-    if (!get_softmodem_params()->sa)
-      create_dl_harq_list(sched_ctrl,pdsch);
+    // pdsch == NULL in SA -> will create default (8) number of HARQ processes
+    create_dl_harq_list(sched_ctrl, pdsch);
     // add all available UL HARQ processes for this UE
     // nb of ul harq processes not configurable
     create_nr_list(&sched_ctrl->available_ul_harq, 16);
@@ -2262,11 +2317,31 @@ void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
   const int nrofHARQ = pdsch && pdsch->nrofHARQ_ProcessesForPDSCH ?
                        get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
   // add all available DL HARQ processes for this UE
-  create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
-  for (int harq = 0; harq < nrofHARQ; harq++)
-    add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
-  create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
-  create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
+  AssertFatal(sched_ctrl->available_dl_harq.len == sched_ctrl->feedback_dl_harq.len
+              && sched_ctrl->available_dl_harq.len == sched_ctrl->retrans_dl_harq.len,
+              "HARQ lists have different lengths (%d/%d/%d)\n",
+              sched_ctrl->available_dl_harq.len,
+              sched_ctrl->feedback_dl_harq.len,
+              sched_ctrl->retrans_dl_harq.len);
+  if (sched_ctrl->available_dl_harq.len == 0) {
+    create_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
+    for (int harq = 0; harq < nrofHARQ; harq++)
+      add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
+    create_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
+    create_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
+  } else if (sched_ctrl->available_dl_harq.len == nrofHARQ) {
+    LOG_D(NR_MAC, "nrofHARQ %d already configured\n", nrofHARQ);
+  } else {
+    const int old_nrofHARQ = sched_ctrl->available_dl_harq.len;
+    AssertFatal(nrofHARQ > old_nrofHARQ,
+                "cannot resize HARQ list to be smaller (nrofHARQ %d, old_nrofHARQ %d)\n",
+                nrofHARQ, old_nrofHARQ);
+    resize_nr_list(&sched_ctrl->available_dl_harq, nrofHARQ);
+    for (int harq = old_nrofHARQ; harq < nrofHARQ; harq++)
+      add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
+    resize_nr_list(&sched_ctrl->feedback_dl_harq, nrofHARQ);
+    resize_nr_list(&sched_ctrl->retrans_dl_harq, nrofHARQ);
+  }
 }
 
 /* hack data to remove UE in the phy */
@@ -2475,11 +2550,11 @@ void nr_csirs_scheduling(int Mod_idP,
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
         NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
-        csi_period_offset(NULL,nzpcsi,&period,&offset);
+        csi_period_offset(NULL,nzpcsi->periodicityAndOffset,&period,&offset);
 
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
-          LOG_I(MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
+          LOG_D(MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
           memset((void*)dl_tti_csirs_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -2523,7 +2598,7 @@ void nr_csirs_scheduling(int Mod_idP,
             case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2:
               csirs_pdu_rel15->row = 2;
               csirs_pdu_rel15->freq_domain = (((resourceMapping.frequencyDomainAllocation.choice.row2.buf[1]>>4)&0x0f) |
-                                             ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<8)&0xff0));
+                                             ((resourceMapping.frequencyDomainAllocation.choice.row2.buf[0]<<4)&0xff0));
               for (int rb = csirs_pdu_rel15->start_rb; rb < (csirs_pdu_rel15->start_rb + csirs_pdu_rel15->nr_of_rbs); rb++)
                 vrb_map[rb+csirs_pdu_rel15->bwp_start] |= SL_to_bitmap(csirs_pdu_rel15->symb_l0, 1);
               break;
@@ -2538,6 +2613,7 @@ void nr_csirs_scheduling(int Mod_idP,
               // determining the row of table 7.4.1.5.3-1 in 38.211
               switch(resourceMapping.nrofPorts){
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p1:
+                  AssertFatal(1==0,"Resource with 1 CSI port shouldn't be within other rows\n");
                   break;
                 case NR_CSI_RS_ResourceMapping__nrofPorts_p2:
                   csirs_pdu_rel15->row = 3;

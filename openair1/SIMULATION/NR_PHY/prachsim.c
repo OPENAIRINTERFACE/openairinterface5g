@@ -25,6 +25,7 @@
 #include <pthread.h>
 
 #include "common/config/config_userapi.h"
+#include "common/utils/load_module_shlib.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h" 
 
@@ -662,7 +663,6 @@ int main(int argc, char **argv){
   RC.nb_nr_L1_inst=1;
   phy_init_nr_gNB(gNB,0,1); //lowmem
   nr_phy_init_RU(ru);
-  gNB->common_vars.rxdata = ru->common.rxdata;
   set_tdd_config_nr(&gNB->gNB_config, mu, 7, 6, 2, 4);
 
   // Configure UE
@@ -674,7 +674,7 @@ int main(int argc, char **argv){
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->nrUE_config.prach_config.num_prach_fd_occasions_list = (fapi_nr_num_prach_fd_occasions_t *) malloc(num_prach_fd_occasions*sizeof(fapi_nr_num_prach_fd_occasions_t));
 
-  if (init_nr_ue_signal(UE, 1, 0) != 0){
+  if (init_nr_ue_signal(UE, 1) != 0){
     printf("Error at UE NR initialisation\n");
     exit(-1);
   }
@@ -781,7 +781,7 @@ int main(int argc, char **argv){
   // multipath channel
   // dump_nr_prach_config(&gNB->frame_parms,subframe);
 
-  for (i = 0; i < frame_parms->samples_per_subframe<<1; i++) {
+  for (i = 0; i < frame_parms->samples_per_subframe; i++) {
     for (aa=0; aa<1; aa++) {
       if (awgn_flag == 0) {
         s_re[aa][i] = ((double)(((short *)&txdata[aa][prach_start]))[(i<<1)]);
@@ -879,7 +879,8 @@ int main(int argc, char **argv){
 	
         rx_nr_prach_ru(ru, prach_format, numRA, prachStartSymbol, prachOccasion, frame, slot);
 
-        gNB->prach_vars.rxsigF = ru->prach_rxsigF[prachOccasion];
+        for (int i = 0; i < ru->nb_rx; ++i)
+          gNB->prach_vars.rxsigF[i] = ru->prach_rxsigF[prachOccasion][i];
 	if (n_frames == 1) printf("ncs %d,num_seq %d\n",prach_pdu->num_cs,  prach_config->num_prach_fd_occasions_list[fd_occasion].num_root_sequences.value);
         rx_nr_prach(gNB, prach_pdu, prachOccasion, frame, subframe, &preamble_rx, &preamble_energy, &preamble_delay);
 
@@ -897,7 +898,7 @@ int main(int argc, char **argv){
           #ifdef NR_PRACH_DEBUG
 	  LOG_M("prach0.m","prach0", &txdata[0][prach_start], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("prachF0.m","prachF0", &gNB->prach_vars.prachF[0], N_ZC, 1, 1);
-            LOG_M("rxsig0.m","rxs0", &gNB->common_vars.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
+            LOG_M("rxsig0.m","rxs0", &ru->common.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("ru_rxsig0.m","rxs0", &ru->common.rxdata[0][subframe*frame_parms->samples_per_subframe], frame_parms->samples_per_subframe, 1, 1);
             LOG_M("ru_rxsigF0.m","rxsF0", ru->common.rxdataF[0], frame_parms->ofdm_symbol_size*frame_parms->symbols_per_slot, 1, 1);
             LOG_M("ru_prach_rxsigF0.m","rxsF0", ru->prach_rxsigF[0][0], N_ZC, 1, 1);
@@ -922,6 +923,28 @@ int main(int argc, char **argv){
       break;
   } //SNR loop
 
+  free_channel_desc_scm(UE2gNB);
+
+  nr_phy_free_RU(ru);
+  free(RC.ru[0]);
+  free(RC.ru);
+
+  phy_free_nr_gNB(gNB);
+  // allocated in set_tdd_config_nr()
+  int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(1<<mu)*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  free(gNB->gNB_config.prach_config.num_prach_fd_occasions_list);
+  for (int i = 0; i < nb_slots_to_set; ++i)
+    free(gNB->gNB_config.tdd_table.max_tdd_periodicity_list[i].max_num_of_symbol_per_slot_list);
+  free(gNB->gNB_config.tdd_table.max_tdd_periodicity_list);
+  free(RC.gNB[0]);
+  free(RC.gNB);
+
+  term_nr_ue_signal(UE, 1);
+  free(UE->nrUE_config.prach_config.num_prach_fd_occasions_list);
+  free(UE);
+  free(PHY_vars_UE_g[0]);
+  free(PHY_vars_UE_g);
+
   for (i=0; i<2; i++) {
     free(s_re[i]);
     free(s_im[i]);
@@ -935,6 +958,9 @@ int main(int argc, char **argv){
   free(r_im);
 
   if (input_fd) fclose(input_fd);
+
+  loader_reset();
+  logTerm();
 
   return(0);
 }

@@ -55,7 +55,7 @@
 
 /* PHY */
 #include "PHY/defs_gNB.h"
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 
 /* Interface */
 #include "nfapi_nr_interface_scf.h"
@@ -171,6 +171,8 @@ typedef struct {
   uint8_t msg3_round;
   /// Flag to indicate if Msg3 carries a DCCH or DTCH message
   bool msg3_dcch_dtch;
+  int msg3_startsymb;
+  int msg3_nrsymb;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4
@@ -327,6 +329,10 @@ typedef struct NR_sched_pucch {
   uint8_t timing_indicator;
   uint8_t resource_indicator;
   int r_pucch;
+  int prb_start;
+  int second_hop_prb;
+  int nr_of_symb;
+  int start_symb;
 } NR_sched_pucch_t;
 
 /* PUSCH semi-static configuration: as long as the TDA and DCI format remain
@@ -601,14 +607,13 @@ typedef struct {
 
   /// total amount of data awaiting for this UE
   uint32_t num_total_bytes;
+  uint16_t dl_pdus_total;
   /// per-LC status data
-  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
+  mac_rlc_status_resp_t rlc_status[NR_MAX_NUM_LCID];
 
   /// Estimation of HARQ from BLER
   NR_DL_bler_stats_t dl_bler_stats;
 
-  int lcid_mask;
-  int lcid_to_schedule;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -624,6 +629,8 @@ typedef struct {
   int ul_failure;
   struct CSI_Report CSI_report;
   bool SR;
+  bool update_pdsch_ps;
+  bool update_pusch_ps;
   bool set_mcs;
   bool set_pmi;
   /// information about every HARQ process
@@ -643,6 +650,12 @@ typedef struct {
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
+
+  /// number of active DL LCs
+  uint8_t dl_lc_num;
+  /// order in which DLSCH scheduler should allocate LCs
+  uint8_t dl_lc_ids[NR_MAX_NUM_LCID];
+
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
@@ -727,7 +740,7 @@ typedef struct gNB_MAC_INST_s {
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
   int num_ulprbbl;
-  int ulprbbl[275];
+  uint16_t ulprbbl[275];
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure

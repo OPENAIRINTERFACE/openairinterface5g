@@ -612,14 +612,15 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
       int startSymbolIndex = 0;
       int nrOfSymbols = 0;
+      bool is_typeA;
 
       get_info_from_tda_tables(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern,
                                time_domain_allocation,
                                gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
-                               1, &startSymbolIndex, &nrOfSymbols);
+                               1, &is_typeA,
+                               &startSymbolIndex, &nrOfSymbols);
 
-      // TODO: There are exceptions to this in table 5.1.2.1.1-4,5 (Default time domain allocation tables B, C)
-      int mappingtype = (startSymbolIndex <= 3)? typeA: typeB;
+      int mappingtype = is_typeA? typeA: typeB;
       uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype, 1);
 
       // Configure sched_ctrlCommon for SIB1
@@ -639,7 +640,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
 
       // Data to be transmitted
-      bzero(tx_req->TLVs[0].value.direct,MAX_NR_DLSCH_PAYLOAD_BYTES);
+      bzero(tx_req->TLVs[0].value.direct,MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*1056);
       memcpy(tx_req->TLVs[0].value.direct, sib1_payload, sib1_sdu_length);
 
       tx_req->PDU_length = TBS;

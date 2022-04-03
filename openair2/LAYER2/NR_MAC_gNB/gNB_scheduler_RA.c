@@ -389,7 +389,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
       const int16_t N_RA_RB = get_N_RA_RB(cfg->prach_config.prach_sub_c_spacing.value, mu_pusch);
       uint16_t *vrb_map_UL = &cc->vrb_map_UL[slotP * MAX_BWP_SIZE];
       for (int i = 0; i < N_RA_RB * fdm; ++i)
-        vrb_map_UL[bwp_start + rach_ConfigGeneric->msg1_FrequencyStart + i] = 0xff; // all symbols
+        vrb_map_UL[bwp_start + rach_ConfigGeneric->msg1_FrequencyStart + i] = SL_to_bitmap(start_symbol, N_t_slot*N_dur);
     }
   }
 }
@@ -772,6 +772,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     int scs = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
     int fh = 0;
     int startSymbolAndLength = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
+    int StartSymbolIndex, NrOfSymbols;
+    SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
     int mappingtype = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->mappingType;
 
     uint16_t *vrb_map_UL = &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
@@ -780,7 +782,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     int BWPSize  = nr_mac->type0_PDCCH_CSS_config[ra->beam_id].num_rbs;
     int rbStart = 0;
     for (int i = 0; (i < ra->msg3_nb_rb) && (rbStart <= (BWPSize - ra->msg3_nb_rb)); i++) {
-      if (vrb_map_UL[rbStart + BWPStart + i]) {
+      if (vrb_map_UL[rbStart + BWPStart + i]&SL_to_bitmap(StartSymbolIndex, NrOfSymbols)) {
         rbStart += i;
         i = 0;
       }
@@ -898,7 +900,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                        aggregation_level);
 
     for (int rb = 0; rb < ra->msg3_nb_rb; rb++) {
-      vrb_map_UL[rbStart + BWPStart + rb] = 1;
+      vrb_map_UL[rbStart + BWPStart + rb] |= SL_to_bitmap(StartSymbolIndex, NrOfSymbols);
     }
 
     // reset state to wait msg3
@@ -928,6 +930,9 @@ void nr_get_Msg3alloc(module_id_t module_id,
   int mu = ubwp ?
     ubwp->bwp_Common->genericParameters.subcarrierSpacing :
     scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+  int StartSymbolIndex = 0;
+  int NrOfSymbols = 0;
+  int startSymbolAndLength = 0;
   int temp_slot = 0;
   ra->Msg3_tda_id = 16; // initialization to a value above limit
 
@@ -942,6 +947,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
     int nb_periods_per_frame = get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
     int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
     for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
+      startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
+      SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
       k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
       // we want to transmit in the uplink symbols of mixed slot
       if ((k2 + DELTA[mu])%nb_slots_per_period == 0) {
@@ -949,6 +956,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
         ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
         if (is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[ra->Msg3_slot / 64], ra->Msg3_slot)) {
           ra->Msg3_tda_id = i;
+          ra->msg3_startsymb = StartSymbolIndex;
+          ra->msg3_nrsymb = NrOfSymbols;
           break;
         }
       }
@@ -1002,11 +1011,12 @@ void nr_get_Msg3alloc(module_id_t module_id,
   while (rbSize < msg3_nb_rb) {
     rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
     rbSize = 0;
-    while (rbStart < bwpSize && vrb_map_UL[rbStart + bwpStart])
+    while (rbStart < bwpSize &&
+           (vrb_map_UL[rbStart + bwpStart]&SL_to_bitmap(StartSymbolIndex, NrOfSymbols)))
       rbStart++;
     AssertFatal(rbStart < bwpSize - msg3_nb_rb, "no space to allocate Msg 3 for RA!\n");
     while (rbStart + rbSize < bwpSize
-           && !vrb_map_UL[rbStart + bwpStart + rbSize]
+           && !(vrb_map_UL[rbStart + bwpStart + rbSize]&SL_to_bitmap(StartSymbolIndex, NrOfSymbols))
            && rbSize < msg3_nb_rb)
       rbSize++;
   }
@@ -1029,6 +1039,7 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   int start_symbol_index,nr_of_symbols;
 
   SLIV2SL(startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
+  int mcsindex = -1; // init value
 
   pusch_pdu->pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_pdu->rnti = rnti;
@@ -1037,10 +1048,7 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->bwp_size = bwp_size;
   pusch_pdu->subcarrier_spacing = scs;
   pusch_pdu->cyclic_prefix = 0;
-  pusch_pdu->mcs_index = 1;
   pusch_pdu->mcs_table = 0;
-  pusch_pdu->target_code_rate = nr_get_code_rate_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
-  pusch_pdu->qam_mod_order = nr_get_Qm_ul(pusch_pdu->mcs_index,pusch_pdu->mcs_table);
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
     pusch_pdu->transform_precoding = 1;
   else
@@ -1077,15 +1085,23 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
     num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
 
-  pusch_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_pdu->qam_mod_order,
-                                                 pusch_pdu->target_code_rate,
-                                                 pusch_pdu->rb_size,
-                                                 pusch_pdu->nr_of_symbols,
-                                                 num_dmrs_symb*12, // nb dmrs set for no data in dmrs symbol
-                                                 0, //nb_rb_oh
-                                                 0, // to verify tb scaling
-                                                 pusch_pdu->nrOfLayers)>>3;
+  int TBS = 0;
+  while(TBS<7) {  // TBS for msg3 is 7 bytes (except for RRCResumeRequest1 currently not implemented)
+    mcsindex++;
+    pusch_pdu->target_code_rate = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
+    pusch_pdu->qam_mod_order = nr_get_Qm_ul(mcsindex,pusch_pdu->mcs_table);
+    TBS = nr_compute_tbs(pusch_pdu->qam_mod_order,
+                         pusch_pdu->target_code_rate,
+                         pusch_pdu->rb_size,
+                         pusch_pdu->nr_of_symbols,
+                         num_dmrs_symb*12, // nb dmrs set for no data in dmrs symbol
+                         0, //nb_rb_oh
+                         0, // to verify tb scaling
+                         pusch_pdu->nrOfLayers)>>3;
 
+    pusch_pdu->mcs_index = mcsindex;
+    pusch_pdu->pusch_data.tb_size = TBS;
+  }
 }
 
 void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra, uint8_t *RAR_pdu)
@@ -1107,7 +1123,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
                 i + ra->msg3_first_rb,
                 ra->Msg3_frame,
                 ra->Msg3_slot);
-    vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start] = 1;
+    vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start] |= SL_to_bitmap(ra->msg3_startsymb, ra->msg3_nrsymb);
   }
 
   LOG_D(NR_MAC, "[gNB %d][RAPROC] Frame %d, Slot %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
@@ -1179,7 +1195,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       time_domain_assignment = 1;
     else
       time_domain_assignment = 0;
-    uint8_t mcsIndex = 0;
+    int mcsIndex = -1;  // initialization value
     int rbStart = 0;
     int rbSize = 8;
 
@@ -1336,9 +1352,6 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->SubcarrierSpacing = genericParameters->subcarrierSpacing;
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
-    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
-    pdsch_pdu_rel15->qamModOrder[0] = 2;
-    pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
     pdsch_pdu_rel15->rvIndex[0] = 0;
     pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
@@ -1362,9 +1375,38 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                                                     startSymbolIndex,
                                                     mappingtype, 1);
 
-    int x_Overhead = 0;
     uint8_t tb_scaling = 0;
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
+    int R, Qm;
+    uint8_t N_PRB_DMRS;
+    uint32_t TBS=0;
+    if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+      // if no data in dmrs cdm group is 1 only even REs have no data
+      // if no data in dmrs cdm group is 2 both odd and even REs have no data
+      N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData*6;
+    }
+    else {
+      N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData*4;
+    }
+    uint16_t dmrs_length = get_num_dmrs(pdsch_pdu_rel15->dlDmrsSymbPos);
+
+    while(TBS<9) {  // min TBS for RAR is 9 bytes
+      mcsIndex++;
+      R = nr_get_code_rate_dl(mcsIndex, mcsTableIdx);
+      Qm = nr_get_Qm_dl(mcsIndex, mcsTableIdx);
+      TBS = nr_compute_tbs(Qm,
+                           R,
+                           rbSize,
+                           nrOfSymbols,
+                           N_PRB_DMRS*dmrs_length,
+                           0, // overhead
+                           tb_scaling,  // tb scaling
+		           1)>>3;  // layers
+
+      pdsch_pdu_rel15->targetCodeRate[0] = R;
+      pdsch_pdu_rel15->qamModOrder[0] = Qm;
+      pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
+      pdsch_pdu_rel15->TBSize[0] = TBS;
+    }
 
     // Fill PDCCH DL DCI PDU
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
@@ -1651,12 +1693,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     uint8_t tb_scaling = 0;
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     do {
-      rbSize++;
+      if(rbSize < BWPSize)
+        rbSize++;
+      else
+        mcsIndex++;
       LOG_D(NR_MAC,"Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
       harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
-                           nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
-                           rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
-    } while (rbSize < BWPSize && harq->tb_size < ra->mac_pdu_length);
+                                     nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
+                                     rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
+    } while (harq->tb_size < ra->mac_pdu_length && mcsIndex<=28);
 
     int i = 0;
     while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {

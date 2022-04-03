@@ -401,6 +401,12 @@ def GetParametersFromXML(action):
 		string_field=test.findtext('nb_healthy')
 		if (string_field is not None):
 			CONTAINERS.nb_healthy[0] = int(string_field)
+		string_field=test.findtext('d_retx_th')
+		if (string_field is not None):
+			CONTAINERS.ran_checkers['d_retx_th']= string_field
+		string_field=test.findtext('u_retx_th')
+		if (string_field is not None):
+			CONTAINERS.ran_checkers['u_retx_th']= string_field
 
 	elif action == 'PingFromContainer':
 		string_field = test.findtext('container_name')

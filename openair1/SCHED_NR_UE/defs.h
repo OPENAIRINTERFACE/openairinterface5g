@@ -82,6 +82,11 @@
 #define DAQ_AGC_OFF 0
 
 
+typedef struct {
+  uint8_t decoded_output[64];
+  uint8_t xtra_byte;
+} fapiPbch_t;
+
 /** @addtogroup _PHY_PROCEDURES_
  * @{
  */
@@ -295,9 +300,6 @@ uint8_t nr_pdcch_alloc2ul_subframe(NR_DL_FRAME_PARMS *frame_parms,uint8_t n);
 uint32_t nr_pdcch_alloc2ul_frame(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n);
 
 
-uint16_t nr_get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1);
-
-
 int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
 /*! \brief UL time alignment procedures for TA application
@@ -398,7 +400,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
-                           UE_nr_rxtx_proc_t *proc);
+                           UE_nr_rxtx_proc_t *proc,
+			   void * typeSpecific);
 
 bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,

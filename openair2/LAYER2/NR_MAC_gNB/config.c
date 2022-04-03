@@ -58,19 +58,42 @@ void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *
                              struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
                              NR_UE_sched_ctrl_t *sched_ctrl) {
 
-
-  if (rlc_bearer2add_list)
-  // keep lcids
-    for (int i=0;i<rlc_bearer2add_list->list.count;i++) {
-      sched_ctrl->lcid_mask |= (1<<rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
-      LOG_I(NR_MAC,"Adding LCID %d (%s %d)\n",
-            (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity,
-            rlc_bearer2add_list->list.array[i]->logicalChannelIdentity<4 ? "SRB" : "DRB",
-            (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
+  if (rlc_bearer2release_list) {
+    for (int i = 0; i < rlc_bearer2release_list->list.count; i++) {
+      for (int idx = 0; idx < sched_ctrl->dl_lc_num; idx++) {
+        if (sched_ctrl->dl_lc_ids[idx] == *rlc_bearer2release_list->list.array[i]) {
+          const int remaining_lcs = sched_ctrl->dl_lc_num - idx - 1;
+          memmove(&sched_ctrl->dl_lc_ids[idx], &sched_ctrl->dl_lc_ids[idx + 1], sizeof(sched_ctrl->dl_lc_ids[idx]) * remaining_lcs);
+          sched_ctrl->dl_lc_num--;
+          break;
+        }
+      }
     }
-  if (rlc_bearer2release_list)
-    for (int i=0;i<rlc_bearer2release_list->list.count;i++)
-      sched_ctrl->lcid_mask |= (1<<*rlc_bearer2release_list->list.array[i]);
+  }
+
+  if (rlc_bearer2add_list) {
+    // keep lcids
+    for (int i = 0; i < rlc_bearer2add_list->list.count; i++) {
+      const int lcid = rlc_bearer2add_list->list.array[i]->logicalChannelIdentity;
+      bool found = false;
+      for (int idx = 0; idx < sched_ctrl->dl_lc_num; idx++) {
+        if (sched_ctrl->dl_lc_ids[idx] == lcid) {
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        sched_ctrl->dl_lc_num++;
+        sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num - 1] = lcid;
+        LOG_D(NR_MAC, "Adding LCID %d (%s %d)\n", lcid, lcid < 4 ? "SRB" : "DRB", lcid);
+      }
+    }
+  }
+
+  LOG_D(NR_MAC, "In %s: total num of active bearers %d) \n",
+      __FUNCTION__,
+      sched_ctrl->dl_lc_num);
 
 }
 
@@ -629,16 +652,12 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
       const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+      sched_ctrl->update_pdsch_ps = true;
+      sched_ctrl->update_pusch_ps = true;
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-      if (sched_ctrl->available_dl_harq.len == 0) {
+      if (get_softmodem_params()->sa) {
         // add all available DL HARQ processes for this UE in SA
         create_dl_harq_list(sched_ctrl, pdsch);
-      }
-      else {
-        const int nrofHARQ = pdsch && pdsch->nrofHARQ_ProcessesForPDSCH ?
-                             get_nrofHARQ_ProcessesForPDSCH(*pdsch->nrofHARQ_ProcessesForPDSCH) : 8;
-        AssertFatal(sched_ctrl->available_dl_harq.len==nrofHARQ,
-                    "Reconfiguration of available harq processes not yet supported\n");
       }
       // update coreset/searchspace
       void *bwpd = NULL;

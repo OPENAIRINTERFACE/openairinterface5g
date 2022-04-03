@@ -36,7 +36,7 @@
 
 #include "common_lib.h"
 #include "openairinterface5g_limits.h"
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 #include "defs_common.h"
 #include "nfapi_nr_interface_scf.h"
 
@@ -458,8 +458,6 @@ typedef struct RU_t_s {
   int emulate_rf;
   /// numerology index
   int numerology;
-  /// flag to indicate basicsim operation
-  int basicsim;
   /// flag to indicate the RU is in sync with a master reference
   int in_synch;
   /// timing offset
