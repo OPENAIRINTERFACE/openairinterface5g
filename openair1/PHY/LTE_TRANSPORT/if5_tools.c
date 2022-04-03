@@ -1362,14 +1362,15 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
       for (packet_id=0; packet_id < ru->nb_rx*siglen / spp_eth; packet_id++) {
         //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
         //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF0, 1 );
+        for (i=0;i<ru->nb_rx;i++) _mm_prefetch((char*)rxp[i][packet_id*spp_eth],_MM_HINT_NTA);
         clock_gettime( CLOCK_MONOTONIC, &if_time);
         timein[packet_id] = if_time.tv_nsec;
-        ru->ifdevice.trx_read_func2(&ru->ifdevice,
+/*        ru->ifdevice.trx_read_func2(&ru->ifdevice,
 				   &timestamp[packet_id],
 				   (is_rx>0) ? rxp : NULL,
 				   spp_eth,
                                    packet_id,
-				   &aid);
+				   &aid);*/
         clock_gettime( CLOCK_MONOTONIC, &if_time);
         timeout[packet_id] = if_time.tv_nsec;
         timestamp[packet_id] = (timestamp[packet_id]*factor_n)/factor_d; 
@@ -1380,7 +1381,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
            if (firstTS==1) firstTS=0;
            else if (oldTS + spp_eth != timestamp[packet_id]) {
               LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu, timediff %ld\n",(long long unsigned int)oldTS,(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[packet_id]-oldTS,-timein[packet_id]+timeout[packet_id]); 
-              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d aid %d TS %llu, timediff %ld\n",i,aid_list[i],(long long unsigned int)timestamp[i],-timein[i]+timeout[i]);
+              for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d/%d aid %d TS %llu, timediff %ld\n",i,ru->nb_rx*siglen / spp_eth,aid_list[i],(long long unsigned int)timestamp[i],-timein[i]+timeout[i]);
               AssertFatal(1==0,"fronthaul problem\n");
            }
 

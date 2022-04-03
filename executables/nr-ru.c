@@ -306,7 +306,7 @@ void fh_if5_south_in(RU_t *ru,
   int is_rx=1;
   int slot_type = nr_slot_select(cfg,*frame,*tti);
   if (slot_type == NR_DOWNLINK_SLOT) is_rx=0;
-  recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_RRH_GW_UL,is_rx);
+  ru->ifdevice.trx_read_func2(&ru->ifdevice,&proc->timestamp_rx,NULL,fp->get_samples_per_slot(*tti,fp)); 
   if (proc->first_rx == 1) ru->ts_offset = proc->timestamp_rx;
   proc->frame_rx    = ((proc->timestamp_rx-ru->ts_offset) / (fp->samples_per_subframe*10))&1023;
   proc->tti_rx = fp->get_slot_from_timestamp(proc->timestamp_rx-ru->ts_offset,fp);
@@ -1029,6 +1029,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   cfg->num_rb_dl=N_RB;
   cfg->tx_num_channels=ru->nb_tx;
   cfg->rx_num_channels=ru->nb_rx;
+  LOG_I(PHY,"Setting RF config for N_RB %d, NB_RX %d, NB_TX %d\n",cfg->num_rb_dl,cfg->rx_num_channels,cfg->tx_num_channels);
 
   for (i=0; i<ru->nb_tx; i++) {
     if (ru->if_frequency == 0) {
@@ -1272,7 +1273,7 @@ void *ru_thread( void *param ) {
 
     // Start IF device if any
     if (ru->nr_start_if) {
-      LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
+      LOG_I(PHY,"Starting IF interface for RU %d, nb_rx %d\n",ru->idx,ru->nb_rx);
       AssertFatal(ru->nr_start_if(ru,NULL) == 0, "Could not start the IF device\n");
 
       if (ru->has_ctrl_prt > 0) {
@@ -1362,7 +1363,7 @@ void *ru_thread( void *param ) {
     }
 
     // synchronization on input FH interface, acquire signals/data and block
-    LOG_D(PHY,"[RU_thread] read data: frame_rx = %d, tti_rx = %d\n", frame, slot);
+    LOG_I(PHY,"[RU_thread] read data: frame_rx = %d, tti_rx = %d\n", frame, slot);
 
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
@@ -1495,6 +1496,8 @@ int start_streaming(RU_t *ru) {
 }
 
 int nr_start_if(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB) {
+  for (int i=0;i<ru->nb_rx;i++) ru->openair0_cfg.rxbase[i] = ru->common.rxdata[i];
+  ru->openair0_cfg.rxsize = ru->nr_frame_parms->samples_per_subframe*10;
   return(ru->ifdevice.trx_start_func(&ru->ifdevice));
 }
 
@@ -1845,6 +1848,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->ifdevice.host_type     = RAU_HOST;
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
+
       ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
       printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
 

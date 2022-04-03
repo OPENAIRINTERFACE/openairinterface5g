@@ -64,8 +64,32 @@ int trx_eth_start(openair0_device *device)
        AssertFatal(device->thirdparty_init != NULL, "device->thirdparty_init is null\n");
        AssertFatal(device->thirdparty_init(device) == 0, "third-party init failed\n");
        device->openair0_cfg->samples_per_packet = 256;
-    }
-    /* initialize socket */
+       eth->num_fd = max(device->openair0_cfg->rx_num_channels,device->openair0_cfg->tx_num_channels); 
+       printf("Creating %d UDP threads ...\n",device->openair0_cfg->rx_num_channels);
+       udp_read_t *u[device->openair0_cfg->rx_num_channels];
+       for (int i=0;i<device->openair0_cfg->rx_num_channels;i++) {
+          u[i] = malloc(sizeof(udp_read_t));
+          u[i]->thread_id=i;
+          u[i]->device = device;
+          threadCreate(&u[i]->pthread,udp_read_thread,u[i],"udp read thread",-1,OAI_PRIORITY_RT_MAX);
+       }
+       device->sampling_rate_ratio_n=1;
+       device->sampling_rate_ratio_d=1;
+       if (device->openair0_cfg->nr_flag==1) { // This check if RRU knows about NR numerologies
+          if (device->openair0_cfg->num_rb_dl <= 162 && device->openair0_cfg->num_rb_dl > 106) device->sampling_rate_ratio_n = 2;
+          else if (device->openair0_cfg->num_rb_dl <= 106 && device->openair0_cfg->num_rb_dl > 51) {device->sampling_rate_ratio_d=3;device->sampling_rate_ratio_n=4;}
+          else if (device->openair0_cfg->num_rb_dl == 51) {device->sampling_rate_ratio_n=1;device->sampling_rate_ratio_d=1;}
+          else AssertFatal(1==0,"num_rb_dl %d not ok with ECPRI\n",device->openair0_cfg->num_rb_dl);
+       }
+       else {
+          if (device->openair0_cfg->num_rb_dl == 100) device->sampling_rate_ratio_d = 1;
+          else if (device->openair0_cfg->num_rb_dl == 75) {device->sampling_rate_ratio_d = 4; device->sampling_rate_ratio_n=3;}
+          else if (device->openair0_cfg->num_rb_dl == 50) device->sampling_rate_ratio_d = 2;
+          else if (device->openair0_cfg->num_rb_dl == 25) device->sampling_rate_ratio_d = 4;
+          else AssertFatal(1==0,"num_rb_dl %d not ok with ECPRI\n",device->openair0_cfg->num_rb_dl);
+       }
+   }
+   /* initialize socket */
     if (eth->flags == ETH_RAW_MODE) {
         printf("Setting ETHERNET to ETH_RAW_IF5_MODE\n");
         if (eth_socket_init_raw(device)!=0)   return -1;
@@ -159,12 +183,13 @@ void trx_eth_end(openair0_device *device)
 {
     eth_state_t *eth = (eth_state_t*)device->priv;
     /* destroys socket only for the processes that call the eth_end fuction-- shutdown() for beaking the pipe */
-    if ( close(eth->sockfdd) <0 ) {
-        perror("ETHERNET: Failed to close socket");
-        exit(0);
-    } else {
-        printf("[%s] socket has been successfully closed.\n",(device->host_type == RAU_HOST)? "RAU":"RRU");
-    }
+    for (int i=0;i<eth->num_fd;i++)
+      if ( close(eth->sockfdd[i]) <0 ) {
+          perror("ETHERNET: Failed to close socket");
+          exit(0);
+      } else {
+          printf("[%s] socket has been successfully closed.\n",(device->host_type == RAU_HOST)? "RAU":"RRU");
+      }
 }
 
 
@@ -224,7 +249,8 @@ int ethernet_tune(openair0_device *device,
     /****************** socket level options ************************/
     switch(option) {
     case SND_BUF_SIZE:  /* transmit socket buffer size */
-        if (setsockopt(eth->sockfdd,
+      for (int i=0;i<eth->num_fd;i++)
+        if (setsockopt(eth->sockfdd[i],
                        SOL_SOCKET,
                        SO_SNDBUF,
                        &value,sizeof(value))) {
@@ -232,10 +258,11 @@ int ethernet_tune(openair0_device *device,
         } else {
             printf("send buffer size= %d bytes\n",value);
         }
-        break;
+      break;
 
     case RCV_BUF_SIZE:   /* receive socket buffer size */
-        if (setsockopt(eth->sockfdd,
+      for (int i=0;i<eth->num_fd;i++) {
+        if (setsockopt(eth->sockfdd[i],
                        SOL_SOCKET,
                        SO_RCVBUF,
                        &value,sizeof(value))) {
@@ -243,26 +270,29 @@ int ethernet_tune(openair0_device *device,
         } else {
             printf("receive bufffer size= %d bytes\n",value);
         }
-        break;
+      }
+      break;
 
     case RCV_TIMEOUT:
         timeout.tv_sec = value/1000000;
         timeout.tv_usec = value%1000000;//less than rt_period?
         if (setsockopt(eth->sockfdc,
-                       SOL_SOCKET,
-                       SO_RCVTIMEO,
-                       (char *)&timeout,sizeof(timeout))) {
-            perror("[ETHERNET] setsockopt()");
+                         SOL_SOCKET,
+                         SO_RCVTIMEO,
+                         (char *)&timeout,sizeof(timeout))) {
+              perror("[ETHERNET] setsockopt()");
         } else {
-            printf( "receive timeout= %u usec\n",(unsigned int)timeout.tv_usec);
+              printf( "receive timeout= %u usec\n",(unsigned int)timeout.tv_usec);
         }
-        if (setsockopt(eth->sockfdd,
-                       SOL_SOCKET,
-                       SO_RCVTIMEO,
-                       (char *)&timeout,sizeof(timeout))) {
-            perror("[ETHERNET] setsockopt()");
-        } else {
-            printf( "receive timeout= %u usec\n",(unsigned int)timeout.tv_usec);
+        for (int i=0;i<eth->num_fd;i++) {
+          if (setsockopt(eth->sockfdd[i],
+                         SOL_SOCKET,
+                         SO_RCVTIMEO,
+                         (char *)&timeout,sizeof(timeout))) {
+              perror("[ETHERNET] setsockopt()");
+          } else {
+              printf( "receive timeout= %u usec\n",(unsigned int)timeout.tv_usec);
+          }
         }
         break;
 
@@ -277,13 +307,15 @@ int ethernet_tune(openair0_device *device,
         } else {
             printf( "send timeout= %d,%d sec\n",(int)timeout.tv_sec,(int)timeout.tv_usec);
         }
-        if (setsockopt(eth->sockfdd,
-                       SOL_SOCKET,
-                       SO_SNDTIMEO,
-                       (char *)&timeout,sizeof(timeout))) {
-            perror("[ETHERNET] setsockopt()");
-        } else {
-            printf( "send timeout= %d,%d sec\n",(int)timeout.tv_sec,(int)timeout.tv_usec);
+        for (int i=0;i<eth->num_fd;i++) {
+          if (setsockopt(eth->sockfdd[i],
+                         SOL_SOCKET,
+                         SO_SNDTIMEO,
+                         (char *)&timeout,sizeof(timeout))) {
+              perror("[ETHERNET] setsockopt()");
+          } else {
+              printf( "send timeout= %d,%d sec\n",(int)timeout.tv_sec,(int)timeout.tv_usec);
+          }
         }
         break;
 
@@ -293,20 +325,24 @@ int ethernet_tune(openair0_device *device,
         ifr.ifr_addr.sa_family = AF_INET;
         strncpy(ifr.ifr_name,eth->if_name, sizeof(ifr.ifr_name)-1);
         ifr.ifr_mtu =value;
-        if (ioctl(eth->sockfdd,SIOCSIFMTU,(caddr_t)&ifr) < 0 )
-            perror ("[ETHERNET] Can't set the MTU");
-        else
-            printf("[ETHERNET] %s MTU size has changed to %d\n",eth->if_name,ifr.ifr_mtu);
+        for (int i=0;i<eth->num_fd;i++) {
+          if (ioctl(eth->sockfdd[i],SIOCSIFMTU,(caddr_t)&ifr) < 0 )
+              perror ("[ETHERNET] Can't set the MTU");
+          else
+              printf("[ETHERNET] %s MTU size has changed to %d\n",eth->if_name,ifr.ifr_mtu);
+        }
         break;
 
     case TX_Q_LEN:  /* change TX queue length of eth interface */
         ifr.ifr_addr.sa_family = AF_INET;
         strncpy(ifr.ifr_name,eth->if_name, sizeof(ifr.ifr_name)-1);
         ifr.ifr_qlen =value;
-        if (ioctl(eth->sockfdd,SIOCSIFTXQLEN,(caddr_t)&ifr) < 0 )
-            perror ("[ETHERNET] Can't set the txqueuelen");
-        else
-            printf("[ETHERNET] %s txqueuelen size has changed to %d\n",eth->if_name,ifr.ifr_qlen);
+        for (int i=0;i<eth->num_fd;i++) {
+          if (ioctl(eth->sockfdd[i],SIOCSIFTXQLEN,(caddr_t)&ifr) < 0 )
+              perror ("[ETHERNET] Can't set the txqueuelen");
+          else
+              printf("[ETHERNET] %s txqueuelen size has changed to %d\n",eth->if_name,ifr.ifr_qlen);
+        }
         break;
 
     /******************* device level options  *************************/
@@ -413,7 +449,10 @@ int transport_init(openair0_device *device,
         eth->compression = ALAW_COMPRESS;
     }
 
+    eth->num_fd = max(openair0_cfg->rx_num_channels,openair0_cfg->tx_num_channels);
+
     printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+    printf("[ETHERNET]: num_fd %d\n",eth->num_fd);
     device->Mod_id           = 0;//num_devices_eth++;
     device->transp_type      = ETHERNET_TP;
     device->trx_start_func   = trx_eth_start;
@@ -438,6 +477,7 @@ int transport_init(openair0_device *device,
         device->trx_read_func2    = trx_eth_read_udp;
         device->trx_ctlsend_func = trx_eth_ctlsend_udp;
         device->trx_ctlrecv_func = trx_eth_ctlrecv_udp;
+        memset((void*)&device->fhstate,0,sizeof(device->fhstate));
     } else if (eth->flags == ETH_RAW_IF4p5_MODE) {
         device->trx_write_func   = trx_eth_write_raw_IF4p5;
         device->trx_read_func    = trx_eth_read_raw_IF4p5;
@@ -454,6 +494,7 @@ int transport_init(openair0_device *device,
     eth->if_name = eth_params->local_if_name;
     device->priv = eth;
 
+    
     /* device specific */
     //  openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
     //  openair0_cfg[0].iq_txshift = eth_params->iq_txshift;// shift

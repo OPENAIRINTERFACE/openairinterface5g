@@ -16,16 +16,18 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <net/if.h>
 #include <netinet/ether.h>
 #include <unistd.h>
 #include <errno.h>
 #include <linux/sysctl.h>
 #include <sys/sysctl.h>
+#include <pthread.h>
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-
+#include "common/utils/system.h"
 #include "ori.h"
 
 #include "targets/ARCH/COMMON/common_lib.h"
@@ -221,42 +223,6 @@ int aw2s_oricleanup(openair0_device *device) {
   return(0);
 }
 
-typedef struct fhstate_s {
-  int Npackets;
-  openair0_timestamp olddeltaTS;
-  openair0_timestamp oldTS;
-  int fhjumps;
-  openair0_device *device;
-  int r0;
-  int r1;
-  int r2;
-  int r3;
-} fhstate_t;
-
-  openair0_timestamp TS;
-  int64_t deltaTS,olddeltaTS=-1;
-  int aid,r0=0;
-  r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
-  for (i=0;i<fhstate->Npackets;i++) {
-    device->trx_read_func2(fhstate->device,
-                           fhstate->TS,
-                           NULL,
-                           256,
-                           0,
-                           &aid);
-    if (aid == 0) fhstate->r0=1;
-    if (aid == 1) fhstate->r1=1;
-    if (aid == 2) fhstate->r2=1;
-    if (aid == 3) fhstate->r3=1;
-    if (aid==0) {
-      deltaTS = TS-oldTS;
-      fhstate-> oldTS=TS;
-      if (deltaTS != fhstate->olddeltaTS && fhstate->olddeltaTS > 0) {
-          fhstate->fhjumps++;
-      }
-      if (i>0) fhstate->olddeltaTS = deltaTS;
-    }
-  }
 int aw2s_startstreaming(openair0_device *device) {
 
   ORI_s *               ori = (ORI_s*)device->thirdparty_priv;
@@ -447,55 +413,8 @@ int aw2s_startstreaming(openair0_device *device) {
       }
     printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
   }
-/*  
-  while (rx0->fst != ORI_FST_Operational || 
-         (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
-         (openair0_cfg->rx_num_channels > 2 && rx2->fst != ORI_FST_Operational) || 
-         (openair0_cfg->rx_num_channels > 3 && rx3->fst != ORI_FST_Operational))  
-  {}
-*/	
-  // test RX interface 
-  uint64_t TS;
-  int64_t deltaTS,olddeltaTS=-1;
-  int aid,r0=0,r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
-  int r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
-  int r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;
 
-  int i;
-  fhstate_t fhstate;
-
-  fhstate.Npackets=1024000;
-  fhstate.oldTS=0;
-  fhstate.fhjumps=0;
-  fhstate.r0=0;
-  fhstate.r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
-  fhstate.r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
-  fhstate.r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;
-  for (i=0;i<fhstate->Npackets;i++) {
-    device->trx_read_func2(fhstate->device,
-                           (openair0_timestamp*)&TS,
-                           NULL,
-                           256,
-                           0,
-                           &aid);
-    if (aid == 0) fhstate->r0=1;
-    if (aid == 1) fhstate->r1=1;
-    if (aid == 2) fhstate->r2=1;
-    if (aid == 3) fhstate->r3=1;
-    if (aid==0) {
-      deltaTS = TS-fhstate->oldTS;
-      fhstate->oldTS=TS;
-      if (deltaTS != fhstate->olddeltaTS && fhstate->olddeltaTS > 0) {
-          fhstate->fhjumps++;
-      }
-      if (i>0) fhstate->olddeltaTS = deltaTS;
-    }
-  }
-  if (fhstate.r0==1 && fhstate.r1==1 && fhstate.r2==1 && fhstate.r3==1) printf("Streaming started, returning to OAI, fhjumps %d\n",fhjumps);
-  else {
-    printf("Didn't get anything from one antenna port after %d packets %d,%d,%d,%d\n",fhstate.Npackets,fhstate.r0,fhstate.r1,fhstate.r2,fhstater3);
-    return(-1);
-  }
+  device->fhstate.active=1; 
   return(0);
 
 }
@@ -977,7 +896,7 @@ int aw2s_oriinit(openair0_device *device) {
 
 int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params ) {
 
-  
+  printf("Initializing AW2S (%p,%p,%p)\n",aw2s_oriinit,aw2s_oricleanup,aw2s_startstreaming); 
   device->thirdparty_init           = aw2s_oriinit;
   device->thirdparty_cleanup        = aw2s_oricleanup;
   device->thirdparty_startstreaming = aw2s_startstreaming;

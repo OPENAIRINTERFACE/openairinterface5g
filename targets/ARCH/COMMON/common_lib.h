@@ -151,6 +151,12 @@ typedef enum {
   gpsdo=2
 } clock_source_t;
 
+/*! \brief Structure used for initializing UDP read threads */
+typedef struct {
+  openair0_device *device;
+  int thread_id;
+  pthread_t pthread;
+} udp_read_t;
 
 /*! \brief RF frontend parameters set by application */
 typedef struct {
@@ -176,9 +182,11 @@ typedef struct {
   int rx_num_channels;
   //! number of TX channels (=TX antennas)
   int tx_num_channels;
-  //! \brief RX base addresses for mmapped_dma
+  //! \brief RX base addresses for mmapped_dma or direct access
   int32_t *rxbase[4];
-  //! \brief TX base addresses for mmapped_dma
+  //! \brief RX buffer size for direct access
+  int rxsize;
+  //! \brief TX base addresses for mmapped_dma or direct access
   int32_t *txbase[4];
   //! \brief Center frequency in Hz for RX.
   //! index: [0..rx_num_channels[
@@ -309,6 +317,18 @@ typedef struct {
   pthread_mutex_t mutex_write;
 } openair0_thread_t;
 
+typedef struct fhstate_s {
+  openair0_timestamp TS[8]; 
+  openair0_timestamp TS0;
+  openair0_timestamp olddeltaTS[8];
+  openair0_timestamp oldTS[8];
+  openair0_timestamp TS_read;
+  uint32_t *buff[8];
+  uint32_t buff_size;
+  int r[8];
+  int active;
+} fhstate_t;
+
 /*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
   /*!tx write thread*/
@@ -342,6 +362,15 @@ struct openair0_device_t {
 
   /*!brief Can be used by driver to hold internal structure*/
   void *priv;
+
+  /*!brief pointer to FH state, used in ECPRI split 8*/
+  fhstate_t fhstate;
+
+  /*!bried Used in ECPRI split 8 to indicate numerator of sampling rate ratio*/
+  int sampling_rate_ratio_n;
+
+  /*!bried Used in ECPRI split 8 to indicate denominator of sampling rate ratio*/
+  int sampling_rate_ratio_d;
 
   /* Functions API, which are called by the application*/
 
@@ -417,7 +446,7 @@ struct openair0_device_t {
    * \param antenna_id Index of antenna from which samples were received
    * \returns the number of sample read
    */
-  int (*trx_read_func2)(openair0_device *device, openair0_timestamp *ptimestamp, uint32_t **buff, int nsamps,int packet_idx,int *antenna_id);
+  int (*trx_read_func2)(openair0_device *device, openair0_timestamp *ptimestamp, uint32_t **buff, int nsamps);
 
   /*! \brief print the device statistics
    * \param device the hardware to use
@@ -465,6 +494,7 @@ struct openair0_device_t {
 
 /*! \brief Pointer to generic RRU private information
    */
+
 
   void *thirdparty_priv;
 
