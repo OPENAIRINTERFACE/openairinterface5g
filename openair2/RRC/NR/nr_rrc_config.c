@@ -294,7 +294,7 @@ void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedulingRequ
                             NR_ServingCellConfigCommon_t *scc) {
 
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-  int sr_slot = 0;
+  int sr_slot = 1; // in FDD SR in slot 1
   if(tdd)
     sr_slot = tdd->nrofDownlinkSlots; // SR in the first uplink slot
 
