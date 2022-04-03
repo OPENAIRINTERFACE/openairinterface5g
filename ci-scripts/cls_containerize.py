@@ -606,6 +606,8 @@ class Containerize():
 		if containerToKill:
 			mySSH.command('docker kill --signal INT ' + containerName, '\$', 30)
 			time.sleep(5)
+			mySSH.command('docker kill --signal KILL ' + containerName, '\$', 30)
+			time.sleep(5)
 			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
 			mySSH.command('docker rm -f ' + containerName, '\$', 30)
 		# Forcing the down now to remove the networks and any artifacts

@@ -40,14 +40,14 @@ void mac_top_init_gNB(void);
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   int pdsch_AntennaPorts,
+                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
-                           int pdsch_AntennaPorts,
+                           rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
                            int minRXTXTIMEpdsch,

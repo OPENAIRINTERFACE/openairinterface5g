@@ -23,6 +23,7 @@ This page is only valid for an `Ubuntu18` host.
    1. [Deploy OAI 5G Core Network](#21-deploy-oai-5g-core-network)
    2. [Deploy OAI gNB in RF simulator mode and in Standalone Mode](#22-deploy-oai-gnb-in-rf-simulator-mode-and-in-standalone-mode)
    3. [Deploy OAI NR-UE in RF simulator mode and in Standalone Mode](#23-deploy-oai-nr-ue-in-rf-simulator-mode-and-in-standalone-mode)
+   4. [Deploy Second OAI NR-UE in RF simulator mode and in Standalone Mode](#24-deploy-second-oai-nr-ue-in-rf-simulator-mode-and-in-standalone-mode)
 3. [Check traffic](#3-check-traffic)
    1. [Check your Internet connectivity](#31-check-your-internet-connectivity)
    2. [Start the iperf server inside the NR-UE container](#32-start-the-iperf-server-inside-the-nr-ue-container)
@@ -203,6 +204,8 @@ $ docker logs rfsim5g-oai-amf
 $ docker-compose up -d oai-nr-ue
 rfsim5g-mysql is up-to-date
 rfsim5g-oai-nrf is up-to-date
+rfsim5g-oai-amf is up-to-date
+rfsim5g-oai-smf is up-to-date
 rfsim5g-oai-spgwu is up-to-date
 rfsim5g-oai-ext-dn is up-to-date
 rfsim5g-oai-gnb is up-to-date
@@ -231,7 +234,7 @@ Making sure the OAI UE is connected:
 $ docker exec -it rfsim5g-oai-nr-ue /bin/bash
 root@bb4d400a832d:/opt/oai-nr-ue# ifconfig 
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet 192.168.71.137  netmask 255.255.255.192  broadcast 192.168.71.191
+        inet 192.168.71.150  netmask 255.255.255.192  broadcast 192.168.71.191
         ether 02:42:c0:a8:47:89  txqueuelen 0  (Ethernet)
         RX packets 224259  bytes 5821372018 (5.8 GB)
         RX errors 0  dropped 0  overruns 0  frame 0
@@ -248,6 +251,98 @@ lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
 
 oaitun_ue1: flags=4305<UP,POINTOPOINT,RUNNING,NOARP,MULTICAST>  mtu 1500
         inet 12.1.1.2  netmask 255.255.255.0  destination 12.1.1.2
+        unspec 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00  txqueuelen 500  (UNSPEC)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+
+## 2.4. Deploy Second OAI NR-UE in RF simulator mode and in Standalone Mode ##
+
+```bash
+Create a entry for new IMSI (208990100001101) in oai_db.sql file
+Refer Section - [Making the NR-UE connect to the core network](#51-making-the-nr-ue-connect-to-the-core-network)
+
+Create entry for Second UE in docker-compose.yaml file as follows:
+    oai-nr-ue2:
+        image: oai-nr-ue:develop
+        privileged: true
+        container_name: rfsim5g-oai-nr-ue2
+        environment:
+            RFSIMULATOR: 192.168.71.140
+            FULL_IMSI: '208990100001101'
+            FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
+            OPC: 'C42449363BBAD02B66D16BC975D77CC1'
+            DNN: oai
+            NSSAI_SST: 1
+            NSSAI_SD: 1
+            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --nokrnmod --log_config.global_log_options level,nocolor,time
+        depends_on:
+            - oai-gnb
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.151
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+```
+
+
+```bash
+$ docker-compose up -d oai-nr-ue2
+rfsim5g-mysql is up-to-date
+rfsim5g-oai-nrf is up-to-date
+rfsim5g-oai-amf is up-to-date
+rfsim5g-oai-smf is up-to-date
+rfsim5g-oai-spgwu is up-to-date
+rfsim5g-oai-ext-dn is up-to-date
+rfsim5g-oai-gnb is up-to-date
+Creating rfsim5g-oai-nr-ue2 ... done
+```
+
+Wait for a bit.
+
+```bash
+$ docker-compose ps -a
+       Name                     Command                  State                  Ports            
+-------------------------------------------------------------------------------------------------
+rfsim5g-mysql        docker-entrypoint.sh mysqld      Up (healthy)   3306/tcp, 33060/tcp
+rfsim5g-oai-amf      /bin/bash /openair-amf/bin ...   Up (healthy)   38412/sctp, 80/tcp, 9090/tcp
+rfsim5g-oai-ext-dn   /bin/bash -c  apt update;  ...   Up (healthy)
+rfsim5g-oai-gnb      /opt/oai-gnb/bin/entrypoin ...   Up (healthy)
+rfsim5g-oai-nr-ue    /opt/oai-nr-ue/bin/entrypo ...   Up (healthy)
+rfsim5g-oai-nr-ue2   /opt/oai-nr-ue/bin/entrypo ...   Up (healthy)
+rfsim5g-oai-nrf      /bin/bash /openair-nrf/bin ...   Up (healthy)   80/tcp, 9090/tcp
+rfsim5g-oai-smf      /bin/bash /openair-smf/bin ...   Up (healthy)   80/tcp, 8805/udp, 9090/tcp
+rfsim5g-oai-spgwu    /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp
+```
+
+Making sure the Second OAI UE is connected:
+
+```bash
+$ docker exec -it rfsim5g-oai-nr-ue2 /bin/bash
+root@bb4d400a832d:/opt/oai-nr-ue# ifconfig 
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.71.151  netmask 255.255.255.192  broadcast 192.168.71.191
+        ether 02:42:c0:a8:47:8a  txqueuelen 0  (Ethernet)
+        RX packets 3192021  bytes 67784900946 (67.7 GB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 3397743  bytes 91320004542 (91.3 GB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+oaitun_ue1: flags=4305<UP,POINTOPOINT,RUNNING,NOARP,MULTICAST>  mtu 1500
+        inet 12.1.1.3  netmask 255.255.255.0  destination 12.1.1.3
         unspec 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00  txqueuelen 500  (UNSPEC)
         RX packets 0  bytes 0 (0.0 B)
         RX errors 0  dropped 0  overruns 0  frame 0
@@ -298,6 +393,9 @@ rtt min/avg/max/mdev = 10.939/13.747/16.556/2.810 ms
 Let now try to check UDP traffic in Downlink.
 
 You will need 2 terminals: one in the NR-UE container, one in the ext-dn container.
+
+Note:
+Similarly, Second OAI UE Internet connectivity can be checked.
 
 ## 3.2. Start the `iperf` server inside the NR-UE container ##
 
@@ -384,24 +482,26 @@ The `500 Kbits/sec` value may change depending on your CPU power!
 
 ```bash
 $ docker-compose down
+Stopping rfsim5g-oai-nr-ue2 ... done
 Stopping rfsim5g-oai-nr-ue  ... done
 Stopping rfsim5g-oai-gnb    ... done
 Stopping rfsim5g-oai-ext-dn ... done
+Stopping rfsim5g-oai-spgwu  ... done
 Stopping rfsim5g-oai-smf    ... done
 Stopping rfsim5g-oai-amf    ... done
-Stopping rfsim5g-oai-spgwu  ... done
 Stopping rfsim5g-oai-nrf    ... done
 Stopping rfsim5g-mysql      ... done
+Removing rfsim5g-oai-nr-ue2 ... done
 Removing rfsim5g-oai-nr-ue  ... done
 Removing rfsim5g-oai-gnb    ... done
 Removing rfsim5g-oai-ext-dn ... done
+Removing rfsim5g-oai-spgwu  ... done
 Removing rfsim5g-oai-smf    ... done
 Removing rfsim5g-oai-amf    ... done
-Removing rfsim5g-oai-spgwu  ... done
 Removing rfsim5g-oai-nrf    ... done
 Removing rfsim5g-mysql      ... done
 Removing network rfsim5g-oai-public-net
-Removing network rfsim5g-oai-traffic_net-net
+Removing network rfsim5g-oai-traffic-net
 ```
 
 # 5. Explanations on the configuration in the `docker-compose.yaml` #
@@ -419,11 +519,17 @@ This value is also present in the `oai_db.sql` file:
 
 ```bash
 INSERT INTO `users` VALUES ('208990100001100','1','55000000000000',NULL,'PURGED',50,40000000,100000000,47,0000000000,1,0xfec86ba6eb707ed08905757b1bb44b8f,0,0,0x40,'ebd07771ace8677a',0xc42449363bbad02b66d16bc975d77cc1);
+INSERT INTO `users` VALUES ('208990100001101','1','55000000000000',NULL,'PURGED',50,40000000,100000000,47,0000000000,1,0xfec86ba6eb707ed08905757b1bb44b8f,0,0,0x40,'ebd07771ace8677a',0xc42449363bbad02b66d16bc975d77cc1);
 ```
 
 As you can see, 2 other values shall match in the NR-UE section of `docker-compose.yaml`:
 
+OAI UE - 1
 * `FULL_IMSI: '208990100001100'`
+* `FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'`
+
+OAI UE - 2
+* `FULL_IMSI: '208990100001101'`
 * `FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'`
 
 We are also using a dedicated `oai-smf.conf` for the `SMF` container: the `oai` DNN shall match the one in  the NR-UE section of `docker-compose.yaml` (`DNN: oai`).
