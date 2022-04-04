@@ -43,31 +43,30 @@ export class CommandsComponent {
     );
   }
 
-  onCmdSubmit(control: CmdCtrl) {
-    this.commandsApi.runCommand$(control.api()).subscribe();
-  }
-
-  onCmdSelect(control: CmdCtrl) {
-    this.subcmds$ = this.commandsApi.readModuleCommands$(control.nameFC.value).pipe(
+  onCmdSelect() {
+    this.subcmds$ = this.commandsApi.readModuleCommands$(`${this.selectedCmd?.nameFC.value}`).pipe(
       map(cmds => cmds.map(cmd => new CmdCtrl(cmd))),
       // tap(cmds => [this.selectedSubCmd] = cmds)
     )
 
-    this.subvars$ = this.commandsApi.readModuleVariables$(control.nameFC.value).pipe(
+    this.subvars$ = this.commandsApi.readModuleVariables$(`${this.selectedCmd?.nameFC.value}`).pipe(
       map(vars => vars.map(v => new VarCtrl(v))),
       // tap(vars => [this.selectedSubVar] = vars)
     )
   }
 
-  onSubCmdSelect(control: CmdCtrl) {
-    this.args$ = this.commandsApi.readModuleVariables$(control.nameFC.value).pipe(
+  onSubCmdSelect() {
+    this.args$ = this.commandsApi.readModuleVariables$(`${this.selectedCmd?.nameFC.value}/${this.selectedSubCmd?.nameFC.value}`).pipe(
       map(vars => vars.map(v => new VarCtrl(v))),
       // tap(vars => [this.selectedSubVar] = vars)
     )
   }
 
   onVarSubmit(control: VarCtrl) {
-    control.nameFC = new FormControl(`${this.selectedCmd?.nameFC.value} ${this.selectedSubCmd?.nameFC.value} ${control.nameFC.value}`.trim())
-    this.commandsApi.setVariable$(control.api()).subscribe();
+    this.commandsApi.runCommand$(`${this.selectedCmd?.nameFC.value}/${control.nameFC.value}`, control.valueFC.value).subscribe();
+  }
+
+  onSubVarSubmit(control: VarCtrl) {
+    this.commandsApi.runCommand$(`${this.selectedCmd?.nameFC.value}/${this.selectedSubCmd?.nameFC.value}/${control.nameFC.value}`, control.valueFC.value).subscribe();
   }
 }
