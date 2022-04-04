@@ -159,7 +159,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   NR_UE_COMMON *const common_vars        = &ue->common_vars;
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
-  int i,j,slot,symb, gNB_id, th_id;
+  int i,slot,symb, gNB_id, th_id;
 
   NR_UE_SRS **const srs_vars             = ue->srs_vars;
 
