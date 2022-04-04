@@ -526,6 +526,10 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]);
     }
 
+    for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
+      free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
+    }
+
     for (int i = 0; i < fp->nb_antennas_rx; i++) {
       free_and_zero(ue->nr_srs_info->srs_received_signal[i]);
       free_and_zero(ue->nr_srs_info->srs_ls_estimated_channel[i]);
