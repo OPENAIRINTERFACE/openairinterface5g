@@ -269,6 +269,7 @@ typedef struct {
   int32_t csi_rs_estimated_numer_fin[NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));
   uint32_t *noise_power;
   uint8_t *rank_indicator;
+  uint8_t *pmi;
 } nr_csi_rs_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;

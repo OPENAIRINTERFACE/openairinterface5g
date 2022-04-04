@@ -462,6 +462,35 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
   return 0;
 }
 
+int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
+                             fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
+                             nr_csi_rs_info_t *nr_csi_rs_info,
+                             int32_t ***csi_rs_estimated_channel_freq,
+                             uint8_t rank_indicator,
+                             uint8_t *pmi) {
+
+  // TS 38.214: For 2 antenna ports {3000, 3001} and the UE configured with higher layer parameter codebookType set to
+  // 'typeISinglePanel' each PMI value corresponds to a codebook index given in Table 5.2.2.2.1-1.
+  // The first column is applicable if the UE is reporting a Rank = 1, whereas the second column is applicable if the
+  // UE is reporting a Rank = 2.
+
+  *pmi = 0;
+
+  if(ue->nr_csi_rs_info->N_ports == 1) {
+    return 0;
+  }
+
+  if(rank_indicator == 0) {
+
+  } else if(rank_indicator == 1) {
+
+  } else {
+    LOG_W(NR_PHY, "PMI computation is not implemented for rank indicator %i\n", rank_indicator);
+  }
+
+  return 0;
+}
+
 int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
   return 0;
 }
@@ -519,6 +548,13 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                           ue->nr_csi_rs_info,
                           ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
                           ue->nr_csi_rs_info->rank_indicator);
+
+  nr_csi_rs_pmi_estimation(ue,
+                           csirs_config_pdu,
+                           ue->nr_csi_rs_info,
+                           ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
+                           *ue->nr_csi_rs_info->rank_indicator,
+                           ue->nr_csi_rs_info->pmi);
 
   return 0;
 }
