@@ -364,8 +364,17 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int16_t cond_dB_threshold = 0;
-  int count=0;
+  int count = 0;
   *rank_indicator = 0;
+
+  if (ue->frame_parms.nb_antennas_rx == 1 || ue->nr_csi_rs_info->N_ports == 1) {
+    LOG_I(NR_PHY, "RI = %i\n", *rank_indicator + 1);
+    return 0;
+  } else if( !(ue->frame_parms.nb_antennas_rx == 2 && ue->nr_csi_rs_info->N_ports == 2) ) {
+    LOG_W(NR_PHY, "Rank indicator computation is not implemented for %i x %i system\n",
+          ue->frame_parms.nb_antennas_rx, ue->nr_csi_rs_info->N_ports);
+    return -1;
+  }
 
   /* Example 2x2: Hh x H =
   *            | conjch00 conjch10 | x | ch00 ch01 | = | conjch00*ch00+conjch10*ch10 conjch00*ch01+conjch10*ch11 |
@@ -503,19 +512,12 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                                ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
                                ue->nr_csi_rs_info->noise_power);
 
-  if(ue->frame_parms.nb_antennas_rx == 1 || ue->nr_csi_rs_info->N_ports == 1) {
-    *ue->nr_csi_rs_info->rank_indicator = 0;
-  } else if(ue->frame_parms.nb_antennas_rx == 2 && ue->nr_csi_rs_info->N_ports == 2) {
-    nr_csi_rs_ri_estimation(ue,
-                            proc,
-                            csirs_config_pdu,
-                            ue->nr_csi_rs_info,
-                            ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
-                            ue->nr_csi_rs_info->rank_indicator);
-  } else {
-    LOG_D(NR_PHY, "Rank indicator computation is not implemented for %i x %i system\n",
-          ue->frame_parms.nb_antennas_rx, ue->nr_csi_rs_info->N_ports);
-  }
+  nr_csi_rs_ri_estimation(ue,
+                          proc,
+                          csirs_config_pdu,
+                          ue->nr_csi_rs_info,
+                          ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
+                          ue->nr_csi_rs_info->rank_indicator);
 
   return 0;
 }
