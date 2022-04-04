@@ -28,7 +28,8 @@
 * \email: raymond.knopp@eurecom.fr and  navid.nikaein@eurecom.fr, kroempa@gmail.com
 */
 
-#pragma once
+#ifndef __RRC_NR_MESSAGES_ASN1_MSG__H__
+#define __RRC_NR_MESSAGES_ASN1_MSG__H__
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -101,18 +102,19 @@ uint8_t do_RRCReject(uint8_t Mod_id,
                      uint8_t *const buffer);
 
 void fill_initial_SpCellConfig(int uid,
-			       NR_SpCellConfig_t *SpCellConfig,
-			       NR_ServingCellConfigCommon_t *scc,
-                               rrc_gNB_carrier_data_t *carrier);
+                               NR_SpCellConfig_t *SpCellConfig,
+                               NR_ServingCellConfigCommon_t *scc,
+                               const gNB_RrcConfigurationReq *configuration);
 
 void fill_initial_cellGroupConfig(int uid,
-				  NR_CellGroupConfig_t *cellGroupConfig,
-				  NR_ServingCellConfigCommon_t *scc,
-                                  rrc_gNB_carrier_data_t *carrier);
+                                  NR_CellGroupConfig_t *cellGroupConfig,
+                                  NR_ServingCellConfigCommon_t *scc,
+                                  const gNB_RrcConfigurationReq *configuration);
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             rrc_gNB_carrier_data_t *carrier,
-                            NR_UE_NR_Capability_t *uecap);
+                            NR_UE_NR_Capability_t *uecap,
+                            const gNB_RrcConfigurationReq *configuration);
 
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup);
 
@@ -121,7 +123,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     const uint8_t                transaction_id,
                     OCTET_STRING_t               *masterCellGroup_from_DU,
                     NR_ServingCellConfigCommon_t *scc,
-                    rrc_gNB_carrier_data_t *carrier);
+                    const gNB_RrcConfigurationReq *configuration);
 
 uint8_t do_NR_SecurityModeCommand(
                     const protocol_ctxt_t *const ctxt_pP,
@@ -151,6 +153,7 @@ int16_t do_RRCReconfiguration(
     struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
     rrc_gNB_ue_context_t         *const ue_context_pP,
     rrc_gNB_carrier_data_t       *carrier,
+    const gNB_RrcConfigurationReq *configuration,
     NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig,
     NR_CellGroupConfig_t         *cellGroupConfig);
 
@@ -205,3 +208,4 @@ do_RRCReestablishmentComplete(
     uint8_t *buffer, size_t buffer_size,
     int64_t rrc_TransactionIdentifier);
 
+#endif  /* __RRC_NR_MESSAGES_ASN1_MSG__H__ */
