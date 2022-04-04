@@ -261,6 +261,7 @@ typedef struct {
   int32_t **csi_rs_received_signal;
   int32_t ***csi_rs_ls_estimated_channel;
   int32_t ***csi_rs_estimated_channel_freq;
+  int16_t log2_maxh;
   int32_t csi_rs_estimated_conjch_ch[4][4][4][4][NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));
   int32_t csi_rs_estimated_A_MF[2][2][NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));
   int32_t csi_rs_estimated_A_MF_sq[2][2][NR_MAX_OFDM_SYMBOL_SIZE] __attribute__((aligned(32)));

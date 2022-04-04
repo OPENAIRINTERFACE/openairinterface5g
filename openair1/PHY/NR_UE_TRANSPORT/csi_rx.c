@@ -205,6 +205,7 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
   *noise_power = 0;
+  int maxh = 0;
 
   for (int ant_rx = 0; ant_rx < frame_parms->nb_antennas_rx; ant_rx++) {
 
@@ -318,6 +319,7 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
         int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][k];
         noise_real[ant_rx][port_tx][rb-csirs_config_pdu->start_rb] = abs(csi_rs_ls_estimated_channel[0]-csi_rs_estimated_channel16[0]);
         noise_imag[ant_rx][port_tx][rb-csirs_config_pdu->start_rb] = abs(csi_rs_ls_estimated_channel[1]-csi_rs_estimated_channel16[1]);
+        maxh = cmax3(maxh, abs(csi_rs_estimated_channel16[0]), abs(csi_rs_estimated_channel16[1]));
       }
     }
     for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
@@ -347,6 +349,7 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
   }
 
   *noise_power /= (frame_parms->nb_antennas_rx*nr_csi_rs_info->N_ports);
+  nr_csi_rs_info->log2_maxh = log2_approx(maxh-1);
 
 #ifdef NR_CSIRS_DEBUG
   LOG_I(NR_PHY, "Noise power estimation based on CSI-RS: %i\n", *noise_power);
@@ -403,7 +406,7 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
                                 &csi_rs_estimated_channel_freq[ant_rx_ch][port_tx_ch][k],
                                 &nr_csi_rs_info->csi_rs_estimated_conjch_ch[ant_rx_conjch][port_tx_conjch][ant_rx_ch][port_tx_ch][k],
                                 1,
-                                0);
+                                nr_csi_rs_info->log2_maxh);
 
             // construct Hh x H elements
             if(ant_rx_conjch == ant_rx_ch) {
