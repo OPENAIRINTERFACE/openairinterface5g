@@ -758,13 +758,14 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   }
   free_and_zero(pusch_dmrs);
 
-  uint32_t ***csi_rs = gNB->nr_csi_rs_info->nr_gold_csi_rs;
+  uint32_t ***nr_gold_csi_rs = gNB->nr_csi_rs_info->nr_gold_csi_rs;
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
     for (int symb = 0; symb < fp->symbols_per_slot; symb++)
-      free_and_zero(csi_rs[slot][symb]);
-    free_and_zero(csi_rs[slot]);
+      free_and_zero(nr_gold_csi_rs[slot][symb]);
+    free_and_zero(nr_gold_csi_rs[slot]);
   }
-  free_and_zero(csi_rs);
+  free_and_zero(nr_gold_csi_rs);
+  free_and_zero(gNB->nr_csi_rs_info);
 
   for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
     for (int i = 0; i < Prx; i++){
