@@ -360,10 +360,12 @@ configmodule_interface_t *load_configmodule(int argc,
 /* config module could be initialized again after this call */
 void end_configmodule(void) {
   if ( cfgptr->status && (cfgptr->rtflags & CONFIG_SAVERUNCFG)) {
-	 printf_params("[CONFIG] Runtime params creation status: %i null values, %i errors, %i successfull\n",
+	 printf_params("[CONFIG] Runtime params creation status: %i null values, %i errors, %i empty list or array, %i successfull \n",
 	               cfgptr->status->num_err_nullvalue,
 	               cfgptr->status->num_err_write,
+	               cfgptr->status->emptyla,
 	               cfgptr->status->num_write);
+	               
   }
   if (cfgptr != NULL) {
     if (cfgptr->end != NULL) {
