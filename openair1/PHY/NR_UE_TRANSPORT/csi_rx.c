@@ -356,7 +356,6 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
 }
 
 int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
-                            UE_nr_rxtx_proc_t *proc,
                             fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                             nr_csi_rs_info_t *nr_csi_rs_info,
                             int32_t ***csi_rs_estimated_channel_freq,
@@ -513,7 +512,6 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                                ue->nr_csi_rs_info->noise_power);
 
   nr_csi_rs_ri_estimation(ue,
-                          proc,
                           csirs_config_pdu,
                           ue->nr_csi_rs_info,
                           ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
