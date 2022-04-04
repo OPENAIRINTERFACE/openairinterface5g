@@ -3,21 +3,22 @@ import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 
 
-export enum IOptionType {
-    subcommand = "subcommand",
-    variable = "variable"
-}
-export interface IOption {
-    type: IOptionType;
-}
-
-export interface IVariable extends IOption {
+export interface IVariable {
     name: string;
     value: string;
-    modifiable: boolean;
+    type: IArgType;
+    modifiable: boolean; //set command ?
 }
-export interface ISubCommands extends IOption {
-    name: string[];
+
+export enum IArgType {
+    boolean = "boolean",
+    list = "list",
+    range = "range",
+    string = "string"
+}
+
+export interface ICommand {
+    name: string;
 }
 
 const route = '/oaisoftmodem';
@@ -28,14 +29,16 @@ const route = '/oaisoftmodem';
 export class CommandsApi {
     constructor(private httpClient: HttpClient) { }
 
-    public readStatus$ = () => this.httpClient.get<IVariable[]>(environment.backend + route + '/status/');
+    public readVariables$ = () => this.httpClient.get<IVariable[]>(environment.backend + route + '/variables/');
 
-    public readModules$ = () => this.httpClient.get<string[]>(environment.backend + route + '/modules/');
+    public readCommands$ = () => this.httpClient.get<ICommand[]>(environment.backend + route + '/commands/');
 
-    public getOptions$ = (cmdName: string) => this.httpClient.get<IOption[]>(environment.backend + route + '/module/' + cmdName);
+    public readModuleVariables$ = (moduleName: string) => this.httpClient.get<IVariable[]>(environment.backend + route + '/variables/' + moduleName);
 
-    public runCommand$ = (cmdName: string) => this.httpClient.post<string>(environment.backend + route + '/command/' + cmdName, {});
+    public readModuleCommands$ = (moduleName: string) => this.httpClient.get<ICommand[]>(environment.backend + route + '/commands/' + moduleName);
 
-    public setVariable$ = (variable: IVariable) => this.httpClient.post<string>(environment.backend + route + '/variable/' + variable.name, variable.value);
+    public runCommand$ = (command: ICommand) => this.httpClient.post<string>(environment.backend + route + '/run/', command);
+
+    public setVariable$ = (variable: IVariable) => this.httpClient.post<string>(environment.backend + route + '/set/', variable);
 
 }

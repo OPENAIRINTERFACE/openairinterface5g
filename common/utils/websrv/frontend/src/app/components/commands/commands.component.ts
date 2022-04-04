@@ -1,11 +1,10 @@
 import { Component } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { BehaviorSubject } from 'rxjs';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
-import { CommandsApi, IOptionType, ISubCommands, IVariable } from 'src/app/api/commands.api';
-import { SubCmdCtrl } from 'src/app/controls/cmds.control';
-import { VariableCtrl } from 'src/app/controls/variable.control';
+import { CommandsApi, IArgType } from 'src/app/api/commands.api';
+import { CmdCtrl } from 'src/app/controls/cmd.control';
+import { VariableCtrl as VarCtrl } from 'src/app/controls/var.control';
 import { LoadingService } from 'src/app/services/loading.service';
 
 
@@ -16,41 +15,59 @@ import { LoadingService } from 'src/app/services/loading.service';
 })
 export class CommandsComponent {
 
-  IOptionType = IOptionType;
+  IOptionType = IArgType;
 
-  status$: Observable<VariableCtrl[]>
-  cmds$: Observable<string[]>
-  variables$ = new BehaviorSubject<VariableCtrl[]>([])
-  subcmds$: BehaviorSubject<SubCmdCtrl> | undefined
+  vars$: Observable<VarCtrl[]>
+  cmds$: Observable<CmdCtrl[]>
+  selectedCmd?: CmdCtrl
+  selectedVar?: VarCtrl
 
-  selectedCmd = new FormControl()
-  selectedSubCmd = new FormControl()
-  selectedVariable?: VariableCtrl
+  subvars$?: Observable<VarCtrl[]>
+  subcmds$?: Observable<CmdCtrl[]>
+  selectedSubCmd?: CmdCtrl
+  selectedSubVar?: VarCtrl
+
+  args$?: Observable<VarCtrl[]>
+  selectedArg?: VarCtrl
 
   constructor(
     public commandsApi: CommandsApi,
     public loadingService: LoadingService,
   ) {
-    this.status$ = this.commandsApi.readStatus$().pipe(
-      map((ivars) => ivars.map(ivar => new VariableCtrl(ivar)))
+    this.vars$ = this.commandsApi.readVariables$().pipe(
+      map((ivars) => ivars.map(ivar => new VarCtrl(ivar)))
     );
 
-    this.cmds$ = this.commandsApi.readModules$();
+    this.cmds$ = this.commandsApi.readCommands$().pipe(
+      map((ivars) => ivars.map(ivar => new CmdCtrl(ivar)))
+    );
   }
 
-  onCmdSubmit(subCmdName: string) {
-    this.commandsApi.runCommand$(subCmdName).subscribe();
+  onCmdSubmit(control: CmdCtrl) {
+    this.commandsApi.runCommand$(control.api()).subscribe();
   }
 
-  onVarSubmit(varCtrl: VariableCtrl) {
-    this.commandsApi.setVariable$(varCtrl.api()).subscribe();
+  onCmdSelect(control: CmdCtrl) {
+    this.subcmds$ = this.commandsApi.readModuleCommands$(control.nameFC.value).pipe(
+      map(cmds => cmds.map(cmd => new CmdCtrl(cmd))),
+      // tap(cmds => [this.selectedSubCmd] = cmds)
+    )
+
+    this.subvars$ = this.commandsApi.readModuleVariables$(control.nameFC.value).pipe(
+      map(vars => vars.map(v => new VarCtrl(v))),
+      // tap(vars => [this.selectedSubVar] = vars)
+    )
   }
 
-  onSelect(cmdNameFC: FormControl) {
-    this.commandsApi.getOptions$(cmdNameFC.value).subscribe(opts => {
-      this.variables$.next(opts.filter(iopt => iopt.type === IOptionType.variable).map(iopt => new VariableCtrl(iopt as IVariable)))
-      const [subCmds] = opts.filter(iopt => iopt.type === IOptionType.subcommand)
-      this.subcmds$ = new BehaviorSubject<SubCmdCtrl>(new SubCmdCtrl(subCmds as ISubCommands))
-    })
+  onSubCmdSelect(control: CmdCtrl) {
+    this.args$ = this.commandsApi.readModuleVariables$(control.nameFC.value).pipe(
+      map(vars => vars.map(v => new VarCtrl(v))),
+      // tap(vars => [this.selectedSubVar] = vars)
+    )
+  }
+
+  onVarSubmit(control: VarCtrl) {
+    control.nameFC = new FormControl(`${this.selectedCmd?.nameFC.value} ${this.selectedSubCmd?.nameFC.value} ${control.nameFC.value}`.trim())
+    this.commandsApi.setVariable$(control.api()).subscribe();
   }
 }
