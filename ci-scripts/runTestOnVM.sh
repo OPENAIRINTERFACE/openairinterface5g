@@ -1939,6 +1939,12 @@ function run_test_on_vm {
                 SA_106PRB_STATUS=0
             fi
         done
+        #manage SYNC issue after try_cnt
+        if [ $SYNC_STATUS -ne 0 ]
+        then
+            echo "SA 106PRB test NOT OK, NOT SYNC'ED"
+            SA_106PRB_STATUS=-1
+        fi
         ########### end SA test
 
         sleep 30
@@ -2022,6 +2028,12 @@ function run_test_on_vm {
                 SA_24PRB_STATUS=0
             fi
         done
+        #manage SYNC issue after try_cnt
+        if [ $SYNC_STATUS -ne 0 ]
+        then
+            echo "SA 24PRB test NOT OK, NOT SYNC'ED"
+            SA_24PRB_STATUS=-1
+        fi
         ########### end SA test
 
         sleep 30
@@ -2110,6 +2122,12 @@ function run_test_on_vm {
                 try_cnt=$((try_cnt+10))
             fi
         done
+        #manage SYNC issue after try_cnt
+        if [ $SYNC_STATUS -ne 0 ]
+        then
+            echo "RA FR2 test NOT OK, NOT SYNC'ED"
+            RA_FR2_STATUS=-1
+        fi
         ########### end RA FR2 test
 
         sleep 30
@@ -2212,6 +2230,13 @@ function run_test_on_vm {
                 try_cnt=$((try_cnt+10))
             fi
           done
+          #manage SYNC issue after try_cnt
+          if [ $SYNC_STATUS -ne 0 ]
+          then
+            echo "RA FR1 test NOT OK, NOT SYNC'ED"
+            RA_FR1_STATUS=-1
+          fi
+
         done
         ########### end RA test
         
@@ -2332,6 +2357,13 @@ function run_test_on_vm {
                 try_cnt=$((try_cnt+10))
             fi
           done
+          #manage SYNC issue after try_cnt
+          if [ $SYNC_STATUS -ne 0 ]
+          then
+              echo "PHY test NOT OK, NOT SYNC'ED"
+              IPERF_STATUS=-1
+          fi
+
         done
         ######### end of loop
         full_l2_sim_destroy
@@ -2345,7 +2377,6 @@ function run_test_on_vm {
         if [ $SA_24PRB_STATUS -ne 0 ]; then NR_STATUS=-1; fi  
         if [ $RA_FR2_STATUS -ne 0 ]; then NR_STATUS=-1; fi        
         if [ $RA_FR1_STATUS -ne 0 ]; then NR_STATUS=-1; fi
-        if [ $SYNC_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $PING_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then NR_STATUS=-1; fi
         if [ $NR_STATUS -eq 0 ]
