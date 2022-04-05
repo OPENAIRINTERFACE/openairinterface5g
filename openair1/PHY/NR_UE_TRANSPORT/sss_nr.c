@@ -558,6 +558,9 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, 
   }
   //#endif
 
+  if (Nid1==N_ID_1_NUMBER)
+    return -1;
+  
   int re = 0;
   int im = 0;
   d = (int16_t *)&d_sss[Nid2][Nid1];

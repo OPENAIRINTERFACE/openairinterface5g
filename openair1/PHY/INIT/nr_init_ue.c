@@ -311,11 +311,26 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   }
 
   // DLSCH
-  for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
+  for (gNB_id = 0; gNB_id < ue->n_connected_gNB+1; gNB_id++) {
     for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
       ue->pdsch_vars[th_id][gNB_id] = (NR_UE_PDSCH *)malloc16_clear(sizeof(NR_UE_PDSCH));
     }
+    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
+      phy_init_nr_ue_PDSCH( ue->pdsch_vars[th_id][gNB_id], fp );
+    }
 
+    int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
+    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
+      for (i=0; i<nb_codewords; i++) {
+        ue->pdsch_vars[th_id][gNB_id]->llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
+      }
+      for (i=0; i<NR_MAX_NB_LAYERS; i++) {
+        ue->pdsch_vars[th_id][gNB_id]->layer_llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
+      }
+    }
+  }
+
+  for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
     for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
       ue->pdcch_vars[th_id][gNB_id] = (NR_UE_PDCCH *)malloc16_clear(sizeof(NR_UE_PDCCH));
     }
@@ -340,21 +355,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       ue->nr_srs_info->srs_estimated_channel_freq[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
       ue->nr_srs_info->srs_estimated_channel_time[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
       ue->nr_srs_info->srs_estimated_channel_time_shifted[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-    }
-
-
-    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-      phy_init_nr_ue_PDSCH( ue->pdsch_vars[th_id][gNB_id], fp );
-    }
-
-    int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
-    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-      for (i=0; i<nb_codewords; i++) {
-        ue->pdsch_vars[th_id][gNB_id]->llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
-      }
-      for (i=0; i<NR_MAX_NB_LAYERS; i++) {
-        ue->pdsch_vars[th_id][gNB_id]->layer_llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
-      }
     }
 
     // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE

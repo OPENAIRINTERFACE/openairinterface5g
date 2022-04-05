@@ -10606,15 +10606,30 @@ int dfts_autoinit(void)
 
 #ifndef MR_MAIN
 
-void dft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
-	AssertFatal((sizeidx>=0 && sizeidx<(int)DFT_SIZE_IDXTABLESIZE),"Invalid dft size index %i\n",sizeidx);
-	dft_ftab[sizeidx](sigF,sig,scale_flag);
+void dft(uint8_t sizeidx, int16_t *input,int16_t *output,unsigned char scale_flag){
+	AssertFatal((sizeidx>=0 && sizeidx<DFT_SIZE_IDXTABLESIZE),"Invalid dft size index %i\n",sizeidx);
+        AssertFatal( ((intptr_t)output&0x1F)==0,"Buffers should be 32 bytes aligned %p",output);
+        if ((intptr_t)input&0x1F) {
+          LOG_D(PHY, "DFT called with input not aligned, add a memcpy, size %d\n", sizeidx);
+          int16_t tmp[dft_ftab[sizeidx].size*2] __attribute__ ((aligned(32))); // input and output are not in right type (int16_t instead of c16_t)
+          memcpy(tmp, input, sizeof tmp);
+          dft_ftab[sizeidx].func(tmp,output,scale_flag);
+        } else
+          dft_ftab[sizeidx].func(input,output,scale_flag);
 };
 
-void idft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
-	AssertFatal((sizeidx>=0 && sizeidx<(int)IDFT_SIZE_IDXTABLESIZE),"Invalid idft size index %i\n",sizeidx);
-	idft_ftab[sizeidx](sigF,sig,scale_flag);
+void idft(uint8_t sizeidx, int16_t *input,int16_t *output,unsigned char scale_flag){
+	AssertFatal((sizeidx>=0 && sizeidx<DFT_SIZE_IDXTABLESIZE),"Invalid idft size index %i\n",sizeidx);
+        AssertFatal( ((intptr_t)output&0x1F)==0,"Buffers should be 32 bytes aligned %p",output);
+        if ((intptr_t)input&0x1F) {
+          LOG_D(PHY, "DFT called with input not aligned, add a memcpy\n");
+          int16_t tmp[idft_ftab[sizeidx].size*2] __attribute__ ((aligned(32))); // input and output are not in right type (int16_t instead of c16_t)
+          memcpy(tmp, input, sizeof tmp);
+          dft_ftab[sizeidx].func(tmp,output,scale_flag);
+        } else
+          idft_ftab[sizeidx].func(input,output,scale_flag);
 };
+
 #endif
 
 /*---------------------------------------------------------------------------------------*/
