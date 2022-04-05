@@ -94,14 +94,14 @@ int setparam(char *buff, int debug, telnet_printfunc_t prnt);
 int history_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 
 telnetshell_vardef_t telnet_vardef[] = {
-  {"debug",TELNET_VARTYPE_INT32,&telnetparams.telnetdbg},
-  {"prio",TELNET_VARTYPE_INT32,&telnetparams.priority},
-  {"loopc",TELNET_VARTYPE_INT32,&telnetparams.loopcount},
-  {"loopd",TELNET_VARTYPE_INT32,&telnetparams.loopdelay},
-  {"phypb",TELNET_VARTYPE_INT32,&telnetparams.phyprntbuff_size},
-  {"hsize",TELNET_VARTYPE_INT32,&telnetparams.histsize},
-  {"hfile",TELNET_VARTYPE_STRING,&telnetparams.histfile},
-  {"",0,NULL}
+  {"debug",TELNET_VARTYPE_INT32,0,&telnetparams.telnetdbg},
+  {"prio",TELNET_VARTYPE_INT32,0,&telnetparams.priority},
+  {"loopc",TELNET_VARTYPE_INT32,0,&telnetparams.loopcount},
+  {"loopd",TELNET_VARTYPE_INT32,0,&telnetparams.loopdelay},
+  {"phypb",TELNET_VARTYPE_INT32,0,&telnetparams.phyprntbuff_size},
+  {"hsize",TELNET_VARTYPE_INT32,0,&telnetparams.histsize},
+  {"hfile",TELNET_VARTYPE_STRING,TELNET_CHECKVAL_RDONLY,&telnetparams.histfile},
+  {"",0,0,NULL}
 };
 
 telnetshell_cmddef_t  telnet_cmdarray[] = {
@@ -344,46 +344,46 @@ int history_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
 /*
 generic commands available for all modules loaded by the server
 */
-char *telnet_getvarvalue(int moduleindex, int varindex) {
+char *telnet_getvarvalue(telnetshell_vardef_t   *var, int varindex) {
 	    char *val;
-        switch(telnetparams.CmdParsers[moduleindex].var[varindex].vartype) {
+        switch(var[varindex].vartype) {
           case TELNET_VARTYPE_INT32:
             val=malloc(64);
-            snprintf(val,64,"%i",*(int32_t *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            snprintf(val,64,"%i",*(int32_t *)(var[varindex].varvalptr));
             break;
 
           case TELNET_VARTYPE_INT64:
             val=malloc(128);
-            snprintf(val,128,"%lli",(long long)*(int64_t *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            snprintf(val,128,"%lli",(long long)*(int64_t *)(var[varindex].varvalptr));
             break;
 
           case TELNET_VARTYPE_INT16:
             val=malloc(16);
-            snprintf(val,16,"%hi",*(short *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            snprintf(val,16,"%hi",*(short *)(var[varindex].varvalptr));
             break;
 
           case TELNET_VARTYPE_INT8:
             val=malloc(16);
-            snprintf(val,16,"%i",(int)(*(int8_t *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr)));
+            snprintf(val,16,"%i",(int)(*(int8_t *)(var[varindex].varvalptr)));
             break;
             
           case TELNET_VARTYPE_UINT:
             val=malloc(64);
-            snprintf(val,64,"%u",*(unsigned int *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            snprintf(val,64,"%u",*(unsigned int *)(var[varindex].varvalptr));
             break;
             
           case TELNET_VARTYPE_DOUBLE:
             val=malloc(32);
-            snprintf(val,32,"%g\n",*(double *)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            snprintf(val,32,"%g\n",*(double *)(var[varindex].varvalptr));
             break;
 
           case TELNET_VARTYPE_STRING:
-            val = strdup(*(char **)(telnetparams.CmdParsers[moduleindex].var[varindex].varvalptr));
+            val = strdup(*(char **)(var[varindex].varvalptr));
             break;
 
           default:
             val=malloc(64);
-            snprintf(val,64,"ERR:%s var %i unknown type",telnetparams.CmdParsers[moduleindex].module,varindex);
+            snprintf(val,64,"ERR:var %i unknown type",varindex);
             break;
         }	
     return val;
@@ -401,7 +401,7 @@ int setgetvar(int moduleindex,char getorset,char *params) {
       if (n > 0 && (getorset == 'g' || getorset == 'G')) {
         client_printf("%s, %s = ", telnetparams.CmdParsers[moduleindex].module,
                       telnetparams.CmdParsers[moduleindex].var[i].varname );
-        char *strval=telnet_getvarvalue(moduleindex, i);
+        char *strval=telnet_getvarvalue(telnetparams.CmdParsers[moduleindex].var, i);
         client_printf("%s\n",strval);
         free(strval);
       }
