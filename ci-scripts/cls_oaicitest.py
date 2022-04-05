@@ -469,6 +469,7 @@ class OaiCiTest():
 			#case it is a amarisoft ue (only 1 at a time supported at the moment)
 			elif ue_kind == 'amarisoft':
 				AS_UE = cls_amarisoft_ue.AS_UE(InfraUE.ci_ue_infra[self.ue_id])
+				HTML.CreateHtmlTestRow(AS_UE.Config, 'OK', CONST.ALL_PROCESSES_OK)
 				AS_UE.RunScenario()
 				AS_UE.WaitEndScenario()
 				AS_UE.KillASUE()
@@ -1592,7 +1593,6 @@ class OaiCiTest():
 			#if module, ping from module to EPC
 			if self.ue_id!='':
 				if (re.match('amarisoft', self.ue_id, re.IGNORECASE)):
-					logging.debug("Ping analysis from amarisoft scenario")
 					launchFromEpc = False
 					launchFromASUE = True
 				else:
@@ -1659,8 +1659,10 @@ class OaiCiTest():
 				elif (launchFromASUE == True): 
 					#ping was already executed when running scenario
 					#we only need to retrieve ping log file, whose location is in the ci_ueinfra.yaml
-					logging.debug("Get Ping log from AS server : " + Module_UE.Ping)
+					logging.debug("Get logs from AS server : " + Module_UE.Ping + ", " + Module_UE.UELog)
 					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, Module_UE.Ping, '.')
+					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, Module_UE.UELog, '.')
+					logging.debug("Ping analysis from Amarisoft scenario")
 					path,ping_log_file = os.path.split(Module_UE.Ping)
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
 					SSH.command('cat ' + Module_UE.Ping, '\#', 5)

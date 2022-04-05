@@ -67,8 +67,14 @@ class AS_UE:
 	def RunScenario(self):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
+
+		logging.debug("Deleting old artifacts :")
+		cmd='rm -rf ' + self.Ping + ' ' + self.UELog 
+		mySSH.command(cmd,'#',5)
+		logging.debug("Running scenario :")
 		cmd='echo $USER; nohup '+self.Cmd + ' ' + self.Config + ' &'
 		mySSH.command(cmd,'#',5)
+
 		mySSH.close()
 
 

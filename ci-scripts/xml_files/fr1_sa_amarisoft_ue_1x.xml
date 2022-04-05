@@ -37,7 +37,7 @@
 
 	<testCase id="010000">
 		<class>Initialize_UE</class>
-		<desc>Initialize Amarisoft UE 1x</desc>
+		<desc>Run AS UE Scenario</desc>
 		<id>amarisoft_ue_1</id>
 	</testCase>
 

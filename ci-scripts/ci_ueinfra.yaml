@@ -53,6 +53,7 @@ amarisoft_ue_1:
   Config : /root/NV17-12-21/ue/config/oaicicd-ue-Ping-SATest.cfg 
   Duration : 60
   Ping : /tmp/test_ue1.log
+  UELog : /tmp/ue1.log
   HostIPAddress : 192.168.18.89
   HostUsername : root
   HostPassword : toor 
@@ -60,6 +61,7 @@ amarisoft_ue_1:
 
 
 #an other scenario example
+#notice : this will not work as such, only suggestion for multi ue scenario
 amarisoft_ue_2:
   ID: amarisoft_ue_2
   State : enabled
@@ -71,7 +73,12 @@ amarisoft_ue_2:
   Cmd : /root/NV17-12-21/ue/lteue 
   Config : /root/NV17-12-21/ue/config/xxxxxxx.cfg #to be updated for an other scenario 
   Duration : 60
-  Ping : /tmp/test_ue1.log #to be updated fo an other scenario
+  Ping :
+    - /tmp/test_ue1.log #to be updated fo an other scenario
+    - /tmp/test_ue2.log #could be a list for a multi ue scenario
+  UELog :
+    - /tmp/ue1.log
+    - /tmp/ue1.log
   HostIPAddress : 192.168.18.89
   HostUsername : root
   HostPassword : toor 
