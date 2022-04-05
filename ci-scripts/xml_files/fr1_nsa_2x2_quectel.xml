@@ -75,13 +75,13 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time,line_num,function</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q --usrp-tx-thread-config 1 --T_stdout 2 --log_config.global_log_options level,nocolor,time,line_num,function</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
 		<eNB_Stats>yes</eNB_Stats>
 		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
-		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
+		<USRP_IPAddress>192.168.18.252</USRP_IPAddress>
 	</testCase>
 
 	<testCase id="000001">
