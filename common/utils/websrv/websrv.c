@@ -146,6 +146,9 @@ int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_res
 
  int websrv_callback_default (const struct _u_request * request, struct _u_response * response, void * user_data) {
   LOG_I(UTIL,"Requested file is: %s\n",request->http_url);
+  if (request->map_post_body != NULL)
+    for (int i=0; i<u_map_count(request->map_post_body) ; i++)
+      LOG_I(UTIL,"POST parameter %i %s : %s\n",i,u_map_enum_keys(request->map_post_body)[i], u_map_enum_values(request->map_post_body)[i]	);
   char *tmpurl = strdup(websrvparams.url);
   char *srvdir = dirname(tmpurl);
   if (srvdir==NULL) {
@@ -161,8 +164,23 @@ int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_res
     return U_CALLBACK_ERROR;
   return U_CALLBACK_CONTINUE;
 }
+/* callback processing module url (<address>/oaisoftmodem/module/variables), post method */
+int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _u_response * response, void * user_data) {
+	 LOG_I(UTIL,"websrv : callback_set_softmodemcmd received %s\n",request->http_url);
+	 json_error_t jserr;
+	 json_t* jsbody = ulfius_get_json_body_request (request, &jserr);
+	 if (jsbody == NULL) {
+       LOG_E(UTIL,"websrv cannot find json body in %s %s\n",request->http_url, jserr.text );
+       		 
+	 } else {
+	   websrv_printjson("callback_set_softmodemcmd: ",jsbody);
+	 }
+//	 cmdparser_t * modulestruct = (cmdparser_t *)user_data;
+	 ulfius_set_empty_body_response(response, 200);
+	 return U_CALLBACK_CONTINUE;   
+}
 
-/* callback processing module url (<address>/oaisoftmodem/module/variabes)*/
+/* callback processing module url (<address>/oaisoftmodem/module/variables), get method*/
 int websrv_callback_get_softmodemvar(const struct _u_request * request, struct _u_response * response, void * user_data) {
 	cmdparser_t * modulestruct = (cmdparser_t *)user_data;
 	
@@ -171,10 +189,15 @@ int websrv_callback_get_softmodemvar(const struct _u_request * request, struct _
 	json_t *moduleactions = json_array();
 
      for(int j=0; modulestruct->var[j].varvalptr != NULL ; j++) {
-	   char*strval=telnet_getvarvalue(modulestruct->var[j].varvalptr, j);
+	   char*strval=telnet_getvarvalue(modulestruct->var, j);
 	   char *strbool="true";
 	   if (modulestruct->var[j].checkval & TELNET_CHECKVAL_RDONLY)
 	     strbool="false";
+	   else {
+	    char prefixurl[TELNET_CMD_MAXSIZE+64];
+	     snprintf(prefixurl,TELNET_CMD_MAXSIZE+63,"oaisoftmodem/%s",modulestruct->module);		   
+		 ulfius_add_endpoint_by_val(websrvparams.instance, "POST", prefixurl,"variables" , 0, &websrv_callback_set_softmodemvar, user_data );
+	   }
 	   json_t *oneaction =json_pack("{s:s,s:s,s:s,s:s}","type","string","name",modulestruct->var[j].varname,"value",strval,"modifiable",strbool);
        if (oneaction==NULL) {
 	     LOG_E(UTIL,"websrv cannot encode oneaction %s/%s\n",modulestruct->module,modulestruct->var[j].varname);
@@ -276,12 +299,17 @@ int websrv_callback_get_softmodemstatus(const struct _u_request * request, struc
   } else {
 	  websrv_printjson("status body1",body1);
   }  
+
   json_t *body2=json_pack("{s:s,s:s,s:s,s:s}","name","exec_function", "value",execfunc, "type", strtype, "modifiable",strbool); 
   if (body2==NULL) {
 	  LOG_E(UTIL,"websrv cannot encode status body1 response\n");
   } else {
 	  websrv_printjson("status body2",body2);
   } 
+  int status=ulfius_add_endpoint_by_val(websrvparams.instance, "POST", "oaisoftmodem","/variables" , 0, &websrv_callback_set_softmodemvar, user_data );
+  if (status != U_OK) {
+	  LOG_E(UTIL,"websrv cannot add endpoint oaisoftmodem/variables\n");
+  }
   json_array_append(moduleactions , body1);
   json_array_append(moduleactions , body2);
   
