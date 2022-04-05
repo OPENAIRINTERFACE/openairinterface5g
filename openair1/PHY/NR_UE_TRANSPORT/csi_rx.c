@@ -457,8 +457,6 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
     *rank_indicator = 1;
   }
 
-  LOG_I(NR_PHY, "RI = %i\n", *rank_indicator + 1);
-
   return 0;
 }
 
@@ -467,20 +465,63 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
                              nr_csi_rs_info_t *nr_csi_rs_info,
                              int32_t ***csi_rs_estimated_channel_freq,
                              uint8_t rank_indicator,
-                             uint8_t *pmi) {
+                             uint8_t *i1,
+                             uint8_t *i2) {
+
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  i1[0] = 1;
+  i1[1] = 1;
+  i1[2] = 1;
+  *i2 = 0;
 
   // TS 38.214: For 2 antenna ports {3000, 3001} and the UE configured with higher layer parameter codebookType set to
   // 'typeISinglePanel' each PMI value corresponds to a codebook index given in Table 5.2.2.2.1-1.
   // The first column is applicable if the UE is reporting a Rank = 1, whereas the second column is applicable if the
   // UE is reporting a Rank = 2.
 
-  *pmi = 0;
-
   if(ue->nr_csi_rs_info->N_ports == 1) {
     return 0;
   }
 
   if(rank_indicator == 0) {
+
+    uint32_t metric[4] = {0};
+    uint16_t shift = nr_csi_rs_info->log2_maxh + log2_approx(frame_parms->nb_antennas_rx) + log2_approx(csirs_config_pdu->nr_of_rbs) - 1;
+
+    for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
+
+      if (csirs_config_pdu->freq_density <= 1 && csirs_config_pdu->freq_density != (rb % 2)) {
+        continue;
+      }
+      uint16_t k = (frame_parms->first_carrier_offset + rb * NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
+
+      for (int ant_rx = 0; ant_rx < frame_parms->nb_antennas_rx; ant_rx++) {
+        int16_t *csi_rs_estimated_channel_p0 = (int16_t *) &csi_rs_estimated_channel_freq[ant_rx][0][k];
+        int16_t *csi_rs_estimated_channel_p1 = (int16_t *) &csi_rs_estimated_channel_freq[ant_rx][1][k];
+
+        // H_p0 + 1*H_p1 = (H_p0_re + H_p1_re) + 1j*(H_p0_im + H_p1_im)
+        metric[0] += ((csi_rs_estimated_channel_p0[0]+csi_rs_estimated_channel_p1[0])*(csi_rs_estimated_channel_p0[0]+csi_rs_estimated_channel_p1[0])
+            + (csi_rs_estimated_channel_p0[1]+csi_rs_estimated_channel_p1[1])*(csi_rs_estimated_channel_p0[1]+csi_rs_estimated_channel_p1[1]))>>shift;
+
+        // H_p0 + 1j*H_p1 = (H_p0_re - H_p1_im) + 1j*(H_p0_im + H_p1_re)
+        metric[1] += ((csi_rs_estimated_channel_p0[0]-csi_rs_estimated_channel_p1[1])*(csi_rs_estimated_channel_p0[0]-csi_rs_estimated_channel_p1[1])
+                      + (csi_rs_estimated_channel_p0[1]+csi_rs_estimated_channel_p1[0])*(csi_rs_estimated_channel_p0[1]+csi_rs_estimated_channel_p1[0]))>>shift;
+
+        // H_p0 - 1*H_p1 = (H_p0_re - H_p1_re) + 1j*(H_p0_im - H_p1_im)
+        metric[2] += ((csi_rs_estimated_channel_p0[0]-csi_rs_estimated_channel_p1[0])*(csi_rs_estimated_channel_p0[0]-csi_rs_estimated_channel_p1[0])
+                      + (csi_rs_estimated_channel_p0[1]-csi_rs_estimated_channel_p1[1])*(csi_rs_estimated_channel_p0[1]-csi_rs_estimated_channel_p1[1]))>>shift;
+
+        // H_p0 - 1j*H_p1 = (H_p0_re + H_p1_im) + 1j*(H_p0_im - H_p1_re)
+        metric[3] += ((csi_rs_estimated_channel_p0[0]+csi_rs_estimated_channel_p1[1])*(csi_rs_estimated_channel_p0[0]+csi_rs_estimated_channel_p1[1])
+                      + (csi_rs_estimated_channel_p0[1]-csi_rs_estimated_channel_p1[0])*(csi_rs_estimated_channel_p0[1]-csi_rs_estimated_channel_p1[0]))>>shift;
+      }
+    }
+
+    for(int tested_i2 = 0; tested_i2 < 4; tested_i2++) {
+      if(metric[tested_i2] > metric[*i2]) {
+        *i2 = tested_i2;
+      }
+    }
 
   } else if(rank_indicator == 1) {
 
@@ -554,7 +595,13 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                            ue->nr_csi_rs_info,
                            ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
                            *ue->nr_csi_rs_info->rank_indicator,
-                           ue->nr_csi_rs_info->pmi);
+                           ue->nr_csi_rs_info->i1,
+                           ue->nr_csi_rs_info->i2);
+
+  LOG_I(NR_PHY, "RI = %i, i1 = [%i %i %i], i2 = %i\n",
+        *ue->nr_csi_rs_info->rank_indicator + 1,
+        ue->nr_csi_rs_info->i1[0], ue->nr_csi_rs_info->i1[1], ue->nr_csi_rs_info->i1[2],
+        *ue->nr_csi_rs_info->i2);
 
   return 0;
 }
