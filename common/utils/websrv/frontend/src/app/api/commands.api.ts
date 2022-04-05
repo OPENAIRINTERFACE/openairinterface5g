@@ -33,7 +33,7 @@ export class CommandsApi {
 
     public readCommands$ = (moduleName?: string) => this.httpClient.get<ICommand[]>(environment.backend + route + '/' + (moduleName ? ('/' + moduleName) : "") + '/commands/');
 
-    public runCommand$ = (moduleName: string, command: ICommand) => this.httpClient.post<string>(environment.backend + route + '/' + moduleName + '/commands/', command);
+    public runCommand$ = (command: ICommand, moduleName: string) => this.httpClient.post<string>(environment.backend + route + '/' + moduleName + '/commands/', command);
 
     public setVariable$ = (variable: IVariable, moduleName?: string) => this.httpClient.post<string>(environment.backend + route + (moduleName ? ('/' + moduleName) : "") + '/variables/', variable);
 
