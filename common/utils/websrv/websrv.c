@@ -145,7 +145,7 @@ int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_res
 }
 
  int websrv_callback_default (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  LOG_I(UTIL,"Requested file is: %s\n",request->http_url);
+  LOG_I(UTIL,"Requested file is: %s %s\n",request->http_verb,request->http_url);
   if (request->map_post_body != NULL)
     for (int i=0; i<u_map_count(request->map_post_body) ; i++)
       LOG_I(UTIL,"POST parameter %i %s : %s\n",i,u_map_enum_keys(request->map_post_body)[i], u_map_enum_values(request->map_post_body)[i]	);
@@ -165,8 +165,25 @@ int websrv_callback_get_mainurl(const struct _u_request * request, struct _u_res
   return U_CALLBACK_CONTINUE;
 }
 /* callback processing module url (<address>/oaisoftmodem/module/variables), post method */
+int websrv_callback_okset_softmodemvar(const struct _u_request * request, struct _u_response * response, void * user_data) {
+	 LOG_I(UTIL,"websrv : callback_okset_softmodemvar received %s %s\n",request->http_verb,request->http_url);
+     for (int i=0; i<u_map_count(request->map_header) ; i++)
+       LOG_I(UTIL,"header variable %i %s : %s\n",i,u_map_enum_keys(request->map_header)[i], u_map_enum_values(request->map_header)[i]	);
+     int us=ulfius_add_header_to_response(response,"Access-Control-Request-Method" ,"POST");
+      if (us != U_OK){
+	    ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
+	    LOG_E(UTIL,"websrv cannot set response header type ulfius error %d \n",us);
+      }  
+      us=ulfius_add_header_to_response(response,"Access-Control-Allow-Headers", "content-type"); 
+      us=ulfius_set_empty_body_response(response, 200);
+      if (us != U_OK){
+	    ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_set_empty_body_response)");
+	    LOG_E(UTIL,"websrv cannot set empty body response ulfius error %d \n",us);
+      }  
+	 return U_CALLBACK_CONTINUE;   
+}
 int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _u_response * response, void * user_data) {
-	 LOG_I(UTIL,"websrv : callback_set_softmodemcmd received %s\n",request->http_url);
+	 LOG_I(UTIL,"websrv : callback_set_softmodemvar received %s %s\n",request->http_verb,request->http_url);
 	 json_error_t jserr;
 	 json_t* jsbody = ulfius_get_json_body_request (request, &jserr);
 	 if (jsbody == NULL) {
@@ -177,7 +194,7 @@ int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _
 	 }
 //	 cmdparser_t * modulestruct = (cmdparser_t *)user_data;
 	 ulfius_set_empty_body_response(response, 200);
-	 return U_CALLBACK_CONTINUE;   
+	 return U_CALLBACK_COMPLETE;   
 }
 
 /* callback processing module url (<address>/oaisoftmodem/module/variables), get method*/
@@ -352,16 +369,22 @@ int websrv_callback_get_softmodemstatus(const struct _u_request * request, struc
   
   // default_endpoint declaration
   ulfius_set_default_endpoint(websrvparams.instance, &websrv_callback_default, NULL);
-  int status=ulfius_add_endpoint_by_val(websrvparams.instance, "POST", "oaisoftmodem","/variables" , 0, &websrv_callback_set_softmodemvar, NULL );
+  int status=ulfius_add_endpoint_by_val(websrvparams.instance, "OPTIONS", "oaisoftmodem","variables" , 1, &websrv_callback_okset_softmodemvar, NULL );
   if (status != U_OK) {
 	  LOG_E(UTIL,"websrv cannot add endpoint oaisoftmodem/variables\n");
   }  
+  ulfius_add_endpoint_by_val(websrvparams.instance, "POST", "oaisoftmodem","variables" , 0, &websrv_callback_set_softmodemvar, NULL );
+
   for (int i=0; telnetparams->CmdParsers[i].var != NULL && telnetparams->CmdParsers[i].cmd != NULL; i++) {
 	  char prefixurl[TELNET_CMD_MAXSIZE+20];
 	  snprintf(prefixurl,TELNET_CMD_MAXSIZE+19,"oaisoftmodem/%s",telnetparams->CmdParsers[i].module);
 	  LOG_I(UTIL,"websrv add endpoints %s/[variables or commands] \n",prefixurl);
 	  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", prefixurl,"variables" , 0, &websrv_callback_get_softmodemvar, &(telnetparams->CmdParsers[i]) );
 	  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", prefixurl,"commands" , 0, &websrv_callback_get_softmodemcmd, &(telnetparams->CmdParsers[i]) );
+      status=ulfius_add_endpoint_by_val(websrvparams.instance, "OPTIONS", prefixurl,"variables" , 0, &websrv_callback_okset_softmodemvar, &(telnetparams->CmdParsers[i]) );
+      if (status != U_OK) {
+	    LOG_E(UTIL,"websrv cannot add endpoint %s/variables\n",prefixurl);}
+      ulfius_add_endpoint_by_val(websrvparams.instance, "POST", prefixurl,"variables" , 0, &websrv_callback_set_softmodemvar, &(telnetparams->CmdParsers[i]) ); 
     }
   // Start the framework
   ret=U_ERROR;
