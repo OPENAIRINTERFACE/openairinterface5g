@@ -39,7 +39,7 @@ export class CommandsComponent {
     );
 
     this.cmds$ = this.commandsApi.readCommands$().pipe(
-      map((cmds) => cmds.map(ivar => new CmdCtrl(ivar))),
+      map((cmds) => cmds.map(icmd => new CmdCtrl(icmd))),
       tap(controls => [this.selectedCmd] = controls)
     );
   }
@@ -47,19 +47,20 @@ export class CommandsComponent {
   onCmdSelect() {
 
     this.subcmds$ = this.commandsApi.readCommands$(`${this.selectedCmd!.nameFC.value}`).pipe(
-      map(cmds => cmds.map(cmd => new CmdCtrl(cmd))),
+      map(icmds => icmds.map(icmd => new CmdCtrl(icmd))),
       tap(controls => [this.selectedSubCmd] = controls)
     )
 
-    this.subvars$ = this.commandsApi.readVariables$(`${this.selectedCmd!.nameFC.value}`).pipe(map(vars => vars.map(v => new VarCtrl(v))),
+    this.subvars$ = this.commandsApi.readVariables$(`${this.selectedCmd!.nameFC.value}`).pipe(
+      map(ivars => ivars.map(ivar => new VarCtrl(ivar))),
       tap(controls => [this.selectedSubVar] = controls)
     )
   }
 
   onSubCmdSelect() {
     this.args$ = this.commandsApi.readVariables$(`${this.selectedCmd!.nameFC.value}/${this.selectedSubCmd!.nameFC.value}`).pipe(
-      map(vars => vars.map(v => new VarCtrl(v))),
-      tap(vars => [this.selectedArg] = vars)
+      map(ivars => ivars.map(ivar => new VarCtrl(ivar))),
+      tap(controls => [this.selectedArg] = controls)
     )
   }
 
@@ -68,6 +69,7 @@ export class CommandsComponent {
   }
 
   onSubVarSubmit(control: VarCtrl) {
-    this.commandsApi.setVariable$(control.api(), `${this.selectedCmd?.nameFC.value}/${this.selectedSubCmd?.nameFC.value}/${control.nameFC.value}`).subscribe();
+    this.commandsApi.setVariable$(control.api(), `${this.selectedCmd?.nameFC.value}`).subscribe();
+    // this.commandsApi.setVariable$(control.api(), `${this.selectedCmd?.nameFC.value} / ${this.selectedSubCmd?.nameFC.value} / ${control.nameFC.value}`).subscribe();
   }
 }
