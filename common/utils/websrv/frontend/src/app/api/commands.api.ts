@@ -33,10 +33,10 @@ export class CommandsApi {
 
     public readCommands$ = () => this.httpClient.get<ICommand[]>(environment.backend + route + '/commands/');
 
-    public readModuleVariables$ = (moduleName: string) => this.httpClient.get<IVariable[]>(environment.backend + route + '/variables/' + moduleName);
+    public readModuleVariables$ = (moduleName: string) => this.httpClient.get<IVariable[]>(environment.backend + route + '/' + moduleName + '/variables/');
 
-    public readModuleCommands$ = (moduleName: string) => this.httpClient.get<ICommand[]>(environment.backend + route + '/commands/' + moduleName);
+    public readModuleCommands$ = (moduleName: string) => this.httpClient.get<ICommand[]>(environment.backend + route + '/' + moduleName + '/commands/');
 
-    public runCommand$ = (moduleName: string, variable: IVariable) => this.httpClient.post<string>(environment.backend + route + '/commands/' + moduleName, variable);
+    public runCommand$ = (moduleName: string, variable: IVariable) => this.httpClient.post<string>(environment.backend + route + '/' + moduleName + '/commands/', variable);
 
 }
