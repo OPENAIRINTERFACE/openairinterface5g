@@ -10,7 +10,7 @@ const enum VariablesFCN {
 }
 
 
-export class VariableCtrl extends FormGroup {
+export class VarCtrl extends FormGroup {
 
   constructor(ivar: IVariable) {
     super({});
@@ -49,11 +49,11 @@ export class VariableCtrl extends FormGroup {
   }
 
   get typeFC() {
-    return this.get(VariablesFCN.value) as FormControl;
+    return this.get(VariablesFCN.type) as FormControl;
   }
 
   set typeFC(control: FormControl) {
-    this.setControl(VariablesFCN.value, control);
+    this.setControl(VariablesFCN.type, control);
   }
 
   get modifiableFC() {

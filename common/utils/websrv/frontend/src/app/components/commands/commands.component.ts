@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
+import { tap } from 'rxjs/internal/operators/tap';
 import { CommandsApi, IArgType } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
-import { VariableCtrl as VarCtrl } from 'src/app/controls/var.control';
+import { VarCtrl } from 'src/app/controls/var.control';
 import { LoadingService } from 'src/app/services/loading.service';
 
 
@@ -35,38 +35,39 @@ export class CommandsComponent {
     public loadingService: LoadingService,
   ) {
     this.vars$ = this.commandsApi.readVariables$().pipe(
-      map((ivars) => ivars.map(ivar => new VarCtrl(ivar)))
+      map((vars) => vars.map(ivar => new VarCtrl(ivar)))
     );
 
     this.cmds$ = this.commandsApi.readCommands$().pipe(
-      map((ivars) => ivars.map(ivar => new CmdCtrl(ivar)))
+      map((cmds) => cmds.map(ivar => new CmdCtrl(ivar))),
+      tap(controls => [this.selectedCmd] = controls)
     );
   }
 
   onCmdSelect() {
-    this.subcmds$ = this.commandsApi.readModuleCommands$(`${this.selectedCmd?.nameFC.value}`).pipe(
+
+    this.subcmds$ = this.commandsApi.readCommands$(`${this.selectedCmd!.nameFC.value}`).pipe(
       map(cmds => cmds.map(cmd => new CmdCtrl(cmd))),
-      // tap(cmds => [this.selectedSubCmd] = cmds)
+      tap(controls => [this.selectedSubCmd] = controls)
     )
 
-    this.subvars$ = this.commandsApi.readModuleVariables$(`${this.selectedCmd?.nameFC.value}`).pipe(
-      map(vars => vars.map(v => new VarCtrl(v))),
-      // tap(vars => [this.selectedSubVar] = vars)
+    this.subvars$ = this.commandsApi.readVariables$(`${this.selectedCmd!.nameFC.value}`).pipe(map(vars => vars.map(v => new VarCtrl(v))),
+      tap(controls => [this.selectedSubVar] = controls)
     )
   }
 
   onSubCmdSelect() {
-    this.args$ = this.commandsApi.readModuleVariables$(`${this.selectedCmd?.nameFC.value}/${this.selectedSubCmd?.nameFC.value}`).pipe(
+    this.args$ = this.commandsApi.readVariables$(`${this.selectedCmd!.nameFC.value}/${this.selectedSubCmd!.nameFC.value}`).pipe(
       map(vars => vars.map(v => new VarCtrl(v))),
-      // tap(vars => [this.selectedSubVar] = vars)
+      tap(vars => [this.selectedArg] = vars)
     )
   }
 
   onVarSubmit(control: VarCtrl) {
-    this.commandsApi.runCommand$(`${this.selectedCmd?.nameFC.value}/${control.nameFC.value}`, control.valueFC.value).subscribe();
+    this.commandsApi.setVariable$(control.api()).subscribe();
   }
 
   onSubVarSubmit(control: VarCtrl) {
-    this.commandsApi.runCommand$(`${this.selectedCmd?.nameFC.value}/${this.selectedSubCmd?.nameFC.value}/${control.nameFC.value}`, control.valueFC.value).subscribe();
+    this.commandsApi.setVariable$(control.api(), `${this.selectedCmd?.nameFC.value}/${this.selectedSubCmd?.nameFC.value}/${control.nameFC.value}`).subscribe();
   }
 }

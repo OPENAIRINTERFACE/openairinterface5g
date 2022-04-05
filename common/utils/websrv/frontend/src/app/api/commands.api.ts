@@ -29,14 +29,12 @@ const route = '/oaisoftmodem';
 export class CommandsApi {
     constructor(private httpClient: HttpClient) { }
 
-    public readVariables$ = () => this.httpClient.get<IVariable[]>(environment.backend + route + '/variables/');
+    public readVariables$ = (moduleName?: string) => this.httpClient.get<IVariable[]>(environment.backend + route + '/' + (moduleName ? ('/' + moduleName) : "") + '/variables/');
 
-    public readCommands$ = () => this.httpClient.get<ICommand[]>(environment.backend + route + '/commands/');
+    public readCommands$ = (moduleName?: string) => this.httpClient.get<ICommand[]>(environment.backend + route + '/' + (moduleName ? ('/' + moduleName) : "") + '/commands/');
 
-    public readModuleVariables$ = (moduleName: string) => this.httpClient.get<IVariable[]>(environment.backend + route + '/' + moduleName + '/variables/');
+    public runCommand$ = (moduleName: string, command: ICommand) => this.httpClient.post<string>(environment.backend + route + '/' + moduleName + '/commands/', command);
 
-    public readModuleCommands$ = (moduleName: string) => this.httpClient.get<ICommand[]>(environment.backend + route + '/' + moduleName + '/commands/');
-
-    public runCommand$ = (moduleName: string, variable: IVariable) => this.httpClient.post<string>(environment.backend + route + '/' + moduleName + '/commands/', variable);
+    public setVariable$ = (variable: IVariable, moduleName?: string) => this.httpClient.post<string>(environment.backend + route + (moduleName ? ('/' + moduleName) : "") + '/variables/', variable);
 
 }
