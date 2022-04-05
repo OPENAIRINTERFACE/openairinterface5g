@@ -1928,6 +1928,7 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                          NULL,
                                          NULL,
                                          NULL,
+                                         NULL,
                                          masterCellGroup);
 
   enable_nr_rrc_processing_timer(ctxt_pP->module_id, ue_context_pP, TX_SL_AHEAD_DELAY + NR_RRC_PROCESSING_DELAY_MS + NR_RRC_BWP_SWITCH_DELAY_MS);
