@@ -176,16 +176,16 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 
   if (NODE_IS_MONOLITHIC(rrc->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->carrier.ssb_SubcarrierOffset,
-                           rrc->carrier.pdsch_AntennaPorts,
-                           rrc->carrier.pusch_AntennaPorts,
-                           rrc->carrier.sib1_tda,
-                           rrc->carrier.minRXTXTIME,
-                           (NR_ServingCellConfigCommon_t *)rrc->carrier.servingcellconfigcommon,
+                           rrc->configuration.ssb_SubcarrierOffset,
+                           rrc->configuration.pdsch_AntennaPorts,
+                           rrc->configuration.pusch_AntennaPorts,
+                           rrc->configuration.sib1_tda,
+                           rrc->configuration.minRXTXTIME,
+                           rrc->carrier.servingcellconfigcommon,
                            &rrc->carrier.mib,
                            0,
                            0, // WIP hardcoded rnti
-                           (NR_CellGroupConfig_t *)NULL);
+                           NULL);
   }
 
   /* set flag to indicate that cell information is configured. This is required
@@ -225,15 +225,9 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->initial_id2_ngap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->ngap_id2_ngap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  rrc->configuration = *configuration;
   rrc->carrier.servingcellconfigcommon = configuration->scc;
   rrc->carrier.servingcellconfig = configuration->scd;
-  rrc->carrier.ssb_SubcarrierOffset = configuration->ssb_SubcarrierOffset;
-  rrc->carrier.pdsch_AntennaPorts = configuration->pdsch_AntennaPorts;
-  rrc->carrier.pusch_AntennaPorts = configuration->pusch_AntennaPorts;
-  rrc->carrier.minRXTXTIME = configuration->minRXTXTIME;
-  rrc->carrier.sib1_tda = configuration->sib1_tda;
-  rrc->carrier.do_CSIRS = configuration->do_CSIRS;
-  rrc->carrier.do_SRS = configuration->do_SRS;
   nr_rrc_config_ul_tda(configuration->scc,configuration->minRXTXTIME);
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
@@ -289,24 +283,25 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc_gNB_ue_context_t         *const ue_context_pP,
                          const protocol_ctxt_t        *const ctxt_pP ) {
 
+  NR_CellGroupConfig_t *cgc = get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : NULL;
   rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->carrier.ssb_SubcarrierOffset,
-                         rrc->carrier.pdsch_AntennaPorts,
-                         rrc->carrier.pusch_AntennaPorts,
-                         rrc->carrier.sib1_tda,
-                         rrc->carrier.minRXTXTIME,
+                         rrc->configuration.ssb_SubcarrierOffset,
+                         rrc->configuration.pdsch_AntennaPorts,
+                         rrc->configuration.pusch_AntennaPorts,
+                         rrc->configuration.sib1_tda,
+                         rrc->configuration.minRXTXTIME,
                          NULL,
                          NULL,
                          0,
                          ue_context_pP->ue_context.rnti,
-                         get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : (NR_CellGroupConfig_t *)NULL);
+                         cgc);
 
-      nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                                 ue_context_pP->ue_context.SRB_configList,
-                                 ue_context_pP->ue_context.DRB_configList,
-                                 NULL,
-                                 NULL,
-                                 get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
+  nr_rrc_rlc_config_asn1_req(ctxt_pP,
+                             ue_context_pP->ue_context.SRB_configList,
+                             ue_context_pP->ue_context.DRB_configList,
+                             NULL,
+                             NULL,
+                             get_softmodem_params()->sa ? cgc->rlc_BearerToAddModList : NULL);
 
 }
 
@@ -354,7 +349,7 @@ rrc_gNB_generate_RRCSetup(
                             (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
                             rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
                             masterCellGroup_from_DU,
-                            scc,servingcellconfigdedicated,&rrc->carrier);
+                            scc,servingcellconfigdedicated,&rrc->configuration);
 
   AssertFatal(ret>0,"Error generating RRCSetup for RRCSetupRequest\n");
 
@@ -469,7 +464,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                             (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
                             rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
                             NULL,
-                            scc,servingcellconfigdedicated,&rrc_instance_p->carrier);
+                            scc,servingcellconfigdedicated,&rrc_instance_p->configuration);
 
   AssertFatal(ret>0,"Error generating RRCSetup for RRCReestablishmentRequest\n");
 
@@ -485,16 +480,16 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
 
   rrc_mac_config_req_gNB(rrc_instance_p->module_id,
-                         rrc_instance_p->carrier.ssb_SubcarrierOffset,
-                         rrc_instance_p->carrier.pdsch_AntennaPorts,
-                         rrc_instance_p->carrier.pusch_AntennaPorts,
-                         rrc_instance_p->carrier.sib1_tda,
-                         rrc_instance_p->carrier.minRXTXTIME,
-                         (NR_ServingCellConfigCommon_t *)rrc_instance_p->carrier.servingcellconfigcommon,
+                         rrc_instance_p->configuration.ssb_SubcarrierOffset,
+                         rrc_instance_p->configuration.pdsch_AntennaPorts,
+                         rrc_instance_p->configuration.pusch_AntennaPorts,
+                         rrc_instance_p->configuration.sib1_tda,
+                         rrc_instance_p->configuration.minRXTXTIME,
+                         rrc_instance_p->carrier.servingcellconfigcommon,
                          &rrc_instance_p->carrier.mib,
                          0,
                          ue_context_pP->ue_context.rnti,
-                         (NR_CellGroupConfig_t *)NULL);
+                         NULL);
 
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n",
@@ -742,6 +737,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 dedicatedNAS_MessageList,
                                 ue_context_pP,
                                 &rrc->carrier,
+                                &rrc->configuration,
                                 NULL,
                                 ue_p->masterCellGroup);
 
@@ -1014,6 +1010,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 dedicatedNAS_MessageList,
                                 ue_context_pP,
                                 &rrc->carrier,
+                                &rrc->configuration,
                                 NULL,
                                 cellGroupConfig);
 
@@ -1197,6 +1194,7 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                 NULL,
                                 NULL,
                                 NULL,
+                                NULL,
                                 NULL);
 
   enable_nr_rrc_processing_timer(ctxt_pP->module_id, ue_context_pP, TX_SL_AHEAD_DELAY + NR_RRC_PROCESSING_DELAY_MS);
@@ -1297,6 +1295,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                NULL,
                                NULL,
                                dedicatedNAS_MessageList,
+                               NULL,
                                NULL,
                                NULL,
                                NULL,
@@ -1405,11 +1404,11 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->carrier.ssb_SubcarrierOffset,
-                           rrc->carrier.pdsch_AntennaPorts,
-                           rrc->carrier.pusch_AntennaPorts,
-                           rrc->carrier.sib1_tda,
-                           rrc->carrier.minRXTXTIME,
+                           rrc->configuration.ssb_SubcarrierOffset,
+                           rrc->configuration.pdsch_AntennaPorts,
+                           rrc->configuration.pusch_AntennaPorts,
+                           rrc->configuration.sib1_tda,
+                           rrc->configuration.minRXTXTIME,
                            NULL,
                            NULL,
                            0,
@@ -1848,6 +1847,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                                 NULL,
                                 NULL,
                                 NULL, // MeasObj_list,
+                                NULL,
                                 NULL,
                                 NULL,
                                 NULL,
