@@ -193,11 +193,6 @@ int websrv_callback_get_softmodemvar(const struct _u_request * request, struct _
 	   char *strbool="true";
 	   if (modulestruct->var[j].checkval & TELNET_CHECKVAL_RDONLY)
 	     strbool="false";
-	   else {
-	    char prefixurl[TELNET_CMD_MAXSIZE+64];
-	     snprintf(prefixurl,TELNET_CMD_MAXSIZE+63,"oaisoftmodem/%s",modulestruct->module);		   
-		 ulfius_add_endpoint_by_val(websrvparams.instance, "POST", prefixurl,"variables" , 0, &websrv_callback_set_softmodemvar, user_data );
-	   }
 	   json_t *oneaction =json_pack("{s:s,s:s,s:s,s:s}","type","string","name",modulestruct->var[j].varname,"value",strval,"modifiable",strbool);
        if (oneaction==NULL) {
 	     LOG_E(UTIL,"websrv cannot encode oneaction %s/%s\n",modulestruct->module,modulestruct->var[j].varname);
@@ -262,11 +257,6 @@ int websrv_callback_get_softmodemmodules(const struct _u_request * request, stru
   for (int i=0; telnetparams->CmdParsers[i].var != NULL && telnetparams->CmdParsers[i].cmd != NULL; i++) {
 	  json_t *acmd =json_pack( "{s:s}", "name",telnetparams->CmdParsers[i].module);
 	  json_array_append(cmdnames, acmd);
-	  char prefixurl[TELNET_CMD_MAXSIZE+20];
-	  snprintf(prefixurl,TELNET_CMD_MAXSIZE+19,"oaisoftmodem/%s",telnetparams->CmdParsers[i].module);
-	  LOG_I(UTIL,"websrv add endpoints %s/[variables or commands] \n",prefixurl);
-	  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", prefixurl,"variables" , 0, &websrv_callback_get_softmodemvar, &(telnetparams->CmdParsers[i]) );
-	  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", prefixurl,"commands" , 0, &websrv_callback_get_softmodemcmd, &(telnetparams->CmdParsers[i]) );
     }
 
   
@@ -306,10 +296,7 @@ int websrv_callback_get_softmodemstatus(const struct _u_request * request, struc
   } else {
 	  websrv_printjson("status body2",body2);
   } 
-  int status=ulfius_add_endpoint_by_val(websrvparams.instance, "POST", "oaisoftmodem","/variables" , 0, &websrv_callback_set_softmodemvar, user_data );
-  if (status != U_OK) {
-	  LOG_E(UTIL,"websrv cannot add endpoint oaisoftmodem/variables\n");
-  }
+
   json_array_append(moduleactions , body1);
   json_array_append(moduleactions , body2);
   
@@ -329,8 +316,8 @@ int websrv_callback_get_softmodemstatus(const struct _u_request * request, struc
 }
 
  void* websrv_autoinit() {
-   int ret;
-   
+  int ret;
+  telnetsrv_params_t *telnetparams= get_telnetsrv_params(); 
   memset(&websrvparams,0,sizeof(websrvparams));
   config_get( websrvoptions,sizeof(websrvoptions)/sizeof(paramdef_t),"websrv");
   websrvparams.instance = malloc(sizeof(struct _u_instance));
@@ -365,7 +352,17 @@ int websrv_callback_get_softmodemstatus(const struct _u_request * request, struc
   
   // default_endpoint declaration
   ulfius_set_default_endpoint(websrvparams.instance, &websrv_callback_default, NULL);
-  
+  int status=ulfius_add_endpoint_by_val(websrvparams.instance, "POST", "oaisoftmodem","/variables" , 0, &websrv_callback_set_softmodemvar, NULL );
+  if (status != U_OK) {
+	  LOG_E(UTIL,"websrv cannot add endpoint oaisoftmodem/variables\n");
+  }  
+  for (int i=0; telnetparams->CmdParsers[i].var != NULL && telnetparams->CmdParsers[i].cmd != NULL; i++) {
+	  char prefixurl[TELNET_CMD_MAXSIZE+20];
+	  snprintf(prefixurl,TELNET_CMD_MAXSIZE+19,"oaisoftmodem/%s",telnetparams->CmdParsers[i].module);
+	  LOG_I(UTIL,"websrv add endpoints %s/[variables or commands] \n",prefixurl);
+	  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", prefixurl,"variables" , 0, &websrv_callback_get_softmodemvar, &(telnetparams->CmdParsers[i]) );
+	  ulfius_add_endpoint_by_val(websrvparams.instance, "GET", prefixurl,"commands" , 0, &websrv_callback_get_softmodemcmd, &(telnetparams->CmdParsers[i]) );
+    }
   // Start the framework
   ret=U_ERROR;
   if (websrvparams.keyfile!=NULL && websrvparams.certfile!=NULL) {
