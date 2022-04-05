@@ -55,7 +55,7 @@ static telnetshell_cmddef_t channelmod_cmdarray[] = {
 };
 
 static telnetshell_vardef_t channelmod_vardef[] = {
-  {"",0,NULL}
+  {"",0,0,NULL}
 };
 
 static double snr_dB=25;

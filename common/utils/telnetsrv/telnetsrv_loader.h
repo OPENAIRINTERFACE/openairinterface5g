@@ -39,11 +39,11 @@
 
 
 telnetshell_vardef_t loader_globalvardef[] = {
-{"mainversion",TELNET_VARTYPE_STRING,&(loader_data.mainexec_buildversion)},
-{"defpath",TELNET_VARTYPE_STRING,&(loader_data.shlibpath)},
-{"maxshlibs",TELNET_VARTYPE_INT32,&(loader_data.maxshlibs)},
-{"numshlibs",TELNET_VARTYPE_INT32,&(loader_data.numshlibs)},
-{"",0,NULL}
+{"mainversion",TELNET_VARTYPE_STRING,TELNET_CHECKVAL_RDONLY, &(loader_data.mainexec_buildversion)},
+{"defpath",TELNET_VARTYPE_STRING,TELNET_CHECKVAL_RDONLY,&(loader_data.shlibpath)},
+{"maxshlibs",TELNET_VARTYPE_INT32,TELNET_CHECKVAL_RDONLY,&(loader_data.maxshlibs)},
+{"numshlibs",TELNET_VARTYPE_INT32,TELNET_CHECKVAL_RDONLY,&(loader_data.numshlibs)},
+{"",0,0,NULL}
 };
 telnetshell_vardef_t *loader_modulesvardef;
 

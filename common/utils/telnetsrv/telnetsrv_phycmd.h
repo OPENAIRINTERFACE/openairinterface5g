@@ -53,7 +53,7 @@ telnetshell_vardef_t phy_vardef[] = {
 //{"txshift",TELNET_VARTYPE_INT32,NULL},
 //{"rachemin",TELNET_VARTYPE_INT32,NULL},
 //{"rachdmax",TELNET_VARTYPE_INT32,NULL},
-{"",0,NULL}
+{"",0,0,NULL}
 };
 
 #else

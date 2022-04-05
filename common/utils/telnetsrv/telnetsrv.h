@@ -85,10 +85,15 @@ typedef struct telnetsrv_qmsg {
 #define TELNET_VARTYPE_DOUBLE 5
 #define TELNET_VARTYPE_INT8   6
 #define TELNET_VARTYPE_UINT   7
+
+#define TELNET_CHECKVAL_RDONLY      1
+#define TELNET_CHECKVAL_BOOL        2
 typedef struct variabledef {
     char varname[TELNET_CMD_MAXSIZE];
     char vartype;
+    char checkval;
     void *varvalptr;
+    
 } telnetshell_vardef_t;
 
 
@@ -157,6 +162,6 @@ extern int get_phybsize(void);
 #endif
 #ifdef WEBSERVERCODE
 extern telnetsrv_params_t *get_telnetsrv_params(void);
-extern char *telnet_getvarvalue(int moduleindex, int varindex);
+extern char *telnet_getvarvalue(telnetshell_vardef_t   *var, int varindex);
 #endif
 #endif

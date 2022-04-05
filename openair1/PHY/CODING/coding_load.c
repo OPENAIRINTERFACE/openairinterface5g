@@ -45,8 +45,8 @@ static telnetshell_cmddef_t coding_cmdarray[] = {
    {"","",NULL},
 };
 telnetshell_vardef_t coding_vardef[] = {
-{"maxiter",TELNET_VARTYPE_INT32,&max_turbo_iterations},
-{"",0,NULL}
+{"maxiter",TELNET_VARTYPE_INT32,0,&max_turbo_iterations},
+{"",0,0,NULL}
 };
 /* PHY/defs.h contains MODE_DECODE_XXX macros, following table must match */
 static char *modedesc[] = {"none","sse","C","avx2"};

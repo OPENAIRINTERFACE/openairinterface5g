@@ -46,7 +46,7 @@ extern int proccmd_thread(char *buf, int debug, telnet_printfunc_t prnt);
 extern int proccmd_exit(char *buf, int debug, telnet_printfunc_t prnt);
 extern int proccmd_log(char *buf, int debug, telnet_printfunc_t prnt);
 telnetshell_vardef_t proc_vardef[] = {
-{"",0,NULL}
+{"",0,0,NULL}
 };
 #define PROCCMD_LOG_HELP_STRING " log sub commands: \n\
  show:  		     display current log configuration \n\
