@@ -234,7 +234,7 @@ Making sure the OAI UE is connected:
 $ docker exec -it rfsim5g-oai-nr-ue /bin/bash
 root@bb4d400a832d:/opt/oai-nr-ue# ifconfig 
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet 192.168.71.137  netmask 255.255.255.192  broadcast 192.168.71.191
+        inet 192.168.71.150  netmask 255.255.255.192  broadcast 192.168.71.191
         ether 02:42:c0:a8:47:89  txqueuelen 0  (Ethernet)
         RX packets 224259  bytes 5821372018 (5.8 GB)
         RX errors 0  dropped 0  overruns 0  frame 0
@@ -270,7 +270,7 @@ Create entry for Second UE in docker-compose.yaml file as follows:
         privileged: true
         container_name: rfsim5g-oai-nr-ue2
         environment:
-            RFSIMULATOR: 192.168.71.136
+            RFSIMULATOR: 192.168.71.140
             FULL_IMSI: '208990100001101'
             FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
             OPC: 'C42449363BBAD02B66D16BC975D77CC1'
@@ -282,7 +282,7 @@ Create entry for Second UE in docker-compose.yaml file as follows:
             - oai-gnb
         networks:
             public_net:
-                ipv4_address: 192.168.71.138
+                ipv4_address: 192.168.71.151
         healthcheck:
             test: /bin/bash -c "pgrep nr-uesoftmodem"
             interval: 10s
@@ -326,7 +326,7 @@ Making sure the Second OAI UE is connected:
 $ docker exec -it rfsim5g-oai-nr-ue2 /bin/bash
 root@bb4d400a832d:/opt/oai-nr-ue# ifconfig 
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet 192.168.71.138  netmask 255.255.255.192  broadcast 192.168.71.191
+        inet 192.168.71.151  netmask 255.255.255.192  broadcast 192.168.71.191
         ether 02:42:c0:a8:47:8a  txqueuelen 0  (Ethernet)
         RX packets 3192021  bytes 67784900946 (67.7 GB)
         RX errors 0  dropped 0  overruns 0  frame 0
