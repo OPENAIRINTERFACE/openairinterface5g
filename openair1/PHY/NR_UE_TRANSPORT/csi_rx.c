@@ -370,7 +370,6 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
   *rank_indicator = 0;
 
   if (ue->frame_parms.nb_antennas_rx == 1 || ue->nr_csi_rs_info->N_ports == 1) {
-    LOG_I(NR_PHY, "RI = %i\n", *rank_indicator + 1);
     return 0;
   } else if( !(ue->frame_parms.nb_antennas_rx == 2 && ue->nr_csi_rs_info->N_ports == 2) ) {
     LOG_W(NR_PHY, "Rank indicator computation is not implemented for %i x %i system\n",
