@@ -373,8 +373,8 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
   ret->set_security = nr_pdcp_entity_set_security;
   ret->set_time     = nr_pdcp_entity_set_time;
 
-  ret->delete = nr_pdcp_entity_delete;
-
+  ret->delete_entity = nr_pdcp_entity_delete;
+  
   ret->deliver_sdu = deliver_sdu;
   ret->deliver_sdu_data = deliver_sdu_data;
 

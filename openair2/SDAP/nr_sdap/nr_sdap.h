@@ -19,19 +19,19 @@
  *      contact@openairinterface.org
  */
 
-#include "COMMON/platform_types.h"
-#include "common/ran_context.h"
+#ifndef _NR_SDAP_GNB_H_
+#define _NR_SDAP_GNB_H_
+
+#include "openair2/COMMON/platform_types.h"
 #include "common/utils/LOG/log.h"
-#include "NR_BCCH-BCH-Message.h"
-#include "NR_ServingCellConfigCommon.h"
-#include "NR_MIB.h"
+#include "nr_sdap_entity.h"
 
-void apply_macrlc_config(gNB_RRC_INST *rrc,
-                         rrc_gNB_ue_context_t         *const ue_context_pP,
-                         const protocol_ctxt_t        *const ctxt_pP ) {
-  abort();
-}
-
+/*
+ * TS 37.324 4.4 Functions
+ * Transfer of user plane data
+ * Downlink - gNB
+ * Uplink   - nrUE
+ */
 boolean_t sdap_data_req(protocol_ctxt_t *ctxt_p,
                         const srb_flag_t srb_flag,
                         const rb_id_t rb_id,
@@ -44,6 +44,23 @@ boolean_t sdap_data_req(protocol_ctxt_t *ctxt_p,
                         const uint32_t *destinationL2Id,
                         const uint8_t qfi,
                         const boolean_t rqi,
-                        const int pdusession_id) {
-abort();
-}
+                        const int pdusession_id
+                       );
+
+/*
+ * TS 37.324 4.4 Functions
+ * Transfer of user plane data
+ * Uplink   - gNB
+ * Downlink - nrUE
+ */
+void sdap_data_ind(rb_id_t pdcp_entity,
+                   int is_gnb,
+                   int has_sdap,
+                   int has_sdapULheader,
+                   int pdusession_id,
+                   int rnti,
+                   char *buf,
+                   int size
+                  );
+
+#endif
