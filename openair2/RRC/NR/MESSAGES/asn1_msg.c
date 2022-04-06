@@ -1890,7 +1890,7 @@ void fill_initial_SpCellConfig(int uid,
   *pdsch_servingcellconfig->ext1->maxMIMO_Layers = 2;
 
   // Downlink BWPs
-  int n_dl_bwp = 1;
+  int n_dl_bwp = 0;
   if (servingcellconfigdedicated &&
       servingcellconfigdedicated->downlinkBWP_ToAddModList &&
       servingcellconfigdedicated->downlinkBWP_ToAddModList->list.count > 0) {
@@ -1910,7 +1910,7 @@ void fill_initial_SpCellConfig(int uid,
   }
 
   // Uplink BWPs
-  int n_ul_bwp = 1;
+  int n_ul_bwp = 0;
   if (servingcellconfigdedicated && servingcellconfigdedicated->uplinkConfig &&
       servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList &&
       servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count > 0) {
