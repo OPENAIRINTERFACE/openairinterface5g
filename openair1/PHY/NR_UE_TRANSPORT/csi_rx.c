@@ -529,7 +529,8 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
     }
 
   } else {
-    LOG_W(NR_PHY, "PMI computation is not implemented for rank indicator %i\n", rank_indicator);
+    LOG_W(NR_PHY, "PMI computation is not implemented for rank indicator %i\n", rank_indicator+1);
+    return -1;
   }
 
   return 0;
