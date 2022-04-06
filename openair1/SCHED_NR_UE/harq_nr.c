@@ -307,7 +307,7 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
 {
   dl_harq->status = SCH_IDLE;
   dl_harq->first_rx = 1;
-  dl_harq->round  = 0;
+  dl_harq->DLround  = 0;
   dl_harq->DCINdi = 1;
   dl_harq->ack = DL_ACKNACK_NO_SET;
 }
@@ -334,27 +334,35 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int 
   if (rnti_type == _SI_RNTI_ ||
       rnti_type == _P_RNTI_ ||
       rnti_type == _RA_RNTI_) {
-    dl_harq->round = 0;
+    dl_harq->DLround = 0;
     dl_harq->status = ACTIVE;
     dl_harq->first_rx = 1;
-  }
-  else{
-    LOG_D(PHY,"receive harq process: %p harqPid=%d, rv=%d, ndi=%d, rntiType=%d, DCIndi=%d\n",
-	  dl_harq, harq_pid, rv, ndi, rnti_type, dl_harq->DCINdi);
+  }  else {
+    LOG_D(PHY,"receive harq process: %p harqPid=%d, rv=%d, ndi=%d, rntiType=%d new transmission= %s\n",
+	  dl_harq, harq_pid, rv, ndi, rnti_type, dl_harq->DCINdi != ndi ? "yes":"no");
     AssertFatal(rv<4 && rv>=0, "invalid redondancy version %d\n", rv);
-    if (rv!=0 && dl_harq->ack == DL_NACK)
-      LOG_D(PHY,"New transmission on a harq pid (%d) never acknowledged\n", harq_pid);
-    if (rv==0 && ndi == dl_harq->DCINdi )
-      LOG_D(PHY,"Missed previous DCI detections. redondancy version is new transmission, but ndi doesn't toogle\n");
-    dl_harq->first_rx = (rv==0);
-    const int rounds[4]={0,3,1,2};
-    dl_harq->round = rounds[rv];
-        dl_harq->status = ACTIVE;
-    if (rv!=0 && dl_harq->DCINdi != ndi )
-      LOG_E(PHY,"Missed previous DCI detections. redondancy version (%d) is retransmission, but ndi toogle\n", rv);
-    if (rv!=0 && dl_harq->ack != DL_NACK)
-      LOG_E(PHY,"Missed previous DCI detections. redondancy version (%d) is retransmission, but status is not DL_NACK\n", rv);
-        dl_harq->DCINdi = ndi;
+    
+    if (ndi!=dl_harq->DCINdi) {
+      if (dl_harq->ack == DL_NACK)
+        LOG_D(PHY,"New transmission on a harq pid (%d) never acknowledged\n", harq_pid);
+      else
+         LOG_D(PHY,"Starting new transmission on a harq pid (%d)\n", harq_pid);
+    } else {
+      if (dl_harq->ack != DL_NACK)
+        LOG_D(PHY,"gNB asked for retransmission even if we sent ACK\n");
+      else
+        LOG_D(PHY,"Starting retransmission on a harq pid (%d), rv (%d)\n", harq_pid, rv);
+    }
+
+    if (ndi!=dl_harq->DCINdi) {
+      dl_harq->first_rx = true;
+      dl_harq->DLround = 0;
+    } else
+      dl_harq->DLround++;
+    
+    dl_harq->status = ACTIVE;
+
+    dl_harq->DCINdi = ndi;
     //dl_harq->status = SCH_IDLE;
    }
 }

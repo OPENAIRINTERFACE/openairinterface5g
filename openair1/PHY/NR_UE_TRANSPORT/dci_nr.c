@@ -61,12 +61,8 @@ char nr_dci_format_string[8][30] = {
 //#define NR_LTE_PDCCH_DCI_SWITCH
 //#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #ifdef NR_PDCCH_DCI_DEBUG
-#define LOG_DNL(a, ...) printf("\n\t\t<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
-#define LOG_DD(a, ...) printf("\t<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
-#define LOG_DDD(a, ...) printf("\t\t<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
+#define LOG_DDD(a, ...) printf("<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )
 #else
-#define LOG_DNL(a...)
-#define LOG_DD(a...)
 #define LOG_DDD(a...)
 #endif
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
@@ -84,7 +80,7 @@ char nr_dci_format_string[8][30] = {
 
 
 static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
-                                       uint32_t *z,
+                                       uint32_t *e_rx,
                                        uint8_t coreset_time_dur,
                                        uint8_t start_symbol,
                                        uint32_t coreset_nbr_rb,
@@ -190,10 +186,10 @@ static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
             index_z = data_sc * rb_count;
             index_llr = (uint16_t) (f*B_rb + rb + symbol_idx * coreset_nbr_rb) * data_sc;
             for (int i = 0; i < data_sc; i++) {
-              z[index_z + i] = llr[index_llr + i];
+              e_rx[index_z + i] = llr[index_llr + i];
 #ifdef NR_PDCCH_DCI_DEBUG
               LOG_I(PHY,"[candidate=%d,symbol_idx=%d,cce=%d,REG bundle=%d,PRB=%d] z[%d]=(%d,%d) <-> \t llr[%d]=(%d,%d) \n",
-                    c_id,symbol_idx,cce_count,k,f*B_rb + rb,(index_z + i),*(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]),
+                    c_id,symbol_idx,cce_count,k,f*B_rb + rb,(index_z + i),*(int16_t *) &e_rx[index_z + i],*(1 + (int16_t *) &e_rx[index_z + i]),
                     (index_llr + i),*(int16_t *) &llr[index_llr + i], *(1 + (int16_t *) &llr[index_llr + i]));
 #endif
             }
@@ -371,11 +367,6 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
   uint8_t i, j, aarx;
   int32_t *dl_ch0, *dl_ch0_ext, *rxF, *rxF_ext;
 
-#ifdef DEBUG_DCI_DECODING
-  uint8_t symbol_mod = (symbol >= (7 - frame_parms->Ncp)) ? symbol - (7 - frame_parms->Ncp) : symbol;
-  LOG_I(PHY, "extract_rbs_single: symbol_mod %d\n",symbol_mod);
-#endif
-
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     dl_ch0 = &dl_ch_estimates[aarx][frame_parms->ofdm_symbol_size*symbol];
     LOG_DDD("dl_ch0 = &dl_ch_estimates[aarx = (%d)][0]\n",aarx);
@@ -397,9 +388,9 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
      *    1.2 The RB is >= than the N_RB_DL/2 -> IQ symbols are in the first half of the rxdataF (from element 0)
      * 2. Number of RBs in the system bandwidth is odd
      * (particular case when the RB with DC as it is treated differently: it is situated in symbol borders of rxdataF)
-     *    2.1 The RB is <= than the N_RB_DL/2   -> IQ symbols are in the second half of the rxdataF (from first_carrier_offset)
-     *    2.2 The RB is >  than the N_RB_DL/2+1 -> IQ symbols are in the first half of the rxdataF (from element 0 + 2nd half RB containing DC)
-     *    2.3 The RB is == N_RB_DL/2+1          -> IQ symbols are in the lower border of the rxdataF for first 6 IQ element and the upper border of the rxdataF for the last 6 IQ elements
+     *    2.1 The RB is <  than the N_RB_DL/2 -> IQ symbols are in the second half of the rxdataF (from first_carrier_offset)
+     *    2.2 The RB is >  than the N_RB_DL/2 -> IQ symbols are in the first half of the rxdataF (from element 0 + 2nd half RB containing DC)
+     *    2.3 The RB is == N_RB_DL/2          -> IQ symbols are in the upper border of the rxdataF for first 6 IQ element and the lower border of the rxdataF for the last 6 IQ elements
      * If the first RB containing PDCCH within the UE BWP and within the CORESET is higher than half of the system bandwidth (N_RB_DL),
      * then the IQ symbol is going to be found at the position 0+c_rb-N_RB_DL/2 in rxdataF and
      * we have to point the pointer at (1+c_rb-N_RB_DL/2) in rxdataF
@@ -429,64 +420,65 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if (((c_rb + n_BWP_start) >= (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         // number of RBs is even  and c_rb is higher than half system bandwidth (we don't skip DC)
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF
-        rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12]; // we point at the 1st part of the rxdataF in symbol
-        LOG_DDD("in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
-               c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))));
-        //rxF = &rxdataF[aarx][(1 + 12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-        //#ifdef NR_PDCCH_DCI_DEBUG
-        //  LOG_DDD("in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(1 + 12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
-        //         c_rb,aarx,(1 + 12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))));
-        //#endif
+        rxF = &rxdataF[aarx][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) + symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
+        LOG_DDD("in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) + symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
+               c_rb,aarx,(12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) + symbol * frame_parms->ofdm_symbol_size));
       }
 
       if (((c_rb + n_BWP_start) < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): odd case
-        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12];
-#ifdef NR_PDCCH_DCI_DEBUG
-        LOG_D(PHY,"in odd case c_rb (%d) is lower or equal than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
-               c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
-#endif
+        rxF = &rxdataF[aarx][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size];
+        LOG_DDD("in odd case c_rb (%d) is lower or equal than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
+               c_rb,aarx,(frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size));
       }
 
       if (((c_rb + n_BWP_start) > (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) {
         // number of RBs is odd  and   c_rb is higher than half system bandwidth + 1
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF just after the first IQ symbols of the RB containing DC
-        rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12]; // we point at the 1st part of the rxdataF in symbol
-#ifdef NR_PDCCH_DCI_DEBUG
-        LOG_D(PHY,"in odd case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - frame_parms->N_RB_DL) - 5 + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
-               c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size))));
-#endif
+        rxF = &rxdataF[aarx][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) - 6 + symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
+        LOG_DDD("in odd case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) - 6 + symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
+               c_rb,aarx,(12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) - 6 + symbol * frame_parms->ofdm_symbol_size));
       }
 
       if (((c_rb + n_BWP_start) == (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) { // treatment of RB containing the DC
         // if odd number RBs in system bandwidth and first RB to be treated is higher than middle system bandwidth (around DC)
         // we have to treat the RB in two parts: first part from i=0 to 5, the data is at the end of rxdataF (pointing at the end of the table)
-        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12];
-#ifdef NR_PDCCH_DCI_DEBUG
-        LOG_D(PHY,"in odd case c_rb (%d) is half N_RB_DL + 1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
-               c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
-#endif
+        rxF = &rxdataF[aarx][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size];
+        LOG_DDD("in odd case c_rb (%d) is half N_RB_DL + 1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
+               c_rb,aarx,(frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size));
         j = 0;
 
         for (i = 0; i < 6; i++) { //treating first part of the RB note that i=5 would correspond to DC. We treat it in NR
           if ((i != 1) && (i != 5)) {
             dl_ch0_ext[j] = dl_ch0[i];
-            rxF_ext[j++] = rxF[i];
-            //              printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+            rxF_ext[j] = rxF[i];
+            LOG_DDD("RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)\n",
+                   c_rb, i, j, *(short *) &rxF_ext[j],*(1 + (short *) &rxF_ext[j]), i,
+                   *(short *) &rxF[i], *(1 + (short *) &rxF[i]));
+            j++;
+          } else {
+            LOG_DDD("RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
+                   c_rb, i, j, *(short *) &rxF_ext[j], *(1 + (short *) &rxF_ext[j]), i,
+                   *(short *) &rxF[i], *(1 + (short *) &rxF[i]));
           }
         }
 
         // then we point at the begining of the symbol part of rxdataF do process second part of RB
-        rxF = &rxdataF[aarx][((symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-#ifdef NR_PDCCH_DCI_DEBUG
-        LOG_D(PHY,"in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(symbol * (frame_parms->ofdm_symbol_size)) = (%d)]\n",
-               c_rb,aarx,(symbol * (frame_parms->ofdm_symbol_size)));
-#endif
+        rxF = &rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
+        LOG_DDD("in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
+               c_rb,aarx,(symbol * frame_parms->ofdm_symbol_size));
         for (; i < 12; i++) {
           if ((i != 9)) {
             dl_ch0_ext[j] = dl_ch0[i];
-            rxF_ext[j++] = rxF[(1 + i - 6)];
-            //              printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+            rxF_ext[j] = rxF[i - 6];
+            LOG_DDD("RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)\n",
+                   c_rb, i, j, *(short *) &rxF_ext[j],*(1 + (short *) &rxF_ext[j]), i,
+                   *(short *) &rxF[i-6], *(1 + (short *) &rxF[i-6]));
+            j++;
+          } else {
+            LOG_DDD("RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
+                   c_rb, i, j, *(short *) &rxF_ext[j], *(1 + (short *) &rxF_ext[j]), i,
+                   *(short *) &rxF[i-6], *(1 + (short *) &rxF[i-6]));
           }
         }
 
@@ -494,32 +486,21 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         dl_ch0_ext += NBR_RE_PER_RB_WITHOUT_DMRS;
         rxF_ext += NBR_RE_PER_RB_WITHOUT_DMRS;
         dl_ch0 += 12;
-        //rxF += 7;
-        //c_rb++;
-        //n_BWP_start++; // We have to increment this variable here to be consequent in the for loop afterwards
-        //}
       } else { // treatment of any RB that does not contain the DC
         j = 0;
 
         for (i = 0; i < 12; i++) {
           if ((i != 1) && (i != 5) && (i != 9)) {
             rxF_ext[j] = rxF[i];
-#ifdef NR_PDCCH_DCI_DEBUG
-            LOG_D(PHY,"RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)\n",
+            LOG_DDD("RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)\n",
                    c_rb, i, j, *(short *) &rxF_ext[j],*(1 + (short *) &rxF_ext[j]), i,
                    *(short *) &rxF[i], *(1 + (short *) &rxF[i]));
-#endif
             dl_ch0_ext[j] = dl_ch0[i];
-
-            //LOG_DDD("ch %d => dl_ch0(%d,%d)\n", i, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
-            //printf("\t-> dl_ch0[%d] => dl_ch0_ext[%d](%d,%d)\n", i,j, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
             j++;
           } else {
-#ifdef NR_PDCCH_DCI_DEBUG
-            LOG_D(PHY,"RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
+            LOG_DDD("RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
                    c_rb, i, j, *(short *) &rxF_ext[j], *(1 + (short *) &rxF_ext[j]), i,
                    *(short *) &rxF[i], *(1 + (short *) &rxF[i]));
-#endif
           }
         }
 
@@ -527,8 +508,6 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         dl_ch0_ext += NBR_RE_PER_RB_WITHOUT_DMRS;
         rxF_ext += NBR_RE_PER_RB_WITHOUT_DMRS;
         dl_ch0 += 12;
-        //rxF += 12;
-        //}
       }
     }
   }
@@ -686,7 +665,7 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     UE_nr_rxtx_proc_t *proc,
                     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-		    int16_t e_rx[4*2*100*12] ) {
+		    int16_t *e_rx) {
 
   uint32_t frame = proc->frame_rx;
   uint32_t slot  = proc->nr_slot_rx;
@@ -784,7 +763,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                                     rel15->CCE,
                                     rel15->L);
 
-  LOG_D(PHY,"we end nr_pdcch_unscrambling()\n");
+  LOG_D(PHY,"we end nr_pdcch_demapping_deinterleaving()\n");
   LOG_D(PHY,"Ending nr_rx_pdcch() function\n");
 
   return (0);
@@ -792,7 +771,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
 
 
-void nr_pdcch_unscrambling(int16_t e_rx[4*2*100*12],
+void nr_pdcch_unscrambling(int16_t *e_rx,
                            uint16_t scrambling_RNTI,
                            uint32_t length,
                            uint16_t pdcch_DMRS_scrambling_id,
@@ -854,7 +833,7 @@ static uint16_t nr_dci_false_detection(uint64_t *dci,
   return x;
 }
 
-uint8_t nr_dci_decoding_procedure(int16_t e_rx[4*2*100*12],
+uint8_t nr_dci_decoding_procedure(int16_t *e_rx,
 				  PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
                                   fapi_nr_dci_indication_t *dci_ind,
@@ -888,16 +867,16 @@ uint8_t nr_dci_decoding_procedure(int16_t e_rx[4*2*100*12],
       int dci_length = rel15->dci_length_options[k];
       uint64_t dci_estimation[2]= {0};
 
-      LOG_D(PHY, "Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d, length %d, format %s\n",
-            j, rel15->number_of_candidates, CCEind, e_rx_cand_idx, L, dci_length,nr_dci_format_string[rel15->dci_format_options[k]]);
+      LOG_D(PHY, "(%i.%i) Trying DCI candidate %d of %d number of candidates, CCE %d (%d), L %d, length %d, format %s\n",
+            proc->frame_rx, proc->nr_slot_rx, j, rel15->number_of_candidates, CCEind, e_rx_cand_idx, L, dci_length, nr_dci_format_string[rel15->dci_format_options[k]]);
 
       nr_pdcch_unscrambling(&e_rx[e_rx_cand_idx], rel15->coreset.scrambling_rnti, L*108, rel15->coreset.pdcch_dmrs_scrambling_id, tmp_e);
 
 #ifdef DEBUG_DCI_DECODING
-      uint32_t *z = (uint32_t *) &pdcch_vars->e_rx[e_rx_cand_idx];
+      uint32_t *z = (uint32_t *) &e_rx[e_rx_cand_idx];
       for (int index_z = 0; index_z < L*6; index_z++){
         for (int i=0; i<9; i++) {
-          LOG_D(PHY,"z[%d]=(%d,%d) \n", (9*index_z + i), *(int16_t *) &z[index_z + i],*(1 + (int16_t *) &z[index_z + i]));
+          LOG_I(PHY,"z[%d]=(%d,%d) \n", (9*index_z + i), *(int16_t *) &z[9*index_z + i],*(1 + (int16_t *) &z[9*index_z + i]));
         }
       }
 #endif

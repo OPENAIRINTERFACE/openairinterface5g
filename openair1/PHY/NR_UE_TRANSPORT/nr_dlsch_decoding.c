@@ -226,7 +226,7 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
       //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
       harq_process->status = SCH_IDLE;
-      harq_process->round  = 0;
+      harq_process->DLround  = 0;
       harq_process->ack = 1;
 
       //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d)\n",
@@ -241,9 +241,9 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
       //LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id, frame, nr_slot_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
       harq_process->ack = 0;
-      if (harq_process->round >= dlsch->Mlimit) {
+      if (harq_process->DLround >= dlsch->Mlimit) {
         harq_process->status = SCH_IDLE;
-        harq_process->round  = 0;
+        harq_process->DLround  = 0;
         phy_vars_ue->dl_stats[4]++;
       }
 
@@ -400,7 +400,7 @@ void nr_processDLSegment(void* arg) {
 
       // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
       if (check_crc((uint8_t *)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-        LOG_D(PHY,"Segment %u CRC OK\n\033[0m",r);
+        LOG_D(PHY,"Segment %u CRC OK\n",r);
 
         if (r==0) {
           for (int i=0; i<10; i++) LOG_D(PHY,"byte %d : %x\n",i,((uint8_t *)llrProcBuf)[i]);
@@ -410,7 +410,7 @@ void nr_processDLSegment(void* arg) {
         no_iteration_ldpc = dlsch->max_ldpc_iterations;
         rdata->decodeIterations = no_iteration_ldpc;
       } else {
-        LOG_D(PHY,"CRC NOT OK\n\033[0m");
+        LOG_D(PHY,"CRC NOT OK\n");
       }
 
       nb_total_decod++;
@@ -453,8 +453,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
 
   // HARQ stats
-  phy_vars_ue->dl_stats[harq_process->round]++;
-  LOG_D(PHY,"Round %d RV idx %d\n",harq_process->round,harq_process->rvidx);
+  phy_vars_ue->dl_stats[harq_process->DLround]++;
+  LOG_D(PHY,"Round %d RV idx %d\n",harq_process->DLround,harq_process->rvidx);
   uint8_t kc;
   uint32_t Tbslbrm;// = 950984;
   uint16_t nb_rb;// = 30;
@@ -507,7 +507,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   */
   nb_rb = harq_process->nb_rb;
-  harq_process->trials[harq_process->round]++;
+  harq_process->trials[harq_process->DLround]++;
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
   harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*dmrs_length, nb_rb_oh, 0, harq_process->Nl);
   A = harq_process->TBS;

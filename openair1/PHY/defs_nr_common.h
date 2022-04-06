@@ -67,6 +67,7 @@
 
 /*used for the resource mapping*/
 #define NR_MAX_PDCCH_DMRS_LENGTH 576 // 16(L)*2(QPSK)*3(3 DMRS symbs per REG)*6(REG per CCE)
+#define  NR_MAX_PDCCH_SIZE 8192 // It seems it is the max polar coded block size
 
 #define NR_MAX_DCI_PAYLOAD_SIZE 64
 #define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)
@@ -322,7 +323,7 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_frame_wCP;
   /// NR numerology index [0..5] as specified in 38.211 Section 4 (mu). 0=15khZ SCS, 1=30khZ, 2=60kHz, etc
   uint8_t numerology_index;
-  /// Number of Physical transmit antennas in node
+  /// Number of Physical transmit antennas in node (corresponds to nrOfAntennaPorts)
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
