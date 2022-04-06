@@ -42,7 +42,7 @@
 
 //#define DEBUG_ULSCH_MODULATION
 
-void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
+void dft_lte(int32_t *z,struct complex16 *input, int32_t Msc_PUSCH, uint8_t Nsymb)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -66,7 +66,7 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
 #endif
   //  printf("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
 
-  d0 = (uint32_t *)d;
+  d0 = (uint32_t *)input;
   d1 = d0+Msc_PUSCH;
   d2 = d1+Msc_PUSCH;
   d3 = d2+Msc_PUSCH;
@@ -476,7 +476,8 @@ void ulsch_modulation(int32_t **txdataF,
   // Modulation
 
   ulsch_Msymb = G/Q_m;
-
+  /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
+  struct complex16 d[MAX_NUM_RE] __attribute__((aligned(32)));
   if(ulsch->cooperation_flag == 2)
     // For Distributed Alamouti Scheme in Collabrative Communication
   {
@@ -488,14 +489,14 @@ void ulsch_modulation(int32_t **txdataF,
 
 
         //UE1, -x1*
-        ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
-        ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
+        d[i].r = (ulsch->b_tilde[j] == 1)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
+        d[i].i = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
         //      if (i<Msc_PUSCH)
         //  printf("input %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
 
         // UE1, x0*
-        ((int16_t*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-        ((int16_t*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 1)? (gain_lin_QPSK) : -gain_lin_QPSK;
+        d[i+1].r = (ulsch->b_tilde[j-2] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+        d[i+1].i = (ulsch->b_tilde[j-1] == 1)? (gain_lin_QPSK) : -gain_lin_QPSK;
 
         break;
 
@@ -521,8 +522,8 @@ void ulsch_modulation(int32_t **txdataF,
           qam16_table_offset_im+=1;
 
 
-        ((int16_t*)&ulsch->d[i])[0]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-        ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+        d[i].r =-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+        d[i].i =(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
 
         //UE1,x0*
         qam16_table_offset_re = 0;
@@ -544,8 +545,8 @@ void ulsch_modulation(int32_t **txdataF,
 
         //    ((int16_t*)&ulsch->d[i+1])[0]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
         //    ((int16_t*)&ulsch->d[i+1])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-        ((int16_t*)&ulsch->d[i+1])[0]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-        ((int16_t*)&ulsch->d[i+1])[1]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+        d[i+1].r=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+        d[i+1].i=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
 
 
         break;
@@ -578,8 +579,8 @@ void ulsch_modulation(int32_t **txdataF,
           qam64_table_offset_im+=1;
 
 
-        ((int16_t*)&ulsch->d[i])[0]=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-        ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+        d[i].r=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+        d[i].i=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 
         //UE1,x0*
         qam64_table_offset_re = 0;
@@ -605,8 +606,8 @@ void ulsch_modulation(int32_t **txdataF,
           qam64_table_offset_im+=1;
 
 
-        ((int16_t*)&ulsch->d[i+1])[0]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-        ((int16_t*)&ulsch->d[i+1])[1]=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+        d[i+1].r=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+        d[i+1].i=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 
         break;
 
@@ -621,8 +622,8 @@ void ulsch_modulation(int32_t **txdataF,
       case 2:
         // TODO: this has to be updated!!!
 
-        ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-        ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
+        d[i].r = (ulsch->b_tilde[j] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+        d[i].i = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
         //        if (i<Msc_PUSCH)
         //    printf("input %d/%d Msc_PUSCH %d (%p): %d,%d\n", i,Msymb,Msc_PUSCH,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
 
@@ -646,8 +647,8 @@ void ulsch_modulation(int32_t **txdataF,
           qam16_table_offset_im+=1;
 
 
-        ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-        ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+        d[i].r=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+        d[i].i=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
         //      printf("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
         break;
 
@@ -676,8 +677,8 @@ void ulsch_modulation(int32_t **txdataF,
           qam64_table_offset_im+=1;
 
 
-        ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-        ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+        d[i].r=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+        d[i].i=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 
         break;
 
@@ -688,7 +689,7 @@ void ulsch_modulation(int32_t **txdataF,
 
   // Transform Precoding
 
-  dft_lte(ulsch->z,ulsch->d,Msc_PUSCH,ulsch->Nsymb_pusch);
+  dft_lte(ulsch->z,d,Msc_PUSCH,ulsch->Nsymb_pusch);
 
   DevAssert(txdataF);
 

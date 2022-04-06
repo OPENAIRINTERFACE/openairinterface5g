@@ -253,7 +253,7 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
   SZ_DEF(73728) \
   SZ_DEF(98304)
 
-#define FOREACH_IDFTSZ(SZ_DEF)                  \
+#define FOREACH_IDFTSZ(SZ_DEF)\
   SZ_DEF(64) \
   SZ_DEF(128) \
   SZ_DEF(256) \
