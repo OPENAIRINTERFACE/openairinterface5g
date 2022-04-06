@@ -484,7 +484,7 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
     return 0;
   }
 
-  if(rank_indicator == 0) {
+  if(rank_indicator == 0 || rank_indicator == 1) {
 
     uint32_t metric[4] = {0};
     uint16_t shift = nr_csi_rs_info->log2_maxh + log2_approx(frame_parms->nb_antennas_rx) + log2_approx(csirs_config_pdu->nr_of_rbs) - 1;
@@ -518,13 +518,15 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
       }
     }
 
-    for(int tested_i2 = 0; tested_i2 < 4; tested_i2++) {
-      if(metric[tested_i2] > metric[i2[0]]) {
-        i2[0] = tested_i2;
+    if(rank_indicator == 0) {
+      for(int tested_i2 = 0; tested_i2 < 4; tested_i2++) {
+        if(metric[tested_i2] > metric[i2[0]]) {
+          i2[0] = tested_i2;
+        }
       }
+    } else {
+      i2[0] = metric[0]+metric[2] > metric[1]+metric[3] ? 0 : 1;
     }
-
-  } else if(rank_indicator == 1) {
 
   } else {
     LOG_W(NR_PHY, "PMI computation is not implemented for rank indicator %i\n", rank_indicator);
