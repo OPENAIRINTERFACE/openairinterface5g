@@ -468,13 +468,15 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
                              uint8_t *i2) {
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  i1[0] = 1;
-  i1[1] = 1;
-  i1[2] = 1;
-  *i2 = 0;
+  memset(i1,0,3*sizeof(uint8_t));
+  i2[0] = 0;
 
-  // TS 38.214: For 2 antenna ports {3000, 3001} and the UE configured with higher layer parameter codebookType set to
-  // 'typeISinglePanel' each PMI value corresponds to a codebook index given in Table 5.2.2.2.1-1.
+  // i1 is a three-element vector in the form of [i11 i12 i13], when CodebookType is specified as 'Type1SinglePanel'.
+  // Note that i13 is not applicable when the number of transmission layers is one of {1, 5, 6, 7, 8}.
+  // i2, for 'Type1SinglePanel' codebook type, it is a scalar when PMIMode is specified as 'wideband', and when PMIMode
+  // is specified as 'subband' or when PRGSize, the length of the i2 vector equals to the number of subbands or PRGs.
+  // Note that when the number of CSI-RS ports is 2, the applicable codebook type is 'Type1SinglePanel'. In this case,
+  // the precoding matrix is obtained by a single index (i2 field here) based on TS 38.214 Table 5.2.2.2.1-1.
   // The first column is applicable if the UE is reporting a Rank = 1, whereas the second column is applicable if the
   // UE is reporting a Rank = 2.
 
@@ -517,8 +519,8 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
     }
 
     for(int tested_i2 = 0; tested_i2 < 4; tested_i2++) {
-      if(metric[tested_i2] > metric[*i2]) {
-        *i2 = tested_i2;
+      if(metric[tested_i2] > metric[i2[0]]) {
+        i2[0] = tested_i2;
       }
     }
 
@@ -597,10 +599,10 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                            ue->nr_csi_rs_info->i1,
                            ue->nr_csi_rs_info->i2);
 
-  LOG_I(NR_PHY, "RI = %i, i1 = [%i %i %i], i2 = %i\n",
+  LOG_I(NR_PHY, "RI = %i, i1 = %i.%i.%i, i2 = %i\n",
         *ue->nr_csi_rs_info->rank_indicator + 1,
         ue->nr_csi_rs_info->i1[0], ue->nr_csi_rs_info->i1[1], ue->nr_csi_rs_info->i1[2],
-        *ue->nr_csi_rs_info->i2);
+        ue->nr_csi_rs_info->i2[0]);
 
   return 0;
 }
