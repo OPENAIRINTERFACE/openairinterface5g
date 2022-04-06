@@ -84,7 +84,7 @@ COPY --from=gnb-build \
 COPY --from=gnb-base /usr/local/bin/uhd_find_devices /usr/local/bin
 COPY --from=gnb-base \
      /usr/local/lib/libuhd.so.3.15.0 \
-     /usr/local/lib/libprotobuf-c.so.1 \
+     /usr/lib/x86_64-linux-gnu/libprotobuf-c.so.1 \
      /usr/local/lib/
 COPY --from=gnb-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-gnb/bin
 COPY --from=gnb-base \
