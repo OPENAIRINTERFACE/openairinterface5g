@@ -815,12 +815,6 @@ static int Gtpv1uHandleGpdu(int h,
     return GTPNOK;
   }
 
-  /*int offset=8;
-
-  if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
-    offset+=8;*/
-
-  
 //Minimum length of GTP-U header if non of the optional fields are present
   int offset= sizeof(Gtpv1uMsgHeaderT);
   

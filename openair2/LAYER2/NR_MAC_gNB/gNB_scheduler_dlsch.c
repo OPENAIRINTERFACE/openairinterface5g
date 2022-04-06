@@ -992,10 +992,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     return;
 
   /* PREPROCESSOR */
-  //Following commented section condition should be removed before update with develop.
-  /*if(slot!= 1 && slot!=11){
-    return;
-  }*/
   gNB_mac->pre_processor_dl(module_id, frame, slot);
 
   const int CC_id = 0;

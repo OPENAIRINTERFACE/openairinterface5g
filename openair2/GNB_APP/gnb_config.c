@@ -1879,11 +1879,7 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         f1Setup->ranac[k]                                      = 0;
         f1Setup->mib[k]                                        = rrc->carrier.MIB;
         f1Setup->mib_length[k]                                 = rrc->carrier.sizeof_MIB;
-        if(0){
-          f1Setup->sib1[k]                                       = rrc->carrier.SIB1;
-          f1Setup->sib1_length[k]                                = rrc->carrier.sizeof_SIB1;
-        }
-        else{
+
         NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
 
         asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
@@ -1914,7 +1910,6 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           xer_fprint(stdout, &asn_DEF_NR_SIB1,(void *)bcch_message->message.choice.c1->choice.systemInformationBlockType1 );
         //}
         f1Setup->sib1_length[k]                                = (enc_rval.encoded+7)/8;
-        }
         break;
       }
     }

@@ -352,6 +352,15 @@ typedef struct cu_to_du_rrc_information_s {
   uint8_t   measConfig_length;
 }cu_to_du_rrc_information_t;
 
+typedef struct du_to_du_rrc_information_s {
+  uint8_t * cellGroupConfig;
+  uint8_t   cellGroupConfig_length;
+  uint8_t * measGapConfig;
+  uint8_t   measGapConfig_length;
+  uint8_t * requestedP_MaxFR1;
+  uint8_t   requestedP_MaxFR1_length;
+}du_to_cu_rrc_information_t;
+
 typedef enum QoS_information_e {
   NG_RAN_QoS    = 0,
   EUTRAN_QoS    = 1,
@@ -377,10 +386,13 @@ typedef struct f1ap_ue_context_setup_s {
   uint32_t servCellId;
   cu_to_du_rrc_information_t *cu_to_du_rrc_information;
   uint8_t  cu_to_du_rrc_information_length;
-  uint8_t *du_to_cu_rrc_information;
-  uint8_t  du_to_cu_rrc_information_length;
-  f1ap_drb_to_be_setup_t *drbs_to_be_setup; // BK: need to replace by s1ap_initial_context_setup_req
-  uint8_t  drbs_to_be_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
+  //uint8_t *du_to_cu_rrc_information;
+  du_to_cu_rrc_information_t *du_to_cu_rrc_information;
+  uint32_t  du_to_cu_rrc_information_length;
+  f1ap_drb_to_be_setup_t *drbs_to_be_setup;
+  uint8_t  drbs_to_be_setup_length;
+  f1ap_drb_to_be_setup_t *drbs_to_be_modified;
+    uint8_t  drbs_to_be_modified_length;
   QoS_information_t QoS_information_type;
   uint8_t  drbs_failed_to_be_setup_length;
   f1ap_rb_failed_to_be_setup_t *drbs_failed_to_be_setup;
@@ -388,28 +400,10 @@ typedef struct f1ap_ue_context_setup_s {
   uint8_t  srbs_to_be_setup_length;
   uint8_t  srbs_failed_to_be_setup_length;
   f1ap_rb_failed_to_be_setup_t *srbs_failed_to_be_setup;
-  s1ap_initial_context_setup_req_t *s1ap_initial_context_setup_req;
   ReconfigurationCompl_t ReconfigComplOutcome;
-   // coniatner for the rrc_eNB_generate_SecurityModeCommand message
   uint8_t *rrc_container;
   int      rrc_container_length;
 } f1ap_ue_context_setup_t;
-
-typedef struct f1ap_ue_context_setup_resp_s {
-  uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
-  uint32_t gNB_DU_ue_id;
-  uint16_t rnti;
-  uint8_t  du_to_cu_rrc_information[1024 /*Arbitrarily big enough*/];
-  uint32_t  du_to_cu_rrc_information_length;
-  f1ap_drb_to_be_setup_t *drbs_setup; // BK: need to replace by s1ap_initial_context_setup_req
-  uint8_t  drbs_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
-  f1ap_srb_to_be_setup_t *srbs_setup;
-  uint8_t  srbs_setup_length;
-  uint8_t  srbs_failed_to_be_setup_length;
-  f1ap_rb_failed_to_be_setup_t *srbs_failed_to_be_setup;
-  uint8_t  drbs_failed_to_be_setup_length;
-  f1ap_rb_failed_to_be_setup_t *drbs_failed_to_be_setup;
-} f1ap_ue_context_setup_resp_t;
 
 typedef enum F1ap_Cause_e {
   F1AP_CAUSE_NOTHING,  /* No components present */
