@@ -305,8 +305,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
-                 int bwp_id,
-                 NR_ControlResourceSetId_t controlResourceSetId);
+                 int bwp_id);
 
 void set_r_pucch_parms(int rsetindex,
                        int r_pucch,

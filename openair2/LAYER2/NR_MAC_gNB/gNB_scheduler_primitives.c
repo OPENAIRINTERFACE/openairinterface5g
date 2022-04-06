@@ -1385,8 +1385,7 @@ void set_r_pucch_parms(int rsetindex,
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
-                 int bwp_id,
-                 NR_ControlResourceSetId_t controlResourceSetId) {
+                 int bwp_id) {
 
   AssertFatal(CellGroup!=NULL,"CellGroup shouldn't be null here\n");
 
@@ -1492,7 +1491,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
-    prepare_dci(CellGroup, dci_pdu_rel15, dci_format, bwp_id, controlResourceSetId);
+    prepare_dci(CellGroup, dci_pdu_rel15, dci_format, bwp_id);
 
   /// Payload generation
   switch (dci_format) {
