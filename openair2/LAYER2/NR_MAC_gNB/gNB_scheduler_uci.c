@@ -44,7 +44,8 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
                          const NR_sched_pucch_t *pucch,
                          int UE_id)
 {
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  gNB_MAC_INST *nr_mac = RC.nrmac[mod_id];
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req =
       &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
@@ -76,13 +77,16 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   NR_CellGroupConfig_t *cg=UE_info->CellGroup[UE_id];
 
-  NR_BWP_UplinkDedicated_t *ubwpd;
-  ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
+  NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
   LOG_D(NR_MAC,"%d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch to be scheduled in %d.%d\n",
         frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
 
-  nr_configure_pucch(pucch_pdu,
+  const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+  nr_configure_pucch(sib1,
+                     pucch_pdu,
                      scc,
                      UE_info->CellGroup[UE_id],
                      UE_info->UE_sched_ctrl[UE_id].active_ubwp,
@@ -742,9 +746,11 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
 
-      NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
-        &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
-        &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+      const NR_SIB1_t *sib1 = RC.nrmac[Mod_idP]->common_channels[0].sib1 ? RC.nrmac[Mod_idP]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+      NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                                 scc,
+                                                                 sib1);
+
       int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 
       // going through the list of PUCCH resources to find the one indexed by resource_id
