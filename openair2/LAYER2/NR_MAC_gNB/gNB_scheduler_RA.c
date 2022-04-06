@@ -635,7 +635,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                                             ra->coreset,
                                             scc,
                                             genericParameters,
-                                            NULL);
+                                            &nr_mac->type0_PDCCH_CSS_config[ra->beam_id]);
 
       // retrieving ra pdcch monitoring period and offset
       find_monitoring_periodicity_offset_common(ra->ra_ss, &monitoring_slot_period, &monitoring_offset);
@@ -871,7 +871,9 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
 
-    config_uldci(ubwp,
+    const NR_SIB1_t *sib1 = cc->sib1 ? cc->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+    config_uldci(sib1,
+                 ubwp,
                  ubwpd,
                  scc,
                  pusch_pdu,
@@ -889,7 +891,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                        NR_UL_DCI_FORMAT_0_0,
                        NR_RNTI_TC,
                        pusch_pdu->bwp_size,
-                       ra->bwp_id);
+                       ra->bwp_id,
+                       nr_mac->cset0_bwp_size);
 
     // Mark the corresponding RBs as used
 
@@ -1460,7 +1463,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_RA,
                        BWPSize,
-                       bwpid);
+                       bwpid,
+                       nr_mac->cset0_bwp_size);
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
@@ -1602,17 +1606,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       return;
     }
 
-    int n_rb=0;
-    for (int i=0;i<6;i++)
-      for (int j=0;j<8;j++) {
-        n_rb+=((coreset->frequencyDomainResources.buf[i]>>j)&1);
-      }
-    n_rb*=6;
-    const uint16_t N_cce = n_rb * coreset->duration / NR_NB_REG_PER_CCE;
     const int delta_PRI=0;
-    int r_pucch = ((CCEIndex<<1)/N_cce)+(delta_PRI<<1);
+    int r_pucch = nr_get_pucch_resource(coreset, sched_ctrl->active_ubwp, NULL, CCEIndex);
 
-    LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, N_cce %d, nb_of_candidates %d,delta_PRI %d)\n",r_pucch,CCEIndex,N_cce,nr_of_candidates,delta_PRI);
+    LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, nb_of_candidates %d, delta_PRI %d)\n", r_pucch, CCEIndex, nr_of_candidates, delta_PRI);
+
     int alloc = nr_acknack_scheduling(module_idP, UE_id, frameP, slotP, r_pucch, 1);
     AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
@@ -1853,7 +1851,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_TC,
                        pdsch_pdu_rel15->BWPSize,
-                       bwpid);
+                       bwpid,
+                       nr_mac->cset0_bwp_size);
 
     // Add padding header and zero rest out if there is space left
     if (ra->mac_pdu_length < harq->tb_size) {
