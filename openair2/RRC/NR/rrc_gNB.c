@@ -183,6 +183,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
                            rrc->configuration.minRXTXTIME,
                            rrc->carrier.servingcellconfigcommon,
                            &rrc->carrier.mib,
+                           rrc->carrier.siblock1,
                            0,
                            0, // WIP hardcoded rnti
                            NULL);
@@ -289,6 +290,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc->configuration.pusch_AntennaPorts,
                          rrc->configuration.sib1_tda,
                          rrc->configuration.minRXTXTIME,
+                         NULL,
                          NULL,
                          NULL,
                          0,
@@ -478,6 +480,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->configuration.minRXTXTIME,
                          rrc_instance_p->carrier.servingcellconfigcommon,
                          &rrc_instance_p->carrier.mib,
+                         rrc_instance_p->carrier.siblock1,
                          0,
                          ue_context_pP->ue_context.rnti,
                          NULL);
@@ -1386,6 +1389,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            rrc->configuration.pusch_AntennaPorts,
                            rrc->configuration.sib1_tda,
                            rrc->configuration.minRXTXTIME,
+                           NULL,
                            NULL,
                            NULL,
                            0,

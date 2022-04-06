@@ -2061,6 +2061,7 @@ void configure_gnb_du_mac(int inst) {
                         rrc->configuration.minRXTXTIME,
                         rrc->configuration.scc,
                         NULL,
+                        NULL,
                         0,
                         0, // rnti
                         (NR_CellGroupConfig_t *)NULL

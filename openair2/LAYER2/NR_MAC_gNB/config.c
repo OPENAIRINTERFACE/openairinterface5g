@@ -462,6 +462,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int minRXTXTIMEpdsch,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
+                           NR_BCCH_DL_SCH_Message_t *sib1,
                            int add_ue,
                            uint32_t rnti,
                            NR_CellGroupConfig_t *CellGroup) {
@@ -572,28 +573,34 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
   }
  
-  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib; 
- 
+  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib;
+  if (sib1) RC.nrmac[Mod_idP]->common_channels[0].sib1 = sib1;
+
   if (CellGroup) {
 
-    const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
-    const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-    if(bwpList) {
-      AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
-      for (int i = 0; i < bwpList->list.count; ++i) {
-        const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
-        calculate_preferred_dl_tda(Mod_idP, bwp);
-      }
-    } else {
+    if (get_softmodem_params()->sa) {
       calculate_preferred_dl_tda(Mod_idP, NULL);
     }
 
-    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-    if(ubwpList) {
-      AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
-      for (int i = 0; i < ubwpList->list.count; ++i) {
-        const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
-        calculate_preferred_ul_tda(Mod_idP, ubwp);
+    const NR_ServingCellConfig_t *servingCellConfig = NULL;
+    if(CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated) {
+      servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
+      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
+      if(bwpList) {
+        AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
+        for (int i = 0; i < bwpList->list.count; ++i) {
+          const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
+          calculate_preferred_dl_tda(Mod_idP, bwp);
+        }
+      }
+
+      const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+      if(ubwpList) {
+        AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
+        for (int i = 0; i < ubwpList->list.count; ++i) {
+          const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
+          calculate_preferred_ul_tda(Mod_idP, ubwp);
+        }
       }
     }
 
@@ -653,7 +660,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
-      const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
       sched_ctrl->update_pdsch_ps = true;
       sched_ctrl->update_pusch_ps = true;
@@ -678,16 +684,14 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
         genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       }
-      else
-        AssertFatal(1==0,"Either initial BWP or active BWP should always be present\n");
-      sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
+      sched_ctrl->search_space = get_searchspace(sib1 ? sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
       sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
       sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
                                                     sched_ctrl->search_space,
                                                     sched_ctrl->coreset,
                                                     scc,
                                                     genericParameters,
-                                                    NULL);
+                                                    RC.nrmac[Mod_idP]->type0_PDCCH_CSS_config);
       sched_ctrl->maxL = 2;
     }
   }
