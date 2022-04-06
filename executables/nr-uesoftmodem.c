@@ -396,7 +396,14 @@ void *rrc_enb_process_msg(void *notUsed) {
 
 
 int main( int argc, char **argv ) {
-  set_priority(79);
+  int set_exe_prio = 1;
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        set_exe_prio = 0;
+  if (set_exe_prio)
+    set_priority(79);
+
   if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
   {
     fprintf(stderr, "mlockall: %s\n", strerror(errno));
