@@ -998,7 +998,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     }
   } else if (mu == NR_MU_3) {
     switch(N_RB) {
-      case 132:
+    case 132:
+    case 128:
         if (fp->threequarter_fs) {
           cfg->sample_rate=184.32e6;
           cfg->samples_per_frame = 1843200;
@@ -1012,7 +1013,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
         }
 
         break;
-      case 66:
+    case 64:
+    case 66:
         if (fp->threequarter_fs) {
           cfg->sample_rate=92.16e6;
           cfg->samples_per_frame = 921600;
