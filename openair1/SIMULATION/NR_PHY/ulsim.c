@@ -697,6 +697,7 @@ int main(int argc, char **argv)
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
   gNB->prb_interpolation = prb_inter;
+  gNB->pusch_thres = -20;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
   frame_parms->N_RB_DL = N_RB_DL;
