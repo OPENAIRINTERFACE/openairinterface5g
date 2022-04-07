@@ -280,10 +280,10 @@ int websrv_callback_get_softmodemvar(const struct _u_request * request, struct _
 
      for(int j=0; modulestruct->var[j].varvalptr != NULL ; j++) {
 	   char*strval=telnet_getvarvalue(modulestruct->var, j);
-	   char *strbool="true";
+	   int modifiable=1;
 	   if (modulestruct->var[j].checkval & TELNET_CHECKVAL_RDONLY)
-	     strbool="false";
-	   json_t *oneaction =json_pack("{s:s,s:s,s:s,s:s}","type","string","name",modulestruct->var[j].varname,"value",strval,"modifiable",strbool);
+	     modifiable=0;
+	   json_t *oneaction =json_pack("{s:s,s:s,s:s,s:b}","type","string","name",modulestruct->var[j].varname,"value",strval,"modifiable",modifiable);
        if (oneaction==NULL) {
 	     LOG_E(UTIL,"[websrv] cannot encode oneaction %s/%s\n",modulestruct->module,modulestruct->var[j].varname);
        } else {
@@ -370,17 +370,16 @@ int websrv_callback_get_softmodemmodules(const struct _u_request * request, stru
 int websrv_callback_get_softmodemstatus(const struct _u_request * request, struct _u_response * response, void * user_data) {
   char *cfgfile=CONFIG_GETCONFFILE ;
   char *execfunc=get_softmodem_function(NULL);
-  char *strbool="false";
   char *strtype="string";
   json_t *moduleactions = json_array();
-  json_t *body1=json_pack("{s:s,s:s,s:s,s:s}","name","config_file", "value",cfgfile, "type",strtype,"modifiable",strbool);
+  json_t *body1=json_pack("{s:s,s:s,s:s,s:b}","name","config_file", "value",cfgfile, "type",strtype,"modifiable",0);
   if (body1==NULL) {
 	  LOG_E(UTIL,"[websrv] cannot encode status body1 response\n");
   } else {
 	  websrv_printjson("status body1",body1);
   }  
 
-  json_t *body2=json_pack("{s:s,s:s,s:s,s:s}","name","exec_function", "value",execfunc, "type", strtype, "modifiable",strbool); 
+  json_t *body2=json_pack("{s:s,s:s,s:s,s:b}","name","exec_function", "value",execfunc, "type", strtype, "modifiable",0); 
   if (body2==NULL) {
 	  LOG_E(UTIL,"[websrv] cannot encode status body1 response\n");
   } else {
