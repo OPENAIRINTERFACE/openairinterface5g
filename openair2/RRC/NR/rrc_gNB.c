@@ -3497,7 +3497,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
       gtpv1u_DU_buffer_report_req_t *req=&GTPV1U_DU_BUFFER_REPORT_REQ(msg);
       req->pdusession_id = drb_id;
       req->rnti = rnti;
-      req->buffer_availability = 1000000; //Hardcoding to be removed and read the actual RLC buffer availability instead
+      req->buffer_availability = 10000000; //Hardcoding to be removed and read the actual RLC buffer availability instead
       extern instance_t DUuniqInstance;
       itti_send_msg_to_task(TASK_GTPV1_U, DUuniqInstance, msg);
 

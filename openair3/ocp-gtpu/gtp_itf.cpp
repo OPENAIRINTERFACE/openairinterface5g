@@ -17,6 +17,7 @@ extern "C" {
 #include <openair2/COMMON/gtpv1_u_messages_types.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include <openair2/LAYER2/PDCP_v10.1.0/pdcp.h>
+#include <openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap_gnb.h"
 //#include <openair1/PHY/phy_extern.h>
 
@@ -999,6 +1000,8 @@ static int Gtpv1uHandleGpdu(int h,
     LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
   if(NR_PDCP_PDU_SN > 0 && NR_PDCP_PDU_SN %5 ==0){
     LOG_D (GTPU, "Create and send DL DATA Delivery status for the previously received PDU, NR_PDCP_PDU_SN: %u \n", NR_PDCP_PDU_SN);
+    int rlc_tx_buffer_space = nr_rlc_get_available_tx_space(ctxt.rnti, rb_id);
+    LOG_D(GTPU, "Available buffer size in RLC for Tx: %d \n", rlc_tx_buffer_space);
     /*Total size of DDD_status PDU = 1 octet to report extension header length
      * size of mandatory part + 3 octets for highest transmitted/delivered PDCP SN
      * 1 octet for padding + 1 octet for next extension header type,
@@ -1010,7 +1013,7 @@ static int Gtpv1uHandleGpdu(int h,
     DlDataDeliveryStatus.deliveredPdcpSn = 0;
     DlDataDeliveryStatus.transmittedPdcpSn= 1; 
     DlDataDeliveryStatus.pduType = 1;
-    DlDataDeliveryStatus.drbBufferSize = htonl(1000000); //hardcoded for now but normally we should extract it from RLC
+    DlDataDeliveryStatus.drbBufferSize = htonl(rlc_tx_buffer_space); //htonl(10000000); //hardcoded for now but normally we should extract it from RLC
     memcpy(extensionHeader->buffer+1, &DlDataDeliveryStatus, sizeof(DlDataDeliveryStatus_flagsT));
     uint8_t offset = sizeof(DlDataDeliveryStatus_flagsT)+1;
 
