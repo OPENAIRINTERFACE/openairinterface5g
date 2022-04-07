@@ -591,21 +591,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
   if (CellGroup) {
 
-    if (get_softmodem_params()->sa) {
-      calculate_preferred_dl_tda(Mod_idP, NULL);
-    }
-
     const NR_ServingCellConfig_t *servingCellConfig = NULL;
     if(CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated) {
       servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
-      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-      if(bwpList) {
-        AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
-        for (int i = 0; i < bwpList->list.count; ++i) {
-          const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
-          calculate_preferred_dl_tda(Mod_idP, bwp);
-        }
-      }
 
       const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
       if(ubwpList) {

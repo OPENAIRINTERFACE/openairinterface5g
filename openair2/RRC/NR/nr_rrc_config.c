@@ -321,8 +321,7 @@ void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc,
   int len_coreset = 1;
   if (curr_bwp < 48)
     len_coreset = 2;
-
-  // setting default TDA for DL with
+  // setting default TDA for DL with TDA index 0
   struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
   // k0: Slot offset between DCI and its scheduled PDSCH (see TS 38.214 clause 5.1.2.1) When the field is absent the UE applies the value 0.
   //timedomainresourceallocation->k0 = calloc(1,sizeof(*timedomainresourceallocation->k0));
@@ -331,10 +330,10 @@ void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc,
   timedomainresourceallocation->startSymbolAndLength = get_SLIV(len_coreset,14-len_coreset); // basic slot configuration starting in symbol 1 til the end of the slot
   ASN_SEQUENCE_ADD(&pdsch_TimeDomainAllocationList->list, timedomainresourceallocation);
   if(frame_type==TDD) {
-    // TDD
     if(scc->tdd_UL_DL_ConfigurationCommon) {
       int dl_symb = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols;
       if(dl_symb > 1) {
+        // mixed slot TDA with TDA index 1
         timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
         // k0: Slot offset between DCI and its scheduled PDSCH (see TS 38.214 clause 5.1.2.1) When the field is absent the UE applies the value 0.
         //timedomainresourceallocation->k0 = calloc(1,sizeof(*timedomainresourceallocation->k0));

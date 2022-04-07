@@ -2858,6 +2858,7 @@ void nr_csirs_scheduling(int Mod_idP,
 void nr_mac_update_timers(module_id_t module_id,
                           frame_t frame,
                           sub_frame_t slot) {
+
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -2894,12 +2895,11 @@ void nr_mac_update_timers(module_id_t module_id,
                                            cg->spCellConfig &&
                                            cg->spCellConfig->spCellConfigDedicated ?
                                            cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-        int **preferred_dl_tda = RC.nrmac[module_id]->preferred_dl_tda;
+
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
         const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
-        const int tda = bwp && preferred_dl_tda[bwp->bwp_Id][slot] >= 0 ?
-                        preferred_dl_tda[bwp->bwp_Id][slot] : (ps->time_domain_allocation >= 0 ? ps->time_domain_allocation : 0);
+        const int tda = set_dl_tda(RC.nrmac[module_id], scc, slot);
 
         nr_set_pdsch_semi_static(sib1,
                                  scc,

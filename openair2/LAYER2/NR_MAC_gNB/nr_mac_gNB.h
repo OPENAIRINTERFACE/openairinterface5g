@@ -807,9 +807,6 @@ typedef struct gNB_MAC_INST_s {
 
   /// bitmap of DLSCH slots, can hold up to 160 slots
   uint64_t dlsch_slot_bitmap[3];
-  /// Lookup for preferred time domain allocation for BWP, in DL, slots
-  /// dynamically allocated
-  int *preferred_dl_tda[MAX_NUM_BWP];
   /// bitmap of ULSCH slots, can hold up to 160 slots
   uint64_t ulsch_slot_bitmap[3];
   /// Lookup for preferred time domain allocation for UL BWP, dynamically
