@@ -60,8 +60,7 @@ const int set_dl_tda(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, int
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
 
   if (tdd) {
-    int nr_mix_slots = tdd->nrofDownlinkSymbols != 0; // there are dl symbols in mixed slot
-    if (nr_mix_slots != 0) { // if there is a mixed slot
+    if (tdd->nrofDownlinkSymbols > 1) { // if there is a mixed slot where we can transmit DL
       int nr_slots_period = n/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
       if ((slot%nr_slots_period) == tdd->nrofDownlinkSlots)
         return 1;

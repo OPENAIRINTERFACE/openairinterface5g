@@ -2917,14 +2917,13 @@ void nr_mac_update_timers(module_id_t module_id,
                                           cg->spCellConfig->spCellConfigDedicated &&
                                           cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
                                           cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
-        int **preferred_ul_tda = RC.nrmac[module_id]->preferred_ul_tda;
+
         NR_pusch_semi_static_t *ups = &sched_ctrl->pusch_semi_static;
 
         int dci_format = get_dci_format(sched_ctrl);
         const uint8_t num_dmrs_cdm_grps_no_data = (ubwp || ubwpd) ? 1 : 2;
         const uint8_t nrOfLayers = 1;
-        const int utda = ubwp && preferred_ul_tda[ubwp->bwp_Id][slot] >= 0 ?
-            preferred_ul_tda[ubwp->bwp_Id][slot] : (ups->time_domain_allocation >= 0 ? ups->time_domain_allocation : 0);
+        const int utda = set_ul_tda(RC.nrmac[module_id], scc, slot);
 
         nr_set_pusch_semi_static(sib1,
                                  scc,
