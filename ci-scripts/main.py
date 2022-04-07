@@ -376,6 +376,16 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			EPC.yamlPath = string_field
 
+	elif action == 'Initialize_5GCN':
+		string_field = test.findtext('args')
+		if (string_field is not None):
+			EPC.cfgDeploy = string_field	
+
+	elif action == 'Terminate_5GCN':
+		string_field = test.findtext('args')
+		if (string_field is not None):
+			EPC.cfgUnDeploy = string_field	
+
 	elif action == 'Deploy_Object' or action == 'Undeploy_Object':
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
