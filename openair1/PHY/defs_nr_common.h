@@ -272,7 +272,8 @@ typedef struct {
   uint8_t *rank_indicator;
   uint8_t *i1;
   uint8_t *i2;
-  uint32_t *precoded_sinr;
+  uint32_t *precoded_sinr_dB;
+  uint8_t *cqi;
 } nr_csi_rs_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;

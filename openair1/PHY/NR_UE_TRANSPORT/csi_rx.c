@@ -471,7 +471,7 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
                              uint8_t rank_indicator,
                              uint8_t *i1,
                              uint8_t *i2,
-                             uint32_t *precoded_sinr) {
+                             uint32_t *precoded_sinr_dB) {
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   memset(i1,0,3*sizeof(uint8_t));
@@ -497,8 +497,6 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
     int32_t sum2_re[4] = {0};
     int32_t sum2_im[4] = {0};
     int32_t tested_precoded_sinr[4] = {0};
-
-    uint16_t shift = nr_csi_rs_info->log2_maxh + log2_approx(frame_parms->nb_antennas_rx) + log2_approx(csirs_config_pdu->nr_of_rbs) - 1;
 
     for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
 
@@ -552,16 +550,24 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
           i2[0] = tested_i2;
         }
       }
-      *precoded_sinr = tested_precoded_sinr[i2[0]];
+      *precoded_sinr_dB = dB_fixed(tested_precoded_sinr[i2[0]]);
     } else {
       i2[0] = tested_precoded_sinr[0]+tested_precoded_sinr[2] > tested_precoded_sinr[1]+tested_precoded_sinr[3] ? 0 : 1;
-      *precoded_sinr = (tested_precoded_sinr[i2[0]] + tested_precoded_sinr[i2[0]+2])>>1;
+      *precoded_sinr_dB = dB_fixed((tested_precoded_sinr[i2[0]] + tested_precoded_sinr[i2[0]+2]))>>1;
     }
 
   } else {
     LOG_W(NR_PHY, "PMI computation is not implemented for rank indicator %i\n", rank_indicator+1);
     return -1;
   }
+
+  return 0;
+}
+
+int nr_csi_rs_cqi_estimation(uint32_t precoded_sinr,
+                             uint8_t *cqi) {
+
+  *cqi = 0;
 
   return 0;
 }
@@ -632,12 +638,17 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                            *ue->nr_csi_rs_info->rank_indicator,
                            ue->nr_csi_rs_info->i1,
                            ue->nr_csi_rs_info->i2,
-                           ue->nr_csi_rs_info->precoded_sinr);
+                           ue->nr_csi_rs_info->precoded_sinr_dB);
 
-  LOG_I(NR_PHY, "RI = %i, i1 = %i.%i.%i, i2 = %i\n",
+  nr_csi_rs_cqi_estimation(*ue->nr_csi_rs_info->precoded_sinr_dB,
+                           ue->nr_csi_rs_info->cqi);
+
+  LOG_I(NR_PHY, "RI = %i, i1 = %i.%i.%i, i2 = %i. SINR = %i dB, CQI = %i\n",
         *ue->nr_csi_rs_info->rank_indicator + 1,
         ue->nr_csi_rs_info->i1[0], ue->nr_csi_rs_info->i1[1], ue->nr_csi_rs_info->i1[2],
-        ue->nr_csi_rs_info->i2[0]);
+        ue->nr_csi_rs_info->i2[0],
+        *ue->nr_csi_rs_info->precoded_sinr_dB,
+        *ue->nr_csi_rs_info->cqi);
 
   return 0;
 }
