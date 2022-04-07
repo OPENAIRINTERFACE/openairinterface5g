@@ -569,6 +569,33 @@ int nr_csi_rs_cqi_estimation(uint32_t precoded_sinr,
 
   *cqi = 0;
 
+  // Default SINR table for an AWGN channel for SISO scenario, considering 0.1 BLER condition and TS 38.214 Table 5.2.2.1-2
+  if(precoded_sinr>0 && precoded_sinr<=2) {
+    *cqi = 4;
+  } else if(precoded_sinr==3) {
+    *cqi = 5;
+  } else if(precoded_sinr>3 && precoded_sinr<=5) {
+    *cqi = 6;
+  } else if(precoded_sinr>5 && precoded_sinr<=7) {
+    *cqi = 7;
+  } else if(precoded_sinr>7 && precoded_sinr<=9) {
+    *cqi = 8;
+  } else if(precoded_sinr==10) {
+    *cqi = 9;
+  } else if(precoded_sinr>10 && precoded_sinr<=12) {
+    *cqi = 10;
+  } else if(precoded_sinr>12 && precoded_sinr<=15) {
+    *cqi = 11;
+  } else if(precoded_sinr==16) {
+    *cqi = 12;
+  } else if(precoded_sinr>16 && precoded_sinr<=18) {
+    *cqi = 13;
+  } else if(precoded_sinr==19) {
+    *cqi = 14;
+  } else if(precoded_sinr>19) {
+    *cqi = 15;
+  }
+
   return 0;
 }
 
@@ -643,7 +670,7 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   nr_csi_rs_cqi_estimation(*ue->nr_csi_rs_info->precoded_sinr_dB,
                            ue->nr_csi_rs_info->cqi);
 
-  LOG_I(NR_PHY, "RI = %i, i1 = %i.%i.%i, i2 = %i. SINR = %i dB, CQI = %i\n",
+  LOG_I(NR_PHY, "RI = %i, i1 = %i.%i.%i, i2 = %i, SINR = %i dB, CQI = %i\n",
         *ue->nr_csi_rs_info->rank_indicator + 1,
         ue->nr_csi_rs_info->i1[0], ue->nr_csi_rs_info->i1[1], ue->nr_csi_rs_info->i1[2],
         ue->nr_csi_rs_info->i2[0],
