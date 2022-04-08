@@ -79,7 +79,7 @@
                 <desc>Deploy Second OAI 5G NR-UE RF sim SA</desc>
                 <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
                 <services>oai-nr-ue2</services>
-                <nb_healthy>8</nb_healthy>
+                <nb_healthy>9</nb_healthy>
         </testCase>
 
         <testCase id="020001">

@@ -999,8 +999,18 @@ class RANManagement():
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
+					ue_prefix = 'ue0'
+					ue_res = re.search('UE ID 1|UE 1:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue1'
+					ue_res = re.search('UE ID 2|UE 2:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue2'
+					ue_res = re.search('UE ID 3|UE 3:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue3'
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
-					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
+					dlsch_ulsch_stats[ue_prefix+k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
 
 
 			#count "problem receiving samples" msg
