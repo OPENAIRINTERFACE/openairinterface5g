@@ -376,6 +376,16 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			EPC.yamlPath = string_field
 
+	elif action == 'Initialize_5GCN':
+		string_field = test.findtext('args')
+		if (string_field is not None):
+			EPC.cfgDeploy = string_field	
+
+	elif action == 'Terminate_5GCN':
+		string_field = test.findtext('args')
+		if (string_field is not None):
+			EPC.cfgUnDeploy = string_field	
+
 	elif action == 'Deploy_Object' or action == 'Undeploy_Object':
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
@@ -391,7 +401,7 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.yamlPath[CONTAINERS.eNB_instance] = string_field
 
-	elif action == 'DeployGenObject' or action == 'UndeployGenObject':
+	elif action == 'DeployGenObject' or action == 'UndeployGenObject' or action == 'StatsFromGenObject':
 		string_field=test.findtext('yaml_path')
 		if (string_field is not None):
 			CONTAINERS.yamlPath[0] = string_field
@@ -931,6 +941,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CONTAINERS.IperfFromContainer(HTML, RAN)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
+				elif action == 'StatsFromGenObject':
+					CONTAINERS.StatsFromGenObject(HTML)
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if RAN.prematureExit:

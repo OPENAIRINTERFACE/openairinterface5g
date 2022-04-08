@@ -34,5 +34,4 @@ extern nrLDPC_initcallfunc_t nrLDPC_initcall;
 extern nrLDPC_decoderfunc_t nrLDPC_decoder;
 extern nrLDPC_encoderfunc_t nrLDPC_encoder;
 // inline functions:
-#include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_init_mem.h"
 #endif
