@@ -68,10 +68,10 @@ queue_t nr_ul_tti_req_queue;
 
 static slot_rnti_mcs_s slot_rnti_mcs[NUM_NFAPI_SLOT];
 
-static int get_mcs_from_sinr(float sinr);
-static int get_cqi_from_mcs(void);
+//static int get_mcs_from_sinr(float sinr);
+//static int get_cqi_from_mcs(void);
 static void read_channel_param(const nfapi_nr_dl_tti_pdsch_pdu_rel15_t * pdu, int sf, int index);
-static bool did_drop_transport_block(int slot, uint16_t rnti);
+//static bool did_drop_transport_block(int slot, uint16_t rnti);
 static float get_bler_val(uint8_t mcs, int sinr);
 static bool should_drop_transport_block(int slot, uint16_t rnti);
 static void save_pdsch_pdu_for_crnti(nfapi_nr_dl_tti_request_t *dl_tti_request);
@@ -1341,6 +1341,7 @@ void RCconfig_nr_ue_L1(void) {
   }
 }
 
+/*
 static int get_mcs_from_sinr(float sinr)
 {
   if (sinr < (nr_bler_data[0].bler_table[0][0]))
@@ -1369,7 +1370,9 @@ static int get_mcs_from_sinr(float sinr)
   LOG_E(NR_MAC, "Unable to get an MCS value.\n");
   abort();
 }
+*/
 
+/*
 static int get_cqi_from_mcs(void)
 {
   static const int mcs_to_cqi[] = {0, 1, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8,
@@ -1399,6 +1402,7 @@ static int get_cqi_from_mcs(void)
   LOG_E(NR_MAC, "Unable to get CQI value because no MCS found\n");
   abort();
 }
+*/
 
 static void read_channel_param(const nfapi_nr_dl_tti_pdsch_pdu_rel15_t * pdu, int slot, int index)
 {
@@ -1431,6 +1435,7 @@ static void read_channel_param(const nfapi_nr_dl_tti_pdsch_pdu_rel15_t * pdu, in
   return;
 }
 
+/*
 static bool did_drop_transport_block(int slot, uint16_t rnti)
 {
   int num_pdus = slot_rnti_mcs[slot].num_pdus;
@@ -1450,6 +1455,7 @@ static bool did_drop_transport_block(int slot, uint16_t rnti)
   }
   return false;
 }
+*/
 
 static float get_bler_val(uint8_t mcs, int sinr)
 {
