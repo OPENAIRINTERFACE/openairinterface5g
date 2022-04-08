@@ -109,12 +109,6 @@ You can get the list of variant specific variables specifying the variant argume
                NB_PATTERN_FILES=9               BUILD_OPTIONS=""             
                LOG_PATTERN=.Rel15.txt     
 
-    --variant basic-sim       OR -v2     ( build and test  )
-               VM_NAME=ci-basic-sim             ARCHIVES_LOC=basic_sim      
-               VM_MEMORY=8192                   VM_CPU=4              
-               NB_PATTERN_FILES=13              BUILD_OPTIONS="--eNB --UE"   
-               LOG_PATTERN=.Rel15.txt     
-
     --variant phy-sim         OR -v3     ( build and test  )
                VM_NAME=ci-phy-sim               ARCHIVES_LOC=phy_sim        
                VM_MEMORY=2048                   VM_CPU=4              

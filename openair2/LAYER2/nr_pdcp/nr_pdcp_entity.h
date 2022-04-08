@@ -39,7 +39,7 @@ typedef struct nr_pdcp_entity_t {
   void (*recv_pdu)(struct nr_pdcp_entity_t *entity, char *buffer, int size);
   void (*recv_sdu)(struct nr_pdcp_entity_t *entity, char *buffer, int size,
                    int sdu_id);
-  void (*delete)(struct nr_pdcp_entity_t *entity);
+  void (*delete_entity)(struct nr_pdcp_entity_t *entity);
 
   /* set_security: pass -1 to integrity_algorithm / ciphering_algorithm
    *               to keep the current algorithm

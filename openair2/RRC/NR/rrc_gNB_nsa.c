@@ -116,6 +116,7 @@ RB_PROTOTYPE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries,
 void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m) {
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
   rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
+  const gNB_RrcConfigurationReq *configuration = &rrc->configuration;
   MessageDef *msg;
   msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
@@ -240,29 +241,16 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                           cipher_algo,
                           NR_SecurityConfig__keyToUse_secondary);
   }
-  if (ue_context_p->ue_context.spCellConfig) {
-    fill_default_reconfig(carrier->servingcellconfigcommon,
-                          ue_context_p->ue_context.spCellConfig->spCellConfigDedicated,
-                          reconfig_ies,
-                          ue_context_p->ue_context.secondaryCellGroup,
-                          ue_context_p->ue_context.UE_Capability_nr,
-                          carrier->pdsch_AntennaPorts,
-                          carrier->minRXTXTIME,
-                          carrier->do_CSIRS,
-                          carrier->do_SRS,
-                          ue_context_p->local_uid);
-  } else {
-    fill_default_reconfig(carrier->servingcellconfigcommon,
-                          NULL,
-                          reconfig_ies,
-                          ue_context_p->ue_context.secondaryCellGroup,
-                          ue_context_p->ue_context.UE_Capability_nr,
-                          carrier->pdsch_AntennaPorts,
-                          carrier->minRXTXTIME,
-                          carrier->do_CSIRS,
-                          carrier->do_SRS,
-                          ue_context_p->local_uid);
-  }
+  NR_ServingCellConfig_t *scc = ue_context_p->ue_context.spCellConfig
+      ? ue_context_p->ue_context.spCellConfig->spCellConfigDedicated
+      : NULL;
+  fill_default_reconfig(carrier->servingcellconfigcommon,
+                        scc,
+                        reconfig_ies,
+                        ue_context_p->ue_context.secondaryCellGroup,
+                        ue_context_p->ue_context.UE_Capability_nr,
+                        configuration,
+                        ue_context_p->local_uid);
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
@@ -359,23 +347,25 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   // configure MAC and RLC
   if (NODE_IS_DU(rrc->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->carrier.ssb_SubcarrierOffset,
-                           rrc->carrier.pdsch_AntennaPorts,
-			   rrc->carrier.pusch_AntennaPorts,
-                           rrc->carrier.sib1_tda,
-                           rrc->carrier.minRXTXTIME,
+                           rrc->configuration.ssb_SubcarrierOffset,
+                           rrc->configuration.pdsch_AntennaPorts,
+                           rrc->configuration.pusch_AntennaPorts,
+                           rrc->configuration.sib1_tda,
+                           rrc->configuration.minRXTXTIME,
                            rrc->carrier.servingcellconfigcommon,
                            &rrc->carrier.mib,
+                           NULL,
                            1, // add_ue flag
                            ue_context_p->ue_id_rnti,
                            ue_context_p->ue_context.secondaryCellGroup);
   } else {
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->carrier.ssb_SubcarrierOffset,
-                           rrc->carrier.pdsch_AntennaPorts,
-                           rrc->carrier.pusch_AntennaPorts,
-                           rrc->carrier.sib1_tda,
-                           rrc->carrier.minRXTXTIME,
+                           rrc->configuration.ssb_SubcarrierOffset,
+                           rrc->configuration.pdsch_AntennaPorts,
+                           rrc->configuration.pusch_AntennaPorts,
+                           rrc->configuration.sib1_tda,
+                           rrc->configuration.minRXTXTIME,
+                           NULL,
                            NULL,
                            NULL,
                            1, // add_ue flag

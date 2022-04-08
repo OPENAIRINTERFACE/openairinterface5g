@@ -86,16 +86,22 @@ void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *
   else {
     target_ss = NR_SearchSpace__searchSpaceType_PR_common;
   }
-  NR_SearchSpace_t *search_space = get_searchspace(scc, bwp ? bwp->bwp_Dedicated : NULL, target_ss);
+  const NR_SIB1_t *sib1 = nrmac->common_channels[0].sib1 ? nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+  NR_SearchSpace_t *search_space = get_searchspace(sib1,
+                                                   scc,
+                                                   bwp ? bwp->bwp_Dedicated : NULL,
+                                                   target_ss);
+
   NR_ControlResourceSet_t *coreset = get_coreset(module_id, scc, bwp ? bwp->bwp_Dedicated : NULL, search_space, target_ss);
   // get coreset symbol "map"
   const uint16_t symb_coreset = (1 << coreset->duration) - 1;
 
-  /* check that TDA index 0 fits into DL and does not overlap CORESET */
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = bwp ?
-      bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
-      scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = get_pdsch_TimeDomainAllocationList(bwp,
+                                                                                            scc,
+                                                                                            sib1);
   AssertFatal(tdaList->list.count >= 1, "need to have at least one TDA for DL slots\n");
+
+  /* check that TDA index 0 fits into DL and does not overlap CORESET */
   const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_DL = tdaList->list.array[0];
   AssertFatal(!tdaP_DL->k0 || *tdaP_DL->k0 == 0,
               "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
@@ -471,76 +477,49 @@ void nr_store_dlsch_buffer(module_id_t module_id,
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
   for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
+
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-
     sched_ctrl->num_total_bytes = 0;
+    sched_ctrl->dl_pdus_total = 0;
 
-    int lcid; 
-    const uint16_t rnti = UE_info->rnti[UE_id];
-    LOG_D(NR_MAC,"UE %d/%x : lcid_mask %x\n",UE_id,rnti,sched_ctrl->lcid_mask);
-    if ((sched_ctrl->lcid_mask&(1<<2)) > 0)
-      sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1] = mac_rlc_status_ind(module_id,
+    /* loop over all activated logical channels */
+    // Note: DL_SCH_LCID_DCCH, DL_SCH_LCID_DCCH1, DL_SCH_LCID_DTCH
+    for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
+
+      const int lcid = sched_ctrl->dl_lc_ids[i];
+      const uint16_t rnti = UE_info->rnti[UE_id];
+      LOG_D(NR_MAC, "In %s: UE %d/%x: LCID %d\n", __FUNCTION__, UE_id, rnti, lcid);
+      start_meas(&RC.nrmac[module_id]->rlc_status_ind);
+      sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                         rnti,
                                                         module_id,
                                                           frame,
                                                         slot,
                                                         ENB_FLAG_YES,
                                                         MBMS_FLAG_NO,
-                                                        DL_SCH_LCID_DCCH1,
+                                                        lcid,
                                                         0,
                                                         0);
-    if ((sched_ctrl->lcid_mask&(1<<1)) > 0)
-       sched_ctrl->rlc_status[DL_SCH_LCID_DCCH] = mac_rlc_status_ind(module_id,
-                                                        rnti,
-                                                        module_id,
-                                                        frame,
-                                                        slot,
-                                                        ENB_FLAG_YES,
-                                                        MBMS_FLAG_NO,
-                                                        DL_SCH_LCID_DCCH,
-                                                        0,
-                                                        0);
-    if ((sched_ctrl->lcid_mask&(1<<4)) > 0) {  
-       start_meas(&RC.nrmac[module_id]->rlc_status_ind);
-       sched_ctrl->rlc_status[DL_SCH_LCID_DTCH] = mac_rlc_status_ind(module_id,
-                                                                    rnti,
-                                                                    module_id,
-                                                                    frame,
-                                                                    slot,
-                                                                    ENB_FLAG_YES,
-                                                                    MBMS_FLAG_NO,
-                                                                    DL_SCH_LCID_DTCH,
-                                                                    0,
-                                                                    0);
-       stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
-    }
-    if(sched_ctrl->rlc_status[DL_SCH_LCID_DCCH].bytes_in_buffer > 0){
-      lcid = DL_SCH_LCID_DCCH;       
-    } 
-    else if (sched_ctrl->rlc_status[DL_SCH_LCID_DCCH1].bytes_in_buffer > 0)
-    {
-      lcid = DL_SCH_LCID_DCCH1;       
-    }else{
-      lcid = DL_SCH_LCID_DTCH;       
-    }
-                                                      
-    sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
-    //later multiplex here. Just select DCCH/SRB before DTCH/DRB
-    sched_ctrl->lcid_to_schedule = lcid;
+      stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
 
-    if (sched_ctrl->num_total_bytes == 0
-        && !sched_ctrl->ta_apply) /* If TA should be applied, give at least one RB */
-      continue;
+      if (sched_ctrl->rlc_status[lcid].bytes_in_buffer == 0)
+        continue;
 
-    LOG_D(NR_MAC,
-          "[%s][%d.%d], %s%d->DLSCH, RLC status %d bytes TA %d\n",
-          __func__,
-          frame,
-          slot,
-          lcid<4?"DCCH":"DTCH",
-          lcid,
-          sched_ctrl->rlc_status[lcid].bytes_in_buffer,
-          sched_ctrl->ta_apply);
+      sched_ctrl->dl_pdus_total += sched_ctrl->rlc_status[lcid].pdus_in_buffer;
+      sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
+      LOG_D(MAC,
+            "[gNB %d][%4d.%2d] %s%d->DLSCH, RLC status for UE %d: %d bytes in buffer, total DL buffer size = %d bytes, %d total PDU bytes, %s TA command\n",
+            module_id,
+            frame,
+            slot,
+            lcid < 4 ? "DCCH":"DTCH",
+            lcid,
+            UE_id,
+            sched_ctrl->rlc_status[lcid].bytes_in_buffer,
+            sched_ctrl->num_total_bytes,
+            sched_ctrl->dl_pdus_total,
+            sched_ctrl->ta_apply ? "send":"do not send");
+    }
   }
 }
 
@@ -552,19 +531,33 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 int UE_id,
                                 int current_harq_pid) {
 
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels->ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+  const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-  NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
 
+  NR_BWP_DownlinkDedicated_t *bwpd =
+      cg &&
+      cg->spCellConfig &&
+      cg->spCellConfig->spCellConfigDedicated ?
+      cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
 
-  NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
-                                &sched_ctrl->active_bwp->bwp_Common->genericParameters :
-                                &RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+  NR_BWP_UplinkDedicated_t *ubwpd =
+      cg &&
+      cg->spCellConfig &&
+      cg->spCellConfig->spCellConfigDedicated &&
+      cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
-  const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+  NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
+                                                             RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
+                                                             sib1);
+
+  const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   int rbStart = 0; // start wrt BWPstart
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
@@ -592,7 +585,15 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
     if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
-      nr_set_pdsch_semi_static(scc, cg, sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, ps);
+      nr_set_pdsch_semi_static(sib1,
+                               scc,
+                               cg,
+                               sched_ctrl->active_bwp,
+                               bwpd,
+                               tda,
+                               ps->nrOfLayers,
+                               sched_ctrl,
+                               ps);
       sched_ctrl->update_pdsch_ps = false;
     }
   } else {
@@ -600,7 +601,15 @@ bool allocate_dl_retransmission(module_id_t module_id,
      * that we have enough resources */
 
     NR_pdsch_semi_static_t temp_ps = *ps;
-    nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
+    nr_set_pdsch_semi_static(sib1,
+                             scc,
+                             UE_info->CellGroup[UE_id],
+                             sched_ctrl->active_bwp,
+                             bwpd,
+                             tda,
+                             ps->nrOfLayers,
+                             sched_ctrl,
+                             &temp_ps);
     while (rbStart < bwpSize &&
            !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
       rbStart++;
@@ -661,7 +670,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
-  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1, 0);
+  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, ubwpd, CCEIndex);
+  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, r_pucch, 0);
   if (alloc<0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -792,15 +802,30 @@ void pf_dl(module_id_t module_id,
     *max = UE_sched.next[*max];
     *p = -1;
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-    NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
+
+    NR_BWP_DownlinkDedicated_t *bwpd =
+        cg &&
+        cg->spCellConfig &&
+        cg->spCellConfig->spCellConfigDedicated ?
+        cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
+
+    NR_BWP_UplinkDedicated_t *ubwpd =
+        cg &&
+        cg->spCellConfig &&
+        cg->spCellConfig->spCellConfigDedicated &&
+        cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+        cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     const uint16_t rnti = UE_info->rnti[UE_id];
-    NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
-      &sched_ctrl->active_bwp->bwp_Common->genericParameters:
-      &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+    const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
 
-    const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+    NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
+                                                               RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
+                                                               sib1);
+
+    const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
+    const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
     int rbStart = 0; // start wrt BWPstart
 
     if (sched_ctrl->available_dl_harq.head < 0) {
@@ -836,7 +861,8 @@ void pf_dl(module_id_t module_id,
 
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
-    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, -1, 0);
+    int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, ubwpd, CCEIndex);
+    const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, r_pucch, 0);
     if (alloc<0) {
       LOG_D(NR_MAC,
             "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
@@ -862,6 +888,10 @@ void pf_dl(module_id_t module_id,
                        CCEIndex,
                        sched_ctrl->aggregation_level);
 
+    /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
+    max_num_ue--;
+    if (max_num_ue < 0) return;
+
     /* MCS has been set above */
 
     const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
@@ -869,10 +899,16 @@ void pf_dl(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-    if (ps->nrOfLayers != layers[UE_id] ||
-        ps->time_domain_allocation != tda ||
-        sched_ctrl->update_pdsch_ps) {
-      nr_set_pdsch_semi_static(scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, bwpd, tda, layers[UE_id], sched_ctrl, ps);
+    if (ps->nrOfLayers != layers[UE_id] || ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
+      nr_set_pdsch_semi_static(sib1,
+                               scc,
+                               UE_info->CellGroup[UE_id],
+                               sched_ctrl->active_bwp,
+                               bwpd,
+                               tda,
+                               layers[UE_id],
+                               sched_ctrl,
+                               ps);
       sched_ctrl->update_pdsch_ps = false;
     }
 
@@ -892,7 +928,12 @@ void pf_dl(module_id_t module_id,
     sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
-    const int oh = 3 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    // Fix me: currently, the RLC does not give us the total number of PDUs
+    // awaiting. Therefore, for the time being, we put a fixed overhead of 12
+    // (for 4 PDUs) and optionally + 2 for TA. Once RLC gives the number of
+    // PDUs, we replace with 3 * numPDUs
+    const int oh = 3 * 4 + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
+    //const int oh = 3 * sched_ctrl->dl_pdus_total + 2 * (frame == (sched_ctrl->ta_frame + 10) % 1024);
     nr_find_nb_rb(sched_pdsch->Qm,
                   sched_pdsch->R,
                   ps->nrOfLayers,
@@ -939,14 +980,21 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  const uint16_t bwpSize = NRRIV2BW(sched_ctrl->active_bwp ?
-				    sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
-				    scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
-				    MAX_BWP_SIZE);
-  const uint16_t BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp ?
-				            sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth:
-				            scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,
-				            MAX_BWP_SIZE);
+  const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+  NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
+                                                             RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
+                                                             sib1);
+
+  NR_BWP_DownlinkDedicated_t *bwpd =
+      UE_info->CellGroup[UE_id] &&
+      UE_info->CellGroup[UE_id]->spCellConfig &&
+      UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated ?
+      UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
+
+  const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
+
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 
   const uint16_t slbitmap = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
@@ -1026,7 +1074,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     UE_info->mac_stats[UE_id].dlsch_current_bytes = 0;
     NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-    NR_BWP_DownlinkDedicated_t *bwpd= cg ? cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP:NULL;
+
+    NR_BWP_DownlinkDedicated_t *bwpd =
+        cg &&
+        cg->spCellConfig &&
+        cg->spCellConfig->spCellConfigDedicated ?
+        cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
 
     /* update TA and set ta_apply every 10 frames.
      * Possible improvement: take the periodicity from input file.
@@ -1105,15 +1158,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
           sched_ctrl->tpc1);
 
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
+    const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+    NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(bwp,
+                                                               RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
+                                                               sib1);
 
-    /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not
-     * exist, create it */
-
-    // BWP
-    NR_BWP_t *genericParameters = bwp ? &bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+    NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space : gNB_mac->sched_ctrlCommon->search_space;
 
     const int bwpid = bwp ? bwp->bwp_Id : 0;
     const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
+
+    /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it */
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][coresetid];
     if (!pdcch_pdu) {
       LOG_D(NR_MAC, "creating pdcch pdu, pdcch_pdu = NULL. \n");
@@ -1144,8 +1199,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int pduindex = gNB_mac->pdu_index[CC_id]++;
     pdsch_pdu->pduIndex = pduindex;
 
-    pdsch_pdu->BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-    pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+    if (coresetid == 0) {
+      pdsch_pdu->BWPSize  = gNB_mac->cset0_bwp_size;
+      pdsch_pdu->BWPStart = gNB_mac->cset0_bwp_start;
+    } else {
+      pdsch_pdu->BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+    }
+
     pdsch_pdu->SubcarrierSpacing = genericParameters->subcarrierSpacing;
 
     pdsch_pdu->CyclicPrefix = genericParameters->cyclicPrefix ? *genericParameters->cyclicPrefix : 0;
@@ -1285,14 +1346,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tpc,
           pucch->timing_indicator);
 
-    const long f = sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats;
-    int dci_format;
-    if (sched_ctrl->search_space) {
-       dci_format = f ? NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-    }
-    else {
-       dci_format = NR_DL_DCI_FORMAT_1_0;
-    }
+    int dci_format = ss && ss->searchSpaceType && ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
+                     NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
+
     const int rnti_type = NR_RNTI_C;
 
     fill_dci_pdu_rel15(scc,
@@ -1302,7 +1358,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
-                       bwp? bwp->bwp_Id : 0);
+                       bwp? bwp->bwp_Id : 0,
+                       gNB_mac->cset0_bwp_size);
 
     LOG_D(NR_MAC,
           "coreset params: FreqDomainResource %llx, start_symbol %d  n_symb %d\n",
@@ -1346,68 +1403,72 @@ void nr_schedule_ue_spec(module_id_t module_id,
       buf += written;
       int size = TBS - written;
       DevAssert(size >= 0);
-
       /* next, get RLC data */
 
-      // const int lcid = DL_SCH_LCID_DTCH;
-      const int lcid = sched_ctrl->lcid_to_schedule;
-      int dlsch_total_bytes = 0;
       start_meas(&gNB_mac->rlc_data_req);
       if (sched_ctrl->num_total_bytes > 0) {
-        tbs_size_t len = 0;
-        while (size > 3) {
-          // we do not know how much data we will get from RLC, i.e., whether it
-          // will be longer than 256B or not. Therefore, reserve space for long header, then
-          // fetch data, then fill real length
-          NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
-          buf += 3;
-          size -= 3;
 
-          /* limit requested number of bytes to what preprocessor specified, or
-           * such that TBS is full */
-          const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+        /* loop over all activated logical channels */
+        for (int i = 0; i < sched_ctrl->dl_lc_num; ++i) {
 
-          len = mac_rlc_data_req(module_id,
-                                 rnti,
-                                 module_id,
-                                 frame,
-                                 ENB_FLAG_YES,
-                                 MBMS_FLAG_NO,
-                                 lcid,
-                                 ndata,
-                                 (char *)buf,
-                                 0,
-                                 0);
+          const int lcid = sched_ctrl->dl_lc_ids[i];
+          if (sched_ctrl->rlc_status[lcid].bytes_in_buffer == 0)
+            continue; // no data for this LC
 
-          LOG_D(NR_MAC,
-                "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
-                frame,
-                slot,
-                rnti,
-                len,
-                lcid < 4 ? "DCCH" : "DTCH",
-                lcid,
-                ndata,
-                size);
-          if (len == 0)
-            break;
+          int dlsch_total_bytes = 0;
+          while (size > 3) {
+            // we do not know how much data we will get from RLC, i.e., whether it
+            // will be longer than 256B or not. Therefore, reserve space for long header, then
+            // fetch data, then fill real length
+            NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
+            buf += 3;
+            size -= 3;
 
-          header->R = 0;
-          header->F = 1;
-          header->LCID = lcid;
-          header->L1 = (len >> 8) & 0xff;
-          header->L2 = len & 0xff;
-          size -= len;
-          buf += len;
-          dlsch_total_bytes += len;
+            /* limit requested number of bytes to what preprocessor specified, or
+             * such that TBS is full */
+            const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer, size);
+            tbs_size_t len = mac_rlc_data_req(module_id,
+                                              rnti,
+                                              module_id,
+                                              frame,
+                                              ENB_FLAG_YES,
+                                              MBMS_FLAG_NO,
+                                              lcid,
+                                              ndata,
+                                              (char *)buf,
+                                              0,
+                                              0);
+
+            LOG_D(NR_MAC,
+                  "%4d.%2d RNTI %04x: %d bytes from %s %d (ndata %d, remaining size %d)\n",
+                  frame,
+                  slot,
+                  rnti,
+                  len,
+                  lcid < 4 ? "DCCH" : "DTCH",
+                  lcid,
+                  ndata,
+                  size);
+            if (len == 0) {
+              /* RLC did not have data anymore, mark buffer as unused */
+              buf -= 3;
+              size += 3;
+              break;
+            }
+
+            header->R = 0;
+            header->F = 1;
+            header->LCID = lcid;
+            header->L1 = (len >> 8) & 0xff;
+            header->L2 = len & 0xff;
+            size -= len;
+            buf += len;
+            dlsch_total_bytes += len;
+          }
+
+          UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
         }
-        if (len == 0) {
-          /* RLC did not have data anymore, mark buffer as unused */
-          buf -= 3;
-          size += 3;
-        }
-      }
-      else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
+      } else if (get_softmodem_params()->phy_test || get_softmodem_params()->do_ra) {
         /* we will need the large header, phy-test typically allocates all
          * resources and fills to the last byte below */
         NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) buf;
@@ -1425,7 +1486,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
         header->L2 = size & 0xff;
         size -= size;
         buf += size;
-        dlsch_total_bytes += size;
       }
       stop_meas(&gNB_mac->rlc_data_req);
 
@@ -1445,7 +1505,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       UE_info->mac_stats[UE_id].dlsch_total_bytes += TBS;
       UE_info->mac_stats[UE_id].dlsch_current_bytes = TBS;
-      UE_info->mac_stats[UE_id].lc_bytes_tx[lcid] += dlsch_total_bytes;
 
       /* save retransmission information */
       harq->sched_pdsch = *sched_pdsch;

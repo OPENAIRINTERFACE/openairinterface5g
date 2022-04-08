@@ -196,8 +196,6 @@ typedef struct {
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_nrmode_t mimo_mode;
-  /// LDPC processing buffers
-  t_nrLDPC_procBuf **p_nrLDPC_procBuf;
   /// Number of code segments 
   uint32_t C;
   /// Number of bits in code segments

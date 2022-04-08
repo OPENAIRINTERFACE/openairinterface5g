@@ -69,7 +69,6 @@ COPY --from=enb-build \
 
 COPY --from=enb-build \
      /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
-     /oai-ran/cmake_targets/ran_build/build/libtcp_bridge_oai.so \
      /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
      /oai-ran/cmake_targets/ran_build/build/liboai_usrpdevif.so \
      /oai-ran/cmake_targets/ran_build/build/libcoding.so \
@@ -84,7 +83,7 @@ COPY --from=enb-build \
 COPY --from=enb-base /usr/local/bin/uhd_find_devices /usr/local/bin
 COPY --from=enb-base \
      /usr/local/lib/libuhd.so.3.15.0 \
-     /usr/local/lib/libprotobuf-c.so.1 \
+     /usr/lib/x86_64-linux-gnu/libprotobuf-c.so.1 \
      /usr/local/lib/
 COPY --from=enb-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
 COPY --from=enb-base \

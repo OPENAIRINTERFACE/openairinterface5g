@@ -127,11 +127,11 @@ void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *_m, int rnti)
 
   for (j = 0; j < 2; j++)
     if (ue->srb[j] != NULL)
-      ue->srb[j]->delete(ue->srb[j]);
+      ue->srb[j]->delete_entity(ue->srb[j]);
 
   for (j = 0; j < 5; j++)
     if (ue->drb[j] != NULL)
-      ue->drb[j]->delete(ue->drb[j]);
+      ue->drb[j]->delete_entity(ue->drb[j]);
 
   free(ue);
 
