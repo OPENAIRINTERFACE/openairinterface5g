@@ -91,12 +91,12 @@
 
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static telnetshell_cmddef_t rfsimu_cmdarray[] = {
-  {"setmodel","<model name> <model type>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
-  {"","",NULL},
+  {"setmodel","<model name> <model type>",(cmdfunc_t)rfsimu_setchanmod_cmd,NULL,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
+  {"","",NULL,NULL,0},
 };
 
 static telnetshell_vardef_t rfsimu_vardef[] = {
-  {"",0,NULL}
+  {"",0,0,NULL}
 };
 pthread_mutex_t Sockmutex;
 

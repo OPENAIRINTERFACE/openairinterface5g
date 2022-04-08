@@ -110,9 +110,8 @@ int dump_phyvars(char *buf, int debug, telnet_printfunc_t prnt) {
 
 
 telnetshell_cmddef_t phy_cmdarray[] = {
-  {"disp","[phycnt,uedump,uestat UE<x>]", dump_phyvars},
-
-  {"","",NULL},
+  {"disp","[phycnt,uedump,uestat UE<x>]", dump_phyvars,NULL,0,NULL},
+  {"","",NULL,NULL,0,NULL},
 };
 
 

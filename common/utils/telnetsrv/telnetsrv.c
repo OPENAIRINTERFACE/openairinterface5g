@@ -90,8 +90,11 @@ int get_phybsize(void) {
 };
 int add_telnetcmd(char *modulename,telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd );
 int setoutput(char *buff, int debug, telnet_printfunc_t prnt);
+int wsetoutput(char *fname, ... );
 int setparam(char *buff, int debug, telnet_printfunc_t prnt);
+int wsetparam(char *pname, ... );
 int history_cmd(char *buff, int debug, telnet_printfunc_t prnt);
+
 
 telnetshell_vardef_t telnet_vardef[] = {
   {"debug",TELNET_VARTYPE_INT32,0,&telnetparams.telnetdbg},
@@ -105,10 +108,10 @@ telnetshell_vardef_t telnet_vardef[] = {
 };
 
 telnetshell_cmddef_t  telnet_cmdarray[] = {
-  {"redirlog","[here,file,off]",setoutput},
-  {"param","[prio]",setparam},
-  {"history","[list,reset]",history_cmd},
-  {"","",NULL},
+  {"redirlog","[here,file,off]",setoutput,wsetoutput,0,NULL},
+  {"param","[prio]",setparam,wsetparam,0,NULL},
+  {"history","[list,reset]",history_cmd,NULL,0,NULL},
+  {"","",NULL,NULL,0,NULL},
 };
 
 
@@ -245,6 +248,11 @@ void redirstd(char *newfname,telnet_printfunc_t prnt ) {
     prnt("ERROR: stderr redir to %s error %s",strerror(errno));
   }
 }
+
+int wsetoutput(char *fname, ... ) {
+  return 0;
+}
+
 int setoutput(char *buff, int debug, telnet_printfunc_t prnt) {
   char cmds[TELNET_MAX_MSGLENGTH/TELNET_CMD_MAXSIZE][TELNET_CMD_MAXSIZE];
   char *logfname;
@@ -280,6 +288,10 @@ int setoutput(char *buff, int debug, telnet_printfunc_t prnt) {
 
   return CMDSTATUS_FOUND;
 } /* setoutput */
+
+int wsetparam(char *pname, ... ) {
+  return 0;
+}
 
 int setparam(char *buff, int debug, telnet_printfunc_t prnt) {
   char cmds[TELNET_MAX_MSGLENGTH/TELNET_CMD_MAXSIZE][TELNET_CMD_MAXSIZE];

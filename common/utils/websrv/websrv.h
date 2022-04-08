@@ -41,7 +41,7 @@
 /* websrv_params_t is an internal structure storing all the current parameters and */
 /* global variables used by the web server                                        */
 typedef struct {
-	 struct _u_instance *instance;        // ulfius (web server) instance
+	 struct _u_instance instance;         // ulfius (web server) instance
      unsigned int dbglvl;                 // debug level of the server
      int priority;                        // server running priority
      unsigned int   listenport;           // ip port the telnet server is listening on
