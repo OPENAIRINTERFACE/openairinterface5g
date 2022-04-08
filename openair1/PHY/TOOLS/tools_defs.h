@@ -272,58 +272,64 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
   SZ_DEF(36864) \
   SZ_DEF(49152) \
   SZ_DEF(73728) \
-  SZ_DEF(98304) 
+  SZ_DEF(98304)
 
 #ifdef OAIDFTS_MAIN
-typedef  void(*adftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);  
-typedef  void(*aidftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);     
+typedef  void(*adftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);
+typedef  void(*aidftfunc_t)(int16_t *sigF,int16_t *sig,unsigned char scale_flag);
 
 #define SZ_FUNC(Sz) void dft ## Sz(int16_t *x,int16_t *y,uint8_t scale_flag);
 
-  FOREACH_DFTSZ(SZ_FUNC)
+FOREACH_DFTSZ(SZ_FUNC)
 
 #define SZ_iFUNC(Sz) void idft ## Sz(int16_t *x,int16_t *y,uint8_t scale_flag);
 
-  FOREACH_IDFTSZ(SZ_iFUNC)
+FOREACH_IDFTSZ(SZ_iFUNC)
 
 #else
-  typedef  void(*dftfunc_t)(uint8_t sizeidx,int16_t *sigF,int16_t *sig,unsigned char scale_flag);  
-  typedef  void(*idftfunc_t)(uint8_t sizeidx,int16_t *sigF,int16_t *sig,unsigned char scale_flag);  
+typedef  void(*dftfunc_t)(uint8_t sizeidx,int16_t *sigF,int16_t *sig,unsigned char scale_flag);
+typedef  void(*idftfunc_t)(uint8_t sizeidx,int16_t *sigF,int16_t *sig,unsigned char scale_flag);
 #  ifdef OAIDFTS_LOADER
-  dftfunc_t dft;
-  idftfunc_t idft;
+dftfunc_t dft;
+idftfunc_t idft;
 #  else
-  extern dftfunc_t dft;
-  extern idftfunc_t idft;
-  extern int load_dftslib(void);
+extern dftfunc_t dft;
+extern idftfunc_t idft;
+extern int load_dftslib(void);
 #  endif
 #endif
-  
+
 #define SZ_ENUM(Sz) DFT_ ## Sz,
 
-  typedef enum dft_size_idx {
-    FOREACH_DFTSZ(SZ_ENUM)
-    DFT_SIZE_IDXTABLESIZE
+typedef enum dft_size_idx {
+  FOREACH_DFTSZ(SZ_ENUM)
+  DFT_SIZE_IDXTABLESIZE
 }  dft_size_idx_t;
-  
+
 #define SZ_iENUM(Sz) IDFT_ ## Sz,
 
-  typedef enum idft_size_idx {
+typedef enum idft_size_idx {
   FOREACH_IDFTSZ(SZ_iENUM)
   IDFT_SIZE_IDXTABLESIZE
 }  idft_size_idx_t;
-  
+
 #ifdef OAIDFTS_MAIN
-  
+
 #define SZ_PTR(Sz) {dft ## Sz,Sz},
-  struct {adftfunc_t func; int size;} dft_ftab[]={
-    FOREACH_DFTSZ(SZ_PTR)
-    };
+struct {
+  adftfunc_t func;
+  int size;
+} dft_ftab[]= {
+  FOREACH_DFTSZ(SZ_PTR)
+};
 
 #define SZ_iPTR(Sz)  {idft ## Sz,Sz},
- struct {adftfunc_t func; int size;} idft_ftab[]={
-    FOREACH_IDFTSZ(SZ_iPTR)
-    };
+struct {
+  adftfunc_t func;
+  int size;
+} idft_ftab[]= {
+  FOREACH_IDFTSZ(SZ_iPTR)
+};
 
 #endif
 
@@ -378,7 +384,7 @@ int32_t add_real_vector64(int16_t *x,
                           uint32_t N);
 
 int32_t sub_real_vector64(int16_t *x,
-                          int16_t* y,
+                          int16_t *y,
                           int16_t *z,
                           uint32_t N);
 
@@ -435,7 +441,7 @@ int32_t signal_energy_amp_shift(int32_t *input, uint32_t length);
 /*!\fn int32_t signal_energy(int *,uint32_t);
 \brief Computes the signal energy per subcarrier
 */
-int32_t subcarrier_energy(int32_t *,uint32_t, int32_t* subcarrier_energy, uint16_t rx_power_correction);
+int32_t subcarrier_energy(int32_t *,uint32_t, int32_t *subcarrier_energy, uint16_t rx_power_correction);
 #endif
 
 /*!\fn int32_t signal_energy_nodc(int32_t *,uint32_t);
