@@ -279,9 +279,18 @@ int nr_process_mac_pdu(module_id_t module_idP,
         case UL_SCH_LCID_L_TRUNCATED_BSR:
         	//38.321 section 6.1.3.1
         	//variable length
+                /* Several checks have been added to this function to
+                   ensure that the casting of the pduP is possible. There seems
+                   to be a partial PDU at the end of this buffer, so here
+                   we gracefully ignore that by returning 0. See:
+                   https://gitlab.eurecom.fr/oai/openairinterface5g/-/issues/534 */
+                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                        return 0;
         	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
         	mac_subheader_len = 2;
         	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                                return 0;
         		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
         		mac_subheader_len = 3;
         	}
@@ -358,9 +367,13 @@ int nr_process_mac_pdu(module_id_t module_idP,
         case UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT:
         	//38.321 section 6.1.3.9
         	//  varialbe length
+                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                        return 0;
         	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
         	mac_subheader_len = 2;
         	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                                return 0;
         		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
         		mac_subheader_len = 3;
         	}
@@ -370,9 +383,13 @@ int nr_process_mac_pdu(module_id_t module_idP,
         case UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT:
         	//38.321 section 6.1.3.9
         	//  varialbe length
+                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                        return 0;
         	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
         	mac_subheader_len = 2;
         	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                                return 0;
         		mac_ce_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
         		mac_subheader_len = 3;
         	}
@@ -386,8 +403,12 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
         case UL_SCH_LCID_SRB1:
         case UL_SCH_LCID_SRB2:
+          if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                return 0;
           if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
             //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
+            if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                  return 0;
             mac_subheader_len = 3;
             mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *) pduP)->L1 & 0x7f) << 8)
                 | ((uint16_t)((NR_MAC_SUBHEADER_LONG *) pduP)->L2 & 0xff);
@@ -471,8 +492,12 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
         case UL_SCH_LCID_DTCH:
           //  check if LCID is valid at current time.
+          if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                return 0;
           if (((NR_MAC_SUBHEADER_SHORT *)pduP)->F) {
             // mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
+            if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                  return 0;
             mac_subheader_len = 3;
             mac_sdu_len = ((uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L1 & 0x7f) << 8)
                           | ((uint16_t)((NR_MAC_SUBHEADER_LONG *)pduP)->L2 & 0xff);
@@ -1783,6 +1808,9 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                 future_ul_tti_req->Slot,
                 sched_pusch->frame,
                 sched_pusch->slot);
+    AssertFatal(future_ul_tti_req->n_pdus <
+                sizeof(future_ul_tti_req->pdus_list) / sizeof(future_ul_tti_req->pdus_list[0]),
+                "Invalid future_ul_tti_req->n_pdus %d\n", future_ul_tti_req->n_pdus);
     future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
     future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
     nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;

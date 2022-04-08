@@ -37,16 +37,11 @@
    \param p_lut Pointer to decoder LUTs
    \param Z Lifting size
 */
-static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
+static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t* bnProcBufRes, int8_t* llrProcBuf, int8_t* llrRes, uint16_t Z)
 {
     const uint8_t*  lut_numBnInBnGroups = p_lut->numBnInBnGroups;
     const uint32_t* lut_startAddrBnGroups = p_lut->startAddrBnGroups;
     const uint16_t* lut_startAddrBnGroupsLlr = p_lut->startAddrBnGroupsLlr;
-
-    int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
-    int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
-    int8_t* llrRes       = p_procBuf->llrRes;
-    int8_t* llrProcBuf   = p_procBuf->llrProcBuf;
 
     __m128i* p_bnProcBuf;
     __m256i* p_bnProcBufRes;
@@ -1681,7 +1676,7 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_proc
    \param p_lut Pointer to decoder LUTs
    \param Z Lifting size
 */
-static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
+static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t* bnProcBufRes, int8_t* llrRes, uint16_t Z)
 {
     // BN Processing calculating the values to send back to the CNs for next iteration
     // bnProcBufRes contains the sum of all edges to each BN at the start of each group
@@ -1689,10 +1684,6 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBu
     const uint8_t*  lut_numBnInBnGroups = p_lut->numBnInBnGroups;
     const uint32_t* lut_startAddrBnGroups = p_lut->startAddrBnGroups;
     const uint16_t* lut_startAddrBnGroupsLlr = p_lut->startAddrBnGroupsLlr;
-
-    int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
-    int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
-    int8_t* llrRes       = p_procBuf->llrRes;
 
     __m256i* p_bnProcBuf;
     __m256i* p_bnProcBufRes;
