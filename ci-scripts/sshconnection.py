@@ -56,6 +56,7 @@ class SSHConnection():
 		self.picocom_closure = True
 
 	def open(self, ipaddress, username, password):
+		prompt = "#" if username == "root" else "\$"
 		count = 0
 		connect_status = False
 		while count < 4:
@@ -68,7 +69,7 @@ class SSHConnection():
 				self.sshresponse = self.ssh.expect(['password:', username + '@'])
 				if self.sshresponse == 0:
 					self.ssh.sendline(password)
-				self.sshresponse = self.ssh.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+				self.sshresponse = self.ssh.expect([prompt, 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 				if self.sshresponse == 0:
 					count = 10
 					connect_status = True
@@ -76,7 +77,7 @@ class SSHConnection():
 					logging.debug('self.sshresponse = ' + str(self.sshresponse))
 			elif self.sshresponse == 1:
 				self.ssh.sendline(password)
-				self.sshresponse = self.ssh.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+				self.sshresponse = self.ssh.expect([prompt, 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 				if self.sshresponse == 0:
 					count = 10
 					connect_status = True
@@ -84,7 +85,7 @@ class SSHConnection():
 					logging.debug('self.sshresponse = ' + str(self.sshresponse))
 			elif self.sshresponse == 2:
 				# Checking if we are really on the remote client defined by its IP address
-				self.command('stdbuf -o0 ifconfig | egrep --color=never "inet addr:|inet "', '\$', 5)
+				self.command('stdbuf -o0 ifconfig | egrep --color=never "inet addr:|inet "', prompt, 5)
 				result = re.search(str(ipaddress), str(self.ssh.before))
 				if result is None:
 					self.close()
@@ -100,7 +101,7 @@ class SSHConnection():
 				time.sleep(1)
 			count += 1
 		if connect_status:
-			self.command('unset HISTFILE', '\$', 5, silent=True)
+			self.command('unset HISTFILE', prompt, 5, silent=True)
 		else:
 			sys.exit('SSH Connection Failed')
 		self.ipaddress = ipaddress

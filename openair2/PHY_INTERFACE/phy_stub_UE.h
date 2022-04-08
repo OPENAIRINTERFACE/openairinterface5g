@@ -24,6 +24,7 @@
 #define NUM_MCS 28
 #define NUM_SINR 100
 #define NUM_BLER_COL 13
+#define LTE_NUM_LAYER 1
 
 // this mutex is used to set multiple UE's UL value in L2 FAPI simulator.
 extern FILL_UL_INFO_MUTEX_t fill_ul_mutex;
@@ -126,7 +127,9 @@ void handle_nfapi_ul_pdu_UE_MAC(module_id_t Mod_id,
 typedef struct phy_channel_params_t
 {
     uint16_t sfn_sf;
-    float sinr;
+    uint16_t message_id;
+    uint16_t nb_of_sinrs;
+    float sinr[LTE_NUM_LAYER];
     // Incomplete, need all channel parameters
 } phy_channel_params_t;
 
