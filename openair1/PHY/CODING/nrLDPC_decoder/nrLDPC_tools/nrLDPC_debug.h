@@ -87,38 +87,38 @@ static inline void nrLDPC_initFile(const char* fileName)
    \brief Writes data of predefined buffers to file
    \param buffer Enum of buffer name to write
 */
-static inline void nrLDPC_debug_writeBuffer2File(e_nrLDPC_buffers buffer, t_nrLDPC_procBuf* p_procBuf)
+static inline void nrLDPC_debug_writeBuffer2File(e_nrLDPC_buffers buffer, int8_t* p_buffer)
 {
     switch (buffer)
     {
     case nrLDPC_buffers_LLR_PROC:
     {
-        nrLDPC_writeFile("llrProcBuf.txt", p_procBuf->llrProcBuf, NR_LDPC_MAX_NUM_LLR);
+        nrLDPC_writeFile("llrProcBuf.txt", p_buffer, NR_LDPC_MAX_NUM_LLR);
         break;
     }
     case nrLDPC_buffers_CN_PROC:
     {
-        nrLDPC_writeFile("cnProcBuf.txt", p_procBuf->cnProcBuf, NR_LDPC_SIZE_CN_PROC_BUF);
+        nrLDPC_writeFile("cnProcBuf.txt", p_buffer, NR_LDPC_SIZE_CN_PROC_BUF);
         break;
     }
     case nrLDPC_buffers_CN_PROC_RES:
     {
-        nrLDPC_writeFile("cnProcBufRes.txt", p_procBuf->cnProcBufRes, NR_LDPC_SIZE_CN_PROC_BUF);
+        nrLDPC_writeFile("cnProcBufRes.txt", p_buffer, NR_LDPC_SIZE_CN_PROC_BUF);
         break;
     }
     case nrLDPC_buffers_BN_PROC:
     {
-        nrLDPC_writeFile("bnProcBuf.txt", p_procBuf->bnProcBuf, NR_LDPC_SIZE_BN_PROC_BUF);
+        nrLDPC_writeFile("bnProcBuf.txt", p_buffer, NR_LDPC_SIZE_BN_PROC_BUF);
         break;
     }
     case nrLDPC_buffers_BN_PROC_RES:
     {
-        nrLDPC_writeFile("bnProcBufRes.txt", p_procBuf->bnProcBufRes, NR_LDPC_SIZE_BN_PROC_BUF);
+        nrLDPC_writeFile("bnProcBufRes.txt", p_buffer, NR_LDPC_SIZE_BN_PROC_BUF);
         break;
     }
     case nrLDPC_buffers_LLR_RES:
     {
-        nrLDPC_writeFile("llrRes.txt", p_procBuf->llrRes, NR_LDPC_MAX_NUM_LLR);
+        nrLDPC_writeFile("llrRes.txt", p_buffer, NR_LDPC_MAX_NUM_LLR);
         break;
     }
     }

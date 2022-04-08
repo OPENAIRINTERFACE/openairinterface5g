@@ -427,6 +427,7 @@ typedef struct NRRrcConfigurationReq_s {
   bool                    force_256qam_off;
   int                     pusch_TargetSNRx10;
   int                     pucch_TargetSNRx10;
+  bool                    enable_sdap;
 } gNB_RrcConfigurationReq;
 
 typedef struct NRDuDlReq_s {

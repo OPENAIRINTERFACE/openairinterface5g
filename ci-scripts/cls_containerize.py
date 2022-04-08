@@ -93,6 +93,7 @@ class Containerize():
 		self.allImagesSize = {}
 		self.collectInfo = {}
 
+		self.deployedContainers = []
 		self.tsharkStarted = False
 		self.pingContName = ''
 		self.pingOptions = ''
@@ -682,12 +683,28 @@ class Containerize():
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps -a'
 		count = 0
 		healthy = 0
+		newContainers = []
 		while (count < 10):
 			count += 1
 			containerStatus = []
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			healthy = 0
 			for state in deployStatus.split('\n'):
+				res = re.search('Name|----------', state)
+				if res is not None:
+					continue
+				if len(state) == 0:
+					continue
+				res = re.search('^(?P<container_name>[a-zA-Z0-9\-\_]+) ', state)
+				if res is not None:
+					cName = res.group('container_name')
+					found = False
+					for alreadyDeployed in self.deployedContainers:
+						if cName == alreadyDeployed:
+							found = True
+					if not found:
+						newContainers.append(cName)
+						self.deployedContainers.append(cName)
 				if re.search('Up \(healthy\)', state) is not None:
 					healthy += 1
 				if re.search('rfsim4g-db-init.*Exit 0', state) is not None:
@@ -698,16 +715,33 @@ class Containerize():
 			else:
 				time.sleep(10)
 
+		imagesInfo = ''
+		for newCont in newContainers:
+			cmd = 'docker inspect -f "{{.Config.Image}}" ' + newCont
+			imageName = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+			imageName = str(imageName).strip()
+			cmd = 'docker image inspect --format "{{.RepoTags}}\t{{.Size}}\t{{.Created}}" ' + imageName
+			imagesInfo += subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">\n'
+		for imageInfo in imagesInfo.split('\n'):
+			html_cell += imageInfo[:-11] + '\n'
+		html_cell += '\n'
+		for cState in containerStatus:
+			html_cell += cState + '\n'
+		html_cell += '</pre>'
+		html_queue.put(html_cell)
 		if count == 100 and healthy == self.nb_healthy[0]:
 			if self.tsharkStarted == False:
 				logging.debug('Starting tshark on public network')
 				self.CaptureOnDockerNetworks()
-			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRowQueue('n/a', 'OK', 1, html_queue)
 			for cState in containerStatus:
 				logging.debug(cState)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
 		else:
-			HTML.CreateHtmlTestRow('Could not deploy in time', 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRowQueue('Could not deploy in time', 'KO', 1, html_queue)
 			for cState in containerStatus:
 				logging.debug(cState)
 			logging.error('\u001B[1m Deploying OAI Object(s) FAILED\u001B[0m')
@@ -726,10 +760,12 @@ class Containerize():
 			cmd = 'sudo nohup tshark -f "(host 192.168.61.11 and icmp) or (not host 192.168.61.11 and not host 192.168.61.30 and not arp and not port 53 and not port 2152)"'
 		elif re.search('5g.*rfsimulator', self.yamlPath[0]) is not None:
 			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not host 192.168.71.150 and not arp and not port 53 and not port 2152 and not port 2153)"'
+		elif re.search('5g_l2sim', self.yamlPath[0]) is not None:
+			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not arp and not port 53 and not port 2152 and not port 2153)"'
 		else:
 			return
 		for name in networkNames.split('\n'):
-			if re.search('rfsim', name) is not None:
+			if re.search('rfsim', name) is not None or re.search('l2sim', name) is not None:
 				cmd += ' -i ' + name
 		cmd += ' -w /tmp/capture_'
 		ymlPath = self.yamlPath[0].split('/')
@@ -781,7 +817,7 @@ class Containerize():
 			# Analyzing log file(s)!
 			listOfPossibleRanContainers = ['enb', 'gnb', 'cu', 'du']
 			for container in listOfPossibleRanContainers:
-				filename = self.yamlPath[0] + '/rfsim?g-oai-' + container + '.log'
+				filename = self.yamlPath[0] + '/*-oai-' + container + '.log'
 				cmd = 'ls ' + filename
 				containerStatus = True
 				try:
@@ -803,7 +839,7 @@ class Containerize():
 
 			listOfPossibleUeContainers = ['lte-ue*', 'nr-ue*']
 			for container in listOfPossibleUeContainers:
-				filename = self.yamlPath[0] + '/rfsim?g-oai-' + container + '.log'
+				filename = self.yamlPath[0] + '/*-oai-' + container + '.log'
 				cmd = 'ls ' + filename
 				containerStatus = True
 				try:
@@ -851,6 +887,7 @@ class Containerize():
 			logging.error('\u001B[1m Undeploying OAI Object(s) FAILED\u001B[0m')
 			return
 
+		self.deployedContainers = []
 		# Cleaning any created tmp volume
 		cmd = 'docker volume prune --force || true'
 		logging.debug(cmd)
@@ -862,6 +899,40 @@ class Containerize():
 		else:
 			HTML.CreateHtmlTestRow('n/a', 'KO', CONST.ALL_PROCESSES_OK)
 			logging.info('\u001B[1m Undeploying OAI Object(s) FAIL\u001B[0m')
+
+	def StatsFromGenObject(self, HTML):
+		self.exitStatus = 0
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
+
+		# if the containers are running, recover the logs!
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
+		logging.debug(cmd)
+		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+		cmd = 'docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}" '
+		anyLogs = False
+		for state in deployStatus.split('\n'):
+			res = re.search('Name|----------', state)
+			if res is not None:
+				continue
+			if len(state) == 0:
+				continue
+			res = re.search('^(?P<container_name>[a-zA-Z0-9\-\_]+) ', state)
+			if res is not None:
+				anyLogs = True
+				cmd += res.group('container_name') + ' '
+		message = ''
+		if anyLogs:
+			logging.debug(cmd)
+			stats = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+			for statLine in stats.split('\n'):
+				logging.debug(statLine)
+				message += statLine + '\n'
+
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">\n' + message + '</pre>'
+		html_queue.put(html_cell)
+		HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', 1, html_queue)
 
 	def PingFromContainer(self, HTML, RAN, UE):
 		self.exitStatus = 0

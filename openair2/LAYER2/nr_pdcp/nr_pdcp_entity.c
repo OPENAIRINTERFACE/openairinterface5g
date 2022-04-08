@@ -51,7 +51,12 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
 
   if (entity->type != NR_PDCP_SRB && !(buffer[0] & 0x80)) {
     LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
+    /* TODO: This is something of a hack. The most significant bit
+       in buffer[0] should be 1 if the packet is a data packet. We are
+       processing malformed data packets if the most significant bit
+       is 0. Rather than exit(1), this hack allows us to continue for now.
+       We need to investigate why this hack is neccessary. */
+    buffer[0] |= 128;
   }
 
   if (entity->sn_size == 12) {
@@ -368,8 +373,8 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
   ret->set_security = nr_pdcp_entity_set_security;
   ret->set_time     = nr_pdcp_entity_set_time;
 
-  ret->delete = nr_pdcp_entity_delete;
-
+  ret->delete_entity = nr_pdcp_entity_delete;
+  
   ret->deliver_sdu = deliver_sdu;
   ret->deliver_sdu_data = deliver_sdu_data;
 
