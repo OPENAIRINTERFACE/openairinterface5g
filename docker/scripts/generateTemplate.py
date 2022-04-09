@@ -23,6 +23,7 @@
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
+import glob
 import re
 import yaml
 import os
@@ -33,7 +34,8 @@ def main():
   #read yaml input parameters
   f = open(f'{sys.argv[1]}',)
   data = yaml.full_load(f)
-  dir = os.listdir(f'{data[0]["paths"]["source_dir"]}')
+  initial_path = f'{data[0]["paths"]["source_dir"]}'
+  dir = glob.glob(initial_path + '/**/*.conf', recursive=True)
 
   #identify configs, read and replace corresponding values
   for config in data[1]["configurations"]:
@@ -42,7 +44,10 @@ def main():
     print('================================================')
     print('filePrefix = ' + filePrefix)
     print('outputfilename = ' + outputfilename)
+    found = False
     for inputfile in dir:
+      if found:
+        continue
       if inputfile.find(filePrefix) >=0:
         prefix_outputfile = {"cu.band7.tm1.25PRB": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}', 
                              "du.band7.tm1.25PRB": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
@@ -58,10 +63,13 @@ def main():
                              "gnb.sa.band66.fr1.106PRB.usrpn300.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gNB_SA_CU.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gNB_SA_DU.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+                             "proxy_gnb.band78.sa.fr1.106PRB.usrpn310.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+                             "proxy_nr-ue.nfapi.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue.nfapi": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue_sim_ci": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}'
                              }
         print('inputfile = ' + inputfile)
+        found = True
         if filePrefix in prefix_outputfile:
           outputfile1 = prefix_outputfile[filePrefix]  
 
@@ -69,7 +77,7 @@ def main():
         if not os.path.exists(directory):
           os.makedirs(directory, exist_ok=True)
 
-        with open(f'{data[0]["paths"]["source_dir"]}{inputfile}', mode='r') as inputfile, \
+        with open(f'{inputfile}', mode='r') as inputfile, \
              open(outputfile1, mode='w') as outputfile:
           for line in inputfile:
             count = 0

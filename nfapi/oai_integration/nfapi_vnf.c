@@ -243,13 +243,13 @@ void oai_create_gnb(void) {
 
   if (RC.gNB == NULL) {
     RC.gNB = (PHY_VARS_gNB **) calloc(1, sizeof(PHY_VARS_gNB *));
-    LOG_I(PHY,"gNB L1 structure RC.gNB allocated @ %p\n",RC.gNB);
+    LOG_D(PHY,"gNB L1 structure RC.gNB allocated @ %p\n",RC.gNB);
   }
 
 
   if (RC.gNB[0] == NULL) {
     RC.gNB[0] = (PHY_VARS_gNB *) calloc(1, sizeof(PHY_VARS_gNB));
-    LOG_I(PHY,"[nr-gnb.c] gNB structure RC.gNB[%d] allocated @ %p\n",0,RC.gNB[0]);
+    LOG_D(PHY,"[nr-gnb.c] gNB structure RC.gNB[%d] allocated @ %p\n",0,RC.gNB[0]);
   }
   
   PHY_VARS_gNB *gNB = RC.gNB[0];
@@ -491,7 +491,7 @@ int wake_gNB_rxtx(PHY_VARS_gNB *gNB, uint16_t sfn, uint16_t slot) {
   L1_proc->frame_tx     = (L1_proc->slot_rx > (19-gNB->if_inst->sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
   L1_proc->slot_tx      = (L1_proc->slot_rx + gNB->if_inst->sl_ahead)%20;
 
-  //LOG_I(PHY, "sfn/sf:%d%d proc[rx:%d%d] rx:%d%d] About to wake rxtx thread\n\n", sfn, slot, proc->frame_rx, proc->slot_rx, L1_proc->frame_rx, L1_proc->slot_rx);
+  //LOG_D(PHY, "sfn/sf:%d%d proc[rx:%d%d] rx:%d%d] About to wake rxtx thread\n\n", sfn, slot, proc->frame_rx, proc->slot_rx, L1_proc->frame_rx, L1_proc->slot_rx);
   //NFAPI_TRACE(NFAPI_TRACE_INFO, "\nEntering wake_gNB_rxtx sfn %d slot %d\n",L1_proc->frame_rx,L1_proc->slot_rx);
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {
@@ -757,7 +757,7 @@ int phy_nr_rach_indication(nfapi_nr_rach_indication_t *ind)
 int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
 {
 
-  LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u\n",
+  LOG_D(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u\n",
           __FUNCTION__,ind->sfn, ind->slot, ind->num_ucis);
   if(NFAPI_MODE == NFAPI_MODE_VNF)
   {
@@ -787,12 +787,12 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
           if (ind_pdu->harq) {
             uci_ind_pdu->harq = CALLOC(1, sizeof(*uci_ind_pdu->harq));
             AssertFatal(uci_ind_pdu->harq != NULL, "Memory not allocated for uci_ind_pdu->harq in phy_nr_uci_indication.");
-
             *uci_ind_pdu->harq = *ind_pdu->harq;
+
             uci_ind_pdu->harq->harq_list = CALLOC(uci_ind_pdu->harq->num_harq, sizeof(*uci_ind_pdu->harq->harq_list));
             AssertFatal(uci_ind_pdu->harq->harq_list != NULL, "Memory not allocated for uci_ind_pdu->harq->harq_list in phy_nr_uci_indication.");
             for (int j = 0; j < uci_ind_pdu->harq->num_harq; j++)
-                uci_ind_pdu->harq->harq_list[j].harq_value =  ind_pdu->harq->harq_list[j].harq_value;
+                uci_ind_pdu->harq->harq_list[j].harq_value = ind_pdu->harq->harq_list[j].harq_value;
           }
           break;
         }
@@ -800,21 +800,27 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
         case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
           nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_ind_pdu = &uci_ind->uci_list[i].pucch_pdu_format_2_3_4;
           nfapi_nr_uci_pucch_pdu_format_2_3_4_t *ind_pdu = &ind->uci_list[i].pucch_pdu_format_2_3_4;
-          
-          uci_ind_pdu->harq.harq_payload = CALLOC(1, sizeof(*uci_ind_pdu->harq.harq_payload));
-          AssertFatal(uci_ind_pdu->harq.harq_payload != NULL, "Memory not allocated for uci_ind_pdu->harq.harq_payload in phy_nr_uci_indication.");
-          *uci_ind_pdu->harq.harq_payload =  *ind_pdu->harq.harq_payload;
-
-
-          uci_ind_pdu->csi_part1.csi_part1_payload = CALLOC(1, sizeof(*uci_ind_pdu->csi_part1.csi_part1_payload));
-          AssertFatal(uci_ind_pdu->csi_part1.csi_part1_payload != NULL, "Memory not allocated for uci_ind_pdu->csi_part1.csi_part1_payload in phy_nr_uci_indication.");
-          *uci_ind_pdu->csi_part1.csi_part1_payload =  *ind_pdu->csi_part1.csi_part1_payload;
-
-
-          uci_ind_pdu->csi_part2.csi_part2_payload = CALLOC(1, sizeof(*uci_ind_pdu->csi_part2.csi_part2_payload));
-          AssertFatal(uci_ind_pdu->csi_part2.csi_part2_payload != NULL, "Memory not allocated for uci_ind_pdu->csi_part2.csi_part2_payload in phy_nr_uci_indication.");
-          *uci_ind_pdu->csi_part2.csi_part2_payload =  *ind_pdu->csi_part2.csi_part2_payload;
-
+          *uci_ind_pdu = *ind_pdu;
+          if (ind_pdu->harq.harq_payload) {
+            uci_ind_pdu->harq.harq_payload = CALLOC(1, sizeof(*uci_ind_pdu->harq.harq_payload));
+            AssertFatal(uci_ind_pdu->harq.harq_payload != NULL, "Memory not allocated for uci_ind_pdu->harq.harq_payload in phy_nr_uci_indication.");
+            *uci_ind_pdu->harq.harq_payload = *ind_pdu->harq.harq_payload;
+          }
+          if (ind_pdu->sr.sr_payload) {
+            uci_ind_pdu->sr.sr_payload = CALLOC(1, sizeof(*uci_ind_pdu->sr.sr_payload));
+            AssertFatal(uci_ind_pdu->sr.sr_payload != NULL, "Memory not allocated for uci_ind_pdu->sr.sr_payload in phy_nr_uci_indication.");
+            *uci_ind_pdu->sr.sr_payload = *ind_pdu->sr.sr_payload;
+          }
+          if (ind_pdu->csi_part1.csi_part1_payload) {
+            uci_ind_pdu->csi_part1.csi_part1_payload = CALLOC(1, sizeof(*uci_ind_pdu->csi_part1.csi_part1_payload));
+            AssertFatal(uci_ind_pdu->csi_part1.csi_part1_payload != NULL, "Memory not allocated for uci_ind_pdu->csi_part1.csi_part1_payload in phy_nr_uci_indication.");
+            *uci_ind_pdu->csi_part1.csi_part1_payload = *ind_pdu->csi_part1.csi_part1_payload;
+          }
+          if (ind_pdu->csi_part2.csi_part2_payload) {
+            uci_ind_pdu->csi_part2.csi_part2_payload = CALLOC(1, sizeof(*uci_ind_pdu->csi_part2.csi_part2_payload));
+            AssertFatal(uci_ind_pdu->csi_part2.csi_part2_payload != NULL, "Memory not allocated for uci_ind_pdu->csi_part2.csi_part2_payload in phy_nr_uci_indication.");
+            *uci_ind_pdu->csi_part2.csi_part2_payload = *ind_pdu->csi_part2.csi_part2_payload;
+          }
           break;
         }
       }
@@ -944,7 +950,7 @@ int phy_crc_indication(struct nfapi_vnf_p7_config *config, nfapi_crc_indication_
 
 int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
 
-  LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u\n",
+  LOG_D(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u\n",
           __FUNCTION__,ind->sfn, ind->slot, ind->number_crcs);
 
   if(NFAPI_MODE == NFAPI_MODE_VNF)
@@ -967,7 +973,7 @@ int phy_nr_crc_indication(nfapi_nr_crc_indication_t *ind) {
       crc_ind->crc_list[j].tb_crc_status = ind->crc_list[j].tb_crc_status;
       crc_ind->crc_list[j].timing_advance = ind->crc_list[j].timing_advance;
       crc_ind->crc_list[j].ul_cqi = ind->crc_list[j].ul_cqi;
-      LOG_I(NR_MAC, "Received crc_ind.harq_id = %d for %d index SFN SLot %u %u with rnti %x\n",
+      LOG_D(NR_MAC, "Received crc_ind.harq_id = %d for %d index SFN SLot %u %u with rnti %x\n",
                     ind->crc_list[j].harq_id, j, ind->sfn, ind->slot, ind->crc_list[j].rnti);
     }
     if (!put_queue(&gnb_crc_ind_queue, crc_ind))
@@ -1063,7 +1069,7 @@ int phy_rx_indication(struct nfapi_vnf_p7_config *config, nfapi_rx_indication_t 
 
 int phy_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
 
-  LOG_I(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u, and pdu %p\n",
+  LOG_D(NR_MAC, "In %s() NFAPI SFN/SF: %d/%d number_of_pdus :%u, and pdu %p\n",
           __FUNCTION__,ind->sfn, ind->slot, ind->number_of_pdus, ind->pdu_list[0].pdu);
 
   if(NFAPI_MODE == NFAPI_MODE_VNF)
@@ -1165,7 +1171,7 @@ static void analyze_cqi_pdus_for_duplicates(nfapi_cqi_indication_t *ind)
   {
     nfapi_cqi_indication_pdu_t *src_pdu = &ind->cqi_indication_body.cqi_pdu_list[i];
 
-    LOG_I(MAC, "CQI_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
+    LOG_D(MAC, "CQI_IND[PDU:%d][rnti:%x cqi:%d channel:%d]\n", i, src_pdu->rx_ue_information.rnti,
           src_pdu->ul_cqi_information.ul_cqi, src_pdu->ul_cqi_information.channel);
 
     for (int j = i + 1; j < num_cqis; j++)
@@ -1887,7 +1893,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   dl_config_req->header.message_id = NFAPI_DL_CONFIG_REQUEST;
-  LOG_I(PHY, "[VNF] %s() DL_CONFIG_REQ sfn_sf:%d_%d number_of_pdus:%d\n", __FUNCTION__,
+  LOG_D(PHY, "[VNF] %s() DL_CONFIG_REQ sfn_sf:%d_%d number_of_pdus:%d\n", __FUNCTION__,
         NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_config_req->dl_config_request_body.number_pdu);
   if (dl_config_req->dl_config_request_body.number_pdu > 0)
   {
@@ -1898,7 +1904,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
             {
                 uint16_t dl_rnti = dl_config_req->dl_config_request_body.dl_config_pdu_list[i].dlsch_pdu.dlsch_pdu_rel8.rnti;
                 uint16_t numPDUs = dl_config_req->dl_config_request_body.number_pdu;
-                LOG_I(MAC, "(OAI eNB) Sending dl_config_req at VNF during Frame: %d and Subframe: %d,"
+                LOG_D(MAC, "(OAI eNB) Sending dl_config_req at VNF during Frame: %d and Subframe: %d,"
                            " with a RNTI value of: %x and with number of PDUs: %u\n",
                       NFAPI_SFNSF2SFN(dl_config_req->sfn_sf),NFAPI_SFNSF2SF(dl_config_req->sfn_sf), dl_rnti, numPDUs);
             }
@@ -1919,8 +1925,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) {
 
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 {
-  //LOG_I(PHY, "sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);
-  //printf("\nEntering oai_nfapi_nr_dl_config_req sfn:%d,slot:%d\n",dl_config_req->SFN,dl_config_req->Slot);
+  LOG_D(NR_PHY, "Entering oai_nfapi_nr_dl_config_req sfn:%d,slot:%d\n", dl_config_req->SFN, dl_config_req->Slot);
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   dl_config_req->header.message_id= NFAPI_NR_PHY_MSG_TYPE_DL_TTI_REQUEST;
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
@@ -1939,6 +1944,7 @@ int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req)
 
 int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req)
 {
+  LOG_D(NR_PHY, "Entering oai_nfapi_nr_tx_data_req sfn:%d,slot:%d\n", tx_data_req->SFN, tx_data_req->Slot);
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
   tx_data_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
   tx_data_req->header.message_id = NFAPI_NR_PHY_MSG_TYPE_TX_DATA_REQUEST;
@@ -2056,7 +2062,7 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   {
     uint8_t pdu_type = pdu_list[i].pdu_type;
 
-    LOG_I(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
+    LOG_D(MAC, "ul_config_req num_pdus: %u pdu_number: %d pdu_type: %u SFN.SF: %d.%d\n",
           num_pdus, i, pdu_type, ul_config_req->sfn_sf >> 4, ul_config_req->sfn_sf & 15);
 
     if (pdu_type != NFAPI_UL_CONFIG_ULSCH_CQI_RI_PDU_TYPE)

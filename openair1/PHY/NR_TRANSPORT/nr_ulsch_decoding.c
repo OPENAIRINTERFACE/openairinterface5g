@@ -76,8 +76,6 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t **ulschptr, uint16_t N_RB_UL)
         free_and_zero(ulsch->harq_processes[i]->c[r]);
         free_and_zero(ulsch->harq_processes[i]->d[r]);
         free_and_zero(ulsch->harq_processes[i]->w[r]);
-        nrLDPC_free_mem(ulsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
-        ulsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
       }
       free_and_zero(ulsch->harq_processes[i]);
       ulsch->harq_processes[i] = NULL;
@@ -101,22 +99,21 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL)
 
   uint32_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
   ulsch = (NR_gNB_ULSCH_t *)malloc16_clear(sizeof(NR_gNB_ULSCH_t));
-  
+
   ulsch->max_ldpc_iterations = max_ldpc_iterations;
   ulsch->Mlimit = 4;
-  
+
   for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
-    
+
     ulsch->harq_processes[i] = (NR_UL_gNB_HARQ_t *)malloc16_clear(sizeof(NR_UL_gNB_HARQ_t));
     ulsch->harq_processes[i]->b = (uint8_t*)malloc16_clear(ulsch_bytes);
     for (r=0; r<a_segments; r++) {
-      ulsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
       ulsch->harq_processes[i]->c[r] = (uint8_t*)malloc16_clear(8448*sizeof(uint8_t));
       ulsch->harq_processes[i]->d[r] = (int16_t*)malloc16_clear((68*384)*sizeof(int16_t));
       ulsch->harq_processes[i]->w[r] = (int16_t*)malloc16_clear((3*(6144+64))*sizeof(int16_t));
     }
   }
-  
+
   return(ulsch);
 }
 
@@ -360,7 +357,6 @@ void nr_processULSegment(void* arg) {
   no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
                                      (int8_t*)&pl[0],
                                      llrProcBuf,
-                                     ulsch_harq->p_nrLDPC_procBuf[r],
                                      p_procTime);
 
   if (check_crc((uint8_t*)llrProcBuf,length_dec,ulsch_harq->F,crc_type)) {
