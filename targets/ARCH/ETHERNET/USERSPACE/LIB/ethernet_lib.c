@@ -82,7 +82,7 @@ int trx_eth_start(openair0_device *device)
           else AssertFatal(1==0,"num_rb_dl %d not ok with ECPRI\n",device->openair0_cfg->num_rb_dl);
        }
        else {
-          if (device->openair0_cfg->num_rb_dl == 100) device->sampling_rate_ratio_d = 1;
+          if (device->openair0_cfg->num_rb_dl == 100 || device->openair0_cfg->num_rb_dl == 51) device->sampling_rate_ratio_d = 1;
           else if (device->openair0_cfg->num_rb_dl == 75) {device->sampling_rate_ratio_d = 4; device->sampling_rate_ratio_n=3;}
           else if (device->openair0_cfg->num_rb_dl == 50) device->sampling_rate_ratio_d = 2;
           else if (device->openair0_cfg->num_rb_dl == 25) device->sampling_rate_ratio_d = 4;
