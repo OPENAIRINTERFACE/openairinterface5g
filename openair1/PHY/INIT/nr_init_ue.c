@@ -210,18 +210,21 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   // ceil(((NB_RB*6(k)*2(QPSK)/32) // 3 RE *2(QPSK)
   int pusch_dmrs_init_length =  ((fp->N_RB_UL*12)>>5)+1;
-
-  ue->nr_gold_pusch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
-  uint32_t ***pusch_dmrs = ue->nr_gold_pusch_dmrs;
+  ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
+  uint32_t ****pusch_dmrs = ue->nr_gold_pusch_dmrs;
 
   for (slot=0; slot<fp->slots_per_frame; slot++) {
-    pusch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+    pusch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t **));
     AssertFatal(pusch_dmrs[slot]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d - malloc failed\n", slot);
 
     for (symb=0; symb<fp->symbols_per_slot; symb++) {
-      pusch_dmrs[slot][symb] = (uint32_t *)malloc16(pusch_dmrs_init_length*sizeof(uint32_t));
+      pusch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_NB_NSCID*sizeof(uint32_t *));
       AssertFatal(pusch_dmrs[slot][symb]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
+      for (int q=0; q<NR_NB_NSCID; q++) {
+        pusch_dmrs[slot][symb][q] = (uint32_t *)malloc16(pusch_dmrs_init_length*sizeof(uint32_t));
+        AssertFatal(pusch_dmrs[slot][symb][q]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d symbol %d nscid %d - malloc failed\n", slot, symb, q);
+      }
     }
   }
 
@@ -298,14 +301,13 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     pdsch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t **));
     AssertFatal(pdsch_dmrs[slot]!=NULL, "NR init: pdsch_dmrs for slot %d - malloc failed\n", slot);
 
-    int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
     for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(nb_codewords*sizeof(uint32_t *));
+      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_NB_NSCID*sizeof(uint32_t *));
       AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
-      for (int q=0; q<nb_codewords; q++) {
+      for (int q=0; q<NR_NB_NSCID; q++) {
         pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(pdsch_dmrs_init_length*sizeof(uint32_t));
-        AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
+        AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d nscid %d - malloc failed\n", slot, symb, q);
       }
     }
   }
@@ -424,6 +426,8 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
     for (int symb = 0; symb < fp->symbols_per_slot; symb++) {
+      for (int q=0; q<NR_NB_NSCID; q++)
+        free_and_zero(ue->nr_gold_pusch_dmrs[slot][symb][q]);
       free_and_zero(ue->nr_gold_pusch_dmrs[slot][symb]);
     }
     free_and_zero(ue->nr_gold_pusch_dmrs[slot]);
@@ -457,10 +461,9 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   }
   free_and_zero(ue->nr_gold_pdcch[0]);
 
-  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
   for (int slot=0; slot<fp->slots_per_frame; slot++) {
     for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      for (int q=0; q<nb_codewords; q++) 
+      for (int q=0; q<NR_NB_NSCID; q++)
         free_and_zero(ue->nr_gold_pdsch[0][slot][symb][q]);
       free_and_zero(ue->nr_gold_pdsch[0][slot][symb]);
     }

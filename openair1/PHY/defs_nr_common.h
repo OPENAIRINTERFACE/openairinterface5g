@@ -94,6 +94,8 @@
 #define NR_RX_NB_TH 1
 #define NR_NB_TH_SLOT 2
 
+#define NR_NB_NSCID 2
+
 extern const uint8_t nr_rv_round_map[4]; 
 
 static inline
