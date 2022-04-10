@@ -219,6 +219,7 @@ typedef enum {
   SPGW,
   S1AP,
   F1AP,
+  E1AP,
   SCTP,
   HW,
   OSA,
