@@ -272,20 +272,34 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
         case UL_SCH_LCID_L_BSR:
         case UL_SCH_LCID_L_TRUNCATED_BSR:
-          //38.321 section 6.1.3.1
-          //variable length
-          getMacLen(pduP, &mac_len, &mac_subheader_len);
-          /* Extract long BSR value */
-          ce_ptr = &pduP[mac_subheader_len];
-          NR_BSR_LONG *bsr_l = (NR_BSR_LONG *) ce_ptr;
-          sched_ctrl->estimated_ul_buffer = 0;
-          
-          n_Lcg = bsr_l->LcgID7 + bsr_l->LcgID6 + bsr_l->LcgID5 + bsr_l->LcgID4 +
-            bsr_l->LcgID3 + bsr_l->LcgID2 + bsr_l->LcgID1 + bsr_l->LcgID0;
+        	//38.321 section 6.1.3.1
+        	//variable length
+                /* Several checks have been added to this function to
+                   ensure that the casting of the pduP is possible. There seems
+                   to be a partial PDU at the end of this buffer, so here
+                   we gracefully ignore that by returning 0. See:
+                   https://gitlab.eurecom.fr/oai/openairinterface5g/-/issues/534 */
+                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                        return 0;
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+        	mac_subheader_len = 2;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                                return 0;
+        		mac_ce_len= ntohs((NR_MAC_SUBHEADER_LONG *)pduP)->L);
+        		mac_subheader_len = 3;
+        	}
+        	/* Extract long BSR value */
+               ce_ptr = &pduP[mac_subheader_len];
+               NR_BSR_LONG *bsr_l = (NR_BSR_LONG *) ce_ptr;
+               sched_ctrl->estimated_ul_buffer = 0;
 
-          LOG_D(NR_MAC, "LONG BSR, LCG ID(7-0) %d/%d/%d/%d/%d/%d/%d/%d\n",
-                bsr_l->LcgID7, bsr_l->LcgID6, bsr_l->LcgID5, bsr_l->LcgID4,
-                bsr_l->LcgID3, bsr_l->LcgID2, bsr_l->LcgID1, bsr_l->LcgID0);
+               n_Lcg = bsr_l->LcgID7 + bsr_l->LcgID6 + bsr_l->LcgID5 + bsr_l->LcgID4 +
+                       bsr_l->LcgID3 + bsr_l->LcgID2 + bsr_l->LcgID1 + bsr_l->LcgID0;
+
+               LOG_D(NR_MAC, "LONG BSR, LCG ID(7-0) %d/%d/%d/%d/%d/%d/%d/%d\n",
+                     bsr_l->LcgID7, bsr_l->LcgID6, bsr_l->LcgID5, bsr_l->LcgID4,
+                     bsr_l->LcgID3, bsr_l->LcgID2, bsr_l->LcgID1, bsr_l->LcgID0);
 
                for (int n = 0; n < n_Lcg; n++){
                  LOG_D(NR_MAC, "LONG BSR, %d/%d (n/n_Lcg), BS Index %d, BS value < %d",
@@ -346,11 +360,34 @@ int nr_process_mac_pdu(module_id_t module_idP,
         	break;
 
         case UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT:
-        case UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT:
-          //  varialbe length
-        	getMacLen(pduP, &mac_len, &mac_subheader_len);
-                //Extract MULTI ENTRY PHR elements from single octet bitmap for PHR calculation */
+        	//38.321 section 6.1.3.9
+        	//  varialbe length
+                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                        return 0;
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+        	mac_subheader_len = 2;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                                return 0;
+        		mac_ce_len = ntohs((NR_MAC_SUBHEADER_LONG *)pduP)->L);
+        		mac_subheader_len = 3;
+        	}
+        	/* Extract MULTI ENTRY PHR elements from single octet bitmap for PHR calculation */
         	break;
+
+        case UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT:
+        	//38.321 section 6.1.3.9
+        	//  varialbe length
+                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                        return 0;
+        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+        	mac_subheader_len = 2;
+        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                                return 0;
+        		mac_ce_len = ntohs((NR_MAC_SUBHEADER_LONG *)pduP)->L);
+        		mac_subheader_len = 3;
+        	}
         	/* Extract MULTI ENTRY PHR elements from four octets bitmap for PHR calculation */
         	break;
 
@@ -361,7 +398,19 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
         case UL_SCH_LCID_SRB1:
         case UL_SCH_LCID_SRB2:
-          getMacLen(pduP, &mac_len, &mac_subheader_len);
+          if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                return 0;
+          if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
+            //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
+            if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                  return 0;
+            mac_subheader_len = 3;
+            mac_sdu_len = ntohs(NR_MAC_SUBHEADER_LONG *) pduP)->L);
+          } else {
+            mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+            mac_subheader_len = 2;
+          }
+
           rnti_t crnti = UE_info->rnti[UE_id];
           int UE_idx = UE_id;
           for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
@@ -436,7 +485,21 @@ int nr_process_mac_pdu(module_id_t module_idP,
           break;
 
         case UL_SCH_LCID_DTCH:
-          getMacLen(pduP, &mac_len, &mac_subheader_len);
+          //  check if LCID is valid at current time.
+          if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+                return 0;
+          if (((NR_MAC_SUBHEADER_SHORT *)pduP)->F) {
+            // mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
+            if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+                  return 0;
+            mac_subheader_len = 3;
+            mac_sdu_len = ntohs((NR_MAC_SUBHEADER_LONG *)pduP)->L);
+
+          } else {
+            mac_sdu_len = (NR_MAC_SUBHEADER_SHORT *)pduP)->L;
+            mac_subheader_len = 2;
+          }
+
           LOG_D(NR_MAC, "In %s: [UE %d] %d.%d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
                 __func__,
                 module_idP,
@@ -1732,6 +1795,9 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                 future_ul_tti_req->Slot,
                 sched_pusch->frame,
                 sched_pusch->slot);
+    AssertFatal(future_ul_tti_req->n_pdus <
+                sizeof(future_ul_tti_req->pdus_list) / sizeof(future_ul_tti_req->pdus_list[0]),
+                "Invalid future_ul_tti_req->n_pdus %d\n", future_ul_tti_req->n_pdus);
     future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
     future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
     nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
