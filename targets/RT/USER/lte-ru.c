@@ -835,8 +835,9 @@ void tx_rf(RU_t *ru,
     // in case of rfsim, we always enable tx because we need to feed rx of the opposite side
     // we write 1 single I/Q sample to trigger Rx (rfsim will fill gaps with 0 I/Q)
     void *dummy_tx[ru->frame_parms->nb_antennas_tx];
+    int16_t dummy_tx_data[ru->frame_parms->nb_antennas_tx][2]; // 2 because the function we call use pairs of int16_t implicitly as complex numbers
     for (int i=0; i<ru->frame_parms->nb_antennas_tx; i++)
-      dummy_tx[i]=malloc16_clear(4);
+      dummy_tx[i]= dummy_tx_data[i];
     
     AssertFatal( 1 ==
                  ru->rfdevice.trx_write_func(&ru->rfdevice,
@@ -846,8 +847,6 @@ void tx_rf(RU_t *ru,
                                              ru->frame_parms->nb_antennas_tx,
                                              4),"");
     
-    for (int i=0; i<ru->frame_parms->nb_antennas_tx; i++)
-      free(dummy_tx[i]);
   }
 }
 

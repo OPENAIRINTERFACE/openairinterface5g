@@ -655,14 +655,6 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
         UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
-        //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-        //UE->rfdevice.trx_stop_func(&UE->rfdevice);
-        // sleep(1);
-        /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
-          LOG_E(HW,"Could not start the device\n");
-          oai_exit=1;
-          }*/
-        
         if (UE->UE_scan_carrier == 1) {
           UE->UE_scan_carrier = 0;
         } else {
@@ -815,9 +807,9 @@ void processSlotRX(void *arg) {
 
 void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {
   void *dummy_tx[UE->frame_parms.nb_antennas_tx];
-
+  int16_t dummy_tx_data[UE->frame_parms.nb_antennas_tx][2*writeBlockSize]; // 2 because the function we call use pairs of int16_t implicitly as complex numbers
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    dummy_tx[i]=malloc16_clear(writeBlockSize*4);
+    dummy_tx[i]=dummy_tx_data[i];
 
   AssertFatal( writeBlockSize ==
                UE->rfdevice.trx_write_func(&UE->rfdevice,
@@ -827,8 +819,6 @@ void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockS
                UE->frame_parms.nb_antennas_tx,
                4),"");
 
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    free(dummy_tx[i]);
 }
 
 void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp, bool toTrash) {
