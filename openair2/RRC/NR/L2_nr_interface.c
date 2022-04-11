@@ -422,6 +422,6 @@ void nr_mac_gNB_enable_rrc_processing_timer_req(const module_id_t Mod_instP, con
     }
     ue_context_p->ue_context.nr_rrc_processing_delay = delay_ms;
   } else {
-    LOG_D(RRC,"%s: Unknown RNTI 0x%04x\n", __FUNCTION__, rntiP);
+    LOG_E(NR_RRC,"%s: Unknown RNTI 0x%04x\n", __FUNCTION__, rntiP);
   }
 }
