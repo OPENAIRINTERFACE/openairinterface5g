@@ -345,11 +345,11 @@ typedef struct f1ap_rb_failed_to_be_setup_s {
 
 typedef struct cu_to_du_rrc_information_s {
   uint8_t * cG_ConfigInfo;
-  uint8_t   cG_ConfigInfo_length;
+  uint32_t   cG_ConfigInfo_length;
   uint8_t * uE_CapabilityRAT_ContainerList;
-  uint8_t   uE_CapabilityRAT_ContainerList_length;
+  uint32_t   uE_CapabilityRAT_ContainerList_length;
   uint8_t * measConfig;
-  uint8_t   measConfig_length;
+  uint32_t   measConfig_length;
 }cu_to_du_rrc_information_t;
 
 typedef struct du_to_du_rrc_information_s {
