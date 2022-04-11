@@ -390,7 +390,7 @@ void nr_processDLSegment(void* arg) {
     no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
                                        (int8_t *)&pl[0],
                                        llrProcBuf,
-                                       p_procTime);
+                                       &procTime);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_OUT);
 
     // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int

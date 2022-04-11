@@ -213,6 +213,7 @@ int nr_process_mac_pdu(module_id_t module_idP,
                         int pdu_len)
 {
 
+
     uint8_t done = 0;
 
     NR_UE_info_t *UE_info = &RC.nrmac[module_idP]->UE_info;
@@ -279,16 +280,8 @@ int nr_process_mac_pdu(module_id_t module_idP,
                    to be a partial PDU at the end of this buffer, so here
                    we gracefully ignore that by returning 0. See:
                    https://gitlab.eurecom.fr/oai/openairinterface5g/-/issues/534 */
-                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
-                        return 0;
-        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
-        	mac_subheader_len = 2;
-        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
-                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
-                                return 0;
-        		mac_ce_len= ntohs((NR_MAC_SUBHEADER_LONG *)pduP)->L);
-        		mac_subheader_len = 3;
-        	}
+	  if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+		  return 0;
         	/* Extract long BSR value */
                ce_ptr = &pduP[mac_subheader_len];
                NR_BSR_LONG *bsr_l = (NR_BSR_LONG *) ce_ptr;
@@ -362,32 +355,16 @@ int nr_process_mac_pdu(module_id_t module_idP,
         case UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT:
         	//38.321 section 6.1.3.9
         	//  varialbe length
-                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
-                        return 0;
-        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
-        	mac_subheader_len = 2;
-        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
-                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
-                                return 0;
-        		mac_ce_len = ntohs((NR_MAC_SUBHEADER_LONG *)pduP)->L);
-        		mac_subheader_len = 3;
-        	}
+	  if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+	    return 0;
         	/* Extract MULTI ENTRY PHR elements from single octet bitmap for PHR calculation */
         	break;
 
         case UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT:
         	//38.321 section 6.1.3.9
         	//  varialbe length
-                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
-                        return 0;
-        	mac_ce_len |= (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
-        	mac_subheader_len = 2;
-        	if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
-                        if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
-                                return 0;
-        		mac_ce_len = ntohs((NR_MAC_SUBHEADER_LONG *)pduP)->L);
-        		mac_subheader_len = 3;
-        	}
+	  if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+	    return 0;
         	/* Extract MULTI ENTRY PHR elements from four octets bitmap for PHR calculation */
         	break;
 
@@ -398,18 +375,8 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
         case UL_SCH_LCID_SRB1:
         case UL_SCH_LCID_SRB2:
-          if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
-                return 0;
-          if(((NR_MAC_SUBHEADER_SHORT *)pduP)->F){
-            //mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
-            if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
-                  return 0;
-            mac_subheader_len = 3;
-            mac_sdu_len = ntohs(NR_MAC_SUBHEADER_LONG *) pduP)->L);
-          } else {
-            mac_sdu_len = (uint16_t)((NR_MAC_SUBHEADER_SHORT *)pduP)->L;
-            mac_subheader_len = 2;
-          }
+	  if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+	    return 0;
 
           rnti_t crnti = UE_info->rnti[UE_id];
           int UE_idx = UE_id;
@@ -486,19 +453,8 @@ int nr_process_mac_pdu(module_id_t module_idP,
 
         case UL_SCH_LCID_DTCH:
           //  check if LCID is valid at current time.
-          if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
-                return 0;
-          if (((NR_MAC_SUBHEADER_SHORT *)pduP)->F) {
-            // mac_sdu_len |= (uint16_t)(((NR_MAC_SUBHEADER_LONG *)pduP)->L2)<<8;
-            if (pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
-                  return 0;
-            mac_subheader_len = 3;
-            mac_sdu_len = ntohs((NR_MAC_SUBHEADER_LONG *)pduP)->L);
-
-          } else {
-            mac_sdu_len = (NR_MAC_SUBHEADER_SHORT *)pduP)->L;
-            mac_subheader_len = 2;
-          }
+	  if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+	    return 0;
 
           LOG_D(NR_MAC, "In %s: [UE %d] %d.%d : ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
                 __func__,

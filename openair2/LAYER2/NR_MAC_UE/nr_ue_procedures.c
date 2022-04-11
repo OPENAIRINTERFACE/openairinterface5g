@@ -3364,13 +3364,14 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
     uint8_t rx_lcid = ((NR_MAC_SUBHEADER_FIXED *)pduP)->LCID;
 
     LOG_D(MAC, "[UE] LCID %d, PDU length %d\n", rx_lcid, pdu_len);
+    bool ret;
     switch(rx_lcid){
       //  MAC CE
       case DL_SCH_LCID_CCCH:
         //  MSG4 RRC Setup 38.331
         //  variable length
-        getMacLen(pduP, &mac_len, &mac_subheader_len);
-        AssertFatal(pdu_len > mac_len, "The mac_len (%d) has an invalid size. PDU len = %d! \n",
+        ret=get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len);
+        AssertFatal(ret, "The mac_len (%d) has an invalid size. PDU len = %d! \n",
                     mac_len, pdu_len);
 
         // Check if it is a valid CCCH message, we get all 00's messages very often
@@ -3404,7 +3405,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
         //  38.321 Ch6.1.3.14
         //  varialbe length
-        getMacLen(pduP, &mac_len, &mac_subheader_len);
+        get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len);
         break;
 
       case DL_SCH_LCID_RECOMMENDED_BITRATE:
@@ -3508,10 +3509,8 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         //  check if LCID is valid at current time.
       default:
             {
-                //  check if LCID is valid at current time.
-                if (pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
-                  return;
-                getMacLen(pduP, &mac_len, &mac_subheader_len);
+	      if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+		    return;
                 LOG_D(NR_MAC, "[UE %d] %4d.%2d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, slot, rx_lcid, gNB_index, mac_len);
 
                 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)

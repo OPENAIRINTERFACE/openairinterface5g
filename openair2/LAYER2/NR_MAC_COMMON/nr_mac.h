@@ -118,9 +118,13 @@ typedef struct {
   uint8_t R: 2;       // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
 
-static inline void getMacLen(uint8_t* pdu, uint16_t *mac_ce_len, uint16_t *mac_subheader_len) {
+static inline int get_mac_len(uint8_t* pdu, int pdu_len, uint16_t *mac_ce_len, uint16_t *mac_subheader_len) {
+  if ( pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+    return false;
   NR_MAC_SUBHEADER_SHORT *s = (NR_MAC_SUBHEADER_SHORT*) pdu;
   NR_MAC_SUBHEADER_LONG *l = (NR_MAC_SUBHEADER_LONG*) pdu;
+  if (s->F && pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+    return false;
   if (s->F) {
     *mac_subheader_len = sizeof(*l);
     *mac_ce_len = ntohs(l->L);
@@ -128,6 +132,7 @@ static inline void getMacLen(uint8_t* pdu, uint16_t *mac_ce_len, uint16_t *mac_s
     *mac_subheader_len = sizeof(*s);
     *mac_ce_len = s->L;
   }
+  return true;
 }
     
 // BSR MAC CEs

@@ -313,12 +313,10 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
   switch(Qm) {
   case 2:
     {
-      AssertFatal(E%4==0,"");
+      AssertFatal(E%2==0,"");
       int16_t *e1=e+(E/2);
-      int16_t *end=f+E-3;
+      int16_t *end=f+E-1;
       while( f<end ){
-        *e++  = *f++;
-        *e1++ = *f++;
         *e++  = *f++;
         *e1++ = *f++;
       }
@@ -360,7 +358,7 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
     break;
   case 8:
     {
-      AssertFatal(E%8==0,"zob");
+      AssertFatal(E%8==0,"");
       int16_t *e1=e+(E/8);
       int16_t *e2=e1+(E/8);
       int16_t *e3=e2+(E/8);

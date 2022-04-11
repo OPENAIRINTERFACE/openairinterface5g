@@ -1426,7 +1426,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             /* limit requested number of bytes to what preprocessor specified, or
              * such that TBS is full */
             const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer,
-                                                 bufEnd-buf-+sizeof(NR_MAC_SUBHEADER_LONG));
+                                                 bufEnd-buf-sizeof(NR_MAC_SUBHEADER_LONG));
             tbs_size_t len = mac_rlc_data_req(module_id,
                                               rnti,
                                               module_id,
