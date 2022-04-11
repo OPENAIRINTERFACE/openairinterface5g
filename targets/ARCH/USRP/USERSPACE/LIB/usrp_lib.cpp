@@ -203,8 +203,8 @@ static int sync_to_gps(openair0_device *device) {
 
       //Set to GPS time
       uhd::time_spec_t gps_time = uhd::time_spec_t(time_t(s->usrp->get_mboard_sensor("gps_time", mboard).to_int()));
-      //s->usrp->set_time_next_pps(gps_time+1.0, mboard);
-      s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+      s->usrp->set_time_next_pps(gps_time+1.0, mboard);
+      //s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
       //Wait for it to apply
       //The wait is 2 seconds because N-Series has a known issue where
       //the time at the last PPS does not properly update at the PPS edge
@@ -215,10 +215,10 @@ static int sync_to_gps(openair0_device *device) {
       uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps(mboard);
       std::cout << "USRP time: " << (boost::format("%0.9f") % time_last_pps.get_real_secs()) << std::endl;
       std::cout << "GPSDO time: " << (boost::format("%0.9f") % gps_time.get_real_secs()) << std::endl;
-      //if (gps_time.get_real_secs() == time_last_pps.get_real_secs())
-      //    std::cout << std::endl << "SUCCESS: USRP time synchronized to GPS time" << std::endl << std::endl;
-      //else
-      //    std::cerr << std::endl << "ERROR: Failed to synchronize USRP time to GPS time" << std::endl << std::endl;
+      if (gps_time.get_real_secs() == time_last_pps.get_real_secs())
+          std::cout << std::endl << "SUCCESS: USRP time synchronized to GPS time" << std::endl << std::endl;
+      else
+          std::cerr << std::endl << "ERROR: Failed to synchronize USRP time to GPS time" << std::endl << std::endl;
     }
 
     if (num_gps_locked == num_mboards and num_mboards > 1) {
@@ -293,15 +293,11 @@ static int trx_usrp_start(openair0_device *device) {
   //s->first_rx = 1;
   s->rx_timestamp = 0;
 
-  s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
-  // wait for the pps to change
   uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps();
-  while (time_last_pps == s->usrp->get_time_last_pps()) {
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-  }
+  LOG_I(HW,"last pps at %f, starting streaming at %f\n",time_last_pps.get_real_secs(),time_last_pps.get_real_secs()+1.0);
 
   uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-  cmd.time_spec = uhd::time_spec_t(1.0);
+  cmd.time_spec = uhd::time_spec_t(time_last_pps+1.0);
   cmd.stream_now = false; // start at constant delay
   s->rx_stream->issue_stream_cmd(cmd);
 
@@ -1103,12 +1099,16 @@ extern "C" {
       LOG_I(HW,"USRP fails to sync with GPS. Exiting.\n");
       exit(EXIT_FAILURE);
     }
-  } else if (s->usrp->get_clock_source(0) == "external") {
-    if (check_ref_locked(s,0)) {
-      LOG_I(HW,"USRP locked to external reference!\n");
-    } else {
-      LOG_I(HW,"Failed to lock to external reference. Exiting.\n");
-      exit(EXIT_FAILURE);
+  } else {
+    s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+ 
+    if (s->usrp->get_clock_source(0) == "external") {
+      if (check_ref_locked(s,0)) {
+	LOG_I(HW,"USRP locked to external reference!\n");
+      } else {
+	LOG_I(HW,"Failed to lock to external reference. Exiting.\n");
+	exit(EXIT_FAILURE);
+      }
     }
   }
 
@@ -1322,7 +1322,7 @@ extern "C" {
   LOG_I(HW,"Actual master clock: %fMHz...\n",s->usrp->get_master_clock_rate()/1e6);
   LOG_I(HW,"Actual clock source %s...\n",s->usrp->get_clock_source(0).c_str());
   LOG_I(HW,"Actual time source %s...\n",s->usrp->get_time_source(0).c_str());
-   sleep(1);
+
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
   int samples=openair0_cfg[0].sample_rate;
