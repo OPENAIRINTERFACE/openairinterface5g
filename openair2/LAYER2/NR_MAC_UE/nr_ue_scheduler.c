@@ -1089,6 +1089,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
           mac->if_module->scheduled_response(&scheduled_response);
       }
+      else
+      {
+        dl_config->number_pdus = 0;
+      }
     }
   } else if (ul_info) {
 
@@ -2263,26 +2267,27 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   int O_CSI = 0;
   int N_UCI = 0;
 
-  PUCCH_sched_t *pucch = calloc(1,sizeof(*pucch));
-  pucch->resource_indicator = -1;
-  pucch->initial_pucch_id = -1;
+  PUCCH_sched_t pucch = {
+    .resource_indicator = -1,
+    .initial_pucch_id = -1
+  };
   uint16_t rnti = mac->crnti;  //FIXME not sure this is valid for all pucch instances
 
   // SR
-  if(trigger_periodic_scheduling_request(mac, pucch, frameP, slotP)) {
+  if (trigger_periodic_scheduling_request(mac, &pucch, frameP, slotP)) {
     O_SR = 1;
     /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
-    pucch->sr_payload = nr_ue_get_SR(module_idP,
+    pucch.sr_payload = nr_ue_get_SR(module_idP,
                                      frameP,
                                      slotP);
   }
 
   // CSI
   if (mac->ra.ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test == 1)
-    O_CSI = nr_get_csi_measurements(mac, frameP, slotP, pucch);
+    O_CSI = nr_get_csi_measurements(mac, frameP, slotP, &pucch);
 
   // ACKNACK
-  O_ACK = get_downlink_ack(mac, frameP, slotP, pucch);
+  O_ACK = get_downlink_ack(mac, frameP, slotP, &pucch);
 
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   NR_PUCCH_Config_t *pucch_Config = NULL;
@@ -2312,35 +2317,39 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
       pucch_Config->format2 &&
       (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)) {
     O_CSI = 0;
-    pucch->csi_part1_payload = 0;
-    pucch->csi_part2_payload = 0;
+    pucch.csi_part1_payload = 0;
+    pucch.csi_part2_payload = 0;
   }
 
   N_UCI = O_SR + O_ACK + O_CSI;
+  mac->nr_ue_emul_l1.num_srs = O_SR;
+  mac->nr_ue_emul_l1.num_harqs = O_ACK;
+  mac->nr_ue_emul_l1.num_csi_reports = O_CSI;
 
   // do no transmit pucch if only SR scheduled and it is negative
-  if ((O_ACK + O_CSI) == 0 && pucch->sr_payload == 0)
+  if ((O_ACK + O_CSI) == 0 && pucch.sr_payload == 0)
     return;
 
   if (N_UCI > 0) {
     LOG_D(NR_MAC,"%d.%d configure pucch, O_SR %d, O_ACK %d, O_CSI %d\n",frameP,slotP,O_SR,O_ACK,O_CSI);
-    pucch->resource_set_id = find_pucch_resource_set(mac, O_ACK + O_CSI);
-    select_pucch_resource(mac, pucch);
+    pucch.resource_set_id = find_pucch_resource_set(mac, O_ACK + O_CSI);
+    select_pucch_resource(mac, &pucch);
     fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
     pthread_mutex_lock(&ul_config->mutex_ul_config);
     AssertFatal(ul_config->number_pdus<FAPI_NR_UL_CONFIG_LIST_NUM, "ul_config->number_pdus %d out of bounds\n",ul_config->number_pdus);
     fapi_nr_ul_config_pucch_pdu *pucch_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu;
 
     fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PUCCH);
+    mac->nr_ue_emul_l1.active_uci_sfn_slot = NFAPI_SFNSLOT2HEX(frameP, slotP);
     pthread_mutex_unlock(&ul_config->mutex_ul_config);
 
     nr_ue_configure_pucch(mac,
                           slotP,
                           rnti,
-                          pucch,
+                          &pucch,
                           pucch_pdu,
                           O_SR, O_ACK, O_CSI);
-    LOG_D(NR_MAC,"Configuring pucch, is_common = %d\n",pucch->is_common);
+    LOG_D(NR_MAC, "Configuring pucch, is_common = %d\n", pucch.is_common);
     nr_scheduled_response_t scheduled_response;
     fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
