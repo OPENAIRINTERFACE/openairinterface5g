@@ -276,8 +276,6 @@ static void do_pdcp_data_ind(
   } else {
     LOG_E(PDCP, "%s:%d:%s: no RB found (rb_id %ld, srb_flag %d)\n",
           __FILE__, __LINE__, __FUNCTION__, rb_id, srb_flagP);
-    return;
-    
   }
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
