@@ -225,6 +225,7 @@ int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _
 	 json_error_t jserr;
 	 json_t* jsbody = ulfius_get_json_body_request (request, &jserr);
      int httpstatus=404;
+     char msg[256];
 	 if (jsbody == NULL) {
        LOG_E(UTIL,"[websrv] cannot find json body in %s %s\n",request->http_url, jserr.text );
        httpstatus=400;	 
@@ -235,28 +236,72 @@ int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _
          LOG_E(UTIL,"[websrv] %s: NULL user data\n",request->http_url);
        } else {
 	     cmdparser_t * modulestruct = (cmdparser_t *)user_data;
-         const char *vname=NULL;
-         const char *vval=NULL;
          json_t *J=json_object_get(jsbody, "name");
-         vname=(J==NULL)?"": json_string_value(J);
+         const char *vname=json_string_value(J);
          for ( telnetshell_vardef_t *var = modulestruct->var; var->varvalptr!= NULL ;var++) {
            if (strncmp(var->varname,vname,TELNET_CMD_MAXSIZE) == 0){
              J=json_object_get(jsbody, "value");
-             vval=(J==NULL)?"": json_string_value(J);
-             int s = telnet_setvarvalue(var,(char *)vval,NULL);
-             if ( s!=0 ) {
-               httpstatus=500; 
-               LOG_E(UTIL,"[websrv] Cannot set var %s to %s\n",vname,vval );
+             if(J!=NULL) {
+               if (json_is_string(J)) {
+				 const char *vval=json_string_value(J);
+				 int n=strlen(var->varvalptr);
+				 if ( strlen(vval) < n ) {
+				   snprintf( var->varvalptr,n,"%s",vval);
+                   httpstatus=200; 
+                   snprintf(msg,sizeof(msg),"Var %s, set to %s",vname,vval );
+                   LOG_I(UTIL,"[websrv] %s \n",msg );
+                 } else {
+                   httpstatus=500; 
+                   snprintf(msg,sizeof(msg),"Var %s, cannot be set to %s, value to long",vname, vval );
+                   LOG_I(UTIL,"[websrv] %s \n",msg );					 
+				 }
+			   } else if (json_is_integer(J)) {
+				 json_int_t i = json_integer_value(J);
+				 switch(var->vartype) {
+					 case TELNET_VARTYPE_INT64:
+					   *(int64_t *)var->varvalptr=(int64_t)i;
+					   break;					 
+					 case TELNET_VARTYPE_INT32:
+					   *(int32_t *)var->varvalptr=(int32_t)i;
+					   break;
+					 case TELNET_VARTYPE_INT16:
+					   *(int16_t *)var->varvalptr=(int16_t)i;
+					   break;	
+					 case TELNET_VARTYPE_INT8:
+					   *(int8_t *)var->varvalptr=(int8_t)i;
+					   break;
+					 case TELNET_VARTYPE_UINT:
+					   *(unsigned int *)var->varvalptr=(unsigned int)i;
+					   break;					   						   				   
+					 default:
+                       httpstatus=500;
+                       snprintf(msg,sizeof(msg)," Cannot set var %s, integer type mismatch\n",vname );
+                       LOG_E(UTIL,"[websrv] %s",msg );					 
+			     }
+			   } else if (json_is_real(J)) {
+				 double lf = json_real_value(J); 
+				 if(var->vartype==TELNET_VARTYPE_DOUBLE) {
+					*(double *)var->varvalptr = lf;
+                    httpstatus=200;
+                    snprintf(msg,sizeof(msg)," Var %s, set to %g\n",vname, *(double *)var->varvalptr );
+                    LOG_I(UTIL,"[websrv] %s",msg );					 					
+				 } else {
+                   httpstatus=500;
+                   snprintf(msg,sizeof(msg)," Cannot set var %s, real type mismatch\n",vname );
+                   LOG_E(UTIL,"[websrv] %s",msg );						 
+				 }
+			   }
              } else {
-               httpstatus=200;
-               LOG_I(UTIL,"[websrv] var %s set to %s\n",vname,vval );
+               httpstatus=500;
+               snprintf(msg,sizeof(msg),"Cannot set var %s, json object is NULL\n",vname );
+               LOG_E(UTIL,"[websrv] %s",msg );
              }
              break;
            }
          }//for
        }//user_data
      } //sbody
-     ulfius_set_empty_body_response(response, httpstatus);
+     ulfius_set_string_body_response(response, httpstatus, msg);
 	 return U_CALLBACK_COMPLETE;   
 }
 /* callback processing module url (<address>/oaisoftmodem/module/commands), post method */
@@ -320,7 +365,26 @@ int websrv_callback_get_softmodemvar(const struct _u_request * request, struct _
 	   int modifiable=1;
 	   if (modulestruct->var[j].checkval & TELNET_CHECKVAL_RDONLY)
 	     modifiable=0;
-	   json_t *oneaction =json_pack("{s:s,s:s,s:s,s:b}","type","string","name",modulestruct->var[j].varname,"value",strval,"modifiable",modifiable);
+       json_t *oneaction;
+	   switch(modulestruct->var[j].vartype) {
+		   case  TELNET_VARTYPE_DOUBLE:
+		      oneaction =json_pack("{s:s,s:s,s:g,s:b}","type","number","name",modulestruct->var[j].varname,"value",*(double *)(modulestruct->var[j].varvalptr),"modifiable",modifiable);		   		   
+		   case  TELNET_VARTYPE_INT32:
+		   case  TELNET_VARTYPE_INT16:
+		   case  TELNET_VARTYPE_INT8:	   
+		   case  TELNET_VARTYPE_UINT:
+		      oneaction =json_pack("{s:s,s:s,s:i,s:b}","type","number","name",modulestruct->var[j].varname,"value",(int)(*(int *)(modulestruct->var[j].varvalptr)),"modifiable",modifiable);
+		   break;
+		   case  TELNET_VARTYPE_INT64:   
+              oneaction =json_pack("{s:s,s:s,s:lli,s:b}","type","number","name",modulestruct->var[j].varname,"value",(int64_t)(*(int64_t *)(modulestruct->var[j].varvalptr)),"modifiable",modifiable);
+		   break;
+		   case TELNET_VARTYPE_STRING:
+		      oneaction =json_pack("{s:s,s:s,s:s,s:b}","type","string","name",modulestruct->var[j].varname,"value",strval,"modifiable",modifiable);
+		   break;
+		   default:
+		      oneaction =json_pack("{s:s,s:s,s:s,s:b}","type","???","name",modulestruct->var[j].varname,"value","???","modifiable",modifiable);
+		   break;
+	   }
        if (oneaction==NULL) {
 	     LOG_E(UTIL,"[websrv] cannot encode oneaction %s/%s\n",modulestruct->module,modulestruct->var[j].varname);
        } else {
