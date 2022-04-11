@@ -1203,124 +1203,120 @@ static void *UE_phy_stub_standalone_pnf_task(void *arg) {
           //&& UE_mac_inst[Mod_id].ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL){
           ul_config_req_UE_MAC(ul_config_req, NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf), ue_Mod_id);
         }
+      } else {
+        LOG_I(MAC, "Skipping subframe select statement proxy SFN.SF: %d.%d\n",
+              NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
+
+        if (ul_config_req != NULL) {
+          LOG_I(MAC, "Skipping subframe select statement ul_config_req SFN.SF: %d.%d\n",
+                NFAPI_SFNSF2SFN(ul_config_req->sfn_sf), NFAPI_SFNSF2SF(ul_config_req->sfn_sf));
+        }
+      }
+    } //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
+
+    if (UL_INFO->crc_ind.crc_indication_body.number_of_crcs > 0) {
+      //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.2, SFN/SF of PNF counter:%d.%d, number_of_crcs: %d \n", timer_frame, timer_subframe, UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
+      send_standalone_msg(UL_INFO, UL_INFO->crc_ind.header.message_id);
+      sent_any = true;
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.21 \n");
+      UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
+    }
+
+    if (UL_INFO->rx_ind.rx_indication_body.number_of_pdus > 0) {
+      //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.3, SFN/SF of PNF counter:%d.%d, number_of_pdus: %d \n", timer_frame, timer_subframe, UL_INFO->rx_ind.rx_indication_body.number_of_pdus);
+      send_standalone_msg(UL_INFO, UL_INFO->rx_ind.header.message_id);
+      sent_any = true;
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.31 \n");
+      UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
+    }
+
+    if (UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis > 0) {
+      send_standalone_msg(UL_INFO, UL_INFO->cqi_ind.header.message_id);
+      sent_any = true;
+      UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
+    }
+
+    if (UL_INFO->harq_ind.harq_indication_body.number_of_harqs > 0) {
+      //LOG_D(MAC, "ul_config_req_UE_MAC 2.4, SFN/SF of PNF counter:%d.%d, number_of_harqs: %d \n", timer_frame, timer_subframe, UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
+      send_standalone_msg(UL_INFO, UL_INFO->harq_ind.header.message_id);
+      sent_any = true;
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.41 \n");
+      UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
+    }
+
+    if (UL_INFO->sr_ind.sr_indication_body.number_of_srs > 0) {
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.5, SFN/SF of PNF counter:%d.%d, number_of_srs: %d \n", timer_frame, timer_subframe, UL_INFO->sr_ind.sr_indication_body.number_of_srs);
+      send_standalone_msg(UL_INFO, UL_INFO->sr_ind.header.message_id);
+      sent_any = true;
+      //LOG_I(MAC, "ul_config_req_UE_MAC 2.51 \n");
+      UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
+    }
+
+    // De-allocate memory of nfapi requests copies before next subframe round
+    if (dl_config_req_tx_req != NULL) {
+      if (dl_config_req_tx_req->dl_config_req->vendor_extension != NULL) {
+        free(dl_config_req_tx_req->dl_config_req->vendor_extension);
+        dl_config_req_tx_req->dl_config_req->vendor_extension = NULL;
       }
 
-      phy_procedures_UE_SL_RX(UE, proc);
-    } else {
-      LOG_I(MAC, "Skipping subframe select statement proxy SFN.SF: %d.%d\n",
-            NFAPI_SFNSF2SFN(sfn_sf), NFAPI_SFNSF2SF(sfn_sf));
-
-      if (ul_config_req != NULL) {
-        LOG_I(MAC, "Skipping subframe select statement ul_config_req SFN.SF: %d.%d\n",
-              NFAPI_SFNSF2SFN(ul_config_req->sfn_sf), NFAPI_SFNSF2SF(ul_config_req->sfn_sf));
+      if (dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list != NULL) {
+        free(dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list);
+        dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list = NULL;
       }
-    }
-  } //for (Mod_id=0; Mod_id<NB_UE_INST; Mod_id++)
 
-  if (UL_INFO->crc_ind.crc_indication_body.number_of_crcs > 0) {
-    //LOG_D(PHY,"UL_info->crc_ind.crc_indication_body.number_of_crcs:%d CRC_IND:SFN/SF:%d\n", UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf));
-    //LOG_I(MAC, "ul_config_req_UE_MAC 2.2, SFN/SF of PNF counter:%d.%d, number_of_crcs: %d \n", timer_frame, timer_subframe, UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
-    send_standalone_msg(UL_INFO, UL_INFO->crc_ind.header.message_id);
-    sent_any = true;
-    //LOG_I(MAC, "ul_config_req_UE_MAC 2.21 \n");
-    UL_INFO->crc_ind.crc_indication_body.number_of_crcs = 0;
-  }
-
-  if (UL_INFO->rx_ind.rx_indication_body.number_of_pdus > 0) {
-    //LOG_D(PHY,"UL_info->rx_ind.number_of_pdus:%d RX_IND:SFN/SF:%d\n", UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf));
-    //LOG_I(MAC, "ul_config_req_UE_MAC 2.3, SFN/SF of PNF counter:%d.%d, number_of_pdus: %d \n", timer_frame, timer_subframe, UL_INFO->rx_ind.rx_indication_body.number_of_pdus);
-    send_standalone_msg(UL_INFO, UL_INFO->rx_ind.header.message_id);
-    sent_any = true;
-    //LOG_I(MAC, "ul_config_req_UE_MAC 2.31 \n");
-    UL_INFO->rx_ind.rx_indication_body.number_of_pdus = 0;
-  }
-
-  if (UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis > 0) {
-    send_standalone_msg(UL_INFO, UL_INFO->cqi_ind.header.message_id);
-    sent_any = true;
-    UL_INFO->cqi_ind.cqi_indication_body.number_of_cqis = 0;
-  }
-
-  if (UL_INFO->harq_ind.harq_indication_body.number_of_harqs > 0) {
-    //LOG_D(MAC, "ul_config_req_UE_MAC 2.4, SFN/SF of PNF counter:%d.%d, number_of_harqs: %d \n", timer_frame, timer_subframe, UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
-    send_standalone_msg(UL_INFO, UL_INFO->harq_ind.header.message_id);
-    sent_any = true;
-    //LOG_I(MAC, "ul_config_req_UE_MAC 2.41 \n");
-    UL_INFO->harq_ind.harq_indication_body.number_of_harqs = 0;
-  }
-
-  if (UL_INFO->sr_ind.sr_indication_body.number_of_srs > 0) {
-    //LOG_I(MAC, "ul_config_req_UE_MAC 2.5, SFN/SF of PNF counter:%d.%d, number_of_srs: %d \n", timer_frame, timer_subframe, UL_INFO->sr_ind.sr_indication_body.number_of_srs);
-    send_standalone_msg(UL_INFO, UL_INFO->sr_ind.header.message_id);
-    sent_any = true;
-    //LOG_I(MAC, "ul_config_req_UE_MAC 2.51 \n");
-    UL_INFO->sr_ind.sr_indication_body.number_of_srs = 0;
-  }
-
-  // De-allocate memory of nfapi requests copies before next subframe round
-  if (dl_config_req_tx_req != NULL) {
-    if (dl_config_req_tx_req->dl_config_req->vendor_extension != NULL) {
-      free(dl_config_req_tx_req->dl_config_req->vendor_extension);
-      dl_config_req_tx_req->dl_config_req->vendor_extension = NULL;
+      nfapi_free_tx_req_pdu_list(dl_config_req_tx_req->tx_req_pdu_list);
+      dl_config_req_tx_req->tx_req_pdu_list = NULL;
+      free(dl_config_req_tx_req->dl_config_req);
+      dl_config_req_tx_req->dl_config_req = NULL;
+      free(dl_config_req_tx_req);
+      dl_config_req_tx_req = NULL;
     }
 
-    if (dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list != NULL) {
-      free(dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list);
-      dl_config_req_tx_req->dl_config_req->dl_config_request_body.dl_config_pdu_list = NULL;
+    if (ul_config_req != NULL) {
+      if (ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL) {
+        free(ul_config_req->ul_config_request_body.ul_config_pdu_list);
+        ul_config_req->ul_config_request_body.ul_config_pdu_list = NULL;
+      }
+
+      free(ul_config_req);
+      ul_config_req = NULL;
     }
 
-    nfapi_free_tx_req_pdu_list(dl_config_req_tx_req->tx_req_pdu_list);
-    dl_config_req_tx_req->tx_req_pdu_list = NULL;
-    free(dl_config_req_tx_req->dl_config_req);
-    dl_config_req_tx_req->dl_config_req = NULL;
-    free(dl_config_req_tx_req);
-    dl_config_req_tx_req = NULL;
-  }
+    if (hi_dci0_req != NULL) {
+      if (hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list != NULL) {
+        free(hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list);
+        hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list = NULL;
+      }
 
-  if (ul_config_req != NULL) {
-    if (ul_config_req->ul_config_request_body.ul_config_pdu_list != NULL) {
-      free(ul_config_req->ul_config_request_body.ul_config_pdu_list);
-      ul_config_req->ul_config_request_body.ul_config_pdu_list = NULL;
+      free(hi_dci0_req);
+      hi_dci0_req = NULL;
     }
 
-    free(ul_config_req);
-    ul_config_req = NULL;
-  }
-
-  if (hi_dci0_req != NULL) {
-    if (hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list != NULL) {
-      free(hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list);
-      hi_dci0_req->hi_dci0_request_body.hi_dci0_pdu_list = NULL;
+    if (!sent_any) {
+      send_standalone_dummy();
     }
-
-    free(hi_dci0_req);
-    hi_dci0_req = NULL;
   }
 
-  if (!sent_any) {
-    send_standalone_dummy();
-  }
-}
-
-// Free UL_INFO messages
-free(UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list);
-UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = NULL;
-free(UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list);
-UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = NULL;
-free(UL_INFO->sr_ind.sr_indication_body.sr_pdu_list);
-UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = NULL;
-free(UL_INFO->harq_ind.harq_indication_body.harq_pdu_list);
-UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = NULL;
-free(UL_INFO->crc_ind.crc_indication_body.crc_pdu_list);
-UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = NULL;
-free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list);
-UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = NULL;
-free(UL_INFO);
-UL_INFO = NULL;
-
-// thread finished
-free(arg);
-return NULL;
+  // Free UL_INFO messages
+  free(UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list);
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_raw_pdu_list = NULL;
+  free(UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list);
+  UL_INFO->cqi_ind.cqi_indication_body.cqi_pdu_list = NULL;
+  free(UL_INFO->sr_ind.sr_indication_body.sr_pdu_list);
+  UL_INFO->sr_ind.sr_indication_body.sr_pdu_list = NULL;
+  free(UL_INFO->harq_ind.harq_indication_body.harq_pdu_list);
+  UL_INFO->harq_ind.harq_indication_body.harq_pdu_list = NULL;
+  free(UL_INFO->crc_ind.crc_indication_body.crc_pdu_list);
+  UL_INFO->crc_ind.crc_indication_body.crc_pdu_list = NULL;
+  free(UL_INFO->rx_ind.rx_indication_body.rx_pdu_list);
+  UL_INFO->rx_ind.rx_indication_body.rx_pdu_list = NULL;
+  free(UL_INFO);
+  UL_INFO = NULL;
+  // thread finished
+  free(arg);
+  return NULL;
 }
 
 /*!
