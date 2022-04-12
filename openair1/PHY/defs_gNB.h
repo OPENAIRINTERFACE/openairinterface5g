@@ -850,9 +850,15 @@ typedef struct PHY_VARS_gNB_s {
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
+  int csi_gold_init;
+  int pdcch_gold_init;
+  int pdsch_gold_init[2];
+  int pusch_gold_init[2];
+
   int ap_N1;
   int ap_N2;
   int ap_XP;
+
   int pucch0_thres;
   int pusch_thres;
   int prach_thres;
