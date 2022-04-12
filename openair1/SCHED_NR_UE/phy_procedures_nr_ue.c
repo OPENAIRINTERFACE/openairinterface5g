@@ -580,6 +580,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
                                       nr_slot_rx,
                                       get_dmrs_port(aatx,dlsch0_harq->dmrs_ports),
                                       m,
+                                      dlsch0_harq->nscid,
+                                      dlsch0_harq->dlDmrsScramblingId,
                                       BWPStart,
                                       dlsch0_harq->dmrsConfigType,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
@@ -1403,16 +1405,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (slot_ssb) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
     LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-    const int estimateSz=7*2*sizeof(int)*fp->ofdm_symbol_size;
+
+    const int estimateSz = fp->symbols_per_slot * fp->ofdm_symbol_size;
     __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates[fp->nb_antennas_rx][estimateSz];
-    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[fp->nb_antennas_rx][estimateSz];
+    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[fp->nb_antennas_rx][fp->ofdm_symbol_size];
+
     for (int i=1; i<4; i++) {
 
       nr_slot_fep(ue,
                   proc,
                   (ue->symbol_offset+i)%(fp->symbols_per_slot),
                   nr_slot_rx);
-
 
       start_meas(&ue->dlsch_channel_estimation_stats);
       nr_pbch_channel_estimation(ue, estimateSz, dl_ch_estimates, dl_ch_estimates_time,proc,gNB_id,nr_slot_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
@@ -1431,7 +1434,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
         nr_adjust_synch_ue(fp,
                            ue,
                            gNB_id,
-			   estimateSz, dl_ch_estimates_time,
+                           fp->ofdm_symbol_size,
+                           dl_ch_estimates_time,
                            frame_rx,
                            nr_slot_rx,
                            0,
@@ -1478,6 +1482,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                                     gNB_id,
                                     nr_slot_rx,
                                     l,
+                                    pdcch_vars->pdcch_config[n_ss].coreset.pdcch_dmrs_scrambling_id,
                                     fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
                                     coreset_nb_rb);
 

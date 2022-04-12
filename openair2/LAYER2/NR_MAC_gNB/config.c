@@ -160,11 +160,11 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 }
 
-void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts_t dl_antenna_ports_struct, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
   RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
-  int i;
+  int pdsch_AntennaPorts = dl_antenna_ports_struct.N1 * dl_antenna_ports_struct.N2 * dl_antenna_ports_struct.XP;
 
   // Carrier configuration
 
@@ -181,7 +181,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->carrier_config.dl_frequency.tl.tag = NFAPI_NR_CONFIG_DL_FREQUENCY_TAG;
   cfg->num_tlv++;
 
-  for (i=0; i<5; i++) {
+  for (int i=0; i<5; i++) {
     if (i==scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
       cfg->carrier_config.dl_grid_size[i].value = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
       cfg->carrier_config.dl_k0[i].value = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
@@ -215,7 +215,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->carrier_config.uplink_frequency.tl.tag = NFAPI_NR_CONFIG_UPLINK_FREQUENCY_TAG;
   cfg->num_tlv++;
 
-  for (i=0; i<5; i++) {
+  for (int i=0; i<5; i++) {
     if (i==scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing) {
       cfg->carrier_config.ul_grid_size[i].value = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
       cfg->carrier_config.ul_k0[i].value = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier;
@@ -306,7 +306,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->num_tlv++;
 
   cfg->prach_config.num_prach_fd_occasions_list = (nfapi_nr_num_prach_fd_occasions_t *) malloc(cfg->prach_config.num_prach_fd_occasions.value*sizeof(nfapi_nr_num_prach_fd_occasions_t));
-  for (i=0; i<cfg->prach_config.num_prach_fd_occasions.value; i++) {
+  for (int i=0; i<cfg->prach_config.num_prach_fd_occasions.value; i++) {
 //    cfg->prach_config.num_prach_fd_occasions_list[i].num_prach_fd_occasions = i;
     if (cfg->prach_config.prach_sequence_length.value)
       cfg->prach_config.num_prach_fd_occasions_list[i].prach_root_sequence_index.value = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139; 
@@ -375,7 +375,7 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
     case 3 :
       cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
-      for (i=0; i<4; i++) {
+      for (int i=0; i<4; i++) {
         cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[3-i]<<i*8);
         cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-i]<<i*8);
       }
@@ -414,7 +414,8 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   cfg->carrier_config.num_rx_ant.value = pusch_AntennaPorts;
   AssertFatal(pusch_AntennaPorts > 0 && pusch_AntennaPorts < 13, "pusch_AntennaPorts in 1...12\n");
   cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
-  LOG_I(NR_MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
+  LOG_I(NR_MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",
+        cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
   cfg->num_tlv++;
   cfg->num_tlv++;
@@ -451,15 +452,16 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
-                           int pdsch_AntennaPorts,
+                           rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
                            int minRXTXTIMEpdsch,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
-	                   int add_ue,
+                           NR_BCCH_DL_SCH_Message_t *sib1,
+                           int add_ue,
                            uint32_t rnti,
-	                   NR_CellGroupConfig_t *CellGroup) {
+                           NR_CellGroupConfig_t *CellGroup) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
@@ -567,28 +569,34 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
   }
  
-  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib; 
- 
+  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib;
+  if (sib1) RC.nrmac[Mod_idP]->common_channels[0].sib1 = sib1;
+
   if (CellGroup) {
 
-    const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
-    const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-    if(bwpList) {
-      AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
-      for (int i = 0; i < bwpList->list.count; ++i) {
-        const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
-        calculate_preferred_dl_tda(Mod_idP, bwp);
-      }
-    } else {
+    if (get_softmodem_params()->sa) {
       calculate_preferred_dl_tda(Mod_idP, NULL);
     }
 
-    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-    if(ubwpList) {
-      AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
-      for (int i = 0; i < ubwpList->list.count; ++i) {
-        const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
-        calculate_preferred_ul_tda(Mod_idP, ubwp);
+    const NR_ServingCellConfig_t *servingCellConfig = NULL;
+    if(CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated) {
+      servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
+      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
+      if(bwpList) {
+        AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
+        for (int i = 0; i < bwpList->list.count; ++i) {
+          const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
+          calculate_preferred_dl_tda(Mod_idP, bwp);
+        }
+      }
+
+      const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+      if(ubwpList) {
+        AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
+        for (int i = 0; i < ubwpList->list.count; ++i) {
+          const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
+          calculate_preferred_ul_tda(Mod_idP, ubwp);
+        }
       }
     }
 
@@ -648,7 +656,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       UE_info->CellGroup[UE_id] = CellGroup;
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
-      const NR_ServingCellConfig_t *servingCellConfig = CellGroup ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
       sched_ctrl->update_pdsch_ps = true;
       sched_ctrl->update_pusch_ps = true;
@@ -673,16 +680,14 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
         genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       }
-      else
-        AssertFatal(1==0,"Either initial BWP or active BWP should always be present\n");
-      sched_ctrl->search_space = get_searchspace(scc, bwpd, target_ss);
+      sched_ctrl->search_space = get_searchspace(sib1 ? sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
       sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
       sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
                                                     sched_ctrl->search_space,
                                                     sched_ctrl->coreset,
                                                     scc,
                                                     genericParameters,
-                                                    NULL);
+                                                    RC.nrmac[Mod_idP]->type0_PDCCH_CSS_config);
       sched_ctrl->maxL = 2;
     }
   }

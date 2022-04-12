@@ -55,7 +55,9 @@ pipeline {
     stage ("Push to DockerHub") {
       steps {
         script {
-          WEEK_TAG = sh returnStdout: true, script: 'date +"%Y.w%U"'
+          WEEK_REF = sh returnStdout: true, script: 'date +"%Y.w%V"'
+          WEEK_REF = WEEK_REF.trim()
+          WEEK_TAG = sh returnStdout: true, script: 'python3 ./ci-scripts/provideUniqueImageTag.py --start_tag ' + WEEK_REF
           WEEK_TAG = WEEK_TAG.trim()
 
           withCredentials([

@@ -29,7 +29,8 @@ FROM ran-base:latest AS nr-ue-base
 
 FROM ran-build:latest AS nr-ue-build
 
-RUN cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/nr_ue_parameters.yaml && \
+    cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-nr-ue
@@ -67,7 +68,10 @@ COPY --from=nr-ue-build \
     ./
 
 WORKDIR /opt/oai-nr-ue/etc
-COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf .
+COPY --from=nr-ue-build \
+    /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf \
+    /oai-ran/docker/etc/nr-ue.nfapi.conf \
+    ./
 
 COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
@@ -88,7 +92,7 @@ COPY --from=nr-ue-build \
 COPY --from=nr-ue-base /usr/local/bin/uhd_find_devices /usr/local/bin
 COPY --from=nr-ue-base \
      /usr/local/lib/libuhd.so.3.15.0 \
-     /usr/local/lib/libprotobuf-c.so.1 \
+     /usr/lib/x86_64-linux-gnu/libprotobuf-c.so.1 \
      /usr/local/lib/
 COPY --from=nr-ue-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-nr-ue/bin
 
@@ -106,5 +110,5 @@ RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai
     ldconfig
 
 WORKDIR /opt/oai-nr-ue
-CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15", "-O", "/opt/oai-nr-ue/etc/nr-ue-sim.conf"]
+CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15", "-O", "/opt/oai-nr-ue/etc/nr-ue.conf"]
 ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]

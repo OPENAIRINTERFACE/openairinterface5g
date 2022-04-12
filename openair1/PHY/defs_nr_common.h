@@ -94,6 +94,8 @@
 #define NR_RX_NB_TH 1
 #define NR_NB_TH_SLOT 2
 
+#define NR_NB_NSCID 2
+
 extern const uint8_t nr_rv_round_map[4]; 
 
 static inline
@@ -322,7 +324,7 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_frame_wCP;
   /// NR numerology index [0..5] as specified in 38.211 Section 4 (mu). 0=15khZ SCS, 1=30khZ, 2=60kHz, etc
   uint8_t numerology_index;
-  /// Number of Physical transmit antennas in node
+  /// Number of Physical transmit antennas in node (corresponds to nrOfAntennaPorts)
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;

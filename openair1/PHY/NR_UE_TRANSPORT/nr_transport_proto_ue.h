@@ -733,7 +733,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     @param n_dmrs_cdm_groups
     @param frame_parms Pointer to frame descriptor
 */
-unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
+void nr_dlsch_extract_rbs(int **rxdataF,
                                         int **dl_ch_estimates,
                                         int **rxdataF_ext,
                                         int **dl_ch_estimates_ext,
@@ -824,28 +824,12 @@ void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
                                      int start_point);
 
 void nr_dlsch_deinterleaving(uint8_t symbol,
-							uint8_t start_symbol,
-							uint16_t L,
-							uint16_t *llr,
-							uint16_t *llr_deint,
-							uint16_t nb_rb_pdsch);
+                             uint8_t start_symbol,
+                             uint16_t L,
+                             uint16_t *llr,
+                             uint16_t *llr_deint,
+                             uint16_t nb_rb_pdsch);
 
-void dlsch_dual_stream_correlation(NR_DL_FRAME_PARMS *frame_parms,
-                                   unsigned char symbol,
-                                   unsigned short nb_rb,
-                                   int **dl_ch_estimates_ext,
-                                   int **dl_ch_estimates_ext_i,
-                                   int **dl_ch_rho_ext,
-                                   unsigned char output_shift);
-
-void dlsch_dual_stream_correlationTM34(NR_DL_FRAME_PARMS *frame_parms,
-                                   unsigned char symbol,
-                                   unsigned short nb_rb,
-                                   int **dl_ch_estimates_ext,
-                                   int **dl_ch_estimates_ext_i,
-                                   int **dl_ch_rho_ext,
-                                   unsigned char output_shift0,
-                                   unsigned char output_shift1);
 //This function is used to compute multiplications in Hhermitian * H matrix
 void conjch0_mult_ch1(int *ch0,
                       int *ch1,
@@ -896,19 +880,6 @@ void nr_dlsch_detection_mrc(int **rxdataF_comp,
                             unsigned char symbol,
                             unsigned short nb_rb,
                             int length);
-
-void nr_dlsch_detection_mrc_core(int **rxdataF_comp,
-                              int **rxdataF_comp_i,
-                              int **rho,
-                              int **rho_i,
-                              int **dl_ch_mag,
-                              int **dl_ch_magb,
-                              int **dl_ch_mag_i,
-                              int **dl_ch_magb_i,
-                              unsigned char n_tx,
-                              unsigned char n_rx,
-                              int length,
-                              int start_point);
 
 void det_HhH(int32_t *after_mf_00,
              int32_t *after_mf_01,

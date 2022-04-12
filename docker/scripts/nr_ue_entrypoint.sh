@@ -5,12 +5,22 @@ set -euo pipefail
 PREFIX=/opt/oai-nr-ue
 
 # Based another env var, pick one template to use
-#if [[ -v USE_NFAPI ]]; then cp $PREFIX/etc/ue.nfapi.conf $PREFIX/etc/ue.conf; fi
+if [[ -v USE_NFAPI ]]; then cp $PREFIX/etc/nr-ue.nfapi.conf $PREFIX/etc/nr-ue.conf; fi
+# Sometimes, the templates are not enough. We mount a conf file on $PREFIX/etc. It can be a template itself.
+if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/nr-ue.conf; fi
+# if none, pick the default
+if [ ! -f $PREFIX/etc/nr-ue.conf ]; then cp $PREFIX/etc/nr-ue-sim.conf $PREFIX/etc/nr-ue.conf; fi
 
-# Only this template will be manipulated and the USIM one!
-CONFIG_FILES=`ls $PREFIX/etc/ue.conf $PREFIX/etc/nr-ue-sim.conf || true`
+# Only this template will be manipulated
+CONFIG_FILES=`ls $PREFIX/etc/nr-ue.conf || true`
 
 for c in ${CONFIG_FILES}; do
+    # Sometimes templates have no pattern to be replaced.
+    if ! grep -oP '@[a-zA-Z0-9_]+@' ${c}; then
+        echo "Configuration is already set"
+        break
+    fi
+
     # grep variable names (format: ${VAR}) from template to be rendered
     VARS=$(grep -oP '@[a-zA-Z0-9_]+@' ${c} | sort | uniq | xargs)
 

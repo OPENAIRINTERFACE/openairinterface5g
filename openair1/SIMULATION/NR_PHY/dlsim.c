@@ -207,7 +207,7 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   int pdsch_AntennaPorts,
+                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
 		   NR_ServingCellConfigCommon_t *scc
 		   );
@@ -238,6 +238,8 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             sdu_size_t      sdu2_lenP) {
   return 0;
 }
+
+nr_bler_struct nr_bler_data[NR_NUM_MCS];
 
 void processSlotTX(void *arg) {}
 
@@ -272,7 +274,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   /* manually set free CCE to 0 */
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
+  sched_ctrl->search_space = get_searchspace(NULL, scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
@@ -282,7 +284,8 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  nr_set_pdsch_semi_static(scc,
+  nr_set_pdsch_semi_static(NULL,
+                           scc,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
@@ -537,8 +540,8 @@ int main(int argc, char **argv)
     case 'x':
       g_nrOfLayers=atoi(optarg);
 
-      if ((g_nrOfLayers!=1) &&
-          (g_nrOfLayers!=2)) {
+      if ((g_nrOfLayers==0) ||
+          (g_nrOfLayers>4)) {
         printf("Unsupported nr Of Layers %d\n",g_nrOfLayers);
         exit(-1);
       }
@@ -784,12 +787,27 @@ int main(int argc, char **argv)
   fix_scc(scc,ssb_bitmap);
   prepare_scd(scd);
 
+  rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts;
+  pdsch_AntennaPorts.N1 = n_tx>1 ? n_tx>>1 : 1;
+  pdsch_AntennaPorts.N2 = 1;
+  pdsch_AntennaPorts.XP = n_tx>1 ? 2 : 1;
+  gNB->ap_N1 = pdsch_AntennaPorts.N1;
+  gNB->ap_N2 = pdsch_AntennaPorts.N2;
+  gNB->ap_XP = pdsch_AntennaPorts.XP;
+
   NR_UE_NR_Capability_t* UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
   prepare_sim_uecap(UE_Capability_nr,scc,mu,
                     N_RB_DL,g_mcsTableIdx);
 
   // TODO do a UECAP for phy-sim
-  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, UE_Capability_nr, 0, 1, n_tx, 6, 0, 0, 0);
+  const gNB_RrcConfigurationReq conf = {
+    .pdsch_AntennaPorts = pdsch_AntennaPorts,
+    .minRXTXTIME = 6,
+    .do_CSIRS = 0,
+    .do_SRS = 0,
+    .force_256qam_off = false
+  };
+  fill_default_secondaryCellGroup(scc, scd, secondaryCellGroup, UE_Capability_nr, 0, 1, &conf, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);
@@ -807,10 +825,11 @@ int main(int argc, char **argv)
 
   AssertFatal((gNB->if_inst         = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
+
   // common configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, 6, scc, NULL, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, n_tx, n_tx, 0, 6, scc, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
@@ -942,10 +961,10 @@ int main(int argc, char **argv)
   nr_gold_pdcch(UE, frame_parms->Nid_cell);
 
   // compute the scrambling IDs for PDSCH DMRS
-  for (int i = 0; i < 2; i++)
-    UE->scramblingID[i] = frame_parms->Nid_cell;
-
-  nr_gold_pdsch(UE, UE->scramblingID);
+  for (int i = 0; i < 2; i++) {
+    UE->scramblingID_dlsch[i] = frame_parms->Nid_cell;
+    nr_gold_pdsch(UE, i, UE->scramblingID_dlsch[i]);
+  }
 
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
@@ -1202,10 +1221,10 @@ int main(int argc, char **argv)
                              frame_length_complex_samples,
                              0);
 
-        double H_awgn_mimo[4][4] ={{1.0, 0.5, 0.25, 0.125},//rx 0
-                                   {0.5, 1.0, 0.5, 0.25},  //rx 1
-                                   {0.25, 0.5, 1.0, 0.5},  //rx 2
-                                   {0.125, 0.25, 0.5, 1.0}};//rx 3
+        double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05}, //rx 0
+                                   {0.2, 1.0, 0.2, 0.1}, //rx 1
+                                   {0.1, 0.2, 1.0, 0.2}, //rx 2
+                                   {0.05, 0.1, 0.2, 1.0}};//rx 3
 
         for (i=frame_parms->get_samples_slot_timestamp(slot,frame_parms,0); 
              i<frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0);
@@ -1260,7 +1279,7 @@ int main(int argc, char **argv)
       TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
       uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
       uint16_t nb_rb       = rel15->rbSize;
-      uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4;
+      uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6*UE_harq_process->n_dmrs_cdm_groups : 4*UE_harq_process->n_dmrs_cdm_groups;
       uint8_t  mod_order   = rel15->qamModOrder[0];
       uint8_t  nb_symb_sch = rel15->NrOfSymbols;
 

@@ -183,7 +183,7 @@ typedef struct {
   //! estimated rssi (dBm)
   short          rx_rssi_dBm[NUMBER_OF_CONNECTED_gNB_MAX];
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][4][4];
+  int            rx_correlation[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX][NR_MAX_NB_LAYERS*NR_MAX_NB_LAYERS];//
   //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
   int            rx_correlation_dB[NUMBER_OF_CONNECTED_gNB_MAX][2];
 
@@ -271,12 +271,6 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp0;
-  /// \brief Received frequency-domain signal after extraction and channel compensation for the second stream. For the SIC receiver we need to store the history of this for each harq process and round
-  /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
-  /// - second index: ? [0..7] (hard coded) accessed via \c round
-  /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - fourth index: ? [0..168*N_RB_DL[
-  int32_t **rxdataF_comp1[8][8];
   /// \brief Hold the channel estimates in frequency domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
@@ -289,12 +283,6 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_ptrs_estimates_ext;
-  /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS. For the SIC receiver we need to store the history of this for each harq process and round
-  /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
-  /// - second index: ? [0..7] (hard coded) accessed via \c round
-  /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - fourth index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_rho_ext[8][8];
   /// \brief Downlink beamforming channel estimates in frequency domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
@@ -303,10 +291,6 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_bf_ch_estimates_ext;
-  /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_rho2_ext;
   /// \brief Downlink PMIs extracted in PRBS and grouped in subbands.
   /// - first index: ressource block [0..N_RB_DL[
   uint8_t *pmi_ext;
@@ -314,18 +298,10 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_mag0;
-  /// \brief Magnitude of Downlink Channel second layer (16QAM level/First 64QAM level).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_mag1[8][8];
   /// \brief Magnitude of Downlink Channel, first layer (2nd 64QAM level).
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_magb0;
-  /// \brief Magnitude of Downlink Channel second layer (2nd 64QAM level).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_magb1[8][8];
   /// \brief Magnitude of Downlink Channel, first layer (256QAM level).
   int32_t **dl_ch_magr0;
   /// \brief Cross-correlation Matrix of the gNB Tx channel signals.
@@ -595,10 +571,6 @@ typedef struct {
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
   /// \brief Pointers to channel cross-correlation vectors for multi-gNB detection.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_rho_ext;
-  /// \brief Pointers to channel cross-correlation vectors for multi-gNB detection.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: ? [0..]
   int32_t **rho;
@@ -817,7 +789,10 @@ typedef struct {
   uint32_t ****nr_gold_pdsch[NUMBER_OF_CONNECTED_eNB_MAX];
 
   // Scrambling IDs used in PDSCH DMRS
-  uint16_t scramblingID[2];
+  uint16_t scramblingID_dlsch[2];
+
+  // Scrambling IDs used in PUSCH DMRS
+  uint16_t scramblingID_ulsch[2];
 
   /// PDCCH DMRS
   uint32_t ***nr_gold_pdcch[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -826,7 +801,7 @@ typedef struct {
   uint16_t scramblingID_pdcch;
 
   /// PUSCH DMRS sequence
-  uint32_t ***nr_gold_pusch_dmrs;
+  uint32_t ****nr_gold_pusch_dmrs;
 
   uint32_t X_u[64][839];
 

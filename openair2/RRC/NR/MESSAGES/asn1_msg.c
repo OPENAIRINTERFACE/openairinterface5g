@@ -197,6 +197,7 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
 
   asn_enc_rval_t enc_rval;
   rrc_gNB_carrier_data_t *carrier = &rrc->carrier;  
+  const gNB_RrcConfigurationReq *configuration = &rrc->configuration;
 
   NR_BCCH_BCH_Message_t *mib = &carrier->mib;
   NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
@@ -220,7 +221,7 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   mib->message.choice.mib->spare.size = 1;
   mib->message.choice.mib->spare.bits_unused = 7;  // This makes a spare of 1 bits
 
-  mib->message.choice.mib->ssb_SubcarrierOffset = (carrier->ssb_SubcarrierOffset)&15;
+  mib->message.choice.mib->ssb_SubcarrierOffset = (configuration->ssb_SubcarrierOffset)&15;
 
   /*
   * The SIB1 will be sent in this allocation (Type0-PDCCH) : 38.213, 13-4 Table and 38.213 13-11 to 13-14 tables
@@ -1007,8 +1008,8 @@ long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
 void fill_initial_SpCellConfig(int uid,
                                NR_SpCellConfig_t *SpCellConfig,
                                NR_ServingCellConfigCommon_t *scc,
-                               rrc_gNB_carrier_data_t *carrier) {
-
+                               const gNB_RrcConfigurationReq *configuration)
+{
   // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
   // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
   // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
@@ -1139,7 +1140,7 @@ void fill_initial_SpCellConfig(int uid,
   ASN_SEQUENCE_ADD(&srs_resset0->srs_ResourceIdList->list,srs_resset0_id);
   srs_Config->srs_ResourceToReleaseList=NULL;
 
-  if(carrier->do_SRS) {
+  if (configuration->do_SRS) {
     srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_periodic;
     srs_resset0->resourceType.choice.periodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.periodic));
     srs_resset0->resourceType.choice.periodic->associatedCSI_RS = NULL;
@@ -1183,7 +1184,7 @@ void fill_initial_SpCellConfig(int uid,
       srs_res0->freqHopping.b_SRS);
   srs_res0->groupOrSequenceHopping=NR_SRS_Resource__groupOrSequenceHopping_neither;
 
-  if(carrier->do_SRS) {
+  if (configuration->do_SRS) {
     srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_periodic;
     srs_res0->resourceType.choice.periodic=calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
     srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
@@ -1229,9 +1230,9 @@ void fill_initial_SpCellConfig(int uid,
  long *delay[8];
  for (int i=0;i<8;i++) {
    delay[i] = calloc(1,sizeof(*delay[i]));
-   AssertFatal(carrier->minRXTXTIME >=2 && carrier->minRXTXTIME <7,
-               "check minRXTXTIME %d\n",carrier->minRXTXTIME);
-   *delay[i] = (i+carrier->minRXTXTIME);
+   AssertFatal(configuration->minRXTXTIME >= 2 && configuration->minRXTXTIME < 7,
+               "minRXTXTIME is %d but should be within [2,7)\n", configuration->minRXTXTIME);
+   *delay[i] = i + configuration->minRXTXTIME;
    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
  }
 
@@ -1451,25 +1452,26 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig_drb);
 }
 
+
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
-                            rrc_gNB_carrier_data_t *carrier,
-                            NR_UE_NR_Capability_t *uecap) {
+                            NR_UE_NR_Capability_t *uecap,
+                            const gNB_RrcConfigurationReq* configuration) {
 
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
   if (SpCellConfig == NULL) return;
 
-  NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
+  NR_ServingCellConfigCommon_t *scc = configuration->scc;
 
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
-                   uecap, bwp_Dedicated, scc);
+                   configuration->force_256qam_off ? NULL : uecap, bwp_Dedicated, scc);
 
   struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
   if (DL_BWP_list) {
     for (int i=0; i<DL_BWP_list->list.count; i++){
       NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
       int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-      set_dl_mcs_table(scs, uecap, bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
+      set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, scc);
     }
   }
 }
@@ -1478,8 +1480,8 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
 void fill_initial_cellGroupConfig(int uid,
                                   NR_CellGroupConfig_t *cellGroupConfig,
                                   NR_ServingCellConfigCommon_t *scc,
-                                  rrc_gNB_carrier_data_t *carrier) {
-
+                                  const gNB_RrcConfigurationReq *configuration)
+{
   NR_RLC_BearerConfig_t                            *rlc_BearerConfig     = NULL;
   NR_RLC_Config_t                                  *rlc_Config           = NULL;
   NR_LogicalChannelConfig_t                        *logicalChannelConfig = NULL;
@@ -1569,7 +1571,7 @@ void fill_initial_cellGroupConfig(int uid,
   
   cellGroupConfig->spCellConfig                                             = calloc(1,sizeof(*cellGroupConfig->spCellConfig));
   
-  fill_initial_SpCellConfig(uid,cellGroupConfig->spCellConfig,scc,carrier);
+  fill_initial_SpCellConfig(uid,cellGroupConfig->spCellConfig,scc,configuration);
   
   cellGroupConfig->sCellToAddModList                                        = NULL;
   cellGroupConfig->sCellToReleaseList                                       = NULL;
@@ -1581,7 +1583,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                     const uint8_t                transaction_id,
                     OCTET_STRING_t               *masterCellGroup_from_DU,
                     NR_ServingCellConfigCommon_t *scc,
-                    rrc_gNB_carrier_data_t *carrier)
+                    const gNB_RrcConfigurationReq *configuration)
 //------------------------------------------------------------------------------
 {
     asn_enc_rval_t                                   enc_rval;
@@ -1648,7 +1650,7 @@ uint8_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     }
     else {
       cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-      fill_initial_cellGroupConfig(ue_context_pP->local_uid,cellGroupConfig,scc,carrier);
+      fill_initial_cellGroupConfig(ue_context_pP->local_uid, cellGroupConfig, scc, configuration);
 
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
 				       NULL,
@@ -1896,6 +1898,7 @@ int16_t do_RRCReconfiguration(
     struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
     rrc_gNB_ue_context_t         *const ue_context_pP,
     rrc_gNB_carrier_data_t       *carrier,
+    const gNB_RrcConfigurationReq *configuration,
     NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig,
     NR_CellGroupConfig_t         *cellGroupConfig)
 //------------------------------------------------------------------------------
@@ -1948,8 +1951,9 @@ int16_t do_RRCReconfiguration(
 
     if(cellGroupConfig!=NULL){
       update_cellGroupConfig(cellGroupConfig,
-                             carrier,
-                             ue_context_pP->ue_context.UE_Capability_nr);
+                             ue_context_pP->ue_context.UE_Capability_nr,
+                             configuration);
+
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
           NULL,
           (void *)cellGroupConfig,
