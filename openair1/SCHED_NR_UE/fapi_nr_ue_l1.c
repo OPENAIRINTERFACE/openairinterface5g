@@ -315,6 +315,8 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
   dlsch0_harq->mcs = dlsch_config_pdu->mcs;
   dlsch0_harq->rvidx = dlsch_config_pdu->rv;
   dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+  dlsch0_harq->nscid = dlsch_config_pdu->nscid;
+  dlsch0_harq->dlDmrsScramblingId = dlsch_config_pdu->dlDmrsScramblingId;
   //get nrOfLayers from DCI info
   uint8_t Nl = 0;
   for (int i = 0; i < 12; i++) { // max 12 ports

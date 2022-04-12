@@ -1713,15 +1713,14 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
 }
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
-                            rrc_gNB_carrier_data_t *carrier,
                             int uid,
                             NR_UE_NR_Capability_t *uecap,
-                            const gNB_RrcConfigurationReq* configuration)
-{
+                            const gNB_RrcConfigurationReq* configuration) {
+
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
   if (SpCellConfig == NULL) return;
 
-  NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
+  NR_ServingCellConfigCommon_t *scc = configuration->scc;
 
   // Config CSI-RS
   if (configuration->do_CSIRS) {
@@ -1752,7 +1751,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
     for (int i=0; i<DL_BWP_list->list.count; i++){
       NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
       int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-      set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
+      set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, scc);
     }
   }
 }
@@ -2231,10 +2230,10 @@ int16_t do_RRCReconfiguration(
 
     if(cellGroupConfig!=NULL){
       update_cellGroupConfig(cellGroupConfig,
-                             carrier,
                              ue_context_pP->local_uid,
                              ue_context_pP->ue_context.UE_Capability_nr,
                              configuration);
+
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
           NULL,
           (void *)cellGroupConfig,

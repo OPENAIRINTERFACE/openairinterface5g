@@ -352,17 +352,19 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         nr_gold_pdcch(ue,fp->Nid_cell);
 
         // compute the scrambling IDs for PDSCH DMRS
-        for (int i=0; i<2; i++)
-          ue->scramblingID[i]=fp->Nid_cell;
-
-        nr_gold_pdsch(ue,ue->scramblingID);
+        for (int i=0; i<NR_NB_NSCID; i++) {
+          ue->scramblingID_dlsch[i]=fp->Nid_cell;
+          nr_gold_pdsch(ue, i, ue->scramblingID_dlsch[i]);
+        }
 
         nr_init_csi_rs(fp, ue->nr_csi_rs_info->nr_gold_csi_rs, fp->Nid_cell);
 
         // initialize the pusch dmrs
-        uint16_t N_n_scid[2] = {fp->Nid_cell,fp->Nid_cell};
-        int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
-        nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
+        for (int i=0; i<NR_NB_NSCID; i++) {
+          ue->scramblingID_ulsch[i]=fp->Nid_cell;
+          nr_init_pusch_dmrs(ue, ue->scramblingID_ulsch[i], i);
+        }
+
 
         // we also need to take into account the shift by samples_per_frame in case the if is true
         if (ue->ssb_offset < sync_pos_frame){
@@ -553,6 +555,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                       0,
                                       pdcch_vars->slot,
                                       l,
+                                      fp->Nid_cell,
                                       fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
                                       coreset_nb_rb);
 
