@@ -676,5 +676,22 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
         *ue->nr_csi_rs_info->precoded_sinr_dB,
         *ue->nr_csi_rs_info->cqi);
 
+  // Send CSI measurements to MAC
+  fapi_nr_csirs_measurements_t csirs_measurements;
+  csirs_measurements.rank_indicator = ue->nr_csi_rs_info->rank_indicator;
+  csirs_measurements.i1 = ue->nr_csi_rs_info->i1;
+  csirs_measurements.i2 = ue->nr_csi_rs_info->i2;
+  csirs_measurements.cqi = ue->nr_csi_rs_info->cqi;
+  nr_downlink_indication_t *dl_indication = calloc(sizeof(*dl_indication),1);
+  fapi_nr_rx_indication_t *rx_ind = calloc(sizeof(*rx_ind),1);
+  nr_fill_dl_indication(dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+  nr_fill_rx_indication(rx_ind, FAPI_NR_CSIRS_IND, gNB_id, ue, NULL, NULL, 1, proc, (void *)&csirs_measurements);
+  if (ue->if_inst && ue->if_inst->dl_indication) {
+    ue->if_inst->dl_indication(dl_indication, NULL);
+  } else {
+    free(dl_indication);
+    free(rx_ind);
+  }
+
   return 0;
 }

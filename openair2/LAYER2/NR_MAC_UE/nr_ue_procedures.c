@@ -1371,6 +1371,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
 }
 
+int8_t nr_ue_process_csirs_measurements(module_id_t module_id,
+                                        frame_t frame,
+                                        int slot,
+                                        fapi_nr_csirs_measurements_t *csirs_measurements) {
+  LOG_D(NR_MAC,"(%d.%d) Received CSI-RS measurements\n", frame, slot);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  memcpy(&mac->csirs_measurements, csirs_measurements, sizeof(*csirs_measurements));
+  return 0;
+}
+
 void set_harq_status(NR_UE_MAC_INST_t *mac,
                      uint8_t pucch_id,
                      uint8_t harq_id,

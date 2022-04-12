@@ -118,9 +118,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
-			   UE_nr_rxtx_proc_t *proc,
-			   void * typeSpecific){
-
+                           UE_nr_rxtx_proc_t *proc,
+                           void *typeSpecific){
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
@@ -174,6 +173,11 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.rsrp_dBm = ue->measurements.rsrp_dBm[gNB_id];
     break;
+    case FAPI_NR_CSIRS_IND:
+      memcpy(&rx_ind->rx_indication_body[n_pdus - 1].csirs_measurements,
+             (fapi_nr_csirs_measurements_t*)typeSpecific,
+             sizeof(*(fapi_nr_csirs_measurements_t*)typeSpecific));
+      break;
     default:
     break;
   }
