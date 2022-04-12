@@ -465,6 +465,8 @@ typedef struct {
   /// MCS table for this DLSCH
   uint8_t mcs_table;
   uint32_t tbslbrm;
+  uint8_t nscid;
+  uint16_t dlDmrsScramblingId;
   uint16_t pduBitmap;
 } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
