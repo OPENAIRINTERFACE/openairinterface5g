@@ -608,7 +608,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-  gNB->csi_gold_init = cfg->cell_config.phy_cell_id.value;
+  gNB->nr_csi_rs_info->csi_gold_init = cfg->cell_config.phy_cell_id.value;
   nr_init_csi_rs(&gNB->frame_parms, gNB->nr_csi_rs_info->nr_gold_csi_rs, cfg->cell_config.phy_cell_id.value);
 
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {

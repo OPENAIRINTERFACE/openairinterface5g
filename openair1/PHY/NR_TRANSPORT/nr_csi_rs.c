@@ -86,8 +86,8 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
   AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
 
   // if the scrambling id is not the one previously used to initialize we need to re-initialize the rs
-  if (csi_params->scramb_id != gNB->csi_gold_init) {
-    gNB->csi_gold_init = csi_params->scramb_id;
+  if (csi_params->scramb_id != nr_csi_rs_info->csi_gold_init) {
+    nr_csi_rs_info->csi_gold_init = csi_params->scramb_id;
     nr_init_csi_rs(&frame_parms, nr_csi_rs_info->nr_gold_csi_rs, csi_params->scramb_id);
   }
 
