@@ -836,6 +836,7 @@ void tx_rf(RU_t *ru,
     // we write 1 single I/Q sample to trigger Rx (rfsim will fill gaps with 0 I/Q)
     void *dummy_tx[ru->frame_parms->nb_antennas_tx];
     int16_t dummy_tx_data[ru->frame_parms->nb_antennas_tx][2]; // 2 because the function we call use pairs of int16_t implicitly as complex numbers
+    memset(dummy_tx_data,0,sizeof(dummy_tx_data));
     for (int i=0; i<ru->frame_parms->nb_antennas_tx; i++)
       dummy_tx[i]= dummy_tx_data[i];
     
