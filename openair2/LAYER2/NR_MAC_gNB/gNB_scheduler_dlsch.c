@@ -1478,6 +1478,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
           header->L = htons(bufEnd-buf);
           dlsch_total_bytes += bufEnd-buf;
 
+          for (; buf < bufEnd - 3; buf += 4) {
+            uint32_t *buf32 = (uint32_t *)buf;
+            *buf32 = lrand48();
+          }
           for (; buf < bufEnd; buf++)
             *buf = lrand48() & 0xff;
         }
