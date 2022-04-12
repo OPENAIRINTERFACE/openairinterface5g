@@ -31,6 +31,145 @@
 #include "nr_rrc_config.h"
 #include "common/utils/nr/nr_common.h"
 
+const uint8_t slotsperframe[5] = {10, 20, 40, 80, 160};
+
+
+void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period) {
+
+  nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
+  int ideal_period = nb_slots_per_period*MAX_MOBILES_PER_GNB;
+
+  if (ideal_period<5) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots4;
+    nzpcsi0->periodicityAndOffset->choice.slots4 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<6) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots5;
+    nzpcsi0->periodicityAndOffset->choice.slots5 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<9) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots8;
+    nzpcsi0->periodicityAndOffset->choice.slots8 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<11) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots10;
+    nzpcsi0->periodicityAndOffset->choice.slots10 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<17) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots16;
+    nzpcsi0->periodicityAndOffset->choice.slots16 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<21) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots20;
+    nzpcsi0->periodicityAndOffset->choice.slots20 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<41) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots40;
+    nzpcsi0->periodicityAndOffset->choice.slots40 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<81) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots80;
+    nzpcsi0->periodicityAndOffset->choice.slots80 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<161) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots160;
+    nzpcsi0->periodicityAndOffset->choice.slots160 = nb_slots_per_period*uid;
+  }
+  else {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
+    nzpcsi0->periodicityAndOffset->choice.slots320 = (nb_slots_per_period*uid)%320 + (nb_slots_per_period*uid)/320;
+  }
+}
+
+
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig,
+                  int uid,
+                  int num_dl_antenna_ports,
+                  int curr_bwp,
+                  int do_csirs) {
+
+  if (do_csirs) {
+
+    csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
+    NR_NZP_CSI_RS_ResourceSet_t *nzpcsirs0 = calloc(1,sizeof(*nzpcsirs0));
+    nzpcsirs0->nzp_CSI_ResourceSetId = 0;
+    NR_NZP_CSI_RS_ResourceId_t *nzpid0 = calloc(1,sizeof(*nzpid0));
+    *nzpid0 = 0;
+    ASN_SEQUENCE_ADD(&nzpcsirs0->nzp_CSI_RS_Resources,nzpid0);
+    nzpcsirs0->repetition = NULL;
+    nzpcsirs0->aperiodicTriggeringOffset = NULL;
+    nzpcsirs0->trs_Info = NULL;
+    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,nzpcsirs0);
+
+    const NR_TDD_UL_DL_Pattern_t *tdd = servingcellconfigcommon->tdd_UL_DL_ConfigurationCommon ?
+                                        &servingcellconfigcommon->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+
+    const int n_slots_frame = slotsperframe[*servingcellconfigcommon->ssbSubcarrierSpacing];
+
+    int nb_slots_per_period = n_slots_frame;
+    if (tdd)
+      nb_slots_per_period = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+
+    csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
+    NR_NZP_CSI_RS_Resource_t *nzpcsi0 = calloc(1,sizeof(*nzpcsi0));
+    nzpcsi0->nzp_CSI_RS_ResourceId = 0;
+    NR_CSI_RS_ResourceMapping_t resourceMapping;
+    switch (num_dl_antenna_ports) {
+      case 1:
+        resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2;
+        resourceMapping.frequencyDomainAllocation.choice.row2.buf = calloc(2, sizeof(uint8_t));
+        resourceMapping.frequencyDomainAllocation.choice.row2.size = 2;
+        resourceMapping.frequencyDomainAllocation.choice.row2.bits_unused = 4;
+        resourceMapping.frequencyDomainAllocation.choice.row2.buf[0] = 0;
+        resourceMapping.frequencyDomainAllocation.choice.row2.buf[1] = 16;
+        resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p1;
+        resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_noCDM;
+        break;
+      case 2:
+        resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other;
+        resourceMapping.frequencyDomainAllocation.choice.other.buf = calloc(2, sizeof(uint8_t));
+        resourceMapping.frequencyDomainAllocation.choice.other.size = 1;
+        resourceMapping.frequencyDomainAllocation.choice.other.bits_unused = 2;
+        resourceMapping.frequencyDomainAllocation.choice.other.buf[0] = 4;
+        resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p2;
+        resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_fd_CDM2;
+        break;
+      case 4:
+        resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4;
+        resourceMapping.frequencyDomainAllocation.choice.row4.buf = calloc(2, sizeof(uint8_t));
+        resourceMapping.frequencyDomainAllocation.choice.row4.size = 1;
+        resourceMapping.frequencyDomainAllocation.choice.row4.bits_unused = 5;
+        resourceMapping.frequencyDomainAllocation.choice.row4.buf[0] = 32;
+        resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p4;
+        resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_fd_CDM2;
+        break;
+      default:
+        AssertFatal(1==0,"Number of ports not yet supported\n");
+    }
+    resourceMapping.firstOFDMSymbolInTimeDomain = 13;  // last symbol of slot
+    resourceMapping.firstOFDMSymbolInTimeDomain2 = NULL;
+    resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
+    resourceMapping.density.choice.one = (NULL_t)0;
+    resourceMapping.freqBand.startingRB = 0;
+    resourceMapping.freqBand.nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
+    nzpcsi0->resourceMapping = resourceMapping;
+    nzpcsi0->powerControlOffset = 0;
+    nzpcsi0->powerControlOffsetSS=calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
+    *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
+    nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
+    set_csirs_periodicity(nzpcsi0, uid, nb_slots_per_period);
+    nzpcsi0->qcl_InfoPeriodicCSI_RS = NULL;
+    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
+  }
+  else {
+    csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = NULL;
+    csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = NULL;
+  }
+  csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
+  csi_MeasConfig->nzp_CSI_RS_ResourceToReleaseList = NULL;
+}
+
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        NR_ServingCellConfigCommon_t *scc,
                        int numerology,

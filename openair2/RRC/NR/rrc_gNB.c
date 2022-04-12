@@ -173,6 +173,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
                            rrc->configuration.minRXTXTIME,
                            rrc->carrier.servingcellconfigcommon,
                            &rrc->carrier.mib,
+                           rrc->carrier.siblock1,
                            0,
                            0, // WIP hardcoded rnti
                            NULL);
@@ -279,6 +280,7 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
                          rrc->configuration.pusch_AntennaPorts,
                          rrc->configuration.sib1_tda,
                          rrc->configuration.minRXTXTIME,
+                         NULL,
                          NULL,
                          NULL,
                          0,
@@ -468,6 +470,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          rrc_instance_p->configuration.minRXTXTIME,
                          rrc_instance_p->carrier.servingcellconfigcommon,
                          &rrc_instance_p->carrier.mib,
+                         rrc_instance_p->carrier.siblock1,
                          0,
                          ue_context_pP->ue_context.rnti,
                          NULL);
@@ -818,7 +821,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   uint8_t                        buffer[RRC_BUF_SIZE];
   uint16_t                       size;
   int                            qos_flow_index = 0;
-  NR_QFI_t                       qfi = 0;
   int                            pdu_sessions_done = 0;
   int i;
   NR_CellGroupConfig_t *cellGroupConfig;
@@ -869,15 +871,21 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     sdap_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
     memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
     sdap_config->pdu_Session = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
-    sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
-    sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
+    if (rrc->configuration.enable_sdap) {
+      sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
+      sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
+    } else {
+      sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
+      sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
+    }
     sdap_config->defaultDRB = TRUE;
     sdap_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
     memset(sdap_config->mappedQoS_FlowsToAdd, 0, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
 
     for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
-      qfi = ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].qfi;
-      ASN_SEQUENCE_ADD(&sdap_config->mappedQoS_FlowsToAdd->list, &qfi);
+      NR_QFI_t *qfi = calloc(1, sizeof(NR_QFI_t));
+      *qfi = ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].qfi;
+      ASN_SEQUENCE_ADD(&sdap_config->mappedQoS_FlowsToAdd->list, qfi);
     }
     sdap_config->mappedQoS_FlowsToRelease = NULL;
     DRB_config->cnAssociation->choice.sdap_Config = sdap_config;
@@ -1366,6 +1374,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
                            rrc->configuration.pusch_AntennaPorts,
                            rrc->configuration.sib1_tda,
                            rrc->configuration.minRXTXTIME,
+                           NULL,
                            NULL,
                            NULL,
                            0,

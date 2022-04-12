@@ -120,6 +120,12 @@ void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs);
 void schedulingrequest_config(NR_ServingCellConfigCommon_t *scc,
                               NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
                               NR_PUCCH_Config_t *pucch_Config);
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig,
+                  int uid,
+                  int num_dl_antenna_ports,
+                  int curr_bwp,
+                  int do_csirs);
 void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                       NR_ServingCellConfigCommon_t *scc);

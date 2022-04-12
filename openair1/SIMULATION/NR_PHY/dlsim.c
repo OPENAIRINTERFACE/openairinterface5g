@@ -239,6 +239,8 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   return 0;
 }
 
+nr_bler_struct nr_bler_data[NR_NUM_MCS];
+
 void processSlotTX(void *arg) {}
 
 //nFAPI P7 dummy functions to avoid linking errors 
@@ -272,7 +274,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   /* manually set free CCE to 0 */
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
+  sched_ctrl->search_space = get_searchspace(NULL, scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
@@ -282,7 +284,8 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  nr_set_pdsch_semi_static(scc,
+  nr_set_pdsch_semi_static(NULL,
+                           scc,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
@@ -824,9 +827,9 @@ int main(int argc, char **argv)
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
 
   // common configuration
-  rrc_mac_config_req_gNB(0,0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
@@ -958,10 +961,10 @@ int main(int argc, char **argv)
   nr_gold_pdcch(UE, frame_parms->Nid_cell);
 
   // compute the scrambling IDs for PDSCH DMRS
-  for (int i = 0; i < 2; i++)
-    UE->scramblingID[i] = frame_parms->Nid_cell;
-
-  nr_gold_pdsch(UE, UE->scramblingID);
+  for (int i = 0; i < 2; i++) {
+    UE->scramblingID_dlsch[i] = frame_parms->Nid_cell;
+    nr_gold_pdsch(UE, i, UE->scramblingID_dlsch[i]);
+  }
 
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
