@@ -623,6 +623,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
                                1, &is_typeA,
                                &startSymbolIndex, &nrOfSymbols);
 
+      AssertFatal((startSymbolIndex+nrOfSymbols)<14,"SIB1 TDA %d would cause overlap with CSI-RS. Please select a different SIB1 TDA.\n",time_domain_allocation);
+
       int mappingtype = is_typeA? typeA: typeB;
       uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype, 1);
 

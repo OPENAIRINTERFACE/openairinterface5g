@@ -536,6 +536,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   nr_generate_modulation_table();
+  gNB->pdcch_gold_init = cfg->cell_config.phy_cell_id.value;
   nr_init_pdcch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
   nr_init_pbch_interleaver(gNB->nr_pbch_interleaver);
 
@@ -549,28 +550,30 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     pdsch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t **));
     AssertFatal(pdsch_dmrs[slot]!=NULL, "NR init: pdsch_dmrs for slot %d - malloc failed\n", slot);
 
-    int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
     for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(nb_codewords*sizeof(uint32_t *));
+      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_NB_NSCID*sizeof(uint32_t *));
       AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
 
-      for (int q=0; q<nb_codewords; q++) {
+      for (int q=0; q<NR_NB_NSCID; q++) {
         pdsch_dmrs[slot][symb][q] = (uint32_t *)malloc16(pdsch_dmrs_init_length*sizeof(uint32_t));
-        AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
+        AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d nscid %d - malloc failed\n", slot, symb, q);
       }
     }
   }
 
-  nr_init_pdsch_dmrs(gNB, cfg->cell_config.phy_cell_id.value);
+
+  for (int nscid = 0; nscid < NR_NB_NSCID; nscid++) {
+    gNB->pdsch_gold_init[nscid] = cfg->cell_config.phy_cell_id.value;
+    nr_init_pdsch_dmrs(gNB, nscid, cfg->cell_config.phy_cell_id.value);
+  }
 
   //PUSCH DMRS init
-  gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(2*sizeof(uint32_t ***));
+  gNB->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(NR_NB_NSCID*sizeof(uint32_t ***));
 
   uint32_t ****pusch_dmrs = gNB->nr_gold_pusch_dmrs;
 
-  // ceil(((NB_RB*6(k)*2(QPSK)/32) // 3 RE *2(QPSK)
   int pusch_dmrs_init_length =  ((fp->N_RB_UL*12)>>5)+1;
-  for(int nscid=0; nscid<2; nscid++) {
+  for(int nscid=0; nscid<NR_NB_NSCID; nscid++) {
     pusch_dmrs[nscid] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
     AssertFatal(pusch_dmrs[nscid]!=NULL, "NR init: pusch_dmrs for nscid %d - malloc failed\n", nscid);
 
@@ -585,9 +588,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     }
   }
 
-  uint32_t Nid_pusch[2] = {cfg->cell_config.phy_cell_id.value,cfg->cell_config.phy_cell_id.value};
-  LOG_D(PHY,"Initializing PUSCH DMRS Gold sequence with (%x,%x)\n",Nid_pusch[0],Nid_pusch[1]);
-  nr_gold_pusch(gNB, &Nid_pusch[0]);
+  for (int nscid=0; nscid<NR_NB_NSCID; nscid++) {
+    gNB->pusch_gold_init[nscid] = cfg->cell_config.phy_cell_id.value;
+    nr_gold_pusch(gNB, nscid, gNB->pusch_gold_init[nscid]);
+  }
 
   // CSI RS init
   // ceil((NB_RB*8(max allocation per RB)*2(QPSK))/32)
@@ -603,6 +607,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
       AssertFatal(gNB->nr_csi_rs_info->nr_gold_csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
     }
   }
+
+  gNB->nr_csi_rs_info->csi_gold_init = cfg->cell_config.phy_cell_id.value;
   nr_init_csi_rs(&gNB->frame_parms, gNB->nr_csi_rs_info->nr_gold_csi_rs, cfg->cell_config.phy_cell_id.value);
 
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
@@ -640,12 +646,12 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   common_vars->beam_id = (uint8_t **)malloc16(Ptx*sizeof(uint8_t*));
 
   for (i=0;i<Ptx;i++){
-      common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
-      LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
-	    i,common_vars->txdataF[i],
-	    fp->samples_per_frame_wCP*sizeof(int32_t));
-      common_vars->beam_id[i] = (uint8_t*)malloc16_clear(fp->symbols_per_slot*fp->slots_per_frame*sizeof(uint8_t));
-      memset(common_vars->beam_id[i],255,fp->symbols_per_slot*fp->slots_per_frame);
+    common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
+    LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
+          i,common_vars->txdataF[i],
+          fp->samples_per_frame_wCP*sizeof(int32_t));
+    common_vars->beam_id[i] = (uint8_t*)malloc16_clear(fp->symbols_per_slot*fp->slots_per_frame*sizeof(uint8_t));
+    memset(common_vars->beam_id[i],255,fp->symbols_per_slot*fp->slots_per_frame);
   }
   for (i=0;i<Prx;i++){
     common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
@@ -736,10 +742,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(pdcch_dmrs);
 
   uint32_t ****pdsch_dmrs = gNB->nr_gold_pdsch_dmrs;
-  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
     for (int symb = 0; symb < fp->symbols_per_slot; symb++) {
-      for (int q = 0; q < nb_codewords; q++)
+      for (int q = 0; q < NR_NB_NSCID; q++)
         free_and_zero(pdsch_dmrs[slot][symb][q]);
       free_and_zero(pdsch_dmrs[slot][symb]);
     }
@@ -768,7 +773,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(gNB->nr_csi_rs_info);
 
   for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
-    for (int i = 0; i < Prx; i++){
+    for (int i = 0; i < Prx; i++) {
       free_and_zero(gNB->nr_srs_info[id]->srs_received_signal[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_ls_estimated_channel[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_freq[i]);

@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/MODULATION/nr_modulation.h"
@@ -215,9 +216,16 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   /////////////////////////DMRS Modulation/////////////////////////
   ///////////
-  uint32_t **pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
+
+  if(pusch_pdu->ul_dmrs_scrambling_id != UE->scramblingID_ulsch[pusch_pdu->scid])  {
+    UE->scramblingID_ulsch[pusch_pdu->scid] = pusch_pdu->ul_dmrs_scrambling_id;
+    nr_init_pusch_dmrs(UE, pusch_pdu->scid, pusch_pdu->ul_dmrs_scrambling_id);
+  }
+
+  uint32_t ***pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
   uint16_t n_dmrs = (pusch_pdu->bwp_start + start_rb + nb_rb)*((dmrs_type == pusch_dmrs_type1) ? 6:4);
   int16_t mod_dmrs[n_dmrs<<1] __attribute((aligned(16)));
+
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
@@ -382,7 +390,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
           // TODO: performance improvement, we can skip the modulation of DMRS symbols outside the bandwidth part
           // Perform this on gold sequence, not required when SC FDMA operation is done,
           LOG_D(PHY,"DMRS in symbol %d\n",l);
-          nr_modulation(pusch_dmrs[l], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // Qm = 2 as DMRS is QPSK modulated
+          nr_modulation(pusch_dmrs[l][pusch_pdu->scid], n_dmrs*2, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
         } else {
           dmrs_idx = 0;
         }
@@ -392,7 +400,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         if(is_ptrs_symbol(l, ulsch_ue->ptrs_symbols)) {
           is_ptrs_sym = 1;
-          nr_modulation(pusch_dmrs[l], nb_rb, DMRS_MOD_ORDER, mod_ptrs);
+          nr_modulation(pusch_dmrs[l][pusch_pdu->scid], nb_rb, DMRS_MOD_ORDER, mod_ptrs);
         }
       }
 

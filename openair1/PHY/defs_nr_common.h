@@ -96,6 +96,8 @@
 #define NR_RX_NB_TH 1
 #define NR_NB_TH_SLOT 2
 
+#define NR_NB_NSCID 2
+
 extern const uint8_t nr_rv_round_map[4]; 
 
 static inline
@@ -255,6 +257,7 @@ typedef struct {
   uint8_t j[16];
   uint8_t koverline[16];
   uint8_t loverline[16];
+  uint16_t csi_gold_init;
   uint32_t ***nr_gold_csi_rs;
   uint8_t csi_rs_generated_signal_bits;
   int32_t **csi_rs_generated_signal;

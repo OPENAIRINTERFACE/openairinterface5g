@@ -633,7 +633,6 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                      AMP,
                      ue->nr_csi_rs_info,
                      (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *) csirs_config_pdu,
-                     ue->frame_parms.first_carrier_offset,
                      proc->nr_slot_rx);
 
   nr_get_csi_rs_signal(ue,

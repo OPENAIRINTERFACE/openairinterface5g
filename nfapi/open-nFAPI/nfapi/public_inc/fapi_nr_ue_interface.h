@@ -464,7 +464,8 @@ typedef struct {
   uint8_t nEpreRatioOfPDSCHToPTRS;
   /// MCS table for this DLSCH
   uint8_t mcs_table;
-
+  uint8_t nscid;
+  uint16_t dlDmrsScramblingId;
   uint16_t pduBitmap;
 } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 

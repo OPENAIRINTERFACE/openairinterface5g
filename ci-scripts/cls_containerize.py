@@ -757,9 +757,13 @@ class Containerize():
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml config | grep com.docker.network.bridge.name | sed -e "s@^.*name: @@"'
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		if re.search('4g.*rfsimulator', self.yamlPath[0]) is not None:
+			# Excluding any traffic from LTE-UE container (192.168.61.30)
+			# From the trf-gen, keeping only PING traffic
 			cmd = 'sudo nohup tshark -f "(host 192.168.61.11 and icmp) or (not host 192.168.61.11 and not host 192.168.61.30 and not arp and not port 53 and not port 2152)"'
 		elif re.search('5g.*rfsimulator', self.yamlPath[0]) is not None:
-			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not host 192.168.71.150 and not arp and not port 53 and not port 2152 and not port 2153)"'
+			# Excluding any traffic from NR-UE containers (192.168.71.150 and 192.168.71.151)
+			# From the ext-dn, keeping only PING traffic
+			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not host 192.168.71.150 and not host 192.168.71.151 and not arp and not port 53 and not port 2152 and not port 2153)"'
 		elif re.search('5g_l2sim', self.yamlPath[0]) is not None:
 			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not arp and not port 53 and not port 2152 and not port 2153)"'
 		else:
@@ -817,46 +821,48 @@ class Containerize():
 			# Analyzing log file(s)!
 			listOfPossibleRanContainers = ['enb', 'gnb', 'cu', 'du']
 			for container in listOfPossibleRanContainers:
-				filename = self.yamlPath[0] + '/*-oai-' + container + '.log'
-				cmd = 'ls ' + filename
+				filenames = self.yamlPath[0] + '/*-oai-' + container + '.log'
+				cmd = 'ls ' + filenames
 				containerStatus = True
 				try:
 					lsStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-					filename = str(lsStatus).strip()
+					filenames = str(lsStatus).strip()
 				except:
 					containerStatus = False
 				if not containerStatus:
 					continue
 
-				logging.debug('\u001B[1m Analyzing xNB logfile ' + filename + ' \u001B[0m')
-				logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML, self.ran_checkers)
-				if (logStatus < 0):
-					fullStatus = False
-					self.exitStatus = 1
-					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
-				else:
-					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+				for filename in filenames.split('\n'):
+					logging.debug('\u001B[1m Analyzing xNB logfile ' + filename + ' \u001B[0m')
+					logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML, self.ran_checkers)
+					if (logStatus < 0):
+						fullStatus = False
+						self.exitStatus = 1
+						HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
+					else:
+						HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 
 			listOfPossibleUeContainers = ['lte-ue*', 'nr-ue*']
 			for container in listOfPossibleUeContainers:
-				filename = self.yamlPath[0] + '/*-oai-' + container + '.log'
-				cmd = 'ls ' + filename
+				filenames = self.yamlPath[0] + '/*-oai-' + container + '.log'
+				cmd = 'ls ' + filenames
 				containerStatus = True
 				try:
 					lsStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-					filename = str(lsStatus).strip()
+					filenames = str(lsStatus).strip()
 				except:
 					containerStatus = False
 				if not containerStatus:
 					continue
 
-				logging.debug('\u001B[1m Analyzing UE logfile ' + filename + ' \u001B[0m')
-				logStatus = UE.AnalyzeLogFile_UE(filename, HTML, RAN)
-				if (logStatus < 0):
-					fullStatus = False
-					HTML.CreateHtmlTestRow('UE log Analysis', 'KO', logStatus)
-				else:
-					HTML.CreateHtmlTestRow('UE log Analysis', 'OK', CONST.ALL_PROCESSES_OK)
+				for filename in filenames.split('\n'):
+					logging.debug('\u001B[1m Analyzing UE logfile ' + filename + ' \u001B[0m')
+					logStatus = UE.AnalyzeLogFile_UE(filename, HTML, RAN)
+					if (logStatus < 0):
+						fullStatus = False
+						HTML.CreateHtmlTestRow('UE log Analysis', 'KO', logStatus)
+					else:
+						HTML.CreateHtmlTestRow('UE log Analysis', 'OK', CONST.ALL_PROCESSES_OK)
 
 			cmd = 'rm ' + self.yamlPath[0] + '/*.log'
 			logging.debug(cmd)
