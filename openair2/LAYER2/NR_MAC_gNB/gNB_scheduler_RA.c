@@ -678,7 +678,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       ra->preamble_index = preamble_index;
       ra->beam_id = beam_index;
 
-      LOG_D(NR_MAC,
+      LOG_I(NR_MAC,
             "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB "
             "index %u RA index %d\n",
             module_idP,
@@ -795,7 +795,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
       return;
     }
 
-    LOG_D(NR_MAC, "[gNB %d][RAPROC] Frame %d, Slot %d : CC_id %d Scheduling retransmission of Msg3 in (%d,%d)\n",
+    LOG_I(NR_MAC, "[gNB %d][RAPROC] Frame %d, Slot %d : CC_id %d Scheduling retransmission of Msg3 in (%d,%d)\n",
           module_idP, frame, slot, CC_id, sched_frame, sched_slot);
 
     nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_idP]->UL_tti_req_ahead[CC_id][sched_slot];
@@ -1920,7 +1920,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     if(ra->msg3_dcch_dtch) {
       // If the UE used MSG3 to transfer a DCCH or DTCH message, then contention resolution is successful upon transmission of PDCCH
-      LOG_D(NR_MAC, "(ue %i, rnti 0x%04x) CBRA procedure succeeded!\n", UE_id, ra->rnti);
+      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CBRA procedure succeeded!\n", UE_id, ra->rnti);
       nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
       UE_info->active[UE_id] = true;
       UE_info->Msg4_ACKed[UE_id] = true;
@@ -1953,12 +1953,12 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
   if (harq->is_waiting == 0) {
     if (harq->round == 0) {
       if (stats->dlsch_errors == 0) {
-        LOG_D(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
+        LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
         UE_info->active[UE_id] = true;
         UE_info->Msg4_ACKed[UE_id] = true;
       }
       else {
-        LOG_D(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
+        LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
       }
 
       nr_clear_ra_proc(module_id, CC_id, frame, ra);
