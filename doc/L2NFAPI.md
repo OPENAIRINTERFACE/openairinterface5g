@@ -46,6 +46,8 @@ This proxy allows to perform L2 nFAPI simulator for:
 * 5G-NSA
 * 5G-SA
 
+Another tutorial for 5G SA mode with 1 User is available [here](../ci-scripts/yaml_files/5g_l2sim_tdd/README.md).
+
 ----
 
 [oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)

@@ -221,6 +221,8 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   return 0;
 }
 
+nr_bler_struct nr_bler_data[NR_NUM_MCS];
+
 //nFAPI P7 dummy functions
 
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
@@ -749,9 +751,9 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib,0, 0, NULL);
+  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib,1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -780,10 +782,10 @@ int main(int argc, char **argv)
 
   init_nr_ue_transport(UE);
 
-  // initialize the pusch dmrs
-  uint16_t N_n_scid[2] = {frame_parms->Nid_cell,frame_parms->Nid_cell};
-  int n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization
-  nr_init_pusch_dmrs(UE, N_n_scid, n_scid);
+  for(int n_scid = 0; n_scid<2; n_scid++) {
+    UE->scramblingID_ulsch[n_scid] = frame_parms->Nid_cell;
+    nr_init_pusch_dmrs(UE, frame_parms->Nid_cell, n_scid);
+  }
 
   //Configure UE
   NR_UE_RRC_INST_t rrcue;

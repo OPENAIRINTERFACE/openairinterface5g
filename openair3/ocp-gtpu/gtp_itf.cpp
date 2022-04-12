@@ -17,8 +17,10 @@ extern "C" {
 #include <openair2/COMMON/gtpv1_u_messages_types.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include <openair2/LAYER2/PDCP_v10.1.0/pdcp.h>
-#include "openair2/SDAP/nr_sdap/nr_sdap_gnb.h"
+#include "openair2/SDAP/nr_sdap/nr_sdap.h"
 //#include <openair1/PHY/phy_extern.h>
+
+static boolean_t is_gnb = false;
 
 #pragma pack(1)
 
@@ -34,7 +36,34 @@ typedef struct Gtpv1uMsgHeader {
   teid_t teid;
 } __attribute__((packed)) Gtpv1uMsgHeaderT;
 
+typedef struct Gtpv1uMsgHeaderOptFields {
+  uint8_t seqNum1Oct;
+  uint8_t seqNum2Oct;
+  uint8_t NPDUNum;
+  uint8_t NextExtHeaderType;    
+} __attribute__((packed)) Gtpv1uMsgHeaderOptFieldsT;
+
+typedef struct PDUSessionContainer {
+  uint8_t spare:4;
+  uint8_t PDU_type:4;
+  uint8_t QFI:6;
+  uint8_t RQI:1;
+  uint8_t PPP:1;
+} __attribute__((packed)) PDUSessionContainerT;
+
+typedef struct Gtpv1uExtHeader {
+  uint8_t ExtHeaderLen;
+  PDUSessionContainerT pdusession_cntr;
+  //uint8_t NextExtHeaderType;
+}__attribute__((packed)) Gtpv1uExtHeaderT;
+
 #pragma pack()
+
+// TS 29.281, fig 5.2.1-3
+#define PDU_SESSION_CONTAINER       (0x85)
+// TS 29.281, 5.2.1
+#define EXT_HDR_LNTH_OCTET_UNITS    (4)
+#define NO_MORE_EXT_HDRS            (0)
 
 // TS 29.060, table 7.1 defines the possible message types
 // here are all the possible messages (3GPP R16)
@@ -65,6 +94,8 @@ typedef struct {
   rnti_t rnti;
   ebi_t incoming_rb_id;
   gtpCallback callBack;
+  gtpCallbackSDAP callBackSDAP;
+  int pdusession_id;
 } rntiData_t;
 
 class gtpEndPoint {
@@ -448,6 +479,10 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   inst->te2ue_mapping[incoming_teid].incoming_rb_id= incoming_bearer_id;
 
   inst->te2ue_mapping[incoming_teid].callBack=callBack;
+  
+  inst->te2ue_mapping[incoming_teid].callBackSDAP = sdap_data_req;
+
+  inst->te2ue_mapping[incoming_teid].pdusession_id = (uint8_t)outgoing_bearer_id;
 
   gtpv1u_bearer_t *tmp=&inst->ue2te_mapping[rnti].bearers[outgoing_bearer_id];
 
@@ -567,14 +602,14 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->outgoing_teid[0]);
   tcp_udp_port_t dstport=globGtp.instances[compatInst(instance)].get_dstport();
-
+  is_gnb = true;
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
                                     create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
                                     create_tunnel_req->outgoing_teid[i],
                                     create_tunnel_req->dst_addr[i], dstport,
-                                    sdap_gnb_data_req);
+                                    pdcp_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
     create_tunnel_resp->num_tunnels=create_tunnel_req->num_tunnels;
@@ -815,10 +850,28 @@ static int Gtpv1uHandleGpdu(int h,
     return GTPNOK;
   }
 
-  int offset=8;
+  int offset=sizeof(Gtpv1uMsgHeaderT);
 
-  if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
-    offset+=8;
+  uint8_t qfi = 0;
+  boolean_t rqi = FALSE;
+
+  if( msgHdr->E || msgHdr->S || msgHdr->PN){
+   Gtpv1uMsgHeaderOptFieldsT *msgHdrOpt = (Gtpv1uMsgHeaderOptFieldsT *)(msgBuf+offset);
+   offset+=sizeof(Gtpv1uMsgHeaderOptFieldsT);
+    if( msgHdr->E && msgHdrOpt->NextExtHeaderType == PDU_SESSION_CONTAINER){
+      Gtpv1uExtHeaderT *msgHdrExt = (Gtpv1uExtHeaderT *)(msgBuf+offset);
+      offset+=msgHdrExt->ExtHeaderLen*EXT_HDR_LNTH_OCTET_UNITS;
+      qfi = msgHdrExt->pdusession_cntr.QFI;
+      rqi = msgHdrExt->pdusession_cntr.RQI;
+
+      /* 
+       * Check if the next extension header type of GTP extension header is set to 0
+       * We can not put it in the struct Gtpv1uExtHeaderT because the length is dynamic.
+       */
+      if(*(msgBuf+offset-1) != NO_MORE_EXT_HDRS)
+        LOG_W(GTPU, "Warning -  Next extension header is not zero, handle it \n");
+    }
+  }
 
   // This context is not good for gtp
   // frame, ... has no meaning
@@ -843,17 +896,34 @@ static int Gtpv1uHandleGpdu(int h,
   const uint32_t destinationL2Id=0;
   pthread_mutex_unlock(&globGtp.gtp_lock);
 
-  if ( !tunnel->second.callBack(&ctxt,
-                                srb_flag,
-                                rb_id,
-                                mui,
-                                confirm,
-                                sdu_buffer_size,
-                                sdu_buffer,
-                                mode,
-                                &sourceL2Id,
-                                &destinationL2Id) )
-    LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  if(is_gnb && qfi){
+    if ( !tunnel->second.callBackSDAP(&ctxt,
+                                      srb_flag,
+                                      rb_id,
+                                      mui,
+                                      confirm,
+                                      sdu_buffer_size,
+                                      sdu_buffer,
+                                      mode,
+                                      &sourceL2Id,
+                                      &destinationL2Id,
+                                      qfi,
+                                      rqi,
+                                      tunnel->second.pdusession_id) )
+      LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  } else {
+    if ( !tunnel->second.callBack(&ctxt,
+                                  srb_flag,
+                                  rb_id,
+                                  mui,
+                                  confirm,
+                                  sdu_buffer_size,
+                                  sdu_buffer,
+                                  mode,
+                                  &sourceL2Id,
+                                  &destinationL2Id) )
+      LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  }
 
   LOG_D(GTPU,"[%d] Received a %d bytes packet for: teid:%x\n", h,
         msgBufLen-offset,
