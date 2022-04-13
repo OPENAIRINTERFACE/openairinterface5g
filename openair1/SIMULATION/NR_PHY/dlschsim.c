@@ -618,7 +618,7 @@ int main(int argc, char **argv)
 	 }
 	 }*/
 
-  free(test_input);
+	//free(test_input); it must not be free as it is in DLSCH_struct -> free_gNB_dlsch () -> free(harq->pdu) with no checks or control
 
   free_channel_desc_scm(gNB2UE);
 

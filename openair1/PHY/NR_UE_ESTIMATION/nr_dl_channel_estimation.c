@@ -466,8 +466,11 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 uint8_t gNB_id,
                                 unsigned char Ns,
                                 unsigned char symbol,
+                                unsigned short scrambling_id,
                                 unsigned short coreset_start_subcarrier,
-                                unsigned short nb_rb_coreset)
+                                unsigned short nb_rb_coreset,
+                                int32_t pdcch_est_size,
+                                int32_t pdcch_dl_ch_estimates[][pdcch_est_size])
 {
 
   unsigned char aarx;
@@ -476,7 +479,6 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
 
-  int **dl_ch_estimates  =ue->pdcch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
   ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
@@ -493,13 +495,11 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   fm = filt16a_m1;
   fr = filt16a_r1;
 
-
   // checking if re-initialization of scrambling IDs is needed (should be done here but scrambling ID for PDCCH is not taken from RRC)
-/*  if (( != ue->scramblingID_pdcch){
-    ue->scramblingID_pdcch=;
-    nr_gold_pdsch(ue,ue->scramblingID_pdcch);
-  }*/
-
+  if (scrambling_id != ue->scramblingID_pdcch){
+    ue->scramblingID_pdcch = scrambling_id;
+    nr_gold_pdcch(ue,ue->scramblingID_pdcch);
+  }
 
   // generate pilot
   int pilot[nb_rb_coreset * 3] __attribute__((aligned(16))); 
@@ -511,7 +511,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     k = coreset_start_subcarrier;
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+1)];
-    dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
+    dl_ch = (int16_t *)&pdcch_dl_ch_estimates[aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
 
@@ -666,6 +666,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
+                                unsigned char nscid,
+                                unsigned short scrambling_id,
                                 unsigned short BWPStart,
                                 uint8_t config_type,
                                 unsigned short bwp_start_subcarrier,
@@ -703,11 +705,10 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int8_t delta = get_delta(p, config_type);
 
   // checking if re-initialization of scrambling IDs is needed
-  /*if ((XXX.scramblingID0 != ue->scramblingID[0]) || (XXX.scramblingID1 != ue->scramblingID[1])){
-    ue->scramblingID[0] = XXX.scramblingID0;
-    ue->scramblingID[1] = XXX.scramblingID1;
-    nr_gold_pdsch(ue,ue->scramblingID);
-  }*/
+  if (scrambling_id != ue->scramblingID_dlsch[nscid]){
+    ue->scramblingID_dlsch[nscid] = scrambling_id;
+    nr_gold_pdsch(ue, nscid, scrambling_id);
+  }
 
   nr_pdsch_dmrs_rx(ue, Ns, ue->nr_gold_pdsch[gNB_id][Ns][symbol][0], &pilot[0], 1000+p, 0, nb_rb_pdsch+rb_offset, config_type);
 

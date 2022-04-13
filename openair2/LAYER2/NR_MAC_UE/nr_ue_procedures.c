@@ -281,13 +281,13 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
     LOG_D(MAC, "In %s: returning rnti_type %s \n", __FUNCTION__, rnti_types[rnti_type]);
 
     return rnti_type;
-
 }
 
 
 int8_t nr_ue_decode_mib(module_id_t module_id,
                         int cc_id,
                         uint8_t gNB_index,
+                        void *phy_data,
                         uint8_t extra_bits,	//	8bits 38.212 c7.1.1
                         uint32_t ssb_length,
                         uint32_t ssb_index,
@@ -363,7 +363,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                            ssb_subcarrier_offset,
                            ssb_index,
                            ssb_start_subcarrier,
-                           mac->frequency_range);
+                           mac->frequency_range,
+                           phy_data);
   }
   else {
     NR_ServingCellConfigCommon_t *scc = mac->scc;
@@ -874,14 +875,26 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     if(pdsch_TimeDomainAllocationList && rnti!=SI_RNTI)
       mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
 
+    struct NR_DMRS_DownlinkConfig *dl_dmrs_config = NULL;
+    if(mac->DLbwp[0])
+      dl_dmrs_config = (mappingtype == typeA) ?
+                       mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup :
+                       mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+
+    dlsch_config_pdu_1_0->nscid = 0;
+    if(dl_dmrs_config && dl_dmrs_config->scramblingID0)
+      dlsch_config_pdu_1_0->dlDmrsScramblingId = *dl_dmrs_config->scramblingID0;
+    else
+      dlsch_config_pdu_1_0->dlDmrsScramblingId = mac->physCellId;
+
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
                                                          (get_softmodem_params()->nsa) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_0->number_symbols,
                                                          dlsch_config_pdu_1_0->start_symbol,
                                                          mappingtype, 1);
-    dlsch_config_pdu_1_0->dmrsConfigType = (mac->DLbwp[0] != NULL) ?
-                                           (mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
+    dlsch_config_pdu_1_0->dmrsConfigType = (dl_dmrs_config != NULL) ?
+                                           (dl_dmrs_config->dmrs_Type == NULL ? 0 : 1) : 0;
 
     /* number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214 version 15.9.0 Release 15 */
     if (dlsch_config_pdu_1_0->number_symbols == 2)
@@ -1075,7 +1088,30 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     if(pdsch_TimeDomainAllocationList)
       mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
 
-    dlsch_config_pdu_1_1->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? NFAPI_NR_DMRS_TYPE1 : NFAPI_NR_DMRS_TYPE2;
+    struct NR_DMRS_DownlinkConfig *dl_dmrs_config = (mappingtype == typeA) ?
+                                                    pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup :
+                                                    pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+
+    switch (dci->dmrs_sequence_initialization.val) {
+      case 0:
+        dlsch_config_pdu_1_1->nscid = 0;
+        if(dl_dmrs_config->scramblingID0)
+          dlsch_config_pdu_1_1->dlDmrsScramblingId = *dl_dmrs_config->scramblingID0;
+        else
+          dlsch_config_pdu_1_1->dlDmrsScramblingId = mac->physCellId;
+        break;
+      case 1:
+        dlsch_config_pdu_1_1->nscid = 1;
+        if(dl_dmrs_config->scramblingID1)
+          dlsch_config_pdu_1_1->dlDmrsScramblingId = *dl_dmrs_config->scramblingID1;
+        else
+          dlsch_config_pdu_1_1->dlDmrsScramblingId = mac->physCellId;
+        break;
+      default:
+        AssertFatal(1==0,"Invalid dmrs sequence initialization value\n");
+    }
+
+    dlsch_config_pdu_1_1->dmrsConfigType = dl_dmrs_config->dmrs_Type == NULL ? NFAPI_NR_DMRS_TYPE1 : NFAPI_NR_DMRS_TYPE2;
 
     /* TODO: fix number of DM-RS CDM groups without data according to subclause 5.1.6.2 of 3GPP TS 38.214,
              using tables 7.3.1.2.2-1, 7.3.1.2.2-2, 7.3.1.2.2-3, 7.3.1.2.2-4 of 3GPP TS 38.212 */
@@ -1136,17 +1172,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     /* ANTENNA_PORTS */
     uint8_t n_codewords = 1; // FIXME!!!
-    long *max_length = NULL;
-    long *dmrs_type = NULL;
+    long *max_length = dl_dmrs_config->maxLength;
+    long *dmrs_type = dl_dmrs_config->dmrs_Type;
+
     dlsch_config_pdu_1_1->n_front_load_symb = 1; // default value
-    if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA) {
-      max_length = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength;
-      dmrs_type = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type;
-    }
-    if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB) {
-      max_length = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->maxLength;
-      dmrs_type = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type;
-    }
+
     if ((dmrs_type == NULL) && (max_length == NULL)){
       // Table 7.3.1.2.2-1: Antenna port(s) (1000 + DMRS port), dmrs-Type=1, maxLength=1
       dlsch_config_pdu_1_1->n_dmrs_cdm_groups = table_7_3_2_3_3_1[dci->antenna_ports.val][0];
