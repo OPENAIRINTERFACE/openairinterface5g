@@ -28,7 +28,8 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
                            fapi_nr_rx_indication_t *rx_ind,
                            UE_nr_rxtx_proc_t *proc,
                            PHY_VARS_NR_UE *ue,
-                           uint8_t gNB_id) {}
+                           uint8_t gNB_id,
+                           void *phy_data) {}
 void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            uint8_t pdu_type,
                            uint8_t gNB_id,

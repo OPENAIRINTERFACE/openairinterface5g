@@ -353,11 +353,11 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     thread_id = scheduled_response->thread_id;
     NR_UE_DLSCH_t *dlsch0 = NULL;
-    NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_ULSCH_t *ulsch = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0];
     NR_UE_PUCCH *pucch_vars = PHY_vars_UE_g[module_id][cc_id]->pucch_vars[thread_id][0];
     NR_UE_CSI_IM *csiim_vars = PHY_vars_UE_g[module_id][cc_id]->csiim_vars[0];
     NR_UE_CSI_RS *csirs_vars = PHY_vars_UE_g[module_id][cc_id]->csirs_vars[0];
+    NR_UE_PDCCH_CONFIG *phy_pdcch_config = NULL;
 
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
@@ -365,7 +365,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config;
       fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu;
       fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu;
-      pdcch_vars->nb_search_space = 0;
 
       for (int i = 0; i < dl_config->number_pdus; ++i){
         AssertFatal(dl_config->number_pdus < FAPI_NR_DL_CONFIG_LIST_NUM,"dl_config->number_pdus %d out of bounds\n",dl_config->number_pdus);
@@ -375,12 +374,16 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         switch(dl_config->dl_config_list[i].pdu_type) {
           case FAPI_NR_DL_CONFIG_TYPE_DCI:
+            if (NULL == phy_pdcch_config) {
+              phy_pdcch_config = (NR_UE_PDCCH_CONFIG *)scheduled_response->phy_data;
+              phy_pdcch_config->nb_search_space = 0;
+            }
             pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
-            memcpy(&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],pdcch_config,sizeof(*pdcch_config));
-            pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
-            pdcch_vars->sfn = scheduled_response->frame;
-            pdcch_vars->slot = slot;
-            LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
+            memcpy((void*)&phy_pdcch_config->pdcch_config[phy_pdcch_config->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
+            phy_pdcch_config->nb_search_space = phy_pdcch_config->nb_search_space + 1;
+            phy_pdcch_config->sfn = scheduled_response->frame;
+            phy_pdcch_config->slot = slot;
+            LOG_D(PHY,"Number of DCI SearchSpaces %d\n",phy_pdcch_config->nb_search_space);
             break;
           case FAPI_NR_DL_CONFIG_TYPE_CSI_IM:
             csiim_config_pdu = &dl_config->dl_config_list[i].csiim_config_pdu.csiim_config_rel15;
