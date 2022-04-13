@@ -2590,7 +2590,7 @@ uint8_t get_csirs_RI_PMI_CQI_payload(NR_UE_MAC_INST_t *mac,
                                      NR_CSI_ResourceConfigId_t csi_ResourceConfigId,
                                      NR_CSI_MeasConfig_t *csi_MeasConfig) {
 
-  int bits = 0;
+  int n_bits = 0;
   uint32_t temp_payload = 0;
 
   for (int csi_resourceidx = 0; csi_resourceidx < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; csi_resourceidx++) {
@@ -2607,14 +2607,27 @@ uint8_t get_csirs_RI_PMI_CQI_payload(NR_UE_MAC_INST_t *mac,
 
           int cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
           int ri_bitlen = csi_report->csi_meas_bitlen.ri_bitlen;
-          int pmi_bitlen = csi_report->csi_meas_bitlen.pmi_x1_bitlen[*mac->csirs_measurements.rank_indicator] +
-              csi_report->csi_meas_bitlen.pmi_x2_bitlen[*mac->csirs_measurements.rank_indicator];
+          int pmi_x1_bitlen = csi_report->csi_meas_bitlen.pmi_x1_bitlen[*mac->csirs_measurements.rank_indicator];
+          int pmi_x2_bitlen = csi_report->csi_meas_bitlen.pmi_x2_bitlen[*mac->csirs_measurements.rank_indicator];
           int cqi_bitlen = csi_report->csi_meas_bitlen.cqi_bitlen[*mac->csirs_measurements.rank_indicator];
 
-          LOG_I(NR_MAC, "cri_bitlen = %d\n", cri_bitlen);
-          LOG_I(NR_MAC, "ri_bitlen = %d\n", ri_bitlen);
-          LOG_I(NR_MAC, "pmi_bitlen = %d\n", pmi_bitlen);
-          LOG_I(NR_MAC, "cqi_bitlen = %d\n", cqi_bitlen);
+          n_bits = cri_bitlen + ri_bitlen + pmi_x1_bitlen + pmi_x2_bitlen + cqi_bitlen;
+
+          // TODO: Improvements will be needed to cri_bitlen>0 and pmi_x1_bitlen>0
+          temp_payload = (*mac->csirs_measurements.rank_indicator<<(cri_bitlen+cqi_bitlen+pmi_x2_bitlen+pmi_x1_bitlen)) |
+                         (*mac->csirs_measurements.i1<<(cri_bitlen+cqi_bitlen+pmi_x2_bitlen)) |
+                         (*mac->csirs_measurements.i2<<(cri_bitlen+cqi_bitlen)) |
+                         (*mac->csirs_measurements.cqi<<cri_bitlen) |
+                         0;
+
+          reverse_n_bits((uint8_t *)&temp_payload, n_bits);
+
+          LOG_D(NR_MAC, "cri_bitlen = %d\n", cri_bitlen);
+          LOG_D(NR_MAC, "ri_bitlen = %d\n", ri_bitlen);
+          LOG_D(NR_MAC, "pmi_x1_bitlen = %d\n", pmi_x1_bitlen);
+          LOG_D(NR_MAC, "pmi_x2_bitlen = %d\n", pmi_x2_bitlen);
+          LOG_D(NR_MAC, "cqi_bitlen = %d\n", cqi_bitlen);
+          LOG_D(NR_MAC, "csi_part1_payload = 0x%x\n", temp_payload);
 
           break;
         }
@@ -2622,7 +2635,7 @@ uint8_t get_csirs_RI_PMI_CQI_payload(NR_UE_MAC_INST_t *mac,
     }
   }
   pucch->csi_part1_payload = temp_payload;
-  return bits;
+  return n_bits;
 }
 
 // returns index from RSRP
