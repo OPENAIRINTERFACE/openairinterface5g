@@ -338,7 +338,6 @@ uint8_t get_nr_prach_duration(uint8_t prach_format);
 void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
                         int16_t amp,
                         nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
-                        uint16_t cell_id,
                         int slot);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);

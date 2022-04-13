@@ -61,10 +61,11 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
                    unsigned short n_idDMRS);
 
 void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
-                   unsigned short *n_idDMRS);
+                   int nscid,
+                   uint32_t nid);
 
 void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
-                        uint16_t *N_n_scid,
+                        uint16_t N_n_scid,
                         uint8_t n_scid);
 
 #endif
