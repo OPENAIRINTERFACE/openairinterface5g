@@ -399,6 +399,8 @@ typedef struct {
   /// measured SSB RSRP in dBm
   short ssb_rsrp_dBm;
 
+  nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
+
   /// measurements from CSI-RS
   fapi_nr_csirs_measurements_t csirs_measurements;
 

@@ -2296,7 +2296,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
         CellGroup->spCellConfig->spCellConfigDedicated &&
         CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
         CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
-      compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
+      compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info->csi_report_template[UE_id]);
     }
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));

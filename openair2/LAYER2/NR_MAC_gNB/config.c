@@ -687,7 +687,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
           CellGroup->spCellConfig->spCellConfigDedicated &&
           CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
           CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
-        compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, Mod_idP);
+        compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info->csi_report_template[UE_id]);
       }
     }
   }

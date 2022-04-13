@@ -2486,8 +2486,10 @@ uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
     case NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP:
       n_csi_bits = get_ssb_rsrp_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
       break;
-    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
     case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
+      n_csi_bits = get_csirs_RI_PMI_CQI_payload(mac,pucch,csi_reportconfig,csi_ResourceConfigId,csi_MeasConfig);
+      break;
+    case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP:
     case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1:
     case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI:
     case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
@@ -2580,6 +2582,46 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
   return bits;
 }
 
+uint8_t get_csirs_RI_PMI_CQI_payload(NR_UE_MAC_INST_t *mac,
+                                     PUCCH_sched_t *pucch,
+                                     struct NR_CSI_ReportConfig *csi_reportconfig,
+                                     NR_CSI_ResourceConfigId_t csi_ResourceConfigId,
+                                     NR_CSI_MeasConfig_t *csi_MeasConfig) {
+
+  int bits = 0;
+  uint32_t temp_payload = 0;
+
+  for (int csi_resourceidx = 0; csi_resourceidx < csi_MeasConfig->csi_ResourceConfigToAddModList->list.count; csi_resourceidx++) {
+
+    struct NR_CSI_ResourceConfig *csi_resourceconfig = csi_MeasConfig->csi_ResourceConfigToAddModList->list.array[csi_resourceidx];
+    if (csi_resourceconfig->csi_ResourceConfigId == csi_ResourceConfigId) {
+
+      for (int csi_idx = 0; csi_idx < csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.count; csi_idx++) {
+        if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_idx]->nzp_CSI_ResourceSetId ==
+            *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {
+
+          nr_csi_report_t *csi_report = &mac->csi_report_template[csi_reportconfig->reportConfigId];
+          compute_csi_bitlen(csi_MeasConfig, mac->csi_report_template);
+
+          int cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
+          int ri_bitlen = csi_report->csi_meas_bitlen.ri_bitlen;
+          int pmi_bitlen = csi_report->csi_meas_bitlen.pmi_x1_bitlen[*mac->csirs_measurements.rank_indicator] +
+              csi_report->csi_meas_bitlen.pmi_x2_bitlen[*mac->csirs_measurements.rank_indicator];
+          int cqi_bitlen = csi_report->csi_meas_bitlen.cqi_bitlen[*mac->csirs_measurements.rank_indicator];
+
+          LOG_I(NR_MAC, "cri_bitlen = %d\n", cri_bitlen);
+          LOG_I(NR_MAC, "ri_bitlen = %d\n", ri_bitlen);
+          LOG_I(NR_MAC, "pmi_bitlen = %d\n", pmi_bitlen);
+          LOG_I(NR_MAC, "cqi_bitlen = %d\n", cqi_bitlen);
+
+          break;
+        }
+      }
+    }
+  }
+  pucch->csi_part1_payload = temp_payload;
+  return bits;
+}
 
 // returns index from RSRP
 // according to Table 10.1.6.1-1 in 38.133
