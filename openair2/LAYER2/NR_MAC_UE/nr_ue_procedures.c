@@ -287,6 +287,7 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
 int8_t nr_ue_decode_mib(module_id_t module_id,
                         int cc_id,
                         uint8_t gNB_index,
+                        void *phy_data,
                         uint8_t extra_bits,	//	8bits 38.212 c7.1.1
                         uint32_t ssb_length,
                         uint32_t ssb_index,
@@ -362,7 +363,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                            ssb_subcarrier_offset,
                            ssb_index,
                            ssb_start_subcarrier,
-                           mac->frequency_range);
+                           mac->frequency_range,
+                           phy_data);
   }
   else {
     NR_ServingCellConfigCommon_t *scc = mac->scc;
