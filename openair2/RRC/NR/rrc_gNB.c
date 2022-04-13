@@ -1486,18 +1486,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
     free(DRB_Release_configList2);
     ue_context_pP->ue_context.DRB_Release_configList2[xid] = NULL;
   }
-  //Temporarily trigger artificially UE context release for the CU case just to be able to test it with OAI UE. To be removed later
-  if(0){
-    if(NODE_IS_CU(RC.nrrrc[ctxt_pP->instance]->node_type)){
-      MessageDef *message_p;
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
-      f1ap_ue_context_release_cmd_t *rel_cmd=&F1AP_UE_CONTEXT_RELEASE_CMD (message_p);
-      rel_cmd->rnti = ctxt_pP->rnti;
-      rel_cmd->cause = F1AP_CAUSE_RADIO_NETWORK;
-      rel_cmd->cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
-      itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, message_p);
-    }
-  }
 }
 
 //-----------------------------------------------------------------------------

@@ -1156,7 +1156,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
     ie81->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
     ie81->criticality                    = F1AP_Criticality_ignore;
     ie81->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_RRCContainer;
-    OCTET_STRING_fromBuf(&ie81->value.choice.RRCContainer, f1ap_ue_context_modification_req->rrc_container,
+    OCTET_STRING_fromBuf(&ie81->value.choice.RRCContainer, (const char*)f1ap_ue_context_modification_req->rrc_container,
         f1ap_ue_context_modification_req->rrc_container_length);
   }
 

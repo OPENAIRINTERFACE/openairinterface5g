@@ -233,7 +233,6 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
              ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
       f1ap_ue_context_setup_req->rrc_container_length = ieRRC->value.choice.RRCContainer.size;
       // AssertFatal(0, "check configuration, send to appropriate handler\n");
-      protocol_ctxt_t ctxt;
     } else {
       LOG_E(F1AP, " RRCContainer in UEContextSetupRequestIEs size id 0\n");
     }
@@ -294,15 +293,14 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
     /* OPTIONAL */
     /* measGapConfig */
     if (resp->du_to_cu_rrc_information->measGapConfig!=NULL) {
-      OCTET_STRING_fromBuf(ie3->value.choice.DUtoCURRCInformation.measGapConfig, resp->du_to_cu_rrc_information->measGapConfig,
+      OCTET_STRING_fromBuf(ie3->value.choice.DUtoCURRCInformation.measGapConfig, (const char *)resp->du_to_cu_rrc_information->measGapConfig,
         resp->du_to_cu_rrc_information->measGapConfig_length);
     }
 
     /* OPTIONAL */
     /* requestedP_MaxFR1 */
     if (resp->du_to_cu_rrc_information->requestedP_MaxFR1!=NULL) {
-      asn1cCalloc(ie3->value.choice.DUtoCURRCInformation.requestedP_MaxFR1, tmp);
-      OCTET_STRING_fromBuf(ie3->value.choice.DUtoCURRCInformation.requestedP_MaxFR1, resp->du_to_cu_rrc_information->requestedP_MaxFR1,
+      OCTET_STRING_fromBuf(ie3->value.choice.DUtoCURRCInformation.requestedP_MaxFR1, (const char *)resp->du_to_cu_rrc_information->requestedP_MaxFR1,
           resp->du_to_cu_rrc_information->requestedP_MaxFR1_length);
     }
   }
@@ -1290,14 +1288,14 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
     /* OPTIONAL */
     /* measGapConfig */
     if (resp->du_to_cu_rrc_information->measGapConfig!=NULL) {
-      OCTET_STRING_fromBuf(ie4->value.choice.DUtoCURRCInformation.measGapConfig, resp->du_to_cu_rrc_information->measGapConfig,
+      OCTET_STRING_fromBuf(ie4->value.choice.DUtoCURRCInformation.measGapConfig, (const char *)resp->du_to_cu_rrc_information->measGapConfig,
         resp->du_to_cu_rrc_information->measGapConfig_length);
     }
 
     /* OPTIONAL */
     /* requestedP_MaxFR1 */
     if (resp->du_to_cu_rrc_information->requestedP_MaxFR1!=NULL) {
-      OCTET_STRING_fromBuf(ie4->value.choice.DUtoCURRCInformation.requestedP_MaxFR1, resp->du_to_cu_rrc_information->requestedP_MaxFR1,
+      OCTET_STRING_fromBuf(ie4->value.choice.DUtoCURRCInformation.requestedP_MaxFR1, (const char *)resp->du_to_cu_rrc_information->requestedP_MaxFR1,
           resp->du_to_cu_rrc_information->requestedP_MaxFR1_length);
     }
   }
@@ -1358,9 +1356,8 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
       F1AP_DRBs_Modified_Item_t *drbs_modified_item= &drbs_modified_item_ies->value.choice.DRBs_Modified_Item;
       /* dRBID */
       drbs_modified_item->dRBID = resp->drbs_to_be_modified[i].drb_id;
+      
       /* ULTunnels_Modified_List */
-      int maxnoofULTunnels = 1; // 2;
-
       for (int j=0;  j<resp->drbs_to_be_modified[i].up_dl_tnl_length;  j++) {
         /*  DLTunnels_Modified_Item */
         asn1cSequenceAdd(drbs_modified_item->dLUPTNLInformation_ToBeSetup_List.list,
