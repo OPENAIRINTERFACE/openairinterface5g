@@ -861,7 +861,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  config_pucch_resset0(pucch_Config, uid, curr_bwp, uecap); // <= 2 bits
  config_pucch_resset1(pucch_Config, uecap); // > 2 bits
 
- schedulingrequest_config(servingcellconfigcommon, secondaryCellGroup->mac_CellGroupConfig, pucch_Config);
+ scheduling_request_config(servingcellconfigcommon, secondaryCellGroup->mac_CellGroupConfig, pucch_Config);
 
  pucch_Config->schedulingRequestResourceToReleaseList=NULL;
  pucch_Config->multi_CSI_PUCCH_ResourceList=NULL;

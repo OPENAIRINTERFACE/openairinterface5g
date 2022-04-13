@@ -473,9 +473,9 @@ void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedulingRequ
   schedulingRequestResourceConfig->periodicityAndOffset->choice.sl640 = sr_slot;
 }
 
-void schedulingrequest_config(NR_ServingCellConfigCommon_t *scc,
-                              NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
-                              NR_PUCCH_Config_t *pucch_Config) {
+void scheduling_request_config(NR_ServingCellConfigCommon_t *scc,
+                               NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
+                               NR_PUCCH_Config_t *pucch_Config) {
 
   mac_CellGroupConfig->schedulingRequestConfig = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
   mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));

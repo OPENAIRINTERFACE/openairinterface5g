@@ -1185,7 +1185,7 @@ void fill_initial_SpCellConfig(int uid,
   srs_res0->spatialRelationInfo->referenceSignal.choice.csi_RS_Index=0;
   ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceToAddModList->list,srs_res0);
 
-  schedulingrequest_config(scc, cellGroupConfig->mac_CellGroupConfig, pucch_Config);
+  scheduling_request_config(scc, cellGroupConfig->mac_CellGroupConfig, pucch_Config);
 
   set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME);
 
