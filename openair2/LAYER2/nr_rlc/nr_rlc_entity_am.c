@@ -908,8 +908,6 @@ typedef struct {
   int so_start;
   int sn_end;
   int so_end;
-  /* data for maximum ack */
-  int ack_sn;                               /* -1 if not to be used */
   /* pdu to use for next call to 'next_missing' */
   nr_rlc_pdu_t *next;
 } missing_data_t;
@@ -924,13 +922,12 @@ static missing_data_t next_missing(nr_rlc_entity_am_t *entity,
   int max_so       = 0;
   int last_reached = 0;
 
-  ret.ack_sn = -1;
-
   /* special case: missing part before the head of RX list */
   if (check_head) {
     if (cur->sn != entity->rx_next || !cur->is_first) {
       /* don't report if out of reporting window */
-      if (sn_compare_rx(entity, entity->rx_highest_status, cur->sn) <= 0) {
+      if (sn_compare_rx(entity, entity->rx_highest_status,
+                        entity->rx_next) <= 0) {
         ret.sn_start = -1;
         return ret;
       }
@@ -953,10 +950,6 @@ next_pdu:
   if (cur_max_so > max_so)
     max_so = cur_max_so;
   last_reached = last_reached | cur->is_last;
-
-  /* if cur already processed, it can be the acked SDU */
-  if (cur->data == NULL)
-    ret.ack_sn = (cur->sn + 1) % entity->sn_modulus;
 
   /* no next? */
   if (cur->next == NULL) {
@@ -1033,32 +1026,36 @@ next_pdu:
   }
 
   /* discontinuity between different SDUs */
-  ret.sn_start = sn;
+  if (last_reached) {
+    ret.sn_start = (sn + 1) % entity->sn_modulus;
+    ret.so_start = 0;
+  } else {
+    ret.sn_start = sn;
+    ret.so_start = max_so + 1;
+  }
   /* don't report if out of reporting window */
   if (sn_compare_rx(entity, entity->rx_highest_status, ret.sn_start) <= 0) {
     ret.sn_start = -1;
     return ret;
   }
-  ret.so_start = max_so + 1;
 
 set_end_different_sdu:
-  /* don't go more than rx_highest_status - 1 */
-  if (sn_compare_rx(entity, entity->rx_highest_status, cur->sn) <= 0) {
-    ret.sn_end = (entity->rx_highest_status - 1 + entity->sn_modulus) %
-                      entity->sn_modulus;
-    ret.so_end   = 0xffff;
-    return ret;
-  }
-
   /* if cur is the head of a SDU, then use cur-1 */
   if (cur->is_first) {
     ret.sn_end = (cur->sn - 1 + entity->sn_modulus) % entity->sn_modulus;
     ret.so_end = 0xffff;
-    return ret;
+  } else {
+    ret.sn_end = cur->sn;
+    ret.so_end = cur->so - 1;
+  }
+  /* don't go more than rx_highest_status - 1 */
+  if (sn_compare_rx(entity, entity->rx_highest_status, ret.sn_end) <= 0) {
+    ret.sn_end = (entity->rx_highest_status - 1 + entity->sn_modulus) %
+                      entity->sn_modulus;
+    ret.so_end   = 0xffff;
+    ret.next = NULL;
   }
 
-  ret.sn_end = cur->sn;
-  ret.so_end = cur->so - 1;
   return ret;
 }
 
@@ -1098,21 +1095,20 @@ static void get_e1_position(nr_rlc_entity_am_t *entity,
   }
 }
 
-/* returns the number of nacks serialized.
- * In most cases it is 1, it can be more if the
- * missing data consists of a range that is more
- * than 255 SNs in which case it has to be cut in
- * smaller ranges.
+/* returns the last nack SN generated, -1 if nothing generated.
  * If there is no more room in the status buffer,
  * will set m->next = NULL (and may serialize
- * less nacks than required by 'm').
+ * less nacks than required by 'm'), also
+ * sets *generation_truncated to 1.
  */
 static int generate_missing(nr_rlc_entity_am_t *entity,
                             nr_rlc_pdu_encoder_t *encoder,
-                            missing_data_t *m, int *e1_byte, int *e1_bit)
+                            missing_data_t *m, int *e1_byte, int *e1_bit,
+                            int *generation_truncated,
+                            unsigned char **so_end_address)
 {
   int r_bits = entity->sn_field_length == 18 ? 3 : 1;
-  int range_count = 0;
+  int last_nack_generated = -1;
   int sn_start;
   int so_start;
   int sn_end;
@@ -1164,6 +1160,7 @@ static int generate_missing(nr_rlc_entity_am_t *entity,
     m_nack.so_end = so_end;
     if (encoder->byte + nack_size(entity, &m_nack) > encoder->size) {
       m->next = NULL;
+      *generation_truncated = 1;
       break;
     }
 
@@ -1197,6 +1194,7 @@ static int generate_missing(nr_rlc_entity_am_t *entity,
     /* nack_sn */
     nr_rlc_pdu_encoder_put_bits(encoder, sn_start,
                                 entity->sn_field_length);
+    last_nack_generated = sn_start;
     /* e1 = 0 (set later if needed) */
     nr_rlc_pdu_encoder_put_bits(encoder, 0, 1);
     /* e2 */
@@ -1208,33 +1206,43 @@ static int generate_missing(nr_rlc_entity_am_t *entity,
     /* so_start/so_end */
     if (e2) {
       nr_rlc_pdu_encoder_put_bits(encoder, so_start, 16);
+      *so_end_address = (unsigned char *)encoder->buffer + encoder->byte;
       nr_rlc_pdu_encoder_put_bits(encoder, so_end, 16);
-    }
+    } else
+      *so_end_address = NULL;
     /* nack range */
-    if (e3)
+    if (e3) {
       nr_rlc_pdu_encoder_put_bits(encoder, cur_sn_count, 8);
+      last_nack_generated += cur_sn_count - 1;
+    }
 
     sn_count -= cur_sn_count;
     sn_start = (sn_start + cur_sn_count) % entity->sn_modulus;
-    range_count++;
   }
 
-  return range_count;
+  return last_nack_generated;
 }
 
 static int generate_status(nr_rlc_entity_am_t *entity, char *buffer, int size)
 {
-  int                  ack_sn = entity->rx_next;
-  missing_data_t  m;
+  int                  last_nack;
+  int                  ack_sn;
+  missing_data_t       m;
   nr_rlc_pdu_t         *cur;
-  int                  nack_count = 0;
+  int                  check_head = 1;
   nr_rlc_pdu_encoder_t encoder;
   int                  e1_byte;
   int                  e1_bit;
+  int                  generation_truncated;
+  int                  ln;
+  unsigned char        *so_end_address = NULL;
 
   /* if not enough room, do nothing */
   if (size < 3)
     return 0;
+
+  /* initial last_nack is rx_next - 1 */
+  last_nack = (entity->rx_next - 1 + entity->sn_modulus) % entity->sn_modulus;
 
   nr_rlc_pdu_encoder_init(&encoder, buffer, size);
 
@@ -1250,22 +1258,33 @@ static int generate_status(nr_rlc_entity_am_t *entity, char *buffer, int size)
   e1_bit = entity->sn_field_length == 18 ? 1 : 7;
 
   while (cur != NULL) {
-    m = next_missing(entity, cur, nack_count == 0);
-
-    /* update ack_sn if the returned value is valid */
-    if (m.ack_sn != -1)
-      ack_sn = m.ack_sn;
+    m = next_missing(entity, cur, check_head);
+    check_head = 0;
 
     /* stop here if no more nack to report */
     if (m.sn_start == -1)
       break;
 
-    nack_count += generate_missing(entity, &encoder, &m, &e1_byte, &e1_bit);
+    generation_truncated = 0;
+    ln = generate_missing(entity, &encoder, &m, &e1_byte, &e1_bit,
+                          &generation_truncated, &so_end_address);
+    /* remember the last nack put, if any */
+    if (ln != -1)
+      last_nack = ln;
+    /* if generation was truncated and so_end was put, we force its value to
+     * 0xffff (end of SDU) because we don't know what missing nack information
+     * was supposed to be put, so we nack until the end of the PDU to be sure
+     */
+    if (generation_truncated && so_end_address != NULL) {
+      so_end_address[0] = 0xff;
+      so_end_address[1] = 0xff;
+    }
 
     cur = m.next;
   }
 
-  /* put ack_sn */
+  /* put ack_sn, which is last_nack + 1 */
+  ack_sn = (last_nack + 1) % entity->sn_modulus;
   if (entity->sn_field_length == 12) {
     buffer[0] = ack_sn >> 8;
     buffer[1] = ack_sn & 255;
