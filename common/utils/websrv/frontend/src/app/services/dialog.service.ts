@@ -14,7 +14,7 @@ export class DialogService {
     private _snackBar: MatSnackBar,
   ) { }
 
-  openErrorDialog(data: any): any {
+  openDialog(data: any): any {
     if (this.isDialogOpen) {
       return false;
     }

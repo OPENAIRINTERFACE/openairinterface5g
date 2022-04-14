@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
-import { tap } from 'rxjs/internal/operators/tap';
 import { CommandsApi, IArgType } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
 import { VarCtrl } from 'src/app/controls/var.control';
+import { DialogService } from 'src/app/services/dialog.service';
 import { LoadingService } from 'src/app/services/loading.service';
 
 
@@ -33,6 +33,7 @@ export class CommandsComponent {
   constructor(
     public commandsApi: CommandsApi,
     public loadingService: LoadingService,
+    public dialogService: DialogService
   ) {
     this.vars$ = this.commandsApi.readVariables$().pipe(
       map((vars) => vars.map(ivar => new VarCtrl(ivar)))
@@ -72,10 +73,22 @@ export class CommandsComponent {
   }
 
   onSubVarSubmit(control: VarCtrl) {
-    this.commandsApi.setVariable$(control.api(), `${this.selectedModule!.nameFC.value}`).subscribe();
+    this.commandsApi.setVariable$(control.api(), `${this.selectedModule!.nameFC.value}`)
+      .pipe(
+        map(array => this.success('setVariable ' + control.nameFC.value + ' OK', array[0]))
+      ).subscribe();
   }
 
   onCmdSubmit(control: CmdCtrl) {
-    this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).subscribe();
+    this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
+      map(array => this.success('runCommand ' + control.nameFC.value + ' OK', array[0]))
+    ).subscribe();
   }
+
+  private success = (mess: string, str: string) => this.dialogService.openDialog({
+    title: mess,
+    body: str,
+  });
+
+
 }

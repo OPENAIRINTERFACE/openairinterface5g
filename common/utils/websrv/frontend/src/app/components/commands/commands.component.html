@@ -40,17 +40,11 @@
     </div>
   </div>
 
-  <div *ngIf="cmds$ | async as cmds" fxLaypout="column" fxLayoutGap="10px">
+  <div *ngIf="cmds$ | async as cmds">
     <div *ngIf="cmds.length">
       <h2 mat-dialog-title>Commands</h2>
-      <div *ngFor="let cmd of cmds">
-        <!-- <mat-form-field>
-          <mat-label>{{ cmd.nameFC.value }}</mat-label>
-          <input input matInput [formControl]="cmd.nameFC" />
-        </mat-form-field> -->
-        <button mat-raised-button color="primary" (click)="onCmdSubmit(cmd)">
-          {{cmd.nameFC.value}}
-        </button>
+      <div *ngFor="let cmd of cmds" fxLayoutGap="10px">
+        <button mat-raised-button color="primary" (click)="onCmdSubmit(cmd)"> {{cmd.nameFC.value}} </button>
       </div>
     </div>
   </div>

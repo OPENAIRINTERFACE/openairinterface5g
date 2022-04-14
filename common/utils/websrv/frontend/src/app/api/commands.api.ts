@@ -10,20 +10,20 @@ export interface IVariable {
     modifiable: boolean; //set command ?
 }
 
-export enum ILogLvl {
-    error="error",
-    warn="warn",
-    analysis="analysis",
-    info="info",
-    debug="debug",
-    trace="trace"
-}
-export interface ICmdResp {
- component: string;
- level:     ILogLvl;
- enabled:   boolean;
- output:    string;
-}
+// export enum ILogLvl {
+//     error="error",
+//     warn="warn",
+//     analysis="analysis",
+//     info="info",
+//     debug="debug",
+//     trace="trace"
+// }
+// export interface ICmdResp {
+//  component: string;
+//  level:     ILogLvl;
+//  enabled:   boolean;
+//  output:    string;
+// }
 
 export enum IArgType {
     boolean = "boolean",
@@ -50,8 +50,8 @@ export class CommandsApi {
 
     public readCommands$ = (moduleName?: string) => this.httpClient.get<ICommand[]>(environment.backend + route + '/' + (moduleName ? ('/' + moduleName) : "") + '/commands/');
 
-    public runCommand$ = (command: ICommand, moduleName: string) => this.httpClient.post<ICmdResp[]>(environment.backend + route + '/' + moduleName + '/commands/', command);
+    public runCommand$ = (command: ICommand, moduleName: string) => this.httpClient.post<string[]>(environment.backend + route + '/' + moduleName + '/commands/', command);
 
-    public setVariable$ = (variable: IVariable, moduleName?: string) => this.httpClient.post<string>(environment.backend + route + (moduleName ? ('/' + moduleName) : "") + '/variables/', variable);
+    public setVariable$ = (variable: IVariable, moduleName?: string) => this.httpClient.post<string[]>(environment.backend + route + (moduleName ? ('/' + moduleName) : "") + '/variables/', variable);
 
 }

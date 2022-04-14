@@ -10,21 +10,22 @@ export class ErrorInterceptor implements HttpInterceptor {
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler) {
     return next.handle(request).pipe(
-      tap((event: HttpEvent<any>) => {
-        if (event instanceof HttpResponse) {
-          switch (event.status) {
-            case 201:
-              this.log(GREEN, request.method + ' ' + event.status + ' Success');
-              this.dialogService.openSnackBar(request.method + ' 201 Success');
-              break;
+      // tap((event: HttpEvent<any>) => {
+      //   if (event instanceof HttpResponse) {
+      //     switch (event.status) {
+      //       case 200:
+      //       case 201:
+      //         this.log(GREEN, request.method + ' ' + event.status + ' Success');
+      //         this.dialogService.openSnackBar(request.method + ' ' + event.status + ' Success');
+      //         break;
 
-            default:
-              break;
-          }
+      //       default:
+      //         break;
+      //     }
 
-          // return throwError(event.body);
-        }
-      }),
+      //     // return throwError(event.body);
+      //   }
+      // }),
       catchError((error: HttpErrorResponse) => {
         switch (error.status) {
           case 400:
@@ -32,7 +33,7 @@ export class ErrorInterceptor implements HttpInterceptor {
           case 501:
           case 500:
             this.log(YELLOW, request.method + ' ' + error.status + ' Error: ' + error.error);
-            this.dialogService.openErrorDialog({
+            this.dialogService.openDialog({
               title: error.status + ' Error',
               body: error.error,
             });
