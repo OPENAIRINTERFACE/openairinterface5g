@@ -29,7 +29,7 @@ export class ErrorInterceptor implements HttpInterceptor {
         switch (error.status) {
           case 400:
           case 403:
-          case 200:
+          case 501:
           case 500:
             this.log(YELLOW, request.method + ' ' + error.status + ' Error: ' + error.error);
             this.dialogService.openErrorDialog({

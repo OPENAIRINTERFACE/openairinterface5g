@@ -36,7 +36,15 @@
 #define WEBSRV_MODNAME  "websrv"
 
 #define WEBSRV_PORT               8090
-
+/* websrv_printf_t is an internal structure storing messages while processing a request */
+/* The meaage is used to fill a response body                                           */
+typedef struct {
+  pthread_mutex_t mutex;          // protect the message betwween the websrv_printf_start and websrv_print_end calls
+  struct _u_response * response;  // the ulfius response structure, used to send the message
+  char *buff;                     // a buffer to store the message, allocated in websrv_printf_start, free in websrv_print_end
+  int  buffsize;                  //
+  char *buffptr;                  // pointer to free portion of buff
+} websrv_printf_t;
 
 /* websrv_params_t is an internal structure storing all the current parameters and */
 /* global variables used by the web server                                        */

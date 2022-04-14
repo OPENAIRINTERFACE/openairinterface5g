@@ -41,6 +41,7 @@
  
  
  static websrv_params_t websrvparams;
+ static websrv_printf_t websrv_printf_buff;
  paramdef_t websrvoptions[] = {
   /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
   /*                                            configuration parameters for telnet utility                                                                                      */
@@ -67,7 +68,48 @@ void websrv_printjson(char * label, json_t *jsonobj){
 	LOG_I(UTIL,"[websrv] %s:%s\n", label, (jstr==NULL)?"??\n":jstr);
 }
 
+/* */
+void websrv_printf_start(struct _u_response * response, int buffsize ) {
+  pthread_mutex_lock(&(websrv_printf_buff.mutex));	
+  websrv_printf_buff.buff = malloc(buffsize);
+  websrv_printf_buff.buffptr = websrv_printf_buff.buff;
+  websrv_printf_buff.buffsize = buffsize;
+  websrv_printf_buff.response = response;
+}
 
+void websrv_printf_atpos( int pos, const char *message,  ...) {
+  va_list va_args;
+  va_start(va_args, message);
+  
+  websrv_printf_buff.buffptr = websrv_printf_buff.buff + pos + vsnprintf( websrv_printf_buff.buff + pos, websrv_printf_buff.buffsize - pos -1,message, va_args );
+
+  va_end(va_args);
+  return ;
+}
+
+void websrv_printf( const char *message,  ...) {
+  va_list va_args;
+  va_start(va_args, message);
+  websrv_printf_buff.buffptr +=  vsnprintf( websrv_printf_buff.buffptr,
+                                            websrv_printf_buff.buffsize - (websrv_printf_buff.buffptr - websrv_printf_buff.buff) - 1,message, va_args );	
+  
+  va_end(va_args); 
+  return ;
+}
+
+void websrv_printf_end(int httpstatus ) {
+  if (httpstatus >= 200 && httpstatus < 300)
+    LOG_I(UTIL,"[websrv] %s\n",websrv_printf_buff.buff);
+  else
+    LOG_W(UTIL,"[websrv] %s\n",websrv_printf_buff.buff);
+  ulfius_add_header_to_response(websrv_printf_buff.response,"content-type" ,"text");
+  ulfius_set_binary_body_response(websrv_printf_buff.response,httpstatus , websrv_printf_buff.buff,websrv_printf_buff.buffptr - websrv_printf_buff.buff);
+
+  free(websrv_printf_buff.buff);
+  websrv_printf_buff.buff=NULL;
+  pthread_mutex_unlock(&(websrv_printf_buff.mutex));
+
+}
 /*----------------------------------------------------------------------------------------------------------*/
 /* callbacks and utility functions to stream a file */
 char * websrv_read_file(const char * filename) {
@@ -222,18 +264,18 @@ int websrv_callback_okset_softmodem_cmdvar(const struct _u_request * request, st
 }
 int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _u_response * response, void * user_data) {
 	 LOG_I(UTIL,"[websrv] : callback_set_softmodemvar received %s %s\n",request->http_verb,request->http_url);
+	 websrv_printf_start(response,256);
 	 json_error_t jserr;
 	 json_t* jsbody = ulfius_get_json_body_request (request, &jserr);
      int httpstatus=404;
-     char msg[256];
 	 if (jsbody == NULL) {
-       LOG_E(UTIL,"[websrv] cannot find json body in %s %s\n",request->http_url, jserr.text );
+	   websrv_printf("cannot find json body in %s %s\n",request->http_url, jserr.text );
        httpstatus=400;	 
 	 } else {
 	   websrv_printjson("callback_set_softmodemvar: ",jsbody);
        if (user_data == NULL) {
          httpstatus=500;
-         LOG_E(UTIL,"[websrv] %s: NULL user data\n",request->http_url);
+         websrv_printf("%s: NULL user data",request->http_url);
        } else {
 	     cmdparser_t * modulestruct = (cmdparser_t *)user_data;
          json_t *J=json_object_get(jsbody, "name");
@@ -244,18 +286,14 @@ int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _
              if(J!=NULL) {
                if (json_is_string(J)) {
 				 const char *vval=json_string_value(J);
-				 int n=strlen(var->varvalptr);
-				 if ( strlen(vval) < n ) {
-				   snprintf( var->varvalptr,n,"%s",vval);
-                   httpstatus=200; 
-                   snprintf(msg,sizeof(msg),"Var %s, set to %s",vname,vval );
-                   LOG_I(UTIL,"[websrv] %s \n",msg );
-                 } else {
-                   httpstatus=500; 
-                   snprintf(msg,sizeof(msg),"Var %s, cannot be set to %s, value to long",vname, vval );
-                   LOG_I(UTIL,"[websrv] %s \n",msg );					 
+				 websrv_printf("var %s set to ",var->varname); 
+                 int st=telnet_setvarvalue(var,(char *)vval, websrv_printf );
+                 if (st>=0) {				   
+				   httpstatus=200;
+				 } else {
+				   httpstatus=500;				 
 				 }
-			   } else if (json_is_integer(J)) {
+			  } else if (json_is_integer(J)) {
 				 json_int_t i = json_integer_value(J);
 				 switch(var->vartype) {
 					 case TELNET_VARTYPE_INT64:
@@ -275,39 +313,39 @@ int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _
 					   break;					   						   				   
 					 default:
                        httpstatus=500;
-                       snprintf(msg,sizeof(msg)," Cannot set var %s, integer type mismatch\n",vname );
-                       LOG_E(UTIL,"[websrv] %s",msg );					 
+                       websrv_printf(" Cannot set var %s, integer type mismatch\n",vname );
+                       break;				 
 			     }
 			   } else if (json_is_real(J)) {
 				 double lf = json_real_value(J); 
 				 if(var->vartype==TELNET_VARTYPE_DOUBLE) {
 					*(double *)var->varvalptr = lf;
                     httpstatus=200;
-                    snprintf(msg,sizeof(msg)," Var %s, set to %g\n",vname, *(double *)var->varvalptr );
-                    LOG_I(UTIL,"[websrv] %s",msg );					 					
+                    websrv_printf(" Var %s, set to %g\n",vname, *(double *)var->varvalptr );				 					
 				 } else {
                    httpstatus=500;
-                   snprintf(msg,sizeof(msg)," Cannot set var %s, real type mismatch\n",vname );
-                   LOG_E(UTIL,"[websrv] %s",msg );						 
+                   websrv_printf(" Cannot set var %s, real type mismatch\n",vname );					 
 				 }
 			   }
              } else {
                httpstatus=500;
-               snprintf(msg,sizeof(msg),"Cannot set var %s, json object is NULL\n",vname );
-               LOG_E(UTIL,"[websrv] %s",msg );
+               websrv_printf("Cannot set var %s, json object is NULL\n",vname );
              }
              break;
            }
          }//for
        }//user_data
      } //sbody
-     ulfius_set_string_body_response(response, httpstatus, msg);
+     websrv_printf_end(httpstatus);
 	 return U_CALLBACK_COMPLETE;   
 }
 /* callback processing module url (<address>/oaisoftmodem/module/commands), post method */
 int websrv_processwebfunc(struct _u_response * response, cmdparser_t * modulestruct ,telnetshell_cmddef_t *cmd) {
   LOG_I(UTIL,"[websrv] : executing command %s %s\n",modulestruct->module,cmd->cmdname);
-  return 501;
+  websrv_printf_start(response,16384);
+  cmd->cmdfunc("",websrvparams.dbglvl,websrv_printf);
+  websrv_printf_end(200);
+  return 200;
 }
 
 int websrv_callback_exec_softmodemcmd(const struct _u_request * request, struct _u_response * response, void * user_data) {
@@ -333,7 +371,7 @@ int websrv_callback_exec_softmodemcmd(const struct _u_request * request, struct 
 		 LOG_E(UTIL,"[websrv] command name not found in body\n");
          httpstatus=400;
        } else {
-		 httpstatus=500;
+		 httpstatus=501;
 		 msg="Unknown command in request body";
          for ( telnetshell_cmddef_t *cmd = modulestruct->cmd ; cmd->cmdfunc != NULL ;cmd++) {
            if (( strcmp(cmd->cmdname,vname) == 0) && cmd->webfunc != NULL){
@@ -343,7 +381,7 @@ int websrv_callback_exec_softmodemcmd(const struct _u_request * request, struct 
          }//for
 	   }
      } //sbody
-     if (httpstatus != 200)
+     if (httpstatus >= 300)
        ulfius_set_string_body_response(response, httpstatus, msg);
 	 return U_CALLBACK_COMPLETE;   
 }
@@ -401,12 +439,12 @@ int websrv_callback_get_softmodemvar(const struct _u_request * request, struct _
 
      int us=ulfius_add_header_to_response(response,"content-type" ,"application/json");
      if (us != U_OK){
-	   ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
+	   ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_add_header_to_response)");
 	   LOG_E(UTIL,"[websrv] cannot set response header type ulfius error %d \n",us);
      }   
      us=ulfius_set_json_body_response(response, 200, modulevars);
      if (us != U_OK){
-	   ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_set_json_body_response)");
+	   ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_set_json_body_response)");
 	   LOG_E(UTIL,"[websrv] cannot set body response ulfius error %d \n",us);
      }   
     return U_CALLBACK_COMPLETE;     
@@ -437,12 +475,12 @@ int websrv_callback_get_softmodemcmd(const struct _u_request * request, struct _
         }             
         int us=ulfius_add_header_to_response(response,"content-type" ,"application/json");
         if (us != U_OK){
-	      ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_add_header_to_response)");
+	      ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_add_header_to_response)");
 	      LOG_E(UTIL,"[websrv] cannot set response header type ulfius error %d \n",us);
         }   
         us=ulfius_set_json_body_response(response, 200, modulesubcom);
         if (us != U_OK){
-	      ulfius_set_string_body_response(response, 501, "Internal server error (ulfius_set_json_body_response)");
+	      ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_set_json_body_response)");
 	      LOG_E(UTIL,"[websrv] cannot set body response ulfius error %d \n",us);
         }        
 	return U_CALLBACK_COMPLETE;

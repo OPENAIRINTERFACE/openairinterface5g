@@ -90,9 +90,9 @@ int get_phybsize(void) {
 };
 int add_telnetcmd(char *modulename,telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd );
 int setoutput(char *buff, int debug, telnet_printfunc_t prnt);
-int wsetoutput(char *fname, ... );
+int wsetoutput(char *buff, int debug, telnet_printfunc_t prnt, ... );
 int setparam(char *buff, int debug, telnet_printfunc_t prnt);
-int wsetparam(char *pname, ... );
+int wsetparam(char *buff, int debug, telnet_printfunc_t prnt, ... );
 int history_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 
 
@@ -249,7 +249,7 @@ void redirstd(char *newfname,telnet_printfunc_t prnt ) {
   }
 }
 
-int wsetoutput(char *fname, ... ) {
+int wsetoutput(char *buffer, int debug, telnet_printfunc_t prnt, ... ) {
   return 0;
 }
 
@@ -289,7 +289,7 @@ int setoutput(char *buff, int debug, telnet_printfunc_t prnt) {
   return CMDSTATUS_FOUND;
 } /* setoutput */
 
-int wsetparam(char *pname, ... ) {
+int wsetparam(char *buff, int debug, telnet_printfunc_t prnt, ...) {
   return 0;
 }
 
