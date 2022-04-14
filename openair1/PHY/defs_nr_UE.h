@@ -226,11 +226,6 @@ typedef struct {
 } NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
-  /// TX buffers for multiple layers
-  int32_t *txdataF_layers[NR_MAX_NB_LAYERS];
-  } NR_UE_PUSCH;
-
-typedef struct {
   bool active[2];
   fapi_nr_ul_config_pucch_pdu pucch_pdu[2];
   } NR_UE_PUCCH;
@@ -654,40 +649,6 @@ typedef struct {
 #define PBCH_A 24
 
 typedef struct {
-  /// \brief Pointers to extracted PBCH symbols in frequency-domain.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..287] (hard coded)
-  int32_t **rxdataF_ext;
-  /// \brief Pointers to extracted and compensated PBCH symbols in frequency-domain.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..287] (hard coded)
-  int32_t **rxdataF_comp;
-  /// \brief Hold the channel estimates in frequency domain.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
-  int32_t **dl_ch_estimates;
-  /// \brief Pointers to downlink channel estimates in frequency-domain extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..287] (hard coded)
-  int32_t **dl_ch_estimates_ext;
-  /// \brief Hold the channel estimates in time domain (used for tracking).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: samples? [0..2*ofdm_symbol_size[
-  int32_t **dl_ch_estimates_time;
-  int log2_maxh;
-  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint32_t pbch_a_interleaved;
-  uint32_t pbch_a_prime;
-  uint8_t pbch_e[NR_POLAR_PBCH_E];
-  int16_t  demod_pbch_e[NR_POLAR_PBCH_E];
-  /// \brief Pointer to PBCH llrs.
-  /// - first index: ? [0..1919] (hard coded)
-  int16_t *llr;
-  /// \brief Pointer to PBCH decoded output.
-  /// - first index: ? [0..63] (hard coded)
-  uint8_t *decoded_output;
-  /// \brief PBCH additional bits
-  uint8_t xtra_byte;
   /// \brief Total number of PDU errors.
   uint32_t pdu_errors;
   /// \brief Total number of PDU errors 128 frames ago.
@@ -695,7 +656,7 @@ typedef struct {
   /// \brief Total number of consecutive PDU errors.
   uint32_t pdu_errors_conseq;
   /// \brief FER (in percent) .
-  uint32_t pdu_fer;
+  //uint32_t pdu_fer;
 } NR_UE_PBCH;
 
 typedef struct {
@@ -819,10 +780,9 @@ typedef struct {
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_SRS       *srs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
-  NR_UE_PUSCH     *pusch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PUCCH     *pucch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
-  NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_CODEWORDS]; // two RxTx Threads
-  NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_CODEWORDS]; // two code words
+  NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_LAYERS>4 ? 2:1]; // two RxTx Threads
+  NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
@@ -866,7 +826,7 @@ typedef struct {
   uint16_t scramblingID_pdcch;
 
   /// PUSCH DMRS sequence
-  uint32_t ****nr_gold_pusch_dmrs;
+  uint32_t ***nr_gold_pusch_dmrs;
 
   uint32_t X_u[64][839];
 
@@ -1073,7 +1033,7 @@ typedef struct {
 #endif
   
   int dl_stats[5];
-
+  void* scopeData;
 } PHY_VARS_NR_UE;
 
 /* this structure is used to pass both UE phy vars and

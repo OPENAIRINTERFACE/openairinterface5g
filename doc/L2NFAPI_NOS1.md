@@ -12,6 +12,10 @@
   </tr>
 </table>
 
+**2022/03/08: CAUTION, THIS TUTORIAL IS NO LONGER VALID on the `develop` branch after the `2022.w01` tag.**
+
+**2022/03/08: CAUTION, THE LAST VALID TAG on `develop` branch is `2021.w51_c`.**
+
 ## Table of Contents ##
 
 1.   [Environment](#1-environment)

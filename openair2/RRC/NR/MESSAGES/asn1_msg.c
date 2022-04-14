@@ -41,6 +41,7 @@
 #include <per_encoder.h>
 #include <nr/nr_common.h>
 
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "asn1_msg.h"
 #include "../nr_rrc_proto.h"
 #include "RRC/NR/nr_rrc_extern.h"
@@ -1038,7 +1039,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
      default:
        AssertFatal(1==0,"Number of ports not yet supported\n");
    }
-   resourceMapping.firstOFDMSymbolInTimeDomain = 6;
+   // This programs CSI-RS in slot 0 symbol 13. Note: need to use a SIB1 configuration which leaves the last symbol free for CSI-RS.
+   resourceMapping.firstOFDMSymbolInTimeDomain = 13;
    resourceMapping.firstOFDMSymbolInTimeDomain2 = NULL;
    resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
    resourceMapping.density.choice.one = (NULL_t)0;
@@ -1051,7 +1053,7 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
    nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
    nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-   nzpcsi0->periodicityAndOffset->choice.slots320 = 20;
+   nzpcsi0->periodicityAndOffset->choice.slots320 = 0;
    nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS)); 
    *nzpcsi0->qcl_InfoPeriodicCSI_RS=0;
    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
@@ -1596,7 +1598,7 @@ void fill_initial_SpCellConfig(int uid,
      csirep1->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
      csirep1->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep1->reportConfigType.choice.periodic));
      csirep1->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-     csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (8 + (20 * uid)) % 320;
+     csirep1->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (7 + (20 * uid)) % 320;
      ASN_SEQUENCE_ADD(&csirep1->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
      csirep1->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI;
      csirep1->reportQuantity.choice.cri_RI_PMI_CQI=(NULL_t)0;
@@ -1655,7 +1657,7 @@ void fill_initial_SpCellConfig(int uid,
    csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
    csirep2->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep2->reportConfigType.choice.periodic));
    csirep2->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-   csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (28 + (20 * uid)) % 320;
+   csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (27 + (20 * uid)) % 320;
    ASN_SEQUENCE_ADD(&csirep2->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
    csirep2->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP;
    csirep2->reportQuantity.choice.cri_RSRP=(NULL_t)0;
@@ -1786,14 +1788,14 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
 
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
-                   uecap, bwp_Dedicated, scc);
+                   NULL/*uecap*/, SpCellConfig, bwp_Dedicated, scc);
 
   struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
   if (DL_BWP_list) {
     for (int i=0; i<DL_BWP_list->list.count; i++){
       NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
       int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
-      set_dl_mcs_table(scs, uecap, bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
+      set_dl_mcs_table(scs, NULL,/*uecap,*/ SpCellConfig,bwp->bwp_Dedicated, carrier->servingcellconfigcommon);
     }
   }
 }

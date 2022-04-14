@@ -65,7 +65,6 @@ COPY --from=gnb-build /oai-ran/targets/bin/nr-softmodem.Rel15 .
 
 WORKDIR /usr/local/lib/
 COPY --from=gnb-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
-COPY --from=gnb-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
 COPY --from=gnb-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
 COPY --from=gnb-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
 COPY --from=gnb-build /oai-ran/targets/bin/libcoding.so .
@@ -102,7 +101,6 @@ RUN ldconfig
 #debug
 RUN ldd /opt/oai-gnb/bin/nr-softmodem.Rel15
 RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
-RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
 RUN ldd /usr/local/lib/librfsimulator.so.Rel15
 RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
 RUN ldd /usr/local/lib/libcoding.so

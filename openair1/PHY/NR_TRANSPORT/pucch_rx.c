@@ -439,7 +439,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = no_conf ? 1 : 0;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(1);
     uci_pdu->harq->harq_list[0].harq_value = !(index&0x01);
-    if (no_conf) LOG_I(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ value %d (0 pass, 1 fail) with confidence level %d (0 is good, 1 is bad) xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d, energy %f, sync_pos %d\n",
+    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ value %d (0 pass, 1 fail) with confidence level %d (0 is good, 1 is bad) xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d, energy %f, sync_pos %d\n",
           frame,slot,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,10*log10((double)sigenergy),gNB->ulsch_stats[0].sync_pos);
 
     if (pucch_pdu->sr_flag == 1) {
@@ -458,7 +458,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
     uci_pdu->harq->harq_list[1].harq_value = !(index&0x01);
     uci_pdu->harq->harq_list[0].harq_value = !((index>>1)&0x01);
-    if (no_conf) LOG_I(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d (0 pass, 1 fail) and %d with confidence level %d (0 is good, 1 is bad), xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d,sync_pos %d\n",
+    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values %d and %d (0 pass, 1 fail) with confidence level %d (0 is good, 1 is bad), xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d,sync_pos %d\n",
           frame,slot,uci_pdu->harq->harq_list[1].harq_value,uci_pdu->harq->harq_list[0].harq_value,uci_pdu->harq->harq_confidence_level,xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,gNB->ulsch_stats[0].sync_pos);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
@@ -1178,9 +1178,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
     }
   }
-#ifdef DEBUG_NR_PUCCH_RX
-  printf("Decoding pucch2 for %d symbols, %d PRB\n",pucch_pdu->nr_of_symbols,pucch_pdu->prb_size);
-#endif
+  LOG_D(PHY,"Decoding pucch2 for %d symbols, %d PRB, nb_harq %d, nb_sr %d, nb_csi %d/%d\n",
+        pucch_pdu->nr_of_symbols,pucch_pdu->prb_size,
+        pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,pucch_pdu->bit_len_csi_part1,pucch_pdu->bit_len_csi_part2);
 
   int nc_group_size=1; // 2 PRB
   int ngroup = prb_size_ext/nc_group_size/2;

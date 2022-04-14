@@ -64,7 +64,6 @@ COPY --from=nr-ue-build /oai-ran/targets/bin/nr-uesoftmodem.Rel15 .
 
 WORKDIR /usr/local/lib/
 COPY --from=nr-ue-build /oai-ran/targets/bin/liboai_eth_transpro.so.Rel15 .
-COPY --from=nr-ue-build /oai-ran/targets/bin/libtcp_bridge_oai.so.Rel15 .
 COPY --from=nr-ue-build /oai-ran/targets/bin/librfsimulator.so.Rel15 .
 COPY --from=nr-ue-build /oai-ran/targets/bin/liboai_usrpdevif.so.Rel15 .
 COPY --from=nr-ue-build /oai-ran/targets/bin/libcoding.so .
@@ -100,7 +99,6 @@ COPY --from=nr-ue-build /usr/local/lib64/libuhd.so.4.0.0 /usr/local/lib64
 RUN ldconfig
 RUN ldd /opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15
 RUN ldd /usr/local/lib/liboai_eth_transpro.so.Rel15
-RUN ldd /usr/local/lib/libtcp_bridge_oai.so.Rel15
 RUN ldd /usr/local/lib/librfsimulator.so.Rel15
 RUN ldd /usr/local/lib/liboai_usrpdevif.so.Rel15
 RUN ldd /usr/local/lib/libcoding.so

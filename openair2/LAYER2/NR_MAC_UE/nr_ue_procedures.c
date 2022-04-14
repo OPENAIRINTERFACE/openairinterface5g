@@ -1154,7 +1154,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                           (table_7_3_2_3_3_1[dci->antenna_ports.val][2]<<1) +
                                           (table_7_3_2_3_3_1[dci->antenna_ports.val][3]<<2) +
                                           (table_7_3_2_3_3_1[dci->antenna_ports.val][4]<<3));
-      dlsch_config_pdu_1_1->n_front_load_symb = 1;
     }
     if ((dmrs_type == NULL) && (max_length != NULL)){
       // Table 7.3.1.2.2-2: Antenna port(s) (1000 + DMRS port), dmrs-Type=1, maxLength=2

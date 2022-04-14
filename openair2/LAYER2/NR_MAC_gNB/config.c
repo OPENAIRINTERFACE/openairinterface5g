@@ -58,19 +58,42 @@ void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *
                              struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
                              NR_UE_sched_ctrl_t *sched_ctrl) {
 
-
-  if (rlc_bearer2add_list)
-  // keep lcids
-    for (int i=0;i<rlc_bearer2add_list->list.count;i++) {
-      sched_ctrl->lcid_mask |= (1<<rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
-      LOG_I(NR_MAC,"Adding LCID %d (%s %d)\n",
-            (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity,
-            rlc_bearer2add_list->list.array[i]->logicalChannelIdentity<4 ? "SRB" : "DRB",
-            (int)rlc_bearer2add_list->list.array[i]->logicalChannelIdentity);
+  if (rlc_bearer2release_list) {
+    for (int i = 0; i < rlc_bearer2release_list->list.count; i++) {
+      for (int idx = 0; idx < sched_ctrl->dl_lc_num; idx++) {
+        if (sched_ctrl->dl_lc_ids[idx] == *rlc_bearer2release_list->list.array[i]) {
+          const int remaining_lcs = sched_ctrl->dl_lc_num - idx - 1;
+          memmove(&sched_ctrl->dl_lc_ids[idx], &sched_ctrl->dl_lc_ids[idx + 1], sizeof(sched_ctrl->dl_lc_ids[idx]) * remaining_lcs);
+          sched_ctrl->dl_lc_num--;
+          break;
+        }
+      }
     }
-  if (rlc_bearer2release_list)
-    for (int i=0;i<rlc_bearer2release_list->list.count;i++)
-      sched_ctrl->lcid_mask |= (1<<*rlc_bearer2release_list->list.array[i]);
+  }
+
+  if (rlc_bearer2add_list) {
+    // keep lcids
+    for (int i = 0; i < rlc_bearer2add_list->list.count; i++) {
+      const int lcid = rlc_bearer2add_list->list.array[i]->logicalChannelIdentity;
+      bool found = false;
+      for (int idx = 0; idx < sched_ctrl->dl_lc_num; idx++) {
+        if (sched_ctrl->dl_lc_ids[idx] == lcid) {
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        sched_ctrl->dl_lc_num++;
+        sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num - 1] = lcid;
+        LOG_D(NR_MAC, "Adding LCID %d (%s %d)\n", lcid, lcid < 4 ? "SRB" : "DRB", lcid);
+      }
+    }
+  }
+
+  LOG_D(NR_MAC, "In %s: total num of active bearers %d) \n",
+      __FUNCTION__,
+      sched_ctrl->dl_lc_num);
 
 }
 
@@ -446,11 +469,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
                 "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
     /* fill in slot/frame numbers: slot is fixed, frame will be updated by scheduler
-       extern sf_ahead is initialized in ru_thread but that function is not executed yet here*/
-    const uint16_t sf_ahead = (uint16_t) ceil((float)6/(0x01<<(*scc->ssbSubcarrierSpacing)));
-    const uint16_t sl_ahead = sf_ahead * (0x01<<(*scc->ssbSubcarrierSpacing));
-    /* consider that scheduler runs sl_ahead: the first sl_ahead slots are
-     * already "in the past" and thus we put frame 1 instead of 0!*/
+     * consider that scheduler runs sl_ahead: the first sl_ahead slots are
+     * already "in the past" and thus we put frame 1 instead of 0! */
     for (int i = 0; i < n; ++i) {
       nfapi_nr_ul_tti_request_t *req = &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][i];
       req->SFN = i < (RC.nrmac[Mod_idP]->if_inst->sl_ahead-1);
@@ -667,7 +687,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   
-    
   return(0);
 
 }// END rrc_mac_config_req_gNB

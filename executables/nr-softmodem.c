@@ -741,7 +741,7 @@ int main( int argc, char **argv ) {
       RC.ru[ru_id]->rf_map.card=0;
       RC.ru[ru_id]->rf_map.chain=CC_id+chain_offset;
       if (ru_id==0) sl_ahead = RC.ru[ru_id]->sl_ahead;	
-      else AssertFatal(RC.ru[ru_id]->sl_ahead != RC.ru[0]->sl_ahead,"RU %d has different sl_ahead %d than RU 0 %d\n",RC.ru[ru_id]->sl_ahead,RC.ru[0]->sl_ahead);
+      else AssertFatal(RC.ru[ru_id]->sl_ahead != RC.ru[0]->sl_ahead,"RU %d has different sl_ahead %d than RU 0 %d\n",ru_id,RC.ru[ru_id]->sl_ahead,RC.ru[0]->sl_ahead);
     }
     
   }
