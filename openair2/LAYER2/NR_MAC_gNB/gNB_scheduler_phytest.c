@@ -276,7 +276,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               UE_id);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = set_dl_tda(RC.nrmac[module_id], scc, slot);
+  const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
@@ -436,7 +436,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = set_ul_tda(nr_mac, scc, slot);
+  const int tda = get_ul_tda(nr_mac, scc, slot);
   if (tda < 0)
     return false;
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =

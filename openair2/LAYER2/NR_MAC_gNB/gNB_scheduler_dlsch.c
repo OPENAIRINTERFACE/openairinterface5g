@@ -53,15 +53,14 @@
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
 
-const int set_dl_tda(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, int slot) {
+const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot) {
 
-  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd =
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
 
   if (tdd) {
     if (tdd->nrofDownlinkSymbols > 1) { // if there is a mixed slot where we can transmit DL
-      int nr_slots_period = n/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+      const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + 1;
       if ((slot%nr_slots_period) == tdd->nrofDownlinkSlots)
         return 1;
     }
@@ -455,7 +454,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 int current_harq_pid) {
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
-  NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
+  const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nr_mac->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
@@ -485,7 +484,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = 0; // start wrt BWPstart
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   int rbSize = 0;
-  const int tda = set_dl_tda(RC.nrmac[module_id], scc, slot);
+  const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
 
   if (tda == retInfo->time_domain_allocation) {
@@ -829,7 +828,7 @@ void pf_dl(module_id_t module_id,
     if (max_num_ue < 0) return;
 
     /* MCS has been set above */
-    const int tda = set_dl_tda(RC.nrmac[module_id], scc, slot);
+    const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
     AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
@@ -901,7 +900,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = set_dl_tda(RC.nrmac[module_id], scc, slot);
+  const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   int startSymbolIndex, nrOfSymbols;
   const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_bwp ?
         sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :

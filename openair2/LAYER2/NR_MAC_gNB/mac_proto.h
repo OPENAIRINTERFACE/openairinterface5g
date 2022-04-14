@@ -522,8 +522,8 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
 int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl);
-const int set_dl_tda(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, int slot);
-const int set_ul_tda(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, int slot);
+const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
+const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 
 bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
 

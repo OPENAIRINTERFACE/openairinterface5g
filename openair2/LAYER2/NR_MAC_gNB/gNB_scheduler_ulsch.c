@@ -46,16 +46,14 @@ int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl) {
   return(dci_format);
 }
 
-const int set_ul_tda(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, int slot) {
+const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot) {
 
   /* there is a mixed slot only when in TDD */
-  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const NR_TDD_UL_DL_Pattern_t *tdd =
-      scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
 
   if (tdd) {
     if (tdd->nrofUplinkSymbols > 1) { // if there is uplink symbols in mixed slot
-      int nr_slots_period = n/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+      const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + 1;
       if ((slot%nr_slots_period) == tdd->nrofUplinkSlots)
         return 1;
     }
@@ -848,7 +846,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
 {
   const int CC_id = 0;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
-  NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[CC_id].ServingCellConfigCommon;
+  const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nr_mac->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
@@ -867,7 +865,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   const uint8_t nrOfLayers = 1;
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || ubwpd) ? 1 : 2;
-  const int tda = set_ul_tda(nr_mac, scc, slot);
+  const int tda = get_ul_tda(nr_mac, scc, slot);
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
   LOG_D(NR_MAC,"num_dmrs_cdm_grps_no_data %d, tbs %d\n",num_dmrs_cdm_grps_no_data, retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation) {
@@ -1136,7 +1134,7 @@ void pf_ul(module_id_t module_id,
       const uint8_t nrOfLayers = 1;
       const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
       int dci_format = get_dci_format(sched_ctrl);
-      const int tda = set_ul_tda(nrmac, scc, slot);
+      const int tda = get_ul_tda(nrmac, scc, slot);
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
           || ps->nrOfLayers != nrOfLayers
@@ -1276,7 +1274,7 @@ void pf_ul(module_id_t module_id,
     const uint8_t nrOfLayers = 1;
     const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
     int dci_format = get_dci_format(sched_ctrl);
-    const int tda = set_ul_tda(nrmac, scc, slot);
+    const int tda = get_ul_tda(nrmac, scc, slot);
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->nrOfLayers != nrOfLayers
@@ -1369,7 +1367,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * schedule now (slot + k2 is not UL slot) */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = set_ul_tda(nr_mac, scc, slot);
+  const int tda = get_ul_tda(nr_mac, scc, slot);
   if (tda < 0)
     return false;
   int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, tda, mu);
