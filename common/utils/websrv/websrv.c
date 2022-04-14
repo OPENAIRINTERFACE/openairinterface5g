@@ -68,6 +68,31 @@ void websrv_printjson(char * label, json_t *jsonobj){
 	LOG_I(UTIL,"[websrv] %s:%s\n", label, (jstr==NULL)?"??\n":jstr);
 }
 
+/*----------------------------------------------------------------*/
+/* format a json string array in a response body                  */
+int websrv_string_response(char *astring, struct _u_response * response, int httpstatus) {
+  json_t *jstr = json_array(); 
+  char *tokctx;
+  char *aline=strtok_r(astring,"\n",&tokctx);
+  while(aline != NULL) {
+    json_t *jline=json_string(aline);
+    json_array_append_new(jstr,jline);
+    aline=strtok_r(NULL,"\n",&tokctx);
+  }
+  websrv_printjson( (char *)__FUNCTION__ , jstr);
+  int us=ulfius_add_header_to_response(response,"content-type" ,"application/json");
+  if (us != U_OK){
+	  ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_add_header_to_response)");
+	  LOG_E(UTIL,"[websrv] cannot set response header type ulfius error %d \n",us);
+  }   
+  us=ulfius_set_json_body_response(response, 200, jstr);
+  if (us != U_OK){
+	  ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_set_json_body_response)");
+	  LOG_E(UTIL,"[websrv] cannot set body response ulfius error %d \n",us);
+  }
+  return 0; 
+}
+
 /* */
 void websrv_printf_start(struct _u_response * response, int buffsize ) {
   pthread_mutex_lock(&(websrv_printf_buff.mutex));	
@@ -98,18 +123,20 @@ void websrv_printf( const char *message,  ...) {
 }
 
 void websrv_printf_end(int httpstatus ) {
-  if (httpstatus >= 200 && httpstatus < 300)
+  if (httpstatus >= 200 && httpstatus < 300) {
     LOG_I(UTIL,"[websrv] %s\n",websrv_printf_buff.buff);
-  else
+    websrv_string_response(websrv_printf_buff.buff, websrv_printf_buff.response, httpstatus) ;   
+  } else {
     LOG_W(UTIL,"[websrv] %s\n",websrv_printf_buff.buff);
-  ulfius_add_header_to_response(websrv_printf_buff.response,"content-type" ,"text");
-  ulfius_set_binary_body_response(websrv_printf_buff.response,httpstatus , websrv_printf_buff.buff,websrv_printf_buff.buffptr - websrv_printf_buff.buff);
-
+    ulfius_set_binary_body_response(websrv_printf_buff.response,httpstatus , websrv_printf_buff.buff,websrv_printf_buff.buffptr - websrv_printf_buff.buff);
+  }
+  
   free(websrv_printf_buff.buff);
   websrv_printf_buff.buff=NULL;
   pthread_mutex_unlock(&(websrv_printf_buff.mutex));
 
 }
+
 /*----------------------------------------------------------------------------------------------------------*/
 /* callbacks and utility functions to stream a file */
 char * websrv_read_file(const char * filename) {
