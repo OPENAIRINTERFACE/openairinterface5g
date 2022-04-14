@@ -390,7 +390,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   index=maxpos;
   uci_stats->pucch0_n00 = gNB->measurements.n0_subband_power_tot_dB[prb_offset[0]];
   uci_stats->pucch0_n01 = gNB->measurements.n0_subband_power_tot_dB[prb_offset[1]];
-  LOG_I(PHY,"n00[%d] = %d, n01[%d] = %d\n",prb_offset[0],uci_stats->pucch0_n00,prb_offset[1],uci_stats->pucch0_n01);
+  LOG_D(PHY,"n00[%d] = %d, n01[%d] = %d\n",prb_offset[0],uci_stats->pucch0_n00,prb_offset[1],uci_stats->pucch0_n01);
   // estimate CQI for MAC (from antenna port 0 only)
   int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
   int SNRtimes10,sigenergy=0;
@@ -1680,6 +1680,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   }
 
   // estimate CQI for MAC (from antenna port 0 only)
+  // TODO this computation is wrong -> to be ignored at MAC for now
   int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],
                                                        12*pucch_pdu->prb_size)) -
                                                        (10*gNB->measurements.n0_power_tot_dB);

@@ -1493,10 +1493,11 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   // tpc (power control)
-  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-                                uci_234->ul_cqi,
-                                30);
-  sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
+  // TODO PUCCH2 SNR computation is not correct -> ignore the following
+  //sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+  //                              uci_234->ul_cqi,
+  //                              30);
+  //sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
 
   if ((uci_234->pduBitmap >> 1) & 0x01) {
     // iterate over received harq bits
