@@ -2312,7 +2312,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->pucch_consecutive_dtx_cnt = 0;
     sched_ctrl->pusch_consecutive_dtx_cnt = 0;
     sched_ctrl->ul_failure                = 0;
-    sched_ctrl->schedule_enabled = true;
 
     sched_ctrl->sched_srs.frame = -1;
     sched_ctrl->sched_srs.slot = -1;

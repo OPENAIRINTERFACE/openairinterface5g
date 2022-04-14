@@ -96,9 +96,6 @@ typedef struct nr_uid_linear_allocator_s {
 #define PROTOCOL_NR_RRC_CTXT_FMT                   PROTOCOL_CTXT_FMT
 #define PROTOCOL_NR_RRC_CTXT_ARGS(CTXT_Pp)         PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
 
-// Delay to take in consideration for sl_ahead value
-#define TX_SL_AHEAD_DELAY 3
-
 // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
 #define NR_RRC_PROCESSING_DELAY_MS  10
 
@@ -379,8 +376,6 @@ typedef struct gNB_RRC_UE_s {
   //GTPV1 F1-U TUNNELS
   uint32_t                           incoming_teid[S1AP_MAX_E_RAB];
 
-  uint32_t                           nr_rrc_processing_timer;
-  uint32_t                           nr_rrc_processing_delay;
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;

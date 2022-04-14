@@ -1947,10 +1947,12 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
         UE_info->active[UE_id] = true;
         UE_info->Msg4_ACKed[UE_id] = true;
 
-        // Pause scheduling according to:
+        const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+        NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
+                                                                   RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
+                                                                   sib1);
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-        sched_ctrl->schedule_enabled = false;
-        nr_mac_gNB_enable_rrc_processing_timer_req(module_id, ra->rnti);
+        sched_ctrl->rrc_processing_timer = (10 << genericParameters->subcarrierSpacing); // RRCSetup 10 ms
       }
       else {
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
