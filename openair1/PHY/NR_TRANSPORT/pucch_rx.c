@@ -298,7 +298,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
         xr[aa][l][n2+1]+=(int16_t)(((int32_t)x_re[l][n]*r[n2+1]-(int32_t)x_im[l][n]*r[n2])>>15);
 #ifdef DEBUG_NR_PUCCH_RX
         printf("x (%d,%d), r%d.%d (%d,%d), xr (%d,%d)\n",
-	               x_re[l][n],x_im[l][n],l2,re_offset[l],r[n2],r[n2+1],xr[aa][l][n2],xr[aa][l][n2+1]);
+               x_re[l][n],x_im[l][n],l2,re_offset[l],r[n2],r[n2+1],xr[aa][l][n2],xr[aa][l][n2+1]);
 #endif
       }
     }
@@ -390,7 +390,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   index=maxpos;
   uci_stats->pucch0_n00 = gNB->measurements.n0_subband_power_tot_dB[prb_offset[0]];
   uci_stats->pucch0_n01 = gNB->measurements.n0_subband_power_tot_dB[prb_offset[1]];
-  LOG_D(PHY,"n00[%d] = %d, n01[%d] = %d\n",prb_offset[0],uci_stats->pucch0_n00,prb_offset[1],uci_stats->pucch0_n01);
+  LOG_I(PHY,"n00[%d] = %d, n01[%d] = %d\n",prb_offset[0],uci_stats->pucch0_n00,prb_offset[1],uci_stats->pucch0_n01);
   // estimate CQI for MAC (from antenna port 0 only)
   int max_n0 = uci_stats->pucch0_n00>uci_stats->pucch0_n01 ? uci_stats->pucch0_n00:uci_stats->pucch0_n01;
   int SNRtimes10,sigenergy=0;
@@ -422,11 +422,12 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-    uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
+    uci_pdu->sr->sr_confidence_level = (SNRtimes10 > uci_stats->pucch0_thres) ? 1 : 0;
     uci_stats->pucch0_sr_trials++;
-    if (xrtmag_dBtimes10>(10*gNB->measurements.n0_power_tot_dB)) {
+    if (xrtmag_dBtimes10>10*max_n0) {
       uci_pdu->sr->sr_indication = 1;
       uci_stats->pucch0_positive_SR++;
+      LOG_D(PHY,"PUCCH0 got positive SR. Cumulative number of positive SR %d\n", uci_stats->pucch0_positive_SR);
     } else {
       uci_pdu->sr->sr_indication = 0;
     }
@@ -445,7 +446,10 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>1) ? 1 : 0;
       uci_pdu->sr->sr_confidence_level = no_conf ? 1 : 0;
-      uci_stats->pucch0_positive_SR++;
+      if(uci_pdu->sr->sr_indication == 1 && uci_pdu->sr->sr_confidence_level == 0) {
+        uci_stats->pucch0_positive_SR++;
+        LOG_D(PHY,"PUCCH0 got positive SR. Cumulative number of positive SR %d\n", uci_stats->pucch0_positive_SR);
+      }
     }
     uci_stats->pucch01_trials++;
   }
@@ -463,6 +467,10 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
       uci_pdu->sr->sr_confidence_level = (no_conf) ? 1 : 0;
+      if(uci_pdu->sr->sr_indication == 1 && uci_pdu->sr->sr_confidence_level == 0) {
+        uci_stats->pucch0_positive_SR++;
+        LOG_D(PHY,"PUCCH0 got positive SR. Cumulative number of positive SR %d\n", uci_stats->pucch0_positive_SR);
+      }
     }
   }
 }
@@ -1671,7 +1679,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     LOG_D(PHY,"metric %d dB\n",corr_dB);
   }
 
-    // estimate CQI for MAC (from antenna port 0 only)
+  // estimate CQI for MAC (from antenna port 0 only)
   int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],
                                                        12*pucch_pdu->prb_size)) -
                                                        (10*gNB->measurements.n0_power_tot_dB);
