@@ -238,6 +238,26 @@ pipeline {
             }
           }
         }
+        stage ("5G L2 Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-L2-Sim-Test-5G', 'Test-L2-Sim-Container-5G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-L2-Sim-Test-5G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
         stage ("NSA B200 Sanity Check") {
           when { expression {doMandatoryTests} }
           steps {

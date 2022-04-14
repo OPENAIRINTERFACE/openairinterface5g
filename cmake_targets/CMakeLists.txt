@@ -1781,7 +1781,8 @@ set(NR_PDCP_SRC
   )
 
 set(NR_SDAP_SRC
-  ${OPENAIR2_DIR}/SDAP/nr_sdap/nr_sdap_gnb.c
+  ${OPENAIR2_DIR}/SDAP/nr_sdap/nr_sdap.c
+  ${OPENAIR2_DIR}/SDAP/nr_sdap/nr_sdap_entity.c
   )
   
 set(L2_SRC
@@ -1867,6 +1868,7 @@ set(NR_L2_SRC_UE
   ${NR_RRC_DIR}/nr_rrc_config.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
   ${NR_UE_RRC_DIR}/rrc_nsa.c
+  ${NR_RRC_DIR}/nr_rrc_config.c
   )
 
 set (MAC_SRC

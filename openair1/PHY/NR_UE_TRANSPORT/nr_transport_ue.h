@@ -196,8 +196,6 @@ typedef struct {
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_nrmode_t mimo_mode;
-  /// LDPC processing buffers
-  t_nrLDPC_procBuf **p_nrLDPC_procBuf;
   /// Number of code segments 
   uint32_t C;
   /// Number of bits in code segments
@@ -261,6 +259,8 @@ typedef struct {
   uint16_t ptrs_symbols;
   // PTRS symbol index, to be updated every PTRS symbol within a slot.
   uint8_t ptrs_symbol_index;
+  uint8_t nscid;
+  uint16_t dlDmrsScramblingId;
   /// PDU BITMAP 
   uint16_t pduBitmap;
 } NR_DL_UE_HARQ_t;
