@@ -1253,24 +1253,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
  csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
 
- if (do_csirs) {
-   csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
-   NR_NZP_CSI_RS_ResourceSet_t *nzpcsirs0 = calloc(1,sizeof(*nzpcsirs0));
-   nzpcsirs0->nzp_CSI_ResourceSetId = 0;
-   NR_NZP_CSI_RS_ResourceId_t *nzpid0 = calloc(1,sizeof(*nzpid0));
-   *nzpid0 = 0;
-   ASN_SEQUENCE_ADD(&nzpcsirs0->nzp_CSI_RS_Resources,nzpid0);
-   nzpcsirs0->repetition = NULL;
-   nzpcsirs0->aperiodicTriggeringOffset = NULL;
-   nzpcsirs0->trs_Info = NULL;
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,nzpcsirs0);
- }
- else
-   csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = NULL;
-
- csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
-
- config_csirs(servingcellconfigcommon, csi_MeasConfig,dl_antenna_ports,curr_bwp,do_csirs);
+ config_csirs(servingcellconfigcommon, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, do_csirs);
 
  csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
@@ -1289,9 +1272,9 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);
 
  csi_MeasConfig->csi_ResourceConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ResourceConfigToAddModList));
+ csi_MeasConfig->csi_ResourceConfigToReleaseList = NULL;
 
  if (do_csirs) {
-   csi_MeasConfig->csi_ResourceConfigToReleaseList = NULL;
    NR_CSI_ResourceConfig_t *csires0 = calloc(1,sizeof(*csires0));
    csires0->csi_ResourceConfigId=0;
    csires0->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
@@ -1501,62 +1484,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_SpCellConfig, (void *)secondaryCellGroup->spCellConfig);
   }
-}
-
-
-void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-                  NR_CSI_MeasConfig_t *csi_MeasConfig,
-                  int dl_antenna_ports,
-                  int curr_bwp,
-                  int do_csirs) {
-
- if (do_csirs) {
-   csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
-   NR_NZP_CSI_RS_Resource_t *nzpcsi0 = calloc(1,sizeof(*nzpcsi0));
-   nzpcsi0->nzp_CSI_RS_ResourceId = 0;
-   NR_CSI_RS_ResourceMapping_t resourceMapping;
-   switch (dl_antenna_ports) {
-     case 1:
-       resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2;
-       resourceMapping.frequencyDomainAllocation.choice.row2.buf = calloc(2, sizeof(uint8_t));
-       resourceMapping.frequencyDomainAllocation.choice.row2.size = 2;
-       resourceMapping.frequencyDomainAllocation.choice.row2.bits_unused = 4;
-       resourceMapping.frequencyDomainAllocation.choice.row2.buf[0] = 0;
-       resourceMapping.frequencyDomainAllocation.choice.row2.buf[1] = 16;
-       resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p1;
-       resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_noCDM;
-       break;
-     case 2:
-       resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other;
-       resourceMapping.frequencyDomainAllocation.choice.other.buf = calloc(2, sizeof(uint8_t));
-       resourceMapping.frequencyDomainAllocation.choice.other.size = 1;
-       resourceMapping.frequencyDomainAllocation.choice.other.bits_unused = 2;
-       resourceMapping.frequencyDomainAllocation.choice.other.buf[0] = 4;
-       resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p2;
-       resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_fd_CDM2;
-       break;
-     default:
-       AssertFatal(1==0,"Number of ports not yet supported\n");
-   }
-   resourceMapping.firstOFDMSymbolInTimeDomain = 6;
-   resourceMapping.firstOFDMSymbolInTimeDomain2 = NULL;
-   resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
-   resourceMapping.density.choice.one = (NULL_t)0;
-   resourceMapping.freqBand.startingRB = 0;
-   resourceMapping.freqBand.nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
-   nzpcsi0->resourceMapping = resourceMapping;
-   nzpcsi0->powerControlOffset = 0;
-   nzpcsi0->powerControlOffsetSS=calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
-   *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
-   nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
-   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
-   nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-   nzpcsi0->periodicityAndOffset->choice.slots320 = 0;
-   nzpcsi0->qcl_InfoPeriodicCSI_RS = NULL;
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
- }
- else
-   csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = NULL;
 }
 
 

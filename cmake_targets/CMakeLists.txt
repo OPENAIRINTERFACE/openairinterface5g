@@ -1868,6 +1868,7 @@ set(NR_L2_SRC_UE
   ${NR_RRC_DIR}/nr_rrc_config.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
   ${NR_UE_RRC_DIR}/rrc_nsa.c
+  ${NR_RRC_DIR}/nr_rrc_config.c
   )
 
 set (MAC_SRC
