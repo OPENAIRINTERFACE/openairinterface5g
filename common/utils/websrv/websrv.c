@@ -67,6 +67,22 @@ void websrv_printjson(char * label, json_t *jsonobj){
 	char *jstr = json_dumps(jsonobj,0);
 	LOG_I(UTIL,"[websrv] %s:%s\n", label, (jstr==NULL)?"??\n":jstr);
 }
+/*-----------------------------------*/
+/* build a json body in a response */
+void websrv_jbody( struct _u_response * response, json_t *jbody) {
+  websrv_printjson( (char *)__FUNCTION__ , jbody);
+  int us=ulfius_add_header_to_response(response,"content-type" ,"application/json");
+  if (us != U_OK){
+	  ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_add_header_to_response)");
+	  LOG_E(UTIL,"[websrv] cannot set response header type ulfius error %d \n",us);
+  }   
+  us=ulfius_set_json_body_response(response, 200, jbody);
+  if (us != U_OK){
+	  ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_set_json_body_response)");
+	  LOG_E(UTIL,"[websrv] cannot set body response ulfius error %d \n",us);
+  }
+  return;
+}
 
 /*----------------------------------------------------------------*/
 /* format a json string array in a response body                  */
@@ -79,17 +95,8 @@ int websrv_string_response(char *astring, struct _u_response * response, int htt
     json_array_append_new(jstr,jline);
     aline=strtok_r(NULL,"\n",&tokctx);
   }
-  websrv_printjson( (char *)__FUNCTION__ , jstr);
-  int us=ulfius_add_header_to_response(response,"content-type" ,"application/json");
-  if (us != U_OK){
-	  ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_add_header_to_response)");
-	  LOG_E(UTIL,"[websrv] cannot set response header type ulfius error %d \n",us);
-  }   
-  us=ulfius_set_json_body_response(response, 200, jstr);
-  if (us != U_OK){
-	  ulfius_set_string_body_response(response, 500, "Internal server error (ulfius_set_json_body_response)");
-	  LOG_E(UTIL,"[websrv] cannot set body response ulfius error %d \n",us);
-  }
+  json_t *jbody = json_pack("{s:o}","display",jstr);
+  websrv_jbody(response,jbody);
   return 0; 
 }
 
