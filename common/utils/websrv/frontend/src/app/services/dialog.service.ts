@@ -22,7 +22,7 @@ export class DialogService {
     this.isDialogOpen = true;
 
     const dialogRef = this._dialog.open(ErrorDialogComponent, {
-      width: '300px',
+      width: '900px',
       data,
     });
 

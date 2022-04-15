@@ -81,7 +81,8 @@ export class CommandsComponent {
 
   onCmdSubmit(control: CmdCtrl) {
     this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
-      map(array => this.success('runCommand ' + control.nameFC.value + ' OK', array[0]))
+      //   map(array => this.success('runCommand ' + control.nameFC.value + ' OK', "&nbsp" + array.join("&nbsp</p><p>&nbsp") + "&nbsp"))
+      map(resp => this.success('runCommand ' + control.nameFC.value + ' OK', resp.display!.join("</p><p>")))
     ).subscribe();
   }
 
