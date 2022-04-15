@@ -664,22 +664,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
   fix_servingcellconfigdedicated(servingcellconfigdedicated);
 
-  uint64_t bitmap=0;
-  switch (servingcellconfigcommon->ssb_PositionsInBurst->present) {
-    case 1 :
-      bitmap = ((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.shortBitmap.buf[0])<<56;
-      break;
-    case 2 :
-      bitmap = ((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])<<56;
-      break;
-    case 3 :
-      for (int i=0; i<8; i++) {
-        bitmap |= (((uint64_t) servingcellconfigcommon->ssb_PositionsInBurst->choice.longBitmap.buf[i])<<((7-i)*8));
-      }
-      break;
-    default:
-      AssertFatal(1==0,"SSB bitmap size value %d undefined (allowed values 1,2,3) \n", servingcellconfigcommon->ssb_PositionsInBurst->present);
-  }
+  uint64_t bitmap = get_ssb_bitmap(servingcellconfigcommon);
 
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
