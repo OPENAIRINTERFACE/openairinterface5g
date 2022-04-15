@@ -33,7 +33,7 @@
 #include "f1ap_common.h"
 #include "f1ap_decoder.h"
 
-int asn1_decoder_xer_print = 1;
+int asn1_decoder_xer_print = 0;
 
 static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu) {
   //MessageDef *message_p;
