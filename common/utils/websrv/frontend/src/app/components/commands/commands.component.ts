@@ -75,13 +75,12 @@ export class CommandsComponent {
   onSubVarSubmit(control: VarCtrl) {
     this.commandsApi.setVariable$(control.api(), `${this.selectedModule!.nameFC.value}`)
       .pipe(
-        map(array => this.success('setVariable ' + control.nameFC.value + ' OK', array[0]))
+        map(resp => this.success('setVariable ' + control.nameFC.value + ' OK', resp[0]))
       ).subscribe();
   }
 
   onCmdSubmit(control: CmdCtrl) {
     this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
-      //   map(array => this.success('runCommand ' + control.nameFC.value + ' OK', "&nbsp" + array.join("&nbsp</p><p>&nbsp") + "&nbsp"))
       map(resp => this.success('runCommand ' + control.nameFC.value + ' OK', resp.display!.join("</p><p>")))
     ).subscribe();
   }
