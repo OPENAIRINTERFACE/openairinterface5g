@@ -947,10 +947,20 @@ static int Gtpv1uHandleGpdu(int h,
       if(msgBuf[offset-1] == 0x84){ //Extension header corresponding to NR-RAN container type
         uint8_t PDU_type = (msgBuf[offset+1]>>4) & 0x0f;
         if (PDU_type == 0){ //DL USER Data Format
-          if((msgBuf[offset+2]>>2)& 0x3){ //"Report delivered" and "User data existence flags" enabled (TS 38.425, 5.4)
+          int additional_offset = 6; //Additional offset capturing the first non-mandatory octet (TS 38.425, Figure 5.5.2.1-1)
+          if(msgBuf[offset+1]>>2 & 0x1){ //DL Discard Blocks flag is present
+            LOG_I(GTPU, "DL User Data: DL Discard Blocks handling not enabled\n"); 
+            additional_offset = additional_offset + 9; //For the moment ignore
+          }
+          if(msgBuf[offset+1]>>1 & 0x1){ //DL Flush flag is present
+            LOG_I(GTPU, "DL User Data: DL Flush handling not enabled\n");
+            additional_offset = additional_offset + 3; //For the moment ignore
+          }
+          if((msgBuf[offset+2]>>3)& 0x1){ //"Report delivered" enabled (TS 38.425, 5.4)
             /*Store the NR PDCP PDU SN for which a delivery status report shall be generated once the
              *PDU gets forwarded to the lower layers*/
-            NR_PDCP_PDU_SN = msgBuf[offset+3] << 16 | msgBuf[offset+4] << 8 | msgBuf[offset+5];
+            //NR_PDCP_PDU_SN = msgBuf[offset+6] << 16 | msgBuf[offset+7] << 8 | msgBuf[offset+8];
+            NR_PDCP_PDU_SN = msgBuf[offset+additional_offset] << 16 | msgBuf[offset+additional_offset+1] << 8 | msgBuf[offset+additional_offset+2]; 
             LOG_D(GTPU, " NR_PDCP_PDU_SN: %u \n",  NR_PDCP_PDU_SN);
           }
         }
