@@ -99,6 +99,7 @@
 #include <openair2/X2AP/x2ap_eNB.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include <openair2/RRC/NR/nr_rrc_proto.h>
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
 #include "BIT_STRING.h"
 #include "assertions.h"
@@ -3491,13 +3492,14 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
       LOG_I(NR_RRC, "Send first DDD buffer status reporting towards the CU through an ITTI message to gtp-u \n");
       uint8_t drb_id = ue_context_p->ue_context.DRB_configList->list.array[0]->drb_Identity;
       rnti_t rnti   = ue_context_p->ue_context.rnti;
+      int rlc_tx_buffer_space = nr_rlc_get_available_tx_space(rnti, drb_id);
       LOG_I(NR_RRC, "Reported in DDD drb_id:%d, rnti:%d\n", drb_id, rnti);
       MessageDef *msg = itti_alloc_new_message_sized(TASK_RRC_GNB, 0, GTPV1U_DU_BUFFER_REPORT_REQ,
                                      sizeof(gtpv1u_gnb_tunnel_data_req_t));
       gtpv1u_DU_buffer_report_req_t *req=&GTPV1U_DU_BUFFER_REPORT_REQ(msg);
       req->pdusession_id = drb_id;
       req->rnti = rnti;
-      req->buffer_availability = 10000000; //Hardcoding to be removed and read the actual RLC buffer availability instead
+      req->buffer_availability = rlc_tx_buffer_space; //10000000; //Hardcoding to be removed and read the actual RLC buffer availability instead
       extern instance_t DUuniqInstance;
       itti_send_msg_to_task(TASK_GTPV1_U, DUuniqInstance, msg);
 
