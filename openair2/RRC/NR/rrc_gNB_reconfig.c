@@ -119,39 +119,7 @@ void fill_default_nsa_downlinkBWP(NR_BWP_Downlink_t *bwp,
   int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
-  coreset->controlResourceSetId=bwp->bwp_Id+1; // To uniquely identify each Coreset lets derive it from the BWPId
-  // frequency domain resources depends on BWP size
-  // options are 24, 48 or 96
-  coreset->frequencyDomainResources.buf = calloc(1,6);
-  if (curr_bwp < 48)
-    coreset->frequencyDomainResources.buf[0] = 0xf0;
-  else
-    coreset->frequencyDomainResources.buf[0] = 0xff;
-  if (curr_bwp < 96)
-    coreset->frequencyDomainResources.buf[1] = 0;
-  else
-    coreset->frequencyDomainResources.buf[1] = 0xff;
-  coreset->frequencyDomainResources.buf[2] = 0;
-  coreset->frequencyDomainResources.buf[3] = 0;
-  coreset->frequencyDomainResources.buf[4] = 0;
-  coreset->frequencyDomainResources.buf[5] = 0;
-  coreset->frequencyDomainResources.size = 6;
-  coreset->frequencyDomainResources.bits_unused = 3;
-  coreset->duration=1;
-  coreset->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
-  coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
-  coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
-  NR_TCI_StateId_t *tci[64];
-  for (int i=0;i<64;i++) {
-    if ((bitmap>>(63-i))&0x01){
-      tci[i]=calloc(1,sizeof(*tci[i]));
-      *tci[i] = i;
-      ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
-    }
-  }
-  coreset->tci_StatesPDCCH_ToReleaseList = NULL;
-  coreset->tci_PresentInDCI = NULL;
-  coreset->pdcch_DMRS_ScramblingID = NULL;
+  rrc_coreset_config(coreset, curr_bwp, bitmap);
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet = coreset;
 
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceZero=NULL;
