@@ -37,6 +37,8 @@
 #include "assertions.h"
 #include "PHY/defs_common.h"
 
+#define MAX_BWP_SIZE          275
+
 typedef struct nr_bandentry_s {
   int16_t band;
   uint64_t ul_min;

@@ -134,6 +134,12 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        int numerology,
                        int rbsize,
                        int mcs_table);
-
+void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
+                        NR_ServingCellConfigCommon_t *scc,
+                        NR_ServingCellConfig_t *servingcellconfigdedicated,
+                        NR_UE_NR_Capability_t *uecap,
+                        int dl_antenna_ports,
+                        bool force_256qam_off,
+                        int bwp_loop, bool is_SA);
 
 #endif

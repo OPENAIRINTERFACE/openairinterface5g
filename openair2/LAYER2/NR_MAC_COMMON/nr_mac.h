@@ -62,7 +62,6 @@
 #define NR_BCCH_BCH 5    // MIB
 #define CCCH_PAYLOAD_SIZE_MAX 512 
 #define RAR_PAYLOAD_SIZE_MAX  128
-#define MAX_BWP_SIZE          275
 
 typedef enum frequency_range_e {
   FR1 = 0,

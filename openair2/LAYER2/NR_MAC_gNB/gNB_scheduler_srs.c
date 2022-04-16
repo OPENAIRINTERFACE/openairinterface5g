@@ -31,6 +31,7 @@
 #include "NR_MAC_gNB/mac_proto.h"
 #include "common/ran_context.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "common/utils/nr/nr_common.h"
 
 extern RAN_CONTEXT_t RC;
 
