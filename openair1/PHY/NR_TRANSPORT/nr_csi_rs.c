@@ -30,7 +30,6 @@
 void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
                         int16_t amp,
                         nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
-                        uint16_t cell_id,
                         int slot){
 
   NR_DL_FRAME_PARMS frame_parms=gNB->frame_parms;
@@ -52,20 +51,10 @@ void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
 
   AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
 
-  // pre-computed for scrambling id equel to cell id
-  // if the scrambling id is not the cell id we need to re-initialize the rs
-  if (csi_params.scramb_id != cell_id) {
-    uint8_t reset;
-    uint32_t x1, x2;
-    uint32_t Nid = csi_params.scramb_id;
-    for (uint8_t symb=0; symb<frame_parms.symbols_per_slot; symb++) {
-      reset = 1;
-      x2 = ((1<<10) * (frame_parms.symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
-      for (uint32_t n=0; n<(csi_rs_length>>5)+1; n++) {
-        gold_csi_rs[symb][n] = lte_gold_generic(&x1, &x2, reset);
-        reset = 0;
-      }
-    }
+  // if the scrambling id is not the one previously used to initialize we need to re-initialize the rs
+  if (csi_params.scramb_id != gNB->csi_gold_init) {
+    gNB->csi_gold_init = csi_params.scramb_id;
+    nr_init_csi_rs(gNB, csi_params.scramb_id);
   }
 
   switch (csi_params.row) {

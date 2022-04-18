@@ -525,4 +525,7 @@ bool nr_find_nb_rb(uint16_t Qm,
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
 
 void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp);
+
+void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
