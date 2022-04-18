@@ -148,5 +148,12 @@ void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
                         int dl_antenna_ports,
                         bool force_256qam_off,
                         int bwp_loop, bool is_SA);
+void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
+                      long bwp_loop, bool is_SA, int uid,
+                      const gNB_RrcConfigurationReq *configuration,
+                      NR_ServingCellConfig_t *servingcellconfigdedicated,
+                      NR_ServingCellConfigCommon_t *scc,
+                      NR_CellGroupConfig_t *cellGroupConfig,
+                      NR_UE_NR_Capability_t *uecap);
 
 #endif
