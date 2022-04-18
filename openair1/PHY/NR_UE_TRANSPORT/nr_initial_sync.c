@@ -541,8 +541,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     int coreset_start_rb=0;
 
     // Hold the channel estimates in frequency domain.
-    int32_t pdcch_est_size = fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH);
-    int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
+    int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
+    __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
 
 
     for(int n_ss = 0; n_ss<phy_pdcch_config.nb_search_space; n_ss++) {
