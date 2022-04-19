@@ -349,6 +349,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // This updates the timers running at MAC layer
   nr_mac_update_timers(module_idP, frame, slot);
 
+  // This schedules the BWP switching
+  schedule_nr_bwp_switch(module_idP, frame, slot);
+
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot);
 
