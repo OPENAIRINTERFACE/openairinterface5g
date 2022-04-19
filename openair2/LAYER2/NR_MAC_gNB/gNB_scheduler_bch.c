@@ -426,7 +426,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                      gNB_mac->sched_ctrlCommon->cce_index,
                      gNB_mac->sched_ctrlCommon->aggregation_level);
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
-    vrb_map[rb + rbStart] = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
+    vrb_map[rb + rbStart] |= SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   }
   return TBS;
 }
