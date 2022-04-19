@@ -589,7 +589,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     }
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
+    if (ps->time_domain_allocation != tda) {
       nr_set_pdsch_semi_static(sib1,
                                scc,
                                cg,
@@ -599,7 +599,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                ps->nrOfLayers,
                                sched_ctrl,
                                ps);
-      sched_ctrl->update_pdsch_ps = false;
     }
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -914,7 +913,6 @@ void pf_dl(module_id_t module_id,
                                layers[UE_id],
                                sched_ctrl,
                                ps);
-      sched_ctrl->update_pdsch_ps = false;
     }
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
@@ -1054,22 +1052,6 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id)
   }
 
   return nr_fr1_dlsch_preprocessor;
-}
-
-void nr_mac_update_timers(module_id_t module_id,
-                          frame_t frame,
-                          sub_frame_t slot) {
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  const NR_list_t *UE_list = &UE_info->list;
-  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    if (sched_ctrl->rrc_processing_timer > 0) {
-      sched_ctrl->rrc_processing_timer--;
-      if (sched_ctrl->rrc_processing_timer == 0) {
-        LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %d\n", frame, slot, UE_id);
-      }
-    }
-  }
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,

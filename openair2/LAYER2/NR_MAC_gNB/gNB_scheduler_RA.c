@@ -1994,7 +1994,7 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
                                                                    sib1);
 
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-        uint32_t delay_ms = bwpList ? 16 : 10;
+        uint32_t delay_ms = bwpList ? NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
         sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
       }
       else {
