@@ -46,8 +46,6 @@ void config_common(int Mod_idP,
                    int pusch_AntennaPorts,
                    NR_ServingCellConfigCommon_t *scc);
 
-void nr_rrc_mac_schedule_ue_enabled(module_id_t module_id, rnti_t rnti, bool schedule_enabled);
-
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
                            rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
@@ -59,12 +57,17 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            NR_BCCH_DL_SCH_Message_t *sib1,
                            int add_ue,
                            uint32_t rnti,
-                           NR_CellGroupConfig_t *CellGroup);
+                           NR_CellGroupConfig_t *CellGroup,
+                           uint32_t rrc_reconfiguration_delay);
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
                                 int CC_idP,
                                 frame_t frameP, 
                                 sub_frame_t subframeP);
+
+void nr_mac_update_timers(module_id_t module_id,
+                          frame_t frame,
+                          sub_frame_t slot);
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);

@@ -490,7 +490,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       const uint16_t rnti = UE_info->rnti[UE_id];
       LOG_D(NR_MAC, "In %s: UE %d/%x: LCID %d\n", __FUNCTION__, UE_id, rnti, lcid);
 
-      if(lcid == DL_SCH_LCID_DTCH && sched_ctrl->schedule_enabled == false) {
+      if (lcid == DL_SCH_LCID_DTCH && sched_ctrl->rrc_processing_timer > 0) {
         continue;
       }
 
@@ -498,7 +498,7 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                         rnti,
                                                         module_id,
-                                                          frame,
+                                                        frame,
                                                         slot,
                                                         ENB_FLAG_YES,
                                                         MBMS_FLAG_NO,
@@ -1054,6 +1054,22 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id)
   }
 
   return nr_fr1_dlsch_preprocessor;
+}
+
+void nr_mac_update_timers(module_id_t module_id,
+                          frame_t frame,
+                          sub_frame_t slot) {
+  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  const NR_list_t *UE_list = &UE_info->list;
+  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    if (sched_ctrl->rrc_processing_timer > 0) {
+      sched_ctrl->rrc_processing_timer--;
+      if (sched_ctrl->rrc_processing_timer == 0) {
+        LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %d\n", frame, slot, UE_id);
+      }
+    }
+  }
 }
 
 void nr_schedule_ue_spec(module_id_t module_id,
