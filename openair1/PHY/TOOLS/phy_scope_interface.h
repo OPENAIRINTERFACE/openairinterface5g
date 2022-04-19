@@ -45,6 +45,8 @@ enum UEdataType {
   pbchDlChEstimateTime,
   pbchLlr,
   pbchRxdataF_comp,
+  pdcchLlr,
+  pdcchRxdataF_comp,
   UEdataTypeNumberOfItems
 };
 

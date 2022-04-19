@@ -2023,15 +2023,15 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig_drb);
 }
 
+
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
-                            rrc_gNB_carrier_data_t *carrier,
                             NR_UE_NR_Capability_t *uecap,
-                            const gNB_RrcConfigurationReq* configuration)
-{
+                            const gNB_RrcConfigurationReq* configuration) {
+
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
   if (SpCellConfig == NULL) return;
 
-  NR_ServingCellConfigCommon_t *scc = carrier ? carrier->servingcellconfigcommon : NULL;
+  NR_ServingCellConfigCommon_t *scc = configuration ? configuration->scc : NULL;
 
   // Set DL MCS table
   if(scc) {
@@ -2527,9 +2527,9 @@ int16_t do_RRCReconfiguration(
 
     if(cellGroupConfig!=NULL){
       update_cellGroupConfig(cellGroupConfig,
-                             carrier,
                              ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL,
                              configuration);
+
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
           NULL,
           (void *)cellGroupConfig,
