@@ -732,19 +732,21 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
-  rrc_mac_config_req_gNB(ctxt_pP->module_id,
-                         0,
-                         rrc->configuration.pdsch_AntennaPorts,
-                         0,
-                         0,
-                         0,
-                         rrc->carrier.servingcellconfigcommon,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_context_pP->ue_context.rnti,
-                         NULL,
-                         NR_RRC_RECONFIGURATION_DELAY_MS);
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                           0,
+                           rrc->configuration.pdsch_AntennaPorts,
+                           0,
+                           0,
+                           0,
+                           rrc->carrier.servingcellconfigcommon,
+                           NULL,
+                           NULL,
+                           0,
+                           ue_context_pP->ue_context.rnti,
+                           NULL,
+                           NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 
   /* Free all NAS PDUs */
   for (int i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -1012,19 +1014,21 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 cellGroupConfig);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
 
-  rrc_mac_config_req_gNB(ctxt_pP->module_id,
-                         0,
-                         rrc->configuration.pdsch_AntennaPorts,
-                         0,
-                         0,
-                         0,
-                         rrc->carrier.servingcellconfigcommon,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_context_pP->ue_context.rnti,
-                         NULL,
-                         NR_RRC_RECONFIGURATION_DELAY_MS);
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                           0,
+                           rrc->configuration.pdsch_AntennaPorts,
+                           0,
+                           0,
+                           0,
+                           rrc->carrier.servingcellconfigcommon,
+                           NULL,
+                           NULL,
+                           0,
+                           ue_context_pP->ue_context.rnti,
+                           NULL,
+                           NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -1199,19 +1203,21 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                 NULL);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
-  rrc_mac_config_req_gNB(ctxt_pP->module_id,
-                         0,
-                         RC.nrrrc[ctxt_pP->module_id]->configuration.pdsch_AntennaPorts,
-                         0,
-                         0,
-                         0,
-                         RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_context_pP->ue_context.rnti,
-                         NULL,
-                         NR_RRC_RECONFIGURATION_DELAY_MS);
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                           0,
+                           RC.nrrrc[ctxt_pP->module_id]->configuration.pdsch_AntennaPorts,
+                           0,
+                           0,
+                           0,
+                           RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon,
+                           NULL,
+                           NULL,
+                           0,
+                           ue_context_pP->ue_context.rnti,
+                           NULL,
+                           NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_modify_pdusessions; i++) {
@@ -1317,19 +1323,21 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
-  rrc_mac_config_req_gNB(ctxt_pP->module_id,
-                         0,
-                         RC.nrrrc[ctxt_pP->module_id]->configuration.pdsch_AntennaPorts,
-                         0,
-                         0,
-                         0,
-                         RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_context_pP->ue_context.rnti,
-                         NULL,
-                         NR_RRC_RECONFIGURATION_DELAY_MS);
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                           0,
+                           RC.nrrrc[ctxt_pP->module_id]->configuration.pdsch_AntennaPorts,
+                           0,
+                           0,
+                           0,
+                           RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon,
+                           NULL,
+                           NULL,
+                           0,
+                           ue_context_pP->ue_context.rnti,
+                           NULL,
+                           NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 
   /* Free all NAS PDUs */
   if (nas_length > 0) {
@@ -1882,19 +1890,21 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
 
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
-  rrc_mac_config_req_gNB(ctxt_pP->module_id,
-                         0,
-                         RC.nrrrc[ctxt_pP->module_id]->configuration.pdsch_AntennaPorts,
-                         0,
-                         0,
-                         0,
-                         RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_context_pP->ue_context.rnti,
-                         NULL,
-                         NR_RRC_RECONFIGURATION_DELAY_MS);
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                           0,
+                           RC.nrrrc[ctxt_pP->module_id]->configuration.pdsch_AntennaPorts,
+                           0,
+                           0,
+                           0,
+                           RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon,
+                           NULL,
+                           NULL,
+                           0,
+                           ue_context_pP->ue_context.rnti,
+                           NULL,
+                           NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
