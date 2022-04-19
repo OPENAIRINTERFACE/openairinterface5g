@@ -1952,7 +1952,7 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
                                                                    RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
                                                                    sib1);
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-        sched_ctrl->rrc_processing_timer = (10 << genericParameters->subcarrierSpacing); // RRCSetup 10 ms
+        sched_ctrl->rrc_processing_timer = (NR_RRC_SETUP_DELAY_MS << genericParameters->subcarrierSpacing); // RRCSetup 10 ms
       }
       else {
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);

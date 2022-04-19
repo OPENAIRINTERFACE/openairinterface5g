@@ -744,7 +744,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                          0,
                          ue_context_pP->ue_context.rnti,
                          NULL,
-                         NR_RRC_PROCESSING_DELAY_MS);
+                         NR_RRC_RECONFIGURATION_DELAY_MS);
 
   /* Free all NAS PDUs */
   for (int i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -1024,7 +1024,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                          0,
                          ue_context_pP->ue_context.rnti,
                          NULL,
-                         NR_RRC_PROCESSING_DELAY_MS);
+                         NR_RRC_RECONFIGURATION_DELAY_MS);
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -1211,7 +1211,7 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                          0,
                          ue_context_pP->ue_context.rnti,
                          NULL,
-                         NR_RRC_PROCESSING_DELAY_MS);
+                         NR_RRC_RECONFIGURATION_DELAY_MS);
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_modify_pdusessions; i++) {
@@ -1329,7 +1329,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                          0,
                          ue_context_pP->ue_context.rnti,
                          NULL,
-                         NR_RRC_PROCESSING_DELAY_MS);
+                         NR_RRC_RECONFIGURATION_DELAY_MS);
 
   /* Free all NAS PDUs */
   if (nas_length > 0) {
@@ -1894,7 +1894,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                          0,
                          ue_context_pP->ue_context.rnti,
                          NULL,
-                         NR_RRC_PROCESSING_DELAY_MS);
+                         NR_RRC_RECONFIGURATION_DELAY_MS);
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
