@@ -2609,6 +2609,11 @@ void nr_csirs_scheduling(int Mod_idP,
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+    if (sched_ctrl->rrc_processing_timer > 0) {
+      continue;
+    }
+
     NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
 
     if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
