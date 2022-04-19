@@ -2807,14 +2807,42 @@ void nr_csirs_scheduling(int Mod_idP,
 void nr_mac_update_timers(module_id_t module_id,
                           frame_t frame,
                           sub_frame_t slot) {
+
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const NR_list_t *UE_list = &UE_info->list;
+
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
     if (sched_ctrl->rrc_processing_timer > 0) {
+
       sched_ctrl->rrc_processing_timer--;
+
       if (sched_ctrl->rrc_processing_timer == 0) {
+
         LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %d\n", frame, slot, UE_id);
+
+        // If needed, update the Dedicated BWP
+        const int current_bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
+        const int current_ubwp_id = sched_ctrl->active_ubwp ? sched_ctrl->active_ubwp->bwp_Id : 0;
+        if(UE_info->CellGroup[UE_id] &&
+           UE_info->CellGroup[UE_id]->spCellConfig &&
+           UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
+           UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList &&
+           UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+           UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList) {
+          const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated;
+          if(*servingCellConfig->firstActiveDownlinkBWP_Id != current_bwp_id) {
+            sched_ctrl->active_bwp = servingCellConfig->downlinkBWP_ToAddModList->list.array[*servingCellConfig->firstActiveDownlinkBWP_Id - 1];
+            LOG_I(NR_MAC, "Changing to DL-BWP %li\n", sched_ctrl->active_bwp->bwp_Id);
+          }
+          if(*servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id != current_ubwp_id) {
+            sched_ctrl->active_ubwp = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList->list.array[*servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id - 1];
+            LOG_I(NR_MAC, "Changing to UL-BWP %li\n", sched_ctrl->active_ubwp->bwp_Id);
+          }
+        }
+
         sched_ctrl->update_pdsch_ps = true;
         sched_ctrl->update_pusch_ps = true;
       }
