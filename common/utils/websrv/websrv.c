@@ -143,7 +143,11 @@ void websrv_printf_end(int httpstatus ) {
   pthread_mutex_unlock(&(websrv_printf_buff.mutex));
 
 }
-
+/*--------------------------------------------------------------------------------------------------*/
+/* format a json response from a result table returned from a call to a telnet server command       */
+void websrv_getdata_response(struct _u_response * response,webdatadef_t * wdata) {
+	
+}
 /*----------------------------------------------------------------------------------------------------------*/
 /* callbacks and utility functions to stream a file */
 char * websrv_read_file(const char * filename) {
@@ -376,9 +380,15 @@ int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _
 /* callback processing module url (<address>/oaisoftmodem/module/commands), post method */
 int websrv_processwebfunc(struct _u_response * response, cmdparser_t * modulestruct ,telnetshell_cmddef_t *cmd) {
   LOG_I(UTIL,"[websrv] : executing command %s %s\n",modulestruct->module,cmd->cmdname);
-  websrv_printf_start(response,16384);
-  cmd->cmdfunc("",websrvparams.dbglvl,websrv_printf);
-  websrv_printf_end(200);
+  if ( cmd->cmdflags & TELNETSRV_CMDFLAG_GETWEBDATA ) {
+	webdatadef_t wdata;
+	cmd->webfunc_getdata(cmd->helpstr,websrvparams.dbglvl,(webdatadef_t *)&wdata);
+	websrv_getdata_response(response,&wdata);
+  } else {
+    websrv_printf_start(response,16384);
+    cmd->cmdfunc("",websrvparams.dbglvl,websrv_printf);
+    websrv_printf_end(200);
+  }
   return 200;
 }
 
@@ -408,7 +418,7 @@ int websrv_callback_exec_softmodemcmd(const struct _u_request * request, struct 
 		 httpstatus=501;
 		 msg="Unknown command in request body";
          for ( telnetshell_cmddef_t *cmd = modulestruct->cmd ; cmd->cmdfunc != NULL ;cmd++) {
-           if (( strcmp(cmd->cmdname,vname) == 0) && cmd->webfunc != NULL){
+           if ( strcmp(cmd->cmdname,vname) == 0 && (( cmd->cmdflags & TELNETSRV_CMDFLAG_TELNETONLY) == 0) ){
 			   httpstatus=websrv_processwebfunc(response,modulestruct,cmd);
              break;
            }

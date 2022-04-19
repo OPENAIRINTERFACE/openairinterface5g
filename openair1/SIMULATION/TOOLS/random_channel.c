@@ -48,10 +48,10 @@ static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt);
 static telnetshell_cmddef_t channelmod_cmdarray[] = {
-  {"help","",channelmod_print_help,NULL,0,NULL},
-  {"show","<predef,current>",channelmod_show_cmd,NULL,0,NULL},
-  {"modify","<channelid> <param> <value>",channelmod_modify_cmd,NULL,0,NULL},
-  {"","",NULL,NULL,0,NULL},
+  {"help","",channelmod_print_help,{NULL},0,NULL},
+  {"show","<predef,current>",channelmod_show_cmd,{NULL},0,NULL},
+  {"modify","<channelid> <param> <value>",channelmod_modify_cmd,{NULL},0,NULL},
+  {"","",NULL,{NULL},0,NULL},
 };
 
 static telnetshell_vardef_t channelmod_vardef[] = {

@@ -42,8 +42,8 @@
 
 int loader_show_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 telnetshell_cmddef_t loader_cmdarray[] = {
-   {"show","[params,modules]",loader_show_cmd,(webfunc_t)loader_show_cmd,0,NULL},
-   {"","",NULL},
+   {"show","[params,modules]",loader_show_cmd,{(webfunc_t)loader_show_cmd},0,NULL},
+   {"","",NULL,{NULL},0,NULL},
 };
 
 

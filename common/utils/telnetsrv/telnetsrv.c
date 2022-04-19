@@ -108,10 +108,10 @@ telnetshell_vardef_t telnet_vardef[] = {
 };
 
 telnetshell_cmddef_t  telnet_cmdarray[] = {
-  {"redirlog","[here,file,off]",setoutput,wsetoutput,0,NULL},
-  {"param","[prio]",setparam,wsetparam,0,NULL},
-  {"history","[list,reset]",history_cmd,NULL,0,NULL},
-  {"","",NULL,NULL,0,NULL},
+  {"redirlog","[here,file,off]",setoutput,{wsetoutput},0,NULL},
+  {"param","[prio]",setparam,{wsetparam},0,NULL},
+  {"history","[list,reset]",history_cmd,{NULL},0,NULL},
+  {"","",NULL,{NULL},0,NULL},
 };
 
 

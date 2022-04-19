@@ -45,6 +45,7 @@ extern int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt);
 extern int proccmd_thread(char *buf, int debug, telnet_printfunc_t prnt);
 extern int proccmd_exit(char *buf, int debug, telnet_printfunc_t prnt);
 extern int proccmd_log(char *buf, int debug, telnet_printfunc_t prnt);
+extern int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data);
 telnetshell_vardef_t proc_vardef[] = {
 {"",0,0,NULL}
 };
@@ -73,9 +74,9 @@ telnetshell_vardef_t proc_vardef[] = {
  
 
 telnetshell_cmddef_t proc_cmdarray[] = {
-   {"show","loglvl|thread|config", proccmd_show},
-   {"log","(enter help for details)", proccmd_log},
-   {"thread","(enter help for details)", proccmd_thread},
+   {"show","loglvl|thread|config", proccmd_show,{(webfunc_t)proccmd_websrv_getdata},TELNETSRV_CMDFLAG_GETWEBDATA,NULL},
+   {"log","(enter help for details)", proccmd_log, {NULL},TELNETSRV_CMDFLAG_TELNETONLY,NULL},
+   {"thread","(enter help for details)", proccmd_thread,{(webfunc_t)proccmd_websrv_getdata},0,NULL},
    {"exit","", proccmd_exit},
    {"","",NULL},
 };

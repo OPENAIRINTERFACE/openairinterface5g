@@ -48,6 +48,27 @@
 #define CMDSTATUS_VARNOTFOUND 3
 #define CMDSTATUS_NOTFOUND    4
 
+/* definitions to store 2 dim table, used to store command results before */
+/* displaying them either on console or web page */
+#define TELNET_MAXLINE_NUM     50
+#define TELNET_MAXCOL_NUM      5
+
+typedef struct col {
+    char coltitle[TELNET_CMD_MAXSIZE];
+    unsigned int coltype;
+} acol_t;
+
+typedef struct line {
+    char *val[TELNET_MAXCOL_NUM];
+} aline_t;
+
+typedef struct webdatadef {
+    char  tblname[TELNET_HELPSTR_SIZE];
+    int   numlines;
+    int   numcols;
+    acol_t columns[TELNET_MAXCOL_NUM];
+    aline_t lines[TELNET_MAXLINE_NUM];
+} webdatadef_t;
 /*----------------------------------------------------------------------------*/
 /* structure to be used when adding a module to the telnet server */
 /* This is the second parameter of the add_telnetcmd function, which can be used   */
@@ -55,14 +76,21 @@
 typedef void(*telnet_printfunc_t)(const char* format, ...);
 typedef int(*cmdfunc_t)(char*, int, telnet_printfunc_t prnt);
 typedef int(*webfunc_t)(char *cmdbuff, int debug, telnet_printfunc_t prnt, ... );
+typedef int(*webfunc_getdata_t)(char *cmdbuff, int debug, void *data);
 typedef int(*qcmdfunc_t)(char*, int, telnet_printfunc_t prnt,void *arg);
 
 #define TELNETSRV_CMDFLAG_PUSHINTPOOLQ   (1<<0)    // ask the telnet server to push the command in a thread pool queue
+#define TELNETSRV_CMDFLAG_GETWEBDATA     (1<<1)    // When called from web server, use the getdata variant of the function
+#define TELNETSRV_CMDFLAG_TELNETONLY     (1<<2)    // Only for telnet client connections
+#define TELNETSRV_CMDFLAG_WEBSRVONLY     (1<<3)    // Only for web server connections
 typedef struct cmddef {
     char cmdname[TELNET_CMD_MAXSIZE];
     char helpstr[TELNET_HELPSTR_SIZE];
-    cmdfunc_t cmdfunc; 
-    webfunc_t webfunc;
+    cmdfunc_t cmdfunc;
+    union { 
+      webfunc_t webfunc;
+      webfunc_getdata_t webfunc_getdata;
+    };
     unsigned int cmdflags;
     void *qptr;
 } telnetshell_cmddef_t;

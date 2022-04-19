@@ -191,6 +191,27 @@ struct dirent *entry;
 	closedir(proc_dir);
 } /* print_threads */
 
+int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
+
+  if (strcasestr(cmdbuff,"loglvl") != NULL) {
+	webdatadef_t *logsdata = ( webdatadef_t *) data;
+	logsdata->numcols=4;
+	snprintf(logsdata->columns[0].coltitle,TELNET_CMD_MAXSIZE,"component");
+	snprintf(logsdata->columns[1].coltitle,TELNET_CMD_MAXSIZE,"level");
+	snprintf(logsdata->columns[2].coltitle,TELNET_CMD_MAXSIZE,"enabled");
+	snprintf(logsdata->columns[3].coltitle,TELNET_CMD_MAXSIZE,"output");
+	
+    for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+       if (g_log->log_component[i].name != NULL) {
+		  logsdata->lines[i].val[0]= (char *)(g_log->log_component[i].name);
+		  logsdata->lines[i].val[1]=map_int_to_str(log_level_names,(g_log->log_component[i].level>=0)?g_log->log_component[i].level:g_log->log_component[i].savedlevel);
+		  logsdata->lines[i].val[2]=(g_log->log_component[i].level>=0)?"true":"false";
+		  logsdata->lines[i].val[3]=(g_log->log_component[i].filelog>0)?g_log->log_component[i].filelog_name:"stdout";
+       }
+     }
+   }
+   return 0;
+}
 
 int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt)
 {
