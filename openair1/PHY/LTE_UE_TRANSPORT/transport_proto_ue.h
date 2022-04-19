@@ -1669,7 +1669,7 @@ uint8_t get_num_prach_tdd(module_id_t Mod_id);
   @param frame_type 0-FDD, 1-TDD
   @returns 0-1 accordingly
 */
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
+uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,frame_type_t frame_type);
 
 /*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
@@ -1691,7 +1691,7 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
                        uint8_t prach_ConfigIndex,
                        uint8_t zeroCorrelationZoneConfig,
                        uint8_t highSpeedFlag,
-                       lte_frame_type_t frame_type,
+                       frame_type_t frame_type,
                        uint32_t X_u[64][839]);
 
 

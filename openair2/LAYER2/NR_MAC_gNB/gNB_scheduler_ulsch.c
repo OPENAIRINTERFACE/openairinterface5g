@@ -55,7 +55,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
 
   /* there is a mixed slot only when in TDD */
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
-  lte_frame_type_t frame_type = nrmac->common_channels->frame_type;
+  frame_type_t frame_type = nrmac->common_channels->frame_type;
   const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   NR_ServingCellConfigCommonSIB_t *scc_sib1 = get_softmodem_params()->sa ?

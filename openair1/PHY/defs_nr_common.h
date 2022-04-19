@@ -280,7 +280,7 @@ struct NR_DL_FRAME_PARMS {
   uint32_t att_rx;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   /// Frame type (0 FDD, 1 TDD)
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   uint8_t tdd_config;
   /// Cell ID
   uint16_t Nid_cell;
