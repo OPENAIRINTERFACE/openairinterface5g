@@ -1598,11 +1598,11 @@ int nr_acknack_scheduling(int mod_id,
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   // initializing the values for FDD
   int nr_slots_period = n_slots_frame;
-  int first_ul_slot_tdd = slot + minfbtime;
+  int next_ul_slot = slot + minfbtime;
   int first_ul_slot_period = 0;
   if(tdd){
     nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
-    first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
+    next_ul_slot = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
     first_ul_slot_period = tdd->nrofDownlinkSlots;
   }
   else
@@ -1746,8 +1746,8 @@ int nr_acknack_scheduling(int mod_id,
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
-    const int s = first_ul_slot_tdd;
-    pucch->frame = (s < n_slots_frame - 1) ? frame : (frame + 1) % 1024;
+    const int s = next_ul_slot;
+    pucch->frame = s < n_slots_frame ? frame : (frame + 1) % 1024;
     pucch->ul_slot = s % n_slots_frame;
   }
 
