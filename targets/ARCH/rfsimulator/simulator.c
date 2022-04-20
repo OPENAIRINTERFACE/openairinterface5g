@@ -91,8 +91,8 @@
 
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static telnetshell_cmddef_t rfsimu_cmdarray[] = {
-  {"setmodel","<model name> <model type>",(cmdfunc_t)rfsimu_setchanmod_cmd,NULL,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
-  {"","",NULL,NULL,0},
+  {"setmodel","<model name> <model type>",(cmdfunc_t)rfsimu_setchanmod_cmd,{NULL},TELNETSRV_CMDFLAG_PUSHINTPOOLQ,NULL},
+  {"","",NULL,{NULL},0,NULL},
 };
 
 static telnetshell_vardef_t rfsimu_vardef[] = {

@@ -66,6 +66,7 @@ void register_module_endpoints(cmdparser_t *module) ;
 void websrv_printjson(char * label, json_t *jsonobj){
 	char *jstr = json_dumps(jsonobj,0);
 	LOG_I(UTIL,"[websrv] %s:%s\n", label, (jstr==NULL)?"??\n":jstr);
+    free(jstr);
 }
 /*-----------------------------------*/
 /* build a json body in a response */
@@ -146,7 +147,24 @@ void websrv_printf_end(int httpstatus ) {
 /*--------------------------------------------------------------------------------------------------*/
 /* format a json response from a result table returned from a call to a telnet server command       */
 void websrv_getdata_response(struct _u_response * response,webdatadef_t * wdata) {
-	
+    json_t *jbody = json_array();
+	for (int i=0; i<wdata->numlines ; i++) {
+        json_t *kv=json_object();
+        for (int j=0; j<wdata->numcols; j++) {
+          json_t *jval;  
+          if(wdata->columns[j].coltype & TELNET_CHECKVAL_BOOL)
+            jval=json_boolean(wdata->lines[i].val[j]);
+          else if (wdata->columns[j].coltype == TELNET_VARTYPE_STRING)
+            jval=json_string(wdata->lines[i].val[j]);
+//          else if (wdata->columns[j].coltype == TELNET_VARTYPE_DOUBLE)
+//            jval=json_real((double)(wdata->lines[i].val[j]));
+          else
+            jval=json_integer((int)(wdata->lines[i].val[j]));
+          json_object_set_new(kv, wdata->columns[j].coltitle, jval);                    
+        }
+        json_array_append_new(jbody,kv);
+    }
+    websrv_jbody(response,jbody);
 }
 /*----------------------------------------------------------------------------------------------------------*/
 /* callbacks and utility functions to stream a file */
@@ -382,6 +400,7 @@ int websrv_processwebfunc(struct _u_response * response, cmdparser_t * modulestr
   LOG_I(UTIL,"[websrv] : executing command %s %s\n",modulestruct->module,cmd->cmdname);
   if ( cmd->cmdflags & TELNETSRV_CMDFLAG_GETWEBDATA ) {
 	webdatadef_t wdata;
+    memset(&wdata,0,sizeof(wdata));
 	cmd->webfunc_getdata(cmd->helpstr,websrvparams.dbglvl,(webdatadef_t *)&wdata);
 	websrv_getdata_response(response,&wdata);
   } else {
