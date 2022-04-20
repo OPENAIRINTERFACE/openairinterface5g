@@ -2220,9 +2220,7 @@ int16_t do_RRCSetup(rrc_gNB_ue_context_t          *const ue_context_pP,
 		  &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
 		  (void **)&cellGroupConfig,
 		  (uint8_t *)masterCellGroup_from_DU->buf,
-		  masterCellGroup_from_DU->size, 0, 0); 
-      
-      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
+		  masterCellGroup_from_DU->size, 0, 0);
     }
     else {
       cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
@@ -2249,8 +2247,10 @@ int16_t do_RRCSetup(rrc_gNB_ue_context_t          *const ue_context_pP,
     ue_p->masterCellGroup = cellGroupConfig;
 
     if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
       xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
     }
+
     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_CCCH_Message,
 				     NULL,
 				     (void *)&dl_ccch_msg,
