@@ -58,7 +58,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   lte_frame_type_t frame_type = nrmac->common_channels->frame_type;
   const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
-  NR_ServingCellConfigCommonSIB_t *scc_sib1 = get_softmodem_params()->sa ?
+  NR_ServingCellConfigCommonSIB_t *scc_sib1 = nrmac->common_channels[0].sib1 ?
       RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1->servingCellConfigCommon : NULL;
 
   AssertFatal(scc!=NULL || scc_sib1!=NULL,"We need one serving cell config common\n");
