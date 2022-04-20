@@ -40,6 +40,7 @@ nrmodule2_quectel:
     - sudo -S ip link set dev wwan1 mtu 1500
   MTU : 1500
 
+# CAUTION: 192.168.18.89 address has to be changed when the server is moved
 #single UE single ping
 amarisoft_ue_1:
   ID: amarisoft_ue_1
