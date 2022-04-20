@@ -326,16 +326,16 @@ Removing network l2sim-oai-traffic-net
 In the `SMF` section, provide your own DNS IP address:
 
 ```yaml
-            DEFAULT_DNS_IPV4_ADDRESS=192.168.18.129
+            DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
 ```
 
-In the `gNB` section, provide your docker-host primary IP address and interface name: in our case `192.168.18.193` and `eno1`.
+In the `gNB` section, provide your docker-host primary IP address and interface name: in our case `172.21.16.128` and `eno1`.
 
 ```yaml
             GNB_NGA_IF_NAME: eno1
-            GNB_NGA_IP_ADDRESS: 192.168.18.193
+            GNB_NGA_IP_ADDRESS: 172.21.16.128
             GNB_NGU_IF_NAME: eno1
-            GNB_NGU_IP_ADDRESS: 192.168.18.193
+            GNB_NGU_IP_ADDRESS: 172.21.16.128
 ```
 
 Same thing in the `nr-ue` section:

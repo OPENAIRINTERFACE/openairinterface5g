@@ -12,7 +12,7 @@ idefix:
   LogStore : /media/usb-drive/ci_qlogs
   PLMN : 22201
   UENetwork : wwan0 
-  HostIPAddress : 192.168.18.188
+  HostIPAddress : 172.21.16.135
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none
@@ -32,7 +32,7 @@ nrmodule2_quectel:
   LogStore : /media/ci_qlogs  
   PLMN : 20897
   UENetwork : wwan0
-  HostIPAddress : 192.168.18.189
+  HostIPAddress : 172.21.16.139
   HostUsername : nrmodule2 
   HostPassword : linux 
   HostSourceCodePath : none
@@ -97,7 +97,7 @@ dummy:
   DetachScript : ''
   PLMN : 22201
   UENetwork : wwan0
-  HostIPAddress : 192.168.18.188
+  HostIPAddress : 172.21.16.135
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none

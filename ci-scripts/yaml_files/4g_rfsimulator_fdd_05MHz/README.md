@@ -505,7 +505,7 @@ In my traffic test, I was able to ping outside of my local network.
 in SPGW-C config:
 
 ```yaml
-            DEFAULT_DNS_IPV4_ADDRESS: 192.168.18.129
+            DEFAULT_DNS_IPV4_ADDRESS: 172.21.3.100
             DEFAULT_DNS_SEC_IPV4_ADDRESS: 8.8.4.4
             PUSH_PROTOCOL_OPTION: 'true'
 ```
