@@ -730,7 +730,7 @@ int main(int argc, char **argv)
 
   // TODO do a UECAP for phy-sim
   const gNB_RrcConfigurationReq conf = {
-    .pdsch_AntennaPorts = { .N1 = n_tx, .N2 = 1, .XP = 1 },
+    .pdsch_AntennaPorts = { .N1 = 1, .N2 = 1, .XP = 1 },
     .pusch_AntennaPorts = n_rx,
     .minRXTXTIME = 0,
     .do_CSIRS = 0,
@@ -751,10 +751,10 @@ int main(int argc, char **argv)
   rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 0, 0, NULL);
   // UE dedicated configuration
   rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
-  frame_parms->nb_antennas_tx = n_tx;
+  frame_parms->nb_antennas_tx = 1;
   frame_parms->nb_antennas_rx = n_rx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-  cfg->carrier_config.num_tx_ant.value = n_tx;
+  cfg->carrier_config.num_tx_ant.value = 1;
   cfg->carrier_config.num_rx_ant.value = n_rx;
 //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
   phy_init_nr_gNB(gNB,0,1);
@@ -771,6 +771,8 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
+  UE->frame_parms.nb_antennas_tx = n_tx;
+  frame_parms->nb_antennas_rx = 1;
 
   if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation\n");
