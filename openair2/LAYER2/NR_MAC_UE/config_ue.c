@@ -560,7 +560,8 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id-1][ss->searchSpaceId - 1] = ss;
+    AssertFatal(ss->searchSpaceId <= FAPI_NR_MAX_SS, "Invalid searchSpaceId\n");
+    mac->SSpace[dl_bwp_id][ss->searchSpaceId - 1] = ss;
   }
 
   struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
@@ -575,7 +576,8 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id-1][css->searchSpaceId - 1] = css;
+    AssertFatal(css->searchSpaceId <= FAPI_NR_MAX_SS, "Invalid searchSpaceId\n");
+    mac->SSpace[dl_bwp_id][css->searchSpaceId - 1] = css;
   }
 }
 
