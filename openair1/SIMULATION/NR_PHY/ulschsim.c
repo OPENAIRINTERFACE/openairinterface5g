@@ -391,14 +391,15 @@ int main(int argc, char **argv)
   initTpool(tp_param, gNB->threadPool, true);
   initNotifiedFIFO(gNB->respDecode);
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
-  frame_parms->nb_antennas_tx = n_tx;
-  frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
   crcTableInit();
 
   memcpy(&gNB->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
+
+  gNB->frame_parms.nb_antennas_tx = 1;
+  gNB->frame_parms.nb_antennas_rx = n_rx;
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
@@ -407,6 +408,9 @@ int main(int argc, char **argv)
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
+
+  UE->frame_parms.nb_antennas_tx = n_tx;
+  UE->frame_parms.nb_antennas_rx = 1;
 
   //phy_init_nr_top(frame_parms);
   if (init_nr_ue_signal(UE, 1) != 0) {
