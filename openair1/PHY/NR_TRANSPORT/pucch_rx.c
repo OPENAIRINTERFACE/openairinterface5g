@@ -422,9 +422,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   if (pucch_pdu->bit_len_harq==0) {
     uci_pdu->harq = NULL;
     uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-    uci_pdu->sr->sr_confidence_level = (SNRtimes10 > uci_stats->pucch0_thres) ? 1 : 0;
+    uci_pdu->sr->sr_confidence_level = (SNRtimes10 < uci_stats->pucch0_thres);
     uci_stats->pucch0_sr_trials++;
-    if (xrtmag_dBtimes10>10*max_n0) {
+    if (xrtmag_dBtimes10>(10*max_n0+100)) {
       uci_pdu->sr->sr_indication = 1;
       uci_stats->pucch0_positive_SR++;
       LOG_D(PHY,"PUCCH0 got positive SR. Cumulative number of positive SR %d\n", uci_stats->pucch0_positive_SR);
