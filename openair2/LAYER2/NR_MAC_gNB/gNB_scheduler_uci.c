@@ -1596,18 +1596,10 @@ int nr_acknack_scheduling(int mod_id,
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels[CC_id].ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-  // initializing the values for FDD
-  int nr_slots_period = n_slots_frame;
-  int next_ul_slot = slot + minfbtime;
-  int first_ul_slot_period = 0;
-  if(tdd){
-    nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
-    next_ul_slot = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
-    first_ul_slot_period = tdd->nrofDownlinkSlots;
-  }
-  else
-    // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
-    AssertFatal(RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD,"Dynamic TDD not handled yet\n");
+  AssertFatal(tdd || RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD, "Dynamic TDD not handled yet\n");
+  const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
+  const int next_ul_slot = tdd ? tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period) : slot + minfbtime;
+  const int first_ul_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
 
   NR_sched_pucch_t *csi_pucch;
 
