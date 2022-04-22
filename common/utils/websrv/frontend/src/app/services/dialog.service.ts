@@ -1,6 +1,9 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { of } from 'rxjs/internal/observable/of';
+import { tap } from 'rxjs/internal/operators/tap';
+import { ConfirmDialogComponent } from '../components/confirm/confirm.component';
 import { ErrorDialogComponent } from '../components/error-dialog/error-dialog.component';
 
 @Injectable({
@@ -38,5 +41,19 @@ export class DialogService {
       horizontalPosition: 'center',
       verticalPosition: 'bottom',
     });
+  }
+
+  openConfirmDialog() {
+    if (this.isDialogOpen) {
+      return of(undefined);
+    }
+
+    this.isDialogOpen = true;
+
+    return this._dialog.open(ConfirmDialogComponent, {
+      width: '300px'
+    })
+      .afterClosed()
+      .pipe(tap(() => this.isDialogOpen = false));
   }
 }
