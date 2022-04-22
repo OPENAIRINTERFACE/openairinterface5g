@@ -29,6 +29,7 @@ import { CommandsApi } from './api/commands.api';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { CommandsComponent } from './components/commands/commands.component';
+import { ConfirmDialogComponent } from './components/confirm/confirm.component';
 import { ErrorDialogComponent } from './components/error-dialog/error-dialog.component';
 import { NavComponent } from './components/nav/nav.component';
 import { InterceptorProviders } from './interceptors/interceptors';
@@ -40,6 +41,7 @@ import { LoadingService } from './services/loading.service';
     NavComponent,
     ErrorDialogComponent,
     CommandsComponent,
+    ConfirmDialogComponent
   ],
   imports: [
     BrowserModule,

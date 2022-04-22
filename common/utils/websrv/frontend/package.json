@@ -5,7 +5,7 @@
     "lint": "ng lint",
     "build": "ng build",
     "dev": "ng serve --configuration=development",
-    "prod": "ng serve  --configuration=production"
+    "prod": "ng serve --configuration=production"
   },
   "private": true,
   "dependencies": {

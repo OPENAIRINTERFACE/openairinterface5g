@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
-import { tap, mergeMap } from 'rxjs/operators';
+import { tap, mergeMap, filter } from 'rxjs/operators';
 import { CommandsApi, IArgType, ILog } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
 import { VarCtrl } from 'src/app/controls/var.control';
@@ -92,16 +92,19 @@ export class CommandsComponent {
   }
 
   onCmdSubmit(control: CmdCtrl) {
-    this.logs$ = this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
+    this.logs$ = this.dialogService.openConfirmDialog().pipe(
+      mergeMap(() => this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`)),
       tap(resp => this.success('runCommand ' + control.nameFC.value + ' OK', resp.display!.join("</p><p>"))),
       map(iresp => iresp.logs!)
     );
   }
 
-  private success = (mess: string, str: string) => this.dialogService.openDialog({
-    title: mess,
-    body: str,
-  });
+  private success = (mess: string, str: string) => {
+    return this.dialogService.openDialog({
+      title: mess,
+      body: str,
+    })
+  };
 
 
 }
