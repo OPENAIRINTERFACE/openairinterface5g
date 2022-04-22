@@ -721,7 +721,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
           ul_ch_mag128[1] = _mm_mulhi_epi16(ul_ch_mag128[1],QAM_amp128);
           ul_ch_mag128[1] = _mm_slli_epi16(ul_ch_mag128[1],1);
           
-          ul_ch_mag128b[1] = _mm_mulhi_epi16(ul_ch_mag128b[1],QAM_amp128);
+          ul_ch_mag128b[1] = _mm_mulhi_epi16(ul_ch_mag128b[1],QAM_amp128b);
           ul_ch_mag128b[1] = _mm_slli_epi16(ul_ch_mag128b[1],1);
 
           mmtmpD0 = _mm_madd_epi16(ul_ch128[2],ul_ch128[2]);
