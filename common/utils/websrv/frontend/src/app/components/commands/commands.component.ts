@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
-import { tap, mergeMap } from 'rxjs/operators';
-import { CommandsApi, IArgType, ILog } from 'src/app/api/commands.api';
+import { CommandsApi, IArgType, IColumn, IRow } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
+import { RowCtrl } from 'src/app/controls/row.control';
 import { VarCtrl } from 'src/app/controls/var.control';
 import { DialogService } from 'src/app/services/dialog.service';
 import { LoadingService } from 'src/app/services/loading.service';
@@ -32,14 +32,9 @@ export class CommandsComponent {
   // selectedArg?: VarCtrl
 
   //table columns
-  DISPLAYED_COLUMNS = [
-    'component',
-    'level',
-    'output',
-    'enabled'
-  ]
-
-  logs$: Observable<ILog[]> = new Observable<ILog[]>()
+  displayedColumns: string[] = []
+  rows$: Observable<RowCtrl[]> = new Observable<RowCtrl[]>()
+  columns: IColumn[] = []
 
   constructor(
     public commandsApi: CommandsApi,
@@ -92,9 +87,14 @@ export class CommandsComponent {
   }
 
   onCmdSubmit(control: CmdCtrl) {
-    this.logs$ = this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
-      tap(resp => this.success('runCommand ' + control.nameFC.value + ' OK', resp.display!.join("</p><p>"))),
-      map(iresp => iresp.logs!)
+    this.rows$ = this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
+      map(iresp => {
+        this.columns = iresp.columns
+        this.displayedColumns = this.columns.map(col => col.name)
+        let rows: RowCtrl[] = []
+        iresp.rows.map(row => this.columns.map(col => rows.push(new RowCtrl(row, col.type))))
+        return rows
+      })
     );
   }
 
