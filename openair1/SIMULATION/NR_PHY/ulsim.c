@@ -1171,6 +1171,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
       ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
       ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
+      ul_config.ul_config_list[0].pusch_config_pdu.dmrs_ports = ((1<<precod_nbr_layers)-1);
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
 
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS/8;
