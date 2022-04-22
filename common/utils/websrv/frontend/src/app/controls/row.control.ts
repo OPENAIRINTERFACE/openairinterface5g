@@ -18,12 +18,12 @@ export class RowCtrl extends FormGroup {
     switch (this.type) {
       case IArgType.boolean:
         return this.boolFC.value ? "true" : "false";
-      case IArgType.list:
-        return this.listFC.value ? "true" : "false";
+      // case IArgType.list:
+      //   return this.listFC.value as string;
       case IArgType.number:
-        return this.numberFC.value ? "true" : "false";
-      case IArgType.range:
-        return this.rangeFC.value ? "true" : "false";
+        return this.numberFC.value as string;
+      // case IArgType.range:
+      //   return this.rangeFC.value as string;
       case IArgType.string:
         return this.stringFC.value
     }
