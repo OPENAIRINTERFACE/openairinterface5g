@@ -181,12 +181,13 @@ void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wda
         coltype="string";
       else
         coltype="number";
-      json_t *acol=json_pack("{name:s,type:s,modifiable:b}",wdata->columns[i].coltitle,coltype,
-                            ( wdata->columns[i].coltype & TELNET_CHECKVAL_RDONLY)?0:1  );
+      json_t *acol=json_pack("{s:s,s:s,s:b}","name",wdata->columns[i].coltitle,"type",coltype,
+                            "modifiable",( wdata->columns[i].coltype & TELNET_CHECKVAL_RDONLY)?0:1  );
       json_array_append_new(jcols,acol);                   
       }    
 	for (int i=0; i<wdata->numlines ; i++) {
         json_t *jval; 
+        json_t *jline=json_array();
         for (int j=0; j<wdata->numcols; j++) {  
           if(wdata->columns[j].coltype & TELNET_CHECKVAL_BOOL)
             jval=json_boolean(wdata->lines[i].val[j]);
@@ -196,9 +197,9 @@ void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wda
 //            jval=json_real((double)(wdata->lines[i].val[j]));
           else
             jval=json_integer((long)(wdata->lines[i].val[j]));
-          json_array_append_new(jdata,jval);                   
+          json_array_append_new(jline,jval);                   
         }
-        
+      json_array_append_new(jdata,jline);  
     }
     json_t *jbody=json_pack("{s:o,s:o}","columns",jcols,"rows",jdata);
     websrv_jbody(response,jbody);
@@ -448,7 +449,7 @@ int websrv_processwebfunc(struct _u_response * response, cmdparser_t * modulestr
 	websrv_gettbldata_response(response,&wdata);
   } else {
     websrv_printf_start(response,16384);
-    cmd->cmdfunc("",websrvparams.dbglvl,websrv_printf);
+    cmd->cmdfunc(cmd->cmdname,websrvparams.dbglvl,websrv_printf);
     websrv_printf_end(200);
   }
   return 200;

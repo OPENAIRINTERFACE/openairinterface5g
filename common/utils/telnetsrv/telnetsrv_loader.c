@@ -64,7 +64,7 @@ int loader_show_cmd(char *buff, int debug, telnet_printfunc_t prnt)
           prnt( "   Default shared lib path: \"%s\"\n", loader_data.shlibpath);
           prnt( "   Max number of shared lib : %i\n", loader_data.maxshlibs);
       }
-      else if (strcasestr(buff,"modules") != NULL || buff[0]==0) {
+      else if (strcasestr(buff,"modules") != NULL || buff[0]==0 || strcasestr(buff,"show") != NULL) {
           prnt( "%i shared lib have been dynamicaly loaded by the oai loader\n", loader_data.numshlibs);
           for (int i=0 ; i<loader_data.numshlibs ; i++) {
               prnt( "   Module %i: %s\n", i,loader_data.shlibs[i].name);
