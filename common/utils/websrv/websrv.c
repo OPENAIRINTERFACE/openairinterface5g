@@ -160,13 +160,50 @@ void websrv_getdata_response(struct _u_response * response,webdatadef_t * wdata)
 //          else if (wdata->columns[j].coltype == TELNET_VARTYPE_DOUBLE)
 //            jval=json_real((double)(wdata->lines[i].val[j]));
           else
-            jval=json_integer((int)(wdata->lines[i].val[j]));
+            jval=json_integer((long)(wdata->lines[i].val[j]));
           json_object_set_new(kv, wdata->columns[j].coltitle, jval);                    
         }
         json_array_append_new(jdata,kv);
     }
     json_t *jbody=json_pack("{s:o,s:o}","display",json_string(""),"logs",jdata);
     websrv_jbody(response,jbody);
+}
+/*--------------------------------------------------------------------------------------------------*/
+/* format a json response from a result table returned from a call to a telnet server command       */
+void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wdata) {
+/*	json_t *jcols = json_array();
+    json_t *jdata = json_array();
+    char *coltype;
+    for (int i=0; i<wdata->numcols; i++) {
+      json_t *jval;  
+      if(wdata->columns[j].coltype & TELNET_CHECKVAL_BOOL)
+        coltype="boolean";
+      else if (wdata->columns[j].coltype == TELNET_VARTYPE_STRING)
+        coltype="string";
+
+      else
+        coltype="number";
+      json_t acol=json_pack("{name:s,type:s,modifiable:b}",wdata->columns[j].coltitle,coltype,);
+      json_array_append_new(jcols,acol);                   
+      }    
+	for (int i=0; i<wdata->numlines ; i++) {
+        json_t *kv=json_object();
+        for (int j=0; j<wdata->numcols; j++) {
+          json_t *jval;  
+          if(wdata->columns[j].coltype & TELNET_CHECKVAL_BOOL)
+            jval=json_boolean(wdata->lines[i].val[j]);
+          else if (wdata->columns[j].coltype == TELNET_VARTYPE_STRING)
+            jval=json_string(wdata->lines[i].val[j]);
+//          else if (wdata->columns[j].coltype == TELNET_VARTYPE_DOUBLE)
+//            jval=json_real((double)(wdata->lines[i].val[j]));
+          else
+            jval=json_integer((long)(wdata->lines[i].val[j]));
+          json_object_set_new(kv, wdata->columns[j].coltitle, jval);                    
+        }
+        json_array_append_new(jdata,kv);
+    }
+    json_t *jbody=json_pack("{s:o,s:o}","columns",,"rows",);
+    websrv_jbody(response,jbody);*/
 }
 /*----------------------------------------------------------------------------------------------------------*/
 /* callbacks and utility functions to stream a file */
@@ -403,7 +440,7 @@ int websrv_processwebfunc(struct _u_response * response, cmdparser_t * modulestr
   if ( cmd->cmdflags & TELNETSRV_CMDFLAG_GETWEBDATA ) {
 	webdatadef_t wdata;
     memset(&wdata,0,sizeof(wdata));
-	cmd->webfunc_getdata(cmd->helpstr,websrvparams.dbglvl,(webdatadef_t *)&wdata);
+	cmd->webfunc_getdata(cmd->cmdname,websrvparams.dbglvl,(webdatadef_t *)&wdata);
 	websrv_getdata_response(response,&wdata);
   } else {
     websrv_printf_start(response,16384);
@@ -528,10 +565,18 @@ int websrv_callback_get_softmodemcmd(const struct _u_request * request, struct _
 	LOG_I(UTIL,"[websrv] received  %s commands request\n", modulestruct->module);
 	    json_t *modulesubcom = json_array();
         for(int j=0; modulestruct->cmd[j].cmdfunc != NULL ; j++) {
-		  if(strcasecmp("help",modulestruct->cmd[j].cmdname) != 0) {
-		    json_t *acmd =json_pack( "{s:s}", "name",modulestruct->cmd[j].cmdname);
-		    json_array_append(modulesubcom , acmd);
+		  if(strcasecmp("help",modulestruct->cmd[j].cmdname) == 0 || ( modulestruct->cmd[j].cmdflags & TELNETSRV_CMDFLAG_TELNETONLY ) ) {
+			continue;
 		  }
+		json_t *acmd;
+		if (modulestruct->cmd[j].cmdflags &  TELNETSRV_CMDFLAG_CONFEXEC) {
+		  char confstr[256];
+		  snprintf(confstr,sizeof(confstr),"Execute %s ?",modulestruct->cmd[j].cmdname);
+		  acmd =json_pack( "{s:s,s:s}", "name",modulestruct->cmd[j].cmdname,"confirm", confstr);
+		} else {
+		  acmd =json_pack( "{s:s}", "name",modulestruct->cmd[j].cmdname);
+	    }
+		json_array_append(modulesubcom , acmd);
         }
         if (modulesubcom==NULL) {
 	      LOG_E(UTIL,"[websrv] cannot encode modulesubcom response for %s\n",modulestruct->module);
