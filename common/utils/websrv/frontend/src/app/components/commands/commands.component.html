@@ -50,7 +50,7 @@
   </div>
 
 
-  <mat-table mat-table [dataSource]="logs$" multiTemplateDataRows class="mat-elevation-z8">
+  <mat-table *ngIf="logs$ | async as logs" mat-table [dataSource]="logs" multiTemplateDataRows class="mat-elevation-z8">
 
     <!-- For anyone who has set the multiTemplateDataRows property of mat-table to true,
               you can't use index. Instead you have use either dataIndex or renderIndex.
