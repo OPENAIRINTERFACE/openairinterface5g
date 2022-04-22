@@ -196,16 +196,24 @@ int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
   if (strcasestr(cmdbuff,"loglvl") != NULL) {
 	webdatadef_t *logsdata = ( webdatadef_t *) data;
 	logsdata->numcols=4;
+    logsdata->numlines=0;
 	snprintf(logsdata->columns[0].coltitle,TELNET_CMD_MAXSIZE,"component");
+    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING;
 	snprintf(logsdata->columns[1].coltitle,TELNET_CMD_MAXSIZE,"level");
+    logsdata->columns[1].coltype = TELNET_VARTYPE_STRING;
 	snprintf(logsdata->columns[2].coltitle,TELNET_CMD_MAXSIZE,"enabled");
+    logsdata->columns[2].coltype = TELNET_CHECKVAL_BOOL;
 	snprintf(logsdata->columns[3].coltitle,TELNET_CMD_MAXSIZE,"output");
+    logsdata->columns[3].coltype = TELNET_VARTYPE_STRING;
+    
 	
     for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
        if (g_log->log_component[i].name != NULL) {
+          logsdata->numlines++;
 		  logsdata->lines[i].val[0]= (char *)(g_log->log_component[i].name);
+          
 		  logsdata->lines[i].val[1]=map_int_to_str(log_level_names,(g_log->log_component[i].level>=0)?g_log->log_component[i].level:g_log->log_component[i].savedlevel);
-		  logsdata->lines[i].val[2]=(g_log->log_component[i].level>=0)?"true":"false";
+		  logsdata->lines[i].val[2]=(g_log->log_component[i].level>=0)?0xFFFFFFFF:NULL;
 		  logsdata->lines[i].val[3]=(g_log->log_component[i].filelog>0)?g_log->log_component[i].filelog_name:"stdout";
        }
      }

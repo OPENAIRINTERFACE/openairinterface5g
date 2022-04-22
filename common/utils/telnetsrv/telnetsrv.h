@@ -50,7 +50,7 @@
 
 /* definitions to store 2 dim table, used to store command results before */
 /* displaying them either on console or web page */
-#define TELNET_MAXLINE_NUM     50
+#define TELNET_MAXLINE_NUM     100
 #define TELNET_MAXCOL_NUM      5
 
 typedef struct col {
@@ -108,6 +108,8 @@ typedef struct telnetsrv_qmsg {
 /*structure to be used when adding a module to the telnet server */
 /* This is the first parameter of the add_telnetcmd function, which can be used   */
 /* to add a set of new variables which can be got/set from the telnet server shell */
+/* var type: bits 0-3, type value (1 to 15)
+ * type modifier, bits 4-31 */ 
 #define TELNET_VARTYPE_INT32  1
 #define TELNET_VARTYPE_INT16  2
 #define TELNET_VARTYPE_INT64  3
@@ -116,8 +118,8 @@ typedef struct telnetsrv_qmsg {
 #define TELNET_VARTYPE_INT8   6
 #define TELNET_VARTYPE_UINT   7
 
-#define TELNET_CHECKVAL_RDONLY      1
-#define TELNET_CHECKVAL_BOOL        2
+#define TELNET_CHECKVAL_RDONLY      16
+#define TELNET_CHECKVAL_BOOL        32
 typedef struct variabledef {
     char varname[TELNET_CMD_MAXSIZE];
     char vartype;
