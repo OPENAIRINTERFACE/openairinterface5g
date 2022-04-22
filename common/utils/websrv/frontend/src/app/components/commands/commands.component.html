@@ -49,4 +49,61 @@
     </div>
   </div>
 
+
+  <mat-table mat-table [dataSource]="logs$" multiTemplateDataRows class="mat-elevation-z8">
+
+    <!-- For anyone who has set the multiTemplateDataRows property of mat-table to true,
+              you can't use index. Instead you have use either dataIndex or renderIndex.
+              See https://github.com/angular/material2/issues/12793 -->
+
+
+    <div matColumnDef="component">
+      <mat-header-cell *matHeaderCellDef> Component
+      </mat-header-cell>
+      <mat-cell *matCellDef="let log">
+        <div fxLayout="row" fxLayoutAlign="start end">
+          <p>{{log.component}}</p>
+        </div>
+      </mat-cell>
+    </div>
+
+
+    <div matColumnDef="level">
+      <mat-header-cell *matHeaderCellDef> Level
+      </mat-header-cell>
+      <mat-cell *matCellDef="let log">
+        <div fxLayout="row" fxLayoutAlign="start end">
+          <p>{{log.level}}</p>
+        </div>
+      </mat-cell>
+    </div>
+
+
+    <div matColumnDef="output">
+      <mat-header-cell *matHeaderCellDef> Output
+      </mat-header-cell>
+      <mat-cell *matCellDef="let log">
+        <div fxLayout="row" fxLayoutAlign="start end">
+          <p>{{log.output}}</p>
+        </div>
+      </mat-cell>
+    </div>
+
+
+    <div matColumnDef="enabled">
+      <mat-header-cell *matHeaderCellDef> Enabled
+      </mat-header-cell>
+      <mat-cell *matCellDef="let log">
+        <div fxLayout="row" fxLayoutAlign="start end">
+          <p>{{log.enabled}}</p>
+        </div>
+      </mat-cell>
+    </div>
+
+    <mat-header-row *matHeaderRowDef="DISPLAYED_COLUMNS"></mat-header-row>
+    <mat-row *matRowDef="let stageCtrl; columns: DISPLAYED_COLUMNS"></mat-row>
+
+
+  </mat-table>
+
 </div>

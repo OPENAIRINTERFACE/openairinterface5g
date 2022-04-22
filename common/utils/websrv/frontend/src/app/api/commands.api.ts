@@ -33,8 +33,16 @@ export interface ILog {
     enabled: boolean;
 }
 
-export interface ILog2 {
-    enabled: boolean;
+export interface IColumn { //should use IVariable ?
+    name: string;
+    type: IArgType;
+    modifiable: boolean; //set command ?
+}
+
+export type IRow = string[]
+export interface ITable {
+    columns: IColumn[];
+    rows: IRow[];
 }
 
 export interface IResp {

@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
-import { CommandsApi, IArgType } from 'src/app/api/commands.api';
+import { tap, mergeMap } from 'rxjs/operators';
+import { CommandsApi, IArgType, ILog } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
 import { VarCtrl } from 'src/app/controls/var.control';
 import { DialogService } from 'src/app/services/dialog.service';
@@ -30,6 +31,16 @@ export class CommandsComponent {
   args$?: Observable<VarCtrl[]>
   // selectedArg?: VarCtrl
 
+  //table columns
+  DISPLAYED_COLUMNS = [
+    'component',
+    'level',
+    'output',
+    'enabled'
+  ]
+
+  logs$: Observable<ILog[]> = new Observable<ILog[]>()
+
   constructor(
     public commandsApi: CommandsApi,
     public loadingService: LoadingService,
@@ -44,6 +55,7 @@ export class CommandsComponent {
       // tap(controls => [this.selectedCmd] = controls)
     );
   }
+
 
   onModuleSelect(control: CmdCtrl) {
 
@@ -80,9 +92,10 @@ export class CommandsComponent {
   }
 
   onCmdSubmit(control: CmdCtrl) {
-    this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
-      map(resp => this.success('runCommand ' + control.nameFC.value + ' OK', resp.display!.join("</p><p>")))
-    ).subscribe();
+    this.logs$ = this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
+      tap(resp => this.success('runCommand ' + control.nameFC.value + ' OK', resp.display!.join("</p><p>"))),
+      map(iresp => iresp.logs!)
+    );
   }
 
   private success = (mess: string, str: string) => this.dialogService.openDialog({
