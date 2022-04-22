@@ -147,7 +147,8 @@ void websrv_printf_end(int httpstatus ) {
 /*--------------------------------------------------------------------------------------------------*/
 /* format a json response from a result table returned from a call to a telnet server command       */
 void websrv_getdata_response(struct _u_response * response,webdatadef_t * wdata) {
-    json_t *jbody = json_array();
+    json_t *jdata = json_array();
+    
 	for (int i=0; i<wdata->numlines ; i++) {
         json_t *kv=json_object();
         for (int j=0; j<wdata->numcols; j++) {
@@ -162,8 +163,9 @@ void websrv_getdata_response(struct _u_response * response,webdatadef_t * wdata)
             jval=json_integer((int)(wdata->lines[i].val[j]));
           json_object_set_new(kv, wdata->columns[j].coltitle, jval);                    
         }
-        json_array_append_new(jbody,kv);
+        json_array_append_new(jdata,kv);
     }
+    json_t *jbody=json_pack("{s:o,s:o}","display",json_string(""),"logs",jdata);
     websrv_jbody(response,jbody);
 }
 /*----------------------------------------------------------------------------------------------------------*/
