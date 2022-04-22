@@ -315,7 +315,7 @@ typedef struct {
   int cc;
   signed char first_packet;
   signed char last_packet;
-  int flags_msb;
+  int flags_gpio;
 } openair0_write_package_t;
 
 typedef struct {
