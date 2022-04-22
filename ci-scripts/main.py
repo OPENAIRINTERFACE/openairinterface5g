@@ -49,7 +49,7 @@ import cls_physim1          #class PhySim for physical simulators deploy and run
 import sshconnection 
 import epc
 import ran
-import html
+import cls_oai_html
 
 
 #-----------------------------------------------------------
@@ -518,7 +518,7 @@ CiTestObj = cls_oaicitest.OaiCiTest()
 SSH = sshconnection.SSHConnection()
 EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
-HTML = html.HTMLManagement()
+HTML = cls_oai_html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
 SCA = cls_static_code_analysis.StaticCodeAnalysis()
 PHYSIM = cls_physim1.PhySim()

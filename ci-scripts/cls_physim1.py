@@ -33,7 +33,7 @@
 #-----------------------------------------------------------
 import logging
 import sshconnection as SSH
-import html
+import cls_oai_html
 import os
 import re
 import time
