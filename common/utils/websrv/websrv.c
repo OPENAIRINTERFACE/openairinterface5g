@@ -155,7 +155,7 @@ void websrv_getdata_response(struct _u_response * response,webdatadef_t * wdata)
           json_t *jval;  
           if(wdata->columns[j].coltype & TELNET_CHECKVAL_BOOL)
             jval=json_boolean(wdata->lines[i].val[j]);
-          else if (wdata->columns[j].coltype == TELNET_VARTYPE_STRING)
+          else if (wdata->columns[j].coltype & TELNET_VARTYPE_STRING)
             jval=json_string(wdata->lines[i].val[j]);
 //          else if (wdata->columns[j].coltype == TELNET_VARTYPE_DOUBLE)
 //            jval=json_real((double)(wdata->lines[i].val[j]));
@@ -165,45 +165,43 @@ void websrv_getdata_response(struct _u_response * response,webdatadef_t * wdata)
         }
         json_array_append_new(jdata,kv);
     }
-    json_t *jbody=json_pack("{s:o,s:o}","display",json_string(""),"logs",jdata);
+    json_t *jbody=json_pack("{s:[o],s:o}","display",json_null(),"logs",jdata);
     websrv_jbody(response,jbody);
 }
 /*--------------------------------------------------------------------------------------------------*/
 /* format a json response from a result table returned from a call to a telnet server command       */
 void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wdata) {
-/*	json_t *jcols = json_array();
+	json_t *jcols = json_array();
     json_t *jdata = json_array();
     char *coltype;
     for (int i=0; i<wdata->numcols; i++) {
-      json_t *jval;  
-      if(wdata->columns[j].coltype & TELNET_CHECKVAL_BOOL)
+      if(wdata->columns[i].coltype & TELNET_CHECKVAL_BOOL)
         coltype="boolean";
-      else if (wdata->columns[j].coltype == TELNET_VARTYPE_STRING)
+      else if (wdata->columns[i].coltype & TELNET_VARTYPE_STRING)
         coltype="string";
-
       else
         coltype="number";
-      json_t acol=json_pack("{name:s,type:s,modifiable:b}",wdata->columns[j].coltitle,coltype,);
+      json_t *acol=json_pack("{name:s,type:s,modifiable:b}",wdata->columns[i].coltitle,coltype,
+                            ( wdata->columns[i].coltype & TELNET_CHECKVAL_RDONLY)?0:1  );
       json_array_append_new(jcols,acol);                   
       }    
 	for (int i=0; i<wdata->numlines ; i++) {
-        json_t *kv=json_object();
-        for (int j=0; j<wdata->numcols; j++) {
-          json_t *jval;  
+        json_t *jval; 
+        for (int j=0; j<wdata->numcols; j++) {  
           if(wdata->columns[j].coltype & TELNET_CHECKVAL_BOOL)
             jval=json_boolean(wdata->lines[i].val[j]);
-          else if (wdata->columns[j].coltype == TELNET_VARTYPE_STRING)
+          else if (wdata->columns[j].coltype & TELNET_VARTYPE_STRING)
             jval=json_string(wdata->lines[i].val[j]);
 //          else if (wdata->columns[j].coltype == TELNET_VARTYPE_DOUBLE)
 //            jval=json_real((double)(wdata->lines[i].val[j]));
           else
             jval=json_integer((long)(wdata->lines[i].val[j]));
-          json_object_set_new(kv, wdata->columns[j].coltitle, jval);                    
+          json_array_append_new(jdata,jval);                   
         }
-        json_array_append_new(jdata,kv);
+        
     }
-    json_t *jbody=json_pack("{s:o,s:o}","columns",,"rows",);
-    websrv_jbody(response,jbody);*/
+    json_t *jbody=json_pack("{s:o,s:o}","columns",jcols,"rows",jdata);
+    websrv_jbody(response,jbody);
 }
 /*----------------------------------------------------------------------------------------------------------*/
 /* callbacks and utility functions to stream a file */
@@ -437,11 +435,17 @@ int websrv_callback_set_softmodemvar(const struct _u_request * request, struct _
 /* callback processing module url (<address>/oaisoftmodem/module/commands), post method */
 int websrv_processwebfunc(struct _u_response * response, cmdparser_t * modulestruct ,telnetshell_cmddef_t *cmd) {
   LOG_I(UTIL,"[websrv] : executing command %s %s\n",modulestruct->module,cmd->cmdname);
+  
   if ( cmd->cmdflags & TELNETSRV_CMDFLAG_GETWEBDATA ) {
 	webdatadef_t wdata;
     memset(&wdata,0,sizeof(wdata));
 	cmd->webfunc_getdata(cmd->cmdname,websrvparams.dbglvl,(webdatadef_t *)&wdata);
 	websrv_getdata_response(response,&wdata);
+  } else if (cmd->cmdflags & TELNETSRV_CMDFLAG_GETWEBTBLDATA) {
+	webdatadef_t wdata;
+    memset(&wdata,0,sizeof(wdata));
+	cmd->webfunc_getdata(cmd->cmdname,websrvparams.dbglvl,(webdatadef_t *)&wdata);	  
+	websrv_gettbldata_response(response,&wdata);
   } else {
     websrv_printf_start(response,16384);
     cmd->cmdfunc("",websrvparams.dbglvl,websrv_printf);

@@ -84,6 +84,7 @@ typedef int(*qcmdfunc_t)(char*, int, telnet_printfunc_t prnt,void *arg);
 #define TELNETSRV_CMDFLAG_TELNETONLY     (1<<2)    // Only for telnet client connections
 #define TELNETSRV_CMDFLAG_WEBSRVONLY     (1<<3)    // Only for web server connections
 #define TELNETSRV_CMDFLAG_CONFEXEC       (1<<4)    // Ask for confirm before exec
+#define TELNETSRV_CMDFLAG_GETWEBTBLDATA  (1<<8)    // When called from web server, use the get table data variant of the function
 typedef struct cmddef {
     char cmdname[TELNET_CMD_MAXSIZE];
     char helpstr[TELNET_HELPSTR_SIZE];

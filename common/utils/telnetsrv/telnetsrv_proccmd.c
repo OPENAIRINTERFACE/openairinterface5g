@@ -198,7 +198,7 @@ int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
 	logsdata->numcols=4;
     logsdata->numlines=0;
 	snprintf(logsdata->columns[0].coltitle,TELNET_CMD_MAXSIZE,"component");
-    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING;
+    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
 	snprintf(logsdata->columns[1].coltitle,TELNET_CMD_MAXSIZE,"level");
     logsdata->columns[1].coltype = TELNET_VARTYPE_STRING;
 	snprintf(logsdata->columns[2].coltitle,TELNET_CMD_MAXSIZE,"enabled");
@@ -223,7 +223,7 @@ int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
 	logsdata->numcols=3;
     logsdata->numlines=0;
 	snprintf(logsdata->columns[0].coltitle,TELNET_CMD_MAXSIZE,"module");
-    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING;
+    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
 	snprintf(logsdata->columns[1].coltitle,TELNET_CMD_MAXSIZE,"debug");
     logsdata->columns[1].coltype = TELNET_CHECKVAL_BOOL;
 	snprintf(logsdata->columns[2].coltitle,TELNET_CMD_MAXSIZE,"dump");
@@ -242,7 +242,7 @@ int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
 	logsdata->numcols=2;
     logsdata->numlines=0;
 	snprintf(logsdata->columns[0].coltitle,TELNET_CMD_MAXSIZE,"option");
-    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING;
+    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
 	snprintf(logsdata->columns[1].coltitle,TELNET_CMD_MAXSIZE,"enabled");
     logsdata->columns[1].coltype = TELNET_CHECKVAL_BOOL;
 
