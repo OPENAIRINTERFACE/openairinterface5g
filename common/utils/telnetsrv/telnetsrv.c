@@ -512,6 +512,8 @@ int process_command(char *buf) {
       }
 
       for(j=0; telnetparams.CmdParsers[i].cmd[j].cmdfunc != NULL ; j++) {
+		if ( telnetparams.CmdParsers[i].cmd[j].cmdflags & TELNETSRV_CMDFLAG_WEBSRVONLY )
+		  continue;
         client_printf("      %s %s %s\n",
                       telnetparams.CmdParsers[i].module,telnetparams.CmdParsers[i].cmd[j].cmdname,
                       telnetparams.CmdParsers[i].cmd[j].helpstr);
@@ -542,6 +544,8 @@ int process_command(char *buf) {
       } else {
         for (k=0 ; telnetparams.CmdParsers[i].cmd[k].cmdfunc != NULL ; k++) {
           if (strncasecmp(cmd, telnetparams.CmdParsers[i].cmd[k].cmdname,sizeof(telnetparams.CmdParsers[i].cmd[k].cmdname)) == 0) {
+			if (telnetparams.CmdParsers[i].cmd[k].cmdflags & TELNETSRV_CMDFLAG_WEBSRVONLY)
+			  continue;
           	if (telnetparams.CmdParsers[i].cmd[k].qptr != NULL) {
           		notifiedFIFO_elt_t *msg =newNotifiedFIFO_elt(sizeof(telnetsrv_qmsg_t),0,NULL,NULL);
           		telnetsrv_qmsg_t *cmddata=NotifiedFifoData(msg);

@@ -213,12 +213,46 @@ int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
 		  logsdata->lines[i].val[0]= (char *)(g_log->log_component[i].name);
           
 		  logsdata->lines[i].val[1]=map_int_to_str(log_level_names,(g_log->log_component[i].level>=0)?g_log->log_component[i].level:g_log->log_component[i].savedlevel);
-		  logsdata->lines[i].val[2]=(g_log->log_component[i].level>=0)?0xFFFFFFFF:NULL;
+		  logsdata->lines[i].val[2]=(g_log->log_component[i].level>=0)?(char *)0xFFFFFFFF:NULL;
 		  logsdata->lines[i].val[3]=(g_log->log_component[i].filelog>0)?g_log->log_component[i].filelog_name:"stdout";
-       }
-     }
-   }
-   return 0;
+        }
+      }
+    }
+  if (strcasestr(cmdbuff,"dbgopt") != NULL) {
+	webdatadef_t *logsdata = ( webdatadef_t *) data;
+	logsdata->numcols=3;
+    logsdata->numlines=0;
+	snprintf(logsdata->columns[0].coltitle,TELNET_CMD_MAXSIZE,"module");
+    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING;
+	snprintf(logsdata->columns[1].coltitle,TELNET_CMD_MAXSIZE,"debug");
+    logsdata->columns[1].coltype = TELNET_CHECKVAL_BOOL;
+	snprintf(logsdata->columns[2].coltitle,TELNET_CMD_MAXSIZE,"dump");
+    logsdata->columns[2].coltype = TELNET_CHECKVAL_BOOL;
+
+    for (int i=0; log_maskmap[i].name != NULL ; i++) {
+	  logsdata->numlines++;
+	  logsdata->lines[i].val[0]= log_maskmap[i].name;
+      logsdata->lines[i].val[1]= (g_log->debug_mask &  log_maskmap[i].value)?(char *)0xFFFFFFFF:NULL;
+      logsdata->lines[i].val[2]=(g_log->dump_mask & log_maskmap[i].value)?(char *)0xFFFFFFFF:NULL;
+    }
+  }
+  
+  if (strcasestr(cmdbuff,"logopt") != NULL) {
+	webdatadef_t *logsdata = ( webdatadef_t *) data;
+	logsdata->numcols=2;
+    logsdata->numlines=0;
+	snprintf(logsdata->columns[0].coltitle,TELNET_CMD_MAXSIZE,"option");
+    logsdata->columns[0].coltype = TELNET_VARTYPE_STRING;
+	snprintf(logsdata->columns[1].coltitle,TELNET_CMD_MAXSIZE,"enabled");
+    logsdata->columns[1].coltype = TELNET_CHECKVAL_BOOL;
+
+    for (int i=0; log_options[i].name != NULL; i++) {
+	  logsdata->numlines++;
+	  logsdata->lines[i].val[0]=log_options[i].name;
+      logsdata->lines[i].val[1]=(g_log->flag & log_options[i].value)?(char *)0xFFFFFFFF:NULL;
+    }
+  }
+  return 0;
 }
 
 int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt)
