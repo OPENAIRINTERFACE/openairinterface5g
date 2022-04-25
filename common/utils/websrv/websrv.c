@@ -57,8 +57,8 @@
 };
 int websrv_add_endpoint( char **http_method, int num_method, const char * url_prefix,const char * url_format,
                          int (* callback_function[])(const struct _u_request * request, 
-                                                   struct _u_response * response,
-                                                   void * user_data),
+                         struct _u_response * response,
+                         void * user_data),
                          void * user_data) ;
     
 void register_module_endpoints(cmdparser_t *module) ;
@@ -68,6 +68,7 @@ void websrv_printjson(char * label, json_t *jsonobj){
 	LOG_I(UTIL,"[websrv] %s:%s\n", label, (jstr==NULL)?"??\n":jstr);
     free(jstr);
 }
+void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wdata) ;
 /*-----------------------------------*/
 /* build a json body in a response */
 void websrv_jbody( struct _u_response * response, json_t *jbody) {
@@ -144,6 +145,27 @@ void websrv_printf_end(int httpstatus ) {
   pthread_mutex_unlock(&(websrv_printf_buff.mutex));
 
 }
+
+/* buid a response via a webdatadef_t structure containing one string column               */
+void websrv_printf_tbl_end(int httpstatus ) {
+  webdatadef_t pdata;
+  char *tokctx;
+  
+  pdata.numcols=1;
+  pdata.numlines=0;
+  pdata.columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
+  pdata.columns[0].coltitle[0]=0;
+  for ( char *alineptr=strtok_r(websrv_printf_buff.buff,"\n",&tokctx); alineptr != NULL ; alineptr=strtok_r(NULL,"\n",&tokctx) ) {
+	  pdata.lines[pdata.numlines].val[0]=alineptr;
+	  pdata.numlines++;  
+  }
+  websrv_gettbldata_response(websrv_printf_buff.response,&pdata);
+  free(websrv_printf_buff.buff);
+  websrv_printf_buff.buff=NULL;
+  pthread_mutex_unlock(&(websrv_printf_buff.mutex));
+
+}
+
 /*--------------------------------------------------------------------------------------------------*/
 /* format a json response from a result table returned from a call to a telnet server command       */
 void websrv_getdata_response(struct _u_response * response,webdatadef_t * wdata) {
@@ -190,7 +212,7 @@ void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wda
         json_t *jline=json_array();
         for (int j=0; j<wdata->numcols; j++) {  
           if(wdata->columns[j].coltype & TELNET_CHECKVAL_BOOL)
-            jval=json_boolean(wdata->lines[i].val[j]);
+            jval=json_string(wdata->lines[i].val[j]);
           else if (wdata->columns[j].coltype & TELNET_VARTYPE_STRING)
             jval=json_string(wdata->lines[i].val[j]);
 //          else if (wdata->columns[j].coltype == TELNET_VARTYPE_DOUBLE)
@@ -204,6 +226,7 @@ void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wda
     json_t *jbody=json_pack("{s:o,s:o}","columns",jcols,"rows",jdata);
     websrv_jbody(response,jbody);
 }
+
 /*----------------------------------------------------------------------------------------------------------*/
 /* callbacks and utility functions to stream a file */
 char * websrv_read_file(const char * filename) {
@@ -450,7 +473,10 @@ int websrv_processwebfunc(struct _u_response * response, cmdparser_t * modulestr
   } else {
     websrv_printf_start(response,16384);
     cmd->cmdfunc(cmd->cmdname,websrvparams.dbglvl,websrv_printf);
-    websrv_printf_end(200);
+    if (cmd->cmdflags & TELNETSRV_CMDFLAG_PRINTWEBTBLDATA)
+      websrv_printf_tbl_end(200);
+    else
+      websrv_printf_end(200);
   }
   return 200;
 }

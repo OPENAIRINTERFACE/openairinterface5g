@@ -139,7 +139,9 @@ char toksep[2];
   prnt("%s\n",prntline); 
 } /*decode_procstat */
 
-void read_statfile(char *fname,int debug, telnet_printfunc_t prnt)
+
+
+void read_statfile(char *fname,int debug, telnet_printfunc_t prnt, void *data)
 {
 FILE *procfile;
 char arecord[1024];
@@ -169,9 +171,9 @@ struct dirent *entry;
 
 
 
-    prnt("  id          name            state   USRmod    KRNmod  prio nice   vsize   proc pol \n\n");
+    prnt("\n  id          name            state   USRmod    KRNmod  prio nice   vsize   proc pol \n\n");
     snprintf(aname, sizeof(aname), "/proc/%d/stat", getpid());
-    read_statfile(aname,debug,prnt);
+    read_statfile(aname,debug,prnt,NULL);
     prnt("\n");
     snprintf(aname, sizeof(aname), "/proc/%d/task", getpid());
     proc_dir = opendir(aname);
@@ -183,10 +185,11 @@ struct dirent *entry;
     
     while ((entry = readdir(proc_dir)) != NULL)
         {
-        if(entry->d_name[0] == '.')
-            continue;
-	snprintf(aname, sizeof(aname), "/proc/%d/task/%.*s/stat", getpid(),(int)(sizeof(aname)-24),entry->d_name);    
-        read_statfile(aname,debug,prnt);      
+        if(entry->d_name[0] != '.')
+          {
+	      snprintf(aname, sizeof(aname), "/proc/%d/task/%.*s/stat", getpid(),(int)(sizeof(aname)-24),entry->d_name);    
+          read_statfile(aname,debug,prnt,NULL);
+	      }      
         } /* while entry != NULL */
 	closedir(proc_dir);
 } /* print_threads */
@@ -213,7 +216,7 @@ int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
 		  logsdata->lines[i].val[0]= (char *)(g_log->log_component[i].name);
           
 		  logsdata->lines[i].val[1]=map_int_to_str(log_level_names,(g_log->log_component[i].level>=0)?g_log->log_component[i].level:g_log->log_component[i].savedlevel);
-		  logsdata->lines[i].val[2]=(g_log->log_component[i].level>=0)?(char *)0xFFFFFFFF:NULL;
+		  logsdata->lines[i].val[2]=(g_log->log_component[i].level>=0)?"true":"false";
 		  logsdata->lines[i].val[3]=(g_log->log_component[i].filelog>0)?g_log->log_component[i].filelog_name:"stdout";
         }
       }
@@ -232,8 +235,8 @@ int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
     for (int i=0; log_maskmap[i].name != NULL ; i++) {
 	  logsdata->numlines++;
 	  logsdata->lines[i].val[0]= log_maskmap[i].name;
-      logsdata->lines[i].val[1]= (g_log->debug_mask &  log_maskmap[i].value)?(char *)0xFFFFFFFF:NULL;
-      logsdata->lines[i].val[2]=(g_log->dump_mask & log_maskmap[i].value)?(char *)0xFFFFFFFF:NULL;
+      logsdata->lines[i].val[1]= (g_log->debug_mask &  log_maskmap[i].value)?"true":"false";
+      logsdata->lines[i].val[2]=(g_log->dump_mask & log_maskmap[i].value)?"true":"false";
     }
   }
   
@@ -249,9 +252,10 @@ int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data) {
     for (int i=0; log_options[i].name != NULL; i++) {
 	  logsdata->numlines++;
 	  logsdata->lines[i].val[0]=log_options[i].name;
-      logsdata->lines[i].val[1]=(g_log->flag & log_options[i].value)?(char *)0xFFFFFFFF:NULL;
+      logsdata->lines[i].val[1]=(g_log->flag & log_options[i].value)?"true":"false";
     }
   }
+    
   return 0;
 }
 
@@ -354,7 +358,7 @@ char sv1[64];
        prnt(" proccmd_thread: %i params = %i,%s,%i\n",res,bv1,sv1,bv2);   
    if(res != 3)
      {
-     prnt("softmodem thread needs 3 params, %i received\n",res);
+     print_threads(buf, debug, prnt);
      return 0;
      }
 

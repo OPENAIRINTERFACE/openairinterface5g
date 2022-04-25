@@ -79,12 +79,13 @@ typedef int(*webfunc_t)(char *cmdbuff, int debug, telnet_printfunc_t prnt, ... )
 typedef int(*webfunc_getdata_t)(char *cmdbuff, int debug, void *data);
 typedef int(*qcmdfunc_t)(char*, int, telnet_printfunc_t prnt,void *arg);
 
-#define TELNETSRV_CMDFLAG_PUSHINTPOOLQ   (1<<0)    // ask the telnet server to push the command in a thread pool queue
-#define TELNETSRV_CMDFLAG_GETWEBDATA     (1<<1)    // When called from web server, use the getdata variant of the function
-#define TELNETSRV_CMDFLAG_TELNETONLY     (1<<2)    // Only for telnet client connections
-#define TELNETSRV_CMDFLAG_WEBSRVONLY     (1<<3)    // Only for web server connections
-#define TELNETSRV_CMDFLAG_CONFEXEC       (1<<4)    // Ask for confirm before exec
-#define TELNETSRV_CMDFLAG_GETWEBTBLDATA  (1<<8)    // When called from web server, use the get table data variant of the function
+#define TELNETSRV_CMDFLAG_PUSHINTPOOLQ     (1<<0)    // ask the telnet server to push the command in a thread pool queue
+#define TELNETSRV_CMDFLAG_GETWEBDATA       (1<<1)    // When called from web server, use the getdata variant of the function
+#define TELNETSRV_CMDFLAG_TELNETONLY       (1<<2)    // Only for telnet client connections
+#define TELNETSRV_CMDFLAG_WEBSRVONLY       (1<<3)    // Only for web server connections
+#define TELNETSRV_CMDFLAG_CONFEXEC         (1<<4)    // Ask for confirm before exec
+#define TELNETSRV_CMDFLAG_GETWEBTBLDATA    (1<<8)    // When called from web server, use the get table data variant of the function
+#define TELNETSRV_CMDFLAG_PRINTWEBTBLDATA  (1<<9)    // Print as a single column table
 typedef struct cmddef {
     char cmdname[TELNET_CMD_MAXSIZE];
     char helpstr[TELNET_HELPSTR_SIZE];
