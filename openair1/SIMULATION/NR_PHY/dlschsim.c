@@ -478,13 +478,10 @@ int main(int argc, char **argv)
 	harq_process->n_dmrs_cdm_groups = 1;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 
-	unsigned char *test_input;
-	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
+	unsigned char *test_input=dlsch->harq_process.pdu;
 	//unsigned char test_input[TBS / 8]  __attribute__ ((aligned(16)));
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
-        dlsch->harq_process.pdu=test_input;
-	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_NR_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%hhu \n",test_input[i]);
@@ -617,8 +614,6 @@ int main(int argc, char **argv)
 	 r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	 }
 	 }*/
-
-	//free(test_input); it must not be free as it is in DLSCH_struct -> free_gNB_dlsch () -> free(harq->pdu) with no checks or control
 
   free_channel_desc_scm(gNB2UE);
 

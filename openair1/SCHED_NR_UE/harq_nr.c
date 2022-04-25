@@ -357,8 +357,10 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int 
     if (ndi!=dl_harq->DCINdi) {
       dl_harq->first_rx = true;
       dl_harq->DLround = 0;
-    } else
+    } else {
+      dl_harq->first_rx = false;
       dl_harq->DLround++;
+    }
     
     dl_harq->status = ACTIVE;
 
