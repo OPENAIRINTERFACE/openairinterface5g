@@ -1,12 +1,7 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
-<<<<<<< HEAD
-import { tap, mergeMap, filter } from 'rxjs/operators';
-import { CommandsApi, IArgType, ILog } from 'src/app/api/commands.api';
-=======
-import { CommandsApi, IArgType, IColumn, IRow } from 'src/app/api/commands.api';
->>>>>>> websrv-table
+import { CommandsApi, IArgType, IColumn } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
 import { RowCtrl } from 'src/app/controls/row.control';
 import { VarCtrl } from 'src/app/controls/var.control';

@@ -67,7 +67,7 @@
         <mat-form-field [ngSwitch]="col.type">
           <mat-slide-toggle *ngSwitchCase="IOptionType.boolean" [formControl]="row.booleanFC"
             [checked]="row.isEnabledFC.value" [disabled]="!col.modifiable"></mat-slide-toggle>
-          <input *ngSwitchCase="IOptionType.boolean" matInput [formControl]="row.stringFC"
+          <input *ngSwitchCase="IOptionType.string" matInput [formControl]="row.stringFC"
             [disabled]="!col.modifiable" />
         </mat-form-field>
       </mat-cell>
