@@ -710,7 +710,8 @@ typedef struct {
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
   bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
-
+  /// Sched CSI-RS: scheduling decisions
+  bool sched_csirs;
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
