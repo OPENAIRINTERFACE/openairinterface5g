@@ -76,11 +76,11 @@ telnetshell_vardef_t proc_vardef[] = {
 telnetshell_cmddef_t proc_cmdarray[] = {
    {"show","loglvl|thread|config", proccmd_show,{(webfunc_t)proccmd_websrv_getdata},TELNETSRV_CMDFLAG_TELNETONLY,NULL},
    {"log","(enter help for details)", proccmd_log, {NULL},TELNETSRV_CMDFLAG_TELNETONLY,NULL},
-   {"show loglvl","", proccmd_log,{(webfunc_t)proccmd_websrv_getdata}, TELNETSRV_CMDFLAG_WEBSRVONLY|TELNETSRV_CMDFLAG_GETWEBDATA,NULL},
+   {"show loglvl","", proccmd_log,{(webfunc_t)proccmd_websrv_getdata}, TELNETSRV_CMDFLAG_WEBSRVONLY|TELNETSRV_CMDFLAG_GETWEBTBLDATA,NULL},
    {"show logopt","", proccmd_log,{(webfunc_t)proccmd_websrv_getdata}, TELNETSRV_CMDFLAG_WEBSRVONLY|TELNETSRV_CMDFLAG_GETWEBTBLDATA,NULL},
    {"show dbgopt","", proccmd_log,{(webfunc_t)proccmd_websrv_getdata}, TELNETSRV_CMDFLAG_WEBSRVONLY|TELNETSRV_CMDFLAG_GETWEBTBLDATA,NULL},
    {"show config","", proccmd_show,{(webfunc_t)proccmd_show}, TELNETSRV_CMDFLAG_WEBSRVONLY,NULL},
-   {"thread","(enter help for details)", proccmd_thread,{(webfunc_t)proccmd_websrv_getdata},0,NULL},
+   {"show thread","", proccmd_thread,{(webfunc_t)proccmd_show},TELNETSRV_CMDFLAG_WEBSRVONLY|TELNETSRV_CMDFLAG_PRINTWEBTBLDATA,NULL},
    {"exit","", proccmd_exit,{NULL},TELNETSRV_CMDFLAG_CONFEXEC,NULL},
    {"","",NULL},
 };
