@@ -1224,7 +1224,7 @@ int main(int argc, char **argv)
         ////////////////////////////////////////////////////
         tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
         txlev_sum = 0;
-        for (int aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+        for (int aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
           atxlev[aa] = signal_energy(&UE->common_vars.txdata[aa][tx_offset + 5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
                               frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
                               
@@ -1279,9 +1279,6 @@ int main(int argc, char **argv)
                 r_im[ap][i] += s_im[aa][i]*H_awgn[ap][aa];
               }
             }
-            
-            sigma_dB = 10 * log10((double)atxlev[ap] * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
-            sigma    = pow(10,sigma_dB/10);
 		
             ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)   + (delay*2)] = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
             ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)] = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
