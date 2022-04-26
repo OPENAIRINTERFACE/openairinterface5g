@@ -299,7 +299,7 @@ uint64_t pmi2hex_2Ar1(uint32_t pmi);
 
 uint64_t pmi2hex_2Ar2(uint32_t pmi);
 
-uint8_t get_pmi(uint8_t N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb);
+uint8_t get_pmi(int N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb);
 
 // DL power control functions
 double get_pa_dB(uint8_t pa);

@@ -278,7 +278,7 @@ main ()
   short output[256] __attribute__((aligned(16)));
 
   int i;
-  struct complex16 alpha;
+  c16_t alpha;
 
   Zero_Buffer(output,256*2);
 

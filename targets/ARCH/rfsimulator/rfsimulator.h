@@ -25,8 +25,8 @@
 #define  __RFSIMULATOR_H
 double gaussZiggurat(double mean, double variance);
 void tableNor(unsigned long seed);
-void rxAddInput( struct complex16 *input_sig,
-                 struct complex16 *after_channel_sig,
+void rxAddInput( const c16_t *input_sig,
+                 c16_t *after_channel_sig,
                  int rxAnt,
                  channel_desc_t *channelDesc,
                  int nbSamples,

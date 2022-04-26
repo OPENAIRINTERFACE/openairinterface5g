@@ -58,11 +58,6 @@ extern int l2_init_eNB(void);
 extern void mac_top_init_eNB(void);
 extern void mac_init_cell_params(int Mod_idP,int CC_idP);
 
-
-int32_t **rxdata;
-int32_t **txdata;
-
-
 typedef struct eutra_bandentry_s {
   int16_t band;
   uint32_t ul_min;

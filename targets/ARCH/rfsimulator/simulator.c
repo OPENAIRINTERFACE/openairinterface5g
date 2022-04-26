@@ -100,7 +100,7 @@ static telnetshell_vardef_t rfsimu_vardef[] = {
 };
 pthread_mutex_t Sockmutex;
 
-typedef struct complex16 sample_t; // 2*16 bits complex number
+typedef c16_t sample_t; // 2*16 bits complex number
 
 typedef struct buffer_s {
   int conn_sock;
@@ -495,7 +495,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       setblocking(conn_sock, notBlocking);
       allocCirBuf(t, conn_sock);
       LOG_I(HW,"A client connected, sending the current time\n");
-      struct complex16 v= {0};
+      c16_t v= {0};
       void *samplesVoid[t->tx_num_channels];
 
       for ( int i=0; i < t->tx_num_channels; i++)
@@ -665,7 +665,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
         // We send timestamp for nb samples required
         // assuming this should have been done earlier if a Tx would exist
         pthread_mutex_unlock(&Sockmutex);
-        struct complex16 v= {0};
+        c16_t v= {0};
         void *dummyS[t->tx_num_channels];
 
         for ( int i=0; i < t->tx_num_channels; i++)
@@ -728,7 +728,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
 
       for (int a=0; a<nbAnt; a++) {//loop over number of Rx antennas
         if ( ptr->channel_model != NULL ) // apply a channel model
-          rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
+          rxAddInput( ptr->circularBuf, (c16_t *) samplesVoid[a],
                       a,
                       ptr->channel_model,
                       nsamps,

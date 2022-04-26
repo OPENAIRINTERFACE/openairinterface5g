@@ -90,7 +90,7 @@ int set_pss_in_rx_buffer(PHY_VARS_NR_UE *PHY_vars_UE, int position_symbol, int p
 
 int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission_mode,
                       unsigned char extended_prefix_flag, uint8_t frame_type, uint16_t Nid_cell,
-                      uint8_t N_RB_DL);
+                      int N_RB_DL);
 
 void display_test_configuration_pss(int position, int pss_sequence_number);
 
