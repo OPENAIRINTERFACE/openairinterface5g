@@ -223,7 +223,7 @@ void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wda
         }
       json_array_append_new(jdata,jline);  
     }
-    json_t *jbody=json_pack("{s:[o],s:{s:o,s:o}}","display",json_null(),"table","columns",jcols,"rows",jdata);
+    json_t *jbody=json_pack("{s:[],s:{s:o,s:o}}","display","table","columns",jcols,"rows",jdata);
     websrv_jbody(response,jbody);
 }
 
@@ -472,7 +472,8 @@ int websrv_processwebfunc(struct _u_response * response, cmdparser_t * modulestr
 	websrv_gettbldata_response(response,&wdata);
   } else {
     websrv_printf_start(response,16384);
-    cmd->cmdfunc(cmd->cmdname,websrvparams.dbglvl,websrv_printf);
+    char *sptr=index(cmd->cmdname,' ');
+    cmd->cmdfunc((sptr==NULL)?cmd->cmdname:sptr,websrvparams.dbglvl,websrv_printf);
     if (cmd->cmdflags & TELNETSRV_CMDFLAG_PRINTWEBTBLDATA)
       websrv_printf_tbl_end(200);
     else
