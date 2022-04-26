@@ -26,18 +26,6 @@ export enum ILogOutput {
     file = "/tmp/<component>.log",
 }
 
-export interface IColumn { //should use IVariable ?
-    name: string;
-    type: IArgType;
-    modifiable: boolean; //set command ?
-}
-
-export type IRow = string[]
-export interface ITable {
-    columns: IColumn[];
-    rows: IRow[];
-}
-
 export enum IArgType {
     boolean = "boolean",
     list = "list",
@@ -49,6 +37,23 @@ export enum IArgType {
 export interface ICommand {
     name: string;
     confirm?: string;
+}
+
+
+export interface IColumn { //should use IVariable ?
+    name: string;
+    type: IArgType;
+    modifiable: boolean; //set command ?
+}
+
+export type IRow = string[]
+export interface ITable {
+    columns: IColumn[];
+    rows: IRow[];
+}
+export interface IResp {
+    display: string[],
+    table?: ITable
 }
 
 const route = '/oaisoftmodem';
@@ -63,8 +68,8 @@ export class CommandsApi {
 
     public readCommands$ = (moduleName?: string) => this.httpClient.get<ICommand[]>(environment.backend + route + '/' + (moduleName ? ('/' + moduleName) : "") + '/commands/');
 
-    public runCommand$ = (command: ICommand, moduleName: string) => this.httpClient.post<ITable>(environment.backend + route + '/' + moduleName + '/commands/', command);
+    public runCommand$ = (command: ICommand, moduleName: string) => this.httpClient.post<IResp>(environment.backend + route + '/' + moduleName + '/commands/', command);
 
-    public setVariable$ = (variable: IVariable, moduleName?: string) => this.httpClient.post<string[]>(environment.backend + route + (moduleName ? ('/' + moduleName) : "") + '/variables/', variable);
+    public setVariable$ = (variable: IVariable, moduleName?: string) => this.httpClient.post<IResp>(environment.backend + route + (moduleName ? ('/' + moduleName) : "") + '/variables/', variable);
 
 }

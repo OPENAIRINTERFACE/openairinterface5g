@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
+import { of } from 'rxjs/internal/observable/of';
 import { map } from 'rxjs/internal/operators/map';
 import { mergeMap } from 'rxjs/internal/operators/mergeMap';
-import { CommandsApi, IArgType, IColumn } from 'src/app/api/commands.api';
+import { CommandsApi, IArgType, IColumn, ITable } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
 import { RowCtrl } from 'src/app/controls/row.control';
 import { VarCtrl } from 'src/app/controls/var.control';
@@ -83,31 +84,31 @@ export class CommandsComponent {
   onSubVarSubmit(control: VarCtrl) {
     this.commandsApi.setVariable$(control.api(), `${this.selectedModule!.nameFC.value}`)
       .pipe(
-        map(resp => this.success('setVariable ' + control.nameFC.value + ' OK', resp[0]))
+        map(resp => this.dialogService.openRespDialog(resp))
       ).subscribe();
   }
 
   onCmdSubmit(control: CmdCtrl) {
 
+    // const obs = control.confirm ? this.dialogService.openConfirmDialog(control.confirm) : of(null)
 
-    this.rows$ = this.dialogService.openConfirmDialog().pipe(
-      mergeMap(() => this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`)),
-      map(iresp => {
-        this.columns = iresp.columns
+    // this.rows$ = obs.pipe(
+    //   mergeMap(() => this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`)),
+
+    this.rows$ = this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
+      mergeMap(resp => {
+        if (resp.display[0]) return this.dialogService.openRespDialog(resp, 'cmd ' + control.nameFC.value + ' response:')
+        else return of(resp)
+      }),
+      map(resp => {
+        this.columns = resp.table!.columns
         this.displayedColumns = this.columns.map(col => col.name)
         let rows: RowCtrl[] = []
-        iresp.rows.map(row => this.columns.map(col => rows.push(new RowCtrl(row, col.type))))
+        resp.table?.rows.map(row => this.columns.map(col => rows.push(new RowCtrl(row, col.type))))
         return rows
       })
     );
   }
-
-  private success = (mess: string, str: string) => {
-    return this.dialogService.openDialog({
-      title: mess,
-      body: str,
-    })
-  };
 
 
 }

@@ -33,10 +33,7 @@ export class ErrorInterceptor implements HttpInterceptor {
           case 501:
           case 500:
             this.log(YELLOW, request.method + ' ' + error.status + ' Error: ' + error.error);
-            this.dialogService.openDialog({
-              title: error.status + ' Error',
-              body: error.error,
-            });
+            this.dialogService.openErrorDialog(error);
             break;
 
           default:

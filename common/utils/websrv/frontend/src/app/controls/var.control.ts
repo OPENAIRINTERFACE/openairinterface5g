@@ -24,7 +24,7 @@ export class VarCtrl extends FormGroup {
   api() {
     const doc: IVariable = {
       name: this.nameFC.value,
-      value: this.valueFC.value,
+      value: String(this.valueFC.value),  //FIXME 
       type: this.typeFC.value,
       modifiable: this.modifiableFC.value
     };
