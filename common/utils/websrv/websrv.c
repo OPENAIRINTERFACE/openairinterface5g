@@ -223,7 +223,7 @@ void websrv_gettbldata_response(struct _u_response * response,webdatadef_t * wda
         }
       json_array_append_new(jdata,jline);  
     }
-    json_t *jbody=json_pack("{s:o,s:o}","columns",jcols,"rows",jdata);
+    json_t *jbody=json_pack("{s:[o],s:{s:o,s:o}}","display",json_null(),"table","columns",jcols,"rows",jdata);
     websrv_jbody(response,jbody);
 }
 
