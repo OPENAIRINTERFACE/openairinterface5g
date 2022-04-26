@@ -924,7 +924,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Cppcheck_Analysis':
 					SCA.CppCheckAnalysis(HTML)
 				elif action == 'LicenceAndFormattingCheck':
-					SCA.LicenceAndFormattingCheck(HTML)
+					ret = SCA.LicenceAndFormattingCheck(HTML)
+					if ret != 0:
+						RAN.prematureExit = True
 				elif action == 'Deploy_Run_PhySim':
 					PHYSIM.Deploy_PhySim(HTML, RAN)
 				elif action == 'DeployGenObject':
