@@ -202,7 +202,7 @@ typedef struct {
   int p_gNB;
   int Ncp;
   int nr_band;
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   uint64_t dl_CarrierFreq;
   NR_BCCH_BCH_Message_t *mib;
   NR_BCCH_DL_SCH_Message_t *sib1;

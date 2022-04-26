@@ -574,7 +574,7 @@ void get_cqipmiri_params(PHY_VARS_UE *ue,
   }
 }
 
-PUCCH_FMT_t get_pucch_format(lte_frame_type_t frame_type,
+PUCCH_FMT_t get_pucch_format(frame_type_t frame_type,
                              lte_prefix_type_t cyclic_prefix_type,
                              uint8_t SR_payload,
                              uint8_t nb_cw,
