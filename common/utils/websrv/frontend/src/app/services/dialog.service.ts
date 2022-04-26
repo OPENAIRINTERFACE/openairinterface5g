@@ -46,6 +46,7 @@ export class DialogService {
 
     const dialogRef = this._dialog.open(ErrorDialogComponent, {
       width: '900px',
+      height: '80%',
       data: {
         title: title,
         body: resp.display!.join("</p><p>")
