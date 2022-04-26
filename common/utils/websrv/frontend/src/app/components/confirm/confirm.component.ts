@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { Component } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject } from '@angular/core';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-confirm',
@@ -10,8 +10,9 @@ import { MatDialogRef } from '@angular/material/dialog';
 export class ConfirmDialogComponent {
 
   constructor(
-    public dialogRef: MatDialogRef<void>
-  ) { }
+    public dialogRef: MatDialogRef<void>,
+    @Inject(MAT_DIALOG_DATA) public data: any) {
+  }
 
   onNoClick() {
     this.dialogRef.close();

@@ -3,6 +3,7 @@ import { Observable } from 'rxjs/internal/Observable';
 import { of } from 'rxjs/internal/observable/of';
 import { map } from 'rxjs/internal/operators/map';
 import { mergeMap } from 'rxjs/internal/operators/mergeMap';
+import { filter } from 'rxjs/operators';
 import { CommandsApi, IArgType, IColumn } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
 import { EntryFC } from 'src/app/controls/entry.control';
@@ -90,12 +91,12 @@ export class CommandsComponent {
 
   onCmdSubmit(control: CmdCtrl) {
 
-    // const obs = control.confirm ? this.dialogService.openConfirmDialog(control.confirm) : of(null)
+    const obs = control.confirm
+      ? this.dialogService.openConfirmDialog(control.confirm).pipe(filter(confirmed => confirmed))
+      : of(null)
 
-    // this.rows$ = obs.pipe(
-    //   mergeMap(() => this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`)),
-
-    this.rows$ = this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
+    this.rows$ = obs.pipe(
+      mergeMap(() => this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`)),
       mergeMap(resp => {
         if (resp.display[0]) return this.dialogService.openRespDialog(resp, 'cmd ' + control.nameFC.value + ' response:')
         else return of(resp)
