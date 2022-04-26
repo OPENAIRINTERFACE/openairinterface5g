@@ -1064,7 +1064,7 @@ void *nrue_standalone_pnf_task(void *context)
 
 //  L2 Abstraction Layer
 int handle_bcch_bch(module_id_t module_id, int cc_id,
-                    unsigned int gNB_index, uint8_t *pduP,
+                    unsigned int gNB_index, void *phy_data, uint8_t *pduP,
                     unsigned int additional_bits,
                     uint32_t ssb_index, uint32_t ssb_length,
                     uint16_t ssb_start_subcarrier, uint16_t cell_id){
@@ -1072,6 +1072,7 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
   return nr_ue_decode_mib(module_id,
 			  cc_id,
 			  gNB_index,
+			  phy_data,
 			  additional_bits,
 			  ssb_length,  //  Lssb = 64 is not support    
 			  ssb_index,
@@ -1208,7 +1209,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         if (ret >= 0) {
           AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
           AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
-          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id);
+          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id, dl_info->phy_data);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
         memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
@@ -1229,7 +1230,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
           case FAPI_NR_RX_PDU_TYPE_SSB:
             mac->ssb_rsrp_dBm = (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm;
-            ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+            ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->phy_data,
                                          (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
                                          (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
                                          (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,

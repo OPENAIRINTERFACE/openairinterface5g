@@ -20,7 +20,7 @@ services:
             NB_PRB: 25
             ENABLE_MEASUREMENT_REPORTS: 'yes'
             ENABLE_X2: 'yes'
-            MME_S1C_IP_ADDRESS: 192.168.18.210
+            MME_S1C_IP_ADDRESS: 172.21.16.136
             ENB_S1C_IF_NAME: eth0
             ENB_S1C_IP_ADDRESS: 192.168.68.130
             ENB_S1U_IF_NAME: eth0
@@ -29,7 +29,7 @@ services:
             RRC_INACTIVITY_THRESHOLD: 0
             FLEXRAN_ENABLED: 'no'
             FLEXRAN_INTERFACE_NAME: eth0
-            FLEXRAN_IPV4_ADDRESS: 192.168.18.210
+            FLEXRAN_IPV4_ADDRESS: 172.21.16.136
             THREAD_PARALLEL_CONFIG: PARALLEL_SINGLE_THREAD
             USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
