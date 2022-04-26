@@ -72,4 +72,13 @@ export class CommandsApi {
 
     public setVariable$ = (variable: IVariable, moduleName?: string) => this.httpClient.post<IResp>(environment.backend + route + (moduleName ? ('/' + moduleName) : "") + '/variables/', variable);
 
+    public setParam$ = (moduleName: string, cmdName: string, colName: string, rawIndex: number, value: string) => this.httpClient.post<IResp>(environment.backend + route + '/' + moduleName + '/set',
+        {
+            cmdName: cmdName,
+            colName: colName,
+            rawIndex: rawIndex,
+            value: value
+        }
+    );
+
 }
