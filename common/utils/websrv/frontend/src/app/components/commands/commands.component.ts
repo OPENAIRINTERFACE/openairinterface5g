@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Observable } from 'rxjs/internal/Observable';
 import { map } from 'rxjs/internal/operators/map';
+import { mergeMap } from 'rxjs/internal/operators/mergeMap';
 import { CommandsApi, IArgType, IColumn } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
 import { RowCtrl } from 'src/app/controls/row.control';
@@ -87,7 +88,10 @@ export class CommandsComponent {
   }
 
   onCmdSubmit(control: CmdCtrl) {
-    this.rows$ = this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`).pipe(
+
+
+    this.rows$ = this.dialogService.openConfirmDialog().pipe(
+      mergeMap(() => this.commandsApi.runCommand$(control.api(), `${this.selectedModule!.nameFC.value}`)),
       map(iresp => {
         this.columns = iresp.columns
         this.displayedColumns = this.columns.map(col => col.name)
