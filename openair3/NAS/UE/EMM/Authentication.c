@@ -149,7 +149,8 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   int rc = RETURNerror;
   authentication_data_t *authentication_data = user->authentication_data;
   emm_timers_t *emm_timers = user->emm_data->emm_timers;
-
+  uint8_t nullRand[AUTH_CK_SIZE];
+  memset(nullRand, 0, AUTH_CK_SIZE);
   LOG_TRACE(INFO, "EMM-PROC  - Authentication requested ksi type = %s, ksi = %d", native_ksi ? "native" : "mapped", ksi);
 
   /* 3GPP TS 24.301, section 5.4.2.1
@@ -178,11 +179,13 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   OctetString ik = {AUTH_IK_SIZE, authentication_data->ik};
   OctetString res = {AUTH_RES_SIZE, authentication_data->res};
 
-  if (memcmp(authentication_data->rand, rand->value, AUTH_CK_SIZE) != 0) {
+  if ((memcmp(authentication_data->rand, rand->value, AUTH_CK_SIZE) != 0) ||
+      (memcmp(nullRand,authentication_data->rand, AUTH_CK_SIZE) == 0)) {
     /*
      * There is no valid stored RAND in the ME or the stored RAND is
      * different from the new received value in the AUTHENTICATION
-     * REQUEST message
+     * REQUEST message OR the received RAND is all "0" or "NULL"
+     * process the new received AUTHENTICATIOn REQUEST message
      */
     OctetString auts;
     auts.length = 0;
