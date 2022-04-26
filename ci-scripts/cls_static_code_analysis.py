@@ -237,3 +237,53 @@ class StaticCodeAnalysis():
 
 		return 0
 
+	def LicenceAndFormattingCheck(self, HTML):
+		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		lIpAddr = self.eNBIPAddress
+		lUserName = self.eNBUserName
+		lPassWord = self.eNBPassword
+		lSourcePath = self.eNBSourceCodePath
+
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		logging.debug('Building on server: ' + lIpAddr)
+		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
+
+		self.testCase_id = HTML.testCase_id
+
+		# on RedHat/CentOS .git extension is mandatory
+		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
+		if result is not None:
+			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
+		else:
+			full_ran_repo_name = self.ranRepository + '.git'
+		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
+		mySSH.command('cd ' + lSourcePath, '\$', 5)
+		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+		# Raphael: here add a check if git clone or git fetch went smoothly
+		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
+		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
+
+		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
+		# if the commit ID is provided use it to point to it
+		if self.ranCommitID != '':
+			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
+		# if the branch is not develop, then it is a merge request and we need to do
+		# the potential merge. Note that merge conflicts should already been checked earlier
+		if (self.ranAllowMerge):
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
+					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+			else:
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+
+		mySSH.command('docker image rm oai-formatting-check:latest || true', '\$', 60)
+		mySSH.command('docker build --target oai-formatting-check --tag oai-formatting-check:latest --file ci-scripts/docker/Dockerfile.formatting.bionic . > cmake_targets/log/oai-formatting-check.txt 2>&1', '\$', 600)
+
+		return 0
