@@ -539,7 +539,7 @@ class EPCManagement():
 			mySSH.command('python3 ./core-network.py '+self.cfgUnDeploy, '\$', 60)
 			mySSH.command('docker volume prune --force || true', '\$', 60)
 			time.sleep(2)
-			mySSH.command('tshark -r /tmp/oai-cn5g.pcap | egrep --colour=never "Tracking area update" ','\$', 30)
+			mySSH.command('tshark -r /tmp/oai-cn5g-v1.3.pcap | egrep --colour=never "Tracking area update" ','\$', 30)
 			result = re.search('Tracking area update request', mySSH.getBefore())
 			if result is not None:
 				message = 'UE requested ' + str(mySSH.getBefore().count('Tracking area update request')) + 'Tracking area update request(s)'
@@ -833,8 +833,8 @@ class EPCManagement():
 				mySSH.command('zip mme.log.zip mme_check_run.*', '\$', 60)
 		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
 			mySSH.command('cd ' + self.SourceCodePath + '/logs','\$', 5)
-			mySSH.command('cp -f /tmp/oai-cn5g.pcap .','\$', 30)
-			mySSH.command('zip mme.log.zip oai-amf.log oai-nrf.log oai-cn5g.pcap','\$', 30)
+			mySSH.command('cp -f /tmp/oai-cn5g-v1.3.pcap .','\$', 30)
+			mySSH.command('zip mme.log.zip oai-amf.log oai-nrf.log oai-cn5g*.pcap','\$', 30)
 			mySSH.command('mv mme.log.zip ' + self.SourceCodePath + '/scripts','\$', 30)
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip mme.log.zip mme*.log', '\$', 60)
