@@ -64,12 +64,20 @@
         </div>
       </mat-header-cell>
       <mat-cell *matCellDef="let row; dataIndex as rowIndex">
-        <mat-form-field [ngSwitch]="col.type">
-          <mat-slide-toggle *ngSwitchCase="IOptionType.boolean" [formControl]="row.booleanFC"
-            [checked]="row.isEnabledFC.value" [disabled]="!col.modifiable"></mat-slide-toggle>
-          <input *ngSwitchCase="IOptionType.string" matInput [formControl]="row.stringFC"
-            [disabled]="!col.modifiable" />
-        </mat-form-field>
+
+        <div *ngIf="col.type === IOptionType.boolean; then toggle else default"></div>
+
+        <ng-template #toggle>
+          <mat-slide-toggle [formControl]="row[colIndex]" [checked]="row[colIndex].value" [disabled]="!col.modifiable">
+          </mat-slide-toggle>
+        </ng-template>
+
+        <ng-template #default>
+          <mat-form-field>
+            <input matInput [formControl]="row[colIndex]" [disabled]="!col.modifiable" />
+          </mat-form-field>
+        </ng-template>
+
       </mat-cell>
     </div>
 

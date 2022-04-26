@@ -3,9 +3,9 @@ import { Observable } from 'rxjs/internal/Observable';
 import { of } from 'rxjs/internal/observable/of';
 import { map } from 'rxjs/internal/operators/map';
 import { mergeMap } from 'rxjs/internal/operators/mergeMap';
-import { CommandsApi, IArgType, IColumn, ITable } from 'src/app/api/commands.api';
+import { CommandsApi, IArgType, IColumn } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
-import { RowCtrl } from 'src/app/controls/row.control';
+import { EntryFC } from 'src/app/controls/entry.control';
 import { VarCtrl } from 'src/app/controls/var.control';
 import { DialogService } from 'src/app/services/dialog.service';
 import { LoadingService } from 'src/app/services/loading.service';
@@ -35,7 +35,7 @@ export class CommandsComponent {
 
   //table columns
   displayedColumns: string[] = []
-  rows$: Observable<RowCtrl[]> = new Observable<RowCtrl[]>()
+  rows$: Observable<EntryFC[][]> = new Observable<EntryFC[][]>()
   columns: IColumn[] = []
 
   constructor(
@@ -103,8 +103,17 @@ export class CommandsComponent {
       map(resp => {
         this.columns = resp.table!.columns
         this.displayedColumns = this.columns.map(col => col.name)
-        let rows: RowCtrl[] = []
-        resp.table?.rows.map(row => this.columns.map(col => rows.push(new RowCtrl(row, col.type))))
+
+        let rows = [];
+
+        for (let i = 0; i < resp.table!.rows.length; i++) {
+          let row: EntryFC[] = []
+
+          for (let j = 0; j < this.columns.length; j++) {
+            row[j] = new EntryFC(resp.table!.rows[i][j], this.columns[j].type)
+          }
+          rows[i] = row
+        }
         return rows
       })
     );
