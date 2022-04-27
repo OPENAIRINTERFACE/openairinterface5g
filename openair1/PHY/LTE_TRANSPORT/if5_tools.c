@@ -1052,7 +1052,7 @@ static inline int64_t clock_difftime_ns(struct timespec start, struct timespec e
 void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seqno, uint16_t packet_type) {      
   
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
-  int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
+  int32_t *txp[ru->nb_tx], *rxp[ru->nb_rx]; 
   int32_t *tx_buffer=NULL;
   uint16_t packet_id=0, i=0;
 
@@ -1131,6 +1131,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
           //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
           clock_gettime( CLOCK_MONOTONIC, &start_comp);
+	  
           ru->ifdevice.trx_write_func2(&ru->ifdevice,
 	  			       (proc_timestamp + packet_id*spp_eth-600)*factor,
 				       (void*)txp[aid],
