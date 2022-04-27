@@ -82,15 +82,7 @@ To get the code and build the gNB executable:
     git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
     git checkout develop
     
-    # Install dependencies in Ubuntu 20.04
-    cd
-    cd openairinterface5g/
-    source oaienv
-    cd cmake_targets/
-    ./install_external_packages.ubuntu20
-    
     # Build OAI gNB
-    cd
     cd openairinterface5g/
     source oaienv
     cd cmake_targets/
