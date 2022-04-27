@@ -38,14 +38,15 @@ void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
                         int curr_bwp,
                         uint64_t ssb_bitmap) {
 
-  // frequency domain resources depends on BWP size
+
+  // frequency domain resources depending on BWP size
   coreset->frequencyDomainResources.buf = calloc(1,6);
   coreset->frequencyDomainResources.buf[0] = (curr_bwp < 48) ? 0xf0 : 0xff;
   coreset->frequencyDomainResources.buf[1] = (curr_bwp < 96) ? 0x00 : 0xff;
   coreset->frequencyDomainResources.buf[2] = (curr_bwp < 144) ? 0x00 : 0xff;
   coreset->frequencyDomainResources.buf[3] = (curr_bwp < 192) ? 0x00 : 0xff;
-  coreset->frequencyDomainResources.buf[4] = 0;
-  coreset->frequencyDomainResources.buf[5] = 0;
+  coreset->frequencyDomainResources.buf[4] = (curr_bwp < 240) ? 0x00 : 0xff;
+  coreset->frequencyDomainResources.buf[5] = 0x00;
   coreset->frequencyDomainResources.size = 6;
   coreset->frequencyDomainResources.bits_unused = 3;
   coreset->duration = (curr_bwp < 48) ? 2 : 1;
@@ -53,10 +54,12 @@ void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
   coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
   // The ID space is used across the BWPs of a Serving Cell as per 38.331
+  // Unique ID depending on BWP size
   coreset->controlResourceSetId = (coreset->frequencyDomainResources.buf[0] > 0) +
                                   (coreset->frequencyDomainResources.buf[1] > 0) +
                                   (coreset->frequencyDomainResources.buf[2] > 0) +
-                                  (coreset->frequencyDomainResources.buf[3] > 0);
+                                  (coreset->frequencyDomainResources.buf[3] > 0) +
+                                  (coreset->frequencyDomainResources.buf[4] > 0);
 
   coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
   NR_TCI_StateId_t *tci[64];
