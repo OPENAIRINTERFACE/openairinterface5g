@@ -31,9 +31,7 @@ This page is only valid for an `Ubuntu18` host.
 
 # 1. Retrieving the images on Docker-Hub #
 
-Currently the images are hosted under the user account `rdefosseoai`.
-
-This may change in the future.
+Currently the images are hosted under the team account `oaisoftwarealliance`. They were previously hosted under the user account `rdefosseoai`.
 
 Once again you may need to log on [docker-hub](https://hub.docker.com/) if your organization has reached pulling limit as `anonymous`.
 
@@ -49,13 +47,13 @@ Now pull images.
 ```bash
 $ docker pull cassandra:2.1
 $ docker pull redis:6.0.5
-$ docker pull rdefosseoai/oai-hss:latest
-$ docker pull rdefosseoai/magma-mme:latest
-$ docker pull rdefosseoai/oai-spgwc:latest
-$ docker pull rdefosseoai/oai-spgwu-tiny:latest
+$ docker pull oaisoftwarealliance/oai-hss:latest
+$ docker pull oaisoftwarealliance/magma-mme:latest
+$ docker pull oaisoftwarealliance/oai-spgwc:latest
+$ docker pull oaisoftwarealliance/oai-spgwu-tiny:latest
 
-$ docker pull rdefosseoai/oai-enb:develop
-$ docker pull rdefosseoai/oai-lte-ue:develop
+$ docker pull oaisoftwarealliance/oai-enb:develop
+$ docker pull oaisoftwarealliance/oai-lte-ue:develop
 ```
 
 If the `redis` tag is not available, pick the newest available `6.0.x` tag at [Docker Hub Redis Tags](https://hub.docker.com/_/redis?tab=tags).
@@ -63,13 +61,13 @@ If the `redis` tag is not available, pick the newest available `6.0.x` tag at [D
 And **re-tag** them for tutorials' docker-compose file to work.
 
 ```bash
-$ docker image tag rdefosseoai/oai-spgwc:latest oai-spgwc:latest
-$ docker image tag rdefosseoai/oai-hss:latest oai-hss:latest
-$ docker image tag rdefosseoai/oai-spgwu-tiny:latest oai-spgwu-tiny:latest 
-$ docker image tag rdefosseoai/magma-mme:latest magma-mme:latest
+$ docker image tag oaisoftwarealliance/oai-spgwc:latest oai-spgwc:latest
+$ docker image tag oaisoftwarealliance/oai-hss:latest oai-hss:latest
+$ docker image tag oaisoftwarealliance/oai-spgwu-tiny:latest oai-spgwu-tiny:latest 
+$ docker image tag oaisoftwarealliance/magma-mme:latest magma-mme:latest
 
-$ docker image tag rdefosseoai/oai-enb:develop oai-enb:develop
-$ docker image tag rdefosseoai/oai-lte-ue:develop oai-lte-ue:develop
+$ docker image tag oaisoftwarealliance/oai-enb:develop oai-enb:develop
+$ docker image tag oaisoftwarealliance/oai-lte-ue:develop oai-lte-ue:develop
 ```
 
 ```bash
