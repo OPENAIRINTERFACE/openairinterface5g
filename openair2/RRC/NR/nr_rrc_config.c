@@ -146,15 +146,16 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   int uid,
                   int num_dl_antenna_ports,
                   int curr_bwp,
-                  int do_csirs) {
+                  int do_csirs,
+                  int id) {
 
   if (do_csirs) {
 
     csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
     NR_NZP_CSI_RS_ResourceSet_t *nzpcsirs0 = calloc(1,sizeof(*nzpcsirs0));
-    nzpcsirs0->nzp_CSI_ResourceSetId = 0;
+    nzpcsirs0->nzp_CSI_ResourceSetId = id;
     NR_NZP_CSI_RS_ResourceId_t *nzpid0 = calloc(1,sizeof(*nzpid0));
-    *nzpid0 = 0;
+    *nzpid0 = id;
     ASN_SEQUENCE_ADD(&nzpcsirs0->nzp_CSI_RS_Resources,nzpid0);
     nzpcsirs0->repetition = NULL;
     nzpcsirs0->aperiodicTriggeringOffset = NULL;
@@ -228,6 +229,103 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
   csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
   csi_MeasConfig->nzp_CSI_RS_ResourceToReleaseList = NULL;
 }
+
+void set_csiim_offset(struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAndOffset,
+                      struct NR_CSI_ResourcePeriodicityAndOffset *target_periodicityAndOffset) {
+
+  switch(periodicityAndOffset->present) {
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots4:
+      periodicityAndOffset->choice.slots4 = target_periodicityAndOffset->choice.slots4;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots5:
+      periodicityAndOffset->choice.slots5 = target_periodicityAndOffset->choice.slots5;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots8:
+      periodicityAndOffset->choice.slots8 = target_periodicityAndOffset->choice.slots8;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots10:
+      periodicityAndOffset->choice.slots10 = target_periodicityAndOffset->choice.slots10;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots16:
+      periodicityAndOffset->choice.slots16 = target_periodicityAndOffset->choice.slots16;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots20:
+      periodicityAndOffset->choice.slots20 = target_periodicityAndOffset->choice.slots20;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots32:
+      periodicityAndOffset->choice.slots32 = target_periodicityAndOffset->choice.slots32;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots40:
+      periodicityAndOffset->choice.slots40 = target_periodicityAndOffset->choice.slots40;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots64:
+      periodicityAndOffset->choice.slots64 = target_periodicityAndOffset->choice.slots64;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots80:
+      periodicityAndOffset->choice.slots80 = target_periodicityAndOffset->choice.slots80;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots160:
+      periodicityAndOffset->choice.slots160 = target_periodicityAndOffset->choice.slots160;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots320:
+      periodicityAndOffset->choice.slots320 = target_periodicityAndOffset->choice.slots320;
+      break;
+    case NR_CSI_ResourcePeriodicityAndOffset_PR_slots640:
+      periodicityAndOffset->choice.slots640 = target_periodicityAndOffset->choice.slots640;
+      break;
+    default:
+      AssertFatal(1==0,"CSI periodicity not among allowed values\n");
+  }
+
+}
+
+void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig, int id) {
+
+ if (do_csirs && dl_antenna_ports > 1) {
+   csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
+   NR_CSI_IM_Resource_t *imres = calloc(1,sizeof(*imres));
+   imres->csi_IM_ResourceId = id;
+   NR_NZP_CSI_RS_Resource_t *nzpcsi = NULL;
+   for (int i=0; i<csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.count; i++){
+     nzpcsi = csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list.array[i];
+     if (nzpcsi->nzp_CSI_RS_ResourceId == imres->csi_IM_ResourceId)
+       break;
+   }
+   AssertFatal(nzpcsi->nzp_CSI_RS_ResourceId == imres->csi_IM_ResourceId, "Couldn't find NZP CSI-RS corresponding to CSI-IM\n");
+   imres->csi_IM_ResourceElementPattern = calloc(1,sizeof(*imres->csi_IM_ResourceElementPattern));
+   imres->csi_IM_ResourceElementPattern->present = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern_PR_pattern1;
+   imres->csi_IM_ResourceElementPattern->choice.pattern1 = calloc(1,sizeof(*imres->csi_IM_ResourceElementPattern->choice.pattern1));
+   // starting subcarrier is 4 in the following configuration
+   // this is ok for current possible CSI-RS configurations (using only the first 4 symbols)
+   // TODO needs a more dynamic setting if CSI-RS is changed
+   imres->csi_IM_ResourceElementPattern->choice.pattern1->subcarrierLocation_p1 = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern__pattern1__subcarrierLocation_p1_s4;
+   imres->csi_IM_ResourceElementPattern->choice.pattern1->symbolLocation_p1 = nzpcsi->resourceMapping.firstOFDMSymbolInTimeDomain; // same symbol as CSI-RS
+   imres->freqBand = calloc(1,sizeof(*imres->freqBand));
+   imres->freqBand->startingRB = 0;
+   imres->freqBand->nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
+   imres->periodicityAndOffset = calloc(1,sizeof(*imres->periodicityAndOffset));
+   // same period and offset of the associated CSI-RS
+   imres->periodicityAndOffset->present = nzpcsi->periodicityAndOffset->present;
+   set_csiim_offset(imres->periodicityAndOffset, nzpcsi->periodicityAndOffset);
+   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceToAddModList->list,imres);
+   csi_MeasConfig->csi_IM_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceSetToAddModList));
+   NR_CSI_IM_ResourceSet_t *imset = calloc(1,sizeof(*imset));
+   imset->csi_IM_ResourceSetId = id;
+   NR_CSI_IM_ResourceId_t *res = calloc(1,sizeof(*res));
+   *res = id;
+   ASN_SEQUENCE_ADD(&imset->csi_IM_Resources,res);
+   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceSetToAddModList->list,imset);
+ }
+ else {
+   csi_MeasConfig->csi_IM_ResourceToAddModList = NULL;
+   csi_MeasConfig->csi_IM_ResourceSetToAddModList = NULL;
+ }
+
+ csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
+ csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
+}
+
 
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        NR_ServingCellConfigCommon_t *scc,

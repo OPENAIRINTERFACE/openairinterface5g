@@ -651,47 +651,14 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
 
-  int curr_bwp = NRRIV2BW(PRBalloc_to_locationandbandwidth(servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,0),275);
-
- if (do_csirs && dl_antenna_ports > 1) {
-   csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
-   NR_CSI_IM_Resource_t *imres0 = calloc(1,sizeof(*imres0));
-   imres0->csi_IM_ResourceId = 0;
-   imres0->csi_IM_ResourceElementPattern = calloc(1,sizeof(*imres0->csi_IM_ResourceElementPattern));
-   imres0->csi_IM_ResourceElementPattern->present = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern_PR_pattern1;
-   imres0->csi_IM_ResourceElementPattern->choice.pattern1 = calloc(1,sizeof(*imres0->csi_IM_ResourceElementPattern->choice.pattern1));
-   imres0->csi_IM_ResourceElementPattern->choice.pattern1->subcarrierLocation_p1 = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern__pattern1__subcarrierLocation_p1_s4;
-   imres0->csi_IM_ResourceElementPattern->choice.pattern1->symbolLocation_p1 = 6;
-   imres0->freqBand = calloc(1,sizeof(*imres0->freqBand));
-   imres0->freqBand->startingRB = 0;
-   imres0->freqBand->nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
-   imres0->periodicityAndOffset = calloc(1,sizeof(*imres0->periodicityAndOffset));
-   imres0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-   imres0->periodicityAndOffset->choice.slots320 = 0;
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceToAddModList->list,imres0);
-   csi_MeasConfig->csi_IM_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceSetToAddModList));
-   NR_CSI_IM_ResourceSet_t *imset0 = calloc(1,sizeof(*imset0));
-   imset0->csi_IM_ResourceSetId = 0;
-   NR_CSI_IM_ResourceId_t *res0 = calloc(1,sizeof(*res0));
-   *res0 = 0;
-   ASN_SEQUENCE_ADD(&imset0->csi_IM_Resources,res0);
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceSetToAddModList->list,imset0);
- }
- else {
-   csi_MeasConfig->csi_IM_ResourceToAddModList = NULL;
-   csi_MeasConfig->csi_IM_ResourceSetToAddModList = NULL;
- }
-
- csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
- csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
-
- config_csirs(servingcellconfigcommon, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, do_csirs);
+ csi_MeasConfig->csi_ResourceConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ResourceConfigToAddModList));
+ csi_MeasConfig->csi_ResourceConfigToReleaseList = NULL;
 
  csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
 
  NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1,sizeof(*ssbresset0));
- ssbresset0->csi_SSB_ResourceSetId=0;
+ ssbresset0->csi_SSB_ResourceSetId = 0;
 
  NR_SSB_Index_t *ssbresset[64];
  for (int i=0;i<64;i++) {
@@ -703,46 +670,50 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  }
  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);
 
- csi_MeasConfig->csi_ResourceConfigToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_ResourceConfigToAddModList));
- csi_MeasConfig->csi_ResourceConfigToReleaseList = NULL;
+ for (int bwp_loop = 0; bwp_loop < n_dl_bwp; bwp_loop++) {
 
- if (do_csirs) {
-   NR_CSI_ResourceConfig_t *csires0 = calloc(1,sizeof(*csires0));
-   csires0->csi_ResourceConfigId=0;
-   csires0->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
-   csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
-   csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList = calloc(1,sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList));
-   NR_NZP_CSI_RS_ResourceSetId_t *nzp0 = calloc(1,sizeof(*nzp0));
-   *nzp0 = 0;
-   ASN_SEQUENCE_ADD(&csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list,nzp0);
-   csires0->bwp_Id = 1;
-   csires0->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires0);
- }
+  NR_BWP_Downlink_t *bwp = secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_loop];
+  int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
 
- NR_CSI_ResourceConfig_t *csires1 = calloc(1,sizeof(*csires1));
- csires1->csi_ResourceConfigId=1;
- csires1->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
- csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
- csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList = calloc(1,sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList));
- NR_CSI_SSB_ResourceSetId_t *ssbres00 = calloc(1,sizeof(*ssbres00));
- *ssbres00 = 0;
- ASN_SEQUENCE_ADD(&csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list,ssbres00);
- csires1->bwp_Id = 1;
- csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
- ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires1);
+   config_csirs(servingcellconfigcommon, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, do_csirs, bwp_loop);
+   config_csiim(do_csirs, dl_antenna_ports, curr_bwp, csi_MeasConfig, bwp_loop);
 
- if (do_csirs && dl_antenna_ports > 1) {
-   NR_CSI_ResourceConfig_t *csires2 = calloc(1,sizeof(*csires2));
-   csires2->csi_ResourceConfigId=2;
-   csires2->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_csi_IM_ResourceSetList;
-   csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList = calloc(1,sizeof(*csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList));
-   NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1,sizeof(*csiim00));
-   *csiim00 = 0;
-   ASN_SEQUENCE_ADD(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
-   csires2->bwp_Id = 1;
-   csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
+   if (do_csirs) {
+     NR_CSI_ResourceConfig_t *csires = calloc(1,sizeof(*csires));
+     csires->csi_ResourceConfigId = bwp->bwp_Id;
+     csires->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
+     csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
+     csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList = calloc(1,sizeof(*csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList));
+     NR_NZP_CSI_RS_ResourceSetId_t *nzp0 = calloc(1,sizeof(*nzp0));
+     *nzp0 = bwp_loop;
+     ASN_SEQUENCE_ADD(&csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list,nzp0);
+     csires->bwp_Id = bwp->bwp_Id;
+     csires->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
+     ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires);
+   }
+   if (do_csirs && dl_antenna_ports > 1) {
+     NR_CSI_ResourceConfig_t *csiresim = calloc(1,sizeof(*csiresim));
+     csiresim->csi_ResourceConfigId = bwp->bwp_Id+10;
+     csiresim->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_csi_IM_ResourceSetList;
+     csiresim->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList = calloc(1,sizeof(*csiresim->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList));
+     NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1,sizeof(*csiim00));
+     *csiim00 = bwp_loop;
+     ASN_SEQUENCE_ADD(&csiresim->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
+     csiresim->bwp_Id = bwp->bwp_Id;
+     csiresim->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
+     ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csiresim);
+   }
+   NR_CSI_ResourceConfig_t *ssbres = calloc(1,sizeof(*ssbres));
+   ssbres->csi_ResourceConfigId = bwp->bwp_Id+20;
+   ssbres->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
+   ssbres->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*ssbres->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
+   ssbres->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList = calloc(1,sizeof(*ssbres->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList));
+   NR_CSI_SSB_ResourceSetId_t *ssbres00 = calloc(1,sizeof(*ssbres00));
+   *ssbres00 = 0;
+   ASN_SEQUENCE_ADD(&ssbres->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list,ssbres00);
+   ssbres->bwp_Id = bwp->bwp_Id;
+   ssbres->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
+   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,ssbres);
  }
 
  NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1,sizeof(*pucchcsires1));
