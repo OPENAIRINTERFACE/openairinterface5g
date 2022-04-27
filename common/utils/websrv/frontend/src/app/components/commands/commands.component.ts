@@ -4,9 +4,9 @@ import { of } from 'rxjs/internal/observable/of';
 import { map } from 'rxjs/internal/operators/map';
 import { mergeMap } from 'rxjs/internal/operators/mergeMap';
 import { filter } from 'rxjs/operators';
-import { CommandsApi, IArgType, IColumn } from 'src/app/api/commands.api';
+import { CommandsApi, IArgType, IColumn, ICommand } from 'src/app/api/commands.api';
 import { CmdCtrl } from 'src/app/controls/cmd.control';
-import { EntryFC } from 'src/app/controls/entry.control';
+import { Param, ParamFC } from 'src/app/controls/param.control';
 import { VarCtrl } from 'src/app/controls/var.control';
 import { DialogService } from 'src/app/services/dialog.service';
 import { LoadingService } from 'src/app/services/loading.service';
@@ -24,19 +24,14 @@ export class CommandsComponent {
   vars$: Observable<VarCtrl[]>
   modules$: Observable<CmdCtrl[]>
   selectedModule?: CmdCtrl
-  // selectedVar?: VarCtrl
+  selectedCmd?: ICommand
 
-  subvars$?: Observable<VarCtrl[]>
-  cmds$?: Observable<CmdCtrl[]>
-  // selectedSubCmd?: CmdCtrl
-  // selectedSubVar?: VarCtrl
-
-  args$?: Observable<VarCtrl[]>
-  // selectedArg?: VarCtrl
+  modulevars$?: Observable<VarCtrl[]>
+  modulecmds$?: Observable<CmdCtrl[]>
 
   //table columns
   displayedColumns: string[] = []
-  rows$: Observable<EntryFC[][]> = new Observable<EntryFC[][]>()
+  rows$: Observable<ParamFC[][]> = new Observable<ParamFC[][]>()
   columns: IColumn[] = []
 
   constructor(
@@ -49,8 +44,7 @@ export class CommandsComponent {
     );
 
     this.modules$ = this.commandsApi.readCommands$().pipe(
-      map((cmds) => cmds.map(icmd => new CmdCtrl(icmd))),
-      // tap(controls => [this.selectedCmd] = controls)
+      map((cmds) => cmds.map(icmd => new CmdCtrl(icmd)))
     );
   }
 
@@ -59,22 +53,12 @@ export class CommandsComponent {
 
     this.selectedModule = control
 
-    this.cmds$ = this.commandsApi.readCommands$(`${control.nameFC.value}`).pipe(
+    this.modulecmds$ = this.commandsApi.readCommands$(`${control.nameFC.value}`).pipe(
       map(icmds => icmds.map(icmd => new CmdCtrl(icmd)))
     )
 
-    this.subvars$ = this.commandsApi.readVariables$(`${control.nameFC.value}`).pipe(
+    this.modulevars$ = this.commandsApi.readVariables$(`${control.nameFC.value}`).pipe(
       map(ivars => ivars.map(ivar => new VarCtrl(ivar))),
-      // tap(controls => [this.selectedSubVar] = controls)
-    )
-  }
-
-  onCmdSelect(control: CmdCtrl) {
-
-    // this.selectedSubCmd = control
-
-    this.args$ = this.commandsApi.readVariables$(`${this.selectedModule!.nameFC.value}/${control.nameFC.value}`).pipe(
-      map(ivars => ivars.map(ivar => new VarCtrl(ivar)))
     )
   }
 
@@ -82,7 +66,7 @@ export class CommandsComponent {
     this.commandsApi.setVariable$(control.api()).subscribe();
   }
 
-  onSubVarSubmit(control: VarCtrl) {
+  onModuleVarsubmit(control: VarCtrl) {
     this.commandsApi.setVariable$(control.api(), `${this.selectedModule!.nameFC.value}`)
       .pipe(
         map(resp => this.dialogService.openRespDialog(resp))
@@ -90,9 +74,12 @@ export class CommandsComponent {
   }
 
   onCmdSubmit(control: CmdCtrl) {
+    this.selectedCmd = control.api()
 
     const obs = control.confirm
-      ? this.dialogService.openConfirmDialog(control.confirm).pipe(filter(confirmed => confirmed))
+      ? this.dialogService.openConfirmDialog(control.confirm).pipe(
+        filter(confirmed => confirmed)
+      )
       : of(null)
 
     this.rows$ = obs.pipe(
@@ -108,16 +95,26 @@ export class CommandsComponent {
         let rows = [];
 
         for (let i = 0; i < resp.table!.rows.length; i++) {
-          let row: EntryFC[] = []
+          let row: Param[] = []
 
           for (let j = 0; j < this.columns.length; j++) {
-            row[j] = new EntryFC(resp.table!.rows[i][j], this.columns[j].type)
+            row[j] = new Param(
+              resp.table!.rows[i][j],
+              this.columns[j],
+              j,
+              this.selectedModule!.nameFC.value,
+              this.selectedCmd!.name
+            )
           }
-          rows[i] = row
+          rows[i] = row.map(param => new ParamFC(param))
         }
         return rows
       })
     );
+  }
+
+  onParamSubmit(row: ParamFC[]) {
+    row.map(paramFC => this.commandsApi.setParam$(paramFC.api()).subscribe());
   }
 
 

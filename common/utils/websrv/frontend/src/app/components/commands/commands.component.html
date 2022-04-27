@@ -1,89 +1,121 @@
-<div *ngIf="vars$ | async as vars">
-  <h1 mat-dialog-title>Softmodem variables</h1>
-  <div *ngFor="let variable of vars">
-    <mat-form-field>
-      <mat-label>{{ variable.nameFC.value }}</mat-label>
-      <input input matInput [formControl]="variable.valueFC" />
-    </mat-form-field>
-    <button mat-raised-button color="primary" [disabled]="!variable.modifiableFC.value" (click)="onVarSubmit(variable)">
-      set
-    </button>
-  </div>
-</div>
+<div class="grid-container">
+  <mat-grid-list cols="2" rowHeight="200px">
+    <mat-grid-tile [colspan]="1" [rowspan]="2">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>Softmodem variables</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+          <div *ngIf="vars$ | async as vars">
+            <div *ngFor="let variable of vars">
+              <mat-form-field>
+                <mat-label>{{ variable.nameFC.value }}</mat-label>
+                <input input matInput [formControl]="variable.valueFC" />
+              </mat-form-field>
+              <button mat-raised-button color="primary" [disabled]="!variable.modifiableFC.value"
+                (click)="onVarSubmit(variable)">
+                set
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
 
-<div *ngIf="modules$ | async as modules" fxLaypout="row">
-  <mat-form-field>
-    <mat-label>Module</mat-label>
-    <mat-select (selectionChange)="onModuleSelect($event.value)">
-      <mat-option *ngFor="let module of modules" [value]="module"> {{ module.nameFC.value }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
-</div>
+    <mat-grid-tile [colspan]="1" [rowspan]="2">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>Softmodem commands</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+          <div *ngIf="modules$ | async as modules" fxLaypout="row">
+            <mat-form-field>
+              <mat-label>Module</mat-label>
+              <mat-select (selectionChange)="onModuleSelect($event.value)">
+                <mat-option *ngFor="let module of modules" [value]="module"> {{ module.nameFC.value }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div *ngIf="modulecmds$ | async as cmds">
+            <div *ngIf="cmds.length">
+              <div *ngFor="let cmd of cmds" fxLayoutGap="10px" fxLayoutAlign="start start">
+                <button mat-raised-button color="primary" (click)="onCmdSubmit(cmd)"> {{cmd.nameFC.value}} </button>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
 
-<div *ngIf="selectedModule">
-  <h1 mat-dialog-title>{{ selectedModule!.nameFC.value }} module</h1>
+    <mat-grid-tile *ngIf="modulevars$ | async as modulevars" [colspan]="1" [rowspan]="6">
+      <mat-card *ngIf="modulevars.length" class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>{{ selectedModule!.nameFC.value }} variables</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+          <div *ngFor="let variable of modulevars">
+            <mat-form-field>
+              <mat-label>{{ variable.nameFC.value }}</mat-label>
+              <input input matInput [formControl]="variable.valueFC" />
+            </mat-form-field>
+            <button mat-raised-button color="primary" [disabled]="!variable.modifiableFC.value"
+              (click)="onModuleVarsubmit(variable)">
+              set
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
 
-  <div *ngIf="subvars$ | async as subvars" fxLaypout="column">
-    <div *ngIf="subvars.length">
-      <h2 mat-dialog-title>Variables</h2>
-      <div *ngFor="let variable of subvars">
-        <mat-form-field>
-          <mat-label>{{ variable.nameFC.value }}</mat-label>
-          <input input matInput [formControl]="variable.valueFC" />
-        </mat-form-field>
-        <button mat-raised-button color="primary" [disabled]="!variable.modifiableFC.value"
-          (click)="onSubVarSubmit(variable)">
-          set
-        </button>
-      </div>
-    </div>
-  </div>
+    <mat-grid-tile *ngIf="selectedCmd" [colspan]="1" [rowspan]="10">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>{{ selectedModule!.nameFC.value }} {{ selectedCmd.name }} </mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
 
-  <div *ngIf="cmds$ | async as cmds">
-    <div *ngIf="cmds.length">
-      <h2 mat-dialog-title>Commands</h2>
-      <div *ngFor="let cmd of cmds" fxLayoutGap="10px">
-        <button mat-raised-button color="primary" (click)="onCmdSubmit(cmd)"> {{cmd.nameFC.value}} </button>
-      </div>
-    </div>
-  </div>
+          <mat-table mat-table [dataSource]="rows$" multiTemplateDataRows class="mat-elevation-z8">
 
-
-  <mat-table mat-table [dataSource]="rows$" multiTemplateDataRows class="mat-elevation-z8">
-
-    <!-- For anyone who has set the multiTemplateDataRows property of mat-table to true,
+            <!-- For anyone who has set the multiTemplateDataRows property of mat-table to true,
               you can't use index. Instead you have use either dataIndex or renderIndex.
               See https://github.com/angular/material2/issues/12793 -->
 
 
-    <div *ngFor="let col of columns; index as colIndex" matColumnDef="{{col.name}}">
-      <mat-header-cell *matHeaderCellDef>
-        <div>
-          <h4>{{ col.name }}</h4>
-        </div>
-      </mat-header-cell>
-      <mat-cell *matCellDef="let row; dataIndex as rowIndex">
+            <div *ngFor="let col of columns; index as colIndex" matColumnDef="{{col.name}}">
+              <mat-header-cell *matHeaderCellDef>
+                <div>
+                  <h4>{{ col.name }}</h4>
+                </div>
+              </mat-header-cell>
+              <mat-cell *matCellDef="let row; dataIndex as rowIndex">
 
-        <div *ngIf="col.type === IOptionType.boolean; then toggle else default"></div>
+                <div *ngIf="col.type === IOptionType.boolean; then toggle else default"> </div>
+                <!-- <button mat-raised-button color="primary" (click)="onParamSubmit(row)"> set </button> -->
 
-        <ng-template #toggle>
-          <mat-slide-toggle [formControl]="row[colIndex]" [checked]="row[colIndex].value" [disabled]="!col.modifiable">
-          </mat-slide-toggle>
-        </ng-template>
+                <ng-template #toggle>
+                  <mat-slide-toggle [formControl]="row[colIndex]" [checked]="row[colIndex].value"
+                    [disabled]="!col.modifiable" (change)="onParamSubmit(row)">
+                  </mat-slide-toggle>
+                </ng-template>
 
-        <ng-template #default>
-          <mat-form-field>
-            <input matInput [formControl]="row[colIndex]" [disabled]="!col.modifiable" />
-          </mat-form-field>
-        </ng-template>
+                <ng-template #default>
+                  <mat-form-field>
+                    <input matInput [formControl]="row[colIndex]" [disabled]="!col.modifiable" />
+                  </mat-form-field>
+                </ng-template>
 
-      </mat-cell>
-    </div>
+              </mat-cell>
+            </div>
 
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: displayedColumns" (keydown.enter)="onParamSubmit(row)"></mat-row>
 
-  </mat-table>
+          </mat-table>
 
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+  </mat-grid-list>
 </div>

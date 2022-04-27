@@ -31,14 +31,12 @@ import { AppComponent } from './app.component';
 import { CommandsComponent } from './components/commands/commands.component';
 import { ConfirmDialogComponent } from './components/confirm/confirm.component';
 import { ErrorDialogComponent } from './components/error-dialog/error-dialog.component';
-import { NavComponent } from './components/nav/nav.component';
 import { InterceptorProviders } from './interceptors/interceptors';
 import { LoadingService } from './services/loading.service';
 
 @NgModule({
   declarations: [
     AppComponent,
-    NavComponent,
     ErrorDialogComponent,
     CommandsComponent,
     ConfirmDialogComponent
@@ -48,29 +46,23 @@ import { LoadingService } from './services/loading.service';
     AppRoutingModule,
     BrowserAnimationsModule,
     HttpClientModule,
-    ClipboardModule,
     MatFormFieldModule,
     MatInputModule,
     ReactiveFormsModule,
-    MatChipsModule,
+    // MatChipsModule,
     MatProgressSpinnerModule,
-    MatIconModule,
     MatButtonModule,
     FlexLayoutModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
     MatToolbarModule,
-    MatSidenavModule,
-    MatListModule,
+    // MatListModule,
     MatTableModule,
-    MatPaginatorModule,
     MatSelectModule,
     MatDialogModule,
     MatSnackBarModule,
     MatSlideToggleModule,
     MatGridListModule,
     MatCardModule,
-    MatMenuModule,
+    // MatMenuModule,
   ],
   providers: [
     // services

@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
+import { Param, ParamFC } from '../controls/param.control';
 
 
 export interface IVariable {
@@ -72,12 +73,12 @@ export class CommandsApi {
 
     public setVariable$ = (variable: IVariable, moduleName?: string) => this.httpClient.post<IResp>(environment.backend + route + (moduleName ? ('/' + moduleName) : "") + '/variables/', variable);
 
-    public setParam$ = (moduleName: string, cmdName: string, colName: string, rawIndex: number, value: string) => this.httpClient.post<IResp>(environment.backend + route + '/' + moduleName + '/set',
+    public setParam$ = (param: Param) => this.httpClient.post<IResp>(environment.backend + route + '/' + param.moduleName + '/set',
         {
-            cmdName: cmdName,
-            colName: colName,
-            rawIndex: rawIndex,
-            value: value
+            cmdName: param.cmdName,
+            colName: param.col.name,
+            rawIndex: param.rawIndex,
+            value: param.value
         }
     );
 
