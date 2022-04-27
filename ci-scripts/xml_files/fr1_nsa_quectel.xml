@@ -146,8 +146,8 @@
 
 	<testCase id="070003">
 		<class>Iperf</class>
-		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 3M -t 60</iperf_args>
+		<desc>iperf (UL/8Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 8M -t 60</iperf_args>
 		<direction>UL</direction>
 		<id>idefix</id>
 		<iperf_packetloss_threshold>1</iperf_packetloss_threshold>
