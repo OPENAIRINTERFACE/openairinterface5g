@@ -181,9 +181,10 @@ typedef struct {
   /// Pointers to transport block segments
   uint8_t **c;
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
+  /// Accumulates the soft bits for each round to increase decoding success (HARQ)
   int16_t **d;
   /// Index of current HARQ round for this DLSCH
-  uint8_t round;
+  uint8_t DLround;
   /// MCS table for this DLSCH
   uint8_t mcs_table;
   /// MCS format for this DLSCH

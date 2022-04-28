@@ -587,9 +587,6 @@ typedef struct gNB_L1_proc_t_s {
   int instance_cnt_te;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-
-  // instance count for over-the-air gNB synchronization
-  int instance_cnt_synch;
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
   /// pthread structure for eNB single processing thread
@@ -661,8 +658,6 @@ typedef struct {
   unsigned int   n0_power_tot;
   //! estimated avg noise power (dB)
   unsigned int n0_power_tot_dB;
-  //! estimated avg noise power (dB)
-  int n0_power_tot_dBm;
   //! estimated avg noise power per RB per RX ant (lin)
   unsigned int n0_subband_power[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB per RX ant (dB)

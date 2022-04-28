@@ -308,7 +308,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 #endif
 
       int freq_offset_sss = 0;
-      rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss);
+      ret = rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss);
 
       accumulated_freq_offset += freq_offset_sss;
 
@@ -336,8 +336,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         }
       }
 
-      nr_gold_pbch(ue);
-      ret = nr_pbch_detection(proc, ue, 1, &phy_pdcch_config);  // start pbch detection at first symbol after pss
+      if (ret==0) { //we got sss channel
+        nr_gold_pbch(ue);
+        ret = nr_pbch_detection(proc, ue, 1, &phy_pdcch_config);  // start pbch detection at first symbol after pss
+      }
 
       if (ret == 0) {
         // sync at symbol ue->symbol_offset

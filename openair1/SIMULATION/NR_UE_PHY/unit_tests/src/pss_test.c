@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
   uint8_t nb_antennas_rx = 1;
   uint16_t Nid_cell=123;
   uint8_t frame_type=FDD;
-  uint8_t N_RB_DL=100;
+  int N_RB_DL=100;
   lte_prefix_type_t extended_prefix_flag=NORMAL;
   const char *name_test = "PSS NR";
   test_t test = { name_test, 0, 0, 0, 0};

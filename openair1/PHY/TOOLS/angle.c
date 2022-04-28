@@ -29,7 +29,7 @@
 #include "costable.h"
 #include "defs.h"
 
-unsigned int angle(struct complex16 perror)
+unsigned int angle(c16_t perror)
 {
   int a;
 

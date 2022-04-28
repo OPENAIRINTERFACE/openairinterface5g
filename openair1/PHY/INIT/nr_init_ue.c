@@ -359,6 +359,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       ue->nr_srs_info->srs_estimated_channel_time_shifted[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
     }
 
+
     // RACH
     prach_vars[gNB_id]->prachF             = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
     prach_vars[gNB_id]->prach              = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
@@ -455,6 +456,7 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
+
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
     }
 
