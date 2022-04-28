@@ -76,6 +76,10 @@ void freq2time(uint16_t ofdm_symbol_size,
   }
 }
 
+// Table 6.4.1.1.3-1/2 from TS 38.211
+const uint16_t delta1[8] = {0, 0, 1, 1, 0, 0, 1, 1};
+const uint16_t delta2[12] = {0, 0, 2, 2, 4, 4, 0, 0, 2, 2, 4, 4};
+
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
                                 unsigned short p,
@@ -86,7 +90,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
-  unsigned short k;
+  unsigned short k0;
   unsigned int pilot_cnt,re_cnt;
   int16_t ch[2],ch_r[2],ch_l[2],*pil,*rxF,*ul_ch;
   int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
@@ -112,18 +116,18 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   symbol_offset = gNB->frame_parms.ofdm_symbol_size*symbol;
 
-  k = bwp_start_subcarrier;
+  k0 = bwp_start_subcarrier;
   int re_offset;
 
   uint16_t nb_rb_pusch = pusch_pdu->rb_size;
 
-  LOG_D(PHY, "In %s: ch_offset %d, soffset %d, symbol_offset %d OFDM size %d, Ns = %d, k = %d symbol %d\n",
+  LOG_D(PHY, "In %s: ch_offset %d, soffset %d, symbol_offset %d, OFDM size %d, Ns = %d, k0 = %d, symbol %d\n",
         __FUNCTION__,
         ch_offset, soffset,
         symbol_offset,
         gNB->frame_parms.ofdm_symbol_size,
         Ns,
-        k,
+        k0,
         symbol);
 
   switch (nushift) {
@@ -206,60 +210,92 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   }
 #endif
 
+  // Based on Table 6.4.1.1.3-1/2 from TS 38.211
+  int delta = 0;
+  //int deltas[3] = {0};
+  //int n_delta = 0;
+  if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1) {
+    delta = delta1[p];
+    /*if (pusch_pdu->nrOfLayers <= 2) {
+      n_delta = 1;
+    } else {
+      n_delta = 2;
+      deltas[1] = 1;
+    }*/
+  } else {
+    delta = delta2[p];
+    /*if (pusch_pdu->nrOfLayers <= 2) {
+      n_delta = 1;
+    } else if (pusch_pdu->nrOfLayers <= 4) {
+      n_delta = 2;
+      deltas[1] = 2;
+    } else {
+      n_delta = 3;
+      deltas[1] = 2;
+      deltas[2] = 4;
+    }*/
+  }
+
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
-    re_offset = k;   /* Initializing the Resource element offset for each Rx antenna */
-
     pil   = (int16_t *)&pilot[0];
-    rxF   = (int16_t *)&rxdataF[aarx][(soffset+symbol_offset+k+nushift)];
+    rxF   = (int16_t *)&rxdataF[aarx][(soffset + symbol_offset + k0 + nushift)];
     ul_ch = (int16_t *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
-    re_offset = k;
+    re_offset = k0;
 
     memset(ul_ch,0,4*(gNB->frame_parms.ofdm_symbol_size));
 
 #ifdef DEBUG_PUSCH
     LOG_I(PHY, "In %s symbol_offset %d, nushift %d\n", __FUNCTION__, symbol_offset, nushift);
     LOG_I(PHY, "In %s ch est pilot addr %p, N_RB_UL %d\n", __FUNCTION__, &pilot[0], gNB->frame_parms.N_RB_UL);
-    LOG_I(PHY, "In %s bwp_start_subcarrier %d, k %d, first_carrier %d, nb_rb_pusch %d\n", __FUNCTION__, bwp_start_subcarrier, k, gNB->frame_parms.first_carrier_offset, nb_rb_pusch);
+    LOG_I(PHY, "In %s bwp_start_subcarrier %d, k0 %d, first_carrier %d, nb_rb_pusch %d\n", __FUNCTION__, bwp_start_subcarrier, k0, gNB->frame_parms.first_carrier_offset, nb_rb_pusch);
     LOG_I(PHY, "In %s rxF addr %p p %d\n", __FUNCTION__, rxF, p);
     LOG_I(PHY, "In %s ul_ch addr %p nushift %d\n", __FUNCTION__, ul_ch, nushift);
 #endif
-    //if ((gNB->frame_parms.N_RB_UL&1)==0) {
 
     if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && gNB->prb_interpolation == 0){
 
       LOG_D(PHY,"PUSCH estimation DMRS type 1, Freq-domain interpolation");
 
-      for (pilot_cnt = 0; pilot_cnt < 6*nb_rb_pusch; pilot_cnt++) {
+      // For configuration type 1: k = 4*n + 2*k' + delta,
+      // where k' is 0 or 1, and delta is in Table 6.4.1.1.3-1 from TS 38.211
 
-        ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-        ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      pilot_cnt = 0;
+      for (int n = 0; n < 3*nb_rb_pusch; n++) {
+        for (int k_line = 0; k_line <= 1; k_line++) {
+
+          pilot_cnt++;
+
+          re_offset = (k0 + (n<<2) + (k_line<<1) + delta) % gNB->frame_parms.ofdm_symbol_size;
+          rxF = (int16_t *)&rxdataF[aarx][(soffset + symbol_offset + re_offset)];
+
+          ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+          ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
 #ifdef DEBUG_PUSCH
-        printf("pilot %4u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d)\n",
-               pilot_cnt, pil[0], pil[1], rxF[0], rxF[1], ch[0], ch[1]);
-        //printf("data %4u: rxF -> (%4d,%4d) (%2d)\n",pilot_cnt, rxF[2], rxF[3], dBc(rxF[2], rxF[3]));
+          printf("pilot %4u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d)\n",
+                 pilot_cnt, pil[0], pil[1], rxF[0], rxF[1], ch[0], ch[1]);
+          //printf("data %4u: rxF -> (%4d,%4d) (%2d)\n",pilot_cnt, rxF[2], rxF[3], dBc(rxF[2], rxF[3]));
 #endif
 
-        if (pilot_cnt == 0) {
-          multadd_real_vector_complex_scalar(fl, ch, ul_ch, 8);
-        } else if (pilot_cnt == 1) {
-          multadd_real_vector_complex_scalar(fml, ch, ul_ch, 8);
-        } else if (pilot_cnt == (6*nb_rb_pusch-2)) {
-          multadd_real_vector_complex_scalar(fmr, ch, ul_ch, 8);
-          ul_ch+=8;
-        } else if (pilot_cnt == (6*nb_rb_pusch-1)) {
-          multadd_real_vector_complex_scalar(fr, ch, ul_ch, 8);
-        } else if (pilot_cnt%2 == 0) {
-          multadd_real_vector_complex_scalar(fmm, ch, ul_ch, 8);
-          ul_ch+=8;
-        } else {
-          multadd_real_vector_complex_scalar(fm, ch, ul_ch, 8);
-        }
+          if (pilot_cnt == 0) {
+            multadd_real_vector_complex_scalar(fl, ch, ul_ch, 8);
+          } else if (pilot_cnt == 1) {
+            multadd_real_vector_complex_scalar(fml, ch, ul_ch, 8);
+          } else if (pilot_cnt == (6*nb_rb_pusch-2)) {
+            multadd_real_vector_complex_scalar(fmr, ch, ul_ch, 8);
+            ul_ch+=8;
+          } else if (pilot_cnt == (6*nb_rb_pusch-1)) {
+            multadd_real_vector_complex_scalar(fr, ch, ul_ch, 8);
+          } else if (pilot_cnt%2 == 0) {
+            multadd_real_vector_complex_scalar(fmm, ch, ul_ch, 8);
+            ul_ch+=8;
+          } else {
+            multadd_real_vector_complex_scalar(fm, ch, ul_ch, 8);
+          }
 
-        pil += 2;
-        re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
-        rxF = (int16_t *)&rxdataF[aarx][(soffset+symbol_offset+nushift+re_offset)];
+          pil += 2;
+        }
       }
 
       // check if PRB crosses DC and improve estimates around DC
@@ -267,7 +303,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ul_ch = (int16_t *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
         uint16_t idxDC = 2*(gNB->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
         uint16_t idxPil = idxDC/2;
-        re_offset = k;
+        re_offset = k0;
         pil = (int16_t *)&pilot[0];
         pil += (idxPil-2);
         ul_ch += (idxDC-4);
