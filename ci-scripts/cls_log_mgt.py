@@ -81,11 +81,11 @@ class Log_Mgt:
 	def LogRotation(self):
 		doLoop = True
 		nbDays = 14
-		while doLoop and nbDays > 2:
+		while doLoop and nbDays > 1:
 			used_space = self.__CheckUsedSpace() #avail space in target folder
 			if used_space > 80 :
 				logging.debug('\u001B[1;37;41m  Used Disk (' + str(used_space) + '%) > 80%, on '  + self.Username+'@'+self.IPAddress + '\u001B[0m')
-				logging.debug('\u001B[1;37;41m  Removing Artifacts older than ' + nbDays + ' days \u001B[0m')
+				logging.debug('\u001B[1;37;41m  Removing Artifacts older than ' + str(nbDays) + ' days \u001B[0m')
 				self.__RemoveOldest(nbDays)
 				nbDays -= 1
 			else:

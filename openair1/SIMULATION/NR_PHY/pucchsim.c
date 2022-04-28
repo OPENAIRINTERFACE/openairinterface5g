@@ -552,7 +552,7 @@ int main(int argc, char **argv)
 
       if (n_trials==1) printf("txlev %d (%f dB), offset %d, sigma2 %f ( %f dB)\n",txlev,10*log10(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size,sigma2,sigma2_dB);
 
-      struct complex16 **rxdataF =  (struct complex16 **)gNB->common_vars.rxdataF;
+      c16_t **rxdataF =  (struct complex16 **)gNB->common_vars.rxdataF;
       for (int symb=0; symb<gNB->frame_parms.symbols_per_slot;symb++) {
         if (symb<startingSymbolIndex || symb >= startingSymbolIndex+nrofSymbols) {
           int i0 = symb*gNB->frame_parms.ofdm_symbol_size;

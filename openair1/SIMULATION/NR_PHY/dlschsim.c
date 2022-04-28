@@ -481,13 +481,10 @@ int main(int argc, char **argv)
 	harq_process->n_dmrs_cdm_groups = 1;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 
-	unsigned char *test_input;
-	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
+	unsigned char *test_input=dlsch->harq_process.pdu;
 	//unsigned char test_input[TBS / 8]  __attribute__ ((aligned(16)));
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
-
-	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_NR_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%hhu \n",test_input[i]);
@@ -501,7 +498,7 @@ int main(int argc, char **argv)
 	    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
     bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 	if (input_fd == NULL) {
-	  nr_dlsch_encoding(gNB, test_input, frame, slot, dlsch, frame_parms,output,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+	  nr_dlsch_encoding(gNB, frame, slot, &dlsch->harq_process, frame_parms,output,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -620,8 +617,6 @@ int main(int argc, char **argv)
 	 r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	 }
 	 }*/
-
-  free(test_input);
 
   free_channel_desc_scm(gNB2UE);
 

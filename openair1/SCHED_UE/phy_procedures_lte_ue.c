@@ -574,7 +574,7 @@ void get_cqipmiri_params(PHY_VARS_UE *ue,
   }
 }
 
-PUCCH_FMT_t get_pucch_format(lte_frame_type_t frame_type,
+PUCCH_FMT_t get_pucch_format(frame_type_t frame_type,
                              lte_prefix_type_t cyclic_prefix_type,
                              uint8_t SR_payload,
                              uint8_t nb_cw,
@@ -4869,110 +4869,4 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,
 
   LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, subframe_rx);
   return (0);
-}
-
-
-void phy_procedures_UE_lte(PHY_VARS_UE *ue,
-                           UE_rxtx_proc_t *proc,
-                           uint8_t eNB_id,
-                           uint8_t abstraction_flag,
-                           uint8_t do_pdcch_flag,
-                           runmode_t mode) {
-  MessageDef   *msg_p;
-  int           result;
-  int           frame_rx = proc->frame_rx;
-  int           frame_tx = proc->frame_tx;
-  int           subframe_rx = proc->subframe_rx;
-  int           subframe_tx = proc->subframe_tx;
-  UE_L2_STATE_t ret;
-  int slot;
-
-  if (ue->mac_enabled == 0) {
-    ue->UE_mode[eNB_id]=PUSCH;
-  }
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,1);
-
-  if ( LOG_DEBUGFLAG(UE_TIMING)) {
-    start_meas(&ue->phy_proc[ue->current_thread_id[subframe_rx]]);
-  }
-  do {
-    // Checks if a message has been sent to PHY sub-task
-    itti_poll_msg (TASK_PHY_UE, &msg_p);
-
-    if (msg_p != NULL) {
-      switch (ITTI_MSG_ID(msg_p)) {
-        case PHY_FIND_CELL_REQ:
-          LOG_I(PHY, "[UE ] Received %s\n", ITTI_MSG_NAME (msg_p));
-          /* TODO process the message */
-          break;
-
-        default:
-          LOG_E(PHY, "[UE %ld] Received unexpected message %s\n", ITTI_MSG_DESTINATION_INSTANCE (msg_p), ITTI_MSG_NAME (msg_p));
-          break;
-      }
-
-      result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
-      AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    }
-  } while(msg_p != NULL);
-
-  for (slot=0; slot<2; slot++) {
-    if ((subframe_select(&ue->frame_parms,subframe_tx)==SF_UL)||
-        (ue->frame_parms.frame_type == FDD)) {
-      phy_procedures_UE_TX(ue,proc,eNB_id,abstraction_flag,mode);
-    }
-
-    if ((subframe_select(&ue->frame_parms,subframe_rx)==SF_DL) ||
-        (ue->frame_parms.frame_type == FDD)) {
-      phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,do_pdcch_flag,mode);
-    }
-
-    if ((subframe_select(&ue->frame_parms,subframe_tx)==SF_S) &&
-        (slot==1)) {
-      phy_procedures_UE_S_TX(ue,eNB_id,abstraction_flag);
-    }
-
-    if ((subframe_select(&ue->frame_parms,subframe_rx)==SF_S) &&
-        (slot==0)) {
-      phy_procedures_UE_RX(ue,proc,eNB_id,abstraction_flag,do_pdcch_flag,mode);
-    }
-
-    if (ue->mac_enabled==1) {
-      if (slot==0) {
-        //LOG_I(PHY,"[UE %d] Frame %d, subframe %d, star ue_scheduler\n", ue->Mod_id,frame_rx,subframe_tx);
-        ret = ue_scheduler(ue->Mod_id,
-                           frame_rx,
-                           subframe_rx,
-                           frame_tx,
-                           subframe_tx,
-                           subframe_select(&ue->frame_parms,subframe_tx),
-                           eNB_id,
-                           0/*FIXME CC_id*/);
-
-        if (ret == CONNECTION_LOST) {
-          LOG_E(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, returning to PRACH\n",ue->Mod_id,
-                frame_rx,subframe_tx);
-          ue->UE_mode[eNB_id] = PRACH;
-          //      mac_xface->macphy_exit("Connection lost");
-        } else if (ret == PHY_RESYNCH) {
-          LOG_E(PHY,"[UE %d] Frame %d, subframe %d RRC Connection lost, trying to resynch\n",
-                ue->Mod_id,
-                frame_rx,subframe_tx);
-          ue->UE_mode[eNB_id] = RESYNCH;
-          //     mac_xface->macphy_exit("Connection lost");
-        } else if (ret == PHY_HO_PRACH) {
-          LOG_I(PHY,"[UE %d] Frame %d, subframe %d, return to PRACH and perform a contention-free access\n",
-                ue->Mod_id,frame_rx,subframe_tx);
-          ue->UE_mode[eNB_id] = PRACH;
-        }
-      }
-    }
-
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,0);
-
-    if (LOG_DEBUGFLAG(UE_TIMING)) {
-      stop_meas(&ue->phy_proc[ue->current_thread_id[subframe_rx]]);
-    }
-  } // slot
 }

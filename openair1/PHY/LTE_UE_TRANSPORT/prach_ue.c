@@ -46,7 +46,7 @@
 //#define PRACH_DEBUG 1
 
 int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint16_t Nf ) {
-  lte_frame_type_t frame_type         = ue->frame_parms.frame_type;
+  frame_type_t frame_type         = ue->frame_parms.frame_type;
   //uint8_t tdd_config         = ue->frame_parms.tdd_config;
   uint16_t rootSequenceIndex = ue->frame_parms.prach_config_common.rootSequenceIndex;
   uint8_t prach_ConfigIndex  = ue->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;

@@ -508,7 +508,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   start_meas(&ue->dlsch_rx_pdcch_stats);
 
   /// PDCCH/DCI e-sequence (input to rate matching).
-  int32_t pdcch_e_rx_size = 2*4*100*12;
+  int32_t pdcch_e_rx_size = NR_MAX_PDCCH_SIZE;
   int16_t pdcch_e_rx[pdcch_e_rx_size];
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);

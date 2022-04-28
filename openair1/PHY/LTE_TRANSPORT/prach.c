@@ -56,7 +56,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
                uint8_t ce_level
               ) {
   int i;
-  lte_frame_type_t   frame_type;
+  frame_type_t   frame_type;
   uint16_t           rootSequenceIndex;
   uint8_t            prach_ConfigIndex;
   uint8_t            Ncs_config;
