@@ -120,6 +120,7 @@
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
 		<iperf_packetloss_threshold>15</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>85</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
