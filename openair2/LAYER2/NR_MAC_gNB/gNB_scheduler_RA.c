@@ -399,7 +399,7 @@ void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP
 void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
                       uint16_t *msg2_frame, uint16_t *msg2_slot,
                       NR_ServingCellConfigCommon_t *scc,
-                      lte_frame_type_t frame_type,
+                      frame_type_t frame_type,
                       uint16_t monitoring_slot_period,
                       uint16_t monitoring_offset,uint8_t beam_index,
                       uint8_t num_active_ssb,
@@ -525,7 +525,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  lte_frame_type_t frame_type = cc->frame_type;
+  frame_type_t frame_type = cc->frame_type;
 
   uint8_t total_RApreambles = MAX_NUM_NR_PRACH_PREAMBLES;
   uint8_t  num_ssb_per_RO = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
@@ -934,7 +934,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
 
   uint16_t msg3_nb_rb = 8; // sdu has 6 or 8 bytes
 
-  lte_frame_type_t frame_type = RC.nrmac[module_id]->common_channels->frame_type;
+  frame_type_t frame_type = RC.nrmac[module_id]->common_channels->frame_type;
 
   int mu = ubwp ?
     ubwp->bwp_Common->genericParameters.subcarrierSpacing :
@@ -1631,7 +1631,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     harq->feedback_slot = pucch->ul_slot;
     harq->feedback_frame = pucch->frame;
 
-    uint8_t *buf = (uint8_t *) harq->tb;
+    uint8_t *buf = (uint8_t *) harq->transportBlock;
     // Bytes to be transmitted
     if (harq->round == 0) {
       if (ra->msg3_dcch_dtch) {
@@ -1880,11 +1880,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(ra->rnti),
-      T_INT(frameP), T_INT(slotP), T_INT(current_harq_pid), T_BUFFER(harq->tb, harq->tb_size));
+      T_INT(frameP), T_INT(slotP), T_INT(current_harq_pid), T_BUFFER(harq->transportBlock, harq->tb_size));
 
     // DL TX request
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
-    memcpy(tx_req->TLVs[0].value.direct, harq->tb, sizeof(uint8_t) * harq->tb_size);
+    memcpy(tx_req->TLVs[0].value.direct, harq->transportBlock, sizeof(uint8_t) * harq->tb_size);
     tx_req->PDU_length =  harq->tb_size;
     tx_req->PDU_index = pduindex;
     tx_req->num_TLV = 1;

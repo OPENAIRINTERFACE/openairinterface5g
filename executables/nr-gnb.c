@@ -456,6 +456,7 @@ void init_gNB_Tpool(int inst) {
   for (int i=0; i < 2; i++) {
     notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
     processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
+    memset(msgDataTx,0, sizeof(processingData_L1tx_t));
     init_DLSCH_struct(gNB, msgDataTx);
     memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
     pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning

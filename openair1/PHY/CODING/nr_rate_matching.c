@@ -307,62 +307,76 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
 
 
 void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
-{
+{ 
 
-  int16_t *e1,*e2,*e3,*e4,*e5,*e6,*e7;
+  
   switch(Qm) {
   case 2:
-    e1=e+(E/2);
-    for (int j = 0,j2=0; j< E/2; j+=2,j2+=4){
-      e[j]  = f[j2];
-      e1[j] = f[j2+1];
-      e[j+1]  = f[j2+2];
-      e1[j+1] = f[j2+3];
+    {
+      AssertFatal(E%2==0,"");
+      int16_t *e1=e+(E/2);
+      int16_t *end=f+E-1;
+      while( f<end ){
+        *e++  = *f++;
+        *e1++ = *f++;
+      }
     }
     break;
   case 4:
-    e1=e+(E/4);
-    e2=e1+(E/4);
-    e3=e2+(E/4);
-    for (int j = 0,j2=0; j< E/4; j++,j2+=4){
-      e[j]  = f[j2];
-      e1[j] = f[j2+1];
-      e2[j] = f[j2+2];
-      e3[j] = f[j2+3];
+    {
+      AssertFatal(E%4==0,"");
+      int16_t *e1=e+(E/4);
+      int16_t *e2=e1+(E/4);
+      int16_t *e3=e2+(E/4);
+      int16_t *end=f+E-3;
+      while( f<end ){ 
+        *e++  = *f++;
+        *e1++ = *f++;
+        *e2++ = *f++;
+        *e3++ = *f++;
+      }
     }
     break;
   case 6:
-    e1=e+(E/6);
-    e2=e1+(E/6);
-    e3=e2+(E/6);
-    e4=e3+(E/6);
-    e5=e4+(E/6);
-    for (int j = 0,j2=0; j< E/6; j++,j2+=6){
-      e[j]  = f[j2];
-      e1[j] = f[j2+1];
-      e2[j] = f[j2+2];
-      e3[j] = f[j2+3];
-      e4[j] = f[j2+4];
-      e5[j] = f[j2+5];
+    {
+      AssertFatal(E%6==0,"");
+      int16_t *e1=e+(E/6);
+      int16_t *e2=e1+(E/6);
+      int16_t *e3=e2+(E/6);
+      int16_t *e4=e3+(E/6);
+      int16_t *e5=e4+(E/6);
+      int16_t *end=f+E-5;
+     while( f<end ){ 
+        *e++  = *f++;
+        *e1++ = *f++;
+        *e2++ = *f++;
+        *e3++ = *f++;
+        *e4++ = *f++;
+        *e5++ = *f++;
+      }
     }
     break;
   case 8:
-    e1=e+(E/8);
-    e2=e1+(E/8);
-    e3=e2+(E/8);
-    e4=e3+(E/8);
-    e5=e4+(E/8);
-    e6=e5+(E/8);
-    e7=e6+(E/8);
-    for (int j = 0,j2=0; j< E/8; j++,j2+=8){
-      e[j]  = f[j2];
-      e1[j] = f[j2+1];
-      e2[j] = f[j2+2];
-      e3[j] = f[j2+3];
-      e4[j] = f[j2+4];
-      e5[j] = f[j2+5];
-      e6[j] = f[j2+6];
-      e7[j] = f[j2+7];
+    {
+      AssertFatal(E%8==0,"");
+      int16_t *e1=e+(E/8);
+      int16_t *e2=e1+(E/8);
+      int16_t *e3=e2+(E/8);
+      int16_t *e4=e3+(E/8);
+      int16_t *e5=e4+(E/8);
+      int16_t *e6=e5+(E/8);
+      int16_t *e7=e6+(E/8);
+      int16_t *end=f+E-7;
+      while( f<end ){
+        *e++  = *f++;
+        *e1++ = *f++;
+        *e2++ = *f++;
+        *e3++ = *f++;
+        *e4++ = *f++;
+        *e5++ = *f++;
+        *e6++ = *f++;
+        *e7++ = *f++;
+      }
     }
     break;
   default:

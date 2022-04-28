@@ -20,6 +20,7 @@
  */
 
 #include <stdint.h>
+#include <openair1/SCHED/sched_common_extern.h>
 
 
 // This is the formula from Section 5.1.1.1 in 36.213 100*10*log10((2^(MPR*Ks)-1)), where MPR is in the range [0,6] and Ks=1.25

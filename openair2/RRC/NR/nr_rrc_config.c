@@ -216,7 +216,7 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
 
 void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
 
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
   // coreset duration setting to be improved in the framework of RRC harmonization, potentially using a common function
   int len_coreset = 1;
@@ -248,7 +248,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
 
   //TODO change to accomodate for SRS
 
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   int temp_min_delay = 6; // k2 = 2 or 3 won'r work as well as higher values
   if(frame_type==TDD && scc->tdd_UL_DL_ConfigurationCommon) {
 

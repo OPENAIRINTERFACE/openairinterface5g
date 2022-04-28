@@ -1352,7 +1352,7 @@ void flexran_agent_set_operating_bandwidth(mid_t mod_id, uint8_t cc_id, uint8_t 
   }
 }
 
-void flexran_agent_set_operating_frame_type(mid_t mod_id, uint8_t cc_id, lte_frame_type_t frame_type) {
+void flexran_agent_set_operating_frame_type(mid_t mod_id, uint8_t cc_id, frame_type_t frame_type) {
   if (phy_is_present(mod_id, cc_id)) {
     RC.eNB[mod_id][cc_id]->frame_parms.frame_type = frame_type;
   } else {
