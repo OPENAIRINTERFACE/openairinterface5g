@@ -33,7 +33,7 @@
 #-----------------------------------------------------------
 import logging
 import sshconnection as SSH
-import html
+import cls_oai_html
 import os
 import re
 import time
@@ -153,6 +153,7 @@ class PhySim:
 		mySSH.command(f'oc project {ocProjectName}', '\$', 30)
 		if mySSH.getBefore().count(f'Already on project "{ocProjectName}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCProjectName}"') == 0:
 			logging.error(f'\u001B[1m Unable to access OC project {ocProjectName}\u001B[0m')
+			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
 			RAN.prematureExit = True
@@ -161,9 +162,10 @@ class PhySim:
 			logging.debug(f'\u001B[1m   Now using project {ocProjectName}\u001B[0m')
 
 		# Tag the image and push to the OC cluster
-		mySSH.command('oc whoami -t | sudo podman login -u ' + ocUserName + ' --password-stdin https://default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/ --tls-verify=false', '\$', 30)
+		mySSH.command('oc whoami -t | sudo podman login -u ' + ocUserName + ' --password-stdin https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/ --tls-verify=false', '\$', 30)
 		if mySSH.getBefore().count('Login Succeeded!') == 0:
 			logging.error('\u001B[1m Podman Login to OC Cluster Registry Failed\u001B[0m')
+			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 			RAN.prematureExit = True
@@ -171,9 +173,11 @@ class PhySim:
 		else:
 			logging.debug('\u001B[1m Podman Login to OC Cluster Registry Successfully\u001B[0m')
 		time.sleep(2)
-		mySSH.command('oc create -f openshift/oai-physim-image-stream.yml', '\$', 30)
+		mySSH.command('oc create -f openshift/oai-physim-image-stream.yml || true', '\$', 30)
 		if mySSH.getBefore().count('(AlreadyExists):') == 0 and mySSH.getBefore().count('created') == 0:
 			logging.error(f'\u001B[1m Image Stream "oai-physim" Creation Failed on OC Cluster {ocProjectName}\u001B[0m')
+			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
+			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_IS_FAIL)
 			RAN.prematureExit = True
@@ -181,11 +185,13 @@ class PhySim:
 		else:
 			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocProjectName}\u001B[0m')
 		time.sleep(2)
-		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 30)
+		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 30)
 		time.sleep(2)
-		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag} --tls-verify=false', '\$', 180)
+		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag} --tls-verify=false', '\$', 180)
 		if mySSH.getBefore().count('Storing signatures') == 0:
 			logging.error('\u001B[1m Image "oai-physim" push to OC Cluster Registry Failed\u001B[0m')
+			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
+			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_IS_FAIL)
 			RAN.prematureExit = True
@@ -195,8 +201,9 @@ class PhySim:
 
 		# Using helm charts deployment
 		time.sleep(5)
+		mySSH.command(f'grep -rl OAICICD_PROJECT ./charts/ | xargs sed -i -e "s#OAICICD_PROJECT#{ocProjectName}#"', '\$', 30)
 		mySSH.command(f'sed -i -e "s#TAG#{imageTag}#g" ./charts/physims/values.yaml', '\$', 6)
-		mySSH.command('helm install physim ./charts/physims/ | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 30)
+		mySSH.command('helm install physim ./charts/physims/ 2>&1 | tee -a cmake_targets/log/physim_helm_summary.txt', '\$', 30)
 		if mySSH.getBefore().count('STATUS: deployed') == 0:
 			logging.error('\u001B[1m Deploying PhySim Failed using helm chart on OC Cluster\u001B[0m')
 			mySSH.command('helm uninstall physim >> cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 30)
@@ -206,8 +213,10 @@ class PhySim:
 				mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
 				if re.search('No resources found', mySSH.getBefore()):
 					isFinished1 = True
-			mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 30)
+			mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 30)
 			mySSH.command('oc delete is oai-physim', '\$', 30)
+			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
+			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
 			self.AnalyzeLogFile_phySim(HTML)
 			RAN.prematureExit = True
@@ -227,7 +236,7 @@ class PhySim:
 		if isRunning == False:
 			logging.error('\u001B[1m Some PODS Running FAILED \u001B[0m')
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim 2>&1 | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 6)
-			mySSH.command('helm uninstall physim >> cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
+			mySSH.command('helm uninstall physim 2>&1 >> cmake_targets/log/physim_helm_summary.txt', '\$', 6)
 			self.AnalyzeLogFile_phySim(HTML)
 			isFinished1 = False
 			while(isFinished1 == False):
@@ -235,8 +244,10 @@ class PhySim:
 				mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
 				if re.search('No resources found', mySSH.getBefore()):
 					isFinished1 = True
-			mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
+			mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
 			mySSH.command('oc delete is oai-physim', '\$', 6)
+			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
+			mySSH.command('oc logout', '\$', 30)
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PHYSIM_DEPLOY_FAIL)
 			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
 			RAN.prematureExit = True
@@ -293,9 +304,10 @@ class PhySim:
 				isFinished1 = True
 		if isFinished1 == True:
 			logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
-		mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.5glab.nsa.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
+		mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
 		mySSH.command('oc delete is oai-physim', '\$', 6)
 		logging.debug('\u001B[1m Deleted the Image and ImageStream\u001B[0m')
+		mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
 		self.AnalyzeLogFile_phySim(HTML)

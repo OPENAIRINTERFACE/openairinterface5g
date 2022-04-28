@@ -21,7 +21,7 @@
 
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
-uint8_t get_pmi(uint8_t N_RB_DL, MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb)
+uint8_t get_pmi(int N_RB_DL, MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb)
 {
   /*
   MIMO_mode_t mode   = dlsch_harq->mimo_mode;

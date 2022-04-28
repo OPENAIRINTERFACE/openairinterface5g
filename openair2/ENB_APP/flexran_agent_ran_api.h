@@ -433,7 +433,7 @@ void flexran_agent_set_operating_eutra_band(mid_t mod_id, uint8_t cc_id, uint8_t
 void flexran_agent_set_operating_bandwidth(mid_t mod_id, uint8_t cc_id, uint8_t N_RB);
 
 /*set frame type*/
-void flexran_agent_set_operating_frame_type(mid_t mod_id, uint8_t cc_id, lte_frame_type_t frame_type);
+void flexran_agent_set_operating_frame_type(mid_t mod_id, uint8_t cc_id, frame_type_t frame_type);
 
 /*RRC status flexRAN*/
 uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti);

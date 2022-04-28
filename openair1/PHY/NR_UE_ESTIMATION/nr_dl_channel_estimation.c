@@ -468,7 +468,9 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned char symbol,
                                 unsigned short scrambling_id,
                                 unsigned short coreset_start_subcarrier,
-                                unsigned short nb_rb_coreset)
+                                unsigned short nb_rb_coreset,
+                                int32_t pdcch_est_size,
+                                int32_t pdcch_dl_ch_estimates[][pdcch_est_size])
 {
 
   unsigned char aarx;
@@ -477,7 +479,6 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
 
-  int **dl_ch_estimates  =ue->pdcch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
   ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
@@ -510,7 +511,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     k = coreset_start_subcarrier;
     pil   = (int16_t *)&pilot[0];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+1)];
-    dl_ch = (int16_t *)&dl_ch_estimates[aarx][ch_offset];
+    dl_ch = (int16_t *)&pdcch_dl_ch_estimates[aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
 

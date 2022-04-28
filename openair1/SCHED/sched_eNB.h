@@ -215,7 +215,7 @@ int16_t get_target_pucch_rx_power(module_id_t module_idP, uint8_t CC_id);
 
 int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subframe_tx);
 
-void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
+void compute_srs_pos(frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
 void release_rnti_of_phy(module_id_t mod_id);
 /*@}*/
