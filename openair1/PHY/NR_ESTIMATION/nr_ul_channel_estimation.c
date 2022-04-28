@@ -307,10 +307,11 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #ifdef DEBUG_PUSCH
       ul_ch = (int16_t *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
       for(uint16_t idxP=0; idxP<ceil((float)nb_rb_pusch*12/8); idxP++) {
+        printf("(%3d)\t",idxP);
         for(uint8_t idxI=0; idxI<16; idxI += 2) {
           printf("%d\t%d\t",ul_ch[idxP*16+idxI],ul_ch[idxP*16+idxI+1]);
         }
-        printf("%d\n",idxP);
+        printf("\n");
       }
 #endif    
     }
