@@ -616,22 +616,21 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 #ifdef DEBUG_CH_COMP
   int16_t *rxF, *ul_ch;
   int prnt_idx;
+  for (int nl=0; nl<nrOfLayers; nl++) {
+    for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+      rxF = (int16_t *) &rxdataF_ext[aarx][symbol * (off + (nb_rb * 12))];
+      ul_ch = (int16_t *) &ul_ch_estimates_ext[nl * frame_parms->nb_antennas_rx + aarx][symbol * (off + (nb_rb * 12))];
 
-  for (int ant=0; ant<frame_parms->nb_antennas_rx; ant++) {
-    rxF   = (int16_t *)&rxdataF_ext[ant][symbol*(off+(nb_rb*12))];
-    ul_ch = (int16_t *)&ul_ch_estimates_ext[ant][symbol*(off+(nb_rb*12))];
+      printf("--------symbol = %d, mod_order = %d, output_shift = %d, layer %i, antenna rx = %d -----------\n",
+             symbol, mod_order, output_shift, nl, aarx);
+      printf("----------------Before compensation------------------\n");
 
-    printf("--------------------symbol = %d, mod_order = %d, output_shift = %d-----------------------\n", symbol, mod_order, output_shift);
-    printf("----------------Before compensation------------------\n");
-
-    for (prnt_idx=0;prnt_idx<12*5*2;prnt_idx+=2){
-
-      printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
-      printf("ul_ch[%d] = (%d,%d)\n", prnt_idx>>1, ul_ch[prnt_idx],ul_ch[prnt_idx+1]);
-
+      for (prnt_idx = 0; prnt_idx < 12 * 5 * 2; prnt_idx += 2) {
+        printf("rxF[%d] = (%d,%d)\n", prnt_idx >> 1, rxF[prnt_idx], rxF[prnt_idx + 1]);
+        printf("ul_ch[%d] = (%d,%d)\n", prnt_idx >> 1, ul_ch[prnt_idx], ul_ch[prnt_idx + 1]);
+      }
     }
   }
-
 #endif
 
 #ifdef DEBUG_CH_MAG
@@ -1137,19 +1136,17 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
 
 #ifdef DEBUG_CH_COMP
+  for (int nl2=0; nl2<nrOfLayers; nl2++) {
+    for (int aarx2=0; aarx2<frame_parms->nb_antennas_rx; aarx2++) {
+      rxF   = (int16_t *)&rxdataF_comp[nl2*frame_parms->nb_antennas_rx+aarx2][(symbol*(off+(nb_rb*12)))];
 
-  for (int ant=0; ant<frame_parms->nb_antennas_rx; ant++) {
-    rxF   = (int16_t *)&rxdataF_comp[ant][(symbol*(off+(nb_rb*12)))];
+      printf("--------After compansation, layer %i, antenna rx %i----------\n", nl2, aarx2);
 
-    printf("----------------After compansation------------------\n");
-
-    for (prnt_idx=0;prnt_idx<12*5*2;prnt_idx+=2){
-
-      printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
-
+      for (prnt_idx=0;prnt_idx<12*5*2;prnt_idx+=2){
+        printf("rxF[%d] = (%d,%d)\n", prnt_idx>>1, rxF[prnt_idx],rxF[prnt_idx+1]);
+      }
     }
   }
-
 #endif
 
 #ifdef DEBUG_CH_MAG
