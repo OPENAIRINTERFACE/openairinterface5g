@@ -246,33 +246,41 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     LOG_I(PHY, "In %s ul_ch addr %p nushift %d\n", __FUNCTION__, ul_ch, nushift);
 #endif
 
-    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && gNB->prb_interpolation == 0){
+    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && gNB->prb_interpolation == 0) {
 
       LOG_D(PHY,"PUSCH estimation DMRS type 1, Freq-domain interpolation");
 
       // For configuration type 1: k = 4*n + 2*k' + delta,
       // where k' is 0 or 1, and delta is in Table 6.4.1.1.3-1 from TS 38.211
 
-      int delta = nr_pusch_dmrs_delta(pusch_dmrs_type1, p);
-
       pilot_cnt = 0;
+
       for (int n = 0; n < 3*nb_rb_pusch; n++) {
+
+        // LS estimation
+        ch[0] = 0;
+        ch[1] = 0;
+        for (int p2 = 0; p2<pusch_pdu->nrOfLayers; p2+=2) {
+          int delta2 = nr_pusch_dmrs_delta(pusch_dmrs_type1, p2);
+          for (int k_line = 0; k_line <= 1; k_line++) {
+            re_offset = (k0 + (n << 2) + (k_line << 1) + delta2) % gNB->frame_parms.ofdm_symbol_size;
+            rxF = (int16_t *) &rxdataF[aarx][(soffset + symbol_offset + re_offset)];
+            ch[0] += (int16_t) (((int32_t) pil[0] * rxF[0] - (int32_t) pil[1] * rxF[1]) >> 15);
+            ch[1] += (int16_t) (((int32_t) pil[0] * rxF[1] + (int32_t) pil[1] * rxF[0]) >> 15);
+            pil += 2;
+          }
+        }
+
+        // Channel interpolation
         for (int k_line = 0; k_line <= 1; k_line++) {
-
           pilot_cnt++;
-
-          re_offset = (k0 + (n<<2) + (k_line<<1) + delta) % gNB->frame_parms.ofdm_symbol_size;
-          rxF = (int16_t *)&rxdataF[aarx][(soffset + symbol_offset + re_offset)];
-
-          ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-          ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
 #ifdef DEBUG_PUSCH
+          re_offset = (k0 + (n << 2) + (k_line << 1)) % gNB->frame_parms.ofdm_symbol_size;
+          rxF = (int16_t *) &rxdataF[aarx][(soffset + symbol_offset + re_offset)];
           printf("pilot %4u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d)\n",
                  pilot_cnt, pil[0], pil[1], rxF[0], rxF[1], ch[0], ch[1]);
           //printf("data %4u: rxF -> (%4d,%4d) (%2d)\n",pilot_cnt, rxF[2], rxF[3], dBc(rxF[2], rxF[3]));
 #endif
-
           if (pilot_cnt == 0) {
             multadd_real_vector_complex_scalar(fl, ch, ul_ch, 8);
           } else if (pilot_cnt == 1) {
@@ -288,8 +296,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
           } else {
             multadd_real_vector_complex_scalar(fm, ch, ul_ch, 8);
           }
-
-          pil += 2;
         }
       }
 
