@@ -76,10 +76,6 @@ void freq2time(uint16_t ofdm_symbol_size,
   }
 }
 
-// Table 6.4.1.1.3-1/2 from TS 38.211
-const uint16_t delta1[8] = {0, 0, 1, 1, 0, 0, 1, 1};
-const uint16_t delta2[12] = {0, 0, 2, 2, 4, 4, 0, 0, 2, 2, 4, 4};
-
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char Ns,
                                 unsigned short p,
@@ -211,20 +207,17 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif
 
   // Based on Table 6.4.1.1.3-1/2 from TS 38.211
-  int delta = 0;
-  //int deltas[3] = {0};
-  //int n_delta = 0;
+  /*int deltas[3] = {0};
+  int n_delta = 0;
   if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1) {
-    delta = delta1[p];
-    /*if (pusch_pdu->nrOfLayers <= 2) {
+    if (pusch_pdu->nrOfLayers <= 2) {
       n_delta = 1;
     } else {
       n_delta = 2;
       deltas[1] = 1;
-    }*/
+    }
   } else {
-    delta = delta2[p];
-    /*if (pusch_pdu->nrOfLayers <= 2) {
+    if (pusch_pdu->nrOfLayers <= 2) {
       n_delta = 1;
     } else if (pusch_pdu->nrOfLayers <= 4) {
       n_delta = 2;
@@ -233,8 +226,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       n_delta = 3;
       deltas[1] = 2;
       deltas[2] = 4;
-    }*/
-  }
+    }
+  }*/
 
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -259,6 +252,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
       // For configuration type 1: k = 4*n + 2*k' + delta,
       // where k' is 0 or 1, and delta is in Table 6.4.1.1.3-1 from TS 38.211
+
+      int delta = nr_pusch_dmrs_delta(pusch_dmrs_type1, p);
 
       pilot_cnt = 0;
       for (int n = 0; n < 3*nb_rb_pusch; n++) {
