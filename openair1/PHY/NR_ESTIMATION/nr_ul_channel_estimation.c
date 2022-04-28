@@ -227,101 +227,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     //if ((gNB->frame_parms.N_RB_UL&1)==0) {
 
     if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && gNB->prb_interpolation == 0){
+
       LOG_D(PHY,"PUSCH estimation DMRS type 1, Freq-domain interpolation");
-      // Treat first 2 pilots specially (left edge)
-      ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-      ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
 
-#ifdef DEBUG_PUSCH
-      LOG_I(PHY, "In %s ch 0 %d\n", __FUNCTION__, ((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1]));
-      LOG_I(PHY, "In %s pilot 0 : rxF - > (%d,%d) (%d)  ch -> (%d,%d) (%d), pil -> (%d,%d) \n",
-        __FUNCTION__,
-        rxF[0],
-        rxF[1],
-        dBc(rxF[0],rxF[1]),
-        ch[0],
-        ch[1],
-        dBc(ch[0],ch[1]),
-        pil[0],
-        pil[1]);
-      LOG_I(PHY, "In %s data 0 : rxF - > (%d,%d) (%d)\n", __FUNCTION__, rxF[2], rxF[3], dBc(rxF[2],rxF[3]));
-#endif
-
-      multadd_real_vector_complex_scalar(fl,
-                                         ch,
-                                         ul_ch,
-                                         8);
-      pil += 2;
-      re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
-      rxF   = (int16_t *)&rxdataF[aarx][(soffset+symbol_offset+nushift+re_offset)];
-      //for (int i= 0; i<8; i++)
-      //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));
-
-      ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-      ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
-#ifdef DEBUG_PUSCH
-      LOG_I(PHY, "In %s pilot 1 : rxF - > (%d,%d) (%d) ch -> (%d,%d) (%d), pil -> (%d,%d) \n",
-        __FUNCTION__,
-        rxF[0],
-        rxF[1],
-        dBc(rxF[0],rxF[1]),
-        ch[0],
-        ch[1],
-        dBc(ch[0],ch[1]),
-        pil[0],
-        pil[1]);
-      LOG_I(PHY, "In %s data 1 : rxF - > (%d,%d) (%d)\n",
-        __FUNCTION__,
-        rxF[2],
-        rxF[3],
-        dBc(rxF[2],rxF[3]));
-#endif
-
-      multadd_real_vector_complex_scalar(fml,
-                                         ch,
-                                         ul_ch,
-                                         8);
-      pil += 2;
-      re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
-      rxF   = (int16_t *)&rxdataF[aarx][(soffset+symbol_offset+nushift+re_offset)];
-      //printf("ul_ch addr %p\n",ul_ch);
-      
-      ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
-      ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
-#ifdef DEBUG_PUSCH
-      LOG_I(PHY, "In %s pilot 2 : rxF - > (%d,%d) (%d) ch -> (%d,%d) (%d), pil -> (%d,%d) \n",
-        __FUNCTION__,
-        rxF[0],
-        rxF[1],
-        dBc(rxF[0],rxF[1]),
-        ch[0],
-        ch[1],
-        dBc(ch[0],ch[1]),
-        pil[0],
-        pil[1]);
-      LOG_I(PHY, "In %s data 2 : rxF - > (%d,%d) (%d)\n",
-        __FUNCTION__,
-        rxF[2],
-        rxF[3],
-        dBc(rxF[2],rxF[3]));
-#endif
-
-      multadd_real_vector_complex_scalar(fmm,
-                                         ch,
-                                         ul_ch,
-                                         8);
-
-      //for (int i= 0; i<16; i++)
-      //printf("ul_ch addr %p %d\n", ul_ch+i, *(ul_ch+i));
-
-      pil += 2;
-      re_offset = (re_offset+2) % gNB->frame_parms.ofdm_symbol_size;
-      rxF   = (int16_t *)&rxdataF[aarx][(soffset+symbol_offset+nushift+re_offset)];
-      ul_ch+=8;
-
-      for (pilot_cnt=3; pilot_cnt<(6*nb_rb_pusch-3); pilot_cnt++) {
+      for (pilot_cnt = 0; pilot_cnt < (6*nb_rb_pusch-3); pilot_cnt++) {
 
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -332,7 +241,11 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         //printf("data %4u: rxF -> (%4d,%4d) (%2d)\n",pilot_cnt, rxF[2], rxF[3], dBc(rxF[2], rxF[3]));
 #endif
 
-        if (pilot_cnt%2 == 0) {
+        if (pilot_cnt == 0) {
+          multadd_real_vector_complex_scalar(fl, ch, ul_ch, 8);
+        } else if (pilot_cnt == 1) {
+          multadd_real_vector_complex_scalar(fml, ch, ul_ch, 8);
+        } else if (pilot_cnt%2 == 0) {
           multadd_real_vector_complex_scalar(fmm, ch, ul_ch, 8);
           ul_ch+=8;
         } else {
