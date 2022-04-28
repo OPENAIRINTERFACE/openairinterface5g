@@ -35,9 +35,7 @@ This page is only valid for an `Ubuntu18` host.
 
 # 1. Retrieving the images on Docker-Hub #
 
-Currently the images are hosted under the user account `rdefosseoai`.
-
-This may change in the future.
+Currently the images are hosted under the team account `oaisoftwarealliance`. They were previously hosted under the user account `rdefosseoai`.
 
 Once again you may need to log on [docker-hub](https://hub.docker.com/) if your organization has reached pulling limit as `anonymous`.
 
@@ -52,25 +50,25 @@ Now pull images.
 
 ```bash
 $ docker pull mysql:5.7
-$ docker pull rdefosseoai/oai-amf:latest
-$ docker pull rdefosseoai/oai-nrf:latest
-$ docker pull rdefosseoai/oai-smf:latest
-$ docker pull rdefosseoai/oai-spgwu-tiny:latest
+$ docker pull oaisoftwarealliance/oai-amf:latest
+$ docker pull oaisoftwarealliance/oai-nrf:latest
+$ docker pull oaisoftwarealliance/oai-smf:latest
+$ docker pull oaisoftwarealliance/oai-spgwu-tiny:latest
 
-$ docker pull rdefosseoai/oai-gnb:develop
-$ docker pull rdefosseoai/oai-nr-ue:develop
+$ docker pull oaisoftwarealliance/oai-gnb:develop
+$ docker pull oaisoftwarealliance/oai-nr-ue:develop
 ```
 
 And **re-tag** them for tutorials' docker-compose file to work.
 
 ```bash
-$ docker image tag rdefosseoai/oai-amf:latest oai-amf:latest
-$ docker image tag rdefosseoai/oai-nrf:latest oai-nrf:latest
-$ docker image tag rdefosseoai/oai-smf:latest oai-smf:latest
-$ docker image tag rdefosseoai/oai-spgwu-tiny:latest oai-spgwu-tiny:latest
+$ docker image tag oaisoftwarealliance/oai-amf:latest oai-amf:latest
+$ docker image tag oaisoftwarealliance/oai-nrf:latest oai-nrf:latest
+$ docker image tag oaisoftwarealliance/oai-smf:latest oai-smf:latest
+$ docker image tag oaisoftwarealliance/oai-spgwu-tiny:latest oai-spgwu-tiny:latest
 
-$ docker image tag rdefosseoai/oai-gnb:develop oai-gnb:develop
-$ docker image tag rdefosseoai/oai-nr-ue:develop oai-nr-ue:develop
+$ docker image tag oaisoftwarealliance/oai-gnb:develop oai-gnb:develop
+$ docker image tag oaisoftwarealliance/oai-nr-ue:develop oai-nr-ue:develop
 ```
 
 ```bash

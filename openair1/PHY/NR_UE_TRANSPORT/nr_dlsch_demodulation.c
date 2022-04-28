@@ -117,7 +117,6 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                         unsigned char first_symbol_flag,
                         unsigned char symbol,
                         unsigned short nb_rb,
-                        unsigned short round,
                         int32_t codeword_TB0,
                         int32_t codeword_TB1,
                         uint32_t len,
@@ -154,7 +153,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   unsigned char aatx=0,aarx=0;
 
-  unsigned short round;
   int avgs = 0;// rb;
   NR_DL_UE_HARQ_t *dlsch0_harq, *dlsch1_harq = NULL;
 
@@ -278,8 +276,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   nb_rb_pdsch =  dlsch0_harq->nb_rb;
 
   DevAssert(dlsch0_harq);
-  round = dlsch0_harq->round;
-  //printf("round = %d\n", round);
+
 
   if (gNB_id > 2) {
     LOG_W(PHY, "In %s: Illegal gNB_id %d\n", __FUNCTION__, gNB_id);
@@ -522,7 +519,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                      rx_type, harq_pid,
                      gNB_id, gNB_id_i,
                      first_symbol_flag,
-                     i, nb_rb_pdsch, round,
+                     i, nb_rb_pdsch,
                      codeword_TB0, codeword_TB1,
                      pdsch_vars[gNB_id]->dl_valid_re[i-1],
                      nr_slot_rx, beamforming_mode);
@@ -2479,7 +2476,6 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                         unsigned char first_symbol_flag,
                         unsigned char symbol,
                         unsigned short nb_rb,
-                        unsigned short round,
                         int32_t codeword_TB0,
                         int32_t codeword_TB1,
                         uint32_t len,

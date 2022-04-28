@@ -245,14 +245,17 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 /* initialie thread pools used for NRUE processing paralleliation */ 
 void init_tpools(uint8_t nun_dlsch_threads) {
-  char *params = NULL;
-  params = calloc(1,(NR_RX_NB_TH*NR_NB_TH_SLOT*3)+1);
+  char params[NR_RX_NB_TH*NR_NB_TH_SLOT*3+1]={0};
   for (int i=0; i<NR_RX_NB_TH*NR_NB_TH_SLOT; i++) {
     memcpy(params+(i*3),"-1,",3);
   }
-  initTpool(params, &(nrUE_params.Tpool), false);
-  free(params);
-  init_dlsch_tpool( nun_dlsch_threads);
+  if (getenv("noThreads")) {
+     initTpool("n", &(nrUE_params.Tpool), false);
+     init_dlsch_tpool(0);
+   } else {
+     initTpool(params, &(nrUE_params.Tpool), false);
+     init_dlsch_tpool( nun_dlsch_threads);
+   }
 }
 static void get_options(void) {
 

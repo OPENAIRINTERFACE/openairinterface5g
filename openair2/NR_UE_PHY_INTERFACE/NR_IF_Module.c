@@ -89,13 +89,13 @@ void nrue_init_standalone_socket(int tx_port, int rx_port)
     int sd = socket(server_address.sin_family, SOCK_DGRAM, 0);
     if (sd < 0)
     {
-      LOG_E(MAC, "Socket creation error standalone PNF\n");
+      LOG_E(NR_MAC, "Socket creation error standalone PNF\n");
       return;
     }
 
     if (inet_pton(server_address.sin_family, stub_eth_params.remote_addr, &server_address.sin_addr) <= 0)
     {
-      LOG_E(MAC, "Invalid standalone PNF Address\n");
+      LOG_E(NR_MAC, "Invalid standalone PNF Address\n");
       close(sd);
       return;
     }
@@ -103,7 +103,7 @@ void nrue_init_standalone_socket(int tx_port, int rx_port)
     // Using connect to use send() instead of sendto()
     if (connect(sd, (struct sockaddr *)&server_address, addr_len) < 0)
     {
-      LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
+      LOG_E(NR_MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
       close(sd);
       return;
     }
@@ -129,7 +129,7 @@ void nrue_init_standalone_socket(int tx_port, int rx_port)
 
     if (bind(sd, (struct sockaddr *)&server_address, addr_len) < 0)
     {
-      LOG_E(MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
+      LOG_E(NR_MAC, "Connection to standalone PNF failed: %s\n", strerror(errno));
       close(sd);
       return;
     }
@@ -634,6 +634,7 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
     AssertFatal(num_pdus >= 0, "Invalid ul_tti_request number of PDUS\n");
     AssertFatal(num_pdus <= sizeof(ul_tti_req->pdus_list) / sizeof(ul_tti_req->pdus_list[0]),
                 "Too many pdus %d in ul_tti_req\n", num_pdus);
+
     if (!send_crc_ind_and_rx_ind(sfn_slot))
     {
         LOG_T(NR_MAC, "CRC_RX ind not sent\n");
@@ -1045,7 +1046,7 @@ void *nrue_standalone_pnf_task(void *context)
 
       if (sem_post(&sfn_slot_semaphore) != 0)
       {
-        LOG_E(MAC, "sem_post() error\n");
+        LOG_E(NR_MAC, "sem_post() error\n");
         abort();
       }
     }
@@ -1125,13 +1126,13 @@ void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nac
   }
   else {
     //shouldn't get here
-    LOG_E(MAC, "Trying to process acknack for an inactive harq process (%d)\n", harq_pid);
+    LOG_E(NR_MAC, "Trying to process acknack for an inactive harq process (%d)\n", harq_pid);
   }
 }
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
-  NR_UE_L2_STATE_t ret;
+  NR_UE_L2_STATE_t ret=0;
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -1183,6 +1184,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
   } else {
     // UL indication after reception of DCI or DL PDU
     if (dl_info && dl_info->dci_ind && dl_info->dci_ind->number_of_dcis) {
+
       LOG_T(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
       for (int i = 0; i < dl_info->dci_ind->number_of_dcis; i++) {
         LOG_T(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
@@ -1198,8 +1200,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
         /* The check below filters out UL_DCIs (format 7) which are being processed as DL_DCIs. */
         if (dci_index->dci_format == 7 && mac->ra.ra_state == RA_SUCCEEDED) {
-          LOG_T(NR_MAC, "We are filtering a UL_DCI to prevent it from being treated like a DL_DCI\n");
-          break;
+          LOG_D(NR_MAC, "We are filtering a UL_DCI to prevent it from being treated like a DL_DCI\n");
+          continue;
         }
         dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
         g_harq_pid = def_dci_pdu_rel15->harq_pid;
@@ -1222,7 +1224,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
       for (int i=0; i<dl_info->rx_ind->number_pdus; ++i) {
 
-        LOG_T(MAC, "In %s sending DL indication to MAC. 1 PDU type %d of %d total number of PDUs \n",
+        LOG_D(NR_MAC, "In %s sending DL indication to MAC. 1 PDU type %d of %d total number of PDUs \n",
           __FUNCTION__,
           dl_info->rx_ind->rx_indication_body[i].pdu_type,
           dl_info->rx_ind->number_pdus);
