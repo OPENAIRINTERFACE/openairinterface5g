@@ -428,7 +428,7 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id) {
   size += 10;
 
   // encode the message
-  initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
+  initialNasMsg->data = malloc16_clear(size * sizeof(Byte_t));
   registration_request_buf = initialNasMsg->data;
 
   initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);

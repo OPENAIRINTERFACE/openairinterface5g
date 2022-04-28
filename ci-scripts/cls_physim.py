@@ -32,7 +32,7 @@ import logging
 #to create a SSH object locally in the methods
 import sshconnection
 #to update the HTML object
-import html
+import cls_oai_html
 from multiprocessing import SimpleQueue
 #for log folder maintenance
 import os

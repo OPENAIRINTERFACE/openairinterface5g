@@ -36,6 +36,8 @@ At the moment of writing this document interoperability with the following COTS 
  - [Quectel RM500Q-GL](https://www.quectel.com/product/5g-rm500q-gl/)
  - [Simcom SIMCOM8200EA](https://www.simcom.com/product/SIM8200EA_M2.html)
  - Huawei Mate 30 Pro
+ - Oneplus 8
+ - Google Pixel 5
 
  End-to-end control plane signaling to achieve a 5G SA connection, UE registration and PDU session establishment with the CN, as well as some basic user-plane traffic tests have been validated so far using SIMCOM/Quectel modules and Huawei Mate 30 pro. In terms of interoperability with different 5G Core Networks, so far this setup has been tested with:
  
