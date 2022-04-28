@@ -399,7 +399,7 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
                        uint8_t prach_ConfigIndex,
                        uint8_t zeroCorrelationZoneConfig,
                        uint8_t highSpeedFlag,
-                       lte_frame_type_t frame_type,
+                       frame_type_t frame_type,
                        uint32_t X_u[64][839]) {
   // Compute DFT of x_u => X_u[k] = x_u(inv(u)*k)^* X_u[k] = exp(j\pi u*inv(u)*k*(inv(u)*k+1)/N_ZC)
   unsigned int k,inv_u,i,NCS=0,num_preambles;

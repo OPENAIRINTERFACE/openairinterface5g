@@ -700,7 +700,7 @@ typedef struct {
   unsigned int n_frames_flag; // if set, then let the emulation goes to infinity
   node_function_t node_function[MAX_NUM_CCs];
   node_timing_t node_timing[MAX_NUM_CCs];
-  unsigned char frame_type[MAX_NUM_CCs]; //! LTE frame type (TDD=1, FDD=0). \note this should be converted to \ref lte_frame_type_t (header file reorganization needed)
+  unsigned char frame_type[MAX_NUM_CCs]; //! LTE frame type (TDD=1, FDD=0). \note this should be converted to \ref frame_type_t (header file reorganization needed)
   char *frame_type_name[MAX_NUM_CCs];
   unsigned char tdd_config[MAX_NUM_CCs];
   unsigned char tdd_config_S[MAX_NUM_CCs];

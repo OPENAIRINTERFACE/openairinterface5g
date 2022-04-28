@@ -1259,6 +1259,17 @@ void ue_init_standalone_socket(int tx_port, int rx_port)
   }
 }
 
+static uint16_t get_message_id(const uint8_t *buffer, ssize_t len)
+{
+  if (len < 4)
+    return 0;
+
+  // Unpack 2 bytes message_id from buffer.
+  uint16_t v;
+  memcpy(&v, buffer + 2, sizeof(v));
+  return ntohs(v);
+}
+
 void *ue_standalone_pnf_task(void *context)
 {
   struct sockaddr_in server_address;
@@ -1301,7 +1312,7 @@ void *ue_standalone_pnf_task(void *context)
         abort();
       }
     }
-    else if (len == sizeof(phy_channel_params_t))
+    else if (get_message_id((const uint8_t *)buffer, len) == 0x0FFF) // 0x0FFF : channel info identifier.
     {
       phy_channel_params_t ch_info;
       memcpy(&ch_info, buffer, sizeof(phy_channel_params_t));
@@ -1314,8 +1325,15 @@ void *ue_standalone_pnf_task(void *context)
       uint16_t sf = ch_info.sfn_sf & 15;
       assert(sf < 10);
 
-      sf_rnti_mcs[sf].sinr = ch_info.sinr;
-      LOG_D(MAC, "Received_SINR = %f\n",ch_info.sinr);
+      if (ch_info.nb_of_sinrs > 1)
+        LOG_W(MAC, "Expecting at most one SINR.\n");
+
+      // TODO: Update sinr field of slot_rnti_mcs to be array.
+      for (int i = 0; i < ch_info.nb_of_sinrs; ++i)
+      {
+        sf_rnti_mcs[sf].sinr = ch_info.sinr[i];
+        LOG_D(MAC, "Received_SINR[%d] = %f\n", i, ch_info.sinr[i]);
+      }
     }
     else
     {

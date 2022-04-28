@@ -550,60 +550,20 @@ typedef struct {
 } NR_UE_PDCCH_SEARCHSPACE;
 #endif
 typedef struct {
-  /// \brief Pointers to extracted PDCCH symbols in frequency-domain.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **rxdataF_ext;
-  /// \brief Pointers to extracted and compensated PDCCH symbols in frequency-domain.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **rxdataF_comp;
-  /// \brief Hold the channel estimates in frequency domain.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
-  int32_t **dl_ch_estimates;
-  /// \brief Hold the channel estimates in time domain (used for tracking).
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: samples? [0..2*ofdm_symbol_size[
-  int32_t **dl_ch_estimates_time;
-  /// \brief Pointers to extracted channel estimates of PDCCH symbols.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_estimates_ext;
-  /// \brief Pointers to channel cross-correlation vectors for multi-gNB detection.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..]
-  int32_t **rho;
-  /// \brief Pointer to llrs, 4-bit resolution.
-  /// - first index: ? [0..48*N_RB_DL[
-  int16_t *llr;
-  /// \brief Pointer to llrs, 16-bit resolution.
-  /// - first index: ? [0..96*N_RB_DL[
-  int16_t *llr16;
-  /// \brief \f$\overline{w}\f$ from 36-211.
-  /// - first index: ? [0..48*N_RB_DL[
-  int16_t *wbar;
-  /// \brief PDCCH/DCI e-sequence (input to rate matching).
-  /// - first index: ? [0..96*N_RB_DL[
-  int16_t *e_rx;
-  /// Total number of PDU errors (diagnostic mode)
-  uint32_t dci_errors;
+  int nb_search_space;
+  uint16_t sfn;
+  uint16_t slot;
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS];
+} NR_UE_PDCCH_CONFIG;
+
+typedef struct {
   /// Total number of PDU received
   uint32_t dci_received;
   /// Total number of DCI False detection (diagnostic mode)
   uint32_t dci_false;
   /// Total number of DCI missed (diagnostic mode)
   uint32_t dci_missed;
-  /// nCCE for PDCCH per subframe
-  uint8_t nCCE[10];
-  //Check for specific DCIFormat and AgregationLevel
-  uint8_t dciFormat;
-  uint8_t agregationLevel;
-  int nb_search_space;
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS];
-  // frame and slot for sib1 in initial sync
-  uint16_t sfn;
-  uint16_t slot;
+
   /*
 #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
@@ -789,7 +749,10 @@ typedef struct {
   uint32_t ****nr_gold_pdsch[NUMBER_OF_CONNECTED_eNB_MAX];
 
   // Scrambling IDs used in PDSCH DMRS
-  uint16_t scramblingID[2];
+  uint16_t scramblingID_dlsch[2];
+
+  // Scrambling IDs used in PUSCH DMRS
+  uint16_t scramblingID_ulsch[2];
 
   /// PDCCH DMRS
   uint32_t ***nr_gold_pdcch[NUMBER_OF_CONNECTED_eNB_MAX];
@@ -798,7 +761,7 @@ typedef struct {
   uint16_t scramblingID_pdcch;
 
   /// PUSCH DMRS sequence
-  uint32_t ***nr_gold_pusch_dmrs;
+  uint32_t ****nr_gold_pusch_dmrs;
 
   uint32_t X_u[64][839];
 

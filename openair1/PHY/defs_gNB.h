@@ -280,8 +280,6 @@ typedef struct {
   uint32_t C;
   /// Pointers to code blocks after LDPC coding (38.212 V15.4.0 section 5.3.2)
   int16_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
-  /// LDPC processing buffer
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC lifting size (38.212 V15.4.0 table 5.3.2-1)
   uint32_t Z;
   /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
@@ -589,9 +587,6 @@ typedef struct gNB_L1_proc_t_s {
   int instance_cnt_te;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-
-  // instance count for over-the-air gNB synchronization
-  int instance_cnt_synch;
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
   /// pthread structure for eNB single processing thread
@@ -663,8 +658,6 @@ typedef struct {
   unsigned int   n0_power_tot;
   //! estimated avg noise power (dB)
   unsigned int n0_power_tot_dB;
-  //! estimated avg noise power (dB)
-  int n0_power_tot_dBm;
   //! estimated avg noise power per RB per RX ant (lin)
   unsigned int n0_subband_power[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB per RX ant (dB)
@@ -852,9 +845,15 @@ typedef struct PHY_VARS_gNB_s {
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
+  int csi_gold_init;
+  int pdcch_gold_init;
+  int pdsch_gold_init[2];
+  int pusch_gold_init[2];
+
   int ap_N1;
   int ap_N2;
   int ap_XP;
+
   int pucch0_thres;
   int pusch_thres;
   int prach_thres;

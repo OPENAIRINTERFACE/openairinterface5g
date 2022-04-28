@@ -60,7 +60,7 @@
 		<air_interface>nr</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
-		<USRP_IPAddress>192.168.18.252</USRP_IPAddress>
+		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
 	</testCase>
 
 	<testCase id="000001">

@@ -351,6 +351,14 @@ The following features are valid for the gNB and the 5G-NR UE.
   - Interfaces with RRC, RLC 
   - Interfaces with gtp-u (data Tx/Rx over N3 and F1-U interfaces)
 
+**gNB SDAP**
+- Send/Receive operations according to 37.324 Rel.15
+  - Establishment/Handling of SDAP entities.
+  - Transfer of User Plane Data
+  - Mapping between a QoS flow and a DRB for both DL and UL
+  - Marking QoS flow ID in both DL and UL packets
+  - Reflective QoS flow to DRB mapping for UL SDAP data PDUs
+
 **gNB RRC**
 - NR RRC (38.331) Rel 16 messages using new asn1c 
 - LTE RRC (36.331) also updated to Rel 15 
@@ -400,6 +408,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 - New gtp-u implementation supporting both N3 and F1-U interfaces according to 29.281 Rel.15
   - Interfaces with RRC, F1AP for tunnel creation
   - Interfaces with PDCP and RLC for data send/receive at the CU and DU respectively (F1-U interface)
+  - Interface with SDAP for data send/receive, capture of GTP-U Optional Header, GTP-U Extension Header and PDU Session Container.
 
 # OpenAirInterface 5G-NR UE Feature Set #
 
@@ -501,6 +510,13 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Sequence number management, SDU dicard and in-order delivery
    - Radio bearer establishment/handling and association with PDCP entities
    - Interfaces with RRC, RLC 
+
+**UE SDAP**
+*  Tx/Rx operations operations according to 37.324 Rel.15
+  - Establishment/Handling of SDAP entities.
+  - Transfer of User Plane Data
+  - Reflective Mapping
+  - RRC Signaling Mapping
 
 **UE RRC**
 * Integration of RRC messages and procedures supporting UE 5G SA connection according to 38.331 Rel.16 
