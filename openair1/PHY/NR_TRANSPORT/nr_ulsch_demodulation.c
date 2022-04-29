@@ -359,25 +359,15 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
         memcpy1((void*)&rxF_ext[2*neg_length],(void*)rxF,pos_length*sizeof(int32_t));
       }
 
-      #ifdef SUPPORT_PMI_MATRIC  
-      for (aatx = 0; aatx < pusch_pdu->nrOfLayers; aatx++)
-      #else
-      aatx = aarx;
-      #endif
-      {
+      for (aatx = 0; aatx < pusch_pdu->nrOfLayers; aatx++) {
         ul_ch0     = &pusch_vars->ul_ch_estimates[aatx*frame_parms->nb_antennas_rx+aarx][pusch_vars->dmrs_symbol*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
         ul_ch0_ext = &pusch_vars->ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*nb_re_pusch2];
-  
         memcpy1((void*)ul_ch0_ext,(void*)ul_ch0,nb_re_pusch*sizeof(int32_t));
       }
     }
     else {
-      #ifdef SUPPORT_PMI_MATRIC  
-      for (aatx = 0; aatx < pusch_pdu->nrOfLayers; aatx++)
-      #else
-      aatx = aarx;
-      #endif      
-      {
+
+      for (aatx = 0; aatx < pusch_pdu->nrOfLayers; aatx++) {
         ul_ch0     = &pusch_vars->ul_ch_estimates[aatx*frame_parms->nb_antennas_rx+aarx][pusch_vars->dmrs_symbol*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
         ul_ch0_ext = &pusch_vars->ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*nb_re_pusch2];
 
@@ -2098,11 +2088,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                     gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
                                     gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
                                     gNB->pusch_vars[ulsch_id]->rxdataF_comp,
-                                    #ifdef SUPPORT_PMI_MATRIC
                                     (rel15_ul->nrOfLayers>1) ? gNB->pusch_vars[ulsch_id]->rho : NULL,
-                                    #else
-                                    NULL,
-                                    #endif
                                     frame_parms,
                                     symbol,
                                     nb_re_pusch,
@@ -2118,11 +2104,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                              gNB->pusch_vars[ulsch_id]->rxdataF_comp,
                              gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
                              gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
-                             #ifdef SUPPORT_PMI_MATRIC
                              (rel15_ul->nrOfLayers>1) ? gNB->pusch_vars[ulsch_id]->rho : NULL,
-                             #else
-                             NULL,
-                             #endif
                              rel15_ul->nrOfLayers,
                              symbol,
                              rel15_ul->rb_size,
