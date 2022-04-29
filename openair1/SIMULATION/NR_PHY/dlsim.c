@@ -707,7 +707,7 @@ int main(int argc, char **argv)
 
   NR_UE_NR_Capability_t* UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
   prepare_sim_uecap(UE_Capability_nr,scc,mu,
-                    N_RB_DL,g_mcsTableIdx);
+                    N_RB_DL,g_mcsTableIdx,0);
 
   // TODO do a UECAP for phy-sim
   const gNB_RrcConfigurationReq conf = {

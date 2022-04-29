@@ -387,7 +387,7 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                        symbol);
       break;
     default:
-      LOG_E(PHY,"nr_ulsch_compute_llr: invalid Qm value, symbol = %d, Qm = %d\n",symbol, mod_order);
+      AssertFatal(1==0,"nr_ulsch_compute_llr: invalid Qm value, symbol = %d, Qm = %d\n",symbol, mod_order);
       break;
   }
 }
