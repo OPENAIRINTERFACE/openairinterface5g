@@ -206,28 +206,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   }
 #endif
 
-  // Based on Table 6.4.1.1.3-1/2 from TS 38.211
-  /*int deltas[3] = {0};
-  int n_delta = 0;
-  if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1) {
-    if (pusch_pdu->nrOfLayers <= 2) {
-      n_delta = 1;
-    } else {
-      n_delta = 2;
-      deltas[1] = 1;
-    }
-  } else {
-    if (pusch_pdu->nrOfLayers <= 2) {
-      n_delta = 1;
-    } else if (pusch_pdu->nrOfLayers <= 4) {
-      n_delta = 2;
-      deltas[1] = 2;
-    } else {
-      n_delta = 3;
-      deltas[1] = 2;
-      deltas[2] = 4;
-    }
-  }*/
+  uint8_t b_shift = pusch_pdu->nrOfLayers < 4 ? 1 : log2_approx(pusch_pdu->nrOfLayers>>1);
 
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -265,8 +244,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
           for (int k_line = 0; k_line <= 1; k_line++) {
             re_offset = (k0 + (n << 2) + (k_line << 1) + delta2) % gNB->frame_parms.ofdm_symbol_size;
             rxF = (int16_t *) &rxdataF[aarx][(soffset + symbol_offset + re_offset)];
-            ch[0] += (int16_t) (((int32_t) pil[0] * rxF[0] - (int32_t) pil[1] * rxF[1]) >> 15);
-            ch[1] += (int16_t) (((int32_t) pil[0] * rxF[1] + (int32_t) pil[1] * rxF[0]) >> 15);
+            ch[0] += (int16_t) (((int32_t) pil[0] * rxF[0] - (int32_t) pil[1] * rxF[1]) >> (15+b_shift));
+            ch[1] += (int16_t) (((int32_t) pil[0] * rxF[1] + (int32_t) pil[1] * rxF[0]) >> (15+b_shift));
             pil += 2;
           }
         }
