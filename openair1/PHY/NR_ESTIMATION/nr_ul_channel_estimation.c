@@ -206,7 +206,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   }
 #endif
 
-  uint8_t b_shift = pusch_pdu->nrOfLayers < 4 ? 1 : log2_approx(pusch_pdu->nrOfLayers>>1);
+  uint8_t b_shift = pusch_pdu->nrOfLayers == 1;
 
   for (aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
 
