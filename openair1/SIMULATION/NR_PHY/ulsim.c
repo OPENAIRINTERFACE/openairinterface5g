@@ -1260,23 +1260,19 @@ int main(int argc, char **argv)
         for (i=0; i<slot_length; i++) {
           for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
             if (channel_model == AWGN) {
-              double H_awgn[4][4] ={{1.0, 0.0, 0.0, 0.0},//rx 0
-                                    {0.0, 1.0, 0.0, 0.0},  //rx 1
-                                    {0.0, 0.0, 1.0, 0.0},  //rx 2
-                                    {0.0, 0.0, 0.0, 1.0}};//rx 3
-              #if 0
-              double H_awgn_mimo[4][4] ={{1.0, 0.5, 0.25, 0.125},//rx 0
-                                   {0.5, 1.0, 0.5, 0.25},  //rx 1
-                                   {0.25, 0.5, 1.0, 0.5},  //rx 2
-                                   {0.125, 0.25, 0.5, 1.0}};//rx 3
-              #endif
+
+              double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05},   //rx 0
+                                         {0.2, 1.0, 0.2, 0.1},    //rx 1
+                                         {0.1, 0.2, 1.0, 0.2},    //rx 2
+                                         {0.05, 0.1, 0.2, 1.0}};  //rx 3
+
               // sum up signals from different Tx antennas
               r_re[ap][i] = 0;
               r_im[ap][i] = 0;
              
               for (int aa=0; aa<n_tx; aa++) {
-                r_re[ap][i] += s_re[aa][i]*H_awgn[ap][aa];
-                r_im[ap][i] += s_im[aa][i]*H_awgn[ap][aa];
+                r_re[ap][i] += s_re[aa][i]*H_awgn_mimo[ap][aa];
+                r_im[ap][i] += s_im[aa][i]*H_awgn_mimo[ap][aa];
               }
             }
 		
