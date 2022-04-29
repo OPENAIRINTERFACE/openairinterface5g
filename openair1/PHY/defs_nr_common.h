@@ -67,6 +67,7 @@
 
 /*used for the resource mapping*/
 #define NR_MAX_PDCCH_DMRS_LENGTH 576 // 16(L)*2(QPSK)*3(3 DMRS symbs per REG)*6(REG per CCE)
+#define  NR_MAX_PDCCH_SIZE 8192 // It seems it is the max polar coded block size
 
 #define NR_MAX_DCI_PAYLOAD_SIZE 64
 #define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)
@@ -93,6 +94,8 @@
 
 #define NR_RX_NB_TH 1
 #define NR_NB_TH_SLOT 2
+
+#define NR_NB_NSCID 2
 
 extern const uint8_t nr_rv_round_map[4]; 
 
@@ -278,7 +281,7 @@ struct NR_DL_FRAME_PARMS {
   uint32_t att_rx;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   /// Frame type (0 FDD, 1 TDD)
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   uint8_t tdd_config;
   /// Cell ID
   uint16_t Nid_cell;

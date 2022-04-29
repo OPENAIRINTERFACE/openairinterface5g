@@ -84,9 +84,6 @@ typedef struct {
   nr_rlc_sdu_segment_t *wait_end;
 
   nr_rlc_sdu_segment_t *retransmit_list;
-  nr_rlc_sdu_segment_t *retransmit_end;
-
-  nr_rlc_sdu_segment_t *ack_list;
 } nr_rlc_entity_am_t;
 
 void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *entity,

@@ -7082,43 +7082,40 @@ static inline void dft12f(simd_q15_t *x0,
 
   simd_q15_t tmp_dft12[12];
 
-  simd_q15_t *tmp_dft12_ptr = &tmp_dft12[0];
-
   // msg("dft12\n");
 
   bfly4_tw1(x0,
             x3,
             x6,
             x9,
-            tmp_dft12_ptr,
-            tmp_dft12_ptr+3,
-            tmp_dft12_ptr+6,
-            tmp_dft12_ptr+9);
-
+            tmp_dft12,
+            tmp_dft12+3,
+            tmp_dft12+6,
+            tmp_dft12+9);
 
   bfly4_tw1(x1,
             x4,
             x7,
             x10,
-            tmp_dft12_ptr+1,
-            tmp_dft12_ptr+4,
-            tmp_dft12_ptr+7,
-            tmp_dft12_ptr+10);
+            tmp_dft12+1,
+            tmp_dft12+4,
+            tmp_dft12+7,
+            tmp_dft12+10);
 
 
   bfly4_tw1(x2,
             x5,
             x8,
             x11,
-            tmp_dft12_ptr+2,
-            tmp_dft12_ptr+5,
-            tmp_dft12_ptr+8,
-            tmp_dft12_ptr+11);
+            tmp_dft12+2,
+            tmp_dft12+5,
+            tmp_dft12+8,
+            tmp_dft12+11);
 
   //  k2=0;
-  bfly3_tw1(tmp_dft12_ptr,
-            tmp_dft12_ptr+1,
-            tmp_dft12_ptr+2,
+  bfly3_tw1(tmp_dft12,
+            tmp_dft12+1,
+            tmp_dft12+2,
             y0,
             y4,
             y8);
@@ -7126,9 +7123,9 @@ static inline void dft12f(simd_q15_t *x0,
 
 
   //  k2=1;
-  bfly3(tmp_dft12_ptr+3,
-        tmp_dft12_ptr+4,
-        tmp_dft12_ptr+5,
+  bfly3(tmp_dft12+3,
+        tmp_dft12+4,
+        tmp_dft12+5,
         y1,
         y5,
         y9,
@@ -7138,9 +7135,9 @@ static inline void dft12f(simd_q15_t *x0,
 
 
   //  k2=2;
-  bfly3(tmp_dft12_ptr+6,
-        tmp_dft12_ptr+7,
-        tmp_dft12_ptr+8,
+  bfly3(tmp_dft12+6,
+        tmp_dft12+7,
+        tmp_dft12+8,
         y2,
         y6,
         y10,
@@ -7148,9 +7145,9 @@ static inline void dft12f(simd_q15_t *x0,
         W4_12);
 
   //  k2=3;
-  bfly3(tmp_dft12_ptr+9,
-        tmp_dft12_ptr+10,
-        tmp_dft12_ptr+11,
+  bfly3(tmp_dft12+9,
+        tmp_dft12+10,
+        tmp_dft12+11,
         y3,
         y7,
         y11,
@@ -10606,15 +10603,43 @@ int dfts_autoinit(void)
 
 #ifndef MR_MAIN
 
-void dft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
-	AssertFatal((sizeidx>=0 && sizeidx<(int)DFT_SIZE_IDXTABLESIZE),"Invalid dft size index %i\n",sizeidx);
-	dft_ftab[sizeidx](sigF,sig,scale_flag);
+void dft(uint8_t sizeidx, int16_t *input,int16_t *output,unsigned char scale_flag){
+	AssertFatal((sizeidx >= 0 && sizeidx<DFT_SIZE_IDXTABLESIZE),"Invalid dft size index %i\n",sizeidx);
+        int algn=0xF;
+        #ifdef __AVX2__
+        if ( (dft_ftab[sizeidx].size%3) != 0 ) // there is no AVX2 implementation for multiples of 3 DFTs
+          algn=0x1F;
+        #endif 
+        AssertFatal(((intptr_t)output&algn)==0,"Buffers should be aligned %p",output);
+        if (((intptr_t)input)&algn) {
+          LOG_D(PHY, "DFT called with input not aligned, add a memcpy, size %d\n", sizeidx);
+          int sz=dft_ftab[sizeidx].size;
+          if (sizeidx==DFT_12) // This case does 8 DFTs in //
+            sz*=8;
+          int16_t tmp[sz*2] __attribute__ ((aligned(32))); // input and output are not in right type (int16_t instead of c16_t)
+          memcpy(tmp, input, sizeof tmp);
+          dft_ftab[sizeidx].func(tmp,output,scale_flag);
+        } else
+          dft_ftab[sizeidx].func(input,output,scale_flag);
 };
 
-void idft(uint8_t sizeidx, int16_t *sigF,int16_t *sig,unsigned char scale_flag){
-	AssertFatal((sizeidx>=0 && sizeidx<(int)IDFT_SIZE_IDXTABLESIZE),"Invalid idft size index %i\n",sizeidx);
-	idft_ftab[sizeidx](sigF,sig,scale_flag);
+void idft(uint8_t sizeidx, int16_t *input,int16_t *output,unsigned char scale_flag){
+	AssertFatal((sizeidx>=0 && sizeidx<DFT_SIZE_IDXTABLESIZE),"Invalid idft size index %i\n",sizeidx);
+        int algn=0xF;
+        #ifdef __AVX2__
+          algn=0x1F;
+        #endif
+        AssertFatal( ((intptr_t)output&algn)==0,"Buffers should be 16 bytes aligned %p",output);
+        if (((intptr_t)input)&algn ) {  
+          LOG_D(PHY, "DFT called with input not aligned, add a memcpy\n");
+          int sz=idft_ftab[sizeidx].size;
+          int16_t tmp[sz*2] __attribute__ ((aligned(32))); // input and output are not in right type (int16_t instead of c16_t)
+          memcpy(tmp, input, sizeof tmp);
+          dft_ftab[sizeidx].func(tmp,output,scale_flag);
+        } else
+          idft_ftab[sizeidx].func(input,output,scale_flag);
 };
+
 #endif
 
 /*---------------------------------------------------------------------------------------*/

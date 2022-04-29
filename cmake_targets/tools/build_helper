@@ -103,12 +103,12 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
+        "ubuntu22.04") return 0 ;;
+        "ubuntu21.04") return 0 ;;
+        "ubuntu20.04") return 0 ;;
         "ubuntu18.04") return 0 ;;
-        "ubuntu17.10") return 0 ;;
-        "ubuntu17.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
-        "ubuntu14.04") return 0 ;;
-        "fedora24")    return 0 ;;
+        "fedora35")    return 0 ;;
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
@@ -315,6 +315,26 @@ install_protobuf_c_from_source(){
     ) >& $protobuf_c_install_log
 }
 
+install_protobuf_c() {
+  local protobuf_packages=""
+  case "$(get_distribution_release)" in
+    "ubuntu18.04" | "ubuntu20.04" | "ubuntu21.04" | "ubuntu22.04")
+      protobuf_packages="protobuf-c-compiler libprotobuf-c1 libprotobuf-c-dev"
+      ;;
+  esac
+  case "$OS_DISTRO" in
+    "rhel" | "centos" | "fedora") # in EPEL and Fedora repos (at least as of 35)
+      protobuf_packages="protobuf-c-compiler protobuf-c protobuf-c-devel"
+      ;;
+  esac
+  if [[ "$protobuf_packages" == "" ]]; then
+    install_protobuf_from_source
+    install_protobuf_c_from_source
+  else
+    $SUDO $INSTALLER -y install $protobuf_packages
+  fi
+}
+
 install_usrp_uhd_driver_from_source(){
     uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
     echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "
@@ -471,10 +491,6 @@ install_bladerf_driver_from_source(){
 
 check_install_bladerf_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-        if [ "$(get_distribution_release)" == "ubuntu14.04" ] ; then
-            $SUDO add-apt-repository -y ppa:bladerf/bladerf
-            $SUDO apt-get update
-        fi
         $SUDO apt-get install -y  bladerf libbladerf-dev
         $SUDO apt-get install -y bladerf-firmware-fx3
         $SUDO apt-get install -y bladerf-fpga-hostedx40
@@ -574,7 +590,16 @@ check_install_soapy () {
 
 check_install_additional_tools (){
   $SUDO $INSTALLER update -y
+  local optional_packages=""
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    case "$(get_distribution_release)" in
+        "ubuntu16.04"| "ubuntu18.04")
+            optional_packages="python-dev python-pexpect python-numpy python-scipy python-matplotlib ctags"
+            ;;
+        "ubuntu20.04" | "ubuntu21.04" | "ubuntu22.04" )
+            optional_packages="python3 python3-pip python3-dev python3-scipy python3-matplotlib universal-ctags"
+            ;;
+    esac
     PACKAGE_LIST="\
 	check \
 	dialog \
@@ -584,8 +609,6 @@ check_install_additional_tools (){
 	libpthread-stubs0-dev \
 	openvpn \
 	pkg-config \
-	python-dev  \
-	python-pexpect \
 	sshfs \
 	swig  \
 	tshark \
@@ -593,18 +616,14 @@ check_install_additional_tools (){
 	unzip  \
 	valgrind  \
 	vlan	  \
-	ctags \
         ntpdate \
         iperf3 \
         android-tools-adb \
 	wvdial \
-        python-numpy \
         sshpass \
         nscd \
         bc \
-        ntp \
-        python-scipy \
-        python-matplotlib"
+        ntp"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
     PACKAGE_LIST="\
       check \
@@ -650,22 +669,19 @@ check_install_additional_tools (){
       valgrind  \
       vconfig	  \
       ctags \
-      ntpdate \
+      ntpsec \
       iperf3 \
       wvdial \
       python-numpy \
       sshpass \
       nscd \
-      python2-paramiko \
+      python-paramiko \
       python-pyroute2 \
       python-netifaces \
-      python2-scipy \
-      python2-matplotlib"
+      python-scipy \
+      python-matplotlib"
   fi
-    $SUDO $INSTALLER install -y $PACKAGE_LIST
-
-    $SUDO rm -fr /opt/ssh
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
+    $SUDO $INSTALLER install -y $PACKAGE_LIST $optional_packages
 
   #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
@@ -696,25 +712,26 @@ check_install_oai_software() {
     local LAPACK_TARGET="/usr/lib/atlas-base/atlas/liblapack.so"
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
-        "ubuntu14.04")
-            specific_packages="libtasn1-3-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
-            # For iperf3
-            $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
-            $SUDO apt-get update
-            ;;
         "ubuntu16.04")
-            specific_packages="libtasn1-6-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
+            specific_packages="libtasn1-6-dev libgnutls-dev libatlas-dev iproute libconfig8-dev iptables-dev libgcrypt11-dev python-pip pydb python guile-2.0-dev"
             ;;
-        "ubuntu17.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev libatlas-dev iproute libconfig8-dev"
-            ;;
-        "ubuntu17.10")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute libconfig8-dev"
+        "ubuntu18.04")
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev iptables-dev libgcrypt11-dev python-pip pydb python guile-2.0-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
-        "ubuntu18.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
+        "ubuntu20.04")
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev"
+            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            ;;
+         "ubuntu21.04")
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev"
+            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            ;;
+         "ubuntu22.04")
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python2 guile-2.2-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
@@ -734,22 +751,21 @@ check_install_oai_software() {
 	texlive-latex-base \
 	ethtool \
 	flex  \
+        g++ \
+        gcc \
 	gdb  \
 	git \
 	graphviz \
 	gtkwave \
-	guile-2.0-dev  \
 	iperf \
 	iptables \
-	iptables-dev \
 	libatlas-base-dev \
 	libblas-dev \
-  liblapack-dev\
-  liblapacke-dev\
+	liblapack-dev \
+	liblapacke-dev \
 	libffi-dev \
 	libforms-bin \
 	libforms-dev \
-	libgcrypt11-dev \
 	libgmp-dev \
 	libgtk-3-dev \
 	libidn2-0-dev  \
@@ -769,11 +785,8 @@ check_install_oai_software() {
 	openssh-client \
 	openssh-server \
 	openssl \
-	python  \
 	subversion \
 	xmlstarlet \
-	python-pip \
-	pydb \
 	libyaml-dev \
 	wget \
 	libxpm-dev \
@@ -791,8 +804,6 @@ check_install_oai_software() {
         $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
       fi
       $SUDO $INSTALLER install -y python-epdb vim-common
-    else
-      $SUDO $INSTALLER install -y pydb
     fi
 
     $SUDO $INSTALLER install -y \
@@ -804,6 +815,8 @@ check_install_oai_software() {
       doxygen \
       ethtool \
       flex \
+      g++ \
+      gcc \
       gdb \
       git \
       graphviz \
@@ -860,8 +873,6 @@ check_install_oai_software() {
   fi
 
     install_asn1c_from_source $1
-    $SUDO rm -fr /opt/ssh
-    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
 
 install_asn1c_from_source(){
@@ -954,24 +965,4 @@ do
          exit
         fi
 done
-}
-
-
-# get from http://www.linuxjournal.com/content/validating-ip-address-bash-script
-validate_ip() {
-
-local  ip=$1
-local  stat=1
-
-if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-    OIFS=$IFS
-    IFS='.'
-    ip=($ip)
-    IFS=$OIFS
-    [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
-        && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
-    stat=$?
-fi
-
-return $stat
 }

@@ -30,6 +30,10 @@ typedef struct nr_rlc_sdu_t {
   int retx_count;
 
   int ref_count;      /* incremented each time the SDU is segmented */
+  int free_count;     /* incremented each time a segment is freed
+                       * when it equals ref_count we can free the SDU
+                       * completely
+                       */
 } nr_rlc_sdu_t;
 
 typedef struct nr_rlc_sdu_segment_t {
@@ -44,7 +48,8 @@ typedef struct nr_rlc_sdu_segment_t {
 nr_rlc_sdu_segment_t *nr_rlc_new_sdu(
     char *buffer, int size,
     int upper_layer_id);
-void nr_rlc_free_sdu_segment(nr_rlc_sdu_segment_t *sdu);
+/* return 1 if the SDU has been freed too, 0 if not (more segments to free) */
+int nr_rlc_free_sdu_segment(nr_rlc_sdu_segment_t *sdu);
 void nr_rlc_sdu_segment_list_append(nr_rlc_sdu_segment_t **list,
                                     nr_rlc_sdu_segment_t **end,
                                     nr_rlc_sdu_segment_t *sdu);

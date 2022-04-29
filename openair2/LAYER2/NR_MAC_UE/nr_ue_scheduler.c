@@ -93,7 +93,8 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              int cc_id,
                              frame_t frame,
                              int slot,
-                             int thread_id){
+                             int thread_id,
+                             void *phy_data){
 
   scheduled_response->dl_config  = dl_config;
   scheduled_response->ul_config  = ul_config;
@@ -103,6 +104,7 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
   scheduled_response->frame      = frame;
   scheduled_response->slot       = slot;
   scheduled_response->thread_id  = thread_id;
+  scheduled_response->phy_data   = phy_data;
 
 }
 
@@ -734,6 +736,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                          ? pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup : pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
     }
 
+    pusch_config_pdu->scid = 0;
+    pusch_config_pdu->ul_dmrs_scrambling_id = mac->physCellId;
+    if(*dci_format == NR_UL_DCI_FORMAT_0_1)
+      pusch_config_pdu->scid = dci->dmrs_sequence_initialization.val;
+
     /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
 
     if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
@@ -758,6 +765,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
       LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d \n", pusch_config_pdu->num_dmrs_cdm_grps_no_data,
                 pusch_config_pdu->dfts_ofdm.low_papr_group_number);
+    }
+    else {
+      if (pusch_config_pdu->scid == 0 &&
+          NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID0)
+        pusch_config_pdu->ul_dmrs_scrambling_id = *NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID0;
+      if (pusch_config_pdu->scid == 1 &&
+          NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID1)
+        pusch_config_pdu->ul_dmrs_scrambling_id = *NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID1;
     }
 
     /* TRANSFORM PRECODING --------------------------------------------------------------------------------------------------------*/
@@ -1059,7 +1074,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
       mac->dl_config_request = dcireq.dl_config_req;
 
-      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
+      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
     }
@@ -1075,9 +1090,13 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         fill_dci_search_candidates(mac->ra.ss, rel15);
         dl_config->number_pdus = 1;
         LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d\n",mac->cg,rel15->rnti,dl_config->number_pdus);
-        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id);
+        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
           mac->if_module->scheduled_response(&scheduled_response);
+      }
+      else
+      {
+        dl_config->number_pdus = 0;
       }
     }
   } else if (ul_info) {
@@ -1180,7 +1199,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
         pthread_mutex_unlock(&ul_config->mutex_ul_config); // avoid double lock
 
-        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, ul_info->thread_id);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, ul_info->thread_id, NULL);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           mac->if_module->scheduled_response(&scheduled_response);
         }
@@ -2251,26 +2270,27 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
   int O_CSI = 0;
   int N_UCI = 0;
 
-  PUCCH_sched_t *pucch = calloc(1,sizeof(*pucch));
-  pucch->resource_indicator = -1;
-  pucch->initial_pucch_id = -1;
+  PUCCH_sched_t pucch = {
+    .resource_indicator = -1,
+    .initial_pucch_id = -1
+  };
   uint16_t rnti = mac->crnti;  //FIXME not sure this is valid for all pucch instances
 
   // SR
-  if(trigger_periodic_scheduling_request(mac, pucch, frameP, slotP)) {
+  if (trigger_periodic_scheduling_request(mac, &pucch, frameP, slotP)) {
     O_SR = 1;
     /* sr_payload = 1 means that this is a positive SR, sr_payload = 0 means that it is a negative SR */
-    pucch->sr_payload = nr_ue_get_SR(module_idP,
+    pucch.sr_payload = nr_ue_get_SR(module_idP,
                                      frameP,
                                      slotP);
   }
 
   // CSI
   if (mac->ra.ra_state == RA_SUCCEEDED || get_softmodem_params()->phy_test == 1)
-    O_CSI = nr_get_csi_measurements(mac, frameP, slotP, pucch);
+    O_CSI = nr_get_csi_measurements(mac, frameP, slotP, &pucch);
 
   // ACKNACK
-  O_ACK = get_downlink_ack(mac, frameP, slotP, pucch);
+  O_ACK = get_downlink_ack(mac, frameP, slotP, &pucch);
 
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   NR_PUCCH_Config_t *pucch_Config = NULL;
@@ -2300,37 +2320,41 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
       pucch_Config->format2 &&
       (pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI == NULL)) {
     O_CSI = 0;
-    pucch->csi_part1_payload = 0;
-    pucch->csi_part2_payload = 0;
+    pucch.csi_part1_payload = 0;
+    pucch.csi_part2_payload = 0;
   }
 
   N_UCI = O_SR + O_ACK + O_CSI;
+  mac->nr_ue_emul_l1.num_srs = O_SR;
+  mac->nr_ue_emul_l1.num_harqs = O_ACK;
+  mac->nr_ue_emul_l1.num_csi_reports = O_CSI;
 
   // do no transmit pucch if only SR scheduled and it is negative
-  if ((O_ACK + O_CSI) == 0 && pucch->sr_payload == 0)
+  if ((O_ACK + O_CSI) == 0 && pucch.sr_payload == 0)
     return;
 
   if (N_UCI > 0) {
     LOG_D(NR_MAC,"%d.%d configure pucch, O_SR %d, O_ACK %d, O_CSI %d\n",frameP,slotP,O_SR,O_ACK,O_CSI);
-    pucch->resource_set_id = find_pucch_resource_set(mac, O_ACK + O_CSI);
-    select_pucch_resource(mac, pucch);
+    pucch.resource_set_id = find_pucch_resource_set(mac, O_ACK + O_CSI);
+    select_pucch_resource(mac, &pucch);
     fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
     pthread_mutex_lock(&ul_config->mutex_ul_config);
     AssertFatal(ul_config->number_pdus<FAPI_NR_UL_CONFIG_LIST_NUM, "ul_config->number_pdus %d out of bounds\n",ul_config->number_pdus);
     fapi_nr_ul_config_pucch_pdu *pucch_pdu = &ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu;
 
     fill_ul_config(ul_config, frameP, slotP, FAPI_NR_UL_CONFIG_TYPE_PUCCH);
+    mac->nr_ue_emul_l1.active_uci_sfn_slot = NFAPI_SFNSLOT2HEX(frameP, slotP);
     pthread_mutex_unlock(&ul_config->mutex_ul_config);
 
     nr_ue_configure_pucch(mac,
                           slotP,
                           rnti,
-                          pucch,
+                          &pucch,
                           pucch_pdu,
                           O_SR, O_ACK, O_CSI);
-    LOG_D(NR_MAC,"Configuring pucch, is_common = %d\n",pucch->is_common);
+    LOG_D(NR_MAC, "Configuring pucch, is_common = %d\n", pucch.is_common);
     nr_scheduled_response_t scheduled_response;
-    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
+    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id, NULL);
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
       mac->if_module->scheduled_response(&scheduled_response);
   }
@@ -2677,7 +2701,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
         }
       } // if format1
 
-      fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id);
+      fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id, NULL);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
     } // is_nr_prach_slot
@@ -2692,7 +2716,8 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
                           uint8_t ssb_subcarrier_offset,
                           uint32_t ssb_index,
                           uint16_t ssb_start_subcarrier,
-                          frequency_range_t frequency_range) {
+                          frequency_range_t frequency_range,
+                          void *phy_data) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   nr_scheduled_response_t scheduled_response;
@@ -2740,7 +2765,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
     slot_s = mac->type0_PDCCH_CSS_config.n_c;
   }
   LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
-  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0); // TODO fix thread_id, for now assumed 0
+  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0, phy_data); // TODO fix thread_id, for now assumed 0
 
   if (dl_config->number_pdus) {
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
@@ -3118,8 +3143,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
         header->R = 0;
         header->F = 1;
         header->LCID = lcid;
-        header->L1 = ((unsigned short) sdu_length >> 8) & 0x7f;
-        header->L2 = (unsigned short) sdu_length & 0xff;
+        header->L = htons(sdu_length);
 
         #ifdef ENABLE_MAC_PAYLOAD_DEBUG
         LOG_I(NR_MAC, "In %s: dumping MAC sub-header with length %d: \n", __FUNCTION__, sh_size);

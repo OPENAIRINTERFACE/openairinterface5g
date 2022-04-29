@@ -107,14 +107,15 @@ class Module_UE:
 	def GetModuleIPAddress(self):
 		HOST=self.HostUsername+'@'+self.HostIPAddress
 		response= []
-		tentative = 3 
+		tentative = 8
 		while (len(response)==0) and (tentative>0):
 			COMMAND="ip a show dev " + self.UENetwork + " | grep --colour=never inet | grep " + self.UENetwork
-			logging.debug(COMMAND)
+			if tentative == 8:
+				logging.debug(COMMAND)
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			response = ssh.stdout.readlines()
 			tentative-=1
-			time.sleep(10)
+			time.sleep(2)
 		if (tentative==0) and (len(response)==0):
 			logging.debug('\u001B[1;37;41m Module IP Address Not Found! Time expired \u001B[0m')
 			return -1

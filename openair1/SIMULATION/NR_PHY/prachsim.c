@@ -223,6 +223,8 @@ nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
 
+nr_bler_struct nr_bler_data[NR_NUM_MCS];
+
 void processSlotTX(void *arg) {}
 
 int main(int argc, char **argv){

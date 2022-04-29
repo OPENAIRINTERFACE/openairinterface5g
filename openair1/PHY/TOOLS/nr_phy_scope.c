@@ -37,7 +37,7 @@
 const FL_COLOR rx_antenna_colors[4] = {FL_RED,FL_BLUE,FL_GREEN,FL_YELLOW};
 const FL_COLOR water_colors[4] = {FL_BLUE,FL_GREEN,FL_YELLOW,FL_RED};
 
-typedef struct complex16 scopeSample_t;
+typedef c16_t scopeSample_t;
 #define SquaredNorm(VaR) ((VaR).r*(VaR).r+(VaR).i*(VaR).i)
 
 typedef struct {
@@ -678,52 +678,42 @@ static void uePbchIQ  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_U
 
 static void uePcchLLR  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDCCH LLRs
-  if (!phy_vars_ue->pdcch_vars[0][eNB_id]->llr)
+  if (!data[pdcchLlr])
     return;
 
   //int num_re = 4*273*12; // 12*frame_parms->N_RB_DL*num_pdcch_symbols
   //int Qm = 2;
-  int coded_bits_per_codeword = 2*4*100*12; //num_re*Qm;
+  const int sz=data[pdcchLlr]->lineSz;
   float *llr, *bit;
-  oai_xygraph_getbuff(graph, &bit, &llr, coded_bits_per_codeword*RX_NB_TH_MAX, 0);
-  int base=0;
+  oai_xygraph_getbuff(graph, &bit, &llr, sz, 0);
 
-  for (int thr=0 ; thr < RX_NB_TH_MAX ; thr ++ ) {
-    int16_t *pdcch_llr = (int16_t *) phy_vars_ue->pdcch_vars[thr][eNB_id]->llr;
+  int16_t *pdcch_llr = (int16_t *)(data[pdcchLlr]+1);
 
-    for (int i=0; i<coded_bits_per_codeword; i++) {
-      llr[base+i] = (float) pdcch_llr[i];
-    }
-
-    base+=coded_bits_per_codeword;
+  for (int i=0; i<sz; i++) {
+    llr[i] = (float) pdcch_llr[i];
   }
 
-  AssertFatal(base <= coded_bits_per_codeword*RX_NB_TH_MAX, "");
-  oai_xygraph(graph,bit,llr,base,0,10);
+  oai_xygraph(graph,bit,llr,sz,0,10);
 }
 static void uePcchIQ  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDCCH I/Q of MF Output
-  if (!phy_vars_ue->pdcch_vars[0][eNB_id]->rxdataF_comp[0])
+  if (!data[pdcchRxdataF_comp])
     return;
 
-  int nb=4*273*12; // 12*frame_parms->N_RB_DL*num_pdcch_symbols
+  const int sz=data[pdcchRxdataF_comp]->lineSz;
+  //const int antennas=data[pdcchRxdataF_comp]->colSz;
+  // We take the first antenna only for now
   float *I, *Q;
-  oai_xygraph_getbuff(graph, &I, &Q, nb*RX_NB_TH_MAX, 0);
-  int base=0;
+  oai_xygraph_getbuff(graph, &I, &Q, sz, 0);
 
-  for (int thr=0 ; thr < RX_NB_TH_MAX ; thr ++ ) {
-    scopeSample_t *pdcch_comp = (scopeSample_t *) phy_vars_ue->pdcch_vars[thr][eNB_id]->rxdataF_comp[0];
+  scopeSample_t *pdcch_comp = (scopeSample_t *) (data[pdcchRxdataF_comp]+1);
 
-    for (int i=0; i< nb; i++) {
-      I[base+i] = pdcch_comp[i].r;
-      Q[base+i] = pdcch_comp[i].i;
-    }
-
-    base+=nb;
+  for (int i=0; i<sz; i++) {
+    I[i] = pdcch_comp[i].r;
+    Q[i] = pdcch_comp[i].i;
   }
 
-  AssertFatal(base <= nb*RX_NB_TH_MAX, "");
-  oai_xygraph(graph,I,Q,base,0,10);
+  oai_xygraph(graph,I,Q,sz,0,10);
 }
 static void uePdschLLR  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDSCH LLRs
@@ -908,7 +898,6 @@ static void *nrUEscopeThread(void *arg) {
   char *name="5G-UE-scope";
   fl_initialize (&fl_argc, &name, NULL, 0, 0);
   OAI_phy_scope_t  *form_nrue=create_phy_scope_nrue(0);
-  (( scopeData_t *)ue->scopeData)->liveData=calloc(sizeof(scopeGraphData_t *), UEdataTypeNumberOfItems);
 
   while (!oai_exit) {
     fl_freeze_form(form_nrue->phy_scope);
@@ -925,28 +914,43 @@ static void *nrUEscopeThread(void *arg) {
 }
 
 void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz) {
+  // Local static copy of the scope data bufs
+  // The active data buf is alterned to avoid interference between the Scope thread (display) and the Rx thread (data input)
+  // Index of "2" could be set to the number of Rx threads + 1
+  static scopeGraphData_t *copyDataBufs[UEdataTypeNumberOfItems][2] = {0};
+  static int  copyDataBufsIdx[UEdataTypeNumberOfItems] = {0};
+
   scopeData_t *tmp=(scopeData_t *)ue->scopeData;
 
   if (tmp) {
-    scopeGraphData_t *live= ((scopeGraphData_t **)tmp->liveData)[type];
+    // Begin of critical zone between UE Rx threads that might copy new data at the same time: might require a mutex
+    int newCopyDataIdx = (copyDataBufsIdx[type]==0)?1:0;
+    copyDataBufsIdx[type] = newCopyDataIdx;
+    // End of critical zone between UE Rx threads
 
-    if (live == NULL || live->dataSize < elementSz*colSz*lineSz) {
-      scopeGraphData_t *ptr=realloc(live, sizeof(scopeGraphData_t) + elementSz*colSz*lineSz);
+    // New data will be copied in a different buffer than the live one
+    scopeGraphData_t *copyData= copyDataBufs[type][newCopyDataIdx];
+
+    if (copyData == NULL || copyData->dataSize < elementSz*colSz*lineSz) {
+      scopeGraphData_t *ptr=realloc(copyData, sizeof(scopeGraphData_t) + elementSz*colSz*lineSz);
 
       if (!ptr) {
         LOG_E(PHY,"can't realloc\n");
         return;
       } else {
-        live=ptr;
+        copyData=ptr;
       }
     }
 
-    live->dataSize=elementSz*colSz*lineSz;
-    live->elementSz=elementSz;
-    live->colSz=colSz;
-    live->lineSz=lineSz;
-    memcpy(live+1, dataIn,  elementSz*colSz*lineSz);
-    ((scopeGraphData_t **)tmp->liveData)[type]=live;
+    copyData->dataSize=elementSz*colSz*lineSz;
+    copyData->elementSz=elementSz;
+    copyData->colSz=colSz;
+    copyData->lineSz=lineSz;
+    memcpy(copyData+1, dataIn,  elementSz*colSz*lineSz);
+    copyDataBufs[type][newCopyDataIdx] = copyData;
+
+    // The new data just copied in the local static buffer becomes live now
+    ((scopeGraphData_t **)tmp->liveData)[type]=copyData;
   }
 }
 
@@ -954,6 +958,7 @@ void nrUEinitScope(PHY_VARS_NR_UE *ue) {
   AssertFatal(ue->scopeData=malloc(sizeof(scopeData_t)),"");
   scopeData_t *scope=(scopeData_t *) ue->scopeData;
   scope->copyData=UEcopyData;
+  AssertFatal(scope->liveData=calloc(sizeof(scopeGraphData_t *), UEdataTypeNumberOfItems),"");
   pthread_t forms_thread;
   threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
 }
