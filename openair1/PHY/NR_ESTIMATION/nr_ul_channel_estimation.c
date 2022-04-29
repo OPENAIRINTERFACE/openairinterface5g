@@ -252,7 +252,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
         // Channel interpolation
         for (int k_line = 0; k_line <= 1; k_line++) {
-          pilot_cnt++;
 #ifdef DEBUG_PUSCH
           re_offset = (k0 + (n << 2) + (k_line << 1)) % gNB->frame_parms.ofdm_symbol_size;
           rxF = (int16_t *) &rxdataF[aarx][(soffset + symbol_offset + re_offset)];
@@ -275,6 +274,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
           } else {
             multadd_real_vector_complex_scalar(fm, ch, ul_ch, 8);
           }
+          pilot_cnt++;
         }
       }
 
