@@ -1648,8 +1648,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
           ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->R = 0;
           ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->F = 1;
           ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->L1 = (mac_sdu_length >> 8) & 0xff;
-          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->L2 = mac_sdu_length & 0xff;
+          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->L = htons(mac_sdu_length);
           ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_LONG);
         }
         LOG_I(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, mac_subheader_len, ra->mac_pdu_length);
