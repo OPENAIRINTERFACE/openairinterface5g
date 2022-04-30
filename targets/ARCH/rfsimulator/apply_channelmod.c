@@ -52,7 +52,8 @@
   either we regenerate the channel (call again random_channel(desc,0)), or we keep it over subframes
   legacy: we regenerate each sub frame in UL, and each frame only in DL
 */
-void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_sig,
+void rxAddInput( const c16_t *input_sig,
+		 c16_t *after_channel_sig,
                  int rxAnt,
                  channel_desc_t *channelDesc,
                  int nbSamples,
@@ -73,7 +74,7 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
   const int nbTx=channelDesc->nb_tx;
 
   for (int i=0; i<((int)nbSamples-dd); i++) {
-    struct complex16 *out_ptr=after_channel_sig+dd+i;
+    c16_t *out_ptr=after_channel_sig+dd+i;
     struct complexd rx_tmp= {0};
 
     for (int txAnt=0; txAnt < nbTx; txAnt++) {
@@ -87,7 +88,7 @@ void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_si
         // but it is not very usefull
         // it would be better to split out each antenna in a separate flow
         // that will allow to mix ru antennas freely
-        struct complex16 tx16=input_sig[((TS+i-l)*nbTx+txAnt)%CirSize];
+        c16_t tx16=input_sig[((TS+i-l)*nbTx+txAnt)%CirSize];
         rx_tmp.r += tx16.r * channelModel[l].r - tx16.i * channelModel[l].i;
         rx_tmp.i += tx16.i * channelModel[l].r + tx16.r * channelModel[l].i;
       } //l

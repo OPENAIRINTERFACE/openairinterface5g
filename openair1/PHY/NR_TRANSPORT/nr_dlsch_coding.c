@@ -286,10 +286,9 @@ void ldpc8blocks( void *p) {
 }
 
 int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-                      unsigned char *a,
                       int frame,
                       uint8_t slot,
-                      NR_gNB_DLSCH_t *dlsch,
+                      NR_DL_gNB_HARQ_t *harq,
                       NR_DL_FRAME_PARMS *frame_parms,
 		      unsigned char * output,
                       time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
@@ -298,13 +297,12 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   encoder_implemparams_t impp;
   impp.output=output;
   unsigned int crc=1;
-  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
-  impp.Zc = &dlsch->harq_process.Z;
+  impp.Zc = &harq->Z;
   float Coderate = 0.0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
-
+  unsigned char *a=harq->pdu;
   if ( rel15->rnti != SI_RNTI)
     trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
 
@@ -317,14 +315,14 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
       stats=&gNB->dlsch_stats[i];
     }
 
-    if (gNB->dlsch_stats[i].rnti == dlsch->rnti) {
+    if (gNB->dlsch_stats[i].rnti == rel15->rnti) {
       stats=&gNB->dlsch_stats[i];
       break;
     }
   }
 
   if (stats) {
-    stats->rnti = dlsch->rnti;
+    stats->rnti = rel15->rnti;
     stats->total_bytes_tx += rel15->TBSize[0];
     stats->current_RI   = rel15->nrOfLayers;
     stats->current_Qm   = rel15->qamModOrder[0];

@@ -969,9 +969,9 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
   uint16_t                        ue_initial_id;
   uint32_t                        gNB_ue_ngap_id;
   rrc_gNB_ue_context_t            *ue_context_p = NULL;
-  protocol_ctxt_t                 ctxt;
-  gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
-  gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
+  protocol_ctxt_t                 ctxt={0};
+  gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
+  gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp={0};
   uint8_t                         pdu_sessions_done;
   uint8_t                         inde_list[NR_NB_RB_MAX - 3]= {0};
   int                             ret = 0;

@@ -3155,8 +3155,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
         header->R = 0;
         header->F = 1;
         header->LCID = lcid;
-        header->L1 = ((unsigned short) sdu_length >> 8) & 0x7f;
-        header->L2 = (unsigned short) sdu_length & 0xff;
+        header->L = htons(sdu_length);
 
         #ifdef ENABLE_MAC_PAYLOAD_DEBUG
         LOG_I(NR_MAC, "In %s: dumping MAC sub-header with length %d: \n", __FUNCTION__, sh_size);

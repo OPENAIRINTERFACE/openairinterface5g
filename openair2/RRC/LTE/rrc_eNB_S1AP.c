@@ -1757,7 +1757,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
           && RC.rrc[instance]->configuration.mnc[j] == S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc
           && RC.rrc[instance]->configuration.tac == S1AP_PAGING_IND(msg_p).tac[tai_size]) {
         for (uint8_t CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-          lte_frame_type_t frame_type = RC.eNB[instance][CC_id]->frame_parms.frame_type;
+          frame_type_t frame_type = RC.eNB[instance][CC_id]->frame_parms.frame_type;
           /* get nB from configuration */
           /* get default DRX cycle from configuration */
           Tc = (uint8_t)RC.rrc[instance]->configuration.radioresourceconfig[CC_id].pcch_defaultPagingCycle;

@@ -369,7 +369,7 @@ typedef struct {
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t                *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
 
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
 
   /*BWP*/
   // dedicated active DL BWP

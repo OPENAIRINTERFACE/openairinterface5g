@@ -346,7 +346,7 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   // prepare DL Allocation lists
   nr_rrc_config_dl_tda(scc);
 
-  lte_frame_type_t frame_type = get_frame_type((int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  frame_type_t frame_type = get_frame_type((int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   if (frame_type == FDD) {
     ASN_STRUCT_FREE(asn_DEF_NR_TDD_UL_DL_ConfigCommon, scc->tdd_UL_DL_ConfigurationCommon);
     scc->tdd_UL_DL_ConfigurationCommon = NULL;

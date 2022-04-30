@@ -206,7 +206,7 @@ typedef struct {
   int p_gNB;
   int Ncp;
   int nr_band;
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   uint64_t dl_CarrierFreq;
   NR_BCCH_BCH_Message_t *mib;
   NR_BCCH_DL_SCH_Message_t *sib1;
@@ -449,7 +449,7 @@ typedef struct NR_UE_harq {
 
   /* Transport block to be sent using this HARQ process, its size is in
    * sched_pdsch */
-  uint32_t tb[16384];
+  uint32_t transportBlock[16384];
   uint32_t tb_size;
 
   /// sched_pdsch keeps information on MCS etc used for the initial transmission

@@ -3093,7 +3093,7 @@ int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slo
   else return(slot_in_period <= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, slot_t slot, lte_frame_type_t frame_type) {
+int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, slot_t slot, frame_type_t frame_type) {
 
   int period,period1,period2=0;
 

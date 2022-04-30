@@ -18,9 +18,7 @@ This tutorial is only valid once this file is merged into the `develop` branch.
 
 # 1. Retrieving the images on Docker-Hub #
 
-Currently the images are hosted under the user account `rdefosseoai`.
-
-This may change in the future.
+Currently the images are hosted under the team account `oaisoftwarealliance`. They were previously hosted under the user account `rdefosseoai`.
 
 Once again you may need to log on [docker-hub](https://hub.docker.com/) if your organization has reached pulling limit as `anonymous`.
 
@@ -35,27 +33,27 @@ Now pull images.
 
 ```bash
 $ docker pull mysql:5.7
-$ docker pull rdefosseoai/oai-amf:latest
-$ docker pull rdefosseoai/oai-nrf:latest
-$ docker pull rdefosseoai/oai-smf:latest
-$ docker pull rdefosseoai/oai-spgwu-tiny:latest
+$ docker pull oaisoftwarealliance/oai-amf:latest
+$ docker pull oaisoftwarealliance/oai-nrf:latest
+$ docker pull oaisoftwarealliance/oai-smf:latest
+$ docker pull oaisoftwarealliance/oai-spgwu-tiny:latest
 
-$ docker pull rdefosseoai/oai-gnb:develop
-$ docker pull rdefosseoai/oai-nr-ue:develop
-$ docker pull rdefosseoai/proxy:latest
+$ docker pull oaisoftwarealliance/oai-gnb:develop
+$ docker pull oaisoftwarealliance/oai-nr-ue:develop
+$ docker pull oaisoftwarealliance/proxy:latest
 ```
 
 And **re-tag** them for tutorials' docker-compose file to work.
 
 ```bash
-$ docker image tag rdefosseoai/oai-amf:latest oai-amf:latest
-$ docker image tag rdefosseoai/oai-nrf:latest oai-nrf:latest
-$ docker image tag rdefosseoai/oai-smf:latest oai-smf:latest
-$ docker image tag rdefosseoai/oai-spgwu-tiny:latest oai-spgwu-tiny:latest
+$ docker image tag oaisoftwarealliance/oai-amf:latest oai-amf:latest
+$ docker image tag oaisoftwarealliance/oai-nrf:latest oai-nrf:latest
+$ docker image tag oaisoftwarealliance/oai-smf:latest oai-smf:latest
+$ docker image tag oaisoftwarealliance/oai-spgwu-tiny:latest oai-spgwu-tiny:latest
 
-$ docker image tag rdefosseoai/oai-gnb:develop oai-gnb:develop
-$ docker image tag rdefosseoai/oai-nr-ue:develop oai-nr-ue:develop
-$ docker image tag rdefosseoai/proxy:latest oai-lte-multi-ue-proxy:latest
+$ docker image tag oaisoftwarealliance/oai-gnb:develop oai-gnb:develop
+$ docker image tag oaisoftwarealliance/oai-nr-ue:develop oai-nr-ue:develop
+$ docker image tag oaisoftwarealliance/proxy:latest oai-lte-multi-ue-proxy:latest
 ```
 
 ```bash
@@ -326,16 +324,16 @@ Removing network l2sim-oai-traffic-net
 In the `SMF` section, provide your own DNS IP address:
 
 ```yaml
-            DEFAULT_DNS_IPV4_ADDRESS=192.168.18.129
+            DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
 ```
 
-In the `gNB` section, provide your docker-host primary IP address and interface name: in our case `192.168.18.193` and `eno1`.
+In the `gNB` section, provide your docker-host primary IP address and interface name: in our case `172.21.16.128` and `eno1`.
 
 ```yaml
             GNB_NGA_IF_NAME: eno1
-            GNB_NGA_IP_ADDRESS: 192.168.18.193
+            GNB_NGA_IP_ADDRESS: 172.21.16.128
             GNB_NGU_IF_NAME: eno1
-            GNB_NGU_IP_ADDRESS: 192.168.18.193
+            GNB_NGU_IP_ADDRESS: 172.21.16.128
 ```
 
 Same thing in the `nr-ue` section:
