@@ -5,15 +5,15 @@ import subprocess
 import sys
 
 AUTH_SERVICE = 'registry.docker.io'
-AUTH_SCOPE   = 'repository:rdefosseoai/oai-enb:pull'
+AUTH_SCOPE   = 'repository:oaisoftwarealliance/oai-enb:pull'
 
 def main() -> None:
     args = _parse_args()
 
-    cmd = 'curl -fsSL "https://auth.docker.io/token?service=' + AUTH_SERVICE + '&scope=' + AUTH_SCOPE + '" | jq --raw-output ".token"'
+    cmd = 'curl -fsSL "https://auth.docker.io/token?service=' + AUTH_SERVICE + '&scope=' + AUTH_SCOPE + '" 2>/dev/null | jq --raw-output ".token"'
     token = subprocess.check_output(cmd, shell=True, universal_newlines=True)
     token = str(token).strip()
-    cmd = 'curl -fsSL -H "Authorization: Bearer ' + token + '" "https://index.docker.io/v2/rdefosseoai/oai-enb/tags/list" | jq .'
+    cmd = 'curl -fsSL -H "Authorization: Bearer ' + token + '" "https://index.docker.io/v2/oaisoftwarealliance/oai-enb/tags/list" 2>/dev/null | jq .'
     listOfTags = subprocess.check_output(cmd, shell=True, universal_newlines=True)
 
     foundTag = False

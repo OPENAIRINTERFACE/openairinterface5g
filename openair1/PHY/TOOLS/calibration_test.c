@@ -305,15 +305,15 @@ int main(int argc, char **argv) {
   
   openair0_device_load(&rfdevice,&openair0_cfg);
 
-  void ** samplesRx = (void **)malloc16(antennas* sizeof(struct complex16 *) );
-  void ** samplesTx = (void **)malloc16(antennas* sizeof(struct complex16 *) );
+  void ** samplesRx = (void **)malloc16(antennas* sizeof(c16_t *) );
+  void ** samplesTx = (void **)malloc16(antennas* sizeof(c16_t *) );
 
   int fd=open(getenv("rftestInputFile"),O_RDONLY);
   AssertFatal(fd>=0,"%s",strerror(errno));
   
   for (int i=0; i<antennas; i++) {
-    samplesRx[i] = (int32_t *)malloc16_clear( DFT*sizeof(struct complex16) );
-    samplesTx[i] = (int32_t *)malloc16_clear( DFT*sizeof(struct complex16) );
+    samplesRx[i] = (int32_t *)malloc16_clear( DFT*sizeof(c16_t) );
+    samplesTx[i] = (int32_t *)malloc16_clear( DFT*sizeof(c16_t) );
   }
 
   CalibrationInitScope(samplesRx, &rfdevice);
@@ -322,7 +322,7 @@ int main(int argc, char **argv) {
   
   while(!oai_exit) {
     for (int i=0; i<antennas; i++)
-      read(fd, samplesTx[i], DFT*sizeof(struct complex16));
+      read(fd, samplesTx[i], DFT*sizeof(c16_t));
     int readBlockSize = rfdevice.trx_read_func(&rfdevice,
 					       &timestamp,
 					       samplesRx,

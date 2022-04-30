@@ -39,26 +39,33 @@ extern "C" {
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
-struct complexd {
+typedef struct complexd {
   double r;
   double i;
-};
+} cd_t;
 
-struct complexf {
+typedef struct complexf {
   float r;
   float i;
-};
+} cf_t;
 
-struct complex16 {
+typedef struct complex16 {
   int16_t r;
   int16_t i;
-};
+} c16_t;
 
-struct complex32 {
+typedef struct complex32 {
   int32_t r;
   int32_t i;
-};
+} c32_t;
+  
+typedef struct complex64 {
+  int64_t r;
+  int64_t i;
+} c64_t;
 
+#define squaredMod(a) ((a).r*(a).r+(a).i*(a).i)
+#define csum(res, i1, i2) (res).r=(i1).r+(i2).r ; (res).i=(i1).i+(i2).i  
 //cmult_sv.h
 
 /*!\fn void multadd_real_vector_complex_scalar(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N)
