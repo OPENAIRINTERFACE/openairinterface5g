@@ -4,9 +4,9 @@
 
 global:
   serviceAccountName: oai-physim-sa
-  namespace: "oaicicd-ran-tmp"
+  namespace: "OAICICD_PROJECT"
   image:
-    repository: image-registry.openshift-image-registry.svc:5000/oaicicd-ran-tmp/oai-physim
+    repository: image-registry.openshift-image-registry.svc:5000/OAICICD_PROJECT/oai-physim
     version: TAG
 
 ## Declaring values specific to coressponding physim to overwrite
