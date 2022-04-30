@@ -451,10 +451,11 @@ int nr_process_mac_pdu(module_id_t module_idP,
                               0);
           break;
 
-        case UL_SCH_LCID_DTCH:
-          //  check if LCID is valid at current time.
-          if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
-            return 0;
+          case UL_SCH_LCID_DTCH:
+            //  check if LCID is valid at current time.
+            if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len)) {
+              return 0;
+            }
 
             struct timespec time_request;
             clock_gettime(CLOCK_REALTIME, &time_request);
@@ -471,24 +472,26 @@ int nr_process_mac_pdu(module_id_t module_idP,
                   mac_len);
             UE_info->mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_len;
 
-          mac_rlc_data_ind(module_idP,
-                           UE_info->rnti[UE_id],
-                           module_idP,
-                           frameP,
-                           ENB_FLAG_YES,
-                           MBMS_FLAG_NO,
-                           rx_lcid,
-                           (char *)(pduP + mac_subheader_len),
-                           mac_len,
-                           1,
-                           NULL);
+            mac_rlc_data_ind(module_idP,
+                             UE_info->rnti[UE_id],
+                             module_idP,
+                             frameP,
+                             ENB_FLAG_YES,
+                             MBMS_FLAG_NO,
+                             rx_lcid,
+                             (char *)(pduP + mac_subheader_len),
+                             mac_len,
+                             1,
+                             NULL);
 
-          /* Updated estimated buffer when receiving data */
-          if (sched_ctrl->estimated_ul_buffer >= mac_len)
-            sched_ctrl->estimated_ul_buffer -= mac_len;
-          else
-            sched_ctrl->estimated_ul_buffer = 0;
-          break;
+            /* Updated estimated buffer when receiving data */
+            if (sched_ctrl->estimated_ul_buffer >= mac_len) {
+              sched_ctrl->estimated_ul_buffer -= mac_len;
+            } else {
+              sched_ctrl->estimated_ul_buffer = 0;
+            }
+
+            break;
 
         default:
           LOG_E(NR_MAC, "Received unknown MAC header (LCID = 0x%02x)\n", rx_lcid);
