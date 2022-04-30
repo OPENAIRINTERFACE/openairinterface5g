@@ -259,12 +259,10 @@ void init_tpools(uint8_t nun_dlsch_threads) {
 }
 static void get_options(void) {
 
-  nrUE_params.ofdm_offset_divisor = 8;
   paramdef_t cmdline_params[] =CMDLINE_NRUEPARAMS_DESC ;
   int numparams = sizeof(cmdline_params)/sizeof(paramdef_t);
+  config_get(cmdline_params,numparams,NULL);
   config_process_cmdline( cmdline_params,numparams,NULL);
-
-
 
   if (vcdflag > 0)
     ouput_vcd = 1;
