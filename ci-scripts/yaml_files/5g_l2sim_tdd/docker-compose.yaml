@@ -120,7 +120,7 @@ services:
             - SMF_INTERFACE_PORT_FOR_SBI=80
             - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
             - SMF_API_VERSION=v1
-            - DEFAULT_DNS_IPV4_ADDRESS=192.168.18.129
+            - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
             - DEFAULT_DNS_SEC_IPV4_ADDRESS=4.4.4.4
             - AMF_IPV4_ADDRESS=0.0.0.0
             - AMF_PORT=80
@@ -241,9 +241,9 @@ services:
             NSSAI_SD1: 112233
             AMF_IP_ADDRESS: 192.168.71.132
             GNB_NGA_IF_NAME: eno1
-            GNB_NGA_IP_ADDRESS: 192.168.18.193
+            GNB_NGA_IP_ADDRESS: 172.21.16.128
             GNB_NGU_IF_NAME: eno1
-            GNB_NGU_IP_ADDRESS: 192.168.18.193
+            GNB_NGU_IP_ADDRESS: 172.21.16.128
             LOCAL_S_IF_NAME: 'lo:'
             REMOTE_S_ADDRESS: 127.0.0.1
             LOCAL_S_ADDRESS: 127.0.0.2

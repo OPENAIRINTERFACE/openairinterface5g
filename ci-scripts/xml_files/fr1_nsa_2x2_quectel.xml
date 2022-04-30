@@ -68,7 +68,7 @@
 		<air_interface>lte</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
-		<USRP_IPAddress>192.168.18.241</USRP_IPAddress>
+		<USRP_IPAddress>172.21.19.13</USRP_IPAddress>
 	</testCase>
 
 
@@ -81,7 +81,7 @@
 		<air_interface>nr</air_interface>
 		<eNB_Stats>yes</eNB_Stats>
 		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
-		<USRP_IPAddress>192.168.18.252</USRP_IPAddress>
+		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
 	</testCase>
 
 	<testCase id="000001">
@@ -115,11 +115,12 @@
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 60M -t 60</iperf_args>
+		<desc>iperf (DL/125Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 125M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
-		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_packetloss_threshold>15</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>85</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 

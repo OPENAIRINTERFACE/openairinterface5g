@@ -115,7 +115,7 @@ services:
             TZ: Europe/Paris
             SGW_INTERFACE_NAME_FOR_S11: eth0
             PGW_INTERFACE_NAME_FOR_SX: eth0
-            DEFAULT_DNS_IPV4_ADDRESS: 192.168.18.129
+            DEFAULT_DNS_IPV4_ADDRESS: 172.21.3.100
             DEFAULT_DNS_SEC_IPV4_ADDRESS: 8.8.4.4
             PUSH_PROTOCOL_OPTION: 'true'
             APN_NI_1: oai.ipv4
