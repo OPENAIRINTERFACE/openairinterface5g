@@ -1116,15 +1116,6 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
          siglen = spsf;
       }
 
-      if (ru->openair0_cfg.nr_flag==1) {
-         if (nrfp->N_RB_DL <= 162 && nrfp->N_RB_DL > 106)      {factor_n=1; factor_d=2;}  // 61.44 Ms/s
-         else if (nrfp->N_RB_DL <= 106 && nrfp->N_RB_DL > 51 ) {factor_n=3; factor_d=4;} // 46.08 Ms/s
-         else if (nrfp->N_RB_DL == 51 )  {factor_n=1; factor_d=1;} // 30.72 Ms/s
-         else AssertFatal(1==0,"N_RB_DL %d not supported yet\n",nrfp->N_RB_DL); 
-      }
-      else {
-         factor_n = 30720/spsf;
-      }
       for (i=0; i < ru->nb_tx; i++)
         txp[i] = (int32_t*)&ru->common.txdata[i][offset];
     
@@ -1134,7 +1125,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
           clock_gettime( CLOCK_MONOTONIC, &start_comp);
           ru->ifdevice.trx_write_func2(&ru->ifdevice,
-	  			       ((proc_timestamp + packet_id*spp_eth-600)*factor_n)/factor_d,
+	  			       (proc_timestamp + packet_id*spp_eth/*-1250*/),
 				       (void*)txp[aid],
 				       spp_eth,
 				       aid,

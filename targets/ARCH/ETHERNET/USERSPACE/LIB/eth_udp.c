@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <linux/filter.h>
 #include <net/if.h>
 #include <netinet/ether.h>
 #include <unistd.h>
@@ -151,6 +152,22 @@ int eth_socket_init_udp(openair0_device *device) {
       printf("ETHERNET: Cannot set SO_REUSEPORT option on socket (user %d)",i);
       exit(0);
     }
+#ifdef SO_ATTACH_REUSEPORT_EBPF    
+    struct sock_filter code[]={
+   		{ BPF_LD  | BPF_W | BPF_ABS, 0, 0, SKF_AD_OFF + SKF_AD_CPU },
+		/* return A */
+		{ BPF_RET | BPF_A, 0, 0, 0 },
+    };
+    struct sock_fprog bpf = {
+      .len = sizeof(code)/sizeof(struct sock_filter),
+      .filter = code,
+    };
+    if (i==0 && setsockopt(eth->sockfdd[i], SOL_SOCKET, SO_ATTACH_REUSEPORT_CBPF, &bpf, sizeof(bpf))) {
+      printf("ETHERNET: Cannot set SO_ATTACH_REUSEPORT_EBPF option on socket (user %d)",i);
+      exit(0);
+    }
+#endif
+
   }
   
   /* want to receive -> so bind */   
@@ -277,6 +294,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
   int bytes_sent=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int sendto_flag =0;
+  fhstate_t *fhstate = &device->fhstate;
 
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
@@ -321,8 +339,9 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
         /* buff[i] points to the position in tx buffer where the payload to be sent is
        buff2 points to the position in tx buffer where the packet header will be placed */
     void *buff2 = ((void*)buff_tx2)- APP_HEADER_SIZE_BYTES; 
-    
-   
+    openair0_timestamp TS = timestamp + fhstate->TS0;
+    TS = 6*device->sampling_rate_ratio_d*(TS/device->sampling_rate_ratio_n);
+    TS -= device->txrx_offset; 
  
     bytes_sent = 0;
     
@@ -338,7 +357,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     // ECPRI PC_ID (2 bytes)
     *(uint16_t *)(buff2 + 4) = cc;
     // OAI modified SEQ_ID (4 bytes)
-    *(uint64_t *)(buff2 + 6) = ((uint64_t )timestamp)*6;
+    *(uint64_t *)(buff2 + 6) = TS;
 
     /*
     printf("ECPRI TX (REV %x, MessType %d, Payload size %d, PC_ID %d, TS %llu\n",
@@ -408,7 +427,7 @@ void *udp_read_thread(void *arg) {
   char buffer[UDP_PACKET_SIZE_BYTES(256)];
 
   while (oai_exit == 0) {
-    printf("UDP read thread %d, waiting for start\n",u->thread_id);
+    LOG_I(PHY,"UDP read thread %d, waiting for start sampling_rate_d %d, sampling_rate_n %d\n",u->thread_id,device->sampling_rate_ratio_n,device->sampling_rate_ratio_d);
     while (fhstate->active > 0) {
       size_t count = recvfrom(((eth_state_t*)device->priv)->sockfdd[u->thread_id],
                               buffer,sizeof(buffer),0,
@@ -417,9 +436,8 @@ void *udp_read_thread(void *arg) {
       aid = *(uint16_t*)(&buffer[ECPRICOMMON_BYTES]);
       TS  = *(openair0_timestamp *)(&buffer[ECPRICOMMON_BYTES+ECPRIPCID_BYTES]);   
       // convert TS to samples, /6 for AW2S @ 30.72 Ms/s, this is converted for other sample rates in OAI application
-      TS = device->sampling_rate_ratio_n*(TS/device->sampling_rate_ratio_d/6);
-      printf("udp_thread_id %d count %d, aid %d, TS %llu\n",u->thread_id,count,aid,(unsigned long long)TS);
-      if (count <= 0) { printf("problem in recvfrom\n"); exit(-1); }
+      TS = device->sampling_rate_ratio_n*(TS/(device->sampling_rate_ratio_d*6));
+      if ((int)count <= 0)  continue;
       AssertFatal(aid < 8,"Cannot handle more than 8 antennas, got aid %d\n",aid);
       fhstate->r[aid]=1;
       if (aid==0 && fhstate->TS[0] == 0) fhstate->TS0 = TS;
@@ -428,7 +446,6 @@ void *udp_read_thread(void *arg) {
       int64_t offset =  TS - fhstate->TS0;
       if (offset > 0) offset = offset % device->openair0_cfg->rxsize;
       else offset = TS % device->openair0_cfg->rxsize + ((((uint64_t)1)<<63)-(fhstate->TS0-1)) % device->openair0_cfg->rxsize;   
-      printf("udp_thread_id %d aid %d, TS %llu, TS0 %llu, offset %d, size %d\n",u->thread_id,aid,(unsigned long long)TS,fhstate->TS0,offset,device->openair0_cfg->rxsize);
       // need to do memcpy since there is no guarantee that aid is the same each time, otherwise we could have used
       // zero-copy and corrected the header component.   	 
       memcpy((void*)(device->openair0_cfg->rxbase[aid]+offset),
@@ -453,7 +470,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uin
   min_TS = fhstate->TS[0];
   for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,fhstate->TS[i]);
   // poll/sleep until we accumulated enough samples on each antenna port
-  while (min_TS < prev_read_TS + nsamps) {
+  while (min_TS < fhstate->TS0+prev_read_TS + nsamps) {
     usleep(100);
     min_TS = fhstate->TS[0];
     for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,fhstate->TS[i]);

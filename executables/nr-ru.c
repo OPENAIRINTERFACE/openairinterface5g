@@ -296,22 +296,19 @@ void fh_if4p5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
 
 // Synchronous if5 from south
 
-uint64_t ts_rx[20];
 void fh_if5_south_in(RU_t *ru,
                      int *frame,
                      int *tti) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
-  nfapi_nr_config_request_scf_t *cfg = &ru->config;
-  int is_rx=1;
-  int slot_type = nr_slot_select(cfg,*frame,*tti);
-  if (slot_type == NR_DOWNLINK_SLOT) is_rx=0;
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );   
+  start_meas(&ru->rx_fhaul);
+
   ru->ifdevice.trx_read_func2(&ru->ifdevice,&proc->timestamp_rx,NULL,fp->get_samples_per_slot(*tti,fp)); 
   if (proc->first_rx == 1) ru->ts_offset = proc->timestamp_rx;
   proc->frame_rx    = ((proc->timestamp_rx-ru->ts_offset) / (fp->samples_per_subframe*10))&1023;
   proc->tti_rx = fp->get_slot_from_timestamp(proc->timestamp_rx-ru->ts_offset,fp);
-//(idx_sf * fp->slots_per_subframe + (int)round((float)(proc->timestamp_rx % fp->samples_per_subframe) / fp->samples_per_slot0))%(fp->slots_per_frame);
-  ts_rx[*tti] = proc->timestamp_rx;
+
   LOG_D(PHY,"IF5 %d.%d => RX %d.%d first_rx %d\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx); 
 
   if (proc->first_rx == 0) {
@@ -330,7 +327,10 @@ void fh_if5_south_in(RU_t *ru,
     *tti = proc->tti_rx;
   }
 
+  stop_meas(&ru->rx_fhaul);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );
+
 }
 
 // Synchronous if4p5 from south
@@ -1313,7 +1313,7 @@ void *ru_thread( void *param ) {
       else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
     } else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
-    LOG_I(PHY,"RU %d RF started\n",ru->idx);
+    LOG_I(PHY,"RU %d RF started opp_enabled %d\n",ru->idx,opp_enabled);
     // start trx write thread
     if(usrp_tx_thread == 1) {
       if (ru->start_write_thread) {
@@ -1363,12 +1363,11 @@ void *ru_thread( void *param ) {
     }
 
     // synchronization on input FH interface, acquire signals/data and block
-    LOG_I(PHY,"[RU_thread] read data: frame_rx = %d, tti_rx = %d\n", frame, slot);
+    LOG_D(PHY,"[RU_thread] read data: frame_rx = %d, tti_rx = %d\n", frame, slot);
 
     if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
-    continue;
 
     if (initial_wait == 1 && proc->frame_rx < 300 && ru->fh_south_in == rx_rf) {
        if (proc->frame_rx>0 && ((proc->frame_rx % 100) == 0) && proc->tti_rx==0) {
@@ -1537,7 +1536,8 @@ void init_RU_proc(RU_t *ru) {
 
   if(emulate_rf)
     threadCreate( &proc->pthread_emulateRF, emulatedRF_thread, (void *)proc, "emulateRF", -1, OAI_PRIORITY_RT );
-
+  if (opp_enabled == 1) 
+    threadCreate( &ru->ru_stats_thread, ru_stats_thread, (void *)ru,"ru_stats", -1, OAI_PRIORITY_RT );
   if (get_thread_worker_conf() == WORKER_ENABLE) {
     if (ru->feprx) nr_init_feprx_thread(ru);
 
