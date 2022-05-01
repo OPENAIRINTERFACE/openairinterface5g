@@ -253,7 +253,6 @@ int nr_init_frame_parms(nfapi_nr_config_request_scf_t* cfg,
 
   LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
 
-
   if (Ncp == NFAPI_CP_EXTENDED)
     AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
 

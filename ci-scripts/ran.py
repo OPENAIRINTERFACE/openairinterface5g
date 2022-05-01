@@ -485,7 +485,7 @@ class RANManagement():
 
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
+		mySSH.command('echo $USER; nohup sudo -E stdbuf -o0 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
 
 
 		#stats monitoring during runtime
@@ -752,11 +752,11 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log* iperf*.log log/*/*.log log/*/*.pcap', '\$', 60)
 		result = re.search('core.\d+', mySSH.getBefore())
 		if result is not None:
 			mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip core* ran_build/build/{lte,nr}-softmodem', '\$', 60) # add core and executable to zip
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 15)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log* iperf*.log log/*/*.log log/*/*.pcap', '\$', 15)
 		mySSH.close()
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML, checkers={}):
@@ -822,6 +822,8 @@ class RANManagement():
 		RealTimeProcessingIssue = False
 		DLRetxIssue = False
 		ULRetxIssue = False
+		nrRrcRcfgComplete = 0
+		harqFeedbackPast = 0
 	
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
@@ -995,8 +997,25 @@ class RANManagement():
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
+					ue_prefix = 'ue0'
+					ue_res = re.search('UE ID 1|UE 1:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue1'
+					ue_res = re.search('UE ID 2|UE 2:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue2'
+					ue_res = re.search('UE ID 3|UE 3:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue3'
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
-					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
+					dlsch_ulsch_stats[ue_prefix+k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
+
+			result = re.search('Received NR_RRCReconfigurationComplete from UE', str(line))
+			if result is not None:
+				nrRrcRcfgComplete += 1
+			result = re.search('HARQ feedback is in the past', str(line))
+			if result is not None:
+				harqFeedbackPast += 1
 
 
 			#count "problem receiving samples" msg
@@ -1083,6 +1102,14 @@ class RANManagement():
 				htmleNBFailureMsg += statMsg + '\n'
 			if gnbTxWriteThreadEnabled:
 				statMsg = nodeB_prefix + 'NB ran with TX Write thread enabled'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
+			if nrRrcRcfgComplete > 0:
+				statMsg = nodeB_prefix + 'NB showed ' + str(nrRrcRcfgComplete) + ' "Received NR_RRCReconfigurationComplete from UE" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
+			if harqFeedbackPast > 0:
+				statMsg = nodeB_prefix + 'NB showed ' + str(harqFeedbackPast) + ' "HARQ feedback is in the past" message(s)'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
 			#FR1 NSA test : add new markers to make sure gNB is used

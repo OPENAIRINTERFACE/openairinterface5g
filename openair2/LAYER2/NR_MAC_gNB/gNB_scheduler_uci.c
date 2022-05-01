@@ -44,7 +44,8 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
                          const NR_sched_pucch_t *pucch,
                          int UE_id)
 {
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+  gNB_MAC_INST *nr_mac = RC.nrmac[mod_id];
+  NR_UE_info_t *UE_info = &nr_mac->UE_info;
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req =
       &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
@@ -56,6 +57,9 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
               future_ul_tti_req->Slot,
               pucch->frame,
               pucch->ul_slot);
+  AssertFatal(future_ul_tti_req->n_pdus <
+              sizeof(future_ul_tti_req->pdus_list) / sizeof(future_ul_tti_req->pdus_list[0]),
+              "Invalid future_ul_tti_req->n_pdus %d\n", future_ul_tti_req->n_pdus);
   future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
   future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
   nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
@@ -77,11 +81,16 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon;
   NR_CellGroupConfig_t *cg=UE_info->CellGroup[UE_id];
 
-  NR_BWP_UplinkDedicated_t *ubwpd;
-  ubwpd = cg ? cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP:NULL;
+  NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
-  LOG_D(NR_MAC,"pucch_acknak: %d.%d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch in %d.%d\n",frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
-  nr_configure_pucch(pucch_pdu,
+  LOG_D(NR_MAC,"%4d.%2d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch to be scheduled in %4d.%2d\n",
+        frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
+
+  const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+  nr_configure_pucch(sib1,
+                     pucch_pdu,
                      scc,
                      UE_info->CellGroup[UE_id],
                      UE_info->UE_sched_ctrl[UE_id].active_ubwp,
@@ -754,9 +763,11 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
 
-      NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
-        &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
-        &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+      const NR_SIB1_t *sib1 = RC.nrmac[Mod_idP]->common_channels[0].sib1 ? RC.nrmac[Mod_idP]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+      NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                                 scc,
+                                                                 sib1);
+
       int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 
       // going through the list of PUCCH resources to find the one indexed by resource_id
@@ -772,17 +783,17 @@ void nr_csi_meas_reporting(int Mod_idP,
         switch(pucchres->format.present){
           case NR_PUCCH_Resource__format_PR_format2:
             len = pucchres->format.choice.format2->nrofPRBs;
-            mask = ((1 << pucchres->format.choice.format2->nrofSymbols) - 1) << pucchres->format.choice.format2->startingSymbolIndex;
+            mask = SL_to_bitmap(pucchres->format.choice.format2->startingSymbolIndex, pucchres->format.choice.format2->nrofSymbols);
             curr_pucch->simultaneous_harqcsi = pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI;
             LOG_D(NR_MAC,"%d.%d Allocating PUCCH format 2, startPRB %d, nPRB %d, simulHARQ %d, num_bits %d\n", frame, sched_slot,start,len,curr_pucch->simultaneous_harqcsi,curr_pucch->csi_bits);
             break;
           case NR_PUCCH_Resource__format_PR_format3:
             len = pucchres->format.choice.format3->nrofPRBs;
-            mask = ((1 << pucchres->format.choice.format3->nrofSymbols) - 1) << pucchres->format.choice.format3->startingSymbolIndex;
+            mask = SL_to_bitmap(pucchres->format.choice.format3->startingSymbolIndex, pucchres->format.choice.format3->nrofSymbols);
             curr_pucch->simultaneous_harqcsi = pucch_Config->format3->choice.setup->simultaneousHARQ_ACK_CSI;
             break;
           case NR_PUCCH_Resource__format_PR_format4:
-            mask = ((1 << pucchres->format.choice.format4->nrofSymbols) - 1) << pucchres->format.choice.format4->startingSymbolIndex;
+            mask = SL_to_bitmap(pucchres->format.choice.format4->startingSymbolIndex, pucchres->format.choice.format4->nrofSymbols);
             curr_pucch->simultaneous_harqcsi = pucch_Config->format4->choice.setup->simultaneousHARQ_ACK_CSI;
             break;
         default:
@@ -790,7 +801,12 @@ void nr_csi_meas_reporting(int Mod_idP,
         }
         // verify resources are free
         for (int i = start; i < start + len; ++i) {
-          vrb_map_UL[i+bwp_start] |= mask;
+          if((vrb_map_UL[i+bwp_start] & mask) != 0) {
+            LOG_E(NR_MAC, "%4d.%2d VRB MAP in %4d.%2d not free. Can't schedule CSI reporting on PUCCH.\n", frame, slot, frame, sched_slot);
+            memset(curr_pucch, 0, sizeof(*curr_pucch));
+          }
+          else
+            vrb_map_UL[i+bwp_start] |= mask;
         }
       }
     }
@@ -819,6 +835,7 @@ static void handle_dl_harq(module_id_t mod_id,
     stats->dlsch_errors++;
     LOG_D(NR_MAC, "retransmission error for UE %d (total %"PRIu64")\n", UE_id, stats->dlsch_errors);
   } else {
+    LOG_D(PHY,"NACK for: pid %d, ue %x\n",harq_pid, UE_id);
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
     harq->round++;
   }
@@ -1405,7 +1422,7 @@ static NR_UE_harq_t *find_harq(module_id_t mod_id, frame_t frame, sub_frame_t sl
   while (harq->feedback_frame != frame
          || (harq->feedback_frame == frame && harq->feedback_slot < slot)) {
     LOG_W(NR_MAC,
-          "expected HARQ pid %d feedback at %d.%d, but is at %d.%d instead (HARQ feedback is in the past)\n",
+          "expected HARQ pid %d feedback at %4d.%2d, but is at %4d.%2d instead (HARQ feedback is in the past)\n",
           pid,
           harq->feedback_frame,
           harq->feedback_slot,
@@ -1421,7 +1438,7 @@ static NR_UE_harq_t *find_harq(module_id_t mod_id, frame_t frame, sub_frame_t sl
   /* feedbacks that we wait for in the future: don't do anything */
   if (harq->feedback_slot > slot) {
     LOG_W(NR_MAC,
-          "expected HARQ pid %d feedback at %d.%d, but is at %d.%d instead (HARQ feedback is in the future)\n",
+          "expected HARQ pid %d feedback at %4d.%2d, but is at %4d.%2d instead (HARQ feedback is in the future)\n",
           pid,
           harq->feedback_frame,
           harq->feedback_slot,
@@ -1458,7 +1475,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       DevAssert(harq->is_waiting);
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      LOG_D(NR_MAC,"bit %d pid %d ack/nack %d\n",harq_bit,pid,harq_value);
+      LOG_D(NR_MAC,"%4d.%2d bit %d pid %d ack/nack %d\n",frame, slot, harq_bit,pid,harq_value);
       handle_dl_harq(mod_id, UE_id, pid, harq_value == 0 && harq_confidence == 0);
       if (harq_confidence == 1)  UE_info->mac_stats[UE_id].pucch0_DTX++;
     }
@@ -1500,10 +1517,11 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   // tpc (power control)
-  sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
-                                uci_234->ul_cqi,
-                                30);
-  sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
+  // TODO PUCCH2 SNR computation is not correct -> ignore the following
+  //sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10,
+  //                              uci_234->ul_cqi,
+  //                              30);
+  //sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
 
   if ((uci_234->pduBitmap >> 1) & 0x01) {
     // iterate over received harq bits
@@ -1527,6 +1545,61 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   if ((uci_234->pduBitmap >> 3) & 0x01) {
     //@TODO:Handle CSI Report 2
   }
+}
+
+bool test_acknack_vrb_occupation(NR_UE_sched_ctrl_t *sched_ctrl,
+                                 NR_sched_pucch_t *pucch,
+                                 uint16_t *vrb_map_UL,
+                                 const NR_ServingCellConfigCommon_t *scc,
+                                 NR_PUCCH_Config_t *pucch_Config,
+                                 int r_pucch,
+                                 int bwp_start,
+                                 int bwp_size) {
+
+  // We assume initial cyclic shift is always 0 so different pucch resources can't overlap
+
+  NR_sched_pucch_t *csi_pucch = &sched_ctrl->sched_pucch[1];
+  if (csi_pucch &&
+      csi_pucch->csi_bits > 0 &&
+      csi_pucch->frame == pucch->frame &&
+      csi_pucch->ul_slot == pucch->ul_slot &&
+      csi_pucch->simultaneous_harqcsi &&
+      (csi_pucch->csi_bits + csi_pucch->dai_c) < 11)
+    return true; // available resources for csi_pucch already verified
+
+  if(r_pucch<0){
+    const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[0];
+    DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
+    pucch->second_hop_prb = resource->secondHopPRB!= NULL ?  *resource->secondHopPRB : 0;
+    pucch->nr_of_symb = resource->format.choice.format0->nrofSymbols;
+    pucch->start_symb = resource->format.choice.format0->startingSymbolIndex;
+    pucch->prb_start = resource->startingPRB;
+  }
+  else{
+    int rsetindex = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
+    set_r_pucch_parms(rsetindex,
+                      r_pucch,
+                      bwp_size,
+                      &pucch->prb_start,
+                      &pucch->second_hop_prb,
+                      &pucch->nr_of_symb,
+                      &pucch->start_symb);
+  }
+
+  // verifying occupation of PRBs for ACK/NACK on dedicated pucch
+  for (int l=0; l<pucch->nr_of_symb; l++) {
+    uint16_t symb = SL_to_bitmap(pucch->start_symb+l, 1);
+    int prb;
+    if (l==1 && pucch->second_hop_prb != 0)
+      prb = pucch->second_hop_prb;
+    else
+      prb = pucch->prb_start;
+    if ((vrb_map_UL[bwp_start+prb] & symb) != 0) {
+      return false;
+      break;
+    }
+  }
+  return true;
 }
 
 
@@ -1567,8 +1640,26 @@ int nr_acknack_scheduling(int mod_id,
    *   later)
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &RC.nrmac[mod_id]->UE_info.UE_sched_ctrl[UE_id];
+  NR_CellGroupConfig_t *cg = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id];
+
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+  if (sched_ctrl->active_ubwp) {
+    pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
+  } else if (cg &&
+             cg->spCellConfig &&
+             cg->spCellConfig->spCellConfigDedicated &&
+             cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+             cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
+    pucch_Config = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+  }
+  NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
+    &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
+    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  int bwp_size = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
-  LOG_D(NR_MAC, "In %s: %d.%d Trying to allocate pucch, current DAI %d\n", __FUNCTION__, frame, slot, pucch->dai_c);
+  LOG_D(NR_MAC, "In %s: %4d.%2d Trying to allocate pucch, current DAI %d\n", __FUNCTION__, frame, slot, pucch->dai_c);
 
   pucch->r_pucch=r_pucch;
   AssertFatal(pucch->csi_bits == 0,
@@ -1615,10 +1706,9 @@ int nr_acknack_scheduling(int mod_id,
     }
   }
 
-  LOG_D(NR_MAC, "In %s: pucch_acknak 1. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n", __FUNCTION__, frame, slot, pucch->frame, pucch->ul_slot, pucch->dai_c);
+  LOG_D(NR_MAC, "In %s: pucch_acknak 1. DL %4d.%2d, UL_ACK %4d.%2d, DAI_C %d\n", __FUNCTION__, frame, slot, pucch->frame, pucch->ul_slot, pucch->dai_c);
 
   // this is hardcoded for now as ue specific only if we are not on the initialBWP (to be fixed to allow ue_Specific also on initialBWP
-  NR_CellGroupConfig_t *cg = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id];
   NR_BWP_UplinkDedicated_t *ubwpd=NULL;
 
   if (cg &&
@@ -1636,7 +1726,7 @@ int nr_acknack_scheduling(int mod_id,
   int max_fb_time = 0;
   get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
 
-  LOG_D(NR_MAC, "In %s: 1b. DL %d.%d, UL_ACK %d.%d, DAI_C %d\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
+  LOG_D(NR_MAC, "In %s: 1b. DL %4d.%2d, UL_ACK %4d.%2d, DAI_C %d\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
   if (pucch->dai_c > 0) {
     /* this UE already has a PUCCH occasion */
@@ -1681,11 +1771,11 @@ int nr_acknack_scheduling(int mod_id,
       csi_pucch->dai_c++;
     }
     // retain old resource indicator, and we are good
-    LOG_D(NR_MAC, "In %s: %d.%d. DAI > 0, pucch allocated for %d.%d (index %d)\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
+    LOG_D(NR_MAC, "In %s: %4d.%2d. DAI > 0, pucch allocated for %4d.%2d (index %d)\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
     return 0;
   }
 
-  LOG_D(NR_MAC, "In %s: %d.%d DAI = 0, looking for new pucch occasion\n", __FUNCTION__, frame, slot);
+  LOG_D(NR_MAC, "In %s: %4d.%2d DAI = 0, looking for new pucch occasion\n", __FUNCTION__, frame, slot);
   /* we need to find a new PUCCH occasion */
 
   /*(Re)Inizialization of timing information*/
@@ -1703,23 +1793,36 @@ int nr_acknack_scheduling(int mod_id,
   // Find the right timing_indicator value.
   int ind_found = -1;
   // while we are within the feedback limits
+  uint16_t *vrb_map_UL;
   while ((n_slots_frame + pucch->ul_slot - slot) % n_slots_frame <= max_fb_time) {
-    int i = 0;
-    while (i < 8) {
-      LOG_D(NR_MAC, "In %s: pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n", __FUNCTION__,
-            i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
-      int diff = pucch->ul_slot - slot;
-      if (diff<0)
-        diff += n_slots_frame;
-      if (pdsch_to_harq_feedback[i] == diff &&
-          pdsch_to_harq_feedback[i] >= minfbtime) {
-        ind_found = i;
-        break;
+    // checking if in ul_slot the resources potentially to be assigned to this PUCCH are available
+    vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
+    bool ret = test_acknack_vrb_occupation(sched_ctrl,
+                                           pucch,
+                                           vrb_map_UL,
+                                           scc,
+                                           pucch_Config,
+                                           r_pucch,
+                                           bwp_start,
+                                           bwp_size);
+    if (ret) {
+      int i = 0;
+      while (i < 8) {
+        LOG_D(NR_MAC,"pdsch_to_harq_feedback[%d] = %d (pucch->ul_slot %d - slot %d)\n",
+              i,pdsch_to_harq_feedback[i],pucch->ul_slot,slot);
+        int diff = pucch->ul_slot - slot;
+        if (diff<0)
+          diff += n_slots_frame;
+        if (pdsch_to_harq_feedback[i] == diff &&
+            pdsch_to_harq_feedback[i] >= minfbtime) {
+          ind_found = i;
+          break;
+        }
+        ++i;
       }
-      ++i;
+      if (ind_found!=-1)
+        break;
     }
-    if (ind_found!=-1)
-      break;
     // advance to the next ul slot
     const int f = pucch->frame;
     const int s = pucch->ul_slot;
@@ -1779,51 +1882,21 @@ int nr_acknack_scheduling(int mod_id,
 
   pucch->timing_indicator = ind_found; // index in the list of timing indicators
 
-  LOG_D(NR_MAC, "In %s: 2. DAI 0 DL %d.%d, UL_ACK %d.%d (index %d)\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
+  LOG_D(NR_MAC, "In %s: 2. DAI 0 DL %4d.%2d, UL_ACK %4d.%2d (index %d)\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->timing_indicator);
 
   pucch->dai_c++;
   pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
   pucch->r_pucch=r_pucch;
-  NR_PUCCH_Config_t *pucch_Config = NULL;
-  if (sched_ctrl->active_ubwp) {
-    pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-  } else if (RC.nrmac[mod_id]->UE_info.CellGroup[UE_id] &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
-             RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
-    pucch_Config = RC.nrmac[mod_id]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
-  }
 
-  NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
-    &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
-    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-
-  /* verify that at that slot and symbol, resources are free. We only do this
-   * for initialCyclicShift 0 (we assume it always has that one), so other
-   * initialCyclicShifts can overlap with ICS 0!*/
-
-  if (pucch_Config) {
-    const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[pucch->resource_indicator];
-    DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
-    int second_hop_prb = resource->secondHopPRB!= NULL ?  *resource->secondHopPRB : 0;
-    int nr_of_symbols = resource->format.choice.format0->nrofSymbols;
-    if (resource->format.choice.format0->initialCyclicShift == 0) {
-      uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
-      for (int l=0; l<nr_of_symbols; l++) {
-        uint16_t symb = 1 << (resource->format.choice.format0->startingSymbolIndex + l);
-        int prb;
-        if (l==1 && second_hop_prb != 0)
-          prb = second_hop_prb;
-        else
-          prb = resource->startingPRB;
-        if ((vrb_map_UL[bwp_start+prb] & symb) != 0)
-          LOG_W(MAC, "symbol 0x%x is not free for PUCCH alloc in vrb_map_UL at RB %ld and slot %d.%d\n", symb, resource->startingPRB, pucch->frame, pucch->ul_slot);
-        vrb_map_UL[bwp_start+prb] |= symb;
-      }
-    }
+  vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch->ul_slot * MAX_BWP_SIZE];
+  for (int l=0; l<pucch->nr_of_symb; l++) {
+    uint16_t symb = SL_to_bitmap(pucch->start_symb+l, 1);
+    int prb;
+    if (l==1 && pucch->second_hop_prb != 0)
+      prb = pucch->second_hop_prb;
+    else
+      prb = pucch->prb_start;
+    vrb_map_UL[bwp_start+prb] |= symb;
   }
   return 0;
 }
@@ -1963,12 +2036,13 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
         }
         curr_pucch->sr_flag = true;
       } else {
-        NR_sched_pucch_t sched_sr;
-        memset(&sched_sr, 0, sizeof(sched_sr));
-        sched_sr.frame = SFN;
-        sched_sr.ul_slot = slot;
-        sched_sr.resource_indicator = found;
-        sched_sr.sr_flag = true;
+        NR_sched_pucch_t sched_sr = {
+          .frame = SFN,
+          .ul_slot = slot,
+          .sr_flag = true,
+          .resource_indicator = found,
+          .r_pucch = -1
+        };
         nr_fill_nfapi_pucch(Mod_idP, SFN, slot, &sched_sr, UE_id);
       }
     }

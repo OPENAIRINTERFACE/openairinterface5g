@@ -53,7 +53,6 @@ extern "C"
 
 
 #define CONFIG_HLP_DUMPFRAME     "dump UE received frame to rxsig_frame0.dat and exit\n"
-#define CONFIG_HLP_UELOOP        "get softmodem (UE) to loop through memory instead of acquiring from HW\n"
 #define CONFIG_HLP_PHYTST        "test UE phy layer, mac disabled\n"
 #define CONFIG_HLP_DORA          "test gNB  and UE with RA procedures\n"
 #define CONFIG_HLP_SA            "run gNB in standalone mode\n"
@@ -93,12 +92,13 @@ extern "C"
 #define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 
 #define CONFIG_HLP_NOS1          "Disable s1 interface\n"
-#define CONFIG_HLP_RFSIM         "Run in rf simulator mode (also known as basic simulator)\n"
+#define CONFIG_HLP_RFSIM         "Run in rf simulator mode\n"
 #define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 #define CONFIG_HLP_USRP_THREAD   "having extra thead for usrp tx\n"
 #define CONFIG_HLP_NFAPI         "Change the nFAPI mode for NR\n"
 #define CONFIG_L1_EMULATOR       "Run in L1 emulated mode (disable PHY layer)\n"
+#define CONFIG_HLP_CONTINUOUS_TX "perform continuous transmission, even in TDD mode (to work around USRP issues)\n"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                          */
@@ -126,6 +126,7 @@ extern "C"
 #define NODE_NUMBER         softmodem_params.node_number
 #define NON_STOP            softmodem_params.non_stop
 #define EMULATE_L1          softmodem_params.emulate_l1
+#define CONTINUOUS_TX       softmodem_params.continuous_tx
 
 #define DEFAULT_RFCONFIG_FILE    "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
@@ -154,7 +155,6 @@ extern int usrp_tx_thread;
     {"worker-config",        CONFIG_HLP_WORKER_CMD,   0,              strptr:(char **)&worker_config,     defstrval:NULL,        TYPE_STRING, 0},                     \
     {"noS1",                 CONFIG_HLP_NOS1,         PARAMFLAG_BOOL, uptr:&noS1,                         defintval:0,           TYPE_INT,    0},                     \
     {"rfsim",                CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&rfsim,                        defintval:0,           TYPE_INT,    0},                     \
-    {"basicsim",             CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&basicsim,                     defintval:0,           TYPE_INT,    0},                     \
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
     {"nsa",                  CONFIG_HLP_NSA,          PARAMFLAG_BOOL, iptr:&NSA,                          defintval:0,           TYPE_INT,    0},                     \
@@ -163,7 +163,8 @@ extern int usrp_tx_thread;
     {"do-prb-interpolation", CONFIG_HLP_PRBINTER,     PARAMFLAG_BOOL, iptr:&PRB_INTERPOLATION,            defintval:0,           TYPE_INT,    0},                     \
     {"nfapi",                CONFIG_HLP_NFAPI,        0,              u8ptr:&nfapi_mode,                  defintval:0,           TYPE_UINT8,  0},                     \
     {"non-stop",             CONFIG_HLP_NONSTOP,      PARAMFLAG_BOOL, iptr:&NON_STOP,                     defintval:0,           TYPE_INT,    0},                     \
-    {"emulate-l1",           CONFIG_L1_EMULATOR,      PARAMFLAG_BOOL, iptr:&EMULATE_L1,                   defintval:0,           TYPE_INT,    0}                      \
+    {"emulate-l1",           CONFIG_L1_EMULATOR,      PARAMFLAG_BOOL, iptr:&EMULATE_L1,                   defintval:0,           TYPE_INT,    0},                     \
+    {"continuous-tx",        CONFIG_HLP_CONTINUOUS_TX,PARAMFLAG_BOOL, iptr:&CONTINUOUS_TX,                defintval:0,           TYPE_INT,    0},                     \
   }
 
 #define CONFIG_HLP_NSA           "Enable NSA mode \n"
@@ -201,7 +202,6 @@ extern int usrp_tx_thread;
 #define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
 #define SOFTMODEM_NONBIOT_BIT         (1<<2)
 #define SOFTMODEM_RFSIM_BIT           (1<<10)
-#define SOFTMODEM_BASICSIM_BIT        (1<<11)
 #define SOFTMODEM_SIML1_BIT           (1<<12)
 #define SOFTMODEM_DOSCOPE_BIT         (1<<15)
 #define SOFTMODEM_RECPLAY_BIT         (1<<16)
@@ -218,7 +218,6 @@ extern int usrp_tx_thread;
 #define IS_SOFTMODEM_NOKRNMOD        ( get_softmodem_optmask() & SOFTMODEM_NOKRNMOD_BIT)
 #define IS_SOFTMODEM_NONBIOT         ( get_softmodem_optmask() & SOFTMODEM_NONBIOT_BIT)
 #define IS_SOFTMODEM_RFSIM           ( get_softmodem_optmask() & SOFTMODEM_RFSIM_BIT)
-#define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
 #define IS_SOFTMODEM_SIML1           ( get_softmodem_optmask() & SOFTMODEM_SIML1_BIT)
 #define IS_SOFTMODEM_DOSCOPE         ( get_softmodem_optmask() & SOFTMODEM_DOSCOPE_BIT)
 #define IS_SOFTMODEM_IQPLAYER        ( get_softmodem_optmask() & SOFTMODEM_RECPLAY_BIT)
@@ -254,6 +253,7 @@ typedef struct {
   uint16_t       node_number;
   int            non_stop;
   int            emulate_l1;
+  int            continuous_tx;
 } softmodem_params_t;
 
 extern uint64_t get_softmodem_optmask(void);

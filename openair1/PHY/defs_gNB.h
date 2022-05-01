@@ -89,7 +89,7 @@ typedef struct {
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
+  uint8_t **c;
   /// Frame where current HARQ round was sent
   uint32_t frame;
   /// Subframe where current HARQ round was sent
@@ -157,13 +157,11 @@ typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
   /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
-  int32_t *txdataF[NR_MAX_NB_LAYERS];
-  /// TX buffers for UE-spec transmission (antenna ports 1000 or 1001,...,1007, before precoding)
-  int32_t *txdataF_precoding[NR_MAX_NB_LAYERS];
+  int32_t **txdataF;
   /// Modulated symbols buffer
-  int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
+  int32_t **mod_symbs;
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  int32_t **ue_spec_bf_weights[NR_MAX_NB_LAYERS];
+  int32_t ***ue_spec_bf_weights;
   /// dl channel estimates (estimated from ul channel estimates)
   int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
@@ -282,12 +280,10 @@ typedef struct {
   uint32_t C;
   /// Pointers to code blocks after LDPC coding (38.212 V15.4.0 section 5.3.2)
   int16_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
-  /// LDPC processing buffer
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC lifting size (38.212 V15.4.0 table 5.3.2-1)
   uint32_t Z;
   /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
-  int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
+  int16_t e[MAX_NUM_NR_ULSCH_SEGMENTS][3*8448];
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
   uint32_t E;
   /// Number of segments processed so far
@@ -591,9 +587,6 @@ typedef struct gNB_L1_proc_t_s {
   int instance_cnt_te;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-
-  // instance count for over-the-air gNB synchronization
-  int instance_cnt_synch;
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
   /// pthread structure for eNB single processing thread
@@ -665,8 +658,6 @@ typedef struct {
   unsigned int   n0_power_tot;
   //! estimated avg noise power (dB)
   unsigned int n0_power_tot_dB;
-  //! estimated avg noise power (dB)
-  int n0_power_tot_dBm;
   //! estimated avg noise power per RB per RX ant (lin)
   unsigned int n0_subband_power[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB per RX ant (dB)
@@ -771,7 +762,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
-  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
+  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX];  // [Nusers times]
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
   /// statistics for DLSCH measurement collection
@@ -801,6 +792,13 @@ typedef struct PHY_VARS_gNB_s {
 
   /// PDSCH DMRS sequence
   uint32_t ****nr_gold_pdsch_dmrs;
+
+  /// PDSCH codebook I precoding LUTs
+  /// first dimension: Rank number [0,...,noOfLayers-1[
+  /// second dimension: PMI [0,...,CodeSize-1[
+  /// third dimension: [i_rows*noOfLayers+j_col], i_rows=0,...pdsch_AntennaPorts-1 and j_col=0,...,noOfLayers-1
+  int32_t ***nr_mimo_precoding_matrix;
+  int pmiq_size[NR_MAX_NB_LAYERS];
 
   /// PUSCH DMRS
   uint32_t ****nr_gold_pusch_dmrs;
@@ -846,6 +844,15 @@ typedef struct PHY_VARS_gNB_s {
   int mac_enabled;
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
+
+  int csi_gold_init;
+  int pdcch_gold_init;
+  int pdsch_gold_init[2];
+  int pusch_gold_init[2];
+
+  int ap_N1;
+  int ap_N2;
+  int ap_XP;
 
   int pucch0_thres;
   int pusch_thres;

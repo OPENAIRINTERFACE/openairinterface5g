@@ -215,6 +215,7 @@ typedef enum {
   OCM,
   UDP_,
   GTPU,
+  SDAP,
   SPGW,
   S1AP,
   F1AP,
@@ -346,7 +347,7 @@ typedef struct {
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
 @param multiVec create new file or append to existing (useful for writing multiple vectors to same file. Just call the function multiple times with same file name and with this parameter set to 1)
 */
-#define MATLAB_RAW (1<<31)
+#define MATLAB_RAW (1U<<31)
 #define MATLAB_SHORT 0
 #define MATLAB_CSHORT 1
 #define MATLAB_INT 2

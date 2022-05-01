@@ -91,7 +91,7 @@ int slot_fep(PHY_VARS_UE *ue,
   }
 
   //  subframe_offset_F = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
-
+ 
   if (l<0 || l>=7-frame_parms->Ncp) {
     printf("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
     return(-1);

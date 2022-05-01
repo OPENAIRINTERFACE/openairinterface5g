@@ -336,9 +336,9 @@ int get_dmrs_port(int nl, uint16_t dmrs_ports) {
   return p;
 }
 
-lte_frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
+frame_type_t get_frame_type(uint16_t current_band, uint8_t scs_index)
 {
-  lte_frame_type_t current_type;
+  frame_type_t current_type;
   int32_t delta_duplex = get_delta_duplex(current_band, scs_index);
 
   if (delta_duplex == 0)
@@ -521,7 +521,6 @@ int get_subband_size(int NPRB,int size) {
  
 }
 
-
 // from start symbol index and nb or symbols to symbol occupation bitmap in a slot
 uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols) {
  return ((1<<nrOfSymbols)-1)<<startSymbolIndex;
@@ -543,5 +542,4 @@ void SLIV2SL(int SLIV,int *S,int *L) {
     *L=15-SLIVdiv14;
     *S=13-SLIVmod14;
   }
-
 }

@@ -33,10 +33,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "PHY/defs_eNB.h"
-#include "PHY/TOOLS/dB_routines.h"
-
-extern int16_t hundred_times_delta_TF[100];
-extern uint16_t hundred_times_log10_NPRB[100];
+#include <openair1/PHY/TOOLS/tools_defs.h>
+#include <openair1/SCHED/sched_common_extern.h>
 
 int16_t estimate_ue_tx_power(int norm,uint32_t tbs, uint32_t nb_rb, uint8_t control_only, int ncp, uint8_t use_srs)
 {

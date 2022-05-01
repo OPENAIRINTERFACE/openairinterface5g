@@ -268,8 +268,8 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
     return;
   }
   uint16_t              sc_per_symbol    = (nb_rb + K_ptrs - 1)/K_ptrs;
-  struct complex16      ptrs_p[(1 + sc_per_symbol/4)*4];
-  struct complex16      dmrs_comp_p[(1 + sc_per_symbol/4)*4];
+  c16_t      ptrs_p[(1 + sc_per_symbol/4)*4];
+  c16_t      dmrs_comp_p[(1 + sc_per_symbol/4)*4];
   double                abs              = 0.0;
   double                real             = 0.0;
   double                imag             = 0.0;
@@ -422,7 +422,7 @@ void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, double
 /* estimate from slope */
 void ptrs_estimate_from_slope(int16_t *error_est, double *slope_p, uint8_t start, uint8_t end)
 {
-  struct complex16 *error=(struct complex16 *) error_est;
+  c16_t *error=(struct complex16 *) error_est;
   for(uint8_t i = 1; i< (end -start);i++) {
     error[start+i].r = error[start].r + (int16_t)(i * slope_p[0]);// real
     error[start+i].i = error[start].i + (int16_t)(i * slope_p[1]); //imag

@@ -424,7 +424,6 @@ typedef struct rrc_gNB_ue_context_s {
   struct gNB_RRC_UE_s   ue_context;
 } rrc_gNB_ue_context_t;
 
-
 typedef struct {
 
   // buffer that contains the encoded messages
@@ -449,13 +448,6 @@ typedef struct {
   NR_SIB2_t                                *sib2;
   NR_SIB3_t                                *sib3;
   NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
-  int ssb_SubcarrierOffset;
-  int sib1_tda;
-  int pdsch_AntennaPorts;
-  int pusch_AntennaPorts;
-  int minRXTXTIME;
-  int do_CSIRS;
-  int do_SRS;
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_PDCCH_ConfigSIB1_t                     *pdcch_ConfigSIB1;

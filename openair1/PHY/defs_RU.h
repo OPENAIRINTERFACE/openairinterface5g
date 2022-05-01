@@ -54,7 +54,6 @@ typedef enum {
   no_L2_connect=5,
   calib_prach_tx=6,
   rx_dump_frame=7,
-  loop_through_memory=8
 } runmode_t;
 
 /*! \brief Extension Type */
@@ -458,8 +457,6 @@ typedef struct RU_t_s {
   int emulate_rf;
   /// numerology index
   int numerology;
-  /// flag to indicate basicsim operation
-  int basicsim;
   /// flag to indicate the RU is in sync with a master reference
   int in_synch;
   /// timing offset

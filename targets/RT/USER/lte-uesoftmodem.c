@@ -276,7 +276,6 @@ uint16_t node_number;
 static void get_options(void) {
   int CC_id=0;
   int tddflag=0;
-  char *loopfile=NULL;
   int dumpframe=0;
   int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
@@ -292,14 +291,6 @@ static void get_options(void) {
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   nfapi_setmode(nfapi_mode);
-
-
-  if (loopfile != NULL) {
-    printf("Input file for hardware emulation: %s",loopfile);
-    mode=loop_through_memory;
-    input_fd = fopen(loopfile,"r");
-    AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
-  }
 
   get_softmodem_params()->hw_timing_advance = timingadv;
 
@@ -519,7 +510,7 @@ int restart_L1L2(module_id_t enb_id) {
 static void init_pdcp(int ue_id) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
-  if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
+  if (IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
 

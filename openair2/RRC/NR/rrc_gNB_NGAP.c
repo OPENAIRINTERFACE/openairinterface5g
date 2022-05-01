@@ -905,30 +905,27 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
   for (pdusession = 0; pdusession < ue_context_pP->ue_context.setup_pdu_sessions; pdusession++) {
     // if (xid == ue_context_pP->ue_context.pdusession[pdusession].xid) {
       if (ue_context_pP->ue_context.pduSession[pdusession].status == PDU_SESSION_STATUS_DONE) {
-        NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].pdusession_id = ue_context_pP->ue_context.pduSession[pdusession].param.pdusession_id;
-        // NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].pdusession_id = 1;
-        NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].nb_of_qos_flow = ue_context_pP->ue_context.pduSession[pdusession].param.nb_qos;
-        NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].gtp_teid = ue_context_pP->ue_context.gnb_gtp_teid[pdusession];
-        NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].gNB_addr.pdu_session_type = PDUSessionType_ipv4;
-        NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].gNB_addr.length = ue_context_pP->ue_context.gnb_gtp_addrs[pdusession].length;
-        memcpy(NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].gNB_addr.buffer,
-                ue_context_pP->ue_context.gnb_gtp_addrs[pdusession].buffer, sizeof(uint8_t)*20);
-        for (qos_flow_index = 0; qos_flow_index < NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].nb_of_qos_flow; qos_flow_index++) {
-          NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].associated_qos_flows[qos_flow_index].qfi =
+        pdusession_setup_t * tmp=&NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession];
+        tmp->pdusession_id = ue_context_pP->ue_context.pduSession[pdusession].param.pdusession_id;
+        // tmp->pdusession_id = 1;
+        tmp->nb_of_qos_flow = ue_context_pP->ue_context.pduSession[pdusession].param.nb_qos;
+        tmp->gtp_teid = ue_context_pP->ue_context.gnb_gtp_teid[pdusession];
+        tmp->gNB_addr.pdu_session_type = PDUSessionType_ipv4;
+        tmp->gNB_addr.length = ue_context_pP->ue_context.gnb_gtp_addrs[pdusession].length;
+        memcpy(tmp->gNB_addr.buffer,
+               ue_context_pP->ue_context.gnb_gtp_addrs[pdusession].buffer, tmp->gNB_addr.length);
+        for (qos_flow_index = 0; qos_flow_index < tmp->nb_of_qos_flow; qos_flow_index++) {
+          tmp->associated_qos_flows[qos_flow_index].qfi =
             ue_context_pP->ue_context.pduSession[pdusession].param.qos[qos_flow_index].qfi;
-          NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession].associated_qos_flows[qos_flow_index].qos_flow_mapping_ind = QOSFLOW_MAPPING_INDICATION_DL;
+          tmp->associated_qos_flows[qos_flow_index].qos_flow_mapping_ind = QOSFLOW_MAPPING_INDICATION_DL;
         }
 
         ue_context_pP->ue_context.pduSession[pdusession].status = PDU_SESSION_STATUS_ESTABLISHED;
-        LOG_I (NR_RRC,"gnb_gtp_addr (msg index %d, pdu_sessions index %d, status %d, xid %d): nb_of_pdusessions %d,  pdusession_id %d, teid: %u, addr: %d.%d.%d.%d \n ",
+        LOG_I (NR_RRC,"gnb_gtp_addr (msg index %d, pdu_sessions index %d, status %d, xid %d): nb_of_pdusessions %d,  pdusession_id %d, teid: %u \n ",
                pdu_sessions_done, pdusession, ue_context_pP->ue_context.pduSession[pdusession].status, xid,
                ue_context_pP->ue_context.nb_of_pdusessions,
                NGAP_PDUSESSION_SETUP_RESP (msg_p).pdusessions[pdu_sessions_done].pdusession_id,
-               NGAP_PDUSESSION_SETUP_RESP (msg_p).pdusessions[pdu_sessions_done].gtp_teid,
-               NGAP_PDUSESSION_SETUP_RESP (msg_p).pdusessions[pdu_sessions_done].gNB_addr.buffer[0],
-               NGAP_PDUSESSION_SETUP_RESP (msg_p).pdusessions[pdu_sessions_done].gNB_addr.buffer[1],
-               NGAP_PDUSESSION_SETUP_RESP (msg_p).pdusessions[pdu_sessions_done].gNB_addr.buffer[2],
-               NGAP_PDUSESSION_SETUP_RESP (msg_p).pdusessions[pdu_sessions_done].gNB_addr.buffer[3]);
+               NGAP_PDUSESSION_SETUP_RESP (msg_p).pdusessions[pdu_sessions_done].gtp_teid);
         pdu_sessions_done++;
       } else if ((ue_context_pP->ue_context.pduSession[pdusession].status == PDU_SESSION_STATUS_NEW) ||
                  (ue_context_pP->ue_context.pduSession[pdusession].status == PDU_SESSION_STATUS_ESTABLISHED)) {
@@ -972,9 +969,9 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
   uint16_t                        ue_initial_id;
   uint32_t                        gNB_ue_ngap_id;
   rrc_gNB_ue_context_t            *ue_context_p = NULL;
-  protocol_ctxt_t                 ctxt;
-  gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
-  gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
+  protocol_ctxt_t                 ctxt={0};
+  gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
+  gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp={0};
   uint8_t                         pdu_sessions_done;
   uint8_t                         inde_list[NR_NB_RB_MAX - 3]= {0};
   int                             ret = 0;

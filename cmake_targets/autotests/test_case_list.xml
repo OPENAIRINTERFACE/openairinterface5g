@@ -1094,9 +1094,9 @@
                                  (Test9: 106 PRBs 50 PDSCH-PRBs MCS Index 27),
                                  (Test10: 106 PRBs 50 PDSCH-PRBs MCS Index 16),
                                  (Test11: 106 MCS-TABLE 256 QAM MCS Index 26),
-                                 (Test12: HARQ test 25% TP (4 rounds),
-                                 (Test13: HARQ test 33% TP (3 rounds),
-                                 (Test14: HARQ test 50% TP (2 rounds),
+                                 (Test12: HARQ test 25% TP 4 rounds),
+                                 (Test13: HARQ test 33% TP 3 rounds),
+                                 (Test14: HARQ test 50% TP 2 rounds),
                                  (Test15: 3 PTRS, 8 Interpolated Symbols),
                                  (Test16: 6 PTRS, 5 Interpolated Symbols),
                                  (Test17: 11 PTRS, 0 Interpolated Symbols),
@@ -1121,7 +1121,7 @@
                   -n100 -R217 -a110 -s5 -b100
                   -n100 -e27 -s30
                   -n100 -e16 -s10
-                  -n100 -q1 -e27 -s30
+                  -n100 -q1 -e26 -s30
                   -n100 -s1 -t25
                   -n100 -s1 -t33
                   -n100 -s1 -t50

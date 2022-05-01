@@ -66,6 +66,8 @@ class EPCManagement():
 		self.mmeConfFile = 'mme.conf'
 		self.yamlPath = ''
 		self.isMagmaUsed = False
+		self.cfgDeploy = '--type start-mini --fqdn yes --scenario 1 --capture /tmp/oai-cn5g-v1.3.pcap' #from xml, 'mini' is default normal for docker-network.py 
+		self.cfgUnDeploy = '--type stop-mini --fqdn yes --scenario 1' #from xml, 'mini' is default normal for docker-network.py 
 
 
 #-----------------------------------------------------------
@@ -251,8 +253,8 @@ class EPCManagement():
 			logging.debug('Starting OAI CN5G')
 			mySSH.command('if [ -d ' + self.SourceCodePath + '/scripts ]; then echo ' + self.Password + ' | sudo -S rm -Rf ' + self.SourceCodePath + '/scripts ; fi', '\$', 5)
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
-			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
-			mySSH.command('./core-network.sh start nrf spgwu', '\$', 60)
+			mySSH.command('cd /opt/oai-cn5g-fed-v1.3/docker-compose', '\$', 5)
+			mySSH.command('python3 ./core-network.py '+self.cfgDeploy, '\$', 60)
 			time.sleep(2)
 			mySSH.command('docker-compose -p 5gcn ps -a', '\$', 60)
 			if mySSH.getBefore().count('Up (healthy)') != 6:
@@ -530,8 +532,8 @@ class EPCManagement():
 				mySSH.command('docker logs ' + c + ' > ' + self.SourceCodePath + '/logs/' + c + '.log', '\$', 5)
 
 			logging.debug('Terminating OAI CN5G')
-			mySSH.command('cd /opt/oai-cn5g-fed/docker-compose', '\$', 5)
-			mySSH.command('./core-network.sh stop nrf spgwu', '\$', 60)
+			mySSH.command('cd /opt/oai-cn5g-fed-v1.3/docker-compose', '\$', 5)
+			mySSH.command('python3 ./core-network.py '+self.cfgUnDeploy, '\$', 60)
 			mySSH.command('docker volume prune --force || true', '\$', 60)
 			time.sleep(2)
 			mySSH.command('tshark -r /tmp/oai-cn5g.pcap | egrep --colour=never "Tracking area update" ','\$', 30)

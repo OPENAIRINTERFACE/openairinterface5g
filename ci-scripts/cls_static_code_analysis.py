@@ -35,6 +35,7 @@ import sys              # arg
 import re               # reg
 import logging
 import os
+from pathlib import Path
 import time
 
 #-----------------------------------------------------------
@@ -51,7 +52,7 @@ class CppCheckResults():
 
 	def __init__(self):
 
-		self.variants = ['xenial', 'bionic']
+		self.variants = ['bionic', 'focal']
 		self.versions = ['','']
 		self.nbErrors = [0,0]
 		self.nbWarnings = [0,0]
@@ -116,12 +117,22 @@ class StaticCodeAnalysis():
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
 			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
+		# if the branch is not develop, then it is a merge request and we need to do
+		# the potential merge. Note that merge conflicts should already been checked earlier
+		if (self.ranAllowMerge):
+			if self.ranTargetBranch == '':
+				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
+					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+			else:
+				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
+				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 
-		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:xenial || true', '\$', 60)
-		mySSH.command('docker build --tag oai-cppcheck:xenial --file ci-scripts/docker/Dockerfile.cppcheck.xenial . > cmake_targets/log/cppcheck-xenial.txt 2>&1', '\$', 600)
+		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:focal || true', '\$', 60)
 		mySSH.command('sed -e "s@xenial@bionic@" ci-scripts/docker/Dockerfile.cppcheck.xenial > ci-scripts/docker/Dockerfile.cppcheck.bionic', '\$', 6)
 		mySSH.command('docker build --tag oai-cppcheck:bionic --file ci-scripts/docker/Dockerfile.cppcheck.bionic . > cmake_targets/log/cppcheck-bionic.txt 2>&1', '\$', 600)
-		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:xenial || true', '\$', 30)
+		mySSH.command('sed -e "s@xenial@focal@" ci-scripts/docker/Dockerfile.cppcheck.xenial > ci-scripts/docker/Dockerfile.cppcheck.focal', '\$', 6)
+		mySSH.command('docker build --tag oai-cppcheck:focal --file ci-scripts/docker/Dockerfile.cppcheck.focal . > cmake_targets/log/cppcheck-focal.txt 2>&1', '\$', 600)
+		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:focal || true', '\$', 30)
 
 		# Analyzing the logs
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
@@ -131,8 +142,22 @@ class StaticCodeAnalysis():
 
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '/*', '.')
 		CCR = CppCheckResults()
+		CCR_ref = CppCheckResults()
 		vId = 0
 		for variant in CCR.variants:
+			refAvailable = False
+			if self.ranAllowMerge:
+				refFolder = str(Path.home()) + '/cppcheck-references'
+				if (os.path.isfile(refFolder + '/cppcheck-'+ variant + '.txt')):
+					refAvailable = True
+					with open(refFolder + '/cppcheck-'+ variant + '.txt', 'r') as refFile:
+						for line in refFile:
+							ret = re.search(' (?P<nb_errors>[0-9\.]+) errors', str(line))
+							if ret is not None:
+								CCR_ref.nbErrors[vId] = int(ret.group('nb_errors'))
+							ret = re.search(' (?P<nb_warnings>[0-9\.]+) warnings', str(line))
+							if ret is not None:
+								CCR_ref.nbWarnings[vId] = int(ret.group('nb_warnings'))
 			if (os.path.isfile('./cppcheck-'+ variant + '.txt')):
 				xmlStart = False
 				with open('./cppcheck-'+ variant + '.txt', 'r') as logfile:
@@ -167,21 +192,43 @@ class StaticCodeAnalysis():
 								CCR.nbPtrAddNotNull[vId] += 1
 							if re.search('id="oppositeInnerCondition"', str(line)) is not None:
 								CCR.nbOppoInnerCondition[vId] += 1
-			logging.debug('========  Variant ' + variant + ' - ' + CCR.versions[vId] + ' ========')
-			logging.debug('   ' + str(CCR.nbErrors[vId]) + ' errors')
-			logging.debug('   ' + str(CCR.nbWarnings[vId]) + ' warnings')
-			logging.debug('  -- Details --')
-			logging.debug('   Memory leak:                     ' + str(CCR.nbMemLeaks[vId]))
-			logging.debug('   Possible null pointer deference: ' + str(CCR.nbNullPtrs[vId]))
-			logging.debug('   Uninitialized variable:          ' + str(CCR.nbUninitVars[vId]))
-			logging.debug('   Undefined behaviour shifting:    ' + str(CCR.nbTooManyBitsShift[vId]))
-			logging.debug('   Signed integer overflow:         ' + str(CCR.nbIntegerOverflow[vId]))
-			logging.debug('')
-			logging.debug('   Printf formatting issue:         ' + str(CCR.nbInvalidPrintf[vId]))
-			logging.debug('   Modulo result is predetermined:  ' + str(CCR.nbModuloAlways[vId]))
-			logging.debug('   Opposite Condition -> dead code: ' + str(CCR.nbOppoInnerCondition[vId]))
-			logging.debug('   Wrong Scanf Nb Args:             ' + str(CCR.nbWrongScanfArg[vId]))
-			logging.debug('')
+			vMsg  = ''
+			vMsg += '========  Variant ' + variant + ' - ' + CCR.versions[vId] + ' ========\n'
+			vMsg += '   ' + str(CCR.nbErrors[vId]) + ' errors\n'
+			vMsg += '   ' + str(CCR.nbWarnings[vId]) + ' warnings\n'
+			vMsg += '  -- Details --\n'
+			vMsg += '   Memory leak:                     ' + str(CCR.nbMemLeaks[vId]) + '\n'
+			vMsg += '   Possible null pointer deference: ' + str(CCR.nbNullPtrs[vId]) + '\n'
+			vMsg += '   Uninitialized variable:          ' + str(CCR.nbUninitVars[vId]) + '\n'
+			vMsg += '   Undefined behaviour shifting:    ' + str(CCR.nbTooManyBitsShift[vId]) + '\n'
+			vMsg += '   Signed integer overflow:         ' + str(CCR.nbIntegerOverflow[vId]) + '\n'
+			vMsg += '\n'
+			vMsg += '   Printf formatting issue:         ' + str(CCR.nbInvalidPrintf[vId]) + '\n'
+			vMsg += '   Modulo result is predetermined:  ' + str(CCR.nbModuloAlways[vId]) + '\n'
+			vMsg += '   Opposite Condition -> dead code: ' + str(CCR.nbOppoInnerCondition[vId]) + '\n'
+			vMsg += '   Wrong Scanf Nb Args:             ' + str(CCR.nbWrongScanfArg[vId]) + '\n'
+			for vLine in vMsg.split('\n'):
+				logging.debug(vLine)
+			if self.ranAllowMerge and refAvailable:
+				if CCR_ref.nbErrors[vId] == CCR.nbErrors[vId]:
+					logging.debug('   No change in number of errors')
+				elif CCR_ref.nbErrors[vId] > CCR.nbErrors[vId]:
+					logging.debug('   Good! Decrease in number of errors')
+				else:
+					logging.debug('   Bad! increase in number of errors')
+				if CCR_ref.nbWarnings[vId] == CCR.nbWarnings[vId]:
+					logging.debug('   No change in number of warnings')
+				elif CCR_ref.nbWarnings[vId] > CCR.nbWarnings[vId]:
+					logging.debug('   Good! Decrease in number of warnings')
+				else:
+					logging.debug('   Bad! increase in number of warnings')
+			# Create new reference file
+			if not self.ranAllowMerge:
+				refFolder = str(Path.home()) + '/cppcheck-references'
+				if not os.path.isdir(refFolder):
+					os.mkdir(refFolder)
+				with open(refFolder + '/cppcheck-'+ variant + '.txt', 'w') as refFile:
+					refFile.write(vMsg)
 			vId += 1
 
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)

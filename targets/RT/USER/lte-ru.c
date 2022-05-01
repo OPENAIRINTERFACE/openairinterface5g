@@ -732,7 +732,7 @@ void tx_rf(RU_t *ru,
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
-      (SF_type == SF_S)) {
+      (SF_type == SF_S) ) {
     int siglen=fp->samples_per_tti,flags=1;
 
     if (SF_type == SF_S) {
@@ -830,6 +830,23 @@ void tx_rf(RU_t *ru,
       late_control=STATE_BURST_TERMINATE;
       LOG_E(PHY,"TX : Timeout (sent %d/%d) state =%d\n",txs, siglen,late_control);
     }
+  } else if (IS_SOFTMODEM_RFSIM ) {
+    // in case of rfsim, we always enable tx because we need to feed rx of the opposite side
+    // we write 1 single I/Q sample to trigger Rx (rfsim will fill gaps with 0 I/Q)
+    void *dummy_tx[ru->frame_parms->nb_antennas_tx];
+    int16_t dummy_tx_data[ru->frame_parms->nb_antennas_tx][2]; // 2 because the function we call use pairs of int16_t implicitly as complex numbers
+    memset(dummy_tx_data,0,sizeof(dummy_tx_data));
+    for (int i=0; i<ru->frame_parms->nb_antennas_tx; i++)
+      dummy_tx[i]= dummy_tx_data[i];
+    
+    AssertFatal( 1 ==
+                 ru->rfdevice.trx_write_func(&ru->rfdevice,
+                                             timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+                                             dummy_tx,
+                                             1,
+                                             ru->frame_parms->nb_antennas_tx,
+                                             4),"");
+    
   }
 }
 
@@ -1385,12 +1402,6 @@ int setup_RU_buffers(RU_t *ru) {
     if      (frame_parms->N_RB_DL == 100) ru->N_TA_offset = 624;
     else if (frame_parms->N_RB_DL == 50)  ru->N_TA_offset = 624/2;
     else if (frame_parms->N_RB_DL == 25)  ru->N_TA_offset = 624/4;
-
-    if(IS_SOFTMODEM_BASICSIM)
-      /* this is required for the basic simulator in TDD mode
-       * TODO: find a proper cleaner solution
-       */
-      ru->N_TA_offset = 0;
 
     if      (frame_parms->N_RB_DL == 100) /* no scaling to do */;
     else if (frame_parms->N_RB_DL == 50) {

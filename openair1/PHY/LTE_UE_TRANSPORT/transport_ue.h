@@ -155,8 +155,6 @@ typedef struct {
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_CHANNEL_BITS];
-  /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  int32_t d[MAX_NUM_RE];
   /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15)
   int32_t z[MAX_NUM_RE];
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)

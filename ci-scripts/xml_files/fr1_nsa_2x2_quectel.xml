@@ -68,20 +68,20 @@
 		<air_interface>lte</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
-		<USRP_IPAddress>192.168.18.241</USRP_IPAddress>
+		<USRP_IPAddress>172.21.19.13</USRP_IPAddress>
 	</testCase>
 
 
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time,line_num,function</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.nsa_2x2.106PRB.usrpn310.conf -q --usrp-tx-thread-config 1 --T_stdout 2 --log_config.global_log_options level,nocolor,time,line_num,function</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 		<eNB_serverId>1</eNB_serverId>
 		<air_interface>nr</air_interface>
 		<eNB_Stats>yes</eNB_Stats>
 		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
-		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
+		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
 	</testCase>
 
 	<testCase id="000001">
@@ -115,11 +115,12 @@
 
 	<testCase id="070000">
 		<class>Iperf</class>
-		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 60M -t 60</iperf_args>
+		<desc>iperf (DL/125Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 125M -t 60</iperf_args>
 		<direction>DL</direction>
 		<id>nrmodule2_quectel</id>
-		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_packetloss_threshold>15</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>85</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 

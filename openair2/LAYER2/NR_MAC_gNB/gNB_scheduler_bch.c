@@ -547,7 +547,8 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      dci_format,
                      rnti_type,
                      pdsch_pdu_rel15->BWPSize,
-                     0);
+                     0,
+                     gNB_mac->cset0_bwp_size);
 
   LOG_D(MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
   LOG_D(MAC,"BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);
@@ -622,6 +623,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
                                1, &is_typeA,
                                &startSymbolIndex, &nrOfSymbols);
 
+      AssertFatal((startSymbolIndex+nrOfSymbols)<14,"SIB1 TDA %d would cause overlap with CSI-RS. Please select a different SIB1 TDA.\n",time_domain_allocation);
+
       int mappingtype = is_typeA? typeA: typeB;
       uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype, 1);
 
@@ -642,7 +645,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
       nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
 
       // Data to be transmitted
-      bzero(tx_req->TLVs[0].value.direct,MAX_NR_DLSCH_PAYLOAD_BYTES);
+      bzero(tx_req->TLVs[0].value.direct,MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*1056);
       memcpy(tx_req->TLVs[0].value.direct, sib1_payload, sib1_sdu_length);
 
       tx_req->PDU_length = TBS;

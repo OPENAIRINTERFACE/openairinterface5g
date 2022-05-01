@@ -57,7 +57,7 @@ typedef struct {
   /// Number of "Filler" bits
   uint32_t F;
   /// LDPC-code outputs
-  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
+  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS];
 } encoder_implemparams_t;
 #define INIT0_LDPCIMPLEMPARAMS {0,0,0,NULL,NULL,NULL,NULL}
 typedef void(*nrLDPC_initcallfunc_t)(t_nrLDPC_dec_params *p_decParams, int8_t *p_llr, int8_t *p_out);
@@ -71,5 +71,5 @@ typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,sho
    \param p_llrOut Output vector
    \param p_profiler LDPC profiler statistics
 */
-typedef int32_t(*nrLDPC_decoderfunc_t)(t_nrLDPC_dec_params *, int8_t *, int8_t *, t_nrLDPC_procBuf *, t_nrLDPC_time_stats * );
+typedef int32_t(*nrLDPC_decoderfunc_t)(t_nrLDPC_dec_params* , int8_t*, int8_t* , t_nrLDPC_time_stats* );
 #endif
