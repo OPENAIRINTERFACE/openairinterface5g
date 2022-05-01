@@ -289,7 +289,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
-                           /* tda = */ 0,
+                           /* tda = */ 2,
                            g_nrOfLayers,
                            sched_ctrl,
                            ps);

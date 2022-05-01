@@ -128,7 +128,6 @@ typedef enum {
 #define GNB_CONFIG_STRING_FORCE256QAMOFF                "force_256qam_off"
 #define GNB_CONFIG_STRING_ENABLE_SDAP                   "enable_sdap"
 #define GNB_CONFIG_HLP_STRING_ENABLE_SDAP               "enable the SDAP layer\n"
-
 #define GNB_CONFIG_HLP_FORCE256QAMOFF                   "suppress activation of 256 QAM despite UE support"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
@@ -160,10 +159,10 @@ typedef enum {
 {GNB_CONFIG_STRING_DOSRS,                        NULL,   0,            iptr:NULL,   defintval:0,                 TYPE_INT,       0},  \
 {GNB_CONFIG_STRING_NRCELLID,                     NULL,   0,            u64ptr:NULL, defint64val:1,               TYPE_UINT64,    0},  \
 {GNB_CONFIG_STRING_MINRXTXTIME,                  NULL,   0,            iptr:NULL,   defintval:2,                 TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                TYPE_STRING,    0},   \
-{GNB_CONFIG_STRING_UMONDEFAULTDRB,               NULL,   0,            uptr:NULL,   defuintval:0,                 TYPE_UINT,   0}   \
+{GNB_CONFIG_STRING_ULPRBBLACKLIST,               NULL,   0,            strptr:NULL, defstrval:"",                TYPE_STRING,    0},  \
+{GNB_CONFIG_STRING_UMONDEFAULTDRB,               NULL,   0,            uptr:NULL,   defuintval:0,                 TYPE_UINT,   0},   \
 {GNB_CONFIG_STRING_FORCE256QAMOFF, GNB_CONFIG_HLP_FORCE256QAMOFF, PARAMFLAG_BOOL, iptr:NULL, defintval:0,        TYPE_INT,       0},  \
-{GNB_CONFIG_STRING_ENABLE_SDAP, GNB_CONFIG_HLP_STRING_ENABLE_SDAP, PARAMFLAG_BOOL, iptr:NULL, defintval:0,       TYPE_INT,       0},  \
+{GNB_CONFIG_STRING_ENABLE_SDAP, GNB_CONFIG_HLP_STRING_ENABLE_SDAP, PARAMFLAG_BOOL, iptr:NULL, defintval:0,       TYPE_INT,       0}  \
 }
 
 #define GNB_GNB_ID_IDX                  0
@@ -191,9 +190,9 @@ typedef enum {
 #define GNB_NRCELLID_IDX                22
 #define GNB_MINRXTXTIME_IDX             23
 #define GNB_ULPRBBLACKLIST_IDX          24
-#define GNB_UMONDEFAULTDRB_IDX          23
-#define GNB_FORCE256QAMOFF_IDX          25
-#define GNB_ENABLE_SDAP_IDX             26
+#define GNB_UMONDEFAULTDRB_IDX          25
+#define GNB_FORCE256QAMOFF_IDX          26
+#define GNB_ENABLE_SDAP_IDX             27
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define GNBPARAMS_CHECK {                                         \

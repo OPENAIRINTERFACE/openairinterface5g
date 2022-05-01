@@ -423,7 +423,7 @@ struct openair0_device_t {
       @param antenna_id index of the antenna if the device has multiple anteannas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
   */
-  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void *buff, int nsamps,int antenna_id, int flags);
+  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int flags);
 
   /*! \brief Receive samples from hardware.
    * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for

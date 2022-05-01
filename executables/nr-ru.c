@@ -275,8 +275,14 @@ int connect_rau(RU_t *ru) {
 // southbound IF5 fronthaul for 16-bit OAI format
 void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-
-  send_IF5(ru, timestamp, slot, &ru->seqno, IF5_RRH_GW_DL);
+  void *buffs[ru->nb_tx];
+  int offset = ru->nr_frame_parms->get_samples_slot_timestamp(slot,ru->nr_frame_parms,0);
+  for (int aid=0;aid<ru->nb_tx;aid++) buffs[aid]=&ru->common.txdata[aid][offset]; 
+  ru->ifdevice.trx_write_func2(&ru->ifdevice,
+		               timestamp,
+			       buffs,
+			       ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
+			       0); 
 }
 
 // southbound IF4p5 fronthaul

@@ -114,7 +114,6 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
     
   for (int s=first_symb;s<(first_symb+num_symb);s++) {
     for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
-
       if (s==first_symb /*&& ((gNB->rb_mask_ul[s][rb>>5]&(1<<(rb&31))) == 0)*/) {
         nb_symb[rb]=0;
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx;aarx++) 

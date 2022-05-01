@@ -289,129 +289,92 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   return (bytes_sent);  	  
 }
 
-int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void *buff, int nsamps,int cc, int flags) {	
+int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int flags) {	
   
   int bytes_sent=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int sendto_flag =0;
   fhstate_t *fhstate = &device->fhstate;
 
+  AssertFatal((nsamps&255) == 0,"transport size should be a multiple of 256 samples, have %d\n",nsamps);
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
 
- 
-
-
-  int nsamps2;  // aligned to upper 32 or 16 byte boundary
-  
+  int ntx = device->openair0_cfg->tx_num_channels; 
+  void *buff2[ntx];
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
-  nsamps2 = (nsamps+7)>>3;
-  __m256i buff_tx[nsamps2+1];
-  __m256i *buff_tx2=buff_tx+1;
+  int nsamps2 = 256>>3;
+  __m256i buff_tx[ntx][nsamps2+1];
+  for (int aid=0;aid<ntx;aid++) buff2[aid]=(void*)&buff_tx[aid][1] - APP_HEADER_SIZE_BYTES;
 #else
-  nsamps2 = (nsamps+3)>>2;
-  __m128i buff_tx[nsamps2+2];
-  __m128i *buff_tx2=buff_tx+2;
+  int nsamps2 = 256>>2;
+  __m128i buff_tx[ntx][nsamps2+2];
+  for (int aid=0;aid<ntx;aid++) buff2[aid]=(void*)&buff_tx[aid][2] - APP_HEADER_SIZE_BYTES;
 #endif
 #elif defined(__arm__) || defined(__aarch64__)
-  nsamps2 = (nsamps+3)>>2;
-  int16x8_t buff_tx[nsamps2+2];
-  int16x8_t *buff_tx2=buff_tx+2;
+  int nsamps2 = 256>>2;
+  int16x8_t buff_tx[ntx][nsamps2+2];
+  for (int aid=0;aid<ntx;aid++) buff2[aid]=(void*)&buff_tx[aid][2] - APP_HEADER_SIZE_BYTES;
 #else
 #error Unsupported CPU architecture, ethernet device cannot be built
 #endif
+  for (int aid=0;aid<ntx;aid++) {
 
-    
+    /* construct application header */
+    // ECPRI Protocol revision + reserved bits (1 byte)
+      *(uint8_t *)buff2[aid] = ECPRIREV;
+    // ECPRI Message type (1 byte)
+      *(uint8_t *)(buff2[aid] + 1) = 64;
+    // ECPRI Payload Size (2 bytes)
+      *(uint8_t *)(buff2[aid] + 2) = 4;// 1024>>6;
+      *(uint8_t *)(buff2[aid] + 3) = 0;// 1024&0xff;
+    // ECPRI PC_ID (2 bytes)
+      *(uint16_t *)(buff2[aid] + 4) = aid;
+
+  }
+  openair0_timestamp TS = timestamp + fhstate->TS0;
+  TS = 6*device->sampling_rate_ratio_d*(TS/device->sampling_rate_ratio_n);
+  TS -= device->txrx_offset; 
+  int TSinc = 6*256*device->sampling_rate_ratio_d/device->sampling_rate_ratio_n;
+  for (int offset=0;offset<nsamps;offset+=256,TS+=TSinc) {
+    // OAI modified SEQ_ID (4 bytes)
+    for (int aid=0;aid<ntx;aid++) {
+      *(uint64_t *)(buff2[aid] + 6) = TS;
+
     // bring TX data into 12 MSBs 
-  for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-    buff_tx2[j] = _mm256_slli_epi16(((__m256i *)buff)[j],4);
+      __m256i *buff256 = (__m256i *)&((uint32_t*)buff[aid])[offset];
+      for (int j=0; j<32; j++) buff_tx[aid][1+j] = _mm256_slli_epi16(buff256[j],4);
 #else
-    buff_tx2[j] = _mm_slli_epi16(((__m128i *)buff)[j],4);
+      __m128i *buff128 = (__m128i *)&buff[aid][offset];
+      for (int j=0; j<64; j++) buff_tx[aid][2+j] = _mm_slli_epi16(buff128[j],4);
 #endif
 #elif defined(__arm__)
-    buff_tx2[j] = vshlq_n_s16(((int16x8_t *)buff)[j],4);
+      int16x8_t *buff128 = (__int16x8_t*)&buff[aid][offset];
+      for (int j=0; j<64; j++) buff_tx[aid][2+j] = vshlq_n_s16(((int16x8_t *)buff128)[j],4);
 #endif
-  }
-
-        /* buff[i] points to the position in tx buffer where the payload to be sent is
-       buff2 points to the position in tx buffer where the packet header will be placed */
-    void *buff2 = ((void*)buff_tx2)- APP_HEADER_SIZE_BYTES; 
-    openair0_timestamp TS = timestamp + fhstate->TS0;
-    TS = 6*device->sampling_rate_ratio_d*(TS/device->sampling_rate_ratio_n);
-    TS -= device->txrx_offset; 
- 
-    bytes_sent = 0;
     
-    /* constract application header */
-    // ECPRI Protocol revision + reserved bits (1 byte)
-    *(uint8_t *)buff2 = ECPRIREV;
-    // ECPRI Message type (1 byte)
-    *(uint8_t *)(buff2 + 1) = 64;
-    // ECPRI Payload Size (2 bytes)
-    AssertFatal(nsamps<16381,"nsamps > 16381\n");
-    *(uint8_t *)(buff2 + 2) = (nsamps<<2)>>8;
-    *(uint8_t *)(buff2 + 3) = (nsamps<<2)&0xff;
-    // ECPRI PC_ID (2 bytes)
-    *(uint16_t *)(buff2 + 4) = cc;
-    // OAI modified SEQ_ID (4 bytes)
-    *(uint64_t *)(buff2 + 6) = TS;
 
-    /*
-    printf("ECPRI TX (REV %x, MessType %d, Payload size %d, PC_ID %d, TS %llu\n",
-	   *(uint8_t *)buff2,
-	   *(uint8_t *)(buff2+1),
-	   *(uint16_t *)(buff2+2),
-	   *(uint16_t *)(buff2+4),
-	   *(uint64_t *)(buff2+6));
-	   */	   	   
-    
-    int sent_byte;
-    if (eth->compression == ALAW_COMPRESS) {
-      sent_byte = UDP_PACKET_SIZE_BYTES_ALAW(nsamps);
-    } else {
-      sent_byte = UDP_PACKET_SIZE_BYTES(nsamps);
-    }
-
-    //while(bytes_sent < sent_byte) {
-    //printf("eth->pck_seq_num: %d\n", eth->pck_seq_num);
-#if DEBUG   
-      printf("------- TX ------: buff2 current position=%d remaining_bytes=%d  bytes_sent=%d \n",
-	     (void *)(buff2+bytes_sent), 
-	     sent_byte - bytes_sent,
-	     bytes_sent);
-#endif
-      /* Send packet */
-      bytes_sent = sendto(eth->sockfdd[cc%eth->num_fd],
-			   buff2, 
-                           sent_byte,
-			   sendto_flag,
-			   (struct sockaddr*)&eth->dest_addrd,
-			   eth->addr_len);
+     /* Send packet */
+      bytes_sent = sendto(eth->sockfdd[aid%eth->num_fd],
+                          buff2[aid], 
+                          UDP_PACKET_SIZE_BYTES(256),
+                          sendto_flag,
+                          (struct sockaddr*)&eth->dest_addrd,
+                          eth->addr_len);
       
       if ( bytes_sent == -1) {
 	eth->num_tx_errors++;
 	perror("ETHERNET WRITE: ");
 	exit(-1);
       } else {
-#if DEBUG
-    printf("------- TX ------: nu=%d an_id=%d ts%d bytes_send=%d\n",
-	   *(int16_t *)buff2,
-	   *(int16_t *)(buff2 + sizeof(int16_t)),
-	   *(openair0_timestamp *)(buff2 + sizeof(int32_t)),
-	   bytes_sent);
-
-    dump_packet((device->host_type == RAU_HOST)? "RAU":"RAU", buff2, UDP_PACKET_SIZE_BYTES(nsamps), TX_FLAG);
-#endif
-    eth->tx_actual_nsamps=bytes_sent>>2;
-    eth->tx_count++;
-    eth->pck_seq_num++;
-    if ( eth->pck_seq_num > MAX_PACKET_SEQ_NUM(nsamps,device->openair0_cfg->samples_per_frame) )  eth->pck_seq_num = 1;
+        eth->tx_actual_nsamps=bytes_sent>>2;
+        eth->tx_count++;
       }
-    //}
-                  
+    }
+  }      
   return (bytes_sent-APP_HEADER_SIZE_BYTES)>>2;
 }
       
@@ -476,47 +439,6 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uin
     for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,fhstate->TS[i]);
   }
 
-/*
-  //  openair0_timestamp prev_timestamp = -1;
-  int rcvfrom_flag =0;
-  int block_cnt=0;
-  int again_cnt=0;
-  static int packet_cnt=0;
-  int payload_size = UDP_PACKET_SIZE_BYTES(nsamps);
-
-  // we need a temporary storage buffer since the antenna ID is in the packet
-  int nsamps2 = (payload_size>>2)+(APP_HEADER_SIZE_BYTES>>2);
-  int32_t temp_rx[nsamps2+1];
-  char *temp_rx0 = ((char *)&temp_rx[1+(APP_HEADER_SIZE_BYTES>>2)]) - APP_HEADER_SIZE_BYTES;  
-  
-  eth->rx_nsamps=nsamps;
-
-  bytes_received=0;
-  block_cnt=0;
-  AssertFatal(eth->compression == NO_COMPRESS, "IF5 compression not supported for now\n");
- 
-  bytes_received =recvfrom(eth->sockfdd[sockid%eth->num_fd],
- 	                   (void*)temp_rx0,
-		           payload_size,
-		           rcvfrom_flag,
-		           (struct sockaddr *)&eth->dest_addrd,
-		           (socklen_t *)&eth->addr_len); 
-  if (bytes_received ==-1) {
-      eth->num_rx_errors++;
-  } else {
-      // store the timestamp value from packet's header 
-      *timestamp =  *(openair0_timestamp *)(temp_rx0 + ECPRICOMMON_BYTES+ECPRIPCID_BYTES);
-      // convert TS to samples, /6 for AW2S @ 30.72 Ms/s, this is converted for other sample rates in OAI application
-      *timestamp = *timestamp/6;
-      *cc        = *(uint16_t*)(temp_rx0 + ECPRICOMMON_BYTES);
-    eth->rx_actual_nsamps=payload_size>>2;
-    eth->rx_count++;
-  }	 
-
-  if (buff) memcpy((void*)(buff[*cc]+packet_idx*nsamps),
-                    (void*)(temp_rx+1),
-                    nsamps<<2); 
- */ 
   *timestamp = fhstate->TS_read;
   fhstate->TS_read = prev_read_TS + nsamps;
   return (nsamps);

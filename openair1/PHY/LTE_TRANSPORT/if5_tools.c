@@ -1103,41 +1103,7 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
       }
 */
     } else if (eth->compression == NO_COMPRESS) {
-
-      NR_DL_FRAME_PARMS *nrfp = ru->nr_frame_parms;
-
-      int offset,siglen,factor_n=1,factor_d=1;
-      if (nrfp) {
-         offset = nrfp->get_samples_slot_timestamp(tti,nrfp,0);
-         siglen = nrfp->get_samples_per_slot(tti,nrfp);
-      }
-      else {
-         offset = tti*fp->samples_per_subframe;
-         siglen = spsf;
-      }
-
-      for (i=0; i < ru->nb_tx; i++)
-        txp[i] = (int32_t*)&ru->common.txdata[i][offset];
-    
-      for (packet_id=0; packet_id < siglen / spp_eth; packet_id++) {
-        for (int aid=0; aid<ru->nb_tx;aid++) {
-          //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
-          //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
-          clock_gettime( CLOCK_MONOTONIC, &start_comp);
-          ru->ifdevice.trx_write_func2(&ru->ifdevice,
-	  			       (proc_timestamp + packet_id*spp_eth/*-1250*/),
-				       (void*)txp[aid],
-				       spp_eth,
-				       aid,
-				       0); 
-          LOG_D(HW,"TTI %d : packet %d, TS %llu\n",tti,packet_id,(unsigned long long)(proc_timestamp-ru->ts_offset+packet_id*spp_eth));
-          clock_gettime( CLOCK_MONOTONIC, &end_comp);
-          LOG_D(HW,"[TTI %d] IF_Write_Time: %"PRId64"\n",tti,clock_difftime_ns(start_comp, end_comp));
-          //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 0 );  
-	  txp[aid] += spp_eth;
-
-        }
-     }
+      AssertFatal(1==0,"Shouldn't get here anymore\n");
     }
   } else if (packet_type == IF5_RRH_GW_UL) {
     if (eth->compression == ALAW_COMPRESS) {
