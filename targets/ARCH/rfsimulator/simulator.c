@@ -705,17 +705,10 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
         }
         else { // no channel modeling
           
-          #if 0
           double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05}, //rx 0
                                       {0.2, 1.0, 0.2, 0.1}, //rx 1
                                      {0.1, 0.2, 1.0, 0.2}, //rx 2
                                      {0.05, 0.1, 0.2, 1.0}};//rx 3
-          #else
-          double H_awgn_mimo[4][4] ={{1.0, 0.0, 0.0, 0.0},//rx 0
-                                     {0.0, 1.0, 0.0, 0.0},//rx 1
-                                     {0.0, 0.0, 1.0, 0.0},//rx 2
-                                     {0.0, 0.0, 0.0, 1.0}};//rx 3
-          #endif
 
           sample_t *out=(sample_t *)samplesVoid[a];
           int nbAnt_tx = ptr->th.nbAnt;//number of Tx antennas
