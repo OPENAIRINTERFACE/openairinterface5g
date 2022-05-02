@@ -308,31 +308,26 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
                           unsigned char symbol,
                           uint8_t is_dmrs_symbol,
                           nfapi_nr_pusch_pdu_t *pusch_pdu,
-                          NR_DL_FRAME_PARMS *frame_parms)
-{
+                          NR_DL_FRAME_PARMS *frame_parms) {
 
   unsigned short start_re, re, nb_re_pusch;
   unsigned char aarx, aatx;
   uint32_t rxF_ext_index = 0;
   uint32_t ul_ch0_ext_index = 0;
   uint32_t ul_ch0_index = 0;
-  //uint8_t k_prime;
-  //uint16_t n;
   int16_t *rxF,*rxF_ext;
   int *ul_ch0,*ul_ch0_ext;
-  //uint8_t delta = 0;
   int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
 
 #ifdef DEBUG_RB_EXT
-
   printf("--------------------symbol = %d-----------------------\n", symbol);
   printf("--------------------ch_ext_index = %d-----------------------\n", symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size);
-
 #endif
 
   uint8_t is_data_re;
   start_re = (frame_parms->first_carrier_offset + (pusch_pdu->rb_start + pusch_pdu->bwp_start) * NR_NB_SC_PER_RB)%frame_parms->ofdm_symbol_size;
   nb_re_pusch = NR_NB_SC_PER_RB * pusch_pdu->rb_size;
+
 #ifdef __AVX2__
   int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
 #else
@@ -341,18 +336,13 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
 
   for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
 
-    rxF       = (int16_t *)&rxdataF[aarx][soffset+(symbol * frame_parms->ofdm_symbol_size)];
-    rxF_ext   = (int16_t *)&pusch_vars->rxdataF_ext[aarx][symbol * nb_re_pusch2]; // [hna] rxdataF_ext isn't contiguous in order to solve an alignment problem ib llr computation in case of mod_order = 4, 6
+    rxF = (int16_t *)&rxdataF[aarx][soffset+(symbol * frame_parms->ofdm_symbol_size)];
+    rxF_ext = (int16_t *)&pusch_vars->rxdataF_ext[aarx][symbol * nb_re_pusch2]; // [hna] rxdataF_ext isn't contiguous in order to solve an alignment problem ib llr computation in case of mod_order = 4, 6
     
     if (is_dmrs_symbol == 0) {
-      //
-      //rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
       if (start_re + nb_re_pusch <= frame_parms->ofdm_symbol_size) {
-        memcpy1((void*)rxF_ext,
-                (void*)&rxF[start_re*2],
-                nb_re_pusch*sizeof(int32_t));
-      } 
-      else {
+        memcpy1((void*)rxF_ext, (void*)&rxF[start_re*2], nb_re_pusch*sizeof(int32_t));
+      } else {
         int neg_length = frame_parms->ofdm_symbol_size-start_re;
         int pos_length = nb_re_pusch-neg_length;
         memcpy1((void*)rxF_ext,(void*)&rxF[start_re*2],neg_length*sizeof(int32_t));
@@ -360,28 +350,23 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
       }
 
       for (aatx = 0; aatx < pusch_pdu->nrOfLayers; aatx++) {
-        ul_ch0     = &pusch_vars->ul_ch_estimates[aatx*frame_parms->nb_antennas_rx+aarx][pusch_vars->dmrs_symbol*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
+        ul_ch0 = &pusch_vars->ul_ch_estimates[aatx*frame_parms->nb_antennas_rx+aarx][pusch_vars->dmrs_symbol*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
         ul_ch0_ext = &pusch_vars->ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*nb_re_pusch2];
         memcpy1((void*)ul_ch0_ext,(void*)ul_ch0,nb_re_pusch*sizeof(int32_t));
       }
-    }
-    else {
+
+    } else {
 
       for (aatx = 0; aatx < pusch_pdu->nrOfLayers; aatx++) {
-        ul_ch0     = &pusch_vars->ul_ch_estimates[aatx*frame_parms->nb_antennas_rx+aarx][pusch_vars->dmrs_symbol*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
+        ul_ch0 = &pusch_vars->ul_ch_estimates[aatx*frame_parms->nb_antennas_rx+aarx][pusch_vars->dmrs_symbol*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
         ul_ch0_ext = &pusch_vars->ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*nb_re_pusch2];
 
-        //n = 0;
-        //k_prime = 0;
         rxF_ext_index = 0;
         ul_ch0_ext_index = 0;
-        ul_ch0_index = 0;        
-        
+        ul_ch0_index = 0;
         for (re = 0; re < nb_re_pusch; re++) {
-          uint16_t k= start_re+re;
-                
+          uint16_t k = start_re + re;
           is_data_re = allowed_xlsch_re_in_dmrs_symbol(k, start_re, frame_parms->ofdm_symbol_size, pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dmrs_config_type);
-          
           if (++k >= frame_parms->ofdm_symbol_size) {
             k -= frame_parms->ofdm_symbol_size;
           }
@@ -390,9 +375,9 @@ void nr_ulsch_extract_rbs(int32_t **rxdataF,
           printf("re = %d, is_dmrs_symbol = %d, symbol = %d\n", re, is_dmrs_symbol, symbol);
           #endif
 
-          /* save only data and respective channel estimates */
+          // save only data and respective channel estimates
           if (is_data_re == 1) {
-            if (aatx == aarx) {
+            if (aatx == 0) {
               rxF_ext[rxF_ext_index]     = (rxF[ ((start_re + re)*2)      % (frame_parms->ofdm_symbol_size*2)]);
               rxF_ext[rxF_ext_index + 1] = (rxF[(((start_re + re)*2) + 1) % (frame_parms->ofdm_symbol_size*2)]);
               rxF_ext_index +=2;
