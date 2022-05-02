@@ -31,7 +31,7 @@
 #ifndef __NR_LDPC_TYPES__H__
 #define __NR_LDPC_TYPES__H__
 #ifndef CODEGEN
-#include "../../TOOLS/time_meas.h"
+#include "time_meas.h"
 #endif
 #include "nrLDPCdecoder_defs.h"
 // ==============================================================================

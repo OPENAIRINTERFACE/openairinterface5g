@@ -299,8 +299,8 @@ int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
 
   /// CRC, coding and rate matching
   polar_encoder_fast (&a_reversed, (void*)pbch->pbch_e, 0, 0,
-                      nr_polar_params( NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL,0,NULL)
-                     );
+                      NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
+
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
 

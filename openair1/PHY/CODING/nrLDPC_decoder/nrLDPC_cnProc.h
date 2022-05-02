@@ -42,13 +42,10 @@
 #define conditional_negate(a,b,z) _mm512_mask_sub_epi8(a,_mm512_movepi8_mask(b),z,a)
 
 #ifdef __AVX512BW__
-static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
+static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
-
-    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
-    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
 
     __m512i* p_cnProcBuf;
     __m512i* p_cnProcBufRes;
@@ -376,13 +373,10 @@ static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
 
 #else
 
-static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
+static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
-
-    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
-    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
 
     __m256i* p_cnProcBuf;
     __m256i* p_cnProcBufRes;
@@ -1219,13 +1213,15 @@ static inline void nrLDPC_cnProc_BG1_AVX512(t_nrLDPC_lut* p_lut, t_nrLDPC_procBu
 }
 
 #else
-static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
+/**
+   \brief Performs CN processing for BG1 on the CN processing buffer and stores the results in the CN processing results buffer.
+   \param p_lut Pointer to decoder LUTs
+   \param Z Lifting size
+*/
+static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
-
-    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
-    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
 
     __m256i* p_cnProcBuf;
     __m256i* p_cnProcBufRes;
@@ -1719,13 +1715,10 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_pr
    \param Z Lifting size
    \return 32-bit parity check indicator
 */
-static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
+static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
-
-    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
-    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
 
     __m256i* p_cnProcBuf;
     __m256i* p_cnProcBufRes;
@@ -2354,13 +2347,10 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf
    \param Z Lifting size
    \return 32-bit parity check indicator
 */
-static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
+static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
-
-    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
-    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
 
     __m256i* p_cnProcBuf;
     __m256i* p_cnProcBufRes;

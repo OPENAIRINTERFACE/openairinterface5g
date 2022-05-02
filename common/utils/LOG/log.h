@@ -212,10 +212,10 @@ typedef enum {
   PERF,
   OIP,
   CLI,
-  MSC,
   OCM,
   UDP_,
   GTPU,
+  SDAP,
   SPGW,
   S1AP,
   F1AP,
@@ -303,6 +303,7 @@ extern "C" {
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
+void logTerm (void);
 int  isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
 void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
@@ -346,7 +347,7 @@ typedef struct {
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
 @param multiVec create new file or append to existing (useful for writing multiple vectors to same file. Just call the function multiple times with same file name and with this parameter set to 1)
 */
-#define MATLAB_RAW (1<<31)
+#define MATLAB_RAW (1U<<31)
 #define MATLAB_SHORT 0
 #define MATLAB_CSHORT 1
 #define MATLAB_INT 2
@@ -472,130 +473,6 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 
 /* @}*/
-
-static __inline__ uint64_t rdtsc(void) {
-  uint32_t a, d;
-  __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
-  return (((uint64_t)d)<<32) | ((uint64_t)a);
-}
-
-#define DEBUG_REALTIME 1
-#if DEBUG_REALTIME
-
-extern double cpuf;
-
-static inline uint64_t checkTCPU(int timeout,
-		                         char *file,
-								 int line)
-{
-  static uint64_t __thread lastCPUTime=0;
-  static uint64_t __thread last=0;
-  uint64_t cur=rdtsc();
-  struct timespec CPUt;
-  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &CPUt);
-  uint64_t CPUTime=CPUt.tv_sec*1000*1000+CPUt.tv_nsec/1000;
-  double microCycles=(double)(cpuf*1000);
-  int duration=(int)((cur-last)/microCycles);
-
-  if ( last!=0 && duration > timeout ) {
-    //struct timespec ts;
-    //clock_gettime(CLOCK_MONOTONIC, &ts);
-    printf("%s:%d lte-ue delay %d (exceed %d), CPU for this period: %lld\n", file, line,
-           duration, timeout, (long long)CPUTime-lastCPUTime );
-  }
-
-  last=cur;
-  lastCPUTime=CPUTime;
-  return cur;
-}
-
-static inline unsigned long long checkT(int timeout,
-		                                char *file,
-										int line)
-{
-  static unsigned long long __thread last=0;
-  unsigned long long cur=rdtsc();
-  int microCycles=(int)(cpuf*1000);
-  int duration=(int)((cur-last)/microCycles);
-
-  if ( last!=0 && duration > timeout )
-    printf("%s:%d lte-ue delay %d (exceed %d)\n", file, line,
-           duration, timeout);
-
-  last=cur;
-  return cur;
-}
-
-typedef struct m {
-  uint64_t iterations;
-  uint64_t sum;
-  uint64_t maxArray[11];
-} Meas;
-
-static inline void printMeas(char *txt,
-		                     Meas *M,
-							 int period)
-{
-  if (M->iterations%period == 0 ) {
-    char txt2[512];
-    sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " max=%"
-            PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n",
-            txt,
-            M->sum/M->iterations,
-            M->iterations,
-            M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
-            M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-#if T_TRACER
-    LOG_W(PHY,"%s",txt2);
-#else
-    printf("%s",txt2);
-#endif
-  }
-}
-
-static inline int cmpint(const void *a,
-		                 const void *b)
-{
-  uint64_t *aa=(uint64_t *)a;
-  uint64_t *bb=(uint64_t *)b;
-  return (int)(*aa-*bb);
-}
-
-static inline void updateTimes(uint64_t start,
-		                       Meas *M,
-							   int period,
-							   char *txt)
-{
-  if (start!=0) {
-    uint64_t end=rdtsc();
-    long long diff=(end-start)/(cpuf*1000);
-    M->maxArray[0]=diff;
-    M->sum+=diff;
-    M->iterations++;
-    qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
-    printMeas(txt,M,period);
-  }
-}
-
-#define check(a) do { checkT(a,__FILE__,__LINE__); } while (0)
-#define checkcpu(a) do { checkTCPU(a,__FILE__,__LINE__); } while (0)
-#define initRefTimes(a) static __thread Meas a= {0}
-#define pickTime(a) uint64_t a=rdtsc()
-#define readTime(a) a
-#define initStaticTime(a) static __thread uint64_t a={0}
-#define pickStaticTime(a) do { a=rdtsc(); } while (0)
-
-#else
-#define check(a) do {} while (0)
-#define checkcpu(a) do {} while (0)
-#define initRefTimes(a) do {} while (0)
-#define initStaticTime(a) do {} while (0)
-#define pickTime(a) do {} while (0)
-#define readTime(a) 0
-#define pickStaticTime(a) do {} while (0)
-#define updateTimes(a,b,c,d) do {} while (0)
-#define printMeas(a,b,c) do {} while (0)
-#endif
 
 #ifdef __cplusplus
 }

@@ -71,7 +71,6 @@
 
 #include "pdcp.h"
 #include "plmn_data.h"
-#include "msc.h"
 #include <common/utils/system.h>
 
 #include "intertask_interface.h"
@@ -1390,16 +1389,6 @@ rrc_ue_process_radioResourceConfigDedicated(
     uint8_t *kUPenc = NULL;
     derive_key_up_enc(UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
                       UE_rrc_inst[ctxt_pP->module_id].kenb, &kUPenc);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_UE,
-      MSC_PDCP_UE,
-      NULL,
-      0,
-      MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security %X)",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ctxt_pP->rnti,
-      UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm |
-      (UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm << 4));
     // Refresh DRBs
     rrc_pdcp_config_asn1_req(ctxt_pP,
                              (LTE_SRB_ToAddModList_t *)NULL,
@@ -3186,7 +3175,8 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
     const size_t num_plmn_data = sizeof(plmn_data) / sizeof(plmn_data[0]);
     for (size_t plmn_ind = 0;; ++plmn_ind) {
       if (plmn_ind == num_plmn_data) {
-        LOG_E( RRC, "Did not find name from internal table for %u %u\n", mcc, mnc);
+        LOG_W( RRC, "Did not find operator name from internal table for MCC %0*d, MNC %0*d\n",
+               mccdigits, mcc, mncdigits, mnc);
         break;
       }
       if ((plmn_data[plmn_ind].mcc == mcc) && (plmn_data[plmn_ind].mnc == mnc)) {

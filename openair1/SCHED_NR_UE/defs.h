@@ -82,6 +82,11 @@
 #define DAQ_AGC_OFF 0
 
 
+typedef struct {
+  uint8_t decoded_output[64];
+  uint8_t xtra_byte;
+} fapiPbch_t;
+
 /** @addtogroup _PHY_PROCEDURES_
  * @{
  */
@@ -111,16 +116,18 @@ int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, re
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id);
 
 /*! \brief Scheduling for UE RX procedures in normal subframes.
-  @param ue             Pointer to UE variables on which to act
-  @param proc           Pointer to proc information
-  @param gNB_id         Local id of eNB on which to act
-  @param dlsch_parallel use multithreaded dlsch processing
-  @param txFifo         Result fifo if PDSCH is run in parallel
+  @param ue                     Pointer to UE variables on which to act
+  @param proc                   Pointer to proc information
+  @param gNB_id                 Local id of eNB on which to act
+  @param dlsch_parallel         use multithreaded dlsch processing
+  @param phy_pdcch_config       PDCCH Config for this slot
+  @param txFifo                 Result fifo if PDSCH is run in parallel
 */
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
                            uint8_t dlsch_parallel,
+                           NR_UE_PDCCH_CONFIG *phy_pdcch_config,
                            notifiedFIFO_t *txFifo);
 
 int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id, uint8_t abstraction_flag, uint8_t do_pdcch_flag, relaying_type_t r_type);
@@ -295,9 +302,6 @@ uint8_t nr_pdcch_alloc2ul_subframe(NR_DL_FRAME_PARMS *frame_parms,uint8_t n);
 uint32_t nr_pdcch_alloc2ul_frame(NR_DL_FRAME_PARMS *frame_parms,uint32_t frame, uint8_t n);
 
 
-uint16_t nr_get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1);
-
-
 int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 
 /*! \brief UL time alignment procedures for TA application
@@ -381,7 +385,8 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
                            fapi_nr_rx_indication_t *rx_ind,
                            UE_nr_rxtx_proc_t *proc,
                            PHY_VARS_NR_UE *ue,
-                           uint8_t gNB_id);
+                           uint8_t gNB_id,
+                           void *phy_data);
 
 /*@}*/
 
@@ -398,7 +403,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
-                           UE_nr_rxtx_proc_t *proc);
+                           UE_nr_rxtx_proc_t *proc,
+			   void * typeSpecific);
 
 bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
@@ -414,8 +420,11 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1);
 
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
-			   PHY_VARS_NR_UE *ue,
-			   UE_nr_rxtx_proc_t *proc,
+                           PHY_VARS_NR_UE *ue,
+                           UE_nr_rxtx_proc_t *proc,
+                           int32_t pdcch_est_size,
+                           int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                           NR_UE_PDCCH_CONFIG *phy_pdcch_config,
                            int n_ss);
 
 

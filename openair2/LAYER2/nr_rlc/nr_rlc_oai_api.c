@@ -40,8 +40,6 @@
 
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
-#include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
-
 extern RAN_CONTEXT_t RC;
 
 #include <stdint.h>
@@ -518,7 +516,7 @@ rb_found:
 	req->pdusession_id=rb_id;
 	LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
 	extern instance_t DUuniqInstance;
-	itti_send_msg_to_task(OCP_GTPV1_U, DUuniqInstance, msg);
+	itti_send_msg_to_task(TASK_GTPV1_U, DUuniqInstance, msg);
 	return;
       }
     }

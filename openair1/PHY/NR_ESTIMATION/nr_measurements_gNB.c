@@ -107,25 +107,20 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   NR_gNB_COMMON *common_vars = &gNB->common_vars;
   PHY_MEASUREMENTS_gNB *measurements = &gNB->measurements;
-  int rb, offset, offset0, nb_symb[275], len;
-  int32_t *ul_ch;
-
-  LOG_D(PHY,"slot %d Doing I0 for first_symb %d, num_symb %d\n",slot,first_symb,num_symb);
+  int rb, nb_symb[275]={0};
+   
+  memset(measurements->n0_subband_power, 0, sizeof(measurements->n0_subband_power));
+    
   for (int s=first_symb;s<(first_symb+num_symb);s++) {
     for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
-
-      if (s==first_symb) {
-        nb_symb[rb]=0;
-        for (int aarx=0; aarx<frame_parms->nb_antennas_rx;aarx++) 
-           measurements->n0_subband_power[aarx][rb]=0;   
-      }
-      offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
+      int offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) +
+	(frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
       if ((gNB->rb_mask_ul[s][rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
         nb_symb[rb]++;          
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-          offset = offset0 + (s*frame_parms->ofdm_symbol_size);
-          ul_ch  = &common_vars->rxdataF[aarx][offset];
-          len = 12;
+          int offset = offset0 + (s*frame_parms->ofdm_symbol_size);
+          int32_t *ul_ch  = &common_vars->rxdataF[aarx][offset];
+          int len = 12;
           if (((frame_parms->N_RB_UL&1) == 1) && 
               (rb==(frame_parms->N_RB_UL>>1))) {
             len=6;
@@ -184,7 +179,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
   PHY_MEASUREMENTS_gNB *meas = &gNB->measurements;
   NR_DL_FRAME_PARMS      *fp = &gNB->frame_parms;
   int              ch_offset = fp->ofdm_symbol_size * symbol;
-  int                N_RB_UL = gNB->ulsch[ulsch_id][0]->harq_processes[harq_pid]->ulsch_pdu.rb_size;
+  int                N_RB_UL = gNB->ulsch[ulsch_id]->harq_processes[harq_pid]->ulsch_pdu.rb_size;
 
   rx_power_tot[ulsch_id] = 0;
 

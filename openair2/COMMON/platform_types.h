@@ -233,6 +233,7 @@ typedef uint8_t            pdusessionid_t;
 //-----------------------------------------------------------------------------
 // may be ITTI not enabled, but type instance is useful also for OTG,
 typedef intptr_t instance_t;
+
 typedef struct protocol_ctxt_s {
   module_id_t module_id;     /*!< \brief  Virtualized module identifier      */
   eNB_flag_t  enb_flag;      /*!< \brief  Flag to indicate eNB (1) or UE (0) */

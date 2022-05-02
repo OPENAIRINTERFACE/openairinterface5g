@@ -621,7 +621,12 @@ void x2ap_eNB_handle_sgNB_release_request(instance_t instance,
   }
 
   target = x2ap_get_eNB(NULL, x2ap_release_req->assoc_id, 0);
-  DevAssert(target != NULL);
+  if (target == NULL) {
+    X2AP_ERROR("no X2AP target eNB on assoc_id %d, dropping sgNB release request\n", x2ap_release_req->assoc_id);
+    /* x2ap_gNB_handle_ENDC_sGNB_release_request_acknowledge() would handle the
+     * ack, but does not do anything */
+    return;
+  }
 
   /* id_source is not used by oai's gNB so it's not big deal. For
    * interoperability with other gNBs things may need to be refined.

@@ -45,7 +45,6 @@
 static softmodem_params_t softmodem_params;
 char *parallel_config=NULL;
 char *worker_config=NULL;
-msc_interface_t msc_interface;
 int usrp_tx_thread = 0;
 
 uint8_t nfapi_mode=0;
@@ -90,7 +89,7 @@ void get_common_options(uint32_t execmask) {
   uint32_t glog_level=0 ;
   uint32_t start_telnetsrv = 0, start_telnetclt = 0;
   uint32_t noS1 = 0, nokrnmod = 1, nonbiot = 0;
-  uint32_t rfsim = 0, basicsim = 0, do_forms = 0;
+  uint32_t rfsim = 0, do_forms = 0;
   char *logmem_filename = NULL;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
@@ -140,10 +139,6 @@ void get_common_options(uint32_t execmask) {
 
   if (rfsim) {
     set_softmodem_optmask(SOFTMODEM_RFSIM_BIT);
-  }
-
-  if (basicsim) {
-    set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
   }
 
   if (do_forms) {

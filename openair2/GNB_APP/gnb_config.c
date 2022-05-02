@@ -31,6 +31,7 @@
 #include <inttypes.h>
 
 #include "common/utils/LOG/log.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
 #include "gnb_config.h"
@@ -47,7 +48,6 @@
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
-#include "PHY/phy_extern.h"
 #include "PHY/INIT/phy_init.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
@@ -346,9 +346,16 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   // prepare DL Allocation lists
   nr_rrc_config_dl_tda(scc);
 
-  if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity > 320 ) {
-    free(scc->tdd_UL_DL_ConfigurationCommon->pattern2);
-    scc->tdd_UL_DL_ConfigurationCommon->pattern2=NULL;
+  frame_type_t frame_type = get_frame_type((int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  if (frame_type == FDD) {
+    ASN_STRUCT_FREE(asn_DEF_NR_TDD_UL_DL_ConfigCommon, scc->tdd_UL_DL_ConfigurationCommon);
+    scc->tdd_UL_DL_ConfigurationCommon = NULL;
+  } else { // TDD
+    if (scc->tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity > 320 ) {
+      free(scc->tdd_UL_DL_ConfigurationCommon->pattern2);
+      scc->tdd_UL_DL_ConfigurationCommon->pattern2 = NULL;
+    }
+
   }
 
   if ((int)*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing == -1) {
@@ -614,18 +621,24 @@ void RCconfig_NR_L1(void) {
   int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal (num_gnbs > 0,"Failed to parse config file no gnbs %s \n",GNB_CONFIG_STRING_ACTIVE_GNBS);
 
-  config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
-  char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr; 
+  config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
+  int N1 = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr;
+  int N2 = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr;
+  int XP = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr;
+  char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr;
   if (ulprbbl) LOG_I(NR_PHY,"PRB blacklist %s\n",ulprbbl);
-  char *pt = strtok(ulprbbl,",");
+  char *save = NULL;
+  char *pt = strtok_r(ulprbbl, ",", &save);
   int prbbl[275];
   int num_prbbl=0;
   memset(prbbl,0,275*sizeof(int));
 
   while (pt) {
-    prbbl[atoi(pt)] = 1;
+    const int rb = atoi(pt);
+    AssertFatal(rb < 275, "RB %d out of bounds (max 275)\n", rb);
+    prbbl[rb] = 0x3FFF; // all symbols taken
     LOG_I(NR_PHY,"Blacklisting prb %d\n",atoi(pt));
-    pt = strtok(NULL,",");
+    pt = strtok_r(NULL, ",", &save);
     num_prbbl++;
   }
 
@@ -659,6 +672,9 @@ void RCconfig_NR_L1(void) {
       RC.gNB[j]->prach_thres        = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD].uptr);
       RC.gNB[j]->pusch_thres        = *(L1_ParamList.paramarray[j][L1_PUSCH_DTX_THRESHOLD].uptr);
       RC.gNB[j]->num_ulprbbl        = num_prbbl;
+      RC.gNB[j]->ap_N1              = N1;
+      RC.gNB[j]->ap_N2              = N2;
+      RC.gNB[j]->ap_XP              = XP;
       LOG_I(NR_PHY,"Copying %d blacklisted PRB to L1 context\n",num_prbbl);
       memcpy(RC.gNB[j]->ulprbbl,prbbl,275*sizeof(int));
       if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
@@ -729,15 +745,16 @@ void RCconfig_nr_macrlc() {
   
   config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
   char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr; 
-  char *pt = strtok(ulprbbl,",");
-  int prbbl[275];
+  char *save = NULL;
+  char *pt = strtok_r(ulprbbl, ",", &save);
+  uint16_t prbbl[275];
   int num_prbbl=0;
-  int prb;
-  memset(prbbl,0,275*sizeof(int));
+  memset(prbbl,0,sizeof(prbbl));
   while (pt) {
-    prb=atoi(pt); 
-    prbbl[prb] = 1;
-    pt = strtok(NULL,",");
+    const int prb = atoi(pt);
+    AssertFatal(prb < 275, "RB %d out of bounds (max 275)\n", prb);
+    prbbl[prb] = 0x3FFF; // all symbols taken
+    pt = strtok_r(NULL, ",", &save);
     num_prbbl++;
   }
   
@@ -998,8 +1015,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   if (num_gnbs>0) {
 
-
-
     // Output a list of all gNBs. ////////// Identification parameters
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL); 
     
@@ -1155,23 +1170,31 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 		      (NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l] == 3),"BAD MNC DIGIT LENGTH %d",
 		      NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l]);
 	}
-        printf("SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
+        LOG_I(RRC,"SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
-        printf("pdsch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr);
-        NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_IDX].iptr;
-        printf("pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
+        LOG_I(RRC,"pdsch_AntennaPorts N1 %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts.N1 = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr;
+        LOG_I(RRC,"pdsch_AntennaPorts N2 %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts.N2 = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr;
+        LOG_I(RRC,"pdsch_AntennaPorts XP %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr);
+        NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts.XP = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr;
+        LOG_I(RRC,"pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
-        printf("minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
+        LOG_I(RRC,"minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIME = *GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr;
+        LOG_I(RRC,"SIB1 TDA %d\n",*GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
-        printf("Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
+        LOG_I(RRC,"Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_CSIRS = *GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr;
-        printf("Do SRS %d\n",*GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr);
+        LOG_I(RRC, "Do SRS %d\n",*GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).do_SRS = *GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr;
+        NRRRC_CONFIGURATION_REQ (msg_p).force_256qam_off = *GNBParamList.paramarray[i][GNB_FORCE256QAMOFF_IDX].iptr;
+        LOG_I(RRC, "256 QAM: %s\n", NRRRC_CONFIGURATION_REQ (msg_p).force_256qam_off ? "force off" : "may be on");
         NRRRC_CONFIGURATION_REQ (msg_p).scc = scc;
         NRRRC_CONFIGURATION_REQ (msg_p).scd = scd;
-
-	  
+	    NRRRC_CONFIGURATION_REQ (msg_p).enable_sdap = *GNBParamList.paramarray[i][GNB_ENABLE_SDAP_IDX].iptr;
+        LOG_I(GNB_APP, "SDAP layer is %s\n", NRRRC_CONFIGURATION_REQ (msg_p).enable_sdap ? "enabled" : "disabled");
+        
       }//
     }//End for (k=0; k <num_gnbs ; k++)
     memcpy(&rrc->configuration, &NRRRC_CONFIGURATION_REQ(msg_p), sizeof(NRRRC_CONFIGURATION_REQ(msg_p)));
@@ -1222,7 +1245,7 @@ int RCconfig_nr_gtpu(void ) {
     GTPV1U_REQ(message).localPort = port;
     strcpy(GTPV1U_REQ(message).localAddrStr,address);
     sprintf(GTPV1U_REQ(message).localPortStr,"%d", port);
-    itti_send_msg_to_task (TASK_VARIABLE, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
+    itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
   } else
     LOG_E(GTPU,"invalid address for NGU or S1U\n");
   
@@ -1453,7 +1476,8 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
             
             //    NGAP_REGISTER_GNB_REQ (msg_p).enb_interface_name_for_NGU = strdup(enb_interface_name_for_NGU);
             cidr = *(NETParams[GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX].strptr);
-            address = strtok(cidr, "/");
+            char *save = NULL;
+            address = strtok_r(cidr, "/", &save);
             
             NGAP_REGISTER_GNB_REQ (msg_p).gnb_ip_address.ipv6 = 0;
             NGAP_REGISTER_GNB_REQ (msg_p).gnb_ip_address.ipv4 = 1;
@@ -1725,7 +1749,8 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
             }
 
             cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
-            address = strtok(cidr, "/");
+            char *save = NULL;
+            address = strtok_r(cidr, "/", &save);
             X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
             X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
             strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
@@ -2035,7 +2060,9 @@ void configure_gnb_du_mac(int inst) {
                         rrc->configuration.pdsch_AntennaPorts,
                         rrc->configuration.pusch_AntennaPorts,
                         rrc->configuration.sib1_tda,
+                        rrc->configuration.minRXTXTIME,
                         rrc->configuration.scc,
+                        NULL,
                         NULL,
                         0,
                         0, // rnti

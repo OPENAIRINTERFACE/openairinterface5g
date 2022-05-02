@@ -30,11 +30,15 @@
 
 
 
-
+import logging
 import re
 import subprocess
-import logging
-import math
+import sshconnection
+
+logging.basicConfig(
+	level=logging.DEBUG,
+	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
+)
 
 class Log_Mgt:
 
@@ -49,39 +53,24 @@ class Log_Mgt:
 #-----------------$
 
 
-	def __CheckAvailSpace(self):
+	def __CheckUsedSpace(self):
 		HOST=self.Username+'@'+self.IPAddress
 		COMMAND="df "+ self.path
 		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 		result = ssh.stdout.readlines()
 		s=result[1].decode('utf-8').rstrip()#result[1] is the second line with the results we are looking for
-		tmp=s.split()
-		return tmp[3] #return avail space from the line
+		used=s.split()[4] #get 4th field ex: 70%
+		m = re.match('^(\d+)\%',used)
+		if m is not None:
+			return int(m.group(1))
 
-	def __GetOldestFile(self):
-		HOST=self.Username+'@'+self.IPAddress
-		COMMAND="ls -rtl "+ self.path #-rtl will bring oldest file on top
-		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-		result = ssh.stdout.readlines()
-		s=result[1].decode('utf-8').rstrip()
-		tmp=s.split()
-		return tmp[8]#return filename from the line
+	def __RemoveOldest(self, days):
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.IPAddress, self.Username, self.Password)
+		COMMAND='echo ' + self.Password + ' | sudo -S find ' + self.path + ' -type f -mtime +' +  str(days) + ' -delete'
+		mySSH.command(COMMAND,'\$',20)
+		mySSH.close()
 
-
-	def __AvgSize(self):
-		HOST=self.Username+'@'+self.IPAddress
-		COMMAND="ls -rtl "+ self.path
-		ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-		result = ssh.stdout.readlines()
-		if len(result)>1: #at least 1 file present
-			total_size=0
-			for i in range(1,len(result)):
-				s=result[i].decode('utf-8').rstrip()
-				tmp=s.split()
-				total_size+=int(tmp[4]) #get filesize
-			return math.floor(total_size/(len(result)-1)) #compute average file/artifact size
-		else:#empty,no files
-			return 0
 
 
 #-----------------$
@@ -90,17 +79,20 @@ class Log_Mgt:
 
 
 	def LogRotation(self):
-		avail_space =int(self.__CheckAvailSpace())*1000 #avail space in target folder, initially displayed in Gb
-		avg_size=self.__AvgSize() #average size of artifacts in the target folder
-		logging.debug("Avail Space : " + str(avail_space) + " / Artifact Avg Size : " + str(avg_size))
-		if avail_space < 50*avg_size: #reserved space is 50x artifact file ; oldest file will be deleted
-			oldestfile=self.__GetOldestFile()
-			HOST=self.Username+'@'+self.IPAddress
-			COMMAND="echo " + self.Password + " | sudo -S rm "+ self.path + "/" + oldestfile
-			logging.debug(COMMAND)
-			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
-		else:
-			logging.debug("Still some space left for artifacts storage")
+		doLoop = True
+		nbDays = 14
+		while doLoop and nbDays > 1:
+			used_space = self.__CheckUsedSpace() #avail space in target folder
+			if used_space > 80 :
+				logging.debug('\u001B[1;37;41m  Used Disk (' + str(used_space) + '%) > 80%, on '  + self.Username+'@'+self.IPAddress + '\u001B[0m')
+				logging.debug('\u001B[1;37;41m  Removing Artifacts older than ' + str(nbDays) + ' days \u001B[0m')
+				self.__RemoveOldest(nbDays)
+				nbDays -= 1
+			else:
+				logging.debug('Used Disk (' + str(used_space) + '%) < 80%, on '  + self.Username+'@'+self.IPAddress +', no cleaning required')
+				doLoop = False
+
+
 			
 
 

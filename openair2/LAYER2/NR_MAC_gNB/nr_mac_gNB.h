@@ -55,7 +55,7 @@
 
 /* PHY */
 #include "PHY/defs_gNB.h"
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 
 /* Interface */
 #include "nfapi_nr_interface_scf.h"
@@ -171,6 +171,8 @@ typedef struct {
   uint8_t msg3_round;
   /// Flag to indicate if Msg3 carries a DCCH or DTCH message
   bool msg3_dcch_dtch;
+  int msg3_startsymb;
+  int msg3_nrsymb;
   /// TBS used for Msg4
   int msg4_TBsize;
   /// MCS used for Msg4
@@ -200,9 +202,10 @@ typedef struct {
   int p_gNB;
   int Ncp;
   int nr_band;
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   uint64_t dl_CarrierFreq;
   NR_BCCH_BCH_Message_t *mib;
+  NR_BCCH_DL_SCH_Message_t *sib1;
   NR_ServingCellConfigCommon_t *ServingCellConfigCommon;
   NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
   long ul_Bandwidth;
@@ -327,6 +330,10 @@ typedef struct NR_sched_pucch {
   uint8_t timing_indicator;
   uint8_t resource_indicator;
   int r_pucch;
+  int prb_start;
+  int second_hop_prb;
+  int nr_of_symb;
+  int start_symb;
 } NR_sched_pucch_t;
 
 /* PUSCH semi-static configuration: as long as the TDA and DCI format remain
@@ -391,7 +398,8 @@ typedef struct NR_sched_srs {
 typedef struct NR_pdsch_semi_static {
   int time_domain_allocation;
   uint8_t numDmrsCdmGrpsNoData;
-
+  uint8_t frontloaded_symb;
+  int mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;
   uint8_t nrOfLayers;
@@ -437,7 +445,7 @@ typedef struct NR_UE_harq {
 
   /* Transport block to be sent using this HARQ process, its size is in
    * sched_pdsch */
-  uint32_t tb[16384];
+  uint32_t transportBlock[16384];
   uint32_t tb_size;
 
   /// sched_pdsch keeps information on MCS etc used for the initial transmission
@@ -477,6 +485,7 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t pmi_x2;
   uint8_t wb_cqi_1tb;
   uint8_t wb_cqi_2tb;
+  uint8_t cqi_table;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -487,11 +496,8 @@ typedef struct CRI_SSB_RSRP {
 } CRI_SSB_RSRP_t;
 
 struct CSI_Report {
-  NR_CSI_Report_Config_PR present;
-  union Config_CSI_Report {
-    struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
-    struct CRI_SSB_RSRP ssb_cri_report;
-  } choice;
+  struct CRI_RI_LI_PMI_CQI cri_ri_li_pmi_cqi_report;
+  struct CRI_SSB_RSRP ssb_cri_report;
 };
 
 #define MAX_SR_BITLEN 8
@@ -504,12 +510,13 @@ typedef struct {
 }L1_RSRP_bitlen_t;
 
 typedef struct{
+  uint8_t ri_restriction;
   uint8_t cri_bitlen;
   uint8_t ri_bitlen;
-  uint8_t li_bitlen;
-  uint8_t pmi_x1_bitlen;
-  uint8_t pmi_x2_bitlen;
-  uint8_t cqi_bitlen;
+  uint8_t li_bitlen[8];
+  uint8_t pmi_x1_bitlen[8];
+  uint8_t pmi_x2_bitlen[8];
+  uint8_t cqi_bitlen[8];
 } CSI_Meas_bitlen_t;
 
 typedef struct nr_csi_report {
@@ -597,14 +604,13 @@ typedef struct {
 
   /// total amount of data awaiting for this UE
   uint32_t num_total_bytes;
+  uint16_t dl_pdus_total;
   /// per-LC status data
-  mac_rlc_status_resp_t rlc_status[MAX_NUM_LCID];
+  mac_rlc_status_resp_t rlc_status[NR_MAX_NUM_LCID];
 
   /// Estimation of HARQ from BLER
   NR_DL_bler_stats_t dl_bler_stats;
 
-  int lcid_mask;
-  int lcid_to_schedule;
   uint16_t ta_frame;
   int16_t ta_update;
   bool ta_apply;
@@ -618,9 +624,11 @@ typedef struct {
   int pusch_consecutive_dtx_cnt;
   int pucch_consecutive_dtx_cnt;
   int ul_failure;
-  struct CSI_Report CSI_report[MAX_CSI_REPORTS];
+  struct CSI_Report CSI_report;
   bool SR;
-
+  bool update_pdsch_ps;
+  bool update_pusch_ps;
+  bool set_mcs;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
@@ -638,6 +646,12 @@ typedef struct {
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
+
+  /// number of active DL LCs
+  uint8_t dl_lc_num;
+  /// order in which DLSCH scheduler should allocate LCs
+  uint8_t dl_lc_ids[NR_MAX_NUM_LCID];
+
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
@@ -673,7 +687,6 @@ typedef struct {
   NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
   NR_list_t list;
   int num_UEs;
-
   bool active[MAX_MOBILES_PER_GNB];
   rnti_t rnti[MAX_MOBILES_PER_GNB];
   NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
@@ -717,12 +730,13 @@ typedef struct gNB_MAC_INST_s {
   int                             ssb_SubcarrierOffset;
   /// SIB1 Time domain allocation
   int                             sib1_tda;
+  int                             minRXTXTIMEpdsch;
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
   uint16_t pdu_index[NFAPI_CC_MAX];
   int num_ulprbbl;
-  int ulprbbl[275];
+  uint16_t ulprbbl[275];
   /// NFAPI Config Request Structure
   nfapi_nr_config_request_scf_t     config[NFAPI_CC_MAX];
   /// NFAPI DL Config Request Structure

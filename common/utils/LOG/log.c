@@ -411,6 +411,16 @@ int register_log_component(char *name,
   return computed_compidx;
 }
 
+static void unregister_all_log_components(void)
+{
+  log_component_t* lc = &g_log->log_component[0];
+  while (lc->name) {
+    free((char *)lc->name); // defined as const, but assigned through strdup()
+    free(lc->filelog_name);
+    lc++;
+  }
+}
+
 int isLogInitDone (void)
 {
   if (g_log == NULL)
@@ -449,7 +459,6 @@ int logInit (void)
   register_log_component("OCG","",OCG);
   register_log_component("PERF","",PERF);
   register_log_component("OIP","",OIP);
-  register_log_component("MSC","log",MSC);
   register_log_component("OCM","log",OCM);
   register_log_component("HW","",HW);
   register_log_component("OSA","",OSA);
@@ -469,6 +478,7 @@ int logInit (void)
   register_log_component("NAS","log",NAS);
   register_log_component("UDP","",UDP_);
   register_log_component("GTPU","",GTPU);
+  register_log_component("SDAP","",SDAP);
   register_log_component("S1AP","",S1AP);
   register_log_component("F1AP","",F1AP);
   register_log_component("M2AP","",M2AP);
@@ -501,6 +511,12 @@ int logInit (void)
   g_log->flag =  g_log->flag | FLAG_INITIALIZED;
   printf("log init done\n");
   return 0;
+}
+
+void logTerm(void)
+{
+  unregister_all_log_components();
+  free_and_zero(g_log);
 }
 
 #include <sys/syscall.h>

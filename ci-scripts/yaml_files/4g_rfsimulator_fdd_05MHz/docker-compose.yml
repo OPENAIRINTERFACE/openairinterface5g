@@ -58,57 +58,45 @@ services:
             timeout: 5s
             retries: 5
 
-    oai_mme:
-        image: oai-mme:latest
-        container_name: rfsim4g-oai-mme
+    redis:
+        image: redis:6.0.5
+        container_name: rfsim4g-redis
         privileged: true
-        depends_on: [oai_hss]
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.6
+        volumes:
+            - ./redis_extern.conf:/usr/local/etc/redis/redis.conf
+        entrypoint: /bin/bash -c "redis-server /usr/local/etc/redis/redis.conf"
+        healthcheck:
+            test: /bin/bash -c "redis-cli -h 192.168.61.6 -p 6380 ping"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    magma_mme:
+        image: magma-mme:latest
+        container_name: rfsim4g-magma-mme
+        hostname: mme
+        privileged: true
+        depends_on: [oai_hss, redis]
         networks:
             public_net:
                 ipv4_address: 192.168.61.3
         environment:
+            TZ: Europe/Paris
             REALM: openairinterface.org
             PREFIX: /openair-mme/etc
-            INSTANCE: 1
-            PID_DIRECTORY: /var/run
-            HSS_IP_ADDR: 192.168.61.2
             HSS_HOSTNAME: hss
             HSS_FQDN: hss.openairinterface.org
             HSS_REALM: openairinterface.org
-            MCC: '208'
-            MNC: '96'
-            MME_GID: 32768
-            MME_CODE: 3
-            TAC_0: 1
-            TAC_1: 2
-            TAC_2: 3
             MME_FQDN: mme.openairinterface.org
-            MME_S6A_IP_ADDR: 192.168.61.3
-            MME_INTERFACE_NAME_FOR_S1_MME: eth0
-            MME_IPV4_ADDRESS_FOR_S1_MME: 192.168.61.3
-            MME_INTERFACE_NAME_FOR_S11: eth0
-            MME_IPV4_ADDRESS_FOR_S11: 192.168.61.3
-            MME_INTERFACE_NAME_FOR_S10: lo
-            MME_IPV4_ADDRESS_FOR_S10: 127.0.0.10
-            OUTPUT: CONSOLE
-            SGW_IPV4_ADDRESS_FOR_S11_0: 192.168.61.4
-            PEER_MME_IPV4_ADDRESS_FOR_S10_0: 0.0.0.0
-            PEER_MME_IPV4_ADDRESS_FOR_S10_1: 0.0.0.0
-            MCC_SGW_0: '208'
-            MNC3_SGW_0: '096'
-            TAC_LB_SGW_0: '01'
-            TAC_HB_SGW_0: '00'
-            MCC_MME_0: '208'
-            MNC3_MME_0: '096'
-            TAC_LB_MME_0: '02'
-            TAC_HB_MME_0: '00'
-            MCC_MME_1: '208'
-            MNC3_MME_1: '096'
-            TAC_LB_MME_1: '03'
-            TAC_HB_MME_1: '00'
-            TAC_LB_SGW_TEST_0: '03'
-            TAC_HB_SGW_TEST_0: '00'
-            SGW_IPV4_ADDRESS_FOR_S11_TEST_0: 0.0.0.0
+            FEATURES: mme_oai
+        volumes:
+            - ./mme_fd.sprint.conf:/magma-mme/etc/mme_fd.conf.tmplt
+            - ./mme.conf:/magma-mme/etc/mme.conf
+            - ./entrypoint.sh:/magma-mme/bin/entrypoint.sh
+        entrypoint: /bin/bash -c "/magma-mme/bin/entrypoint.sh"
         healthcheck:
             test: /bin/bash -c "pgrep oai_mme"
             interval: 10s
@@ -118,7 +106,7 @@ services:
     oai_spgwc:
         image: oai-spgwc:latest
         privileged: true
-        depends_on: [oai_mme]
+        depends_on: [magma_mme]
         container_name: rfsim4g-oai-spgwc
         networks:
             public_net:
@@ -127,7 +115,7 @@ services:
             TZ: Europe/Paris
             SGW_INTERFACE_NAME_FOR_S11: eth0
             PGW_INTERFACE_NAME_FOR_SX: eth0
-            DEFAULT_DNS_IPV4_ADDRESS: 192.168.18.129
+            DEFAULT_DNS_IPV4_ADDRESS: 172.21.3.100
             DEFAULT_DNS_SEC_IPV4_ADDRESS: 8.8.4.4
             PUSH_PROTOCOL_OPTION: 'true'
             APN_NI_1: oai.ipv4

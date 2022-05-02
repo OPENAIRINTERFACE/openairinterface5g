@@ -41,11 +41,11 @@ uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype_fromDCI);
+int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype_fromDCI,int length);
 
 int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slot_t slotP);
 
-int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slotP, lte_frame_type_t frame_type);
+int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slotP, frame_type_t frame_type);
 
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
                      const NR_BWP_UplinkCommon_t *initialULBWP,
@@ -54,7 +54,8 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
                      uint16_t N_RB,
-                     int bwp_id);
+                     int bwp_id,
+                     uint16_t cset0_bwp_size);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
@@ -140,6 +141,7 @@ void get_info_from_tda_tables(int default_abc,
                               int tda,
                               int dmrs_TypeA_Position,
                               int normal_CP,
+                              bool *is_mapping_typeA,
                               int *startSymbolIndex,
                               int *nrOfSymbols);
 
@@ -160,7 +162,7 @@ int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
 
 void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
-                       NR_NZP_CSI_RS_Resource_t *nzpcsi,
+                       struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAndOffset,
                        int *period, int *offset);
 
 void reverse_n_bits(uint8_t *value, uint16_t bitlen);
@@ -176,8 +178,6 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
                         uint8_t *K_ptrs, uint8_t *L_ptrs,
                         uint8_t *reOffset, uint8_t *maxNumPorts, uint8_t *ulPower,
                         uint8_t NrOfSymbols);
-
-uint8_t get_num_dmrs_symbols(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,int mappingtype);
 
 /* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
 @param    *pusch_config,   pointer to pusch config

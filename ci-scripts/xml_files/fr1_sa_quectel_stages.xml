@@ -42,6 +42,8 @@
  000001
  071004
  000001
+ 071005
+ 000001
  011002
  081000
 	</TestCaseRequestedList>
@@ -72,7 +74,7 @@
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
 		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
-		<USRP_IPAddress>192.168.18.240</USRP_IPAddress>
+		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
 	</testCase>
 
 	<testCase id="000001">
@@ -148,7 +150,16 @@
 		<iperf_bitrate_threshold>90</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
-
+	<testCase id="071005">
+		<class>Iperf</class>
+		<desc>iperf (DL/130Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 130M -t 30</iperf_args>
+		<direction>DL</direction>
+		<id>nrmodule2_quectel</id>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>50</iperf_bitrate_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
 
 
 	<testCase id="081000">

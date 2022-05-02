@@ -49,7 +49,7 @@ import cls_physim1          #class PhySim for physical simulators deploy and run
 import sshconnection 
 import epc
 import ran
-import html
+import cls_oai_html
 
 
 #-----------------------------------------------------------
@@ -376,6 +376,16 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			EPC.yamlPath = string_field
 
+	elif action == 'Initialize_5GCN':
+		string_field = test.findtext('args')
+		if (string_field is not None):
+			EPC.cfgDeploy = string_field	
+
+	elif action == 'Terminate_5GCN':
+		string_field = test.findtext('args')
+		if (string_field is not None):
+			EPC.cfgUnDeploy = string_field	
+
 	elif action == 'Deploy_Object' or action == 'Undeploy_Object':
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
@@ -391,7 +401,7 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.yamlPath[CONTAINERS.eNB_instance] = string_field
 
-	elif action == 'DeployGenObject' or action == 'UndeployGenObject':
+	elif action == 'DeployGenObject' or action == 'UndeployGenObject' or action == 'StatsFromGenObject':
 		string_field=test.findtext('yaml_path')
 		if (string_field is not None):
 			CONTAINERS.yamlPath[0] = string_field
@@ -401,6 +411,12 @@ def GetParametersFromXML(action):
 		string_field=test.findtext('nb_healthy')
 		if (string_field is not None):
 			CONTAINERS.nb_healthy[0] = int(string_field)
+		string_field=test.findtext('d_retx_th')
+		if (string_field is not None):
+			CONTAINERS.ran_checkers['d_retx_th']= string_field
+		string_field=test.findtext('u_retx_th')
+		if (string_field is not None):
+			CONTAINERS.ran_checkers['u_retx_th']= string_field
 
 	elif action == 'PingFromContainer':
 		string_field = test.findtext('container_name')
@@ -502,7 +518,7 @@ CiTestObj = cls_oaicitest.OaiCiTest()
 SSH = sshconnection.SSHConnection()
 EPC = epc.EPCManagement()
 RAN = ran.RANManagement()
-HTML = html.HTMLManagement()
+HTML = cls_oai_html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
 SCA = cls_static_code_analysis.StaticCodeAnalysis()
 PHYSIM = cls_physim1.PhySim()
@@ -763,19 +779,19 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	HTML.CreateHtmlTabHeader()
 
 	# On CI bench w/ containers, we need to validate if IP routes are set
-	if EPC.IPAddress == '192.168.18.210':
+	if EPC.IPAddress == '172.21.16.136':
 		CONTAINERS.CheckAndAddRoute('porcepix', EPC.IPAddress, EPC.UserName, EPC.Password)
-	if CONTAINERS.eNBIPAddress == '192.168.18.194':
+	if CONTAINERS.eNBIPAddress == '172.21.16.127':
 		CONTAINERS.CheckAndAddRoute('asterix', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
-	if CONTAINERS.eNB1IPAddress == '192.168.18.194':
+	if CONTAINERS.eNB1IPAddress == '172.21.16.127':
 		CONTAINERS.CheckAndAddRoute('asterix', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
-	if CONTAINERS.eNBIPAddress == '192.168.18.193':
+	if CONTAINERS.eNBIPAddress == '172.21.16.128':
 		CONTAINERS.CheckAndAddRoute('obelix', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
-	if CONTAINERS.eNB1IPAddress == '192.168.18.193':
+	if CONTAINERS.eNB1IPAddress == '172.21.16.128':
 		CONTAINERS.CheckAndAddRoute('obelix', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
-	if CONTAINERS.eNBIPAddress == '192.168.18.209':
+	if CONTAINERS.eNBIPAddress == '172.21.16.137':
 		CONTAINERS.CheckAndAddRoute('nepes', CONTAINERS.eNBIPAddress, CONTAINERS.eNBUserName, CONTAINERS.eNBPassword)
-	if CONTAINERS.eNB1IPAddress == '192.168.18.209':
+	if CONTAINERS.eNB1IPAddress == '172.21.16.137':
 		CONTAINERS.CheckAndAddRoute('nepes', CONTAINERS.eNB1IPAddress, CONTAINERS.eNB1UserName, CONTAINERS.eNB1Password)
 
 	CiTestObj.FailReportCnt = 0
@@ -910,7 +926,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Deploy_Run_PhySim':
 					PHYSIM.Deploy_PhySim(HTML, RAN)
 				elif action == 'DeployGenObject':
-					CONTAINERS.DeployGenObject(HTML)
+					CONTAINERS.DeployGenObject(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'UndeployGenObject':
@@ -925,6 +941,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CONTAINERS.IperfFromContainer(HTML, RAN)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
+				elif action == 'StatsFromGenObject':
+					CONTAINERS.StatsFromGenObject(HTML)
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if RAN.prematureExit:

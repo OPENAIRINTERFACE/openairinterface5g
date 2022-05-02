@@ -39,6 +39,7 @@ import time
 from multiprocessing import Process, Lock, SimpleQueue
 import yaml
 
+
 #-----------------------------------------------------------
 # OAI Testing modules
 #-----------------------------------------------------------
@@ -484,7 +485,7 @@ class RANManagement():
 
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		mySSH.command('echo $USER; nohup sudo -E ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
+		mySSH.command('echo $USER; nohup sudo -E stdbuf -o0 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh > ' + lSourcePath + '/cmake_targets/enb_' + self.testCase_id + '.log 2>&1 &', lUserName, 10)
 
 
 		#stats monitoring during runtime
@@ -751,14 +752,14 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log* iperf*.log log/*/*.log log/*/*.pcap', '\$', 60)
 		result = re.search('core.\d+', mySSH.getBefore())
 		if result is not None:
 			mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip core* ran_build/build/{lte,nr}-softmodem', '\$', 60) # add core and executable to zip
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log.png log/*/*.log log/*/*.pcap', '\$', 15)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log* iperf*.log log/*/*.log log/*/*.pcap', '\$', 15)
 		mySSH.close()
 
-	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML):
+	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML, checkers={}):
 		if (not os.path.isfile('./' + eNBlogFile)):
 			return -1
 		enb_log_file = open('./' + eNBlogFile, 'r')
@@ -815,10 +816,14 @@ class RANManagement():
 		removing_ue = 0
 		#count"X2AP-PDU"
 		x2ap_pdu = 0
-		#NSA specific log markers
-		nsa_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': []}
+		#gnb specific log markers
+		gnb_markers ={'SgNBReleaseRequestAcknowledge': [],'FAILURE': [], 'scgFailureInformationNR-r15': [], 'SgNBReleaseRequest': [], 'Detected UL Failure on PUSCH':[]}
 		nodeB_prefix_found = False
 		RealTimeProcessingIssue = False
+		DLRetxIssue = False
+		ULRetxIssue = False
+		nrRrcRcfgComplete = 0
+		harqFeedbackPast = 0
 	
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
@@ -992,8 +997,25 @@ class RANManagement():
 			for k in keys:
 				result = re.search(k, line)
 				if result is not None:
+					ue_prefix = 'ue0'
+					ue_res = re.search('UE ID 1|UE 1:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue1'
+					ue_res = re.search('UE ID 2|UE 2:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue2'
+					ue_res = re.search('UE ID 3|UE 3:', line)
+					if ue_res is not None:
+						ue_prefix = 'ue3'
 					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
-					dlsch_ulsch_stats[k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
+					dlsch_ulsch_stats[ue_prefix+k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
+
+			result = re.search('Received NR_RRCReconfigurationComplete from UE', str(line))
+			if result is not None:
+				nrRrcRcfgComplete += 1
+			result = re.search('HARQ feedback is in the past', str(line))
+			if result is not None:
+				harqFeedbackPast += 1
 
 
 			#count "problem receiving samples" msg
@@ -1008,11 +1030,11 @@ class RANManagement():
 			result = re.search('X2AP-PDU', str(line))
 			if result is not None:
 				x2ap_pdu += 1
-			#nsa markers logging
-			for k in nsa_markers:
+			#gnb markers logging
+			for k in gnb_markers:
 				result = re.search(k, line)
 				if result is not None:
-					nsa_markers[k].append(line_cnt)					
+					gnb_markers[k].append(line_cnt)
 
 		enb_log_file.close()
 
@@ -1082,6 +1104,14 @@ class RANManagement():
 				statMsg = nodeB_prefix + 'NB ran with TX Write thread enabled'
 				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 				htmleNBFailureMsg += statMsg + '\n'
+			if nrRrcRcfgComplete > 0:
+				statMsg = nodeB_prefix + 'NB showed ' + str(nrRrcRcfgComplete) + ' "Received NR_RRCReconfigurationComplete from UE" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
+			if harqFeedbackPast > 0:
+				statMsg = nodeB_prefix + 'NB showed ' + str(harqFeedbackPast) + ' "HARQ feedback is in the past" message(s)'
+				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				htmleNBFailureMsg += statMsg + '\n'
 			#FR1 NSA test : add new markers to make sure gNB is used
 			if NSA_RAPROC_PUSCH_check:
 				statMsg = '[RAPROC] PUSCH with TC_RNTI message check for ' + nodeB_prefix + 'NB : PASS '
@@ -1096,46 +1126,94 @@ class RANManagement():
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			#nsa markers
+			#gnb markers
 			statMsg = 'logfile line count = ' + str(line_cnt)			
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			if len(nsa_markers['SgNBReleaseRequestAcknowledge'])!=0:
-				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(nsa_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences , starting line ' + str(nsa_markers['SgNBReleaseRequestAcknowledge'][0])
+			if len(gnb_markers['SgNBReleaseRequestAcknowledge'])!=0:
+				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(gnb_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences , starting line ' + str(gnb_markers['SgNBReleaseRequestAcknowledge'][0])
 			else:
-				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(nsa_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences' 
+				statMsg = 'SgNBReleaseRequestAcknowledge = ' + str(len(gnb_markers['SgNBReleaseRequestAcknowledge'])) + ' occurences' 
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			statMsg = 'FAILURE = ' + str(len(nsa_markers['FAILURE'])) + ' occurences'
+			statMsg = 'FAILURE = ' + str(len(gnb_markers['FAILURE'])) + ' occurences'
+			htmlMsg = statMsg+'\n'
+			logging.debug(statMsg)
+			htmleNBFailureMsg += htmlMsg
+			statMsg = 'Detected UL Failure on PUSCH = ' + str(len(gnb_markers['Detected UL Failure on PUSCH'])) + ' occurences'
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
 
-			#ulsch and dlsch statistics
+			#ulsch and dlsch statistics and checkers
+			#print statistics into html
 			if len(dlsch_ulsch_stats)!=0: #check if dictionary is not empty
+				#for each dictionary key, generate the msg for html as information
 				statMsg=''
-				for key in dlsch_ulsch_stats: #for each dictionary key
+				for key in dlsch_ulsch_stats: 
 					statMsg += dlsch_ulsch_stats[key] + '\n' 
 					logging.debug(dlsch_ulsch_stats[key])
 				htmleNBFailureMsg += statMsg
+
+			#checker
+			if (len(dlsch_ulsch_stats)!=0) and (len(checkers)!=0):
+				if 'd_retx_th' in checkers:
+					checkers['d_retx_th'] = [float(x) for x in checkers['d_retx_th'].split(',')]
+					dlsch_checker_status = list(0 for i in checkers['d_retx_th'])#status 0 / -1
+					d_perc_retx = list(0 for i in checkers['d_retx_th'])#results in %
+
+				if 'u_retx_th' in checkers:
+					checkers['u_retx_th'] = [float(x) for x in checkers['u_retx_th'].split(',')]
+					ulsch_checker_status = list(0 for i in checkers['u_retx_th'])
+					u_perc_retx = list(0 for i in checkers['u_retx_th'])
+
+				#ul and dl retransmissions checkers
+				#NOTICE:  DL and UL regex are different 
+
+				if ('dlsch_rounds' in dlsch_ulsch_stats) and ('d_retx_th' in checkers):
+					tmp=re.match(r'^.*dlsch_rounds\s+(\d+)\/(\d+)\/(\d+)\/(\d+),\s+dlsch_errors\s+(\d+)',dlsch_ulsch_stats['dlsch_rounds'])
+					if tmp is not None :
+						#captures the different groups from the regex
+						retx_data=[float(x) for x in tmp.groups()]
+						for i in range(0,len(d_perc_retx)):
+							#case where numerator > denumerator with denum ==0 is disregarded, cannot hapen in principle, will lead to 0%
+							d_perc_retx[i] = 0 if (retx_data[i] == 0)  else 100*retx_data[i+1]/retx_data[i]
+							#treating % > 100 , % > requirement
+							if (d_perc_retx[i] > 100) or (d_perc_retx[i] > checkers['d_retx_th'][i]): dlsch_checker_status[i] = -1
+					if -1 in dlsch_checker_status:
+						DLRetxIssue = True
+
+				if ('ulsch_rounds' in dlsch_ulsch_stats)  and ('u_retx_th' in checkers):
+					tmp=re.match(r'^.*ulsch_rounds\s+(\d+)\/(\d+)\/(\d+)\/(\d+),\s+.*,\s+ulsch_errors\s+(\d+)',dlsch_ulsch_stats['ulsch_rounds'])
+					if tmp is not None :
+						retx_data=[float(x) for x in tmp.groups()]
+						for i in range(0,len(d_perc_retx)):
+							u_perc_retx[i] = 0 if (retx_data[i] == 0) else 100*retx_data[i+1]/retx_data[i]
+							if (u_perc_retx[i] > 100) or (u_perc_retx[i] > checkers['u_retx_th'][i]): ulsch_checker_status[i] = -1
+					if -1 in ulsch_checker_status:
+						ULRetxIssue = True
+
+
 
 			#real time statistics
 			datalog_rt_stats['Data']={}
 			if len(real_time_stats)!=0: #check if dictionary is not empty
 				for k in real_time_stats:
-					tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+\d+;\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
+					tmp=re.match(r'^(?P<metric>.*):\s+(?P<avg>\d+\.\d+) us;\s+(?P<count>\d+);\s+(?P<max>\d+\.\d+) us;',real_time_stats[k])
 					if tmp is not None:
 						metric=tmp.group('metric')
 						avg=float(tmp.group('avg'))
 						max=float(tmp.group('max'))
-						datalog_rt_stats['Data'][metric]=["{:.0f}".format(avg),"{:.0f}".format(max),"{:.2f}".format(avg/datalog_rt_stats['Ref'][metric])]
+						count=int(tmp.group('count'))
+						datalog_rt_stats['Data'][metric]=["{:.0f}".format(avg),"{:.0f}".format(max),"{:d}".format(count),"{:.2f}".format(avg/datalog_rt_stats['Ref'][metric])]
 				#once all metrics are collected, store the data as a class attribute to build a dedicated HTML table afterward
 				self.datalog_rt_stats=datalog_rt_stats
 				#check if there is a fail => will render the test as failed
 				for k in datalog_rt_stats['Data']:
-					if float(datalog_rt_stats['Data'][k][2])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
+					if float(datalog_rt_stats['Data'][k][3])> datalog_rt_stats['Threshold'][k]: #condition for fail : avg/ref is greater than the fixed threshold
+						logging.debug('\u001B[1;30;43m datalog_rt_stats metric ' + k + '=' + datalog_rt_stats['Data'][k][3] + ' > threshold ' + str(datalog_rt_stats['Threshold'][k]) + ' \u001B[0m')
 						RealTimeProcessingIssue = True
 			else:
 				statMsg = 'No real time stats found in the log file\n'
@@ -1158,17 +1236,33 @@ class RANManagement():
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			if len(nsa_markers['SgNBReleaseRequest'])!=0:
-				statMsg = 'SgNBReleaseRequest = ' + str(len(nsa_markers['SgNBReleaseRequest'])) + ' occurences , starting line ' + str(nsa_markers['SgNBReleaseRequest'][0])
+			if len(gnb_markers['SgNBReleaseRequest'])!=0:
+				statMsg = 'SgNBReleaseRequest = ' + str(len(gnb_markers['SgNBReleaseRequest'])) + ' occurences , starting line ' + str(gnb_markers['SgNBReleaseRequest'][0])
 			else:
-				statMsg = 'SgNBReleaseRequest = ' + str(len(nsa_markers['SgNBReleaseRequest'])) + ' occurences'
+				statMsg = 'SgNBReleaseRequest = ' + str(len(gnb_markers['SgNBReleaseRequest'])) + ' occurences'
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg
-			statMsg = 'scgFailureInformationNR-r15 = ' + str(len(nsa_markers['scgFailureInformationNR-r15'])) + ' occurences'
+			statMsg = 'scgFailureInformationNR-r15 = ' + str(len(gnb_markers['scgFailureInformationNR-r15'])) + ' occurences'
 			htmlMsg = statMsg+'\n'
 			logging.debug(statMsg)
 			htmleNBFailureMsg += htmlMsg			
+
+		if DLRetxIssue:
+			retx_checker_status_str = ''
+			for status in dlsch_checker_status : retx_checker_status_str+=str(status)+ ' '
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with too many retransmissions / errors issue in DL ! \u001B[0m')
+			logging.debug('\u001B[1;37;41m Status : ' + retx_checker_status_str + ' \u001B[0m')
+			htmleNBFailureMsg += 'Fail due to retransmissions / errors issue in DL, status : ' + retx_checker_status_str + '\n'
+			global_status = CONST.ENB_RETX_ISSUE
+
+		if ULRetxIssue:
+			retx_checker_status_str = ''
+			for status in ulsch_checker_status : retx_checker_status_str+=str(status)+ ' '
+			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with too many retransmissions / errors issue in UL ! \u001B[0m')
+			logging.debug('\u001B[1;37;41m Status : ' + retx_checker_status_str + ' \u001B[0m')
+			htmleNBFailureMsg += 'Fail due to retransmissions / errors issue in UL, status : ' + retx_checker_status_str + '\n'
+			global_status = CONST.ENB_RETX_ISSUE
 
 		if RealTimeProcessingIssue:
 			logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB ended with real time processing issue! \u001B[0m')

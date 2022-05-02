@@ -44,8 +44,6 @@
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
-#define NR_MAX_NB_RB 275
-
 #define NR_NB_SC_PER_RB 12
 #define NR_NB_REG_PER_CCE 6
 
@@ -67,21 +65,9 @@
 #define NR_PBCH_DMRS_LENGTH 144 // in mod symbols
 #define NR_PBCH_DMRS_LENGTH_DWORD 10 // ceil(2(QPSK)*NR_PBCH_DMRS_LENGTH/32)
 
-/*These max values are for the gold sequences which are generated at init for the
- * full carrier bandwidth*/
-#define NR_MAX_PDCCH_DMRS_INIT_LENGTH ((NR_MAX_NB_RB<<1)*3) // 3 symbols *2(QPSK)
-#define NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD 52 // ceil(NR_MAX_PDCCH_DMRS_LENGTH/32)
 /*used for the resource mapping*/
 #define NR_MAX_PDCCH_DMRS_LENGTH 576 // 16(L)*2(QPSK)*3(3 DMRS symbs per REG)*6(REG per CCE)
-
-#define NR_MAX_PDSCH_DMRS_LENGTH 3300      //275*6(k)*2(QPSK real+imag) 
-#define NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD 104  // ceil(NR_MAX_PDSCH_DMRS_LENGTH/32)
-
-#define NR_MAX_CSI_RS_LENGTH 4400 //275*8(max allocation per RB)*2(QPSK)
-#define NR_MAX_CSI_RS_INIT_LENGTH_DWORD 138  // ceil(NR_MAX_CSI_RS_LENGTH/32)
-
-#define NR_MAX_PUSCH_DMRS_LENGTH NR_MAX_PDSCH_DMRS_LENGTH 
-#define NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD
+#define  NR_MAX_PDCCH_SIZE 8192 // It seems it is the max polar coded block size
 
 #define NR_MAX_DCI_PAYLOAD_SIZE 64
 #define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)
@@ -93,26 +79,23 @@
 #define NR_MAX_CSET_DURATION 3
 
 #define NR_MAX_NB_RBG 18
-#define NR_MAX_NB_LAYERS 2 // 8 // SU-MIMO (3GPP TS 38.211 V15.4.0 section 7.3.1.3)
-#define NR_MAX_NB_CODEWORDS 2
+#define NR_MAX_NB_LAYERS 4 // 8
 #define NR_MAX_NB_HARQ_PROCESSES 16
-#define NR_MAX_PDSCH_ENCODED_LENGTH (NR_MAX_NB_RB*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS) // 8 is the maximum modulation order (it was 950984 before !!)
-#define NR_MAX_PUSCH_ENCODED_LENGTH NR_MAX_PDSCH_ENCODED_LENGTH
+
 #define NR_MAX_PDSCH_TBS 3824
 #define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.
 
-#define MAX_NUM_NR_DLSCH_SEGMENTS (NR_MAX_NB_LAYERS*34)
-#define MAX_NR_DLSCH_PAYLOAD_BYTES (MAX_NUM_NR_DLSCH_SEGMENTS*1056)
+#define MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER 34
 
 #define MAX_NUM_NR_ULSCH_SEGMENTS 34
 #define MAX_NR_ULSCH_PAYLOAD_BYTES (MAX_NUM_NR_ULSCH_SEGMENTS*1056)
 
 #define MAX_NUM_NR_SRS_SYMBOLS 4
 
-#define MAX_NUM_NR_CHANNEL_BITS (14*273*12*8)  // 14 symbols, 273 RB
-#define MAX_NUM_NR_RE (14*273*12)
 #define NR_RX_NB_TH 1
 #define NR_NB_TH_SLOT 2
+
+#define NR_NB_NSCID 2
 
 extern const uint8_t nr_rv_round_map[4]; 
 
@@ -253,7 +236,7 @@ typedef struct {
 
 typedef struct {
   uint16_t sc_list_length;
-  uint16_t sc_list[6 * NR_MAX_NB_RB];
+  uint16_t *sc_list;
   uint8_t srs_generated_signal_bits;
   int32_t *srs_generated_signal;
   int32_t **srs_received_signal;
@@ -298,7 +281,7 @@ struct NR_DL_FRAME_PARMS {
   uint32_t att_rx;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   /// Frame type (0 FDD, 1 TDD)
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   uint8_t tdd_config;
   /// Cell ID
   uint16_t Nid_cell;
@@ -342,7 +325,7 @@ struct NR_DL_FRAME_PARMS {
   uint32_t samples_per_frame_wCP;
   /// NR numerology index [0..5] as specified in 38.211 Section 4 (mu). 0=15khZ SCS, 1=30khZ, 2=60kHz, etc
   uint8_t numerology_index;
-  /// Number of Physical transmit antennas in node
+  /// Number of Physical transmit antennas in node (corresponds to nrOfAntennaPorts)
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
@@ -387,8 +370,6 @@ struct NR_DL_FRAME_PARMS {
   uint8_t N_ssb;
   /// SSB index
   uint8_t ssb_index;
-  /// PBCH polar encoder params
-  t_nrPolar_params pbch_polar_params;
   /// OFDM symbol offset divisor for UL
   uint32_t ofdm_offset_divisor;
 };

@@ -31,9 +31,7 @@ This page is only valid for an `Ubuntu18` host.
 
 # 1. Retrieving the images on Docker-Hub #
 
-Currently the images are hosted under the user account `rdefosseoai`.
-
-This may change in the future.
+Currently the images are hosted under the team account `oaisoftwarealliance`. They were previously hosted under the user account `rdefosseoai`.
 
 Once again you may need to log on [docker-hub](https://hub.docker.com/) if your organization has reached pulling limit as `anonymous`.
 
@@ -48,25 +46,28 @@ Now pull images.
 
 ```bash
 $ docker pull cassandra:2.1
-$ docker pull rdefosseoai/oai-hss:latest
-$ docker pull rdefosseoai/oai-mme:latest
-$ docker pull rdefosseoai/oai-spgwc:latest
-$ docker pull rdefosseoai/oai-spgwu-tiny:latest
+$ docker pull redis:6.0.5
+$ docker pull oaisoftwarealliance/oai-hss:latest
+$ docker pull oaisoftwarealliance/magma-mme:latest
+$ docker pull oaisoftwarealliance/oai-spgwc:latest
+$ docker pull oaisoftwarealliance/oai-spgwu-tiny:latest
 
-$ docker pull rdefosseoai/oai-enb:develop
-$ docker pull rdefosseoai/oai-lte-ue:develop
+$ docker pull oaisoftwarealliance/oai-enb:develop
+$ docker pull oaisoftwarealliance/oai-lte-ue:develop
 ```
+
+If the `redis` tag is not available, pick the newest available `6.0.x` tag at [Docker Hub Redis Tags](https://hub.docker.com/_/redis?tab=tags).
 
 And **re-tag** them for tutorials' docker-compose file to work.
 
 ```bash
-$ docker image tag rdefosseoai/oai-spgwc:latest oai-spgwc:latest
-$ docker image tag rdefosseoai/oai-hss:latest oai-hss:latest
-$ docker image tag rdefosseoai/oai-spgwu-tiny:latest oai-spgwu-tiny:latest 
-$ docker image tag rdefosseoai/oai-mme:latest oai-mme:latest
+$ docker image tag oaisoftwarealliance/oai-spgwc:latest oai-spgwc:latest
+$ docker image tag oaisoftwarealliance/oai-hss:latest oai-hss:latest
+$ docker image tag oaisoftwarealliance/oai-spgwu-tiny:latest oai-spgwu-tiny:latest 
+$ docker image tag oaisoftwarealliance/magma-mme:latest magma-mme:latest
 
-$ docker image tag rdefosseoai/oai-enb:develop oai-enb:develop
-$ docker image tag rdefosseoai/oai-lte-ue:develop oai-lte-ue:develop
+$ docker image tag oaisoftwarealliance/oai-enb:develop oai-enb:develop
+$ docker image tag oaisoftwarealliance/oai-lte-ue:develop oai-lte-ue:develop
 ```
 
 ```bash
@@ -81,14 +82,14 @@ How to build the Traffic-Generator image is explained [here](https://github.com/
 
 **Just `docker-compose up -d` WILL NOT WORK!**
 
-All the following commands **SHALL** be run from the `ci-scripts/yaml_files/4g_rfsimulator` folder.
+All the following commands **SHALL** be run from the `ci-scripts/yaml_files/4g_rfsimulator_fdd_05MHz` folder.
 
 ## 2.1. Deploy and Configure Cassandra Database ##
 
 It is very crutial that the Cassandra DB is fully configured before you do anything else!
 
 ```bash
-$ cd ci-scripts/yaml_files/4g_rfsimulator
+$ cd ci-scripts/yaml_files/4g_rfsimulator_fdd_05MHz
 $ docker-compose up -d db_init
 Creating network "rfsim4g-oai-private-net" with the default driver
 Creating network "rfsim4g-oai-public-net" with the default driver
@@ -128,11 +129,12 @@ $ sudo tshark -i rfsim4g-public -f 'port 3868 or port 2123 or port 36412 or port
 ## 2.2. Deploy OAI CN4G containers ##
 
 ```bash
-$ docker-compose up -d oai_mme oai_spgwu trf_gen
+$ docker-compose up -d magma_mme oai_spgwu trf_gen
 rfsim4g-cassandra is up-to-date
-Creating rfsim4g-trf-gen   ... done
+Creating rfsim4g-trf-gen ... done
+Creating rfsim4g-redis   ... done
 Creating rfsim4g-oai-hss ... done
-Creating rfsim4g-oai-mme ... done
+Creating rfsim4g-magma-mme ... done
 Creating rfsim4g-oai-spgwc ... done
 Creating rfsim4g-oai-spgwu-tiny ... done
 ```
@@ -144,11 +146,12 @@ $ docker-compose ps -a
          Name                       Command                  State                            Ports                      
 -------------------------------------------------------------------------------------------------------------------------
 rfsim4g-cassandra        docker-entrypoint.sh cassa ...   Up (healthy)   7000/tcp, 7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp
-rfsim4g-oai-hss          /openair-hss/bin/entrypoin ...   Up (healthy)   5868/tcp, 9042/tcp, 9080/tcp, 9081/tcp          
-rfsim4g-oai-mme          /openair-mme/bin/entrypoin ...   Up (healthy)   2123/udp, 3870/tcp, 5870/tcp                    
-rfsim4g-oai-spgwc        /openair-spgwc/bin/entrypo ...   Up (healthy)   2123/udp, 8805/udp                              
-rfsim4g-oai-spgwu-tiny   /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp                              
-rfsim4g-trf-gen          /bin/bash -c ip route add  ...   Up (healthy)                                                   
+rfsim4g-magma-mme        /bin/bash -c /magma-mme/bi ...   Up (healthy)   2123/udp, 3870/tcp, 5870/tcp
+rfsim4g-oai-hss          /openair-hss/bin/entrypoin ...   Up (healthy)   5868/tcp, 9042/tcp, 9080/tcp, 9081/tcp
+rfsim4g-oai-spgwc        /openair-spgwc/bin/entrypo ...   Up (healthy)   2123/udp, 8805/udp
+rfsim4g-oai-spgwu-tiny   /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp
+rfsim4g-redis            /bin/bash -c redis-server  ...   Up (healthy)   6379/tcp
+rfsim4g-trf-gen          /bin/bash -c ip route add  ...   Up (healthy)
 ```
 
 ## 2.3. Deploy OAI eNB in RF simulator mode ##
@@ -165,77 +168,55 @@ $ docker-compose ps -a
          Name                       Command                  State                            Ports                      
 -------------------------------------------------------------------------------------------------------------------------
 rfsim4g-cassandra        docker-entrypoint.sh cassa ...   Up (healthy)   7000/tcp, 7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp
-rfsim4g-oai-enb          /opt/oai-enb/bin/entrypoin ...   Up (healthy)   2152/udp, 36412/udp, 36422/udp                  
-rfsim4g-oai-hss          /openair-hss/bin/entrypoin ...   Up (healthy)   5868/tcp, 9042/tcp, 9080/tcp, 9081/tcp          
-rfsim4g-oai-mme          /openair-mme/bin/entrypoin ...   Up (healthy)   2123/udp, 3870/tcp, 5870/tcp                    
-rfsim4g-oai-spgwc        /openair-spgwc/bin/entrypo ...   Up (healthy)   2123/udp, 8805/udp                              
-rfsim4g-oai-spgwu-tiny   /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp                              
-rfsim4g-trf-gen          /bin/bash -c ip route add  ...   Up (healthy)                                    
+rfsim4g-magma-mme        /bin/bash -c /magma-mme/bi ...   Up (healthy)   2123/udp, 3870/tcp, 5870/tcp
+rfsim4g-oai-enb          /opt/oai-enb/bin/entrypoin ...   Up (healthy)   2152/udp, 36412/udp, 36422/udp
+rfsim4g-oai-hss          /openair-hss/bin/entrypoin ...   Up (healthy)   5868/tcp, 9042/tcp, 9080/tcp, 9081/tcp
+rfsim4g-oai-spgwc        /openair-spgwc/bin/entrypo ...   Up (healthy)   2123/udp, 8805/udp
+rfsim4g-oai-spgwu-tiny   /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp
+rfsim4g-redis            /bin/bash -c redis-server  ...   Up (healthy)   6379/tcp
+rfsim4g-trf-gen          /bin/bash -c ip route add  ...   Up (healthy)
 ```
 
-Check if the eNB connected to MME:
+Check if the eNB connected to MME: with MAGMA-MME, the logs are not pushed to `stdout` but to a file at `/var/log/mme.log`
 
 ```bash
-$ docker logs rfsim4g-oai-mme
+$ docker exec rfsim4g-magma-mme /bin/bash -c "cat /var/log/mme.log"
 ...
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0039    ======================================= STATISTICS ============================================
+000141 Fri Feb 11 09:49:29 2022 7EFFE7BE4700 DEBUG S6A    tasks/s6a/s6a_peer.c            :0095    Diameter identity of MME: mme.openairinterface.org with length: 24
+000142 Fri Feb 11 09:49:29 2022 7EFFE7BE4700 DEBUG S6A    tasks/s6a/s6a_peer.c            :0130    S6a peer connection attempt 1 / 8
+000143 Fri Feb 11 09:49:29 2022 7EFFE7BE4700 DEBUG S6A    tasks/s6a/s6a_peer.c            :0141    Peer hss.openairinterface.org is now connected...
+000144 Fri Feb 11 09:49:29 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_state_mana:0097    Inside get_state with read_from_db 0
+000146 Fri Feb 11 09:49:29 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_main.c    :0083    MME APP ZMQ latency: 214.
+000145 Fri Feb 11 09:49:29 2022 7EFFE83E5700 DEBUG S1AP   tasks/s1ap/s1ap_mme.c           :0121    S1AP ZMQ latency: 146.
+000147 Fri Feb 11 09:50:23 2022 7EFFE83E5700 DEBUG S1AP   tasks/s1ap/s1ap_mme.c           :0121    S1AP ZMQ latency: 144.
+000148 Fri Feb 11 09:50:23 2022 7EFFE83E5700 DEBUG S1AP   tasks/s1ap/s1ap_mme_handlers.c  :3775    Create eNB context for assoc_id: 4121
+000149 Fri Feb 11 09:50:23 2022 7EFFE83E5700 DEBUG S1AP   tasks/s1ap/s1ap_mme.c           :0121    S1AP ZMQ latency: 48.
+000150 Fri Feb 11 09:50:23 2022 7EFFE83E5700 DEBUG S1AP   tasks/s1ap/s1ap_mme_handlers.c  :0536    New s1 setup request incoming from eNB-rf-sim macro eNB id: 00e01
+000151 Fri Feb 11 09:50:23 2022 7EFFE83E5700 DEBUG S1AP   tasks/s1ap/s1ap_mme_handlers.c  :0639    Adding eNB with enb_id :3585 to the list of served eNBs 
+000152 Fri Feb 11 09:50:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0049    ======================================= STATISTICS ============================================
 
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0042                   |   Current Status| Added since last display|  Removed since last display |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0048    Connected eNBs |          0      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0054    Attached UEs   |          0      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0060    Connected UEs  |          0      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0066    Default Bearers|          0      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0072    S1-U Bearers   |          0      |              0              |             0               |
+000153 Fri Feb 11 09:50:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0050                   |   Current Status|
+000154 Fri Feb 11 09:50:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0053    Attached UEs   |          0      |
+000155 Fri Feb 11 09:50:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0056    Connected UEs  |          0      |
+000156 Fri Feb 11 09:50:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0059    Connected eNBs |          0      |
+000157 Fri Feb 11 09:50:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0062    Default Bearers|          0      |
+000158 Fri Feb 11 09:50:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0065    S1-U Bearers   |          0      |
 
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0075    ======================================= STATISTICS ============================================
+000159 Fri Feb 11 09:50:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0070    ======================================= STATISTICS ============================================
 
-DEBUG SCTP   rc/sctp/sctp_primitives_server.c:0469    Client association changed: 0
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0101    ----------------------
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0102    SCTP Status:
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0103    assoc id .....: 675
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0104    state ........: 4
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0105    instrms ......: 2
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0106    outstrms .....: 2
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0108    fragmentation : 1452
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0109    pending data .: 0
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0110    unack data ...: 0
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0111    rwnd .........: 106496
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0112    peer info     :
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0114        state ....: 2
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0116        cwnd .....: 4380
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0118        srtt .....: 0
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0120        rto ......: 3000
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0122        mtu ......: 1500
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0123    ----------------------
-DEBUG SCTP   rc/sctp/sctp_primitives_server.c:0479    New connection
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0205    ----------------------
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0206    Local addresses:
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0217        - [192.168.61.3]
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0234    ----------------------
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0151    ----------------------
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0152    Peer addresses:
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0163        - [192.168.61.20]
-DEBUG SCTP   enair-mme/src/sctp/sctp_common.c:0178    ----------------------
-DEBUG SCTP   rc/sctp/sctp_primitives_server.c:0554    SCTP RETURNING!!
-DEBUG SCTP   rc/sctp/sctp_primitives_server.c:0547    [675][44] Msg of length 51 received from port 36412, on stream 0, PPID 18
-DEBUG SCTP   rc/sctp/sctp_primitives_server.c:0554    SCTP RETURNING!!
-DEBUG S1AP   mme/src/s1ap/s1ap_mme_handlers.c:2826    Create eNB context for assoc_id: 675
-DEBUG S1AP   mme/src/s1ap/s1ap_mme_handlers.c:0361    S1-Setup-Request macroENB_ID.size 3 (should be 20)
-DEBUG S1AP   mme/src/s1ap/s1ap_mme_handlers.c:0321    New s1 setup request incoming from macro eNB id: 00e01
-DEBUG S1AP   mme/src/s1ap/s1ap_mme_handlers.c:0423    Adding eNB to the list of served eNBs
-DEBUG S1AP   mme/src/s1ap/s1ap_mme_handlers.c:0438    Adding eNB id 3585 to the list of served eNBs
-DEBUG SCTP   rc/sctp/sctp_primitives_server.c:0283    [44][675] Sending buffer 0x7f9394009f90 of 27 bytes on stream 0 with ppid 18
-DEBUG SCTP   rc/sctp/sctp_primitives_server.c:0296    Successfully sent 27 bytes on stream 0
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0039    ======================================= STATISTICS ============================================
+000160 Fri Feb 11 09:50:28 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_state_mana:0097    Inside get_state with read_from_db 0
+000161 Fri Feb 11 09:51:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0049    ======================================= STATISTICS ============================================
 
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0042                   |   Current Status| Added since last display|  Removed since last display |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0048    Connected eNBs |          1      |              1              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0054    Attached UEs   |          0      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0060    Connected UEs  |          0      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0066    Default Bearers|          0      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0072    S1-U Bearers   |          0      |              0              |             0               |
+000162 Fri Feb 11 09:51:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0050                   |   Current Status|
+000163 Fri Feb 11 09:51:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0053    Attached UEs   |          0      |
+000164 Fri Feb 11 09:51:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0056    Connected UEs  |          0      |
+000165 Fri Feb 11 09:51:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0059    Connected eNBs |          1      |
+000166 Fri Feb 11 09:51:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0062    Default Bearers|          0      |
+000167 Fri Feb 11 09:51:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0065    S1-U Bearers   |          0      |
 
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0075    ======================================= STATISTICS ============================================
+000168 Fri Feb 11 09:51:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0070    ======================================= STATISTICS ============================================
+
+000169 Fri Feb 11 09:51:28 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_state_mana:0097    Inside get_state with read_from_db 0
 ...
 ```
 
@@ -253,14 +234,14 @@ $ docker-compose ps -a
          Name                       Command                  State                            Ports                      
 -------------------------------------------------------------------------------------------------------------------------
 rfsim4g-cassandra        docker-entrypoint.sh cassa ...   Up (healthy)   7000/tcp, 7001/tcp, 7199/tcp, 9042/tcp, 9160/tcp
-rfsim4g-oai-enb          /opt/oai-enb/bin/entrypoin ...   Up (healthy)   2152/udp, 36412/udp, 36422/udp                  
-rfsim4g-oai-hss          /openair-hss/bin/entrypoin ...   Up (healthy)   5868/tcp, 9042/tcp, 9080/tcp, 9081/tcp          
-rfsim4g-oai-lte-ue0      /opt/oai-lte-ue/bin/entryp ...   Up (healthy)   10000/tcp                                       
-rfsim4g-oai-mme          /openair-mme/bin/entrypoin ...   Up (healthy)   2123/udp, 3870/tcp, 5870/tcp                    
-rfsim4g-oai-spgwc        /openair-spgwc/bin/entrypo ...   Up (healthy)   2123/udp, 8805/udp                              
-rfsim4g-oai-spgwu-tiny   /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp                              
-rfsim4g-trf-gen          /bin/bash -c ip route add  ...   Up (healthy)                                             
-Creating rfsim4g-oai-enb ... done
+rfsim4g-magma-mme        /bin/bash -c /magma-mme/bi ...   Up (healthy)   2123/udp, 3870/tcp, 5870/tcp
+rfsim4g-oai-enb          /opt/oai-enb/bin/entrypoin ...   Up (healthy)   2152/udp, 36412/udp, 36422/udp
+rfsim4g-oai-hss          /openair-hss/bin/entrypoin ...   Up (healthy)   5868/tcp, 9042/tcp, 9080/tcp, 9081/tcp
+rfsim4g-oai-lte-ue0      /opt/oai-lte-ue/bin/entryp ...   Up (healthy)   10000/tcp
+rfsim4g-oai-spgwc        /openair-spgwc/bin/entrypo ...   Up (healthy)   2123/udp, 8805/udp
+rfsim4g-oai-spgwu-tiny   /openair-spgwu-tiny/bin/en ...   Up (healthy)   2152/udp, 8805/udp
+rfsim4g-redis            /bin/bash -c redis-server  ...   Up (healthy)   6379/tcp
+rfsim4g-trf-gen          /bin/bash -c ip route add  ...   Up (healthy)
 ```
 
 Making sure the OAI UE is connected:
@@ -268,40 +249,69 @@ Making sure the OAI UE is connected:
 ```bash
 $ docker logs rfsim4g-oai-enb
 ...
-[RRC]   RRCConnectionReconfiguration Encoded 1098 bits (138 bytes)
-[RRC]   [eNB 0] Frame 0, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes 138, UE id 617b)
-[RRC]   sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
-[PDCP]   [FRAME 00000][eNB][MOD 00][RNTI 617b][SRB 02]  Action ADD  LCID 2 (SRB id 2) configured with SN size 5 bits and RLC AM
-[PDCP]   [FRAME 00000][eNB][MOD 00][RNTI 617b][DRB 01]  Action ADD  LCID 3 (DRB id 1) configured with SN size 12 bits and RLC AM
-[SCTP]   Successfully sent 46 bytes on stream 1 for assoc_id 676
-[RRC]   [FRAME 00000][eNB][MOD 00][RNTI 617b] UE State = RRC_RECONFIGURED (default DRB, xid 0)
-[PDCP]   [FRAME 00000][eNB][MOD 00][RNTI 617b][SRB 02]  Action MODIFY LCID 2 RB id 2 reconfigured with SN size 5 and RLC AM 
-[PDCP]   [FRAME 00000][eNB][MOD 00][RNTI 617b][DRB 01]  Action MODIFY LCID 3 RB id 1 reconfigured with SN size 1 and RLC AM 
-[RRC]   [eNB 0] Frame  0 CC 0 : SRB2 is now active
-[RRC]   [eNB 0] Frame  0 : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE rnti 617b, reconfiguring DRB 1/LCID 3
-[RRC]   [eNB 0] Frame  0 : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete, reconfiguring DRB 1/LCID 3
-[MAC]   UE 0 RNTI 617b adding LC 3 idx 2 to scheduling control (total 3)
-[MAC]   Added physicalConfigDedicated 0x7f98e0004950 for 0.0
-[S1AP]   initial_ctxt_resp_p: e_rab ID 5, enb_addr 192.168.61.20, SIZE 4 
-[SCTP]   Successfully sent 40 bytes on stream 1 for assoc_id 676
-[SCTP]   Successfully sent 61 bytes on stream 1 for assoc_id 676
+7320446.555734 [RRC] I [FRAME 00000][eNB][MOD 00][RNTI bd8c] Logical Channel DL-DCCH, Generate UECapabilityEnquiry (bytes 10)
+7320446.555739 [RRC] I sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+7320446.570284 [RRC] I [FRAME 00000][eNB][MOD 00][RNTI bd8c] received ueCapabilityInformation on UL-DCCH 1 from UE
+7320446.570293 [RRC] A got UE capabilities for UE bd8c
+7320446.570346 [RRC] W drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated
+7320446.570370 [RRC] I [eNB 0] frame 0: requesting A2, A3, A4, and A5 event reporting
+7320446.570435 [RRC] I RRCConnectionReconfiguration Encoded 1146 bits (144 bytes)
+7320446.570440 [RRC] I [eNB 0] Frame 0, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes 144, UE id bd8c)
+7320446.570445 [RRC] I sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
+7320446.570446 [SCTP] I Successfully sent 46 bytes on stream 1 for assoc_id 4120
+7320446.570449 [PDCP] I [FRAME 00000][eNB][MOD 00][RNTI bd8c][SRB 02]  Action ADD  LCID 2 (SRB id 2) configured with SN size 5 bits and RLC AM
+7320446.570455 [PDCP] I [FRAME 00000][eNB][MOD 00][RNTI bd8c][DRB 01]  Action ADD  LCID 3 (DRB id 1) configured with SN size 12 bits and RLC AM
+7320446.583036 [RRC] I [FRAME 00000][eNB][MOD 00][RNTI bd8c] UE State = RRC_RECONFIGURED (default DRB, xid 0)
+7320446.583056 [PDCP] I [FRAME 00000][eNB][MOD 00][RNTI bd8c][SRB 02]  Action MODIFY LCID 2 RB id 2 reconfigured with SN size 5 and RLC AM 
+7320446.583060 [PDCP] I [FRAME 00000][eNB][MOD 00][RNTI bd8c][DRB 01]  Action MODIFY LCID 3 RB id 1 reconfigured with SN size 1 and RLC AM 
+7320446.583065 [RRC] I [eNB 0] Frame  0 CC 0 : SRB2 is now active
+7320446.583067 [RRC] I [eNB 0] Frame  0 : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete from UE rnti bd8c, reconfiguring DRB 1/LCID 3
+7320446.583070 [RRC] I [eNB 0] Frame  0 : Logical Channel UL-DCCH, Received LTE_RRCConnectionReconfigurationComplete, reconfiguring DRB 1/LCID 3
+7320446.583074 [MAC] I UE 0 RNTI bd8c adding LC 3 idx 2 to scheduling control (total 3)
+7320446.583077 [MAC] I Added physicalConfigDedicated 0x7fd18c46be50 for 0.0
+7320446.583095 [S1AP] I initial_ctxt_resp_p: e_rab ID 5, enb_addr 192.168.61.20, SIZE 4 
+7320446.583150 [SCTP] I Successfully sent 40 bytes on stream 1 for assoc_id 4120
+7320446.595495 [SCTP] I Successfully sent 61 bytes on stream 1 for assoc_id 4120
+7320446.774197 [SCTP] I Found data for descriptor 103
+7320446.774227 [SCTP] I [4120][103] Msg of length 53 received, on stream 1, PPID 18
+7320446.774295 [RRC] I [eNB 0] Received S1AP_DOWNLINK_NAS: ue_initial_id 0, eNB_ue_s1ap_id 4527568
+7320446.774316 [RRC] I sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB
 ...
 ```
 
-On the MME:
+On the MME: be patient, the statistics display update is slow!
 
 ```bash
-$ docker logs rfsim4g-oai-mme
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0039    ======================================= STATISTICS ============================================
+$ docker exec rfsim4g-magma-mme /bin/bash -c "cat /var/log/mme.log"
+000413 Fri Feb 11 09:52:52 2022 7EFFE8BE6700 INFO  GTPv2- lib/gtpv2-c/nwgtpv2c-0.11/src/Nw:2376    Stopped active timer 0x2 for info 0x0x60700001a9b0!
+000414 Fri Feb 11 09:52:52 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_state_mana:0097    Inside get_state with read_from_db 0
+000415 Fri Feb 11 09:52:52 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_main.c    :0083    MME APP ZMQ latency: 172.
+000416 Fri Feb 11 09:52:52 2022 7EFFEA3E9700 INFO  MME-AP tasks/mme_app/mme_app_main.c    :0137    Received S11 MODIFY BEARER RESPONSE from SPGW
+000417 Fri Feb 11 09:52:52 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_main.c    :0150    S11 MODIFY BEARER RESPONSE local S11 teid = 1
+000418 Fri Feb 11 09:52:52 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_state_mana:0097    Inside get_state with read_from_db 0
+000419 Fri Feb 11 09:53:28 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_state_mana:0097    Inside get_state with read_from_db 0
+000420 Fri Feb 11 09:53:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0049    ======================================= STATISTICS ============================================
 
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0042                   |   Current Status| Added since last display|  Removed since last display |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0048    Connected eNBs |          1      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0054    Attached UEs   |          1      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0060    Connected UEs  |          1      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0066    Default Bearers|          0      |              0              |             0               |
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0072    S1-U Bearers   |          0      |              0              |             0               |
+000421 Fri Feb 11 09:53:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0050                   |   Current Status|
+000422 Fri Feb 11 09:53:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0053    Attached UEs   |          0      |
+000423 Fri Feb 11 09:53:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0056    Connected UEs  |          0      |
+000424 Fri Feb 11 09:53:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0059    Connected eNBs |          1      |
+000425 Fri Feb 11 09:53:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0062    Default Bearers|          0      |
+000426 Fri Feb 11 09:53:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0065    S1-U Bearers   |          0      |
 
-DEBUG MME-AP src/mme_app/mme_app_statistics.c:0075    ======================================= STATISTICS ============================================
+000427 Fri Feb 11 09:53:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0070    ======================================= STATISTICS ============================================
+
+000428 Fri Feb 11 09:54:28 2022 7EFFEA3E9700 DEBUG MME-AP tasks/mme_app/mme_app_state_mana:0097    Inside get_state with read_from_db 0
+000429 Fri Feb 11 09:54:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0049    ======================================= STATISTICS ============================================
+
+000430 Fri Feb 11 09:54:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0050                   |   Current Status|
+000431 Fri Feb 11 09:54:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0053    Attached UEs   |          1      |
+000432 Fri Feb 11 09:54:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0056    Connected UEs  |          1      |
+000433 Fri Feb 11 09:54:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0059    Connected eNBs |          1      |
+000434 Fri Feb 11 09:54:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0062    Default Bearers|          1      |
+000435 Fri Feb 11 09:54:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0065    S1-U Bearers   |          1      |
+
+000436 Fri Feb 11 09:54:28 2022 7EFFEC3ED700 DEBUG SERVIC tasks/service303/service303_mme_:0070    ======================================= STATISTICS ============================================
 ```
 
 On the LTE UE:
@@ -377,16 +387,18 @@ Stopping rfsim4g-oai-lte-ue0    ... done
 Stopping rfsim4g-oai-enb        ... done
 Stopping rfsim4g-oai-spgwu-tiny ... done
 Stopping rfsim4g-oai-spgwc      ... done
-Stopping rfsim4g-oai-mme        ... done
+Stopping rfsim4g-magma-mme      ... done
 Stopping rfsim4g-oai-hss        ... done
+Stopping rfsim4g-redis          ... done
 Stopping rfsim4g-trf-gen        ... done
 Stopping rfsim4g-cassandra      ... done
 Removing rfsim4g-oai-lte-ue0    ... done
 Removing rfsim4g-oai-enb        ... done
 Removing rfsim4g-oai-spgwu-tiny ... done
 Removing rfsim4g-oai-spgwc      ... done
-Removing rfsim4g-oai-mme        ... done
+Removing rfsim4g-magma-mme      ... done
 Removing rfsim4g-oai-hss        ... done
+Removing rfsim4g-redis          ... done
 Removing rfsim4g-trf-gen        ... done
 Removing rfsim4g-cassandra      ... done
 Removing network rfsim4g-oai-private-net
@@ -443,19 +455,23 @@ My 1st UE IMSI is an aggregation of `MCC`, `MNC`, `SHORT_IMSI`.
 
 ## 5.2. PLMN and TAI ##
 
-in MME config:
+in MME config, in the docker-compose there is not much besides REALM fields:
 
 ```yaml
+            TZ: Europe/Paris
             REALM: openairinterface.org
-..
-            MCC: '208'
-            MNC: '96'
-            MME_GID: 32768
-            MME_CODE: 3
-            TAC_0: 1
-            TAC_1: 2
-            TAC_2: 3
+            PREFIX: /openair-mme/etc
+            HSS_HOSTNAME: hss
+            HSS_FQDN: hss.openairinterface.org
+            HSS_REALM: openairinterface.org
             MME_FQDN: mme.openairinterface.org
+            FEATURES: mme_oai
+```
+
+Everything is hard-coded in the `mme.conf` that is mounted as a volume: look for instances of
+
+```
+MCC="208" ; MNC="96";  TAC = "1";
 ```
 
 in SPGW-C/-U configs:
@@ -487,7 +503,7 @@ In my traffic test, I was able to ping outside of my local network.
 in SPGW-C config:
 
 ```yaml
-            DEFAULT_DNS_IPV4_ADDRESS: 192.168.18.129
+            DEFAULT_DNS_IPV4_ADDRESS: 172.21.3.100
             DEFAULT_DNS_SEC_IPV4_ADDRESS: 8.8.4.4
             PUSH_PROTOCOL_OPTION: 'true'
 ```

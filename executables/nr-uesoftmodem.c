@@ -50,6 +50,7 @@
 #include "LAYER2/MAC/mac_vars.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
+#include "NR_IF_Module.h"
 #include "openair1/SIMULATION/TOOLS/sim.h"
 
 #ifdef SMBV
@@ -61,7 +62,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-//#include "PHY/TOOLS/time_meas.h"
 
 #include "intertask_interface.h"
 
@@ -157,6 +157,9 @@ uint32_t       N_RB_DL    = 106;
  */
 uint8_t abstraction_flag=0;
 
+nr_bler_struct nr_bler_data[NR_NUM_MCS];
+
+static void init_bler_table(void);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -242,16 +245,18 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 /* initialie thread pools used for NRUE processing paralleliation */ 
 void init_tpools(uint8_t nun_dlsch_threads) {
-  char *params = NULL;
-  params = calloc(1,(NR_RX_NB_TH*NR_NB_TH_SLOT*3)+1);
+  char params[NR_RX_NB_TH*NR_NB_TH_SLOT*3+1]={0};
   for (int i=0; i<NR_RX_NB_TH*NR_NB_TH_SLOT; i++) {
     memcpy(params+(i*3),"-1,",3);
   }
-  initTpool(params, &(nrUE_params.Tpool), false);
-  free(params);
-  init_dlsch_tpool( nun_dlsch_threads);
+  if (getenv("noThreads")) {
+     initTpool("n", &(nrUE_params.Tpool), false);
+     init_dlsch_tpool(0);
+   } else {
+     initTpool(params, &(nrUE_params.Tpool), false);
+     init_dlsch_tpool( nun_dlsch_threads);
+   }
 }
-
 static void get_options(void) {
 
   nrUE_params.ofdm_offset_divisor = 8;
@@ -374,7 +379,7 @@ void init_openair0(void) {
 static void init_pdcp(int ue_id) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
-  /*if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
+  /*if (IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }*/
 
@@ -397,7 +402,14 @@ void *rrc_enb_process_msg(void *notUsed) {
 
 
 int main( int argc, char **argv ) {
-  set_priority(79);
+  int set_exe_prio = 1;
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        set_exe_prio = 0;
+  if (set_exe_prio)
+    set_priority(79);
+
   if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
   {
     fprintf(stderr, "mlockall: %s\n", strerror(errno));
@@ -466,6 +478,7 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
   if (get_softmodem_params()->emulate_l1) {
     RCconfig_nr_ue_L1();
+    init_bler_table();
   }
 
   if (get_softmodem_params()->do_ra)
@@ -545,4 +558,57 @@ int main( int argc, char **argv ) {
     vcd_signal_dumper_close();
 
   return 0;
+}
+
+// Read in each MCS file and build BLER-SINR-TB table
+static void init_bler_table(void) {
+  memset(nr_bler_data, 0, sizeof(nr_bler_data));
+
+  const char *awgn_results_dir = getenv("AWGN_RESULTS_DIR");
+  if (!awgn_results_dir) {
+    LOG_W(NR_MAC, "No $AWGN_RESULTS_DIR\n");
+    return;
+  }
+
+  for (unsigned int i = 0; i < NR_NUM_MCS; i++) {
+    char fName[1024];
+    snprintf(fName, sizeof(fName), "%s/mcs%d_awgn_5G.csv", awgn_results_dir, i);
+    FILE *pFile = fopen(fName, "r");
+    if (!pFile) {
+      LOG_E(NR_MAC, "%s: open %s: %s\n", __func__, fName, strerror(errno));
+      continue;
+    }
+    size_t bufSize = 1024;
+    char * line = NULL;
+    char * token;
+    char * temp = NULL;
+    int nlines = 0;
+    while (getline(&line, &bufSize, pFile) > 0) {
+      if (!strncmp(line, "SNR", 3)) {
+        continue;
+      }
+
+      if (nlines > NUM_SINR) {
+        LOG_E(NR_MAC, "BLER FILE ERROR - num lines greater than expected - file: %s\n", fName);
+        abort();
+      }
+
+      token = strtok_r(line, ";", &temp);
+      int ncols = 0;
+      while (token != NULL) {
+        if (ncols > NUM_BLER_COL) {
+          LOG_E(NR_MAC, "BLER FILE ERROR - num of cols greater than expected\n");
+          abort();
+        }
+
+        nr_bler_data[i].bler_table[nlines][ncols] = strtof(token, NULL);
+        ncols++;
+
+        token = strtok_r(NULL, ";", &temp);
+      }
+      nlines++;
+    }
+    nr_bler_data[i].length = nlines;
+    fclose(pFile);
+  }
 }

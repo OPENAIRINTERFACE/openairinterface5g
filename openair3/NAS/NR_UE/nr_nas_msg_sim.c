@@ -428,7 +428,7 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id) {
   size += 10;
 
   // encode the message
-  initialNasMsg->data = (Byte_t *)malloc(size * sizeof(Byte_t));
+  initialNasMsg->data = malloc16_clear(size * sizeof(Byte_t));
   registration_request_buf = initialNasMsg->data;
 
   initialNasMsg->length = mm_msg_encode(mm_msg, (uint8_t*)(initialNasMsg->data), size);
@@ -812,7 +812,6 @@ void *nas_nrue_task(void *args_p)
 
   ue_security_key=(ue_sa_security_key_t **)calloc(1,sizeof(ue_sa_security_key_t*)*NB_UE_INST);
   itti_mark_task_ready (TASK_NAS_NRUE);
-  MSC_START_USE();
   
   while(1) {
     // Wait for a message or an event

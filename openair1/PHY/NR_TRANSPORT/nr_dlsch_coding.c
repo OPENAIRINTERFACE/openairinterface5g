@@ -50,47 +50,52 @@
 //#define DEBUG_DLSCH_FREE 1
 
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB) {
-  int r;
-  NR_gNB_DLSCH_t *dlsch = *dlschptr;
-  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
+void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, 
+                    uint16_t N_RB,
+                    const NR_DL_FRAME_PARMS* frame_parms) {
 
-  if (dlsch) {
-    if (N_RB != 273) {
-      a_segments = a_segments*N_RB;
-      a_segments = a_segments/273 +1;
-    }
-    
-#ifdef DEBUG_DLSCH_FREE
-    LOG_D(PHY,"Freeing dlsch %p\n",dlsch);
-#endif
-    NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
-    
-    if (harq->b) {
-      free16(harq->b, a_segments * 1056);
-      harq->b = NULL;
-#ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing harq->b (%p)\n", harq->b);
-#endif
-    }
-    
-#ifdef DEBUG_DLSCH_FREE
-    LOG_D(PHY, "Freeing dlsch process %d c (%p)\n", i, harq->c);
-#endif
-    
-    for (r = 0; r < a_segments; r++) {
-#ifdef DEBUG_DLSCH_FREE
-      LOG_D(PHY, "Freeing dlsch process %d c[%d] (%p)\n", i, r, harq->c[r]);
-#endif
-      
-      if (harq->c[r]) {
-	free16(harq->c[r], 1056);
-	harq->c[r] = NULL;
-      }
-    }
-    free16(dlsch, sizeof(NR_gNB_DLSCH_t));
-    *dlschptr = NULL;
+  NR_gNB_DLSCH_t *dlsch = *dlschptr;
+
+  int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*max_layers;
+
+  if (N_RB != 273) {
+    a_segments = a_segments*N_RB;
+    a_segments = a_segments/273 +1;
   }
+
+  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
+  if (harq->b) {
+    free16(harq->b, a_segments * 1056);
+    harq->b = NULL;
+  }
+  for (int r = 0; r < a_segments; r++) {
+    free(harq->c[r]);
+    harq->c[r] = NULL;
+  }
+  free(harq->c);
+  free(harq->pdu);
+
+  for (int aa = 0; aa < 64; aa++)
+    free(dlsch->calib_dl_ch_estimates[aa]);
+  free(dlsch->calib_dl_ch_estimates);
+
+  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
+  for (int q=0; q<nb_codewords; q++)
+    free(dlsch->mod_symbs[q]);
+  free(dlsch->mod_symbs);
+
+  for (int layer = 0; layer < max_layers; layer++) {
+    free(dlsch->txdataF[layer]);
+    for (int aa = 0; aa < 64; aa++)
+      free(dlsch->ue_spec_bf_weights[layer][aa]);
+    free(dlsch->ue_spec_bf_weights[layer]);
+  }
+  free(dlsch->txdataF);
+  free(dlsch->ue_spec_bf_weights);
+
+  free(dlsch);
+  *dlschptr = NULL;
 }
 
 NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
@@ -99,9 +104,9 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
                               uint32_t Nsoft,
                               uint8_t  abstraction_flag,
                               uint16_t N_RB) {
-  unsigned char i,r,aa,layer;
-  int re;
-  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS;  //number of segments to be allocated
+
+  int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*max_layers;  //number of segments to be allocated
 
   if (N_RB != 273) {
     a_segments = a_segments*N_RB;
@@ -117,31 +122,36 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   dlsch->Mlimit = 4;
   dlsch->Nsoft = Nsoft;
 
-  for (layer=0; layer<NR_MAX_NB_LAYERS; layer++) {
+  int txdataf_size = frame_parms->N_RB_DL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8; // max pdsch encoded length for each layer
+
+  dlsch->txdataF = (int32_t **)malloc16(max_layers*sizeof(int32_t *));
+
+  dlsch->ue_spec_bf_weights = (int32_t ***)malloc16(max_layers*sizeof(int32_t **));
+  for (int layer=0; layer<max_layers; layer++) {
     dlsch->ue_spec_bf_weights[layer] = (int32_t **)malloc16(64*sizeof(int32_t *));
 
-    for (aa=0; aa<64; aa++) {
+    for (int aa=0; aa<64; aa++) {
       dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
 
-      for (re=0; re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
+      for (int re=0; re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
         dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
       }
     }
-
-    dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH/NR_MAX_NB_LAYERS)*sizeof(int32_t)); // NR_MAX_NB_LAYERS is already included in NR_MAX_PDSCH_ENCODED_LENGTH
-    dlsch->txdataF_precoding[layer] = (int32_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int32_t));
+    dlsch->txdataF[layer] = (int32_t *)malloc16((txdataf_size)*sizeof(int32_t));
   }
 
-  for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
-    dlsch->mod_symbs[q] = (int32_t *)malloc16(NR_MAX_PDSCH_ENCODED_LENGTH*sizeof(int32_t));
+  int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
+  dlsch->mod_symbs = (int32_t **)malloc16(nb_codewords*sizeof(int32_t *));
+  for (int q=0; q<nb_codewords; q++)
+    dlsch->mod_symbs[q] = (int32_t *)malloc16(txdataf_size*max_layers*sizeof(int32_t));
 
   dlsch->calib_dl_ch_estimates = (int32_t **)malloc16(64*sizeof(int32_t *));
 
-  for (aa=0; aa<64; aa++) {
+  for (int aa=0; aa<64; aa++) {
     dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
   }
 
-  for (i=0; i<20; i++) {
+  for (int i=0; i<20; i++) {
     dlsch->harq_ids[0][i] = 0;
     dlsch->harq_ids[1][i] = 0;
   }
@@ -156,7 +166,8 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   nr_emulate_dlsch_payload(harq->pdu, (dlsch_bytes) >> 3);
   bzero(harq->b, dlsch_bytes);
 
-  for (r = 0; r < a_segments; r++) {
+  harq->c = (uint8_t **)malloc16(a_segments*sizeof(uint8_t *));
+  for (int r = 0; r < a_segments; r++) {
     // account for filler in first segment and CRCs for multiple segment case
     // [hna] 8448 is the maximum CB size in NR
     //       68*348 = 68*(maximum size of Zc)
@@ -275,10 +286,9 @@ void ldpc8blocks( void *p) {
 }
 
 int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-                      unsigned char *a,
                       int frame,
                       uint8_t slot,
-                      NR_gNB_DLSCH_t *dlsch,
+                      NR_DL_gNB_HARQ_t *harq,
                       NR_DL_FRAME_PARMS *frame_parms,
 		      unsigned char * output,
                       time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
@@ -287,13 +297,12 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   encoder_implemparams_t impp;
   impp.output=output;
   unsigned int crc=1;
-  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
-  impp.Zc = &dlsch->harq_process.Z;
+  impp.Zc = &harq->Z;
   float Coderate = 0.0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
-
+  unsigned char *a=harq->pdu;
   if ( rel15->rnti != SI_RNTI)
     trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
 
@@ -306,19 +315,20 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
       stats=&gNB->dlsch_stats[i];
     }
 
-    if (gNB->dlsch_stats[i].rnti == dlsch->rnti) {
+    if (gNB->dlsch_stats[i].rnti == rel15->rnti) {
       stats=&gNB->dlsch_stats[i];
       break;
     }
   }
 
   if (stats) {
-    stats->rnti = dlsch->rnti;
+    stats->rnti = rel15->rnti;
     stats->total_bytes_tx += rel15->TBSize[0];
     stats->current_RI   = rel15->nrOfLayers;
     stats->current_Qm   = rel15->qamModOrder[0];
   }
 
+  int max_bytes = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*rel15->nrOfLayers*1056;
   if (A > 3824) {
     // Add 24-bit crc (polynomial A) to payload
     crc = crc24a(a,A)>>8;
@@ -329,11 +339,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     //printf("a0 %d a1 %d a2 %d\n", a[A>>3], a[1+(A>>3)], a[2+(A>>3)]);
     harq->B = A+24;
     //    harq->b = a;
-    AssertFatal((A / 8) + 4 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
+    AssertFatal((A / 8) + 4 <= max_bytes,
                 "A %d is too big (A/8+4 = %d > %d)\n",
                 A,
                 (A / 8) + 4,
-                MAX_NR_DLSCH_PAYLOAD_BYTES);
+                max_bytes);
     memcpy(harq->b, a, (A / 8) + 4); // why is this +4 if the CRC is only 3 bytes?
   } else {
     // Add 16-bit crc (polynomial A) to payload
@@ -344,11 +354,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     //printf("a0 %d a1 %d \n", a[A>>3], a[1+(A>>3)]);
     harq->B = A+16;
     //    harq->b = a;
-    AssertFatal((A / 8) + 3 <= MAX_NR_DLSCH_PAYLOAD_BYTES,
+    AssertFatal((A / 8) + 3 <= max_bytes,
                 "A %d is too big (A/8+3 = %d > %d)\n",
                 A,
                 (A / 8) + 3,
-                MAX_NR_DLSCH_PAYLOAD_BYTES);
+                max_bytes);
     memcpy(harq->b, a, (A / 8) + 3); // using 3 bytes to mimic the case of 24 bit crc
   }
 
@@ -365,6 +375,11 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   start_meas(dlsch_segmentation_stats);
   impp.Kb = nr_segmentation(harq->b, harq->c, harq->B, &impp.n_segments, &impp.K, impp.Zc, &impp.F, impp.BG);
   stop_meas(dlsch_segmentation_stats);
+
+  if (impp.n_segments>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*rel15->nrOfLayers) {
+    LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d\n",impp.n_segments,harq->B);
+    return(-1);
+  }
 
   for (int r=0; r<impp.n_segments; r++) {
     //d_tmp[r] = &harq->d[r][0];

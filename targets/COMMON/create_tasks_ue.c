@@ -27,7 +27,6 @@
   #include "sctp_eNB_task.h"
   #include "s1ap_eNB.h"
   #include "openair3/NAS/UE/nas_ue_task.h"
-  #include "udp_eNB_task.h"
   #include "gtpv1u_eNB_task.h"
   #if ENABLE_RAL
     #include "lteRALue.h"

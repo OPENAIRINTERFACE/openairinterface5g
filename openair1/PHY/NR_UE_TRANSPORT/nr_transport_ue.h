@@ -88,9 +88,9 @@ typedef struct {
   /// LDPC-code outputs
   uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC-code outputs (TS 36.212 V15.4.0, Sec 5.3.2 p. 17)
-  uint8_t *e; 
+  uint8_t *e;
   /// Rate matching (Interleaving) outputs (TS 36.212 V15.4.0, Sec 5.4.2.2 p. 30)
-  uint8_t *f; 
+  uint8_t *f;
   /// Number of code segments
   uint32_t C;
   /// Number of bits in code segments
@@ -122,55 +122,15 @@ typedef struct {
 typedef struct {
   /// SRS active flag
   uint8_t srs_active; 
-//#if defined(UPGRADE_RAT_NR)
-#if 1
   // Pointers to HARQ processes for the ULSCH
   NR_UL_UE_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
   int harq_process_id[NR_MAX_SLOTS_PER_FRAME];
   // UL number of harq processes
   uint8_t number_harq_processes_for_pusch;
-#endif 
-  /*
-  /// Pointer to CQI data (+1 for 8 bits crc)
-  uint8_t o[1+MAX_CQI_BYTES];
-  /// Length of CQI data (bits)
-  uint8_t O;
-  /// Format of CQI data
-  UCI_format_t uci_format;
-  /// Rank information
-  uint8_t o_RI[2];
-  /// Length of rank information (bits)
-  uint8_t O_RI;
-  /// Pointer to ACK
-  uint8_t o_ACK[4];
-  */
   /// Minimum number of CQI bits for PUSCH (36-212 r8.6, Sec 5.2.4.1 p. 37)
   uint8_t O_CQI_MIN;
   /// ACK/NAK Bundling flag
   uint8_t bundling;
-  /// Concatenated "g"-sequences (for definition see 36-212 V15.4.0 2018-12, p.31)
-  uint8_t g[MAX_NUM_NR_CHANNEL_BITS] __attribute__ ((aligned(32)));
-  /// Interleaved "h"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  uint8_t h[MAX_NUM_NR_CHANNEL_BITS];
-  /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  uint8_t b_tilde[MAX_NUM_NR_CHANNEL_BITS];
-  /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  int32_t d_mod[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
-  /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
-  int32_t y[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
-  /*
-  /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
-  uint8_t q[MAX_CQI_PAYLOAD];
-  
-  /// coded and interleaved CQI bits
-  uint8_t o_w[(MAX_CQI_BITS+8)*3];
-  /// coded CQI bits
-  uint8_t o_d[96+((MAX_CQI_BITS+8)*3)];
-  /// coded ACK bits
-  uint8_t q_ACK[MAX_ACK_PAYLOAD];
-  /// coded RI bits
-  uint8_t q_RI[MAX_RI_PAYLOAD];
-  */
   /// beta_offset_cqi times 8
   uint16_t beta_offset_cqi_times8;
   /// beta_offset_ri times 8
@@ -219,9 +179,12 @@ typedef struct {
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
+  uint8_t **c;
+  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
+  /// Accumulates the soft bits for each round to increase decoding success (HARQ)
+  int16_t **d;
   /// Index of current HARQ round for this DLSCH
-  uint8_t round;
+  uint8_t DLround;
   /// MCS table for this DLSCH
   uint8_t mcs_table;
   /// MCS format for this DLSCH
@@ -234,14 +197,6 @@ typedef struct {
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_nrmode_t mimo_mode;
-  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t *w[MAX_NUM_NR_DLSCH_SEGMENTS];
-  /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  //double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
-  /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
-  /// LDPC processing buffers
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Number of code segments 
   uint32_t C;
   /// Number of bits in code segments
@@ -272,6 +227,8 @@ typedef struct {
   uint8_t dmrsConfigType;
   // Number of DMRS CDM groups with no data
   uint8_t n_dmrs_cdm_groups;
+  /// DMRS ports bitmap
+  uint16_t dmrs_ports;
   /// Starting Symbol number
   uint16_t start_symbol;
   /// Current subband PMI allocation
@@ -303,6 +260,8 @@ typedef struct {
   uint16_t ptrs_symbols;
   // PTRS symbol index, to be updated every PTRS symbol within a slot.
   uint8_t ptrs_symbol_index;
+  uint8_t nscid;
+  uint16_t dlDmrsScramblingId;
   /// PDU BITMAP 
   uint16_t pduBitmap;
 } NR_DL_UE_HARQ_t;

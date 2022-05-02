@@ -28,7 +28,6 @@
 #include "rlc_am.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "common/utils/LOG/log.h"
-#include "msc.h"
 //-----------------------------------------------------------------------------
 void
 rlc_am_check_timer_status_prohibit(
@@ -60,12 +59,6 @@ rlc_am_check_timer_status_prohibit(
         rlc_pP->t_status_prohibit.running   = 0;
         rlc_pP->t_status_prohibit.timed_out = 1;
         rlc_pP->stat_timer_status_prohibit_timed_out += 1;
-
-#if MESSAGE_CHART_GENERATOR_RLC_MAC
-      MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                             "0 "PROTOCOL_RLC_AM_MSC_FMT" t_status_prohibit timed out",\
-                             PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
-#endif
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-STATUS-PROHIBIT] TIME-OUT\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         //#warning         TO DO rlc_am_check_timer_status_prohibit
@@ -91,11 +84,6 @@ rlc_am_stop_and_reset_timer_status_prohibit(
     rlc_pP->t_status_prohibit.ms_time_out    = 0;
     rlc_pP->t_status_prohibit.ms_start       = 0;
     rlc_pP->t_status_prohibit.timed_out      = 0;
-#if MESSAGE_CHART_GENERATOR_RLC_MAC
-    MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                  "0 "PROTOCOL_RLC_AM_MSC_FMT" t_status_prohibit stopped & reseted",\
-                  PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
-#endif
   }
 }
 //-----------------------------------------------------------------------------
@@ -117,11 +105,6 @@ rlc_am_start_timer_status_prohibit(
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->t_status_prohibit.ms_time_out);
       LOG_D(RLC, "TIME-OUT = FRAME %u\n",  rlc_pP->t_status_prohibit.ms_time_out);
-#if MESSAGE_CHART_GENERATOR_RLC_MAC
-      MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
-                             "0 "PROTOCOL_RLC_AM_MSC_FMT" t_status_prohibit started (TO %u ms)",\
-                             PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP), rlc_pP->t_status_prohibit.ms_time_out);
-#endif
     } else {
     LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-STATUS-PROHIBIT] NOT STARTED, CAUSE CONFIGURED 0 ms\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));

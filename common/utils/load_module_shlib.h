@@ -47,6 +47,7 @@ typedef struct {
    char               *thisshlib_path;
    uint32_t           numfunc;
    loader_shlibfunc_t *funcarray;
+   uint32_t           len_funcarray;
 }loader_shlibdesc_t;
 
 typedef struct {
@@ -90,5 +91,6 @@ extern void * get_shlibmodule_fptr(char *modname, char *fname);
 extern loader_data_t loader_data;
 #endif /* LOAD_MODULE_SHLIB_MAIN */
 #define load_module_shlib(M, F, N, I) load_module_version_shlib(M, NULL, F, N, I)
+void loader_reset();
 #endif
 

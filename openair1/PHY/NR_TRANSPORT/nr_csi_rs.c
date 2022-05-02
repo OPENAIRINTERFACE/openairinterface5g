@@ -30,14 +30,15 @@
 void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
                         int16_t amp,
                         nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
-                        uint16_t cell_id,
                         int slot){
 
   NR_DL_FRAME_PARMS frame_parms=gNB->frame_parms;
   int32_t **txdataF = gNB->common_vars.txdataF;
   int txdataF_offset = slot*frame_parms.samples_per_slot_wCP;
   uint32_t **gold_csi_rs = gNB->nr_gold_csi_rs[slot];
-  int16_t mod_csi[frame_parms.symbols_per_slot][NR_MAX_CSI_RS_LENGTH>>1] __attribute__((aligned(16)));;
+  //*8(max allocation per RB)*2(QPSK))
+  int csi_rs_length =  frame_parms.N_RB_DL<<4;
+  int16_t mod_csi[frame_parms.symbols_per_slot][csi_rs_length>>1] __attribute__((aligned(16)));;
   uint16_t b = csi_params.freq_domain;
   uint16_t n, csi_bw, csi_start, p, k, l, mprime, na, kpn, csi_length;
   uint8_t size, ports, kprime, lprime, i, gs;
@@ -50,20 +51,10 @@ void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
 
   AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
 
-  // pre-computed for scrambling id equel to cell id
-  // if the scrambling id is not the cell id we need to re-initialize the rs
-  if (csi_params.scramb_id != cell_id) {
-    uint8_t reset;
-    uint32_t x1, x2;
-    uint32_t Nid = csi_params.scramb_id;
-    for (uint8_t symb=0; symb<frame_parms.symbols_per_slot; symb++) {
-      reset = 1;
-      x2 = ((1<<10) * (frame_parms.symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
-      for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
-        gold_csi_rs[symb][n] = lte_gold_generic(&x1, &x2, reset);
-        reset = 0;
-      }
-    }
+  // if the scrambling id is not the one previously used to initialize we need to re-initialize the rs
+  if (csi_params.scramb_id != gNB->csi_gold_init) {
+    gNB->csi_gold_init = csi_params.scramb_id;
+    nr_init_csi_rs(gNB, csi_params.scramb_id);
   }
 
   switch (csi_params.row) {

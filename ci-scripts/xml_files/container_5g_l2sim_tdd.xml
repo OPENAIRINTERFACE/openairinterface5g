@@ -1,0 +1,115 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+        <htmlTabRef>l2sim-5gnr-tdd</htmlTabRef>
+        <htmlTabName>Testing 5G NR L2 sim - TDD gNB</htmlTabName>
+        <htmlTabIcon>wrench</htmlTabIcon>
+        <repeatCount>2</repeatCount>
+        <TestCaseRequestedList>
+ 100001
+ 000000
+ 000001
+ 000002
+ 000003
+ 000011
+ 200000
+ 020001
+ 020002
+ 200001
+ 100001
+        </TestCaseRequestedList>
+        <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="000000">
+                <class>DeployGenObject</class>
+                <desc>Deploy MySql Database</desc>
+                <yaml_path>yaml_files/5g_l2sim_tdd</yaml_path>
+                <services>mysql</services>
+                <nb_healthy>1</nb_healthy>
+        </testCase>
+
+        <testCase id="000001">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G CoreNetwork</desc>
+                <yaml_path>yaml_files/5g_l2sim_tdd</yaml_path>
+                <services>oai-nrf oai-amf oai-smf oai-spgwu oai-ext-dn</services>
+                <nb_healthy>6</nb_healthy>
+        </testCase>
+
+        <testCase id="000002">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G gNB L2 sim SA</desc>
+                <yaml_path>yaml_files/5g_l2sim_tdd</yaml_path>
+                <services>oai-gnb</services>
+                <nb_healthy>7</nb_healthy>
+        </testCase>
+
+        <testCase id="000003">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G NR-UE L2 sim SA and Proxy</desc>
+                <yaml_path>yaml_files/5g_l2sim_tdd</yaml_path>
+                <services>proxy oai-nr-ue0</services>
+                <nb_healthy>9</nb_healthy>
+        </testCase>
+
+        <testCase id="000011">
+                <class>IdleSleep</class>
+                <desc>Sleep</desc>
+                <idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+        </testCase>
+
+        <testCase id="020001">
+                <class>PingFromContainer</class>
+                <desc>Ping ext-dn from NR-UE</desc>
+                <container_name>l2sim-oai-nr-ue0</container_name>
+                <options>-I oaitun_ue1 -c 20 192.168.72.135</options>
+                <loss_threshold>5</loss_threshold>
+        </testCase>
+
+        <testCase id="020002">
+                <class>PingFromContainer</class>
+                <desc>Ping NR-UE from ext-dn</desc>
+                <container_name>l2sim-oai-ext-dn</container_name>
+                <options>-c 20 12.1.1.2</options>
+                <loss_threshold>5</loss_threshold>
+        </testCase>
+
+        <testCase id="100001">
+                <class>UndeployGenObject</class>
+                <desc>Undeploy all OAI 5G stack</desc>
+                <yaml_path>yaml_files/5g_l2sim_tdd</yaml_path>
+        </testCase>
+
+        <testCase id="200000">
+                <class>StatsFromGenObject</class>
+                <desc>Statistics before Traffic Test</desc>
+                <yaml_path>yaml_files/5g_l2sim_tdd</yaml_path>
+        </testCase>
+
+        <testCase id="200001">
+                <class>StatsFromGenObject</class>
+                <desc>Statistics after Traffic Test</desc>
+                <yaml_path>yaml_files/5g_l2sim_tdd</yaml_path>
+        </testCase>
+
+</testCaseList>

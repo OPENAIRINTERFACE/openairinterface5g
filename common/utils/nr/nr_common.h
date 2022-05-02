@@ -63,7 +63,7 @@ void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset);
 uint16_t config_bandwidth(int mu, int nb_rb, int nr_band);
 int get_nr_table_idx(int nr_bandP, uint8_t scs_index);
 int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index);
-lte_frame_type_t get_frame_type(uint16_t nr_bandP, uint8_t scs_index);
+frame_type_t get_frame_type(uint16_t nr_bandP, uint8_t scs_index);
 uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex);
 int NRRIV2BW(int locationAndBandwidth,int N_RB);
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
@@ -80,6 +80,7 @@ void SLIV2SL(int SLIV,int *S,int *L);
 int get_dmrs_port(int nl, uint16_t dmrs_ports);
 uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols);
 int get_nb_periods_per_frame(uint8_t tdd_period);
+int get_supported_band_index(int scs, int band, int n_rbs);
 long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)

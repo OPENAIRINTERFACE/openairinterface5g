@@ -26,6 +26,9 @@ def nodeExecutor = params.nodeExecutor
 // Name of the phone resource
 def ciServerResource = params.serverResource
 
+// Docker Hub account to push to
+def DH_Account = "oaisoftwarealliance"
+
 pipeline {
   agent {
     label nodeExecutor
@@ -55,7 +58,9 @@ pipeline {
     stage ("Push to DockerHub") {
       steps {
         script {
-          WEEK_TAG = sh returnStdout: true, script: 'date +"%Y.w%U"'
+          WEEK_REF = sh returnStdout: true, script: 'date +"%Y.w%V"'
+          WEEK_REF = WEEK_REF.trim()
+          WEEK_TAG = sh returnStdout: true, script: 'python3 ./ci-scripts/provideUniqueImageTag.py --start_tag ' + WEEK_REF
           WEEK_TAG = WEEK_TAG.trim()
 
           withCredentials([
@@ -64,11 +69,11 @@ pipeline {
             def listOfImages = ["oai-enb", "oai-gnb", "oai-lte-ue", "oai-nr-ue"]
             sh "docker login -u ${DH_Username} -p ${DH_Password} > /dev/null 2>&1"
             listOfImages.eachWithIndex { item, iindex ->
-              sh "docker image tag ${item}:develop ${DH_Username}/${item}:develop"
-              sh "docker image tag ${item}:develop ${DH_Username}/${item}:${WEEK_TAG}"
-              sh "docker push --quiet ${DH_Username}/${item}:${WEEK_TAG}"
-              sh "docker push --quiet ${DH_Username}/${item}:develop"
-              sh "docker rmi ${DH_Username}/${item}:${WEEK_TAG} ${DH_Username}/${item}:develop"
+              sh "docker image tag ${item}:develop ${DH_Account}/${item}:develop"
+              sh "docker image tag ${item}:develop ${DH_Account}/${item}:${WEEK_TAG}"
+              sh "docker push --quiet ${DH_Account}/${item}:${WEEK_TAG}"
+              sh "docker push --quiet ${DH_Account}/${item}:develop"
+              sh "docker rmi ${DH_Account}/${item}:${WEEK_TAG} ${DH_Account}/${item}:develop"
             }
             sh "docker logout > /dev/null 2>&1"
           }

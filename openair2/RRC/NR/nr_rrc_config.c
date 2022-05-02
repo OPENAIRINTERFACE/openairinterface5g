@@ -31,17 +31,203 @@
 #include "nr_rrc_config.h"
 #include "common/utils/nr/nr_common.h"
 
+const uint8_t slotsperframe[5] = {10, 20, 40, 80, 160};
+
+
+void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period) {
+
+  nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
+  int ideal_period = nb_slots_per_period*MAX_MOBILES_PER_GNB;
+
+  if (ideal_period<5) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots4;
+    nzpcsi0->periodicityAndOffset->choice.slots4 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<6) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots5;
+    nzpcsi0->periodicityAndOffset->choice.slots5 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<9) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots8;
+    nzpcsi0->periodicityAndOffset->choice.slots8 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<11) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots10;
+    nzpcsi0->periodicityAndOffset->choice.slots10 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<17) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots16;
+    nzpcsi0->periodicityAndOffset->choice.slots16 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<21) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots20;
+    nzpcsi0->periodicityAndOffset->choice.slots20 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<41) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots40;
+    nzpcsi0->periodicityAndOffset->choice.slots40 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<81) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots80;
+    nzpcsi0->periodicityAndOffset->choice.slots80 = nb_slots_per_period*uid;
+  }
+  else if (ideal_period<161) {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots160;
+    nzpcsi0->periodicityAndOffset->choice.slots160 = nb_slots_per_period*uid;
+  }
+  else {
+    nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
+    nzpcsi0->periodicityAndOffset->choice.slots320 = (nb_slots_per_period*uid)%320 + (nb_slots_per_period*uid)/320;
+  }
+}
+
+
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig,
+                  int uid,
+                  int num_dl_antenna_ports,
+                  int curr_bwp,
+                  int do_csirs) {
+
+  if (do_csirs) {
+
+    csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
+    NR_NZP_CSI_RS_ResourceSet_t *nzpcsirs0 = calloc(1,sizeof(*nzpcsirs0));
+    nzpcsirs0->nzp_CSI_ResourceSetId = 0;
+    NR_NZP_CSI_RS_ResourceId_t *nzpid0 = calloc(1,sizeof(*nzpid0));
+    *nzpid0 = 0;
+    ASN_SEQUENCE_ADD(&nzpcsirs0->nzp_CSI_RS_Resources,nzpid0);
+    nzpcsirs0->repetition = NULL;
+    nzpcsirs0->aperiodicTriggeringOffset = NULL;
+    nzpcsirs0->trs_Info = NULL;
+    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list,nzpcsirs0);
+
+    const NR_TDD_UL_DL_Pattern_t *tdd = servingcellconfigcommon->tdd_UL_DL_ConfigurationCommon ?
+                                        &servingcellconfigcommon->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+
+    const int n_slots_frame = slotsperframe[*servingcellconfigcommon->ssbSubcarrierSpacing];
+
+    int nb_slots_per_period = n_slots_frame;
+    if (tdd)
+      nb_slots_per_period = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+
+    csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
+    NR_NZP_CSI_RS_Resource_t *nzpcsi0 = calloc(1,sizeof(*nzpcsi0));
+    nzpcsi0->nzp_CSI_RS_ResourceId = 0;
+    NR_CSI_RS_ResourceMapping_t resourceMapping;
+    switch (num_dl_antenna_ports) {
+      case 1:
+        resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row2;
+        resourceMapping.frequencyDomainAllocation.choice.row2.buf = calloc(2, sizeof(uint8_t));
+        resourceMapping.frequencyDomainAllocation.choice.row2.size = 2;
+        resourceMapping.frequencyDomainAllocation.choice.row2.bits_unused = 4;
+        resourceMapping.frequencyDomainAllocation.choice.row2.buf[0] = 0;
+        resourceMapping.frequencyDomainAllocation.choice.row2.buf[1] = 16;
+        resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p1;
+        resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_noCDM;
+        break;
+      case 2:
+        resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_other;
+        resourceMapping.frequencyDomainAllocation.choice.other.buf = calloc(2, sizeof(uint8_t));
+        resourceMapping.frequencyDomainAllocation.choice.other.size = 1;
+        resourceMapping.frequencyDomainAllocation.choice.other.bits_unused = 2;
+        resourceMapping.frequencyDomainAllocation.choice.other.buf[0] = 4;
+        resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p2;
+        resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_fd_CDM2;
+        break;
+      case 4:
+        resourceMapping.frequencyDomainAllocation.present = NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row4;
+        resourceMapping.frequencyDomainAllocation.choice.row4.buf = calloc(2, sizeof(uint8_t));
+        resourceMapping.frequencyDomainAllocation.choice.row4.size = 1;
+        resourceMapping.frequencyDomainAllocation.choice.row4.bits_unused = 5;
+        resourceMapping.frequencyDomainAllocation.choice.row4.buf[0] = 32;
+        resourceMapping.nrofPorts = NR_CSI_RS_ResourceMapping__nrofPorts_p4;
+        resourceMapping.cdm_Type = NR_CSI_RS_ResourceMapping__cdm_Type_fd_CDM2;
+        break;
+      default:
+        AssertFatal(1==0,"Number of ports not yet supported\n");
+    }
+    resourceMapping.firstOFDMSymbolInTimeDomain = 13;  // last symbol of slot
+    resourceMapping.firstOFDMSymbolInTimeDomain2 = NULL;
+    resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
+    resourceMapping.density.choice.one = (NULL_t)0;
+    resourceMapping.freqBand.startingRB = 0;
+    resourceMapping.freqBand.nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
+    nzpcsi0->resourceMapping = resourceMapping;
+    nzpcsi0->powerControlOffset = 0;
+    nzpcsi0->powerControlOffsetSS=calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
+    *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
+    nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
+    set_csirs_periodicity(nzpcsi0, uid, nb_slots_per_period);
+    nzpcsi0->qcl_InfoPeriodicCSI_RS = NULL;
+    ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
+  }
+  else {
+    csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = NULL;
+    csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = NULL;
+  }
+  csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
+  csi_MeasConfig->nzp_CSI_RS_ResourceToReleaseList = NULL;
+}
+
+void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
+                       NR_ServingCellConfigCommon_t *scc,
+                       int numerology,
+                       int rbsize,
+                       int mcs_table) {
+
+  int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  NR_BandNR_t *nr_bandnr = CALLOC(1,sizeof(NR_BandNR_t));
+  nr_bandnr->bandNR = band;
+  ASN_SEQUENCE_ADD(&cap->rf_Parameters.supportedBandListNR.list,
+                   nr_bandnr);
+  if (mcs_table == 1) {
+    int bw = get_supported_band_index(numerology, band, rbsize);
+    if (band>256) {
+      NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[0];
+      bandNRinfo->pdsch_256QAM_FR2 = CALLOC(1,sizeof(*bandNRinfo->pdsch_256QAM_FR2));
+      *bandNRinfo->pdsch_256QAM_FR2 = NR_BandNR__pdsch_256QAM_FR2_supported;
+    }
+    else{
+      cap->phy_Parameters.phy_ParametersFR1 = CALLOC(1,sizeof(*cap->phy_Parameters.phy_ParametersFR1));
+      NR_Phy_ParametersFR1_t *phy_fr1 = cap->phy_Parameters.phy_ParametersFR1;
+      phy_fr1->pdsch_256QAM_FR1 = CALLOC(1,sizeof(*phy_fr1->pdsch_256QAM_FR1));
+      *phy_fr1->pdsch_256QAM_FR1 = NR_Phy_ParametersFR1__pdsch_256QAM_FR1_supported;
+    }
+    cap->featureSets = CALLOC(1,sizeof(*cap->featureSets));
+    NR_FeatureSets_t *fs=cap->featureSets;
+    fs->featureSetsDownlinkPerCC = CALLOC(1,sizeof(*fs->featureSetsDownlinkPerCC));
+    NR_FeatureSetDownlinkPerCC_t *fs_cc = CALLOC(1,sizeof(NR_FeatureSetDownlinkPerCC_t));
+    fs_cc->supportedSubcarrierSpacingDL = numerology;
+    if(band>256) {
+      fs_cc->supportedBandwidthDL.present = NR_SupportedBandwidth_PR_fr2;
+      fs_cc->supportedBandwidthDL.choice.fr2 = bw;
+    }
+    else{
+      fs_cc->supportedBandwidthDL.present = NR_SupportedBandwidth_PR_fr1;
+      fs_cc->supportedBandwidthDL.choice.fr1 = bw;
+    }
+    fs_cc->supportedModulationOrderDL = CALLOC(1,sizeof(*fs_cc->supportedModulationOrderDL));
+    *fs_cc->supportedModulationOrderDL = NR_ModulationOrder_qam256;
+    ASN_SEQUENCE_ADD(&fs->featureSetsDownlinkPerCC->list,
+                     fs_cc);
+  }
+}
+
 void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
 
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
-
+  frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+  // coreset duration setting to be improved in the framework of RRC harmonization, potentially using a common function
+  int len_coreset = 1;
+  if (curr_bwp < 48)
+    len_coreset = 2;
   // setting default TDA for DL with
   struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
   timedomainresourceallocation->mappingType = NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
-  timedomainresourceallocation->startSymbolAndLength = get_SLIV(1,13); // basic slot configuration starting in symbol 1 til the end of the slot
+  timedomainresourceallocation->startSymbolAndLength = get_SLIV(len_coreset,14-len_coreset); // basic slot configuration starting in symbol 1 til the end of the slot
   ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
                    timedomainresourceallocation);
-
   if(frame_type==TDD) {
     // TDD
     if(scc->tdd_UL_DL_ConfigurationCommon) {
@@ -49,7 +235,7 @@ void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
       if(dl_symb > 1) {
         timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
         timedomainresourceallocation->mappingType = NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
-        timedomainresourceallocation->startSymbolAndLength = get_SLIV(1,dl_symb-1); // mixed slot configuration starting in symbol 1 til the end of the dl allocation
+        timedomainresourceallocation->startSymbolAndLength = get_SLIV(len_coreset,dl_symb-len_coreset); // mixed slot configuration starting in symbol 1 til the end of the dl allocation
         ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
                          timedomainresourceallocation);
       }
@@ -67,7 +253,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
 
   uint8_t DELTA[4]= {2,3,4,6}; // Delta parameter for Msg3
   int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
 
   struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
   pusch_timedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
@@ -102,6 +288,52 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
       ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation_msg3);
     }
   }
-
 }
+
+
+void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+                      NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
+                      NR_ServingCellConfigCommon_t *scc) {
+
+  if (cap == NULL){
+    bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
+    return;
+  }
+
+  int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  struct NR_FrequencyInfoDL__scs_SpecificCarrierList scs_list = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList;
+  int bw_rb = -1;
+  for(int i=0; i<scs_list.list.count; i++){
+    if(scs == scs_list.list.array[i]->subcarrierSpacing){
+      bw_rb = scs_list.list.array[i]->carrierBandwidth;
+      break;
+    }
+  }
+  AssertFatal(bw_rb>0,"Could not find scs-SpecificCarrierList element for scs %d",scs);
+  int bw = get_supported_band_index(scs, band, bw_rb);
+  AssertFatal(bw>0,"Supported band corresponding to %d RBs not found\n", bw_rb);
+
+  bool supported = false;
+  if (band>256) {
+    for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
+      NR_BandNR_t *bandNRinfo = cap->rf_Parameters.supportedBandListNR.list.array[i];
+      if(bandNRinfo->bandNR == band && bandNRinfo->pdsch_256QAM_FR2) {
+        supported = true;
+        break;
+      }
+    }
+  }
+  else if (cap->phy_Parameters.phy_ParametersFR1 && cap->phy_Parameters.phy_ParametersFR1->pdsch_256QAM_FR1)
+    supported = true;
+
+  if (supported) {
+    if(bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
+      bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table));
+    *bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+  }
+  else
+    bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
+}
+
+
 

@@ -72,6 +72,7 @@
 #include <executables/softmodem-common.h>
 
 #include "nr_nas_msg_sim.h"
+#include <openair2/RRC/NR/nr_rrc_proto.h>
 
 NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 /* NAS Attach request with IMSI */
@@ -177,27 +178,6 @@ static int nr_rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_NR_t subS
 
   return (0);
 }
-
-extern boolean_t nr_rrc_pdcp_config_asn1_req(
-    const protocol_ctxt_t *const  ctxt_pP,
-    NR_SRB_ToAddModList_t  *const srb2add_list,
-    NR_DRB_ToAddModList_t  *const drb2add_list,
-    NR_DRB_ToReleaseList_t *const drb2release_list,
-    const uint8_t                   security_modeP,
-    uint8_t                  *const kRRCenc,
-    uint8_t                  *const kRRCint,
-    uint8_t                  *const kUPenc,
-    uint8_t                  *const kUPint
-    ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
-    ,rb_id_t                 *const defaultDRB,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
-
-extern rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
-    const NR_SRB_ToAddModList_t   * const srb2add_listP,
-    const NR_DRB_ToAddModList_t   * const drb2add_listP,
-    const NR_DRB_ToReleaseList_t  * const drb2release_listP,
-    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
-    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
@@ -2164,17 +2144,6 @@ nr_rrc_ue_establish_srb2(
      nr_derive_key_up_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPint);
 
-     MSC_LOG_TX_MESSAGE(
-	 MSC_RRC_UE,
-	 MSC_PDCP_UE,
-	 NULL,
-	 0,
-	 MSC_AS_TIME_FMT" CONFIG_REQ UE %x DRB (security %X)",
-	 MSC_AS_TIME_ARGS(ctxt_pP),
-	 ctxt_pP->rnti,
-	 NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-	 (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4));
-
        // Refresh DRBs
         nr_rrc_pdcp_config_asn1_req(ctxt_pP,
                                     NULL,
@@ -2241,7 +2210,7 @@ nr_rrc_ue_establish_srb2(
  //      nr_rrc_ue_process_measConfig(ctxt_pP, gNB_index, ie->measConfig);
      }
 
-     if(ie->nonCriticalExtension->masterCellGroup!=NULL) {
+     if((ie->nonCriticalExtension) && (ie->nonCriticalExtension->masterCellGroup!=NULL)) {
        nr_rrc_ue_process_masterCellGroup(
            ctxt_pP,
            gNB_index,
@@ -2254,7 +2223,7 @@ nr_rrc_ue_establish_srb2(
      }
 
      /* Check if there is dedicated NAS information to forward to NAS */
-     if (ie->nonCriticalExtension->dedicatedNAS_MessageList != NULL) {
+     if ((ie->nonCriticalExtension) && (ie->nonCriticalExtension->dedicatedNAS_MessageList != NULL)) {
        int list_count;
        uint32_t pdu_length;
        uint8_t *pdu_buffer;
@@ -2826,7 +2795,6 @@ void start_oai_nrue_threads()
     init_queue(&nr_tx_req_queue);
     init_queue(&nr_ul_dci_req_queue);
     init_queue(&nr_ul_tti_req_queue);
-    init_queue(&nr_wait_ul_tti_req_queue);
 
     if (sem_init(&sfn_slot_semaphore, 0, 0) != 0)
     {

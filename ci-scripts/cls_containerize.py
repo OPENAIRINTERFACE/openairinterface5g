@@ -93,6 +93,7 @@ class Containerize():
 		self.allImagesSize = {}
 		self.collectInfo = {}
 
+		self.deployedContainers = []
 		self.tsharkStarted = False
 		self.pingContName = ''
 		self.pingOptions = ''
@@ -105,6 +106,9 @@ class Containerize():
 		self.imageToCopy = ''
 		self.registrySvrId = ''
 		self.testSvrId = ''
+
+		#checkers from xml
+		self.ran_checkers={}
 
 #-----------------------------------------------------------
 # Container management functions
@@ -239,7 +243,7 @@ class Containerize():
 		# Build the base image only on Push Events (not on Merge Requests)
 		# On when the base image docker file is being modified.
 		if forceBaseImageBuild:
-			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + baseImage + ' --tag ' + baseImage + ':' + baseTag + ' --file docker/Dockerfile.base' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-base.log 2>&1', '\$', 1600)
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + baseImage + ' --tag ' + baseImage + ':' + baseTag + ' --file docker/Dockerfile.base' + self.dockerfileprefix + ' . > cmake_targets/log/ran-base.log 2>&1', '\$', 1600)
 		# First verify if the base image was properly created.
 		status = True
 		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + baseImage + ':' + baseTag, '\$', 5)
@@ -603,6 +607,8 @@ class Containerize():
 		if containerToKill:
 			mySSH.command('docker kill --signal INT ' + containerName, '\$', 30)
 			time.sleep(5)
+			mySSH.command('docker kill --signal KILL ' + containerName, '\$', 30)
+			time.sleep(5)
 			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
 			mySSH.command('docker rm -f ' + containerName, '\$', 30)
 		# Forcing the down now to remove the networks and any artifacts
@@ -624,7 +630,7 @@ class Containerize():
 		else:
 			if containerToKill:
 				logging.debug('\u001B[1m Analyzing ' + nodeB_prefix + 'NB logfile \u001B[0m ' + self.eNB_logFile[self.eNB_instance])
-				logStatus = RAN.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance], HTML)
+				logStatus = RAN.AnalyzeLogFile_eNB(self.eNB_logFile[self.eNB_instance], HTML, self.ran_checkers)
 			else:
 				logStatus = 0
 			if (logStatus < 0):
@@ -636,7 +642,7 @@ class Containerize():
 				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, './' + self.eNB_logFile[self.eNB_instance], self.eNBSourceCodePath + '/cmake_targets/')
 		logging.info('\u001B[1m Undeploying OAI Object Pass\u001B[0m')
 
-	def DeployGenObject(self, HTML):
+	def DeployGenObject(self, HTML, RAN, UE):
 		self.exitStatus = 0
 		logging.info('\u001B[1m Checking Services to deploy\u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose config --services'
@@ -677,44 +683,100 @@ class Containerize():
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps -a'
 		count = 0
 		healthy = 0
+		newContainers = []
 		while (count < 10):
 			count += 1
+			containerStatus = []
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			healthy = 0
 			for state in deployStatus.split('\n'):
-				res = re.search('Up \(healthy\)', state)
+				res = re.search('Name|----------', state)
 				if res is not None:
+					continue
+				if len(state) == 0:
+					continue
+				res = re.search('^(?P<container_name>[a-zA-Z0-9\-\_]+) ', state)
+				if res is not None:
+					cName = res.group('container_name')
+					found = False
+					for alreadyDeployed in self.deployedContainers:
+						if cName == alreadyDeployed:
+							found = True
+					if not found:
+						newContainers.append(cName)
+						self.deployedContainers.append(cName)
+				if re.search('Up \(healthy\)', state) is not None:
 					healthy += 1
+				if re.search('rfsim4g-db-init.*Exit 0', state) is not None:
+					subprocess.check_output('docker rm -f rfsim4g-db-init || true', shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				containerStatus.append(state)
 			if healthy == self.nb_healthy[0]:
 				count = 100
 			else:
 				time.sleep(10)
 
+		imagesInfo = ''
+		for newCont in newContainers:
+			cmd = 'docker inspect -f "{{.Config.Image}}" ' + newCont
+			imageName = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+			imageName = str(imageName).strip()
+			cmd = 'docker image inspect --format "{{.RepoTags}}\t{{.Size}}\t{{.Created}}" ' + imageName
+			imagesInfo += subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">\n'
+		for imageInfo in imagesInfo.split('\n'):
+			html_cell += imageInfo[:-11] + '\n'
+		html_cell += '\n'
+		for cState in containerStatus:
+			html_cell += cState + '\n'
+		html_cell += '</pre>'
+		html_queue.put(html_cell)
 		if count == 100 and healthy == self.nb_healthy[0]:
 			if self.tsharkStarted == False:
 				logging.debug('Starting tshark on public network')
 				self.CaptureOnDockerNetworks()
-				self.tsharkStarted = True
-			HTML.CreateHtmlTestRow('n/a', 'OK', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRowQueue('n/a', 'OK', 1, html_queue)
+			for cState in containerStatus:
+				logging.debug(cState)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
 		else:
-			self.exitStatus = 1
-			HTML.CreateHtmlTestRow('Could not deploy in time', 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRowQueue('Could not deploy in time', 'KO', 1, html_queue)
+			for cState in containerStatus:
+				logging.debug(cState)
 			logging.error('\u001B[1m Deploying OAI Object(s) FAILED\u001B[0m')
+			HTML.testCase_id = 'AUTO-UNDEPLOY'
+			UE.testCase_id = 'AUTO-UNDEPLOY'
+			HTML.desc = 'Automatic Undeployment'
+			UE.desc = 'Automatic Undeployment'
+			UE.ShowTestID()
+			self.UndeployGenObject(HTML, RAN, UE)
+			self.exitStatus = 1
 
 	def CaptureOnDockerNetworks(self):
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml config | grep com.docker.network.bridge.name | sed -e "s@^.*name: @@"'
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-		cmd = 'sudo nohup tshark -f "not tcp and not arp and not port 53 and not host archive.ubuntu.com and not host security.ubuntu.com and not port 2152"'
+		if re.search('4g.*rfsimulator', self.yamlPath[0]) is not None:
+			# Excluding any traffic from LTE-UE container (192.168.61.30)
+			# From the trf-gen, keeping only PING traffic
+			cmd = 'sudo nohup tshark -f "(host 192.168.61.11 and icmp) or (not host 192.168.61.11 and not host 192.168.61.30 and not arp and not port 53 and not port 2152)"'
+		elif re.search('5g.*rfsimulator', self.yamlPath[0]) is not None:
+			# Excluding any traffic from NR-UE containers (192.168.71.150 and 192.168.71.151)
+			# From the ext-dn, keeping only PING traffic
+			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not host 192.168.71.150 and not host 192.168.71.151 and not arp and not port 53 and not port 2152 and not port 2153)"'
+		elif re.search('5g_l2sim', self.yamlPath[0]) is not None:
+			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not arp and not port 53 and not port 2152 and not port 2153)"'
+		else:
+			return
 		for name in networkNames.split('\n'):
-			res = re.search('rfsim', name)
-			if res is not None:
+			if re.search('rfsim', name) is not None or re.search('l2sim', name) is not None:
 				cmd += ' -i ' + name
 		cmd += ' -w /tmp/capture_'
 		ymlPath = self.yamlPath[0].split('/')
 		cmd += ymlPath[1] + '.pcap > /tmp/tshark.log 2>&1 &'
 		logging.debug(cmd)
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
+		self.tsharkStarted = True
 
 	def UndeployGenObject(self, HTML, RAN, UE):
 		self.exitStatus = 0
@@ -745,7 +807,11 @@ class Containerize():
 				cName = res.group('container_name')
 				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
 				logging.debug(cmd)
-				deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+				if re.search('magma-mme', cName) is not None:
+					cmd = 'cd ' + self.yamlPath[0] + ' && docker cp -L ' + cName + ':/var/log/mme.log ' + cName + '-full.log'
+					logging.debug(cmd)
+					subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		fullStatus = True
 		if anyLogs:
 			cmd = 'mkdir -p '+ logPath + ' && cp ' + self.yamlPath[0] + '/*.log ' + logPath
@@ -755,45 +821,48 @@ class Containerize():
 			# Analyzing log file(s)!
 			listOfPossibleRanContainers = ['enb', 'gnb', 'cu', 'du']
 			for container in listOfPossibleRanContainers:
-				filename = self.yamlPath[0] + '/rfsim?g-oai-' + container + '.log'
-				cmd = 'ls ' + filename
+				filenames = self.yamlPath[0] + '/*-oai-' + container + '.log'
+				cmd = 'ls ' + filenames
 				containerStatus = True
 				try:
 					lsStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-					filename = str(lsStatus).strip()
+					filenames = str(lsStatus).strip()
 				except:
 					containerStatus = False
 				if not containerStatus:
 					continue
 
-				logging.debug('\u001B[1m Analyzing xNB logfile ' + filename + ' \u001B[0m')
-				logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML)
-				if (logStatus < 0):
-					fullStatus = False
-					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
-				else:
-					HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
+				for filename in filenames.split('\n'):
+					logging.debug('\u001B[1m Analyzing xNB logfile ' + filename + ' \u001B[0m')
+					logStatus = RAN.AnalyzeLogFile_eNB(filename, HTML, self.ran_checkers)
+					if (logStatus < 0):
+						fullStatus = False
+						self.exitStatus = 1
+						HTML.CreateHtmlTestRow(RAN.runtime_stats, 'KO', logStatus)
+					else:
+						HTML.CreateHtmlTestRow(RAN.runtime_stats, 'OK', CONST.ALL_PROCESSES_OK)
 
 			listOfPossibleUeContainers = ['lte-ue*', 'nr-ue*']
 			for container in listOfPossibleUeContainers:
-				filename = self.yamlPath[0] + '/rfsim?g-oai-' + container + '.log'
-				cmd = 'ls ' + filename
+				filenames = self.yamlPath[0] + '/*-oai-' + container + '.log'
+				cmd = 'ls ' + filenames
 				containerStatus = True
 				try:
 					lsStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-					filename = str(lsStatus).strip()
+					filenames = str(lsStatus).strip()
 				except:
 					containerStatus = False
 				if not containerStatus:
 					continue
 
-				logging.debug('\u001B[1m Analyzing UE logfile ' + filename + ' \u001B[0m')
-				logStatus = UE.AnalyzeLogFile_UE(filename, HTML, RAN)
-				if (logStatus < 0):
-					fullStatus = False
-					HTML.CreateHtmlTestRow('UE log Analysis', 'KO', logStatus)
-				else:
-					HTML.CreateHtmlTestRow('UE log Analysis', 'OK', CONST.ALL_PROCESSES_OK)
+				for filename in filenames.split('\n'):
+					logging.debug('\u001B[1m Analyzing UE logfile ' + filename + ' \u001B[0m')
+					logStatus = UE.AnalyzeLogFile_UE(filename, HTML, RAN)
+					if (logStatus < 0):
+						fullStatus = False
+						HTML.CreateHtmlTestRow('UE log Analysis', 'KO', logStatus)
+					else:
+						HTML.CreateHtmlTestRow('UE log Analysis', 'OK', CONST.ALL_PROCESSES_OK)
 
 			cmd = 'rm ' + self.yamlPath[0] + '/*.log'
 			logging.debug(cmd)
@@ -824,6 +893,7 @@ class Containerize():
 			logging.error('\u001B[1m Undeploying OAI Object(s) FAILED\u001B[0m')
 			return
 
+		self.deployedContainers = []
 		# Cleaning any created tmp volume
 		cmd = 'docker volume prune --force || true'
 		logging.debug(cmd)
@@ -835,6 +905,40 @@ class Containerize():
 		else:
 			HTML.CreateHtmlTestRow('n/a', 'KO', CONST.ALL_PROCESSES_OK)
 			logging.info('\u001B[1m Undeploying OAI Object(s) FAIL\u001B[0m')
+
+	def StatsFromGenObject(self, HTML):
+		self.exitStatus = 0
+		ymlPath = self.yamlPath[0].split('/')
+		logPath = '../cmake_targets/log/' + ymlPath[1]
+
+		# if the containers are running, recover the logs!
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
+		logging.debug(cmd)
+		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+		cmd = 'docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}" '
+		anyLogs = False
+		for state in deployStatus.split('\n'):
+			res = re.search('Name|----------', state)
+			if res is not None:
+				continue
+			if len(state) == 0:
+				continue
+			res = re.search('^(?P<container_name>[a-zA-Z0-9\-\_]+) ', state)
+			if res is not None:
+				anyLogs = True
+				cmd += res.group('container_name') + ' '
+		message = ''
+		if anyLogs:
+			logging.debug(cmd)
+			stats = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+			for statLine in stats.split('\n'):
+				logging.debug(statLine)
+				message += statLine + '\n'
+
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">\n' + message + '</pre>'
+		html_queue.put(html_cell)
+		HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', 1, html_queue)
 
 	def PingFromContainer(self, HTML, RAN, UE):
 		self.exitStatus = 0
@@ -1042,19 +1146,19 @@ class Containerize():
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to asterix gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.64/26"', '\$', 10)
-			result = re.search('192.168.18.194', mySSH.getBefore())
+			result = re.search('172.21.16.127', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 172.21.16.127 dev eno1', '\$', 10)
 			# Check if route to obelix enb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
-			result = re.search('192.168.18.193', mySSH.getBefore())
+			result = re.search('172.21.16.128', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev eno1', '\$', 10)
 			# Check if route to nepes gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
-			result = re.search('192.168.18.209', mySSH.getBefore())
+			result = re.search('172.21.16.137', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 172.21.16.137 dev eno1', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
@@ -1070,19 +1174,19 @@ class Containerize():
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
 			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
-			result = re.search('192.168.18.210', mySSH.getBefore())
+			result = re.search('172.21.16.136', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev em1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev em1', '\$', 10)
 			# Check if route to porcepix cn5g exists
 			mySSH.command('ip route | grep --colour=never "192.168.70.128/26"', '\$', 10)
-			result = re.search('192.168.18.210', mySSH.getBefore())
+			result = re.search('172.21.16.136', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.70.128/26 via 192.168.18.210 dev em1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.70.128/26 via 172.21.16.136 dev em1', '\$', 10)
 			# Check if X2 route to obelix enb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
-			result = re.search('192.168.18.193', mySSH.getBefore())
+			result = re.search('172.21.16.128', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev em1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev em1', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
@@ -1098,19 +1202,19 @@ class Containerize():
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
 			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
-			result = re.search('192.168.18.210', mySSH.getBefore())
+			result = re.search('172.21.16.136', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev eno1', '\$', 10)
 			# Check if X2 route to asterix gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.64/26"', '\$', 10)
-			result = re.search('192.168.18.194', mySSH.getBefore())
+			result = re.search('172.21.16.127', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 172.21.16.127 dev eno1', '\$', 10)
 			# Check if X2 route to nepes gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
-			result = re.search('192.168.18.209', mySSH.getBefore())
+			result = re.search('172.21.16.137', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 172.21.16.137 dev eno1', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
@@ -1126,14 +1230,14 @@ class Containerize():
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
 			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
-			result = re.search('192.168.18.210', mySSH.getBefore())
+			result = re.search('172.21.16.136', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev enp0s31f6', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev enp0s31f6', '\$', 10)
 			# Check if X2 route to obelix enb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
-			result = re.search('192.168.18.193', mySSH.getBefore())
+			result = re.search('172.21.16.128', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev enp0s31f6', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev enp0s31f6', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
