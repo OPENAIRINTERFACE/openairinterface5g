@@ -759,8 +759,6 @@ void RCconfig_NR_L1(void) {
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_CC[0]=%d for init_gNB_afterRU()\n", __FUNCTION__, RC.nb_nr_CC[0]);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_macrlc_inst:%d because used by mac_top_init_gNB()\n", __FUNCTION__, RC.nb_nr_macrlc_inst);
 
-        mac_top_init_gNB();
-
         configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr,
                                RC.gNB[j]->eth_params_n.remote_portc,
                                RC.gNB[j]->eth_params_n.my_addr,
