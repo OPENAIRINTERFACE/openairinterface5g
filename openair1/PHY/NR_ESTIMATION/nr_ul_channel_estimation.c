@@ -233,21 +233,19 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       // where k' is 0 or 1, and delta is in Table 6.4.1.1.3-1 from TS 38.211
 
       pilot_cnt = 0;
+      int delta = nr_pusch_dmrs_delta(pusch_dmrs_type1, p);
 
       for (int n = 0; n < 3*nb_rb_pusch; n++) {
 
         // LS estimation
         ch[0] = 0;
         ch[1] = 0;
-        for (int p2 = 0; p2<pusch_pdu->nrOfLayers; p2+=2) {
-          int delta2 = nr_pusch_dmrs_delta(pusch_dmrs_type1, p2);
-          for (int k_line = 0; k_line <= 1; k_line++) {
-            re_offset = (k0 + (n << 2) + (k_line << 1) + delta2) % gNB->frame_parms.ofdm_symbol_size;
-            rxF = (int16_t *) &rxdataF[aarx][(soffset + symbol_offset + re_offset)];
-            ch[0] += (int16_t) (((int32_t) pil[0] * rxF[0] - (int32_t) pil[1] * rxF[1]) >> (15+b_shift));
-            ch[1] += (int16_t) (((int32_t) pil[0] * rxF[1] + (int32_t) pil[1] * rxF[0]) >> (15+b_shift));
-            pil += 2;
-          }
+        for (int k_line = 0; k_line <= 1; k_line++) {
+          re_offset = (k0 + (n << 2) + (k_line << 1) + delta) % gNB->frame_parms.ofdm_symbol_size;
+          rxF = (int16_t *) &rxdataF[aarx][(soffset + symbol_offset + re_offset)];
+          ch[0] += (int16_t) (((int32_t) pil[0] * rxF[0] - (int32_t) pil[1] * rxF[1]) >> (15+b_shift));
+          ch[1] += (int16_t) (((int32_t) pil[0] * rxF[1] + (int32_t) pil[1] * rxF[0]) >> (15+b_shift));
+          pil += 2;
         }
 
         // Channel interpolation
