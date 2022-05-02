@@ -173,8 +173,25 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
   return output - begin;
 }
 
+static void mac_rrc_init(gNB_MAC_INST *mac, ngran_node_t node_type)
+{
+  switch (node_type) {
+    case ngran_gNB_CU:
+      AssertFatal(1 == 0, "nothing to do for CU\n");
+      break;
+    case ngran_gNB_DU:
+      mac_rrc_ul_f1ap_init(&mac->mac_rrc);
+      break;
+    case ngran_gNB:
+      mac_rrc_ul_direct_init(&mac->mac_rrc);
+      break;
+    default:
+      AssertFatal(0 == 1, "Unknown node type %d\n", node_type);
+      break;
+  }
+}
 
-void mac_top_init_gNB(void)
+void mac_top_init_gNB(ngran_node_t node_type)
 {
   module_id_t     i;
   gNB_MAC_INST    *nrmac;
@@ -221,6 +238,8 @@ void mac_top_init_gNB(void)
       }
       if (!IS_SOFTMODEM_NOSTATS_BIT)
         pthread_create(&RC.nrmac[i]->stats_thread, NULL, nrmac_stats_thread, (void*)RC.nrmac[i]);
+
+      mac_rrc_init(RC.nrmac[i], node_type);
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
     AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");

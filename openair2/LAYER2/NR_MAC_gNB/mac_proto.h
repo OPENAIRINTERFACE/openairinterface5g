@@ -36,7 +36,7 @@
 
 void set_cset_offset(uint16_t);
 
-void mac_top_init_gNB(void);
+void mac_top_init_gNB(ngran_node_t node_type);
 
 void config_common(int Mod_idP,
                    int pdsch_AntennaPorts,
