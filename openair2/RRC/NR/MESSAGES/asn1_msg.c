@@ -222,7 +222,15 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   mib->message.choice.mib->spare.size = 1;
   mib->message.choice.mib->spare.bits_unused = 7;  // This makes a spare of 1 bits
 
-  mib->message.choice.mib->ssb_SubcarrierOffset = (configuration->ssb_SubcarrierOffset)&15;
+  AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
+  int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  frequency_range_t frequency_range = band<100?FR1:FR2;
+  int ssb_subcarrier_offset;
+  if(frequency_range == FR1)
+    ssb_subcarrier_offset = (configuration->ssb_SubcarrierOffset<24) ? (configuration->ssb_SubcarrierOffset<<*scc->ssbSubcarrierSpacing) : configuration->ssb_SubcarrierOffset;
+  else
+    ssb_subcarrier_offset = configuration->ssb_SubcarrierOffset;
+  mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset&15;
 
   /*
   * The SIB1 will be sent in this allocation (Type0-PDCCH) : 38.213, 13-4 Table and 38.213 13-11 to 13-14 tables
@@ -236,7 +244,6 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
     mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero;
   }
 
-  AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
   switch (*scc->ssbSubcarrierSpacing) {
   case NR_SubcarrierSpacing_kHz15:
     mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;

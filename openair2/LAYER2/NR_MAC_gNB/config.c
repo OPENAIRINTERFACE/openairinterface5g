@@ -344,21 +344,24 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   uint16_t sco = absolute_diff%(12*scs_scaling);
   // values of subcarrier offset larger than the limit only indicates CORESET for Type0-PDCCH CSS set is not present
-  uint8_t ssb_SubcarrierOffset_limit = 0;
+  int ssb_SubcarrierOffset_limit = 0;
+  int offset_scaling = 0;  //15kHz
   if(frequency_range == FR1) {
     ssb_SubcarrierOffset_limit = 24;
-  } else {
+    if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
+      offset_scaling = cfg->ssb_config.scs_common.value;
+  } else
     ssb_SubcarrierOffset_limit = 12;
-  }
   if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
-    AssertFatal(sco==(scs_scaling * (ssb_SubcarrierOffset>>(cfg->ssb_config.scs_common.value))),"absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+    AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),
+                "absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
   cfg->num_tlv++;
-  cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset>>(cfg->ssb_config.scs_common.value);
+  cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset<<offset_scaling;
   cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
   cfg->num_tlv++;
 
