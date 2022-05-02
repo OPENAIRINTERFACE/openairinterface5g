@@ -1251,34 +1251,36 @@ int main(int argc, char **argv)
           }
         }
 
-
-        if (UE2gNB->max_Doppler == 0) 
-          multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials==1)?1:0);
-        else
-          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
-
-        for (i=0; i<slot_length; i++) {
-          for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-            if (channel_model == AWGN) {
-
-              double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05},   //rx 0
-                                         {0.2, 1.0, 0.2, 0.1},    //rx 1
-                                         {0.1, 0.2, 1.0, 0.2},    //rx 2
-                                         {0.05, 0.1, 0.2, 1.0}};  //rx 3
-
+        // The multipath_channel() function calculates a channel matrix with only 1's. So the channel rank is 1, and we
+        // cannot use multi-layer. To solve this issue, for now we use the H_awgn_mimo matrix for multi-layer.
+        if (precod_nbr_layers == 1) {
+          if (UE2gNB->max_Doppler == 0) {
+            multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials==1)?1:0);
+          } else {
+            multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
+          }
+        } else {
+          double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05},   //rx 0
+                                     {0.2, 1.0, 0.2, 0.1},    //rx 1
+                                     {0.1, 0.2, 1.0, 0.2},    //rx 2
+                                     {0.05, 0.1, 0.2, 1.0}};  //rx 3
+          for (i=0; i<slot_length; i++) {
+            for (ap = 0; ap < frame_parms->nb_antennas_rx; ap++) {
               // sum up signals from different Tx antennas
               r_re[ap][i] = 0;
               r_im[ap][i] = 0;
-             
               for (int aa=0; aa<n_tx; aa++) {
                 r_re[ap][i] += s_re[aa][i]*H_awgn_mimo[ap][aa];
                 r_im[ap][i] += s_im[aa][i]*H_awgn_mimo[ap][aa];
               }
             }
-		
+          }
+        }
+
+        for (i=0; i<slot_length; i++) {
+          for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
             ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)   + (delay*2)] = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
             ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)] = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
-            
             /* Add phase noise if enabled */
             if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
               phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
