@@ -807,21 +807,17 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
     int avg_rho_re[frame_parms->nb_antennas_rx][nrOfLayers*nrOfLayers];
     int avg_rho_im[frame_parms->nb_antennas_rx][nrOfLayers*nrOfLayers];
 
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) 
-    {
-      for (aatx=0; aatx < nrOfLayers; aatx++) 
-      {
-        ul_ch128      = (__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
-      
-        for (int atx=0; atx< nrOfLayers; atx++) 
-        {
+    for (aarx=0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+      for (aatx=0; aatx < nrOfLayers; aatx++) {
+        for (int atx=0; atx< nrOfLayers; atx++) {
+
           avg_rho_re[aarx][aatx*nrOfLayers+atx] = 0;
           avg_rho_im[aarx][aatx*nrOfLayers+atx] = 0;
           rho128        = (__m128i *)&rho[aarx][aatx*nrOfLayers+atx][symbol*(off+(nb_rb*12))];
+          ul_ch128      = (__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
           ul_ch128_2    = (__m128i *)&ul_ch_estimates_ext[atx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
-          for (rb=0; rb<nb_rb_0; rb++) 
-          {
+          for (rb=0; rb<nb_rb_0; rb++) {
             // multiply by conjugated channel
             mmtmpD0 = _mm_madd_epi16(ul_ch128[0],ul_ch128_2[0]);
             //  print_ints("re",&mmtmpD0);
