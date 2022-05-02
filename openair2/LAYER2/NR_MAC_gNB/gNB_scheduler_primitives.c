@@ -579,16 +579,21 @@ void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
     bwpd = (NR_BWP_DownlinkDedicated_t*)bwpd0;
   }
 
-  if (bwpd &&
-      bwpd->pdsch_Config &&
-      bwpd->pdsch_Config->choice.setup &&
-      bwpd->pdsch_Config->choice.setup->mcs_Table) {
-    if (*bwpd->pdsch_Config->choice.setup->mcs_Table == 0)
-      ps->mcsTableIdx = 1;
-    else
-      ps->mcsTableIdx = 2;
+  if (sched_ctrl->update_pdsch_ps == true) {
+    if (bwpd &&
+        bwpd->pdsch_Config &&
+        bwpd->pdsch_Config->choice.setup &&
+        bwpd->pdsch_Config->choice.setup->mcs_Table) {
+      if (*bwpd->pdsch_Config->choice.setup->mcs_Table == 0) {
+        ps->mcsTableIdx = 1;
+      } else {
+        ps->mcsTableIdx = 2;
+      }
+    } else {
+      ps->mcsTableIdx = 0;
+    }
+    sched_ctrl->update_pdsch_ps = false;
   }
-  else ps->mcsTableIdx = 0;
   LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
 
   NR_PDSCH_Config_t *pdsch_Config;
