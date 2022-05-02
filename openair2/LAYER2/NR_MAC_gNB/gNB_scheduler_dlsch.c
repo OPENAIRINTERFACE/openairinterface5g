@@ -1059,14 +1059,13 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id) {
       const uint8_t Qm = nr_get_Qm_dl(mcs, mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(mcs, mcsTableIdx);
       pf_tbs[mcsTableIdx][mcs] = nr_compute_tbs(Qm,
-                                 R,
-                                 1, /* rbSize */
-                                 10, /* hypothetical number of slots */
-                                 0, /* N_PRB_DMRS * N_DMRS_SLOT */
-                                 0 /* N_PRB_oh, 0 for initialBWP */,
-                                 0 /* tb_scaling */,
-                                 1 /* nrOfLayers */)
-                                 >> 3;
+                                                R,
+                                                1, /* rbSize */
+                                                10, /* hypothetical number of slots */
+                                                0, /* N_PRB_DMRS * N_DMRS_SLOT */
+                                                0 /* N_PRB_oh, 0 for initialBWP */,
+                                                0 /* tb_scaling */,
+                                                1 /* nrOfLayers */) >> 3;
     }
   }
 
@@ -1274,15 +1273,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     if (phaseTrackingRS) {
       bool valid_ptrs_setup = set_dl_ptrs_values(phaseTrackingRS->choice.setup,
-                              pdsch_pdu->rbSize,
-                              pdsch_pdu->mcsIndex[0],
-                              pdsch_pdu->mcsTable[0],
-                              &pdsch_pdu->PTRSFreqDensity,
-                              &pdsch_pdu->PTRSTimeDensity,
-                              &pdsch_pdu->PTRSPortIndex,
-                              &pdsch_pdu->nEpreRatioOfPDSCHToPTRS,
-                              &pdsch_pdu->PTRSReOffset,
-                              pdsch_pdu->NrOfSymbols);
+                                                 pdsch_pdu->rbSize,
+                                                 pdsch_pdu->mcsIndex[0],
+                                                 pdsch_pdu->mcsTable[0],
+                                                 &pdsch_pdu->PTRSFreqDensity,
+                                                 &pdsch_pdu->PTRSTimeDensity,
+                                                 &pdsch_pdu->PTRSPortIndex,
+                                                 &pdsch_pdu->nEpreRatioOfPDSCHToPTRS,
+                                                 &pdsch_pdu->PTRSReOffset,
+                                                 pdsch_pdu->NrOfSymbols);
 
       if (valid_ptrs_setup)
         pdsch_pdu->pduBitmap |= 0x1; // Bit 0: pdschPtrs - Indicates PTRS included (FR2)
