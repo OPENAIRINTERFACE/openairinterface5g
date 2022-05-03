@@ -509,6 +509,7 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
+int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl);
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
 void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);
 

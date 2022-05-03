@@ -579,7 +579,11 @@ void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
     bwpd = (NR_BWP_DownlinkDedicated_t*)bwpd0;
   }
 
-  if (sched_ctrl->update_pdsch_ps == true) {
+  // Prevent gNB to enable 256QAM table while the RRCProcessing timer is running.
+  // For example, after the RRC created RRC Reconfiguration message we need to prevent gNB to apply another MCS table
+  // before the RRC Reconfiguration being received by the UE, otherwise UE will not be able to decode PDSCH
+  // and the connection will drop.
+  if (sched_ctrl->rrc_processing_timer == 0) {
     if (bwpd &&
         bwpd->pdsch_Config &&
         bwpd->pdsch_Config->choice.setup &&
@@ -592,7 +596,6 @@ void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
     } else {
       ps->mcsTableIdx = 0;
     }
-    sched_ctrl->update_pdsch_ps = false;
   }
   LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
 
@@ -2812,8 +2815,45 @@ void nr_mac_update_timers(module_id_t module_id,
       sched_ctrl->rrc_processing_timer--;
       if (sched_ctrl->rrc_processing_timer == 0) {
         LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %d\n", frame, slot, UE_id);
-        sched_ctrl->update_pdsch_ps = true;
-        sched_ctrl->update_pusch_ps = true;
+
+        const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+        NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
+
+        NR_BWP_DownlinkDedicated_t *bwpd = UE_info->CellGroup[UE_id] &&
+                                           UE_info->CellGroup[UE_id]->spCellConfig &&
+                                           UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated ?
+                                           UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
+
+        const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
+        const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+        nr_set_pdsch_semi_static(sib1,
+                                 scc,
+                                 UE_info->CellGroup[UE_id],
+                                 sched_ctrl->active_bwp,
+                                 bwpd,
+                                 tda >= 0 ? tda : sched_ctrl->pdsch_semi_static.time_domain_allocation,
+                                 layers,
+                                 sched_ctrl,
+                                 &sched_ctrl->pdsch_semi_static);
+
+        NR_BWP_UplinkDedicated_t *ubwpd = UE_info->CellGroup[UE_id] &&
+                                          UE_info->CellGroup[UE_id]->spCellConfig &&
+                                          UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
+                                          UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig ?
+                                          UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+
+        const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
+        int dci_format = get_dci_format(sched_ctrl);
+        const int utda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
+        nr_set_pusch_semi_static(sib1,
+                                 scc,
+                                 sched_ctrl->active_ubwp,
+                                 ubwpd,
+                                 dci_format,
+                                 utda >= 0 ? utda : sched_ctrl->pusch_semi_static.time_domain_allocation,
+                                 num_dmrs_cdm_grps_no_data,
+                                 &sched_ctrl->pusch_semi_static);
+
       }
     }
   }
