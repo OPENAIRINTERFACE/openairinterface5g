@@ -262,10 +262,6 @@ void *rrc_enb_process_itti_msg(void *);
 #include <openair3/SCTP/sctp_eNB_task.h>
 #include <openair3/NGAP/ngap_gNB.h>
 
-#ifdef ITTI_SIM
-  #include <openair2/COMMON/itti_sim_messages_types.h>
-#endif
-
 /*
   static const char *const messages_definition_xml = {
   #include <messages_xml.h>

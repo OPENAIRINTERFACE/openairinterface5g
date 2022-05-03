@@ -37,9 +37,6 @@
 
 #include "COMMON/s1ap_messages_types.h"
 #include "COMMON/rrc_messages_types.h"
-#if ITTI_SIM
-#include "COMMON/itti_sim_messages_types.h"
-#endif
 
 #include "collection/tree.h"
 #include "rrc_types_NB_IoT.h"
