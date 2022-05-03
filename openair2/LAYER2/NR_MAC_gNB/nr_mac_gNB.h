@@ -46,6 +46,7 @@
 #include "targets/ARCH/COMMON/common_lib.h"
 #include "COMMON/platform_constants.h"
 #include "common/ran_context.h"
+#include "collection/linear_alloc.h"
 
 /* RRC */
 #include "NR_BCCH-BCH-Message.h"
@@ -694,6 +695,7 @@ typedef struct nr_mac_rrc_ul_if_s {
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
   rnti_t rnti;
+  uid_t uid; // unique ID of this UE
   /// scheduling control info
   nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl;
@@ -720,6 +722,7 @@ typedef struct {
   pthread_mutex_t mutex;
   NR_UE_info_t *list[MAX_MOBILES_PER_GNB+1];
   bool sched_csirs;
+  uid_allocator_t uid_allocator;
 } NR_UEs_t;
 
 #define UE_iterator(BaSe, VaR) NR_UE_info_t ** VaR##pptr=BaSe, *VaR; while ((VaR=*(VaR##pptr++)))

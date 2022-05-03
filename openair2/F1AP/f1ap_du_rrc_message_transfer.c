@@ -749,7 +749,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     rnti_t          rntiP,
     const uint8_t   *sduP,
     sdu_size_t      sdu_lenP,
-    const char      *sdu2P,
+    const uint8_t   *sdu2P,
     sdu_size_t      sdu2_lenP) {
   F1AP_F1AP_PDU_t                       pdu= {0};
   F1AP_InitialULRRCMessageTransfer_t    *out;
@@ -808,7 +808,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     ie5->criticality                    = F1AP_Criticality_reject;
     ie5->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_DUtoCURRCContainer;
     OCTET_STRING_fromBuf(&ie5->value.choice.DUtoCURRCContainer,
-                         sdu2P,
+                         (const char *)sdu2P,
                          sdu2_lenP);
   }
   /* mandatory */

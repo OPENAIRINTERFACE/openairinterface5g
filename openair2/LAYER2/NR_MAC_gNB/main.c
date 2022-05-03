@@ -228,6 +228,7 @@ void mac_top_init_gNB(ngran_node_t node_type)
       RC.nrmac[i]->first_MIB = true;
 
       pthread_mutex_init(&RC.nrmac[i]->UE_info.mutex, NULL);
+      uid_linear_allocator_init(&RC.nrmac[i]->UE_info.uid_allocator);
 
       if (get_softmodem_params()->phy_test) {
         RC.nrmac[i]->pre_processor_dl = nr_preprocessor_phytest;

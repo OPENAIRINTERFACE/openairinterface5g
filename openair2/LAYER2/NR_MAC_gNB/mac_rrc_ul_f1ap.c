@@ -25,7 +25,22 @@
 
 static void initial_ul_rrc_message_transfer_f1ap(module_id_t module_id, const f1ap_initial_ul_rrc_message_t *ul_rrc)
 {
-  AssertFatal(0 == 1, "not implemented\n");
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
+  /* copy all fields, but reallocate rrc_containers! */
+  f1ap_initial_ul_rrc_message_t *f1ap_msg = &F1AP_INITIAL_UL_RRC_MESSAGE(msg);
+  *f1ap_msg = *ul_rrc;
+
+  f1ap_msg->rrc_container = malloc(ul_rrc->rrc_container_length);
+  DevAssert(f1ap_msg->rrc_container);
+  memcpy(f1ap_msg->rrc_container, ul_rrc->rrc_container, ul_rrc->rrc_container_length);
+  f1ap_msg->rrc_container_length = ul_rrc->rrc_container_length;
+
+  f1ap_msg->du2cu_rrc_container = malloc(ul_rrc->du2cu_rrc_container_length);
+  DevAssert(f1ap_msg->du2cu_rrc_container);
+  memcpy(f1ap_msg->du2cu_rrc_container, ul_rrc->du2cu_rrc_container, ul_rrc->du2cu_rrc_container_length);
+  f1ap_msg->du2cu_rrc_container_length = ul_rrc->du2cu_rrc_container_length;
+
+  itti_send_msg_to_task(TASK_DU_F1, module_id, msg);
 }
 
 void mac_rrc_ul_f1ap_init(struct nr_mac_rrc_ul_if_s *mac_rrc)

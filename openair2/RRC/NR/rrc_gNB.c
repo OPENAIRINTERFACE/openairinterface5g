@@ -339,10 +339,9 @@ void
 rrc_gNB_generate_RRCSetup(
     const protocol_ctxt_t        *const ctxt_pP,
     rrc_gNB_ue_context_t         *const ue_context_pP,
-    OCTET_STRING_t               *masterCellGroup_from_DU,
-    NR_ServingCellConfigCommon_t *scc,
-    const int                    CC_id
-)
+    const uint8_t                *masterCellGroup,
+    int                           masterCellGroup_len,
+    NR_ServingCellConfigCommon_t *scc)
 //-----------------------------------------------------------------------------
 {
   LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup for RNTI %04x\n", ctxt_pP->rnti);
@@ -355,16 +354,15 @@ rrc_gNB_generate_RRCSetup(
 
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
-  NR_ServingCellConfig_t *servingcellconfigdedicated = rrc->configuration.scd;
-  int16_t ret = do_RRCSetup(ue_context_pP,
-                            (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
-                            rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
-                            masterCellGroup_from_DU,
-                            scc,servingcellconfigdedicated,&rrc->configuration);
-
-  AssertFatal(ret>0,"Error generating RRCSetup for RRCSetupRequest\n");
-
-  ue_p->Srb0.Tx_buffer.payload_size = ret;
+  const NR_ServingCellConfig_t *sccd = rrc->configuration.scd;
+  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
+                                                  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
+                                                  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
+                                                  masterCellGroup,
+                                                  masterCellGroup_len,
+                                                  scc,
+                                                  sccd,
+                                                  &rrc->configuration);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -400,8 +398,8 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   LOG_I(NR_RRC, "generate RRCSetup for RRCReestablishmentRequest \n");
   rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
   gNB_RRC_INST                 *rrc_instance_p = RC.nrrrc[ctxt_pP->module_id];
-  NR_ServingCellConfigCommon_t *scc=rrc_instance_p->carrier.servingcellconfigcommon;
-  NR_ServingCellConfig_t       *servingcellconfigdedicated = rrc_instance_p->configuration.scd;
+  const NR_ServingCellConfigCommon_t *scc=rrc_instance_p->carrier.servingcellconfigcommon;
+  const NR_ServingCellConfig_t       *sccd = rrc_instance_p->configuration.scd;
 
   ue_context_pP = rrc_gNB_get_next_free_ue_context(ctxt_pP, rrc_instance_p, 0);
 
@@ -410,7 +408,10 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                             (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
                             rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
                             NULL,
-                            scc,servingcellconfigdedicated,&rrc_instance_p->configuration);
+                            0,
+                            scc,
+                            sccd,
+                            &rrc_instance_p->configuration);
 
   AssertFatal(ret>0,"Error generating RRCSetup for RRCReestablishmentRequest\n");
 
@@ -452,9 +453,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
 void
 rrc_gNB_generate_RRCReject(
     const protocol_ctxt_t    *const ctxt_pP,
-    rrc_gNB_ue_context_t     *const ue_context_pP,
-    const int                CC_id
-)
+    rrc_gNB_ue_context_t     *const ue_context_pP)
 //-----------------------------------------------------------------------------
 {
   LOG_I(NR_RRC, "rrc_gNB_generate_RRCReject \n");
@@ -1859,8 +1858,8 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
 int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,
                            int                buffer_length,
-                           OCTET_STRING_t     *du_to_cu_rrc_container,
-                           const int          CC_id)
+                           const uint8_t      *du_to_cu_rrc_container,
+                           int                du_to_cu_rrc_container_len)
 {
   module_id_t                                       Idx;
   asn_dec_rval_t                                    dec_rval;
@@ -1870,22 +1869,16 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
   NR_RRCSetupRequest_IEs_t                         *rrcSetupRequest = NULL;
   NR_RRCReestablishmentRequest_IEs_t                rrcReestablishmentRequest;
   uint64_t                                          random_value = 0;
-  int i;
 
-    dec_rval = uper_decode( NULL,
-                            &asn_DEF_NR_UL_CCCH_Message,
-                            (void **)&ul_ccch_msg,
-                            (uint8_t *) buffer,
-                            100,
-                            0,
-                            0);
+  LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, inst %ld, payload_size %d\n", ctxt_pP->rnti, ctxt_pP->instance, buffer_length);
+  dec_rval = uper_decode(NULL, &asn_DEF_NR_UL_CCCH_Message, (void **) &ul_ccch_msg, buffer, buffer_length, 0, 0);
 
-    if (dec_rval.consumed == 0) {
-        /* TODO */
-        LOG_E(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" FATAL Error in receiving CCCH\n",
-                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-        return -1;
-    }
+  if (dec_rval.code != RC_OK || dec_rval.consumed == 0) {
+    LOG_E(NR_RRC,
+          PROTOCOL_NR_RRC_CTXT_UE_FMT" FATAL Error in receiving CCCH\n",
+          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
+    return -1;
+  }
 
     if (ul_ccch_msg->message.present == NR_UL_CCCH_MessageType_PR_c1) {
      switch (ul_ccch_msg->message.choice.c1->present) {
@@ -1991,8 +1984,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                     PROTOCOL_NR_RRC_CTXT_UE_FMT" RRCSetupRequest without random UE identity or S-TMSI not supported, let's reject the UE\n",
                     PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
             rrc_gNB_generate_RRCReject(ctxt_pP,
-                                       rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
-                                       CC_id);
+                                       rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti));
             break;
           }
 
@@ -2001,8 +1993,8 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           rrc_gNB_generate_RRCSetup(ctxt_pP,
                                     rrc_gNB_get_ue_context(gnb_rrc_inst, ctxt_pP->rnti),
                                     du_to_cu_rrc_container,
-                                    gnb_rrc_inst->carrier.servingcellconfigcommon,
-                                    CC_id);
+                                    du_to_cu_rrc_container_len,
+                                    gnb_rrc_inst->carrier.servingcellconfigcommon);
         }
         break;
 
@@ -2034,13 +2026,13 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
                   rrcReestablishmentRequest.ue_Identity.physCellId,
                   RC.nrrrc[ctxt_pP->module_id]->carrier.physCellId);
-            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, CC_id);
+            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, 0);
             break;
           }
 
           LOG_D(NR_RRC, "physCellId is %ld\n", rrcReestablishmentRequest.ue_Identity.physCellId);
 
-          for (i = 0; i < rrcReestablishmentRequest.ue_Identity.shortMAC_I.size; i++) {
+          for (int i = 0; i < rrcReestablishmentRequest.ue_Identity.shortMAC_I.size; i++) {
             LOG_D(NR_RRC, "rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[%d] = %x\n",
                   i, rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[i]);
           }
@@ -2051,7 +2043,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             LOG_E(NR_RRC,
                   PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest c_RNTI range error, fallback to RRC establishment\n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, CC_id);
+            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, 0);
             break;
           }
 
@@ -2063,7 +2055,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             LOG_E(NR_RRC,
                   PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest without UE context, fallback to RRC establishment\n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, CC_id);
+            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, 0);
             break;
           }
 #if(0)
@@ -2074,14 +2066,14 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             LOG_E(NR_RRC,
                   PROTOCOL_NR_RRC_CTXT_UE_FMT" NR_RRCReestablishmentRequest without UE_id(MAC) rnti %x, fallback to RRC establishment\n",
                   PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
-            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, CC_id);
+            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, 0);
             break;
           }
 
           //previous rnti
           rnti_t previous_rnti = 0;
 
-          for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+          for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
             if (reestablish_rnti_map[i][1] == c_rnti) {
               previous_rnti = reestablish_rnti_map[i][0];
               break;
@@ -2095,7 +2087,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
               LOG_E(NR_RRC,
                     PROTOCOL_NR_RRC_CTXT_UE_FMT" RRCReestablishmentRequest without UE_id(MAC) previous rnti %x, fallback to RRC establishment\n",
                     PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),previous_rnti);
-              rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, CC_id);
+              rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(ctxt_pP, 0);
               break;
             }
           }
@@ -2149,7 +2141,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           ue_context_p->ue_context.reestablishment_xid = -1;
 
           // insert C-RNTI to map
-          for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+          for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
             if (reestablish_rnti_map[i][0] == 0) {
               reestablish_rnti_map[i][0] = ctxt_pP->rnti;
               reestablish_rnti_map[i][1] = c_rnti;
@@ -2165,7 +2157,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                 rrcReestablishmentRequest.ue_Identity.physCellId,
                 ue_context_p->ue_context.reestablishment_cause);
 
-          ue_context_p->ue_context.primaryCC_id = CC_id;
+          ue_context_p->ue_context.primaryCC_id = 0;
           //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
           Idx = DCCH;
           // SRB1
@@ -2187,7 +2179,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                 &DCCH_LCHAN_DESC,
                 LCHAN_DESC_SIZE);
 
-          rrc_gNB_generate_RRCReestablishment(ctxt_pP, ue_context_p, CC_id);
+          rrc_gNB_generate_RRCReestablishment(ctxt_pP, ue_context_p, 0);
 
           LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT"CALLING RLC CONFIG SRB1 (rbid %d)\n",
                 PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -2875,6 +2867,38 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 
     // handle other failure cases
   }//for (int i=0;i<f1_setup_req->num_cells_available;i++)
+}
+
+void rrc_gNB_process_initial_ul_rrc_message(const f1ap_initial_ul_rrc_message_t *ul_rrc)
+{
+  // first get RRC instance (note, no the ITTI instance)
+  module_id_t i = 0;
+  for (i=0; i < RC.nb_nr_inst; i++) {
+    gNB_RRC_INST *rrc = RC.nrrrc[i];
+    if (rrc->nr_cellid == ul_rrc->nr_cellid)
+      break;
+  }
+  //AssertFatal(i != RC.nb_nr_inst, "Cell_id not found\n");
+  // TODO REMOVE_DU_RRC in monolithic mode, the MAC does not have the
+  // nr_cellid. Thus, the above check would fail. For the time being, just put
+  // a warning, as we handle one DU only anyway
+  if (i == RC.nb_nr_inst) {
+    i = 0;
+    LOG_W(RRC, "initial UL RRC message nr_cellid %ld does not match RRC's %ld\n", ul_rrc->nr_cellid, RC.nrrrc[0]->nr_cellid);
+  }
+  protocol_ctxt_t ctxt = { 0 };
+  PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, i, GNB_FLAG_YES, ul_rrc->crnti, 0, 0);
+
+  nr_rrc_gNB_decode_ccch(&ctxt,
+                         ul_rrc->rrc_container,
+                         ul_rrc->rrc_container_length,
+                         ul_rrc->du2cu_rrc_container,
+                         ul_rrc->du2cu_rrc_container_length);
+
+  if (ul_rrc->rrc_container)
+    free(ul_rrc->rrc_container);
+  if (ul_rrc->du2cu_rrc_container)
+    free(ul_rrc->du2cu_rrc_container);
 }
 
 void rrc_gNB_process_release_request(const module_id_t gnb_mod_idP, x2ap_ENDC_sgnb_release_request_t *m)
@@ -3897,49 +3921,11 @@ void *rrc_gnb_task(void *args_p) {
         nr_rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
         break;
 
-      /* Messages from MAC */
-      case NR_RRC_MAC_CCCH_DATA_IND:
-	{
-	  instance_t i;
-	  for (i=0; i<RC.nb_nr_inst; i++) {
-	    // first get RRC instance (note, no the ITTI instance)
-	    gNB_RRC_INST *rrc = RC.nrrrc[i];
-	    
-	    if (rrc->nr_cellid == NR_RRC_MAC_CCCH_DATA_IND(msg_p).nr_cellid)
-	      break;
-	  }
-	  AssertFatal(i!=RC.nb_nr_inst, "Cell_id not found\n");
-	  PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-					i,
-					GNB_FLAG_YES,
-					NR_RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
-					msg_p->ittiMsgHeader.lte_time.frame,
-					msg_p->ittiMsgHeader.lte_time.slot);
-	  LOG_I(NR_RRC,"Decoding CCCH : ue %d, inst %ld, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
-		ctxt.rnti,
-		i,
-		NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
-		&ctxt,
-		NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
-	  
-	  if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= CCCH_SDU_SIZE) {
-	    LOG_I(NR_RRC, "CCCH message has size %d > %d\n",
-		  NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,CCCH_SDU_SIZE);
-	    break;
-	  }
-
-	  nr_rrc_gNB_decode_ccch(&ctxt,
-				 (uint8_t *)NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
-				 NR_RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
-				 NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container,
-				 NR_RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
-	  
-	  if (NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container) {
-	    free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container->buf);
-	    free(NR_RRC_MAC_CCCH_DATA_IND(msg_p).du_to_cu_rrc_container);
-	  }
-	}
-      break;
+      case F1AP_INITIAL_UL_RRC_MESSAGE:
+        AssertFatal(NODE_IS_CU(RC.nrrrc[instance]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[instance]->node_type),
+                    "should not receive F1AP_INITIAL_UL_RRC_MESSAGE, need call by CU!\n");
+        rrc_gNB_process_initial_ul_rrc_message(&F1AP_INITIAL_UL_RRC_MESSAGE(msg_p));
+        break;
 
       /* Messages from PDCP */
       case NR_RRC_DCCH_DATA_IND:

@@ -62,7 +62,6 @@
 
 #define F1AP_MAX_NO_OF_TNL_ASSOCIATIONS 32
 #define F1AP_MAX_NO_UE_ID 1024
-#define F1AP_MAX_DU2CU_RRC_LENGTH 1024
 
 typedef struct f1ap_net_ip_address_s {
   unsigned ipv4:1;
@@ -310,7 +309,7 @@ typedef struct f1ap_initial_ul_rrc_message_s {
   uint16_t crnti;
   uint8_t *rrc_container;
   int      rrc_container_length;
-  char     du2cu_rrc_container[F1AP_MAX_DU2CU_RRC_LENGTH];
+  uint8_t *du2cu_rrc_container;
   int      du2cu_rrc_container_length;
 } f1ap_initial_ul_rrc_message_t;
 

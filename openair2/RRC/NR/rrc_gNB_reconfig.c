@@ -82,9 +82,9 @@ void fix_servingcellconfigdedicated(NR_ServingCellConfig_t *scd) {
 
 void fill_default_nsa_downlinkBWP(NR_BWP_Downlink_t *bwp,
                                   long bwp_loop,
-                                  NR_CellGroupConfig_t *secondaryCellGroup,
-                                  NR_ServingCellConfig_t *servingcellconfigdedicated,
-                                  NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                                  const NR_CellGroupConfig_t *secondaryCellGroup,
+                                  const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                  const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                                   const gNB_RrcConfigurationReq *configuration,
                                   NR_UE_NR_Capability_t *uecap,
                                   int dl_antenna_ports,
