@@ -523,6 +523,10 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     }
     free_and_zero(ue->nr_csi_rs_info->noise_power);
     free_and_zero(ue->nr_csi_rs_info->rank_indicator);
+    free_and_zero(ue->nr_csi_rs_info->i1);
+    free_and_zero(ue->nr_csi_rs_info->i2);
+    free_and_zero(ue->nr_csi_rs_info->precoded_sinr_dB);
+    free_and_zero(ue->nr_csi_rs_info->cqi);
     free_and_zero(ue->nr_csi_rs_info->nr_gold_csi_rs);
     free_and_zero(ue->nr_csi_rs_info->csi_rs_generated_signal);
     free_and_zero(ue->nr_csi_rs_info->csi_rs_received_signal);
