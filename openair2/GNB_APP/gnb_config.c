@@ -383,7 +383,7 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   *scd->defaultDownlinkBWP_Id = 0;
 
 for (int j = 0; j < NR_MAX_NUM_BWP; j++) {
-  
+
   // Downlink bandwidth part
   NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
   bwp->bwp_Id = j+1;
@@ -1030,7 +1030,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   prepare_scd(scd);
   paramdef_t SCDsParams[] = SCDPARAMS_DESC(scd);
   paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
-  
+
    ////////// Physical parameters
 
   /* get global parameters, defined outside any section in the config file */
@@ -2114,8 +2114,7 @@ void configure_gnb_du_mac(int inst) {
                         NULL,
                         0,
                         0, // rnti
-                        NULL,
-                        0);
+                        NULL);
 }
 
 

@@ -832,6 +832,13 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   default :
     LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
   }
+
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1089,6 +1096,13 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1285,6 +1299,13 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1408,6 +1429,13 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1989,6 +2017,13 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
       buffer,
       PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+  }
+
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
   }
 }
 //-----------------------------------------------------------------------------

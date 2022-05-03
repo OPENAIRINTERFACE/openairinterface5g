@@ -46,6 +46,11 @@ void config_common(int Mod_idP,
                    int pusch_AntennaPorts,
                    NR_ServingCellConfigCommon_t *scc);
 
+int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
+                                          rnti_t rnti,
+                                          NR_SubcarrierSpacing_t subcarrierSpacing,
+                                          uint32_t rrc_reconfiguration_delay);
+
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
                            rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
@@ -509,6 +514,7 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
+int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl);
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
 void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);
 
