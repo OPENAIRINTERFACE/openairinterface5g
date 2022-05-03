@@ -1359,8 +1359,7 @@ int main(int argc, char **argv)
       LOG_M("rxsigF0_llrlayers0.m","rxsF0_llrlayers0",
             &gNB->pusch_vars[0]->llr_layers[0][0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
     
-      if (precod_nbr_layers==2)
-      {
+      if (precod_nbr_layers==2) {
          LOG_M("rxsigF1_ext.m","rxsF1_ext",
             &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 			  
@@ -1379,8 +1378,7 @@ int main(int argc, char **argv)
 
         }
         
-        if (precod_nbr_layers==4)
-        {
+        if (precod_nbr_layers==4) {
           LOG_M("rxsigF1_ext.m","rxsF1_ext",
             &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
          LOG_M("rxsigF2_ext.m","rxsF2_ext",

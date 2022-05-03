@@ -459,9 +459,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   if ((target_ul_Nl==4)||(target_ul_Nl==3))
-  {
     num_dmrs_cdm_grps_no_data = 2;
-  }
   
   /* we want to avoid a lengthy deduction of DMRS and other parameters in
    * every TTI if we can save it, so check whether dci_format, TDA, or

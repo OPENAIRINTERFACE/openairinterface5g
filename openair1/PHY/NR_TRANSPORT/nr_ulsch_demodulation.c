@@ -478,17 +478,14 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
   int off = 0;
 #endif
 
-  for (aatx = 0; aatx < nrOfLayers; aatx++)
-  {
-    for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) 
-    {
+  for (aatx = 0; aatx < nrOfLayers; aatx++) {
+    for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128U = _mm_setzero_si128();
 
       ul_ch128=(__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
-      for (rb = 0; rb < nb_rb_0; rb++) 
-	  {
+      for (rb = 0; rb < nb_rb_0; rb++) {
         avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[0], ul_ch128[0]), x));
         avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[1], ul_ch128[1]), x));
         avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[2], ul_ch128[2]), x));
@@ -499,10 +496,9 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                                                     ((int32_t*)&avg128U)[1] +
                                                     ((int32_t*)&avg128U)[2] +
                                                     ((int32_t*)&avg128U)[3]) / y;
-
     }
   }
-   
+
   _mm_empty();
   _m_empty();
 
@@ -637,23 +633,19 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
   QAM_amp128b = _mm_setzero_si128();
 
   uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
-  for (aatx=0; aatx<nrOfLayers; aatx++)
-  {
-    if (mod_order == 4) 
-    {
+  for (aatx=0; aatx<nrOfLayers; aatx++) {
+    if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = _mm_setzero_si128();
     } 
-    else if (mod_order == 6)
-    {
+    else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1); //
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
     }
 
     //    printf("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
 
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) 
-    {
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)  {
       ul_ch128          = (__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
       ul_ch_mag128      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
       ul_ch_mag128b     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
@@ -661,10 +653,8 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
       rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
 
-      for (rb=0; rb<nb_rb_0; rb++) 
-      {
-        if (mod_order>2) 
-        {
+      for (rb=0; rb<nb_rb_0; rb++) {
+        if (mod_order>2) {
           // get channel amplitude if not QPSK
 
           //print_shorts("ch:",(int16_t*)&ul_ch128[0]);
@@ -1164,8 +1154,7 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
   int off = 0;
 #endif
 
-  if (n_rx > 1) 
-  {
+  if (n_rx > 1) {
     #if defined(__x86_64__) || defined(__i386__)
     for (int aatx=0; aatx<nrOfLayers; aatx++) {
       int nb_re = nb_rb*12;
@@ -1174,15 +1163,13 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
       ul_ch_mag128[0]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
       ul_ch_mag128b[0]     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
 
-      for (int aa=1;aa < n_rx;aa++) 
-      {
+      for (int aa=1;aa < n_rx;aa++) {
         rxdataF_comp128[1]   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
         ul_ch_mag128[1]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
         ul_ch_mag128b[1]     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
       
         // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
-        for (i=0; i<nb_rb_0*3; i++) 
-        {
+        for (i=0; i<nb_rb_0*3; i++) {
             rxdataF_comp128[0][i] = _mm_adds_epi16(rxdataF_comp128[0][i],rxdataF_comp128[1][i]);
             ul_ch_mag128[0][i]    = _mm_adds_epi16(ul_ch_mag128[0][i],ul_ch_mag128[1][i]);
             ul_ch_mag128b[0][i]   = _mm_adds_epi16(ul_ch_mag128b[0][i],ul_ch_mag128b[1][i]);
@@ -1933,18 +1920,15 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
   //--------------------- Channel estimation ---------------------
   //----------------------------------------------------------
   start_meas(&gNB->ulsch_channel_estimation_stats);
-  for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) 
-  {
+  for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
     LOG_D(PHY, "symbol %d, dmrs_symbol_flag :%d\n", symbol, dmrs_symbol_flag);
     
-    if (dmrs_symbol_flag == 1) 
-    {
+    if (dmrs_symbol_flag == 1) {
       if (gNB->pusch_vars[ulsch_id]->dmrs_symbol == INVALID_VALUE)
         gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
 
-      for (int nl=0; nl<rel15_ul->nrOfLayers; nl++)
-      {
+      for (int nl=0; nl<rel15_ul->nrOfLayers; nl++) {
         
         nr_pusch_channel_estimation(gNB,
                                     slot,
@@ -1984,29 +1968,24 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
 #endif
   uint32_t rxdataF_ext_offset = 0;
 
-  for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) 
-  {
+  for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
-    if (dmrs_symbol_flag == 1) 
-    {
+    if (dmrs_symbol_flag == 1) {
       if ((rel15_ul->ul_dmrs_symb_pos >> ((symbol + 1) % frame_parms->symbols_per_slot)) & 0x01)
         AssertFatal(1==0,"Double DMRS configuration is not yet supported\n");
 
       gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
 
-      if (rel15_ul->dmrs_config_type == 0) 
-      {
+      if (rel15_ul->dmrs_config_type == 0) {
         // if no data in dmrs cdm group is 1 only even REs have no data
         // if no data in dmrs cdm group is 2 both odd and even REs have no data
         nb_re_pusch = rel15_ul->rb_size *(12 - (rel15_ul->num_dmrs_cdm_grps_no_data*6));
       }
-      else 
-      {
+      else {
         nb_re_pusch = rel15_ul->rb_size *(12 - (rel15_ul->num_dmrs_cdm_grps_no_data*4));
       }
     } 
-    else 
-    {
+    else {
       nb_re_pusch = rel15_ul->rb_size * NR_NB_SC_PER_RB;
     }
 
@@ -2016,8 +1995,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     //----------------------------------------------------------
     //--------------------- RBs extraction ---------------------
     //----------------------------------------------------------
-    if (nb_re_pusch > 0) 
-    {
+    if (nb_re_pusch > 0) {
       start_meas(&gNB->ulsch_rbs_extraction_stats);
       nr_ulsch_extract_rbs(gNB->common_vars.rxdataF,
                            gNB->pusch_vars[ulsch_id],
@@ -2104,8 +2082,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                    nb_re_pusch);
       stop_meas(&gNB->ulsch_mrc_stats);
 
-      if (rel15_ul->transformPrecoder == transformPrecoder_enabled)      
-      {
+      if (rel15_ul->transformPrecoder == transformPrecoder_enabled) {
          #ifdef __AVX2__
         // For odd number of resource blocks need byte alignment to multiple of 8
         int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
@@ -2123,8 +2100,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       //----------------------------------------------------------
       /* In case PTRS is enabled then LLR will be calculated after PTRS symbols are processed *
       * otherwise LLR are calculated for each symbol based upon DMRS channel estimates only. */
-      if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) 
-      {
+      if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
         start_meas(&gNB->ulsch_ptrs_processing_stats);
         nr_pusch_ptrs_processing(gNB,
                                  frame_parms,
@@ -2143,8 +2119,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       /*--------------------  LLRs computation  -------------------------------------------------------------*/
       /*-----------------------------------------------------------------------------------------------------*/
       start_meas(&gNB->ulsch_llr_stats);
-      for (aatx=0; aatx < rel15_ul->nrOfLayers; aatx++)
-      {
+      for (aatx=0; aatx < rel15_ul->nrOfLayers; aatx++) {
         nr_ulsch_compute_llr(&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aatx*frame_parms->nb_antennas_rx][symbol * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
                              gNB->pusch_vars[ulsch_id]->ul_ch_mag0[aatx*frame_parms->nb_antennas_rx],
                              gNB->pusch_vars[ulsch_id]->ul_ch_magb0[aatx*frame_parms->nb_antennas_rx],

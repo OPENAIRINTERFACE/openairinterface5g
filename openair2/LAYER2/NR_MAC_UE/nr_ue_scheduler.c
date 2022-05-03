@@ -231,8 +231,7 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
     if (n_antenna_port == 1); // 1 antenna port and the higher layer parameter txConfig = codebook 0 bits
 
-    if (n_antenna_port == 4)
-    { // 4 antenna port and the higher layer parameter txConfig = codebook
+    if (n_antenna_port == 4) { // 4 antenna port and the higher layer parameter txConfig = codebook
 
       // Table 7.3.1.1.2-2: transformPrecoder=disabled and maxRank = 2 or 3 or 4
       if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled)
@@ -259,8 +258,7 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
       // Table 7.3.1.1.2-3: transformPrecoder= enabled, or transformPrecoder=disabled and maxRank = 1
       if (((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled)
         || (transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled))
-        && (*pusch_Config->maxRank == 1))
-      {
+        && (*pusch_Config->maxRank == 1)) {
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][6];
@@ -279,11 +277,10 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
       }
     }
 
-    if (n_antenna_port == 2)
-    { // 2 antenna port and the higher layer parameter txConfig = codebook
+    if (n_antenna_port == 2) {
+      // 2 antenna port and the higher layer parameter txConfig = codebook
       // Table 7.3.1.1.2-4: transformPrecoder=disabled and maxRank = 2
-      if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank == 2))
-      {
+      if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank == 2)) {
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][12];
           pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][13];
@@ -299,8 +296,7 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
       // Table 7.3.1.1.2-5: transformPrecoder= enabled, or transformPrecoder= disabled and maxRank = 1
       if (((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled)
         || (transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled))
-        && (*pusch_Config->maxRank == 1))
-      {
+        && (*pusch_Config->maxRank == 1)) {
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][16];

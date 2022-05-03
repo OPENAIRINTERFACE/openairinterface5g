@@ -1011,13 +1011,9 @@ void config_uldci(const NR_SIB1_t *sib1,
       }
       dci_pdu_rel15->precoding_information.val= 0;
       if (pusch_pdu->nrOfLayers == 2)
-      {
         dci_pdu_rel15->precoding_information.val = 4;
-      }
       else if (pusch_pdu->nrOfLayers == 4)
-      {
         dci_pdu_rel15->precoding_information.val = 11;
-      }
 
       // antenna_ports.val = 0 for transform precoder is disabled, dmrs-Type=1, maxLength=1, Rank=1/2/3/4 
       // Antenna Ports

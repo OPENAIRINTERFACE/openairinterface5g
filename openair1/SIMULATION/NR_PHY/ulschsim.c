@@ -444,9 +444,7 @@ int main(int argc, char **argv)
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0];
 
   if ((Nl==4)||(Nl==3))
-  {
     nb_re_dmrs = nb_re_dmrs*2;
-  }
 
   mod_order = nr_get_Qm_ul(Imcs, 0);
   code_rate = nr_get_code_rate_ul(Imcs, 0);
