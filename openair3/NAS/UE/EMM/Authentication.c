@@ -149,8 +149,7 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   int rc = RETURNerror;
   authentication_data_t *authentication_data = user->authentication_data;
   emm_timers_t *emm_timers = user->emm_data->emm_timers;
-  uint8_t nullRand[AUTH_CK_SIZE];
-  memset(nullRand, 0, AUTH_CK_SIZE);
+
   LOG_TRACE(INFO, "EMM-PROC  - Authentication requested ksi type = %s, ksi = %d", native_ksi ? "native" : "mapped", ksi);
 
   /* 3GPP TS 24.301, section 5.4.2.1
