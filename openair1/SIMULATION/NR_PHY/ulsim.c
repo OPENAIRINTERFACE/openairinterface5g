@@ -1237,7 +1237,9 @@ int main(int argc, char **argv)
         n_trials = 1;
 
       if (input_fd == NULL) {
-        sigma_dB = 10 * log10((double)txlev_sum * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
+        // Justification of division by precod_nbr_layers:
+        // When the channel is the identity matrix, the results in terms of SNR should be almost equal for 2x2 and 4x4.
+        sigma_dB = 10 * log10((double)txlev_sum/precod_nbr_layers * ((double)frame_parms->ofdm_symbol_size/(12*nb_rb))) - SNR;;
         sigma    = pow(10,sigma_dB/10);
 
 
