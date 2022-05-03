@@ -230,7 +230,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->Nb_ue = 0;
   rrc->carrier.Srb0.Active = 0;
   rrc_gNB_mac_rrc_init(rrc);
-  nr_uid_linear_allocator_init(&rrc->uid_allocator);
+  uid_linear_allocator_init(&rrc->uid_allocator);
   RB_INIT(&rrc->rrc_ue_head);
   rrc->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
