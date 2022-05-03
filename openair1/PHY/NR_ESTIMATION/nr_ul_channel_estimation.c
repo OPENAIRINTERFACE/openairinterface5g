@@ -169,7 +169,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     gNB->pusch_gold_init[pusch_pdu->scid] = pusch_pdu->ul_dmrs_scrambling_id;
     nr_gold_pusch(gNB, pusch_pdu->scid, pusch_pdu->ul_dmrs_scrambling_id);
   }
-  if (pusch_pdu->transformPrecoder == transformPrecoder_disabled) {
+  if (pusch_pdu->transform_precoding == transformPrecoder_disabled) {
     nr_pusch_dmrs_rx(gNB, Ns, gNB->nr_gold_pusch_dmrs[pusch_pdu->scid][Ns][symbol], &pilot[0], (1000+p), 0, nb_rb_pusch,
                      (pusch_pdu->bwp_start + pusch_pdu->rb_start)*NR_NB_SC_PER_RB, pusch_pdu->dmrs_config_type);
   }

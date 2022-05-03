@@ -2082,7 +2082,7 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
                                    nb_re_pusch);
       stop_meas(&gNB->ulsch_mrc_stats);
 
-      if (rel15_ul->transformPrecoder == transformPrecoder_enabled) {
+      if (rel15_ul->transform_precoding == transformPrecoder_enabled) {
          #ifdef __AVX2__
         // For odd number of resource blocks need byte alignment to multiple of 8
         int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);

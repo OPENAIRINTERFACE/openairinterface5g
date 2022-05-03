@@ -947,7 +947,7 @@ static uint8_t pack_ul_tti_request_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu, ui
         push8(pusch_pdu->qam_mod_order, ppWritePackedMsg, end) &&
         push8(pusch_pdu->mcs_index, ppWritePackedMsg, end) &&
         push8(pusch_pdu->mcs_table, ppWritePackedMsg, end) &&
-        push8(pusch_pdu->transformPrecoder, ppWritePackedMsg, end) &&
+        push8(pusch_pdu->transform_precoding, ppWritePackedMsg, end) &&
         push16(pusch_pdu->data_scrambling_id, ppWritePackedMsg, end) &&
         push8(pusch_pdu->nrOfLayers, ppWritePackedMsg, end) &&
         push16(pusch_pdu->ul_dmrs_symb_pos, ppWritePackedMsg, end) &&
@@ -4481,7 +4481,7 @@ static uint8_t unpack_ul_tti_request_pusch_pdu(void *tlv, uint8_t **ppReadPacked
         pull8(ppReadPackedMsg, &pusch_pdu->qam_mod_order,  end) &&
         pull8(ppReadPackedMsg, &pusch_pdu->mcs_index,  end) &&
         pull8(ppReadPackedMsg, &pusch_pdu->mcs_table, end) &&
-        pull8(ppReadPackedMsg, &pusch_pdu->transformPrecoder, end) &&
+        pull8(ppReadPackedMsg, &pusch_pdu->transform_precoding, end) &&
         pull16(ppReadPackedMsg, &pusch_pdu->data_scrambling_id, end) &&
         pull8(ppReadPackedMsg, &pusch_pdu->nrOfLayers, end) &&
         pull16(ppReadPackedMsg, &pusch_pdu->ul_dmrs_symb_pos, end) &&

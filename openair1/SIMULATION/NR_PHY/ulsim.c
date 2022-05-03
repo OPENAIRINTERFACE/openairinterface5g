@@ -323,7 +323,7 @@ int main(int argc, char **argv)
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
 
-  uint8_t transformPrecoder = transformPrecoder_disabled; // 0 - ENABLE, 1 - DISABLE
+  uint8_t transform_precoding = transformPrecoder_disabled; // 0 - ENABLE, 1 - DISABLE
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   uint8_t mcs_table = 0;
 
@@ -581,10 +581,10 @@ int main(int argc, char **argv)
       break;
 
     case 'Z':
-      transformPrecoder = transformPrecoder_enabled; 
+      transform_precoding = transformPrecoder_enabled;
       num_dmrs_cdm_grps_no_data = 2;
       mcs_table = 3;
-      printf("NOTE: TRANSFORM PRECODING (SC-FDMA) is ENABLED in UPLINK (0 - ENABLE, 1 - DISABLE) : %d \n",  transformPrecoder);
+      printf("NOTE: TRANSFORM PRECODING (SC-FDMA) is ENABLED in UPLINK (0 - ENABLE, 1 - DISABLE) : %d \n", transform_precoding);
       break;
 
     default:
@@ -879,7 +879,7 @@ int main(int argc, char **argv)
   if ((UE->frame_parms.nb_antennas_tx==4)&&(precod_nbr_layers==4))
     num_dmrs_cdm_grps_no_data = 2;
   
-  if (transformPrecoder == transformPrecoder_enabled) {  
+  if (transform_precoding == transformPrecoder_enabled) {
 
     AssertFatal(enable_ptrs == 0, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
 
@@ -1084,7 +1084,7 @@ int main(int argc, char **argv)
       pusch_pdu->mcs_table = mcs_table;
       pusch_pdu->target_code_rate = code_rate;
       pusch_pdu->qam_mod_order = mod_order;
-      pusch_pdu->transformPrecoder = transformPrecoder;
+      pusch_pdu->transform_precoding = transform_precoding;
       pusch_pdu->data_scrambling_id = *scc->physCellId;
       pusch_pdu->nrOfLayers = precod_nbr_layers;
       pusch_pdu->ul_dmrs_symb_pos = l_prime_mask;
@@ -1111,7 +1111,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
       // if transform precoding is enabled
-      if (transformPrecoder == transformPrecoder_enabled) { 
+      if (transform_precoding == transformPrecoder_enabled) {
 
         pusch_pdu->dfts_ofdm.low_papr_group_number = *scc->physCellId % 30; // U as defined in 38.211 section 6.4.1.1.1.2 
         pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;     // V as defined in 38.211 section 6.4.1.1.1.2
@@ -1171,10 +1171,10 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list = (nfapi_nr_ue_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ue_ptrs_ports_t));
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
 
-      ul_config.ul_config_list[0].pusch_config_pdu.transformPrecoder = transformPrecoder;
+      ul_config.ul_config_list[0].pusch_config_pdu.transform_precoding = transform_precoding;
 
       // if transform precoding is enabled
-      if (transformPrecoder == transformPrecoder_enabled) {
+      if (transform_precoding == transformPrecoder_enabled) {
    
         ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_group_number = *scc->physCellId % 30;// U as defined in 38.211 section 6.4.1.1.1.2 
         ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_sequence_number = 0;// V as defined in 38.211 section 6.4.1.1.1.2

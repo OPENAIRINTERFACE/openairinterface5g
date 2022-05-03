@@ -282,7 +282,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
   int32_t y[max_num_re] __attribute__ ((aligned(16)));
 
-  if (pusch_pdu->transformPrecoder == transformPrecoder_enabled) {
+  if (pusch_pdu->transform_precoding == transformPrecoder_enabled) {
 
     uint32_t nb_re_pusch=nb_rb * NR_NB_SC_PER_RB;
     uint32_t y_offset = 0;
@@ -377,7 +377,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       if ((ul_dmrs_symb_pos >> l) & 0x01) {
         is_dmrs_sym = 1;
 
-        if (pusch_pdu->transformPrecoder == transformPrecoder_disabled){
+        if (pusch_pdu->transform_precoding == transformPrecoder_disabled){
         
           if (dmrs_type == pusch_dmrs_type1)
             dmrs_idx = (pusch_pdu->bwp_start + start_rb)*6;
@@ -393,7 +393,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         }
       } else if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
-        AssertFatal(pusch_pdu->transformPrecoder == transformPrecoder_disabled, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
+        AssertFatal(pusch_pdu->transform_precoding == transformPrecoder_disabled, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
 
         if(is_ptrs_symbol(l, ulsch_ue->ptrs_symbols)) {
           is_ptrs_sym = 1;
@@ -424,7 +424,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         if (is_dmrs == 1) {
           // if transform precoding is enabled
-          if (pusch_pdu->transformPrecoder == transformPrecoder_enabled) {
+          if (pusch_pdu->transform_precoding == transformPrecoder_enabled) {
             ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[2*dmrs_idx]) >> 15;
             ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[(2*dmrs_idx) + 1]) >> 15;
           } else {
@@ -448,7 +448,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
           ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = (beta_ptrs*AMP*mod_ptrs[(ptrs_idx<<1) + 1]) >> 15;
           ptrs_idx++;
         } else if (!is_dmrs_sym || allowed_xlsch_re_in_dmrs_symbol(k, start_sc, frame_parms->ofdm_symbol_size, cdm_grps_no_data, dmrs_type)) {
-          if (pusch_pdu->transformPrecoder == transformPrecoder_disabled) {
+          if (pusch_pdu->transform_precoding == transformPrecoder_disabled) {
             ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1]       = ((int16_t *)tx_layers[nl])[m<<1];
             ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = ((int16_t *)tx_layers[nl])[(m<<1) + 1];
           }

@@ -350,7 +350,7 @@ typedef struct NR_pusch_semi_static_t {
   int nrOfSymbols;
 
   NR_PUSCH_Config_t *pusch_Config;
-  uint8_t transformPrecoder;
+  uint8_t transform_precoding;
   uint8_t mcs_table;
 
   long mapping_type;

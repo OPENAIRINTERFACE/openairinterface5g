@@ -305,7 +305,7 @@ typedef struct
   uint8_t  qam_mod_order;
   uint8_t  mcs_index;
   uint8_t  mcs_table;
-  uint8_t  transformPrecoder;
+  uint8_t  transform_precoding;
   uint16_t data_scrambling_id;
   uint8_t  nrOfLayers;
   uint8_t  Tpmi;
