@@ -2847,13 +2847,16 @@ void nr_mac_update_timers(module_id_t module_id,
         NR_BWP_DownlinkDedicated_t *bwpd = spCellConfigDedicated ? spCellConfigDedicated->initialDownlinkBWP : NULL;
 
         const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
-        const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+        const int tda = sched_ctrl->active_bwp && RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] >= 0 ?
+                        RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] :
+                        (sched_ctrl->pdsch_semi_static.time_domain_allocation >= 0 ? sched_ctrl->pdsch_semi_static.time_domain_allocation : 0);
+
         nr_set_pdsch_semi_static(sib1,
                                  scc,
                                  UE_info->CellGroup[UE_id],
                                  sched_ctrl->active_bwp,
                                  bwpd,
-                                 tda >= 0 ? tda : sched_ctrl->pdsch_semi_static.time_domain_allocation,
+                                 tda,
                                  layers,
                                  sched_ctrl,
                                  &sched_ctrl->pdsch_semi_static);
@@ -2864,13 +2867,16 @@ void nr_mac_update_timers(module_id_t module_id,
 
         const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
         int dci_format = get_dci_format(sched_ctrl);
-        const int utda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
+        const int utda = sched_ctrl->active_ubwp && RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] >= 0 ?
+            RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] :
+                         (sched_ctrl->pusch_semi_static.time_domain_allocation >= 0 ? sched_ctrl->pusch_semi_static.time_domain_allocation : 0);
+
         nr_set_pusch_semi_static(sib1,
                                  scc,
                                  sched_ctrl->active_ubwp,
                                  ubwpd,
                                  dci_format,
-                                 utda >= 0 ? utda : sched_ctrl->pusch_semi_static.time_domain_allocation,
+                                 utda,
                                  num_dmrs_cdm_grps_no_data,
                                  &sched_ctrl->pusch_semi_static);
 

@@ -481,23 +481,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            NR_BCCH_DL_SCH_Message_t *sib1,
                            int add_ue,
                            uint32_t rnti,
-                           NR_CellGroupConfig_t *CellGroup,
-                           uint32_t rrc_reconfiguration_delay) {
-
-  if (scc && rrc_reconfiguration_delay > 0) {
-    const int UE_id = find_nr_UE_id(Mod_idP,rnti);
-    if (UE_id >= 0) {
-      NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-      NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-      if (sched_ctrl->rrc_processing_timer == 0) {
-        const uint16_t sf_ahead = (uint16_t) ceil((float)6/(0x01<<(*scc->ssbSubcarrierSpacing)));
-        const uint16_t sl_ahead = sf_ahead * (0x01<<(*scc->ssbSubcarrierSpacing));
-        sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay << (*scc->ssbSubcarrierSpacing)) + sl_ahead;
-        LOG_I(NR_MAC, "Activating RRC processing timer for UE %d\n", UE_id);
-      }
-    }
-    return 0;
-  }
+                           NR_CellGroupConfig_t *CellGroup) {
 
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
