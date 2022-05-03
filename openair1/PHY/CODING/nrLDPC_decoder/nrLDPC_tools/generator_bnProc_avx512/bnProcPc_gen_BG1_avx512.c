@@ -16,9 +16,9 @@ void nrLDPC_bnProcPc_BG1_generator_AVX512(int R)
 
 
   char fname[500];
-  sprintf(fname,"../ldpc_gen_files/bn_avx512/nrLDPC_bnProcPc_BG1_R%s_AVX512.h",ratestr[R]);
+  sprintf(fname,"../ldpc_gen_files/bnProcPc_avx512/nrLDPC_bnProcPc_BG1_R%s_AVX512.h",ratestr[R]);
   FILE *fd=fopen(fname,"w");
-  if (fd == NULL) {printf("Cannot create \n");abort();}
+  if (fd == NULL) {printf("Cannot create %s\n",fname);abort();}
 
 
 

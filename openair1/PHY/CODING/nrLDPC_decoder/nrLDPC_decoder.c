@@ -155,13 +155,13 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, uint32_
    // int8_t* cnProcBuf=  cnProcBuf;
    // int8_t* cnProcBufRes= cnProcBufRes;
 
-    int8_t cnProcBuf[NR_LDPC_SIZE_CN_PROC_BUF]    __attribute__ ((aligned(32))) = {0};
-    int8_t cnProcBufRes[NR_LDPC_SIZE_CN_PROC_BUF] __attribute__ ((aligned(32))) = {0};
-    int8_t bnProcBuf[NR_LDPC_SIZE_BN_PROC_BUF]    __attribute__ ((aligned(32))) = {0};
-    int8_t bnProcBufRes[NR_LDPC_SIZE_BN_PROC_BUF] __attribute__ ((aligned(32))) = {0};
-    int8_t llrRes[NR_LDPC_MAX_NUM_LLR]            __attribute__ ((aligned(32))) = {0};
-    int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR]        __attribute__ ((aligned(32))) = {0};
-    int8_t llrOut[NR_LDPC_MAX_NUM_LLR]            __attribute__ ((aligned(32))) = {0};
+    int8_t cnProcBuf[NR_LDPC_SIZE_CN_PROC_BUF]    __attribute__ ((aligned(64))) = {0};
+    int8_t cnProcBufRes[NR_LDPC_SIZE_CN_PROC_BUF] __attribute__ ((aligned(64))) = {0};
+    int8_t bnProcBuf[NR_LDPC_SIZE_BN_PROC_BUF]    __attribute__ ((aligned(64))) = {0};
+    int8_t bnProcBufRes[NR_LDPC_SIZE_BN_PROC_BUF] __attribute__ ((aligned(64))) = {0};
+    int8_t llrRes[NR_LDPC_MAX_NUM_LLR]            __attribute__ ((aligned(64))) = {0};
+    int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR]        __attribute__ ((aligned(64))) = {0};
+    int8_t llrOut[NR_LDPC_MAX_NUM_LLR]            __attribute__ ((aligned(64))) = {0};
     // Minimum number of iterations is 1
     // 0 iterations means hard-decision on input LLRs
     uint32_t i = 1;
