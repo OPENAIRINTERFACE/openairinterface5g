@@ -3517,6 +3517,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
         mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
         rrc_rlc_remove_ue(ctxt_pP);
         pdcp_remove_UE(ctxt_pP);
+        newGtpuDeleteAllTunnels(ctxt_pP->instance, ctxt_pP->rnti);
 
         /* remove RRC UE Context */
         ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rnti);
