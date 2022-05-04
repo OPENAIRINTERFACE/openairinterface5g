@@ -395,14 +395,12 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   NR_BWP_DownlinkCommon_t  *initialDownlinkBWP=&ServCellCom->downlinkConfigCommon.initialDownlinkBWP;
   initialDownlinkBWP->genericParameters=
     configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-  
 
   for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.count; i++) {
     asn1cSequenceAdd(ServCellCom->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list,
 		     struct NR_NR_MultiBandInfo, nrMultiBandInfo);
     nrMultiBandInfo->freqBandIndicatorNR = configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[i];
   }
-
 
   int scs_scaling0 = 1<<(configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing);
   int scs_scaling  = scs_scaling0;
@@ -512,7 +510,6 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ss7->searchSpaceType->choice.common=calloc(1,sizeof(*ss7->searchSpaceType->choice.common));
   ss7->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss7->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
 
-  
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1,  0);
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation, 7);
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->pagingSearchSpace, 5);
@@ -980,36 +977,11 @@ uint8_t do_RRCReject(uint8_t Mod_id,
     return((enc_rval.encoded+7)/8);
 }
 
-// TODO: Implement to b_SRS = 1 and b_SRS = 2
-long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
-
-  if(b_SRS>0) {
-    LOG_E(NR_RRC,"rrc_get_max_nr_csrs(): Not implemented yet for b_SRS>0\n");
-    return 0; // This c_srs is always valid
-  }
-
-  const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 48, 52, 56, 60, 64, 72, 72, 76, 80, 88,
-                               96, 96, 104, 112, 120, 120, 120, 128, 128, 128, 132, 136, 144, 144, 144, 144, 152, 160,
-                               160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
-                               256, 264, 272, 272, 272 };
-
-  long c_srs = 0;
-  uint16_t m = 4;
-  for(int c = 1; c<64; c++) {
-    if(m_SRS[c]>m && m_SRS[c]<max_rbs) {
-      c_srs = c;
-      m = m_SRS[c];
-    }
-  }
-
-  return c_srs;
-}
-
 void fill_initial_SpCellConfig(int uid,
                                NR_SpCellConfig_t *SpCellConfig,
                                NR_ServingCellConfigCommon_t *scc,
-                               const gNB_RrcConfigurationReq *configuration)
-{
+                               const gNB_RrcConfigurationReq *configuration) {
+
   // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
   // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
   // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
@@ -1127,79 +1099,7 @@ void fill_initial_SpCellConfig(int uid,
   pusch_Config->tp_pi2BPSK=NULL;
 
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  initialUplinkBWP->srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
-  NR_SRS_Config_t *srs_Config = calloc(1,sizeof(*srs_Config));
-  initialUplinkBWP->srs_Config->choice.setup=srs_Config;
-  srs_Config->srs_ResourceSetToReleaseList=NULL;
-  srs_Config->srs_ResourceSetToAddModList=calloc(1,sizeof(*srs_Config->srs_ResourceSetToAddModList));
-  NR_SRS_ResourceSet_t *srs_resset0=calloc(1,sizeof(*srs_resset0));
-  srs_resset0->srs_ResourceSetId = 0;
-  srs_resset0->srs_ResourceIdList=calloc(1,sizeof(*srs_resset0->srs_ResourceIdList));
-  NR_SRS_ResourceId_t *srs_resset0_id=calloc(1,sizeof(*srs_resset0_id));
-  *srs_resset0_id=0;
-  ASN_SEQUENCE_ADD(&srs_resset0->srs_ResourceIdList->list,srs_resset0_id);
-  srs_Config->srs_ResourceToReleaseList=NULL;
-
-  if (configuration->do_SRS) {
-    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_periodic;
-    srs_resset0->resourceType.choice.periodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.periodic));
-    srs_resset0->resourceType.choice.periodic->associatedCSI_RS = NULL;
-  } else {
-    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_aperiodic;
-    srs_resset0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic));
-    srs_resset0->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger=1;
-    srs_resset0->resourceType.choice.aperiodic->csi_RS=NULL;
-    srs_resset0->resourceType.choice.aperiodic->slotOffset= calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic->slotOffset));
-    *srs_resset0->resourceType.choice.aperiodic->slotOffset=2;
-    srs_resset0->resourceType.choice.aperiodic->ext1=NULL;
-  }
-
-  srs_resset0->usage=NR_SRS_ResourceSet__usage_codebook;
-  srs_resset0->alpha = calloc(1,sizeof(*srs_resset0->alpha));
-  *srs_resset0->alpha = NR_Alpha_alpha1;
-  srs_resset0->p0=calloc(1,sizeof(*srs_resset0->p0));
-  *srs_resset0->p0=-80;
-  srs_resset0->pathlossReferenceRS=NULL;
-  srs_resset0->srs_PowerControlAdjustmentStates=NULL;
-  ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceSetToAddModList->list,srs_resset0);
-  srs_Config->srs_ResourceToReleaseList=NULL;
-  srs_Config->srs_ResourceToAddModList=calloc(1,sizeof(*srs_Config->srs_ResourceToAddModList));
-  NR_SRS_Resource_t *srs_res0=calloc(1,sizeof(*srs_res0));
-  srs_res0->srs_ResourceId=0;
-  srs_res0->nrofSRS_Ports=NR_SRS_Resource__nrofSRS_Ports_port1;
-  srs_res0->ptrs_PortIndex=NULL;
-  srs_res0->transmissionComb.present=NR_SRS_Resource__transmissionComb_PR_n2;
-  srs_res0->transmissionComb.choice.n2=calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));
-  srs_res0->transmissionComb.choice.n2->combOffset_n2=0;
-  srs_res0->transmissionComb.choice.n2->cyclicShift_n2=0;
-  srs_res0->resourceMapping.startPosition = 2 + uid%2;
-  srs_res0->resourceMapping.nrofSymbols=NR_SRS_Resource__resourceMapping__nrofSymbols_n1;
-  srs_res0->resourceMapping.repetitionFactor=NR_SRS_Resource__resourceMapping__repetitionFactor_n1;
-  srs_res0->freqDomainPosition=0;
-  srs_res0->freqDomainShift=0;
-  srs_res0->freqHopping.b_SRS=0;
-  srs_res0->freqHopping.b_hop=0;
-  srs_res0->freqHopping.c_SRS = rrc_get_max_nr_csrs(
-      NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 275),
-      srs_res0->freqHopping.b_SRS);
-  srs_res0->groupOrSequenceHopping=NR_SRS_Resource__groupOrSequenceHopping_neither;
-
-  if (configuration->do_SRS) {
-    srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_periodic;
-    srs_res0->resourceType.choice.periodic=calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
-    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
-    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl160 = 17 + (uid>1)*10; // 17/17/.../147/157 are mixed slots
-  } else {
-    srs_res0->resourceType.present= NR_SRS_Resource__resourceType_PR_aperiodic;
-    srs_res0->resourceType.choice.aperiodic=calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
-  }
-
-  srs_res0->sequenceId=40;
-  srs_res0->spatialRelationInfo=calloc(1,sizeof(*srs_res0->spatialRelationInfo));
-  srs_res0->spatialRelationInfo->servingCellId=NULL;
-  srs_res0->spatialRelationInfo->referenceSignal.present=NR_SRS_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
-  srs_res0->spatialRelationInfo->referenceSignal.choice.csi_RS_Index=0;
-  ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceToAddModList->list,srs_res0);
+  config_srs(initialUplinkBWP->srs_Config, scc, uid, configuration->do_SRS);
 
   // configure Scheduling request
   // 40 slot period 
@@ -1325,13 +1225,13 @@ void fill_initial_SpCellConfig(int uid,
   bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
 
   bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
- *bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
- bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation = NR_PDSCH_Config__resourceAllocation_resourceAllocationType1;
- bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
- bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
- bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize =
-   calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize));
- *bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
+  *bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
+  bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation = NR_PDSCH_Config__resourceAllocation_resourceAllocationType1;
+  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
+  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
+  bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize =
+      calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize));
+  *bwp_Dedicated->pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
 
   bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList=calloc(1,sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList));
   NR_TCI_State_t *tcic;
@@ -1351,6 +1251,7 @@ void fill_initial_SpCellConfig(int uid,
   NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = calloc(1,sizeof(*pdsch_servingcellconfig));
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->present = NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup;
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
+
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
   pdsch_servingcellconfig->xOverhead = NULL;
   pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = calloc(1, sizeof(*pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH));
@@ -1452,7 +1353,6 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig_drb);
 }
 
-
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             NR_UE_NR_Capability_t *uecap,
                             const gNB_RrcConfigurationReq* configuration) {
@@ -1475,7 +1375,6 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
     }
   }
 }
-
 
 void fill_initial_cellGroupConfig(int uid,
                                   NR_CellGroupConfig_t *cellGroupConfig,
