@@ -711,9 +711,7 @@ rb_found:
     
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
-    struct timespec time_request;
-    clock_gettime(CLOCK_REALTIME, &time_request); 
-    LOG_D(PDCP, "%s(): (rb %d) calling enqueue_rlc_data_req size %d at time %lu.%lu\n", __func__, rb_id, size,time_request.tv_sec,time_request.tv_nsec);
+    LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
     //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
     //printf("\n");
     enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
@@ -1338,9 +1336,7 @@ static boolean_t pdcp_data_req_drb(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer)
 {
-  struct timespec time_request;
-  clock_gettime(CLOCK_REALTIME, &time_request);
-  LOG_D(PDCP, "%s() called at time %lu.%lu, size %d\n", __func__, time_request.tv_sec,time_request.tv_nsec,sdu_buffer_size);
+  LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
   int rnti = ctxt_pP->rnti;

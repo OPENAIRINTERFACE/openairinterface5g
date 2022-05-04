@@ -456,14 +456,10 @@ int nr_process_mac_pdu(module_id_t module_idP,
 	  if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
 	    return 0;
 
-          struct timespec time_request;
-          clock_gettime(CLOCK_REALTIME, &time_request);
-          LOG_D(NR_MAC, "[UE %04x] %d.%d : Time %lu.%lu ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
+          LOG_D(NR_MAC, "[UE %x] %d.%d: ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
                 UE_info->rnti[UE_id],
                 frameP,
                 slot,
-                time_request.tv_sec,
-                time_request.tv_nsec,
                 rx_lcid<4?"DCCH":"DTCH",
                 rx_lcid,
                 module_idP,
