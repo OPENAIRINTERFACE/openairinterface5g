@@ -410,7 +410,7 @@ check_install_usrp_uhd_driver(){
             x=$((x + 1))
         done
         $SUDO apt-get update
-        $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
+        $SUDO apt-get -y install python-tk libboost-all-dev libusb-1.0-0-dev
         if [[ "$distribution" == "ubuntu16.04" ]]; then
             $SUDO apt-get -y install libuhd-dev libuhd3.15.0 uhd-host
         fi
