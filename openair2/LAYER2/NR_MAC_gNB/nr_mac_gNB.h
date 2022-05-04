@@ -626,8 +626,6 @@ typedef struct {
   int ul_failure;
   struct CSI_Report CSI_report;
   bool SR;
-  bool update_pdsch_ps;
-  bool update_pusch_ps;
   bool set_mcs;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
@@ -646,12 +644,13 @@ typedef struct {
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
-
   /// number of active DL LCs
   uint8_t dl_lc_num;
   /// order in which DLSCH scheduler should allocate LCs
   uint8_t dl_lc_ids[NR_MAX_NUM_LCID];
 
+  /// Timer for RRC processing procedures
+  uint32_t rrc_processing_timer;
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
