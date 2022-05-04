@@ -474,7 +474,7 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
     */
 void config_control_ue(NR_UE_MAC_INST_t *mac){
 
-  uint8_t coreset_id = 1, ss_id;
+  uint8_t ss_id;
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
   NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
@@ -520,6 +520,7 @@ void config_control_ue(NR_UE_MAC_INST_t *mac){
   }
   // check pdcch_Config, pdcch_ConfigCommon and DL BWP
   mac->DLbwp[0] = dl_bwp_id>0?scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]:NULL;
+  int coreset_id = controlResourceSetToAddModList->list.array[0]->controlResourceSetId;
   mac->coreset[dl_bwp_id][coreset_id - 1] = controlResourceSetToAddModList->list.array[0];
 
   // Check dedicated UL BWP and pass to MAC

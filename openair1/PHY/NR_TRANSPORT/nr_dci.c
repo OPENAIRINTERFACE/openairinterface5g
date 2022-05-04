@@ -82,7 +82,6 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     
   int rb_offset;
   int n_rb;
-
   // compute rb_offset and n_prb based on frequency allocation
   nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   nr_fill_cce_list(cce_list,0,pdcch_pdu_rel15);

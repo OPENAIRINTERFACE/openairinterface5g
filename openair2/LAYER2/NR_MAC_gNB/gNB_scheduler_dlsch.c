@@ -680,7 +680,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
           UE_info->rnti[UE_id],
           frame,
           slot);
-    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return false;
   }
 
@@ -871,7 +870,6 @@ void pf_dl(module_id_t module_id,
             rnti,
             frame,
             slot);
-      mac->pdcch_cand[cid]--;
       continue;
     }
 

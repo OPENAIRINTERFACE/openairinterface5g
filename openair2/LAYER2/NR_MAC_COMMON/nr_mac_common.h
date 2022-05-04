@@ -37,6 +37,8 @@
 #include "nr_mac.h"
 #include "openair1/PHY/impl_defs_nr.h"
 
+uint16_t get_Y(int cid, int slot, rnti_t rnti);
+
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);

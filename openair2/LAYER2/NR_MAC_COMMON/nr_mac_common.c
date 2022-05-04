@@ -3467,6 +3467,19 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
   }
 }
 
+uint16_t get_Y(int cid, int slot, rnti_t rnti) {
+
+  const int A[3] = {39827, 39829, 39839};
+  const int D = 65537;
+  int Y;
+
+  Y = (A[cid] * rnti) % D;
+
+  for (int s = 0; s < slot; s++)
+    Y = (A[cid] * Y) % D;
+
+  return Y;
+}
 
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,

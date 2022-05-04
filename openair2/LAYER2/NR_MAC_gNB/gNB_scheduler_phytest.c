@@ -367,7 +367,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
           rnti,
           frame,
           slot);
-    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return;
   }
 
@@ -522,7 +521,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   if (CCEIndex < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-    nr_mac->pdcch_cand[cid]--;
     return false;
   }
 

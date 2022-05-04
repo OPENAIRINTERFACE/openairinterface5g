@@ -443,13 +443,7 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
                          uint16_t Y){
 
   uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
-  const int next_cand = mac->pdcch_cand[coreset->controlResourceSetId];
   const int N_ci = 0;
-
-  if(next_cand>=nr_of_candidates) {
-    LOG_D(NR_MAC,"No more available candidates for this coreset\n");
-    return -1;
-  }
 
   const int N_rb = pdcch->n_rb;  // nb of rbs of coreset per symbol
   const int N_symb = coreset->duration; // nb of coreset symbols
@@ -462,9 +456,10 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
 
   // loop over all the available candidates
   // this implements TS 38.211 Sec. 7.3.2.2
-  for(int m=next_cand; m<nr_of_candidates; m++) { // loop over candidates
+  for(int m=0; m<nr_of_candidates; m++) { // loop over candidates
     bool taken = false; // flag if the resource for a given candidate are taken
     int first_cce = aggregation * (( Y + CEILIDIV((m*N_cces),(aggregation*nr_of_candidates)) + N_ci ) % CEILIDIV(N_cces,aggregation));
+    LOG_D(NR_MAC,"Candidate %d of %d first_cce %d (L %d N_cces %d Y %d)\n", m, nr_of_candidates, first_cce, aggregation, N_cces, Y);
     for (int j=first_cce; (j<first_cce+aggregation) && !taken; j++) { // loop over CCEs
       for (int k=6*j/L; (k<(6*j/L+6/L)) && !taken; k++) { // loop over REG bundles
         int f = cce_to_reg_interleaving(R, k, pdcch->ShiftIndex, C, L, N_regs);
@@ -476,10 +471,8 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
         }
       }
     }
-    if(!taken){
-      mac->pdcch_cand[coreset->controlResourceSetId] = m++; // using candidate m, next available is m+1
+    if(!taken)
       return first_cce;
-    }
   }
   return -1;
 }
@@ -2202,20 +2195,6 @@ int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
   }
 
   return -1;
-}
-
-uint16_t get_Y(int cid, int slot, rnti_t rnti) {
-
-  const int A[3] = {39827, 39829, 39839};
-  const int D = 65537;
-  int Y;
-
-  Y = (A[cid] * rnti) % D;
-
-  for (int s = 0; s < slot; s++)
-    Y = (A[cid] * Y) % D;
-
-  return Y;
 }
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
