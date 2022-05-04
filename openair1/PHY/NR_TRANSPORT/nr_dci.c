@@ -73,7 +73,6 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
                      NR_DL_FRAME_PARMS *frame_parms,
                      int slot) {
 
-  int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1] __attribute__((aligned(16))); // 3 for the max coreset duration
   uint16_t cset_start_sc;
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
@@ -87,6 +86,8 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   nr_fill_cce_list(cce_list,0,pdcch_pdu_rel15);
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
   cset_start_sc = frame_parms->first_carrier_offset + (pdcch_pdu_rel15->BWPStart + rb_offset) * NR_NB_SC_PER_RB;
+
+  int16_t mod_dmrs[pdcch_pdu_rel15->DurationSymbols][(n_rb+rb_offset)*6] __attribute__((aligned(16))); // 3 for the max coreset duration
 
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
     /*The coreset is initialised

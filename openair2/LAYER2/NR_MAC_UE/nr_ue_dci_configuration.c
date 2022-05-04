@@ -61,7 +61,7 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,
   int i=0;
   int Y = 0;
   if (slot >= 0)
-    Y = get_Y(*ss->controlResourceSetId, slot, rnti);
+    Y = get_Y((*ss->controlResourceSetId)%3, slot, rnti);
   for (int maxL=16;maxL>0;maxL>>=1) {
     find_aggregation_candidates(&aggregation,
                                 &number_of_candidates,
@@ -70,13 +70,13 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,
     if (number_of_candidates>0) {
       LOG_D(NR_MAC,"L %d, number of candidates %d, aggregation %d\n",maxL,number_of_candidates,aggregation);
       rel15->number_of_candidates += number_of_candidates;
-      int N_cce_sym = 0; // nb of rbs of coreset per symbol
+      int n_rb = 0; // nb of rbs of coreset per symbol
       for (int i=0;i<6;i++) {
         for (int t=0;t<8;t++) {
-          N_cce_sym+=((rel15->coreset.frequency_domain_resource[i]>>t)&1);
+          n_rb+=((rel15->coreset.frequency_domain_resource[i]>>t)&1);
         }
       }
-      int N_cces = N_cce_sym*rel15->coreset.duration;
+      int N_cces = n_rb*rel15->coreset.duration/NR_NB_REG_PER_CCE;
       for (int j=0; j<number_of_candidates; i++,j++) {
         int first_cce = aggregation * (( Y + CEILIDIV((j*N_cces),(aggregation*number_of_candidates)) + 0 ) % CEILIDIV(N_cces,aggregation));
         LOG_D(NR_MAC,"Candidate %d of %d first_cce %d (L %d N_cces %d Y %d)\n", j, number_of_candidates, first_cce, aggregation, N_cces, Y);
