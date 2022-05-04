@@ -1098,8 +1098,9 @@ void fill_initial_SpCellConfig(int uid,
   pusch_Config->uci_OnPUSCH=NULL;
   pusch_Config->tp_pi2BPSK=NULL;
 
+  // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(initialUplinkBWP->srs_Config, scc, uid, configuration->do_SRS);
+  config_srs(initialUplinkBWP->srs_Config, scc, uid, 0);
 
   // configure Scheduling request
   // 40 slot period 
@@ -1354,6 +1355,7 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
 }
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
+                            int uid,
                             NR_UE_NR_Capability_t *uecap,
                             const gNB_RrcConfigurationReq* configuration) {
 
@@ -1361,6 +1363,22 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   if (SpCellConfig == NULL) return;
 
   NR_ServingCellConfigCommon_t *scc = configuration->scc;
+
+  if (configuration &&
+      configuration->do_SRS &&
+      SpCellConfig &&
+      SpCellConfig->spCellConfigDedicated &&
+      SpCellConfig->spCellConfigDedicated->uplinkConfig &&
+      SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
+    if (!SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config) {
+      SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config =
+          calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config));
+    }
+    config_srs(SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
+               scc,
+               uid,
+               configuration->do_SRS);
+  }
 
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
@@ -1850,6 +1868,7 @@ int16_t do_RRCReconfiguration(
 
     if(cellGroupConfig!=NULL){
       update_cellGroupConfig(cellGroupConfig,
+                             ue_context_pP->local_uid,
                              ue_context_pP->ue_context.UE_Capability_nr,
                              configuration);
 

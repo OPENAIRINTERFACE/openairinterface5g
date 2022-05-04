@@ -200,9 +200,27 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
                 int do_srs) {
 
   setup_release_srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
-  setup_release_srs_Config->choice.setup = calloc(1,sizeof(*setup_release_srs_Config->choice.setup));
 
-  NR_SRS_Config_t *srs_Config = setup_release_srs_Config->choice.setup;
+  NR_SRS_Config_t *srs_Config;
+  if (setup_release_srs_Config->choice.setup) {
+    srs_Config = setup_release_srs_Config->choice.setup;
+    if (srs_Config->srs_ResourceSetToReleaseList) {
+      free(srs_Config->srs_ResourceSetToReleaseList);
+    }
+    if (srs_Config->srs_ResourceSetToAddModList) {
+      free(srs_Config->srs_ResourceSetToAddModList);
+    }
+    if (srs_Config->srs_ResourceToReleaseList) {
+      free(srs_Config->srs_ResourceToReleaseList);
+    }
+    if (srs_Config->srs_ResourceToAddModList) {
+      free(srs_Config->srs_ResourceToAddModList);
+    }
+    free(srs_Config);
+  }
+
+  setup_release_srs_Config->choice.setup = calloc(1,sizeof(*setup_release_srs_Config->choice.setup));
+  srs_Config = setup_release_srs_Config->choice.setup;
 
   srs_Config->srs_ResourceSetToReleaseList = NULL;
 
@@ -254,9 +272,10 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
   srs_res0->freqDomainShift = 0;
   srs_res0->freqHopping.b_SRS = 0;
   srs_res0->freqHopping.b_hop = 0;
-  srs_res0->freqHopping.c_SRS = rrc_get_max_nr_csrs(
-      NRRIV2BW(servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 275),
-      srs_res0->freqHopping.b_SRS);
+  srs_res0->freqHopping.c_SRS = servingcellconfigcommon ?
+                                rrc_get_max_nr_csrs(
+                                    NRRIV2BW(servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 275),
+                                    srs_res0->freqHopping.b_SRS) : 0;
   srs_res0->groupOrSequenceHopping = NR_SRS_Resource__groupOrSequenceHopping_neither;
   if (do_srs) {
     srs_res0->resourceType.present = NR_SRS_Resource__resourceType_PR_periodic;
