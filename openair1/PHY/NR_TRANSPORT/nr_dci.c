@@ -83,7 +83,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   int n_rb;
   // compute rb_offset and n_prb based on frequency allocation
   nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
-  nr_fill_cce_list(cce_list,0,pdcch_pdu_rel15);
+  nr_fill_cce_list(cce_list, pdcch_pdu_rel15);
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
   cset_start_sc = frame_parms->first_carrier_offset + (pdcch_pdu_rel15->BWPStart + rb_offset) * NR_NB_SC_PER_RB;
 
@@ -177,8 +177,10 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
     // Get cce_list indices by reg_idx in ascending order
     int reg_list_index = 0;
+    int N_regs = n_rb*pdcch_pdu_rel15->DurationSymbols; // nb of REGs per coreset
+    int N_cces = N_regs / NR_NB_REG_PER_CCE; // nb of cces in coreset
     int reg_list_order[NR_MAX_PDCCH_AGG_LEVEL] = {};
-    for (int p = 0; p < NR_MAX_PDCCH_AGG_LEVEL; p++) {
+    for (int p = 0; p < N_cces; p++) {
       for(int p2 = 0; p2 < dci_pdu->AggregationLevel; p2++) {
         if(cce_list[d][p2].reg_list[0].reg_idx == p * NR_NB_REG_PER_CCE) {
           reg_list_order[reg_list_index] = p2;
@@ -197,7 +199,7 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
         for (int reg_in_cce_idx = 0; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx++) {
 
           k = cset_start_sc + cce_list[d][cce_idx].reg_list[reg_in_cce_idx].start_sc_idx;
-
+          LOG_D(PHY,"CCE %d REG %d k %d\n",cce_idx,reg_in_cce_idx,k);
           if (k >= frame_parms->ofdm_symbol_size)
             k -= frame_parms->ofdm_symbol_size;
 

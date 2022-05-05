@@ -261,18 +261,17 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
 void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg);
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
-/* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of
-   dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
+/* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of dlsim */
 int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1, g_nrOfLayers = 1;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
+
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   AssertFatal(UE_info->num_UEs == 1, "can have only a single UE\n");
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[0];
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
-  /* manually set free CCE to 0 */
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   sched_ctrl->search_space = get_searchspace(NULL, scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
   uint8_t nr_of_candidates;
@@ -280,7 +279,16 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                               &nr_of_candidates,
                               sched_ctrl->search_space,4);
   sched_ctrl->coreset = get_coreset(module_id, scc, sched_ctrl->active_bwp->bwp_Dedicated, sched_ctrl->search_space, target_ss);
-  sched_ctrl->cce_index = 0;
+  int Y = get_Y((*sched_ctrl->search_space->controlResourceSetId)%3, slot, UE_info->rnti[0]);
+  int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
+                                      /* CC_id = */ 0,
+                                      sched_ctrl->aggregation_level,
+                                      nr_of_candidates,
+                                      &sched_ctrl->sched_pdcch,
+                                      sched_ctrl->coreset,
+                                      Y);
+  AssertFatal(CCEIndex>=0, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, 0, UE_info->rnti[0]);
+  sched_ctrl->cce_index = CCEIndex;
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
@@ -1098,9 +1106,8 @@ int main(int argc, char **argv)
 
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].ndi = !(trial&1);
 
-
         UE_info->UE_sched_ctrl[0].harq_processes[harq_pid].round = round;
-      
+
         if (css_flag == 0) {
           nr_schedule_ue_spec(0, frame, slot);
         } else {

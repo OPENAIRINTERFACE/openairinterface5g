@@ -1052,7 +1052,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
   for (int i=0;i<6;i++)
     pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
 
-  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d,  \n",
+  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d\n",
         pdcch_pdu->BWPStart,pdcch_pdu->BWPSize,(int)pdcch_pdu->SubcarrierSpacing,(int)coreset->frequencyDomainResources.buf[0],(int)coreset->duration);
 
   pdcch_pdu->CceRegMappingType = pdcch->CceRegMappingType;
