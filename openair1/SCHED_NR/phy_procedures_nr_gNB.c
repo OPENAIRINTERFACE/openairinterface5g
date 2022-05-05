@@ -829,6 +829,19 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
           T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
 
+        uint16_t num_srs = gNB->UL_INFO.srs_ind.number_of_pdus;
+        gNB->UL_INFO.srs_ind.pdu_list = &gNB->srs_pdu_list[0];
+        gNB->UL_INFO.srs_ind.sfn = frame_rx;
+        gNB->UL_INFO.srs_ind.slot = slot_rx;
+        //gNB->srs_pdu_list[num_srs].handle;
+        gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
+        //gNB->srs_pdu_list[num_srs].timing_advance;
+        gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
+        //gNB->srs_pdu_list[num_srs].wide_band_snr;
+        //gNB->srs_pdu_list[num_srs].num_reported_symbols;
+        //gNB->srs_pdu_list[num_srs].reported_symbol_list;
+        gNB->UL_INFO.srs_ind.number_of_pdus += 1;
+
         srs->active = 0;
       }
     }

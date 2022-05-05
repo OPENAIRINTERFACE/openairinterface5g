@@ -879,6 +879,18 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   }
 }
 
+void handle_nr_srs_measurements(const module_id_t module_id,
+                                const frame_t frame,
+                                const sub_frame_t slot,
+                                const rnti_t rnti,
+                                const uint16_t timing_advance,
+                                const uint8_t num_symbols,
+                                const uint8_t wide_band_snr,
+                                const uint8_t num_reported_symbols,
+                                nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list) {
+  LOG_I(NR_MAC, "(%d.%d) Received SRS indication for rnti: 0x%04x\n", frame, slot, rnti);
+}
+
 long get_K2(NR_ServingCellConfigCommon_t *scc,
             NR_ServingCellConfigCommonSIB_t *scc_sib1,
             NR_BWP_Uplink_t *ubwp,
