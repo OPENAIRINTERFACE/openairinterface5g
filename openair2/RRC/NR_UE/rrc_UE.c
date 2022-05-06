@@ -359,7 +359,8 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
           return;
         }
         nr_rrc_ue_process_rrcReconfiguration(module_id,RRCReconfiguration);
-        }
+        ASN_STRUCT_FREE(asn_DEF_NR_RRCReconfiguration, RRCReconfiguration);
+      }
       break;
     
     case nr_RadioBearerConfigX_r15:
@@ -392,6 +393,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
         else if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
           xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *) RadioBearerConfig);
         }
+        ASN_STRUCT_FREE(asn_DEF_NR_RadioBearerConfig, RadioBearerConfig);
       }
       break;
     

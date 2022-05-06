@@ -105,6 +105,10 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
 return 0;
 }
 
+int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+  return 0;
+}
+
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
@@ -1003,6 +1007,8 @@ int main(int argc, char **argv)
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
+  NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+
   memset((void*)&dcireq,0,sizeof(dcireq));
   memset((void*)&scheduled_response,0,sizeof(scheduled_response));
   dcireq.module_id = 0;
@@ -1017,6 +1023,7 @@ int main(int argc, char **argv)
   scheduled_response.frame = frame;
   scheduled_response.slot  = slot;
   scheduled_response.thread_id = 0;
+  scheduled_response.phy_data = &phy_pdcch_config;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
@@ -1086,7 +1093,7 @@ int main(int argc, char **argv)
       
       UE_harq_process->ack = 0;
       round = 0;
-      UE_harq_process->round = round;
+      UE_harq_process->DLround = round;
       UE_harq_process->first_rx = 1;
         
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
@@ -1259,6 +1266,7 @@ int main(int argc, char **argv)
                                &UE_proc,
                                0,
                                dlsch_threads,
+                               &phy_pdcch_config,
                                NULL);
         
         //printf("dlsim round %d ends\n",round);
@@ -1407,8 +1415,6 @@ int main(int argc, char **argv)
       LOG_M("chestF0.m","chF0",&UE->pdsch_vars[0][0]->dl_ch_estimates_ext[0][0],g_rbSize*12*14,1,1);
       write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
       LOG_M("rxF_llr.m","rxFllr",UE->pdsch_vars[UE_proc.thread_id][0]->llr[0],available_bits,1,0);
-      LOG_M("pdcch_rxFcomp.m","pdcch_rxFcomp",&UE->pdcch_vars[0][0]->rxdataF_comp[0][0],96*12,1,1);
-      LOG_M("pdcch_rxFllr.m","pdcch_rxFllr",UE->pdcch_vars[0][0]->llr,96*12,1,1);
       break;
     }
 

@@ -22,7 +22,7 @@
 -->
 <testCaseList>
 	<htmlTabRef>TEST-SA-FR1-Tab1</htmlTabRef>
-	<htmlTabName>SA Ping DL UL with QUECTEL</htmlTabName>
+	<htmlTabName>SA Ping DL UL with Quectel, 2.5ms TDD</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
@@ -63,14 +63,14 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1 --T_stdout 2 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.ddsuu.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1 --T_stdout 2 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
 		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
-		<USRP_IPAddress>192.168.18.252</USRP_IPAddress>
+		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
 	</testCase>
 
 	<testCase id="000001">
@@ -92,7 +92,7 @@
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 40</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
-		<ping_rttavg_threshold>20</ping_rttavg_threshold>
+		<ping_rttavg_threshold>10</ping_rttavg_threshold>
 	</testCase>
 
 	<testCase id="050001">
@@ -101,7 +101,7 @@
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 100 -i 0,2</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
-		<ping_rttavg_threshold>20</ping_rttavg_threshold>
+		<ping_rttavg_threshold>10</ping_rttavg_threshold>
 	</testCase>
 
 	<testCase id="070000">

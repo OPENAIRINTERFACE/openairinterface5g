@@ -70,7 +70,7 @@ typedef struct CellInfo_s {
 //-------------------------------------------------------------------------------------------//
 // eNB: ENB_APP -> PHY messages
 typedef struct PhyConfigurationReq_s {
-  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  frame_type_t            frame_type[MAX_NUM_CCs];
   lte_prefix_type_t       prefix_type[MAX_NUM_CCs];
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];

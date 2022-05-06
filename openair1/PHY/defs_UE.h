@@ -833,7 +833,6 @@ typedef struct {
   pthread_mutex_t timer_mutex;
   pthread_cond_t timer_cond;
   int instance_cnt_timer;
-
   /// RF and Interface devices per CC
 
   openair0_device rfdevice;
