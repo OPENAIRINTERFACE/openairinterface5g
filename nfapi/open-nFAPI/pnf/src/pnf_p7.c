@@ -32,7 +32,6 @@
 #define FAPI2_IP_DSCP	0
 
 extern uint16_t sf_ahead;
-extern uint16_t slot_ahead;
 
 //uint16_t sf_ahead=4;
 
@@ -933,7 +932,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 
 	// save the curren time, sfn and slot
 	pnf_p7->slot_start_time_hr = pnf_get_current_time_hr();
-	slot_ahead = 6;
+	int slot_ahead = 6;
 	uint32_t sfn_slot_tx = sfnslot_add_slot(sfn, slot, slot_ahead);
 	uint16_t sfn_tx = NFAPI_SFNSLOT2SFN(sfn_slot_tx);
 	uint8_t slot_tx = NFAPI_SFNSLOT2SLOT(sfn_slot_tx);

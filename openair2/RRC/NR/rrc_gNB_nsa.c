@@ -242,9 +242,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                           NR_SecurityConfig__keyToUse_secondary);
   }
 
-  NR_ServingCellConfig_t *scc = ue_context_p->ue_context.spCellConfig
-      ? ue_context_p->ue_context.spCellConfig->spCellConfigDedicated
-      : NULL;
+  NR_ServingCellConfig_t *scc = ue_context_p->ue_context.spCellConfig ?
+      ue_context_p->ue_context.spCellConfig->spCellConfigDedicated : NULL;
   fill_default_reconfig(carrier->servingcellconfigcommon,
                         scc,
                         reconfig_ies,
@@ -341,8 +340,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                               sizeof(X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer));
     X2AP_ENDC_SGNB_ADDITION_REQ_ACK(msg).rrc_buffer_size = (enc_rval.encoded+7)>>3;
     itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
-  } else if (get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0,rrc->module_id);
   }
 
   rrc->Nb_ue++;
@@ -375,14 +372,15 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                            ue_context_p->ue_context.secondaryCellGroup);
   }
 
-  if(m == NULL){
-    LOG_W(RRC, "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %x, frame %d, subframe %d eNB_index %d \n", &ctxt,
-                                                                                                                                                        ctxt.module_id,
-                                                                                                                                                        ctxt.rnti,
-                                                                                                                                                        ctxt.frame,
-                                                                                                                                                        ctxt.subframe,
-                                                                                                                                                        ctxt.eNB_index);
-  }
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_id_rnti, 0, 0, rrc->module_id);
+  LOG_W(RRC,
+        "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %x, frame %d, subframe %d eNB_index %d \n",
+        &ctxt,
+        ctxt.module_id,
+        ctxt.rnti,
+        ctxt.frame,
+        ctxt.subframe,
+        ctxt.eNB_index);
 
   nr_rrc_pdcp_config_asn1_req(&ctxt,
                               get_softmodem_params()->sa ? ue_context_p->ue_context.rb_config->srb_ToAddModList : (NR_SRB_ToAddModList_t *) NULL,
@@ -397,15 +395,14 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                               NULL,
                               ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
-  nr_rrc_rlc_config_asn1_req (&ctxt,
-                              get_softmodem_params()->sa ? ue_context_p->ue_context.rb_config->srb_ToAddModList : (NR_SRB_ToAddModList_t *) NULL,
-                              ue_context_p->ue_context.rb_config->drb_ToAddModList,
-                              ue_context_p->ue_context.rb_config->drb_ToReleaseList,
-                              (LTE_PMCH_InfoList_r9_t *) NULL,
-                              ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
+  nr_rrc_rlc_config_asn1_req(&ctxt,
+                             get_softmodem_params()->sa ? ue_context_p->ue_context.rb_config->srb_ToAddModList : (NR_SRB_ToAddModList_t *) NULL,
+                             ue_context_p->ue_context.rb_config->drb_ToAddModList,
+                             ue_context_p->ue_context.rb_config->drb_ToReleaseList,
+                             (LTE_PMCH_InfoList_r9_t *) NULL,
+                             ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %x\n", __FUNCTION__, __LINE__, ctxt.rnti);
-
 }
 
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
