@@ -45,29 +45,9 @@ Note: The available resources, and their current usage, is indicated here:
 Note: obelix and porcepix are both used in the OTA testbench and the 5G
 NSA/Faraday Cage testbench!
 
-```
-                asterix
-                ┌─────┐        ┌────┐
-                │     ├────────┤N300│
-                │     │        └────┘
-                └─┬───┘
-porcepix          │
-┌─────┐           │                                                   nrmodule2
-│     ├───────────┘                                 ┌───────┐         ┌─────┐
-│     │                                             │Quectel├─────────┤     │
-└──┬─┬┘         obelix         ┌────┐               └───────┘         │     │
-   │ │          ┌─────┐        │N300│                                 └─────┘
-   │ └──────────┤     ├────────┴────┘
-   │            │     │
-   │            └─────┴────────┬────┐
-   │                           │X300│
-   │                           └────┘
-   │            UEsimbox
-   │            ┌─────┐
-   └────────────┤     │        ┌────┐
-                │     ├────────┤SDR │
-                └─────┘        └────┘
-```
+![5G OTA Testbench](testbenches_doc_resources/5g-ota-bench.png)
+
+[PDF version](testbenches_doc_resources/5g-ota-bench.pdf) | [LaTeX/TikZ version](testbenches_doc_resources/5g-ota-bench.tex) if you want to modify to reflect your setup
 
 ### 5G NSA/Faraday Cage Testbench
 
@@ -76,58 +56,18 @@ porcepix          │
 Note: obelix and porcepix are both used in the OTA testbench and the 5G
 NSA/Faraday Cage testbench!
 
-[Proper image to be followed up]
+![5G NSA/Faraday Cage Testbench](testbenches_doc_resources/5g-nsa-faraday-bench.png)
 
-```
-            obelix
-            ┌─────┐
-            │     ├─────B7────────────────────┐
-            │     │            Faraday Cage   │
-            └┬────┘            ┌──────────────┼───┐
-             │                 │              │   │
-             │                 │              Y   │
-porcepix     │                 │                  │
-┌─────┐      │                 │                  │                   idefix
-│     ├──────┘                 │               Y──┼────┐              ┌─────┐
-│     │                        │               Y--│----├───────┐      │     │
-└────┬┘                        │               Y──┼────┤Quectel├──────┤     │
-     │                         │               Y--│----└───────┘      └─────┘
-     │                         │            Y     │
-     │      nepes              │            │     │
-     │      ┌─────┐            └────────────┼─────┘
-     │      │     │                         │
-     └──────┤     ├─────B78─────────────────┘
-            └─────┘
-```
+[PDF version](testbenches_doc_resources/5g-nsa-faraday-bench.pdf) | [LaTeX/TikZ version](testbenches_doc_resources/5g-nsa-faraday-bench.tex) if you want to modify to reflect your setup
 
 ### 4G Testbench(es)
 
 **Purpose**: 4G/LTE testbenches
 
-[Proper image to be followed up]
 
-```
-            hutch
-            ┌─────┐
-            │     ├─────B7────────────────────┐
-     ┌──────┤     │            Faraday Cage   │
-     │      └─────┘            ┌──────────────┼───┐
-     │                         │              │   │
-     │                         │              Y   │
-nano │                         │                  │
-┌────┴┐   USB               ┌──┼─UE               │             carabe
-│     ├─────────────────────┤  │                  │             ┌─────┐
-│     │                     └──┼─UE               │             │     │
-└───┬─┘                        │               Y──┼───────B7UE──┤     │
-    │                          │                  │             └─────┘
-    │                          │            Y     │
-    │       starsky            │            │     │
-    │       ┌─────┐            └────────────┼─────┘
-    └───────┤     │                         │
-            │     ├──┬───────B40────────────┘
-            └─────┘  │
-                     Y (sniffer)
-```
+![4G Faraday Cage Testbench](testbenches_doc_resources/4g-faraday-bench.png)
+
+[PDF version](testbenches_doc_resources/4g-faraday-bench.pdf) | [LaTeX/TikZ version](testbenches_doc_resources/4g-faraday-bench.tex) if you want to modify to reflect your setup
 
 ## Pipelines
 
