@@ -457,19 +457,14 @@ int nr_process_mac_pdu(module_id_t module_idP,
               return 0;
             }
 
-            struct timespec time_request;
-            clock_gettime(CLOCK_REALTIME, &time_request);
-            LOG_D(NR_MAC, "In %s: [UE %d] %d.%d : Time %lu.%lu ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
-                  __func__,
-                  module_idP,
-                  frameP,
-                  slot,
-                  time_request.tv_sec,
-                  time_request.tv_nsec,
-                  rx_lcid<4?"DCCH":"DTCH",
-                  rx_lcid,
-                  module_idP,
-                  mac_len);
+            LOG_D(NR_MAC, "[UE %x] %d.%d: ULSCH -> UL-%s %d (gNB %d, %d bytes)\n",
+                UE_info->rnti[UE_id],
+                frameP,
+                slot,
+                rx_lcid<4?"DCCH":"DTCH",
+                rx_lcid,
+                module_idP,
+                mac_len);
             UE_info->mac_stats[UE_id].lc_bytes_rx[rx_lcid] += mac_len;
 
             mac_rlc_data_ind(module_idP,
@@ -666,11 +661,11 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         UE_scheduling_control->ta_update = timing_advance;
       UE_scheduling_control->raw_rssi = rssi;
       UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
-      LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+      LOG_D(NR_MAC, "[UE %d] PUSCH TPC %d (SNRx10 %d) and TA %d\n",UE_id,UE_scheduling_control->tpc0,UE_scheduling_control->pusch_snrx10,UE_scheduling_control->ta_update);
     }
     else{
       LOG_D(NR_MAC,"[UE %d] Detected DTX : increasing UE TX power\n",UE_id);
-      UE_scheduling_control->tpc0 = 3;
+      UE_scheduling_control->tpc0 = 1;
     }
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
@@ -743,20 +738,20 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         continue;
 
       if(no_sig) {
-        LOG_W(NR_MAC, "Random Access %i failed at state %i (no signal)\n", i, ra->state);
+        LOG_D(NR_MAC, "Random Access %i failed at state %i (no signal)\n", i, ra->state);
         nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
       } else {
 
         // random access pusch with TC-RNTI
         if (ra->rnti != current_rnti) {
-          LOG_W(NR_MAC,
+          LOG_D(NR_MAC,
                 "expected TC_RNTI %04x to match current RNTI %04x\n",
                 ra->rnti,
                 current_rnti);
 
           if( (frameP==ra->Msg3_frame) && (slotP==ra->Msg3_slot) ) {
-            LOG_W(NR_MAC, "Random Access %i failed at state %i (TC_RNTI %04x RNTI %04x)\n", i, ra->state,ra->rnti,current_rnti);
+            LOG_D(NR_MAC, "Random Access %i failed at state %i (TC_RNTI %04x RNTI %04x)\n", i, ra->state,ra->rnti,current_rnti);
             nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
             nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           }
@@ -768,7 +763,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
         UE_id = add_new_nr_ue(gnb_mod_idP, ra->rnti, ra->CellGroup);
         if (UE_id<0) {
-          LOG_W(NR_MAC, "Random Access %i discarded at state %i (TC_RNTI %04x RNTI %04x): max number of users achieved!\n", i, ra->state,ra->rnti,current_rnti);
+          LOG_D(NR_MAC, "Random Access %i discarded at state %i (TC_RNTI %04x RNTI %04x): max number of users achieved!\n", i, ra->state,ra->rnti,current_rnti);
           nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           return;
@@ -866,20 +861,20 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
       // for CFRA (NSA) do not schedule retransmission of msg3
       if (ra->cfra) {
-        LOG_W(NR_MAC, "Random Access %i failed at state %i (NSA msg3 reception failed)\n", i, ra->state);
+        LOG_D(NR_MAC, "Random Access %i failed at state %i (NSA msg3 reception failed)\n", i, ra->state);
         nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
         return;
       }
 
       if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
-        LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
+        LOG_D(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
         nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
         return;
       }
 
-      LOG_W(NR_MAC, "Random Access %i Msg3 CRC did not pass)\n", i);
+      LOG_D(NR_MAC, "Random Access %i Msg3 CRC did not pass)\n", i);
       ra->msg3_round++;
       ra->state = Msg3_retransmission;
     }
@@ -999,8 +994,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
 
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
-        || sched_ctrl->update_pusch_ps) {
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
       nr_set_pusch_semi_static(sib1,
                                scc,
                                sched_ctrl->active_ubwp,
@@ -1009,12 +1003,11 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                tda,
                                num_dmrs_cdm_grps_no_data,
                                ps);
-      sched_ctrl->update_pusch_ps = false;
     }
 
     /* Check the resource is enough for retransmission */
-    while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+    const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
     if (rbStart + retInfo->rbSize > bwpSize) {
       LOG_W(NR_MAC, "cannot allocate retransmission of UE %d/RNTI %04x: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d\n", UE_id, UE_info->rnti[UE_id], rbStart, retInfo->rbSize, bwpSize);
@@ -1034,12 +1027,11 @@ bool allocate_ul_retransmission(module_id_t module_id,
                              &temp_ps);
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
-    while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
+    const uint16_t slbitmap = SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols);
+    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
     int rbSize = 0;
-    while (rbStart + rbSize < bwpSize &&
-           (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
+    while (rbStart + rbSize < bwpSize && (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap)
       rbSize++;
     uint32_t new_tbs;
     uint16_t new_rbSize;
@@ -1212,8 +1204,9 @@ void pf_ul(module_id_t module_id,
     const bool do_sched = nr_UE_is_to_be_scheduled(module_id, 0, UE_id, sched_pusch->frame, sched_pusch->slot);
 
     LOG_D(NR_MAC,"pf_ul: do_sched UE %d => %s\n",UE_id,do_sched ? "yes" : "no");
-    if (B == 0 && !do_sched)
+    if ((B == 0 && !do_sched) || (sched_ctrl->rrc_processing_timer > 0)) {
       continue;
+    }
 
     /* Schedule UE on SR or UL inactivity and no data (otherwise, will be scheduled
      * based on data to transmit) */
@@ -1257,8 +1250,7 @@ void pf_ul(module_id_t module_id,
       const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
-          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
-          || sched_ctrl->update_pusch_ps) {
+          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
         nr_set_pusch_semi_static(sib1,
                                  scc,
                                  sched_ctrl->active_ubwp,
@@ -1267,12 +1259,11 @@ void pf_ul(module_id_t module_id,
                                  tda,
                                  num_dmrs_cdm_grps_no_data,
                                  ps);
-        sched_ctrl->update_pusch_ps = false;
       }
 
       LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d\n", min_rb, rbStart);
-      while (rbStart < bwpSize &&
-             !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+      const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+      while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
       if (rbStart + min_rb >= bwpSize) {
         LOG_W(NR_MAC, "cannot allocate continuous UL data for UE %d/RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
@@ -1305,7 +1296,7 @@ void pf_ul(module_id_t module_id,
       /* Mark the corresponding RBs as used */
       n_rb_sched -= sched_pusch->rbSize;
       for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+        rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= slbitmap;
 
       continue;
     }
@@ -1395,8 +1386,7 @@ void pf_ul(module_id_t module_id,
     const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
-        || sched_ctrl->update_pusch_ps) {
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
       nr_set_pusch_semi_static(sib1,
                                scc,
                                sched_ctrl->active_ubwp,
@@ -1405,17 +1395,15 @@ void pf_ul(module_id_t module_id,
                                tda,
                                num_dmrs_cdm_grps_no_data,
                                ps);
-      sched_ctrl->update_pusch_ps = false;
     }
     update_ul_ue_R_Qm(sched_pusch, ps);
 
-    while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+    const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
     sched_pusch->rbStart = rbStart;
     uint16_t max_rbSize = 1;
-    while (rbStart + max_rbSize < bwpSize &&
-           (rballoc_mask[rbStart + max_rbSize]&&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+    while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
     if (rbStart + min_rb >= bwpSize) {
@@ -1457,7 +1445,7 @@ void pf_ul(module_id_t module_id,
 
     n_rb_sched -= sched_pusch->rbSize;
     for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
-      rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+      rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= slbitmap;
   }
 }
 
@@ -1491,7 +1479,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   if (tda < 0)
     return false;
   int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, tda, mu);
-  const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu]))&1023;
+  const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) & 1023;
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
 
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))

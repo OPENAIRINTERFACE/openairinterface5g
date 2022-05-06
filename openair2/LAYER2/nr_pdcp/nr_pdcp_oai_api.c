@@ -711,9 +711,7 @@ rb_found:
     
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
-    struct timespec time_request;
-    clock_gettime(CLOCK_REALTIME, &time_request);
-    LOG_D(PDCP, "%s(): (rb %d) calling enqueue_rlc_data_req size %d at time %lu.%lu\n", __func__, rb_id, size,time_request.tv_sec,time_request.tv_nsec);
+    LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
     //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
     //printf("\n");
     enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
@@ -968,7 +966,7 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     has_sdapDLheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present ? 1 : 0;
     has_sdap = has_sdapULheader | has_sdapDLheader;
     is_sdap_DefaultDRB = s->cnAssociation->choice.sdap_Config->defaultDRB == true ? 1 : 0;
-    mappedQFIs2Add = (NR_QFI_t*)s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.array[0];
+    mappedQFIs2Add = (NR_QFI_t*)s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.array[0]; 
     mappedQFIs2AddCount = s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.count;
     LOG_D(SDAP, "Captured mappedQoS_FlowsToAdd from RRC: %ld \n", *mappedQFIs2Add);
   }
@@ -1338,9 +1336,7 @@ static boolean_t pdcp_data_req_drb(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer)
 {
-  struct timespec time_request;
-  clock_gettime(CLOCK_REALTIME, &time_request);
-  LOG_D(PDCP, "%s() called at time %lu.%lu, size %d\n", __func__, time_request.tv_sec,time_request.tv_nsec,sdu_buffer_size);
+  LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
   int rnti = ctxt_pP->rnti;

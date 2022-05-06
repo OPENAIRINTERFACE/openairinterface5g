@@ -344,21 +344,24 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   uint16_t sco = absolute_diff%(12*scs_scaling);
   // values of subcarrier offset larger than the limit only indicates CORESET for Type0-PDCCH CSS set is not present
-  uint8_t ssb_SubcarrierOffset_limit = 0;
+  int ssb_SubcarrierOffset_limit = 0;
+  int offset_scaling = 0;  //15kHz
   if(frequency_range == FR1) {
     ssb_SubcarrierOffset_limit = 24;
-  } else {
+    if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
+      offset_scaling = cfg->ssb_config.scs_common.value;
+  } else
     ssb_SubcarrierOffset_limit = 12;
-  }
   if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
-    AssertFatal(sco==(scs_scaling * (ssb_SubcarrierOffset>>(cfg->ssb_config.scs_common.value))),"absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+    AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),
+                "absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
   cfg->num_tlv++;
-  cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset>>(cfg->ssb_config.scs_common.value);
+  cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset<<offset_scaling;
   cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
   cfg->num_tlv++;
 
@@ -448,6 +451,26 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts
 
 }
 
+int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_SubcarrierSpacing_t subcarrierSpacing, uint32_t rrc_reconfiguration_delay) {
+
+  if (rrc_reconfiguration_delay == 0) {
+    return -1;
+  }
+  const int UE_id = find_nr_UE_id(Mod_idP,rnti);
+  if (UE_id < 0) {
+    LOG_W(NR_MAC, "Could not find UE for RNTI 0x%04x\n", rnti);
+    return -1;
+  }
+
+  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  const uint16_t sf_ahead = 6/(0x01<<subcarrierSpacing) + ((6%(0x01<<subcarrierSpacing))>0);
+  const uint16_t sl_ahead = sf_ahead * (0x01<<subcarrierSpacing);
+  sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
+  LOG_I(NR_MAC, "Activating RRC processing timer for UE %d\n", UE_id);
+
+  return 0;
+}
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
@@ -650,8 +673,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
       process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
       NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-      sched_ctrl->update_pdsch_ps = true;
-      sched_ctrl->update_pusch_ps = true;
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
       if (get_softmodem_params()->sa) {
         // add all available DL HARQ processes for this UE in SA
@@ -693,6 +714,5 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
 
-  return(0);
-
+  return 0;
 }// END rrc_mac_config_req_gNB

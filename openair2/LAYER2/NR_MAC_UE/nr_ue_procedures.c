@@ -354,13 +354,18 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     scs_ssb = get_softmodem_params()->numerology;
     band = mac->nr_band;
     ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
+    int ssb_sc_offset_norm;
+    if (ssb_subcarrier_offset<24 && mac->frequency_range == FR1)
+      ssb_sc_offset_norm = ssb_subcarrier_offset>>scs_ssb;
+    else
+      ssb_sc_offset_norm = ssb_subcarrier_offset;
 
     if (mac->common_configuration_complete == 0)
       nr_ue_sib1_scheduler(module_id,
                            cc_id,
                            ssb_start_symbol,
                            frame,
-                           ssb_subcarrier_offset,
+                           ssb_sc_offset_norm,
                            ssb_index,
                            ssb_start_subcarrier,
                            mac->frequency_range,

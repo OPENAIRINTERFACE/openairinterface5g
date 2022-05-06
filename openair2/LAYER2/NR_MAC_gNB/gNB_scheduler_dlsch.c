@@ -488,6 +488,11 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       const int lcid = sched_ctrl->dl_lc_ids[i];
       const uint16_t rnti = UE_info->rnti[UE_id];
       LOG_D(NR_MAC, "In %s: UE %d/%x: LCID %d\n", __FUNCTION__, UE_id, rnti, lcid);
+
+      if (lcid == DL_SCH_LCID_DTCH && sched_ctrl->rrc_processing_timer > 0) {
+        continue;
+      }
+
       start_meas(&RC.nrmac[module_id]->rlc_status_ind);
       sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
                                                         rnti,
@@ -571,8 +576,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
       rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
       rbSize = 0;
 
-      while (rbStart < bwpSize &&
-             !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+      const int slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+      while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
 
       if (rbStart >= bwpSize) {
@@ -581,14 +586,14 @@ bool allocate_dl_retransmission(module_id_t module_id,
       }
 
       while (rbStart + rbSize < bwpSize &&
-             (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)) &&
+             (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap &&
              rbSize < retInfo->rbSize)
         rbSize++;
     }
 
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
+    if (ps->time_domain_allocation != tda) {
       nr_set_pdsch_semi_static(sib1,
                                scc,
                                cg,
@@ -598,7 +603,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                ps->nrOfLayers,
                                sched_ctrl,
                                ps);
-      sched_ctrl->update_pdsch_ps = false;
     }
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -614,12 +618,12 @@ bool allocate_dl_retransmission(module_id_t module_id,
                              ps->nrOfLayers,
                              sched_ctrl,
                              &temp_ps);
-    while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
+
+    const uint16_t slbitmap = SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols);
+    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
 
-    while (rbStart + rbSize < bwpSize &&
-           (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
+    while (rbStart + rbSize < bwpSize && (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap)
       rbSize++;
 
     uint32_t new_tbs;
@@ -913,7 +917,7 @@ void pf_dl(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-    if (ps->nrOfLayers != layers[UE_id] || ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
+    if (ps->nrOfLayers != layers[UE_id] || ps->time_domain_allocation != tda) {
       nr_set_pdsch_semi_static(sib1,
                                scc,
                                UE_info->CellGroup[UE_id],
@@ -923,20 +927,17 @@ void pf_dl(module_id_t module_id,
                                layers[UE_id],
                                sched_ctrl,
                                ps);
-      sched_ctrl->update_pdsch_ps = false;
     }
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
 
     // Freq-demain allocation
-    while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&slbitmap))
+    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
 
     uint16_t max_rbSize = 1;
 
-    while (rbStart + max_rbSize < bwpSize &&
-           (rballoc_mask[rbStart + max_rbSize]&slbitmap))
+    while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -1444,27 +1445,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   lcid < 4 ? "DCCH" : "DTCH",
                   lcid,
                   ndata,
-                  bufEnd-buf-+sizeof(NR_MAC_SUBHEADER_LONG));
+                  bufEnd-buf-sizeof(NR_MAC_SUBHEADER_LONG));
 
             if (len == 0)
               break;
-
-            if (lcid>=4) {
-              struct timespec time_request;
-              clock_gettime(CLOCK_REALTIME, &time_request);
-              LOG_D(NR_MAC,
-                    "%4d.%2d [UE %04x]: Time %lu.%lu:  %d bytes %s %d -> DLSCH (ndata %lu, remaining size %lu)\n",
-                    frame,
-                    slot,
-                    rnti,
-                    time_request.tv_sec,
-                    time_request.tv_nsec,
-                    len,
-                    lcid < 4 ? "DCCH" : "DTCH",
-                    lcid,
-                    (unsigned long)ndata,
-                    (unsigned long)(bufEnd-buf-+sizeof(NR_MAC_SUBHEADER_LONG)));
-            }
 
             header->R = 0;
             header->F = 1;
@@ -1492,6 +1476,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
           header->L = htons(bufEnd-buf);
           dlsch_total_bytes += bufEnd-buf;
 
+          for (; buf < bufEnd - 3; buf += 4) {
+            uint32_t *buf32 = (uint32_t *)buf;
+            *buf32 = lrand48();
+          }
           for (; buf < bufEnd; buf++)
             *buf = lrand48() & 0xff;
         }

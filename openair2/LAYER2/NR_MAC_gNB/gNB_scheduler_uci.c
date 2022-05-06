@@ -218,7 +218,9 @@ void nr_csi_meas_reporting(int Mod_idP,
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     const NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
+    if ((sched_ctrl->rrc_processing_timer > 0) || (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0)) {
+      continue;
+    }
     if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
 	      !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
     const NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
@@ -1126,18 +1128,10 @@ int nr_acknack_scheduling(int mod_id,
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels[CC_id].ServingCellConfigCommon;
   const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-  // initializing the values for FDD
-  int nr_slots_period = n_slots_frame;
-  int first_ul_slot_tdd = slot + minfbtime;
-  int first_ul_slot_period = 0;
-  if(tdd){
-    nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
-    first_ul_slot_tdd = tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period);
-    first_ul_slot_period = tdd->nrofDownlinkSlots;
-  }
-  else
-    // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
-    AssertFatal(RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD,"Dynamic TDD not handled yet\n");
+  AssertFatal(tdd || RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD, "Dynamic TDD not handled yet\n");
+  const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
+  const int next_ul_slot = tdd ? tdd->nrofDownlinkSlots + nr_slots_period * (slot / nr_slots_period) : slot + minfbtime;
+  const int first_ul_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
 
 
   /* for the moment, we consider:
@@ -1257,7 +1251,8 @@ int nr_acknack_scheduling(int mod_id,
       if (!(csi_pucch &&
           csi_pucch->csi_bits > 0 &&
           csi_pucch->frame == f &&
-          csi_pucch->ul_slot == s)) nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
+          csi_pucch->ul_slot == s))
+        nr_fill_nfapi_pucch(mod_id, frame, slot, pucch, UE_id);
       memset(pucch, 0, sizeof(*pucch));
       pucch->frame = s == n_slots_frame - 1 ? (f + 1) % 1024 : f;
       if(((s + 1)%nr_slots_period) == 0)
@@ -1292,8 +1287,8 @@ int nr_acknack_scheduling(int mod_id,
     AssertFatal(pucch->sr_flag + pucch->dai_c == 0,
                 "expected no SR/AckNack for UE %d in %4d.%2d, but has %d/%d for %4d.%2d\n",
                 UE_id, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
-    const int s = first_ul_slot_tdd;
-    pucch->frame = (s < n_slots_frame - 1) ? frame : (frame + 1) % 1024;
+    const int s = next_ul_slot;
+    pucch->frame = s < n_slots_frame ? frame : (frame + 1) % 1024;
     pucch->ul_slot = s % n_slots_frame;
   }
 
@@ -1487,8 +1482,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-        }
-        else if (pdu->rnti == UE_info->rnti[UE_id]
+        } else if (pdu->rnti == UE_info->rnti[UE_id]
             && pdu->format_type == 2 // does not use NR_PUCCH_Resource__format_PR_format0
             && pdu->nr_of_symbols == pucch_res->format.choice.format2->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format2->startingSymbolIndex) {
@@ -1496,9 +1490,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-
-        }
-        else if (pdu->rnti == UE_info->rnti[UE_id]
+        } else if (pdu->rnti == UE_info->rnti[UE_id]
             && pdu->format_type == 1 // does not use NR_PUCCH_Resource__format_PR_format0
             && pdu->nr_of_symbols == pucch_res->format.choice.format1->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format1->startingSymbolIndex) {
@@ -1506,9 +1498,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-
-        }
-        else if (pdu->rnti == UE_info->rnti[UE_id]
+        } else if (pdu->rnti == UE_info->rnti[UE_id]
             && pdu->format_type == 3 // does not use NR_PUCCH_Resource__format_PR_format0
             && pdu->nr_of_symbols == pucch_res->format.choice.format3->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format3->startingSymbolIndex) {
@@ -1516,9 +1506,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-
-        }
-        else if (pdu->rnti == UE_info->rnti[UE_id]
+        } else if (pdu->rnti == UE_info->rnti[UE_id]
             && pdu->format_type == 4 // does not use NR_PUCCH_Resource__format_PR_format0
             && pdu->nr_of_symbols == pucch_res->format.choice.format4->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format4->startingSymbolIndex) {

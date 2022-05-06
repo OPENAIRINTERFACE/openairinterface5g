@@ -385,7 +385,6 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
     rb->recv_sdu(rb, (char *)sdu_pP->data, sdu_sizeP, muiP);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: SDU sent to unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
   }
 
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
@@ -460,14 +459,9 @@ static void deliver_sdu(void *_ue, nr_rlc_entity_t *entity, char *buf, int size)
   exit(1);
 
 rb_found:
-  if (is_srb==0) {
-     struct timespec time_request;
-     clock_gettime(CLOCK_REALTIME, &time_request);
+  LOG_D(RLC, "%s:%d:%s: delivering SDU (rnti %d is_srb %d rb_id %d) size %d\n",
+        __FILE__, __LINE__, __FUNCTION__, ue->rnti, is_srb, rb_id, size);
 
-     LOG_D(RLC, "%s:%d:%s: delivering SDU Time %lu.%lu (rnti %d is_srb %d rb_id %d) size %d\n",
-           __FILE__, __LINE__, __FUNCTION__, time_request.tv_sec,time_request.tv_nsec,
-           ue->rnti, is_srb, rb_id, size);
-  }
   /* unused fields? */
   ctx.instance = 0;
   ctx.frame = 0;

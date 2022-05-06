@@ -128,7 +128,6 @@ typedef enum {
 #define GNB_CONFIG_STRING_FORCE256QAMOFF                "force_256qam_off"
 #define GNB_CONFIG_STRING_ENABLE_SDAP                   "enable_sdap"
 #define GNB_CONFIG_HLP_STRING_ENABLE_SDAP               "enable the SDAP layer\n"
-
 #define GNB_CONFIG_HLP_FORCE256QAMOFF                   "suppress activation of 256 QAM despite UE support"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/

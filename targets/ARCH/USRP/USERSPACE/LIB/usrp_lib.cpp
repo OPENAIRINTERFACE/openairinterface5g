@@ -1116,7 +1116,6 @@ extern "C" {
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
-    s->usrp->set_rx_dc_offset(true);
   }
 
   if (device->type==USRP_N300_DEV) {
