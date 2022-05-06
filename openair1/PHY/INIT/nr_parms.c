@@ -366,8 +366,10 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 
   uint8_t sco = 0;
   if (((fp->freq_range == nr_FR1) && (config->ssb_table.ssb_subcarrier_offset<24)) ||
-      ((fp->freq_range == nr_FR2) && (config->ssb_table.ssb_subcarrier_offset<12)) )
-    sco = config->ssb_table.ssb_subcarrier_offset;
+      ((fp->freq_range == nr_FR2) && (config->ssb_table.ssb_subcarrier_offset<12)) ) {
+    if (fp->freq_range == nr_FR1)
+      sco = config->ssb_table.ssb_subcarrier_offset>>config->ssb_config.scs_common;
+  }
 
   fp->ssb_start_subcarrier = (12 * config->ssb_table.ssb_offset_point_a + sco);
   set_Lmax(fp);

@@ -115,6 +115,7 @@ typedef struct NR_IF_Module_s {
   uint16_t current_frame;
   uint8_t current_slot;
   pthread_mutex_t if_mutex;
+  int sl_ahead;
 } NR_IF_Module_t;
 
 /*Initial */

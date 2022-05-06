@@ -46,6 +46,11 @@ void config_common(int Mod_idP,
                    int pusch_AntennaPorts,
                    NR_ServingCellConfigCommon_t *scc);
 
+int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
+                                          rnti_t rnti,
+                                          NR_SubcarrierSpacing_t subcarrierSpacing,
+                                          uint32_t rrc_reconfiguration_delay);
+
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
                            rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
@@ -63,6 +68,10 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
                                 frame_t frameP, 
                                 sub_frame_t subframeP);
+
+void nr_mac_update_timers(module_id_t module_id,
+                          frame_t frame,
+                          sub_frame_t slot);
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
@@ -222,7 +231,7 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                                   nr_scs_e scs_common,
                                   nr_scs_e pdcch_scs,
-                                  nr_frequency_range_e freq_range,
+                                  frequency_range_t freq_range,
                                   uint8_t rmsi_pdcch_config,
                                   uint8_t ssb_idx,
                                   uint8_t k_ssb,
@@ -510,6 +519,7 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
+int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl);
 void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
 void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);
 

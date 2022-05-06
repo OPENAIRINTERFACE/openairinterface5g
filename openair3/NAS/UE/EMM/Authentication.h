@@ -18,6 +18,8 @@ typedef struct {
   unsigned char mac_count:2;  /* MAC failure counter (#20)        */
   unsigned char umts_count:2; /* UMTS challenge failure counter (#26) */
   unsigned char sync_count:2; /* Sync failure counter (#21)       */
+  unsigned char auth_process_started:1; /* Authentication started */
+  unsigned char reserve:1;    /* For future use, byte aligned */
 } authentication_data_t;
 
 #endif

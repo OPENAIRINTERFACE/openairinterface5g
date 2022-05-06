@@ -37,7 +37,7 @@
 #if defined(ENB_MODE)
 # include "common/utils/LOG/log.h"
 # define SCTP_ERROR(x, args...) LOG_E(SCTP, x, ##args)
-# define SCTP_DEBUG(x, args...) LOG_I(SCTP, x, ##args)
+# define SCTP_DEBUG(x, args...) LOG_D(SCTP, x, ##args)
 # define SCTP_WARN(x, args...)  LOG_W(SCTP, x, ##args)
 #else
 # define SCTP_ERROR(x, args...) do { fprintf(stderr, "[SCTP][E]"x, ##args); } while(0)
