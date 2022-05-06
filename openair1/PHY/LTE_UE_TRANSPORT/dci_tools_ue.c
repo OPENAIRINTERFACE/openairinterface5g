@@ -64,7 +64,7 @@ extern uint16_t beta_cqi[16];
 extern uint16_t beta_ri[16];
 extern uint16_t beta_ack[16];
 
-void extract_dci1A_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci1A_info(uint8_t N_RB_DL, frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
     uint8_t harq_pid=0;
     uint32_t rballoc=0;
@@ -182,7 +182,7 @@ void extract_dci1A_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_
     pdci_info_extarcted->dai      = dai;
 }
 
-void extract_dci1C_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci1C_info(uint8_t N_RB_DL, frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
 
     uint32_t rballoc=0;
@@ -222,7 +222,7 @@ void extract_dci1C_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_
     pdci_info_extarcted->Ngap     = Ngap;
 }
 
-void extract_dci1_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci1_info(uint8_t N_RB_DL, frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
 
     uint32_t rballoc=0;
@@ -329,7 +329,7 @@ void extract_dci1_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_p
 
 }
 
-void extract_dci2_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, uint8_t nb_antenna_ports_eNB, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci2_info(uint8_t N_RB_DL, frame_type_t frame_type, uint8_t nb_antenna_ports_eNB, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
 
     uint32_t rballoc=0;
@@ -615,7 +615,7 @@ void extract_dci2_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, uint8_t nb_
 
 }
 
-void extract_dci2A_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, uint8_t nb_antenna_ports_eNB, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci2A_info(uint8_t N_RB_DL, frame_type_t frame_type, uint8_t nb_antenna_ports_eNB, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
 
     uint32_t rballoc=0;

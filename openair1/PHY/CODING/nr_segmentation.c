@@ -87,7 +87,7 @@ if ((Kprime%Kb) > 0)
 else
   Z = (Kprime/Kb);
 
- LOG_D(PHY,"nr segmetation B %u Bprime %u Kprime %u z %u \n", B, Bprime, Kprime, Z);
+ LOG_D(PHY,"nr segmentation B %u Bprime %u Kprime %u z %u \n", B, Bprime, Kprime, Z);
 	  
   if (Z <= 2) {
     *K = 2;

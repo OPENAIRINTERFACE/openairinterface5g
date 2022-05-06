@@ -84,6 +84,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint8_t dmrs_Type = rel15->dmrsConfigType;
     int nb_re_dmrs;
     uint16_t n_dmrs;
+    LOG_D(PHY,"pdsch: BWPStart %d, BWPSize %d, rbStart %d, rbsize %d\n",
+          rel15->BWPStart,rel15->BWPSize,rel15->rbStart,rel15->rbSize);
     if (rel15->dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
       nb_re_dmrs = 6*rel15->numDmrsCdmGrpsNoData;
     }
@@ -129,7 +131,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     start_meas(dlsch_encoding_stats);
 
     if (nr_dlsch_encoding(gNB,
-                          harq->pdu, frame, slot, dlsch, frame_parms,output,tinput,tprep,tparity,toutput,
+                          frame, slot, harq, frame_parms,output,tinput,tprep,tparity,toutput,
                           dlsch_rate_matching_stats,
                           dlsch_interleaving_stats,
                           dlsch_segmentation_stats) == -1)
@@ -163,6 +165,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                                    rel15->dataScramblingId,
                                    rel15->rnti,
                                    scrambled_output);
+
 #ifdef DEBUG_DLSCH
       printf("PDSCH scrambling:\n");
       for (int i=0; i<encoded_length>>8; i++) {
@@ -171,6 +174,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
         printf("\n");
       }
 #endif
+
       stop_meas(dlsch_scrambling_stats);
       /// Modulation
       start_meas(dlsch_modulation_stats);

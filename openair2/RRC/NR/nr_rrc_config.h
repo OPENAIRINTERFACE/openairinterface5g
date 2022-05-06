@@ -122,6 +122,7 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
 void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
                   NR_CSI_MeasConfig_t *csi_MeasConfig);
 void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+                      NR_SpCellConfig_t *SpCellConfig,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                       NR_ServingCellConfigCommon_t *scc);
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,

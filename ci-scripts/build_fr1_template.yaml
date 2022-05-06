@@ -14,7 +14,7 @@ steps:
 
 
 ADB: #on Caracal
-  ADBIPAddress : 192.168.18.196
+  ADBIPAddress : 172.21.16.132
   ADBUserName : oaici
   ADBPassword : KkexF6CErOi1fNuebCPsuIVK
 
