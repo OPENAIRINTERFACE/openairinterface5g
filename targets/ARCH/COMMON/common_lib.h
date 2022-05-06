@@ -239,6 +239,12 @@ typedef struct {
   double tx_sample_rate;
   //! check for threequarter sampling rate
   int8_t threequarter_fs;
+  //! Flag to indicate this configuration is for NR
+  int nr_flag;
+  //! NR band number
+  int nr_band;
+  //! NR scs for raster
+  int nr_scs_for_raster;
 } openair0_config_t;
 
 /*! \brief RF mapping */

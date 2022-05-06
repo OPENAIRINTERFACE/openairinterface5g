@@ -4071,8 +4071,6 @@ uint16_t compute_pucch_prb_size(uint8_t format,
     if ((O_tot+O_csi)>(nr_prbs*n_re_ctrl*n_symb*Qm*r))
       AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
                   r,O_tot,O_crc,nr_prbs);
-    else
-      return nr_prbs;
   }
 
   if (format==2){

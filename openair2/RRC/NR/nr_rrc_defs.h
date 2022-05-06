@@ -290,10 +290,10 @@ typedef struct gNB_RRC_UE_s {
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
-  SRB_INFO                           SI;
-  SRB_INFO                           Srb0;
-  SRB_INFO_TABLE_ENTRY               Srb1;
-  SRB_INFO_TABLE_ENTRY               Srb2;
+  NR_SRB_INFO                           SI;
+  NR_SRB_INFO                           Srb0;
+  NR_SRB_INFO_TABLE_ENTRY               Srb1;
+  NR_SRB_INFO_TABLE_ENTRY               Srb2;
   NR_MeasConfig_t                   *measConfig;
   HANDOVER_INFO                     *handover_info;
   NR_MeasResults_t                  *measResults;
@@ -517,6 +517,7 @@ typedef struct gNB_RRC_INST_s {
   int srb1_max_retx_threshold;
   int srb1_timer_reordering;
   int srb1_timer_status_prohibit;
+  int um_on_default_drb;
   int srs_enable[MAX_NUM_CCs];
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;

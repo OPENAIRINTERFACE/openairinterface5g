@@ -1059,12 +1059,11 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   if (pusch_Config->transformPrecoder == NULL) {
     if (servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder != NULL)
       transform_precoding = NR_PUSCH_Config__transformPrecoder_enabled;
-  }
-  else {
+  } else {
     transform_precoding = *pusch_Config->transformPrecoder;
   }
 
-  if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled ) {
+  if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
     /* Enable DMRS uplink config for transform precoding enabled */
     NR_DMRS_UplinkConfig->transformPrecodingEnabled = calloc(1,sizeof(*NR_DMRS_UplinkConfig->transformPrecodingEnabled));
     NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity = NULL;
