@@ -277,7 +277,7 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
 
 void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc){
 
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+  frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
   // coreset duration setting to be improved in the framework of RRC harmonization, potentially using a common function
   int len_coreset = 1;
@@ -309,12 +309,26 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
 
   //TODO change to accomodate for SRS
 
+  frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   int temp_min_delay = 6; // k2 = 2 or 3 won'r work as well as higher values
+  if(frame_type==TDD && scc->tdd_UL_DL_ConfigurationCommon) {
+
+    switch (scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2p5:  // 30kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2:    // 60kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms1p25: // 60kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms1:    // 120kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p625:    // 120kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p5:    // 120kHz SCS
+        temp_min_delay = 2; 
+        break;
+    }
+  }
+
   int k2 = (min_fb_delay<temp_min_delay)?temp_min_delay:min_fb_delay;
 
   uint8_t DELTA[4]= {2,3,4,6}; // Delta parameter for Msg3
   int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
 
   struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
   pusch_timedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
@@ -324,6 +338,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
   ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation); 
 
   if(frame_type==TDD) {
+      
     // TDD
     if(scc->tdd_UL_DL_ConfigurationCommon) {
       int ul_symb = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
@@ -353,6 +368,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
 
 
 void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+                      NR_SpCellConfig_t *SpCellConfig,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                       NR_ServingCellConfigCommon_t *scc) {
 
@@ -391,6 +407,17 @@ void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
     if(bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == NULL)
       bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = calloc(1, sizeof(*bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table));
     *bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+// set table 2 in correct entry in SpCellConfig->spCellConfigDedicated->csi_MeasConfig->csi_ReportConfigToAddModList->list 
+    AssertFatal(SpCellConfig!=NULL,"SpCellConfig shouldn't be null\n");
+    AssertFatal(SpCellConfig->spCellConfigDedicated!=NULL,"SpCellConfigDedicated shouldn't be null\n");
+    if (SpCellConfig->spCellConfigDedicated->csi_MeasConfig &&
+        SpCellConfig->spCellConfigDedicated->csi_MeasConfig->present== NR_SetupRelease_CSI_MeasConfig_PR_setup &&
+        SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup &&
+        SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->csi_ReportConfigToAddModList)
+       for (int i=0;i<SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->csi_ReportConfigToAddModList->list.count;i++) {
+          if (SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->csi_ReportConfigToAddModList->list.array[i]->cqi_Table)
+             *SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->csi_ReportConfigToAddModList->list.array[i]->cqi_Table=NR_CSI_ReportConfig__cqi_Table_table2;
+       } 
   }
   else
     bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;

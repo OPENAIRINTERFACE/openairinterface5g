@@ -34,9 +34,9 @@
 // Note: this is for prototype of generate_drs_pusch (OTA synchronization of RRUs)
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
-static struct complex16 *primary_synch0_time __attribute__((aligned(32)));
-static struct complex16 *primary_synch1_time __attribute__((aligned(32)));
-static struct complex16 *primary_synch2_time __attribute__((aligned(32)));
+static c16_t *primary_synch0_time __attribute__((aligned(32)));
+static c16_t *primary_synch1_time __attribute__((aligned(32)));
+static c16_t *primary_synch2_time __attribute__((aligned(32)));
 
 static void doIdft(int size, short *in, short *out) {
   switch (size) {
@@ -67,7 +67,7 @@ static void doIdft(int size, short *in, short *out) {
     }
   }
 
-static void copyPrimary( struct complex16 *out, struct complex16 *in, int ofdmSize) {
+static void copyPrimary( c16_t *out, struct complex16 *in, int ofdmSize) {
   int k=ofdmSize-36;
     
   for (int i=0; i<72; i++) {
@@ -83,20 +83,20 @@ static void copyPrimary( struct complex16 *out, struct complex16 *in, int ofdmSi
   }
 
 int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms ) { // LTE_UE_COMMON *common_vars
-  struct complex16 syncF_tmp[2048]__attribute__((aligned(32)))= {{0}};
+  c16_t syncF_tmp[2048]__attribute__((aligned(32)))= {{0}};
   int sz=frame_parms->ofdm_symbol_size*sizeof(*primary_synch0_time);
-  AssertFatal( NULL != (primary_synch0_time = (struct complex16 *)malloc16(sz)),"");
+  AssertFatal( NULL != (primary_synch0_time = (c16_t *)malloc16(sz)),"");
   bzero(primary_synch0_time,sz);
-  AssertFatal( NULL != (primary_synch1_time = (struct complex16 *)malloc16(sz)),"");
+  AssertFatal( NULL != (primary_synch1_time = (c16_t *)malloc16(sz)),"");
   bzero(primary_synch1_time,sz);
-  AssertFatal( NULL != (primary_synch2_time = (struct complex16 *)malloc16(sz)),"");
+  AssertFatal( NULL != (primary_synch2_time = (c16_t *)malloc16(sz)),"");
   bzero(primary_synch2_time,sz);
   // generate oversampled sync_time sequences
-  copyPrimary( syncF_tmp, (struct complex16 *) primary_synch0, frame_parms->ofdm_symbol_size);
+  copyPrimary( syncF_tmp, (c16_t *) primary_synch0, frame_parms->ofdm_symbol_size);
   doIdft(frame_parms->N_RB_DL, (short *)syncF_tmp,(short *)primary_synch0_time);
-  copyPrimary( syncF_tmp, (struct complex16 *) primary_synch1, frame_parms->ofdm_symbol_size);
+  copyPrimary( syncF_tmp, (c16_t *) primary_synch1, frame_parms->ofdm_symbol_size);
   doIdft(frame_parms->N_RB_DL, (short *)syncF_tmp,(short *)primary_synch1_time);
-  copyPrimary( syncF_tmp, (struct complex16 *) primary_synch2, frame_parms->ofdm_symbol_size);
+  copyPrimary( syncF_tmp, (c16_t *) primary_synch2, frame_parms->ofdm_symbol_size);
   doIdft(frame_parms->N_RB_DL, (short *)syncF_tmp,(short *)primary_synch2_time);
 
   if ( LOG_DUMPFLAG(DEBUG_LTEESTIM)){

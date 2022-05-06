@@ -344,6 +344,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
      LOG_I(NR_MAC,"Frame.Slot %d.%d\n%s\n",frame,slot,stats_output);
   }
 
+  nr_mac_update_timers(module_idP, frame, slot);
+
   // This schedules MIB
   schedule_nr_mib(module_idP, frame, slot);
 
@@ -366,8 +368,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, f, s);
   }
 
-  // This schedule SR
-  nr_sr_reporting(module_idP, frame, slot);
 
   // Schedule CSI-RS transmission
   nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
@@ -395,6 +395,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   stop_meas(&gNB->schedule_dlsch);
 
   nr_schedule_pucch(module_idP, frame, slot);
+
+  // This schedule SR after PUCCH for multiplexing
+  nr_sr_reporting(module_idP, frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

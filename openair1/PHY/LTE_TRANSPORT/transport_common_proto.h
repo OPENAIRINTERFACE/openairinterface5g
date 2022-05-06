@@ -224,7 +224,7 @@ uint8_t get_num_prach_tdd(module_id_t Mod_id);
   @returns 0-1 accordingly
 */
 /*
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
+uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,frame_type_t frame_type);
 */
 
 /*!
@@ -247,7 +247,7 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
                        uint8_t prach_ConfigIndex,
                        uint8_t zeroCorrelationZoneConfig,
                        uint8_t highSpeedFlag,
-                       lte_frame_type_t frame_type,
+                       frame_type_t frame_type,
                        uint32_t X_u[64][839]);
 
 
@@ -299,7 +299,7 @@ uint64_t pmi2hex_2Ar1(uint32_t pmi);
 
 uint64_t pmi2hex_2Ar2(uint32_t pmi);
 
-uint8_t get_pmi(uint8_t N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb);
+uint8_t get_pmi(int N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb);
 
 // DL power control functions
 double get_pa_dB(uint8_t pa);

@@ -2237,7 +2237,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   int P1_SHIFT[13],P2_SHIFT[13];
   int offset,nushiftmod3;
 
-  uint8_t get_pmi_temp;
+  int get_pmi_temp;
 
   MIMO_mode_t mimo_mode = -1;
   uint8_t mprime=0,Ns;

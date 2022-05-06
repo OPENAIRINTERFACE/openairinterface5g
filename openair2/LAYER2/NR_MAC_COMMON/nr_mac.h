@@ -107,11 +107,10 @@ typedef struct {
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_SHORT;
 
 typedef struct {
-  uint8_t LCID: 6;    // octet 1 [5:0]
-  uint8_t F: 1;       // octet 1 [6]
-  uint8_t R: 1;       // octet 1 [7]
-  uint8_t L1: 8;      // octet 2 [7:0]
-  uint8_t L2: 8;      // octet 3 [7:0]
+  uint8_t LCID: 6;
+  uint8_t F: 1;
+  uint8_t R: 1;
+  uint16_t L: 16;
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_LONG;
 
 typedef struct {
@@ -119,6 +118,23 @@ typedef struct {
   uint8_t R: 2;       // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
 
+static inline int get_mac_len(uint8_t* pdu, int pdu_len, uint16_t *mac_ce_len, uint16_t *mac_subheader_len) {
+  if ( pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+    return false;
+  NR_MAC_SUBHEADER_SHORT *s = (NR_MAC_SUBHEADER_SHORT*) pdu;
+  NR_MAC_SUBHEADER_LONG *l = (NR_MAC_SUBHEADER_LONG*) pdu;
+  if (s->F && pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+    return false;
+  if (s->F) {
+    *mac_subheader_len = sizeof(*l);
+    *mac_ce_len = ntohs(l->L);
+  } else {
+    *mac_subheader_len = sizeof(*s);
+    *mac_ce_len = s->L;
+  }
+  return true;
+}
+    
 // BSR MAC CEs
 // TS 38.321 ch. 6.1.3.1
 // Short BSR for a specific logical channel group ID

@@ -278,7 +278,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
-
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
     nr_set_pdsch_semi_static(NULL, scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, target_dl_Nl, sched_ctrl, ps);
 

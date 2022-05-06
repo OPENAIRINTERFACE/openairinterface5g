@@ -308,7 +308,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 #endif
 
       int freq_offset_sss = 0;
-      rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss);
+      ret = rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss);
 
       accumulated_freq_offset += freq_offset_sss;
 
@@ -336,8 +336,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         }
       }
 
-      nr_gold_pbch(ue);
-      ret = nr_pbch_detection(proc, ue, 1, &phy_pdcch_config);  // start pbch detection at first symbol after pss
+      if (ret==0) { //we got sss channel
+        nr_gold_pbch(ue);
+        ret = nr_pbch_detection(proc, ue, 1, &phy_pdcch_config);  // start pbch detection at first symbol after pss
+      }
 
       if (ret == 0) {
         // sync at symbol ue->symbol_offset
@@ -539,8 +541,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     int coreset_start_rb=0;
 
     // Hold the channel estimates in frequency domain.
-    int32_t pdcch_est_size = fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH);
-    int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
+    int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
+    __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
 
 
     for(int n_ss = 0; n_ss<phy_pdcch_config.nb_search_space; n_ss++) {

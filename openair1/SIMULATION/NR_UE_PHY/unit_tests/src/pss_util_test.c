@@ -206,7 +206,7 @@ void undefined_function(const char *function) {
 *********************************************************************/
 
 int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission_mode,
-              unsigned char extended_prefix_flag, uint8_t frame_type, uint16_t Nid_cell, uint8_t N_RB_DL) {
+              unsigned char extended_prefix_flag, uint8_t frame_type, uint16_t Nid_cell, int N_RB_DL) {
   (void) transmission_mode;
   NR_DL_FRAME_PARMS *frame_parms;
   int log_level = OAILOG_TRACE;

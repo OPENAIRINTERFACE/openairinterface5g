@@ -57,8 +57,6 @@ extern int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind);
 extern int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind);
 extern int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind);
 extern uint8_t nfapi_mode;
-extern uint16_t sf_ahead;
-extern uint16_t sl_ahead;
 
 
 void handle_nr_rach(NR_UL_IND_t *UL_info)
@@ -79,7 +77,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
   bool in_timewindow = frame_diff == 0 || (frame_diff == 1 && UL_info->slot < 7);
 
   if (UL_info->rach_ind.number_of_pdus > 0 && in_timewindow) {
-    LOG_A(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",
+    LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",
           UL_info->frame, UL_info->slot, UL_info->rach_ind.sfn, UL_info->rach_ind.slot);
     for (int i = 0; i < UL_info->rach_ind.number_of_pdus; i++) {
       UL_info->rach_ind.number_of_pdus--;
@@ -461,14 +459,14 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
       nfapi_nr_config_request_scf_t *cfg = &mac->config[CC_id];
       int spf = get_spf(cfg);
       gNB_dlsch_ulsch_scheduler(module_id,
-				(UL_info->frame+((UL_info->slot>(spf-1-sl_ahead))?1:0)) % 1024,
-				(UL_info->slot+sl_ahead)%spf);
+				(UL_info->frame+((UL_info->slot>(spf-1-ifi->sl_ahead))?1:0)) % 1024,
+				(UL_info->slot+ifi->sl_ahead)%spf);
 
       ifi->CC_mask            = 0;
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
-      sched_info->frame       = (UL_info->frame + ((UL_info->slot>(spf-1-sl_ahead)) ? 1 : 0)) % 1024;
-      sched_info->slot        = (UL_info->slot+sl_ahead)%spf;
+      sched_info->frame       = (UL_info->frame + ((UL_info->slot>(spf-1-ifi->sl_ahead)) ? 1 : 0)) % 1024;
+      sched_info->slot        = (UL_info->slot+ifi->sl_ahead)%spf;
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->UL_dci_req  = &mac->UL_dci_req[CC_id];
 

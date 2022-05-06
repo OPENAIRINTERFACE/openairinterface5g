@@ -120,7 +120,7 @@ services:
             - SMF_INTERFACE_PORT_FOR_SBI=80
             - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
             - SMF_API_VERSION=v1
-            - DEFAULT_DNS_IPV4_ADDRESS=192.168.18.129
+            - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
             - DEFAULT_DNS_SEC_IPV4_ADDRESS=4.4.4.4
             - AMF_IPV4_ADDRESS=0.0.0.0
             - AMF_PORT=80
