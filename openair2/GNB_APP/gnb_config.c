@@ -382,84 +382,84 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
   scd->defaultDownlinkBWP_Id = CALLOC(1, sizeof(*scd->defaultDownlinkBWP_Id));
   *scd->defaultDownlinkBWP_Id = 0;
 
-for (int j = 0; j < NR_MAX_NUM_BWP; j++) {
+  for (int j = 0; j < NR_MAX_NUM_BWP; j++) {
 
-  // Downlink bandwidth part
-  NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
-  bwp->bwp_Id = j+1;
+    // Downlink bandwidth part
+    NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
+    bwp->bwp_Id = j+1;
 
-  // Allocate downlink dedicated bandwidth part and PDSCH structures
-  bwp->bwp_Common = calloc(1, sizeof(*bwp->bwp_Common));
-  bwp->bwp_Common->pdcch_ConfigCommon = calloc(1, sizeof(*bwp->bwp_Common->pdcch_ConfigCommon));
-  bwp->bwp_Common->pdsch_ConfigCommon = calloc(1, sizeof(*bwp->bwp_Common->pdsch_ConfigCommon));
-  bwp->bwp_Dedicated = calloc(1, sizeof(*bwp->bwp_Dedicated));
-  bwp->bwp_Dedicated->pdsch_Config = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config));
-  bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup));
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present = NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
+    // Allocate downlink dedicated bandwidth part and PDSCH structures
+    bwp->bwp_Common = calloc(1, sizeof(*bwp->bwp_Common));
+    bwp->bwp_Common->pdcch_ConfigCommon = calloc(1, sizeof(*bwp->bwp_Common->pdcch_ConfigCommon));
+    bwp->bwp_Common->pdsch_ConfigCommon = calloc(1, sizeof(*bwp->bwp_Common->pdsch_ConfigCommon));
+    bwp->bwp_Dedicated = calloc(1, sizeof(*bwp->bwp_Dedicated));
+    bwp->bwp_Dedicated->pdsch_Config = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config));
+    bwp->bwp_Dedicated->pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present = NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
 
-  // Allocate DL DMRS and PTRS configuration
-  bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
-  NR_DMRS_DownlinkConfig_t *NR_DMRS_DownlinkCfg = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-  NR_DMRS_DownlinkCfg->phaseTrackingRS=CALLOC(1, sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS));
-  NR_DMRS_DownlinkCfg->phaseTrackingRS->present = NR_SetupRelease_PTRS_DownlinkConfig_PR_setup;
-  NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup = CALLOC(1, sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup));
-  NR_PTRS_DownlinkConfig_t *NR_PTRS_DownlinkCfg = NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup;
-  NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->frequencyDensity));
-  long *dl_rbs = CALLOC(2, sizeof(long));
-  for (int i=0;i<2;i++) {
-    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, &dl_rbs[i]);
+    // Allocate DL DMRS and PTRS configuration
+    bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1, sizeof(*bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
+    NR_DMRS_DownlinkConfig_t *NR_DMRS_DownlinkCfg = bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+    NR_DMRS_DownlinkCfg->phaseTrackingRS=CALLOC(1, sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS));
+    NR_DMRS_DownlinkCfg->phaseTrackingRS->present = NR_SetupRelease_PTRS_DownlinkConfig_PR_setup;
+    NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup = CALLOC(1, sizeof(*NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup));
+    NR_PTRS_DownlinkConfig_t *NR_PTRS_DownlinkCfg = NR_DMRS_DownlinkCfg->phaseTrackingRS->choice.setup;
+    NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->frequencyDensity));
+    long *dl_rbs = CALLOC(2, sizeof(long));
+    for (int i=0;i<2;i++) {
+      ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, &dl_rbs[i]);
+    }
+    NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->timeDensity));
+    long *dl_mcs = CALLOC(3, sizeof(long));
+    for (int i=0;i<3;i++) {
+      ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->timeDensity->list, &dl_mcs[i]);
+    }
+    NR_PTRS_DownlinkCfg->epre_Ratio = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->epre_Ratio));
+    NR_PTRS_DownlinkCfg->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->resourceElementOffset));
+    *NR_PTRS_DownlinkCfg->resourceElementOffset = 0;
+    ASN_SEQUENCE_ADD(&scd->downlinkBWP_ToAddModList->list,bwp);
+
+    // Allocate uplink structures
+
+    NR_PUSCH_Config_t *pusch_Config = CALLOC(1, sizeof(*pusch_Config));
+
+    // Allocate UL DMRS and PTRS structures
+    pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB = CALLOC(1, sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB));
+    pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->present = NR_SetupRelease_DMRS_UplinkConfig_PR_setup;
+    pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup = CALLOC(1, sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup));
+    NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
+    NR_DMRS_UplinkConfig->phaseTrackingRS = CALLOC(1, sizeof(*NR_DMRS_UplinkConfig->phaseTrackingRS));
+    NR_DMRS_UplinkConfig->phaseTrackingRS->present = NR_SetupRelease_PTRS_UplinkConfig_PR_setup;
+    NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup = CALLOC(1, sizeof(*NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup));
+    NR_PTRS_UplinkConfig_t *NR_PTRS_UplinkConfig = NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup;
+    NR_PTRS_UplinkConfig->transformPrecoderDisabled = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled));
+    NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity));
+    long *n_rbs = CALLOC(2, sizeof(long));
+    for (int i=0;i<2;i++) {
+      ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, &n_rbs[i]);
+    }
+    NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity));
+    long *ptrs_mcs = CALLOC(3, sizeof(long));
+    for (int i = 0; i < 3; i++) {
+      ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, &ptrs_mcs[i]);
+    }
+    NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
+    *NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = 0;
+
+    // UL bandwidth part
+    NR_BWP_Uplink_t *ubwp = CALLOC(1, sizeof(*ubwp));
+    ubwp->bwp_Id = j+1;
+    ubwp->bwp_Common = CALLOC(1, sizeof(*ubwp->bwp_Common));
+    ubwp->bwp_Dedicated = CALLOC(1, sizeof(*ubwp->bwp_Dedicated));
+
+    ubwp->bwp_Dedicated->pusch_Config = CALLOC(1, sizeof(*ubwp->bwp_Dedicated->pusch_Config));
+    ubwp->bwp_Dedicated->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
+    ubwp->bwp_Dedicated->pusch_Config->choice.setup = pusch_Config;
+
+    ASN_SEQUENCE_ADD(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
   }
-  NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->timeDensity));
-  long *dl_mcs = CALLOC(3, sizeof(long));
-  for (int i=0;i<3;i++) {
-    ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->timeDensity->list, &dl_mcs[i]);
-  }
-  NR_PTRS_DownlinkCfg->epre_Ratio = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->epre_Ratio));
-  NR_PTRS_DownlinkCfg->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->resourceElementOffset));
-  *NR_PTRS_DownlinkCfg->resourceElementOffset = 0;
-  ASN_SEQUENCE_ADD(&scd->downlinkBWP_ToAddModList->list,bwp);
-
-  // Allocate uplink structures
-
-  NR_PUSCH_Config_t *pusch_Config = CALLOC(1, sizeof(*pusch_Config));
-
-  // Allocate UL DMRS and PTRS structures
-  pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB = CALLOC(1, sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB));
-  pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->present = NR_SetupRelease_DMRS_UplinkConfig_PR_setup;
-  pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup = CALLOC(1, sizeof(*pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup));
-  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
-  NR_DMRS_UplinkConfig->phaseTrackingRS = CALLOC(1, sizeof(*NR_DMRS_UplinkConfig->phaseTrackingRS));
-  NR_DMRS_UplinkConfig->phaseTrackingRS->present = NR_SetupRelease_PTRS_UplinkConfig_PR_setup;
-  NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup = CALLOC(1, sizeof(*NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup));
-  NR_PTRS_UplinkConfig_t *NR_PTRS_UplinkConfig = NR_DMRS_UplinkConfig->phaseTrackingRS->choice.setup;
-  NR_PTRS_UplinkConfig->transformPrecoderDisabled = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled));
-  NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity));
-  long *n_rbs = CALLOC(2, sizeof(long));
-  for (int i=0;i<2;i++) {
-    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, &n_rbs[i]);
-  }
-  NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity));
-  long *ptrs_mcs = CALLOC(3, sizeof(long));
-  for (int i = 0; i < 3; i++) {
-    ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, &ptrs_mcs[i]);
-  }
-  NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
-  *NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = 0;
-
-  // UL bandwidth part
-  NR_BWP_Uplink_t *ubwp = CALLOC(1, sizeof(*ubwp));
-  ubwp->bwp_Id = j+1;
-  ubwp->bwp_Common = CALLOC(1, sizeof(*ubwp->bwp_Common));
-  ubwp->bwp_Dedicated = CALLOC(1, sizeof(*ubwp->bwp_Dedicated));
-
-  ubwp->bwp_Dedicated->pusch_Config = CALLOC(1, sizeof(*ubwp->bwp_Dedicated->pusch_Config));
-  ubwp->bwp_Dedicated->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
-  ubwp->bwp_Dedicated->pusch_Config->choice.setup = pusch_Config;
-
-  ASN_SEQUENCE_ADD(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
-}
 }
 
 /* This function checks dedicated serving cell configuration and performs fixes as needed */

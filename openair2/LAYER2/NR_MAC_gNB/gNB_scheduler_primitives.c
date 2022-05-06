@@ -2642,7 +2642,7 @@ void nr_csirs_scheduling(int Mod_idP,
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
       NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
-                                    &sched_ctrl->active_bwp->bwp_Common->genericParameters:
+                                    &sched_ctrl->active_bwp->bwp_Common->genericParameters :
                                     &gNB_mac->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
@@ -2836,15 +2836,15 @@ void nr_mac_update_timers(module_id_t module_id,
         // If needed, update the Dedicated BWP
         const int current_bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
         const int current_ubwp_id = sched_ctrl->active_ubwp ? sched_ctrl->active_ubwp->bwp_Id : 0;
-        if(spCellConfigDedicated &&
+        if (spCellConfigDedicated &&
            spCellConfigDedicated->downlinkBWP_ToAddModList &&
            spCellConfigDedicated->uplinkConfig &&
            spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList) {
-          if(*spCellConfigDedicated->firstActiveDownlinkBWP_Id != current_bwp_id) {
+          if (*spCellConfigDedicated->firstActiveDownlinkBWP_Id != current_bwp_id) {
             sched_ctrl->active_bwp = spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[*spCellConfigDedicated->firstActiveDownlinkBWP_Id - 1];
             LOG_I(NR_MAC, "Changing to DL-BWP %li\n", sched_ctrl->active_bwp->bwp_Id);
           }
-          if(*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id != current_ubwp_id) {
+          if (*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id != current_ubwp_id) {
             sched_ctrl->active_ubwp = spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id - 1];
             LOG_I(NR_MAC, "Changing to UL-BWP %li\n", sched_ctrl->active_ubwp->bwp_Id);
           }

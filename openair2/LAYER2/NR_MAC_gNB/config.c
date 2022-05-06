@@ -467,7 +467,7 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
   const uint16_t sf_ahead = 6/(0x01<<subcarrierSpacing) + ((6%(0x01<<subcarrierSpacing))>0);
   const uint16_t sl_ahead = sf_ahead * (0x01<<subcarrierSpacing);
   sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
-  LOG_I(NR_MAC, "Activating RRC processing timer for UE %d\n", UE_id);
+  LOG_I(NR_MAC, "Activating RRC processing timer for UE %d with %d ms\n", UE_id, rrc_reconfiguration_delay);
 
   return 0;
 }
