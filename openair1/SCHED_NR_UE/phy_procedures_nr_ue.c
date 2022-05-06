@@ -1581,6 +1581,24 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
   }
 }
 
+uint8_t check_prs_slot_nrUE(PHY_VARS_NR_UE *ue, uint8_t *prs_gNB_id, uint8_t *prs_rsc_id, int nr_slot_rx)
+{
+  uint8_t is_prs_slot = 0, rsc_id = 0, gNB_id = 0;
+  for(gNB_id = 0; gNB_id < ue->prs_active_gNBs; gNB_id++)
+  {
+    for(rsc_id = 0; rsc_id < ue->prs_vars[gNB_id]->NumPRSResources; rsc_id++)
+    {
+      if((ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset) == nr_slot_rx)
+      {
+        is_prs_slot = 1;
+        *prs_rsc_id = rsc_id;
+        *prs_gNB_id = gNB_id;
+        return is_prs_slot;
+      }
+    }
+  }
+  return is_prs_slot;
+}
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
@@ -1595,6 +1613,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int slot_ssb;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[proc->thread_id][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
+  uint8_t rsc_id = 0, is_prs_slot = 0, prs_gNB_id = 0;
 
   uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
   uint8_t dci_cnt = 0;
@@ -1659,21 +1678,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       nr_ue_rrc_measurements(ue, proc, nr_slot_rx);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_OUT);
     }
+  }
 
-/*
-    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[0]=40; // PRS resource slot period
-    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceSetPeriod[1]=0;  // resource slot offset
-    ue->prs_vars[gNB_id]->prs_cfg.SymbolStart=7;		
-    ue->prs_vars[gNB_id]->prs_cfg.NumPRSSymbols=4;
-    ue->prs_vars[gNB_id]->prs_cfg.NumRB=fp->N_RB_DL;
-    ue->prs_vars[gNB_id]->prs_cfg.RBOffset=0;
-    ue->prs_vars[gNB_id]->prs_cfg.CombSize=4;
-    ue->prs_vars[gNB_id]->prs_cfg.REOffset=0;
-    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceOffset=0;
-    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceRepetition=1;
-    ue->prs_vars[gNB_id]->prs_cfg.PRSResourceTimeGap=1;
-    ue->prs_vars[gNB_id]->prs_cfg.NPRSID=0;
-*/
+  // Check for PRS slot
+  is_prs_slot = check_prs_slot_nrUE(ue, &prs_gNB_id, &rsc_id, nr_slot_rx);
+  if (is_prs_slot)
+  {
     for(int j = ue->prs_start_symb; j < ue->prs_end_symb; j++)
     {
             nr_slot_fep(ue,
@@ -1683,8 +1693,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     }
 
     //PRS channel estimation
-    for(int gIdx = 0; gIdx < ue->prs_active_gNBs; gIdx++)
-      nr_prs_channel_estimation(gIdx,ue,proc,fp);
+    //for(int gIdx = 0; gIdx < ue->prs_active_gNBs; gIdx++)
+    {
+      nr_prs_channel_estimation(prs_gNB_id,rsc_id,ue,proc,fp);
+    }
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {

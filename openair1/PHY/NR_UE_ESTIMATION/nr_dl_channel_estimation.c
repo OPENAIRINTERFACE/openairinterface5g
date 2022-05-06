@@ -50,16 +50,17 @@ static inline int abs32(int x)
 }
 
 int nr_prs_channel_estimation(uint8_t gNB_id,
+                              uint8_t rsc_id,
                               PHY_VARS_NR_UE *ue,
                               UE_nr_rxtx_proc_t *proc,
                               NR_DL_FRAME_PARMS *frame_params)
 {
   int32_t **rxdataF      = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
   uint32_t **nr_gold_prs = ue->nr_gold_prs[proc->nr_slot_rx];
-  prs_data_t *prs_cfg    = &ue->prs_vars[gNB_id]->prs_cfg;
-  prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_meas;
-  int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_ch_estimates;
-  int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_ch_estimates_time;
+  prs_data_t *prs_cfg    = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
+  prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
+  int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates;
+  int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates_time;
   
   uint8_t rxAnt = 0, idx = prs_cfg->NPRSID;
   int16_t *rxF, *pil, *fl, *fm, *fmm, *fml, *fmr, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
@@ -92,7 +93,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     }
    
 #ifdef DEBUG_PRS_PRINTS 
-    printf("[gNB %d] PRS config l %d k_prime %d:\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", gNB_id, l, k_prime, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
+    printf("[gNB %d][rsc %d] PRS config l %d k_prime %d:\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", gNB_id, rsc_id, l, k_prime, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
 #endif
     // Pilots generation and modulation
     for (int m = 0; m < num_pilots; m++) 
@@ -483,11 +484,10 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                    frame_params->ofdm_symbol_size,
                    &prs_meas[rxAnt][l].dl_toa,
                    &ch_pwr);
-    LOG_I(PHY, "[gNB %d][Rx %d][sfn %d][slot %d] ToA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, l, prs_meas[rxAnt][l].dl_toa-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr));
+    LOG_I(PHY, "[gNB %d][rsc %d][Rx %d][sfn %d][slot %d] ToA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rsc_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, l, prs_meas[rxAnt][l].dl_toa-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr));
 
     //prs measurements
     prs_meas[rxAnt][l].gNB_id     = gNB_id;
-    prs_meas[rxAnt][l].timestamp  = 0; //TODO
     prs_meas[rxAnt][l].sfn        = proc->frame_rx;
     prs_meas[rxAnt][l].slot       = proc->nr_slot_rx;
     prs_meas[rxAnt][l].rxAnt_idx  = rxAnt;
