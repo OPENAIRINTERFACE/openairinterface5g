@@ -93,6 +93,12 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
       sched_ctrl->pcmax,
       avg_rsrp,
       stats->num_rsrp_meas);
+    stroff+=sprintf(output+stroff,"UE %d: CQI %d, RI %d, PMI (%d,%d)\n",
+                    UE_id,
+                    UE_info->UE_sched_ctrl[UE_id].CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,
+                    UE_info->UE_sched_ctrl[UE_id].CSI_report.cri_ri_li_pmi_cqi_report.ri+1,
+                    UE_info->UE_sched_ctrl[UE_id].CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
+                    UE_info->UE_sched_ctrl[UE_id].CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
     stroff+=sprintf(output+stroff,"UE %d: dlsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
                     UE_id,

@@ -165,7 +165,7 @@ From the `cmake_targets/ran_build/build` folder:
 
 gNB on machine 1:
 
-`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --sa`
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --sa`
 
 UE on machine 2:
 
@@ -173,7 +173,7 @@ UE on machine 2:
 
 With the RF simulator (on the same machine):
 
-`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa`
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa`
 
 `sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 -s 516 --rfsim --sa`
 
