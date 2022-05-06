@@ -297,13 +297,14 @@ int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
                                  const frame_t         frameP,
                                  const sub_frame_t     sub_frameP,
                                  const rnti_t          rntiP,
-                                 const int             bwp_id) {
+                                 const int             dl_bwp_id,
+                                 const int             ul_bwp_id) {
 
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[module_idP], rntiP);
 
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, GNB_FLAG_YES, rntiP, frameP, sub_frameP, 0);
-  nr_rrc_reconfiguration_req(ue_context_p, &ctxt, bwp_id);
+  nr_rrc_reconfiguration_req(ue_context_p, &ctxt, dl_bwp_id, ul_bwp_id);
 
   return 0;
 }
