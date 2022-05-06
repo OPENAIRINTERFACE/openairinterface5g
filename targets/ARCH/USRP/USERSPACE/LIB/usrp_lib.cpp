@@ -675,7 +675,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   if (samples_received == nsamps) s->wait_for_first_pps=0;
 
     // bring RX data into 12 LSBs for softmodem RX
-    for (int i=0; i<cc; i++) {
+  for (int i=0; i<cc; i++) {
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
@@ -695,7 +695,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       for (int j=0; j<nsamps2; j++) 
         ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
-    }
+  }
 
   if (samples_received < nsamps) {
     LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
@@ -1116,7 +1116,6 @@ extern "C" {
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
-    s->usrp->set_rx_dc_offset(true);
   }
 
   if (device->type==USRP_N300_DEV) {

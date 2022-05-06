@@ -100,6 +100,11 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
                            transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
 return 0;
 }
+
+int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+  return 0;
+}
+
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
