@@ -2878,6 +2878,7 @@ void nr_mac_update_timers(module_id_t module_id,
 
         int dci_format = get_dci_format(sched_ctrl);
         const uint8_t num_dmrs_cdm_grps_no_data = (ubwp || ubwpd) ? 1 : 2;
+        const uint8_t nrOfLayers = 1;
         const int utda = ubwp && preferred_ul_tda[ubwp->bwp_Id][slot] >= 0 ?
             preferred_ul_tda[ubwp->bwp_Id][slot] : (ups->time_domain_allocation >= 0 ? ups->time_domain_allocation : 0);
 
@@ -2888,6 +2889,7 @@ void nr_mac_update_timers(module_id_t module_id,
                                  dci_format,
                                  utda,
                                  num_dmrs_cdm_grps_no_data,
+                                 nrOfLayers,
                                  ups);
       }
     }
