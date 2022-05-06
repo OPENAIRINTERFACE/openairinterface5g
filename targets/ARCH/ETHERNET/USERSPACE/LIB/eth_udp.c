@@ -346,7 +346,16 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
       __m256i *buff256 = (__m256i *)&((uint32_t*)buff[aid])[offset];
-      for (int j=0; j<32; j++) buff_tx[aid][1+j] = _mm256_slli_epi16(buff256[j],4);
+      for (int j=0; j<32; j+=8) {
+	 buff_tx[aid][1+j] = _mm256_slli_epi16(buff256[j],4);
+	 buff_tx[aid][2+j] = _mm256_slli_epi16(buff256[j+1],4);
+	 buff_tx[aid][3+j] = _mm256_slli_epi16(buff256[j+2],4);
+	 buff_tx[aid][4+j] = _mm256_slli_epi16(buff256[j+3],4);
+	 buff_tx[aid][5+j] = _mm256_slli_epi16(buff256[j+4],4);
+	 buff_tx[aid][6+j] = _mm256_slli_epi16(buff256[j+5],4);
+	 buff_tx[aid][7+j] = _mm256_slli_epi16(buff256[j+6],4);
+	 buff_tx[aid][8+j] = _mm256_slli_epi16(buff256[j+7],4);
+      }
 #else
       __m128i *buff128 = (__m128i *)&buff[aid][offset];
       for (int j=0; j<64; j++) buff_tx[aid][2+j] = _mm_slli_epi16(buff128[j],4);

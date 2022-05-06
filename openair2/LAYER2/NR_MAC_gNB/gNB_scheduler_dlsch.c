@@ -488,17 +488,22 @@ void nr_store_dlsch_buffer(module_id_t module_id,
       const int lcid = sched_ctrl->dl_lc_ids[i];
       const uint16_t rnti = UE_info->rnti[UE_id];
       LOG_D(NR_MAC, "In %s: UE %d/%x: LCID %d\n", __FUNCTION__, UE_id, rnti, lcid);
+
+      if (lcid == DL_SCH_LCID_DTCH && sched_ctrl->rrc_processing_timer > 0) {
+        continue;
+      }
+
       start_meas(&RC.nrmac[module_id]->rlc_status_ind);
       sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
-                                     rnti,
-                                     module_id,
-                                     frame,
-                                     slot,
-                                     ENB_FLAG_YES,
-                                     MBMS_FLAG_NO,
-                                     lcid,
-                                     0,
-                                     0);
+                                                        rnti,
+                                                        module_id,
+                                                        frame,
+                                                        slot,
+                                                        ENB_FLAG_YES,
+                                                        MBMS_FLAG_NO,
+                                                        lcid,
+                                                        0,
+                                                        0);
       stop_meas(&RC.nrmac[module_id]->rlc_status_ind);
 
       if (sched_ctrl->rlc_status[lcid].bytes_in_buffer == 0)
@@ -588,7 +593,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
-    if (ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
+    if (ps->time_domain_allocation != tda) {
       nr_set_pdsch_semi_static(sib1,
                                scc,
                                cg,
@@ -598,7 +603,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                ps->nrOfLayers,
                                sched_ctrl,
                                ps);
-      sched_ctrl->update_pdsch_ps = false;
     }
   } else {
     /* the retransmission will use a different time domain allocation, check
@@ -904,7 +908,7 @@ void pf_dl(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-    if (ps->nrOfLayers != layers[UE_id] || ps->time_domain_allocation != tda || sched_ctrl->update_pdsch_ps) {
+    if (ps->nrOfLayers != layers[UE_id] || ps->time_domain_allocation != tda) {
       nr_set_pdsch_semi_static(sib1,
                                scc,
                                UE_info->CellGroup[UE_id],
@@ -914,7 +918,6 @@ void pf_dl(module_id_t module_id,
                                layers[UE_id],
                                sched_ctrl,
                                ps);
-      sched_ctrl->update_pdsch_ps = false;
     }
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
@@ -1047,14 +1050,13 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id) {
       const uint8_t Qm = nr_get_Qm_dl(mcs, mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(mcs, mcsTableIdx);
       pf_tbs[mcsTableIdx][mcs] = nr_compute_tbs(Qm,
-                                 R,
-                                 1, /* rbSize */
-                                 10, /* hypothetical number of slots */
-                                 0, /* N_PRB_DMRS * N_DMRS_SLOT */
-                                 0 /* N_PRB_oh, 0 for initialBWP */,
-                                 0 /* tb_scaling */,
-                                 1 /* nrOfLayers */)
-                                 >> 3;
+                                                R,
+                                                1, /* rbSize */
+                                                10, /* hypothetical number of slots */
+                                                0, /* N_PRB_DMRS * N_DMRS_SLOT */
+                                                0 /* N_PRB_oh, 0 for initialBWP */,
+                                                0 /* tb_scaling */,
+                                                1 /* nrOfLayers */) >> 3;
     }
   }
 
@@ -1264,15 +1266,15 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     if (phaseTrackingRS) {
       bool valid_ptrs_setup = set_dl_ptrs_values(phaseTrackingRS->choice.setup,
-                              pdsch_pdu->rbSize,
-                              pdsch_pdu->mcsIndex[0],
-                              pdsch_pdu->mcsTable[0],
-                              &pdsch_pdu->PTRSFreqDensity,
-                              &pdsch_pdu->PTRSTimeDensity,
-                              &pdsch_pdu->PTRSPortIndex,
-                              &pdsch_pdu->nEpreRatioOfPDSCHToPTRS,
-                              &pdsch_pdu->PTRSReOffset,
-                              pdsch_pdu->NrOfSymbols);
+                                                 pdsch_pdu->rbSize,
+                                                 pdsch_pdu->mcsIndex[0],
+                                                 pdsch_pdu->mcsTable[0],
+                                                 &pdsch_pdu->PTRSFreqDensity,
+                                                 &pdsch_pdu->PTRSTimeDensity,
+                                                 &pdsch_pdu->PTRSPortIndex,
+                                                 &pdsch_pdu->nEpreRatioOfPDSCHToPTRS,
+                                                 &pdsch_pdu->PTRSReOffset,
+                                                 pdsch_pdu->NrOfSymbols);
 
       if (valid_ptrs_setup)
         pdsch_pdu->pduBitmap |= 0x1; // Bit 0: pdschPtrs - Indicates PTRS included (FR2)

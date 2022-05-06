@@ -992,8 +992,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
 
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
-        || sched_ctrl->update_pusch_ps) {
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
       nr_set_pusch_semi_static(sib1,
                                scc,
                                sched_ctrl->active_ubwp,
@@ -1002,7 +1001,6 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                tda,
                                num_dmrs_cdm_grps_no_data,
                                ps);
-      sched_ctrl->update_pusch_ps = false;
     }
 
     /* Check the resource is enough for retransmission */
@@ -1205,8 +1203,9 @@ void pf_ul(module_id_t module_id,
     const bool do_sched = nr_UE_is_to_be_scheduled(module_id, 0, UE_id, sched_pusch->frame, sched_pusch->slot);
 
     LOG_D(NR_MAC,"pf_ul: do_sched UE %d => %s\n",UE_id,do_sched ? "yes" : "no");
-    if (B == 0 && !do_sched)
+    if ((B == 0 && !do_sched) || (sched_ctrl->rrc_processing_timer > 0)) {
       continue;
+    }
 
     /* Schedule UE on SR or UL inactivity and no data (otherwise, will be scheduled
      * based on data to transmit) */
@@ -1250,8 +1249,7 @@ void pf_ul(module_id_t module_id,
       const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
-          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
-          || sched_ctrl->update_pusch_ps) {
+          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
         nr_set_pusch_semi_static(sib1,
                                  scc,
                                  sched_ctrl->active_ubwp,
@@ -1260,7 +1258,6 @@ void pf_ul(module_id_t module_id,
                                  tda,
                                  num_dmrs_cdm_grps_no_data,
                                  ps);
-        sched_ctrl->update_pusch_ps = false;
       }
 
       LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d\n", min_rb, rbStart);
@@ -1388,8 +1385,7 @@ void pf_ul(module_id_t module_id,
     const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data
-        || sched_ctrl->update_pusch_ps) {
+        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
       nr_set_pusch_semi_static(sib1,
                                scc,
                                sched_ctrl->active_ubwp,
@@ -1398,7 +1394,6 @@ void pf_ul(module_id_t module_id,
                                tda,
                                num_dmrs_cdm_grps_no_data,
                                ps);
-      sched_ctrl->update_pusch_ps = false;
     }
     update_ul_ue_R_Qm(sched_pusch, ps);
 

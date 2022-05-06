@@ -797,6 +797,13 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   default :
     LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
   }
+
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -906,11 +913,12 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
     DRB_config->pdcp_Config->drb->integrityProtection = NULL;
     DRB_config->pdcp_Config->drb->statusReportRequired = NULL;
-    DRB_config->pdcp_Config->drb->outOfOrderDelivery = NULL;
+    DRB_config->pdcp_Config->drb->outOfOrderDelivery = calloc(1,sizeof(*DRB_config->pdcp_Config->drb->outOfOrderDelivery));
+    *DRB_config->pdcp_Config->drb->outOfOrderDelivery = NR_PDCP_Config__drb__outOfOrderDelivery_true;
     DRB_config->pdcp_Config->moreThanOneRLC = NULL;
 
-    DRB_config->pdcp_Config->t_Reordering = NULL; /*calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
-    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms10;*/
+    DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
+    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms20;
     DRB_config->pdcp_Config->ext1 = NULL;
 
     if (rrc->security.do_drb_integrity) {
@@ -1032,6 +1040,13 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1205,6 +1220,13 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1305,6 +1327,13 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1862,6 +1891,13 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
       buffer,
       PDCP_TRANSMISSION_MODE_CONTROL);
 #endif
+  }
+
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          NR_RRC_RECONFIGURATION_DELAY_MS);
   }
 }
 //-----------------------------------------------------------------------------

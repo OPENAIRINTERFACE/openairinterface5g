@@ -278,11 +278,14 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
   void *buffs[ru->nb_tx];
   int offset = ru->nr_frame_parms->get_samples_slot_timestamp(slot,ru->nr_frame_parms,0);
   for (int aid=0;aid<ru->nb_tx;aid++) buffs[aid]=&ru->common.txdata[aid][offset]; 
+  start_meas(&ru->tx_fhaul);
   ru->ifdevice.trx_write_func2(&ru->ifdevice,
 		               timestamp,
 			       buffs,
 			       ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
 			       0); 
+  stop_meas(&ru->tx_fhaul);
+
 }
 
 // southbound IF4p5 fronthaul

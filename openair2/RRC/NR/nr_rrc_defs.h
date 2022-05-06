@@ -96,6 +96,10 @@ typedef struct nr_uid_linear_allocator_s {
 #define PROTOCOL_NR_RRC_CTXT_FMT                   PROTOCOL_CTXT_FMT
 #define PROTOCOL_NR_RRC_CTXT_ARGS(CTXT_Pp)         PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
 
+// 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
+#define NR_RRC_SETUP_DELAY_MS           10
+#define NR_RRC_RECONFIGURATION_DELAY_MS 10
+#define NR_RRC_BWP_SWITCHING_DELAY_MS   6
 
 #define NR_UE_MODULE_INVALID ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!!
 #define NR_UE_INDEX_INVALID  ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!! used to be -1
@@ -372,7 +376,7 @@ typedef struct gNB_RRC_UE_s {
   rb_id_t                            gnb_gtp_ebi[S1AP_MAX_E_RAB];
   rb_id_t                            gnb_gtp_psi[S1AP_MAX_E_RAB];
   //GTPV1 F1-U TUNNELS
-  uint32_t                           incoming_teid[S1AP_MAX_E_RAB]; 
+  uint32_t                           incoming_teid[S1AP_MAX_E_RAB];
 
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;

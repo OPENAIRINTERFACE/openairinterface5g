@@ -241,9 +241,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                           cipher_algo,
                           NR_SecurityConfig__keyToUse_secondary);
   }
-  NR_ServingCellConfig_t *scc = ue_context_p->ue_context.spCellConfig
-      ? ue_context_p->ue_context.spCellConfig->spCellConfigDedicated
-      : NULL;
+  NR_ServingCellConfig_t *scc = ue_context_p->ue_context.spCellConfig ?
+      ue_context_p->ue_context.spCellConfig->spCellConfigDedicated : NULL;
   fill_default_reconfig(carrier->servingcellconfigcommon,
                         scc,
                         reconfig_ies,
