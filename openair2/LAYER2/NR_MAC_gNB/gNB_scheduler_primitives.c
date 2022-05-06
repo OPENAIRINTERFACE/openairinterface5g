@@ -421,19 +421,6 @@ NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
 }
 
 
-int cce_to_reg_interleaving(const int R, int k, int n_shift, const int C, int L, const int N_regs) {
-
-  int f;  // interleaving function
-  if(R==0)
-    f = k;
-  else {
-    int c = k/R;
-     int r = k%R;
-     f = (r*C + c + n_shift)%(N_regs/L);
-  }
-  return f;
-}
-
 int find_pdcch_candidate(gNB_MAC_INST *mac,
                          int cc_id,
                          int aggregation,

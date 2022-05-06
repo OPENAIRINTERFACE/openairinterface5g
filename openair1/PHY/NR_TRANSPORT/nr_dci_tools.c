@@ -47,71 +47,51 @@ void nr_fill_cce_list(nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL]
   int R = pdcch_pdu_rel15->InterleaverSize;
   int n_shift = pdcch_pdu_rel15->ShiftIndex;
 
-
   //Max number of candidates per aggregation level -- SIB1 configured search space only
-
 
   int n_rb,rb_offset;
 
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
 
-
-  int N_reg = n_rb;
-  int C=-1;
-
-  AssertFatal(N_reg > 0,"N_reg cannot be 0\n");
-
   for (int d=0;d<pdcch_pdu_rel15->numDlDci;d++) {
+
     int  L = pdcch_pdu_rel15->dci_pdu[d].AggregationLevel;
+    int dur = pdcch_pdu_rel15->DurationSymbols;
+    int N_regs = n_rb*dur; // nb of REGs per coreset
+    AssertFatal(N_regs > 0,"N_reg cannot be 0\n");
 
     if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_MIB_SIB1)
       AssertFatal(L>=4, "Invalid aggregation level for SIB1 configured PDCCH %d\n", L);
-    
+
+    int C = 0;
+
     if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-      uint16_t assertFatalCond = (N_reg%(bsize*R));
-      AssertFatal(assertFatalCond == 0,"CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %us, bsize %d R %d)\n",N_reg, bsize, R);
-      C = N_reg/(bsize*R);
+      uint16_t assertFatalCond = (N_regs%(bsize*R));
+      AssertFatal(assertFatalCond == 0,"CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %us, bsize %d R %d)\n",N_regs, bsize, R);
+      C = N_regs/(bsize*R);
     }
-    
-    if (pdcch_pdu_rel15->dci_pdu[d].RNTI != 0xFFFF) LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", d, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
+
+    if (pdcch_pdu_rel15->dci_pdu[d].RNTI != 0xFFFF)
+      LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", d, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
+
     for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
       cce = &cce_list[d][cce_idx];
       cce->cce_idx = pdcch_pdu_rel15->dci_pdu[d].CceIndex + cce_idx;
       LOG_D(PHY, "cce_idx %d\n", cce->cce_idx);
-      
-      if (pdcch_pdu_rel15->CceRegMappingType == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
-	LOG_D(PHY, "Interleaved CCE to REG mapping\n");
-	uint8_t j = cce->cce_idx, j_prime;
-	uint8_t r,c,idx;
-	
-	for (uint8_t bundle_idx=0; bundle_idx<NR_NB_REG_PER_CCE/bsize; bundle_idx++) {
-	  j_prime = 6*j/bsize + bundle_idx;
-	  r = j_prime%R;
-	  c = (j_prime-r)/R;
-	  idx = (r*C + c + n_shift)%(N_reg/bsize);
-	  LOG_D(PHY, "bundle idx = %d \n j = %d \t j_prime = %d \t r = %d \t c = %d\n", idx, j , j_prime, r, c);
-	  
-	  for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
-	    reg = &cce->reg_list[reg_idx];
-	    reg->reg_idx = bsize*idx + reg_idx;
-	    reg->start_sc_idx = reg->reg_idx * NR_NB_SC_PER_RB;
-	    reg->symb_idx = 0;
-	    LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
-	  }
-	}
-      }
-      else { // NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED
-	LOG_D(PHY, "Non interleaved CCE to REG mapping\n");
-	for (uint8_t reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
+
+      uint8_t j = cce->cce_idx;
+      for (int k=6*j/bsize; k<(6*j/bsize+6/bsize); k++) { // loop over REG bundles
+
+        int f = cce_to_reg_interleaving(R, k, n_shift, C, bsize, N_regs);
+
+	for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
 	  reg = &cce->reg_list[reg_idx];
-	  reg->reg_idx = cce->cce_idx*NR_NB_REG_PER_CCE + reg_idx;
-	  reg->start_sc_idx = reg->reg_idx * NR_NB_SC_PER_RB;
-	  reg->symb_idx = 0;
+	  reg->reg_idx = bsize*f + reg_idx;
+	  reg->start_sc_idx = (reg->reg_idx/dur) * NR_NB_SC_PER_RB;
+	  reg->symb_idx = reg_idx%dur;
 	  LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
 	}
-	
       }
-      
     }
   }
 }
