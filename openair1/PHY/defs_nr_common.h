@@ -244,6 +244,7 @@ typedef struct {
   int32_t **srs_estimated_channel_freq;
   int32_t **srs_estimated_channel_time;
   int32_t **srs_estimated_channel_time_shifted;
+  uint32_t *noise_power_per_rb;
   uint32_t *noise_power;
 } nr_srs_info_t;
 

@@ -1099,6 +1099,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               int32_t **srs_estimated_channel_freq,
                               int32_t **srs_estimated_channel_time,
                               int32_t **srs_estimated_channel_time_shifted,
+                              uint32_t *noise_power_per_rb,
                               uint32_t *noise_power) {
 
   if(nr_srs_info->sc_list_length == 0) {
@@ -1214,6 +1215,50 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
     memcpy(&srs_estimated_channel_time_shifted[ant][gNB->frame_parms.ofdm_symbol_size>>1],
            &srs_estimated_channel_time[ant][0],
            (gNB->frame_parms.ofdm_symbol_size>>1)*sizeof(int32_t));
+  }
+
+  // Compute noise power
+
+  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
+  uint8_t srs_symbols_per_rb = srs_pdu->comb_size == 0 ? 6 : 3;
+  uint8_t n_noise_estimates = frame_parms->nb_antennas_rx*srs_symbols_per_rb;
+  uint8_t count_estimates = 0;
+  uint64_t sum_re = 0;
+  uint64_t sum_re2 = 0;
+  uint64_t sum_im = 0;
+  uint64_t sum_im2 = 0;
+
+  for (int sc_idx = 0; sc_idx < nr_srs_info->sc_list_length; sc_idx++) {
+
+    int subcarrier0 = nr_srs_info->sc_list[sc_idx]-subcarrier_offset;
+    if(subcarrier0 < 0) {
+      subcarrier0 = subcarrier0 + frame_parms->ofdm_symbol_size;
+    }
+    int rb = subcarrier0/NR_NB_SC_PER_RB;
+
+    for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
+
+      sum_re = sum_re + noise_real[ant*nr_srs_info->sc_list_length+sc_idx];
+      sum_re2 = sum_re2 + noise_real[ant*nr_srs_info->sc_list_length+sc_idx]*noise_real[ant*nr_srs_info->sc_list_length+sc_idx];
+      sum_im = sum_im + noise_imag[ant*nr_srs_info->sc_list_length+sc_idx];
+      sum_im2 = sum_im2 + noise_imag[ant*nr_srs_info->sc_list_length+sc_idx]*noise_imag[ant*nr_srs_info->sc_list_length+sc_idx];
+
+      count_estimates++;
+      if (count_estimates == n_noise_estimates) {
+        noise_power_per_rb[rb] = sum_re2/n_noise_estimates - (sum_re/n_noise_estimates)*(sum_re/n_noise_estimates) +
+                                 sum_im2/n_noise_estimates - (sum_im/n_noise_estimates)*(sum_im/n_noise_estimates);
+        count_estimates = 0;
+        sum_re = 0;
+        sum_re2 = 0;
+        sum_im = 0;
+        sum_im2 = 0;
+
+#ifdef SRS_DEBUG
+        LOG_I(NR_PHY,"noise_power_per_rb[%i] = %i\n", rb, noise_power_per_rb[rb]);
+#endif
+
+      }
+    }
   }
 
   *noise_power = calc_power(noise_real,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length)
