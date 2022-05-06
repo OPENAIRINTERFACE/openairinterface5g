@@ -16,7 +16,7 @@ extern int oai_nfapi_cqi_indication(nfapi_cqi_indication_t *cqi_ind);
 extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 
-extern uint16_t sf_ahead;
+int sf_ahead=4;
 extern UL_RCC_IND_t  UL_RCC_INFO;
 
 extern RAN_CONTEXT_t RC;

@@ -449,7 +449,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (harq_process->ndi != pusch_pdu->pusch_data.new_data_indicator) {
     harq_process->new_rx = true;
     harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
-    LOG_E(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
+    LOG_D(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
   }
 
   A   = (harq_process->TBS)<<3;

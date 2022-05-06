@@ -423,7 +423,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
 #endif
 
   if (Foffset > E) {
-    LOG_E(PHY,"nr_rate_matching: invalid parameters (Foffset %d > E %d)\n",Foffset,E);
+    LOG_E(PHY,"nr_rate_matching: invalid parameters (Foffset %d > E %d) F %d, k0 %d, Ncb %d, rvidx %d, Ilbrm %d\n",Foffset,E,F, ind, Ncb, rvidx, Ilbrm);
     return -1;
   }
   if (Foffset > Ncb) {
