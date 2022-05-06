@@ -206,10 +206,11 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
           l = cset_start_symb + symbol_idx;
 
           // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
+          int eff_reg_idx = cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx/pdcch_pdu_rel15->DurationSymbols;
           if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
-            dmrs_idx = (cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx) * 3;
+            dmrs_idx = eff_reg_idx * 3;
           else
-            dmrs_idx = (cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx + rb_offset) * 3;
+            dmrs_idx = (eff_reg_idx + rb_offset) * 3;
 
           k_prime = 0;
 
