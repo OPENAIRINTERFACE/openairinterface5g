@@ -1692,11 +1692,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                         nr_slot_rx);
     }
 
-    //PRS channel estimation
-    //for(int gIdx = 0; gIdx < ue->prs_active_gNBs; gIdx++)
-    {
-      nr_prs_channel_estimation(prs_gNB_id,rsc_id,ue,proc,fp);
-    }
+    nr_prs_channel_estimation(prs_gNB_id,rsc_id,ue,proc,fp);
   }
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {

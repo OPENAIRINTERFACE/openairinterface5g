@@ -338,10 +338,10 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas!=NULL), "NR UE init: PRS measurements malloc failed for gNB_id %d\n", idx);
 
       for (i=0; i<fp->nb_antennas_rx; i++) {
-        prs_vars[idx]->prs_resource[k].prs_ch_estimates[i]      = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*NR_SYMBOLS_PER_SLOT*sizeof(int32_t));
-        prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[i] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*NR_SYMBOLS_PER_SLOT*sizeof(int32_t));
+        prs_vars[idx]->prs_resource[k].prs_ch_estimates[i]      = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+        prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[i] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
         AssertFatal(((prs_vars[idx]->prs_resource[k].prs_ch_estimates[i]!=NULL) || (prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[i]!=NULL)), "NR UE init: PRS channel estimates malloc failed for rx_ant %d\n", i);
-        prs_vars[idx]->prs_resource[k].prs_meas[i]              = (prs_meas_t *)malloc16_clear(NR_SYMBOLS_PER_SLOT*sizeof(prs_meas_t) );
+        prs_vars[idx]->prs_resource[k].prs_meas[i]              = (prs_meas_t *)malloc16_clear(sizeof(prs_meas_t) );
         AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas[i]!=NULL), "NR UE init: PRS measurements malloc failed for rx_ant %d\n", i);
       }
     }
