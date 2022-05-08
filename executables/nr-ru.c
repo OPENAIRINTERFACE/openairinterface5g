@@ -275,15 +275,15 @@ int connect_rau(RU_t *ru) {
 // southbound IF5 fronthaul for 16-bit OAI format
 void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  void *buffs[ru->nb_tx];
   int offset = ru->nr_frame_parms->get_samples_slot_timestamp(slot,ru->nr_frame_parms,0);
-  for (int aid=0;aid<ru->nb_tx;aid++) buffs[aid]=&ru->common.txdata[aid][offset]; 
   start_meas(&ru->tx_fhaul);
-  ru->ifdevice.trx_write_func2(&ru->ifdevice,
-		               timestamp,
-			       buffs,
-			       ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
-			       0); 
+  for (int aid=0;aid<ru->nb_tx;aid++)  
+    ru->ifdevice.trx_write_func2(&ru->ifdevice,
+    		                 timestamp,
+			         (void*)&ru->common.txdata[aid][offset],
+				 aid,
+			         ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
+			         0); 
   stop_meas(&ru->tx_fhaul);
 
 }
@@ -488,7 +488,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   RU_proc_t *proc        = &ru->proc;
   int tti_tx,frame_tx;
   openair0_timestamp timestamp_tx;
-  recv_IF5(ru, &timestamp_tx, *slot, IF5_RRH_GW_DL,1);
+  AssertFatal(1==0,"Shouldn't get here\n");
   //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
   frame_tx    = (timestamp_tx / (fp->samples_per_subframe*10))&1023;
   uint32_t idx_sf = timestamp_tx / fp->samples_per_subframe;
@@ -565,11 +565,9 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 }
 
 void fh_if5_north_out(RU_t *ru) {
-  RU_proc_t *proc=&ru->proc;
-  uint8_t seqno=0;
   /// **** send_IF5 of rxdata to BBU **** ///
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );
-  send_IF5(ru, proc->timestamp_rx, proc->tti_rx, &seqno, IF5_RRH_GW_UL);
+  AssertFatal(1==0,"Shouldn't get here\n");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );
 }
 
@@ -1181,9 +1179,15 @@ void *ru_stats_thread(void *param) {
         print_meas(&ru->precoding_stats,"feptx_prec",NULL,NULL);
         print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
         print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
-        print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
+        if (ru->txfh_in_fep) {
+          print_meas(&ru->ofdm_mod_stats,"feptx_ofdm (with txfh)",NULL,NULL);
+	  print_meas(&ru->ofdm_total_stats,"feptx_total (with txfh)",NULL,NULL);
+	} 
+        else {
+          print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
+          print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
+  	}
       }
-
       print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
       print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
 
@@ -1851,11 +1855,12 @@ void set_function_spec_param(RU_t *ru) {
 
     case REMOTE_IF5: // the remote unit is IF5 RRU
       ru->do_prach               = 0;
+//      ru->txfh_in_fep            = 1;
       ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread   : nr_fep_full;     // this is frequency-shift + DFTs
       ru->feptx_prec             = (get_thread_worker_conf() == WORKER_ENABLE) ? NULL                  : nr_feptx_prec;          // need to do transmit Precoding + IDFTs
       ru->feptx_ofdm             = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm; // need to do transmit Precoding + IDFTs
       ru->fh_south_in            = fh_if5_south_in;     // synchronous IF5 reception
-      ru->fh_south_out           = fh_if5_south_out;    // synchronous IF5 transmission
+      ru->fh_south_out           = (ru->txfh_in_fep) ? NULL : fh_if5_south_out;    // synchronous IF5 transmission
       ru->fh_south_asynch_in     = NULL;                // no asynchronous UL
       ru->start_rf               = ru->eth_params.transp_preference == ETH_UDP_IF5_ECPRI_MODE ? start_streaming : NULL;
       ru->stop_rf                = NULL;

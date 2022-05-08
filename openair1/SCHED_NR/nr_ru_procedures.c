@@ -56,7 +56,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
 
-  unsigned int slot_offset,slot_offsetF;
+  unsigned int slot_offset,slot_offsetF,initial_slot_offset,num_samples;;
   int slot = tti_tx;
 
 
@@ -71,17 +71,19 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
     slot_offset += (idx_sym%(0x7<<fp->numerology_index)) ? fp->nb_prefix_samples : fp->nb_prefix_samples0;
 
   slot_offset += fp->ofdm_symbol_size*first_symbol;
+  initial_slot_offset = slot_offset;
 
   LOG_D(PHY,"SFN/SF:RU:TX:%d/%d Generating slot %d (first_symbol %d num_symbols %d)\n",ru->proc.frame_tx, ru->proc.tti_tx,slot,first_symbol,num_symbols);
   
-  if (fp->Ncp == 1)
+  if (fp->Ncp == 1) {
     PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
                  (int*)&ru->common.txdata[aa][slot_offset],
                  fp->ofdm_symbol_size,
                  num_symbols,
                  fp->nb_prefix_samples,
                  CYCLIC_PREFIX);
-  else {
+    num_samples=num_symbols*(fp->nb_prefix_samples+fp->ofdm_symbol_size);
+  } else {
     if (fp->numerology_index != 0) {
       
       if (!(slot%(fp->slots_per_subframe/2))&&(first_symbol==0)) { // case where first symbol in slot has longer prefix
@@ -98,6 +100,8 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                      num_symbols-1,
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
+        num_samples=(num_symbols-1)*(fp->nb_prefix_samples+fp->ofdm_symbol_size)+
+		    fp->nb_prefix_samples0+fp->ofdm_symbol_size;
       }
       else { // all symbols in slot have shorter prefix
         PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
@@ -106,6 +110,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                      num_symbols,
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
+        num_samples=num_symbols*(fp->nb_prefix_samples+fp->ofdm_symbol_size);
       }
     } // numerology_index!=0
     else { //numerology_index == 0
@@ -130,10 +135,20 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
           slot_offset += fp->nb_prefix_samples0+fp->ofdm_symbol_size;
           slot_offsetF += fp->ofdm_symbol_size;
         }
-      }
-    }
+      } // for(idx_symbol..
+      num_samples=slot_offset-initial_slot_offset;
+    } //  numerology 0
   }
 
+  if (ru->txfh_in_fep) {
+     ru->ifdevice.trx_write_func2(&ru->ifdevice,
+                                  ru->proc.timestamp_tx,
+                                  (void*)&ru->common.txdata[aa][initial_slot_offset],
+                                  aa,
+                                  num_samples,
+                                  0);
+
+  }   
         
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0), 0);
 }

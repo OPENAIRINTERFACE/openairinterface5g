@@ -289,101 +289,98 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   return (bytes_sent);  	  
 }
 
-int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int flags) {	
+int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void *buff, int aid, int nsamps, int flags) {	
   
   int bytes_sent=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int sendto_flag =0;
   fhstate_t *fhstate = &device->fhstate;
 
-  AssertFatal((nsamps&255) == 0,"transport size should be a multiple of 256 samples, have %d\n",nsamps);
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
 
-  int ntx = device->openair0_cfg->tx_num_channels; 
-  void *buff2[ntx];
+  void *buff2;
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
   int nsamps2 = 256>>3;
-  __m256i buff_tx[ntx][nsamps2+1];
-  for (int aid=0;aid<ntx;aid++) buff2[aid]=(void*)&buff_tx[aid][1] - APP_HEADER_SIZE_BYTES;
+  __m256i buff_tx[nsamps2+1];
+  buff2=(void*)&buff_tx[1] - APP_HEADER_SIZE_BYTES;
 #else
   int nsamps2 = 256>>2;
-  __m128i buff_tx[ntx][nsamps2+2];
-  for (int aid=0;aid<ntx;aid++) buff2[aid]=(void*)&buff_tx[aid][2] - APP_HEADER_SIZE_BYTES;
+  __m128i buff_tx[nsamps2+2];
+  buff=(void*)&buff_tx[2] - APP_HEADER_SIZE_BYTES;
 #endif
 #elif defined(__arm__) || defined(__aarch64__)
   int nsamps2 = 256>>2;
-  int16x8_t buff_tx[ntx][nsamps2+2];
-  for (int aid=0;aid<ntx;aid++) buff2[aid]=(void*)&buff_tx[aid][2] - APP_HEADER_SIZE_BYTES;
+  int16x8_t buff_tx[nsamps2+2];
+  buff2=(void*)&buff_tx[2] - APP_HEADER_SIZE_BYTES;
 #else
 #error Unsupported CPU architecture, ethernet device cannot be built
 #endif
-  for (int aid=0;aid<ntx;aid++) {
 
-    /* construct application header */
-    // ECPRI Protocol revision + reserved bits (1 byte)
-      *(uint8_t *)buff2[aid] = ECPRIREV;
-    // ECPRI Message type (1 byte)
-      *(uint8_t *)(buff2[aid] + 1) = 64;
-    // ECPRI Payload Size (2 bytes)
-      *(uint8_t *)(buff2[aid] + 2) = 4;// 1024>>6;
-      *(uint8_t *)(buff2[aid] + 3) = 0;// 1024&0xff;
-    // ECPRI PC_ID (2 bytes)
-      *(uint16_t *)(buff2[aid] + 4) = aid;
+  /* construct application header */
+  // ECPRI Protocol revision + reserved bits (1 byte)
+  *(uint8_t *)buff2 = ECPRIREV;
+   // ECPRI Message type (1 byte)
+  *(uint8_t *)(buff2 + 1) = 64;
+  // ECPRI PC_ID (2 bytes)
+  *(uint16_t *)(buff2 + 4) = aid;
 
-  }
   openair0_timestamp TS = timestamp + fhstate->TS0;
   TS = 6*device->sampling_rate_ratio_d*(TS/device->sampling_rate_ratio_n);
   TS -= device->txrx_offset; 
   int TSinc = 6*256*device->sampling_rate_ratio_d/device->sampling_rate_ratio_n;
+  int len=256;
   for (int offset=0;offset<nsamps;offset+=256,TS+=TSinc) {
     // OAI modified SEQ_ID (4 bytes)
-    for (int aid=0;aid<ntx;aid++) {
-      *(uint64_t *)(buff2[aid] + 6) = TS;
+    *(uint64_t *)(buff2 + 6) = TS;
 
+    if ((offset + 256) <= nsamps) len=1024;
+    else len = (nsamps-offset)<<2; 
+    // ECPRI Payload Size (2 bytes)
+    *(uint8_t *)(buff2 + 2) = len>>8;
+    *(uint8_t *)(buff2 + 3) = len&0xff;
+    //LOG_I(PHY,"TS %llu aa %d : offset %d, len %d\n",(unsigned long long)TS,aid,offset,len);
     // bring TX data into 12 MSBs 
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-      __m256i *buff256 = (__m256i *)&((uint32_t*)buff[aid])[offset];
-      for (int j=0; j<32; j+=8) {
-	 buff_tx[aid][1+j] = _mm256_slli_epi16(buff256[j],4);
-	 buff_tx[aid][2+j] = _mm256_slli_epi16(buff256[j+1],4);
-	 buff_tx[aid][3+j] = _mm256_slli_epi16(buff256[j+2],4);
-	 buff_tx[aid][4+j] = _mm256_slli_epi16(buff256[j+3],4);
-	 buff_tx[aid][5+j] = _mm256_slli_epi16(buff256[j+4],4);
-	 buff_tx[aid][6+j] = _mm256_slli_epi16(buff256[j+5],4);
-	 buff_tx[aid][7+j] = _mm256_slli_epi16(buff256[j+6],4);
-	 buff_tx[aid][8+j] = _mm256_slli_epi16(buff256[j+7],4);
-      }
+    __m256i *buff256 = (__m256i *)&((uint32_t*)buff)[offset];
+    for (int j=0; j<32; j+=8) {
+      buff_tx[1+j] = _mm256_slli_epi16(buff256[j],4);
+      buff_tx[2+j] = _mm256_slli_epi16(buff256[j+1],4);
+      buff_tx[3+j] = _mm256_slli_epi16(buff256[j+2],4);
+      buff_tx[4+j] = _mm256_slli_epi16(buff256[j+3],4);
+      buff_tx[5+j] = _mm256_slli_epi16(buff256[j+4],4);
+      buff_tx[6+j] = _mm256_slli_epi16(buff256[j+5],4);
+      buff_tx[7+j] = _mm256_slli_epi16(buff256[j+6],4);
+      buff_tx[8+j] = _mm256_slli_epi16(buff256[j+7],4);
+    }
 #else
-      __m128i *buff128 = (__m128i *)&buff[aid][offset];
-      for (int j=0; j<64; j++) buff_tx[aid][2+j] = _mm_slli_epi16(buff128[j],4);
+    __m128i *buff128 = (__m128i *)&buff[offset];
+    for (int j=0; j<64; j++) buff_tx[2+j] = _mm_slli_epi16(buff128[j],4);
 #endif
 #elif defined(__arm__)
-      int16x8_t *buff128 = (__int16x8_t*)&buff[aid][offset];
-      for (int j=0; j<64; j++) buff_tx[aid][2+j] = vshlq_n_s16(((int16x8_t *)buff128)[j],4);
+    int16x8_t *buff128 = (__int16x8_t*)&buff[offset];
+    for (int j=0; j<64; j++) buff_tx[2+j] = vshlq_n_s16(((int16x8_t *)buff128)[j],4);
 #endif
     
-
      /* Send packet */
-      bytes_sent = sendto(eth->sockfdd[aid%eth->num_fd],
-                          buff2[aid], 
-                          UDP_PACKET_SIZE_BYTES(256),
-                          sendto_flag,
-                          (struct sockaddr*)&eth->dest_addrd,
-                          eth->addr_len);
+    bytes_sent = sendto(eth->sockfdd[aid%eth->num_fd],
+                        buff2, 
+                        UDP_PACKET_SIZE_BYTES(len>>2),
+                        sendto_flag,
+                        (struct sockaddr*)&eth->dest_addrd,
+                        eth->addr_len);
       
-      if ( bytes_sent == -1) {
+    if ( bytes_sent == -1) {
 	eth->num_tx_errors++;
 	perror("ETHERNET WRITE: ");
 	exit(-1);
-      } else {
+    } else {
         eth->tx_actual_nsamps=bytes_sent>>2;
         eth->tx_count++;
-      }
     }
-  }      
+  }
   return (bytes_sent-APP_HEADER_SIZE_BYTES)>>2;
 }
       
@@ -426,12 +423,11 @@ void *udp_read_thread(void *arg) {
     }
     sleep(1);
   }
-  
+  return(0);  
 }
 
 int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uint32_t **buff, int nsamps) {
   
-  eth_state_t *eth = (eth_state_t*)device->priv;
   fhstate_t *fhstate = &device->fhstate;
   openair0_timestamp prev_read_TS= fhstate->TS_read, min_TS;
   // block until FH is ready

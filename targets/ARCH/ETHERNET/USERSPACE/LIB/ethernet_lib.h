@@ -241,7 +241,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value);
 * @ingroup  _oai
 */
 int eth_socket_init_udp(openair0_device *device);
-int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int flags);
+int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void *buf, int aid, int nsamps, int flags);
 int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uint32_t **buff, int nsamps);
 
 

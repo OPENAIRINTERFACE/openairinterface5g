@@ -507,6 +507,8 @@ typedef struct RU_t_s {
   int sf_ahead;
   /// TX processing advance in slots (for NR)
   int sl_ahead;
+  /// flag to indicated TX FH is embedded in TX FEP
+  int txfh_in_fep;
   /// FAPI confiuration
   nfapi_nr_config_request_scf_t  config;
   /// Frame parameters

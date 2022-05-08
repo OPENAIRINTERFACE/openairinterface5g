@@ -608,25 +608,10 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
     NR_pdsch_semi_static_t temp_ps = *ps;
-<<<<<<< HEAD
+    const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     nr_set_pdsch_semi_static(sib1,scc, cg, sched_ctrl->active_bwp, bwpd,tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
     while (rbStart < bwpSize &&
            !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
-=======
-
-    nr_set_pdsch_semi_static(sib1,
-                             scc,
-                             cg,
-                             sched_ctrl->active_bwp,
-                             bwpd,
-                             tda,
-                             ps->nrOfLayers,
-                             sched_ctrl,
-                             &temp_ps);
-
-    const uint16_t slbitmap = SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols);
-    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
->>>>>>> origin/develop
       rbStart++;
 
     while (rbStart + rbSize < bwpSize && (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap)
