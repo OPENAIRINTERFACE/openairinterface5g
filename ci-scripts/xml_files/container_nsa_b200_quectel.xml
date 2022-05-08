@@ -142,8 +142,8 @@
 		<iperf_args>-u -b 125M -t 60 -i 1 -fm</iperf_args>
 		<direction>DL</direction>
 		<id>idefix</id>
-		<iperf_packetloss_threshold>1</iperf_packetloss_threshold>
-		<iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+		<iperf_packetloss_threshold>25</iperf_packetloss_threshold>
+		<iperf_bitrate_threshold>80</iperf_bitrate_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 
