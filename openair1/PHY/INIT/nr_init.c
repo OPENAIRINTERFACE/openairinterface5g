@@ -622,6 +622,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     gNB->nr_srs_info[id]->noise_power_per_rb = (uint32_t*)malloc16_clear(fp->N_RB_UL*sizeof(uint32_t));
     gNB->nr_srs_info[id]->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
     gNB->nr_srs_info[id]->snr_per_rb = (int8_t*)malloc16_clear(fp->N_RB_UL*sizeof(int8_t));
+    gNB->nr_srs_info[id]->snr = (int8_t*)malloc16_clear(sizeof(int8_t));
     gNB->nr_srs_info[id]->srs_received_signal = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     gNB->nr_srs_info[id]->srs_ls_estimated_channel = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     gNB->nr_srs_info[id]->srs_estimated_channel_freq = (int32_t **)malloc16(Prx*sizeof(int32_t*));

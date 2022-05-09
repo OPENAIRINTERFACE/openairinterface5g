@@ -1102,7 +1102,8 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               uint32_t *signal_power,
                               uint32_t *noise_power_per_rb,
                               uint32_t *noise_power,
-                              int8_t *snr_per_rb) {
+                              int8_t *snr_per_rb,
+                              int8_t *snr) {
 
   if(nr_srs_info->sc_list_length == 0) {
     LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);
@@ -1283,6 +1284,8 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
   *noise_power = calc_power(noise_real,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length)
                   + calc_power(noise_imag,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length);
 
+  *snr = dB_fixed((int32_t)((*signal_power<<factor_bits)/(*noise_power))) - factor_dB;
+
 #ifdef SRS_DEBUG
   uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
   uint8_t R = srs_pdu->comb_size == 0 ? 2 : 4;
@@ -1312,7 +1315,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
 
     }
   }
-  LOG_I(NR_PHY,"noise_power = %u\n", *noise_power);
+  LOG_I(NR_PHY,"noise_power = %u, SNR = %i dB\n", *noise_power, *snr);
 #endif
 
   return 0;

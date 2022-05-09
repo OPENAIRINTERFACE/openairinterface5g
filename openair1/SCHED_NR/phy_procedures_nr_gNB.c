@@ -862,7 +862,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                   gNB->nr_srs_info[i]->signal_power,
                                   gNB->nr_srs_info[i]->noise_power_per_rb,
                                   gNB->nr_srs_info[i]->noise_power,
-                                  gNB->nr_srs_info[i]->snr_per_rb);
+                                  gNB->nr_srs_info[i]->snr_per_rb,
+                                  gNB->nr_srs_info[i]->snr);
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
           T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
@@ -874,11 +875,11 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->UL_INFO.srs_ind.pdu_list = &gNB->srs_pdu_list[0];
         gNB->UL_INFO.srs_ind.sfn = frame_rx;
         gNB->UL_INFO.srs_ind.slot = slot_rx;
-        //gNB->srs_pdu_list[num_srs].handle;
+        gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
         gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
         //gNB->srs_pdu_list[num_srs].timing_advance;
         gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
-        //gNB->srs_pdu_list[num_srs].wide_band_snr;
+        gNB->srs_pdu_list[num_srs].wide_band_snr = (*gNB->nr_srs_info[i]->snr + 64)<<1;
         gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
         if(!gNB->srs_pdu_list[num_srs].reported_symbol_list) {
           gNB->srs_pdu_list[num_srs].reported_symbol_list = (nfapi_nr_srs_indication_reported_symbol_t*) calloc(1, gNB->srs_pdu_list[num_srs].num_reported_symbols*sizeof(nfapi_nr_srs_indication_reported_symbol_t));
@@ -895,6 +896,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.slot = %i\n", gNB->UL_INFO.srs_ind.slot);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].rnti = 0x%04x\n", num_srs, gNB->srs_pdu_list[num_srs].rnti);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_symbols);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].wide_band_snr = %i\n", num_srs, gNB->srs_pdu_list[num_srs].wide_band_snr);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_reported_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_reported_symbols);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].reported_symbol_list[0].num_rbs = %i\n", num_srs, gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs);
         for(int rb = 0; rb < gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs; rb++) {

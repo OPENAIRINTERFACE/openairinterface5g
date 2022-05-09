@@ -248,6 +248,7 @@ typedef struct {
   uint32_t *noise_power_per_rb;
   uint32_t *noise_power;
   int8_t *snr_per_rb;
+  int8_t *snr;
 } nr_srs_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
