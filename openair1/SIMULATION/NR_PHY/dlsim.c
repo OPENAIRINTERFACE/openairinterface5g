@@ -210,11 +210,9 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 }
 
 void config_common(int Mod_idP,
-                   int ssb_SubcarrierOffset,
                    rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
-		   NR_ServingCellConfigCommon_t *scc
-		   );
+		   NR_ServingCellConfigCommon_t *scc);
 
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
@@ -831,9 +829,9 @@ int main(int argc, char **argv)
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
 
   // common configuration
-  rrc_mac_config_req_gNB(0,0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  rrc_mac_config_req_gNB(0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;

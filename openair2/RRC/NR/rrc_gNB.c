@@ -166,7 +166,6 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 
   if (NODE_IS_MONOLITHIC(rrc->node_type)){
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.ssb_SubcarrierOffset,
                            rrc->configuration.pdsch_AntennaPorts,
                            rrc->configuration.pusch_AntennaPorts,
                            rrc->configuration.sib1_tda,
@@ -275,7 +274,6 @@ void apply_macrlc_config(gNB_RRC_INST *rrc,
 
   NR_CellGroupConfig_t *cgc = get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : NULL;
   rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->configuration.ssb_SubcarrierOffset,
                          rrc->configuration.pdsch_AntennaPorts,
                          rrc->configuration.pusch_AntennaPorts,
                          rrc->configuration.sib1_tda,
@@ -463,7 +461,6 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
 
   rrc_mac_config_req_gNB(rrc_instance_p->module_id,
-                         rrc_instance_p->configuration.ssb_SubcarrierOffset,
                          rrc_instance_p->configuration.pdsch_AntennaPorts,
                          rrc_instance_p->configuration.pusch_AntennaPorts,
                          rrc_instance_p->configuration.sib1_tda,
@@ -1398,7 +1395,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.ssb_SubcarrierOffset,
                            rrc->configuration.pdsch_AntennaPorts,
                            rrc->configuration.pusch_AntennaPorts,
                            rrc->configuration.sib1_tda,

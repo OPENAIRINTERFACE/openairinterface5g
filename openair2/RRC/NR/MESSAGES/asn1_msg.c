@@ -41,6 +41,7 @@
 #include <per_encoder.h>
 #include <nr/nr_common.h>
 
+#include "executables/softmodem-common.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "asn1_msg.h"
 #include "../nr_rrc_proto.h"
@@ -197,8 +198,7 @@ int xer_nr_sprint (char *string, size_t string_size, asn_TYPE_descriptor_t *td, 
 uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) { 
 
   asn_enc_rval_t enc_rval;
-  rrc_gNB_carrier_data_t *carrier = &rrc->carrier;  
-  const gNB_RrcConfigurationReq *configuration = &rrc->configuration;
+  rrc_gNB_carrier_data_t *carrier = &rrc->carrier;
 
   NR_BCCH_BCH_Message_t *mib = &carrier->mib;
   NR_ServingCellConfigCommon_t *scc = carrier->servingcellconfigcommon;
@@ -225,11 +225,18 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
   int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
   frequency_range_t frequency_range = band<100?FR1:FR2;
-  int ssb_subcarrier_offset;
-  if(frequency_range == FR1)
-    ssb_subcarrier_offset = (configuration->ssb_SubcarrierOffset<24) ? (configuration->ssb_SubcarrierOffset<<*scc->ssbSubcarrierSpacing) : configuration->ssb_SubcarrierOffset;
-  else
-    ssb_subcarrier_offset = configuration->ssb_SubcarrierOffset;
+  int scs_scaling = 1<<*scc->ssbSubcarrierSpacing;
+  if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
+    scs_scaling = scs_scaling*3;
+  if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
+    scs_scaling = scs_scaling>>2;
+  uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+  int ssb_subcarrier_offset = 31; // default value for NSA
+  if (get_softmodem_params()->sa) {
+    ssb_subcarrier_offset = absolute_diff%(12*scs_scaling);
+    if(frequency_range == FR1)
+      ssb_subcarrier_offset = ssb_subcarrier_offset<<*scc->ssbSubcarrierSpacing;
+  }
   mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset&15;
 
   /*

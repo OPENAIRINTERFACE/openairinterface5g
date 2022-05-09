@@ -457,7 +457,7 @@ int main(int argc, char **argv)
 
   nr_phy_config_request_sim_pbchsim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,1);
-  nr_set_ssb_first_subcarrier(&gNB->gNB_config,frame_parms);
+  fp->ssb_start_subcarrier = 12 * gNB->gNB_config->ssb_table.ssb_offset_point_a.value
 
   uint8_t n_hf = 0;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;

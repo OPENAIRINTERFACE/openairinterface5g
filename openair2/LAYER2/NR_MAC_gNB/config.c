@@ -160,7 +160,7 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 }
 
-void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts_t dl_antenna_ports_struct, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(int Mod_idP, rrc_pdsch_AntennaPorts_t dl_antenna_ports_struct, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
   RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
@@ -342,26 +342,24 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts
   if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
     scs_scaling = scs_scaling>>2;
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
-  uint16_t sco = absolute_diff%(12*scs_scaling);
-  // values of subcarrier offset larger than the limit only indicates CORESET for Type0-PDCCH CSS set is not present
-  int ssb_SubcarrierOffset_limit = 0;
-  int offset_scaling = 0;  //15kHz
-  if(frequency_range == FR1) {
-    ssb_SubcarrierOffset_limit = 24;
-    if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
-      offset_scaling = cfg->ssb_config.scs_common.value;
-  } else
-    ssb_SubcarrierOffset_limit = 12;
-  if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
-    AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),
-                "absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+
+  RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = absolute_diff%(12*scs_scaling);
+  int sco;
+  if(get_softmodem_params()->sa) {
+    sco = RC.nrmac[Mod_idP]->ssb_SubcarrierOffset;
+    if(frequency_range == FR1)
+      sco = sco<<cfg->ssb_config.scs_common.value;
+  }
+  else
+    sco = 31; // no SIB1
+
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
   cfg->num_tlv++;
-  cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset<<offset_scaling;
+  cfg->ssb_table.ssb_subcarrier_offset.value = sco;
   cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
   cfg->num_tlv++;
 
@@ -473,7 +471,6 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
 }
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
-                           int ssb_SubcarrierOffset,
                            rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
@@ -509,7 +506,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     LOG_I(NR_MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
     config_common(Mod_idP,
-                  ssb_SubcarrierOffset,
                   pdsch_AntennaPorts,
                   pusch_AntennaPorts,
 		  scc);
@@ -523,7 +519,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         printf("Waiting for PHY_config_req\n");
       }
     }
-    RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = ssb_SubcarrierOffset;
     RC.nrmac[Mod_idP]->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
 
     NR_PHY_Config_t phycfg;
