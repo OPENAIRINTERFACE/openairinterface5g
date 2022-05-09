@@ -877,7 +877,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->UL_INFO.srs_ind.slot = slot_rx;
         gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
         gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
-        //gNB->srs_pdu_list[num_srs].timing_advance;
+        gNB->srs_pdu_list[num_srs].timing_advance = nr_est_timing_advance_srs(&gNB->frame_parms, gNB->nr_srs_info[i]->srs_estimated_channel_time);
         gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
         gNB->srs_pdu_list[num_srs].wide_band_snr = (*gNB->nr_srs_info[i]->snr + 64)<<1;
         gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
@@ -895,6 +895,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.sfn = %i\n", gNB->UL_INFO.srs_ind.sfn);
         LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.slot = %i\n", gNB->UL_INFO.srs_ind.slot);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].rnti = 0x%04x\n", num_srs, gNB->srs_pdu_list[num_srs].rnti);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].timing_advance = %i\n", num_srs, gNB->srs_pdu_list[num_srs].timing_advance);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_symbols);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].wide_band_snr = %i\n", num_srs, gNB->srs_pdu_list[num_srs].wide_band_snr);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_reported_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_reported_symbols);

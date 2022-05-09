@@ -55,6 +55,9 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
 
+int nr_est_timing_advance_srs(NR_DL_FRAME_PARMS *frame_parms,
+                              int32_t **srs_estimated_channel_time);
+
 void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               NR_DL_FRAME_PARMS *frame_parms,
                               nfapi_nr_pusch_pdu_t *rel15_ul,
