@@ -49,7 +49,7 @@ gNBs =
     {
  #spCellConfigCommon
 
-      physCellId                                                    = 0;
+      physCellId                                                    = 1;
 
 #  downlinkConfigCommon
     #frequencyInfoDL
@@ -140,7 +140,7 @@ gNBs =
 # ssb_PositionsInBurs_BitmapPR
 # 1=short, 2=medium, 3=long
       ssb_PositionsInBurst_PR                                       = 2;
-      ssb_PositionsInBurst_Bitmap                                   = 1;
+      ssb_PositionsInBurst_Bitmap                                   = 2;
 
 # ssb_periodicityServingCell
 # 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1
@@ -224,11 +224,11 @@ prs_config = (
   NumRB = 240;
   RBOffset = 0;
   CombSize = 4;
-  REOffset = [0];
+  REOffset = [1];
   PRSResourceOffset = [0];
   PRSResourceRepetition = 1;
   PRSResourceTimeGap = 1;
-  NPRS_ID = [0];
+  NPRS_ID = [1];
   MutingPattern1 = [];
   MutingPattern2 = [];
   MutingBitRepetition = 1;
@@ -261,7 +261,7 @@ RUs = (
   #beamforming 1x4 matrix:
   bf_weights = [0x00007fff, 0x0000, 0x0000, 0x0000];
   #clock_src = "internal";
-  sdr_addrs = "addr=192.168.10.2,clock_source=gpsdo,time_source=gpsdo"
+  sdr_addrs = "addr=192.168.20.2,clock_source=gpsdo,time_source=gpsdo"
 }
 );
 
