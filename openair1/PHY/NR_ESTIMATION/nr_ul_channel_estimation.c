@@ -1079,9 +1079,9 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
   }//Antenna loop
 }
 
-uint32_t calc_power(uint16_t *x, uint32_t size) {
-  uint64_t sum_x = 0;
-  uint64_t sum_x2 = 0;
+uint32_t calc_power(const int16_t *x, uint32_t size) {
+  int64_t sum_x = 0;
+  int64_t sum_x2 = 0;
   for(int k = 0; k<size; k++) {
     sum_x = sum_x + x[k];
     sum_x2 = sum_x2 + x[k]*x[k];
@@ -1099,8 +1099,10 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
                               int32_t **srs_estimated_channel_freq,
                               int32_t **srs_estimated_channel_time,
                               int32_t **srs_estimated_channel_time_shifted,
+                              uint32_t *signal_power,
                               uint32_t *noise_power_per_rb,
-                              uint32_t *noise_power) {
+                              uint32_t *noise_power,
+                              int8_t *snr_per_rb) {
 
   if(nr_srs_info->sc_list_length == 0) {
     LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);
@@ -1110,8 +1112,10 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   int32_t **srs_ls_estimated_channel = nr_srs_info->srs_ls_estimated_channel;
 
-  uint16_t noise_real[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];
-  uint16_t noise_imag[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];
+  int16_t ch_real[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];
+  int16_t ch_imag[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];
+  int16_t noise_real[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];
+  int16_t noise_imag[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];
 
   int16_t ls_estimated[2];
 
@@ -1199,8 +1203,10 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
 
     // Compute noise
     for(int sc_idx = 0; sc_idx < nr_srs_info->sc_list_length; sc_idx++) {
-      noise_real[ant*nr_srs_info->sc_list_length + sc_idx] = abs((int16_t)((srs_ls_estimated_channel[ant][nr_srs_info->sc_list[sc_idx]]-srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx]]) & 0xFFFF));
-      noise_imag[ant*nr_srs_info->sc_list_length + sc_idx] = abs((int16_t)(((srs_ls_estimated_channel[ant][nr_srs_info->sc_list[sc_idx]]-srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx]]) >> 16) & 0xFFFF));
+      ch_real[ant*nr_srs_info->sc_list_length + sc_idx] = (int16_t)(srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx]] & 0xFFFF);
+      ch_imag[ant*nr_srs_info->sc_list_length + sc_idx] = (int16_t)((srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx]] >> 16) & 0xFFFF);
+      noise_real[ant*nr_srs_info->sc_list_length + sc_idx] = abs((int16_t)(srs_ls_estimated_channel[ant][nr_srs_info->sc_list[sc_idx]] & 0xFFFF) - ch_real[ant*nr_srs_info->sc_list_length + sc_idx]);
+      noise_imag[ant*nr_srs_info->sc_list_length + sc_idx] = abs((int16_t)((srs_ls_estimated_channel[ant][nr_srs_info->sc_list[sc_idx]] >> 16) & 0xFFFF) - ch_imag[ant*nr_srs_info->sc_list_length + sc_idx]);
     }
 
     // Convert to time domain
@@ -1217,7 +1223,19 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
            (gNB->frame_parms.ofdm_symbol_size>>1)*sizeof(int32_t));
   }
 
+  // Compute signal power
+  *signal_power = calc_power(ch_real,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length)
+                  + calc_power(ch_imag,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length);
+
+#ifdef SRS_DEBUG
+  LOG_I(NR_PHY,"signal_power = %u\n", *signal_power);
+#endif
+
   // Compute noise power
+
+  uint8_t signal_power_bits = log2_approx(*signal_power);
+  uint8_t factor_bits = signal_power_bits < 32 ? 32 - signal_power_bits : 0; // 32 due to input of dB_fixed(uint32_t x)
+  int32_t factor_dB = dB_fixed(1<<factor_bits);
 
   uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
   uint8_t srs_symbols_per_rb = srs_pdu->comb_size == 0 ? 6 : 3;
@@ -1247,6 +1265,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
       if (count_estimates == n_noise_estimates) {
         noise_power_per_rb[rb] = sum_re2/n_noise_estimates - (sum_re/n_noise_estimates)*(sum_re/n_noise_estimates) +
                                  sum_im2/n_noise_estimates - (sum_im/n_noise_estimates)*(sum_im/n_noise_estimates);
+        snr_per_rb[rb] = dB_fixed((int32_t)((*signal_power<<factor_bits)/noise_power_per_rb[rb])) - factor_dB;
         count_estimates = 0;
         sum_re = 0;
         sum_re2 = 0;
@@ -1254,7 +1273,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
         sum_im2 = 0;
 
 #ifdef SRS_DEBUG
-        LOG_I(NR_PHY,"noise_power_per_rb[%i] = %i\n", rb, noise_power_per_rb[rb]);
+        LOG_I(NR_PHY,"noise_power_per_rb[%i] = %i, snr_per_rb[%i] = %i dB\n", rb, noise_power_per_rb[rb], rb, snr_per_rb[rb]);
 #endif
 
       }

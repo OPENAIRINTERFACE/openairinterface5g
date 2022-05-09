@@ -834,8 +834,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                   gNB->nr_srs_info[i]->srs_estimated_channel_freq,
                                   gNB->nr_srs_info[i]->srs_estimated_channel_time,
                                   gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted,
+                                  gNB->nr_srs_info[i]->signal_power,
                                   gNB->nr_srs_info[i]->noise_power_per_rb,
-                                  gNB->nr_srs_info[i]->noise_power);
+                                  gNB->nr_srs_info[i]->noise_power,
+                                  gNB->nr_srs_info[i]->snr_per_rb);
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
           T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
