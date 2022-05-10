@@ -58,6 +58,7 @@
 #define CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY    "ulsch_max_frame_inactivity"
 #define CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10             "pusch_TargetSNRx10"
 #define CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10             "pucch_TargetSNRx10"
+#define CONFIG_STRING_MACRLC_UL_PRBBLACK_SNR_THRESHOLD     "ul_prbblack_SNR_threshold"
 #define CONFIG_STRING_MACRLC_PUCCHFAILURETHRES             "pucch_FailureThres"
 #define CONFIG_STRING_MACRLC_PUSCHFAILURETHRES             "pusch_FailureThres"
 #define CONFIG_STRING_MACRLC_DL_BLER_TARGET_UPPER          "dl_bler_target_upper"
@@ -93,6 +94,7 @@
 {CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY,        NULL,     0,          uptr:NULL,           defintval:10,              TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:150,             TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_UL_PRBBLACK_SNR_THRESHOLD,         NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUSCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_DL_BLER_TARGET_UPPER,   "Upper threshold of BLER to decrease DL MCS",   0, dblptr:NULL,  defdblval:0.15,  TYPE_DOUBLE,  0},        \
@@ -123,14 +125,15 @@
 #define MACRLC_ULSCH_MAX_FRAME_INACTIVITY                      17
 #define MACRLC_PUSCHTARGETSNRX10_IDX                           18
 #define MACRLC_PUCCHTARGETSNRX10_IDX                           19
-#define MACRLC_PUCCHFAILURETHRES_IDX                           20 
-#define MACRLC_PUSCHFAILURETHRES_IDX                           21
-#define MACRLC_DL_BLER_TARGET_UPPER_IDX                        22
-#define MACRLC_DL_BLER_TARGET_LOWER_IDX                        23
-#define MACRLC_DL_RD2_BLER_THRESHOLD_IDX                       24
-#define MACRLC_DL_MAX_MCS_IDX                                  25
-#define MACRLC_HARQ_ROUND_MAX_IDX                              26
-#define MACRLC_MIN_GRANT_PRB_IDX                               27
-#define MACRLC_MIN_GRANT_MCS_IDX                               28
+#define MACRLC_UL_PRBBLACK_SNR_THRESHOLD_IDX                   20
+#define MACRLC_PUCCHFAILURETHRES_IDX                           21
+#define MACRLC_PUSCHFAILURETHRES_IDX                           22
+#define MACRLC_DL_BLER_TARGET_UPPER_IDX                        23
+#define MACRLC_DL_BLER_TARGET_LOWER_IDX                        24
+#define MACRLC_DL_RD2_BLER_THRESHOLD_IDX                       25
+#define MACRLC_DL_MAX_MCS_IDX                                  26
+#define MACRLC_HARQ_ROUND_MAX_IDX                              27
+#define MACRLC_MIN_GRANT_PRB_IDX                               28
+#define MACRLC_MIN_GRANT_MCS_IDX                               29
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif

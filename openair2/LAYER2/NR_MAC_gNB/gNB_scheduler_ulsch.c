@@ -890,7 +890,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
                                 const uint8_t num_reported_symbols,
                                 nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list) {
 
-  LOG_I(NR_MAC, "(%d.%d) Received SRS indication for rnti: 0x%04x\n", frame, slot, rnti);
+  LOG_D(NR_MAC, "(%d.%d) Received SRS indication for rnti: 0x%04x\n", frame, slot, rnti);
 
 #ifdef SRS_IND_DEBUG
   LOG_I(NR_MAC, "frame = %i\n", frame);
@@ -906,6 +906,18 @@ void handle_nr_srs_measurements(const module_id_t module_id,
           rb, reported_symbol_list[0].rb_list[rb].rb_snr, (reported_symbol_list[0].rb_list[rb].rb_snr>>1)-64);
   }
 #endif
+
+  int ul_prbblack_SNR_threshold = RC.nrmac[module_id]->ul_prbblack_SNR_threshold;
+  uint16_t *ulprbbl = RC.nrmac[module_id]->ulprbbl;
+
+  memset(ulprbbl, 0, reported_symbol_list[0].num_rbs*sizeof(uint16_t));
+  for (int rb = 0; rb < reported_symbol_list[0].num_rbs; rb++) {
+    int snr = (reported_symbol_list[0].rb_list[rb].rb_snr>>1)-64;
+    if (snr < ul_prbblack_SNR_threshold) {
+      ulprbbl[rb] = 0x3FFF; // all symbols taken
+    }
+    LOG_D(NR_MAC, "ulprbbl[%3i] = 0x%x\n", rb, ulprbbl[rb]);
+  }
 }
 
 long get_K2(NR_ServingCellConfigCommon_t *scc,
