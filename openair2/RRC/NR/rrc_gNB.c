@@ -3928,28 +3928,24 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       /* Messages from PDCP */
-      case NR_RRC_DCCH_DATA_IND:
+      case F1AP_UL_RRC_MESSAGE:
         PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                       instance,
                                       GNB_FLAG_YES,
-                                      NR_RRC_DCCH_DATA_IND(msg_p).rnti,
-                                      msg_p->ittiMsgHeader.lte_time.frame,
-                                      msg_p->ittiMsgHeader.lte_time.slot);
-        LOG_D(NR_RRC,"Decoding DCCH : ue %d, inst %ld, ctxt %p, size %d\n",
+                                      F1AP_UL_RRC_MESSAGE(msg_p).rnti,
+                                      0,
+                                      0);
+        LOG_D(NR_RRC,"Decoding DCCH %d: ue %04x, inst %ld, ctxt %p, size %d\n",
+                F1AP_UL_RRC_MESSAGE(msg_p).srb_id,
                 ctxt.rnti,
                 instance,
                 &ctxt,
-                NR_RRC_DCCH_DATA_IND(msg_p).sdu_size);
-        LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
-                PROTOCOL_NR_RRC_CTXT_UE_ARGS(&ctxt),
-                NR_RRC_DCCH_DATA_IND(msg_p).dcch_index,
-                msg_name_p);
+                F1AP_UL_RRC_MESSAGE(msg_p).rrc_container_length);
         rrc_gNB_decode_dcch(&ctxt,
-                            NR_RRC_DCCH_DATA_IND(msg_p).dcch_index,
-                            NR_RRC_DCCH_DATA_IND(msg_p).sdu_p,
-                            NR_RRC_DCCH_DATA_IND(msg_p).sdu_size);
-        result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), NR_RRC_DCCH_DATA_IND(msg_p).sdu_p);
-
+                            F1AP_UL_RRC_MESSAGE(msg_p).srb_id,
+                            F1AP_UL_RRC_MESSAGE(msg_p).rrc_container,
+                            F1AP_UL_RRC_MESSAGE(msg_p).rrc_container_length);
+        free(F1AP_UL_RRC_MESSAGE(msg_p).rrc_container);
         break;
 
       case NGAP_DOWNLINK_NAS:
