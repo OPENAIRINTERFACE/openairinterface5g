@@ -69,7 +69,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   nfapi_nr_pdu_t        *TX_req;
 
   uint16_t rnti = 0x1234;
-  
   //  int time_domain_assignment,k0;
 
   NR_ServingCellConfigCommon_t *scc=cc->ServingCellConfigCommon;
@@ -266,21 +265,16 @@ void nr_preprocessor_phytest(module_id_t module_id,
 {
   if (!is_xlsch_in_slot(dlsch_slot_bitmap, slot))
     return;
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_UE_info_t *UE = RC.nrmac[module_id]->UE_info.list[0];
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
-  const int UE_id = 0;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   const int CC_id = 0;
-  AssertFatal(UE_info->active[UE_id],
-              "%s(): expected UE %d to be active\n",
-              __func__,
-              UE_id);
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
-    nr_set_pdsch_semi_static(NULL, scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, target_dl_Nl, sched_ctrl, ps);
+    nr_set_pdsch_semi_static(NULL, scc, UE->CellGroup, sched_ctrl->active_bwp, NULL, tda, target_dl_Nl,sched_ctrl , ps);
 
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -316,7 +310,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->dl_lc_num = 1;
   const int lcid = DL_SCH_LCID_DTCH;
   sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num - 1] = lcid;
-  const uint16_t rnti = UE_info->rnti[UE_id];
+  const uint16_t rnti = UE->rnti;
   /* update sched_ctrl->num_total_bytes so that postprocessor schedules data,
    * if available */
   sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
@@ -343,7 +337,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE_info->rnti[UE_id]);
+  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
 
   int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
                                       CC_id,
@@ -354,17 +348,16 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                       Y);
 
   AssertFatal(CCEIndex >= 0,
-              "%s(): could not find CCE for UE %d\n",
+              "%s(): could not find CCE for UE %04x\n",
               __func__,
-              UE_id);
+              UE->rnti);
 
   int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, NULL, CCEIndex);
-  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, r_pucch, 0);
+  const int alloc = nr_acknack_scheduling(module_id, UE, frame, slot, r_pucch, 0);
   if (alloc < 0) {
     LOG_D(MAC,
-          "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
+          "%s(): could not find PUCCH for UE %04x@%d.%d\n",
           __func__,
-          UE_id,
           rnti,
           frame,
           slot);
@@ -422,19 +415,16 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-  NR_UE_info_t *UE_info = &nr_mac->UE_info;
+  NR_UE_info_t *UE = nr_mac->UE_info.list[0];
 
-  AssertFatal(UE_info->num_UEs <= 1,
-              "%s() cannot handle more than one UE, but found %d\n",
-              __func__,
-              UE_info->num_UEs);
-  if (UE_info->num_UEs == 0)
+  AssertFatal(nr_mac->UE_info.list[1] == NULL,
+              "cannot handle more than one UE\n");
+  if (UE == NULL)
     return false;
 
-  const int UE_id = 0;
   const int CC_id = 0;
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
     sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -523,7 +513,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE_info->rnti[UE_id]);
+  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
 
   int CCEIndex = find_pdcch_candidate(nr_mac,
                                       CC_id,

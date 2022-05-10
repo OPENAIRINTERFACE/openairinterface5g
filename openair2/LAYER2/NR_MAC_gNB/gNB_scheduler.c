@@ -218,7 +218,7 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 
       if ((1 << tmp) & deltaTSFC) {
   // This is an SRS subframe, loop over UEs
-  for (UE_id = 0; UE_id < MAX_MOBILES_PER_GNB; UE_id++) {
+  UEs_iterator()  {
     if (!RC.nrmac[module_idP]->UE_info.active[UE_id]) continue;
     ul_req = &RC.nrmac[module_idP]->UL_req[CC_id].ul_config_request_body;
     // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
@@ -372,7 +372,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, f, s);
   }
 
-
   // Schedule CSI-RS transmission
   nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
@@ -398,10 +397,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ue_spec(module_idP, frame, slot); 
   stop_meas(&gNB->schedule_dlsch);
 
-  nr_schedule_pucch(module_idP, frame, slot);
+  nr_schedule_pucch(RC.nrmac[module_idP], frame, slot);
 
   // This schedule SR after PUCCH for multiplexing
-  nr_sr_reporting(module_idP, frame, slot);
+  nr_sr_reporting(RC.nrmac[module_idP], frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   
