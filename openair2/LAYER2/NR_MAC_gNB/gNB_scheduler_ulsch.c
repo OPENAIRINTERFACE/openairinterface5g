@@ -37,6 +37,8 @@
 
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
+//#define SRS_IND_DEBUG
+
 int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl) {
 
   int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType &&
@@ -887,7 +889,23 @@ void handle_nr_srs_measurements(const module_id_t module_id,
                                 const uint8_t wide_band_snr,
                                 const uint8_t num_reported_symbols,
                                 nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list) {
+
   LOG_I(NR_MAC, "(%d.%d) Received SRS indication for rnti: 0x%04x\n", frame, slot, rnti);
+
+#ifdef SRS_IND_DEBUG
+  LOG_I(NR_MAC, "frame = %i\n", frame);
+  LOG_I(NR_MAC, "slot = %i\n", slot);
+  LOG_I(NR_MAC, "rnti = 0x%04x\n", rnti);
+  LOG_I(NR_MAC, "timing_advance = %i\n", timing_advance);
+  LOG_I(NR_MAC, "num_symbols = %i\n", num_symbols);
+  LOG_I(NR_MAC, "wide_band_snr = %i (%i dB)\n", wide_band_snr, (wide_band_snr>>1)-64);
+  LOG_I(NR_MAC, "num_reported_symbols = %i\n", num_reported_symbols);
+  LOG_I(NR_MAC, "reported_symbol_list[0].num_rbs = %i\n", reported_symbol_list[0].num_rbs);
+  for(int rb = 0; rb < reported_symbol_list[0].num_rbs; rb++) {
+    LOG_I(NR_MAC, "reported_symbol_list[0].rb_list[%3i].rb_snr = %i (%i dB)\n",
+          rb, reported_symbol_list[0].rb_list[rb].rb_snr, (reported_symbol_list[0].rb_list[rb].rb_snr>>1)-64);
+  }
+#endif
 }
 
 long get_K2(NR_ServingCellConfigCommon_t *scc,
