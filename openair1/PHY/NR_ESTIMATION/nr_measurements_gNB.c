@@ -90,7 +90,7 @@ int nr_est_timing_advance_srs(NR_DL_FRAME_PARMS *frame_parms,
   }
 
   // Scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
-  uint16_t bw_scaling = frame_parms->ofdm_symbol_size >> 11;
+  uint16_t bw_scaling = frame_parms->ofdm_symbol_size >> 7;
 
   // do some integer rounding to improve TA accuracy
   int sync_pos_rounded;
