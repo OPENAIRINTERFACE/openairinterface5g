@@ -210,16 +210,7 @@ int MCE_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
   AssertFatal(MCE_MBMS_M2AP_ID!=-1,"MCE_MBMS_M2AP_ID was not sent\n");
   AssertFatal(ENB_MBMS_M2AP_ID!=-1,"ENB_MBMS_M2AP_ID was not sent\n");
   //M2AP_SESSION_START_RESP(msg_p).
-//  MSC_LOG_RX_MESSAGE(
-//    MSC_M2AP_MCE,
-//    MSC_M2AP_ENB,
-	//return 0;
-//    0,
-//    0,
-//    MSC_AS_TIME_FMT" MCE_handle_M2_SESSION_START_RESPONSE successfulOutcome assoc_id %d",
-//    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-//    assoc_id);
-//
+
    LOG_D(M2AP, "Sending M2AP_SESSION_START_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
          assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
    itti_send_msg_to_task(TASK_MCE_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_g);
@@ -348,14 +339,6 @@ int MCE_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
   AssertFatal(MCE_MBMS_M2AP_ID!=-1,"MCE_MBMS_M2AP_ID was not sent\n");
   AssertFatal(ENB_MBMS_M2AP_ID!=-1,"ENB_MBMS_M2AP_ID was not sent\n");
  // M2AP_SESSION_STOP_RESP(msg_p).
- // MSC_LOG_RX_MESSAGE(
- //   MSC_M2AP_MCE,
- //   MSC_M2AP_ENB,
- //   0,
- //   0,
- //   MSC_AS_TIME_FMT" MCE_handle_M2_SESSION_STOP_RESPONSE successfulOutcome assoc_id %d",
- //   0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- //   assoc_id);
 
  //  LOG_D(M2AP, "Sending M2AP_SESSION_START_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
  //        assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
@@ -645,14 +628,6 @@ int MCE_handle_MBMS_SCHEDULING_INFORMATION_RESPONSE(instance_t instance,
 //  }
 //
 //  M2AP_SESSION_STOP_RESP(msg_p).
-//  MSC_LOG_RX_MESSAGE(
-//    MSC_M2AP_MCE,
-//    MSC_M2AP_ENB,
-//    0,
-//    0,
-//    MSC_AS_TIME_FMT" MCE_handle_M2_SCHEDULING_INFORMATION_RESPONSE successfulOutcome assoc_id %d",
-//    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-//    assoc_id);
 //
 //   LOG_D(M2AP, "Sending M2AP_SCHEDULING_INFO_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
 //         assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
@@ -836,15 +811,6 @@ int MCE_handle_M2_SETUP_REQUEST(instance_t instance,
   *m2ap_mce_data_from_enb = M2AP_SETUP_REQ(message_p);
   //printf("m2ap_mce_data_from_enb->assoc_id %d %d\n",m2ap_mce_data_from_enb->assoc_id,assoc_id);
 
-//  MSC_LOG_TX_MESSAGE(
-//  MSC_M2AP_MCE,
-//  MSC_RRC_ENB,
-//  0,
-//  0,
-//  MSC_AS_TIME_FMT" MCE_handle_M2_SETUP_REQUEST",
-//  0,0//MSC_AS_TIME_ARGS(ctxt_pP),
-//  );
-//
   if (num_mbms_available > 0) {
     itti_send_msg_to_task(TASK_MCE_APP, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
   } else {
@@ -1217,15 +1183,6 @@ int MCE_handle_MCE_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
    //for (int i=0;i<num_cells_to_activate;i++)
    //  AssertFatal(M2AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
 
-   //MSC_LOG_RX_MESSAGE(
-   // MSC_M2AP_eNB,
-   // MSC_M2AP_CU,
-   // 0,
-   // 0,
-   // MSC_AS_TIME_FMT" eNB_handle_M2_SETUP_RESPONSE successfulOutcome assoc_id %d",
-   // 0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-   // assoc_id);
-
    //LOG_D(M2AP, "Sending M2AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
    //      assoc_id,ENB_MOeNBLE_ID_TO_INSTANCE(assoc_id));
 
@@ -1430,16 +1387,7 @@ int MCE_handle_MBMS_SERVICE_COUNTING_RESPONSE(instance_t instance,
   //AssertFatal(MCE_MBMS_M2AP_ID!=-1,"MCE_MBMS_M2AP_ID was not sent\n");
   //AssertFatal(ENB_MBMS_M2AP_ID!=-1,"ENB_MBMS_M2AP_ID was not sent\n");
   //M2AP_SESSION_START_RESP(msg_p).
-//  MSC_LOG_RX_MESSAGE(
-//    MSC_M2AP_MCE,
-//    MSC_M2AP_ENB,
-	//return 0;
-//    0,
-//    0,
-//    MSC_AS_TIME_FMT" MCE_handle_M2_SESSION_START_RESPONSE successfulOutcome assoc_id %d",
-//    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-//    assoc_id);
-//
+
    //LOG_D(M2AP, "Sending  ITTI message to ENB_APP with assoc_id (%d->%d)\n",
          //assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
 

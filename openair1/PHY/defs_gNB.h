@@ -90,7 +90,7 @@ typedef struct {
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
+  uint8_t **c;
   /// Frame where current HARQ round was sent
   uint32_t frame;
   /// Subframe where current HARQ round was sent
@@ -158,13 +158,11 @@ typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
   /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
-  int32_t *txdataF[NR_MAX_NB_LAYERS];
-  /// TX buffers for UE-spec transmission (antenna ports 1000 or 1001,...,1007, before precoding)
-  int32_t *txdataF_precoding[NR_MAX_NB_LAYERS];
+  int32_t **txdataF;
   /// Modulated symbols buffer
-  int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
+  int32_t **mod_symbs;
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  int32_t **ue_spec_bf_weights[NR_MAX_NB_LAYERS];
+  int32_t ***ue_spec_bf_weights;
   /// dl channel estimates (estimated from ul channel estimates)
   int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
@@ -288,12 +286,10 @@ typedef struct {
   uint32_t C;
   /// Pointers to code blocks after LDPC coding (38.212 V15.4.0 section 5.3.2)
   int16_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
-  /// LDPC processing buffer
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC lifting size (38.212 V15.4.0 table 5.3.2-1)
   uint32_t Z;
   /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
-  int16_t e[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
+  int16_t e[MAX_NUM_NR_ULSCH_SEGMENTS][3*8448];
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
   uint32_t E;
   /// Number of segments processed so far
@@ -402,6 +398,16 @@ typedef struct {
   /// ULSCH PDU
   nfapi_nr_pucch_pdu_t pucch_pdu;
 } NR_gNB_PUCCH_t;
+
+typedef struct {
+  uint8_t active;
+  /// Frame where current SRS pdu was received
+  uint32_t frame;
+  /// Slot where current SRS pdu was received
+  uint32_t slot;
+  /// ULSCH PDU
+  nfapi_nr_srs_pdu_t srs_pdu;
+} NR_gNB_SRS_t;
 
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
@@ -587,9 +593,6 @@ typedef struct gNB_L1_proc_t_s {
   int instance_cnt_te;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-
-  // instance count for over-the-air gNB synchronization
-  int instance_cnt_synch;
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
   /// pthread structure for eNB single processing thread
@@ -661,8 +664,6 @@ typedef struct {
   unsigned int   n0_power_tot;
   //! estimated avg noise power (dB)
   unsigned int n0_power_tot_dB;
-  //! estimated avg noise power (dB)
-  int n0_power_tot_dBm;
   //! estimated avg noise power per RB per RX ant (lin)
   unsigned int n0_subband_power[MAX_NUM_RU_PER_gNB][275];
   //! estimated avg noise power per RB per RX ant (dB)
@@ -759,16 +760,16 @@ typedef struct PHY_VARS_gNB_s {
   //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
   uint16_t num_pdsch_rnti[80];
   NR_gNB_PBCH        pbch;
-  nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PRS         prs_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
+  NR_gNB_SRS_t       *srs[NUMBER_OF_NR_SRS_MAX];
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
-  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX][2];  // [Nusers times][2 codewords] 
+  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX];  // [Nusers times]
   NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
   NR_gNB_DLSCH_t     *dlsch_PCH;
   /// statistics for DLSCH measurement collection
@@ -776,16 +777,16 @@ typedef struct PHY_VARS_gNB_s {
   /// statistics for ULSCH measurement collection
   NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
   NR_gNB_UCI_STATS_t uci_stats[NUMBER_OF_NR_UCI_STATS_MAX];
-  t_nrPolar_params    *uci_polarParams;
+  t_nrPolar_params    **polarParams;
+
+  /// SRS variables
+  nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
 
   uint8_t pbch_configured;
   char gNB_generate_rar;
 
   // PUCCH0 Look-up table for cyclic-shifts
   NR_gNB_PUCCH0_LUT_t pucch0_lut;
-  /// NR synchronization sequences
-  int16_t d_pss[NR_PSS_LENGTH];
-  int16_t d_sss[NR_SSS_LENGTH];
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch_dmrs[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
@@ -798,6 +799,13 @@ typedef struct PHY_VARS_gNB_s {
 
   /// PDSCH DMRS sequence
   uint32_t ****nr_gold_pdsch_dmrs;
+
+  /// PDSCH codebook I precoding LUTs
+  /// first dimension: Rank number [0,...,noOfLayers-1[
+  /// second dimension: PMI [0,...,CodeSize-1[
+  /// third dimension: [i_rows*noOfLayers+j_col], i_rows=0,...pdsch_AntennaPorts-1 and j_col=0,...,noOfLayers-1
+  int32_t ***nr_mimo_precoding_matrix;
+  int pmiq_size[NR_MAX_NB_LAYERS];
 
   /// PUSCH DMRS
   uint32_t ****nr_gold_pusch_dmrs;
@@ -847,6 +855,15 @@ typedef struct PHY_VARS_gNB_s {
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
+  int csi_gold_init;
+  int pdcch_gold_init;
+  int pdsch_gold_init[2];
+  int pusch_gold_init[2];
+
+  int ap_N1;
+  int ap_N2;
+  int ap_XP;
+
   int pucch0_thres;
   int pusch_thres;
   int prach_thres;
@@ -856,7 +873,7 @@ typedef struct PHY_VARS_gNB_s {
   /*
   time_stats_t phy_proc;
   */
-  time_stats_t *phy_proc_tx[2];
+  time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
   /*
@@ -879,6 +896,7 @@ typedef struct PHY_VARS_gNB_s {
 
   time_stats_t rx_pusch_stats;
   time_stats_t ul_indication_stats;
+  time_stats_t schedule_response_stats;
   time_stats_t ulsch_decoding_stats;
   time_stats_t ulsch_rate_unmatching_stats;
   time_stats_t ulsch_ldpc_decoding_stats;
@@ -903,7 +921,7 @@ typedef struct PHY_VARS_gNB_s {
   notifiedFIFO_t *resp_RU_tx;
   tpool_t *threadPool;
   int nbDecode;
-  uint8_t pusch_proc_threads;
+  uint8_t thread_pool_size;
   int number_of_nr_dlsch_max;
   int number_of_nr_ulsch_max;
   void * scopeData;
@@ -964,13 +982,14 @@ typedef struct processingData_L1tx {
   int slot;
   openair0_timestamp timestamp_tx;
   PHY_VARS_gNB *gNB;
-  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu;
-  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu;
+  nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
+  nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
   NR_gNB_CSIRS_t csirs_pdu[NUMBER_OF_NR_CSIRS_MAX];
   NR_gNB_DLSCH_t *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];
   NR_gNB_SSB_t ssb[64];
   uint16_t num_pdsch_slot;
-  time_stats_t phy_proc_tx;
+  int num_dl_pdcch;
+  int num_ul_pdcch;
 } processingData_L1tx_t;
 
 #endif

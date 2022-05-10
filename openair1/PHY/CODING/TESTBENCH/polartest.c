@@ -20,7 +20,7 @@
 
 int main(int argc, char *argv[])
 {
-  //Default simulation values (Aim for iterations = 1000000.)
+  //Default simulation values (Aim for iterations = 1000000.) 
   int decoder_int16=0;
   int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, 2=UCI
   double SNRstart = -20.0, SNRstop = 0.0, SNRinc= 0.5; //dB
@@ -158,20 +158,25 @@ if (logFlag){
 #endif
 }
 
-  uint8_t testArrayLength = ceil(testLength / 32.0);
-  uint8_t coderArrayLength = ceil(coderLength / 32.0);
-  uint32_t testInput[testArrayLength]; //generate randomly
+  const uint8_t testArrayLength = ceil(testLength / 32.0);
+  const uint8_t coderArrayLength = ceil(coderLength / 32.0);
+  // in the polar code, often uint64_t arrays are used, but we work with
+  // uint32_t arrays below, so realArrayLength is the length that always
+  // satisfies uint64_t array length
+  const uint8_t realArrayLength = ((testArrayLength + 1) / 2) * 2;
+  printf("testArrayLength %d realArrayLength %d\n", testArrayLength, realArrayLength);
+  uint32_t testInput[realArrayLength]; //generate randomly
   uint32_t encoderOutput[coderArrayLength];
-  uint32_t estimatedOutput[testArrayLength]; //decoder output
-  memset(testInput,0,sizeof(uint32_t) * testArrayLength);
+  uint32_t estimatedOutput[realArrayLength]; //decoder output
+  memset(testInput,0,sizeof(uint32_t) * realArrayLength); // does not reset all
   memset(encoderOutput,0,sizeof(uint32_t) * coderArrayLength);
-  memset(estimatedOutput,0,sizeof(uint32_t) * testArrayLength);
+  memset(estimatedOutput,0,sizeof(uint32_t) * realArrayLength);
   uint8_t encoderOutputByte[coderLength];
   double modulatedInput[coderLength]; //channel input
   double channelOutput[coderLength];  //add noise
   int16_t channelOutput_int16[coderLength];
 
-  t_nrPolar_params *currentPtr = nr_polar_params(polarMessageType, testLength, aggregation_level, 1, NULL);
+  t_nrPolar_params *currentPtr = nr_polar_params(polarMessageType, testLength, aggregation_level, true);
 
 #ifdef DEBUG_DCI_POLAR_PARAMS
   uint32_t dci_pdu[4];
@@ -206,7 +211,8 @@ if (logFlag){
 		  modulated_input[i]=(-1)/sqrt(2);
 	  channel_output[i] = modulated_input[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
   }
-  decoderState = polar_decoder_dci(channel_output, dci_est, currentPtrDCI, NR_POLAR_DECODER_LISTSIZE, rnti);
+  decoderState = polar_decoder_dci(channel_output, dci_est, NR_POLAR_DECODER_LISTSIZE, rnti,
+                                   1, size, aggregation_level);
   printf("dci_est: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n", dci_est[0], dci_est[1], dci_est[2], dci_est[3]);
   free(encoder_outputByte);
   free(channel_output);
@@ -239,13 +245,13 @@ if (logFlag){
 
 		  start_meas(&timeEncoder);
 		  if (decoder_int16==1) {
-			  polar_encoder_fast((uint64_t *)testInput, encoderOutput, 0, 0, currentPtr);
+			  polar_encoder_fast((uint64_t *)testInput, encoderOutput, 0, 0, polarMessageType, testLength, aggregation_level);
 			  //polar_encoder_fast((uint64_t*)testInput, (uint64_t*)encoderOutput,0,0,currentPtr);
 		  } else { //0 --> PBCH, 1 --> DCI, -1 --> UCI
 			  if (polarMessageType == 0)
-				  polar_encoder(testInput, encoderOutput, currentPtr);
+				  polar_encoder(testInput, encoderOutput, polarMessageType, testLength, aggregation_level);
 			  else if (polarMessageType == 1)
-				  polar_encoder_dci(testInput, encoderOutput, currentPtr, rnti);
+                            polar_encoder_dci(testInput, encoderOutput, rnti, polarMessageType, testLength, aggregation_level);
 		  }
 		  stop_meas(&timeEncoder);
 
@@ -276,19 +282,20 @@ if (logFlag){
       start_meas(&timeDecoder);
 
       if (decoder_int16==1) {
-    	  decoderState = polar_decoder_int16(channelOutput_int16, (uint64_t *)estimatedOutput, 0, currentPtr);
+    	  decoderState = polar_decoder_int16(channelOutput_int16, (uint64_t *)estimatedOutput, 0,
+                                             polarMessageType, testLength, aggregation_level);
       } else { //0 --> PBCH, 1 --> DCI, -1 --> UCI
     	  if (polarMessageType == 0) {
-    		  decoderState = polar_decoder(channelOutput,
-    				                       estimatedOutput,
-										   currentPtr,
-										   decoderListSize);
+            decoderState = polar_decoder(channelOutput,
+                                         estimatedOutput,
+                                         decoderListSize,
+                                         polarMessageType, testLength, aggregation_level);
     	  } else if (polarMessageType == 1) {
-    		  decoderState = polar_decoder_dci(channelOutput,
-    				  	  	  	  	  	  	   estimatedOutput,
-											   currentPtr,
-											   decoderListSize,
-											   rnti);
+            decoderState = polar_decoder_dci(channelOutput,
+                                             estimatedOutput,
+                                             decoderListSize,
+                                             rnti,
+                                             polarMessageType, testLength, aggregation_level);
     	  }
       }
       stop_meas(&timeDecoder);
@@ -334,9 +341,9 @@ if (logFlag){
       decoderState=0;
       nBitError=0;
       blockErrorState=0;
-	  memset(testInput,0,sizeof(uint32_t) * testArrayLength);
+	  memset(testInput,0,sizeof(uint32_t) * realArrayLength);
 	  memset(encoderOutput,0,sizeof(uint32_t) * coderArrayLength);
-	  memset(estimatedOutput,0,sizeof(uint32_t) * testArrayLength);
+	  memset(estimatedOutput,0,sizeof(uint32_t) * realArrayLength);
     }
 
     //Calculate error statistics for the SNR.

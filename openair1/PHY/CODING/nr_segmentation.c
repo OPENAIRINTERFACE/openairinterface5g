@@ -63,11 +63,6 @@ int32_t nr_segmentation(unsigned char *input_buffer,
 #endif
   }
 
-  if ((*C)>MAX_NUM_NR_DLSCH_SEGMENTS) {
-    LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
-    return(-1);
-  }
-
   // Find K+
   Kprime = Bprime/(*C);
 
@@ -92,7 +87,7 @@ if ((Kprime%Kb) > 0)
 else
   Z = (Kprime/Kb);
 
- LOG_D(PHY,"nr segmetation B %u Bprime %u Kprime %u z %u \n", B, Bprime, Kprime, Z);
+ LOG_D(PHY,"nr segmentation B %u Bprime %u Kprime %u z %u \n", B, Bprime, Kprime, Z);
 	  
   if (Z <= 2) {
     *K = 2;

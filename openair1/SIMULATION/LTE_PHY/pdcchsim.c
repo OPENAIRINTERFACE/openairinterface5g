@@ -415,7 +415,7 @@ int main(int argc, char **argv) {
   uint8_t harq_pid;
   uint8_t phich_ACK;
   uint8_t num_phich_interf = 0;
-  lte_frame_type_t frame_type=TDD;
+  frame_type_t frame_type=TDD;
   //  int re_offset;
   //  uint32_t *txptr;
   int aarx;

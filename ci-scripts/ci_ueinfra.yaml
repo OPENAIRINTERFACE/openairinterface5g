@@ -12,7 +12,7 @@ idefix:
   LogStore : /media/usb-drive/ci_qlogs
   PLMN : 22201
   UENetwork : wwan0 
-  HostIPAddress : 192.168.18.188
+  HostIPAddress : 172.21.16.135
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none
@@ -27,18 +27,66 @@ nrmodule2_quectel:
     Apn :
       OAICN5G : oai
       OAI-Rel14-Docker : oai.ipv4
-  WakeupScript : ci_ctl_qtel.py /dev/ttyUSB7 wup
-  DetachScript : ci_ctl_qtel.py /dev/ttyUSB7 detach
+  WakeupScript : ci_ctl_qtel.py /dev/ttyUSB2 wup
+  DetachScript : ci_ctl_qtel.py /dev/ttyUSB2 detach
   LogStore : /media/ci_qlogs  
   PLMN : 20897
-  UENetwork : wwan1
-  HostIPAddress : 192.168.18.189
+  UENetwork : wwan0
+  HostIPAddress : 172.21.16.139
   HostUsername : nrmodule2 
   HostPassword : linux 
   HostSourceCodePath : none
   StartCommands :
     - sudo -S ip link set dev wwan1 mtu 1500
   MTU : 1500
+
+# CAUTION: 192.168.18.89 address has to be changed when the server is moved
+#single UE single ping
+amarisoft_ue_1:
+  ID: amarisoft_ue_1
+  State : enabled
+  Kind : amarisoft
+  #not required for AS config but needed for py script
+  WakeupScript : none
+  DetachScript : none
+  #end 
+  Cmd : /root/NV17-12-21/ue/lteue 
+  Config : /root/NV17-12-21/ue/config/oaicicd-ue-Ping-SATest.cfg 
+  Duration : 60
+  Ping : /tmp/test_ue1.log
+  UELog : /tmp/ue1.log
+  HostIPAddress : 192.168.18.89
+  HostUsername : root
+  HostPassword : toor 
+  HostSourceCodePath : /tmp
+
+
+#an other scenario example
+#notice : this will not work as such, only suggestion for multi ue scenario
+amarisoft_ue_2:
+  ID: amarisoft_ue_2
+  State : enabled
+  Kind : amarisoft
+  #not required for AS config but needed for py script
+  WakeupScript : none
+  DetachScript : none
+  #end 
+  Cmd : /root/NV17-12-21/ue/lteue 
+  Config : /root/NV17-12-21/ue/config/xxxxxxx.cfg #to be updated for an other scenario 
+  Duration : 60
+  Ping :
+    - /tmp/test_ue1.log #to be updated fo an other scenario
+    - /tmp/test_ue2.log #could be a list for a multi ue scenario
+  UELog :
+    - /tmp/ue1.log
+    - /tmp/ue1.log
+  HostIPAddress : 192.168.18.89
+  HostUsername : root
+  HostPassword : toor 
+  HostSourceCodePath : /tmp
+
+
+#do not remove
 dummy:
   ID: ''
   State : ''
@@ -50,7 +98,7 @@ dummy:
   DetachScript : ''
   PLMN : 22201
   UENetwork : wwan0
-  HostIPAddress : 192.168.18.188
+  HostIPAddress : 172.21.16.135
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none

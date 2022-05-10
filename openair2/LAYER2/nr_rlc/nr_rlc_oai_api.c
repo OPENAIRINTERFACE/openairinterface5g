@@ -40,8 +40,6 @@
 
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
-#include "openair2/LAYER2/PROTO_AGENT/proto_agent.h"
-
 extern RAN_CONTEXT_t RC;
 
 #include <stdint.h>
@@ -387,7 +385,6 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
     rb->recv_sdu(rb, (char *)sdu_pP->data, sdu_sizeP, muiP);
   } else {
     LOG_E(RLC, "%s:%d:%s: fatal: SDU sent to unknown RB\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
   }
 
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
@@ -518,7 +515,7 @@ rb_found:
 	req->pdusession_id=rb_id;
 	LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
 	extern instance_t DUuniqInstance;
-	itti_send_msg_to_task(OCP_GTPV1_U, DUuniqInstance, msg);
+	itti_send_msg_to_task(TASK_GTPV1_U, DUuniqInstance, msg);
 	return;
       }
     }
