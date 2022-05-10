@@ -47,13 +47,19 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req =
       &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
-  AssertFatal(future_ul_tti_req->SFN == pucch->frame
-              && future_ul_tti_req->Slot == pucch->ul_slot,
-              "future UL_tti_req's frame.slot %d.%d does not match PUCCH %d.%d\n",
-              future_ul_tti_req->SFN,
-              future_ul_tti_req->Slot,
-              pucch->frame,
-              pucch->ul_slot);
+
+  if (future_ul_tti_req->SFN != pucch->frame || future_ul_tti_req->Slot != pucch->ul_slot)
+    LOG_W(MAC,
+          "Current %d.%d : future UL_tti_req's frame.slot %4d.%2d does not match PUCCH %4d.%2d\n",
+          frame,slot,
+          future_ul_tti_req->SFN,
+          future_ul_tti_req->Slot,
+          pucch->frame,
+          pucch->ul_slot);
+  AssertFatal(future_ul_tti_req->n_pdus <
+              sizeof(future_ul_tti_req->pdus_list) / sizeof(future_ul_tti_req->pdus_list[0]),
+              "Invalid future_ul_tti_req->n_pdus %d\n", future_ul_tti_req->n_pdus);
+
   future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
   future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
   nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
