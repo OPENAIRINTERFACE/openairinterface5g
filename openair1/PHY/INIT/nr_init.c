@@ -788,7 +788,11 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     }
     free_and_zero(gNB->nr_srs_info[id]->sc_list);
     free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal);
+    free_and_zero(gNB->nr_srs_info[id]->signal_power);
+    free_and_zero(gNB->nr_srs_info[id]->noise_power_per_rb);
     free_and_zero(gNB->nr_srs_info[id]->noise_power);
+    free_and_zero(gNB->nr_srs_info[id]->snr_per_rb);
+    free_and_zero(gNB->nr_srs_info[id]->snr);
     free_and_zero(gNB->nr_srs_info[id]->srs_received_signal);
     free_and_zero(gNB->nr_srs_info[id]->srs_ls_estimated_channel);
     free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_freq);
