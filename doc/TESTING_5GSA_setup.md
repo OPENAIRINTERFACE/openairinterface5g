@@ -50,7 +50,7 @@ At the moment of writing this document interoperability with the following COTS 
 ## 1.1  gNB build and configuration
 To get the code and build the gNB executable:
 
-### Ubuntu 18.04
+### Build gNB
 ```bash
     git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
     git checkout develop
@@ -58,42 +58,6 @@ To get the code and build the gNB executable:
     source oaienv
     cd cmake_targets/
     ./build_oai -I -w USRP #For OAI first time installation only to install software dependencies
-    ./build_oai --gNB -w USRP
-```
-
-### Ubuntu 20.04
-```bash
-    # Build UHD from source
-    # https://files.ettus.com/manual/page_build_guide.html
-    sudo apt-get install libboost-all-dev libusb-1.0-0-dev doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel.yaml python3-setuptools cmake build-essential
-    
-    git clone https://github.com/EttusResearch/uhd.git
-    cd uhd/host
-    mkdir build
-    cd build
-    cmake ../
-    make -j 4
-    make test # This step is optional
-    sudo make install
-    sudo ldconfig
-    sudo uhd_images_downloader
-
-
-    git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
-    git checkout develop
-    
-    # Install dependencies in Ubuntu 20.04
-    cd
-    cd openairinterface5g/
-    source oaienv
-    cd cmake_targets/
-    ./install_external_packages.ubuntu20
-    
-    # Build OAI gNB
-    cd
-    cd openairinterface5g/
-    source oaienv
-    cd cmake_targets/
     ./build_oai --gNB -w USRP
 ```
 

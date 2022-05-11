@@ -289,8 +289,6 @@ void nr_processDLSegment(void* arg) {
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
 
-  uint8_t Ilbrm = 1;
-
   Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
   K_bits_F = Kr-harq_process->F;
@@ -323,8 +321,7 @@ void nr_processDLSegment(void* arg) {
         harq_process->round); */
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_IN);
 
-  if (nr_rate_matching_ldpc_rx(Ilbrm,
-                               Tbslbrm,
+  if (nr_rate_matching_ldpc_rx(Tbslbrm,
                                p_decoderParms->BG,
                                p_decoderParms->Z,
                                harq_process->d[r],
@@ -451,7 +448,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   phy_vars_ue->dl_stats[harq_process->DLround]++;
   LOG_D(PHY,"Round %d RV idx %d\n",harq_process->DLround,harq_process->rvidx);
   uint8_t kc;
-  uint32_t Tbslbrm;// = 950984;
   uint16_t nb_rb;// = 30;
   double Coderate;// = 0.0;
   uint8_t dmrs_Type = harq_process->dmrsConfigType;
@@ -567,10 +563,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD) && (!frame%100))
       LOG_I(PHY,"K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
   }
-  if ((harq_process->Nl)<4)
-    Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,harq_process->Nl);
-  else
-    Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,4);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_OUT);
   p_decParams->Z = harq_process->Z;
@@ -621,7 +613,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     rdata->r_offset = r_offset;
     rdata->Kr_bytes = Kr_bytes;
     rdata->rv_index = harq_process->rvidx;
-    rdata->Tbslbrm = Tbslbrm;
+    rdata->Tbslbrm = harq_process->tbslbrm;
     rdata->offset = offset;
     rdata->dlsch = dlsch;
     rdata->dlsch_id = 0;
