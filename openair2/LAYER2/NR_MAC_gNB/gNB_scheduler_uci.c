@@ -503,6 +503,8 @@ void compute_pmi_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
         if(codebookConfig->codebookType.choice.type1->subType.present == NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel) {
           if(codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.present ==
              NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_two) {
+            csi_report->N1 = 1;
+            csi_report->N2 = 1;
             if (i==0)
               csi_report->csi_meas_bitlen.pmi_x2_bitlen[i]=2;
             if (i==1)
