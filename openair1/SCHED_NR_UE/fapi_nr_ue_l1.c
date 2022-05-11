@@ -315,6 +315,7 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
   dlsch0_harq->mcs = dlsch_config_pdu->mcs;
   dlsch0_harq->rvidx = dlsch_config_pdu->rv;
   dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+  dlsch0_harq->tbslbrm = dlsch_config_pdu->tbslbrm;
   dlsch0_harq->nscid = dlsch_config_pdu->nscid;
   dlsch0_harq->dlDmrsScramblingId = dlsch_config_pdu->dlDmrsScramblingId;
   //get nrOfLayers from DCI info
@@ -340,6 +341,7 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
   dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
   LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
 }
+
 
 int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 

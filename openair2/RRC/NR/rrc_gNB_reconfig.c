@@ -1034,39 +1034,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
 
- if (do_csirs && dl_antenna_ports > 1) {
-   csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
-   NR_CSI_IM_Resource_t *imres0 = calloc(1,sizeof(*imres0));
-   imres0->csi_IM_ResourceId = 0;
-   imres0->csi_IM_ResourceElementPattern = calloc(1,sizeof(*imres0->csi_IM_ResourceElementPattern));
-   imres0->csi_IM_ResourceElementPattern->present = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern_PR_pattern1;
-   imres0->csi_IM_ResourceElementPattern->choice.pattern1 = calloc(1,sizeof(*imres0->csi_IM_ResourceElementPattern->choice.pattern1));
-   imres0->csi_IM_ResourceElementPattern->choice.pattern1->subcarrierLocation_p1 = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern__pattern1__subcarrierLocation_p1_s4;
-   imres0->csi_IM_ResourceElementPattern->choice.pattern1->symbolLocation_p1 = 6;
-   imres0->freqBand = calloc(1,sizeof(*imres0->freqBand));
-   imres0->freqBand->startingRB = 0;
-   imres0->freqBand->nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
-   imres0->periodicityAndOffset = calloc(1,sizeof(*imres0->periodicityAndOffset));
-   imres0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-   imres0->periodicityAndOffset->choice.slots320 = 0;
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceToAddModList->list,imres0);
-   csi_MeasConfig->csi_IM_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceSetToAddModList));
-   NR_CSI_IM_ResourceSet_t *imset0 = calloc(1,sizeof(*imset0));
-   imset0->csi_IM_ResourceSetId = 0;
-   NR_CSI_IM_ResourceId_t *res0 = calloc(1,sizeof(*res0));
-   *res0 = 0;
-   ASN_SEQUENCE_ADD(&imset0->csi_IM_Resources,res0);
-   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceSetToAddModList->list,imset0);
- }
- else {
-   csi_MeasConfig->csi_IM_ResourceToAddModList = NULL;
-   csi_MeasConfig->csi_IM_ResourceSetToAddModList = NULL;
- }
-
- csi_MeasConfig->csi_IM_ResourceToReleaseList = NULL;
- csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
-
  config_csirs(servingcellconfigcommon, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, do_csirs);
+ config_csiim(do_csirs, dl_antenna_ports, curr_bwp, csi_MeasConfig);
 
  csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
