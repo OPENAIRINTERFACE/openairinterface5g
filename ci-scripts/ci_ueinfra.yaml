@@ -55,7 +55,7 @@ amarisoft_ue_1:
   Duration : 60
   Ping : /tmp/test_ue1.log
   UELog : /tmp/ue1.log
-  HostIPAddress : 192.168.18.89
+  HostIPAddress : 172.21.16.144
   HostUsername : root
   HostPassword : toor 
   HostSourceCodePath : /tmp

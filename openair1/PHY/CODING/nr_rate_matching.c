@@ -387,8 +387,7 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
 }
 
 
-int nr_rate_matching_ldpc(uint8_t Ilbrm,
-                          uint32_t Tbslbrm,
+int nr_rate_matching_ldpc(uint32_t Tbslbrm,
                           uint8_t BG,
                           uint16_t Z,
                           uint8_t *w,
@@ -409,7 +408,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   //Bit selection
   N = (BG==1)?(66*Z):(50*Z);
 
-  if (Ilbrm == 0)
+  if (Tbslbrm == 0)
       Ncb = N;
   else {
       Nref = 3*Tbslbrm/(2*C); //R_LBRM = 2/3
@@ -419,11 +418,11 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
 
 #ifdef RM_DEBUG
-  printf("nr_rate_matching_ldpc: E %d, F %d, Foffset %d, k0 %d, Ncb %d, rvidx %d, Ilbrm %d\n", E, F, Foffset,ind, Ncb, rvidx, Ilbrm);
+  printf("nr_rate_matching_ldpc: E %d, F %d, Foffset %d, k0 %d, Ncb %d, rvidx %d, Tbslbrm %d\n", E, F, Foffset,ind, Ncb, rvidx, Tbslbrm);
 #endif
 
   if (Foffset > E) {
-    LOG_E(PHY,"nr_rate_matching: invalid parameters (Foffset %d > E %d) F %d, k0 %d, Ncb %d, rvidx %d, Ilbrm %d\n",Foffset,E,F, ind, Ncb, rvidx, Ilbrm);
+    LOG_E(PHY,"nr_rate_matching: invalid parameters (Foffset %d > E %d) F %d, k0 %d, Ncb %d, rvidx %d, Tbslbrm %d\n",Foffset,E,F, ind, Ncb, rvidx, Tbslbrm);
     return -1;
   }
   if (Foffset > Ncb) {
@@ -471,8 +470,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
   return 0;
 }
 
-int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
-                             uint32_t Tbslbrm,
+int nr_rate_matching_ldpc_rx(uint32_t Tbslbrm,
                              uint8_t BG,
                              uint16_t Z,
                              int16_t *w,
@@ -498,7 +496,7 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
   //Bit selection
   N = (BG==1)?(66*Z):(50*Z);
 
-  if (Ilbrm == 0)
+  if (Tbslbrm == 0)
       Ncb = N;
   else {
       Nref = (3*Tbslbrm/(2*C)); //R_LBRM = 2/3
@@ -516,7 +514,7 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
   }
 
 #ifdef RM_DEBUG
-  printf("nr_rate_matching_ldpc_rx: Clear %d, E %d, k0 %d, Ncb %d, rvidx %d, Ilbrm %d\n", clear, E, ind, Ncb, rvidx, Ilbrm);
+  printf("nr_rate_matching_ldpc_rx: Clear %d, E %d, k0 %d, Ncb %d, rvidx %d, Tbslbrm %d\n", clear, E, ind, Ncb, rvidx, Tbslbrm);
 #endif
 
   if (clear==1) memset(w,0,Ncb*sizeof(int16_t));

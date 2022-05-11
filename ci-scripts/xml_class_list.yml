@@ -47,3 +47,4 @@
   - PingFromContainer
   - IperfFromContainer
   - StatsFromGenObject
+  - LicenceAndFormattingCheck

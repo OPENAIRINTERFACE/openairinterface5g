@@ -928,6 +928,19 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       LOG_W(MAC, "[%d.%d] MCS value %d out of bounds! Possibly due to false DCI. Ignoring DCI!\n", frame, slot, dlsch_config_pdu_1_0->mcs);
       return -1;
     }
+
+    int bw_tbslbrm;
+    if (mac->scc || mac->scc_SIB || mac->cg) {
+      NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
+                                              mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+      bw_tbslbrm = get_bw_tbslbrm(&genericParameters, mac->cg);
+    }
+    else
+      bw_tbslbrm = dlsch_config_pdu_1_0->BWPSize;
+    dlsch_config_pdu_1_0->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_0->mcs_table,
+			                               bw_tbslbrm,
+		                                       1);
+
     /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
     dlsch_config_pdu_1_0->ndi = dci->ndi;
     /* RV (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
@@ -1333,6 +1346,17 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dl_config->number_pdus = dl_config->number_pdus + 1;
     /* TODO same calculation for MCS table as done in UL */
     dlsch_config_pdu_1_1->mcs_table = (pdsch_Config->mcs_Table) ? (*pdsch_Config->mcs_Table + 1) : 0;
+
+    // TBS_LBRM according to section 5.4.2.1 of 38.212
+    long *maxMIMO_Layers = mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
+    AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
+    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+    NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
+                                            mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+    int bw_tbslbrm = get_bw_tbslbrm(&genericParameters, mac->cg);
+    dlsch_config_pdu_1_1->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_1->mcs_table,
+			                               bw_tbslbrm,
+		                                       nl_tbslbrm);
     /*PTRS configuration */
     dlsch_config_pdu_1_1->pduBitmap = 0;
     if(pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->phaseTrackingRS != NULL) {
