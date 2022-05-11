@@ -617,7 +617,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
     gNB->nr_srs_info[id]->sc_list = (uint16_t *) malloc16_clear(6*fp->N_RB_UL*sizeof(uint16_t));
-    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t**)malloc16_clear(MAX_NUM_NR_SRS_AP*sizeof(int32_t*));
     gNB->nr_srs_info[id]->signal_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
     gNB->nr_srs_info[id]->noise_power_per_rb = (uint32_t*)malloc16_clear(fp->N_RB_UL*sizeof(uint32_t));
     gNB->nr_srs_info[id]->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
@@ -628,6 +628,9 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     gNB->nr_srs_info[id]->srs_estimated_channel_freq = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     gNB->nr_srs_info[id]->srs_estimated_channel_time = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+    for(i=0; i<MAX_NUM_NR_SRS_AP;i++) {
+      gNB->nr_srs_info[id]->srs_generated_signal[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+    }
     for (i=0;i<Prx;i++){
       gNB->nr_srs_info[id]->srs_received_signal[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
       gNB->nr_srs_info[id]->srs_ls_estimated_channel[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
@@ -796,6 +799,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_freq[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i]);
+    }
+    for(int i=0; i<MAX_NUM_NR_SRS_AP;i++) {
+      free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal[i]);
     }
     free_and_zero(gNB->nr_srs_info[id]->sc_list);
     free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal);

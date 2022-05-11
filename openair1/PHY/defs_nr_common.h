@@ -95,6 +95,7 @@
 #define MAX_NUM_NR_RE (4*14*273*12)
 
 #define MAX_NUM_NR_SRS_SYMBOLS 4
+#define MAX_NUM_NR_SRS_AP 4
 
 #define NR_RX_NB_TH 1
 #define NR_NB_TH_SLOT 2
@@ -242,7 +243,7 @@ typedef struct {
   uint16_t sc_list_length;
   uint16_t *sc_list;
   uint8_t srs_generated_signal_bits;
-  int32_t *srs_generated_signal;
+  int32_t **srs_generated_signal;
   int32_t **srs_received_signal;
   int32_t **srs_ls_estimated_channel;
   int32_t **srs_estimated_channel_freq;

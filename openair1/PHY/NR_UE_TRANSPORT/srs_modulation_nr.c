@@ -76,12 +76,13 @@
 *********************************************************************/
 int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
                     NR_DL_FRAME_PARMS *frame_parms,
-                    int32_t *txptr,
+                    int32_t **txdataF,
+                    uint16_t symbol_offset,
                     nr_srs_info_t *nr_srs_info,
                     int16_t amp,
                     int frame_number,
-                    int slot_number)
-{
+                    int slot_number) {
+
   uint8_t n_SRS_cs_max;
   uint8_t u;
   uint8_t v_nu;
@@ -144,10 +145,6 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   LOG_I(NR_PHY,"l0 = %i\n", l0);
 #endif
 
-  if (N_ap != port1) {
-    LOG_E(NR_PHY, "generate_srs: this number of antenna ports %d is not yet supported!\n", N_ap);
-    return (-1);
-  }
   if (N_symb_SRS != 1) {
     LOG_E(NR_PHY, "generate_srs: this number of srs symbol  %d is not yet supported!\n", N_symb_SRS);
   	return (-1);
@@ -203,7 +200,9 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   /* for each antenna ports for transmission */
   for (int p_index = 0; p_index < N_ap; p_index++) {
 
-  /* see TS 38.211 6.4.1.4.2 Sequence generation */
+    int32_t *txptr = &txdataF[p_index][symbol_offset];
+
+    /* see TS 38.211 6.4.1.4.2 Sequence generation */
 
     n_SRS_cs_i = (n_SRS_cs +  (n_SRS_cs_max * (SRS_antenna_port[p_index] - 1000)/N_ap))%n_SRS_cs_max;
     alpha_i = 2 * M_PI * ((double)n_SRS_cs_i / (double)n_SRS_cs_max);
@@ -373,7 +372,7 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
 
       txptr[subcarrier] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
 
-      if(nr_srs_info) {
+      if(nr_srs_info && p_index==0) {
         nr_srs_info->sc_list[nr_srs_info->sc_list_length] = subcarrier;
         nr_srs_info->sc_list_length++;
       }
@@ -457,7 +456,7 @@ int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gN
   NR_DL_FRAME_PARMS *frame_parms = &(ue->frame_parms);
   uint16_t symbol_offset = (frame_parms->symbols_per_slot - 1 - srs_config_pdu->time_start_position)*frame_parms->ofdm_symbol_size;
 
-  if (generate_srs_nr(srs_config_pdu, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], ue->nr_srs_info,
+  if (generate_srs_nr(srs_config_pdu, frame_parms, ue->common_vars.txdataF, symbol_offset, ue->nr_srs_info,
                       AMP, proc->frame_tx, proc->nr_slot_tx) == 0) {
     return 0;
   } else {

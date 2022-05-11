@@ -855,14 +855,14 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
         // At least currently, the configuration is constant, so it is enough to generate the sequence just once.
         if(gNB->nr_srs_info[i]->sc_list_length == 0) {
-          generate_srs_nr(srs_pdu, &gNB->frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
+          generate_srs_nr(srs_pdu, &gNB->frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
         }
 
         nr_get_srs_signal(gNB,frame_rx,slot_rx,srs_pdu, gNB->nr_srs_info[i], gNB->nr_srs_info[i]->srs_received_signal);
 
         nr_srs_channel_estimation(gNB,frame_rx,slot_rx,srs_pdu,
                                   gNB->nr_srs_info[i],
-                                  gNB->nr_srs_info[i]->srs_generated_signal,
+                                  gNB->nr_srs_info[i]->srs_generated_signal[0],
                                   gNB->nr_srs_info[i]->srs_received_signal,
                                   gNB->nr_srs_info[i]->srs_estimated_channel_freq,
                                   gNB->nr_srs_info[i]->srs_estimated_channel_time,
