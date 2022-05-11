@@ -1,0 +1,31 @@
+FROM ubuntu:bionic AS oai-formatting-check
+
+ARG MERGE_REQUEST
+ARG SRC_BRANCH
+ARG TARGET_BRANCH
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+       astyle \
+       gawk \
+       git
+
+WORKDIR /oai-ran
+COPY . .
+
+RUN /bin/bash -c "if [[ -v MERGE_REQUEST ]]; then echo 'Source Branch = $SRC_BRANCH'; echo 'Target Branch = $TARGET_BRANCH'; else echo 'Push to develop'; fi"
+RUN /bin/bash -c "if [[ -v MERGE_REQUEST ]]; then ./ci-scripts/checkCodingFormattingRules.sh --src-branch $SRC_BRANCH --target-branch $TARGET_BRANCH; else ./ci-scripts/checkCodingFormattingRules.sh; fi"
+
+RUN echo "=== Files not properly formatted ===" && \
+    /bin/bash -c "if [[ -f oai_rules_result_list.txt ]]; then cat oai_rules_result_list.txt; fi"
+
+RUN echo "=== Files with incorrect define protection ===" && \
+   /bin/bash -c "if [[ -f header-files-w-incorrect-define.txt ]]; then cat header-files-w-incorrect-define.txt; fi"
+
+RUN echo "=== Files with a GNU GPL licence Banner ===" && \
+   /bin/bash -c "if [[ -f files-w-gnu-gpl-license-banner.txt ]]; then cat files-w-gnu-gpl-license-banner.txt; fi"
+
+RUN echo "=== Files with a suspect Banner ===" && \
+  /bin/bash -c "if [[ -f files-w-suspect-banner.txt ]]; then cat files-w-suspect-banner.txt; fi"

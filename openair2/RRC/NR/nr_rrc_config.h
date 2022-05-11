@@ -119,6 +119,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   int num_dl_antenna_ports,
                   int curr_bwp,
                   int do_csirs);
+void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig);
 void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
                 NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                 int uid,

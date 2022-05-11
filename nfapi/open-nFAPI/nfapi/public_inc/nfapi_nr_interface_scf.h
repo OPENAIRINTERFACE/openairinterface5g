@@ -777,6 +777,10 @@ typedef struct {
 }  nfapi_nr_dl_tti_pdcch_pdu_rel15_t;
 
 typedef struct {
+  uint32_t tbSizeLbrmBytes;
+}nfapi_v3_pdsch_maintenance_parameters_t;
+
+typedef struct {
   uint16_t pduBitmap;
   uint16_t rnti;
   uint16_t pduIndex;
@@ -854,6 +858,7 @@ typedef struct {
   uint8_t nEpreRatioOfPDSCHToPTRS;
   // Beamforming
   nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming;
+  nfapi_v3_pdsch_maintenance_parameters_t maintenance_parms_v3;
 }nfapi_nr_dl_tti_pdsch_pdu_rel15_t;
 
 
@@ -1195,6 +1200,10 @@ typedef struct
 #define PUSCH_PDU_BITMAP_PUSCH_PTRS 0x4
 #define PUSCH_PDU_BITMAP_DFTS_OFDM  0x8
 
+typedef struct {
+  uint32_t tbSizeLbrmBytes;
+}nfapi_v3_pusch_maintenance_parameters_t;
+
 typedef struct
 {
   uint16_t pdu_bit_map;//Bitmap indicating presence of optional PDUs (see above)
@@ -1240,7 +1249,7 @@ typedef struct
   nfapi_nr_dfts_ofdm_t dfts_ofdm;
   //beamforming
   nfapi_nr_ul_beamforming_t beamforming;
-
+  nfapi_v3_pdsch_maintenance_parameters_t maintenance_parms_v3;
 } nfapi_nr_pusch_pdu_t;
 
 //for pucch_pdu:
