@@ -1022,38 +1022,8 @@ void fill_default_csi_MeasConfig(int uid,
   NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1,sizeof(*csi_MeasConfig));
   setupRelease_csi_MeasConfig->choice.setup = csi_MeasConfig;
 
-  if (dl_antenna_ports > 1) {
-    csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
-    NR_CSI_IM_Resource_t *imres0 = calloc(1,sizeof(*imres0));
-    imres0->csi_IM_ResourceId = 0;
-    imres0->csi_IM_ResourceElementPattern = calloc(1,sizeof(*imres0->csi_IM_ResourceElementPattern));
-    imres0->csi_IM_ResourceElementPattern->present = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern_PR_pattern1;
-    imres0->csi_IM_ResourceElementPattern->choice.pattern1 = calloc(1,sizeof(*imres0->csi_IM_ResourceElementPattern->choice.pattern1));
-    imres0->csi_IM_ResourceElementPattern->choice.pattern1->subcarrierLocation_p1 = NR_CSI_IM_Resource__csi_IM_ResourceElementPattern__pattern1__subcarrierLocation_p1_s4;
-    imres0->csi_IM_ResourceElementPattern->choice.pattern1->symbolLocation_p1 = 6;
-    imres0->freqBand = calloc(1,sizeof(*imres0->freqBand));
-    imres0->freqBand->startingRB = 0;
-    imres0->freqBand->nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
-    imres0->periodicityAndOffset = calloc(1,sizeof(*imres0->periodicityAndOffset));
-    imres0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-    imres0->periodicityAndOffset->choice.slots320 = 0;
-    ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceToAddModList->list,imres0);
-    csi_MeasConfig->csi_IM_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceSetToAddModList));
-    NR_CSI_IM_ResourceSet_t *imset0 = calloc(1,sizeof(*imset0));
-    imset0->csi_IM_ResourceSetId = 0;
-    NR_CSI_IM_ResourceId_t *res0 = calloc(1,sizeof(*res0));
-    *res0 = 0;
-    ASN_SEQUENCE_ADD(&imset0->csi_IM_Resources,res0);
-    ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceSetToAddModList->list,imset0);
-  }
-  else {
-    csi_MeasConfig->csi_IM_ResourceToAddModList = NULL;
-    csi_MeasConfig->csi_IM_ResourceSetToAddModList = NULL;
-  }
-
-  csi_MeasConfig->nzp_CSI_RS_ResourceSetToReleaseList = NULL;
-
   config_csirs(scc, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, configuration->do_CSIRS);
+  config_csiim(configuration->do_CSIRS, dl_antenna_ports, curr_bwp, csi_MeasConfig);
 
   csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
   csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
@@ -1155,7 +1125,7 @@ void fill_default_csi_MeasConfig(int uid,
     csirep1->reportFreqConfiguration->pmi_FormatIndicator = calloc(1,sizeof(*csirep1->reportFreqConfiguration->pmi_FormatIndicator));
     *csirep1->reportFreqConfiguration->pmi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__pmi_FormatIndicator_widebandPMI;
     csirep1->reportFreqConfiguration->csi_ReportingBand = NULL;
-/*calloc(1,sizeof(*csirep1->reportFreqConfiguration->csi_ReportingBand));
+    /*calloc(1,sizeof(*csirep1->reportFreqConfiguration->csi_ReportingBand));
      csirep1->reportFreqConfiguration->csi_ReportingBand->present = NR_CSI_ReportConfig__reportFreqConfiguration__csi_ReportingBand_PR_subbands7;
      csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.size=1;
      csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.bits_unused=1;
@@ -1686,7 +1656,7 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   if (use_rlc_um_for_drb) nr_drb_config(rlc_Config_drb, NR_RLC_Config_PR_um_Bi_Directional);
   else                    nr_drb_config(rlc_Config_drb, NR_RLC_Config_PR_am);
 
-
+  
   rlc_BearerConfig_drb->rlc_Config                                 = rlc_Config_drb;
   logicalChannelConfig_drb                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
   logicalChannelConfig_drb->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig_drb->ul_SpecificParameters));
