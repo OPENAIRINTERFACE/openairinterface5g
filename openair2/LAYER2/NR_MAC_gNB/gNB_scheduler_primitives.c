@@ -667,7 +667,9 @@ void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
+                              uint8_t nrOfLayers,
                               NR_pusch_semi_static_t *ps) {
+
   ps->dci_format = dci_format;
   ps->time_domain_allocation = tda;
 
@@ -709,6 +711,7 @@ void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
     num_dmrs_cdm_grps_no_data = 2; // in case of transform precoding - no Data sent in DMRS symbol
   }
 
+  ps->nrOfLayers = nrOfLayers;
   ps->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
 
   /* DMRS calculations */
@@ -1009,8 +1012,16 @@ void config_uldci(const NR_SIB1_t *sib1,
                     "Non Codebook configuration non supported\n");
         dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
       }
+      dci_pdu_rel15->precoding_information.val= 0;
+      if (pusch_pdu->nrOfLayers == 2)
+        dci_pdu_rel15->precoding_information.val = 4;
+      else if (pusch_pdu->nrOfLayers == 4)
+        dci_pdu_rel15->precoding_information.val = 11;
+
+      // antenna_ports.val = 0 for transform precoder is disabled, dmrs-Type=1, maxLength=1, Rank=1/2/3/4 
       // Antenna Ports
-      dci_pdu_rel15->antenna_ports.val = 0; // TODO for now it is hardcoded, it should depends on cdm group no data and rank
+      dci_pdu_rel15->antenna_ports.val = 0; 
+      
       // DMRS sequence initialization
       dci_pdu_rel15->dmrs_sequence_initialization.val = pusch_pdu->scid;
       break;
@@ -1019,11 +1030,14 @@ void config_uldci(const NR_SIB1_t *sib1,
   }
 
   LOG_D(NR_MAC,
-        "%s() ULDCI type 0 payload: freq_alloc %d, time_alloc %d, freq_hop_flag %d, mcs %d tpc %d ndi %d rv %d\n",
+        "%s() ULDCI type 0 payload: dci_format %d, freq_alloc %d, time_alloc %d, freq_hop_flag %d, precoding_information.val %d antenna_ports.val %d mcs %d tpc %d ndi %d rv %d\n",
         __func__,
+        dci_format,
         dci_pdu_rel15->frequency_domain_assignment.val,
         dci_pdu_rel15->time_domain_assignment.val,
         dci_pdu_rel15->frequency_hopping_flag.val,
+        dci_pdu_rel15->precoding_information.val,
+        dci_pdu_rel15->antenna_ports.val,
         dci_pdu_rel15->mcs,
         dci_pdu_rel15->tpc,
         dci_pdu_rel15->ndi,
@@ -2864,6 +2878,7 @@ void nr_mac_update_timers(module_id_t module_id,
 
         int dci_format = get_dci_format(sched_ctrl);
         const uint8_t num_dmrs_cdm_grps_no_data = (ubwp || ubwpd) ? 1 : 2;
+        const uint8_t nrOfLayers = 1;
         const int utda = ubwp && preferred_ul_tda[ubwp->bwp_Id][slot] >= 0 ?
             preferred_ul_tda[ubwp->bwp_Id][slot] : (ups->time_domain_allocation >= 0 ? ups->time_domain_allocation : 0);
 
@@ -2874,6 +2889,7 @@ void nr_mac_update_timers(module_id_t module_id,
                                  dci_format,
                                  utda,
                                  num_dmrs_cdm_grps_no_data,
+                                 nrOfLayers,
                                  ups);
       }
     }

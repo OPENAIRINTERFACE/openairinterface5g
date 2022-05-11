@@ -526,7 +526,8 @@ void nr_fep0(RU_t *ru, int first_half) {
     end_symbol = NR_SYMBOLS_PER_SLOT;
   }
 
-  LOG_D(PHY,"In fep0 for slot = %d, first_half = %d, start_symbol = %d, end_symbol = %d\n", proc->tti_rx, first_half, start_symbol, end_symbol);
+  LOG_D(PHY,"In fep0 for slot = %d, first_half = %d, start_symbol = %d, end_symbol = %d, nb_antennas_rx = %d,N_TA_offset = %d\n", 
+        proc->tti_rx, first_half, start_symbol, end_symbol,fp->nb_antennas_rx,ru->N_TA_offset);
   //  printf("fep0: slot %d\n",slot);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+proc->tti_rx, 1);

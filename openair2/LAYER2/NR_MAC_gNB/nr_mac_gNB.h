@@ -343,6 +343,7 @@ typedef struct NR_sched_pucch {
 typedef struct NR_pusch_semi_static_t {
   int dci_format;
   int time_domain_allocation;
+  uint8_t nrOfLayers;
   uint8_t num_dmrs_cdm_grps_no_data;
 
   int startSymbolIndex;

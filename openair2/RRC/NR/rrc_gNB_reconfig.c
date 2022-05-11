@@ -57,8 +57,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                                      int scg_id,
                                      int servCellIndex,
                                      const gNB_RrcConfigurationReq *configuration,
-                                     int uid)
-{
+                                     int uid) {
+
   const rrc_pdsch_AntennaPorts_t* pdschap = &configuration->pdsch_AntennaPorts;
   const int dl_antenna_ports = pdschap->N1 * pdschap->N2 * pdschap->XP;
   const int do_csirs = configuration->do_CSIRS;
@@ -720,14 +720,14 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
  pusch_Config->codebookSubset=calloc(1,sizeof(*pusch_Config->codebookSubset));
  *pusch_Config->codebookSubset = NR_PUSCH_Config__codebookSubset_nonCoherent;
  pusch_Config->maxRank=calloc(1,sizeof(*pusch_Config->maxRank));
- *pusch_Config->maxRank= 1;
+ *pusch_Config->maxRank= configuration->pusch_AntennaPorts;
  pusch_Config->rbg_Size=NULL;
  pusch_Config->uci_OnPUSCH=NULL;
  pusch_Config->tp_pi2BPSK=NULL;
 
  /*------------------------------TRANSFORM PRECODING- -----------------------------------------------------------------------*/
 
- uint8_t transform_precoding = NR_PUSCH_Config__transformPrecoder_disabled;
+ uint8_t transformPrecoder = NR_PUSCH_Config__transformPrecoder_disabled;
 
  // TBD: configure this from .conf file, Dedicated params cannot yet be configured in .conf file.
  // Enable this to test transform precoding enabled from dedicated config.
@@ -739,13 +739,13 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
 
  if (pusch_Config->transformPrecoder == NULL) {
   if (servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder != NULL)
-    transform_precoding = NR_PUSCH_Config__transformPrecoder_enabled;
+    transformPrecoder = NR_PUSCH_Config__transformPrecoder_enabled;
  }
  else
-    transform_precoding = *pusch_Config->transformPrecoder;
+    transformPrecoder = *pusch_Config->transformPrecoder;
 
 
- if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled ) {
+ if (transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled ) {
     /* Enable DMRS uplink config for transform precoding enabled */
     NR_DMRS_UplinkConfig->transformPrecodingEnabled = calloc(1,sizeof(*NR_DMRS_UplinkConfig->transformPrecodingEnabled));
     NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity = NULL;
