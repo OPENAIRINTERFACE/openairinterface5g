@@ -234,7 +234,6 @@ void nr_processULSegment(void* arg) {
   int rv_index = rdata->rv_index;
   int r_offset = rdata->r_offset;
   uint8_t kc = rdata->Kc;
-  uint32_t Tbslbrm = rdata->Tbslbrm;
   short* ulsch_llr = rdata->ulsch_llr;
   int max_ldpc_iterations = p_decoderParms->numMaxIter;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
@@ -244,8 +243,6 @@ void nr_processULSegment(void* arg) {
 
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
-  
-  uint8_t  Ilbrm    = 0;
 
   Kr = ulsch_harq->K;
   Kr_bytes = Kr>>3;
@@ -293,8 +290,7 @@ void nr_processULSegment(void* arg) {
 
   //start_meas(&phy_vars_gNB->ulsch_rate_unmatching_stats);
 
-  if (nr_rate_matching_ldpc_rx(Ilbrm,
-                               Tbslbrm,
+  if (nr_rate_matching_ldpc_rx(rdata->tbslbrm,
                                p_decoderParms->BG,
                                p_decoderParms->Z,
                                ulsch_harq->d[r],
@@ -394,7 +390,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint32_t r_offset;
   uint32_t offset;
   int kc;
-  int Tbslbrm;
   int E;
 
 #ifdef PRINT_CRC_CHECK
@@ -449,7 +444,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (harq_process->ndi != pusch_pdu->pusch_data.new_data_indicator) {
     harq_process->new_rx = true;
     harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
-    LOG_E(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
+    LOG_D(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
   }
 
   A   = (harq_process->TBS)<<3;
@@ -539,7 +534,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (!frame%100)
     printf("K %d C %d Z %d \n", harq_process->K, harq_process->C, harq_process->Z);
 #endif
-  Tbslbrm = nr_compute_tbslbrm(0,nb_rb,n_layers);
 
   p_decParams->Z = harq_process->Z;
 
@@ -590,10 +584,10 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->r_offset = r_offset;
     rdata->Kr_bytes = Kr_bytes;
     rdata->rv_index = pusch_pdu->pusch_data.rv_index;
-    rdata->Tbslbrm = Tbslbrm;
     rdata->offset = offset;
     rdata->ulsch = ulsch;
     rdata->ulsch_id = ULSCH_id;
+    rdata->tbslbrm = pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes;
     pushTpool(phy_vars_gNB->threadPool,req);
     phy_vars_gNB->nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",phy_vars_gNB->nbDecode);

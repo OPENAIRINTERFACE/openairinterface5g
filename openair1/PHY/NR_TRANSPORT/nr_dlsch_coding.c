@@ -232,27 +232,20 @@ void ldpc8blocks( void *p) {
 #endif
     uint32_t E = nr_get_E(G, impp->n_segments, mod_order, rel15->nrOfLayers, rr);
     //#ifdef DEBUG_DLSCH_CODING
-    LOG_D(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
+    LOG_D(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d,nrOfLayer %d)...\n",
           rr,
           impp->n_segments,
           G,
           E,
           impp->F,
           Kr-impp->F-2*(*impp->Zc),
-          mod_order,nb_rb);
-    // for tbslbrm calculation according to 5.4.2.1 of 38.212
-    uint8_t Nl = 4;
+          mod_order,nb_rb,rel15->nrOfLayers);
 
-    if (rel15->nrOfLayers < Nl)
-      Nl = rel15->nrOfLayers;
-
-    uint32_t Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
-    uint8_t Ilbrm = 1;
+    uint32_t Tbslbrm = rel15->maintenance_parms_v3.tbSizeLbrmBytes;
 
     uint8_t e[E];
     bzero (e, E);
-    nr_rate_matching_ldpc(Ilbrm,
-                          Tbslbrm,
+    nr_rate_matching_ldpc(Tbslbrm,
                           impp->BG,
                           *impp->Zc,
                           impp->d[rr],
@@ -262,6 +255,20 @@ void ldpc8blocks( void *p) {
                           Kr-impp->F-2*(*impp->Zc),
                           rel15->rvIndex[0],
                           E);
+   if (Kr-impp->F-2*(*impp->Zc)> E)  {
+    LOG_E(PHY,"dlsch coding A %d  Kr %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n",
+          A,impp->K,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,(int)mod_order);
+ 
+    LOG_E(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Kr %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
+          rr,
+          impp->n_segments,
+          G,
+          E,
+          Kr,
+          impp->F,
+          Kr-impp->F-2*(*impp->Zc),
+          mod_order,nb_rb);
+    }
 #ifdef DEBUG_DLSCH_CODING
 
     for (int i =0; i<16; i++)
