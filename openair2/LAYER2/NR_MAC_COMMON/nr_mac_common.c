@@ -4068,8 +4068,6 @@ uint16_t compute_pucch_prb_size(uint8_t format,
     if ((O_tot+O_csi)>(nr_prbs*n_re_ctrl*n_symb*Qm*r))
       AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
                   r,O_tot,O_crc,nr_prbs);
-    else
-      return nr_prbs;
   }
 
   if (format==2){
@@ -4085,6 +4083,25 @@ uint16_t compute_pucch_prb_size(uint8_t format,
   else{
     AssertFatal(1==0,"Not yet implemented");
   }
+}
+
+int get_bw_tbslbrm(NR_BWP_t *genericParameters,
+                   NR_CellGroupConfig_t *cg) {
+
+  int bw = 0;
+  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+      cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+    struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+    for (int i=0; i<BWP_list->list.count; i++) {
+      genericParameters = &BWP_list->list.array[i]->bwp_Common->genericParameters;
+      int curr_bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      if (curr_bw > bw)
+        bw = curr_bw;
+    }
+  }
+  else
+    bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  return bw;
 }
 
 /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
