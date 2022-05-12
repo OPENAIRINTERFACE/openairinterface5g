@@ -191,24 +191,19 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
                   NR_BWP_UplinkDedicated_t **ubwpd,
                   NR_BWP_UplinkCommon_t **ubwpc) {
 
-    if (dl_bwp_id > 0) {
-       AssertFatal(mac->DLbwp[dl_bwp_id-1]!=NULL,"mac->DLbwp[%d] is null, shouldn't be\n",
-                    (int)dl_bwp_id-1);
-       *bwpd = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated;
-       if (mac->DLbwp[dl_bwp_id-1]->bwp_Common) *bwpc = mac->DLbwp[dl_bwp_id-1]->bwp_Common;
-       else if (mac->scc) *bwpc = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
-       else if (mac->scc_SIB) *bwpc = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
-       AssertFatal(*bwpc!=NULL,"bwpc shouldn't be null\n");
-    } else {
-       if (mac->cg &&
-           mac->cg->spCellConfig &&
-           mac->cg->spCellConfig->spCellConfigDedicated &&
-           mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)
-          *bwpd = mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
-       if (mac->scc) *bwpc = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
-       else if (mac->scc_SIB) *bwpc = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
-       AssertFatal(*bwpc!=NULL,"bwpc shouldn't be null\n");
-    }
+  if (dl_bwp_id > 0) {
+    AssertFatal(mac->DLbwp[dl_bwp_id-1]!=NULL,"mac->DLbwp[%d] is null, shouldn't be\n", (int)dl_bwp_id-1);
+    *bwpd = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated;
+  } else {
+    if (mac->cg &&
+        mac->cg->spCellConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated &&
+        mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)
+      *bwpd = mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+  }
+
+  *bwpc = get_bwp_downlink_common(mac, dl_bwp_id);
+  AssertFatal(*bwpc!=NULL,"bwpc shouldn't be null\n");
 
     if (ul_bwp_id > 0) {
        AssertFatal(mac->ULbwp[ul_bwp_id-1]!=NULL,"mac->ULbwp[%d] is null, shouldn't be\n",
@@ -231,6 +226,18 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
        else if (mac->scc_SIB) *ubwpc = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
        AssertFatal(*ubwpc!=NULL,"ubwpc shouldn't be null\n");
     }
+}
+
+NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id) {
+  NR_BWP_DownlinkCommon_t *bwp_Common = NULL;
+  if (dl_bwp_id > 0 && mac->cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+    bwp_Common = mac->cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[dl_bwp_id-1]->bwp_Common;
+  } else if (mac->scc) {
+    bwp_Common = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
+  } else if (mac->scc_SIB) {
+    bwp_Common = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
+  }
+  return bwp_Common;
 }
 
 NR_PDSCH_TimeDomainResourceAllocationList_t *choose_dl_tda_list(NR_PDSCH_Config_t *pdsch_Config,NR_PDSCH_ConfigCommon_t *pdsch_ConfigCommon) {

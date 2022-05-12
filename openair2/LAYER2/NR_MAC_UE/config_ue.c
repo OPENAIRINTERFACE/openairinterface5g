@@ -508,16 +508,7 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
                           NR_ServingCellConfig_t *scd,
                           NR_BWP_Id_t dl_bwp_id) {
 
-
-  NR_BWP_DownlinkCommon_t *bwp_Common = NULL;
-  if(dl_bwp_id > 0 && scd->downlinkBWP_ToAddModList) {
-    bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
-  } else if(mac->scc) {
-    bwp_Common = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
-  } else if(mac->scc_SIB) {
-    bwp_Common = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
-  }
-
+  NR_BWP_DownlinkCommon_t *bwp_Common = get_bwp_downlink_common(mac, dl_bwp_id);
   AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
 
   NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
