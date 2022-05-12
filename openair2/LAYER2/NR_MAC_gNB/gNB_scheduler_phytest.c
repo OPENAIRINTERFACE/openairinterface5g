@@ -303,7 +303,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
            rbSize < target_dl_bw)
       rbSize++;
     /* found target_dl_bw? */
-    if (rbStart+rbSize == target_dl_bw)
+    if (rbSize == target_dl_bw)
       break;
     /* at end and below target_dl_bw? */
     if (rbStart + rbSize >= bwpSize)
