@@ -876,9 +876,7 @@ int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, int Mod_idP, int UE_i
   NR_TCI_State_t *tci =NULL;
   NR_TCI_StateId_t *tci_id = NULL;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
-  NR_BWP_Downlink_t *bwp = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_ControlResourceSet_t *coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1];
+  NR_ControlResourceSet_t *coreset = sched_ctrl->coreset;
   int i;
   int flag = 0;
   int tci_stateID = -1;
@@ -948,7 +946,6 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
   const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
   NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
-  NR_BWP_Downlink_t *bwp = bwp_id > 0 ? sched_ctrl->active_bwp : NULL;
 
   //bwp indicator
   int n_dl_bwp=0;
@@ -1078,10 +1075,8 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
       }
     }
 
-    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI = bwp ?
-                                                                   bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI :
-                                                                   CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI;
-
+    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI = sched_ctrl->coreset ?
+                                                                   sched_ctrl->coreset->tci_PresentInDCI : NULL;
 
     //filling pdsch tci state activation deactivation mac ce structure fields
     if(sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI) {

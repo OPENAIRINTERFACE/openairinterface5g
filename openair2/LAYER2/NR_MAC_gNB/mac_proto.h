@@ -307,6 +307,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int rnti_types,
                         int N_RB,
                         int bwp_id,
+                        NR_ControlResourceSetId_t coreset_id,
                         uint16_t cset0_bwp_size);
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,

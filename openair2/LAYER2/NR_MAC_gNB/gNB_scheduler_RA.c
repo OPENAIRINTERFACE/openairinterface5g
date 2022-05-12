@@ -904,6 +904,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                        NR_RNTI_TC,
                        pusch_pdu->bwp_size,
                        ra->ul_bwp_id,
+                       coresetid,
                        nr_mac->cset0_bwp_size);
 
     // Mark the corresponding RBs as used
@@ -1484,6 +1485,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_RNTI_RA,
                        BWPSize,
                        bwpid,
+                       coresetid,
                        nr_mac->cset0_bwp_size);
 
     // DL TX request
@@ -1893,6 +1895,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        NR_RNTI_TC,
                        pdsch_pdu_rel15->BWPSize,
                        bwpid,
+                       coresetid,
                        nr_mac->cset0_bwp_size);
 
     // Add padding header and zero rest out if there is space left

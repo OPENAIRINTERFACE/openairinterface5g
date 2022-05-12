@@ -1374,6 +1374,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        rnti_type,
                        pdsch_pdu->BWPSize,
                        bwp ? bwp->bwp_Id : 0,
+                       coresetid,
                        gNB_mac->cset0_bwp_size);
 
     LOG_D(NR_MAC,
