@@ -1983,49 +1983,28 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
         UE_info->active[UE_id] = true;
         UE_info->Msg4_ACKed[UE_id] = true;
 
-        // TODO: To be improved the BWP selection
-        //  For now, we are just changing to the first active BWP
-
-        const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id] ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated : NULL;
-
-        const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig ? servingCellConfig->downlinkBWP_ToAddModList : NULL;
-        const int bwp_id = servingCellConfig && servingCellConfig->firstActiveDownlinkBWP_Id ?
-            *servingCellConfig->firstActiveDownlinkBWP_Id : 0;
-        sched_ctrl->active_bwp = bwpList && bwp_id > 0 ? bwpList->list.array[bwp_id - 1] : NULL;
-
-        const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
-        const int ubwp_id = servingCellConfig && servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id ?
-            *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id : 0;
-        sched_ctrl->active_ubwp = ubwpList && ubwp_id > 0 ? ubwpList->list.array[ubwp_id - 1] : NULL;
-
-        if(sched_ctrl->active_bwp) {
-          LOG_I(NR_MAC, "Changing to DL-BWP %i\n", bwp_id);
-        }
-
-        if(sched_ctrl->active_ubwp) {
-          LOG_I(NR_MAC, "Changing to UL-BWP %i\n", ubwp_id);
-        }
-
         // Pause scheduling according to:
-        const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-        NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                                   RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                                   sib1);
-
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-        uint32_t delay_ms = bwpList ? NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
+        const NR_COMMON_channels_t *common_channels = &RC.nrmac[module_id]->common_channels[0];
+        const NR_SIB1_t *sib1 = common_channels->sib1 ? common_channels->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+        const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id] ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated : NULL;
+        NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
+                                                                   common_channels->ServingCellConfigCommon,
+                                                                   sib1);
+        uint32_t delay_ms = servingCellConfig && servingCellConfig->downlinkBWP_ToAddModList ?
+            NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
+
         sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
-      }
-      else {
+        LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %d with %d ms\n", frame, slot, UE_id, delay_ms);
+      } else {
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
       }
 
       nr_clear_ra_proc(module_id, CC_id, frame, ra);
-      if(sched_ctrl->retrans_dl_harq.head >= 0) {
+      if (sched_ctrl->retrans_dl_harq.head >= 0) {
         remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
       }
-    }
-    else {
+    } else {
       LOG_D(NR_MAC, "(ue %i, rnti 0x%04x) Received Nack of RA-Msg4. Preparing retransmission!\n", UE_id, ra->rnti);
       ra->Msg4_frame = (frame + 1) % 1024;
       ra->Msg4_slot = 1;
