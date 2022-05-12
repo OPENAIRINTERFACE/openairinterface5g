@@ -42,7 +42,7 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
+                   int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
                    NR_ServingCellConfigCommon_t *scc);
 
@@ -502,6 +502,12 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 void find_SSB_and_RO_available(module_id_t module_idP);
 
 void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
+
+uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
+                      int layers,
+                      int N1, int N2,
+                      int xp_pdsch_antenna_ports,
+                      int codebook_mode);
 
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 NR_UE_sched_ctrl_t *sched_ctrl,

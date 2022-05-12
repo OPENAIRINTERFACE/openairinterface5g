@@ -211,10 +211,9 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
+                   int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
-		   NR_ServingCellConfigCommon_t *scc
-		   );
+                   NR_ServingCellConfigCommon_t *scc);
 
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,

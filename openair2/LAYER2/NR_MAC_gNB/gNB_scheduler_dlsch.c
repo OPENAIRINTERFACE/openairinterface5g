@@ -1259,7 +1259,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
     // Resource Allocation in time domain
     pdsch_pdu->StartSymbolIndex = ps->startSymbolIndex;
     pdsch_pdu->NrOfSymbols = ps->nrOfSymbols;
-
+    // Precoding
+    if (sched_ctrl->set_pmi) {
+      int report_id = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id;
+      nr_csi_report_t *csi_report = &UE_info->csi_report_template[UE_id][report_id];
+      pdsch_pdu->precodingAndBeamforming.prg_size = pdsch_pdu->rbSize;
+      pdsch_pdu->precodingAndBeamforming.prgs_list[0].pm_idx = set_pm_index(sched_ctrl,
+                                                                            nrOfLayers,
+                                                                            csi_report->N1,
+                                                                            csi_report->N2,
+                                                                            gNB_mac->xp_pdsch_antenna_ports,
+                                                                            csi_report->codebook_mode);
+    }
     // TBS_LBRM according to section 5.4.2.1 of 38.212
     long *maxMIMO_Layers = cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
     AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");

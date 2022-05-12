@@ -487,6 +487,7 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t wb_cqi_1tb;
   uint8_t wb_cqi_2tb;
   uint8_t cqi_table;
+  uint8_t csi_report_id;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -530,6 +531,9 @@ typedef struct nr_csi_report {
   uint8_t nb_of_csi_ssb_report;
   L1_RSRP_bitlen_t CSI_report_bitlen;
   CSI_Meas_bitlen_t csi_meas_bitlen;
+  int codebook_mode;
+  int N1;
+  int N2;
 } nr_csi_report_t;
 
 /*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report 
@@ -628,6 +632,7 @@ typedef struct {
   struct CSI_Report CSI_report;
   bool SR;
   bool set_mcs;
+  bool set_pmi;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
@@ -814,6 +819,8 @@ typedef struct gNB_MAC_INST_s {
   uint16_t cset0_bwp_start;
   uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
+
+  int xp_pdsch_antenna_ports;
 
   bool first_MIB;
   double dl_bler_target_upper;

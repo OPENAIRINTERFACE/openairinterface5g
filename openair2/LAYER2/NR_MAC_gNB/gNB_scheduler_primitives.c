@@ -145,6 +145,31 @@ uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
 
 }
 
+
+uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
+                      int layers,
+                      int N1, int N2,
+                      int xp_pdsch_antenna_ports,
+                      int codebook_mode) {
+
+  int antenna_ports = (N1*N2)<<1;
+  if (xp_pdsch_antenna_ports == 1 &&
+      antenna_ports>1)
+    return 0; //identity matrix (basic 5G configuration handled by PMI report is with XP antennas)
+
+  int x1 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1;
+  int x2 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2;
+  LOG_D(NR_MAC,"PMI report: x1 %d x2 %d\n",x1,x2);
+
+  sched_ctrl->set_pmi = false;
+
+  if (antenna_ports == 2)
+    return x2;
+  else
+    AssertFatal(1==0,"More than 2 antenna ports not yet supported\n");
+}
+
+
 void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
                 NR_UE_sched_ctrl_t *sched_ctrl,
                 uint8_t *target_mcs,
@@ -187,7 +212,7 @@ void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
         }
       }
     }
-    sched_ctrl->set_mcs = FALSE;
+    sched_ctrl->set_mcs = false;
   }
 }
 
@@ -2337,6 +2362,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
     sched_ctrl->set_mcs = true;
+    sched_ctrl->set_pmi = false;
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
     sched_ctrl->ta_apply = false;

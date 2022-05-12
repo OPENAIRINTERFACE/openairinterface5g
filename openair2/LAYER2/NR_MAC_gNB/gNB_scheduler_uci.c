@@ -503,6 +503,8 @@ void compute_pmi_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
         if(codebookConfig->codebookType.choice.type1->subType.present == NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel) {
           if(codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.present ==
              NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_two) {
+            csi_report->N1 = 1;
+            csi_report->N2 = 1;
             if (i==0)
               csi_report->csi_meas_bitlen.pmi_x2_bitlen[i]=2;
             if (i==1)
@@ -512,6 +514,9 @@ void compute_pmi_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
             int n1,n2,o1,o2,x1,x2;
             get_n1n2_o1o2_singlepanel(&n1,&n2,&o1,&o2,codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.moreThanTwo);
             get_x1x2_bitlen_singlepanel(n1,n2,o1,o2,&x1,&x2,i+1,codebookConfig->codebookType.choice.type1->codebookMode);
+            csi_report->N1 = n1;
+            csi_report->N2 = n2;
+            csi_report->codebook_mode = codebookConfig->codebookType.choice.type1->codebookMode;
             csi_report->csi_meas_bitlen.pmi_x1_bitlen[i]=x1;
             csi_report->csi_meas_bitlen.pmi_x2_bitlen[i]=x2;
           }
@@ -1252,7 +1257,7 @@ void evaluate_cqi_report(uint8_t *payload,
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_2tb = temp_cqi;
     LOG_D(MAC,"Wide-band CQI for the second TB %d\n", temp_cqi);
   }
-  sched_ctrl->set_mcs = TRUE;
+  sched_ctrl->set_mcs = true;
 }
 
 
@@ -1275,6 +1280,7 @@ uint8_t evaluate_pmi_report(uint8_t *payload,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
+  sched_ctrl->set_pmi = true;
   return tot_bitlen;
 
 }
@@ -1380,6 +1386,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           if (r_index != -1)
             skip_zero_padding(&cumul_bits,csi_report,r_index,bitlen);
           pmi_bitlen = evaluate_pmi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl);
+          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id = csi_report_id;
           cumul_bits += pmi_bitlen;
           evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl,csirep->cqi_Table);
           break;
@@ -1397,6 +1404,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           if (r_index != -1)
             skip_zero_padding(&cumul_bits,csi_report,r_index,bitlen);
           pmi_bitlen = evaluate_pmi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl);
+          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id = csi_report_id;
           cumul_bits += pmi_bitlen;
           evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl,csirep->cqi_Table);
           break;
