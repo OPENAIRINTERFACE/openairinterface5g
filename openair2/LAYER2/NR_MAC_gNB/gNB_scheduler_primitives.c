@@ -603,23 +603,21 @@ void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
   NR_PDSCH_Config_t *pdsch_Config = NULL;
   if (bwpd && bwpd->pdsch_Config) pdsch_Config = bwpd->pdsch_Config->choice.setup;
   LOG_D(NR_MAC,"tda %d, ps->time_domain_allocation %d,layers %d, ps->nrOfLayers %d, pdsch_config %p\n",tda,ps->time_domain_allocation,layers,ps->nrOfLayers,pdsch_Config);
-  if (ps->time_domain_allocation != tda) {
-    reset_dmrs = true;
-    ps->time_domain_allocation = tda;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = get_pdsch_TimeDomainAllocationList(bwp, scc, sib1);
-    AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
-    ps->mapping_type = tdaList->list.array[tda]->mappingType;
-    if (pdsch_Config) {
-      if (ps->mapping_type == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB)
-        ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type == NULL ? 0 : 1;
-      else
-        ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
-    }
+  reset_dmrs = true;
+  ps->time_domain_allocation = tda;
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = get_pdsch_TimeDomainAllocationList(bwp, scc, sib1);
+  AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  ps->mapping_type = tdaList->list.array[tda]->mappingType;
+  if (pdsch_Config) {
+    if (ps->mapping_type == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB)
+      ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type == NULL ? 0 : 1;
     else
-      ps->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
-    const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
-    SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
+      ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
   }
+  else
+    ps->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
 
   const long f = ((bwp || bwpd) &&
                   sched_ctrl->search_space &&
