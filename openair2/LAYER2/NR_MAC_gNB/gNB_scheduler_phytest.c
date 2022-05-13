@@ -151,8 +151,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	NrOfSymbols = NrOfSymbols_tmp;
         StartSymbolIndex = StartSymbolIndex_tmp;
         mappingtype = mappingtype_tmp;
-	//	k0 = *scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
-	//	time_domain_assignment = i;
       }
     }
     AssertFatal(StartSymbolIndex>=0,"StartSymbolIndex is negative\n");
@@ -164,78 +162,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                                     StartSymbolIndex,
                                                     mappingtype, 1);
 
-    /*
-    AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");
-    nr_configure_css_dci_initial(pdcch_pdu_rel15,
-				 scs, 
-				 scs, 
-				 FR, 
-				 0, 
-				 0, 
-				 0,
-				 sfn_sf, slotP,
-				 slots_per_frame,
-				 dlBWP_carrier_bandwidth);
-    
-    
-    pdu_rel15->frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize, 
-                                                                               pdsch_pdu_rel15->rbStart, 
-                                                                               dlBWP_carrier_bandwidth);
-    pdu_rel15->time_domain_assignment = time_domain_assignment;
-    
-    pdu_rel15->vrb_to_prb_mapping = 1;
-    pdu_rel15->mcs = 9;
-    pdu_rel15->tb_scaling = 1;
-    
-    pdu_rel15->ra_preamble_index = 25;
-    pdu_rel15->format_indicator = 1;
-    pdu_rel15->ndi = 1;
-    pdu_rel15->rv = 0;
-    pdu_rel15->harq_pid = 0;
-    pdu_rel15->dai = 2;
-    pdu_rel15->tpc = 2;
-    pdu_rel15->pucch_resource_indicator = 7;
-    pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
-    
-    LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
-	  pdu_rel15->frequency_domain_assignment,
-	  pdu_rel15->time_domain_assignment,
-	  pdu_rel15->vrb_to_prb_mapping,
-	  pdu_rel15->mcs,
-	  pdu_rel15->tb_scaling,
-	  pdu_rel15->ndi,
-	  pdu_rel15->rv);
-    
-    params_rel15->rnti = rnti;
-    params_rel15->rnti_type = NFAPI_NR_RNTI_C;
-    params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
-    //params_rel15->aggregation_level = 1;
-    LOG_D(MAC, "DCI type 1 params: rnti %x, rnti_type %d, dci_format %d\n \
-                coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
-                ss params : nb_ss_sets_per_slot %d, first symb %d, nb_slots %d, sfn_mod2 %d, first slot %d\n",
-	  params_rel15->rnti,
-	  params_rel15->rnti_type,
-	  params_rel15->dci_format,
-	  params_rel15->mux_pattern,
-	  params_rel15->n_rb,
-	  params_rel15->n_symb,
-	  params_rel15->rb_offset,
-	  params_rel15->nb_ss_sets_per_slot,
-	  params_rel15->first_symbol,
-	  params_rel15->nb_slots,
-	  params_rel15->sfn_mod2,
-	  params_rel15->first_slot);
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, dl_tti_dci_pdu->dci_dl_pdu,0);
-    LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
-	  pdsch_pdu_rel15->rbStart,
-	  pdsch_pdu_rel15->rbSize,
-	  pdsch_pdu_rel15->StartSymbolIndex,
-	  pdsch_pdu_rel15->NrOfSymbols,
-	  pdsch_pdu_rel15->nrOfLayers,
-	  pdsch_pdu_rel15->NrOfCodewords,
-	  pdsch_pdu_rel15->mcsIndex[0]);
-    */
-    
     nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+=2;
     
     TX_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
