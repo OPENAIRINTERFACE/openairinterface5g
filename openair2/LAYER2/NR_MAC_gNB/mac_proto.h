@@ -76,6 +76,10 @@ void nr_mac_update_timers(module_id_t module_id,
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
 
+void schedule_nr_bwp_switch(module_id_t module_id,
+                            frame_t frame,
+                            sub_frame_t slot);
+
 /* \brief main DL scheduler function. Calls a preprocessor to decide on
  * resource allocation, then "post-processes" resource allocation (nFAPI
  * messages, statistics, HARQ handling, CEs, ... */
@@ -303,6 +307,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int rnti_types,
                         int N_RB,
                         int bwp_id,
+                        NR_ControlResourceSetId_t coreset_id,
                         uint16_t cset0_bwp_size);
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,

@@ -284,6 +284,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   const int BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
   int rbStart = 0;
   int rbSize = 0;
   if (target_dl_bw>bwpSize)

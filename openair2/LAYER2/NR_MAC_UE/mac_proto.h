@@ -260,6 +260,8 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
                   NR_BWP_UplinkDedicated_t **ubwpd,
                   NR_BWP_UplinkCommon_t **ubwpc);
 
+NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id);
+
 uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                             uint8_t dci_format,
                             uint8_t dci_length,
@@ -451,6 +453,10 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 
 void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format);
+
+void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
+                          NR_ServingCellConfig_t *scd,
+                          NR_BWP_Id_t dl_bwp_id);
 
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot);
 

@@ -72,13 +72,15 @@
 
 
 /* Defs */
-#define MAX_NUM_BWP 2
+#define MAX_NUM_BWP 5
 #define MAX_NUM_CORESET 12
 #define MAX_NUM_CCE 90
 #define MAX_HARQ_ROUNDS 4
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
+
+#define MIN_NUM_PRBS_TO_SCHEDULE  5
 
 /*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
  * Especially useful in the scheduler and to keep "classes" of users. */
@@ -121,8 +123,10 @@ typedef struct NR_sched_pdcch {
 typedef struct {
   /// Flag to indicate this process is active
   RA_gNB_state_t state;
-  /// BWP id of RA process
-  int bwp_id;
+  /// DL BWP id of RA process
+  int dl_bwp_id;
+  /// UL BWP id of RA process
+  int ul_bwp_id;
   /// CORESET0 configured flag
   int coreset0_configured;
   /// Slot where preamble was received
@@ -566,6 +570,12 @@ typedef struct {
   NR_BWP_Downlink_t *active_bwp;
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
+
+  /// the next active BWP ID in DL
+  NR_BWP_Id_t next_dl_bwp_id;
+  /// the next active BWP ID in UL
+  NR_BWP_Id_t next_ul_bwp_id;
+
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
   NR_ControlResourceSet_t *coreset;
