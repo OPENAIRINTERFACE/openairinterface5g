@@ -131,6 +131,13 @@ EXTERN const uint16_t srs_periodicity[SRS_PERIODICITY]
 #endif
 ;
 
+// TS 38.211 - Table 6.4.1.4.2-1
+EXTERN const uint16_t srs_max_number_cs[3]
+#ifdef INIT_VARIABLES_SRS_MODULATION_NR_H
+    = {8, 12, 6}
+#endif
+;
+
 /*************** FUNCTIONS *****************************************/
 
 /** \brief This function generates the sounding reference symbol (SRS) for the uplink according to 38.211 6.4.1.4 Sounding reference signal
