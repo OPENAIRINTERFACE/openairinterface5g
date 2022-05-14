@@ -576,8 +576,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
       rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
       rbSize = 0;
 
-      while (rbStart < bwpSize &&
-             !(rballoc_mask[rbStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+      const int slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+      while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
 
       if (rbStart >= bwpSize) {
@@ -586,7 +586,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
       }
 
       while (rbStart + rbSize < bwpSize &&
-             (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)) &&
+             (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap &&
              rbSize < retInfo->rbSize)
         rbSize++;
     }
@@ -608,13 +608,21 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
     NR_pdsch_semi_static_t temp_ps = *ps;
-    nr_set_pdsch_semi_static(sib1,scc, cg, sched_ctrl->active_bwp, bwpd,tda, ps->nrOfLayers, sched_ctrl, &temp_ps);
-    while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
+    nr_set_pdsch_semi_static(sib1,
+                             scc,
+                             cg,
+                             sched_ctrl->active_bwp,
+                             bwpd,
+                             tda,
+                             ps->nrOfLayers,
+                             sched_ctrl,
+                             &temp_ps);
+
+    const uint16_t slbitmap = SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols);
+    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
 
-    while (rbStart + rbSize < bwpSize &&
-           (rballoc_mask[rbStart + rbSize]&SL_to_bitmap(temp_ps.startSymbolIndex, temp_ps.nrOfSymbols)))
+    while (rbStart + rbSize < bwpSize && (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap)
       rbSize++;
 
     uint32_t new_tbs;
@@ -923,14 +931,12 @@ void pf_dl(module_id_t module_id,
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
 
     // Freq-demain allocation
-    while (rbStart < bwpSize &&
-           !(rballoc_mask[rbStart]&slbitmap))
+    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
 
     uint16_t max_rbSize = 1;
 
-    while (rbStart + max_rbSize < bwpSize &&
-           (rballoc_mask[rbStart + max_rbSize]&slbitmap))
+    while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -1252,6 +1258,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
     // Resource Allocation in time domain
     pdsch_pdu->StartSymbolIndex = ps->startSymbolIndex;
     pdsch_pdu->NrOfSymbols = ps->nrOfSymbols;
+
+    // TBS_LBRM according to section 5.4.2.1 of 38.212
+    long *maxMIMO_Layers = cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
+    AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
+    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+    // Maximum number of PRBs across all configured DL BWPs
+    int bw_tbslbrm = get_bw_tbslbrm(genericParameters, cg);
+    pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ps->mcsTableIdx,
+                                                                         bw_tbslbrm,
+                                                                         nl_tbslbrm);
+
     NR_PDSCH_Config_t *pdsch_Config=NULL;
 
     if (bwp &&
@@ -1305,7 +1322,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_pdu_rel15_t dci_payload;
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
-    const int n_dl_bwp = bwp ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
+    const int n_dl_bwp = bwp ? cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
     AssertFatal(n_dl_bwp <= 1, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
     // as per table 7.3.1.1.2-1 in 38.212
     dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1) : 0;
@@ -1354,7 +1371,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     const int rnti_type = NR_RNTI_C;
     fill_dci_pdu_rel15(scc,
-                       UE_info->CellGroup[UE_id],
+                       cg,
                        dci_pdu,
                        &dci_payload,
                        dci_format,
@@ -1473,6 +1490,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
           header->L = htons(bufEnd-buf);
           dlsch_total_bytes += bufEnd-buf;
 
+          for (; buf < bufEnd - 3; buf += 4) {
+            uint32_t *buf32 = (uint32_t *)buf;
+            *buf32 = lrand48();
+          }
           for (; buf < bufEnd; buf++)
             *buf = lrand48() & 0xff;
         }
