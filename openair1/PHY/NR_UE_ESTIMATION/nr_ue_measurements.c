@@ -203,18 +203,15 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 // Measurement units:
 // - RSRP:    W (dBW)
 // - RX Gain  dB
-void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
-                             uint8_t gNB_id,
-                             UE_nr_rxtx_proc_t *proc,
-                             uint8_t slot,
-                             uint8_t abstraction_flag)
-{
-  int aarx;
-  int nb_re;
+void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
+                                 int ssb_index,
+                                 UE_nr_rxtx_proc_t *proc,
+                                 uint8_t slot) {
+
   int k_start = 55;
   int k_end   = 183;
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
-  uint8_t           l_sss = ue->symbol_offset + 2;
+  uint8_t l_sss = ue->symbol_offset + 2;
 
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size){
 
@@ -222,50 +219,39 @@ void nr_ue_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
   }
 
-  ue->measurements.rsrp[gNB_id] = 0;
+  uint32_t rsrp = 0;
 
-  if (abstraction_flag == 0) {
+  LOG_D(PHY, "In %s: [UE %d] slot %d l_sss %d ssb_offset %d\n", __FUNCTION__, ue->Mod_id, slot, l_sss, ssb_offset);
+  int nb_re = 0;
 
-    LOG_D(PHY, "In %s: [UE %d] slot %d l_sss %d ssb_offset %d\n", __FUNCTION__, ue->Mod_id, slot, l_sss, ssb_offset);
+  for (int aarx = 0; aarx < ue->frame_parms.nb_antennas_rx; aarx++) {
 
-    nb_re = 0;
+    int16_t *rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aarx][(l_sss*ue->frame_parms.ofdm_symbol_size) + ssb_offset];
 
-    for (aarx = 0; aarx < ue->frame_parms.nb_antennas_rx; aarx++) {
+    for(int k = k_start; k < k_end; k++){
 
-      int16_t *rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aarx][(l_sss*ue->frame_parms.ofdm_symbol_size) + ssb_offset];
+#ifdef DEBUG_MEAS_UE
+      LOG_I(PHY, "In %s rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
+#endif
 
-      for(int k = k_start; k < k_end; k++){
+      rsrp += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
+      nb_re++;
 
-        #ifdef DEBUG_MEAS_UE
-        LOG_I(PHY, "In %s rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
-        #endif
-
-        ue->measurements.rsrp[gNB_id] += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
-
-        nb_re++;
-
-      }
     }
-
-    ue->measurements.rsrp[gNB_id] /= nb_re;
-
-  } else {
-
-    ue->measurements.rsrp[gNB_id] = -93;
-
   }
 
-  ue->measurements.rsrp_filtered[gNB_id] = ue->measurements.rsrp[gNB_id];
+  rsrp /= nb_re;
+  ue->measurements.ssb_rsrp_dBm[ssb_index] = 10*log10(rsrp) +
+                                             30 - 10*log10(pow(2,30)) -
+                                             ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) -
+                                             dB_fixed(ue->frame_parms.ofdm_symbol_size);
 
-  ue->measurements.rsrp_dBm[gNB_id] = 10*log10(ue->measurements.rsrp[gNB_id]) + 30 - 10*log10(pow(2,30)) - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - dB_fixed(ue->frame_parms.ofdm_symbol_size);
-
-  LOG_D(PHY, "In %s: [UE %d] slot %d SS-RSRP: %d dBm/RE (%d)\n",
+  LOG_D(PHY, "In %s: [UE %d] ssb %d SS-RSRP: %d dBm/RE (%d)\n",
     __FUNCTION__,
     ue->Mod_id,
-    slot,
-    ue->measurements.rsrp_dBm[gNB_id],
-    ue->measurements.rsrp[gNB_id]);
-
+    ssb_index,
+    ue->measurements.ssb_rsrp_dBm[ssb_index],
+    rsrp);
 }
 
 // This function computes the received noise power
