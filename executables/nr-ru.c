@@ -1251,7 +1251,7 @@ void *ru_thread( void *param ) {
     }
 
     // At this point, all information for subframe has been received on FH interface
-    res = pullTpool(gNB->resp_L1, gNB->threadPool);
+    res = pullTpool(&gNB->resp_L1, &gNB->threadPool);
     syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
     syncMsg->frame_rx = proc->frame_rx;
@@ -1260,7 +1260,7 @@ void *ru_thread( void *param ) {
     syncMsg->slot_tx = proc->tti_tx;
     syncMsg->timestamp_tx = proc->timestamp_tx;
     res->key = proc->tti_rx;
-    pushTpool(gNB->threadPool, res);
+    pushTpool(&gNB->threadPool, res);
   }
 
   printf( "Exiting ru_thread \n");
@@ -1271,11 +1271,11 @@ void *ru_thread( void *param ) {
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
 
-  res = pullNotifiedFIFO(gNB->resp_L1);
+  res = pullNotifiedFIFO(&gNB->resp_L1);
   delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(gNB->L1_tx_free);
+  res = pullNotifiedFIFO(&gNB->L1_tx_free);
   delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(gNB->L1_tx_free);
+  res = pullNotifiedFIFO(&gNB->L1_tx_free);
   delNotifiedFIFO_elt(res);
 
   ru_thread_status = 0;

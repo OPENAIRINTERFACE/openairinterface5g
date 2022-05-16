@@ -87,8 +87,8 @@ int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
            rdata->Kr_bytes - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb=abortTpoolJob(gNB->threadPool, req->key);
-      nb+=abortNotifiedFIFO(gNB->respDecode, req->key);
+      int nb=abortTpoolJob(&gNB->threadPool, req->key);
+      nb+=abortNotifiedFIFO(&gNB->respDecode, req->key);
       gNB->nbDecode-=nb;
       AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
       ulsch_harq->processedSegments, nb, rdata->nbSegments);
@@ -387,11 +387,9 @@ int main(int argc, char **argv)
   gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
 
-  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
   char tp_param[] = "n";
-  initTpool(tp_param, gNB->threadPool, true);
-  initNotifiedFIFO(gNB->respDecode);
+  initTpool(tp_param, &gNB->threadPool, true);
+  initNotifiedFIFO(&gNB->respDecode);
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
@@ -586,7 +584,7 @@ int main(int argc, char **argv)
       nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul,
                               frame, subframe, harq_pid, G);
       while (gNB->nbDecode > 0) {
-        notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
+        notifiedFIFO_elt_t *req=pullTpool(&gNB->respDecode, &gNB->threadPool);
         ret = nr_postDecode_sim(gNB, req);
         delNotifiedFIFO_elt(req);
       }
@@ -636,8 +634,6 @@ int main(int argc, char **argv)
   free(UE);
 
   phy_free_nr_gNB(gNB);
-  free(gNB->threadPool);
-  free(gNB->respDecode);
   free(RC.gNB[0]);
   free(RC.gNB);
 

@@ -363,8 +363,7 @@ int main(int argc, char **argv)
 	RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
 	RC.gNB[0] = calloc(1, sizeof(PHY_VARS_gNB));
 	gNB = RC.gNB[0];
-	gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-	initTpool(gNBthreads, gNB->threadPool, true);
+	initTpool(gNBthreads, &gNB->threadPool, true);
 	//gNB_config = &gNB->gNB_config;
 	frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 	frame_parms->nb_antennas_tx = n_tx;
@@ -625,7 +624,6 @@ int main(int argc, char **argv)
   reset_DLSCH_struct(gNB, &msgDataTx);
 
   phy_free_nr_gNB(gNB);
-  free(gNB->threadPool);
   free(RC.gNB[0]);
   free(RC.gNB);
 
