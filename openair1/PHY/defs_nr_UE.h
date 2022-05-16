@@ -134,7 +134,7 @@ typedef struct {
   int n_adj_cells;
   uint32_t rsrp[7];
   short rsrp_dBm[7];
-  uint32_t ssb_rsrp_dBm[64];
+  int ssb_rsrp_dBm[64];
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];
