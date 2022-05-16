@@ -78,7 +78,7 @@ uint16_t sequence_number_hopping(int slot_number,
                                  uint8_t l0,
                                  uint8_t l_line) {
   uint16_t v = 0;
-  if (M_sc_b_SRS > 6 * N_SC_RB) {
+  if (M_sc_b_SRS > 6 * NR_NB_SC_PER_RB) {
     // Pseudo-random sequence c(i) defined by TS 38.211 - Section 5.2.1
     uint32_t cinit = n_ID_SRS;
     uint8_t c_last_index = (slot_number * N_SYMB_SLOT + l0 + l_line);
@@ -192,6 +192,10 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
                     int frame_number,
                     int slot_number) {
 
+#ifdef SRS_DEBUG
+  LOG_I(NR_PHY,"Calling %s function\n", __FUNCTION__);
+#endif
+
   // SRS config parameters
   uint8_t B_SRS = srs_config_pdu->bandwidth_index;
   uint8_t C_SRS = srs_config_pdu->config_index;
@@ -212,7 +216,7 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   uint8_t l0 = frame_parms->symbols_per_slot - 1 - l_offset;  // Starting symbol position in the time domain
   uint8_t n_SRS_cs_max = srs_max_number_cs[srs_config_pdu->comb_size];
   uint16_t m_SRS_b = srs_bandwidth_config[C_SRS][B_SRS][0];   // Number of resource blocks
-  uint16_t M_sc_b_SRS = m_SRS_b * N_SC_RB/K_TC;               // Length of the SRS sequence
+  uint16_t M_sc_b_SRS = m_SRS_b * NR_NB_SC_PER_RB/K_TC;               // Length of the SRS sequence
 
 #ifdef SRS_DEBUG
   LOG_I(NR_PHY,"Frame = %i, slot = %i\n", frame_number, slot_number);
@@ -272,7 +276,7 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
     nr_srs_info->sc_list_length = 0;
     nr_srs_info->srs_generated_signal_bits = log2_approx(amp);
   }
-  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_config_pdu->bwp_start*N_SC_RB;
+  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_config_pdu->bwp_start*NR_NB_SC_PER_RB;
   double sqrt_N_ap = sqrt(N_ap);
   uint16_t n_b[B_SRS_NUMBER];
 
@@ -356,8 +360,9 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
       }
       uint8_t k_l_offset = 0; // If the SRS is configured by the IE SRS-PosResource-r16, the quantity k_l_offset is
                               // given by TS 38.211 - Table 6.4.1.4.3-2, otherwise k_l_offset = 0.
-      uint8_t k_0_overbar_p = (n_shift*N_SC_RB + (K_TC_p+k_l_offset))%K_TC;
+      uint8_t k_0_overbar_p = (n_shift*NR_NB_SC_PER_RB + (K_TC_p+k_l_offset))%K_TC;
       uint8_t k_0_p = k_0_overbar_p + K_TC*M_sc_b_SRS*sum_n_b;
+      nr_srs_info->k_0_p[p_index][l_line] = k_0_p;
 
 #ifdef SRS_DEBUG
       LOG_I(NR_PHY,"K_TC_p = %i\n", K_TC_p);
