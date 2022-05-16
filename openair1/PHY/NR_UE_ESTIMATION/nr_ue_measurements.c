@@ -211,13 +211,10 @@ void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
   int k_start = 55;
   int k_end   = 183;
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
-  uint8_t l_sss = ue->symbol_offset + 2;
+  uint8_t l_sss = (ue->symbol_offset + 2) % ue->frame_parms.symbols_per_slot;
 
-  if (ssb_offset>= ue->frame_parms.ofdm_symbol_size){
-
+  if (ssb_offset>= ue->frame_parms.ofdm_symbol_size)
     ssb_offset -= ue->frame_parms.ofdm_symbol_size;
-
-  }
 
   uint32_t rsrp = 0;
 
@@ -267,7 +264,7 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
   uint8_t k_left = 48;
   uint8_t k_right = 183;
   uint8_t k_length = 8;
-  uint8_t l_sss = ue->symbol_offset + 2;
+  uint8_t l_sss = (ue->symbol_offset + 2) % ue->frame_parms.symbols_per_slot;
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   double rx_gain = openair0_cfg[0].rx_gain[0];
   double rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];

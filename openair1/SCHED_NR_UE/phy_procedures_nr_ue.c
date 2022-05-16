@@ -1364,7 +1364,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
           nr_ue_ssb_rsrp_measurements(ue, ssb_index, proc, nr_slot_rx);
 
           // resetting ssb index for PBCH detection if there is a stronger SSB index
-          if(measurements.ssb_rsrp_dBm[ssb_index]>ue->measurements.ssb_rsrp_dBm[fp->ssb_index])
+          if(ue->measurements.ssb_rsrp_dBm[ssb_index] > ue->measurements.ssb_rsrp_dBm[fp->ssb_index])
             fp->ssb_index = ssb_index;
 
           if(ssb_index == fp->ssb_index) {
