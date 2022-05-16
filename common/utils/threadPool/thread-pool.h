@@ -281,7 +281,7 @@ static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpo
   return msg;
 }
 
-static inline int abortTpool(tpool_t *t, uint64_t key) {
+static inline int abortTpoolJob(tpool_t *t, uint64_t key) {
   int nbRemoved=0;
   notifiedFIFO_t *nf=&t->incomingFifo;
   mutexlock(nf->lockF);

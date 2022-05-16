@@ -1328,7 +1328,7 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
 	   sz);
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb=abortTpool(proc->threadPool, req->key);
+      int nb=abortTpoolJob(proc->threadPool, req->key);
       nb+=abortNotifiedFIFO(proc->respDecode, req->key);
       proc->nbDecode-=nb;
       LOG_D(PHY,"uplink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);

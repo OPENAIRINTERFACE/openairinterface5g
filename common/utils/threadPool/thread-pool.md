@@ -17,70 +17,51 @@ All the thread pool functions are thread safe, nevertheless the working function
 
 # jobs
 
-A job is a message (notifiedFIFO_elt_t):  
+A job is a message (`notifiedFIFO_elt_t`):  
 
-* next:
+* `next`:
   internal FIFO chain, do not set it
-* key:
+* `key`:
   a long int that the client can use to identify a message or a group of messages
-* ResponseFifo:
+* `ResponseFifo`:
   if the client defines a response FIFO, the message will be posted back after processing
-* processingFunc:
-  any funtion (type void processingFunc(void *)) that the worker will launch
-* msgData:
+* `processingFunc`:
+  any funtion (type `void processingFunc(void *)`) that the worker will launch
+* `msgData`:
   the data passed to processingFunc. It can be added automatically, or you can set it to a buffer you are managing
-* malloced:
+* `malloced`:
   a boolean that enable internal free in these cases:
   no return Fifo or Abort feature
 
-The job messages can be created with newNotifiedFIFO_elt() and delNotifiedFIFO_elt() or managed by the client.
+The job messages can be created with `newNotifiedFIFO_elt()` and `delNotifiedFIFO_elt()` or managed by the client.
 
 # Queues of jobs
 
 Queues are type of:
 
-* notifiedFIFO_t that must be initialized by init_notifiedFIFO()
-* No delete function is required, the creator has only to free the data of type notifiedFIFO_t
-* push_notifiedFIFO() add a job in the queue
-* pull_notifiedFIFO() is blocking, poll_notifiedFIFO() is non blocking
-* abort_notifiedFIFO() allows the customer to delete all waiting jobs that match with the key (see key in jobs definition)
+* `notifiedFIFO_t` that must be initialized by `init_notifiedFIFO()`
+* No delete function is required, the creator has only to free the data of type `notifiedFIFO_t`
+* `push_notifiedFIFO()` add a job in the queue
+* `pull_notifiedFIFO()` is blocking, `poll_notifiedFIFO()` is non blocking
+* `abort_notifiedFIFO()` allows the customer to delete all waiting jobs that match with the key (see key in jobs definition)
 
-These queues details hereafter
+## Thread-safe functions
 
-## Common
+* `newNotifiedFIFO_elt()`: creates a message, that will later be used in queues/FIFO
+* `delNotifiedFIFO_elt()`: deletes it
+* `NotifiedFifoData()`: gives a pointer to the beginning of free usage memory in a message (you can put any data there, up to 'size' parameter you passed to `newNotifiedFIFO_elt()`)
 
-newNotifiedFIFO_elt()
+These 3 calls are not mandatory, you can also use your own memory to save the `malloc()`/`free()` that are behind these calls
 
-creates a message, that will later be used in queues/FIFO
+# Low level: fast and simple, but not thread-safe
 
-delNotifiedFIFO_elt()
+* `initNotifiedFIFO_nothreadSafe()`: Create a queue
+* `pushNotifiedFIFO_nothreadSafe()`: Add a element in a queue
+* `pullNotifiedFIFO_nothreadSafe()`: Pull a element from a queue
 
-deletes it
+As these queues are not thread safe, there is NO blocking mechanism, neither `pull()` versus `poll()` calls
 
-NotifiedFifoData()
-
-gives a pointer to the beginning of free usage memory in a message (you can put any data there, up to 'size' parameter you passed to newNotifiedFIFO_elt()
-
-These 3 calls are not mandatory, you can also use your own memory to save the malloc()/free() that are behind these calls
-iFirst level: non thread safe FIFO (or queues)
-
-# low level: fast and simple
-
-initNotifiedFIFO_nothreadSafe()
-
-to create a queue
-
-pushNotifiedFIFO_nothreadSafe()
-
-Add a element in a queue
-
-pullNotifiedFIFO_nothreadSafe()
-
-pull a element from a queue
-
-As these queues are not thread safe, there is NO blocking mechanism, neither pull() versus poll() calls
-
-There is no delete for a message queue: you only have to abandon the memory you allocated to call iinitNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf)
+There is no delete for a message queue: you only have to abandon the memory you allocated to call `initNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf)`
 
 So if you malloced the memory under 'nf' parameter you have to free it, if it is automatic variable (local variable) or global variable, nothing is to be done.
 
@@ -89,58 +70,50 @@ So if you malloced the memory under 'nf' parameter you have to free it, if it is
 
 These queues are built on not thread safe queues when we need thread to thread protection
 
-initNotifiedFIFO()
+* `initNotifiedFIFO()`: Create a queue
+* `pushNotifiedFIFO()`: Add a element in a queue
+* `pullNotifiedFIFO()`: Pull a element from a queue, this call is blocking until a message arrived
+* `pollNotifiedFIFO()`: Pull a element from a queue, this call is not blocking, so it returns always very shortly
 
-to create a queue
+Note that in 99.9% cases, `pull()` is better than `poll()`
 
-pushNotifiedFIFO()
-
-Add a element in a queue
-
-pullNotifiedFIFO()
-
-pull a element from a queue, this call is blocking until a message arrived
-
-pollNotifiedFIFO()
-
-pull a element from a queue, this call is not blocking, so it returns always very shortly
-
-in 99.9% cases, pull() is better than poll()
-
-No delete() call, same principle as not thread safe queues
+No `delete()` call, same principle as not thread safe queues
 
 # Thread pools
 
 ## initialization
+
 The clients can create one or more thread pools with `initTpool(char *params,tpool_t *pool, bool performanceMeas  )` or `initNamedTpool(char *params,tpool_t *pool, bool performanceMeas , char *name)`
 
-the params string structure: describes a list of cores, separated by "," that run a worker thread
+the `params` string structure: describes a list of cores, separated by "," that run a worker thread
 
 If the core exists on the CPU, the thread pool initialization sets the affinity between this thread and the related code (use negative values is allowed, so the thread will never be mapped on a specific core).
 
 The threads are all Linux real time scheduler, their name is set automatically to `Tpool<thread index>_<core id>` if initTpool is used or to `<name><thread index>_<core id>` when initNamedTpool is used.
 
 ## adding jobs
-The client create their jobs messages as a notifiedFIFO_elt_t, then they push it with pushTpool() (that internally calls push_notifiedFIFO())
+The client create their jobs messages as a `notifiedFIFO_elt_t`, then they push it with `pushTpool()` (that internally calls `push_notifiedFIFO()`)
 
-If they need a return, they have to create response queues with init_notifiedFIFO() and set this FIFO pointer in the notifiedFIFO_elt_t before pushing the job.
+If they need a return, they have to create response queues with `init_notifiedFIFO()` and set this FIFO pointer in the `notifiedFIFO_elt_t` before pushing the job.
 
 ## abort
 
-A abort service abortTpool() allows to abort all jobs that match a key (see jobs "key"). When the abort returns, it garanties no job (matching the key) response will be posted on response queues.
+A abort service `abortTpoolJob()` allows to abort all jobs that match a key (see jobs "key"). When the abort returns, it garanties no job (matching the key) response will be posted on response queues.
 
-Nevertheless, jobs already performed before the return of abortTpool() are pushed in the response Fifo queue.
+Nevertheless, jobs already performed before the return of `abortTpoolJob()` are pushed in the response Fifo queue.
+
+`abortTpool()` kills all jobs in the Tpool.
 
 ## API details
 Each thread pool (there can be several in the same process) should be initialized once using one of the two API's:
 
-### initNamedTpool(char *params,tpool_t *pool, bool performanceMeas,char *name)
+### `initNamedTpool(char *params,tpool_t *pool, bool performanceMeas,char *name)`
 
-### initTpool(char *params,tpool_t *pool, bool performanceMeas)
+### `initTpool(char *params,tpool_t *pool, bool performanceMeas)`
 
 `params`: the configuration parameter is a string, elements separator is a comma ",". An element can be:
 
-* N: if a N is in the parameter list, no threads are created
+* `N`: if a N is in the parameter list, no threads are created
     The purpose is to keep the same API in any case
 * a CPU with a little number of cores,
     or in debugging sessions to simplify the human work
@@ -149,7 +122,7 @@ Each thread pool (there can be several in the same process) should be initialize
 * a number that is not a valid CPU core
     a floating thread is created (Linux is responsible of the real time core allocation)
 
-example: "-1,-1,-1"
+example: `"-1,-1,-1"`
 as there is no core number -1, the thread pool is made of 3 floating threads
 be careful with fix allocation: it is hard to be more clever than Linux kernel
 
@@ -159,35 +132,27 @@ be careful with fix allocation: it is hard to be more clever than Linux kernel
 
 `name` is used to build the thread names. 
 
-### pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg)
+### `pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg)`
 
 adds a job to do in the thread pool
 
 The msg data you can set are:
 
-* key:  
-    a value for you that you will find back in the response
-    it is also the key for abortTpool()
-* reponseFifo  
-    if you set it, the message will be sent back on this queue when the job is done
-    if you don't set it, no return is performed, the thread pool frees the message 'msg' when the job is done
-* processingFunc  
-    the function the job will run. the function prototype is void <func>(void *memory)
-    the data part (the pointer returned by NotifiedFifoData(msg)) is passed to the function
-    it is used to send data to the processing function and also to write back results
-    of course, writing back results will lead you to use also a return queue (the parameter reponseFifo)
+* `key`: a value for you that you will find back in the response it is also the key for `abortTpoolJob()`
+* `reponseFifo`: if you set it, the message will be sent back on this queue when the job is done if you don't set it, no return is performed, the thread pool frees the message 'msg' when the job is done
+* `processingFunc`: the function the job will run. the function prototype is `void <func>(void *memory)` the data part (the pointer returned by `NotifiedFifoData(msg)`) is passed to the function it is used to send data to the processing function and also to write back results of course, writing back results will lead you to use also a return queue (the parameter `reponseFifo`)
 
-### pullTpool() collects job result in a return queue
+### `pullTpool()` collects job result in a return queue
 
-you collect results in one result queue: the message you gave to pushTpool(), nevertheless it has been updated by processingFunc()
+you collect results in one result queue: the message you gave to `pushTpool()`, nevertheless it has been updated by `processingFunc()`
 
 An example of multiple return queues, in eNB: I created one single thread pool (because it depends mainly on CPU hardware), but i use two return queues: one for turbo encode, one for turbo decode.
 
-### tryPullTpool()
+### `tryPullTpool()`
 
-is the same, but not blocking (pollTpool() would have been a better name)
+is the same, but not blocking (`pollTpool()` would have been a better name)
 
-### abortTpool()
+### `abortTpoolJob()`
 
 Is a facility to cancel work you pushed to a thread pool
 
@@ -197,21 +162,17 @@ But when I get back the decoding results, if one segment can't be decoded, I don
 
 ## Performance measurements
 
-A performance measurement is integrated:
-the pool will automacillay fill timestamps:
+A performance measurement is integrated: the pool will automacillay fill timestamps if you set the environement variable `threadPoolMeasurements` to a valid file name.  The following measurements will be written to Linux pipe.
 
-* creationTime:
-time the request is push to the pool;
-* startProcessingTime:
-time a worker start to run on the job
-* endProcessingTime:
-time the worker finished the job
-* returnTime:
-time the client reads the result
+* `creationTime`: time the request is push to the pool;
+* `startProcessingTime`: time a worker start to run on the job
+* `endProcessingTime`: time the worker finished the job
+* `returnTime`: time the client reads the result
 
-if you set the environement variable:
-threadPoolMeasurements to a valid file name
-These measurements will be wrote to this Linux pipe.
-
-A tool to read the linux fifo and display it in ascii is provided; compute the binay:
-in cmake building directory: make/ninja measurement_display
+The `measurement_display` tool to read the Linux pipe and display it in ascii is provided.
+In the cmake build directory, type `make/ninja measurement_display`. Use as
+follows:
+```
+sudo threadPoolMeasurements=tpool.meas ./nr-softmodem ...
+./measurement_display tpool.meas
+```

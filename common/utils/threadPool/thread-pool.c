@@ -265,7 +265,7 @@ int main() {
     } else
       printf("Empty list \n");
 
-    abortTpool(&pool,510);
+    abortTpoolJob(&pool,510);
   } while(tmp);
 	*/
   return 0;

@@ -206,7 +206,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb=abortTpool(gNB->threadPool, req->key);
+      int nb=abortTpoolJob(gNB->threadPool, req->key);
       nb+=abortNotifiedFIFO(gNB->respDecode, req->key);
       gNB->nbDecode-=nb;
       LOG_D(PHY,"uplink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);

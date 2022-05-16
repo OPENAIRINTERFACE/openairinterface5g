@@ -860,7 +860,7 @@ void *UE_thread(void *arg) {
 
   while (!oai_exit) {
     if (UE->lost_sync) {
-      int nb = abortTpool(&(get_nrUE_params()->Tpool),RX_JOB_ID);
+      int nb = abortTpoolJob(&(get_nrUE_params()->Tpool),RX_JOB_ID);
       nb += abortNotifiedFIFO(&nf, RX_JOB_ID);
       LOG_I(PHY,"Number of aborted slots %d\n",nb);
       for (int i=0; i<nb; i++)

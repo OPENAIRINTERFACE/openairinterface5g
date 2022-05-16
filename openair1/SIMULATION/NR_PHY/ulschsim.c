@@ -87,7 +87,7 @@ int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
            rdata->Kr_bytes - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb=abortTpool(gNB->threadPool, req->key);
+      int nb=abortTpoolJob(gNB->threadPool, req->key);
       nb+=abortNotifiedFIFO(gNB->respDecode, req->key);
       gNB->nbDecode-=nb;
       AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
