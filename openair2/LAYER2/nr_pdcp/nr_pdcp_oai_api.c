@@ -999,14 +999,14 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
 
-    new_nr_sdap_entity(has_sdap,
+    new_nr_sdap_entity(is_gnb,
+                       has_sdap,
                        rnti,
                        pdusession_id,
                        is_sdap_DefaultDRB,
                        drb_id,
                        mappedQFIs2Add,
                        mappedQFIs2AddCount);
-    LOG_D(SDAP, "Added SDAP entity to ue rnti %x with pdusession_id %d\n", rnti, pdusession_id);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }

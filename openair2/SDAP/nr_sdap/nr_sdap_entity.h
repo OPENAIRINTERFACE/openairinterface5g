@@ -164,7 +164,8 @@ void nr_sdap_ue_qfi2drb_config(nr_sdap_entity_t *existing_sdap_entity,
  * TS 37.324 4.4 5.1.1 SDAP entity establishment
  * Establish an SDAP entity.
  */
-nr_sdap_entity_t *new_nr_sdap_entity(int has_sdap,
+nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb,
+                                     int has_sdap,
                                      uint16_t rnti,
                                      int pdusession_id,
                                      bool is_defaultDRB,
