@@ -90,8 +90,12 @@
 
 
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
+static int rfsimu_setdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
+static int rfsimu_getdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static telnetshell_cmddef_t rfsimu_cmdarray[] = {
   {"setmodel","<model name> <model type>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
+  {"setdistance","<model name> <distance>", (cmdfunc_t)rfsimu_setdistance_cmd, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
+  {"getdistance","<model name>", (cmdfunc_t) rfsimu_getdistance_cmd, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
   {"","",NULL},
 };
 
@@ -366,6 +370,155 @@ static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt,
 
   free(modelname);
   free(modeltype);
+  return CMDSTATUS_FOUND;
+}
+
+//static void print_cirBuf(struct complex16 *circularBuf,
+//                         uint64_t firstSample,
+//                         uint32_t cirSize,
+//                         int neg,
+//                         int pos,
+//                         int nbTx)
+//{
+//  for (int i = -neg; i < pos ; ++i) {
+//    for (int txAnt = 0; txAnt < nbTx; txAnt++) {
+//      const int idx = ((firstSample + i) * nbTx + txAnt + cirSize) % cirSize;
+//      if (i == 0)
+//        printf("->");
+//      printf("%08x%08x\n", circularBuf[idx].r, circularBuf[idx].i);
+//    }
+//  }
+//  printf("\n");
+//}
+
+static void rfsimu_offset_change_cirBuf(struct complex16 *circularBuf,
+                                        uint64_t firstSample,
+                                        uint32_t cirSize,
+                                        int old_offset,
+                                        int new_offset,
+                                        int nbTx)
+{
+  //int start = max(new_offset, old_offset) + 10;
+  //int end = 10;
+  //printf("new_offset %d old_offset %d start %d end %d\n", new_offset, old_offset, start, end);
+  //printf("ringbuffer before:\n");
+  //print_cirBuf(circularBuf, firstSample, cirSize, start, end, nbTx);
+
+  int doffset = new_offset - old_offset;
+  if (doffset > 0) {
+    /* Moving away, creating a gap. We need to insert "zero" samples between
+     * the previous (end of the) slot and the new slot (at the ringbuffer
+     * index) to prevent that the receiving side detects things that are not
+     * in the channel (e.g., samples that have already been delivered). */
+    for (int i = new_offset; i > 0; --i) {
+      for (int txAnt = 0; txAnt < nbTx; txAnt++) {
+        const int newidx = ((firstSample - i) * nbTx + txAnt + cirSize) % cirSize;
+        if (i > doffset) {
+          // shift samples not read yet
+          const int oldidx = (newidx + doffset) % cirSize;
+          circularBuf[newidx] = circularBuf[oldidx];
+        } else {
+          // create zero samples between slots
+          const struct complex16 nullsample = {0, 0};
+          circularBuf[newidx] = nullsample;
+        }
+      }
+    }
+  } else {
+    /* Moving closer, creating overlap between samples. For simplicity, we
+     * simply drop `doffset` samples at the end of the previous slot
+     * (this is, in a sense, arbitrary). In a real channel, there would be
+     * some overlap between samples, e.g., for `doffset == 1` we could add
+     * two samples. I think that we cannot do that for multiple samples,
+     * though, and so we just drop some */
+    // drop the last -doffset samples of the previous slot
+    for (int i = old_offset; i > -doffset; --i) {
+      for (int txAnt = 0; txAnt < nbTx; txAnt++) {
+        const int oldidx = ((firstSample - i) * nbTx + txAnt + cirSize) % cirSize;
+        const int newidx = (oldidx - doffset) % cirSize;
+        circularBuf[newidx] = circularBuf[oldidx];
+      }
+    }
+  }
+
+  //printf("ringbuffer after:\n");
+  //print_cirBuf(circularBuf, firstSample, cirSize, start, end, nbTx);
+}
+
+static int rfsimu_setdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg)
+{
+  if (debug)
+    prnt("%s() buffer \"%s\"\n", __func__, buff);
+
+  char *modelname;
+  int distance;
+  int s = sscanf(buff,"%m[^ ] %d\n", &modelname, &distance);
+  if (s != 2) {
+    prnt("require exact two parameters\n");
+    return CMDSTATUS_VARNOTFOUND;
+  }
+
+  rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
+  const double sample_rate = t->sample_rate;
+  const double c = 299792458; /* 3e8 */
+
+  const int new_offset = (double) distance * sample_rate / c;
+  const double new_distance = (double) new_offset * c / sample_rate;
+
+  prnt("\nnew_offset %d new (exact) distance %.3f m\n", new_offset, new_distance);
+
+  /* Set distance in rfsim and channel model, update channel and ringbuffer */
+  for (int i=0; i<FD_SETSIZE; i++) {
+    buffer_t *b=&t->buf[i];
+    if (b->conn_sock <= 0
+        || b->channel_model == NULL
+        || b->channel_model->model_name == NULL
+        || strcmp(b->channel_model->model_name, modelname) != 0)
+      continue;
+
+    channel_desc_t *cd = b->channel_model;
+    const int old_offset = cd->channel_offset;
+    cd->channel_offset = new_offset;
+
+    const int nbTx = cd->nb_tx;
+    rfsimu_offset_change_cirBuf(b->circularBuf, t->nextRxTstamp, CirSize, old_offset, new_offset, nbTx);
+  }
+
+  free(modelname);
+
+  return CMDSTATUS_FOUND;
+}
+
+static int rfsimu_getdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg)
+{
+  if (debug)
+    prnt("%s() buffer \"%s\"\n", __func__, buff);
+
+  char *modelname;
+  int s = sscanf(buff,"%ms\n", &modelname);
+  if (s != 1) {
+    prnt("require exact two parameters\n");
+    return CMDSTATUS_VARNOTFOUND;
+  }
+
+  rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
+  const double sample_rate = t->sample_rate;
+  const double c = 299792458; /* 3e8 */
+
+  for (int i=0; i<FD_SETSIZE; i++) {
+    buffer_t *b=&t->buf[i];
+    if (b->conn_sock <= 0
+        || b->channel_model == NULL
+        || b->channel_model->model_name == NULL
+        || strcmp(b->channel_model->model_name, modelname) != 0)
+      continue;
+
+    channel_desc_t *cd = b->channel_model;
+    const int offset = cd->channel_offset;
+    const double distance = (double) offset * c / sample_rate;
+    prnt("\noffset %d distance %.3f m\n", offset, distance);
+  }
+
   return CMDSTATUS_FOUND;
 }
 
