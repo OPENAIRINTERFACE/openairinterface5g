@@ -3711,9 +3711,12 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         /*uint8_t ta_command = ((NR_MAC_CE_TA *)pduP)[1].TA_COMMAND;
           uint8_t tag_id = ((NR_MAC_CE_TA *)pduP)[1].TAGID;*/
 
+        const int ta = ((NR_MAC_CE_TA *)pduP)[1].TA_COMMAND;
+        const int tag = ((NR_MAC_CE_TA *)pduP)[1].TAGID;
         ul_time_alignment->apply_ta = 1;
-        ul_time_alignment->ta_command = ((NR_MAC_CE_TA *)pduP)[1].TA_COMMAND;
-        ul_time_alignment->tag_id = ((NR_MAC_CE_TA *)pduP)[1].TAGID;
+        ul_time_alignment->ta_command = ta; //here
+        ul_time_alignment->ta_total += ta - 31;
+        ul_time_alignment->tag_id = tag;
 
         /*
         #ifdef DEBUG_HEADER_PARSING
@@ -4094,7 +4097,9 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
     // TA command
     ul_time_alignment->apply_ta = 1;
-    ul_time_alignment->ta_command = 31 + rar->TA2 + (rar->TA1 << 5);
+    const int ta = rar->TA2 + (rar->TA1 << 5);
+    ul_time_alignment->ta_command = 31 + ta;
+    ul_time_alignment->ta_total = ta;
 
 #ifdef DEBUG_RAR
     // CSI
