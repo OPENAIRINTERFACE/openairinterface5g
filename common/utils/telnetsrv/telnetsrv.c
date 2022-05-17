@@ -510,7 +510,7 @@ int process_command(char *buf) {
           		cmddata->cmdfunc=(qcmdfunc_t)telnetparams.CmdParsers[i].cmd[k].cmdfunc;
           	    cmddata->prnt=client_printf;
           	    cmddata->debug=telnetparams.telnetdbg;
-          		cmddata->cmdbuff=strdup(cmdb);
+                    cmddata->cmdbuff=cmdb ? strdup(cmdb) : NULL;
           		pushNotifiedFIFO(telnetparams.CmdParsers[i].cmd[k].qptr, msg);
           	} else {
               telnetparams.CmdParsers[i].cmd[k].cmdfunc(cmdb, telnetparams.telnetdbg, client_printf);
