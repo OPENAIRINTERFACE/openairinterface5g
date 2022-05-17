@@ -58,7 +58,7 @@ void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ub
   frame_type_t frame_type = nrmac->common_channels->frame_type;
   const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
-  NR_ServingCellConfigCommonSIB_t *scc_sib1 = get_softmodem_params()->sa ?
+  NR_ServingCellConfigCommonSIB_t *scc_sib1 = nrmac->common_channels[0].sib1 ?
       RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1->servingCellConfigCommon : NULL;
 
   AssertFatal(scc!=NULL || scc_sib1!=NULL,"We need one serving cell config common\n");
@@ -977,7 +977,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
 
   int rbStart = 0; // wrt BWP start
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-
+  const uint8_t nrOfLayers = 1;
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || ubwpd) ? 1 : 2;
   const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
@@ -991,6 +991,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
 
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
+        || ps->nrOfLayers != nrOfLayers
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
       nr_set_pusch_semi_static(sib1,
                                scc,
@@ -999,6 +1000,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
                                dci_format,
                                tda,
                                num_dmrs_cdm_grps_no_data,
+                               nrOfLayers,
                                ps);
     }
 
@@ -1021,6 +1023,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
                              dci_format,
                              tda,
                              num_dmrs_cdm_grps_no_data,
+                             nrOfLayers,
                              &temp_ps);
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
@@ -1242,11 +1245,13 @@ void pf_ul(module_id_t module_id,
       /* we want to avoid a lengthy deduction of DMRS and other parameters in
        * every TTI if we can save it, so check whether dci_format, TDA, or
        * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+      const uint8_t nrOfLayers = 1;
       const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
       int dci_format = get_dci_format(sched_ctrl);
       const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
+          || ps->nrOfLayers != nrOfLayers
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
         nr_set_pusch_semi_static(sib1,
                                  scc,
@@ -1255,10 +1260,12 @@ void pf_ul(module_id_t module_id,
                                  dci_format,
                                  tda,
                                  num_dmrs_cdm_grps_no_data,
+                                 nrOfLayers,
                                  ps);
       }
 
-      LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d\n", min_rb, rbStart);
+      LOG_D(NR_MAC,"Looking for min_rb %d RBs, starting at %d num_dmrs_cdm_grps_no_data %d\n",
+            min_rb, rbStart, ps->num_dmrs_cdm_grps_no_data);
       const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
       while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
@@ -1287,7 +1294,7 @@ void pf_ul(module_id_t module_id,
                                             ps->N_PRB_DMRS * ps->num_dmrs_symb,
                                             0, // nb_rb_oh
                                             0,
-                                            1 /* NrOfLayers */)
+                                            ps->nrOfLayers)
                              >> 3;
 
       /* Mark the corresponding RBs as used */
@@ -1378,11 +1385,13 @@ void pf_ul(module_id_t module_id,
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
      * every TTI if we can save it, so check whether dci_format, TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
+    const uint8_t nrOfLayers = 1;
     const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
     int dci_format = get_dci_format(sched_ctrl);
     const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
+        || ps->nrOfLayers != nrOfLayers
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
       nr_set_pusch_semi_static(sib1,
                                scc,
@@ -1391,6 +1400,7 @@ void pf_ul(module_id_t module_id,
                                dci_format,
                                tda,
                                num_dmrs_cdm_grps_no_data,
+                               nrOfLayers,
                                ps);
     }
     update_ul_ue_R_Qm(sched_pusch, ps);
@@ -1410,12 +1420,11 @@ void pf_ul(module_id_t module_id,
     }
     else LOG_D(NR_MAC,"allocating UL data for UE %d/RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d\n",UE_id, UE_info->rnti[UE_id],rbStart,min_rb,bwpSize);
 
-
     /* Calculate the current scheduling bytes and the necessary RBs */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
     uint16_t rbSize = 0;
     uint32_t TBS = 0;
-    
+
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
                   1, // layers
@@ -1476,7 +1485,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   if (tda < 0)
     return false;
   int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, tda, mu);
-  const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) % 1024;
+  const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) & 1023;
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
 
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
@@ -1714,7 +1723,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     sched_ctrl->last_ul_slot = sched_pusch->slot;
 
     LOG_D(NR_MAC,
-          "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
+          "ULSCH/PUSCH: %4d.%2d RNTI %04x UL sched %4d.%2d DCI L %d start %2d RBS %3d startSymbol %2d nb_symbol %2d dmrs_pos %x MCS %2d nrOfLayers %2d num_dmrs_cdm_grps_no_data %2d TBS %4d HARQ PID %2d round %d RV %d NDI %d est %6d sched %6d est BSR %6d TPC %d\n",
           frame,
           slot,
           rnti,
@@ -1727,6 +1736,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           ps->nrOfSymbols,
           ps->ul_dmrs_symb_pos,
           sched_pusch->mcs,
+          ps->nrOfLayers,
+          ps->num_dmrs_cdm_grps_no_data,
           sched_pusch->tb_size,
           harq_id,
           cur_harq->round,
@@ -1783,7 +1794,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
-    pusch_pdu->nrOfLayers = 1;
+    pusch_pdu->nrOfLayers = ps->nrOfLayers;
+    pusch_pdu->num_dmrs_cdm_grps_no_data = ps->num_dmrs_cdm_grps_no_data;
 
     /* FAPI: DMRS */
     pusch_pdu->ul_dmrs_symb_pos = ps->ul_dmrs_symb_pos;
@@ -1808,7 +1820,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     }
     pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
     pusch_pdu->num_dmrs_cdm_grps_no_data = ps->num_dmrs_cdm_grps_no_data;
-    pusch_pdu->dmrs_ports = 1;
+    pusch_pdu->dmrs_ports = ((1<<ps->nrOfLayers) - 1);
 
     /* FAPI: Pusch Allocation in frequency domain */
     pusch_pdu->resource_alloc = 1; //type 1
@@ -1873,7 +1885,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 
     /* look up the PDCCH PDU for this BWP and CORESET. If it does not exist,
      * create it */
-    const int bwpid = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
+    const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
     NR_SearchSpace_t *ss = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->search_space: RC.nrmac[module_id]->sched_ctrlCommon->search_space;
     NR_ControlResourceSet_t *coreset = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->coreset: RC.nrmac[module_id]->sched_ctrlCommon->coreset;
     const int coresetid = coreset->controlResourceSetId;
@@ -1929,7 +1941,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  ps->time_domain_allocation,
                  UE_info->UE_sched_ctrl[UE_id].tpc0,
                  n_ubwp,
-                 bwpid);
+                 bwp_id);
     fill_dci_pdu_rel15(scc,
                        cg,
                        dci_pdu,
@@ -1937,10 +1949,10 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                        ps->dci_format,
                        rnti_types[0],
                        pusch_pdu->bwp_size,
-                       bwpid,
+                       bwp_id,
+                       coresetid,
                        nr_mac->cset0_bwp_size);
 
     memset(sched_pusch, 0, sizeof(*sched_pusch));
   }
 }
-

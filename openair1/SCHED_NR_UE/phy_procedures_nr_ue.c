@@ -284,7 +284,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
-  memset(ue->common_vars.txdataF[0], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
+  for(int i=0; i< ue->frame_parms.nb_antennas_tx; ++i)
+    memset(ue->common_vars.txdataF[i], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
 
   LOG_D(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
@@ -918,21 +919,25 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       const double N_TA_max = Ta_max * bw_scaling * tc_factor;
 
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+      NR_BWP_Id_t dl_bwp = mac->DL_BWP_Id;
+      NR_BWP_Id_t ul_bwp = mac->UL_BWP_Id;
 
       NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-      if (mac->ULbwp[0] &&
-          mac->ULbwp[0]->bwp_Dedicated &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
-        pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
-      }
-      else if (mac->ULbwp[0] &&
-               mac->ULbwp[0]->bwp_Common &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-        pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+      if(ul_bwp){
+        if (mac->ULbwp[ul_bwp-1] &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
+        }
+        else if (mac->ULbwp[ul_bwp-1] &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+        }
       }
       else if (mac->scc_SIB &&
                mac->scc_SIB->uplinkConfigCommon &&
@@ -943,12 +948,15 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
       long mapping_type_ul = pusch_TimeDomainAllocationList ? pusch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
 
-      NR_PDSCH_Config_t *pdsch_Config = (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup) ? mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+      NR_PDSCH_Config_t *pdsch_Config = NULL;
       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
-      if (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
-        pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
-      else if (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
-        pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+      if(dl_bwp){
+        pdsch_Config = (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup) ? mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+        if (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
+          pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
+        else if (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
+          pdsch_TimeDomainAllocationList = mac->DLbwp[dl_bwp-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+      }
       else if (mac->scc_SIB && mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup)
         pdsch_TimeDomainAllocationList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
       long mapping_type_dl = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
@@ -1002,7 +1010,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         d_2_1 = 1;
 
       /* d_2_2 */
-      const double d_2_2 = 0.0; // set to 0 because there is only 1 BWP: TODO this should corresponds to the switching time as defined in TS 38.133
+      const double d_2_2 = pusch_d_2_2_timing_capability_1[numerology][1];
 
       /* N_t_1 time duration in msec of N_1 symbols corresponding to a PDSCH reception time
       // N_t_2 time duration in msec of N_2 symbols corresponding to a PUSCH preparation time */

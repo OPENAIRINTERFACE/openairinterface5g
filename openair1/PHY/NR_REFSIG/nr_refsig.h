@@ -42,6 +42,8 @@ void nr_init_csi_rs(NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Nid);
 
 void nr_gold_pusch(PHY_VARS_gNB* gNB, int nscid, uint32_t nid);
 
+int nr_pusch_dmrs_delta(uint8_t dmrs_config_type, unsigned short p);
+
 int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      unsigned int Ns,
                      unsigned int *nr_gold_pusch,

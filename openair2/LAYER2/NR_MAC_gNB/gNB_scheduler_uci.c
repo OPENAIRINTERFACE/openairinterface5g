@@ -51,7 +51,7 @@ void nr_fill_nfapi_pucch(module_id_t mod_id,
       &RC.nrmac[mod_id]->UL_tti_req_ahead[0][pucch->ul_slot];
   AssertFatal(future_ul_tti_req->SFN == pucch->frame
               && future_ul_tti_req->Slot == pucch->ul_slot,
-              "Current %d.%d : future UL_tti_req's frame.slot %4d.%2d does not match PUCCH %4d.%2d\n",
+              "Current %4d.%2d : future UL_tti_req's frame.slot %4d.%2d does not match PUCCH %4d.%2d\n",
               frame,slot,
               future_ul_tti_req->SFN,
               future_ul_tti_req->Slot,
@@ -502,6 +502,8 @@ void compute_pmi_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
         if(codebookConfig->codebookType.choice.type1->subType.present == NR_CodebookConfig__codebookType__type1__subType_PR_typeI_SinglePanel) {
           if(codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.present ==
              NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts_PR_two) {
+            csi_report->N1 = 1;
+            csi_report->N2 = 1;
             if (i==0)
               csi_report->csi_meas_bitlen.pmi_x2_bitlen[i]=2;
             if (i==1)
@@ -511,6 +513,9 @@ void compute_pmi_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
             int n1,n2,o1,o2,x1,x2;
             get_n1n2_o1o2_singlepanel(&n1,&n2,&o1,&o2,codebookConfig->codebookType.choice.type1->subType.choice.typeI_SinglePanel->nrOfAntennaPorts.choice.moreThanTwo);
             get_x1x2_bitlen_singlepanel(n1,n2,o1,o2,&x1,&x2,i+1,codebookConfig->codebookType.choice.type1->codebookMode);
+            csi_report->N1 = n1;
+            csi_report->N2 = n2;
+            csi_report->codebook_mode = codebookConfig->codebookType.choice.type1->codebookMode;
             csi_report->csi_meas_bitlen.pmi_x1_bitlen[i]=x1;
             csi_report->csi_meas_bitlen.pmi_x2_bitlen[i]=x2;
           }
@@ -714,13 +719,13 @@ void nr_csi_meas_reporting(int Mod_idP,
     NR_PUCCH_Config_t *pucch_Config = NULL;
     if (sched_ctrl->active_ubwp) {
       pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-    } else if (RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id] &&
-             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig &&
-             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated &&
-             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
-             RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
-      pucch_Config = RC.nrmac[Mod_idP]->UE_info.CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
+    } else if (CellGroup &&
+               CellGroup->spCellConfig &&
+               CellGroup->spCellConfig->spCellConfigDedicated &&
+               CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+               CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
+               CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
+      pucch_Config = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
     }
 
     for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
@@ -873,9 +878,8 @@ int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, int Mod_idP, int UE_i
   int nb_tci_states = CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
   NR_TCI_State_t *tci =NULL;
   NR_TCI_StateId_t *tci_id = NULL;
-  int bwp_id = 1;
-  NR_BWP_Downlink_t *bwp = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1];
-  NR_ControlResourceSet_t *coreset = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_ControlResourceSet_t *coreset = sched_ctrl->coreset;
   int i;
   int flag = 0;
   int tci_stateID = -1;
@@ -943,15 +947,15 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
   uint8_t idx = 0;
   NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  int bwp_id  = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
+  const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
   NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
-  NR_BWP_Downlink_t *bwp = bwp_id>0 ? sched_ctrl->active_bwp : NULL;
 
   //bwp indicator
   int n_dl_bwp=0;
-  if (CellGroup->spCellConfig->spCellConfigDedicated &&
+  if (CellGroup->spCellConfig &&
+      CellGroup->spCellConfig->spCellConfigDedicated &&
       CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList)
-      n_dl_bwp = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
+    n_dl_bwp = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
 
   uint8_t nr_ssbri_cri = 0;
   uint8_t nb_of_csi_ssb_report = UE_info->csi_report_template[UE_id][cqi_idx].nb_of_csi_ssb_report;
@@ -1074,10 +1078,8 @@ void tci_handling(module_id_t Mod_idP, int UE_id, frame_t frame, slot_t slot) {
       }
     }
 
-    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI = bwp ? 
-                                                                   bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[bwp_id-1]->tci_PresentInDCI :
-                                                                   CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdcch_Config->choice.setup->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI;
-
+    sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI = sched_ctrl->coreset ?
+                                                                   sched_ctrl->coreset->tci_PresentInDCI : NULL;
 
     //filling pdsch tci state activation deactivation mac ce structure fields
     if(sched_ctrl->UE_mac_ce_ctrl.pdcch_state_ind.tci_present_inDCI) {
@@ -1246,7 +1248,7 @@ void evaluate_cqi_report(uint8_t *payload,
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_2tb = temp_cqi;
     LOG_D(MAC,"Wide-band CQI for the second TB %d\n", temp_cqi);
   }
-  sched_ctrl->set_mcs = TRUE;
+  sched_ctrl->set_mcs = true;
 }
 
 
@@ -1269,6 +1271,7 @@ uint8_t evaluate_pmi_report(uint8_t *payload,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
+  sched_ctrl->set_pmi = true;
   return tot_bitlen;
 
 }
@@ -1374,6 +1377,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           if (r_index != -1)
             skip_zero_padding(&cumul_bits,csi_report,r_index,bitlen);
           pmi_bitlen = evaluate_pmi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl);
+          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id = csi_report_id;
           cumul_bits += pmi_bitlen;
           evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl,csirep->cqi_Table);
           break;
@@ -1391,6 +1395,7 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           if (r_index != -1)
             skip_zero_padding(&cumul_bits,csi_report,r_index,bitlen);
           pmi_bitlen = evaluate_pmi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl);
+          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id = csi_report_id;
           cumul_bits += pmi_bitlen;
           evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,sched_ctrl,csirep->cqi_Table);
           break;
@@ -1708,11 +1713,10 @@ int nr_acknack_scheduling(int mod_id,
 
   NR_SearchSpace__searchSpaceType_PR ss_type = (is_common==0 && (sched_ctrl->active_bwp || ubwpd)) ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
   uint8_t pdsch_to_harq_feedback[8];
-  int bwp_Id = 0;
-  if (sched_ctrl->active_ubwp) bwp_Id = sched_ctrl->active_ubwp->bwp_Id;
+  const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
 
   int max_fb_time = 0;
-  get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_Id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
+  get_pdsch_to_harq_feedback(mod_id, UE_id, bwp_id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
 
   LOG_D(NR_MAC, "In %s: 1b. DL %4d.%2d, UL_ACK %4d.%2d, DAI_C %d\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
