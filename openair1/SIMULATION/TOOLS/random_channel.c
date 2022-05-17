@@ -1944,9 +1944,10 @@ static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
     } else if ( strcmp(subcmd,"current") == 0) {
       for (int i=0; i < max_chan ; i++) {
         if (defined_channels[i] != NULL) {
-          prnt("model %i %s type %s: \n----------------\n", i, (defined_channels[i]->model_name !=NULL)?defined_channels[i]->model_name:"(no name set)",
+          prnt("model %i %s type %s:\n", i, (defined_channels[i]->model_name !=NULL)?defined_channels[i]->model_name:"(no name set)",
                map_int_to_str(channelmod_names,defined_channels[i]->modelid));
           display_channelmodel(defined_channels[i],debug,prnt);
+          prnt("----------------\n");
         }
       }
     } else {
