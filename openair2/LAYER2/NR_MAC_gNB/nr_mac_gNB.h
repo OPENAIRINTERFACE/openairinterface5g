@@ -72,13 +72,15 @@
 
 
 /* Defs */
-#define MAX_NUM_BWP 2
+#define MAX_NUM_BWP 5
 #define MAX_NUM_CORESET 12
 #define MAX_NUM_CCE 90
 #define MAX_HARQ_ROUNDS 4
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
+
+#define MIN_NUM_PRBS_TO_SCHEDULE  5
 
 /*! \brief NR_list_t is a "list" (of users, HARQ processes, slices, ...).
  * Especially useful in the scheduler and to keep "classes" of users. */
@@ -121,8 +123,10 @@ typedef struct NR_sched_pdcch {
 typedef struct {
   /// Flag to indicate this process is active
   RA_gNB_state_t state;
-  /// BWP id of RA process
-  int bwp_id;
+  /// DL BWP id of RA process
+  int dl_bwp_id;
+  /// UL BWP id of RA process
+  int ul_bwp_id;
   /// CORESET0 configured flag
   int coreset0_configured;
   /// Slot where preamble was received
@@ -343,6 +347,7 @@ typedef struct NR_sched_pucch {
 typedef struct NR_pusch_semi_static_t {
   int dci_format;
   int time_domain_allocation;
+  uint8_t nrOfLayers;
   uint8_t num_dmrs_cdm_grps_no_data;
 
   int startSymbolIndex;
@@ -486,6 +491,7 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t wb_cqi_1tb;
   uint8_t wb_cqi_2tb;
   uint8_t cqi_table;
+  uint8_t csi_report_id;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -529,6 +535,9 @@ typedef struct nr_csi_report {
   uint8_t nb_of_csi_ssb_report;
   L1_RSRP_bitlen_t CSI_report_bitlen;
   CSI_Meas_bitlen_t csi_meas_bitlen;
+  int codebook_mode;
+  int N1;
+  int N2;
 } nr_csi_report_t;
 
 /*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report 
@@ -561,6 +570,12 @@ typedef struct {
   NR_BWP_Downlink_t *active_bwp;
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
+
+  /// the next active BWP ID in DL
+  NR_BWP_Id_t next_dl_bwp_id;
+  /// the next active BWP ID in UL
+  NR_BWP_Id_t next_ul_bwp_id;
+
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
   NR_ControlResourceSet_t *coreset;
@@ -627,6 +642,7 @@ typedef struct {
   struct CSI_Report CSI_report;
   bool SR;
   bool set_mcs;
+  bool set_pmi;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
@@ -813,6 +829,8 @@ typedef struct gNB_MAC_INST_s {
   uint16_t cset0_bwp_start;
   uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
+
+  int xp_pdsch_antenna_ports;
 
   bool first_MIB;
   double dl_bler_target_upper;
