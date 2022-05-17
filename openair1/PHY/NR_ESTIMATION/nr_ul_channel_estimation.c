@@ -967,11 +967,6 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
   LOG_I(NR_PHY,"Calling %s function\n", __FUNCTION__);
 #endif
 
-  if(nr_srs_info->sc_list_length == 0) {
-    LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);
-    return -1;
-  }
-
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   int32_t ***srs_ls_estimated_channel = nr_srs_info->srs_ls_estimated_channel;
 

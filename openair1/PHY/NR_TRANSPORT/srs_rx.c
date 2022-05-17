@@ -106,11 +106,6 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   LOG_I(NR_PHY,"Calling %s function\n", __FUNCTION__);
 #endif
 
-  if(nr_srs_info->sc_list_length == 0) {
-    LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);
-    return -1;
-  }
-
   int32_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
 

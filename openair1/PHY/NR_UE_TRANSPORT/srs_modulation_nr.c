@@ -273,7 +273,6 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
 
   // Variable initialization
   if(nr_srs_info) {
-    nr_srs_info->sc_list_length = 0;
     nr_srs_info->srs_generated_signal_bits = log2_approx(amp);
   }
   uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_config_pdu->bwp_start*NR_NB_SC_PER_RB;
@@ -405,11 +404,6 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
 #endif
 
         txdataF[p_index][symbol_offset+l_line_offset+subcarrier] = (r_real_amp & 0xFFFF) + ((r_imag_amp<<16)&0xFFFF0000);
-
-        if(nr_srs_info && p_index==0 && l_line==0) {
-          nr_srs_info->sc_list[nr_srs_info->sc_list_length] = subcarrier;
-          nr_srs_info->sc_list_length++;
-        }
 
         // Subcarrier increment
         subcarrier += K_TC;

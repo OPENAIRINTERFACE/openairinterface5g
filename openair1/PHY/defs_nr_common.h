@@ -240,8 +240,6 @@ typedef struct {
 } NR_PRACH_RESOURCES_t;
 
 typedef struct {
-  uint16_t sc_list_length;
-  uint16_t *sc_list;
   uint8_t **k_0_p;
   uint8_t srs_generated_signal_bits;
   int32_t **srs_generated_signal;
