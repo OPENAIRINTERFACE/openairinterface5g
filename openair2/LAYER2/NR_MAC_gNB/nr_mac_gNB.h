@@ -206,7 +206,7 @@ typedef struct {
   int p_gNB;
   int Ncp;
   int nr_band;
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   uint64_t dl_CarrierFreq;
   NR_BCCH_BCH_Message_t *mib;
   NR_BCCH_DL_SCH_Message_t *sib1;
@@ -347,6 +347,7 @@ typedef struct NR_sched_pucch {
 typedef struct NR_pusch_semi_static_t {
   int dci_format;
   int time_domain_allocation;
+  uint8_t nrOfLayers;
   uint8_t num_dmrs_cdm_grps_no_data;
 
   int startSymbolIndex;
@@ -449,7 +450,7 @@ typedef struct NR_UE_harq {
 
   /* Transport block to be sent using this HARQ process, its size is in
    * sched_pdsch */
-  uint32_t tb[16384];
+  uint32_t transportBlock[16384];
   uint32_t tb_size;
 
   /// sched_pdsch keeps information on MCS etc used for the initial transmission
@@ -490,6 +491,7 @@ struct CRI_RI_LI_PMI_CQI {
   uint8_t wb_cqi_1tb;
   uint8_t wb_cqi_2tb;
   uint8_t cqi_table;
+  uint8_t csi_report_id;
 };
 
 typedef struct CRI_SSB_RSRP {
@@ -533,6 +535,9 @@ typedef struct nr_csi_report {
   uint8_t nb_of_csi_ssb_report;
   L1_RSRP_bitlen_t CSI_report_bitlen;
   CSI_Meas_bitlen_t csi_meas_bitlen;
+  int codebook_mode;
+  int N1;
+  int N2;
 } nr_csi_report_t;
 
 /*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report 
@@ -558,19 +563,6 @@ typedef struct NR_UE_ul_harq {
   NR_sched_pusch_t sched_pusch;
 } NR_UE_ul_harq_t;
 
-typedef enum {
-  BWP_SWITCH_INACTIVE = 0,
-  BWP_SWITCH_TO_START,
-  BWP_SWITCH_RUNNING
-} NR_BWP_switch_states_t;
-
-typedef struct NR_BWP_switch_info {
-  NR_BWP_Id_t current_bwp;
-  NR_BWP_Id_t next_bwp;
-  sub_frame_t bwp_switch_slot;
-  NR_BWP_switch_states_t bwp_switch_state;
-} NR_BWP_switch_info_t;
-
 /*! \brief scheduling control information set through an API */
 #define MAX_CSI_REPORTS 48
 typedef struct {
@@ -579,8 +571,10 @@ typedef struct {
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
 
-  /// the state of bwp switch procedure
-  NR_BWP_switch_info_t bwp_switch_info;
+  /// the next active BWP ID in DL
+  NR_BWP_Id_t next_dl_bwp_id;
+  /// the next active BWP ID in UL
+  NR_BWP_Id_t next_ul_bwp_id;
 
   /// CCE index and aggregation, should be coherent with cce_list
   NR_SearchSpace_t *search_space;
@@ -647,9 +641,8 @@ typedef struct {
   int ul_failure;
   struct CSI_Report CSI_report;
   bool SR;
-  bool update_pdsch_ps;
-  bool update_pusch_ps;
   bool set_mcs;
+  bool set_pmi;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free
@@ -667,12 +660,13 @@ typedef struct {
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
   NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
-  /// Flag to indicate if MAC scheduling is enabled or disabled by RRC (e.g. during RRC processing time)
-  bool schedule_enabled;
   /// number of active DL LCs
   uint8_t dl_lc_num;
   /// order in which DLSCH scheduler should allocate LCs
   uint8_t dl_lc_ids[NR_MAX_NUM_LCID];
+
+  /// Timer for RRC processing procedures
+  uint32_t rrc_processing_timer;
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
@@ -836,11 +830,16 @@ typedef struct gNB_MAC_INST_s {
   uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
 
+  int xp_pdsch_antenna_ports;
+
   bool first_MIB;
   double dl_bler_target_upper;
   double dl_bler_target_lower;
   double dl_rd2_bler_threshold;
   uint8_t dl_max_mcs;
+  uint8_t harq_round_max;
+  uint8_t min_grant_prb;
+  uint8_t min_grant_mcs;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

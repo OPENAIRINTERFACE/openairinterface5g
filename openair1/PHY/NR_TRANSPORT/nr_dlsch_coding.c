@@ -232,27 +232,20 @@ void ldpc8blocks( void *p) {
 #endif
     uint32_t E = nr_get_E(G, impp->n_segments, mod_order, rel15->nrOfLayers, rr);
     //#ifdef DEBUG_DLSCH_CODING
-    LOG_D(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
+    LOG_D(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d,nrOfLayer %d)...\n",
           rr,
           impp->n_segments,
           G,
           E,
           impp->F,
           Kr-impp->F-2*(*impp->Zc),
-          mod_order,nb_rb);
-    // for tbslbrm calculation according to 5.4.2.1 of 38.212
-    uint8_t Nl = 4;
+          mod_order,nb_rb,rel15->nrOfLayers);
 
-    if (rel15->nrOfLayers < Nl)
-      Nl = rel15->nrOfLayers;
-
-    uint32_t Tbslbrm = nr_compute_tbslbrm(rel15->mcsTable[0],nb_rb,Nl);
-    uint8_t Ilbrm = 1;
+    uint32_t Tbslbrm = rel15->maintenance_parms_v3.tbSizeLbrmBytes;
 
     uint8_t e[E];
     bzero (e, E);
-    nr_rate_matching_ldpc(Ilbrm,
-                          Tbslbrm,
+    nr_rate_matching_ldpc(Tbslbrm,
                           impp->BG,
                           *impp->Zc,
                           impp->d[rr],
@@ -262,6 +255,20 @@ void ldpc8blocks( void *p) {
                           Kr-impp->F-2*(*impp->Zc),
                           rel15->rvIndex[0],
                           E);
+   if (Kr-impp->F-2*(*impp->Zc)> E)  {
+    LOG_E(PHY,"dlsch coding A %d  Kr %d G %d (nb_rb %d, nb_symb_sch %d, nb_re_dmrs %d, length_dmrs %d, mod_order %d)\n",
+          A,impp->K,G, nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,(int)mod_order);
+ 
+    LOG_E(NR_PHY,"Rate Matching, Code segment %d/%d (coded bits (G) %u, E %d, Kr %d, Filler bits %d, Filler offset %d mod_order %d, nb_rb %d)...\n",
+          rr,
+          impp->n_segments,
+          G,
+          E,
+          Kr,
+          impp->F,
+          Kr-impp->F-2*(*impp->Zc),
+          mod_order,nb_rb);
+    }
 #ifdef DEBUG_DLSCH_CODING
 
     for (int i =0; i<16; i++)
@@ -286,10 +293,9 @@ void ldpc8blocks( void *p) {
 }
 
 int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-                      unsigned char *a,
                       int frame,
                       uint8_t slot,
-                      NR_gNB_DLSCH_t *dlsch,
+                      NR_DL_gNB_HARQ_t *harq,
                       NR_DL_FRAME_PARMS *frame_parms,
 		      unsigned char * output,
                       time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
@@ -298,13 +304,12 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   encoder_implemparams_t impp;
   impp.output=output;
   unsigned int crc=1;
-  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
   nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
-  impp.Zc = &dlsch->harq_process.Z;
+  impp.Zc = &harq->Z;
   float Coderate = 0.0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
-
+  unsigned char *a=harq->pdu;
   if ( rel15->rnti != SI_RNTI)
     trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
 
@@ -317,14 +322,14 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
       stats=&gNB->dlsch_stats[i];
     }
 
-    if (gNB->dlsch_stats[i].rnti == dlsch->rnti) {
+    if (gNB->dlsch_stats[i].rnti == rel15->rnti) {
       stats=&gNB->dlsch_stats[i];
       break;
     }
   }
 
   if (stats) {
-    stats->rnti = dlsch->rnti;
+    stats->rnti = rel15->rnti;
     stats->total_bytes_tx += rel15->TBSize[0];
     stats->current_RI   = rel15->nrOfLayers;
     stats->current_Qm   = rel15->qamModOrder[0];

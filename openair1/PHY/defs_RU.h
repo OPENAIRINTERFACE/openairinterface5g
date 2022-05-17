@@ -54,7 +54,6 @@ typedef enum {
   no_L2_connect=5,
   calib_prach_tx=6,
   rx_dump_frame=7,
-  loop_through_memory=8
 } runmode_t;
 
 /*! \brief Extension Type */
@@ -504,6 +503,10 @@ typedef struct RU_t_s {
   int att_tx;
   /// flag to indicate precoding operation in RU
   int do_precoding;
+  /// TX processing advance in subframes (for LTE)
+  int sf_ahead;
+  /// TX processing advance in slots (for NR)
+  int sl_ahead;
   /// FAPI confiuration
   nfapi_nr_config_request_scf_t  config;
   /// Frame parameters

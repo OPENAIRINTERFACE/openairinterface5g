@@ -439,7 +439,7 @@ class OaiCiTest():
 					while cnt < 4:
 						Module_UE.Command("wup")
 						logging.debug("Waiting for IP address to be assigned")
-						time.sleep(20)
+						time.sleep(5)
 						logging.debug("Retrieve IP address")
 						status=Module_UE.GetModuleIPAddress()
 						if status==0:
@@ -1111,7 +1111,7 @@ class OaiCiTest():
 			while cnt < 4:
 				Module_UE.Command("wup")
 				logging.debug("Waiting for IP address to be assigned")
-				time.sleep(20)
+				time.sleep(5)
 				logging.debug("Retrieve IP address")
 				status=Module_UE.GetModuleIPAddress()
 				if status==0:

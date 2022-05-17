@@ -260,6 +260,8 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
                   NR_BWP_UplinkDedicated_t **ubwpd,
                   NR_BWP_UplinkCommon_t **ubwpc);
 
+NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id);
+
 uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                             uint8_t dci_format,
                             uint8_t dci_length,

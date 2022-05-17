@@ -165,7 +165,7 @@ From the `cmake_targets/ran_build/build` folder:
 
 gNB on machine 1:
 
-`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --sa`
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --sa`
 
 UE on machine 2:
 
@@ -173,7 +173,7 @@ UE on machine 2:
 
 With the RF simulator (on the same machine):
 
-`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa`
+`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa`
 
 `sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 -s 516 --rfsim --sa`
 
@@ -207,7 +207,24 @@ UE on machine 2:
 
 `sudo ./nr-uesoftmodem --if_freq 2169080000 --if_freq_off -400000000`
 
+# MIMO configuration
 
+<table style="border-collapse: collapse; border: none;">
+  <tr style="border-collapse: collapse; border: none;">
+    <td style="border-collapse: collapse; border: none;">
+         <img src="./images/mimo_antenna_ports.png" alt="" border=3 height=100 width=300>
+         </img>
+    </td>
+  </tr>
+</table>
+
+This image shows an example of gNB 5G MIMO logical antenna port configuration. It has to be noted that logical antenna ports might not directly correspond to physical antenna ports and each logical antenna port might consist of a sub-array of antennas.
+
+The basic element is a dual-polarized antenna, therefore the minimal DL MIMO setup with two logical antenna ports would consist of two cross-polarized antenna elements. In a single panel configuration, as the one in the picture, this element can be repeated vertiacally and/or horizontally to form an equi-spaced 1D or 2D array. The values N1 and N2 represent the number of antenna ports in the two dimensions and the supported configurations are specified in Section 5.2.2.2.1 of TS 38.214.
+
+The DL logical antenna port configuration can be selected through configuration file. `pdsch_AntennaPorts_N1` can be used to set N1 parameter, `pdsch_AntennaPorts_N2` to set N2 and `pdsch_AntennaPorts_XP` to set the cross-polarization configuration (1 for single pol, 2 for cross-pol). To be noted that if XP is 1 but N1 and/or N2 are larger than 1, this would result in a non-standard configuration and the PMI selected would be the identity matrix regardless of CSI report. The default value for each of these parameters is 1.
+
+# Additional links
 
 [Selecting an alternative ldpc implementation at run time](../openair1/PHY/CODING/DOC/LDPCImplementation.md)
 

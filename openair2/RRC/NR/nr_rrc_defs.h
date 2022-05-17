@@ -96,12 +96,10 @@ typedef struct nr_uid_linear_allocator_s {
 #define PROTOCOL_NR_RRC_CTXT_FMT                   PROTOCOL_CTXT_FMT
 #define PROTOCOL_NR_RRC_CTXT_ARGS(CTXT_Pp)         PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
 
-// Delay to take in consideration for sl_ahead value
-#define TX_SL_AHEAD_DELAY 3
-
 // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-#define NR_RRC_PROCESSING_DELAY_MS  10
-#define NR_RRC_BWP_SWITCH_DELAY_MS  6
+#define NR_RRC_SETUP_DELAY_MS           10
+#define NR_RRC_RECONFIGURATION_DELAY_MS 10
+#define NR_RRC_BWP_SWITCHING_DELAY_MS   6
 
 #define NR_UE_MODULE_INVALID ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!!
 #define NR_UE_INDEX_INVALID  ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!! used to be -1
@@ -292,10 +290,10 @@ typedef struct gNB_RRC_UE_s {
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
-  SRB_INFO                           SI;
-  SRB_INFO                           Srb0;
-  SRB_INFO_TABLE_ENTRY               Srb1;
-  SRB_INFO_TABLE_ENTRY               Srb2;
+  NR_SRB_INFO                           SI;
+  NR_SRB_INFO                           Srb0;
+  NR_SRB_INFO_TABLE_ENTRY               Srb1;
+  NR_SRB_INFO_TABLE_ENTRY               Srb2;
   NR_MeasConfig_t                   *measConfig;
   HANDOVER_INFO                     *handover_info;
   NR_MeasResults_t                  *measResults;
@@ -380,8 +378,6 @@ typedef struct gNB_RRC_UE_s {
   //GTPV1 F1-U TUNNELS
   uint32_t                           incoming_teid[S1AP_MAX_E_RAB];
 
-  uint32_t                           nr_rrc_processing_timer;
-  uint32_t                           nr_rrc_processing_delay;
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
@@ -521,6 +517,7 @@ typedef struct gNB_RRC_INST_s {
   int srb1_max_retx_threshold;
   int srb1_timer_reordering;
   int srb1_timer_status_prohibit;
+  int um_on_default_drb;
   int srs_enable[MAX_NUM_CCs];
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;

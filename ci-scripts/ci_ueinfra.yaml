@@ -12,7 +12,7 @@ idefix:
   LogStore : /media/usb-drive/ci_qlogs
   PLMN : 22201
   UENetwork : wwan0 
-  HostIPAddress : 192.168.18.188
+  HostIPAddress : 172.21.16.135
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none
@@ -32,7 +32,7 @@ nrmodule2_quectel:
   LogStore : /media/ci_qlogs  
   PLMN : 20897
   UENetwork : wwan0
-  HostIPAddress : 192.168.18.189
+  HostIPAddress : 172.21.16.139
   HostUsername : nrmodule2 
   HostPassword : linux 
   HostSourceCodePath : none
@@ -40,6 +40,7 @@ nrmodule2_quectel:
     - sudo -S ip link set dev wwan1 mtu 1500
   MTU : 1500
 
+# CAUTION: 192.168.18.89 address has to be changed when the server is moved
 #single UE single ping
 amarisoft_ue_1:
   ID: amarisoft_ue_1
@@ -54,7 +55,7 @@ amarisoft_ue_1:
   Duration : 60
   Ping : /tmp/test_ue1.log
   UELog : /tmp/ue1.log
-  HostIPAddress : 192.168.18.89
+  HostIPAddress : 172.21.16.144
   HostUsername : root
   HostPassword : toor 
   HostSourceCodePath : /tmp
@@ -97,7 +98,7 @@ dummy:
   DetachScript : ''
   PLMN : 22201
   UENetwork : wwan0
-  HostIPAddress : 192.168.18.188
+  HostIPAddress : 172.21.16.135
   HostUsername : oaicicd
   HostPassword : oaicicd
   HostSourceCodePath : none

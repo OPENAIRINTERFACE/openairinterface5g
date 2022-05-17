@@ -573,17 +573,7 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].rx_freq[0],
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
-        if (UE->mode != loop_through_memory) {
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
-          //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-          //UE->rfdevice.trx_stop_func(&UE->rfdevice);
-          // sleep(1);
-          /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
-            LOG_E(HW,"Could not start the device\n");
-            oai_exit=1;
-            }*/
-        }
-
+        UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
         if (UE->UE_scan_carrier == 1) {
           UE->UE_scan_carrier = 0;
         } else {
@@ -602,8 +592,7 @@ static void UE_synch(void *arg) {
 
           LOG_I(PHY, "Initial sync failed: trying carrier off %d Hz\n", freq_offset);
 
-          if (UE->mode != loop_through_memory)
-            UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
         }
 
         break;
@@ -624,7 +613,7 @@ void processSlotTX(void *arg) {
   int tx_slot_type = nr_ue_slot_select(cfg, proc->frame_tx, proc->nr_slot_tx);
   uint8_t gNB_id = 0;
 
-  LOG_D(PHY,"%d.%d => slot type %d\n",proc->frame_tx,proc->nr_slot_tx,tx_slot_type);
+  LOG_D(PHY,"processSlotTX %d.%d => slot type %d\n",proc->frame_tx,proc->nr_slot_tx,tx_slot_type);
   if (tx_slot_type == NR_UPLINK_SLOT || tx_slot_type == NR_MIXED_SLOT){
 
     // trigger L2 to run ue_scheduler thru IF module
@@ -648,7 +637,7 @@ void processSlotTX(void *arg) {
       stop_meas(&UE->ue_ul_indication_stats);
     }
 
-    if ((UE->mode != loop_through_memory) && (rxtxD->ue_sched_mode != NOT_PUSCH)) {
+    if (rxtxD->ue_sched_mode != NOT_PUSCH) {
       phy_procedures_nrUE_TX(UE,proc,0);
     }
   }
@@ -724,7 +713,8 @@ void processSlotRX(void *arg) {
       LOG_D(PHY, "Sending Uplink data \n");
       nr_ue_pusch_common_procedures(UE,
                                     proc->nr_slot_tx,
-                                    &UE->frame_parms,1);
+                                    &UE->frame_parms,
+                                    UE->frame_parms.nb_antennas_tx);
     }
 
     if (UE->UE_mode[gNB_id] > NOT_SYNCHED && UE->UE_mode[gNB_id] < PUSCH) {
@@ -738,9 +728,10 @@ void processSlotRX(void *arg) {
 
 void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockSize) {
   void *dummy_tx[UE->frame_parms.nb_antennas_tx];
-
+  int16_t dummy_tx_data[UE->frame_parms.nb_antennas_tx][2*writeBlockSize]; // 2 because the function we call use pairs of int16_t implicitly as complex numbers
+  memset(dummy_tx_data, 0, sizeof(dummy_tx_data));
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    dummy_tx[i]=malloc16_clear(writeBlockSize*4);
+    dummy_tx[i]=dummy_tx_data[i];
 
   AssertFatal( writeBlockSize ==
                UE->rfdevice.trx_write_func(&UE->rfdevice,
@@ -750,8 +741,6 @@ void dummyWrite(PHY_VARS_NR_UE *UE,openair0_timestamp timestamp, int writeBlockS
                UE->frame_parms.nb_antennas_tx,
                4),"");
 
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    free(dummy_tx[i]);
 }
 
 void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp, bool toTrash) {
@@ -793,7 +782,7 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
     *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
       int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
-      // we write before read becasue gNB waits for UE to write and both executions halt
+      // we write before read because gNB waits for UE to write and both executions halt
       // this happens here as the read size is samples_per_subframe which is very much larger than samp_per_slot
       if (IS_SOFTMODEM_RFSIM) dummyWrite(UE,*timestamp, unitTransfer);
       AssertFatal(unitTransfer ==

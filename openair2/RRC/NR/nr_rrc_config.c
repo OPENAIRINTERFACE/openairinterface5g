@@ -375,8 +375,9 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
   phy_Parameters->phy_ParametersFRX_Diff->pucch_F0_2WithoutFH = NULL;
 }
 
+
 void nr_rrc_config_dl_tda(struct NR_PDSCH_TimeDomainResourceAllocationList *pdsch_TimeDomainAllocationList,
-                          lte_frame_type_t frame_type,
+                          frame_type_t frame_type,
                           NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,
                           int curr_bwp) {
 
@@ -384,8 +385,12 @@ void nr_rrc_config_dl_tda(struct NR_PDSCH_TimeDomainResourceAllocationList *pdsc
   int len_coreset = 1;
   if (curr_bwp < 48)
     len_coreset = 2;
+
   // setting default TDA for DL with
   struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+  // k0: Slot offset between DCI and its scheduled PDSCH (see TS 38.214 clause 5.1.2.1) When the field is absent the UE applies the value 0.
+  //timedomainresourceallocation->k0 = calloc(1,sizeof(*timedomainresourceallocation->k0));
+  //*timedomainresourceallocation->k0 = 0;
   timedomainresourceallocation->mappingType = NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
   timedomainresourceallocation->startSymbolAndLength = get_SLIV(len_coreset,14-len_coreset); // basic slot configuration starting in symbol 1 til the end of the slot
   ASN_SEQUENCE_ADD(&pdsch_TimeDomainAllocationList->list, timedomainresourceallocation);
@@ -395,6 +400,9 @@ void nr_rrc_config_dl_tda(struct NR_PDSCH_TimeDomainResourceAllocationList *pdsc
       int dl_symb = tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols;
       if(dl_symb > 1) {
         timedomainresourceallocation = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
+        // k0: Slot offset between DCI and its scheduled PDSCH (see TS 38.214 clause 5.1.2.1) When the field is absent the UE applies the value 0.
+        //timedomainresourceallocation->k0 = calloc(1,sizeof(*timedomainresourceallocation->k0));
+        //*timedomainresourceallocation->k0 = 0;
         timedomainresourceallocation->mappingType = NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
         timedomainresourceallocation->startSymbolAndLength = get_SLIV(len_coreset,dl_symb-len_coreset); // mixed slot configuration starting in symbol 1 til the end of the dl allocation
         ASN_SEQUENCE_ADD(&pdsch_TimeDomainAllocationList->list, timedomainresourceallocation);
@@ -408,12 +416,26 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
 
   //TODO change to accomodate for SRS
 
+  frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   int temp_min_delay = 6; // k2 = 2 or 3 won'r work as well as higher values
+  if(frame_type==TDD && scc->tdd_UL_DL_ConfigurationCommon) {
+
+    switch (scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity) {
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2p5:  // 30kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2:    // 60kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms1p25: // 60kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms1:    // 120kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p625:    // 120kHz SCS
+      case NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p5:    // 120kHz SCS
+        temp_min_delay = 2; 
+        break;
+    }
+  }
+
   int k2 = (min_fb_delay<temp_min_delay)?temp_min_delay:min_fb_delay;
 
   uint8_t DELTA[4]= {2,3,4,6}; // Delta parameter for Msg3
   int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-  lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
 
   struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
   pusch_timedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
@@ -423,6 +445,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
   ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation); 
 
   if(frame_type==TDD) {
+      
     // TDD
     if(scc->tdd_UL_DL_ConfigurationCommon) {
       int ul_symb = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;

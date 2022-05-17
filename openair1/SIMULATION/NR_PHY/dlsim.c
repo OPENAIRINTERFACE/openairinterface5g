@@ -105,6 +105,10 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
 return 0;
 }
 
+int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+  return 0;
+}
+
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
@@ -207,10 +211,9 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
+                   int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
-		   NR_ServingCellConfigCommon_t *scc
-		   );
+                   NR_ServingCellConfigCommon_t *scc);
 
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
@@ -289,7 +292,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
-                           /* tda = */ 2,
+                           /* tda = */ 0,
                            g_nrOfLayers,
                            sched_ctrl,
                            ps);
@@ -311,8 +314,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        ps->nrOfLayers)
-                         >> 3;
+                                        ps->nrOfLayers) >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */
   sched_pdsch->dl_harq_pid = slot;
@@ -1089,7 +1091,7 @@ int main(int argc, char **argv)
       
       UE_harq_process->ack = 0;
       round = 0;
-      UE_harq_process->round = round;
+      UE_harq_process->DLround = round;
       UE_harq_process->first_rx = 1;
         
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {

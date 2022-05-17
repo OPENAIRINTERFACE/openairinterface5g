@@ -323,7 +323,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     uint32_t band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
     mac->frequency_range = band<100?FR1:FR2;
     
-    lte_frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+    frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
     
     // cell config
     
@@ -508,16 +508,7 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
                           NR_ServingCellConfig_t *scd,
                           NR_BWP_Id_t dl_bwp_id) {
 
-
-  NR_BWP_DownlinkCommon_t *bwp_Common = NULL;
-  if(dl_bwp_id > 0 && scd->downlinkBWP_ToAddModList) {
-    bwp_Common = scd->downlinkBWP_ToAddModList->list.array[dl_bwp_id - 1]->bwp_Common;
-  } else if(mac->scc) {
-    bwp_Common = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
-  } else if(mac->scc_SIB) {
-    bwp_Common = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
-  }
-
+  NR_BWP_DownlinkCommon_t *bwp_Common = get_bwp_downlink_common(mac, dl_bwp_id);
   AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
 
   NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
@@ -560,7 +551,8 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(ss->monitoringSymbolsWithinSlot->buf != NULL, "NR_SearchSpace->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id-1][ss->searchSpaceId - 1] = ss;
+    AssertFatal(ss->searchSpaceId <= FAPI_NR_MAX_SS, "Invalid searchSpaceId\n");
+    mac->SSpace[dl_bwp_id][ss->searchSpaceId - 1] = ss;
   }
 
   struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
@@ -575,7 +567,8 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
     AssertFatal(css->searchSpaceType != NULL, "css->searchSpaceType is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot != NULL, "css->monitoringSymbolsWithinSlot is null\n");
     AssertFatal(css->monitoringSymbolsWithinSlot->buf != NULL, "css->monitoringSymbolsWithinSlot->buf is null\n");
-    mac->SSpace[dl_bwp_id-1][css->searchSpaceId - 1] = css;
+    AssertFatal(css->searchSpaceId <= FAPI_NR_MAX_SS, "Invalid searchSpaceId\n");
+    mac->SSpace[dl_bwp_id][css->searchSpaceId - 1] = css;
   }
 }
 

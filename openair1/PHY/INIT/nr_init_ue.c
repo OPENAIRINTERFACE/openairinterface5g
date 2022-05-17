@@ -359,6 +359,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       ue->nr_srs_info->srs_estimated_channel_time_shifted[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
     }
 
+
     // RACH
     prach_vars[gNB_id]->prachF             = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
     prach_vars[gNB_id]->prach              = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
@@ -455,6 +456,7 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
+
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
     }
 
@@ -495,7 +497,7 @@ void term_nr_ue_transport(PHY_VARS_NR_UE *ue)
       for (int k = 0; k < RX_NB_TH_MAX; k++) {
         free_nr_ue_dlsch(&ue->dlsch[k][i][j], N_RB_DL);
         if (j==0)
-          free_nr_ue_ulsch(&ue->ulsch[k][i], N_RB_DL);
+          free_nr_ue_ulsch(&ue->ulsch[k][i], N_RB_DL, &ue->frame_parms);
       }
     }
 
@@ -516,7 +518,7 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
         AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL))!=NULL,"Can't get ue dlsch structures\n");
         LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
         if (j==0) {
-          AssertFatal((ue->ulsch[k][i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES))!=NULL,"Can't get ue ulsch structures\n");
+          AssertFatal((ue->ulsch[k][i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES,&ue->frame_parms))!=NULL,"Can't get ue ulsch structures\n");
           LOG_D(PHY,"ulsch[%d][%d] => %p\n",k,i,ue->ulsch[k][i]);
         }
       }

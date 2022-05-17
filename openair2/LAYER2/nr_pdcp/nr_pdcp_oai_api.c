@@ -703,7 +703,7 @@ rb_found:
     req->offset        = GTPU_HEADER_OVERHEAD_MAX;
     req->rnti          = ue->rnti;
     req->pdusession_id = rb_id;
-    LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
+    LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
 	  __func__, rb_id, size);
     extern instance_t CUuniqInstance;
     itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
@@ -711,7 +711,6 @@ rb_found:
     
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
-    
     LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
     //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
     //printf("\n");
