@@ -92,10 +92,12 @@
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static int rfsimu_setdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static int rfsimu_getdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
+static int rfsimu_vtime_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static telnetshell_cmddef_t rfsimu_cmdarray[] = {
   {"setmodel","<model name> <model type>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
   {"setdistance","<model name> <distance>", (cmdfunc_t)rfsimu_setdistance_cmd, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
   {"getdistance","<model name>", (cmdfunc_t) rfsimu_getdistance_cmd, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
+  {"vtime","", (cmdfunc_t) rfsimu_vtime_cmd, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
   {"","",NULL},
 };
 
@@ -519,6 +521,15 @@ static int rfsimu_getdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt
     prnt("\noffset %d distance %.3f m\n", offset, distance);
   }
 
+  return CMDSTATUS_FOUND;
+}
+
+static int rfsimu_vtime_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg)
+{
+  rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
+  const openair0_timestamp ts = t->nextRxTstamp;
+  const double sample_rate = t->sample_rate;
+  prnt("vtime measurement: TS %llu sample_rate %.3f\n", ts, sample_rate);
   return CMDSTATUS_FOUND;
 }
 
