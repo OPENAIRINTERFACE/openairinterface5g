@@ -833,14 +833,12 @@ int main( int argc, char **argv ) {
 
   /* release memory used by the RU/gNB threads (incomplete), after all
    * threads have been stopped (they partially use the same memory) */
-  for (int inst = 0; inst < NB_gNB_INST; inst++) {
-    //free_transport(RC.gNB[inst]);
-    phy_free_nr_gNB(RC.gNB[inst]);
+  for (int inst = 0; inst < NB_RU; inst++) {
+    nr_phy_free_RU(RC.ru[inst]);
   }
 
-  for (int inst = 0; inst < NB_RU; inst++) {
-    kill_NR_RU_proc(inst);
-    nr_phy_free_RU(RC.ru[inst]);
+  for (int inst = 0; inst < NB_gNB_INST; inst++) {
+    phy_free_nr_gNB(RC.gNB[inst]);
   }
 
   pthread_cond_destroy(&sync_cond);

@@ -625,7 +625,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   gNB->first_run_I0_measurements = 1;
 
-  common_vars->rxdata  = (int32_t **)malloc16(Prx*sizeof(int32_t*));
   common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
   common_vars->beam_id = (uint8_t **)malloc16(Ptx*sizeof(uint8_t*));
@@ -640,7 +639,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
   for (i=0;i<Prx;i++){
     common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
-    common_vars->rxdata[i] = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t));
   }
   common_vars->debugBuff = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t)*100);	
   common_vars->debugBuff_sample_offset = 0; 
@@ -786,11 +784,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 
   for (int i = 0; i < Prx; ++i) {
     free_and_zero(common_vars->rxdataF[i]);
-    free_and_zero(common_vars->rxdata[i]);
   }
 
   free_and_zero(common_vars->txdataF);
-  free_and_zero(common_vars->rxdata);
   free_and_zero(common_vars->rxdataF);
   free_and_zero(common_vars->beam_id);
 
