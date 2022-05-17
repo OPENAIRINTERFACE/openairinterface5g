@@ -243,7 +243,7 @@ class Containerize():
 		# Build the base image only on Push Events (not on Merge Requests)
 		# On when the base image docker file is being modified.
 		if forceBaseImageBuild:
-			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + baseImage + ' --tag ' + baseImage + ':' + baseTag + ' --file docker/Dockerfile.base' + self.dockerfileprefix + ' --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" . > cmake_targets/log/ran-base.log 2>&1', '\$', 1600)
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + baseImage + ' --tag ' + baseImage + ':' + baseTag + ' --file docker/Dockerfile.base' + self.dockerfileprefix + ' . > cmake_targets/log/ran-base.log 2>&1', '\$', 1600)
 		# First verify if the base image was properly created.
 		status = True
 		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + baseImage + ':' + baseTag, '\$', 5)
@@ -294,6 +294,9 @@ class Containerize():
 			if image != 'ran-build':
 				mySSH.command('sed -i -e "s#' + "ran-build" + ':latest#' + "ran-build" + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
 			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
+			# Flatten Image
+			if image != 'ran-build':
+				mySSH.command('python3 ./ci-scripts/flatten_image.py --tag ' + image + ':' + imageTag, '\$', 300)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/' + image + '.log', '\$', 5)
@@ -1146,19 +1149,19 @@ class Containerize():
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to asterix gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.64/26"', '\$', 10)
-			result = re.search('192.168.18.194', mySSH.getBefore())
+			result = re.search('172.21.16.127', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 172.21.16.127 dev eno1', '\$', 10)
 			# Check if route to obelix enb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
-			result = re.search('192.168.18.193', mySSH.getBefore())
+			result = re.search('172.21.16.128', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev eno1', '\$', 10)
 			# Check if route to nepes gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
-			result = re.search('192.168.18.209', mySSH.getBefore())
+			result = re.search('172.21.16.137', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 172.21.16.137 dev eno1', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
@@ -1174,19 +1177,19 @@ class Containerize():
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
 			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
-			result = re.search('192.168.18.210', mySSH.getBefore())
+			result = re.search('172.21.16.136', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev em1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev em1', '\$', 10)
 			# Check if route to porcepix cn5g exists
 			mySSH.command('ip route | grep --colour=never "192.168.70.128/26"', '\$', 10)
-			result = re.search('192.168.18.210', mySSH.getBefore())
+			result = re.search('172.21.16.136', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.70.128/26 via 192.168.18.210 dev em1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.70.128/26 via 172.21.16.136 dev em1', '\$', 10)
 			# Check if X2 route to obelix enb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
-			result = re.search('192.168.18.193', mySSH.getBefore())
+			result = re.search('172.21.16.128', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev em1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev em1', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
@@ -1202,19 +1205,19 @@ class Containerize():
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
 			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
-			result = re.search('192.168.18.210', mySSH.getBefore())
+			result = re.search('172.21.16.136', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev eno1', '\$', 10)
 			# Check if X2 route to asterix gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.64/26"', '\$', 10)
-			result = re.search('192.168.18.194', mySSH.getBefore())
+			result = re.search('172.21.16.127', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 192.168.18.194 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.64/26 via 172.21.16.127 dev eno1', '\$', 10)
 			# Check if X2 route to nepes gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
-			result = re.search('192.168.18.209', mySSH.getBefore())
+			result = re.search('172.21.16.137', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 192.168.18.209 dev eno1', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 172.21.16.137 dev eno1', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
@@ -1230,14 +1233,14 @@ class Containerize():
 			mySSH.open(ipAddr, userName, password)
 			# Check if route to porcepix epc exists
 			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
-			result = re.search('192.168.18.210', mySSH.getBefore())
+			result = re.search('172.21.16.136', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 192.168.18.210 dev enp0s31f6', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev enp0s31f6', '\$', 10)
 			# Check if X2 route to obelix enb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
-			result = re.search('192.168.18.193', mySSH.getBefore())
+			result = re.search('172.21.16.128', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 192.168.18.193 dev enp0s31f6', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev enp0s31f6', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())

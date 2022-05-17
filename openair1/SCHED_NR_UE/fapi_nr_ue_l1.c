@@ -315,6 +315,7 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
   dlsch0_harq->mcs = dlsch_config_pdu->mcs;
   dlsch0_harq->rvidx = dlsch_config_pdu->rv;
   dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+  dlsch0_harq->tbslbrm = dlsch_config_pdu->tbslbrm;
   dlsch0_harq->nscid = dlsch_config_pdu->nscid;
   dlsch0_harq->dlDmrsScramblingId = dlsch_config_pdu->dlDmrsScramblingId;
   //get nrOfLayers from DCI info
@@ -341,6 +342,7 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
   LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
 }
 
+
 int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
   bool found = false;
@@ -353,15 +355,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     thread_id = scheduled_response->thread_id;
     NR_UE_DLSCH_t *dlsch0 = NULL;
-    NR_UE_PDCCH *pdcch_vars = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[thread_id][0];
     NR_UE_ULSCH_t *ulsch = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0];
     NR_UE_PUCCH *pucch_vars = PHY_vars_UE_g[module_id][cc_id]->pucch_vars[thread_id][0];
+    NR_UE_PDCCH_CONFIG *phy_pdcch_config = NULL;
 
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu;
       fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config;
-      pdcch_vars->nb_search_space = 0;
 
       for (int i = 0; i < dl_config->number_pdus; ++i){
         AssertFatal(dl_config->number_pdus < FAPI_NR_DL_CONFIG_LIST_NUM,"dl_config->number_pdus %d out of bounds\n",dl_config->number_pdus);
@@ -371,12 +372,16 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
         switch(dl_config->dl_config_list[i].pdu_type) {
           case FAPI_NR_DL_CONFIG_TYPE_DCI:
+            if (NULL == phy_pdcch_config) {
+              phy_pdcch_config = (NR_UE_PDCCH_CONFIG *)scheduled_response->phy_data;
+              phy_pdcch_config->nb_search_space = 0;
+            }
             pdcch_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
-            memcpy(&pdcch_vars->pdcch_config[pdcch_vars->nb_search_space],pdcch_config,sizeof(*pdcch_config));
-            pdcch_vars->nb_search_space = pdcch_vars->nb_search_space + 1;
-            pdcch_vars->sfn = scheduled_response->frame;
-            pdcch_vars->slot = slot;
-            LOG_D(PHY,"Number of DCI SearchSpaces %d\n",pdcch_vars->nb_search_space);
+            memcpy((void*)&phy_pdcch_config->pdcch_config[phy_pdcch_config->nb_search_space],(void*)pdcch_config,sizeof(*pdcch_config));
+            phy_pdcch_config->nb_search_space = phy_pdcch_config->nb_search_space + 1;
+            phy_pdcch_config->sfn = scheduled_response->frame;
+            phy_pdcch_config->slot = slot;
+            LOG_D(PHY,"Number of DCI SearchSpaces %d\n",phy_pdcch_config->nb_search_space);
             break;
           case FAPI_NR_DL_CONFIG_TYPE_CSI_IM:
             LOG_I(PHY,"Received CSI-IM PDU at FAPI\n");
@@ -421,7 +426,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       for (int i = 0; i < ul_config->number_pdus; ++i){
 
         AssertFatal(ul_config->ul_config_list[i].pdu_type <= FAPI_NR_UL_CONFIG_TYPES,"pdu_type %d out of bounds\n",ul_config->ul_config_list[i].pdu_type);
-        LOG_D(PHY, "In %s: processing %s PDU of %d total UL PDUs (ul_config %p) \n", __FUNCTION__, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
+        LOG_D(PHY, "In %s i %d: processing %s PDU of %d total UL PDUs (ul_config %p) \n", __FUNCTION__, i, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, current_harq_pid, gNB_id = 0;
         /* PRACH */
@@ -446,6 +451,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           if (harq_process_ul_ue){
 
             nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
+            
+            LOG_D(PHY, "In %s i %d: copy pusch_config_pdu nrOfLayers:%d, num_dmrs_cdm_grps_no_data:%d \n", __FUNCTION__, i, pusch_config_pdu->nrOfLayers,pusch_config_pdu->num_dmrs_cdm_grps_no_data);
 
             memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
 

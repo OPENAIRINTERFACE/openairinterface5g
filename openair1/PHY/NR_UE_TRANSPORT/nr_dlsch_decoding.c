@@ -168,6 +168,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
             memset(dlsch->harq_processes[i]->d[r],0,5*8448);
           else
             exit_flag=2;
+
         }
       } else {
         exit_flag=1;
@@ -221,7 +222,7 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
       //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
       harq_process->status = SCH_IDLE;
-      harq_process->round  = 0;
+      harq_process->DLround  = 0;
       harq_process->ack = 1;
 
       //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d)\n",
@@ -236,9 +237,9 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
       //LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id, frame, nr_slot_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
       harq_process->ack = 0;
-      if (harq_process->round >= dlsch->Mlimit) {
+      if (harq_process->DLround >= dlsch->Mlimit) {
         harq_process->status = SCH_IDLE;
-        harq_process->round  = 0;
+        harq_process->DLround  = 0;
         phy_vars_ue->dl_stats[4]++;
       }
 
@@ -288,21 +289,19 @@ void nr_processDLSegment(void* arg) {
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
 
-  uint8_t Ilbrm = 1;
-
   Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
   K_bits_F = Kr-harq_process->F;
 
   t_nrLDPC_time_stats procTime = {0};
-  t_nrLDPC_time_stats* p_procTime     = &procTime ;
 
-  int16_t w[5*8448];
-  memset(w,0,(5*8448)*sizeof(short));
+
 
   start_meas(&rdata->ts_deinterleave);
 
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DEINTERLEAVING, VCD_FUNCTION_IN);
+    int16_t w[E];
+    memset(w, 0, sizeof(w));
   nr_deinterleaving_ldpc(E,
                          Qm,
                          w, // [hna] w is e
@@ -322,8 +321,7 @@ void nr_processDLSegment(void* arg) {
         harq_process->round); */
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_RATE_MATCHING, VCD_FUNCTION_IN);
 
-  if (nr_rate_matching_ldpc_rx(Ilbrm,
-                               Tbslbrm,
+  if (nr_rate_matching_ldpc_rx(Tbslbrm,
                                p_decoderParms->BG,
                                p_decoderParms->Z,
                                harq_process->d[r],
@@ -389,12 +387,12 @@ void nr_processDLSegment(void* arg) {
     no_iteration_ldpc = nrLDPC_decoder(p_decoderParms,
                                        (int8_t *)&pl[0],
                                        llrProcBuf,
-                                       p_procTime);
+                                       &procTime);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_OUT);
 
     // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
     if (check_crc((uint8_t *)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-      LOG_D(PHY,"Segment %u CRC OK\n\033[0m",r);
+      LOG_D(PHY,"Segment %u CRC OK\n",r);
 
       if (r==0) {
         for (int i=0; i<10; i++) LOG_D(PHY,"byte %d : %x\n",i,((uint8_t *)llrProcBuf)[i]);
@@ -404,7 +402,7 @@ void nr_processDLSegment(void* arg) {
       no_iteration_ldpc = dlsch->max_ldpc_iterations;
       rdata->decodeIterations = no_iteration_ldpc;
     } else {
-      LOG_D(PHY,"CRC NOT OK\n\033[0m");
+      LOG_D(PHY,"CRC NOT OK\n");
     }
 
     nb_total_decod++;
@@ -447,10 +445,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
 
   // HARQ stats
-  phy_vars_ue->dl_stats[harq_process->round]++;
-  LOG_D(PHY,"Round %d RV idx %d\n",harq_process->round,harq_process->rvidx);
+  phy_vars_ue->dl_stats[harq_process->DLround]++;
+  LOG_D(PHY,"Round %d RV idx %d\n",harq_process->DLround,harq_process->rvidx);
   uint8_t kc;
-  uint32_t Tbslbrm;// = 950984;
   uint16_t nb_rb;// = 30;
   double Coderate;// = 0.0;
   uint8_t dmrs_Type = harq_process->dmrsConfigType;
@@ -501,7 +498,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   */
   nb_rb = harq_process->nb_rb;
-  harq_process->trials[harq_process->round]++;
+  harq_process->trials[harq_process->DLround]++;
   uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
   harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*dmrs_length, nb_rb_oh, 0, harq_process->Nl);
   A = harq_process->TBS;
@@ -566,10 +563,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     if (LOG_DEBUGFLAG(DEBUG_DLSCH_DECOD) && (!frame%100))
       LOG_I(PHY,"K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
   }
-  if ((harq_process->Nl)<4)
-    Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,harq_process->Nl);
-  else
-    Tbslbrm = nr_compute_tbslbrm(harq_process->mcs_table,nb_rb,4);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_SEGMENTATION, VCD_FUNCTION_OUT);
   p_decParams->Z = harq_process->Z;
@@ -620,7 +613,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     rdata->r_offset = r_offset;
     rdata->Kr_bytes = Kr_bytes;
     rdata->rv_index = harq_process->rvidx;
-    rdata->Tbslbrm = Tbslbrm;
+    rdata->Tbslbrm = harq_process->tbslbrm;
     rdata->offset = offset;
     rdata->dlsch = dlsch;
     rdata->dlsch_id = 0;

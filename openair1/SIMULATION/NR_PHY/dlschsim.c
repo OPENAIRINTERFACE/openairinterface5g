@@ -48,13 +48,16 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
+
 //#define DEBUG_NR_DLSCHSIM
 
+THREAD_STRUCT thread_struct;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 UE_nr_rxtx_proc_t proc;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 double cpuf;
 //uint8_t nfapi_mode = 0;
@@ -119,6 +122,7 @@ int main(int argc, char **argv)
         double DS_TDL = .03;
 	cpuf = get_cpu_freq_GHz();
 	char gNBthreads[128]="n";
+        int Tbslbrm = 950984;
 
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
 		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
@@ -457,6 +461,7 @@ int main(int argc, char **argv)
 	rel15->dlDmrsSymbPos = 4;
 	rel15->mcsIndex[0] = Imcs;
         rel15->numDmrsCdmGrpsNoData = 1;
+        rel15->maintenance_parms_v3.tbSizeLbrmBytes = Tbslbrm;
 	double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
 	short channel_output_fixed[16 * 68 * 384];
 	//unsigned char *estimated_output;
@@ -476,15 +481,13 @@ int main(int argc, char **argv)
 	harq_process->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	harq_process->dlDmrsSymbPos = 4;
 	harq_process->n_dmrs_cdm_groups = 1;
+        harq_process->tbslbrm = Tbslbrm;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 
-	unsigned char *test_input;
-	test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
+	unsigned char *test_input=dlsch->harq_process.pdu;
 	//unsigned char test_input[TBS / 8]  __attribute__ ((aligned(16)));
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
-
-	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_NR_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%hhu \n",test_input[i]);
@@ -498,7 +501,7 @@ int main(int argc, char **argv)
 	    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
     bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 	if (input_fd == NULL) {
-	  nr_dlsch_encoding(gNB, test_input, frame, slot, dlsch, frame_parms,output,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
+	  nr_dlsch_encoding(gNB, frame, slot, &dlsch->harq_process, frame_parms,output,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -617,8 +620,6 @@ int main(int argc, char **argv)
 	 r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
 	 }
 	 }*/
-
-  free(test_input);
 
   free_channel_desc_scm(gNB2UE);
 

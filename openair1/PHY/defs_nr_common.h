@@ -67,6 +67,7 @@
 
 /*used for the resource mapping*/
 #define NR_MAX_PDCCH_DMRS_LENGTH 576 // 16(L)*2(QPSK)*3(3 DMRS symbs per REG)*6(REG per CCE)
+#define  NR_MAX_PDCCH_SIZE 8192 // It seems it is the max polar coded block size
 
 #define NR_MAX_DCI_PAYLOAD_SIZE 64
 #define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)
@@ -78,16 +79,20 @@
 #define NR_MAX_CSET_DURATION 3
 
 #define NR_MAX_NB_RBG 18
+
 #define NR_MAX_NB_LAYERS 4 // 8
+
 #define NR_MAX_NB_HARQ_PROCESSES 16
 
 #define NR_MAX_PDSCH_TBS 3824
 #define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.
 
-#define MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER 34
+#define MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER 36
 
-#define MAX_NUM_NR_ULSCH_SEGMENTS 34
-#define MAX_NR_ULSCH_PAYLOAD_BYTES (MAX_NUM_NR_ULSCH_SEGMENTS*1056)
+#define MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER 34
+
+#define MAX_NUM_NR_CHANNEL_BITS (4*14*273*12*8)  // 14 symbols, 273 RB
+#define MAX_NUM_NR_RE (4*14*273*12)
 
 #define MAX_NUM_NR_SRS_SYMBOLS 4
 
@@ -280,7 +285,7 @@ struct NR_DL_FRAME_PARMS {
   uint32_t att_rx;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   /// Frame type (0 FDD, 1 TDD)
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   uint8_t tdd_config;
   /// Cell ID
   uint16_t Nid_cell;

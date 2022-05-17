@@ -100,7 +100,7 @@ static telnetshell_vardef_t rfsimu_vardef[] = {
 };
 pthread_mutex_t Sockmutex;
 
-typedef struct complex16 sample_t; // 2*16 bits complex number
+typedef c16_t sample_t; // 2*16 bits complex number
 
 typedef struct buffer_s {
   int conn_sock;
@@ -117,7 +117,7 @@ typedef struct buffer_s {
 
 typedef struct {
   int listen_sock, epollfd;
-  openair0_timestamp nextTimestamp;
+  openair0_timestamp nextRxTstamp;
   openair0_timestamp lastWroteTS;
   uint64_t typeStamp;
   char *ip;
@@ -196,7 +196,7 @@ static void removeCirBuf(rfsimulator_state_t *bridge, int sock) {
   free(bridge->buf[sock].circularBuf);
   // Fixme: no free_channel_desc_scm(bridge->buf[sock].channel_model) implemented
   // a lot of mem leaks
-  free(bridge->buf[sock].channel_model);
+  //free(bridge->buf[sock].channel_model);
   memset(&bridge->buf[sock], 0, sizeof(buffer_t));
   bridge->buf[sock].conn_sock=-1;
 }
@@ -429,7 +429,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if (!alreadyLocked)
     pthread_mutex_lock(&Sockmutex);
 
-  LOG_D(HW,"sending %d samples at time: %ld\n", nsamps, timestamp);
+  LOG_D(HW,"sending %d samples at time: %ld, nbAnt %d\n", nsamps, timestamp, nbAnt);
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
@@ -495,7 +495,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       setblocking(conn_sock, notBlocking);
       allocCirBuf(t, conn_sock);
       LOG_I(HW,"A client connected, sending the current time\n");
-      struct complex16 v= {0};
+      c16_t v= {0};
       void *samplesVoid[t->tx_num_channels];
 
       for ( int i=0; i < t->tx_num_channels; i++)
@@ -549,14 +549,14 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
                      (t->typeStamp == ENB_MAGICDL && b->th.magic==UE_MAGICDL), "Socket Error in protocol");
         b->headerMode=false;
 
-        if ( t->nextTimestamp == 0 ) { // First block in UE, resync with the eNB current TS
-          t->nextTimestamp=b->th.timestamp> nsamps_for_initial ?
+        if ( t->nextRxTstamp == 0 ) { // First block in UE, resync with the eNB current TS
+          t->nextRxTstamp=b->th.timestamp> nsamps_for_initial ?
                            b->th.timestamp -  nsamps_for_initial :
                            0;
           b->lastReceivedTS=b->th.timestamp> nsamps_for_initial ?
                             b->th.timestamp :
                             nsamps_for_initial;
-          LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextTimestamp);
+          LOG_W(HW,"UE got first timestamp: starting at %lu\n",  t->nextRxTstamp);
           b->trashingPacket=true;
         } else if ( b->lastReceivedTS < b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
@@ -623,7 +623,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
   }
 
   rfsimulator_state_t *t = device->priv;
-  LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld\n", nsamps, t->nextTimestamp+nsamps);
+  LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld, nbAnt %d\n", nsamps, t->nextRxTstamp+nsamps, nbAnt);
   // deliver data from received data
   // check if a UE is connected
   int first_sock;
@@ -634,54 +634,22 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
 
   if ( first_sock ==  FD_SETSIZE ) {
     // no connected device (we are eNB, no UE is connected)
-    if ( t->nextTimestamp == 0)
+    if ( t->nextRxTstamp == 0)
       LOG_W(HW,"No connected device, generating void samples...\n");
 
     if (!flushInput(t, 10,  nsamps)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 
-      t->nextTimestamp+=nsamps;
+      t->nextRxTstamp+=nsamps;
 
-      if ( ((t->nextTimestamp/nsamps)%100) == 0)
-        LOG_D(HW,"No UE, Generated void samples for Rx: %ld\n", t->nextTimestamp);
+      if ( ((t->nextRxTstamp/nsamps)%100) == 0)
+        LOG_D(HW,"No UE, Generated void samples for Rx: %ld\n", t->nextRxTstamp);
 
-      *ptimestamp = t->nextTimestamp-nsamps;
+      *ptimestamp = t->nextRxTstamp-nsamps;
       return nsamps;
     }
   } else {
-    pthread_mutex_lock(&Sockmutex);
-
-    if ( t->nextTimestamp > 0 && t->lastWroteTS < t->nextTimestamp) {
-      pthread_mutex_unlock(&Sockmutex);
-      usleep(10000);
-      pthread_mutex_lock(&Sockmutex);
-
-      if ( t->lastWroteTS < t->nextTimestamp ) {
-        // Assuming Tx is not done fully in another thread
-        // We can never write is the past from the received time
-        // So, the node perform receive but will never write these symbols
-        // let's tell this to the opposite node
-        // We send timestamp for nb samples required
-        // assuming this should have been done earlier if a Tx would exist
-        pthread_mutex_unlock(&Sockmutex);
-        struct complex16 v= {0};
-        void *dummyS[t->tx_num_channels];
-
-        for ( int i=0; i < t->tx_num_channels; i++)
-          dummyS[i]=(void *)&v;
-
-        LOG_I(HW, "No samples Tx occured, so we send 1 sample to notify it: Tx:%lu, Rx:%lu\n",
-              t->lastWroteTS, t->nextTimestamp);
-        rfsimulator_write_internal(t, t->nextTimestamp,
-                                   dummyS, 1,
-                                   t->tx_num_channels, 1, true);
-      } else {
-        pthread_mutex_unlock(&Sockmutex);
-        LOG_W(HW, "trx_write came from another thread\n");
-      }
-    } else
-      pthread_mutex_unlock(&Sockmutex);
 
     bool have_to_wait;
 
@@ -692,7 +660,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
         buffer_t *b=&t->buf[sock];
 
         if ( b->circularBuf )
-          if ( t->nextTimestamp+nsamps > b->lastReceivedTS ) {
+          if ( t->nextRxTstamp+nsamps > b->lastReceivedTS ) {
             have_to_wait=true;
             break;
           }
@@ -701,7 +669,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
       if (have_to_wait)
         /*printf("Waiting on socket, current last ts: %ld, expected at least : %ld\n",
           ptr->lastReceivedTS,
-          t->nextTimestamp+nsamps);
+          t->nextRxTstamp+nsamps);
         */
         flushInput(t, 3, nsamps);
     } while (have_to_wait);
@@ -727,15 +695,16 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
         t->poll_telnetcmdq(t->telnetcmd_qid,t);
 
       for (int a=0; a<nbAnt; a++) {//loop over number of Rx antennas
-        if ( ptr->channel_model != NULL ) // apply a channel model
-          rxAddInput( ptr->circularBuf, (struct complex16 *) samplesVoid[a],
-                      a,
-                      ptr->channel_model,
-                      nsamps,
-                      t->nextTimestamp,
-                      CirSize
-                    );
+        if ( ptr->channel_model != NULL ) { // apply a channel model
+          rxAddInput(ptr->circularBuf, (c16_t *) samplesVoid[a],
+                     a,
+                     ptr->channel_model,
+                     nsamps,
+                     t->nextRxTstamp,
+                     CirSize);
+        }
         else { // no channel modeling
+          
           double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05}, //rx 0
                                       {0.2, 1.0, 0.2, 0.1}, //rx 1
                                      {0.1, 0.2, 1.0, 0.2}, //rx 2
@@ -747,8 +716,8 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
           //LOG_I(HW, "nbAnt_tx %d\n",nbAnt_tx);
           for (int i=0; i < nsamps; i++) {//loop over nsamps
             for (int a_tx=0; a_tx<nbAnt_tx; a_tx++) { //sum up signals from nbAnt_tx antennas
-              out[i].r += (short)(ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].r*H_awgn_mimo[a][a_tx]);
-              out[i].i += (short)(ptr->circularBuf[((t->nextTimestamp+i)*nbAnt_tx+a_tx)%CirSize].i*H_awgn_mimo[a][a_tx]);
+              out[i].r += (short)(ptr->circularBuf[((t->nextRxTstamp+i)*nbAnt_tx+a_tx)%CirSize].r*H_awgn_mimo[a][a_tx]);
+              out[i].i += (short)(ptr->circularBuf[((t->nextRxTstamp+i)*nbAnt_tx+a_tx)%CirSize].i*H_awgn_mimo[a][a_tx]);
             } // end for a_tx
           } // end for i (number of samps)
         } // end of no channel modeling
@@ -756,11 +725,11 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
     }
   }
 
-  *ptimestamp = t->nextTimestamp; // return the time of the first sample
-  t->nextTimestamp+=nsamps;
+  *ptimestamp = t->nextRxTstamp; // return the time of the first sample
+  t->nextRxTstamp+=nsamps;
   LOG_D(HW,"Rx to upper layer: %d from %ld to %ld, energy in first antenna %d\n",
         nsamps,
-        *ptimestamp, t->nextTimestamp,
+        *ptimestamp, t->nextRxTstamp,
         signal_energy(samplesVoid[0], nsamps));
   return nsamps;
 }

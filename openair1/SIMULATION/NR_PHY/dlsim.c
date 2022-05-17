@@ -105,6 +105,10 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
 return 0;
 }
 
+int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+  return 0;
+}
+
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
@@ -207,10 +211,9 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
+                   int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
-		   NR_ServingCellConfigCommon_t *scc
-		   );
+                   NR_ServingCellConfigCommon_t *scc);
 
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
@@ -296,7 +299,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
-                           /* tda = */ 2,
+                           /* tda = */ 0,
                            g_nrOfLayers,
                            sched_ctrl,
                            ps);
@@ -318,8 +321,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        ps->nrOfLayers)
-                         >> 3;
+                                        ps->nrOfLayers) >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */
   sched_pdsch->dl_harq_pid = slot;
@@ -658,12 +660,12 @@ int main(int argc, char **argv)
         dmrs_arg[i] = atoi(argv[optind++]);
       }
       break;
-      
+
     case 'X':
       strncpy(gNBthreads, optarg, sizeof(gNBthreads));
       gNBthreads[sizeof(gNBthreads)-1]=0;
       break;
-      
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -878,11 +880,11 @@ int main(int argc, char **argv)
     fs = 61.44e6;
     bw = 40e6;
   }
-  else if (mu == 1 && N_RB_DL == 133) { 
+  else if (mu == 1 && N_RB_DL == 133) {
     fs = 61.44e6;
     bw = 50e6;
   }
-  else if (mu == 1 && N_RB_DL == 162) { 
+  else if (mu == 1 && N_RB_DL == 162) {
     fs = 61.44e6;
     bw = 60e6;
   }
@@ -1011,6 +1013,8 @@ int main(int argc, char **argv)
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
+  NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+
   memset((void*)&dcireq,0,sizeof(dcireq));
   memset((void*)&scheduled_response,0,sizeof(scheduled_response));
   dcireq.module_id = 0;
@@ -1025,6 +1029,7 @@ int main(int argc, char **argv)
   scheduled_response.frame = frame;
   scheduled_response.slot  = slot;
   scheduled_response.thread_id = 0;
+  scheduled_response.phy_data = &phy_pdcch_config;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
@@ -1093,7 +1098,7 @@ int main(int argc, char **argv)
       
       UE_harq_process->ack = 0;
       round = 0;
-      UE_harq_process->round = round;
+      UE_harq_process->DLround = round;
       UE_harq_process->first_rx = 1;
         
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
@@ -1267,6 +1272,7 @@ int main(int argc, char **argv)
                                &UE_proc,
                                0,
                                dlsch_threads,
+                               &phy_pdcch_config,
                                NULL);
         
         //----------------------------------------------------------
@@ -1437,8 +1443,6 @@ int main(int argc, char **argv)
       LOG_M("chestF0.m","chF0",&UE->pdsch_vars[0][0]->dl_ch_estimates_ext[0][0],g_rbSize*12*14,1,1);
       write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
       LOG_M("rxF_llr.m","rxFllr",UE->pdsch_vars[UE_proc.thread_id][0]->llr[0],available_bits,1,0);
-      LOG_M("pdcch_rxFcomp.m","pdcch_rxFcomp",&UE->pdcch_vars[0][0]->rxdataF_comp[0][0],96*12,1,1);
-      LOG_M("pdcch_rxFllr.m","pdcch_rxFllr",UE->pdcch_vars[0][0]->llr,96*12,1,1);
       break;
     }
 
