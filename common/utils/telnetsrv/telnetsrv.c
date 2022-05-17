@@ -845,30 +845,39 @@ int telnetsrv_autoinit(void) {
  * function at init time. the telnet server is delivered with a set of commands which
  * will be loaded or not depending on the telnet section of the config file
 */
-int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd) {
-  int i;
-  notifiedFIFO_t *afifo=NULL;
-
+int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd)
+{
   if( modulename == NULL || var == NULL || cmd == NULL) {
     fprintf(stderr,"[TELNETSRV] Telnet server, add_telnetcmd: invalid parameters\n");
     return -1;
   }
 
+  int i;
   for (i=0; i<TELNET_MAXCMD ; i++) {
-    if (telnetparams.CmdParsers[i].var == NULL) {
-      strncpy(telnetparams.CmdParsers[i].module,modulename,sizeof(telnetparams.CmdParsers[i].module)-1);
-      telnetparams.CmdParsers[i].cmd = cmd;
-      telnetparams.CmdParsers[i].var = var;
-      if (cmd->cmdflags & TELNETSRV_CMDFLAG_PUSHINTPOOLQ) {
-      	  if (afifo == NULL) {
-      	  	  afifo = malloc(sizeof(notifiedFIFO_t));
-      	  	  initNotifiedFIFO(afifo);
-      	  }
-      	  cmd->qptr = afifo;
-      }
+    cmdparser_t *CmdParser = &telnetparams.CmdParsers[i];
+    if (CmdParser->var == NULL) {
+      strncpy(CmdParser->module, modulename, sizeof(CmdParser->module) - 1);
+      CmdParser->cmd = cmd;
+      CmdParser->var = var;
       printf("[TELNETSRV] Telnet server: module %i = %s added to shell\n",
-             i,telnetparams.CmdParsers[i].module);
+             i, CmdParser->module);
       break;
+    }
+  }
+
+  if (i == TELNET_MAXCMD) {
+    fprintf(stderr, "[TELNETSRV] TELNET_MAXCMD reached, cannot add new module %s\n", modulename);
+    return -1;
+  }
+
+  notifiedFIFO_t *afifo = NULL;
+  for (int k = 0; cmd[k].cmdfunc != NULL ; k++) {
+    if (cmd[k].cmdflags & TELNETSRV_CMDFLAG_PUSHINTPOOLQ) {
+      if (afifo == NULL) {
+        afifo = malloc(sizeof(notifiedFIFO_t));
+        initNotifiedFIFO(afifo);
+      }
+      cmd[k].qptr = afifo;
     }
   }
 
