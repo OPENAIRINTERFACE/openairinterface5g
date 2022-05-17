@@ -625,18 +625,24 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     gNB->nr_srs_info[id]->snr_per_rb = (int8_t*)malloc16_clear(fp->N_RB_UL*sizeof(int8_t));
     gNB->nr_srs_info[id]->snr = (int8_t*)malloc16_clear(sizeof(int8_t));
     gNB->nr_srs_info[id]->srs_received_signal = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    gNB->nr_srs_info[id]->srs_ls_estimated_channel = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    gNB->nr_srs_info[id]->srs_estimated_channel_freq = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    gNB->nr_srs_info[id]->srs_estimated_channel_time = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+    gNB->nr_srs_info[id]->srs_ls_estimated_channel = (int32_t ***)malloc16(Prx*sizeof(int32_t**));
+    gNB->nr_srs_info[id]->srs_estimated_channel_freq = (int32_t ***)malloc16(Prx*sizeof(int32_t**));
+    gNB->nr_srs_info[id]->srs_estimated_channel_time = (int32_t ***)malloc16(Prx*sizeof(int32_t**));
+    gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted = (int32_t ***)malloc16(Prx*sizeof(int32_t**));
     for (i=0;i<Prx;i++){
       gNB->nr_srs_info[id]->k_0_p[i] = (uint8_t*)malloc16_clear(MAX_NUM_NR_SRS_SYMBOLS*sizeof(uint8_t));
       gNB->nr_srs_info[id]->srs_generated_signal[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
       gNB->nr_srs_info[id]->srs_received_signal[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      gNB->nr_srs_info[id]->srs_ls_estimated_channel[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      gNB->nr_srs_info[id]->srs_estimated_channel_freq[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      gNB->nr_srs_info[id]->srs_estimated_channel_time[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      gNB->nr_srs_info[id]->srs_ls_estimated_channel[i] = (int32_t**)malloc16_clear(Prx*sizeof(int32_t*));
+      gNB->nr_srs_info[id]->srs_estimated_channel_freq[i] = (int32_t**)malloc16_clear(Prx*sizeof(int32_t*));
+      gNB->nr_srs_info[id]->srs_estimated_channel_time[i] = (int32_t**)malloc16_clear(Prx*sizeof(int32_t*));
+      gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i] = (int32_t**)malloc16_clear(Prx*sizeof(int32_t*));
+      for (int j = 0; j < Prx; j++) {
+        gNB->nr_srs_info[id]->srs_ls_estimated_channel[i][j] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+        gNB->nr_srs_info[id]->srs_estimated_channel_freq[i][j] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+        gNB->nr_srs_info[id]->srs_estimated_channel_time[i][j] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+        gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i][j] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+      }
     }
   }
 

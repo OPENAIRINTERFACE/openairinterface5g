@@ -246,10 +246,10 @@ typedef struct {
   uint8_t srs_generated_signal_bits;
   int32_t **srs_generated_signal;
   int32_t **srs_received_signal;
-  int32_t **srs_ls_estimated_channel;
-  int32_t **srs_estimated_channel_freq;
-  int32_t **srs_estimated_channel_time;
-  int32_t **srs_estimated_channel_time_shifted;
+  int32_t ***srs_ls_estimated_channel;
+  int32_t ***srs_estimated_channel_freq;
+  int32_t ***srs_estimated_channel_time;
+  int32_t ***srs_estimated_channel_time_shifted;
   uint32_t *signal_power;
   uint32_t *noise_power_per_rb;
   uint32_t *noise_power;

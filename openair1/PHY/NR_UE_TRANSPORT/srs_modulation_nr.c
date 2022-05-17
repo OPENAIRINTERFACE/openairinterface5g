@@ -216,7 +216,7 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   uint8_t l0 = frame_parms->symbols_per_slot - 1 - l_offset;  // Starting symbol position in the time domain
   uint8_t n_SRS_cs_max = srs_max_number_cs[srs_config_pdu->comb_size];
   uint16_t m_SRS_b = srs_bandwidth_config[C_SRS][B_SRS][0];   // Number of resource blocks
-  uint16_t M_sc_b_SRS = m_SRS_b * NR_NB_SC_PER_RB/K_TC;               // Length of the SRS sequence
+  uint16_t M_sc_b_SRS = m_SRS_b * NR_NB_SC_PER_RB/K_TC;       // Length of the SRS sequence
 
 #ifdef SRS_DEBUG
   LOG_I(NR_PHY,"Frame = %i, slot = %i\n", frame_number, slot_number);

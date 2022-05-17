@@ -862,7 +862,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
         nr_srs_channel_estimation(gNB,frame_rx,slot_rx,srs_pdu,
                                   gNB->nr_srs_info[i],
-                                  gNB->nr_srs_info[i]->srs_generated_signal[0],
+                                  gNB->nr_srs_info[i]->srs_generated_signal,
                                   gNB->nr_srs_info[i]->srs_received_signal,
                                   gNB->nr_srs_info[i]->srs_estimated_channel_freq,
                                   gNB->nr_srs_info[i]->srs_estimated_channel_time,
@@ -874,10 +874,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                   gNB->nr_srs_info[i]->snr);
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
+          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0][0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
 
         T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
+          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted[0][0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
 
         uint16_t num_srs = gNB->UL_INFO.srs_ind.number_of_pdus;
         gNB->UL_INFO.srs_ind.pdu_list = &gNB->srs_pdu_list[0];
@@ -885,7 +885,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->UL_INFO.srs_ind.slot = slot_rx;
         gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
         gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
-        gNB->srs_pdu_list[num_srs].timing_advance = nr_est_timing_advance_srs(&gNB->frame_parms, gNB->nr_srs_info[i]->srs_estimated_channel_time);
+        gNB->srs_pdu_list[num_srs].timing_advance = nr_est_timing_advance_srs(&gNB->frame_parms, gNB->nr_srs_info[i]->srs_estimated_channel_time[0]);
         gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
         gNB->srs_pdu_list[num_srs].wide_band_snr = (*gNB->nr_srs_info[i]->snr + 64)<<1;
         gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
