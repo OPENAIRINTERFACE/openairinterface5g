@@ -444,23 +444,13 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
     }
 
     for (int i = 0; i < fp->nb_antennas_rx; i++) {
-      free_and_zero(ue->nr_srs_info->srs_received_signal[i]);
-      free_and_zero(ue->nr_srs_info->srs_ls_estimated_channel[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_freq[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_time[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_time_shifted[i]);
+      free_and_zero(ue->nr_srs_info->k_0_p[i]);
     }
-    free_and_zero(ue->nr_srs_info->noise_power);
-    free_and_zero(ue->nr_srs_info->srs_received_signal);
-    free_and_zero(ue->nr_srs_info->srs_ls_estimated_channel);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_freq);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_time);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_time_shifted);
+    free_and_zero(ue->nr_srs_info->k_0_p);
     free_and_zero(ue->nr_srs_info);
 
     free_and_zero(ue->srs_vars[gNB_id]);

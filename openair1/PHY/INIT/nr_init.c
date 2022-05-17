@@ -799,15 +799,21 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 
   for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
     for (int i = 0; i < Prx; i++) {
+      free_and_zero(gNB->nr_srs_info[id]->k_0_p[i]);
+      free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_received_signal[i]);
+      for (int j = 0; j < Prx; j++) {
+        free_and_zero(gNB->nr_srs_info[id]->srs_ls_estimated_channel[i][j]);
+        free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_freq[i][j]);
+        free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time[i][j]);
+        free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i][j]);
+      }
       free_and_zero(gNB->nr_srs_info[id]->srs_ls_estimated_channel[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_freq[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i]);
     }
-    for(int i=0; i<MAX_NUM_NR_SRS_AP;i++) {
-      free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal[i]);
-    }
+    free_and_zero(gNB->nr_srs_info[id]->k_0_p);
     free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal);
     free_and_zero(gNB->nr_srs_info[id]->signal_power);
     free_and_zero(gNB->nr_srs_info[id]->noise_power_per_rb);
