@@ -617,8 +617,7 @@ void nr_fep_full_2thread(RU_t *ru, int slot) {
   }
 
   if (proc->instance_cnt_fep==0) {
-    printf("[RU] FEP thread busy\n");
-    exit_fun("FEP thread busy");
+    LOG_E(PHY, "RU FEP thread busy, exiting %s\n", __func__);
     pthread_mutex_unlock( &proc->mutex_fep );
     return;
   }
