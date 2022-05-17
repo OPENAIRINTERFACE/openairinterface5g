@@ -936,6 +936,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   rfsimulator->sample_rate=openair0_cfg->sample_rate;
   rfsimulator->tx_bw=openair0_cfg->tx_bw;  
   rfsimulator_readconfig(rfsimulator);
+  LOG_W(HW, "rfsim: sample_rate %f\n", rfsimulator->sample_rate);
   pthread_mutex_init(&Sockmutex, NULL);
   LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == ENB_MAGICDL ? "server waiting opposite rfsimulators to connect" : "client: will connect to a rfsimulator server side");
   device->trx_start_func       = rfsimulator->typeStamp == ENB_MAGICDL ?

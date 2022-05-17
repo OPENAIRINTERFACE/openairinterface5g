@@ -3724,7 +3724,10 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         #endif
         */
 
-        LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d\n", frameP, slot, ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
+        if (ta == 31)
+          LOG_D(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n", frameP, slot, ta, tag, CC_id, ul_time_alignment->ta_total);
+        else
+          LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n", frameP, slot, ta, tag, CC_id, ul_time_alignment->ta_total);
 
         break;
       case DL_SCH_LCID_CON_RES_ID:
@@ -4100,6 +4103,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     const int ta = rar->TA2 + (rar->TA1 << 5);
     ul_time_alignment->ta_command = 31 + ta;
     ul_time_alignment->ta_total = ta;
+    LOG_W(MAC, "received TA command %d\n", ul_time_alignment->ta_command);
 
 #ifdef DEBUG_RAR
     // CSI
