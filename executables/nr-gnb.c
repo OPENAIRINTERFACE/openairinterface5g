@@ -467,6 +467,11 @@ void init_gNB_Tpool(int inst) {
 }
 
 
+void term_gNB_Tpool(int inst) {
+  PHY_VARS_gNB *gNB = RC.gNB[inst];
+  abortTpool(&gNB->threadPool);
+}
+
 /*!
  * \brief Terminate gNB TX and RX threads.
  */
@@ -609,6 +614,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
 void stop_gNB(int nb_inst) {
   for (int inst=0; inst<nb_inst; inst++) {
     LOG_I(PHY,"Killing gNB %d processing threads\n",inst);
+    term_gNB_Tpool(inst);
     kill_gNB_proc(inst);
   }
 }

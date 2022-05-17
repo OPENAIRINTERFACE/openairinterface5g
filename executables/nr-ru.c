@@ -1271,13 +1271,6 @@ void *ru_thread( void *param ) {
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
 
-  res = pullNotifiedFIFO(&gNB->resp_L1);
-  delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(&gNB->L1_tx_free);
-  delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(&gNB->L1_tx_free);
-  delNotifiedFIFO_elt(res);
-
   ru_thread_status = 0;
   return &ru_thread_status;
 }
