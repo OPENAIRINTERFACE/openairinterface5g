@@ -453,6 +453,24 @@ void nr_init_feptx_thread(RU_t *ru) {
 
 }
 
+void nr_kill_feptx_thread(RU_t *ru) {
+  RU_proc_t *proc = &ru->proc;
+
+  for (int i = 0; i < ru->nb_tx * 2; i++) {
+    RU_feptx_t *feptx = &proc->feptx[i];
+    if (feptx->pthread_feptx == 0)
+      continue;
+
+    pthread_mutex_lock(&feptx->mutex_feptx);
+    feptx->instance_cnt_feptx = 0;
+    pthread_mutex_unlock(&feptx->mutex_feptx);
+    pthread_cond_signal(&feptx->cond_feptx);
+    LOG_I(PHY, "Joining pthread_feptx %d\n", i);
+    pthread_join(feptx->pthread_feptx, NULL);
+    pthread_mutex_destroy(&feptx->mutex_feptx);
+    pthread_cond_destroy(&feptx->cond_feptx);
+  }
+}
 
 void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
 
@@ -590,6 +608,19 @@ void nr_init_feprx_thread(RU_t *ru) {
   threadCreate(&proc->pthread_fep, nr_feprx_thread, (void*)ru, "feprx", -1, OAI_PRIORITY_RT);
 }
 
+void nr_kill_feprx_thread(RU_t *ru) {
+  RU_proc_t *proc = &ru->proc;
+  if (proc->pthread_fep == 0)
+    return;
+  LOG_I(PHY, "Joining pthread_feprx\n");
+  pthread_mutex_lock(&proc->mutex_fep);
+  proc->instance_cnt_fep = 0;
+  pthread_mutex_unlock(&proc->mutex_fep);
+  pthread_cond_signal(&proc->cond_fep);
+  pthread_join(proc->pthread_fep, NULL);
+  pthread_mutex_destroy(&proc->mutex_fep);
+  pthread_cond_destroy(&proc->cond_fep);
+}
 
 void nr_fep_full_2thread(RU_t *ru, int slot) {
 
