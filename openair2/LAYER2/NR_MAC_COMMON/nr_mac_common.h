@@ -55,6 +55,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
                      nr_rnti_type_t rnti_type,
                      uint16_t N_RB,
                      int bwp_id,
+                     NR_ControlResourceSetId_t coreset_id,
                      uint16_t cset0_bwp_size);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
@@ -171,6 +172,10 @@ void get_info_from_tda_tables(int default_abc,
 
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
+
+uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
+                                   NR_SRS_Config_t *srs_config,
+                                   dci_field_t srs_resource_indicator);
 
 uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t nr_prbs,
