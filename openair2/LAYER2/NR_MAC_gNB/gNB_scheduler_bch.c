@@ -504,6 +504,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   LOG_D(NR_MAC,"sib1:rbStart %d, rbSize %d\n",pdsch_pdu_rel15->rbStart,pdsch_pdu_rel15->rbSize);
   LOG_D(NR_MAC,"sib1:dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
 
+  pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(0,
+                                                                             pdsch_pdu_rel15->BWPSize,
+                                                                             1);
+
   /* Fill PDCCH DL DCI PDU */
   nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
   pdcch_pdu_rel15->numDlDci++;
@@ -547,6 +551,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      dci_format,
                      rnti_type,
                      pdsch_pdu_rel15->BWPSize,
+                     0,
                      0,
                      gNB_mac->cset0_bwp_size);
 

@@ -332,6 +332,9 @@ The following features are valid for the gNB and the 5G-NR UE.
   - evalution of RSRP report
   - evaluation of CQI report
 - MAC scheduling of SR reception
+- Bandwidth part (BWP) operation
+  - Handle multiple dedicated BWPs
+  - BWP switching through RRCReconfiguration method
 
 **gNB RLC**
 - Send/Receive operations according to 38.322 Rel.16
@@ -493,6 +496,8 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Configuration of fapi PDU according to DCI
 * Scheduler procedures for SRS transmission
    - Periodic SRS transmission
+* Bandwidth part (BWP) operation
+   - Operation in configured dedicated BWP through RRCSetup or RRCReconfiguration
 
 
 **UE RLC**

@@ -44,6 +44,7 @@
 
 /* MAC */
 #include "NR_MAC_COMMON/nr_mac.h"
+#include "NR_MAC_COMMON/nr_mac_common.h"
 #include "NR_MAC_UE/mac_proto.h"
 #include "NR_MAC_UE/mac_extern.h"
 
@@ -114,18 +115,20 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
  */
 long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
   long k2 = -1;
+
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   // Get K2 from RRC configuration
-  NR_PUSCH_Config_t *pusch_config=mac->ULbwp[0] ? mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup : NULL;
+  NR_PUSCH_Config_t *pusch_config=mac->ULbwp[ul_bwp_id-1] ? mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup : NULL;
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
   if (pusch_config && pusch_config->pusch_TimeDomainAllocationList) {
     pusch_TimeDomainAllocationList = pusch_config->pusch_TimeDomainAllocationList->choice.setup;
   }
-  else if (mac->ULbwp[0] &&
-	   mac->ULbwp[0]->bwp_Common&&
-	   mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon&&
-	   mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup &&
-	   mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-    pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  else if (mac->ULbwp[ul_bwp_id-1] &&
+	   mac->ULbwp[ul_bwp_id-1]->bwp_Common&&
+	   mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon&&
+	   mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup &&
+	   mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+    pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   }
   else if (mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList)
     pusch_TimeDomainAllocationList=mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -154,6 +157,7 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
  */
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot)
 {
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
 
   //Check if request to access ul_config is for a UL slot
@@ -165,8 +169,8 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
   // Calculate the index of the UL slot in mac->ul_config_request list. This is
   // based on the TDD pattern (slot configuration period) and number of UL+mixed
   // slots in the period. TS 38.213 Sec 11.1
-  int mu = mac->ULbwp[0] ?
-    mac->ULbwp[0]->bwp_Common->genericParameters.subcarrierSpacing :
+  int mu = mac->ULbwp[ul_bwp_id-1] ?
+    mac->ULbwp[ul_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
   const int n = nr_slots_per_frame[mu];
   const int num_slots_per_tdd = tdd_config ? (n >> (7 - tdd_config->pattern1.dl_UL_TransmissionPeriodicity)) : n;
@@ -188,17 +192,21 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
 void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
 
   NR_ServingCellConfigCommon_t *scc = mac->scc;
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_BWP_UplinkDedicated_t *ubwpd=NULL;
+  NR_SRS_Config_t *srs_config = NULL;
 
   if (mac->cg &&
       mac->cg->spCellConfig &&
       mac->cg->spCellConfig->spCellConfigDedicated &&
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
+      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
     ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
+    srs_config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;
+  }
 
-  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0] ?
-    mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup :
+  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[ul_bwp_id-1] ?
+    mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup :
     (ubwpd?
      ubwpd->pusch_Config->choice.setup:
      NULL);
@@ -212,7 +220,7 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
     else
       transformPrecoder = NR_PUSCH_Config__transformPrecoder_disabled;
   }
-
+  pusch_config_pdu->transform_precoding = transformPrecoder;
 
   /* PRECOD_NBR_LAYERS */
   if ((*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_nonCodebook));
@@ -220,11 +228,14 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
   if ((*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook)){
 
-    uint8_t n_antenna_port = 0; //FIXME!!!
+    // The UE shall transmit PUSCH using the same antenna port(s) as the SRS port(s) in the SRS resource indicated by the DCI format 0_1
+    // 38.214  Section 6.1.1
+
+    uint8_t n_antenna_port = get_pusch_nb_antenna_ports(pusch_Config, srs_config, dci->srs_resource_indicator);
 
     if (n_antenna_port == 1); // 1 antenna port and the higher layer parameter txConfig = codebook 0 bits
 
-    if (n_antenna_port == 4){ // 4 antenna port and the higher layer parameter txConfig = codebook
+    if (n_antenna_port == 4) { // 4 antenna port and the higher layer parameter txConfig = codebook
 
       // Table 7.3.1.1.2-2: transformPrecoder=disabled and maxRank = 2 or 3 or 4
       if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled)
@@ -234,54 +245,54 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][0];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][1];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][1];
         }
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_partialAndNonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][2];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][3];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][3];
         }
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][4];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][5];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][5];
         }
       }
 
       // Table 7.3.1.1.2-3: transformPrecoder= enabled, or transformPrecoder=disabled and maxRank = 1
       if (((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled)
         || (transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled))
-        && (*pusch_Config->maxRank == 1)){
+        && (*pusch_Config->maxRank == 1)) {
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][6];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][7];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][7];
         }
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_partialAndNonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][8];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][9];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][9];
         }
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][10];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][11];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][11];
         }
       }
     }
 
-    if (n_antenna_port == 4){ // 2 antenna port and the higher layer parameter txConfig = codebook
+    if (n_antenna_port == 2) {
+      // 2 antenna port and the higher layer parameter txConfig = codebook
       // Table 7.3.1.1.2-4: transformPrecoder=disabled and maxRank = 2
-      if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank == 2)){
-
+      if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank == 2)) {
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][12];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][13];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][13];
         }
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][14];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][15];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][15];
         }
 
       }
@@ -289,16 +300,16 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
       // Table 7.3.1.1.2-5: transformPrecoder= enabled, or transformPrecoder= disabled and maxRank = 1
       if (((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled)
         || (transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled))
-        && (*pusch_Config->maxRank == 1)){
+        && (*pusch_Config->maxRank == 1)) {
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_fullyAndPartialAndNonCoherent) {
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][16];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][17];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][17];
         }
 
         if (*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent){
           pusch_config_pdu->nrOfLayers = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][18];
-          pusch_config_pdu->transform_precoding = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][19];
+          pusch_config_pdu->Tpmi = table_7_3_1_1_2_2_3_4_5[dci->precoding_information.val][19];
         }
 
       }
@@ -307,9 +318,9 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
   /*-------------------- Changed to enable Transform precoding in RF SIM------------------------------------------------*/
 
- /*if (pusch_config_pdu->transform_precoding == transform_precoder_enabled) {
+ /*if (pusch_config_pdu->transformPrecoder == transformPrecoder_enabled) {
 
-    pusch_config_dedicated->transform_precoder = transform_precoder_enabled;
+    pusch_config_dedicated->transform_precoder = transformPrecoder_enabled;
 
     if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL) {
 
@@ -331,15 +342,15 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 
     }
   } else
-    pusch_config_dedicated->transform_precoder = transform_precoder_disabled;*/
+    pusch_config_dedicated->transformPrecoder = ttransformPrecoder_disabled;*/
 }
 
 // todo: this function shall be reviewed completely because of the many comments left by the author
-void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
+void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
 
-  /* ANTENNA_PORTS */
-  uint8_t rank = 1; // We need to initialize rank FIXME!!!
+  uint8_t rank = pusch_config_pdu->nrOfLayers;
 
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_BWP_UplinkDedicated_t *ubwpd=NULL;
 
@@ -350,7 +361,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
     ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
 
-  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[0] ? mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup : (ubwpd?ubwpd->pusch_Config->choice.setup:NULL);
+  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[ul_bwp_id-1] ? mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup : (ubwpd?ubwpd->pusch_Config->choice.setup:NULL);
   AssertFatal(pusch_Config!=NULL,"pusch_Config shouldn't be null\n");
 
   long	transformPrecoder;
@@ -375,51 +386,44 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
     dmrs_type = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->dmrs_Type;
   }
 
-  LOG_D(NR_MAC,"MappingType%s max_length %s, dmrs_type %s, antenna_ports %d\n",pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA?"A":"B",max_length?"len2":"len1",dmrs_type?"type2":"type1",dci->antenna_ports.val);
+  LOG_D(NR_MAC,"MappingType%s max_length %s, dmrs_type %s, antenna_ports %d\n",
+        pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA?"A":"B",max_length?"len2":"len1",dmrs_type?"type2":"type1",dci->antenna_ports.val);
+
   if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled) &&
-    (dmrs_type == NULL) && (max_length == NULL)) { // tables 7.3.1.1.2-6
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2; //TBC
-      pusch_config_pdu->dmrs_ports = dci->antenna_ports.val; //TBC
+      (dmrs_type == NULL) && (max_length == NULL)) { // tables 7.3.1.1.2-6
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
+      pusch_config_pdu->dmrs_ports = 1<<dci->antenna_ports.val;
   }
 
   if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_enabled) &&
-    (dmrs_type == NULL) && (max_length != NULL)) { // tables 7.3.1.1.2-7
+      (dmrs_type == NULL) && (max_length != NULL)) { // tables 7.3.1.1.2-7
 
     pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2; //TBC
-    pusch_config_pdu->dmrs_ports = (dci->antenna_ports.val > 3)?(dci->antenna_ports.val-4):(dci->antenna_ports.val); //TBC
-    //pusch_config_pdu->n_front_load_symb = (dci->antenna_ports > 3)?2:1; //FIXME
+    pusch_config_pdu->dmrs_ports = 1<<((dci->antenna_ports.val > 3)?(dci->antenna_ports.val-4):(dci->antenna_ports.val));
+    *n_front_load_symb = (dci->antenna_ports.val > 3)?2:1;
   }
 
   if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) &&
     (dmrs_type == NULL) && (max_length == NULL)) { // tables 7.3.1.1.2-8/9/10/11
 
     if (rank == 1) {
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = (dci->antenna_ports.val > 1)?2:1; //TBC
-      pusch_config_pdu->dmrs_ports = (dci->antenna_ports.val > 1)?(dci->antenna_ports.val-2):(dci->antenna_ports.val); //TBC
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data = (dci->antenna_ports.val > 1)?2:1;
+      pusch_config_pdu->dmrs_ports =1<<((dci->antenna_ports.val > 1)?(dci->antenna_ports.val-2):(dci->antenna_ports.val));
     }
 
     if (rank == 2){
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = (dci->antenna_ports.val > 0)?2:1; //TBC
-      pusch_config_pdu->dmrs_ports = 0; //FIXME
-      //pusch_config_pdu->dmrs_ports[0] = (dci->antenna_ports > 1)?(dci->antenna_ports > 2 ?0:2):0;
-      //pusch_config_pdu->dmrs_ports[1] = (dci->antenna_ports > 1)?(dci->antenna_ports > 2 ?2:3):1;
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data = (dci->antenna_ports.val > 0)?2:1;
+      pusch_config_pdu->dmrs_ports = (dci->antenna_ports.val > 1)?((dci->antenna_ports.val> 2)?0x5:0xc):0x3;
     }
 
     if (rank == 3){
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2; //TBC
-      pusch_config_pdu->dmrs_ports = 0; //FIXME
-      //pusch_config_pdu->dmrs_ports[0] = 0;
-      //pusch_config_pdu->dmrs_ports[1] = 1;
-      //pusch_config_pdu->dmrs_ports[2] = 2;
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
+      pusch_config_pdu->dmrs_ports = 0x7;  // ports 0-2
     }
 
     if (rank == 4){
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2; //TBC
-      pusch_config_pdu->dmrs_ports = 0; //FIXME
-      //pusch_config_pdu->dmrs_ports[0] = 0;
-      //pusch_config_pdu->dmrs_ports[1] = 1;
-      //pusch_config_pdu->dmrs_ports[2] = 2;
-      //pusch_config_pdu->dmrs_ports[3] = 3;
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
+      pusch_config_pdu->dmrs_ports = 0xf;  // ports 0-3
     }
   }
 
@@ -428,8 +432,8 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
 
     if (rank == 1){
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = (dci->antenna_ports.val > 1)?2:1; //TBC
-      pusch_config_pdu->dmrs_ports = (dci->antenna_ports.val > 1)?(dci->antenna_ports.val > 5 ?(dci->antenna_ports.val-6):(dci->antenna_ports.val-2)):dci->antenna_ports.val; //TBC
-      //pusch_config_pdu->n_front_load_symb = (dci->antenna_ports.val > 6)?2:1; //FIXME
+      pusch_config_pdu->dmrs_ports = 1<<((dci->antenna_ports.val > 1)?(dci->antenna_ports.val > 5 ?(dci->antenna_ports.val-6):(dci->antenna_ports.val-2)):dci->antenna_ports.val);
+      *n_front_load_symb = (dci->antenna_ports.val > 6)?2:1;
     }
 
     if (rank == 2){
@@ -437,7 +441,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       pusch_config_pdu->dmrs_ports = 0; //FIXME
       //pusch_config_pdu->dmrs_ports[0] = table_7_3_1_1_2_13[dci->antenna_ports.val][1];
       //pusch_config_pdu->dmrs_ports[1] = table_7_3_1_1_2_13[dci->antenna_ports.val][2];
-      //pusch_config_pdu->n_front_load_symb = (dci->antenna_ports.val > 3)?2:1; // FIXME
+      //n_front_load_symb = (dci->antenna_ports.val > 3)?2:1; // FIXME
     }
 
     if (rank == 3){
@@ -446,7 +450,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       //pusch_config_pdu->dmrs_ports[0] = table_7_3_1_1_2_14[dci->antenna_ports.val][1];
       //pusch_config_pdu->dmrs_ports[1] = table_7_3_1_1_2_14[dci->antenna_ports.val][2];
       //pusch_config_pdu->dmrs_ports[2] = table_7_3_1_1_2_14[dci->antenna_ports.val][3];
-      //pusch_config_pdu->n_front_load_symb = (dci->antenna_ports.val > 1)?2:1; //FIXME
+      //n_front_load_symb = (dci->antenna_ports.val > 1)?2:1; //FIXME
     }
 
     if (rank == 4){
@@ -456,7 +460,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       //pusch_config_pdu->dmrs_ports[1] = table_7_3_1_1_2_15[dci->antenna_ports.val][2];
       //pusch_config_pdu->dmrs_ports[2] = table_7_3_1_1_2_15[dci->antenna_ports.val][3];
       //pusch_config_pdu->dmrs_ports[3] = table_7_3_1_1_2_15[dci->antenna_ports.val][4];
-      //pusch_config_pdu->n_front_load_symb = (dci->antenna_ports.val > 1)?2:1; //FIXME
+      //n_front_load_symb = (dci->antenna_ports.val > 1)?2:1; //FIXME
     }
   }
 
@@ -500,7 +504,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
     if (rank == 1){
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = table_7_3_1_1_2_20[dci->antenna_ports.val][0]; //TBC
       pusch_config_pdu->dmrs_ports = table_7_3_1_1_2_20[dci->antenna_ports.val][1]; //TBC
-      //pusch_config_pdu->n_front_load_symb = table_7_3_1_1_2_20[dci->antenna_ports.val][2]; //FIXME
+      //n_front_load_symb = table_7_3_1_1_2_20[dci->antenna_ports.val][2]; //FIXME
     }
 
     if (rank == 2){
@@ -508,7 +512,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       pusch_config_pdu->dmrs_ports = 0; //FIXME
       //pusch_config_pdu->dmrs_ports[0] = table_7_3_1_1_2_21[dci->antenna_ports.val][1];
       //pusch_config_pdu->dmrs_ports[1] = table_7_3_1_1_2_21[dci->antenna_ports.val][2];
-      //pusch_config_pdu->n_front_load_symb = table_7_3_1_1_2_21[dci->antenna_ports.val][3]; //FIXME
+      //n_front_load_symb = table_7_3_1_1_2_21[dci->antenna_ports.val][3]; //FIXME
       }
 
     if (rank == 3){
@@ -517,7 +521,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       //pusch_config_pdu->dmrs_ports[0] = table_7_3_1_1_2_22[dci->antenna_ports.val][1];
       //pusch_config_pdu->dmrs_ports[1] = table_7_3_1_1_2_22[dci->antenna_ports.val][2];
       //pusch_config_pdu->dmrs_ports[2] = table_7_3_1_1_2_22[dci->antenna_ports.val][3];
-      //pusch_config_pdu->n_front_load_symb = table_7_3_1_1_2_22[dci->antenna_ports.val][4]; //FIXME
+      //n_front_load_symb = table_7_3_1_1_2_22[dci->antenna_ports.val][4]; //FIXME
     }
 
     if (rank == 4){
@@ -527,7 +531,7 @@ void ul_ports_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       //pusch_config_pdu->dmrs_ports[1] = table_7_3_1_1_2_23[dci->antenna_ports.val][2];
       //pusch_config_pdu->dmrs_ports[2] = table_7_3_1_1_2_23[dci->antenna_ports.val][3];
       //pusch_config_pdu->dmrs_ports[3] = table_7_3_1_1_2_23[dci->antenna_ports.val][4];
-      //pusch_config_pdu->n_front_load_symb = table_7_3_1_1_2_23[dci->antenna_ports.val][5]; //FIXME
+      //n_front_load_symb = table_7_3_1_1_2_23[dci->antenna_ports.val][5]; //FIXME
     }
   }
   LOG_D(NR_MAC,"num_dmrs_cdm_grps_no_data %d, dmrs_ports %d\n",pusch_config_pdu->num_dmrs_cdm_grps_no_data,pusch_config_pdu->dmrs_ports);
@@ -559,23 +563,25 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   int                N_PRB_oh  = 0;
 
   int rnti_type = get_rnti_type(mac, rnti);
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
 
   // Common configuration
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
   pusch_config_pdu->pdu_bit_map      = PUSCH_PDU_BITMAP_PUSCH_DATA;
   pusch_config_pdu->nrOfLayers       = 1;
+  pusch_config_pdu->Tpmi             = 0;
   pusch_config_pdu->rnti             = rnti;
   NR_BWP_UplinkCommon_t *initialUplinkBWP;
   if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
   else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
 
   pusch_dmrs_AdditionalPosition_t add_pos = pusch_dmrs_pos2;
-  pusch_maxLength_t dmrslength = pusch_len1;
+  int dmrslength = 1;
 
   if (rar_grant) {
 
     // Note: for Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0
-    NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
+    NR_BWP_Uplink_t *ubwp = mac->ULbwp[ul_bwp_id-1];
     NR_BWP_UplinkDedicated_t *ibwp;
     int scs,abwp_start,abwp_size,startSymbolAndLength,mappingtype;
     NR_PUSCH_Config_t *pusch_Config=NULL;
@@ -686,8 +692,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     int target_ss;
     bool valid_ptrs_setup = 0;
-    uint16_t n_RB_ULBWP;
-    n_RB_ULBWP = NRRIV2BW(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+    uint16_t n_RB_ULBWP = NRRIV2BW(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pusch_config_pdu->bwp_start = NRRIV2PRBOFFSET(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pusch_config_pdu->bwp_size = n_RB_ULBWP;
 
@@ -713,11 +719,12 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     } else if (*dci_format == NR_UL_DCI_FORMAT_0_1) {
 
       config_bwp_ue(mac, &dci->bwp_indicator.val, dci_format);
+
       get_bwp_info(mac,dl_bwp_id,ul_bwp_id,&bwpd,&bwpc,&ubwpd,&ubwpc);
 
       target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
       ul_layers_config(mac, pusch_config_pdu, dci);
-      ul_ports_config(mac, pusch_config_pdu, dci);
+      ul_ports_config(mac, &dmrslength, pusch_config_pdu, dci);
 
     } else {
 
@@ -725,6 +732,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       return -1;
 
     }
+
     NR_PUSCH_ConfigCommon_t *pusch_ConfigCommon = ubwpc->pusch_ConfigCommon->choice.setup;
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = choose_ul_tda_list(pusch_Config,pusch_ConfigCommon);
 
@@ -748,7 +756,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
 
       uint32_t n_RS_Id = 0;
-      if (NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+      if (NR_DMRS_ulconfig->transformPrecodingEnabled &&
+          NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
         n_RS_Id = *NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity;
       else
         n_RS_Id = *mac->scc->physCellId;
@@ -823,19 +832,19 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->absolute_delta_PUSCH = 4;
     }
 
-    if (NR_DMRS_ulconfig != NULL) {
+    if (NR_DMRS_ulconfig != NULL)
       add_pos = (NR_DMRS_ulconfig->dmrs_AdditionalPosition == NULL) ? 2 : *NR_DMRS_ulconfig->dmrs_AdditionalPosition;
-      dmrslength = NR_DMRS_ulconfig->maxLength == NULL ? pusch_len1 : pusch_len2;
-    }
 
     /* DMRS */
     l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols,
                                mappingtype, add_pos, dmrslength,
                                pusch_config_pdu->start_symbol_index,
                                mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    if ((mac->ULbwp[0] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled))
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
-    else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || (mac->ULbwp[0] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled))
+    if ((mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled))
+      if (*dci_format != NR_UL_DCI_FORMAT_0_1) {
+        pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
+      }
+    else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled))
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
 
     // Num PRB Overhead from PUSCH-ServingCellConfig
@@ -850,16 +859,16 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     else N_PRB_oh = 0;
 
     /* PTRS */
-    if (mac->ULbwp[0] &&
-	mac->ULbwp[0]->bwp_Dedicated &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB &&
-	mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
+    if (mac->ULbwp[ul_bwp_id-1] &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
       if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
         nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
         pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
-        valid_ptrs_setup = set_ul_ptrs_values(mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
+        valid_ptrs_setup = set_ul_ptrs_values(mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
                                               pusch_config_pdu->rb_size, pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table,
                                               &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,&pusch_config_pdu->pusch_ptrs.ptrs_time_density,
                                               &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
@@ -955,9 +964,10 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
       continue;
     }
 
-    NR_BWP_t ubwp = mac->ULbwp[0] ?
-                      mac->ULbwp[0]->bwp_Common->genericParameters :
-                      mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+    NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+    NR_BWP_t ubwp = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
+                    mac->ULbwp[ul_bwp_id-1]->bwp_Common->genericParameters :
+                    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters;
 
     uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
     uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
@@ -1076,6 +1086,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
       fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+        LOG_D(NR_MAC,"1# scheduled_response transmitted, %d, %d\n", rx_frame, rx_slot);
         mac->if_module->scheduled_response(&scheduled_response);
     }
     else {
@@ -1201,6 +1212,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
         fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, ul_info->thread_id, NULL);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
+          LOG_D(NR_MAC,"3# scheduled_response transmitted,%d, %d\n", frame_tx, slot_tx);
           mac->if_module->scheduled_response(&scheduled_response);
         }
         pthread_mutex_lock(&ul_config->mutex_ul_config);
@@ -1543,7 +1555,9 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
                           uint8_t tda_id){
 
   int delta = 0;
-  NR_BWP_Uplink_t *ubwp = mac->ULbwp[0];
+  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+  NR_BWP_Uplink_t *ubwp = mac->ULbwp[ul_bwp_id-1];
+
   // Get the numerology to calculate the Tx frame and slot
   int mu = ubwp ?
     ubwp->bwp_Common->genericParameters.subcarrierSpacing :

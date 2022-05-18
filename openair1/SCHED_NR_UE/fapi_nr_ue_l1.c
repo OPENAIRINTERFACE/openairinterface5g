@@ -315,6 +315,7 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
   dlsch0_harq->mcs = dlsch_config_pdu->mcs;
   dlsch0_harq->rvidx = dlsch_config_pdu->rv;
   dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+  dlsch0_harq->tbslbrm = dlsch_config_pdu->tbslbrm;
   dlsch0_harq->nscid = dlsch_config_pdu->nscid;
   dlsch0_harq->dlDmrsScramblingId = dlsch_config_pdu->dlDmrsScramblingId;
   //get nrOfLayers from DCI info
@@ -340,6 +341,7 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
   dlsch0_harq->pduBitmap = dlsch_config_pdu->pduBitmap;
   LOG_D(MAC, ">>>> \tdlsch0->g_pucch = %d\tdlsch0_harq.mcs = %d\n", dlsch0->g_pucch, dlsch0_harq->mcs);
 }
+
 
 int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
@@ -424,7 +426,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
       for (int i = 0; i < ul_config->number_pdus; ++i){
 
         AssertFatal(ul_config->ul_config_list[i].pdu_type <= FAPI_NR_UL_CONFIG_TYPES,"pdu_type %d out of bounds\n",ul_config->ul_config_list[i].pdu_type);
-        LOG_D(PHY, "In %s: processing %s PDU of %d total UL PDUs (ul_config %p) \n", __FUNCTION__, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
+        LOG_D(PHY, "In %s i %d: processing %s PDU of %d total UL PDUs (ul_config %p) \n", __FUNCTION__, i, ul_pdu_type[ul_config->ul_config_list[i].pdu_type - 1], ul_config->number_pdus, ul_config);
 
         uint8_t pdu_type = ul_config->ul_config_list[i].pdu_type, current_harq_pid, gNB_id = 0;
         /* PRACH */
@@ -449,6 +451,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           if (harq_process_ul_ue){
 
             nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
+            
+            LOG_D(PHY, "In %s i %d: copy pusch_config_pdu nrOfLayers:%d, num_dmrs_cdm_grps_no_data:%d \n", __FUNCTION__, i, pusch_config_pdu->nrOfLayers,pusch_config_pdu->num_dmrs_cdm_grps_no_data);
 
             memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
 

@@ -41,7 +41,7 @@ int nr_phy_init_RU(RU_t *ru) {
   int p;
   int re;
 
-  LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
+  LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d, nb_rx %d\n",ru_if_types[ru->if_south],ru->nb_tx, ru->nb_rx);
 
   nfapi_nr_config_request_scf_t *cfg;
   ru->nb_log_antennas=0;
@@ -205,12 +205,11 @@ void nr_phy_free_RU(RU_t *ru)
 	free_and_zero(ru->prach_rxsigF[j][i]);
       free_and_zero(ru->prach_rxsigF[j]);
     }
-
     if (ru->do_precoding == 1) {
       for (i = 0; i < ru->num_gNB; i++) {
         for (p = 0; p < ru->nb_log_antennas; p++) {
-            for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
-            free_and_zero(ru->beam_weights[i][p]);
+          for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
+          free_and_zero(ru->beam_weights[i][p]);
         }
       }
       for(i=0; i< ru->nb_tx; ++i)

@@ -22,6 +22,7 @@
     {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,   i8ptr:&threequarter_fs,             defintval:0,                   TYPE_INT8,   0},        \
     {"m" ,                    CONFIG_HLP_DLMCS_PHYTEST,0,               uptr:&target_dl_mcs,                defintval:0,                   TYPE_UINT,   0},        \
     {"l" ,                    CONFIG_HLP_DLNL_PHYTEST,0,                uptr:&target_dl_Nl,                 defintval:0,                   TYPE_UINT,   0},        \
+    {"L" ,                    CONFIG_HLP_ULNL_PHYTEST,0,                uptr:&target_ul_Nl,                 defintval:0,                   TYPE_UINT,   0},        \
     {"t" ,                    CONFIG_HLP_ULMCS_PHYTEST,0,               uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
     {"M" ,                    CONFIG_HLP_DLBW_PHYTEST,0,                uptr:&target_dl_bw,                 defintval:0,                   TYPE_UINT,   0},        \
     {"T" ,                    CONFIG_HLP_ULBW_PHYTEST,0,                uptr:&target_ul_bw,                 defintval:0,                   TYPE_UINT,   0},        \
@@ -36,6 +37,7 @@
 extern threads_t threads;
 extern uint32_t target_dl_mcs;
 extern uint32_t target_dl_Nl;
+extern uint32_t target_ul_Nl;
 extern uint32_t target_ul_mcs;
 extern uint32_t target_dl_bw;
 extern uint32_t target_ul_bw;

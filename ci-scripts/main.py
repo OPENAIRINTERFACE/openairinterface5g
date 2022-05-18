@@ -799,7 +799,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	HTML.startTime=int(round(time.time() * 1000))
 	while CiTestObj.FailReportCnt < CiTestObj.repeatCounts[0] and RAN.prematureExit:
 		RAN.prematureExit=False
-		# At every iteratin of the retry loop, a separator will be added
+		# At every iteration of the retry loop, a separator will be added
 		# pass CiTestObj.FailReportCnt as parameter of HTML.CreateHtmlRetrySeparator
 		HTML.CreateHtmlRetrySeparator(CiTestObj.FailReportCnt)
 		for test_case_id in todo_tests:
@@ -923,6 +923,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CONTAINERS.UndeployObject(HTML, RAN)
 				elif action == 'Cppcheck_Analysis':
 					SCA.CppCheckAnalysis(HTML)
+				elif action == 'LicenceAndFormattingCheck':
+					ret = SCA.LicenceAndFormattingCheck(HTML)
+					if ret != 0:
+						RAN.prematureExit = True
 				elif action == 'Deploy_Run_PhySim':
 					PHYSIM.Deploy_PhySim(HTML, RAN)
 				elif action == 'DeployGenObject':

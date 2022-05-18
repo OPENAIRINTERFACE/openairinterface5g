@@ -160,11 +160,10 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 }
 
-void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts_t dl_antenna_ports_struct, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
   RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
-  int pdsch_AntennaPorts = dl_antenna_ports_struct.N1 * dl_antenna_ports_struct.N2 * dl_antenna_ports_struct.XP;
 
   // Carrier configuration
 
@@ -416,8 +415,8 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts
   cfg->carrier_config.num_rx_ant.value = pusch_AntennaPorts;
   AssertFatal(pusch_AntennaPorts > 0 && pusch_AntennaPorts < 13, "pusch_AntennaPorts in 1...12\n");
   cfg->carrier_config.num_rx_ant.tl.tag = NFAPI_NR_CONFIG_NUM_RX_ANT_TAG;
-  LOG_I(NR_MAC,"Set TX/RX antenna number to %d (num ssb %d: %x,%x)\n",
-        cfg->carrier_config.num_tx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
+  LOG_I(NR_MAC,"Set RX antenna number to %d, Set TX antenna number to %d (num ssb %d: %x,%x)\n",
+        cfg->carrier_config.num_tx_ant.value,cfg->carrier_config.num_rx_ant.value,num_ssb,cfg->ssb_table.ssb_mask_list[0].ssb_mask.value,cfg->ssb_table.ssb_mask_list[1].ssb_mask.value);
   AssertFatal(cfg->carrier_config.num_tx_ant.value > 0,"carrier_config.num_tx_ant.value %d !\n",cfg->carrier_config.num_tx_ant.value );
   cfg->num_tlv++;
   cfg->num_tlv++;
@@ -467,7 +466,7 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
   const uint16_t sf_ahead = 6/(0x01<<subcarrierSpacing) + ((6%(0x01<<subcarrierSpacing))>0);
   const uint16_t sl_ahead = sf_ahead * (0x01<<subcarrierSpacing);
   sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
-  LOG_I(NR_MAC, "Activating RRC processing timer for UE %d\n", UE_id);
+  LOG_I(NR_MAC, "Activating RRC processing timer for UE %d with %d ms\n", UE_id, rrc_reconfiguration_delay);
 
   return 0;
 }
@@ -508,9 +507,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     LOG_I(NR_MAC,"Configuring common parameters from NR ServingCellConfig\n");
 
+    int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
+    RC.nrmac[Mod_idP]->xp_pdsch_antenna_ports = pdsch_AntennaPorts.XP;
     config_common(Mod_idP,
                   ssb_SubcarrierOffset,
-                  pdsch_AntennaPorts,
+                  num_pdsch_antenna_ports,
                   pusch_AntennaPorts,
 		  scc);
     LOG_D(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);

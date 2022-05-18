@@ -106,6 +106,9 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   }
   LOG_A(NR_RRC, "Successfully decoded UE NR capabilities (NR and MRDC)\n");
 
+  ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
+  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = rrc->carrier.servingcellconfig;
+  LOG_I(NR_RRC,"Adding new NSA user (%p)\n",ue_context_p);
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
 
@@ -241,6 +244,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                           cipher_algo,
                           NR_SecurityConfig__keyToUse_secondary);
   }
+
   NR_ServingCellConfig_t *scc = ue_context_p->ue_context.spCellConfig ?
       ue_context_p->ue_context.spCellConfig->spCellConfigDedicated : NULL;
   fill_default_reconfig(carrier->servingcellconfigcommon,
@@ -250,6 +254,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         ue_context_p->ue_context.UE_Capability_nr,
                         configuration,
                         ue_context_p->local_uid);
+
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
