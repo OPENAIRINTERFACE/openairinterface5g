@@ -350,7 +350,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z:W:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z:W:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -594,7 +594,7 @@ int main(int argc, char **argv)
 
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
+      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
       //printf("-d Use TDD\n");
       printf("-d Introduce delay in terms of number of samples\n");
       printf("-f Number of frames to simulate\n");
