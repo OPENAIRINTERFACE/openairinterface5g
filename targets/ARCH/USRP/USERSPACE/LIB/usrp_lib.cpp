@@ -318,11 +318,24 @@ static void trx_usrp_end(openair0_device *device) {
 
   usrp_state_t *s = (usrp_state_t *)device->priv;
 
-  if (s == NULL)
-    return;
+  AssertFatal(s != NULL, "%s() called on uninitialized USRP\n", __func__);
   iqrecorder_end(device);
 
+  LOG_I(HW, "releasing USRP\n");
 
+  s->tx_stream->~tx_streamer();
+  s->rx_stream->~rx_streamer();
+  s->usrp->~multi_usrp();
+  free(s);
+  device->priv = NULL;
+  device->trx_start_func = NULL;
+  device->trx_get_stats_func = NULL;
+  device->trx_reset_stats_func = NULL;
+  device->trx_end_func = NULL;
+  device->trx_stop_func = NULL;
+  device->trx_set_freq_func = NULL;
+  device->trx_set_gains_func = NULL;
+  device->trx_write_init = NULL;
 }
 
 /*! \brief Called to send samples to the USRP RF target
