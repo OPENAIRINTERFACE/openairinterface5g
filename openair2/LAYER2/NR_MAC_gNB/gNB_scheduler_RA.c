@@ -1727,6 +1727,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int rbSize = 0;
     uint8_t tb_scaling = 0;
     uint16_t *vrb_map = cc[CC_id].vrb_map;
+    // increase PRBs until we get to BWPSize or TBS is bigger than MAC PDU size
     do {
       if(rbSize < BWPSize)
         rbSize++;
