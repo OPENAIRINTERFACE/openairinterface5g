@@ -93,7 +93,7 @@ int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 
 volatile int             start_gNB = 0;
-volatile int             oai_exit = 0;
+int oai_exit = 0;
 
 static int wait_for_sync = 0;
 

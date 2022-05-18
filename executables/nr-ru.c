@@ -80,7 +80,7 @@ static int DEFBFW[] = {0x00007fff};
 #include "nfapi_interface.h"
 #include <nfapi/oai_integration/vendor_ext.h>
 
-extern volatile int oai_exit;
+extern int oai_exit;
 
 extern struct timespec timespec_sub(struct timespec lhs, struct timespec rhs);
 extern struct timespec timespec_add(struct timespec lhs, struct timespec rhs);

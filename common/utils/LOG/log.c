@@ -808,7 +808,7 @@ void logClean (void)
   }
 }
 
-extern volatile int oai_exit;//extern int oai_exit;
+extern int oai_exit;
 void flush_mem_to_file(void)
 {
   int fp;
