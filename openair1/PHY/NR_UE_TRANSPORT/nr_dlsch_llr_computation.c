@@ -638,11 +638,10 @@ int nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                    uint8_t beamforming_mode)
 {
 
-  uint32_t *rxF = (uint32_t *)&rxdataF_comp[((int32_t)symbol*nb_rb*12)];
-  uint32_t *llr32;
+  c16_t *rxF   = (c16_t *)&rxdataF_comp[((int32_t)symbol*nb_rb*12)];
+  c16_t *llr32 = (c16_t *)dlsch_llr;
   int i;
 
-  llr32 = (uint32_t*)dlsch_llr;
   if (!llr32) {
     LOG_E(PHY,"nr_dlsch_qpsk_llr: llr is null, symbol %d, llr32=%p\n",symbol, llr32);
     return(-1);
@@ -657,9 +656,9 @@ int nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
   */
   for (i=0; i<len; i++) {
     //*llr32 = *rxF;
-    ((int16_t *)llr32)[0] = ((int16_t *)rxF)[0] / 8;
-    ((int16_t *)llr32)[1] = ((int16_t *)rxF)[1] / 8;
-     //printf("dlsch_qpsk_llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
+    llr32->r = rxF->r >> 3;
+    llr32->i = rxF->i >> 3;
+    //printf("dlsch_qpsk_llr %d : (%d,%d)\n", i, llr32->r, llr32->i);
     rxF++;
     llr32++;
   }
