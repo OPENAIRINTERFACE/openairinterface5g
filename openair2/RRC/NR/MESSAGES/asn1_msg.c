@@ -2247,6 +2247,16 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
       pucchspatial->closedLoopIndex = NR_PUCCH_SpatialRelationInfo__closedLoopIndex_i0;
       ASN_SEQUENCE_ADD(&spatialRelationInfoToAddModList->list,pucchspatial);
       SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup->spatialRelationInfoToAddModList = spatialRelationInfoToAddModList;
+      struct NR_UplinkConfig__uplinkBWP_ToAddModList *UL_BWP_list = SpCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList;
+      if (UL_BWP_list) {
+        for (int i=0; i<UL_BWP_list->list.count; i++){
+          NR_BWP_Uplink_t *ubwp = UL_BWP_list->list.array[i];
+          if (ubwp->bwp_Dedicated->pucch_Config->choice.setup->spatialRelationInfoToAddModList) {
+            free(ubwp->bwp_Dedicated->pucch_Config->choice.setup->spatialRelationInfoToAddModList);
+          }
+          ubwp->bwp_Dedicated->pucch_Config->choice.setup->spatialRelationInfoToAddModList = spatialRelationInfoToAddModList;
+        }
+      }
       if(!SpCellConfig->spCellConfigDedicated->csi_MeasConfig) {
         SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
       }
