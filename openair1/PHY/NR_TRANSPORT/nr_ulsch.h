@@ -71,6 +71,12 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
 void nr_ulsch_unscrambling(int16_t* llr, uint32_t size, uint32_t Nid, uint32_t n_RNTI);
 
+void nr_ulsch_layer_demapping(int16_t *llr_cw,
+				     uint8_t Nl,
+				     uint8_t mod_order,
+				     uint32_t length,
+				     int16_t **llr_layers); 
+
 void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
                          int frame_rx,
                          int slot_rx,

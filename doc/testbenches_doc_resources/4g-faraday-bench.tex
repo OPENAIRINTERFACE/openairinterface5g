@@ -1,0 +1,59 @@
+\documentclass{standalone}
+
+\usepackage{tikz}
+\usetikzlibrary{backgrounds, positioning, shapes.symbols}
+\usepackage{helvet}
+\renewcommand*{\rmdefault}{\sfdefault}
+
+\begin{document}
+\begin{tikzpicture}
+  [
+    font=\footnotesize,
+    faraday/.style={minimum size=3cm, draw, dashed},
+    duplexer/.style={draw,fill=white},
+  ]
+
+  \node[faraday, label={[anchor=south west]above left:Faraday cage}] (faraday) {};
+
+  \node[above left=0cm and 2.8cm of faraday, label=above:hutch] (hutch)
+    {\includegraphics[width=1.2cm]{server}};
+  \node[right=0.3cm of hutch, label=above:B210] (b210h)
+    {\includegraphics[width=1.2cm]{b210}} edge (hutch);
+  \node[below left=0.35cm of faraday.north east] (anto)
+    {\includegraphics[width=0.3cm]{antenna}};
+  \draw (b210h) -| node [pos=0.25, duplexer] {B7} (anto);
+
+  \node[below left=0cm and 2.8cm of faraday, label=above:starsky] (starsky)
+    {\includegraphics[width=1.2cm]{server}};
+  \node[right=0.3cm of starsky, label=above:B210] (b210s)
+    {\includegraphics[width=1.2cm]{b210}} edge (starsky);
+  \draw (hutch) -- (b210h);
+  \node[above left=0.35cm of faraday.south east] (antn)
+    {\includegraphics[width=0.3cm]{antenna}};
+  \draw (b210s) -| node [pos=0.35, duplexer] {B40} (antn);
+  \node[below right=-0.2cm and 0.8cm of b210s] (antn2)
+    {\includegraphics[width=0.3cm]{antenna}};
+  \draw (b210s) -| (antn2);
+
+  \node[left=5cm of faraday, label=above:nano] (nano)
+    {\includegraphics[width=1.2cm]{server}};
+  \draw (hutch) -- (nano);
+  \draw (starsky) -- (nano);
+  \node[above right=0.0cm and 0.35cm of faraday.west] (phone1)
+    {\includegraphics[height=0.5cm]{phone}};
+  \node[below right=0.0cm and 0.35cm of faraday.west] (phone2)
+    {\includegraphics[height=0.5cm]{phone}};
+  \draw (nano) -- node[above] {USB/adb} +(5cm,0) |- (phone1);
+  \draw (nano) -- +(5cm,0) |- (phone2);
+
+  \node[right=1.5cm of faraday, label=above:B210] (b210c)
+    {\includegraphics[width=1.2cm]{b210}};
+  \node[left=.5cm of faraday.east] (antc)
+    {\includegraphics[width=0.3cm]{antenna}};
+  \draw (b210c) -- node [pos=0.35, duplexer] {B7UE} (antc);
+  \node[right=0.7cm of b210c, label=above:carabe] (carabe)
+    {\includegraphics[width=1.2cm]{server}}
+    edge (b210c);
+
+\end{tikzpicture}
+\end{document}

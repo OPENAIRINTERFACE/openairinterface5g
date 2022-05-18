@@ -33,6 +33,7 @@
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/nr/nr_common.h"
 #include <limits.h>
+#include <executables/softmodem-common.h>
 
 #define reserved 0xffff
 
@@ -2590,6 +2591,30 @@ uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
   return -1;
 }
 
+uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
+                                   NR_SRS_Config_t *srs_config,
+                                   dci_field_t srs_resource_indicator) {
+
+  uint8_t n_antenna_port = 1;
+  if (get_softmodem_params()->phy_test == 1) {
+    // temporary hack to allow UL-MIMO in phy-test mode without SRS
+    n_antenna_port = *pusch_Config->maxRank;
+  }
+  else {
+    if(srs_config != NULL && srs_resource_indicator.nbits > 0) {
+      for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
+        NR_SRS_ResourceSet_t *srs_resource_set = srs_config->srs_ResourceSetToAddModList->list.array[rs];
+        if(srs_resource_set->usage == NR_SRS_ResourceSet__usage_codebook) {
+          NR_SRS_Resource_t *srs_resource = srs_config->srs_ResourceToAddModList->list.array[srs_resource_indicator.val];
+          AssertFatal(srs_resource != NULL,"SRS resource indicated by DCI does not exist\n");
+          n_antenna_port = 1<<srs_resource->nrofSRS_Ports;
+        }
+      }
+    }
+  }
+  return n_antenna_port;
+}
+
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                      const NR_CellGroupConfig_t *cg,
@@ -2598,23 +2623,23 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      nr_rnti_type_t rnti_type,
                      uint16_t N_RB,
                      int bwp_id,
+                     NR_ControlResourceSetId_t coreset_id,
                      uint16_t cset0_bwp_size) {
 
   uint16_t size = 0;
   uint16_t numRBG = 0;
   long rbg_size_config;
   int num_entries = 0;
-  int pusch_antenna_ports = 1; // TODO hardcoded number of antenna ports for pusch
 
   const NR_BWP_DownlinkDedicated_t *bwpd = NULL;
   const NR_BWP_UplinkDedicated_t *ubwpd = NULL;
   const NR_BWP_DownlinkCommon_t *bwpc = NULL;
   const NR_BWP_UplinkCommon_t *ubwpc = NULL;
-  const NR_PDSCH_Config_t *pdsch_Config = NULL;
-  const NR_PUSCH_Config_t *pusch_Config = NULL;
-  const NR_PUCCH_Config_t *pucch_Config = NULL;
-  const NR_PDCCH_Config_t *pdcch_Config = NULL;
-  const NR_SRS_Config_t *srs_config = NULL;
+  NR_PDSCH_Config_t *pdsch_Config = NULL;
+  NR_PUSCH_Config_t *pusch_Config = NULL;
+  NR_PUCCH_Config_t *pucch_Config = NULL;
+  NR_PDCCH_Config_t *pdcch_Config = NULL;
+  NR_SRS_Config_t *srs_config = NULL;
   if(bwp_id > 0) {
     AssertFatal(cg!=NULL,"Cellgroup is null and bwp_id!=0");
     bwpd=cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
@@ -2648,7 +2673,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
-      int dci_10_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,cg,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id, cset0_bwp_size);
+      int dci_10_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,cg,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id, coreset_id, cset0_bwp_size);
       AssertFatal(dci_10_size >= size, "NR_UL_DCI_FORMAT_0_0 size is bigger than NR_DL_DCI_FORMAT_1_0! 3GPP TS 38.212 Section 7.3.1.0: DCI size alignment is not fully implemented");
       size += dci_10_size - size; // Padding to match 1_0 size
       // UL/SUL indicator assumed to be 0
@@ -2773,6 +2798,9 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       LOG_D(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n",dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
       long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
+       
+      uint8_t pusch_antenna_ports = get_pusch_nb_antenna_ports(pusch_Config, srs_config, dci_pdu->srs_resource_indicator);
+	   
       dci_pdu->precoding_information.nbits=0;
       if (pusch_Config && 
           pusch_Config->txConfig != NULL){
@@ -2992,10 +3020,15 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       size += dci_pdu->antenna_ports.nbits;
       LOG_D(NR_MAC,"dci_pdu->antenna_ports.nbits %d\n",dci_pdu->antenna_ports.nbits);
       // Tx Config Indication
-      long *isTciEnable = pdcch_Config->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI;
-      if (isTciEnable != NULL) {
-        dci_pdu->transmission_configuration_indication.nbits = 3;
-        size += dci_pdu->transmission_configuration_indication.nbits;
+      for (int i = 0; i < pdcch_Config->controlResourceSetToAddModList->list.count; i++) {
+        if (pdcch_Config->controlResourceSetToAddModList->list.array[i]->controlResourceSetId == coreset_id) {
+          long *isTciEnable = pdcch_Config->controlResourceSetToAddModList->list.array[i]->tci_PresentInDCI;
+          if (isTciEnable != NULL) {
+            dci_pdu->transmission_configuration_indication.nbits = 3;
+            size += dci_pdu->transmission_configuration_indication.nbits;
+          }
+          break;
+        }
       }
       // SRS request
       if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
@@ -4085,6 +4118,25 @@ uint16_t compute_pucch_prb_size(uint8_t format,
   else{
     AssertFatal(1==0,"Not yet implemented");
   }
+}
+
+int get_bw_tbslbrm(NR_BWP_t *genericParameters,
+                   NR_CellGroupConfig_t *cg) {
+
+  int bw = 0;
+  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+      cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+    struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+    for (int i=0; i<BWP_list->list.count; i++) {
+      genericParameters = &BWP_list->list.array[i]->bwp_Common->genericParameters;
+      int curr_bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      if (curr_bw > bw)
+        bw = curr_bw;
+    }
+  }
+  else
+    bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  return bw;
 }
 
 /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */

@@ -64,7 +64,7 @@ void nr_ulsch_qpsk_llr(int32_t *rxdataF_comp,
 //----------------------------------------------------------------------------------------------
 
 void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
-                        int32_t **ul_ch_mag,
+                        int32_t *ul_ch_mag,
                         int16_t  *ulsch_llr,
                         uint32_t nb_rb,
                         uint32_t nb_re,
@@ -110,12 +110,12 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-    ch_mag = (__m256i*)&ul_ch_mag[0][(symbol*(off+(nb_rb*12)))];
+    ch_mag = (__m256i*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
 #else
-    ch_mag = (__m128i*)&ul_ch_mag[0][(symbol*(off+(nb_rb*12)))];
+    ch_mag = (__m128i*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
 #endif
 #elif defined(__arm__)
-  ch_mag = (int16x8_t*)&ul_ch_mag[0][(symbol*nb_rb*12)];
+  ch_mag = (int16x8_t*)&ul_ch_mag[(symbol*nb_rb*12)];
 #endif
 
 #ifdef __AVX2__
@@ -231,8 +231,8 @@ void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
 //----------------------------------------------------------------------------------------------
 
 void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
-                        int32_t **ul_ch_mag,
-                        int32_t **ul_ch_magb,
+                        int32_t *ul_ch_mag,
+                        int32_t *ul_ch_magb,
                         int16_t  *ulsch_llr,
                         uint32_t nb_rb,
                         uint32_t nb_re,
@@ -265,15 +265,15 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-  ch_mag = (__m256i*)&ul_ch_mag[0][(symbol*(off+(nb_rb*12)))];
-  ch_magb = (__m256i*)&ul_ch_magb[0][(symbol*(off+(nb_rb*12)))];
+  ch_mag = (__m256i*)&ul_ch_mag[(symbol*(off+(nb_rb*12)))];
+  ch_magb = (__m256i*)&ul_ch_magb[(symbol*(off+(nb_rb*12)))];
 #else
-  ch_mag = (__m128i*)&ul_ch_mag[0][(symbol*nb_rb*12)];
-  ch_magb = (__m128i*)&ul_ch_magb[0][(symbol*nb_rb*12)];
+  ch_mag = (__m128i*)&ul_ch_mag[(symbol*nb_rb*12)];
+  ch_magb = (__m128i*)&ul_ch_magb[(symbol*nb_rb*12)];
 #endif
 #elif defined(__arm__)
-  ch_mag = (int16x8_t*)&ul_ch_mag[0][(symbol*nb_rb*12)];
-  ch_magb = (int16x8_t*)&ul_ch_magb[0][(symbol*nb_rb*12)];
+  ch_mag = (int16x8_t*)&ul_ch_mag[(symbol*nb_rb*12)];
+  ch_magb = (int16x8_t*)&ul_ch_magb[(symbol*nb_rb*12)];
 #endif
 
 #ifdef __AVX2__
@@ -471,8 +471,8 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 
 
 void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
-                          int32_t **ul_ch_mag,
-                          int32_t **ul_ch_magb,
+                          int32_t *ul_ch_mag,
+                          int32_t *ul_ch_magb,
                           int16_t *ulsch_llr,
                           uint32_t nb_rb,
                           uint32_t nb_re,
