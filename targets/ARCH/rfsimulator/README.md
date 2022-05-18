@@ -61,6 +61,8 @@ Setting the env variable RFSIMULATOR can be used instead of using the serveraddr
 
 ## How to use the RF simulator options
 
+To define and use a channel model, the configuration file needs to include a channel configuration file. To do this, add `@include "channelmod_rfsimu.conf"` to the end of the configuration file, and place the channel configuration file in the same directory. An example channel configuration file `channelmod_rfsimu.conf` is in `ci-scripts/conf_files`.
+
 Add the following options to the command line to enable the channel model and the IQ samples saving for future replay:
 ```bash
 --rfsimulator.options chanmod,saviq
@@ -82,6 +84,8 @@ Example run:
 sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test --rfsimulator.options chanmod --rfsimulator.modelname AWGN 
 ```
 
+where `@include "channelmod_rfsimu.conf"` has been added at the end of the file, and `ci-scripts/conf_files/channelmod_rfsimu.conf` copied to `targets/PROJECTS/GENERIC-LTE-EPC/CONF/`.
+
 ## 4G case
 
 For the UE, it should be set to the IP address of the eNB. For example:
@@ -102,9 +106,7 @@ $OPENAIR_DIR/targets/bin/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurec
 
 ## 5G case
 
-The 5G RF simulator will be aligned with the 4G as the efforts for merging the 5G specific branches into the develop make progresses.
-
-After regular build, add the simulation driver (do not use ./build_oai -w SIMU until 4G and 5G branches are merged).
+If `build_oai` has not been run with `-w SIMU`, you need to build the `rfsimulator` manually. To do so:
 ```bash
 cd ran_build/build
 make rfsimulator
@@ -113,7 +115,7 @@ make rfsimulator
 ### Launch gNB in one window
 
 ```bash
-sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test
+sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL_SINGLE_THREAD --rfsim --phy-test --nokrnmod 1
 ```
 
 ### Launch UE in another window
@@ -124,15 +126,17 @@ sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-t
 
 Notes:
 
-1. <TARGET_GNB_INTERFACE_ADDRESS> can be 127.0.0.1 if both gNB and nrUE executables run on the same host, OR the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts
-2. the --rrc_config_path parameter SHALL specify where the 2 RAW files are located (`rbconfig.raw` and `reconfig.raw`).
+1. This starts the gNB and UE in the `phy-test` UP-only mode where the gNB is started as if a UE had already connected, and a configurable scheduler is used instead of the default one. The options `-m`, `-l`, `-t`, `-M`, `-T`, `-D`, and `-U` can be used to configure this scheduler.
+2. <TARGET_GNB_INTERFACE_ADDRESS> can be 127.0.0.1 if both gNB and nrUE executables run on the same host, OR the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts.
+3. The --rrc_config_path parameter SHALL specify where the 2 RAW files are located (`rbconfig.raw` and `reconfig.raw`).
    - If you are running on the same machine and launched the 2 executables (`nr-softmodem` and `nr-uesoftmodem`) from the same directory, nothing has to be done.
    - If you launched the 2 executables from 2 different folders, just point to the location where you launched the `nr-softmodem`:
      * `sudo RFSIMULATOR=<TARGET_GNB_INTERFACE_ADDRESS> ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path /the/path/where/you/launched/nr-softmodem`
    - If you are not running on the same machine or launched the 2 executables from 2 different folders, you need to **COPY** the 2 raw files
      * `scp usera@machineA:/the/path/where/you/launched/nr-softmodem/r*config.raw userb@machineB:/the/path/where/you/will/launch/nr-uesoftmodem/`
      * Obviously this operation SHALL be done before launching the `nr-uesoftmodem` executable.
-3. to enable the noS1 mode --noS1 and --nokrnmod 1 options should be added to the command line
+4. To enable the noS1 mode, `--noS1` option should be added to the command line.
+5. To operate the gNB/UE with a 5GC, start them using the `--sa` option. More information can be found [here](../../../doc/TESTING_5GSA_setup.md#2-sa-setup-with-oai-nr-ue-softmodem).
 
 
 In the UE, you can add `-d` option to get the softscope.

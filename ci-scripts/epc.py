@@ -255,16 +255,19 @@ class EPCManagement():
 			mySSH.command('mkdir -p ' + self.SourceCodePath + '/scripts', '\$', 5)
 			mySSH.command('cd /opt/oai-cn5g-fed-v1.3/docker-compose', '\$', 5)
 			mySSH.command('python3 ./core-network.py '+self.cfgDeploy, '\$', 60)
-			time.sleep(2)
-			mySSH.command('docker-compose -p 5gcn ps -a', '\$', 60)
+			if re.search('start-mini-as-ue', self.cfgDeploy):
+				dFile = 'docker-compose-mini-nrf-asue.yaml'
+			else:
+				dFile = 'docker-compose-mini-nrf.yaml'
+			mySSH.command('docker-compose -p 5gcn -f ' + dFile + ' ps -a', '\$', 60)
 			if mySSH.getBefore().count('Up (healthy)') != 6:
 				logging.error('Not all container healthy')
 			else:
-				logging.debug('OK')
-			mySSH.command('docker-compose config | grep --colour=never image', '\$', 10)
+				logging.debug('OK --> all containers are healthy')
+			mySSH.command('docker-compose -p 5gcn -f ' + dFile + ' config | grep --colour=never image', '\$', 10)
 			listOfImages = mySSH.getBefore()
 			for imageLine in listOfImages.split('\\r\\n'):
-				res1 = re.search('image: (?P<name>[a-zA-Z0-9\-]+):(?P<tag>[a-zA-Z0-9\-]+)', str(imageLine))
+				res1 = re.search('image: (?P<name>[a-zA-Z0-9\-/]+):(?P<tag>[a-zA-Z0-9\-]+)', str(imageLine))
 				res2 = re.search('mysql', str(imageLine))
 				if res1 is not None and res2 is None:
 					html_cell += res1.group('name') + ':' + res1.group('tag') + ' '
@@ -536,7 +539,7 @@ class EPCManagement():
 			mySSH.command('python3 ./core-network.py '+self.cfgUnDeploy, '\$', 60)
 			mySSH.command('docker volume prune --force || true', '\$', 60)
 			time.sleep(2)
-			mySSH.command('tshark -r /tmp/oai-cn5g.pcap | egrep --colour=never "Tracking area update" ','\$', 30)
+			mySSH.command('tshark -r /tmp/oai-cn5g-v1.3.pcap | egrep --colour=never "Tracking area update" ','\$', 30)
 			result = re.search('Tracking area update request', mySSH.getBefore())
 			if result is not None:
 				message = 'UE requested ' + str(mySSH.getBefore().count('Tracking area update request')) + 'Tracking area update request(s)'
@@ -830,8 +833,8 @@ class EPCManagement():
 				mySSH.command('zip mme.log.zip mme_check_run.*', '\$', 60)
 		elif re.match('OAICN5G', self.Type, re.IGNORECASE):
 			mySSH.command('cd ' + self.SourceCodePath + '/logs','\$', 5)
-			mySSH.command('cp -f /tmp/oai-cn5g.pcap .','\$', 30)
-			mySSH.command('zip mme.log.zip oai-amf.log oai-nrf.log oai-cn5g.pcap','\$', 30)
+			mySSH.command('cp -f /tmp/oai-cn5g-v1.3.pcap .','\$', 30)
+			mySSH.command('zip mme.log.zip oai-amf.log oai-nrf.log oai-cn5g*.pcap','\$', 30)
 			mySSH.command('mv mme.log.zip ' + self.SourceCodePath + '/scripts','\$', 30)
 		elif re.match('OAI', self.Type, re.IGNORECASE) or re.match('OAI-Rel14-CUPS', self.Type, re.IGNORECASE):
 			mySSH.command('zip mme.log.zip mme*.log', '\$', 60)

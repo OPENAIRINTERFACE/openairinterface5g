@@ -21,6 +21,8 @@ nfapi_mode_t nfapi_mod;
 nfapi_mode_t nfapi_getmode(void) {
   return nfapi_mod;
 }
+void nfapi_setmode(nfapi_mode_t nfapi_mode) {}
+
 int dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info)            { return(0);  }
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,

@@ -535,7 +535,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 int UE_id,
                                 int current_harq_pid) {
 
-
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
   NR_UE_info_t *UE_info = &nr_mac->UE_info;
@@ -756,8 +755,7 @@ void pf_dl(module_id_t module_id,
     /* retransmission */
     if (sched_pdsch->dl_harq_pid >= 0) {
       /* Allocate retransmission */
-      bool r = allocate_dl_retransmission(
-                 module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_pdsch->dl_harq_pid);
+      bool r = allocate_dl_retransmission(module_id, frame, slot, rballoc_mask, &n_rb_sched, UE_id, sched_pdsch->dl_harq_pid);
 
       if (!r) {
         LOG_D(NR_MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
@@ -998,7 +996,6 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-
   const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
   NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
                                                              RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
@@ -1026,9 +1023,9 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
     rballoc_mask[i] = (~vrb_map[i+BWPStart])&0x3fff; //bitwise not and 14 symbols
 
     // if all the pdsch symbols are free
-    if((rballoc_mask[i]&slbitmap) ==
-        slbitmap)
+    if ((rballoc_mask[i]&slbitmap) == slbitmap) {
       n_rb_sched++;
+    }
   }
 
   /* Retrieve amount of data to send for this UE */
@@ -1186,7 +1183,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space : gNB_mac->sched_ctrlCommon->search_space;
 
-    const int bwpid = bwp ? bwp->bwp_Id : 0;
+    const int bwp_id = bwp ? bwp->bwp_Id : 0;
     const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it */
@@ -1200,7 +1197,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_tti_pdcch_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
-      LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwpid,coresetid);
+      LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %d, bwp %d, cs %d\n",UE_id,bwp_id,coresetid);
       NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
       nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, &sched_ctrl->sched_pdcch);
       gNB_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
@@ -1259,6 +1256,28 @@ void nr_schedule_ue_spec(module_id_t module_id,
     // Resource Allocation in time domain
     pdsch_pdu->StartSymbolIndex = ps->startSymbolIndex;
     pdsch_pdu->NrOfSymbols = ps->nrOfSymbols;
+    // Precoding
+    if (sched_ctrl->set_pmi) {
+      int report_id = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id;
+      nr_csi_report_t *csi_report = &UE_info->csi_report_template[UE_id][report_id];
+      pdsch_pdu->precodingAndBeamforming.prg_size = pdsch_pdu->rbSize;
+      pdsch_pdu->precodingAndBeamforming.prgs_list[0].pm_idx = set_pm_index(sched_ctrl,
+                                                                            nrOfLayers,
+                                                                            csi_report->N1,
+                                                                            csi_report->N2,
+                                                                            gNB_mac->xp_pdsch_antenna_ports,
+                                                                            csi_report->codebook_mode);
+    }
+    // TBS_LBRM according to section 5.4.2.1 of 38.212
+    long *maxMIMO_Layers = cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
+    AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
+    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+    // Maximum number of PRBs across all configured DL BWPs
+    int bw_tbslbrm = get_bw_tbslbrm(genericParameters, cg);
+    pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ps->mcsTableIdx,
+                                                                         bw_tbslbrm,
+                                                                         nl_tbslbrm);
+
     NR_PDSCH_Config_t *pdsch_Config=NULL;
 
     if (bwp &&
@@ -1312,19 +1331,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_pdu_rel15_t dci_payload;
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
-    const int n_dl_bwp = bwp ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
-    AssertFatal(n_dl_bwp <= 1, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
+    const int n_dl_bwp = bwp ? cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
+    AssertFatal(n_dl_bwp <= NR_MAX_NUM_BWP, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
+
     // as per table 7.3.1.1.2-1 in 38.212
     dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1) : 0;
 
     if (bwp) AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                            "Only frequency resource allocation type 1 is currently supported\n");
 
-    dci_payload.frequency_domain_assignment.val =
-      PRBalloc_to_locationandbandwidth0(
-        pdsch_pdu->rbSize,
-        pdsch_pdu->rbStart,
-        pdsch_pdu->BWPSize);
+    dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu->rbSize,
+                                                                                    pdsch_pdu->rbStart,
+                                                                                    pdsch_pdu->BWPSize);
     dci_payload.format_indicator = 1;
     dci_payload.time_domain_assignment.val = ps->time_domain_allocation;
     dci_payload.mcs = sched_pdsch->mcs;
@@ -1339,13 +1357,14 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_payload.dmrs_sequence_initialization.val = pdsch_pdu->SCID;
     LOG_D(NR_MAC,
           "%4d.%2d DCI type 1 payload: freq_alloc %d (%d,%d,%d), "
-          "time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d ti %d\n",
+          "nrOfLayers %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d tpc %d ti %d\n",
           frame,
           slot,
           dci_payload.frequency_domain_assignment.val,
           pdsch_pdu->rbStart,
           pdsch_pdu->rbSize,
           pdsch_pdu->BWPSize,
+          pdsch_pdu->nrOfLayers,
           dci_payload.time_domain_assignment.val,
           dci_payload.vrb_to_prb_mapping.val,
           dci_payload.mcs,
@@ -1355,19 +1374,19 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tpc,
           pucch->timing_indicator);
 
-
     int dci_format = ss && ss->searchSpaceType && ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
                      NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
 
     const int rnti_type = NR_RNTI_C;
     fill_dci_pdu_rel15(scc,
-                       UE_info->CellGroup[UE_id],
+                       cg,
                        dci_pdu,
                        &dci_payload,
                        dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
-                       bwp? bwp->bwp_Id : 0,
+                       bwp ? bwp->bwp_Id : 0,
+                       coresetid,
                        gNB_mac->cset0_bwp_size);
 
     LOG_D(NR_MAC,
