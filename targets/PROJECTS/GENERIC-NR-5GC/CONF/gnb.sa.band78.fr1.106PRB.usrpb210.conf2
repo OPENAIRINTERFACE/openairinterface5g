@@ -49,21 +49,21 @@ gNBs =
     {
  #spCellConfigCommon
 
-      physCellId                                                    = 0;
+      physCellId                                                    = 2;
 
 #  downlinkConfigCommon
     #frequencyInfoDL
       # this is 3600 MHz + 43 PRBs@30kHz SCS (same as initial BWP)
-      absoluteFrequencySSB                                             = 650000;
+      absoluteFrequencySSB                                             = 641280;
       dl_frequencyBand                                                 = 78;
       # this is 3600 MHz
-      dl_absoluteFrequencyPointA                                       = 646736;
+      dl_absoluteFrequencyPointA                                       = 640008;
       #scs-SpecificCarrierList
         dl_offstToCarrier                                              = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
         dl_subcarrierSpacing                                           = 1;
-        dl_carrierBandwidth                                            = 273;
+        dl_carrierBandwidth                                            = 106;
      #initialDownlinkBWP
       #genericParameters
         # this is RBstart=27,L=48 (275*(L-1))+RBstart
@@ -83,7 +83,7 @@ gNBs =
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
       ul_subcarrierSpacing                                          = 1;
-      ul_carrierBandwidth                                           = 273;
+      ul_carrierBandwidth                                           = 106;
       pMax                                                          = 20;
      #initialUplinkBWP
       #genericParameters
@@ -217,21 +217,20 @@ MACRLCs = (
 
 prs_config = (
 {
-  NumPRSResources = 1;
-  PRSResourceSetPeriod = [40, 0];
-  SymbolStart = [7];
-  NumPRSSymbols = [7];
-  NumRB = 240;
-  RBOffset = 0;
-  CombSize = 4;
-  REOffset = [0];
-  PRSResourceOffset = [0];
-  PRSResourceRepetition = 1;
-  PRSResourceTimeGap = 1;
-  NPRS_ID = [0];
-  MutingPattern1 = [];
-  MutingPattern2 = [];
-  MutingBitRepetition = 1;
+   NumPRSResources = 2;
+   PRSResourceSetPeriod = [20, 5];
+   SymbolStart = [7, 8];
+   NumPRSSymbols = [5, 5];
+   NumRB = 106;
+   RBOffset = 0;
+   CombSize = 4;
+   REOffset = [2, 3];
+   PRSResourceOffset = [0, 1];
+   PRSResourceRepetition = 1;
+   PRSResourceTimeGap = 1;
+   NPRS_ID = [2, 6];
+   MutingPattern1 = [];
+   MutingPattern2 = [];
 }
 );
 
@@ -260,8 +259,7 @@ RUs = (
   eNB_instances  = [0];
   #beamforming 1x4 matrix:
   bf_weights = [0x00007fff, 0x0000, 0x0000, 0x0000];
-  #clock_src = "internal";
-  sdr_addrs = "addr=192.168.10.2,clock_source=gpsdo,time_source=gpsdo"
+  clock_src = "internal";
 }
 );
 

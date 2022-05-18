@@ -162,7 +162,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   is_prs_slot = check_prs_slot_gNB(&rsc_id, &gNB->prs_vars, slot);
   if(is_prs_slot)
   {
-    LOG_I(PHY,"gNB_TX: frame %d, slot %d, slots_per_frame %d, PRS Resource ID %d\n",frame,slot, fp->slots_per_frame, rsc_id);
+    LOG_D(PHY,"gNB_TX: frame %d, slot %d, slots_per_frame %d, PRS Resource ID %d\n",frame,slot, fp->slots_per_frame, rsc_id);
     nr_generate_prs(gNB->nr_gold_prs[slot],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, &gNB->prs_vars.prs_cfg[rsc_id], cfg, fp);
   }
 
