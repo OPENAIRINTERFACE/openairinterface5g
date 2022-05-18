@@ -201,10 +201,21 @@ static int sync_to_gps(openair0_device *device) {
         LOG_W(HW,"WARNING:  GPS not locked - time will not be accurate until locked\n");
       }
 
+      //wait for next pps
+      uhd::time_spec_t last = s->usrp->get_time_last_pps();
+      uhd::time_spec_t next = s->usrp->get_time_last_pps();
+      while(next == last) {
+	boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+	last = next;
+	next = s->usrp->get_time_last_pps();
+      }
+      boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+
       //Set to GPS time
       uhd::time_spec_t gps_time = uhd::time_spec_t(time_t(s->usrp->get_mboard_sensor("gps_time", mboard).to_int()));
       s->usrp->set_time_next_pps(gps_time+1.0, mboard);
       //s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+      
       //Wait for it to apply
       //The wait is 2 seconds because N-Series has a known issue where
       //the time at the last PPS does not properly update at the PPS edge
