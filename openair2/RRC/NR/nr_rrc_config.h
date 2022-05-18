@@ -120,7 +120,6 @@ void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, NR_UE_NR_Capability_t
 void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time);
 void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs);
 void scheduling_request_config(NR_ServingCellConfigCommon_t *scc,
-                               NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
                                NR_PUCCH_Config_t *pucch_Config);
 void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   NR_CSI_MeasConfig_t *csi_MeasConfig,
