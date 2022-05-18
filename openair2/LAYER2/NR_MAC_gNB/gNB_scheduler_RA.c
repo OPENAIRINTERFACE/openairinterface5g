@@ -1106,11 +1106,11 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
     num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
 
-  int R, TBS = 0;
+  int TBS = 0;
   while(TBS<7) {  // TBS for msg3 is 7 bytes (except for RRCResumeRequest1 currently not implemented)
     mcsindex++;
-    R = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
-    pusch_pdu->target_code_rate = (R>1024)?R*5:R*10;
+    int R = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
+    pusch_pdu->target_code_rate = R;
     pusch_pdu->qam_mod_order = nr_get_Qm_ul(mcsindex,pusch_pdu->mcs_table);
     TBS = nr_compute_tbs(pusch_pdu->qam_mod_order,
                          R,

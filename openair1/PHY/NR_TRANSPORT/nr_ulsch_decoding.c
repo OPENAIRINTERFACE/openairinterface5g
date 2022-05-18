@@ -439,8 +439,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   A   = (harq_process->TBS)<<3;
 
-  // target_code_rate in terms of 0.1 bits
-  float Coderate = (float) pusch_pdu->target_code_rate / (float) 10240;
+  // target_code_rate is in 0.1 units
+  float Coderate = (float) pusch_pdu->target_code_rate / 10240.0f;
 
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, Coderate %f RV %d round %d\n",
         harq_pid, A, G, mcs, n_layers, nb_rb, Qm, Coderate, pusch_pdu->pusch_data.rv_index, harq_process->round);

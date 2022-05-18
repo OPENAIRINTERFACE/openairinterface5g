@@ -504,8 +504,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, dmrs_length, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
 
-  // target_code_rate in terms of 0.1 bits
-  float Coderate = (float) harq_process->R / (float) 10240;
+  // target_code_rate is in 0.1 units
+  float Coderate = (float) harq_process->R / 10240.0f;
 
   LOG_D(PHY,"%d.%d DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d length dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d Qm %d Coderate %f\n",
         frame,nr_slot_rx,harq_pid,A,A/8,G, nb_re_dmrs, dmrs_length, harq_process->mcs, harq_process->Nl, nb_symb_sch, nb_rb, harq_process->Qm, Coderate);

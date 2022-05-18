@@ -368,8 +368,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     memcpy(harq->b, a, (A / 8) + 3); // using 3 bytes to mimic the case of 24 bit crc
   }
 
-  // target_code_rate in terms of 0.1 bits
-  float Coderate = (float) rel15->targetCodeRate[0] / (float) 10240;
+  // target_code_rate is in 0.1 units
+  float Coderate = (float) rel15->targetCodeRate[0] / 10240.0f;
   LOG_D(PHY,"DLSCH Coderate %f\n",Coderate);
 
   if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)

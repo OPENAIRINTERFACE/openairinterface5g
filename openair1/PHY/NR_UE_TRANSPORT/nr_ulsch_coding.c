@@ -198,8 +198,8 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   uint16_t Kr=0;
   uint32_t r_offset=0;
   uint32_t F=0;
-  // target_code_rate in terms of 0.1 bits
-  float Coderate = (float) harq_process->pusch_pdu.target_code_rate / (float) 10240;
+  // target_code_rate is in 0.1 units
+  float Coderate = (float) harq_process->pusch_pdu.target_code_rate / 10240.0f;
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
