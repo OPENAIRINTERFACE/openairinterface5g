@@ -104,6 +104,10 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
 return 0;
 }
 
+int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+  return 0;
+}
+
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
 
@@ -206,10 +210,9 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
-                   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
+                   int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
-		   NR_ServingCellConfigCommon_t *scc
-		   );
+                   NR_ServingCellConfigCommon_t *scc);
 
 int generate_dlsch_header(unsigned char *mac_header,
                           unsigned char num_sdus,
@@ -288,7 +291,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                            UE_info->CellGroup[0],
                            sched_ctrl->active_bwp,
                            NULL,
-                           /* tda = */ 2,
+                           /* tda = */ 0,
                            g_nrOfLayers,
                            sched_ctrl,
                            ps);
@@ -310,8 +313,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                         ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        ps->nrOfLayers)
-                         >> 3;
+                                        ps->nrOfLayers) >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */
   sched_pdsch->dl_harq_pid = slot;
@@ -647,12 +649,12 @@ int main(int argc, char **argv)
         dmrs_arg[i] = atoi(argv[optind++]);
       }
       break;
-      
+
     case 'X':
       strncpy(gNBthreads, optarg, sizeof(gNBthreads));
       gNBthreads[sizeof(gNBthreads)-1]=0;
       break;
-      
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -870,11 +872,11 @@ int main(int argc, char **argv)
     fs = 61.44e6;
     bw = 40e6;
   }
-  else if (mu == 1 && N_RB_DL == 133) { 
+  else if (mu == 1 && N_RB_DL == 133) {
     fs = 61.44e6;
     bw = 50e6;
   }
-  else if (mu == 1 && N_RB_DL == 162) { 
+  else if (mu == 1 && N_RB_DL == 162) {
     fs = 61.44e6;
     bw = 60e6;
   }

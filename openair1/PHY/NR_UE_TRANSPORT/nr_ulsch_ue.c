@@ -38,6 +38,7 @@
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_common.h"
 #include "common/utils/assertions.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
@@ -114,15 +115,14 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
 
-  uint32_t available_bits;
-  int32_t **txdataF;
   int8_t Wf[2], Wt[2];
   int l_prime[2], delta;
   uint8_t nb_dmrs_re_per_rb;
-  int ap, i;
+  int i;
   int sample_offsetF, N_RE_prime;
 
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
+  int32_t **txdataF = UE->common_vars.txdataF;
 
   int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   uint16_t number_dmrs_symbols = 0;
@@ -155,9 +155,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   nb_dmrs_re_per_rb = ((dmrs_type == pusch_dmrs_type1) ? 6:4)*cdm_grps_no_data;
 
-  LOG_D(PHY,"ulsch %x : start_rb %d bwp_start %d start_sc %d start_symbol %d num_symbols %d cdmgrpsnodata %d num_dmrs %d dmrs_re_per_rb %d\n",
-        rnti,start_rb,pusch_pdu->bwp_start,start_sc,start_symbol,number_of_symbols,cdm_grps_no_data,number_dmrs_symbols,nb_dmrs_re_per_rb);
-
+  LOG_D(PHY,"ulsch TX %x : start_rb %d nb_rb %d mod_order %d Nl %d Tpmi %d bwp_start %d start_sc %d start_symbol %d num_symbols %d cdmgrpsnodata %d num_dmrs %d dmrs_re_per_rb %d\n",
+        rnti,start_rb,nb_rb,mod_order,Nl,pusch_pdu->Tpmi,pusch_pdu->bwp_start,start_sc,start_symbol,number_of_symbols,cdm_grps_no_data,number_dmrs_symbols,nb_dmrs_re_per_rb);
   // TbD num_of_mod_symbols is set but never used
   N_RE_prime = NR_NB_SC_PER_RB*number_of_symbols - nb_dmrs_re_per_rb*number_dmrs_symbols - N_PRB_oh;
   harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb;
@@ -184,7 +183,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////ULSCH scrambling/////////////////////////
   ///////////
 
-  available_bits = G;
+  uint32_t available_bits = G;
   uint32_t scrambled_output[(available_bits>>5)+1];
   memset(scrambled_output, 0, ((available_bits>>5)+1)*sizeof(uint32_t));
 
@@ -201,14 +200,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /////////////////////////ULSCH modulation/////////////////////////
   ///////////
 
-  int max_num_re = number_of_symbols*nb_rb*NR_NB_SC_PER_RB;
+  int max_num_re = Nl*number_of_symbols*nb_rb*NR_NB_SC_PER_RB;
   int32_t d_mod[max_num_re] __attribute__ ((aligned(16)));
 
   nr_modulation(scrambled_output, // assume one codeword for the moment
                 available_bits,
                 mod_order,
                 (int16_t *)d_mod);
-
 
     
   ///////////
@@ -284,8 +282,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   /// Transform-coded "y"-sequences (for definition see 38-211 V15.3.0 2018-09, subsection 6.3.1.4)
   int32_t y[max_num_re] __attribute__ ((aligned(16)));
 
-  // if  transform precoding is enbaled (value 0)
-  if (pusch_pdu->transform_precoding == 0) {
+  if (pusch_pdu->transform_precoding == transformPrecoder_enabled) {
 
     uint32_t nb_re_pusch=nb_rb * NR_NB_SC_PER_RB;
     uint32_t y_offset = 0;
@@ -315,20 +312,20 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       LOG_D(PHY,"Transform precoding being done on data- symbol: %d, nb_re_pusch: %d, y_offset: %d\n", l, nb_re_pusch, y_offset);
 
 #ifdef DEBUG_PUSCH_MAPPING
-        printf("NR_ULSCH_UE: y_offset %d\t nb_re_pusch %d \t Symbol %d \t nb_rb %d \n",
-               y_offset, nb_re_pusch, l, nb_rb);
+      printf("NR_ULSCH_UE: y_offset %d\t nb_re_pusch %d \t Symbol %d \t nb_rb %d \n",
+             y_offset, nb_re_pusch, l, nb_rb);
 #endif
     }
 
 #ifdef DEBUG_DFT_IDFT
-    int32_t debug_symbols[max_num_re] __attribute__ ((aligned(16)));
+    int32_t debug_symbols[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
     int offset = 0;
     printf("NR_ULSCH_UE: available_bits: %d, mod_order: %d", available_bits,mod_order);
 
     for (int ll = 0; ll < (available_bits/mod_order); ll++) {
-      debug_symbols[ll] = y[ll];
+        debug_symbols[ll] = ulsch_ue->y[ll];     
     }
-
+      
     printf("NR_ULSCH_UE: numSym: %d, num_dmrs_sym: %d", number_of_symbols,number_dmrs_symbols);
     for (int ll = 0; ll < (number_of_symbols-number_dmrs_symbols); ll++) {
       nr_idft(&debug_symbols[offset], nb_re_pusch);
@@ -341,32 +338,33 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 #endif
 
   }
-  else
-    memcpy(y, tx_layers[0], (available_bits/mod_order)*sizeof(int32_t));
   
-  for (int nl = 0; nl < Nl; nl++)
-    free_and_zero(tx_layers[nl]);
-  free_and_zero(tx_layers);
+  ///////////
+  ////////////////////////////////////////////////////////////////////////
+
+
 
   /////////////////////////ULSCH RE mapping/////////////////////////
   ///////////
 
-  txdataF = UE->common_vars.txdataF;
+  int encoded_length = frame_parms->N_RB_UL*14*NR_NB_SC_PER_RB*mod_order*Nl;
+  int16_t **tx_precoding = (int16_t **)malloc16_clear(Nl*sizeof(int16_t *));
+  for (int nl=0; nl<Nl; nl++)
+    tx_precoding[nl] = (int16_t *)malloc16_clear((encoded_length<<1)*sizeof(int16_t));
 
-  for (ap=0; ap< Nl; ap++) {
-
+  for (int nl=0; nl < Nl; nl++) {
     uint8_t k_prime = 0;
     uint16_t m = 0;
-
     
 #ifdef DEBUG_PUSCH_MAPPING
     printf("NR_ULSCH_UE: Value of CELL ID %d /t, u %d \n", frame_parms->Nid_cell, u);
 #endif
 
-    // DMRS params for this ap
-    get_Wt(Wt, ap, dmrs_type);
-    get_Wf(Wf, ap, dmrs_type);
-    delta = get_delta(ap, dmrs_type);
+    int dmrs_port = get_dmrs_port(nl,pusch_pdu->dmrs_ports);
+    // DMRS params for this dmrs port
+    get_Wt(Wt, dmrs_port, dmrs_type);
+    get_Wf(Wf, dmrs_port, dmrs_type);
+    delta = get_delta(dmrs_port, dmrs_type);
 
     for (int l=start_symbol; l<start_symbol+number_of_symbols; l++) {
 
@@ -379,8 +377,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       if ((ul_dmrs_symb_pos >> l) & 0x01) {
         is_dmrs_sym = 1;
 
-        // transform precoding disabled (value 1)
-        if (pusch_pdu->transform_precoding == 1){
+        if (pusch_pdu->transform_precoding == transformPrecoder_disabled){
         
           if (dmrs_type == pusch_dmrs_type1)
             dmrs_idx = (pusch_pdu->bwp_start + start_rb)*6;
@@ -396,7 +393,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         }
       } else if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
-        AssertFatal(pusch_pdu->transform_precoding == 1, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
+        AssertFatal(pusch_pdu->transform_precoding == transformPrecoder_disabled, "PTRS NOT SUPPORTED IF TRANSFORM PRECODING IS ENABLED\n");
 
         if(is_ptrs_symbol(l, ulsch_ue->ptrs_symbols)) {
           is_ptrs_sym = 1;
@@ -405,7 +402,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
       }
 
       for (i=0; i< nb_rb*NR_NB_SC_PER_RB; i++) {
-
         uint8_t is_dmrs = 0;
         uint8_t is_ptrs = 0;
 
@@ -417,7 +413,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         } else if (is_ptrs_sym) {
           is_ptrs = is_ptrs_subcarrier(k,
                                        rnti,
-                                       ap,
+                                       nl,
                                        dmrs_type,
                                        K_ptrs,
                                        nb_rb,
@@ -428,66 +424,145 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
         if (is_dmrs == 1) {
           // if transform precoding is enabled
-          if (pusch_pdu->transform_precoding == 0) {
-
-            ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[2*dmrs_idx]) >> 15;
-            ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[(2*dmrs_idx) + 1]) >> 15;
-
+          if (pusch_pdu->transform_precoding == transformPrecoder_enabled) {
+            ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[2*dmrs_idx]) >> 15;
+            ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*dmrs_seq[(2*dmrs_idx) + 1]) >> 15;
           } else {
-
-            ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[dmrs_idx<<1]) >> 15;
-            ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
-
+            ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[dmrs_idx<<1]) >> 15;
+            ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*AMP*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
           }
 
 #ifdef DEBUG_PUSCH_MAPPING
-          printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t dmrs: %d %d\n",
-                 dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
-                 ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
+          printf("DMRS: Layer: %d\t, dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t dmrs: %d %d\n",
+                 nl, dmrs_idx, l, k, k_prime, n, ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1],
+                 ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1]);
 #endif
-
 
           dmrs_idx++;
           k_prime++;
           k_prime&=1;
           n+=(k_prime)?0:1;
-
+      
         }  else if (is_ptrs == 1) {
-
-          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (beta_ptrs*AMP*mod_ptrs[ptrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (beta_ptrs*AMP*mod_ptrs[(ptrs_idx<<1) + 1]) >> 15;
-
+          ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1] = (beta_ptrs*AMP*mod_ptrs[ptrs_idx<<1]) >> 15;
+          ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = (beta_ptrs*AMP*mod_ptrs[(ptrs_idx<<1) + 1]) >> 15;
           ptrs_idx++;
-
         } else if (!is_dmrs_sym || allowed_xlsch_re_in_dmrs_symbol(k, start_sc, frame_parms->ofdm_symbol_size, cdm_grps_no_data, dmrs_type)) {
-
-          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = ((int16_t *) y)[m<<1];
-          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = ((int16_t *) y)[(m<<1) + 1];
+          if (pusch_pdu->transform_precoding == transformPrecoder_disabled) {
+            ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1]       = ((int16_t *)tx_layers[nl])[m<<1];
+            ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = ((int16_t *)tx_layers[nl])[(m<<1) + 1];
+          }
+          else {
+            ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1]       = ((int16_t *) y)[m<<1];
+            ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = ((int16_t *) y)[(m<<1) + 1];
+          }
 
 #ifdef DEBUG_PUSCH_MAPPING
-          printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-                 m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
-                 ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
+          printf("DATA: layer %d\t m %d\t l %d \t k %d \t tx_precoding: %d %d\n",
+                 nl, m, l, k, ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1],
+                 ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1]);
 #endif
 
           m++;
 
         } else {
-
-          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1]       = 0;
-          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = 0;
-
+          ((int16_t*)tx_precoding[nl])[(sample_offsetF)<<1]       = 0;
+          ((int16_t*)tx_precoding[nl])[((sample_offsetF)<<1) + 1] = 0;
         }
 
         if (++k >= frame_parms->ofdm_symbol_size)
           k -= frame_parms->ofdm_symbol_size;
-      }
-    }
-  }
+      } //for (i=0; i< nb_rb*NR_NB_SC_PER_RB; i++) 
+    }//for (l=start_symbol; l<start_symbol+number_of_symbols; l++)
+  }//for (nl=0; nl < Nl; nl++)
+
+
+
+  /////////////////////////ULSCH precoding/////////////////////////
+  ///////////
+  ///Layer Precoding and Antenna port mapping
+  // tx_layers 0-3 are mapped on antenna ports
+  // The precoding info is supported by nfapi such as num_prgs, prg_size, prgs_list and pm_idx
+  // The same precoding matrix is applied on prg_size RBs, Thus
+  //        pmi = prgs_list[rbidx/prg_size].pm_idx, rbidx =0,...,rbSize-1
+  // The Precoding matrix:
+  for (int ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
+    for (int l=start_symbol; l<start_symbol+number_of_symbols; l++) {
+      uint16_t k = start_sc;
+
+      for (int rb=0; rb<nb_rb; rb++) {
+        //get pmi info
+        uint8_t pmi=pusch_pdu->Tpmi;
+          
+        if (pmi == 0) {//unitary Precoding
+          if(ap< pusch_pdu->nrOfLayers)
+            memcpy((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size  + k],
+                   (void*)&tx_precoding[ap][2*(l*frame_parms->ofdm_symbol_size + k)],
+                   NR_NB_SC_PER_RB*sizeof(int32_t));
+          else
+            memset((void*)&txdataF[ap][l*frame_parms->ofdm_symbol_size + k],
+                   0,
+                   NR_NB_SC_PER_RB*sizeof(int32_t));
+
+          k += NR_NB_SC_PER_RB;
+          if (k >= frame_parms->ofdm_symbol_size) {
+            k -= frame_parms->ofdm_symbol_size;
+          }
+        }
+        else {
+          //get the precoding matrix weights:
+          char *W_prec;
+          switch (frame_parms->nb_antennas_tx) {
+            case 1://1 antenna port
+              W_prec = nr_W_1l_2p[pmi][ap];
+              break;
+            case 2://2 antenna ports
+              if (pusch_pdu->nrOfLayers == 1)//1 layer
+                W_prec = nr_W_1l_2p[pmi][ap];
+              else//2 layers
+                W_prec = nr_W_2l_2p[pmi][ap];
+              break;
+            case 4://4 antenna ports
+              if (pusch_pdu->nrOfLayers == 1)//1 layer
+                W_prec = nr_W_1l_4p[pmi][ap];
+              else if (pusch_pdu->nrOfLayers == 2)//2 layers
+                W_prec = nr_W_2l_4p[pmi][ap];
+              else if (pusch_pdu->nrOfLayers == 3)//3 layers
+                W_prec = nr_W_3l_4p[pmi][ap];
+              else//4 layers
+                W_prec = nr_W_4l_4p[pmi][ap];
+              break;
+            default:
+              LOG_D(PHY,"Precoding 1,2, or 4 antenna ports are currently supported\n");
+              W_prec = nr_W_1l_2p[pmi][ap];
+              break;
+          }
+
+          for (int i=0; i<NR_NB_SC_PER_RB; i++) {
+            int32_t re_offset = l*frame_parms->ofdm_symbol_size + k;
+            int32_t precodatatx_F = nr_layer_precoder(tx_precoding, W_prec, pusch_pdu->nrOfLayers, re_offset);
+            ((int16_t*)txdataF[ap])[(re_offset<<1)] = ((int16_t *) &precodatatx_F)[0];
+            ((int16_t*)txdataF[ap])[(re_offset<<1) + 1] = ((int16_t *) &precodatatx_F)[1];
+                            
+            if (++k >= frame_parms->ofdm_symbol_size) {
+              k -= frame_parms->ofdm_symbol_size;
+            }
+          }
+        }
+      } //RB loop
+    } // symbol loop
+  }// port loop
 
   NR_UL_UE_HARQ_t *harq_process_ulsch=NULL;
   harq_process_ulsch = UE->ulsch[thread_id][gNB_id]->harq_processes[harq_pid];
   harq_process_ulsch->status = SCH_IDLE;
+
+  for (int nl = 0; nl < Nl; nl++) {
+    free_and_zero(tx_layers[nl]);
+    free_and_zero(tx_precoding[nl]);
+  }
+  free_and_zero(tx_layers);
+  free_and_zero(tx_precoding);
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
@@ -498,7 +573,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
                                       uint8_t slot,
                                       NR_DL_FRAME_PARMS *frame_parms,
-                                      uint8_t Nl) {
+                                      uint8_t n_antenna_ports) {
 
   int tx_offset, ap;
   int32_t **txdata;
@@ -520,7 +595,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   txdataF = UE->common_vars.txdataF;
 
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-  for(ap = 0; ap < Nl; ap++) {
+  for(ap = 0; ap < n_antenna_ports; ap++) {
     for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
 
       LOG_D(PHY,"In %s: rotating txdataF symbol %d (%d) => (%d.%d)\n",
@@ -538,7 +613,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
     }
   }
 
-  for (ap = 0; ap < Nl; ap++) {
+  for (ap = 0; ap < n_antenna_ports; ap++) {
     if (frame_parms->Ncp == 1) { // extended cyclic prefix
       PHY_ofdm_mod(txdataF[ap],
                    &txdata[ap][tx_offset],

@@ -97,6 +97,10 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
 return 0;
 }
 
+int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+  return 0;
+}
+
 void
 rrc_data_ind(
   const protocol_ctxt_t *const ctxt_pP,
