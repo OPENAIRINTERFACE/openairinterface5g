@@ -1019,6 +1019,9 @@ void fill_initial_SpCellConfig(int uid,
                                NR_ServingCellConfig_t *servingcellconfigdedicated,
                                const gNB_RrcConfigurationReq *configuration) {
 
+  if (cellGroupConfig->spCellConfig == NULL) {
+    cellGroupConfig->spCellConfig = calloc(1,sizeof(*cellGroupConfig->spCellConfig));
+  }
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
 
   // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
@@ -1361,61 +1364,74 @@ void fill_initial_SpCellConfig(int uid,
 
   int pdsch_AntennaPorts = configuration->pdsch_AntennaPorts.N1 * configuration->pdsch_AntennaPorts.N2 * configuration->pdsch_AntennaPorts.XP;
 
-  for (int bwp_loop = 0; bwp_loop < n_dl_bwp; bwp_loop++) {
-    NR_BWP_Downlink_t *bwp = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_loop];
-    int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+  int bwp_loop_end = n_dl_bwp>0 ? n_dl_bwp : 1;
+  for (int bwp_loop = 0; bwp_loop < bwp_loop_end; bwp_loop++) {
+
+    int curr_bwp, bwp_id;
+    struct NR_SetupRelease_PDSCH_Config *pdsch_Config;
+    if(n_dl_bwp == 0) {
+      pdsch_Config = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config;
+      curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+      bwp_id = 0;
+    }
+    else {
+      NR_BWP_Downlink_t *bwp = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_loop];
+      pdsch_Config = bwp->bwp_Dedicated->pdsch_Config;
+      curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+      bwp_id = bwp->bwp_Id;
+    }
 
     config_csirs(scc, csi_MeasConfig, uid, pdsch_AntennaPorts, curr_bwp, configuration->do_CSIRS, bwp_loop);
     config_csiim(configuration->do_CSIRS, pdsch_AntennaPorts, curr_bwp, csi_MeasConfig, bwp_loop);
 
     NR_CSI_ResourceConfig_t *csires1 = calloc(1,sizeof(*csires1));
-    csires1->csi_ResourceConfigId = bwp->bwp_Id+20;
+    csires1->csi_ResourceConfigId = bwp_id+20;
     csires1->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
     csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
     csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList = calloc(1,sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList));
     NR_CSI_SSB_ResourceSetId_t *ssbres00 = calloc(1,sizeof(*ssbres00));
     *ssbres00 = 0;
     ASN_SEQUENCE_ADD(&csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list,ssbres00);
-    csires1->bwp_Id = bwp->bwp_Id;
+    csires1->bwp_Id = bwp_id;
     csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
     ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires1);
 
+    NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1,sizeof(*pucchcsires1));
+    pucchcsires1->uplinkBandwidthPartId=bwp_id;
+    pucchcsires1->pucch_Resource=2;
+
     if (configuration->do_CSIRS && pdsch_AntennaPorts > 1) {
       NR_CSI_ResourceConfig_t *csires0 = calloc(1,sizeof(*csires0));
-      csires0->csi_ResourceConfigId = bwp->bwp_Id;
+      csires0->csi_ResourceConfigId = bwp_id;
       csires0->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
       csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB = calloc(1,sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
       csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList = calloc(1,sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList));
       NR_NZP_CSI_RS_ResourceSetId_t *nzp0 = calloc(1,sizeof(*nzp0));
       *nzp0 = bwp_loop;
       ASN_SEQUENCE_ADD(&csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list,nzp0);
-      csires0->bwp_Id = bwp->bwp_Id;
+      csires0->bwp_Id = bwp_id;
       csires0->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
       ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires0);
 
       NR_CSI_ResourceConfig_t *csires2 = calloc(1,sizeof(*csires2));
-      csires2->csi_ResourceConfigId = bwp->bwp_Id+10;
+      csires2->csi_ResourceConfigId = bwp_id+10;
       csires2->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_csi_IM_ResourceSetList;
       csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList = calloc(1,sizeof(*csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList));
       NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1,sizeof(*csiim00));
       *csiim00 = bwp_loop;
       ASN_SEQUENCE_ADD(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
-      csires2->bwp_Id = bwp->bwp_Id;
+      csires2->bwp_Id = bwp_id;
       csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
       ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
 
-      NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1,sizeof(*pucchcsires1));
-      pucchcsires1->uplinkBandwidthPartId=bwp->bwp_Id;
-      pucchcsires1->pucch_Resource=2;
-
       if (pdsch_AntennaPorts > 1) {
-        LOG_I(NR_RRC,"Filling CSI Report Config for RI_PMI_CQI\n");
+        LOG_D(NR_RRC,"Filling CSI Report Config for RI_PMI_CQI\n");
         NR_CSI_ReportConfig_t *csirep1 = calloc(1,sizeof(*csirep1));
         csirep1->reportConfigId=0;
         csirep1->carrier=NULL;
-        csirep1->resourcesForChannelMeasurement=bwp->bwp_Id;
+        csirep1->resourcesForChannelMeasurement=bwp_id;
         csirep1->csi_IM_ResourcesForInterference=calloc(1,sizeof(*csirep1->csi_IM_ResourcesForInterference));
-        *csirep1->csi_IM_ResourcesForInterference=bwp->bwp_Id+10;
+        *csirep1->csi_IM_ResourcesForInterference=bwp_id+10;
         csirep1->nzp_CSI_RS_ResourcesForInterference=NULL;
         csirep1->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
         csirep1->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep1->reportConfigType.choice.periodic));
@@ -1462,7 +1478,7 @@ void fill_initial_SpCellConfig(int uid,
         //csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
         //*csirep1->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
         csirep1->cqi_Table = calloc(1,sizeof(*csirep1->cqi_Table));
-        if(bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table!=NULL)
+        if(pdsch_Config->choice.setup->mcs_Table!=NULL)
           *csirep1->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table2;
         else
           *csirep1->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
@@ -1472,11 +1488,11 @@ void fill_initial_SpCellConfig(int uid,
         ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep1);
       }
 
-      LOG_I(NR_RRC,"Filling CSI Report Config for CRI_RSRP\n");
+      LOG_D(NR_RRC,"Filling CSI Report Config for CRI_RSRP\n");
       NR_CSI_ReportConfig_t *csirep2 = calloc(1,sizeof(*csirep2));
-      csirep2->reportConfigId=bwp->bwp_Id+10;
+      csirep2->reportConfigId=bwp_id+10;
       csirep2->carrier=NULL;
-      csirep2->resourcesForChannelMeasurement=bwp->bwp_Id;
+      csirep2->resourcesForChannelMeasurement=bwp_id;
       csirep2->csi_IM_ResourcesForInterference=NULL;
       csirep2->nzp_CSI_RS_ResourcesForInterference=NULL;
       csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
@@ -1503,6 +1519,35 @@ void fill_initial_SpCellConfig(int uid,
       csirep2->non_PMI_PortIndication = NULL;
       csirep2->ext1 = NULL;
       ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep2);
+    }
+    else{
+      NR_CSI_ReportConfig_t *csirep3 = calloc(1,sizeof(*csirep3));
+      csirep3->reportConfigId=bwp_id+10;
+      csirep3->carrier=NULL;
+      csirep3->resourcesForChannelMeasurement=bwp_id+20;
+      csirep3->csi_IM_ResourcesForInterference=NULL;
+      csirep3->nzp_CSI_RS_ResourcesForInterference=NULL;
+      csirep3->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
+      csirep3->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep3->reportConfigType.choice.periodic));
+      csirep3->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
+      csirep3->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 29 + (20 * uid) % 320;
+      ASN_SEQUENCE_ADD(&csirep3->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
+      csirep3->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
+      csirep3->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;
+      csirep3->reportFreqConfiguration = NULL;
+      csirep3->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
+      csirep3->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
+      csirep3->codebookConfig= NULL;
+      csirep3->dummy = NULL;
+      csirep3->groupBasedBeamReporting.present = NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled;
+      csirep3->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep3->groupBasedBeamReporting.choice.disabled));
+      csirep3->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep3->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
+      *csirep3->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
+      csirep3->cqi_Table = NULL;
+      csirep3->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
+      csirep3->non_PMI_PortIndication = NULL;
+      csirep3->ext1 = NULL;
+      ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep3);
     }
   }
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
