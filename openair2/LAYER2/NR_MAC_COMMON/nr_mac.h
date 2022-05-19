@@ -541,6 +541,9 @@ typedef struct nr_csi_report {
   uint8_t nb_of_csi_ssb_report;
   L1_RSRP_bitlen_t CSI_report_bitlen;
   CSI_Meas_bitlen_t csi_meas_bitlen;
+  int codebook_mode;
+  int N1;
+  int N2;
 } nr_csi_report_t;
 
 #endif /*__LAYER2_MAC_H__ */
