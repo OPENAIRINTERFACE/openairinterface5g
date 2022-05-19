@@ -1324,6 +1324,18 @@ extern "C" {
   openair0_cfg[0].iq_txshift = 4;//shift
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
 
+  if(openair0_cfg[0].tx_subdev!=NULL){
+    LOG_I(HW, "openair0_cfg[0].tx_subdev == %s\n", openair0_cfg[0].tx_subdev);
+    tx_subdev = openair0_cfg[0].tx_subdev;
+    s->usrp->set_tx_subdev_spec(tx_subdev);
+  }
+
+  if(openair0_cfg[0].rx_subdev!=NULL){
+    LOG_I(HW, "openair0_cfg[0].rx_subdev == %s\n", openair0_cfg[0].rx_subdev);
+    rx_subdev = openair0_cfg[0].rx_subdev;
+    s->usrp->set_rx_subdev_spec(rx_subdev);
+  }
+
   for(int i=0; i<((int) s->usrp->get_rx_num_channels()); i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i+choffset);
@@ -1347,13 +1359,6 @@ extern "C" {
 
   LOG_D(HW, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
   LOG_D(HW, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
-  LOG_I(HW, "openair0_cfg[0].tx_subdev == %s\n", openair0_cfg[0].tx_subdev);
-  LOG_I(HW, "openair0_cfg[0].rx_subdev == %s\n", openair0_cfg[0].rx_subdev);
-
-  tx_subdev = openair0_cfg[0].tx_subdev;
-  rx_subdev = openair0_cfg[0].rx_subdev;
-  s->usrp->set_tx_subdev_spec(tx_subdev);
-  s->usrp->set_rx_subdev_spec(rx_subdev);
 
   for(int i=0; i<((int) s->usrp->get_tx_num_channels()); i++) {
     ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
