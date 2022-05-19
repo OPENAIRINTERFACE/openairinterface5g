@@ -2206,6 +2206,37 @@ NR_RLC_BearerConfig_t *get_SRB_RLC_BearerConfig(long channelId,
   return rlc_BearerConfig;
 }
 
+NR_RLC_BearerConfig_t *get_DRB_RLC_BearerConfig(long lcChannelId, long drbId, NR_RLC_Config_PR rlc_conf, long priority)
+{
+  NR_RLC_BearerConfig_t *rlc_BearerConfig                  = calloc(1, sizeof(NR_RLC_BearerConfig_t));
+  rlc_BearerConfig->logicalChannelIdentity                 = lcChannelId;
+  rlc_BearerConfig->servedRadioBearer                      = calloc(1, sizeof(*rlc_BearerConfig->servedRadioBearer));
+  rlc_BearerConfig->servedRadioBearer->present             = NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
+  rlc_BearerConfig->servedRadioBearer->choice.drb_Identity = drbId;
+  rlc_BearerConfig->reestablishRLC                         = NULL;
+
+  NR_RLC_Config_t *rlc_Config  = calloc(1, sizeof(NR_RLC_Config_t));
+  nr_drb_config(rlc_Config, rlc_conf);
+  rlc_BearerConfig->rlc_Config = rlc_Config;
+
+  NR_LogicalChannelConfig_t *logicalChannelConfig                 = calloc(1, sizeof(NR_LogicalChannelConfig_t));
+  logicalChannelConfig->ul_SpecificParameters                     = calloc(1, sizeof(*logicalChannelConfig->ul_SpecificParameters));
+  logicalChannelConfig->ul_SpecificParameters->priority           = priority;
+  logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
+  logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100;
+
+  long *logicalChannelGroup                                          = CALLOC(1, sizeof(long));
+  *logicalChannelGroup                                               = 1;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup   = logicalChannelGroup;
+  logicalChannelConfig->ul_SpecificParameters->schedulingRequestID   = CALLOC(1, sizeof(*logicalChannelConfig->ul_SpecificParameters->schedulingRequestID));
+  *logicalChannelConfig->ul_SpecificParameters->schedulingRequestID  = 0;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_Mask = 0;
+  logicalChannelConfig->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
+  rlc_BearerConfig->mac_LogicalChannelConfig                         = logicalChannelConfig;
+
+  return rlc_BearerConfig;
+}
+
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup, int use_rlc_um_for_drb, uint8_t configure_srb, uint8_t bearer_id_start, uint8_t nb_bearers_to_setup, long *priority ) {
 
   cellGroupConfig->cellGroupId = 0;
@@ -2222,37 +2253,10 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
 
   // DRB Configuration
   for (int i = bearer_id_start; i < bearer_id_start + nb_bearers_to_setup; i++ ){
-    NR_RLC_BearerConfig_t *rlc_BearerConfig_drb                      = NULL;
-    NR_RLC_Config_t *rlc_Config_drb                                  = NULL;
-    NR_LogicalChannelConfig_t *logicalChannelConfig_drb              = NULL;
-    long *logicalChannelGroup_drb                                    = NULL;
-    rlc_BearerConfig_drb                                             = calloc(1, sizeof(NR_RLC_BearerConfig_t));
-    rlc_BearerConfig_drb->logicalChannelIdentity                     = 3 + i ;
-    rlc_BearerConfig_drb->servedRadioBearer                          = calloc(1, sizeof(*rlc_BearerConfig_drb->servedRadioBearer));
-    rlc_BearerConfig_drb->servedRadioBearer->present                 = NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity;
-    rlc_BearerConfig_drb->servedRadioBearer->choice.drb_Identity     = i;
-    rlc_BearerConfig_drb->reestablishRLC                             = NULL;
-    rlc_Config_drb                                                   = calloc(1, sizeof(NR_RLC_Config_t));
-
-    if (use_rlc_um_for_drb) nr_drb_config(rlc_Config_drb, NR_RLC_Config_PR_um_Bi_Directional);
-    else                    nr_drb_config(rlc_Config_drb, NR_RLC_Config_PR_am);
-
-    rlc_BearerConfig_drb->rlc_Config                                 = rlc_Config_drb;
-    logicalChannelConfig_drb                                             = calloc(1, sizeof(NR_LogicalChannelConfig_t));
-    logicalChannelConfig_drb->ul_SpecificParameters                      = calloc(1, sizeof(*logicalChannelConfig_drb->ul_SpecificParameters));
-    logicalChannelConfig_drb->ul_SpecificParameters->priority            = priority[i-bearer_id_start];
-    logicalChannelConfig_drb->ul_SpecificParameters->prioritisedBitRate  = NR_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
-    logicalChannelConfig_drb->ul_SpecificParameters->bucketSizeDuration  = NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100;
-    logicalChannelGroup_drb                                              = CALLOC(1, sizeof(long));
-    *logicalChannelGroup_drb                                             = 1;
-    logicalChannelConfig_drb->ul_SpecificParameters->logicalChannelGroup = logicalChannelGroup_drb;
-    logicalChannelConfig_drb->ul_SpecificParameters->schedulingRequestID = CALLOC(1, sizeof(*logicalChannelConfig_drb->ul_SpecificParameters->schedulingRequestID));
-    *logicalChannelConfig_drb->ul_SpecificParameters->schedulingRequestID = 0;
-    logicalChannelConfig_drb->ul_SpecificParameters->logicalChannelSR_Mask = 0;
-    logicalChannelConfig_drb->ul_SpecificParameters->logicalChannelSR_DelayTimerApplied = 0;
-    rlc_BearerConfig_drb->mac_LogicalChannelConfig                       = logicalChannelConfig_drb;
-    ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig_drb);
-    ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig_drb);
+    const NR_RLC_Config_PR rlc_conf = use_rlc_um_for_drb ? NR_RLC_Config_PR_um_Bi_Directional : NR_RLC_Config_PR_am;
+    NR_RLC_BearerConfig_t *rlc_BearerConfig = get_DRB_RLC_BearerConfig(3 + i, i, rlc_conf, priority[i-bearer_id_start]);
+    ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+    ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig);
   }
 }
 
