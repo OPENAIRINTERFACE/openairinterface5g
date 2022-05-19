@@ -218,6 +218,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
   rrc->ngap_id2_ngap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->configuration = *configuration;
   rrc->carrier.servingcellconfigcommon = configuration->scc;
+  rrc->carrier.servingcellconfig = configuration->scd;
   nr_rrc_config_ul_tda(configuration->scc,configuration->minRXTXTIME);
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
@@ -335,12 +336,16 @@ rrc_gNB_generate_RRCSetup(
   //   T_INT(ctxt_pP->rnti));
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
-  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
-                                                  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
-                                                  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
-                                                  masterCellGroup_from_DU,
-                                                  scc,
-                                                  &rrc->configuration);
+  NR_ServingCellConfig_t *servingcellconfigdedicated = rrc->configuration.scd;
+  int16_t ret = do_RRCSetup(ue_context_pP,
+                            (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
+                            rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
+                            masterCellGroup_from_DU,
+                            scc,servingcellconfigdedicated,&rrc->configuration);
+
+  AssertFatal(ret>0,"Error generating RRCSetup for RRCSetupRequest\n");
+
+  ue_p->Srb0.Tx_buffer.payload_size = ret;
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -442,16 +447,20 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
   rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
   gNB_RRC_INST                 *rrc_instance_p = RC.nrrrc[ctxt_pP->module_id];
   NR_ServingCellConfigCommon_t *scc=rrc_instance_p->carrier.servingcellconfigcommon;
+  NR_ServingCellConfig_t       *servingcellconfigdedicated = rrc_instance_p->configuration.scd;
 
   ue_context_pP = rrc_gNB_get_next_free_ue_context(ctxt_pP, rrc_instance_p, 0);
 
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  ue_p->Srb0.Tx_buffer.payload_size = do_RRCSetup(ue_context_pP,
-                                                  (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
-                                                  rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
-                                                  NULL,
-                                                  scc,
-                                                  &rrc_instance_p->configuration);
+  int16_t ret = do_RRCSetup(ue_context_pP,
+                            (uint8_t *) ue_p->Srb0.Tx_buffer.Payload,
+                            rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id),
+                            NULL,
+                            scc,servingcellconfigdedicated,&rrc_instance_p->configuration);
+
+  AssertFatal(ret>0,"Error generating RRCSetup for RRCReestablishmentRequest\n");
+
+  ue_p->Srb0.Tx_buffer.payload_size = ret;
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)(ue_p->Srb0.Tx_buffer.Payload),
@@ -799,10 +808,16 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   }
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    uint32_t delay_ms = ue_context_pP->ue_context.masterCellGroup &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList ?
+                        NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_RECONFIGURATION_DELAY_MS;
+
     nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
                                           ue_context_pP->ue_context.rnti,
                                           *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
-                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+                                          delay_ms);
   }
 }
 
@@ -1041,10 +1056,16 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 #endif
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    uint32_t delay_ms = ue_context_pP->ue_context.masterCellGroup &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList ?
+                        NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_RECONFIGURATION_DELAY_MS;
+
     nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
                                           ue_context_pP->ue_context.rnti,
                                           *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
-                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+                                          delay_ms);
   }
 }
 
@@ -1221,10 +1242,16 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
 #endif
 
   if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    uint32_t delay_ms = ue_context_pP->ue_context.masterCellGroup &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList ?
+                        NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_RECONFIGURATION_DELAY_MS;
+
     nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
                                           ue_context_pP->ue_context.rnti,
                                           *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
-                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+                                          delay_ms);
   }
 }
 
@@ -1291,8 +1318,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                NULL);
 
   ue_context_pP->ue_context.pdu_session_release_command_flag = 1;
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
-              "[MSG] RRC Reconfiguration\n");
+
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
   /* Free all NAS PDUs */
   if (nas_length > 0) {
@@ -1328,10 +1355,16 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 #endif
 
   if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    uint32_t delay_ms = ue_context_pP->ue_context.masterCellGroup &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList ?
+                        NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_RECONFIGURATION_DELAY_MS;
+
     nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
                                           ue_context_pP->ue_context.rnti,
                                           *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
-                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+                                          delay_ms);
   }
 }
 
@@ -1848,8 +1881,8 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
                                 NULL,
                                 NULL,
                                 NULL);
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,
-              "[MSG] RRC Reconfiguration\n");
+
+  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
@@ -1893,13 +1926,78 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
   }
 
   if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    uint32_t delay_ms = ue_context_pP->ue_context.masterCellGroup &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList ?
+                        NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_RECONFIGURATION_DELAY_MS;
+
     nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
                                           ue_context_pP->ue_context.rnti,
                                           *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
-                                          NR_RRC_RECONFIGURATION_DELAY_MS);
+                                          delay_ms);
   }
 }
 //-----------------------------------------------------------------------------
+
+int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP,
+                               protocol_ctxt_t              *const ctxt_pP,
+                               const int                    dl_bwp_id,
+                               const int                    ul_bwp_id) {
+
+  uint8_t buffer[RRC_BUF_SIZE];
+  memset(buffer, 0, sizeof(buffer));
+  uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
+
+  NR_CellGroupConfig_t *masterCellGroup = ue_context_pP->ue_context.masterCellGroup;
+  if (dl_bwp_id >= 0) {
+    *masterCellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = dl_bwp_id;
+    *masterCellGroup->spCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = dl_bwp_id;
+  }
+  if (ul_bwp_id >= 0) {
+    *masterCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = ul_bwp_id;
+  }
+
+  uint16_t  size = do_RRCReconfiguration(ctxt_pP,
+                                         buffer,
+                                         sizeof(buffer),
+                                         xid,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         NULL,
+                                         masterCellGroup);
+
+  nr_rrc_data_req(ctxt_pP,
+                  DCCH,
+                  rrc_gNB_mui++,
+                  SDU_CONFIRM_NO,
+                  size,
+                  buffer,
+                  PDCP_TRANSMISSION_MODE_CONTROL);
+
+  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+    uint32_t delay_ms = ue_context_pP->ue_context.masterCellGroup &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&
+                        ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList ?
+                        NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_RECONFIGURATION_DELAY_MS;
+
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_context_pP->ue_context.rnti,
+                                          *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          delay_ms);
+  }
+
+  return 0;
+}
 
 /*------------------------------------------------------------------------------*/
 int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,

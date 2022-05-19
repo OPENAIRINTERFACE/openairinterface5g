@@ -150,34 +150,6 @@ int nr_get_csi_rs_signal(PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-int get_wf(int kp, int s) {
-  int wf = 0;
-  if (kp == 0) {
-    wf = 1;
-  } else {
-    wf = -2*(s%2)+1;
-  }
-  return wf;
-}
-
-int get_wt(int lp, int s) {
-  int wt = 0;
-  if (s < 2) {
-    wt = 1;
-  } else if (s < 4) {
-    wt = -2*(lp%2)+1;
-  } else if (s < 6) {
-    wt = -2*(lp/2)+1;
-  } else {
-    if ((lp == 0) || (lp == 3)) {
-      wt = 1;
-    } else {
-      wt = -1;
-    }
-  }
-  return wt;
-}
-
 uint32_t calc_power_csirs(uint16_t *x, fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu) {
   uint64_t sum_x = 0;
   uint64_t sum_x2 = 0;
@@ -247,9 +219,8 @@ int nr_csi_rs_channel_estimation(PHY_VARS_NR_UE *ue,
 
               // This is not just the LS estimation for each (k,l), but also the sum of the different contributions
               // for the sake of optimizing the memory used.
-              int w = get_wf(kp,s)*get_wt(lp,s);
-              csi_rs_ls_estimated_channel[kinit<<1] += w*csi_rs_ls_estimated_channel_re;
-              csi_rs_ls_estimated_channel[(kinit<<1)+1] += w*csi_rs_ls_estimated_channel_im;
+              csi_rs_ls_estimated_channel[kinit<<1] += csi_rs_ls_estimated_channel_re;
+              csi_rs_ls_estimated_channel[(kinit<<1)+1] += csi_rs_ls_estimated_channel_im;
             }
           }
         }
