@@ -1021,7 +1021,7 @@ extern "C" {
     sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
     LOG_I(HW,"UHD version %s (%d.%d.%d)\n",
           uhd::get_version_string().c_str(),vers,subvers,subsubvers);
-    std::string args;
+    std::string args,tx_subdev,rx_subdev;
 
     if (openair0_cfg[0].sdr_addrs == NULL) {
       args = "type=b200";
@@ -1347,6 +1347,13 @@ extern "C" {
 
   LOG_D(HW, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
   LOG_D(HW, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
+  LOG_I(HW, "openair0_cfg[0].tx_subdev == %s\n", openair0_cfg[0].tx_subdev);
+  LOG_I(HW, "openair0_cfg[0].rx_subdev == %s\n", openair0_cfg[0].rx_subdev);
+
+  tx_subdev = openair0_cfg[0].tx_subdev;
+  rx_subdev = openair0_cfg[0].rx_subdev;
+  s->usrp->set_tx_subdev_spec(tx_subdev);
+  s->usrp->set_rx_subdev_spec(rx_subdev);
 
   for(int i=0; i<((int) s->usrp->get_tx_num_channels()); i++) {
     ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
@@ -1419,6 +1426,7 @@ extern "C" {
     LOG_I(HW,"  Actual TX packet size: %lu\n",s->tx_stream->get_max_num_samps());
   }
 
+  std::cout << boost::format("Using Device: %s") % s->usrp->get_pp_string() << std::endl;
   LOG_I(HW,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());
   device->trx_write_func = trx_usrp_write;
   device->trx_read_func  = trx_usrp_read;

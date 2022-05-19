@@ -178,6 +178,10 @@ typedef struct {
   int rx_num_channels;
   //! number of TX channels (=TX antennas)
   int tx_num_channels;
+  //! rx daughter card
+  char* rx_subdev;
+  //! tx daughter card
+  char* tx_subdev;
   //! \brief RX base addresses for mmapped_dma
   int32_t *rxbase[4];
   //! \brief TX base addresses for mmapped_dma

@@ -103,6 +103,8 @@ typedef enum {
 #define CONFIG_STRING_RU_SL_AHEAD                 "sl_ahead"
 #define CONFIG_STRING_RU_NR_FLAG                  "nr_flag"
 #define CONFIG_STRING_RU_NR_SCS_FOR_RASTER        "nr_scs_for_raster"
+#define CONFIG_STRING_RU_TX_SUBDEV                "tx_subdev"
+#define CONFIG_STRING_RU_RX_SUBDEV                "rx_subdev"
 
 #define HLP_RU_SF_AHEAD "LTE TX processing advance"
 #define HLP_RU_SL_AHEAD "NR TX processing advance"
@@ -142,6 +144,8 @@ typedef enum {
 #define RU_SL_AHEAD                   30 
 #define RU_NR_FLAG                    31 
 #define RU_NR_SCS_FOR_RASTER          32
+#define RU_TX_SUBDEV                  33
+#define RU_RX_SUBDEV                  34
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
@@ -180,6 +184,8 @@ typedef enum {
     {CONFIG_STRING_RU_SL_AHEAD,          HLP_RU_SL_AHEAD,      0,       iptr:NULL,       defintval:6,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_NR_FLAG,           HLP_RU_NR_FLAG,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_NR_SCS_FOR_RASTER, HLP_RU_NR_SCS_FOR_RASTER, 0,   iptr:NULL,       defintval:1,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_TX_SUBDEV,                   NULL,       0,       strptr:NULL,     defstrval:"",            TYPE_STRING,      0}, \
+    {CONFIG_STRING_RU_RX_SUBDEV,                   NULL,       0,       strptr:NULL,     defstrval:"",            TYPE_STRING,      0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
