@@ -1909,7 +1909,7 @@ void nr_sr_reporting(int Mod_idP, frame_t SFN, sub_frame_t slot)
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-    if (sched_ctrl->ul_failure==1) continue;
+    if (sched_ctrl->ul_failure==1 || sched_ctrl->rrc_processing_timer>0) continue;
     NR_PUCCH_Config_t *pucch_Config = NULL;
     if (sched_ctrl->active_ubwp) {
       pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;

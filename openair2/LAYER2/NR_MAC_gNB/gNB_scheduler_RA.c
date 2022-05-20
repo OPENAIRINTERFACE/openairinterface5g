@@ -1961,6 +1961,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->round = 0;
       harq->ndi ^= 1;
     } else {
+      const NR_ServingCellConfig_t *servingCellConfig = ra->CellGroup ? ra->CellGroup->spCellConfig->spCellConfigDedicated : NULL;
+      uint32_t delay_ms = servingCellConfig && servingCellConfig->downlinkBWP_ToAddModList ? NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
+      sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
+      LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %d with %d ms\n", frameP, slotP, UE_id, delay_ms);
       ra->state = WAIT_Msg4_ACK;
       LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
     }
@@ -1985,20 +1989,6 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
         UE_info->active[UE_id] = true;
         UE_info->Msg4_ACKed[UE_id] = true;
-
-        // Pause scheduling according to:
-        // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-        const NR_COMMON_channels_t *common_channels = &RC.nrmac[module_id]->common_channels[0];
-        const NR_SIB1_t *sib1 = common_channels->sib1 ? common_channels->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-        const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id] ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated : NULL;
-        NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                                   common_channels->ServingCellConfigCommon,
-                                                                   sib1);
-        uint32_t delay_ms = servingCellConfig && servingCellConfig->downlinkBWP_ToAddModList ?
-            NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
-
-        sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
-        LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %d with %d ms\n", frame, slot, UE_id, delay_ms);
       } else {
         LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
       }
