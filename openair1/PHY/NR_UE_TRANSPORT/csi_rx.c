@@ -553,7 +553,7 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
       *precoded_sinr_dB = dB_fixed(tested_precoded_sinr[i2[0]]);
     } else {
       i2[0] = tested_precoded_sinr[0]+tested_precoded_sinr[2] > tested_precoded_sinr[1]+tested_precoded_sinr[3] ? 0 : 1;
-      *precoded_sinr_dB = dB_fixed((tested_precoded_sinr[i2[0]] + tested_precoded_sinr[i2[0]+2]))>>1;
+      *precoded_sinr_dB = dB_fixed((tested_precoded_sinr[i2[0]] + tested_precoded_sinr[i2[0]+2])>>1);
     }
 
   } else {
