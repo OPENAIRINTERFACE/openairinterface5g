@@ -340,7 +340,7 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
                             uint8_t *rank_indicator) {
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  int16_t cond_dB_threshold = 0;
+  int16_t cond_dB_threshold = 5;
   int count = 0;
   *rank_indicator = 0;
 
@@ -356,6 +356,8 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
   *            | conjch00 conjch10 | x | ch00 ch01 | = | conjch00*ch00+conjch10*ch10 conjch00*ch01+conjch10*ch11 |
   *            | conjch01 conjch11 |   | ch10 ch11 |   | conjch01*ch00+conjch11*ch10 conjch01*ch01+conjch11*ch11 |
   */
+
+  uint8_t sum_shift = 1; // log2(2x2) = 2, which is a shift of 1 bit
 
   for(uint16_t port_tx_conjch = 0; port_tx_conjch < nr_csi_rs_info->N_ports; port_tx_conjch++) {
     for(uint16_t port_tx_ch = 0; port_tx_ch < nr_csi_rs_info->N_ports; port_tx_ch++) {
@@ -413,11 +415,33 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
                  &nr_csi_rs_info->csi_rs_estimated_numer_fin[k],
                  1);
 
+#ifdef NR_CSIRS_DEBUG
+    for(uint16_t port_tx_conjch = 0; port_tx_conjch < nr_csi_rs_info->N_ports; port_tx_conjch++) {
+      for(uint16_t port_tx_ch = 0; port_tx_ch < nr_csi_rs_info->N_ports; port_tx_ch++) {
+        int16_t *csi_rs_estimated_A_MF = (int16_t *) &nr_csi_rs_info->csi_rs_estimated_A_MF[port_tx_conjch][port_tx_ch][k];
+        LOG_I(NR_PHY, "(%i) csi_rs_estimated_A_MF[%i][%i] = (%i, %i)\n",
+              k, port_tx_conjch, port_tx_ch, csi_rs_estimated_A_MF[0], csi_rs_estimated_A_MF[1]);
+        int16_t *csi_rs_estimated_A_MF_sq = (int16_t *) &nr_csi_rs_info->csi_rs_estimated_A_MF_sq[port_tx_conjch][port_tx_ch][k];
+        LOG_I(NR_PHY, "(%i) csi_rs_estimated_A_MF_sq[%i][%i] = (%i, %i)\n",
+              k, port_tx_conjch, port_tx_ch, csi_rs_estimated_A_MF_sq[0], csi_rs_estimated_A_MF_sq[1]);
+      }
+    }
+    LOG_I(NR_PHY, "(%i) csi_rs_estimated_determ_fin = %i\n", k, nr_csi_rs_info->csi_rs_estimated_determ_fin[k]);
+    LOG_I(NR_PHY, "(%i) csi_rs_estimated_numer_fin = %i\n", k, nr_csi_rs_info->csi_rs_estimated_numer_fin[k]>>sum_shift);
+#endif
+
     // compute the conditional number
     for (int sc_idx=0; sc_idx < NR_NB_SC_PER_RB; sc_idx++) {
       int8_t csi_rs_estimated_denum_db = dB_fixed(nr_csi_rs_info->csi_rs_estimated_determ_fin[k + sc_idx]);
-      int8_t csi_rs_estimated_numer_db = dB_fixed(nr_csi_rs_info->csi_rs_estimated_numer_fin[k + sc_idx]);
+      int8_t csi_rs_estimated_numer_db = dB_fixed(nr_csi_rs_info->csi_rs_estimated_numer_fin[k + sc_idx]>>sum_shift);
       int8_t cond_db = csi_rs_estimated_numer_db - csi_rs_estimated_denum_db;
+
+#ifdef NR_CSIRS_DEBUG
+      LOG_I(NR_PHY, "csi_rs_estimated_denum_db = %i\n", csi_rs_estimated_denum_db);
+      LOG_I(NR_PHY, "csi_rs_estimated_numer_db = %i\n", csi_rs_estimated_numer_db);
+      LOG_I(NR_PHY, "cond_db = %i\n", cond_db);
+#endif
+
       if (cond_db < cond_dB_threshold) {
         count++;
       } else {
@@ -430,6 +454,11 @@ int nr_csi_rs_ri_estimation(PHY_VARS_NR_UE *ue,
   if (count > 0) {
     *rank_indicator = 1;
   }
+
+#ifdef NR_CSIRS_DEBUG
+  LOG_I(NR_PHY, "count = %i\n", count);
+  LOG_I(NR_PHY, "rank = %i\n", (*rank_indicator)+1);
+#endif
 
   return 0;
 }
