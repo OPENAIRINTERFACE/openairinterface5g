@@ -4699,3 +4699,35 @@ void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, nr_csi_report_t *cs
     }
   }
 }
+
+uint16_t nr_get_csi_bitlen(nr_csi_report_t *csi_report_template, uint8_t csi_report_id) {
+
+  uint16_t csi_bitlen = 0;
+  uint16_t max_bitlen = 0;
+  L1_RSRP_bitlen_t *CSI_report_bitlen = NULL;
+  CSI_Meas_bitlen_t *csi_meas_bitlen = NULL;
+
+  if (csi_report_template[csi_report_id].reportQuantity_type == NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP ||
+      csi_report_template[csi_report_id].reportQuantity_type == NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP) {
+    CSI_report_bitlen = &(csi_report_template[csi_report_id].CSI_report_bitlen); // This might need to be moodif for Aperiodic CSI-RS measurements
+    csi_bitlen += ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
+                   CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen *
+                                                    (CSI_report_bitlen->nb_ssbri_cri -1 )));
+  } else {
+    csi_meas_bitlen = &(csi_report_template[csi_report_id].csi_meas_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
+    uint16_t temp_bitlen;
+    for (int i=0; i<8; i++) {
+      temp_bitlen = (csi_meas_bitlen->cri_bitlen+
+                     csi_meas_bitlen->ri_bitlen+
+                     csi_meas_bitlen->li_bitlen[i]+
+                     csi_meas_bitlen->cqi_bitlen[i]+
+                     csi_meas_bitlen->pmi_x1_bitlen[i]+
+                     csi_meas_bitlen->pmi_x2_bitlen[i]);
+      if(temp_bitlen>max_bitlen)
+        max_bitlen = temp_bitlen;
+    }
+    csi_bitlen += max_bitlen;
+  }
+
+  return csi_bitlen;
+}

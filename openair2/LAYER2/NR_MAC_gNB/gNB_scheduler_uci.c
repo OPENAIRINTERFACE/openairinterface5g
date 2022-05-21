@@ -170,42 +170,6 @@ void nr_schedule_pucch(int Mod_idP,
   }
 }
 
-uint16_t nr_get_csi_bitlen(int Mod_idP,
-                           int UE_id,
-                           uint8_t csi_report_id) {
-
-  uint16_t csi_bitlen = 0;
-  uint16_t max_bitlen = 0;
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  L1_RSRP_bitlen_t * CSI_report_bitlen = NULL;
-  CSI_Meas_bitlen_t * csi_meas_bitlen = NULL;
-
-  if (NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP==UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type||
-      NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP==UE_info->csi_report_template[UE_id][csi_report_id].reportQuantity_type){
-    CSI_report_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].CSI_report_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
-    csi_bitlen+= ((CSI_report_bitlen->cri_ssbri_bitlen * CSI_report_bitlen->nb_ssbri_cri) +
-                  CSI_report_bitlen->rsrp_bitlen +(CSI_report_bitlen->diff_rsrp_bitlen *
-                  (CSI_report_bitlen->nb_ssbri_cri -1 )));
-  } else{
-   csi_meas_bitlen = &(UE_info->csi_report_template[UE_id][csi_report_id].csi_meas_bitlen); //This might need to be moodif for Aperiodic CSI-RS measurements
-   uint16_t temp_bitlen;
-   for (int i=0; i<8; i++) {
-     temp_bitlen = (csi_meas_bitlen->cri_bitlen+
-                    csi_meas_bitlen->ri_bitlen+
-                    csi_meas_bitlen->li_bitlen[i]+
-                    csi_meas_bitlen->cqi_bitlen[i]+
-                    csi_meas_bitlen->pmi_x1_bitlen[i]+
-                    csi_meas_bitlen->pmi_x2_bitlen[i]);
-     if(temp_bitlen>max_bitlen)
-       max_bitlen = temp_bitlen;
-   }
-   csi_bitlen += max_bitlen;
- }
-
-  return csi_bitlen;
-}
-
-
 void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frame,
                            sub_frame_t slot) {
@@ -275,7 +239,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->ul_slot = sched_slot;
       curr_pucch->resource_indicator = res_index;
       curr_pucch->csi_bits +=
-          nr_get_csi_bitlen(Mod_idP,UE_id,csi_report_id);
+          nr_get_csi_bitlen(UE_info->csi_report_template[UE_id], csi_report_id);
 
       const NR_SIB1_t *sib1 = RC.nrmac[Mod_idP]->common_channels[0].sib1 ? RC.nrmac[Mod_idP]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
       NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
