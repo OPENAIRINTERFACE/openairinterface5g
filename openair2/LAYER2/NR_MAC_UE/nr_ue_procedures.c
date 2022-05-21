@@ -2542,7 +2542,7 @@ uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
     case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI:
     case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
     case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
-      LOG_E(NR_MAC,"Measurement report based on CSI-RS not available\n");
+      LOG_E(NR_MAC,"Measurement report %d based on CSI-RS is not available\n", csi_reportconfig->reportQuantity.present);
       break;
     default:
       AssertFatal(1==0,"Invalid CSI report quantity type %d\n",csi_reportconfig->reportQuantity.present);
