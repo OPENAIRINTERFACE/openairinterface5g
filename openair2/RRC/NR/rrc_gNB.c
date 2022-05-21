@@ -541,7 +541,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
 //-----------------------------------------------------------------------------
 {
   uint8_t                       buffer[RRC_BUF_SIZE];
-  uint16_t                      size;
+  int16_t                       size;
   /*NR_SRB_ToAddModList_t        **SRB_configList2 = NULL;
   NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_pP->ue_context.SRB_configList;
   NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
@@ -651,6 +651,8 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   }
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  NR_MeasConfig_t *measconfig = get_defaultMeasConfig(&rrc->configuration);
+
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   memset(buffer, 0, sizeof(buffer));
   size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
@@ -660,13 +662,17 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 NULL,
                                 NULL,
-                                NULL,
+                                measconfig,
                                 dedicatedNAS_MessageList,
                                 ue_context_pP,
                                 &rrc->carrier,
                                 &rrc->configuration,
                                 NULL,
                                 ue_p->masterCellGroup);
+  AssertFatal(size > 0, "cannot encode RRCReconfiguration in %s()\n", __func__);
+  LOG_W(RRC, "do_RRCReconfiguration(): size %d\n", size);
+
+  xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
@@ -2234,6 +2240,32 @@ static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn) {
   return result;
 }
 
+static void rrc_gNB_process_MeasurementReport(rrc_gNB_ue_context_t *ue_context, const NR_MeasurementReport_t *measurementReport)
+{
+  if (LOG_DEBUGFLAG(DEBUG_ASN1))
+    xer_fprint(stdout, &asn_DEF_NR_MeasurementReport, (void *)measurementReport);
+
+  DevAssert(measurementReport->criticalExtensions.present == NR_MeasurementReport__criticalExtensions_PR_measurementReport
+            && measurementReport->criticalExtensions.choice.measurementReport != NULL);
+
+  const NR_MeasResults_t *measresults = &measurementReport->criticalExtensions.choice.measurementReport->measResults;
+
+  AssertFatal(measresults->measId == 1, "unexpected MeasResult for MeasurementId %ld received\n", measresults->measId);
+  DevAssert(measresults->measResultServingMOList.list.count >= 1);
+  if (measresults->measResultServingMOList.list.count > 1)
+    LOG_W(RRC, "Received %d MeasResultServMO, but handling only 1!\n", measresults->measResultServingMOList.list.count);
+
+  NR_MeasResultServMO_t *measresultservmo = measresults->measResultServingMOList.list.array[0];
+  NR_MeasResultNR_t *measresultnr = &measresultservmo->measResultServingCell;
+  NR_MeasQuantityResults_t *mqr = measresultnr->measResult.cellResults.resultsSSB_Cell;
+
+  LOG_I(RRC, "RNTI %04x servingCellId %ld MeasResultNR for phyCellId %ld:\n", ue_context->ue_context.rnti, measresultservmo->servCellId, *measresultnr->physCellId);
+  if (mqr != NULL)
+    LOG_I(RRC, "    resultSSB: RSRP %ld dBm RSRQ %.1f dB SINR %.1f dB\n", *mqr->rsrp - 156, (float) (*mqr->rsrq - 87) / 2.0f, (float) (*mqr->sinr - 46) / 2.0f);
+  else
+    LOG_I(RRC, "    resultSSB: NOT PROVIDED\n");
+}
+
 //-----------------------------------------------------------------------------
 int
 rrc_gNB_decode_dcch(
@@ -2451,6 +2483,14 @@ rrc_gNB_decode_dcch(
         }
 
         ue_context_p->ue_context.ue_release_timer = 0;
+        break;
+
+      case NR_UL_DCCH_MessageType__c1_PR_measurementReport:
+        DevAssert(ul_dcch_msg != NULL
+                  && ul_dcch_msg->message.present == NR_UL_DCCH_MessageType_PR_c1
+                  && ul_dcch_msg->message.choice.c1
+                  && ul_dcch_msg->message.choice.c1->present == NR_UL_DCCH_MessageType__c1_PR_measurementReport);
+        rrc_gNB_process_MeasurementReport(ue_context_p, ul_dcch_msg->message.choice.c1->choice.measurementReport);
         break;
 
         case NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
