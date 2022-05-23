@@ -354,7 +354,11 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, rrc_pdsch_AntennaPorts
     ssb_SubcarrierOffset_limit = 12;
   if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
     AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),
-                "absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+                "absoluteFrequencySSB has a subcarrier offset of %d/%d while it should be %d (%lu,%lu,%lu)\n",
+                sco,scs_scaling,ssb_SubcarrierOffset,
+                *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
+                scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                absolute_diff);
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;

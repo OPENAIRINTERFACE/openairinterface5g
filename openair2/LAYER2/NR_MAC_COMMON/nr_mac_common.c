@@ -1981,10 +1981,10 @@ uint32_t to_nrarfcn(int nr_bandP,
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
 	      nr_bandP, bw, (long long unsigned int)dl_CarrierFreq_by_1k,
 	      (long long unsigned int)nr_bandtable[i].dl_min);
-  AssertFatal(dl_CarrierFreq_by_1k <= (nr_bandtable[i].dl_max - bw_kHz),
+  AssertFatal(dl_CarrierFreq_by_1k <= (nr_bandtable[i].dl_max - bw_kHz/2),
         "Band %d, dl_CarrierFreq %llu bw %u: DL carrier frequency %llu kHz > %llu\n",
 	      nr_bandP, (long long unsigned int)dl_CarrierFreq,bw, (long long unsigned int)dl_CarrierFreq_by_1k,
-	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz));
+	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz/2));
  
   int deltaFglobal = 60;
   uint32_t N_REF_Offs = 2016667;
