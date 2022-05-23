@@ -465,27 +465,24 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
 
-  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
-  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-  *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
+  uint8_t start_next_period = rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot;
+  int eff_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   // we can't schedule msg2 before sl_ahead since prach
-  int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
   while ((eff_slot-rach_slot)<=sl_ahead) {
-    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-    *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
-    eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
+    eff_slot += tdd_period_slot;
   }
   if (FR==nr_FR2) {
-    int num_tdd_period = *msg2_slot/tdd_period_slot;
+    int num_tdd_period = (eff_slot%nr_slots_per_frame[mu])/tdd_period_slot;
     while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
-      *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-      *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
-      num_tdd_period = *msg2_slot/tdd_period_slot;
+      eff_slot += tdd_period_slot;
+      num_tdd_period = (eff_slot % nr_slots_per_frame[mu])/tdd_period_slot;
     }
     if(tdd_beam_association[num_tdd_period] == -1)
       tdd_beam_association[num_tdd_period] = beam_index;
   }
 
+  *msg2_frame=(rach_frame + eff_slot/nr_slots_per_frame[mu])%1024;
+  *msg2_slot=eff_slot%nr_slots_per_frame[mu];
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
   while (*msg2_frame > frame_limit
