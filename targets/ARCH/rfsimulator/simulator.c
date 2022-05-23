@@ -429,6 +429,8 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
   if (!alreadyLocked)
     pthread_mutex_lock(&Sockmutex);
 
+  LOG_D(HW,"sending %d samples at time: %ld, nbAnt %d\n", nsamps, timestamp, nbAnt);
+
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
 
@@ -621,7 +623,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
   }
 
   rfsimulator_state_t *t = device->priv;
-  LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld\n", nsamps, t->nextRxTstamp+nsamps);
+  LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld, nbAnt %d\n", nsamps, t->nextRxTstamp+nsamps, nbAnt);
   // deliver data from received data
   // check if a UE is connected
   int first_sock;
@@ -693,15 +695,16 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
         t->poll_telnetcmdq(t->telnetcmd_qid,t);
 
       for (int a=0; a<nbAnt; a++) {//loop over number of Rx antennas
-        if ( ptr->channel_model != NULL ) // apply a channel model
-          rxAddInput( ptr->circularBuf, (c16_t *) samplesVoid[a],
-                      a,
-                      ptr->channel_model,
-                      nsamps,
-                      t->nextRxTstamp,
-                      CirSize
-                    );
+        if ( ptr->channel_model != NULL ) { // apply a channel model
+          rxAddInput(ptr->circularBuf, (c16_t *) samplesVoid[a],
+                     a,
+                     ptr->channel_model,
+                     nsamps,
+                     t->nextRxTstamp,
+                     CirSize);
+        }
         else { // no channel modeling
+          
           double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05}, //rx 0
                                       {0.2, 1.0, 0.2, 0.1}, //rx 1
                                      {0.1, 0.2, 1.0, 0.2}, //rx 2

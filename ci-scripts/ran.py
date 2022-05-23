@@ -383,17 +383,19 @@ class RANManagement():
 
 
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
-		localEpcIpAddr = EPC.IPAddress
-		localEpcUserName = EPC.UserName
-		localEpcPassword = EPC.Password
-		mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
-		eth_interface = 'any'
-		fltr = 'sctp'
-		logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
-		self.epcPcapFile = 'enb_' + self.testCase_id + '_s1log.pcap'
-		mySSH.command('echo ' + localEpcPassword + ' | sudo -S rm -f /tmp/' + self.epcPcapFile , '\$', 5)
-		mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
-		mySSH.close()
+		if EPC.IPAddress != "none":
+			localEpcIpAddr = EPC.IPAddress
+			localEpcUserName = EPC.UserName
+			localEpcPassword = EPC.Password
+			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
+			eth_interface = 'any'
+			fltr = 'sctp'
+			logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
+			self.epcPcapFile = 'enb_' + self.testCase_id + '_s1log.pcap'
+			mySSH.command('echo ' + localEpcPassword + ' | sudo -S rm -f /tmp/' + self.epcPcapFile , '\$', 5)
+			mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
+			mySSH.close()
+
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository

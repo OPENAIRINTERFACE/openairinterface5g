@@ -497,7 +497,7 @@ void term_nr_ue_transport(PHY_VARS_NR_UE *ue)
       for (int k = 0; k < RX_NB_TH_MAX; k++) {
         free_nr_ue_dlsch(&ue->dlsch[k][i][j], N_RB_DL);
         if (j==0)
-          free_nr_ue_ulsch(&ue->ulsch[k][i], N_RB_DL);
+          free_nr_ue_ulsch(&ue->ulsch[k][i], N_RB_DL, &ue->frame_parms);
       }
     }
 
@@ -518,7 +518,7 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
         AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL))!=NULL,"Can't get ue dlsch structures\n");
         LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
         if (j==0) {
-          AssertFatal((ue->ulsch[k][i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES))!=NULL,"Can't get ue ulsch structures\n");
+          AssertFatal((ue->ulsch[k][i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES,&ue->frame_parms))!=NULL,"Can't get ue ulsch structures\n");
           LOG_D(PHY,"ulsch[%d][%d] => %p\n",k,i,ue->ulsch[k][i]);
         }
       }

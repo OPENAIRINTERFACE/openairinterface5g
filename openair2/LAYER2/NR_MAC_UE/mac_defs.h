@@ -74,7 +74,7 @@
 // ==========
 
 #define NB_NR_UE_MAC_INST 1
-#define MAX_NUM_BWP       2
+#define MAX_NUM_BWP_UE       4
 #define NUM_SLOT_FRAME    10
 
 /*!\brief value for indicating BSR Timer is not running */
@@ -364,10 +364,10 @@ typedef struct {
   NR_RNTI_Value_t                 *cs_RNTI;
   NR_MIB_t                        *mib;
 
-  NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP];
-  NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP];
-  NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP];
-  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_SS];
+  NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP_UE];
+  NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP_UE];
+  NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
+  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
 
   frame_type_t frame_type;
 
