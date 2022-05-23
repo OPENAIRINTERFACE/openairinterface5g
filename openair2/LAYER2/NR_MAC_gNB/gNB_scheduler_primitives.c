@@ -145,7 +145,6 @@ uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
 
 }
 
-
 uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int layers,
                       int N1, int N2,
@@ -169,51 +168,45 @@ uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
     AssertFatal(1==0,"More than 2 antenna ports not yet supported\n");
 }
 
-
-void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
-                NR_UE_sched_ctrl_t *sched_ctrl,
-                uint8_t *target_mcs,
-                uint8_t mcs_table_idx) {
-
-  if (sched_ctrl->set_mcs) {
-    // TODO for wideband case and multiple TB
-    int cqi_idx = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
-    uint16_t target_coderate,target_qm;
-    if (cqi_idx>0) {
-      int cqi_table = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.cqi_table;
-      if (cqi_table != mcs_table_idx)
-       LOG_W(NR_MAC,"Indices of MCS tables don't correspond yet, cri_ri_li_pmi_cqi_report.cqi_table %d, mcs_table_index %d\n",cqi_table,mcs_table_idx);
-      switch (cqi_table) {
-        case 0:
-          target_qm = cqi_table1[cqi_idx][0];
-          target_coderate = cqi_table1[cqi_idx][1];
-          break;
-        case 1:
-          target_qm = cqi_table2[cqi_idx][0];
-          target_coderate = cqi_table2[cqi_idx][1];
-          break;
-        case 2:
-          target_qm = cqi_table3[cqi_idx][0];
-          target_coderate = cqi_table3[cqi_idx][1];
-          break;
-        default:
-          AssertFatal(1==0,"Invalid cqi table index %d\n",cqi_table);
-      }
-      int max_mcs = 28;
-      int R,Qm;
-      if (mcs_table_idx == 1)
-        max_mcs = 27;
-      for (int i=0; i<=max_mcs; i++) {
-        R = nr_get_code_rate_dl(i, mcs_table_idx);
-        Qm = nr_get_Qm_dl(i, mcs_table_idx);
-        if ((Qm == target_qm) && (target_coderate <= R)) {
-          *target_mcs = i;
-          break;
-        }
-      }
-    }
-    sched_ctrl->set_mcs = false;
+uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx)
+{
+  if (cqi_idx <= 0) {
+    LOG_E(NR_MAC, "invalid cqi_idx %d, default to MCS 9\n", cqi_idx);
+    return 9;
   }
+
+  if (mcs_table != cqi_table) {
+    LOG_E(NR_MAC, "indices of CQI (%d) and MCS (%d) tables don't correspond yet\n", cqi_table, mcs_table);
+    return 9;
+  }
+
+  uint16_t target_coderate, target_qm;
+  switch (cqi_table) {
+    case 0:
+      target_qm = cqi_table1[cqi_idx][0];
+      target_coderate = cqi_table1[cqi_idx][1];
+      break;
+    case 1:
+      target_qm = cqi_table2[cqi_idx][0];
+      target_coderate = cqi_table2[cqi_idx][1];
+      break;
+    case 2:
+      target_qm = cqi_table3[cqi_idx][0];
+      target_coderate = cqi_table3[cqi_idx][1];
+      break;
+    default:
+      AssertFatal(1==0,"Invalid cqi table index %d\n",cqi_table);
+  }
+  const int max_mcs = mcs_table == 1 ? 27 : 28;
+  for (int i = 0; i <= max_mcs; i++) {
+    const int R = nr_get_code_rate_dl(i, mcs_table);
+    const int Qm = nr_get_Qm_dl(i, mcs_table);
+    if (Qm == target_qm && target_coderate <= R)
+      return i;
+  }
+
+  LOG_E(NR_MAC, "could not find maximum MCS from cqi_idx %d, default to 9\n", cqi_idx);
+  return 9;
 }
 
 void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
@@ -766,6 +759,51 @@ void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
   ps->N_PRB_DMRS = ps->dmrs_config_type == 0
       ? num_dmrs_cdm_grps_no_data * 6
       : num_dmrs_cdm_grps_no_data * 4;
+}
+
+#define BLER_UPDATE_FRAME 10
+#define BLER_FILTER 0.9f
+int get_mcs_from_bler(const NR_bler_options_t *bler_options,
+                      const NR_mac_dir_stats_t *stats,
+                      NR_bler_stats_t *bler_stats,
+                      int max_mcs,
+                      frame_t frame)
+{
+  /* first call: everything is zero. Initialize to sensible default */
+  if (bler_stats->last_frame == 0 && bler_stats->mcs == 0) {
+    bler_stats->last_frame = frame;
+    bler_stats->mcs = 9;
+    bler_stats->bler = (bler_options->lower + bler_options->upper) / 2.0f;
+  }
+  int diff = frame - bler_stats->last_frame;
+  if (diff < 0) // wrap around
+    diff += 1024;
+
+  max_mcs = min(max_mcs, bler_options->max_mcs);
+  const uint8_t old_mcs = min(bler_stats->mcs, max_mcs);
+  if (diff < BLER_UPDATE_FRAME)
+    return old_mcs; // no update
+
+  // last update is longer than x frames ago
+  const int dtx = (int)(stats->rounds[0] - bler_stats->rounds[0]);
+  const int dretx = (int)(stats->rounds[1] - bler_stats->rounds[1]);
+  const float bler_window = dtx > 0 ? (float) dretx / dtx : bler_stats->bler;
+  bler_stats->bler = BLER_FILTER * bler_stats->bler + (1 - BLER_FILTER) * bler_window;
+
+  int new_mcs = old_mcs;
+  if (bler_stats->bler < bler_options->lower && old_mcs < max_mcs && dtx > 9)
+    new_mcs += 1;
+  else if ((bler_stats->bler > bler_options->upper && old_mcs > 6) // above threshold
+      || (dtx <= 3 && old_mcs > 9))                                // no activity
+    new_mcs -= 1;
+  // else we are within threshold boundaries
+
+  bler_stats->last_frame = frame;
+  bler_stats->mcs = new_mcs;
+  memcpy(bler_stats->rounds, stats->rounds, sizeof(stats->rounds));
+  LOG_D(MAC, "frame %4d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f)\n",
+        frame, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler);
+  return new_mcs;
 }
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
@@ -2359,7 +2397,7 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
-    sched_ctrl->set_mcs = true;
+    sched_ctrl->dl_max_mcs = 28; /* do not limit MCS for individual UEs */
     sched_ctrl->set_pmi = false;
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;

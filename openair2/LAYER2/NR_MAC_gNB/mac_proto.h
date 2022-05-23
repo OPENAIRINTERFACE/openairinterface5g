@@ -507,10 +507,7 @@ uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int xp_pdsch_antenna_ports,
                       int codebook_mode);
 
-void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
-                NR_UE_sched_ctrl_t *sched_ctrl,
-                uint8_t *target_mcs,
-                uint8_t mcs_table_idx);
+uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx);
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
@@ -530,6 +527,12 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t nb_rb_max,
                    uint32_t *tbs,
                    uint16_t *nb_rb);
+
+int get_mcs_from_bler(const NR_bler_options_t *bler_options,
+                      const NR_mac_dir_stats_t *stats,
+                      NR_bler_stats_t *bler_stats,
+                      int max_mcs,
+                      frame_t frame);
 
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
 
