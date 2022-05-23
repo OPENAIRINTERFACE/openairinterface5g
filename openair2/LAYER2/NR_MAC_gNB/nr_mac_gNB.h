@@ -690,6 +690,7 @@ typedef struct {
   uint32_t pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
+  int8_t srs_wide_band_snr;
 } NR_mac_stats_t;
 
 
