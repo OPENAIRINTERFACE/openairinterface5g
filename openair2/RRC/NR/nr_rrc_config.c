@@ -292,6 +292,7 @@ long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
 
 void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
                 NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                NR_UE_NR_Capability_t *uecap,
                 int uid,
                 int do_srs) {
 
@@ -356,6 +357,26 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
   NR_SRS_Resource_t *srs_res0=calloc(1,sizeof(*srs_res0));
   srs_res0->srs_ResourceId = 0;
   srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
+  if (uecap &&
+      uecap->featureSets &&
+      uecap->featureSets->featureSetsUplink &&
+      uecap->featureSets->featureSetsUplink->list.count > 0) {
+    NR_FeatureSetUplink_t *ul_feature_setup = uecap->featureSets->featureSetsUplink->list.array[0];
+    switch (ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource) {
+      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n1:
+        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
+        break;
+      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n2:
+        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports2;
+        break;
+      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n4:
+        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports4;
+        break;
+      default:
+        LOG_E(NR_RRC, "Max Number of SRS Ports Per Resource %ld is invalid!\n",
+              ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
+    }
+  }
   srs_res0->ptrs_PortIndex = NULL;
   srs_res0->transmissionComb.present = NR_SRS_Resource__transmissionComb_PR_n2;
   srs_res0->transmissionComb.choice.n2 = calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));

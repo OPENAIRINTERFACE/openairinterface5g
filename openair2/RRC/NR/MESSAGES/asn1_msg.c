@@ -1682,7 +1682,7 @@ void fill_initial_SpCellConfig(int uid,
 
   // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(initialUplinkBWP->srs_Config, scc, uid, 0);
+  config_srs(initialUplinkBWP->srs_Config, scc, NULL, uid, 0);
 
   // configure Scheduling request
   // 40 slot period 
@@ -2168,6 +2168,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
       }
       config_srs(SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
                  scc,
+                 uecap,
                  uid,
                  configuration->do_SRS);
     }
