@@ -105,6 +105,10 @@ ID = GNB_PHY_PRACH_INPUT_SIGNAL
     DESC = gNodeB input data in the time domain for slots with PRACH detection
     GROUP = ALL:PHY:GRAPHIC:HEAVY:GNB
     FORMAT = int,frame : int,slot : int,antenna : buffer,rxdata
+ID = GNB_PHY_DL_OUTPUT_SIGNAL
+    DESC = gNodeB output data in the freq domain for slots
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:GNB
+    FORMAT = int,gNB_ID : int,frame : int,slot : int,antenna : buffer,txdata
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
