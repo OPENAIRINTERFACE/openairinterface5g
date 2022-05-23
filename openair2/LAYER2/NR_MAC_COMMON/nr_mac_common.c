@@ -2623,6 +2623,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      nr_rnti_type_t rnti_type,
                      uint16_t N_RB,
                      int bwp_id,
+                     NR_ControlResourceSetId_t coreset_id,
                      uint16_t cset0_bwp_size) {
 
   uint16_t size = 0;
@@ -2672,7 +2673,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
-      int dci_10_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,cg,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id, cset0_bwp_size);
+      int dci_10_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,cg,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id, coreset_id, cset0_bwp_size);
       AssertFatal(dci_10_size >= size, "NR_UL_DCI_FORMAT_0_0 size is bigger than NR_DL_DCI_FORMAT_1_0! 3GPP TS 38.212 Section 7.3.1.0: DCI size alignment is not fully implemented");
       size += dci_10_size - size; // Padding to match 1_0 size
       // UL/SUL indicator assumed to be 0
@@ -3019,10 +3020,15 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       size += dci_pdu->antenna_ports.nbits;
       LOG_D(NR_MAC,"dci_pdu->antenna_ports.nbits %d\n",dci_pdu->antenna_ports.nbits);
       // Tx Config Indication
-      long *isTciEnable = pdcch_Config->controlResourceSetToAddModList->list.array[0]->tci_PresentInDCI;
-      if (isTciEnable != NULL) {
-        dci_pdu->transmission_configuration_indication.nbits = 3;
-        size += dci_pdu->transmission_configuration_indication.nbits;
+      for (int i = 0; i < pdcch_Config->controlResourceSetToAddModList->list.count; i++) {
+        if (pdcch_Config->controlResourceSetToAddModList->list.array[i]->controlResourceSetId == coreset_id) {
+          long *isTciEnable = pdcch_Config->controlResourceSetToAddModList->list.array[i]->tci_PresentInDCI;
+          if (isTciEnable != NULL) {
+            dci_pdu->transmission_configuration_indication.nbits = 3;
+            size += dci_pdu->transmission_configuration_indication.nbits;
+          }
+          break;
+        }
       }
       // SRS request
       if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)

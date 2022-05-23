@@ -84,7 +84,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
     const NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
-    stroff+=sprintf(output+stroff,"UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
+    stroff+=sprintf(output+stroff,"UE ID %d RNTI %04x (%d/%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas), UL-SNR %d dB\n",
       UE_id,
       UE_info->rnti[UE_id],
       num++,
@@ -92,7 +92,8 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
       sched_ctrl->ph,
       sched_ctrl->pcmax,
       avg_rsrp,
-      stats->num_rsrp_meas);
+      stats->num_rsrp_meas,
+      stats->srs_wide_band_snr);
     stroff+=sprintf(output+stroff,"UE %d: CQI %d, RI %d, PMI (%d,%d)\n",
                     UE_id,
                     UE_info->UE_sched_ctrl[UE_id].CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,

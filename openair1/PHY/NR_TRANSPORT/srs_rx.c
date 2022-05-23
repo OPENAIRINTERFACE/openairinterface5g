@@ -120,6 +120,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   uint16_t M_sc_b_SRS = srs_bandwidth_config[srs_pdu->config_index][srs_pdu->bandwidth_index][0] * NR_NB_SC_PER_RB/K_TC;
 
   int32_t *rx_signal;
+  bool no_srs_signal = true;
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
     memset(srs_received_signal[ant], 0, frame_parms->ofdm_symbol_size*sizeof(int32_t));
@@ -147,6 +148,10 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
 
           srs_received_signal[ant][l_line_offset+subcarrier] = rx_signal[l_line_offset+subcarrier];
 
+          if (rx_signal[l_line_offset+subcarrier] != 0) {
+            no_srs_signal = false;
+          }
+
 #ifdef SRS_DEBUG
           int subcarrier_log = subcarrier-subcarrier_offset;
           if(subcarrier_log < 0) {
@@ -171,5 +176,11 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
       } // for (int l_line = 0; l_line < N_symb_SRS; l_line++)
     } // for (int p_index = 0; p_index < N_ap; p_index++)
   } // for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++)
-  return 0;
+
+  if (no_srs_signal) {
+    LOG_W(NR_PHY, "No SRS signal\n");
+    return -1;
+  } else {
+    return 0;
+  }
 }
