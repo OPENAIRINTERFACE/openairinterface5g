@@ -1089,6 +1089,11 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
   LOG_I(NR_PHY,"signal_power = %u\n", *signal_power);
 #endif
 
+  if (*signal_power == 0) {
+    LOG_W(NR_PHY, "Received SRS signal power is 0\n");
+    return -1;
+  }
+
   // Compute noise power
 
   uint8_t signal_power_bits = log2_approx(*signal_power);
