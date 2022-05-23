@@ -1045,7 +1045,7 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
 
   NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
   uint64_t bitmap = get_ssb_bitmap(scc);
-  rrc_coreset_config(coreset, curr_bwp, bitmap);
+  rrc_coreset_config(coreset, bwp->bwp_Id, curr_bwp, bitmap);
 
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet = coreset;
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceZero=NULL;
@@ -1103,7 +1103,7 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
   bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList = calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList));
 
   NR_ControlResourceSet_t *coreset2 = calloc(1,sizeof(*coreset2));
-  rrc_coreset_config(coreset2, curr_bwp, bitmap);
+  rrc_coreset_config(coreset2, bwp->bwp_Id, curr_bwp, bitmap);
   ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list, coreset2);
 
   bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
@@ -1740,7 +1740,7 @@ void fill_initial_SpCellConfig(int uid,
   NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
 
   uint64_t bitmap = get_ssb_bitmap(scc);
-  rrc_coreset_config(coreset, curr_bwp, bitmap);
+  rrc_coreset_config(coreset, 0, curr_bwp, bitmap);
 
   ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list,
                    coreset);

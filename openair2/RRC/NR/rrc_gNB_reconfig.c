@@ -119,7 +119,7 @@ void fill_default_nsa_downlinkBWP(NR_BWP_Downlink_t *bwp,
   int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,275);
 
   NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
-  rrc_coreset_config(coreset, curr_bwp, bitmap);
+  rrc_coreset_config(coreset, bwp->bwp_Id, curr_bwp, bitmap);
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet = coreset;
 
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceZero=NULL;

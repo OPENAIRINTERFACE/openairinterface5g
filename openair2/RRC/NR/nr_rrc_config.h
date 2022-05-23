@@ -113,6 +113,7 @@ typedef struct physicalcellgroup_s{
 
 uint64_t get_ssb_bitmap(NR_ServingCellConfigCommon_t *scc);
 void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
+                        int bwp_id,
                         int curr_bwp,
                         uint64_t ssb_bitmap);
 void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc,

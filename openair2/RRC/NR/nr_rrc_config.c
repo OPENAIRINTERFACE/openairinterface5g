@@ -35,6 +35,7 @@ const uint8_t slotsperframe[5] = {10, 20, 40, 80, 160};
 
 
 void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
+                        int bwp_id,
                         int curr_bwp,
                         uint64_t ssb_bitmap) {
 
@@ -54,12 +55,7 @@ void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
   coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
   // The ID space is used across the BWPs of a Serving Cell as per 38.331
-  // Unique ID depending on BWP size
-  coreset->controlResourceSetId = (coreset->frequencyDomainResources.buf[0] > 0) +
-                                  (coreset->frequencyDomainResources.buf[1] > 0) +
-                                  (coreset->frequencyDomainResources.buf[2] > 0) +
-                                  (coreset->frequencyDomainResources.buf[3] > 0) +
-                                  (coreset->frequencyDomainResources.buf[4] > 0);
+  coreset->controlResourceSetId = bwp_id + 1;
 
   coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
   NR_TCI_StateId_t *tci[64];
