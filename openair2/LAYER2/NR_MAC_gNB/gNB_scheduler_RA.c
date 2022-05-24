@@ -1198,20 +1198,13 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   nr_fill_rar(module_idP, ra, RAR_pdu, pusch_pdu);
 }
 
-void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra)
-{
+void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra) {
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
-    //TODO time domain assignment for msg2 needs to be improved
-    uint8_t time_domain_assignment;
-    if(cc->frame_type == TDD)
-      time_domain_assignment = 1;
-    else
-      time_domain_assignment = 0;
     int mcsIndex = -1;  // initialization value
     int rbStart = 0;
     int rbSize = 8;
@@ -1251,6 +1244,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     // Calculate number of symbols
+    int time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
     int startSymbolIndex, nrOfSymbols;
     const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);

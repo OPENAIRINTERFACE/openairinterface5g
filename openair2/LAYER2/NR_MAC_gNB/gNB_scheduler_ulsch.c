@@ -46,138 +46,18 @@ int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl) {
   return(dci_format);
 }
 
-void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp)
-{
-  gNB_MAC_INST *nrmac = RC.nrmac[module_id];
-  const int bwp_id = ubwp->bwp_Id;
-  if (nrmac->preferred_ul_tda[bwp_id])
-    return;
+const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot) {
 
   /* there is a mixed slot only when in TDD */
-  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
-  frame_type_t frame_type = nrmac->common_channels->frame_type;
-  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  AssertFatal(tdd || nrmac->common_channels->frame_type == FDD, "Dynamic TDD not handled yet\n");
 
-  NR_ServingCellConfigCommonSIB_t *scc_sib1 = nrmac->common_channels[0].sib1 ?
-      RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1->servingCellConfigCommon : NULL;
-
-  AssertFatal(scc!=NULL || scc_sib1!=NULL,"We need one serving cell config common\n");
-
-  const int mu = scc ? scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing :
-                 scc_sib1->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
-
-  NR_TDD_UL_DL_Pattern_t *tdd = NULL;
-  if (scc && scc->tdd_UL_DL_ConfigurationCommon) {
-    tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
-  } else if (scc_sib1 && scc_sib1->tdd_UL_DL_ConfigurationCommon) {
-    tdd = &scc_sib1->tdd_UL_DL_ConfigurationCommon->pattern1;
+  if (tdd && tdd->nrofUplinkSymbols > 1) { // if there is uplink symbols in mixed slot
+    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + 1;
+    if ((slot%nr_slots_period) == tdd->nrofDownlinkSlots)
+      return 1;
   }
-
-  /* Uplink symbols are at the end of the slot */
-  int symb_ulMixed = 0;
-  int nr_mix_slots = 0;
-  int nr_slots_period = n;
-  if (tdd) {
-    symb_ulMixed = ((1 << tdd->nrofUplinkSymbols) - 1) << (14 - tdd->nrofUplinkSymbols);
-    nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-    nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
-  }
-  else
-    // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
-    AssertFatal(nrmac->common_channels->frame_type == FDD,"Dynamic TDD not handled yet\n");
-
-  const struct NR_PUCCH_Config__resourceToAddModList *resList = ubwp->bwp_Dedicated->pucch_Config->choice.setup->resourceToAddModList;
-  // for the moment, just block any symbol that might hold a PUCCH, regardless
-  // of the RB. This is a big simplification, as most RBs will NOT have a PUCCH
-  // in the respective symbols, but it simplifies scheduling
-  uint16_t symb_pucch = 0;
-  for (int i = 0; i < resList->list.count; ++i) {
-    const NR_PUCCH_Resource_t *resource = resList->list.array[i];
-    int nrofSymbols = 0;
-    int startingSymbolIndex = 0;
-    switch (resource->format.present) {
-      case NR_PUCCH_Resource__format_PR_format0:
-        nrofSymbols = resource->format.choice.format0->nrofSymbols;
-        startingSymbolIndex = resource->format.choice.format0->startingSymbolIndex;
-        break;
-      case NR_PUCCH_Resource__format_PR_format1:
-        nrofSymbols = resource->format.choice.format1->nrofSymbols;
-        startingSymbolIndex = resource->format.choice.format1->startingSymbolIndex;
-        break;
-      case NR_PUCCH_Resource__format_PR_format2:
-        nrofSymbols = resource->format.choice.format2->nrofSymbols;
-        startingSymbolIndex = resource->format.choice.format2->startingSymbolIndex;
-        break;
-      case NR_PUCCH_Resource__format_PR_format3:
-        nrofSymbols = resource->format.choice.format3->nrofSymbols;
-        startingSymbolIndex = resource->format.choice.format3->startingSymbolIndex;
-        break;
-      case NR_PUCCH_Resource__format_PR_format4:
-        nrofSymbols = resource->format.choice.format4->nrofSymbols;
-        startingSymbolIndex = resource->format.choice.format4->startingSymbolIndex;
-        break;
-      default:
-        AssertFatal(0, "found NR_PUCCH format index %d\n", resource->format.present);
-        break;
-    }
-    symb_pucch |= ((1 << nrofSymbols) - 1) << startingSymbolIndex;
-  }
-
-  /* check that TDA index 1 fits into UL slot and does not overlap with PUCCH */
-  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_UL = tdaList->list.array[0];
-  const int k2 = get_K2(scc, scc_sib1, (NR_BWP_Uplink_t*)ubwp,0, mu);
-  int start, len;
-  SLIV2SL(tdaP_UL->startSymbolAndLength, &start, &len);
-  const uint16_t symb_tda = ((1 << len) - 1) << start;
-  // check whether PUCCH and TDA overlap: then, we cannot use it. Note that
-  // here we assume that the PUCCH is scheduled in every slot, and on all RBs
-  // (which is mostly not true, this is a simplification)
-  AssertFatal((symb_pucch & symb_tda) == 0, "TDA index 0 for UL overlaps with PUCCH\n");
-
-  // get largest time domain allocation (TDA) for UL slot and UL in mixed slot
-  int tdaMi = -1;
-  if (nr_mix_slots>0) {
-    const NR_PUSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
-    AssertFatal(k2 == get_K2(scc, scc_sib1, (NR_BWP_Uplink_t*)ubwp, 1, mu),
-                "scheduler cannot handle different k2 for UL slot (%d) and UL Mixed slot (%ld)\n",
-                k2,
-                get_K2(scc, scc_sib1, (NR_BWP_Uplink_t*)ubwp, 1, mu));
-    SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
-    const uint16_t symb_tda_mi = ((1 << len) - 1) << start;
-    // check whether PUCCH and TDA overlap: then, we cannot use it. Also, check
-    // whether TDA is entirely within mixed slot, UL. Note that here we assume
-    // that the PUCCH is scheduled in every slot, and on all RBs (which is
-    // mostly not true, this is a simplification)
-    if ((symb_pucch & symb_tda_mi) == 0 && (symb_ulMixed & symb_tda_mi) == symb_tda_mi) {
-      tdaMi = 1;
-    } else {
-      LOG_E(NR_MAC,
-            "TDA index 1 UL overlaps with PUCCH or is not entirely in mixed slot (symb_pucch %x symb_ulMixed %x symb_tda_mi %x), won't schedule UL mixed slot\n",
-            symb_pucch,
-            symb_ulMixed,
-            symb_tda_mi);
-    }
-  }
-
-  nrmac->preferred_ul_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_ul_tda[bwp_id]));
-
-  for (int slot = 0; slot < n; ++slot) {
-    const int sched_slot = (slot + k2) % n;
-    nrmac->preferred_ul_tda[bwp_id][slot] = -1;
-    if (frame_type == FDD || sched_slot % nr_slots_period >= tdd->nrofDownlinkSlots + nr_mix_slots)
-      nrmac->preferred_ul_tda[bwp_id][slot] = 0;
-    else if (nr_mix_slots && sched_slot % nr_slots_period == tdd->nrofDownlinkSlots)
-      nrmac->preferred_ul_tda[bwp_id][slot] = tdaMi;
-    LOG_D(MAC, "DL slot %d UL slot %d preferred_ul_tda %d\n", slot, sched_slot, nrmac->preferred_ul_tda[bwp_id][slot]);
-  }
-
-  if (tdd && k2 < tdd->nrofUplinkSlots) {
-    LOG_W(NR_MAC,
-          "k2 %d < tdd->nrofUplinkSlots %ld: not all UL slots can be scheduled\n",
-          k2,
-          tdd->nrofUplinkSlots);
-  }
+  return 0; // if FDD or not mixed slot in TDD, for now use default TDA (TODO handle CSI-RS slots)
 }
 
 //  For both UL-SCH except:
@@ -980,7 +860,7 @@ bool allocate_ul_retransmission(module_id_t module_id,
   const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   const uint8_t nrOfLayers = 1;
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || ubwpd) ? 1 : 2;
-  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
+  const int tda = get_ul_tda(nr_mac, scc, retInfo->slot);
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
   LOG_D(NR_MAC,"num_dmrs_cdm_grps_no_data %d, tbs %d\n",num_dmrs_cdm_grps_no_data, retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation) {
@@ -1254,7 +1134,7 @@ void pf_ul(module_id_t module_id,
       const uint8_t nrOfLayers = 1;
       const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
       int dci_format = get_dci_format(sched_ctrl);
-      const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
+      const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
       if (ps->time_domain_allocation != tda
           || ps->dci_format != dci_format
           || ps->nrOfLayers != nrOfLayers
@@ -1393,7 +1273,7 @@ void pf_ul(module_id_t module_id,
     const uint8_t nrOfLayers = 1;
     const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
     int dci_format = get_dci_format(sched_ctrl);
-    const int tda = sched_ctrl->active_ubwp ? nrmac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
+    const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
     if (ps->time_domain_allocation != tda
         || ps->dci_format != dci_format
         || ps->nrOfLayers != nrOfLayers
@@ -1486,12 +1366,14 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * schedule now (slot + k2 is not UL slot) */
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = sched_ctrl->active_ubwp ? nr_mac->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 0;
-  if (tda < 0)
-    return false;
-  int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, tda, mu);
+  const int temp_tda = get_ul_tda(nr_mac, scc, slot);
+  int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, temp_tda, mu);
   const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) & 1023;
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
+  const int tda = get_ul_tda(nr_mac, scc, sched_slot);
+  if (tda < 0)
+    return false;
+  DevAssert(K2 == get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, tda, mu));
 
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
     return false;

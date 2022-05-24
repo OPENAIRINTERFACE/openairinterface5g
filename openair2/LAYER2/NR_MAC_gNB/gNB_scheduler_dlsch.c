@@ -53,105 +53,22 @@
 #define WORD 32
 //#define SIZE_OF_POINTER sizeof (void *)
 
-void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp) {
-  gNB_MAC_INST *nrmac = RC.nrmac[module_id];
-  const int bwp_id = bwp ? bwp->bwp_Id : 0;
+const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot) {
 
-  if (nrmac->preferred_dl_tda[bwp_id])
-    return;
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  AssertFatal(tdd || nrmac->common_channels->frame_type == FDD, "Dynamic TDD not handled yet\n");
 
-  /* there is a mixed slot only when in TDD */
-  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
-  frame_type_t frame_type = nrmac->common_channels->frame_type;
-  const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-  const NR_TDD_UL_DL_Pattern_t *tdd =
-    scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-  int symb_dlMixed = 0;
-  int nr_mix_slots = 0;
-  int nr_slots_period = n;
+  // Use special TDA in case of CSI-RS
+  const NR_UE_info_t *UE_info = &nrmac->UE_info;
+  if(UE_info->sched_csirs)
+      return 1;
 
-  if (tdd) {
-    symb_dlMixed = (1 << tdd->nrofDownlinkSymbols) - 1;
-    nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-    nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
-  } else
-    // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
-    AssertFatal(nrmac->common_channels->frame_type == FDD,"Dynamic TDD not handled yet\n");
-
-  int target_ss;
-
-  if (bwp) {
-    target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  } else {
-    target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+  if (tdd && tdd->nrofDownlinkSymbols > 1) { // if there is a mixed slot where we can transmit DL
+    const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + 1;
+    if ((slot%nr_slots_period) == tdd->nrofDownlinkSlots)
+      return 2;
   }
-
-  const NR_SIB1_t *sib1 = nrmac->common_channels[0].sib1 ? nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  NR_SearchSpace_t *search_space = get_searchspace(sib1,
-                                                   scc,
-                                                   bwp ? bwp->bwp_Dedicated : NULL,
-                                                   target_ss);
-
-  NR_ControlResourceSet_t *coreset = get_coreset(module_id, scc, bwp ? bwp->bwp_Dedicated : NULL, search_space, target_ss);
-  // get coreset symbol "map"
-  const uint16_t symb_coreset = (1 << coreset->duration) - 1;
-
-  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = get_pdsch_TimeDomainAllocationList(bwp,
-                                                                                            scc,
-                                                                                            sib1);
-  AssertFatal(tdaList->list.count >= 1, "need to have at least one TDA for DL slots\n");
-
-  /* check that TDA index 0 fits into DL and does not overlap CORESET */
-  const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_DL = tdaList->list.array[0];
-  AssertFatal(!tdaP_DL->k0 || *tdaP_DL->k0 == 0,
-              "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
-              *tdaP_DL->k0);
-  int start, len;
-  SLIV2SL(tdaP_DL->startSymbolAndLength, &start, &len);
-  const uint16_t symb_tda = ((1 << len) - 1) << start;
-  // check whether coreset and TDA overlap: then we cannot use it. Note that
-  // here we assume that the coreset is scheduled every slot (which it
-  // currently is) and starting at symbol 0
-  AssertFatal((symb_coreset & symb_tda) == 0, "TDA index 0 for DL overlaps with CORESET\n");
-  /* check that TDA index 1 fits into DL part of mixed slot, if it exists */
-  int tdaMi = -1;
-
-  if (frame_type == TDD && tdaList->list.count > 1) {
-    const NR_PDSCH_TimeDomainResourceAllocation_t *tdaP_Mi = tdaList->list.array[1];
-    AssertFatal(!tdaP_Mi->k0 || *tdaP_Mi->k0 == 0,
-                "TimeDomainAllocation at index 1: non-null k0 (%ld) is not supported by the scheduler\n",
-                *tdaP_Mi->k0);
-    int start, len;
-    SLIV2SL(tdaP_Mi->startSymbolAndLength, &start, &len);
-    const uint16_t symb_tda = ((1 << len) - 1) << start;
-
-    // check whether coreset and TDA overlap: then, we cannot use it. Also,
-    // check whether TDA is entirely within mixed slot DL. Note that
-    // here we assume that the coreset is scheduled every slot (which it
-    // currently is)
-    if ((symb_coreset & symb_tda) == 0 && (symb_dlMixed & symb_tda) == symb_tda) {
-      tdaMi = 1;
-    } else {
-      LOG_E(MAC,
-            "TDA index 1 DL overlaps with CORESET or is not entirely in mixed slot (symb_coreset %x symb_dlMixed %x symb_tda %x), won't schedule DL mixed slot\n",
-            symb_coreset,
-            symb_dlMixed,
-            symb_tda);
-    }
-  }
-
-  nrmac->preferred_dl_tda[bwp_id] = malloc(n * sizeof(*nrmac->preferred_dl_tda[bwp_id]));
-
-  for (int i = 0; i < n; ++i) {
-    nrmac->preferred_dl_tda[bwp_id][i] = -1;
-
-    if (frame_type == FDD || i % nr_slots_period < tdd->nrofDownlinkSlots)
-      nrmac->preferred_dl_tda[bwp_id][i] = 0;
-    else if (nr_mix_slots && i % nr_slots_period == tdd->nrofDownlinkSlots)
-      nrmac->preferred_dl_tda[bwp_id][i] = tdaMi;
-
-    LOG_D(MAC, "slot %d preferred_dl_tda %d\n", i, nrmac->preferred_dl_tda[bwp_id][i]);
-  }
+  return 0; // if FDD or not mixed slot in TDD, for now use default TDA (TODO handle CSI-RS slots)
 }
 
 // Compute and write all MAC CEs and subheaders, and return number of written
@@ -491,7 +408,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int rbStart = 0; // start wrt BWPstart
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   int rbSize = 0;
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+  const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
 
   if (tda == retInfo->time_domain_allocation) {
@@ -838,7 +755,7 @@ void pf_dl(module_id_t module_id,
     if (max_num_ue < 0) return;
 
     /* MCS has been set above */
-    const int tda = RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0][slot];
+    const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
     AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
@@ -910,12 +827,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   int UE_id = UE_info->list.head;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
-
-  if (!RC.nrmac[module_id]->preferred_dl_tda[bwp_id])
-    return;
-
-  const int tda = RC.nrmac[module_id]->preferred_dl_tda[bwp_id][slot];
+  const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   int startSymbolIndex, nrOfSymbols;
   const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_bwp ?
         sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :

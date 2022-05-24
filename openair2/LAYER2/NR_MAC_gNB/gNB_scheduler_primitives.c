@@ -2697,6 +2697,8 @@ void nr_csirs_scheduling(int Mod_idP,
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
   uint16_t *vrb_map = gNB_mac->common_channels[CC_id].vrb_map;
 
+  UE_info->sched_csirs = false;
+
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
@@ -2729,6 +2731,7 @@ void nr_csirs_scheduling(int Mod_idP,
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
           LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
+          UE_info->sched_csirs = true;
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
           memset((void*)dl_tti_csirs_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -2896,6 +2899,7 @@ void nr_csirs_scheduling(int Mod_idP,
 void nr_mac_update_timers(module_id_t module_id,
                           frame_t frame,
                           sub_frame_t slot) {
+
   NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
   const NR_list_t *UE_list = &UE_info->list;
   for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
@@ -2932,12 +2936,11 @@ void nr_mac_update_timers(module_id_t module_id,
                                            cg->spCellConfig &&
                                            cg->spCellConfig->spCellConfigDedicated ?
                                            cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-        int **preferred_dl_tda = RC.nrmac[module_id]->preferred_dl_tda;
+
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
         const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
-        const int tda = bwp && preferred_dl_tda[bwp->bwp_Id][slot] >= 0 ?
-                        preferred_dl_tda[bwp->bwp_Id][slot] : (ps->time_domain_allocation >= 0 ? ps->time_domain_allocation : 0);
+        const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
 
         nr_set_pdsch_semi_static(sib1,
                                  scc,
@@ -2955,14 +2958,13 @@ void nr_mac_update_timers(module_id_t module_id,
                                           cg->spCellConfig->spCellConfigDedicated &&
                                           cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
                                           cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
-        int **preferred_ul_tda = RC.nrmac[module_id]->preferred_ul_tda;
+
         NR_pusch_semi_static_t *ups = &sched_ctrl->pusch_semi_static;
 
         int dci_format = get_dci_format(sched_ctrl);
         const uint8_t num_dmrs_cdm_grps_no_data = (ubwp || ubwpd) ? 1 : 2;
         const uint8_t nrOfLayers = 1;
-        const int utda = ubwp && preferred_ul_tda[ubwp->bwp_Id][slot] >= 0 ?
-            preferred_ul_tda[ubwp->bwp_Id][slot] : (ups->time_domain_allocation >= 0 ? ups->time_domain_allocation : 0);
+        const int utda = get_ul_tda(RC.nrmac[module_id], scc, slot);
 
         nr_set_pusch_semi_static(sib1,
                                  scc,

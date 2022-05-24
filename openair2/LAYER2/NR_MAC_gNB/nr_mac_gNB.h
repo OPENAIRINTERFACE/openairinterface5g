@@ -717,7 +717,8 @@ typedef struct {
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
   bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
-
+  /// Sched CSI-RS: scheduling decisions
+  bool sched_csirs;
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
@@ -814,15 +815,8 @@ typedef struct gNB_MAC_INST_s {
 
   /// bitmap of DLSCH slots, can hold up to 160 slots
   uint64_t dlsch_slot_bitmap[3];
-  /// Lookup for preferred time domain allocation for BWP, in DL, slots
-  /// dynamically allocated
-  int *preferred_dl_tda[MAX_NUM_BWP];
   /// bitmap of ULSCH slots, can hold up to 160 slots
   uint64_t ulsch_slot_bitmap[3];
-  /// Lookup for preferred time domain allocation for UL BWP, dynamically
-  /// allocated. The index refers to the DL slot, and the indicated TDA's k2
-  /// points to the right UL slot
-  int *preferred_ul_tda[MAX_NUM_BWP];
 
   /// maximum number of slots before a UE will be scheduled ULSCH automatically
   uint32_t ulsch_max_frame_inactivity;
