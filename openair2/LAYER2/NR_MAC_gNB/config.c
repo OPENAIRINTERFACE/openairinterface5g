@@ -551,9 +551,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD,"Dynamic TDD not handled yet\n");
 
     for (int slot = 0; slot < n; ++slot) {
-      if (RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD ||
-          (slot != 0))
-        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
+      RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
       RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
 
       LOG_I(NR_MAC, "In %s: slot %d DL %d UL %d\n",
