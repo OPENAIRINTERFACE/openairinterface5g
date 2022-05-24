@@ -435,6 +435,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
     AssertFatal(1==0,"Handle DCI searching when CellGroup without dedicated BWP\n");
   }
   // Search space 0, CORESET ID 0
+  /* DO NOT ATTEMPT TO DECODE SIB1 AFTER INITIAL SYNC
   if (!get_softmodem_params()->nsa) {
     NR_SearchSpace_t *ss0 = mac->search_space_zero;
     if(ss0) {
@@ -448,5 +449,5 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
                      -1);
       fill_dci_search_candidates(ss0, rel15, -1, -1);
     }
-  }
+  }*/
 }
