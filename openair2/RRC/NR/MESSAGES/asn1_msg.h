@@ -114,7 +114,6 @@ void fill_initial_cellGroupConfig(int uid,
                                   const gNB_RrcConfigurationReq *configuration);
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
-                            int uid,
                             NR_UE_NR_Capability_t *uecap,
                             const gNB_RrcConfigurationReq *configuration);
 
