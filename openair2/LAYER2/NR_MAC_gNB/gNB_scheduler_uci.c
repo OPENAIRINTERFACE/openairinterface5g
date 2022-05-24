@@ -55,8 +55,12 @@ static void nr_fill_nfapi_pucch(gNB_MAC_INST *nrmac,
               future_ul_tti_req->Slot,
               pucch->frame,
               pucch->ul_slot);
-  AssertFatal(future_ul_tti_req->n_pdus < sizeofArray(future_ul_tti_req->pdus_list),
-              "Invalid future_ul_tti_req->n_pdus %d\n", future_ul_tti_req->n_pdus);
+  // n_pdus is number of pdus, so, in the array, it is the index of the next free element
+  if (future_ul_tti_req->n_pdus >= sizeofArray(future_ul_tti_req->pdus_list) ) {
+    LOG_E(NR_MAC,"future_ul_tti_req->n_pdus %d is full, slot: %d, sr flag %d dropping request\n",
+	  future_ul_tti_req->n_pdus, pucch->ul_slot, pucch->sr_flag);
+    return;
+  }
   future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_type = NFAPI_NR_UL_CONFIG_PUCCH_PDU_TYPE;
   future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pdu_size = sizeof(nfapi_nr_pucch_pdu_t);
   nfapi_nr_pucch_pdu_t *pucch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pucch_pdu;
