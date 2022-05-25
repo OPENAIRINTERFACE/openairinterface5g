@@ -59,7 +59,7 @@ if [ $# -eq 0 ]
 then
     echo " ---- Checking the whole repository ----"
     echo ""
-    NB_FILES_TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt --recursive *.c *.h | grep -c Formatted || true`
+    NB_FILES_TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt --recursive --exclude=ci-scripts --exclude=cmake_targets *.c *.h | grep -c Formatted || true`
     echo "Nb Files that do NOT follow OAI rules: $NB_FILES_TO_FORMAT"
     echo $NB_FILES_TO_FORMAT > ./oai_rules_result.txt
 
@@ -136,7 +136,7 @@ fi
 # Merge request scenario
 
 MERGE_COMMMIT=`git log -n1 --pretty=format:%H`
-TARGET_INIT_COMMIT=`cat .git/refs/remotes/origin/$TARGET_BRANCH`
+TARGET_INIT_COMMIT=`git log -n1 --pretty=format:%H origin/$TARGET_BRANCH`
 
 echo " ---- Checking the modified files by the merge request ----"
 echo ""

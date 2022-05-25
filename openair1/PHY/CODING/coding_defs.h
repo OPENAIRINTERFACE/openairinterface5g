@@ -481,16 +481,11 @@ uint32_t nr_compute_tbs(uint16_t Qm,
                         uint8_t tb_scaling,
 			uint8_t Nl);
 
-uint32_t nr_compute_tbslbrm(uint16_t table,
-			    uint16_t nb_rb,
-		            uint8_t Nl);
-
 void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
 
 void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f);
 
-int nr_rate_matching_ldpc(uint8_t Ilbrm,
-                          uint32_t Tbslbrm,
+int nr_rate_matching_ldpc(uint32_t Tbslbrm,
                           uint8_t BG,
                           uint16_t Z,
                           uint8_t *w,
@@ -501,8 +496,7 @@ int nr_rate_matching_ldpc(uint8_t Ilbrm,
                           uint8_t rvidx,
                           uint32_t E);
 
-int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
-                             uint32_t Tbslbrm,
+int nr_rate_matching_ldpc_rx(uint32_t Tbslbrm,
                              uint8_t BG,
                              uint16_t Z,
                              int16_t *w,

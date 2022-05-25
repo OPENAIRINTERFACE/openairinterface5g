@@ -1961,7 +1961,7 @@ void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs){
   uint32_t delta_arfcn = nrarfcn - N_OFFs;
 
   if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1 == 0, "nrarfcn %u is not on the channel raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
+    AssertFatal(1==0, "nrarfcn %u is not on the channel raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
 
 }
 
@@ -1981,10 +1981,10 @@ uint32_t to_nrarfcn(int nr_bandP,
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
 	      nr_bandP, bw, (long long unsigned int)dl_CarrierFreq_by_1k,
 	      (long long unsigned int)nr_bandtable[i].dl_min);
-  AssertFatal(dl_CarrierFreq_by_1k <= (nr_bandtable[i].dl_max - bw_kHz),
+  AssertFatal(dl_CarrierFreq_by_1k <= (nr_bandtable[i].dl_max - bw_kHz/2),
         "Band %d, dl_CarrierFreq %llu bw %u: DL carrier frequency %llu kHz > %llu\n",
 	      nr_bandP, (long long unsigned int)dl_CarrierFreq,bw, (long long unsigned int)dl_CarrierFreq_by_1k,
-	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz));
+	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz/2));
  
   int deltaFglobal = 60;
   uint32_t N_REF_Offs = 2016667;
@@ -2004,7 +2004,7 @@ uint32_t to_nrarfcn(int nr_bandP,
   // This is equation before Table 5.4.2.1-1 in 38101-1-f30
   // F_REF=F_REF_Offs + deltaF_Global(N_REF-NREF_REF_Offs)
   nrarfcn =  (((dl_CarrierFreq_by_1k - F_REF_Offs_khz)/deltaFglobal)+N_REF_Offs);
-  get_delta_arfcn(i, nrarfcn, nr_bandtable[i].N_OFFs_DL);
+  //get_delta_arfcn(i, nrarfcn, nr_bandtable[i].N_OFFs_DL);
 
   return nrarfcn;
 }
@@ -4085,6 +4085,25 @@ uint16_t compute_pucch_prb_size(uint8_t format,
   else{
     AssertFatal(1==0,"Not yet implemented");
   }
+}
+
+int get_bw_tbslbrm(NR_BWP_t *genericParameters,
+                   NR_CellGroupConfig_t *cg) {
+
+  int bw = 0;
+  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
+      cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+    struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+    for (int i=0; i<BWP_list->list.count; i++) {
+      genericParameters = &BWP_list->list.array[i]->bwp_Common->genericParameters;
+      int curr_bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      if (curr_bw > bw)
+        bw = curr_bw;
+    }
+  }
+  else
+    bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  return bw;
 }
 
 /* extract UL PTRS values from RRC and validate it based upon 38.214 6.2.3 */
