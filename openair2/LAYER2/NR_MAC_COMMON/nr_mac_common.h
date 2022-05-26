@@ -47,6 +47,11 @@ int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slo
 
 int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slotP, frame_type_t frame_type);
 
+uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t	*uplinkConfig,
+                                       NR_PUSCH_Config_t *pusch_Config,
+                                       NR_SRS_Config_t *srs_config,
+                                       uint16_t *val);
+
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
                      const NR_BWP_UplinkCommon_t *initialULBWP,
                      const NR_CellGroupConfig_t *cg,

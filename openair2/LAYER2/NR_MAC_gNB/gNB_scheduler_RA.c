@@ -888,6 +888,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                  ubwp,
                  ubwpd,
                  scc,
+                 NULL,
                  pusch_pdu,
                  &uldci_payload,
                  NR_UL_DCI_FORMAT_0_0,

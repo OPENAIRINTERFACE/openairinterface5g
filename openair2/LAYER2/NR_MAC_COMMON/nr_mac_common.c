@@ -2615,6 +2615,64 @@ uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
   return n_antenna_port;
 }
 
+uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t	*uplinkConfig,
+                                       NR_PUSCH_Config_t *pusch_Config,
+                                       NR_SRS_Config_t *srs_config,
+                                       uint16_t *val) {
+  uint8_t nbits = 0;
+
+  if (srs_config && pusch_Config && pusch_Config->txConfig != NULL) {
+
+    int count=0;
+    if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook) {
+      for (int i=0; i<srs_config->srs_ResourceSetToAddModList->list.count; i++) {
+        if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_codebook)
+          count++;
+      }
+      if (count>1) {
+        nbits = 1;
+      }
+    } else {
+      int lmin = 0;
+      int Lmax = 0;
+      int lsum = 0;
+      if (uplinkConfig && uplinkConfig->pusch_ServingCellConfig != NULL) {
+        if (uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers != NULL) {
+          Lmax = *uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
+        } else {
+          AssertFatal(1==0,"MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
+        }
+      } else {
+        AssertFatal(1==0,"MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
+      }
+      for (int i=0; i<srs_config->srs_ResourceSetToAddModList->list.count; i++) {
+        if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_nonCodebook) {
+          count++;
+        }
+        if (count < Lmax) {
+          lmin = count;
+        } else {
+          lmin = Lmax;
+        }
+        for (int k=1;k<=lmin;k++) {
+          lsum += binomial(count,k);
+        }
+      }
+      nbits = (int)ceil(log2(lsum));
+    }
+
+  } else {
+    nbits = 0;
+  }
+
+  // TODO: Implement this.
+  if (val) {
+    *val = 0;
+  }
+
+  return nbits;
+}
+
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                      const NR_CellGroupConfig_t *cg,
@@ -2631,6 +2689,11 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
   long rbg_size_config;
   int num_entries = 0;
 
+  NR_UplinkConfig_t	*uplinkConfig = NULL;
+  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated) {
+    uplinkConfig = cg->spCellConfig->spCellConfigDedicated->uplinkConfig;
+  }
+
   const NR_BWP_DownlinkDedicated_t *bwpd = NULL;
   const NR_BWP_UplinkDedicated_t *ubwpd = NULL;
   const NR_BWP_DownlinkCommon_t *bwpc = NULL;
@@ -2642,23 +2705,21 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
   NR_SRS_Config_t *srs_config = NULL;
   if(bwp_id > 0) {
     AssertFatal(cg!=NULL,"Cellgroup is null and bwp_id!=0");
-    bwpd=cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
-    bwpc=cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Common;
-    ubwpd=cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
-    ubwpc=cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Common;
+    bwpd = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
+    bwpc = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Common;
+    ubwpd = uplinkConfig ? uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated : NULL;
+    ubwpc = uplinkConfig ? uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Common : NULL;
     pdsch_Config = (bwpd->pdsch_Config) ? bwpd->pdsch_Config->choice.setup : NULL;
     pdcch_Config = (bwpd->pdcch_Config) ? bwpd->pdcch_Config->choice.setup : NULL;
     pucch_Config = (ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
     pusch_Config = (ubwpd->pusch_Config) ? ubwpd->pusch_Config->choice.setup : NULL;
     srs_config = (ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup : NULL;
-  }
-  else if (cg){
+  } else if (cg) {
     bwpc = initialDownlinkBWP;
     ubwpc = initialUplinkBWP;
     bwpd = cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated ?
            cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-    ubwpd = cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated && cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-            cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+    ubwpd = uplinkConfig ? uplinkConfig->initialUplinkBWP : NULL;
     pdsch_Config = (bwpd && bwpd->pdsch_Config) ? bwpd->pdsch_Config->choice.setup : NULL;
     pdcch_Config = (bwpd && bwpd->pdcch_Config) ? bwpd->pdcch_Config->choice.setup : NULL;
     pucch_Config = (ubwpd && ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
@@ -2756,55 +2817,15 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         size += dci_pdu->dai[1].nbits;
       }
       // SRS resource indicator
-      if (srs_config &&
-          pusch_Config && 
-          pusch_Config->txConfig != NULL){
-        int count=0;
-        if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
-          for (int i=0; i<srs_config->srs_ResourceSetToAddModList->list.count; i++) {
-            if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_codebook)
-              count++;
-          }
-          if (count>1) {
-            dci_pdu->srs_resource_indicator.nbits = 1;
-            size += dci_pdu->srs_resource_indicator.nbits;
-          }
-        }
-        else {
-          int lmin,Lmax = 0;
-          int lsum = 0;
-          if ( cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-               cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig != NULL) {
-            if ( cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers != NULL)
-              Lmax = *cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
-            else
-              AssertFatal(1==0,"MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
-          }
-          else
-            AssertFatal(1==0,"MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
-          for (int i=0; i<srs_config->srs_ResourceSetToAddModList->list.count; i++) {
-            if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_nonCodebook)
-              count++;
-            if (count < Lmax) lmin = count;
-            else lmin = Lmax;
-            for (int k=1;k<=lmin;k++) {
-              lsum += binomial(count,k);
-            }
-          }
-          dci_pdu->srs_resource_indicator.nbits = (int)ceil(log2(lsum));
-          size += dci_pdu->srs_resource_indicator.nbits;
-        }
-      } else dci_pdu->srs_resource_indicator.nbits = 0;
-      LOG_D(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n",dci_pdu->srs_resource_indicator.nbits);
+      dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(uplinkConfig, pusch_Config, srs_config, NULL);
+      size += dci_pdu->srs_resource_indicator.nbits;
+      LOG_D(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
       long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
-       
       uint8_t pusch_antenna_ports = get_pusch_nb_antenna_ports(pusch_Config, srs_config, dci_pdu->srs_resource_indicator);
-	   
       dci_pdu->precoding_information.nbits=0;
-      if (pusch_Config && 
-          pusch_Config->txConfig != NULL){
-        if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
+      if (pusch_Config && pusch_Config->txConfig != NULL) {
+        if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook) {
           if (pusch_antenna_ports > 1) {
             if (pusch_antenna_ports == 4) {
               if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank>1))

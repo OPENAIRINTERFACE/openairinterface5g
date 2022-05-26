@@ -992,6 +992,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   const NR_BWP_Uplink_t *ubwp,
 		              const NR_BWP_UplinkDedicated_t *ubwpd,
                   const NR_ServingCellConfigCommon_t *scc,
+                  const NR_CellGroupConfig_t *cg,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int dci_format,
@@ -1035,7 +1036,14 @@ void config_uldci(const NR_SIB1_t *sib1,
           ubwpd2->pusch_Config->choice.setup->txConfig != NULL) {
         AssertFatal(*ubwpd2->pusch_Config->choice.setup->txConfig == NR_PUSCH_Config__txConfig_codebook,
                     "Non Codebook configuration non supported\n");
-        dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
+        NR_UplinkConfig_t	*uplinkConfig = NULL;
+        if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated) {
+          uplinkConfig = cg->spCellConfig->spCellConfigDedicated->uplinkConfig;
+        }
+        compute_srs_resource_indicator(uplinkConfig,
+                                       ubwpd->pusch_Config ? ubwpd->pusch_Config->choice.setup : NULL,
+                                       ubwpd2 && ubwpd2->srs_Config ? ubwpd->srs_Config->choice.setup : NULL,
+                                       &dci_pdu_rel15->srs_resource_indicator.val);
       }
       dci_pdu_rel15->precoding_information.val= 0;
       if (pusch_pdu->nrOfLayers == 2)
@@ -1534,8 +1542,10 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,scc->uplinkConfigCommon->initialUplinkBWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, N_RB, bwp_id, coreset_id, cset0_bwp_size);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
-  if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
+
+  if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1) {
     prepare_dci(CellGroup, dci_pdu_rel15, dci_format, bwp_id);
+  }
 
   /// Payload generation
   switch (dci_format) {

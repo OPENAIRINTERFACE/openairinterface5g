@@ -1989,6 +1989,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  sched_ctrl->active_ubwp,
                  ubwpd,
                  scc,
+                 cg,
                  pusch_pdu,
                  &uldci_payload,
                  ps->dci_format,
@@ -1996,6 +1997,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  UE_info->UE_sched_ctrl[UE_id].tpc0,
                  n_ubwp,
                  bwp_id);
+
     fill_dci_pdu_rel15(scc,
                        cg,
                        dci_pdu,
