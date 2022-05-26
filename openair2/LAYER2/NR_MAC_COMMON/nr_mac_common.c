@@ -2615,7 +2615,7 @@ uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
   return n_antenna_port;
 }
 
-uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t	*uplinkConfig,
+uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
                                        NR_PUSCH_Config_t *pusch_Config,
                                        NR_SRS_Config_t *srs_config,
                                        uint16_t *val) {
@@ -2623,19 +2623,35 @@ uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t	*uplinkConfig,
 
   if (srs_config && pusch_Config && pusch_Config->txConfig != NULL) {
 
-    int count=0;
     if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook) {
+
+      // TS 38.212 - Section 7.3.1.1.2: SRS resource indicator has ceil(log2(N_SRS)) bits according to
+      // Tables 7.3.1.1.2-32, 7.3.1.1.2-32A and 7.3.1.1.2-32B if the higher layer parameter txConfig = codebook,
+      // where N_SRS is the number of configured SRS resources in the SRS resource set configured by higher layer
+      // parameter srs-ResourceSetToAddModList, and associated with the higher layer parameter usage of value codeBook.
+      int count = 0;
       for (int i=0; i<srs_config->srs_ResourceSetToAddModList->list.count; i++) {
-        if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_codebook)
+        if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_codebook) {
           count++;
+        }
       }
-      if (count>1) {
-        nbits = 1;
+      if (count>0) {
+        nbits = ceil(log2(count));
       }
+
     } else {
-      int lmin = 0;
+
+      // TS 38.212 - Section 7.3.1.1.2: SRS resource indicator has ceil(log2(sum(k = 1 until min(Lmax,N_SRS) of binomial(N_SRS,k))))
+      // bits according to Tables 7.3.1.1.2-28/29/30/31 if the higher layer parameter txConfig = nonCodebook, where
+      // N_SRS is the number of configured SRS resources in the SRS resource set configured by higher layer parameter
+      // srs-ResourceSetToAddModList, and associated with the higher layer parameter usage of value nonCodeBook and:
+      //
+      // - if UE supports operation with maxMIMO-Layers and the higher layer parameter maxMIMO-Layers of
+      // PUSCH-ServingCellConfig of the serving cell is configured, Lmax is given by that parameter;
+      //
+      // - otherwise, Lmax is given by the maximum number of layers for PUSCH supported by the UE for the serving cell
+      // for non-codebook based operation.
       int Lmax = 0;
-      int lsum = 0;
       if (uplinkConfig && uplinkConfig->pusch_ServingCellConfig != NULL) {
         if (uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers != NULL) {
           Lmax = *uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
@@ -2645,24 +2661,23 @@ uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t	*uplinkConfig,
       } else {
         AssertFatal(1==0,"MIMO on PUSCH not supported, maxMIMO_Layers needs to be set to 1\n");
       }
+      int lmin = 0;
+      int lsum = 0;
+      int count = 0;
       for (int i=0; i<srs_config->srs_ResourceSetToAddModList->list.count; i++) {
         if (srs_config->srs_ResourceSetToAddModList->list.array[i]->usage == NR_SRS_ResourceSet__usage_nonCodebook) {
           count++;
         }
-        if (count < Lmax) {
-          lmin = count;
-        } else {
-          lmin = Lmax;
-        }
-        for (int k=1;k<=lmin;k++) {
-          lsum += binomial(count,k);
-        }
       }
-      nbits = (int)ceil(log2(lsum));
+      lmin = count < Lmax ? count : Lmax;
+      for (int k=1;k<=lmin;k++) {
+        lsum += binomial(count,k);
+      }
+      if (lsum>0) {
+        nbits = ceil(log2(lsum));
+      }
     }
 
-  } else {
-    nbits = 0;
   }
 
   // TODO: Implement this.
