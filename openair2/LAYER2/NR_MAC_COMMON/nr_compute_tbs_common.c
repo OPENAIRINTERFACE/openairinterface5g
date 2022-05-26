@@ -72,7 +72,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
     n = log2(Ninfo-24)-5;
     Np_info = max(3840, (ROUNDIDIV((Ninfo-24),(1<<n)))<<n);
 
-    if (R <= 256) {
+    if (R <= 2560) {
         C = CEILIDIV((Np_info+24),3816);
         nr_tbs = (C<<3)*CEILIDIV((Np_info+24),(C<<3)) - 24;
     } else {
