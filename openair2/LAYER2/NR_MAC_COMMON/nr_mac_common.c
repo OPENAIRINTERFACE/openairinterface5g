@@ -2615,15 +2615,30 @@ uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
   return n_antenna_port;
 }
 
+//#define DEBUG_SRS_RESOURCE_IND
 uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
                                        NR_PUSCH_Config_t *pusch_Config,
                                        NR_SRS_Config_t *srs_config,
                                        uint16_t *val) {
   uint8_t nbits = 0;
 
+  // SRI occupies a number of bits which is dependent upon the uplink transmission scheme, and it is used to determine
+  // the antenna ports and uplink transmission beam to use for PUSCH transmission. In the case of codebook based
+  // transmission, the SRI is used to select between SRS Resources belonging to different antenna panels
+  // (kind of directional antenna). There can be up to 2 SRS Resources (2 antenna panels). In the case of non-codebook
+  // based transmission, the SRI is used to select one or more SRS Resources from a set of N_SRS resources. The number
+  // of SRS Resources selected corresponds to the number of layers (rank) to be transmitted. For now, we set SRI = 0.
+  if (val) {
+    *val = 0;
+  }
+
   if (srs_config && pusch_Config && pusch_Config->txConfig != NULL) {
 
     if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook) {
+
+#ifdef DEBUG_SRS_RESOURCE_IND
+      LOG_I(NR_MAC, "*pusch_Config->txConfig = NR_PUSCH_Config__txConfig_codebook\n");
+#endif
 
       // TS 38.212 - Section 7.3.1.1.2: SRS resource indicator has ceil(log2(N_SRS)) bits according to
       // Tables 7.3.1.1.2-32, 7.3.1.1.2-32A and 7.3.1.1.2-32B if the higher layer parameter txConfig = codebook,
@@ -2639,7 +2654,16 @@ uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
         nbits = ceil(log2(count));
       }
 
+#ifdef DEBUG_SRS_RESOURCE_IND
+      LOG_I(NR_MAC, "srs_config->srs_ResourceSetToAddModList->list.count = %i\n", srs_config->srs_ResourceSetToAddModList->list.count);
+      LOG_I(NR_MAC, "count = %i\n", count);
+#endif
+
     } else {
+
+#ifdef DEBUG_SRS_RESOURCE_IND
+      LOG_I(NR_MAC, "*pusch_Config->txConfig = NR_PUSCH_Config__txConfig_nonCodebook\n");
+#endif
 
       // TS 38.212 - Section 7.3.1.1.2: SRS resource indicator has ceil(log2(sum(k = 1 until min(Lmax,N_SRS) of binomial(N_SRS,k))))
       // bits according to Tables 7.3.1.1.2-28/29/30/31 if the higher layer parameter txConfig = nonCodebook, where
@@ -2676,13 +2700,15 @@ uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
       if (lsum>0) {
         nbits = ceil(log2(lsum));
       }
+
+#ifdef DEBUG_SRS_RESOURCE_IND
+      LOG_I(NR_MAC, "srs_config->srs_ResourceSetToAddModList->list.count = %i\n", srs_config->srs_ResourceSetToAddModList->list.count);
+      LOG_I(NR_MAC, "count = %i\n", count);
+      LOG_I(NR_MAC, "Lmax = %i\n", Lmax);
+      LOG_I(NR_MAC, "lsum = %i\n", lsum);
+#endif
+
     }
-
-  }
-
-  // TODO: Implement this.
-  if (val) {
-    *val = 0;
   }
 
   return nbits;
@@ -2834,7 +2860,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       // SRS resource indicator
       dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(uplinkConfig, pusch_Config, srs_config, NULL);
       size += dci_pdu->srs_resource_indicator.nbits;
-      LOG_D(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
+      LOG_W(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
       long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
       uint8_t pusch_antenna_ports = get_pusch_nb_antenna_ports(pusch_Config, srs_config, dci_pdu->srs_resource_indicator);
