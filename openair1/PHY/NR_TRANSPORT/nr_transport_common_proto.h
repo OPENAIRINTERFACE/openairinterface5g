@@ -60,14 +60,6 @@ uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch, uint8_t nb_re_dmrs, uint
 
 uint32_t nr_get_E(uint32_t G, uint8_t C, uint8_t Qm, uint8_t Nl, uint8_t r);
 
-uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
-
-uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
-
-uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
-
-uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
-
 void compute_nr_prach_seq(uint8_t short_sequence,
                           uint8_t num_sequences,
                           uint8_t rootSequenceIndex,

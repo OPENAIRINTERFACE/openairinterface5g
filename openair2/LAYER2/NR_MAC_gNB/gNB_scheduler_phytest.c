@@ -275,7 +275,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE_id);
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+
+  const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
@@ -434,18 +435,25 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
 
-  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
-  if (tda < 0)
-    return false;
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
     sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  const int temp_tda = get_ul_tda(nr_mac, scc, slot);
+  if (temp_tda < 0)
+    return false;
+  AssertFatal(temp_tda < tdaList->list.count,
+              "time domain assignment %d >= %d\n",
+              temp_tda,
+              tdaList->list.count);
+  int K2 = get_K2(scc,NULL,sched_ctrl->active_ubwp, temp_tda, mu);
+  const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
+  const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
+  const int tda = get_ul_tda(nr_mac, scc, sched_slot);
+  if (tda < 0)
+    return false;
   AssertFatal(tda < tdaList->list.count,
               "time domain assignment %d >= %d\n",
               tda,
               tdaList->list.count);
-  int K2 = get_K2(scc,NULL,sched_ctrl->active_ubwp, tda, mu);
-  const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
-  const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
