@@ -665,8 +665,9 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
 
 void init_timeshift_rotation(NR_DL_FRAME_PARMS *fp)
 {
+  const int sample_offset = fp->nb_prefix_samples / fp->ofdm_offset_divisor;
   for (int i = 0; i < fp->ofdm_symbol_size; i++) {
-    double poff = -i * 2.0 * M_PI * 144.0 / 2048.0 / fp->ofdm_offset_divisor;
+    double poff = -i * 2.0 * M_PI * sample_offset / fp->ofdm_symbol_size;
     double exp_re = cos(poff);
     double exp_im = sin(-poff);
     fp->timeshift_symbol_rotation[i*2] = (int16_t)round(exp_re * 32767);

@@ -96,7 +96,6 @@ uint16_t sl_ahead=0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
-uint32_t N_RB_DL = 106;
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
@@ -658,7 +657,7 @@ int main(int argc, char **argv)
 
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
+      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
              argv[0]);
       printf("-h This message\n");
       printf("-L <log level, 0(errors), 1(warning), 2(analysis), 3(info), 4(debug), 5(trace)>\n");
@@ -667,7 +666,7 @@ int main(int argc, char **argv)
       printf("-n Number of frames to simulate\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 5 dB.  If n_frames is 1 then just SNR is simulated\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
-      printf("-t Delay spread for multipath channel\n");
+      //printf("-t Delay spread for multipath channel\n");
       printf("-g [A,B,C,D,E,F,G,R] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models or R for MIMO model (ignores delay spread and Ricean factor)\n");
       printf("-y Number of TX antennas used in gNB\n");
       printf("-z Number of RX antennas used in UE\n");
@@ -853,10 +852,14 @@ int main(int argc, char **argv)
 
   double fs,bw;
 
-  if (mu == 1 && N_RB_DL == 217) { 
+  if (mu == 0 && N_RB_DL == 25) {
+    fs = 7.68e6;
+    bw = 5e6;
+  }
+  else if (mu == 1 && N_RB_DL == 217) {
     fs = 122.88e6;
     bw = 80e6;
-  }					       
+  }
   else if (mu == 1 && N_RB_DL == 245) {
     fs = 122.88e6;
     bw = 90e6;
@@ -876,6 +879,10 @@ int main(int argc, char **argv)
   else if (mu == 1 && N_RB_DL == 162) {
     fs = 61.44e6;
     bw = 60e6;
+  }
+  else if (mu == 1 && N_RB_DL == 24) {
+    fs = 15.36e6;
+    bw = 10e6;
   }
   else if (mu == 3 && N_RB_DL == 66) {
     fs = 122.88e6;
