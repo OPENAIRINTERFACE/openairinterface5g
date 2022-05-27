@@ -354,6 +354,7 @@ void init_openair0(void) {
     openair0_cfg[card].num_rb_dl = frame_parms->N_RB_DL;
     openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
     openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
+    openair0_cfg[card].tune_offset = get_softmodem_params()->tune_offset;
     openair0_cfg[card].tx_num_channels = min(4, frame_parms->nb_antennas_tx);
     openair0_cfg[card].rx_num_channels = min(4, frame_parms->nb_antennas_rx);
 
