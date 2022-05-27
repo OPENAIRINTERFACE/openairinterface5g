@@ -130,18 +130,18 @@
 #define MACRLC_ULSCH_MAX_FRAME_INACTIVITY                      17
 #define MACRLC_PUSCHTARGETSNRX10_IDX                           18
 #define MACRLC_PUCCHTARGETSNRX10_IDX                           19
-#define MACRLC_UL_PRBBLACK_SNR_THRESHOLD_IDX
-#define MACRLC_PUCCHFAILURETHRES_IDX                           20
-#define MACRLC_PUSCHFAILURETHRES_IDX                           21
-#define MACRLC_DL_BLER_TARGET_UPPER_IDX                        22
-#define MACRLC_DL_BLER_TARGET_LOWER_IDX                        23
-#define MACRLC_DL_MAX_MCS_IDX                                  24
-#define MACRLC_UL_BLER_TARGET_UPPER_IDX                        25
-#define MACRLC_UL_BLER_TARGET_LOWER_IDX                        26
-#define MACRLC_UL_MAX_MCS_IDX                                  27
-#define MACRLC_HARQ_ROUND_MAX_IDX                              28
-#define MACRLC_MIN_GRANT_PRB_IDX                               29
-#define MACRLC_MIN_GRANT_MCS_IDX                               30
+#define MACRLC_UL_PRBBLACK_SNR_THRESHOLD_IDX                   20
+#define MACRLC_PUCCHFAILURETHRES_IDX                           21
+#define MACRLC_PUSCHFAILURETHRES_IDX                           22
+#define MACRLC_DL_BLER_TARGET_UPPER_IDX                        23
+#define MACRLC_DL_BLER_TARGET_LOWER_IDX                        24
+#define MACRLC_DL_MAX_MCS_IDX                                  25
+#define MACRLC_UL_BLER_TARGET_UPPER_IDX                        26
+#define MACRLC_UL_BLER_TARGET_LOWER_IDX                        27
+#define MACRLC_UL_MAX_MCS_IDX                                  28
+#define MACRLC_HARQ_ROUND_MAX_IDX                              29
+#define MACRLC_MIN_GRANT_PRB_IDX                               30
+#define MACRLC_MIN_GRANT_MCS_IDX                               31
 
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif
