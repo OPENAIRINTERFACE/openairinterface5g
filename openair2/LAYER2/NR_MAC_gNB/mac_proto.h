@@ -388,13 +388,6 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,
                    uint8_t numdmrscdmgroupnodata,
                    uint8_t tb_scaling);
-/** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
-uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
-uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
-
-/** \brief Computes Q based on I_MCS PDSCH and table_idx for uplink. Implements MCS Tables from 38.214. */
-uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
-uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
 int NRRIV2BW(int locationAndBandwidth,int N_RB);
 
@@ -524,16 +517,13 @@ uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int xp_pdsch_antenna_ports,
                       int codebook_mode);
 
-void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
-                NR_UE_sched_ctrl_t *sched_ctrl,
-                uint8_t *target_mcs,
-                uint8_t mcs_table_idx);
+uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx);
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
 int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl);
-void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
-void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);
+const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
+const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 
 bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
 
@@ -547,6 +537,12 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t nb_rb_max,
                    uint32_t *tbs,
                    uint16_t *nb_rb);
+
+int get_mcs_from_bler(const NR_bler_options_t *bler_options,
+                      const NR_mac_dir_stats_t *stats,
+                      NR_bler_stats_t *bler_stats,
+                      int max_mcs,
+                      frame_t frame);
 
 void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
 
