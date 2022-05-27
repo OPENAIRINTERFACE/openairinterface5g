@@ -1013,8 +1013,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint16_t nb_symb_sch,
                          uint8_t nr_slot_rx,
                          uint8_t harq_pid,
-                         uint8_t is_crnti,
-                         uint8_t llr8_flag);
+                         uint8_t is_crnti);
 
 int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                      NR_UE_ULSCH_t *ulsch,
