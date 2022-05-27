@@ -459,13 +459,12 @@ typedef struct NR_UE_harq {
 
 //! fixme : need to enhace for the multiple TB CQI report
 
-typedef struct NR_DL_bler_stats {
-  frame_t last_frame_slot;
+typedef struct NR_bler_stats {
+  frame_t last_frame;
   float bler;
-  float rd2_bler;
   uint8_t mcs;
-  uint64_t dlsch_rounds[8];
-} NR_DL_bler_stats_t;
+  uint64_t rounds[8];
+} NR_bler_stats_t;
 
 //
 /*! As per spec 38.214 section 5.2.1.4.2
@@ -613,6 +612,9 @@ typedef struct {
   NR_pdsch_semi_static_t pdsch_semi_static;
   /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pdsch_t sched_pdsch;
+  /// UE-estimated maximum MCS (from CSI-RS)
+  uint8_t dl_max_mcs;
+
   /// For UL synchronization: store last UL scheduling grant
   frame_t last_ul_frame;
   sub_frame_t last_ul_slot;
@@ -624,7 +626,8 @@ typedef struct {
   mac_rlc_status_resp_t rlc_status[NR_MAX_NUM_LCID];
 
   /// Estimation of HARQ from BLER
-  NR_DL_bler_stats_t dl_bler_stats;
+  NR_bler_stats_t dl_bler_stats;
+  NR_bler_stats_t ul_bler_stats;
 
   uint16_t ta_frame;
   int16_t ta_update;
@@ -641,7 +644,6 @@ typedef struct {
   int ul_failure;
   struct CSI_Report CSI_report;
   bool SR;
-  bool set_mcs;
   bool set_pmi;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
@@ -674,25 +676,30 @@ typedef struct {
   uicc_t *uicc;
 } NRUEcontext_t;
 
-typedef struct {
-  uint64_t lc_bytes_tx[64];
-  uint64_t lc_bytes_rx[64];
-  uint64_t dlsch_rounds[8];
-  uint64_t dlsch_errors;
-  uint64_t dlsch_total_bytes;
-  int dlsch_current_bytes;
-  uint64_t ulsch_rounds[8];
-  uint64_t ulsch_errors;
+typedef struct NR_mac_dir_stats {
+  uint64_t lc_bytes[64];
+  uint64_t rounds[8];
+  uint64_t errors;
+  uint64_t total_bytes;
+  uint32_t current_bytes;
+} NR_mac_dir_stats_t;
+
+typedef struct NR_mac_stats {
+  NR_mac_dir_stats_t dl;
+  NR_mac_dir_stats_t ul;
   uint32_t ulsch_DTX;
   uint64_t ulsch_total_bytes_scheduled;
-  uint64_t ulsch_total_bytes_rx;
-  int ulsch_current_bytes;
   uint32_t pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
   int8_t srs_wide_band_snr;
 } NR_mac_stats_t;
 
+typedef struct NR_bler_options {
+  double upper;
+  double lower;
+  uint8_t max_mcs;
+} NR_bler_options_t;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 #define MAX_CSI_REPORTCONFIG 48
@@ -711,7 +718,8 @@ typedef struct {
   // UE selected beam index
   uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
   bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
-
+  /// Sched CSI-RS: scheduling decisions
+  bool sched_csirs;
 } NR_UE_info_t;
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
@@ -810,15 +818,8 @@ typedef struct gNB_MAC_INST_s {
 
   /// bitmap of DLSCH slots, can hold up to 160 slots
   uint64_t dlsch_slot_bitmap[3];
-  /// Lookup for preferred time domain allocation for BWP, in DL, slots
-  /// dynamically allocated
-  int *preferred_dl_tda[MAX_NUM_BWP];
   /// bitmap of ULSCH slots, can hold up to 160 slots
   uint64_t ulsch_slot_bitmap[3];
-  /// Lookup for preferred time domain allocation for UL BWP, dynamically
-  /// allocated. The index refers to the DL slot, and the indicated TDA's k2
-  /// points to the right UL slot
-  int *preferred_ul_tda[MAX_NUM_BWP];
 
   /// maximum number of slots before a UE will be scheduled ULSCH automatically
   uint32_t ulsch_max_frame_inactivity;
@@ -836,10 +837,8 @@ typedef struct gNB_MAC_INST_s {
   int xp_pdsch_antenna_ports;
 
   bool first_MIB;
-  double dl_bler_target_upper;
-  double dl_bler_target_lower;
-  double dl_rd2_bler_threshold;
-  uint8_t dl_max_mcs;
+  NR_bler_options_t dl_bler;
+  NR_bler_options_t ul_bler;
   uint8_t harq_round_max;
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;

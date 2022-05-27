@@ -936,6 +936,23 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
 
+    dlsch_config_pdu_1_0->qamModOrder = nr_get_Qm_dl(dlsch_config_pdu_1_0->mcs, dlsch_config_pdu_1_0->mcs_table);
+    int R = nr_get_code_rate_dl(dlsch_config_pdu_1_0->mcs, dlsch_config_pdu_1_0->mcs_table);
+    dlsch_config_pdu_1_0->targetCodeRate = R;
+    if (dlsch_config_pdu_1_0->targetCodeRate == 0 || dlsch_config_pdu_1_0->qamModOrder == 0) {
+      LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
+      return -1;
+    }
+
+    int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
+    int nb_re_dmrs = ((dlsch_config_pdu_1_0->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) ? 6:4)*dlsch_config_pdu_1_0->n_dmrs_cdm_groups;
+    dlsch_config_pdu_1_0->TBS = nr_compute_tbs(dlsch_config_pdu_1_0->qamModOrder,
+                                               R,
+                                               dlsch_config_pdu_1_0->number_rbs,
+                                               dlsch_config_pdu_1_0->number_symbols,
+                                               nb_re_dmrs*get_num_dmrs(dlsch_config_pdu_1_0->dlDmrsSymbPos),
+                                               nb_rb_oh, 0, 1);
+
     int bw_tbslbrm;
     if (mac->scc || mac->scc_SIB || mac->cg) {
       NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
@@ -1353,6 +1370,25 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dl_config->number_pdus = dl_config->number_pdus + 1;
     /* TODO same calculation for MCS table as done in UL */
     dlsch_config_pdu_1_1->mcs_table = (pdsch_Config->mcs_Table) ? (*pdsch_Config->mcs_Table + 1) : 0;
+    dlsch_config_pdu_1_1->qamModOrder = nr_get_Qm_dl(dlsch_config_pdu_1_1->mcs, dlsch_config_pdu_1_1->mcs_table);
+    int R = nr_get_code_rate_dl(dlsch_config_pdu_1_1->mcs, dlsch_config_pdu_1_1->mcs_table);
+    dlsch_config_pdu_1_1->targetCodeRate = R;
+    if (dlsch_config_pdu_1_1->targetCodeRate == 0 || dlsch_config_pdu_1_1->qamModOrder == 0) {
+      LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
+      return -1;
+    }
+    uint8_t Nl = 0;
+    for (int i = 0; i < 12; i++) { // max 12 ports
+      if ((dlsch_config_pdu_1_1->dmrs_ports>>i)&0x01) Nl += 1;
+    }
+    int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
+    int nb_re_dmrs = ((dmrs_type == NULL) ? 6:4)*dlsch_config_pdu_1_1->n_dmrs_cdm_groups;
+    dlsch_config_pdu_1_1->TBS = nr_compute_tbs(dlsch_config_pdu_1_1->qamModOrder,
+                                               R,
+                                               dlsch_config_pdu_1_1->number_rbs,
+                                               dlsch_config_pdu_1_1->number_symbols,
+                                               nb_re_dmrs*get_num_dmrs(dlsch_config_pdu_1_1->dlDmrsSymbPos),
+                                               nb_rb_oh, 0, Nl);
 
     // TBS_LBRM according to section 5.4.2.1 of 38.212
     long *maxMIMO_Layers = mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;

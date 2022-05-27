@@ -465,27 +465,24 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
 
-  uint8_t start_next_period = (rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot)%nr_slots_per_frame[mu];
-  *msg2_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
-  *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
+  uint8_t start_next_period = rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot;
+  int eff_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
   // we can't schedule msg2 before sl_ahead since prach
-  int eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
   while ((eff_slot-rach_slot)<=sl_ahead) {
-    *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-    *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
-    eff_slot = *msg2_slot+(*msg2_frame-rach_frame)*nr_slots_per_frame[mu];
+    eff_slot += tdd_period_slot;
   }
   if (FR==nr_FR2) {
-    int num_tdd_period = *msg2_slot/tdd_period_slot;
+    int num_tdd_period = (eff_slot%nr_slots_per_frame[mu])/tdd_period_slot;
     while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
-      *msg2_slot = (*msg2_slot+tdd_period_slot)%nr_slots_per_frame[mu];
-      *msg2_frame = ((*msg2_slot>(rach_slot))? rach_frame : (rach_frame+1))%1024;
-      num_tdd_period = *msg2_slot/tdd_period_slot;
+      eff_slot += tdd_period_slot;
+      num_tdd_period = (eff_slot % nr_slots_per_frame[mu])/tdd_period_slot;
     }
     if(tdd_beam_association[num_tdd_period] == -1)
       tdd_beam_association[num_tdd_period] = beam_index;
   }
 
+  *msg2_frame=(rach_frame + eff_slot/nr_slots_per_frame[mu])%1024;
+  *msg2_slot=eff_slot%nr_slots_per_frame[mu];
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
   while (*msg2_frame > frame_limit
@@ -1110,10 +1107,11 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   int TBS = 0;
   while(TBS<7) {  // TBS for msg3 is 7 bytes (except for RRCResumeRequest1 currently not implemented)
     mcsindex++;
-    pusch_pdu->target_code_rate = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
+    int R = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
+    pusch_pdu->target_code_rate = R;
     pusch_pdu->qam_mod_order = nr_get_Qm_ul(mcsindex,pusch_pdu->mcs_table);
     TBS = nr_compute_tbs(pusch_pdu->qam_mod_order,
-                         pusch_pdu->target_code_rate,
+                         R,
                          pusch_pdu->rb_size,
                          pusch_pdu->nr_of_symbols,
                          num_dmrs_symb*12, // nb dmrs set for no data in dmrs symbol
@@ -1201,20 +1199,13 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   nr_fill_rar(module_idP, ra, RAR_pdu, pusch_pdu);
 }
 
-void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra)
-{
+void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra) {
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
 
   if ((ra->Msg2_frame == frameP) && (ra->Msg2_slot == slotP)) {
 
-    //TODO time domain assignment for msg2 needs to be improved
-    uint8_t time_domain_assignment;
-    if(cc->frame_type == TDD)
-      time_domain_assignment = 1;
-    else
-      time_domain_assignment = 0;
     int mcsIndex = -1;  // initialization value
     int rbStart = 0;
     int rbSize = 8;
@@ -1254,6 +1245,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     // Calculate number of symbols
+    int time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
     int startSymbolIndex, nrOfSymbols;
     const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
@@ -1800,7 +1792,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->SubcarrierSpacing = genericParameters->subcarrierSpacing;
     pdsch_pdu_rel15->CyclicPrefix = 0;
     pdsch_pdu_rel15->NrOfCodewords = 1;
-    pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
+    int R = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
+    pdsch_pdu_rel15->targetCodeRate[0] = R;
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
@@ -1982,8 +1975,8 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
 
   if (harq->is_waiting == 0) {
     if (harq->round == 0) {
-      if (stats->dlsch_errors == 0) {
-        LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
+      if (stats->dl.errors == 0) {
+        LOG_A(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
         UE_info->active[UE_id] = true;
         UE_info->Msg4_ACKed[UE_id] = true;
 
