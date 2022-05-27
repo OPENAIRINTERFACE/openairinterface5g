@@ -644,6 +644,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         break;
      case USRP_X300_DEV:
      case USRP_N300_DEV:
+     case USRP_X400_DEV:
         rxshift=2;
         break;
      default:

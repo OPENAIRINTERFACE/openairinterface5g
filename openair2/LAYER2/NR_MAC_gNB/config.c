@@ -551,9 +551,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD,"Dynamic TDD not handled yet\n");
 
     for (int slot = 0; slot < n; ++slot) {
-      if (RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD ||
-          (slot != 0))
-        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
+      RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
       RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
 
       LOG_I(NR_MAC, "In %s: slot %d DL %d UL %d\n",
@@ -591,31 +589,9 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
   if (CellGroup) {
 
-    if (get_softmodem_params()->sa) {
-      calculate_preferred_dl_tda(Mod_idP, NULL);
-    }
-
     const NR_ServingCellConfig_t *servingCellConfig = NULL;
-    if(CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated) {
+    if(CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated)
       servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
-      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-      if(bwpList) {
-        AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
-        for (int i = 0; i < bwpList->list.count; ++i) {
-          const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
-          calculate_preferred_dl_tda(Mod_idP, bwp);
-        }
-      }
-
-      const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-      if(ubwpList) {
-        AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
-        for (int i = 0; i < ubwpList->list.count; ++i) {
-          const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
-          calculate_preferred_ul_tda(Mod_idP, ubwp);
-        }
-      }
-    }
 
     NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {

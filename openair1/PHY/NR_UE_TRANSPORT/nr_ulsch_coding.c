@@ -192,14 +192,14 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   unsigned int crc = 1;
   NR_UL_UE_HARQ_t *harq_process = ulsch->harq_processes[harq_pid];
   uint16_t nb_rb = harq_process->pusch_pdu.rb_size;
-  uint32_t A = harq_process->pusch_pdu.pusch_data.tb_size*8;
+  uint32_t A = harq_process->pusch_pdu.pusch_data.tb_size<<3;
   uint32_t *pz = &harq_process->Z;
-  uint8_t mod_order = nr_get_Qm_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);
-  uint16_t R = nr_get_code_rate_ul(harq_process->pusch_pdu.mcs_index, harq_process->pusch_pdu.mcs_table);
+  uint8_t mod_order = harq_process->pusch_pdu.qam_mod_order;
   uint16_t Kr=0;
   uint32_t r_offset=0;
   uint32_t F=0;
-  float Coderate = 0.0;
+  // target_code_rate is in 0.1 units
+  float Coderate = (float) harq_process->pusch_pdu.target_code_rate / 10240.0f;
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
@@ -207,7 +207,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_IN);
 
   LOG_D(NR_PHY, "ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
-  LOG_D(NR_PHY, "ulsch coding A %d G %d mod_order %d\n", A, G, mod_order);
+  LOG_D(NR_PHY, "ulsch coding A %d G %d mod_order %d Coderate %f\n", A, G, mod_order, Coderate);
   LOG_D(NR_PHY, "harq_pid %d harq_process->ndi %d, pusch_data.new_data_indicator %d\n",
         harq_pid,harq_process->ndi,harq_process->pusch_pdu.pusch_data.new_data_indicator);
 
@@ -263,11 +263,6 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
 ///////////////////////// b---->| block segmentation |---->c /////////////////////////
 ///////////
-
-    if (R<1024)
-      Coderate = (float) R /(float) 1024;
-    else
-      Coderate = (float) R /(float) 2048;
 
     if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
       harq_process->BG = 2;

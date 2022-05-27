@@ -310,8 +310,8 @@ static void handle_dl_harq(module_id_t mod_id,
     harq->round = 0;
     harq->ndi ^= 1;
     NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
-    stats->dlsch_errors++;
-    LOG_D(NR_MAC, "retransmission error for UE %d (total %"PRIu64")\n", UE_id, stats->dlsch_errors);
+    stats->dl.errors++;
+    LOG_D(NR_MAC, "retransmission error for UE %d (total %"PRIu64")\n", UE_id, stats->dl.errors);
   } else {
     LOG_D(PHY,"NACK for: pid %d, ue %x\n",harq_pid, UE_id);
     add_tail_nr_list(&UE_info->UE_sched_ctrl[UE_id].retrans_dl_harq, harq_pid);
@@ -721,7 +721,12 @@ void evaluate_cqi_report(uint8_t *payload,
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_2tb = temp_cqi;
     LOG_D(MAC,"Wide-band CQI for the second TB %d\n", temp_cqi);
   }
-  sched_ctrl->set_mcs = true;
+
+  // TODO for wideband case and multiple TB
+  const int cqi_idx = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
+  const int mcs_table = sched_ctrl->pdsch_semi_static.mcsTableIdx;
+  const int cqi_table = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.cqi_table;
+  sched_ctrl->dl_max_mcs = get_mcs_from_cqi(mcs_table, cqi_table, cqi_idx);
 }
 
 
