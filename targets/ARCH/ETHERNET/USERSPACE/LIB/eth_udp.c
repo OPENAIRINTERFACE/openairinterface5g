@@ -152,11 +152,11 @@ int eth_socket_init_udp(openair0_device *device) {
       printf("ETHERNET: Cannot set SO_REUSEPORT option on socket (user %d)",i);
       exit(0);
     }
-#ifdef SO_ATTACH_REUSEPORT_EBPF    
+#ifdef SO_ATTACH_REUSEPORT_EBPF*/    
     struct sock_filter code[]={
-   		{ BPF_LD  | BPF_W | BPF_ABS, 0, 0, SKF_AD_OFF + SKF_AD_CPU },
-		/* return A */
-		{ BPF_RET | BPF_A, 0, 0, 0 },
+              { BPF_LD  | BPF_W | BPF_ABS, 0, 0, SKF_AD_OFF + SKF_AD_CPU }, // A = #cpu
+              { BPF_ALU | BPF_MOD | BPF_K, 0, 0, eth->num_fd},     // A = A % group_size
+              { BPF_RET | BPF_A, 0, 0, 0 },                                 // return A
     };
     struct sock_fprog bpf = {
       .len = sizeof(code)/sizeof(struct sock_filter),
@@ -166,6 +166,7 @@ int eth_socket_init_udp(openair0_device *device) {
       printf("ETHERNET: Cannot set SO_ATTACH_REUSEPORT_EBPF option on socket (user %d)",i);
       exit(0);
     }
+    else printf("ETHERNET: set SO_ATTACH_REUSEPORT_EBPF option on socket (user %d)\n",i);
 #endif
 
   }
@@ -205,7 +206,7 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
 
   while(bytes_received == -1) {
   again:
-    bytes_received = recvfrom(eth->sockfdd[cc%eth->num_fd],
+    bytes_received = recvfrom(eth->sockfdd[0/*cc%eth->num_fd*/],
                               buff[0],
                               packet_size,
                               0,
@@ -236,7 +237,6 @@ int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestam
       eth->rx_count++;
     }
   }
-
   eth->rx_nsamps = nsamps;  
   return(bytes_received);
 }
@@ -271,7 +271,7 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
    
   eth->tx_nsamps = nblocks;
 
-  bytes_sent = sendto(eth->sockfdd[cc%eth->num_fd],
+  bytes_sent = sendto(eth->sockfdd[0/*cc%eth->num_fd*/],
 		      buff[0], 
 		      packet_size,
 		      0,
@@ -289,7 +289,17 @@ int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestam
   return (bytes_sent);  	  
 }
 
-int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void *buff, int aid, int nsamps, int flags) {	
+
+
+void *trx_eth_write_udp_cmd(void *arg) {
+
+  udpTXelem_t *udpTXelem=(udpTXelem_t*)arg;
+
+  openair0_device *device=udpTXelem->device;
+  openair0_timestamp timestamp = udpTXelem->timestamp;
+  void *buff = udpTXelem->buff;
+  int aid = udpTXelem->buff;
+  int nsamps = udpTXelem->nsamps;
   
   int bytes_sent=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
@@ -365,7 +375,7 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 #endif
     
      /* Send packet */
-    bytes_sent = sendto(eth->sockfdd[aid%eth->num_fd],
+    bytes_sent = sendto(eth->sockfdd[0/*aid%eth->num_fd*/],
                         buff2, 
                         UDP_PACKET_SIZE_BYTES(len>>2),
                         sendto_flag,
@@ -381,9 +391,22 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
         eth->tx_count++;
     }
   }
-  return (bytes_sent-APP_HEADER_SIZE_BYTES)>>2;
 }
       
+int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void *buff, int aid, int nsamps, int flags) {	
+
+    union udpTXReqUnion id = {.s={(uint64_t)timestamp,aid,nsamps,0}};
+    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(udpTXelem_t), id.p, device->respudpTX, trx_eth_write_udp_cmd);
+    udpTXelem_t * udptxelem=(udpTXelem_t *) NotifiedFifoData(req);
+
+    udptxelem->device = device;
+    udptxelem->timestamp = timestamp;
+    udptxelem->buff = buff;
+    udptxelem->aid = aid;
+    udptxelem->nsamps = nsamps;
+    udptxelem->flags = flags;
+    pushTpool(device->threadPool,req);
+}
 extern int oai_exit;
 
 void *udp_read_thread(void *arg) {
@@ -394,11 +417,11 @@ void *udp_read_thread(void *arg) {
   openair0_device *device=u->device;
   fhstate_t *fhstate = &device->fhstate;
   char buffer[UDP_PACKET_SIZE_BYTES(256)];
-
+  int first_read=0;
   while (oai_exit == 0) {
     LOG_I(PHY,"UDP read thread %d, waiting for start sampling_rate_d %d, sampling_rate_n %d\n",u->thread_id,device->sampling_rate_ratio_n,device->sampling_rate_ratio_d);
     while (fhstate->active > 0) {
-      size_t count = recvfrom(((eth_state_t*)device->priv)->sockfdd[u->thread_id],
+      size_t count = recvfrom(((eth_state_t*)device->priv)->sockfdd[0],
                               buffer,sizeof(buffer),0,
                               (struct sockaddr *)&((eth_state_t*)device->priv)->dest_addrd,
                               (socklen_t *)&((eth_state_t*)device->priv)->addr_len);
@@ -409,7 +432,8 @@ void *udp_read_thread(void *arg) {
       if ((int)count <= 0)  continue;
       AssertFatal(aid < 8,"Cannot handle more than 8 antennas, got aid %d\n",aid);
       fhstate->r[aid]=1;
-      if (aid==0 && fhstate->TS[0] == 0) fhstate->TS0 = TS;
+      if (aid==0 && first_read == 0) fhstate->TS0 = TS;
+      first_read = 1;
       /* store the timestamp value from packet's header */
       fhstate->TS[aid] =  TS;
       int64_t offset =  TS - fhstate->TS0;
@@ -420,6 +444,7 @@ void *udp_read_thread(void *arg) {
       memcpy((void*)(device->openair0_cfg->rxbase[aid]+offset),
              (void*)&buffer[APP_HEADER_SIZE_BYTES],
              count-APP_HEADER_SIZE_BYTES); 
+      LOG_D(PHY,"thread_id %d, aid %d, TS %llu, TS0 %llu, offset %d\n",u->thread_id,aid,(unsigned long long)TS,fhstate->TS0,offset);
     }
     sleep(1);
   }
@@ -438,14 +463,26 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uin
   min_TS = fhstate->TS[0];
   for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,fhstate->TS[i]);
   // poll/sleep until we accumulated enough samples on each antenna port
-  while (min_TS < fhstate->TS0+prev_read_TS + nsamps) {
+  int count=0;
+  while (fhstate->first_read == 1 && min_TS < (fhstate->TS0+prev_read_TS + nsamps)) {
     usleep(100);
     min_TS = fhstate->TS[0];
     for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,fhstate->TS[i]);
+    count++;
   }
 
-  *timestamp = fhstate->TS_read;
-  fhstate->TS_read = prev_read_TS + nsamps;
+  if (fhstate->first_read == 0) {
+     *timestamp = min_TS - fhstate->TS0;
+     fhstate->TS_read = *timestamp+nsamps;
+     LOG_D(PHY,"first read : TS_read %llu, TS %llu state (%d,%d,%d,%d,%d,%d,%d,%d)\n",fhstate->TS_read,*timestamp,
+           fhstate->r[0],fhstate->r[1],fhstate->r[2],fhstate->r[3],fhstate->r[4],fhstate->r[5],fhstate->r[6],fhstate->r[7]);
+  }
+  else {  
+     *timestamp = fhstate->TS_read;
+     fhstate->TS_read = prev_read_TS + nsamps;
+     LOG_D(PHY,"TS_read %llu, min_TS %llu, prev_read_TS %llu, nsamps %d, fhstate->TS0+prev_TS+nsamps %llu, wait count %d x 100us\n",fhstate->TS_read,min_TS,prev_read_TS,nsamps,fhstate->TS0+prev_read_TS+nsamps,count);
+  }
+  fhstate->first_read = 1;
   return (nsamps);
 }
 

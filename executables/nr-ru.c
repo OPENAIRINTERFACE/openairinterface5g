@@ -276,6 +276,7 @@ int connect_rau(RU_t *ru) {
 void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
   int offset = ru->nr_frame_parms->get_samples_slot_timestamp(slot,ru->nr_frame_parms,0);
+  return;
   start_meas(&ru->tx_fhaul);
   for (int aid=0;aid<ru->nb_tx;aid++)  
     ru->ifdevice.trx_write_func2(&ru->ifdevice,
@@ -1276,9 +1277,9 @@ void *ru_thread( void *param ) {
   memcpy((void *)&ru->config,(void *)&RC.gNB[0]->gNB_config,sizeof(ru->config));
 
   if(emulate_rf) {
-    fill_rf_config(ru,ru->rf_config_file);
     nr_init_frame_parms(&ru->config, fp);
     nr_dump_frame_parms(fp);
+    fill_rf_config(ru,ru->rf_config_file);
     nr_phy_init_RU(ru);
 
     if (setup_RU_buffers(ru)!=0) {
@@ -1870,6 +1871,7 @@ void set_function_spec_param(RU_t *ru) {
       ru->ifdevice.eth_params    = &ru->eth_params;
       ru->ifdevice.configure_rru = configure_ru;
 
+      printf("starting transport : rx_num_antennas %d, tx_num_antennas %d\n",ru->openair0_cfg.rx_num_channels,ru->openair0_cfg.tx_num_channels); 
       ret = openair0_transport_load(&ru->ifdevice,&ru->openair0_cfg,&ru->eth_params);
       printf("openair0_transport_init returns %d for ru_id %u\n", ret, ru->idx);
 
@@ -1990,7 +1992,8 @@ void init_NR_RU(char *rf_config_file) {
         }
       }
     }
-
+    ru->openair0_cfg.rx_num_channels = ru->nb_rx;
+    ru->openair0_cfg.tx_num_channels = ru->nb_tx;
     //LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],NB_timing[ru->if_timing],ru->function);
     set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
