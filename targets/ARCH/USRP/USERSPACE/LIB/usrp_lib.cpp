@@ -201,16 +201,6 @@ static int sync_to_gps(openair0_device *device) {
         LOG_W(HW,"WARNING:  GPS not locked - time will not be accurate until locked\n");
       }
 
-      //wait for next pps
-      uhd::time_spec_t last = s->usrp->get_time_last_pps();
-      uhd::time_spec_t next = s->usrp->get_time_last_pps();
-      while(next == last) {
-	boost::this_thread::sleep(boost::posix_time::milliseconds(50));
-	last = next;
-	next = s->usrp->get_time_last_pps();
-      }
-      boost::this_thread::sleep(boost::posix_time::milliseconds(200));
-
       //Set to GPS time
       uhd::time_spec_t gps_time = uhd::time_spec_t(time_t(s->usrp->get_mboard_sensor("gps_time", mboard).to_int()));
       s->usrp->set_time_next_pps(gps_time+1.0, mboard);
@@ -306,11 +296,18 @@ static int trx_usrp_start(openair0_device *device) {
   //s->first_rx = 1;
   s->rx_timestamp = 0;
 
-  uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps();
-  LOG_I(HW,"last pps at %f, starting streaming at %f\n",time_last_pps.get_real_secs(),time_last_pps.get_real_secs()+1.0);
+    //wait for next pps
+  uhd::time_spec_t last_pps = s->usrp->get_time_last_pps();
+  uhd::time_spec_t current_pps = s->usrp->get_time_last_pps();
+  while(current_pps == last_pps) {
+    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    current_pps = s->usrp->get_time_last_pps();
+  }
+
+  LOG_I(HW,"current pps at %f, starting streaming at %f\n",current_pps.get_real_secs(),current_pps.get_real_secs()+1.0);
 
   uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-  cmd.time_spec = uhd::time_spec_t(time_last_pps+1.0);
+  cmd.time_spec = uhd::time_spec_t(current_pps+1.0);
   cmd.stream_now = false; // start at constant delay
   s->rx_stream->issue_stream_cmd(cmd);
 
