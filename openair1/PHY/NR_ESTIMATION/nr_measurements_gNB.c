@@ -119,7 +119,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
            measurements->n0_subband_power[aarx][rb]=0;   
       }
       int offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
-      if ((gNB->rb_mask_ul[s][rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
+      if ((gNB->rb_mask_ul[s][rb >> 5] & (1U << (rb & 31))) == 0) {  // check that rb was not used in this subframe
         nb_symb[rb]++;          
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
           int offset = offset0 + (s*frame_parms->ofdm_symbol_size);

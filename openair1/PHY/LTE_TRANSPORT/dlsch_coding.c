@@ -288,7 +288,7 @@ static void TPencode(void * arg) {
   LTE_DL_eNB_HARQ_t *hadlsch=rdata->dlsch->harq_processes[harq_pid];
   
   if ( rdata-> round == 0) {
-    uint8_t tmp[96+12+3+3*6144];
+    uint8_t tmp[96+12+3+3*6144] __attribute__((aligned(32)));
     memset(tmp,LTE_NULL, TURBO_SIMD_SOFTBITS);
     start_meas(rdata->te_stats);
     encoder(rdata->input,

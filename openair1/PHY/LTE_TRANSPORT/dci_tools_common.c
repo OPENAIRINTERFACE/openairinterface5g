@@ -562,9 +562,9 @@ uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
   case 15:
     if (vrb<12) {
       if ((vrb&3) < 2)     // even: 0->0, 1->4, 4->1, 5->5, 8->2, 9->6 odd: 0->7, 1->11
-  return(((7*odd_slot) + 4*(vrb&3) + (vrb>>2))%14) + 14*(vrb/14);
+        return(((7*odd_slot) + 4*(vrb&3) + (vrb>>2))%14) + 14*(vrb/14);
       else if (vrb < 12) // even: 2->7, 3->11, 6->8, 7->12, 10->9, 11->13
-  return (((7*odd_slot) + 4*(vrb&3) + (vrb>>2) +13 )%14) + 14*(vrb/14);
+        return (((7*odd_slot) + 4*(vrb&3) + (vrb>>2) +13 )%14) + 14*(vrb/14);
     }
     if (vrb==12)
       return (3+(7*odd_slot)) % 14;
@@ -573,6 +573,8 @@ uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
     return 14;
     break;
 
+    // Formula in TS 36.211, chap 6.2.3.2
+    // Fix me: returns a PRB number > 24 when vrb is 24
   case 25:
     return (((12*odd_slot) + 6*(vrb&3) + (vrb>>2))%24) + 24*(vrb/24);
     break;
@@ -581,43 +583,44 @@ uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
     if (Ngap==0) {
       // Nrow=12,Nnull=2,NVRBDL=46,Ngap1= 27
       if (vrb>=23)
-  offset=4;
+        offset=4;
       else
-  offset=0;
+        offset=0;
       if (vrb<44) {
-  if ((vrb&3)>=2)
-    return offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2) + 45)%46;
-  else
-    return offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2))%46;
+        if ((vrb&3)>=2)
+          return offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2) + 45)%46;
+        else
+          return offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2))%46;
       }
       if (vrb==44)  // even: 44->11, odd: 45->34
-  return offset+((23*odd_slot) + 22-12+1);
+        return offset+((23*odd_slot) + 22-12+1);
       if (vrb==45)  // even: 45->10, odd: 45->33
-  return offset+((23*odd_slot) + 22+12);
+        return offset+((23*odd_slot) + 22+12);
       if (vrb==46)
-  return offset+46+((23*odd_slot) + 23-12+1) % 46;
+        return offset+46+((23*odd_slot) + 23-12+1) % 46;
       if (vrb==47)
-  return offset+46+((23*odd_slot) + 23+12) % 46;
+        return offset+46+((23*odd_slot) + 23+12) % 46;
       if (vrb==48)
-  return offset+46+((23*odd_slot) + 23-12+1) % 46;
+        return offset+46+((23*odd_slot) + 23-12+1) % 46;
       if (vrb==49)
-  return offset+46+((23*odd_slot) + 23+12) % 46;
+        return offset+46+((23*odd_slot) + 23+12) % 46;
     }
     else {
       // Nrow=6,Nnull=6,NVRBDL=18,Ngap1= 27
       if (vrb>=9)
-  offset=18;
+        offset=18;
       else
-  offset=0;
+        offset=0;
 
       if (vrb<12) {
-  if ((vrb&3)>=2)
-    return offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2) + 17)%18;
-  else
-    return offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2))%18;
+        if ((vrb&3)>=2)
+          return offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2) + 17)%18;
+        else
+          return offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2))%18;
       }
       else {
-  return offset+((9*odd_slot) + 12*(vrb&1)+(vrb>>1) )%18 + 18*(vrb/18);
+        // Same issue as for 25 PRB: returns larger than 0..49
+        return ((9*odd_slot) + 12*(vrb&1) + (vrb>>1))%18 + 18*(vrb/18);
       }
     }
     break;
@@ -677,7 +680,7 @@ void generate_RIV_tables(void)
 
       //      printf("RIV %d (%d) : first_rb %d NBRB %d\n",RIV,localRIV2alloc_LUT25[RIV],RBstart,Lcrbs);
       localRIV2alloc_LUT6[RIV] = alloc0;
-      distRIV2alloc_even_LUT6[RIV]  = allocdist0_0_even;
+      distRIV2alloc_even_LUT6[RIV] = allocdist0_0_even;
       distRIV2alloc_odd_LUT6[RIV]  = allocdist0_0_odd;
       RIV2nb_rb_LUT6[RIV]      = Lcrbs;
       RIV2first_rb_LUT6[RIV]   = RBstart;
@@ -693,15 +696,14 @@ void generate_RIV_tables(void)
       nVRB = Lcrbs-1+RBstart;
       //printf("RBstart %d, len %d --> ",RBstart,Lcrbs);
       alloc0     |= (1<<nVRB);
-      allocdist0_0_even |= (1<<get_prb(25,0,nVRB,0));
-      allocdist0_0_odd  |= (1<<get_prb(25,1,nVRB,0));
+      allocdist0_0_even |= 1U << get_prb(25, 0, nVRB, 0);
+      allocdist0_0_odd  |= 1U << get_prb(25, 1, nVRB, 0);
 
       //printf("alloc 0 %x, allocdist0_even %x, allocdist0_odd %x\n",alloc0,allocdist0_0_even,allocdist0_0_odd);
       RIV=computeRIV(25,RBstart,Lcrbs);
 
       if (RIV>RIV_max25)
-        RIV_max25 = RIV;;
-
+        RIV_max25 = RIV;
 
       localRIV2alloc_LUT25[RIV]      = alloc0;
       distRIV2alloc_even_LUT25[RIV]  = allocdist0_0_even;
@@ -730,37 +732,37 @@ void generate_RIV_tables(void)
 
 
       if (nVRB<32)
-        alloc0 |= (1<<nVRB);
+        alloc0 |= 1U << nVRB;
       else
-        alloc1 |= (1<<(nVRB-32));
+        alloc1 |= 1U << (nVRB - 32);
 
       // Distributed Gap1, even slot
       nVRB_even_dist = get_prb(50,0,nVRB,0);
       if (nVRB_even_dist<32)
-        allocdist0_0_even |= (1<<nVRB_even_dist);
+        allocdist0_0_even |= 1U << nVRB_even_dist;
       else
-        allocdist1_0_even |= (1<<(nVRB_even_dist-32));
+        allocdist1_0_even |= 1U << (nVRB_even_dist - 32);
 
       // Distributed Gap1, odd slot
       nVRB_odd_dist = get_prb(50,1,nVRB,0);
       if (nVRB_odd_dist<32)
-        allocdist0_0_odd |= (1<<nVRB_odd_dist);
+        allocdist0_0_odd |= (1U <<nVRB_odd_dist);
       else
-        allocdist1_0_odd |= (1<<(nVRB_odd_dist-32));
+        allocdist1_0_odd |= (1U <<(nVRB_odd_dist-32));
 
       // Distributed Gap2, even slot
       nVRB_even_dist = get_prb(50,0,nVRB,1);
       if (nVRB_even_dist<32)
-        allocdist0_1_even |= (1<<nVRB_even_dist);
+        allocdist0_1_even |= 1U << nVRB_even_dist;
       else
-        allocdist1_1_even |= (1<<(nVRB_even_dist-32));
+        allocdist1_1_even |= 1U << (nVRB_even_dist - 32);
 
       // Distributed Gap2, odd slot
       nVRB_odd_dist = get_prb(50,1,nVRB,1);
       if (nVRB_odd_dist<32)
-        allocdist0_1_odd |= (1<<nVRB_odd_dist);
+        allocdist0_1_odd |= 1U << nVRB_odd_dist;
       else
-        allocdist1_1_odd |= (1<<(nVRB_odd_dist-32));
+        allocdist1_1_odd |= 1U << (nVRB_odd_dist - 32);
 
       RIV=computeRIV(50,RBstart,Lcrbs);
 
@@ -811,13 +813,13 @@ void generate_RIV_tables(void)
       nVRB = Lcrbs-1+RBstart;
 
       if (nVRB<32)
-        alloc0 |= (1<<nVRB);
+        alloc0 |= 1U << nVRB;
       else if (nVRB<64)
-        alloc1 |= (1<<(nVRB-32));
+        alloc1 |= 1U << (nVRB - 32);
       else if (nVRB<96)
-        alloc2 |= (1<<(nVRB-64));
+        alloc2 |= 1U << (nVRB - 64);
       else
-        alloc3 |= (1<<(nVRB-96));
+        alloc3 |= 1U << (nVRB - 96);
 
       // Distributed Gap1, even slot
       nVRB_even_dist = get_prb(100,0,nVRB,0);
@@ -825,15 +827,14 @@ void generate_RIV_tables(void)
 //      if ((RBstart==0) && (Lcrbs<=8))
 //  printf("nVRB %d => nVRB_even_dist %d\n",nVRB,nVRB_even_dist);
 
-
       if (nVRB_even_dist<32)
-        allocdist0_0_even |= (1<<nVRB_even_dist);
+        allocdist0_0_even |= 1U << nVRB_even_dist;
       else if (nVRB_even_dist<64)
-        allocdist1_0_even |= (1<<(nVRB_even_dist-32));
+        allocdist1_0_even |= 1U << (nVRB_even_dist - 32);
       else if (nVRB_even_dist<96)
-  allocdist2_0_even |= (1<<(nVRB_even_dist-64));
+        allocdist2_0_even |= 1U << (nVRB_even_dist - 64);
       else
-  allocdist3_0_even |= (1<<(nVRB_even_dist-96));
+        allocdist3_0_even |= 1U << (nVRB_even_dist - 96);
 /*      if ((RBstart==0) && (Lcrbs<=8))
   printf("rballoc =>(%08x.%08x.%08x.%08x)\n",
          allocdist0_0_even,
@@ -845,38 +846,37 @@ void generate_RIV_tables(void)
       // Distributed Gap1, odd slot
       nVRB_odd_dist = get_prb(100,1,nVRB,0);
       if (nVRB_odd_dist<32)
-        allocdist0_0_odd |= (1<<nVRB_odd_dist);
+        allocdist0_0_odd |= 1U << nVRB_odd_dist;
       else if (nVRB_odd_dist<64)
-        allocdist1_0_odd |= (1<<(nVRB_odd_dist-32));
+        allocdist1_0_odd |= 1U << (nVRB_odd_dist - 32);
       else if (nVRB_odd_dist<96)
-  allocdist2_0_odd |= (1<<(nVRB_odd_dist-64));
+        allocdist2_0_odd |= 1U << (nVRB_odd_dist - 64);
       else
-  allocdist3_0_odd |= (1<<(nVRB_odd_dist-96));
+        allocdist3_0_odd |= 1U << (nVRB_odd_dist - 96);
 
 
       // Distributed Gap2, even slot
       nVRB_even_dist = get_prb(100,0,nVRB,1);
       if (nVRB_even_dist<32)
-        allocdist0_1_even |= (1<<nVRB_even_dist);
+        allocdist0_1_even |= 1U << nVRB_even_dist;
       else if (nVRB_even_dist<64)
-        allocdist1_1_even |= (1<<(nVRB_even_dist-32));
+        allocdist1_1_even |= 1U << (nVRB_even_dist - 32);
       else if (nVRB_even_dist<96)
-  allocdist2_1_even |= (1<<(nVRB_even_dist-64));
+        allocdist2_1_even |= 1U << (nVRB_even_dist - 64);
       else
-  allocdist3_1_even |= (1<<(nVRB_even_dist-96));
+        allocdist3_1_even |= 1U << (nVRB_even_dist - 96);
 
 
       // Distributed Gap2, odd slot
       nVRB_odd_dist = get_prb(100,1,nVRB,1);
       if (nVRB_odd_dist<32)
-        allocdist0_1_odd |= (1<<nVRB_odd_dist);
+        allocdist0_1_odd |= 1U << nVRB_odd_dist;
       else if (nVRB_odd_dist<64)
-        allocdist1_1_odd |= (1<<(nVRB_odd_dist-32));
+        allocdist1_1_odd |= 1U << (nVRB_odd_dist - 32);
       else if (nVRB_odd_dist<96)
-  allocdist2_1_odd |= (1<<(nVRB_odd_dist-64));
+        allocdist2_1_odd |= 1U << (nVRB_odd_dist - 64);
       else
-  allocdist3_1_odd |= (1<<(nVRB_odd_dist-96));
-
+        allocdist3_1_odd |= 1U << (nVRB_odd_dist - 96);
 
       RIV=computeRIV(100,RBstart,Lcrbs);
 

@@ -1321,8 +1321,7 @@ int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_
   //uint8_t half_frame_index = fp->half_frame_bit;
   //uint8_t i_ssb = fp->ssb_index;
   uint8_t Lmax = fp->Lmax;
-
-  if (!(frame%(1<<(config->ssb_table.ssb_period-1)))){
+  if ((config->ssb_table.ssb_period > 0) && !(frame % (1 << (config->ssb_table.ssb_period - 1)))) {
 
     if(Lmax <= 8) {
       if(slot <=3 && (((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*slot)&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*slot +1))&0x80000000) == 0x80000000))

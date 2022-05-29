@@ -118,12 +118,13 @@ long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
 
   NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
   // Get K2 from RRC configuration
-  NR_PUSCH_Config_t *pusch_config=mac->ULbwp[ul_bwp_id-1] ? mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup : NULL;
+  NR_PUSCH_Config_t *pusch_config= ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ? mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup : NULL;
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
   if (pusch_config && pusch_config->pusch_TimeDomainAllocationList) {
     pusch_TimeDomainAllocationList = pusch_config->pusch_TimeDomainAllocationList->choice.setup;
   }
-  else if (mac->ULbwp[ul_bwp_id-1] &&
+  else if (ul_bwp_id > 0 &&
+	   mac->ULbwp[ul_bwp_id-1] &&
 	   mac->ULbwp[ul_bwp_id-1]->bwp_Common&&
 	   mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon&&
 	   mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup &&
@@ -169,7 +170,7 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
   // Calculate the index of the UL slot in mac->ul_config_request list. This is
   // based on the TDD pattern (slot configuration period) and number of UL+mixed
   // slots in the period. TS 38.213 Sec 11.1
-  int mu = mac->ULbwp[ul_bwp_id-1] ?
+  int mu = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
     mac->ULbwp[ul_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
   const int n = nr_slots_per_frame[mu];
@@ -205,7 +206,7 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
     srs_config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;
   }
 
-  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[ul_bwp_id-1] ?
+  NR_PUSCH_Config_t *pusch_Config = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
     mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup :
     (ubwpd?
      ubwpd->pusch_Config->choice.setup:
@@ -361,7 +362,7 @@ void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
     ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
 
-  NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[ul_bwp_id-1] ? mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup : (ubwpd?ubwpd->pusch_Config->choice.setup:NULL);
+  NR_PUSCH_Config_t *pusch_Config = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ? mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup : (ubwpd?ubwpd->pusch_Config->choice.setup:NULL);
   AssertFatal(pusch_Config!=NULL,"pusch_Config shouldn't be null\n");
 
   long	transformPrecoder;
@@ -581,7 +582,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   if (rar_grant) {
 
     // Note: for Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0
-    NR_BWP_Uplink_t *ubwp = mac->ULbwp[ul_bwp_id-1];
+    NR_BWP_Uplink_t *ubwp = ul_bwp_id > 0 ? mac->ULbwp[ul_bwp_id - 1] : NULL;
     NR_BWP_UplinkDedicated_t *ibwp;
     int scs,abwp_start,abwp_size,startSymbolAndLength,mappingtype;
     NR_PUSCH_Config_t *pusch_Config=NULL;
@@ -839,11 +840,15 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                                mappingtype, add_pos, dmrslength,
                                pusch_config_pdu->start_symbol_index,
                                mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    if (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
-      if (*dci_format != NR_UL_DCI_FORMAT_0_1) {
-        pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
-      }
-    } else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled)) {
+    if (ul_bwp_id > 0 &&
+        mac->ULbwp[ul_bwp_id - 1] &&
+        pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled &&
+        *dci_format != NR_UL_DCI_FORMAT_0_1) {
+      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
+    } else if (*dci_format == NR_UL_DCI_FORMAT_0_0 ||
+               (ul_bwp_id > 0 &&
+                mac->ULbwp[ul_bwp_id-1] &&
+                pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled)) {
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
     }
 
@@ -859,7 +864,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     else N_PRB_oh = 0;
 
     /* PTRS */
-    if (mac->ULbwp[ul_bwp_id-1] &&
+    if (ul_bwp_id > 0 &&
+        mac->ULbwp[ul_bwp_id-1] &&
         mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated &&
         mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config &&
         mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup &&
@@ -1086,9 +1092,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.dl_config_req = mac->dl_config_request;
 
       fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
-      if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
+      if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL) {
         LOG_D(NR_MAC,"1# scheduled_response transmitted, %d, %d\n", rx_frame, rx_slot);
-      mac->if_module->scheduled_response(&scheduled_response);
+        mac->if_module->scheduled_response(&scheduled_response);
+      }
     }
     else {
       // this is for Msg2/Msg4
@@ -1557,15 +1564,14 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 
   int delta = 0;
   NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
-  NR_BWP_Uplink_t *ubwp = mac->ULbwp[ul_bwp_id-1];
 
   // Get the numerology to calculate the Tx frame and slot
-  int mu = ubwp ?
-    ubwp->bwp_Common->genericParameters.subcarrierSpacing :
+  int mu = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
+    mac->ULbwp[ul_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
 
-  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = ubwp ?
-    ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
+  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
+    mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   // k2 as per 3GPP TS 38.214 version 15.9.0 Release 15 ch 6.1.2.1.1
   // PUSCH time domain resource allocation is higher layer configured from uschTimeDomainAllocationList in either pusch-ConfigCommon

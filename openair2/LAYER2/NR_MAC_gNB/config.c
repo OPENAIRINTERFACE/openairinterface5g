@@ -366,7 +366,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
       break;
     case 2 :
-      cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0]<<24;
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = ((uint32_t) scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0]) << 24;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
       break;
     case 3 :

@@ -512,12 +512,16 @@ int main(int argc, char **argv) {
   int re;
   int s,Kr,Kr_bytes;
   LTE_DL_FRAME_PARMS *frame_parms;
-  double s_re0[30720*NB_ANTENNAS_TX],s_im0[30720*NB_ANTENNAS_TX],r_re0[30720*NB_ANTENNAS_RX],r_im0[30720*NB_ANTENNAS_RX];
-  double s_re1[30720*NB_ANTENNAS_TX],s_im1[30720*NB_ANTENNAS_TX],r_re1[30720*NB_ANTENNAS_RX],r_im1[30720*NB_ANTENNAS_RX];
-  double *s_re[NB_ANTENNAS_TX]= {s_re0,s_re1};
-  double *s_im[NB_ANTENNAS_TX]= {s_im0,s_im1};
-  double *r_re[NB_ANTENNAS_RX]= {r_re0,r_re1};
-  double *r_im[NB_ANTENNAS_RX]= {r_im0,r_im1};
+  double *tmpTX[4], *tmpRX[4] ;
+  for (int i = 0; i < 4; i++) {
+    tmpTX[i] = malloc(30720 * NB_ANTENNAS_TX * sizeof(*tmpTX));
+    tmpRX[i] = malloc(30720 * NB_ANTENNAS_RX * sizeof(*tmpRX));
+  }
+  double *s_re[NB_ANTENNAS_TX] = {tmpTX[0], tmpTX[1]};
+  double *s_im[NB_ANTENNAS_TX] = {tmpTX[2], tmpTX[3]};
+  double *r_re[NB_ANTENNAS_RX] = {tmpRX[0], tmpRX[1]};
+  double *r_im[NB_ANTENNAS_RX] = {tmpRX[2], tmpRX[3]};
+  
   uint8_t transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=2;
   int eNB_id = 0;
   unsigned char round;
