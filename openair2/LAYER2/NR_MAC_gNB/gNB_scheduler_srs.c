@@ -34,18 +34,17 @@
 
 extern RAN_CONTEXT_t RC;
 
-void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id, int UE_id, NR_SRS_Resource_t *srs_resource) {
+void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_UE_info_t*  UE, NR_SRS_Resource_t *srs_resource) {
 
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &nrmac->UE_info;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
   NR_BWP_t ubwp = sched_ctrl->active_ubwp ?
                   sched_ctrl->active_ubwp->bwp_Common->genericParameters :
                   scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
 
-  srs_pdu->rnti = UE_info->rnti[UE_id];
+  srs_pdu->rnti = UE->rnti;
   srs_pdu->handle = 0;
   srs_pdu->bwp_size = NRRIV2BW(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
   srs_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
@@ -82,7 +81,7 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id, int
   srs_pdu->t_offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 }
 
-void nr_fill_nfapi_srs(int module_id, int CC_id, int UE_id, sub_frame_t slot, NR_SRS_Resource_t *srs_resource) {
+void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t slot, NR_SRS_Resource_t *srs_resource) {
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][slot];
   AssertFatal(future_ul_tti_req->n_pdus <
@@ -94,7 +93,7 @@ void nr_fill_nfapi_srs(int module_id, int CC_id, int UE_id, sub_frame_t slot, NR
   memset(srs_pdu, 0, sizeof(nfapi_nr_srs_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
-  nr_configure_srs(srs_pdu, module_id, CC_id, UE_id, srs_resource);
+  nr_configure_srs(srs_pdu, module_id, CC_id, UE, srs_resource);
 }
 
 /*******************************************************************
@@ -111,21 +110,19 @@ void nr_fill_nfapi_srs(int module_id, int CC_id, int UE_id, sub_frame_t slot, NR
 void nr_schedule_srs(int module_id, frame_t frame) {
 
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
-  NR_UE_info_t *UE_info = &nrmac->UE_info;
-  const NR_list_t *UE_list = &UE_info->list;
+  NR_UEs_t *UE_info = &nrmac->UE_info;
 
-  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
-
+  UE_iterator(UE_info->list, UE) {
     const int CC_id = 0;
     NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
-    NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    NR_CellGroupConfig_t *cg = UE->CellGroup;
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
     sched_ctrl->sched_srs.frame = -1;
     sched_ctrl->sched_srs.slot = -1;
     sched_ctrl->sched_srs.srs_scheduled = false;
 
-    if(!UE_info->Msg4_ACKed[UE_id] || sched_ctrl->rrc_processing_timer > 0) {
+    if(!UE->Msg4_ACKed || sched_ctrl->rrc_processing_timer > 0) {
       continue;
     }
 
@@ -178,7 +175,7 @@ void nr_schedule_srs(int module_id, frame_t frame) {
       // Check if UE will transmit the SRS in this frame
       if ( ((frame - offset/n_slots_frame)*n_slots_frame)%period == 0) {
         LOG_D(NR_MAC,"Scheduling SRS reception for %d.%d\n", frame, offset%n_slots_frame);
-        nr_fill_nfapi_srs(module_id, CC_id, UE_id, offset%n_slots_frame, srs_resource);
+        nr_fill_nfapi_srs(module_id, CC_id, UE, offset%n_slots_frame, srs_resource);
         sched_ctrl->sched_srs.frame = frame;
         sched_ctrl->sched_srs.slot = offset%n_slots_frame;
         sched_ctrl->sched_srs.srs_scheduled = true;
