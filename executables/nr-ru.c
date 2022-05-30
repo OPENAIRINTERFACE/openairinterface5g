@@ -287,7 +287,7 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
 			         ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
 			         0); 
   stop_meas(&ru->tx_fhaul);
-
+  LOG_D(PHY,"IF5 TX %d.%d\n",frame,slot);
 }
 
 // southbound IF4p5 fronthaul
@@ -338,7 +338,7 @@ void fh_if5_south_in(RU_t *ru,
   }
 
   stop_meas(&ru->rx_fhaul);
-  LOG_I(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0));
+  LOG_D(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0));
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );
 
@@ -1175,17 +1175,16 @@ void *ru_stats_thread(void *param) {
     sleep(1);
 
     if (opp_enabled == 1) {
-      if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
+      if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx (all ports)",NULL,NULL);
 
       if (ru->feptx_ofdm) {
-        print_meas(&ru->precoding_stats,"feptx_prec",NULL,NULL);
+        print_meas(&ru->precoding_stats,"feptx_prec (per port)",NULL,NULL);
         print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
+        print_meas(&ru->ofdm_mod_stats,"feptx_ofdm (per port)",NULL,NULL);
         if (ru->txfh_in_fep) {
-          print_meas(&ru->ofdm_mod_stats,"feptx_ofdm (with txfh)",NULL,NULL);
-	  print_meas(&ru->ofdm_total_stats,"feptx_total (with txfh)",NULL,NULL);
+	  print_meas(&ru->ofdm_total_stats,"feptx_total (all ports/fh)",NULL,NULL);
 	} 
         else {
-          print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
           print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
   	}
       }
@@ -1402,7 +1401,10 @@ void *ru_thread( void *param ) {
       initial_wait=0;
       opp_enabled = opp_enabled0;
     }
-    if (initial_wait == 0 && ru->rx_fhaul.trials > 1000) reset_meas(&ru->rx_fhaul);
+    if (initial_wait == 0 && ru->rx_fhaul.trials > 1000) {
+        reset_meas(&ru->rx_fhaul);
+        reset_meas(&ru->tx_fhaul);
+    }
     proc->timestamp_tx = proc->timestamp_rx;
     int sl=proc->tti_tx;
     for (int slidx=0;slidx<ru->sl_ahead;slidx++)

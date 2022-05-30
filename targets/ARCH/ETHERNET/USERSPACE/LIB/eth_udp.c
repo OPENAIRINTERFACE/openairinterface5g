@@ -336,9 +336,9 @@ void *trx_eth_write_udp_cmd(void *arg) {
   *(uint16_t *)(buff2 + 4) = aid;
 
   openair0_timestamp TS = timestamp + fhstate->TS0;
-  TS = 6*device->sampling_rate_ratio_d*(TS/device->sampling_rate_ratio_n);
+  TS = (6*device->sampling_rate_ratio_d*TS)/device->sampling_rate_ratio_n;
   TS -= device->txrx_offset; 
-  int TSinc = 6*256*device->sampling_rate_ratio_d/device->sampling_rate_ratio_n;
+  int TSinc = (6*256*device->sampling_rate_ratio_d)/device->sampling_rate_ratio_n;
   int len=256;
   for (int offset=0;offset<nsamps;offset+=256,TS+=TSinc) {
     // OAI modified SEQ_ID (4 bytes)
@@ -436,7 +436,7 @@ void *udp_read_thread(void *arg) {
       aid = *(uint16_t*)(&buffer[ECPRICOMMON_BYTES]);
       TS  = *(openair0_timestamp *)(&buffer[ECPRICOMMON_BYTES+ECPRIPCID_BYTES]);   
       // convert TS to samples, /6 for AW2S @ 30.72 Ms/s, this is converted for other sample rates in OAI application
-      TS = device->sampling_rate_ratio_n*(TS/(device->sampling_rate_ratio_d*6));
+      TS = (device->sampling_rate_ratio_n*TS)/(device->sampling_rate_ratio_d*6);
       if ((int)count <= 0)  continue;
       AssertFatal(aid < 8,"Cannot handle more than 8 antennas, got aid %d\n",aid);
       fhstate->r[aid]=1;

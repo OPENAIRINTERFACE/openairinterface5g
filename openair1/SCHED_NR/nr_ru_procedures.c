@@ -62,6 +62,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
 
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0) , 1 );
 
+  if (aa==0) start_meas(&ru->ofdm_mod_stats);
   slot_offset  = fp->get_samples_slot_timestamp(slot,fp,0);
   slot_offsetF = first_symbol*fp->ofdm_symbol_size;
 
@@ -140,6 +141,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
     } //  numerology 0
   }
 
+  if (aa==0) stop_meas(&ru->ofdm_mod_stats);
   if (ru->txfh_in_fep) {
      ru->ifdevice.trx_write_func2(&ru->ifdevice,
                                   ru->proc.timestamp_tx,
@@ -357,9 +359,7 @@ static void *nr_feptx_thread(void *param) {
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 0);
 
       ////////////FEPTX////////////
-      if (aa==0 && l==0) start_meas(&ru->ofdm_mod_stats);
       nr_feptx0(ru,slot,start,fp->symbols_per_slot>>1,aa);
-      if (aa==0 && l==0) stop_meas(&ru->ofdm_mod_stats);
 
       if (release_thread(&feptx->mutex_feptx,&feptx->instance_cnt_feptx,"NR feptx thread")<0) break;
 
@@ -396,9 +396,7 @@ static void *nr_feptx_thread(void *param) {
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->index+1 , 0);
 
 
-      start_meas(&ru->ofdm_mod_stats);
       nr_feptx0(ru,slot,start,1,aa);
-      stop_meas(&ru->ofdm_mod_stats);
 
       if (release_thread(&feptx->mutex_feptx,&feptx->instance_cnt_feptx,"NR feptx thread")<0) break;
 
@@ -434,7 +432,6 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   if (nr_slot_select(cfg,frame_tx,slot) == NR_UPLINK_SLOT) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
-  start_meas(&ru->ofdm_mod_stats);
 
 
     //    LOG_D(HW,"Frame %d: Generating slot %d\n",frame,next_slot);
@@ -442,7 +439,6 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
   nr_feptx0(ru,slot,0,NR_NUMBER_OF_SYMBOLS_PER_SLOT,aa);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 0 );
-  stop_meas(&ru->ofdm_mod_stats);
 
   LOG_D(PHY,"feptx_ofdm (TXPATH): frame %d, slot %d: txp (time %p) %d dB, txp (freq) %d dB\n",
 	frame_tx,slot,txdata,dB_fixed(signal_energy((int32_t*)txdata,fp->get_samples_per_slot(
@@ -750,9 +746,7 @@ void nr_feptx(void *arg) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_PREC+feptx->aid , 0);
 
       ////////////FEPTX////////////
-  if (aa==0) start_meas(&ru->ofdm_mod_stats);
   nr_feptx0(ru,slot,0,fp->symbols_per_slot,aa);
-  if (aa==0) stop_meas(&ru->ofdm_mod_stats);
 }
 void nr_feptx_tp(RU_t *ru, int frame_tx, int slot) {
 

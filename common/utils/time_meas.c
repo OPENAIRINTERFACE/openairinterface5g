@@ -85,21 +85,21 @@ void print_meas(time_stats_t *ts,
       first_time=1;
 
       if ((total_exec_time == NULL) || (sf_exec_time== NULL))
-        fprintf(stderr, "%25s  %25s  %25s  %25s %25s %6f\n","Name","Total","Per Trials",   "Num Trials","CPU_F_GHz", cpu_freq_GHz);
+        fprintf(stderr, "%30s  %25s  %25s  %25s %25s %6f\n","Name","Total","Per Trials",   "Num Trials","CPU_F_GHz", cpu_freq_GHz);
       else
-        fprintf(stderr, "%25s  %25s  %25s  %20s %15s %6f\n","Name","Total","Average/Frame","Trials",    "CPU_F_GHz", cpu_freq_GHz);
+        fprintf(stderr, "%30s  %25s  %25s  %20s %15s %6f\n","Name","Total","Average/Frame","Trials",    "CPU_F_GHz", cpu_freq_GHz);
     }
 
     if (ts->trials>0) {
       //printf("%20s: total: %10.3f ms, average: %10.3f us (%10d trials)\n", name, ts->diff/cpu_freq_GHz/1000000.0, ts->diff/ts->trials/cpu_freq_GHz/1000.0, ts->trials);
       if ((total_exec_time == NULL) || (sf_exec_time== NULL)) {
-        fprintf(stderr, "%25s:  %15.3f us; %15d; %15.3f us;\n",
+        fprintf(stderr, "%30s:  %15.3f us; %15d; %15.3f us;\n",
                 name,
                 (ts->diff/ts->trials/cpu_freq_GHz/1000.0),
                 ts->trials,
                 ts->max/cpu_freq_GHz/1000.0);
       } else {
-        fprintf(stderr, "%25s:  %15.3f ms (%5.2f%%); %15.3f us (%5.2f%%); %15d;\n",
+        fprintf(stderr, "%30s:  %15.3f ms (%5.2f%%); %15.3f us (%5.2f%%); %15d;\n",
                 name,
                 (ts->diff/cpu_freq_GHz/1000000.0),
                 ((ts->diff/cpu_freq_GHz/1000000.0)/(total_exec_time->diff/cpu_freq_GHz/1000000.0))*100,  // percentage
