@@ -809,6 +809,12 @@ void handle_nr_srs_measurements(const module_id_t module_id,
     }
     LOG_D(NR_MAC, "ulprbbl[%3i] = 0x%x\n", rb, ulprbbl[rb]);
   }
+
+  // TODO: This should be improved
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
+  ps->srs_feedback.sri = NR_SRS_SRI_0;
+  ps->srs_feedback.tpmi = 0;
 }
 
 long get_K2(NR_ServingCellConfigCommon_t *scc,
@@ -1879,6 +1885,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  cg,
                  pusch_pdu,
                  &uldci_payload,
+                 &ps->srs_feedback,
                  ps->dci_format,
                  ps->time_domain_allocation,
                  UE_info->UE_sched_ctrl[UE_id].tpc0,

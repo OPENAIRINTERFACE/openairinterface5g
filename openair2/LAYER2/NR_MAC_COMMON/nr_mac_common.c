@@ -1956,6 +1956,32 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 {0,         3072,          -1,         -1,          3,       1539,        -1,         -1},       //14              // (DMRS l' position)
 };
 
+// TS 38.212
+uint16_t table_7_3_1_1_2_28[3][15] = {
+    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+};
+uint16_t table_7_3_1_1_2_29[3][15] = {
+    {0, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 2, 0, 3, 4, 0, 5, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0},
+};
+uint16_t table_7_3_1_1_2_30[3][15] = {
+    {0, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 2, 0, 3, 4, 0, 5, 0, 0, 6, 0, 0, 0, 0},
+    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0},
+};
+uint16_t table_7_3_1_1_2_31[3][15] = {
+    {0, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 2, 0, 3, 4, 0, 5, 0, 0, 6, 0, 0, 0, 0},
+    {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14},
+};
+uint16_t table_7_3_1_1_2_32[3][15] = {
+    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+};
 
 void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs){
 
@@ -2617,6 +2643,7 @@ uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
 uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
                                        NR_PUSCH_Config_t *pusch_Config,
                                        NR_SRS_Config_t *srs_config,
+                                       nr_srs_feedback_t *srs_feedback,
                                        uint16_t *val) {
   uint8_t nbits = 0;
 
@@ -2625,7 +2652,7 @@ uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
   // transmission, the SRI is used to select between SRS Resources belonging to different antenna panels
   // (kind of directional antenna). There can be up to 2 SRS Resources (2 antenna panels). In the case of non-codebook
   // based transmission, the SRI is used to select one or more SRS Resources from a set of N_SRS resources. The number
-  // of SRS Resources selected corresponds to the number of layers (rank) to be transmitted. For now, we set SRI = 0.
+  // of SRS Resources selected corresponds to the number of layers (rank) to be transmitted.
   if (val) {
     *val = 0;
   }
@@ -2650,6 +2677,9 @@ uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
       }
       if (count>0) {
         nbits = ceil(log2(count));
+        if (val && srs_feedback && nbits > 0) {
+          *val = table_7_3_1_1_2_32[count-2][srs_feedback->sri];
+        }
       }
 
 #ifdef DEBUG_SRS_RESOURCE_IND
@@ -2697,6 +2727,24 @@ uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
       }
       if (lsum>0) {
         nbits = ceil(log2(lsum));
+        if (val && srs_feedback && nbits > 0) {
+          switch(Lmax) {
+            case 1:
+              *val = table_7_3_1_1_2_28[count-2][srs_feedback->sri];
+              break;
+            case 2:
+              *val = table_7_3_1_1_2_29[count-2][srs_feedback->sri];
+              break;
+            case 3:
+              *val = table_7_3_1_1_2_30[count-2][srs_feedback->sri];
+              break;
+            case 4:
+              *val = table_7_3_1_1_2_31[count-2][srs_feedback->sri];
+              break;
+            default:
+              LOG_E(NR_MAC, "%s (%d) - Invalid Lmax %d\n", __FUNCTION__, __LINE__, Lmax);
+          }
+        }
       }
 
 #ifdef DEBUG_SRS_RESOURCE_IND
@@ -2856,9 +2904,9 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         size += dci_pdu->dai[1].nbits;
       }
       // SRS resource indicator
-      dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(uplinkConfig, pusch_Config, srs_config, NULL);
+      dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(uplinkConfig, pusch_Config, srs_config, NULL, NULL);
       size += dci_pdu->srs_resource_indicator.nbits;
-      LOG_W(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
+      LOG_D(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
       long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
       uint8_t pusch_antenna_ports = get_pusch_nb_antenna_ports(pusch_Config, srs_config, dci_pdu->srs_resource_indicator);

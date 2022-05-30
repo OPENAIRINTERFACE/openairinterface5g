@@ -50,6 +50,7 @@ int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, sl
 uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t	*uplinkConfig,
                                        NR_PUSCH_Config_t *pusch_Config,
                                        NR_SRS_Config_t *srs_config,
+                                       nr_srs_feedback_t *srs_feedback,
                                        uint16_t *val);
 
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,

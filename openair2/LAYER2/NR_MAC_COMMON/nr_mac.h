@@ -512,5 +512,28 @@ typedef struct Type0_PDCCH_CSS_config_s {
   bool active;
 } NR_Type0_PDCCH_CSS_config_t;
 
+typedef enum {
+  NR_SRS_SRI_0 = 0,
+  NR_SRS_SRI_1,
+  NR_SRS_SRI_2,
+  NR_SRS_SRI_3,
+  NR_SRS_SRI_0_1,
+  NR_SRS_SRI_0_2,
+  NR_SRS_SRI_0_3,
+  NR_SRS_SRI_1_2,
+  NR_SRS_SRI_1_3,
+  NR_SRS_SRI_2_3,
+  NR_SRS_SRI_0_1_2,
+  NR_SRS_SRI_0_1_3,
+  NR_SRS_SRI_0_2_3,
+  NR_SRS_SRI_1_2_3,
+  NR_SRS_SRI_0_1_2_3
+} nr_srs_sri_t;
+
+typedef struct nr_srs_feedback {
+  uint8_t sri;
+  uint8_t tpmi;
+} nr_srs_feedback_t;
+
 #endif /*__LAYER2_MAC_H__ */
 

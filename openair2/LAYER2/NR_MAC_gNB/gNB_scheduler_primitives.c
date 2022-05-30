@@ -1033,6 +1033,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   const NR_CellGroupConfig_t *cg,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
+                  nr_srs_feedback_t *srs_feedback,
                   int dci_format,
                   int time_domain_assignment,
                   uint8_t tpc,
@@ -1081,6 +1082,7 @@ void config_uldci(const NR_SIB1_t *sib1,
         compute_srs_resource_indicator(uplinkConfig,
                                        ubwpd->pusch_Config ? ubwpd->pusch_Config->choice.setup : NULL,
                                        ubwpd2 && ubwpd2->srs_Config ? ubwpd->srs_Config->choice.setup : NULL,
+                                       srs_feedback,
                                        &dci_pdu_rel15->srs_resource_indicator.val);
       }
       dci_pdu_rel15->precoding_information.val= 0;
