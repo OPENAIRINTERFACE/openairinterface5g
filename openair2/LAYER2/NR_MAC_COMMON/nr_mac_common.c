@@ -1957,6 +1957,20 @@ int32_t table_6_4_1_1_3_4_pusch_dmrs_positions_l [12][8] = {                    
 };
 
 // TS 38.212
+uint16_t table_7_3_1_1_2_2_1layer[28] = {0, 1, 2, 3, 12, 13, 14, 15, 16, 17, 18, 19, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47};
+uint16_t table_7_3_1_1_2_2_2layers[22] = {4, 5, 6, 7, 8, 9, 20, 21, 22, 23, 24, 25, 26, 27, 48, 49, 50, 51, 52, 53, 54, 55};
+uint16_t table_7_3_1_1_2_2_3layers[7] = {10, 28, 29, 56, 57, 58, 59};
+uint16_t table_7_3_1_1_2_2_4layers[5] = {11, 30, 31, 60, 61};
+uint16_t table_7_3_1_1_2_2B_1layer[16] = {0, 1, 2, 3, 15, 16, 17, 18, 19, 20, 21, 22, 23, 12, 24, 25};
+uint16_t table_7_3_1_1_2_2B_2layers[14] = {4, 5, 6, 7, 8, 9, 13, 26, 27, 28, 29, 30, 31, 32};
+uint16_t table_7_3_1_1_2_2B_3layers[3] = {10, 14, 33};
+uint16_t table_7_3_1_1_2_2B_4layers[3] = {11, 34, 35};
+uint16_t table_7_3_1_1_2_2A_1layer[16] = {0, 1, 2, 3, 12, 13, 14, 15, 16, 17, 18, 19, 20, 10, 21, 22};
+uint16_t table_7_3_1_1_2_2A_2layers[14] = {4, 5, 6, 7, 8, 9, 11, 23, 24, 25, 26, 27, 28, 29};
+uint16_t table_7_3_1_1_2_3A[16] = {0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 4, 14, 15};
+uint16_t table_7_3_1_1_2_4_1layer_fullyAndPartialAndNonCoherent[6] = {0, 1, 3, 4, 5, 6};
+uint16_t table_7_3_1_1_2_4_2layers_fullyAndPartialAndNonCoherent[3] = {2, 7, 8};
+uint16_t table_7_3_1_1_2_4A_1layer[3] = {0, 1, 3};
 uint16_t table_7_3_1_1_2_28[3][15] = {
     {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {0, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -2760,6 +2774,250 @@ uint8_t compute_srs_resource_indicator(NR_UplinkConfig_t *uplinkConfig,
   return nbits;
 }
 
+uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
+                                      NR_SRS_Config_t *srs_config,
+                                      dci_field_t srs_resource_indicator,
+                                      nr_srs_feedback_t *srs_feedback,
+                                      const uint8_t *nrOfLayers,
+                                      uint16_t *val) {
+
+  // It is only applicable to codebook based transmission. This field occupies 0 bits for non-codebook based
+  // transmission. It also occupies 0 bits for codebook based transmission using a single antenna port.
+  uint8_t nbits = 0;
+  if (val) {
+    *val = 0;
+  }
+
+  uint8_t pusch_antenna_ports = get_pusch_nb_antenna_ports(pusch_Config, srs_config, srs_resource_indicator);
+  if ((pusch_Config && pusch_Config->txConfig != NULL && *pusch_Config->txConfig == NR_PUSCH_Config__txConfig_nonCodebook) ||
+      pusch_antenna_ports == 1) {
+    return nbits;
+  }
+
+  long max_rank = *pusch_Config->maxRank;
+  long *ul_FullPowerTransmission = pusch_Config->ext1 ? pusch_Config->ext1->ul_FullPowerTransmission_r16 : NULL;
+  long *codebookSubset = pusch_Config->codebookSubset;
+
+  if (pusch_antenna_ports == 2) {
+
+    if (max_rank == 1) {
+      // - 1 or 3 bits according to Table 7.3.1.1.2-5 for 2 antenna ports, if txConfig = codebook, ul-FullPowerTransmission
+      //   is not configured or configured to fullpowerMode2 or configured to fullpower, and according to whether transform
+      //   precoder is enabled or disabled, and the values of higher layer parameters maxRank and codebookSubset;
+      // - 2 bits according to Table 7.3.1.1.2-5A for 2 antenna ports, if txConfig = codebook, ul-FullPowerTransmission =
+      //   fullpowerMode1, maxRank=1, and according to whether transform precoder is enabled or disabled, and the values
+      //   of higher layer parameter codebookSubset;
+      if (ul_FullPowerTransmission && *ul_FullPowerTransmission == NR_PUSCH_Config__ext1__ul_FullPowerTransmission_r16_fullpowerMode1) {
+        nbits = 2;
+        if (val && srs_feedback) {
+          AssertFatal(srs_feedback->tpmi <= 2,"TPMI %d is invalid!\n", srs_feedback->tpmi);
+          *val = srs_feedback->tpmi;
+        }
+      } else {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          nbits = 1;
+          if (val && srs_feedback) {
+            AssertFatal(srs_feedback->tpmi <= 1,"TPMI %d is invalid!\n", srs_feedback->tpmi);
+            *val = srs_feedback->tpmi;
+          }
+        } else {
+          nbits = 3;
+          if (val && srs_feedback) {
+            AssertFatal(srs_feedback->tpmi <= 5,"TPMI %d is invalid!\n", srs_feedback->tpmi);
+            *val = srs_feedback->tpmi;
+          }
+        }
+      }
+    } else {
+      // - 2 or 4 bits according to Table 7.3.1.1.2-4 for 2 antenna ports, if txConfig = codebook, ul-FullPowerTransmission
+      //   is not configured or configured to fullpowerMode2 or configured to fullpower, and according to whether transform
+      //   precoder is enabled or disabled, and the values of higher layer parameters maxRank and codebookSubset;
+      // - 2 bits according to Table 7.3.1.1.2-4A for 2 antenna ports, if txConfig = codebook, ul-FullPowerTransmission =
+      //   fullpowerMode1, transform precoder is disabled, maxRank=2, and codebookSubset=nonCoherent;
+      if (ul_FullPowerTransmission && *ul_FullPowerTransmission == NR_PUSCH_Config__ext1__ul_FullPowerTransmission_r16_fullpowerMode1) {
+        nbits = 2;
+        if (val && srs_feedback) {
+          AssertFatal((*nrOfLayers==1 && srs_feedback->tpmi <= 2) || (*nrOfLayers==2 && srs_feedback->tpmi == 0),
+                      "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          *val = *nrOfLayers==1 ? table_7_3_1_1_2_4A_1layer[srs_feedback->tpmi] : 2;
+        }
+      } else {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          nbits = 2;
+          if (val && srs_feedback) {
+            AssertFatal((*nrOfLayers==1 && srs_feedback->tpmi <= 1) || (*nrOfLayers==2 && srs_feedback->tpmi == 0),
+                        "TPMI %d is invalid!\n", srs_feedback->tpmi);
+            *val = *nrOfLayers==1 ? srs_feedback->tpmi : 2;
+          }
+        } else {
+          nbits = 4;
+          if (val && srs_feedback) {
+            AssertFatal((*nrOfLayers==1 && srs_feedback->tpmi <= 5) || (*nrOfLayers==2 && srs_feedback->tpmi <= 2),
+                        "TPMI %d is invalid!\n", srs_feedback->tpmi);
+            *val = *nrOfLayers==1 ? table_7_3_1_1_2_4_1layer_fullyAndPartialAndNonCoherent[srs_feedback->tpmi] :
+                                    table_7_3_1_1_2_4_2layers_fullyAndPartialAndNonCoherent[srs_feedback->tpmi];
+          }
+        }
+      }
+    }
+
+  } else if (pusch_antenna_ports == 4) {
+
+    if (max_rank == 1) {
+      // - 2, 4, or 5 bits according to Table 7.3.1.1.2-3 for 4 antenna ports, if txConfig = codebook, ul-FullPowerTransmission
+      //   is not configured or configured to fullpowerMode2 or configured to fullpower, and according to whether transform
+      //   precoder is enabled or disabled, and the values of higher layer parameters maxRank, and codebookSubset;
+      // - 3 or 4 bits according to Table 7.3.1.1.2-3A for 4 antenna ports, if txConfig = codebook, ul-FullPowerTransmission =
+      //   fullpowerMode1, maxRank=1, and according to whether transform precoder is enabled or disabled, and the values
+      //   of higher layer parameter codebookSubset;
+      if (ul_FullPowerTransmission && *ul_FullPowerTransmission == NR_PUSCH_Config__ext1__ul_FullPowerTransmission_r16_fullpowerMode1) {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          nbits = 3;
+          if (val && srs_feedback) {
+            AssertFatal(srs_feedback->tpmi <= 3 || srs_feedback->tpmi == 13, "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          }
+        } else {
+          nbits = 4;
+          if (val && srs_feedback) {
+            AssertFatal(srs_feedback->tpmi <= 15, "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          }
+        }
+        if (val && srs_feedback) {
+          *val = table_7_3_1_1_2_3A[srs_feedback->tpmi];
+        }
+      } else {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          nbits = 2;
+          if (val && srs_feedback) {
+            AssertFatal(srs_feedback->tpmi <= 3, "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          }
+        } else if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_partialAndNonCoherent) {
+          nbits = 4;
+          if (val && srs_feedback) {
+            AssertFatal(srs_feedback->tpmi <= 11, "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          }
+        } else {
+          nbits = 5;
+          if (val && srs_feedback) {
+            AssertFatal(srs_feedback->tpmi <= 27, "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          }
+        }
+        if (val && srs_feedback) {
+          *val = srs_feedback->tpmi;
+        }
+      }
+    } else {
+      // - 4, 5, or 6 bits according to Table 7.3.1.1.2-2 for 4 antenna ports, if txConfig = codebook, ul-FullPowerTransmission
+      //   is not configured or configured to fullpowerMode2 or configured to fullpower, and according to whether transform
+      //   precoder is enabled or disabled, and the values of higher layer parameters maxRank, and codebookSubset;
+      // - 4 or 5 bits according to Table 7.3.1.1.2-2A for 4 antenna ports, if txConfig = codebook, ul-FullPowerTransmission =
+      //   fullpowerMode1, maxRank=2, transform precoder is disabled, and according to the values of higher layer parameter
+      //   codebookSubset;
+      // - 4 or 6 bits according to Table 7.3.1.1.2-2B for 4 antenna ports, if txConfig = codebook, ul-FullPowerTransmission =
+      //   fullpowerMode1, maxRank=3 or 4, transform precoder is disabled, and according to the values of higher layer
+      //   parameter codebookSubset;
+      if (ul_FullPowerTransmission && *ul_FullPowerTransmission == NR_PUSCH_Config__ext1__ul_FullPowerTransmission_r16_fullpowerMode1) {
+        if (max_rank == 2) {
+          if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+            nbits = 4;
+            if (val && srs_feedback) {
+              AssertFatal((*nrOfLayers==1 && (srs_feedback->tpmi <= 3 || srs_feedback->tpmi==13)) || (*nrOfLayers==2 && srs_feedback->tpmi <= 6),
+                          "TPMI %d is invalid!\n", srs_feedback->tpmi);
+            }
+          } else {
+            nbits = 5;
+            if (val && srs_feedback) {
+              AssertFatal((*nrOfLayers==1 && srs_feedback->tpmi <= 15) || (*nrOfLayers==2 && srs_feedback->tpmi <= 13),
+                          "TPMI %d is invalid!\n", srs_feedback->tpmi);
+            }
+          }
+          if (val && srs_feedback) {
+            *val = *nrOfLayers==1 ? table_7_3_1_1_2_2A_1layer[srs_feedback->tpmi] : table_7_3_1_1_2_2A_2layers[srs_feedback->tpmi];
+          }
+        } else {
+          if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+            nbits = 4;
+            if (val && srs_feedback) {
+              AssertFatal((*nrOfLayers==1 && (srs_feedback->tpmi <= 3 || srs_feedback->tpmi == 13)) || (*nrOfLayers==2 && srs_feedback->tpmi <= 6) ||
+                          (*nrOfLayers==3 && srs_feedback->tpmi <= 1) || (*nrOfLayers==4 && srs_feedback->tpmi == 0),
+                          "TPMI %d is invalid!\n", srs_feedback->tpmi);
+            }
+          } else {
+            nbits = 6;
+            if (val && srs_feedback) {
+              AssertFatal((*nrOfLayers==1 && srs_feedback->tpmi <= 15) || (*nrOfLayers==2 && srs_feedback->tpmi <= 13) ||
+                          (*nrOfLayers==3 && srs_feedback->tpmi <= 2) || (*nrOfLayers==4 && srs_feedback->tpmi <= 2),
+                          "TPMI %d is invalid!\n", srs_feedback->tpmi);
+            }
+          }
+          if (val && srs_feedback) {
+            switch (*nrOfLayers) {
+              case 1:
+                *val = table_7_3_1_1_2_2B_1layer[srs_feedback->tpmi];
+                break;
+              case 2:
+                *val = table_7_3_1_1_2_2B_2layers[srs_feedback->tpmi];
+                break;
+              case 3:
+                *val = table_7_3_1_1_2_2B_3layers[srs_feedback->tpmi];
+                break;
+              case 4:
+                *val = table_7_3_1_1_2_2B_4layers[srs_feedback->tpmi];
+                break;
+              default:
+                LOG_E(NR_MAC,"Number of layers %d is invalid!\n", *nrOfLayers);
+            }
+          }
+        }
+      } else {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          nbits = 4;
+          if (val && srs_feedback) {
+            AssertFatal((*nrOfLayers==1 && srs_feedback->tpmi <= 3) || (*nrOfLayers==2 && srs_feedback->tpmi <= 5) ||
+                        (*nrOfLayers==3 && srs_feedback->tpmi == 0) || (*nrOfLayers==4 && srs_feedback->tpmi == 0),
+                        "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          }
+        } else if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_partialAndNonCoherent) {
+          nbits = 5;
+          if (val && srs_feedback) {
+            AssertFatal((*nrOfLayers==1 && srs_feedback->tpmi <= 11) || (*nrOfLayers==2 && srs_feedback->tpmi <= 13) ||
+                        (*nrOfLayers==3 && srs_feedback->tpmi <= 2) || (*nrOfLayers==4 && srs_feedback->tpmi <= 2),
+                        "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          }
+        } else {
+          nbits = 6;
+          if (val && srs_feedback) {
+            AssertFatal((*nrOfLayers==1 && srs_feedback->tpmi <= 28) || (*nrOfLayers==2 && srs_feedback->tpmi <= 22) ||
+                        (*nrOfLayers==3 && srs_feedback->tpmi <= 7) || (*nrOfLayers==4 && srs_feedback->tpmi <= 5),
+                        "TPMI %d is invalid!\n", srs_feedback->tpmi);
+          }
+        }
+        if (val && srs_feedback) {
+          switch (*nrOfLayers) {
+            case 1:
+              *val = table_7_3_1_1_2_2_1layer[srs_feedback->tpmi];
+              break;
+            case 2:
+              *val = table_7_3_1_1_2_2_2layers[srs_feedback->tpmi];
+              break;
+            case 3:
+              *val = table_7_3_1_1_2_2_3layers[srs_feedback->tpmi];
+              break;
+            case 4:
+              *val = table_7_3_1_1_2_2_4layers[srs_feedback->tpmi];
+              break;
+            default:
+              LOG_E(NR_MAC,"Number of layers %d is invalid!\n", *nrOfLayers);
+          }
+        }
+      }
+    }
+
+  }
+
+  return nbits;
+}
+
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      const NR_BWP_UplinkCommon_t *initialUplinkBWP,
                      const NR_CellGroupConfig_t *cg,
@@ -2908,35 +3166,11 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       size += dci_pdu->srs_resource_indicator.nbits;
       LOG_D(NR_MAC,"dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
-      long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
-      uint8_t pusch_antenna_ports = get_pusch_nb_antenna_ports(pusch_Config, srs_config, dci_pdu->srs_resource_indicator);
-      dci_pdu->precoding_information.nbits=0;
-      if (pusch_Config && pusch_Config->txConfig != NULL) {
-        if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook) {
-          if (pusch_antenna_ports > 1) {
-            if (pusch_antenna_ports == 4) {
-              if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank>1))
-                dci_pdu->precoding_information.nbits = 6-(*pusch_Config->codebookSubset);
-              else {
-                if(*pusch_Config->codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent)
-                  dci_pdu->precoding_information.nbits = 2;
-                else
-                  dci_pdu->precoding_information.nbits = 5-(*pusch_Config->codebookSubset);
-              }
-            }
-            else {
-              AssertFatal(pusch_antenna_ports==2,"Not valid number of antenna ports");
-              if ((transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) && (*pusch_Config->maxRank==2))
-                dci_pdu->precoding_information.nbits = 4-(*pusch_Config->codebookSubset);
-              else
-                dci_pdu->precoding_information.nbits = 3-(*pusch_Config->codebookSubset);
-            }
-          }
-        }
-      }
+      dci_pdu->precoding_information.nbits = compute_precoding_information(pusch_Config, srs_config, dci_pdu->srs_resource_indicator, NULL, NULL, NULL);
       size += dci_pdu->precoding_information.nbits;
       LOG_D(NR_MAC,"dci_pdu->precoding_informaiton.nbits=%d\n",dci_pdu->precoding_information.nbits);
       // Antenna ports
+      long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t*)&format, rnti_type, 0);
       NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = NULL;
       int xa=0;
       int xb=0;

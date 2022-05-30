@@ -1080,16 +1080,17 @@ void config_uldci(const NR_SIB1_t *sib1,
           uplinkConfig = cg->spCellConfig->spCellConfigDedicated->uplinkConfig;
         }
         compute_srs_resource_indicator(uplinkConfig,
-                                       ubwpd->pusch_Config ? ubwpd->pusch_Config->choice.setup : NULL,
-                                       ubwpd2 && ubwpd2->srs_Config ? ubwpd->srs_Config->choice.setup : NULL,
+                                       ubwpd2->pusch_Config ? ubwpd2->pusch_Config->choice.setup : NULL,
+                                       ubwpd2 && ubwpd2->srs_Config ? ubwpd2->srs_Config->choice.setup : NULL,
                                        srs_feedback,
                                        &dci_pdu_rel15->srs_resource_indicator.val);
       }
-      dci_pdu_rel15->precoding_information.val= 0;
-      if (pusch_pdu->nrOfLayers == 2)
-        dci_pdu_rel15->precoding_information.val = 4;
-      else if (pusch_pdu->nrOfLayers == 4)
-        dci_pdu_rel15->precoding_information.val = 11;
+      compute_precoding_information(ubwpd2->pusch_Config ? ubwpd2->pusch_Config->choice.setup : NULL,
+                                    ubwpd2 && ubwpd2->srs_Config ? ubwpd2->srs_Config->choice.setup : NULL,
+                                    dci_pdu_rel15->srs_resource_indicator,
+                                    srs_feedback,
+                                    &pusch_pdu->nrOfLayers,
+                                    &dci_pdu_rel15->precoding_information.val);
 
       // antenna_ports.val = 0 for transform precoder is disabled, dmrs-Type=1, maxLength=1, Rank=1/2/3/4 
       // Antenna Ports
