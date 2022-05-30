@@ -123,7 +123,6 @@ extern "C"
 #define TUNE_OFFSET         softmodem_params.tune_offset
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
-#define USE_256QAM_TABLE    softmodem_params.use_256qam_table
 #define CHEST_FREQ          softmodem_params.chest_freq
 #define CHEST_TIME          softmodem_params.chest_time
 #define NFAPI               softmodem_params.nfapi
@@ -163,7 +162,6 @@ extern int usrp_tx_thread;
     {"rfsim",                CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&rfsim,                        defintval:0,           TYPE_INT,    0},                     \
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_INT,    0},                     \
-    {"use-256qam-table",     CONFIG_HLP_256QAM,       PARAMFLAG_BOOL, iptr:&USE_256QAM_TABLE,             defintval:0,           TYPE_INT,    0},                     \
     {"chest-freq",           CONFIG_HLP_CHESTFREQ,    0,              iptr:&CHEST_FREQ,                   defintval:0,           TYPE_INT,    0},                     \
     {"chest-time",           CONFIG_HLP_CHESTTIME,    0,              iptr:&CHEST_TIME,                   defintval:0,           TYPE_INT,    0},                     \
     {"nsa",                  CONFIG_HLP_NSA,          PARAMFLAG_BOOL, iptr:&NSA,                          defintval:0,           TYPE_INT,    0},                     \
