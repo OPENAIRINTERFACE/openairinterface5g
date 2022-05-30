@@ -716,7 +716,6 @@ typedef struct {
   uint8_t UE_beam_index;
   bool Msg4_ACKed;
   /// Sched CSI-RS: scheduling decisions
-  bool sched_csirs;
   NR_gNB_UCI_STATS_t uci_statS;
   float ul_thr_ue;
   float dl_thr_ue;
@@ -728,6 +727,7 @@ typedef struct {
   // last element always NULL
   pthread_mutex_t mutex;
   NR_UE_info_t *list[MAX_MOBILES_PER_GNB+1];
+  bool sched_csirs;
 } NR_UEs_t;
 
 #define UE_iterator(BaSe, VaR) NR_UE_info_t ** VaR##pptr=BaSe, *VaR; while ((VaR=*(VaR##pptr++)))

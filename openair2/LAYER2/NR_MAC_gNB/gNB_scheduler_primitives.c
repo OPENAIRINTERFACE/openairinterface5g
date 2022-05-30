@@ -2692,6 +2692,7 @@ void nr_csirs_scheduling(int Mod_idP,
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
   uint16_t *vrb_map = gNB_mac->common_channels[CC_id].vrb_map;
 
+  UE_info->sched_csirs = false;
 
   UE_iterator(UE_info->list, UE) {
 
@@ -2724,7 +2725,7 @@ void nr_csirs_scheduling(int Mod_idP,
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
           LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
-          UE->sched_csirs = true;
+          UE_info->sched_csirs = true;
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
           memset((void*)dl_tti_csirs_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
