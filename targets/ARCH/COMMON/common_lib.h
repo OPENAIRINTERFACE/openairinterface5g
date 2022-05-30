@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <openair1/PHY/TOOLS/tools_defs.h>
 #include "record_player.h"
+#include <common/utils/threadPool/thread-pool.h>
 
 /* default name of shared library implementing the radio front end */
 #define OAI_RF_LIBNAME        "oai_device"
@@ -325,6 +326,7 @@ typedef struct fhstate_s {
   openair0_timestamp olddeltaTS[8];
   openair0_timestamp oldTS[8];
   openair0_timestamp TS_read;
+  int first_read;
   uint32_t *buff[8];
   uint32_t buff_size;
   int r[8];
@@ -367,6 +369,12 @@ struct openair0_device_t {
 
   /*!brief pointer to FH state, used in ECPRI split 8*/
   fhstate_t fhstate;
+
+  /*!brief threadpool for UDP write*/
+  tpool_t *threadPool;
+
+  /*!brief message response for notification fifo*/
+  notifiedFIFO_t *respudpTX;
 
   /*!brief Used in ECPRI split 8 to indicate numerator of sampling rate ratio*/
   int sampling_rate_ratio_n;
@@ -423,7 +431,7 @@ struct openair0_device_t {
       @param antenna_id index of the antenna if the device has multiple anteannas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
   */
-  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int flags);
+  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void *buff, int aid, int nsamps, int flags);
 
   /*! \brief Receive samples from hardware.
    * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for

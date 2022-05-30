@@ -64,10 +64,10 @@ int trx_eth_start(openair0_device *device)
        AssertFatal(device->thirdparty_init != NULL, "device->thirdparty_init is null\n");
        AssertFatal(device->thirdparty_init(device) == 0, "third-party init failed\n");
        device->openair0_cfg->samples_per_packet = 256;
-       eth->num_fd = max(device->openair0_cfg->rx_num_channels,device->openair0_cfg->tx_num_channels); 
+       eth->num_fd = 1; //max(device->openair0_cfg->rx_num_channels,device->openair0_cfg->tx_num_channels); 
        printf("Creating %d UDP threads ...\n",device->openair0_cfg->rx_num_channels);
        udp_read_t *u[device->openair0_cfg->rx_num_channels];
-       for (int i=0;i<device->openair0_cfg->rx_num_channels;i++) {
+       for (int i=0;i<(device->openair0_cfg->rx_num_channels);i++) {
           u[i] = malloc(sizeof(udp_read_t));
           u[i]->thread_id=i;
           u[i]->device = device;
@@ -112,6 +112,20 @@ int trx_eth_start(openair0_device *device)
 	  }
           else AssertFatal(1==0,"num_rb_dl %d not ok with ECPRI\n",device->openair0_cfg->num_rb_dl);
        }
+       int threadCnt = device->openair0_cfg->tx_num_channels;
+       if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
+       char pool[80];
+       sprintf(pool,"-1");
+       int s_offset = 0;
+       for (int icpu=1; icpu<threadCnt; icpu++) {
+          sprintf(pool+2+s_offset,",-1");
+          s_offset += 3;
+       }
+       device->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
+       initTpool(pool, device->threadPool, cpumeas(CPUMEAS_GETSTATE));
+       // ULSCH decoder result FIFO
+       device->respudpTX = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+       initNotifiedFIFO(device->respudpTX);
    }
    /* initialize socket */
     if (eth->flags == ETH_RAW_MODE) {
@@ -502,6 +516,7 @@ int transport_init(openair0_device *device,
         device->trx_ctlsend_func = trx_eth_ctlsend_udp;
         device->trx_ctlrecv_func = trx_eth_ctlrecv_udp;
         memset((void*)&device->fhstate,0,sizeof(device->fhstate));
+        printf("Setting %d RX channels to waiting\n",openair0_cfg->rx_num_channels);
 	for (int i=openair0_cfg->rx_num_channels;i<8;i++) device->fhstate.r[i] = 1;
     } else if (eth->flags == ETH_RAW_IF4p5_MODE) {
         device->trx_write_func   = trx_eth_write_raw_IF4p5;
