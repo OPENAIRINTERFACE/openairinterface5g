@@ -113,7 +113,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
       stats->cumul_rsrp = 0;
     }
     stroff+=sprintf(output+stroff,"UE %04x: dlsch_total_bytes %"PRIu64"\n", UE->rnti, stats->dl.total_bytes);
-    stroff+=sprintf(output+stroff,"UE %04x: ulsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", ulsch_DTX %d, ulsch_errors %"PRIu64"\n",
+    stroff+=sprintf(output+stroff,"UE %04x: ulsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", ulsch_DTX %d, ulsch_errors %"PRIu64", BLER %.5f MCS %d\n",
                     UE->rnti,
                     stats->ul.rounds[0], stats->ul.rounds[1],
                     stats->ul.rounds[2], stats->ul.rounds[3],
