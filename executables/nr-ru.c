@@ -285,7 +285,7 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
 			       ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
 			       0); 
   stop_meas(&ru->tx_fhaul);
-
+  LOG_D(PHY,"IF5 TX %d.%d\n",frame,slot);
 }
 
 // southbound IF4p5 fronthaul
