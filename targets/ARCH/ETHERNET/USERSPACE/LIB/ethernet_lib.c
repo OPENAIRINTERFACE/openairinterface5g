@@ -67,7 +67,7 @@ int trx_eth_start(openair0_device *device)
        eth->num_fd = 1; //max(device->openair0_cfg->rx_num_channels,device->openair0_cfg->tx_num_channels); 
        printf("Creating %d UDP threads ...\n",device->openair0_cfg->rx_num_channels);
        udp_read_t *u[device->openair0_cfg->rx_num_channels];
-       for (int i=0;i<device->openair0_cfg->rx_num_channels;i++) {
+       for (int i=0;i<(device->openair0_cfg->rx_num_channels);i++) {
           u[i] = malloc(sizeof(udp_read_t));
           u[i]->thread_id=i;
           u[i]->device = device;

@@ -395,17 +395,26 @@ void *trx_eth_write_udp_cmd(void *arg) {
       
 int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void *buff, int aid, int nsamps, int flags) {	
 
+#ifdef USE_TPOOL
     union udpTXReqUnion id = {.s={(uint64_t)timestamp,aid,nsamps,0}};
     notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(udpTXelem_t), id.p, device->respudpTX, trx_eth_write_udp_cmd);
     udpTXelem_t * udptxelem=(udpTXelem_t *) NotifiedFifoData(req);
-
+#else
+    udpTXelem_t udptxelem0;
+    udpTXelem_t *udptxelem = &udptxelem0;
+#endif
     udptxelem->device = device;
     udptxelem->timestamp = timestamp;
     udptxelem->buff = buff;
     udptxelem->aid = aid;
     udptxelem->nsamps = nsamps;
     udptxelem->flags = flags;
+#ifdef USE_TPOOL    
     pushTpool(device->threadPool,req);
+#else
+    trx_eth_write_udp_cmd(udptxelem); 
+#endif
+
 }
 extern int oai_exit;
 

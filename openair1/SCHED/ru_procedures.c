@@ -566,15 +566,15 @@ static void *fep_thread(void *param)
 
   while (!oai_exit) {
 
-    if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break; 
+    if (wait_on_condition(&proc->mutex_fep[0],&proc->cond_fep[0],&proc->instance_cnt_fep[0],"fep thread")<0) break; 
     if (oai_exit) break;
 	//stop_meas(&ru->ofdm_demod_wakeup_stats);
 	//VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX1, 1 ); 
     fep0(ru,0);
 	//VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX1, 0 ); 
-    if (release_thread(&proc->mutex_fep,&proc->instance_cnt_fep,"fep thread")<0) break;
+    if (release_thread(&proc->mutex_fep[0],&proc->instance_cnt_fep[0],"fep thread")<0) break;
 
-    if (pthread_cond_signal(&proc->cond_fep) != 0) {
+    if (pthread_cond_signal(&proc->cond_fep[0]) != 0) {
       printf("[eNB] ERROR pthread_cond_signal for fep thread exit\n");
       exit_fun( "ERROR pthread_cond_signal" );
       return NULL;
@@ -607,26 +607,26 @@ void init_fep_thread(RU_t *ru,
 {
   RU_proc_t *proc = &ru->proc;
 
-  proc->instance_cnt_fep         = -1;
+  proc->instance_cnt_fep[0]         = -1;
     
-  pthread_mutex_init( &proc->mutex_fep, NULL);
-  pthread_cond_init( &proc->cond_fep, NULL);
+  pthread_mutex_init( &proc->mutex_fep[0], NULL);
+  pthread_cond_init( &proc->cond_fep[0], NULL);
 
-  threadCreate(&proc->pthread_fep, fep_thread, (void*)ru, "fep", -1, OAI_PRIORITY_RT);
+  threadCreate(&proc->pthread_fep[0], fep_thread, (void*)ru, "fep", -1, OAI_PRIORITY_RT);
 }
 
 
 extern void kill_fep_thread(RU_t *ru)
 {
   RU_proc_t *proc = &ru->proc;
-  pthread_mutex_lock( &proc->mutex_fep );
-  proc->instance_cnt_fep         = 0;
-  pthread_cond_signal(&proc->cond_fep);
-  pthread_mutex_unlock( &proc->mutex_fep );
+  pthread_mutex_lock( &proc->mutex_fep[0] );
+  proc->instance_cnt_fep[0]         = 0;
+  pthread_cond_signal(&proc->cond_fep[0]);
+  pthread_mutex_unlock( &proc->mutex_fep[0] );
   LOG_D(PHY, "Joining pthread_fep\n");
-  pthread_join(proc->pthread_fep, NULL);
-  pthread_mutex_destroy( &proc->mutex_fep );
-  pthread_cond_destroy( &proc->cond_fep );
+  pthread_join(proc->pthread_fep[0], NULL);
+  pthread_mutex_destroy( &proc->mutex_fep[0] );
+  pthread_cond_destroy( &proc->cond_fep[0] );
 }
 
 
@@ -666,35 +666,35 @@ void ru_fep_full_2thread(RU_t *ru,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+ru->idx, 1 );
   start_meas(&ru->ofdm_demod_stats);
 
-  if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
-    printf("[RU] ERROR pthread_mutex_lock for fep thread (IC %d)\n", proc->instance_cnt_fep);
+  if (pthread_mutex_timedlock(&proc->mutex_fep[0],&wait) != 0) {
+    printf("[RU] ERROR pthread_mutex_lock for fep thread (IC %d)\n", proc->instance_cnt_fep[0]);
     exit_fun( "error locking mutex_fep" );
     return;
   }
 
-  if (proc->instance_cnt_fep==0) {
+  if (proc->instance_cnt_fep[0]==0) {
     printf("[RU] FEP thread busy\n");
     exit_fun("FEP thread busy");
-    pthread_mutex_unlock( &proc->mutex_fep );
+    pthread_mutex_unlock( &proc->mutex_fep[0] );
     return;
   }
   
-  ++proc->instance_cnt_fep;
+  ++proc->instance_cnt_fep[0];
 
-  if (pthread_cond_signal(&proc->cond_fep) != 0) {
+  if (pthread_cond_signal(&proc->cond_fep[0]) != 0) {
     printf("[RU] ERROR pthread_cond_signal for fep thread\n");
     exit_fun( "ERROR pthread_cond_signal" );
     return;
   }
   //start_meas(&ru->ofdm_demod_wakeup_stats);
   
-  pthread_mutex_unlock( &proc->mutex_fep );
+  pthread_mutex_unlock( &proc->mutex_fep[0] );
 
   // call second slot in this symbol
   fep0(ru,1);
 
   start_meas(&ru->ofdm_demod_wait_stats);
-  wait_on_busy_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread");  
+  wait_on_busy_condition(&proc->mutex_fep[0],&proc->cond_fep[0],&proc->instance_cnt_fep[0],"fep thread");  
   stop_meas(&ru->ofdm_demod_wait_stats);
   if(opp_enabled == 1 && ru->ofdm_demod_wakeup_stats.p_time>30*3000){
     print_meas_now(&ru->ofdm_demod_wakeup_stats,"fep wakeup",stderr);

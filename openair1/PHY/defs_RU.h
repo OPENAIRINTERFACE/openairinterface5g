@@ -39,6 +39,7 @@
 #include "time_meas.h"
 #include "defs_common.h"
 #include "nfapi_nr_interface_scf.h"
+#include <common/utils/threadPool/thread-pool.h>
 
 #define MAX_BANDS_PER_RRU 4
 #define MAX_RRU_CONFIG_SIZE 1024
@@ -189,6 +190,20 @@ typedef struct RU_feptx_t_s{
 }RU_feptx_t;
 
 typedef struct {
+ int aid;
+ struct RU_t_s *ru;
+ int start_symbol;
+ int end_symbol;
+ int slot; 
+} feprx_cmd_t;
+
+typedef struct {
+ int aid;
+ struct RU_t_s *ru;
+ int slot; 
+} feptx_cmd_t;
+
+typedef struct {
   int frame;
   int slot;
   int fmt;
@@ -246,7 +261,7 @@ typedef struct RU_proc_t_s {
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
   /// \internal This variable is protected by \ref mutex_fep
-  int instance_cnt_fep;
+  int instance_cnt_fep[8];
   /// \internal This variable is protected by \ref mutex_feptx
   int instance_cnt_feptx;
   /// \internal This variable is protected by \ref mutex_ru_thread
@@ -265,7 +280,7 @@ typedef struct RU_proc_t_s {
   /// pthread struct for RU synch thread
   pthread_t pthread_synch;
   /// pthread struct for RU RX FEP worker thread
-  pthread_t pthread_fep;
+  pthread_t pthread_fep[8];
   /// pthread struct for RU TX FEP worker thread
   pthread_t pthread_feptx;
   /// pthread struct for emulated RF
@@ -318,7 +333,7 @@ typedef struct RU_proc_t_s {
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
   /// condition varible for RU RX FEP thread
-  pthread_cond_t cond_fep;
+  pthread_cond_t cond_fep[8];
   /// condition varible for RU TX FEP thread
   pthread_cond_t cond_feptx;
   /// condition varible for emulated RF
@@ -345,7 +360,7 @@ typedef struct RU_proc_t_s {
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for fep RX worker thread
-  pthread_mutex_t mutex_fep;
+  pthread_mutex_t mutex_fep[8];
   /// mutex for fep TX worker thread
   pthread_mutex_t mutex_feptx;
   /// mutex for ru_thread
@@ -433,6 +448,8 @@ typedef enum {
 
 
 typedef struct RU_t_s {
+  /// ThreadPool for RU	
+  tpool_t *threadPool;
   /// index of this ru
   uint32_t idx;
   /// pointer to first RU
@@ -647,6 +664,11 @@ typedef struct RU_t_s {
   uint64_t if_frequency;
   /// UL IF frequency offset to DL IF frequency in Hz
   int if_freq_offset;
+  /// to signal end of feprx
+  notifiedFIFO_t *respfeprx;
+  /// to signal end of feptx
+  notifiedFIFO_t *respfeptx;
+
 } RU_t;
 
 
