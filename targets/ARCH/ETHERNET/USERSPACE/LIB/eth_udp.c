@@ -155,7 +155,6 @@ int eth_socket_init_udp(openair0_device *device) {
 #ifdef SO_ATTACH_REUSEPORT_EBPF*/    
     struct sock_filter code[]={
               { BPF_LD  | BPF_W | BPF_ABS, 0, 0, SKF_AD_OFF + SKF_AD_CPU }, // A = #cpu
-              { BPF_ALU | BPF_MOD | BPF_K, 0, 0, eth->num_fd},     // A = A % group_size
               { BPF_RET | BPF_A, 0, 0, 0 },                                 // return A
     };
     struct sock_fprog bpf = {
