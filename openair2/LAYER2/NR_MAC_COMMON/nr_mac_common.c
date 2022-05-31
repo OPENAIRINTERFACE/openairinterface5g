@@ -2639,11 +2639,12 @@ uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
     n_antenna_port = *pusch_Config->maxRank;
   }
   else {
-    if(srs_config != NULL && srs_resource_indicator.nbits > 0) {
+    uint8_t sri = srs_resource_indicator.nbits > 0 ? srs_resource_indicator.val : 0;
+    if(srs_config != NULL) {
       for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
         NR_SRS_ResourceSet_t *srs_resource_set = srs_config->srs_ResourceSetToAddModList->list.array[rs];
         if(srs_resource_set->usage == NR_SRS_ResourceSet__usage_codebook) {
-          NR_SRS_Resource_t *srs_resource = srs_config->srs_ResourceToAddModList->list.array[srs_resource_indicator.val];
+          NR_SRS_Resource_t *srs_resource = srs_config->srs_ResourceToAddModList->list.array[sri];
           AssertFatal(srs_resource != NULL,"SRS resource indicated by DCI does not exist\n");
           n_antenna_port = 1<<srs_resource->nrofSRS_Ports;
         }
