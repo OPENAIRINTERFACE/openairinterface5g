@@ -712,7 +712,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   unsigned int txs;
   int i;
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(frame), T_INT(slot),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->get_samples_per_slot(slot,fp) * 4));
   int sf_extension = 0;
   int siglen=fp->get_samples_per_slot(slot,fp);
   int flags = 0;
