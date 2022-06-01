@@ -213,15 +213,20 @@ void fill_scc_sim(NR_ServingCellConfigCommon_t *scc,uint64_t *ssb_bitmap,int N_R
   //  *scc->n_TimingAdvanceOffset=NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n0;
   *scc->ssb_periodicityServingCell=NR_ServingCellConfigCommon__ssb_periodicityServingCell_ms20;
   scc->dmrs_TypeA_Position=NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2;
-  *scc->ssbSubcarrierSpacing=NR_SubcarrierSpacing_kHz30;
-  *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB=641032;
-  *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]=78;
-  scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA=640000;
+  *scc->ssbSubcarrierSpacing=mu_dl;
+  if (mu_dl == 0) {
+    *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB=520432;
+    *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]=38;
+    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA=520000;
+  } else {
+    *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB=641032;
+    *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]=78;
+    scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA=640000;
+  }
   scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier=0;
-  scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
-
+  scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=mu_dl;
   scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth=N_RB_DL;
-  scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth=13036;
+  scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth=275*(N_RB_DL-1);
   scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing=mu_dl;//NR_SubcarrierSpacing_kHz30;
   *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero=12;
   *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero=0;
@@ -235,13 +240,13 @@ void fill_scc_sim(NR_ServingCellConfigCommon_t *scc,uint64_t *ssb_bitmap,int N_R
   timedomainresourceallocation1->startSymbolAndLength=57;
   ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
                    timedomainresourceallocation1);
-  *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0]=78;
+  *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0]=mu_ul?78:38;
   *scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA=-1;
   scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier=0;
-  scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=NR_SubcarrierSpacing_kHz30;
+  scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing=mu_ul;
   scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth=N_RB_UL;
   *scc->uplinkConfigCommon->frequencyInfoUL->p_Max=20;
-  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth=13036;
+  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth=275*(N_RB_UL-1);
   scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing=mu_ul;//NR_SubcarrierSpacing_kHz30;
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex=98;
   scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.msg1_FDM=NR_RACH_ConfigGeneric__msg1_FDM_one;
@@ -277,8 +282,11 @@ void fill_scc_sim(NR_ServingCellConfigCommon_t *scc,uint64_t *ssb_bitmap,int N_R
  *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->p0_nominal=-90;
  scc->ssb_PositionsInBurst->present=NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap;
  *ssb_bitmap=0xff;
- scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing=NR_SubcarrierSpacing_kHz30;
- scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity=NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5;
+ scc->tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing=mu_dl;
+ if (mu_dl == 0)
+   scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity=NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms10;
+ else
+   scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity=NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5;
  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots=7;
  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols=6;
  scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots=2;

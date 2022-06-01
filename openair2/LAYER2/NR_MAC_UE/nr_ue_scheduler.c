@@ -1095,7 +1095,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         LOG_D(NR_MAC,"1# scheduled_response transmitted, %d, %d\n", rx_frame, rx_slot);
-        mac->if_module->scheduled_response(&scheduled_response);
+      mac->if_module->scheduled_response(&scheduled_response);
     }
     else {
       // this is for Msg2/Msg4
