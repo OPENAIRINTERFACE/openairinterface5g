@@ -373,7 +373,7 @@ int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
 
 int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp);
 int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_FRAME_PARMS *fp);
-uint8_t check_prs_slot_nrUE(PHY_VARS_NR_UE *ue, uint8_t *prs_gNB_id, uint8_t *prs_rsc_id, int nr_slot_rx);
+uint8_t check_prs_slot_nrUE(PHY_VARS_NR_UE *ue, NR_DL_FRAME_PARMS *fp, uint8_t *prs_gNB_id, uint8_t *prs_rsc_id, int frame_rx, int nr_slot_rx);
 
 /*! \brief This function prepares the dl indication to pass to the MAC
     @param

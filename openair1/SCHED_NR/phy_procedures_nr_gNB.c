@@ -63,12 +63,12 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME
   LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
 }
 
-uint8_t check_prs_slot_gNB(uint8_t *prs_rsc_id, NR_gNB_PRS *prs_vars, int nr_slot_tx)
+uint8_t check_prs_slot_gNB(uint8_t *prs_rsc_id, NR_gNB_PRS *prs_vars, NR_DL_FRAME_PARMS *fp, int frame_tx, int nr_slot_tx)
 {
   uint8_t is_prs_slot = 0, rsc_id = 0;
   for(rsc_id = 0; rsc_id < prs_vars->NumPRSResources; rsc_id++)
   {
-    if((prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[1] + prs_vars->prs_cfg[rsc_id].PRSResourceOffset) == nr_slot_tx)
+    if((prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[1] + prs_vars->prs_cfg[rsc_id].PRSResourceOffset) == ((frame_tx*fp->slots_per_frame+nr_slot_tx)%prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[0]))
     {
       is_prs_slot = 1;
       *prs_rsc_id  = rsc_id;
@@ -159,10 +159,10 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   }
 
   // Check for PRS slot
-  is_prs_slot = check_prs_slot_gNB(&rsc_id, &gNB->prs_vars, slot);
+  is_prs_slot = check_prs_slot_gNB(&rsc_id, &gNB->prs_vars, fp, frame, slot);
   if(is_prs_slot)
   {
-    LOG_D(PHY,"gNB_TX: frame %d, slot %d, slots_per_frame %d, PRS Resource ID %d\n",frame,slot, fp->slots_per_frame, rsc_id);
+    LOG_D(PHY,"gNB_TX: frame %d, slot %d, PRS Resource ID %d\n",frame, slot, rsc_id);
     nr_generate_prs(gNB->nr_gold_prs[slot],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, &gNB->prs_vars.prs_cfg[rsc_id], cfg, fp);
   }
 

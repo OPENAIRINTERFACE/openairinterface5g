@@ -1374,14 +1374,15 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
   }
 }
 
-uint8_t check_prs_slot_nrUE(PHY_VARS_NR_UE *ue, uint8_t *prs_gNB_id, uint8_t *prs_rsc_id, int nr_slot_rx)
+uint8_t check_prs_slot_nrUE(PHY_VARS_NR_UE *ue, NR_DL_FRAME_PARMS *fp, uint8_t *prs_gNB_id, uint8_t *prs_rsc_id, int frame_rx, int nr_slot_rx)
 {
   uint8_t is_prs_slot = 0, rsc_id = 0, gNB_id = 0;
   for(gNB_id = 0; gNB_id < ue->prs_active_gNBs; gNB_id++)
   {
     for(rsc_id = 0; rsc_id < ue->prs_vars[gNB_id]->NumPRSResources; rsc_id++)
     {
-      if((ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset) == nr_slot_rx)
+      if((ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset) ==
+          ((frame_rx*fp->slots_per_frame + nr_slot_rx)%ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0]))
       {
         is_prs_slot = 1;
         *prs_rsc_id = rsc_id;
@@ -1481,7 +1482,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   }
 
   // Check for PRS slot
-  is_prs_slot = check_prs_slot_nrUE(ue, &prs_gNB_id, &rsc_id, nr_slot_rx);
+  is_prs_slot = check_prs_slot_nrUE(ue, fp, &prs_gNB_id, &rsc_id, frame_rx, nr_slot_rx);
   if (is_prs_slot)
   {
     for(int j = ue->prs_start_symb; j < ue->prs_end_symb; j++)
