@@ -419,7 +419,7 @@ void set_dl_mcs_table(int scs,
   }
   AssertFatal(bw_rb>0,"Could not find scs-SpecificCarrierList element for scs %d",scs);
   int bw = get_supported_band_index(scs, band, bw_rb);
-  AssertFatal(bw>0,"Supported band corresponding to %d RBs not found\n", bw_rb);
+  AssertFatal(bw>=0,"Supported band corresponding to %d RBs not found\n", bw_rb);
 
   bool supported = false;
   if (band>256) {

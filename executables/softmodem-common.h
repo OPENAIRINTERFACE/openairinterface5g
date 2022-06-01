@@ -60,6 +60,7 @@ extern "C"
 #define CONFIG_HLP_DMRSSYNC      "tells RU to insert DMRS in subframe 1 slot 0"
 #define CONFIG_HLP_CLK           "tells hardware to use a clock reference (0:internal, 1:external, 2:gpsdo)\n"
 #define CONFIG_HLP_TME           "tells hardware to use a time reference (0:internal, 1:external, 2:gpsdo)\n"
+#define CONFIG_HLP_TUNE_OFFSET   "LO tuning offset to use in Hz\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n"
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n"
 #define CONFIG_HLP_DLF           "Set the downlink frequency for all component carriers\n"
@@ -118,6 +119,7 @@ extern "C"
 #define EMULATE_RF          softmodem_params.emulate_rf
 #define CLOCK_SOURCE        softmodem_params.clock_source
 #define TIMING_SOURCE       softmodem_params.timing_source
+#define TUNE_OFFSET         softmodem_params.tune_offset
 #define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
 #define PRB_INTERPOLATION   softmodem_params.prb_interpolation
@@ -141,6 +143,7 @@ extern int usrp_tx_thread;
     {"usim-test",            CONFIG_HLP_USIM,         PARAMFLAG_BOOL, u8ptr:&USIM_TEST,                   defintval:0,           TYPE_UINT8,  0},                     \
     {"clock-source",         CONFIG_HLP_CLK,          0,              uptr:&CLOCK_SOURCE,                 defintval:0,           TYPE_UINT,   0},                     \
     {"time-source",          CONFIG_HLP_TME,          0,              uptr:&TIMING_SOURCE,                defintval:0,           TYPE_UINT,   0},                     \
+    {"tune-offset",          CONFIG_HLP_TUNE_OFFSET,  0,              dblptr:&TUNE_OFFSET,                defintval:0,           TYPE_DOUBLE, 0},                     \
     {"wait-for-sync",        NULL,                    PARAMFLAG_BOOL, iptr:&WAIT_FOR_SYNC,                defintval:0,           TYPE_INT,    0},                     \
     {"single-thread-enable", CONFIG_HLP_NOSNGLT,      PARAMFLAG_BOOL, iptr:&SINGLE_THREAD_FLAG,           defintval:0,           TYPE_INT,    0},                     \
     {"C" ,                   CONFIG_HLP_DLF,          0,              u64ptr:&(downlink_frequency[0][0]), defuintval:0,          TYPE_UINT64, 0},                     \
@@ -245,6 +248,7 @@ typedef struct {
   int            band;
   uint32_t       clock_source;
   uint32_t       timing_source;
+  double         tune_offset;
   int            hw_timing_advance;
   uint32_t       send_dmrs_sync;
   int            prb_interpolation;

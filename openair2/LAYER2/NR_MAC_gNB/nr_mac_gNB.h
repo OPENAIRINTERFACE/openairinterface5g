@@ -91,6 +91,7 @@ typedef struct {
   int len;
 } NR_list_t;
 
+
 typedef enum {
   RA_IDLE = 0,
   Msg2 = 1,
@@ -670,23 +671,33 @@ typedef struct NR_bler_options {
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
+  rnti_t rnti;
   /// scheduling control info
-  nr_csi_report_t csi_report_template[MAX_MOBILES_PER_GNB][MAX_CSI_REPORTCONFIG];
-  NR_UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_GNB];
-  NR_mac_stats_t mac_stats[MAX_MOBILES_PER_GNB];
-  NR_list_t list;
-  int num_UEs;
-  bool active[MAX_MOBILES_PER_GNB];
-  rnti_t rnti[MAX_MOBILES_PER_GNB];
-  NR_CellGroupConfig_t *CellGroup[MAX_MOBILES_PER_GNB];
+  nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
+  NR_UE_sched_ctrl_t UE_sched_ctrl;
+  NR_mac_stats_t mac_stats;
+  NR_CellGroupConfig_t *CellGroup;
   /// CCE indexing
-  int m[MAX_MOBILES_PER_GNB];
+  int m;
   // UE selected beam index
-  uint8_t UE_beam_index[MAX_MOBILES_PER_GNB];
-  bool Msg4_ACKed[MAX_MOBILES_PER_GNB];
+  uint8_t UE_beam_index;
+  bool Msg4_ACKed;
   /// Sched CSI-RS: scheduling decisions
-  bool sched_csirs;
+  NR_gNB_UCI_STATS_t uci_statS;
+  float ul_thr_ue;
+  float dl_thr_ue;
+  int layers; 
 } NR_UE_info_t;
+
+typedef struct {
+  /// scheduling control info
+  // last element always NULL
+  pthread_mutex_t mutex;
+  NR_UE_info_t *list[MAX_MOBILES_PER_GNB+1];
+  bool sched_csirs;
+} NR_UEs_t;
+
+#define UE_iterator(BaSe, VaR) NR_UE_info_t ** VaR##pptr=BaSe, *VaR; while ((VaR=*(VaR##pptr++)))
 
 typedef void (*nr_pp_impl_dl)(module_id_t mod_id,
                               frame_t frame,
@@ -746,7 +757,7 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t        TX_req[NFAPI_CC_MAX];
   int pdcch_cand[MAX_NUM_CORESET];
-  NR_UE_info_t UE_info;
+  NR_UEs_t UE_info;
 
   /// UL handle
   uint32_t ul_handle;
