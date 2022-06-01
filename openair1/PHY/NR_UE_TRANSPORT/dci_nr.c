@@ -686,9 +686,9 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
   // Pointers to extracted PDCCH symbols in frequency-domain.
   int32_t rx_size = 4*273*12;
-  int32_t rxdataF_ext[4*frame_parms->nb_antennas_rx][rx_size];
-  int32_t rxdataF_comp[4*frame_parms->nb_antennas_rx][rx_size];
-  int32_t pdcch_dl_ch_estimates_ext[4*frame_parms->nb_antennas_rx][rx_size];
+  __attribute__ ((aligned(32))) int32_t rxdataF_ext[4*frame_parms->nb_antennas_rx][rx_size];
+  __attribute__ ((aligned(32))) int32_t rxdataF_comp[4*frame_parms->nb_antennas_rx][rx_size];
+  __attribute__ ((aligned(32))) int32_t pdcch_dl_ch_estimates_ext[4*frame_parms->nb_antennas_rx][rx_size];
 
   // Pointer to llrs, 4-bit resolution.
   int32_t llr_size = 2*4*100*12;

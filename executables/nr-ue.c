@@ -666,7 +666,7 @@ void processSlotRX(void *arg) {
 
   if (rx_slot_type == NR_DOWNLINK_SLOT || rx_slot_type == NR_MIXED_SLOT){
 
-    if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
+    if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL && get_softmodem_params()->phy_test == 0) {
       nr_downlink_indication_t dl_indication;
       nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, gNB_id, &phy_pdcch_config);
       UE->if_inst->dl_indication(&dl_indication, NULL);
