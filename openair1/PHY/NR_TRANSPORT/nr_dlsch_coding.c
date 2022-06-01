@@ -310,7 +310,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   uint32_t A = rel15->TBSize[0]<<3;
   unsigned char *a=harq->pdu;
   if ( rel15->rnti != SI_RNTI)
-    trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], 0, WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
+    trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
 
   NR_gNB_SCH_STATS_t *stats=NULL;
   int first_free=-1;

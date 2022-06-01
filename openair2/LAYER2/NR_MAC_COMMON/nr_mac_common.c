@@ -1686,7 +1686,7 @@ int get_nr_prach_info_from_index(uint8_t index,
         }
         if ( (s_map>>subframe)&0x01 ) {
          *N_RA_slot = table_6_3_3_2_3_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
-          if (mu == 1) {
+          if (mu == 1 && index >= 67) {
             if ( (*N_RA_slot <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe 
           } 

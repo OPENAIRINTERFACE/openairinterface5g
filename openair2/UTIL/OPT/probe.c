@@ -476,6 +476,14 @@ static void SendFrameNR(guint8 radioType, guint8 direction, guint8 rntiType,
 extern RAN_CONTEXT_t RC;
 #include <openair1/PHY/phy_extern_ue.h>
 /* Remote serveraddress (where Wireshark is running) */
+void nr_trace_pdu_implementation(int nr, int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
+				 int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
+				 int oob_event_value) {
+  trace_pdu_implementation(nr, direction, pdu_buffer, pdu_buffer_size,
+			   rnti, rntiType, rnti, sysFrameNumber, subFrameNumber, oob_event,
+			   oob_event_value);
+}
+
 void trace_pdu_implementation(int nr, int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
                               int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
                               int oob_event_value) {

@@ -372,9 +372,6 @@ static void match_crc_rx_pdu(nfapi_nr_rx_data_indication_t *rx_ind, nfapi_nr_crc
 
 void NR_UL_indication(NR_UL_IND_t *UL_info) {
   AssertFatal(UL_info!=NULL,"UL_info is null\n");
-#ifdef DUMP_FAPI
-  dump_ul(UL_info);
-#endif
   module_id_t      module_id   = UL_info->module_id;
   int              CC_id       = UL_info->CC_id;
   NR_Sched_Rsp_t   *sched_info = &NR_Sched_INFO[module_id][CC_id];

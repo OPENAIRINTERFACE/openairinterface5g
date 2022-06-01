@@ -683,15 +683,15 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
               "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
               rnti, ctxt.rnti);
   int UE_out_of_sync = 0;
-
   if (RC.nrrrc && RC.nrrrc[instance]->node_type == ngran_gNB_DU) {
-    for (int n = 0; n < MAX_MOBILES_PER_GNB; ++n) {
-      if (RC.nrmac[instance]->UE_info.active[n] == TRUE
-          && rnti == RC.nrmac[instance]->UE_info.rnti[n]) {
+    UE_iterator(RC.nrmac[instance]->UE_info.list, UE) {
+      if (UE->rnti == rnti) {
         UE_out_of_sync = 0;
         break;
       }
     }
+    if (!UE)
+      LOG_E(F1AP,"Not found rnti: %x\n", rnti);
   } else {
     for (int n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
       if (RC.mac[instance]->UE_info.active[n] == TRUE
@@ -701,7 +701,6 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
       }
     }
   }
-
   /* We don't need the Cause */
   /* Optional RRC Container: if present, send to UE */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
