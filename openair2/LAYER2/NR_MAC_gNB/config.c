@@ -462,8 +462,7 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
     return -1;
   }
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
-  const uint16_t sf_ahead = 6/(0x01<<subcarrierSpacing) + ((6%(0x01<<subcarrierSpacing))>0);
-  const uint16_t sl_ahead = sf_ahead * (0x01<<subcarrierSpacing);
+  const uint16_t sl_ahead = RC.nrmac[Mod_idP]->if_inst->sl_ahead;
   sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
   LOG_I(NR_MAC, "Activating RRC processing timer for UE %04x with %d ms\n", UE_info->rnti, rrc_reconfiguration_delay);
 
@@ -486,19 +485,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
 
-    /* dimension UL_tti_req_ahead for number of slots in frame */
     const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-    RC.nrmac[Mod_idP]->UL_tti_req_ahead[0] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
-    AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
-                "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
-    /* fill in slot/frame numbers: slot is fixed, frame will be updated by scheduler
-     * consider that scheduler runs sl_ahead: the first sl_ahead slots are
-     * already "in the past" and thus we put frame 1 instead of 0! */
-    for (int i = 0; i < n; ++i) {
-      nfapi_nr_ul_tti_request_t *req = &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][i];
-      req->SFN = i < (RC.nrmac[Mod_idP]->if_inst->sl_ahead-1);
-      req->Slot = i;
-    }
     RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
         calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
     AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,

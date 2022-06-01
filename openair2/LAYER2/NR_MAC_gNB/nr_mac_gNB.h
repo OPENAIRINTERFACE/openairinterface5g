@@ -850,6 +850,7 @@ typedef struct gNB_MAC_INST_s {
   uint8_t harq_round_max;
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
+  bool init_UL_tti_req_ahead;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
