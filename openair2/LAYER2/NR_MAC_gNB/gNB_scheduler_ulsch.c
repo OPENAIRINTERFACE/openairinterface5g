@@ -812,7 +812,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
   }
 
   // TODO: This should be improved
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
   ps->srs_feedback.sri = NR_SRS_SRI_0;
   ps->srs_feedback.tpmi = 0;
