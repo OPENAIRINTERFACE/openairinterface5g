@@ -80,7 +80,7 @@ static inline notifiedFIFO_elt_t *newNotifiedFIFO_elt(int size,
     notifiedFIFO_t *reponseFifo,
     void (*processingFunc)(void *)) {
   notifiedFIFO_elt_t *ret;
-  AssertFatal( NULL != (ret=(notifiedFIFO_elt_t *) malloc(sizeof(notifiedFIFO_elt_t)+size+32)), "");
+  AssertFatal( NULL != (ret=(notifiedFIFO_elt_t *) calloc(1, sizeof(notifiedFIFO_elt_t)+size+32)), "");
   ret->next=NULL;
   ret->key=key;
   ret->reponseFifo=reponseFifo;

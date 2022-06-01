@@ -455,18 +455,17 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
   if (rrc_reconfiguration_delay == 0) {
     return -1;
   }
-  const int UE_id = find_nr_UE_id(Mod_idP,rnti);
-  if (UE_id < 0) {
+
+  NR_UE_info_t *UE_info = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info,rnti);
+  if (!UE_info) {
     LOG_W(NR_MAC, "Could not find UE for RNTI 0x%04x\n", rnti);
     return -1;
   }
-
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
   const uint16_t sf_ahead = 6/(0x01<<subcarrierSpacing) + ((6%(0x01<<subcarrierSpacing))>0);
   const uint16_t sl_ahead = sf_ahead * (0x01<<subcarrierSpacing);
   sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
-  LOG_I(NR_MAC, "Activating RRC processing timer for UE %d with %d ms\n", UE_id, rrc_reconfiguration_delay);
+  LOG_I(NR_MAC, "Activating RRC processing timer for UE %04x with %d ms\n", UE_info->rnti, rrc_reconfiguration_delay);
 
   return 0;
 }
@@ -593,11 +592,15 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if(CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated)
       servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
 
-    NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
-      const int UE_id = add_new_nr_ue(Mod_idP, rnti, CellGroup);
-      LOG_I(NR_MAC,"Added new UE_id %d/%x with initial CellGroup\n",UE_id,rnti);
-      process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
+      NR_UE_info_t* UE = add_new_nr_ue(RC.nrmac[Mod_idP], rnti, CellGroup);
+      if (UE)
+	LOG_I(NR_MAC,"Added new UE %x with initial CellGroup\n", rnti);
+      else {
+	LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
+	return -1;
+      }
+      process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       const int CC_id = 0;
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[CC_id];
@@ -644,12 +647,18 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
       NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon;
-      const int UE_id = find_nr_UE_id(Mod_idP,rnti);
+      NR_UE_info_t * UE = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info,rnti);
+      if (!UE) {
+	LOG_E(NR_MAC, "Can't find UE %04x\n", rnti);
+	return -1;
+      }
       int target_ss;
-      UE_info->CellGroup[UE_id] = CellGroup;
-      LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
-      process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
-      NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+
+      UE->CellGroup = CellGroup;
+      LOG_I(NR_MAC,"Modified rnti %04x with CellGroup\n",rnti);
+      process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
+      NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+
       const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
       if (get_softmodem_params()->sa) {
         // add all available DL HARQ processes for this UE in SA
@@ -672,7 +681,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
       }
       sched_ctrl->search_space = get_searchspace(sib1 ? sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
-      sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
+      sched_ctrl->coreset = get_coreset(RC.nrmac[Mod_idP], scc, bwpd, sched_ctrl->search_space, target_ss);
       sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
                                                     sched_ctrl->search_space,
                                                     sched_ctrl->coreset,
@@ -685,7 +694,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
           CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
           CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup
         )
-      compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, Mod_idP);
+      compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

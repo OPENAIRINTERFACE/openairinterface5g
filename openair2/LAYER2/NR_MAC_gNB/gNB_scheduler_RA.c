@@ -539,8 +539,10 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
     NR_RA_t *ra = &cc->ra[i];
     pr_found = 0;
-    const int UE_id = find_nr_UE_id(module_idP, ra->rnti);
-    if (UE_id != -1) {
+    const NR_UE_info_t * UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
+    if (UE) {
+      // the UE is already registered
+      LOG_W(NR_MAC, "Received RA for existing RNTI %04x\n", ra->rnti);
       continue;
     }
     if (ra->state == RA_IDLE) {
@@ -634,7 +636,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
       AssertFatal(ra->ra_ss!=NULL,"SearchSpace cannot be null for RA\n");
 
-      ra->coreset = get_coreset(module_idP, scc, bwp, ra->ra_ss, NR_SearchSpace__searchSpaceType_PR_common);
+      ra->coreset = get_coreset(nr_mac, scc, bwp, ra->ra_ss, NR_SearchSpace__searchSpaceType_PR_common);
       ra->sched_pdcch = set_pdcch_structure(nr_mac,
                                             ra->ra_ss,
                                             ra->coreset,
@@ -669,7 +671,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           ra->rnti = (taus() % 65518) + 1;
           loop++;
         } while (loop != 100
-                 && !((find_nr_UE_id(module_idP, ra->rnti) == -1) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
+                 && !((find_nr_UE(&nr_mac->UE_info, ra->rnti) == NULL) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
                       && ra->rnti >= 1 && ra->rnti <= 65519));
         if (loop == 100) {
           LOG_E(NR_MAC, "%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
@@ -682,7 +684,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       ra->beam_id = beam_index;
 
       LOG_I(NR_MAC,
-            "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB "
+            "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB, new rnti %04x "
             "index %u RA index %d\n",
             module_idP,
             CC_id,
@@ -690,6 +692,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
             ra->Msg2_frame,
             ra->Msg2_slot,
             ra->RA_rnti,
+	    ra->rnti,
             cc->ssb_index[beam_index],
             i);
 
@@ -1517,7 +1520,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     ra->state = WAIT_Msg3;
-    LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+    LOG_W(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: rnti %04x RA state %d\n", module_idP, frameP, slotP, ra->rnti, ra->state);
   }
 }
 
@@ -1560,9 +1563,14 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       ra->rnti = ra->crnti;
     }
 
-    int UE_id = find_nr_UE_id(module_idP, ra->rnti);
-    NR_UE_info_t *UE_info = &nr_mac->UE_info;
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+    NR_UE_info_t * UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
+    if (!UE) {
+        LOG_E(NR_MAC,"want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
+        return;
+    }
+
+    LOG_I(NR_MAC,"Generate msg4, rnti: %04x\n", ra->rnti);
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
     NR_BWP_t *genericParameters = bwp ? & bwp->bwp_Common->genericParameters : &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
@@ -1595,7 +1603,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // Remove UE associated to TC-RNTI
     if(harq->round==0 && ra->msg3_dcch_dtch) {
-      mac_remove_nr_ue(module_idP, tc_rnti);
+      mac_remove_nr_ue(nr_mac, tc_rnti);
     }
 
     // get CCEindex, needed also for PUCCH and then later for PDCCH
@@ -1626,7 +1634,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, nb_of_candidates %d, delta_PRI %d)\n", r_pucch, CCEIndex, nr_of_candidates, delta_PRI);
 
-    int alloc = nr_acknack_scheduling(module_idP, UE_id, frameP, slotP, r_pucch, 1);
+    int alloc = nr_acknack_scheduling(module_idP, UE, frameP, slotP, r_pucch, 1);
     AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
     harq->feedback_slot = pucch->ul_slot;
@@ -1942,10 +1950,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     if(ra->msg3_dcch_dtch) {
       // If the UE used MSG3 to transfer a DCCH or DTCH message, then contention resolution is successful upon transmission of PDCCH
-      LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) CBRA procedure succeeded!\n", UE_id, ra->rnti);
+      LOG_I(NR_MAC, "(ue rnti 0x%04x) CBRA procedure succeeded!\n", ra->rnti);
       nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
-      UE_info->active[UE_id] = true;
-      UE_info->Msg4_ACKed[UE_id] = true;
+      UE->Msg4_ACKed = true;
 
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       harq->feedback_slot = -1;
@@ -1962,28 +1969,27 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
 void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra) {
 
-  int UE_id = find_nr_UE_id(module_id, ra->rnti);
+  NR_UE_info_t * UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, ra->rnti);
   const int current_harq_pid = ra->harq_pid;
 
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
-  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+  NR_mac_stats_t *stats = &UE->mac_stats;
 
-  LOG_D(NR_MAC, "ue %d, rnti 0x%04x, harq is waiting %d, round %d, frame %d %d, harq id %d\n", UE_id, ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
+  LOG_D(NR_MAC, "ue rnti 0x%04x, harq is waiting %d, round %d, frame %d %d, harq id %d\n", ra->rnti, harq->is_waiting, harq->round, frame, slot, current_harq_pid);
 
   if (harq->is_waiting == 0) {
     if (harq->round == 0) {
+
       if (stats->dl.errors == 0) {
-        LOG_A(NR_MAC, "(ue %i, rnti 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", UE_id, ra->rnti);
-        UE_info->active[UE_id] = true;
-        UE_info->Msg4_ACKed[UE_id] = true;
+        LOG_A(NR_MAC, "(UE RNTI 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", ra->rnti);
+        UE->Msg4_ACKed = true;
 
         // Pause scheduling according to:
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
         const NR_COMMON_channels_t *common_channels = &RC.nrmac[module_id]->common_channels[0];
         const NR_SIB1_t *sib1 = common_channels->sib1 ? common_channels->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-        const NR_ServingCellConfig_t *servingCellConfig = UE_info->CellGroup[UE_id] ? UE_info->CellGroup[UE_id]->spCellConfig->spCellConfigDedicated : NULL;
+        const NR_ServingCellConfig_t *servingCellConfig = UE->CellGroup ? UE->CellGroup->spCellConfig->spCellConfigDedicated : NULL;
         NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
                                                                    common_channels->ServingCellConfigCommon,
                                                                    sib1);
@@ -1991,9 +1997,9 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
             NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
 
         sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
-        LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %d with %d ms\n", frame, slot, UE_id, delay_ms);
+        LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frame, slot, UE->rnti, delay_ms);
       } else {
-        LOG_I(NR_MAC, "(ue %i, rnti 0x%04x) RA Procedure failed at Msg4!\n", UE_id, ra->rnti);
+        LOG_I(NR_MAC, "(ue rnti 0x%04x) RA Procedure failed at Msg4!\n", ra->rnti);
       }
 
       nr_clear_ra_proc(module_id, CC_id, frame, ra);
@@ -2001,7 +2007,7 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
         remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
       }
     } else {
-      LOG_D(NR_MAC, "(ue %i, rnti 0x%04x) Received Nack of RA-Msg4. Preparing retransmission!\n", UE_id, ra->rnti);
+      LOG_I(NR_MAC, "(UE %04x) Received Nack of RA-Msg4. Preparing retransmission!\n", ra->rnti);
       ra->Msg4_frame = (frame + 1) % 1024;
       ra->Msg4_slot = 1;
       ra->state = Msg4;
