@@ -789,15 +789,14 @@ void handle_nr_srs_measurements(const module_id_t module_id,
   }
 #endif
 
-  const int UE_id = find_nr_UE_id(module_id,rnti);
-  if (UE_id < 0) {
+  NR_UE_info_t* UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, rnti);
+  if (!UE) {
     LOG_W(NR_MAC, "Could not find UE for RNTI 0x%04x\n", rnti);
     return;
   }
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
-  NR_UE_info_t *UE_info = &nr_mac->UE_info;
-  NR_mac_stats_t *stats = &UE_info->mac_stats[UE_id];
+  NR_mac_stats_t *stats = &UE->mac_stats;
   stats->srs_wide_band_snr = (wide_band_snr>>1)-64;
 
   int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
