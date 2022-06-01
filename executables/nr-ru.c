@@ -719,10 +719,17 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
       AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
 
-      if(slot%(fp->slots_per_subframe/2))
-        siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
-      else
-        siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      if (fp->slots_per_subframe == 1) {
+        if (txsymb <= 7)
+          siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        else
+          siglen = 2 * (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 2) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      } else {
+        if(slot%(fp->slots_per_subframe/2))
+          siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        else
+          siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      }
 
       //+ ru->end_of_burst_delay;
       flags = 3; // end of burst
@@ -1049,11 +1056,12 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_gain[i] = ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-ru->att_rx;
     cfg->configFilename = rf_config_file;
-    LOG_I(PHY, "Channel %d: setting tx_gain offset %f, rx_gain offset %f, tx_freq %lu Hz, rx_freq %lu Hz\n",
+    LOG_I(PHY, "Channel %d: setting tx_gain offset %.0f, rx_gain offset %.0f, tx_freq %.0f Hz, rx_freq %.0f Hz, tune_offset %.0f Hz\n",
           i, cfg->tx_gain[i],
           cfg->rx_gain[i],
-          (unsigned long)cfg->tx_freq[i],
-          (unsigned long)cfg->rx_freq[i]);
+          cfg->tx_freq[i],
+          cfg->rx_freq[i],
+          cfg->tune_offset);
   }
 }
 
@@ -2050,6 +2058,8 @@ static void NRRCconfig_RU(void) {
         LOG_I(PHY,"Setting time source to internal\n");
         RC.ru[j]->openair0_cfg.time_source = internal;
       }
+
+      RC.ru[j]->openair0_cfg.tune_offset = get_softmodem_params()->tune_offset;
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
         if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {

@@ -434,6 +434,9 @@ typedef struct {
   uint8_t mcs;
   uint8_t ndi;
   uint8_t rv;
+  uint16_t targetCodeRate;
+  uint8_t qamModOrder;
+  uint32_t TBS;
   uint8_t tb2_mcs;
   uint8_t tb2_ndi;
   uint8_t tb2_rv;

@@ -113,18 +113,18 @@ uint8_t nr_ss_first_symb_idx_scs_120_120_mux3[4] = {4,8,2,6};
 uint8_t nr_max_number_of_candidates_per_slot[4] = {44, 36, 22, 20};
 uint8_t nr_max_number_of_cces_per_slot[4] = {56, 56, 48, 32};
 
-// CQI TABLES
+// CQI TABLES (10 times the value in 214 to adequately compare with R)
 // Table 1 (38.214 5.2.2.1-2)
-uint16_t cqi_table1[16][2] = {{0,0},{2,78},{2,120},{2,193},{2,308},{2,449},{2,602},{4,378},
-                              {4,490},{4,616},{6,466},{6,567},{6,666},{6,772},{6,873},{6,948}};
+uint16_t cqi_table1[16][2] = {{0,0},{2,780},{2,1200},{2,1930},{2,3080},{2,4490},{2,6020},{4,3780},
+                              {4,4900},{4,6160},{6,4660},{6,5670},{6,6660},{6,7720},{6,8730},{6,9480}};
 
 // Table 2 (38.214 5.2.2.1-3)
-uint16_t cqi_table2[16][2] = {{0,0},{2,78},{2,193},{2,449},{4,378},{4,490},{4,616},{6,466},
-                              {6,567},{6,666},{6,772},{6,873},{8,711},{8,797},{8,885},{8,948}};
+uint16_t cqi_table2[16][2] = {{0,0},{2,780},{2,1930},{2,4490},{4,3780},{4,4900},{4,6160},{6,4660},
+                              {6,5670},{6,6660},{6,7720},{6,8730},{8,7110},{8,7970},{8,8850},{8,9480}};
 
 // Table 2 (38.214 5.2.2.1-4)
-uint16_t cqi_table3[16][2] = {{0,0},{2,30},{2,50},{2,78},{2,120},{2,193},{2,308},{2,449},
-                              {2,602},{4,378},{4,490},{4,616},{6,466},{6,567},{6,666},{6,772}};
+uint16_t cqi_table3[16][2] = {{0,0},{2,300},{2,500},{2,780},{2,1200},{2,1930},{2,3080},{2,4490},
+                              {2,6020},{4,3780},{4,4900},{4,6160},{6,4660},{6,5670},{6,6660},{6,7720}};
 
 
 static inline uint8_t get_max_candidates(uint8_t scs) {
@@ -144,7 +144,6 @@ uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
   return (sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri + 1);
 
 }
-
 
 uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int layers,
@@ -169,51 +168,45 @@ uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
     AssertFatal(1==0,"More than 2 antenna ports not yet supported\n");
 }
 
-
-void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
-                NR_UE_sched_ctrl_t *sched_ctrl,
-                uint8_t *target_mcs,
-                uint8_t mcs_table_idx) {
-
-  if (sched_ctrl->set_mcs) {
-    // TODO for wideband case and multiple TB
-    int cqi_idx = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
-    uint16_t target_coderate,target_qm;
-    if (cqi_idx>0) {
-      int cqi_table = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.cqi_table;
-      if (cqi_table != mcs_table_idx)
-       LOG_W(NR_MAC,"Indices of MCS tables don't correspond yet, cri_ri_li_pmi_cqi_report.cqi_table %d, mcs_table_index %d\n",cqi_table,mcs_table_idx);
-      switch (cqi_table) {
-        case 0:
-          target_qm = cqi_table1[cqi_idx][0];
-          target_coderate = cqi_table1[cqi_idx][1];
-          break;
-        case 1:
-          target_qm = cqi_table2[cqi_idx][0];
-          target_coderate = cqi_table2[cqi_idx][1];
-          break;
-        case 2:
-          target_qm = cqi_table3[cqi_idx][0];
-          target_coderate = cqi_table3[cqi_idx][1];
-          break;
-        default:
-          AssertFatal(1==0,"Invalid cqi table index %d\n",cqi_table);
-      }
-      int max_mcs = 28;
-      int R,Qm;
-      if (mcs_table_idx == 1)
-        max_mcs = 27;
-      for (int i=0; i<=max_mcs; i++) {
-        R = nr_get_code_rate_dl(i, mcs_table_idx);
-        Qm = nr_get_Qm_dl(i, mcs_table_idx);
-        if ((Qm == target_qm) && (target_coderate <= R)) {
-          *target_mcs = i;
-          break;
-        }
-      }
-    }
-    sched_ctrl->set_mcs = false;
+uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx)
+{
+  if (cqi_idx <= 0) {
+    LOG_E(NR_MAC, "invalid cqi_idx %d, default to MCS 9\n", cqi_idx);
+    return 9;
   }
+
+  if (mcs_table != cqi_table) {
+    LOG_E(NR_MAC, "indices of CQI (%d) and MCS (%d) tables don't correspond yet\n", cqi_table, mcs_table);
+    return 9;
+  }
+
+  uint16_t target_coderate, target_qm;
+  switch (cqi_table) {
+    case 0:
+      target_qm = cqi_table1[cqi_idx][0];
+      target_coderate = cqi_table1[cqi_idx][1];
+      break;
+    case 1:
+      target_qm = cqi_table2[cqi_idx][0];
+      target_coderate = cqi_table2[cqi_idx][1];
+      break;
+    case 2:
+      target_qm = cqi_table3[cqi_idx][0];
+      target_coderate = cqi_table3[cqi_idx][1];
+      break;
+    default:
+      AssertFatal(1==0,"Invalid cqi table index %d\n",cqi_table);
+  }
+  const int max_mcs = mcs_table == 1 ? 27 : 28;
+  for (int i = 0; i <= max_mcs; i++) {
+    const int R = nr_get_code_rate_dl(i, mcs_table);
+    const int Qm = nr_get_Qm_dl(i, mcs_table);
+    if (Qm == target_qm && target_coderate <= R)
+      return i;
+  }
+
+  LOG_E(NR_MAC, "could not find maximum MCS from cqi_idx %d, default to 9\n", cqi_idx);
+  return 9;
 }
 
 void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
@@ -295,7 +288,7 @@ NR_PDSCH_TimeDomainResourceAllocationList_t *get_pdsch_TimeDomainAllocationList(
 }
 
 
-NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
+NR_ControlResourceSet_t *get_coreset(gNB_MAC_INST    *nrmac,
                                      NR_ServingCellConfigCommon_t *scc,
                                      void *bwp,
                                      NR_SearchSpace_t *ss,
@@ -305,7 +298,7 @@ NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) { // common search space
     NR_ControlResourceSet_t *coreset;
     if(coreset_id == 0) {
-      coreset =  RC.nrmac[module_idP]->sched_ctrlCommon->coreset; // this is coreset 0
+      coreset =  nrmac->sched_ctrlCommon->coreset; // this is coreset 0
     } else if (bwp) {
       coreset = ((NR_BWP_Downlink_t*)bwp)->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet;
     } else if (scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonControlResourceSet) {
@@ -614,11 +607,10 @@ void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
         bwpd->pdsch_Config &&
         bwpd->pdsch_Config->choice.setup &&
         bwpd->pdsch_Config->choice.setup->mcs_Table) {
-      if (*bwpd->pdsch_Config->choice.setup->mcs_Table == 0) {
+      if (*bwpd->pdsch_Config->choice.setup->mcs_Table == 0)
         ps->mcsTableIdx = 1;
-      } else {
+      else
         ps->mcsTableIdx = 2;
-      }
     } else {
       ps->mcsTableIdx = 0;
     }
@@ -635,9 +627,9 @@ void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
   ps->mapping_type = tdaList->list.array[tda]->mappingType;
   if (pdsch_Config) {
     if (ps->mapping_type == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB)
-      ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type == NULL ? 0 : 1;
+      ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type != NULL;
     else
-      ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1;
+      ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type != NULL;
   }
   else
     ps->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
@@ -766,6 +758,51 @@ void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
   ps->N_PRB_DMRS = ps->dmrs_config_type == 0
       ? num_dmrs_cdm_grps_no_data * 6
       : num_dmrs_cdm_grps_no_data * 4;
+}
+
+#define BLER_UPDATE_FRAME 10
+#define BLER_FILTER 0.9f
+int get_mcs_from_bler(const NR_bler_options_t *bler_options,
+                      const NR_mac_dir_stats_t *stats,
+                      NR_bler_stats_t *bler_stats,
+                      int max_mcs,
+                      frame_t frame)
+{
+  /* first call: everything is zero. Initialize to sensible default */
+  if (bler_stats->last_frame == 0 && bler_stats->mcs == 0) {
+    bler_stats->last_frame = frame;
+    bler_stats->mcs = 9;
+    bler_stats->bler = (bler_options->lower + bler_options->upper) / 2.0f;
+  }
+  int diff = frame - bler_stats->last_frame;
+  if (diff < 0) // wrap around
+    diff += 1024;
+
+  max_mcs = min(max_mcs, bler_options->max_mcs);
+  const uint8_t old_mcs = min(bler_stats->mcs, max_mcs);
+  if (diff < BLER_UPDATE_FRAME)
+    return old_mcs; // no update
+
+  // last update is longer than x frames ago
+  const int dtx = (int)(stats->rounds[0] - bler_stats->rounds[0]);
+  const int dretx = (int)(stats->rounds[1] - bler_stats->rounds[1]);
+  const float bler_window = dtx > 0 ? (float) dretx / dtx : bler_stats->bler;
+  bler_stats->bler = BLER_FILTER * bler_stats->bler + (1 - BLER_FILTER) * bler_window;
+
+  int new_mcs = old_mcs;
+  if (bler_stats->bler < bler_options->lower && old_mcs < max_mcs && dtx > 9)
+    new_mcs += 1;
+  else if ((bler_stats->bler > bler_options->upper && old_mcs > 6) // above threshold
+      || (dtx <= 3 && old_mcs > 9))                                // no activity
+    new_mcs -= 1;
+  // else we are within threshold boundaries
+
+  bler_stats->last_frame = frame;
+  bler_stats->mcs = new_mcs;
+  memcpy(bler_stats->rounds, stats->rounds, sizeof(stats->rounds));
+  LOG_D(MAC, "frame %4d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f)\n",
+        frame, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler);
+  return new_mcs;
 }
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
@@ -2097,10 +2134,11 @@ int extract_length(int startSymbolAndLength) {
 /*
  * Dump the UL or DL UE_info into LOG_T(MAC)
  */
-void dump_nr_list(NR_list_t *listP)
+void dump_nr_list(NR_UE_info_t **list)
 {
-  for (int j = listP->head; j >= 0; j = listP->next[j])
-    LOG_T(NR_MAC, "NR list node %d => %d\n", j, listP->next[j]);
+  UE_iterator(list, UE) {
+    LOG_T(NR_MAC, "NR list UEs rntis %04x\n", (*list)->rnti);
+  }
 }
 
 /*
@@ -2155,7 +2193,7 @@ void destroy_nr_list(NR_list_t *list)
 {
   free(list->next);
 }
-
+//------------------------------------------------------------------------------
 /*
  * Add an ID to an NR_list at the end, traversing the whole list. Note:
  * add_tail_nr_list() is a faster alternative, but this implementation ensures
@@ -2184,16 +2222,7 @@ void remove_nr_list(NR_list_t *listP, int id)
     prev = cur;
     cur = &listP->next[*cur];
   }
-  if (*cur == -1) {
-     cur = &listP->head;
-     prev=&listP->head;
-     while (*cur != -1 && *cur != id) {
-       LOG_I(NR_MAC,"remove_nr_list : id %d, *cur %d\n",id,*cur);
-       prev = cur;
-       cur = &listP->next[*cur];
-     }
-     AssertFatal(1==0, "ID %d not found in UE_list\n", id);
-  }
+  AssertFatal(*cur != -1, "ID %d not found in UE_list\n", id);
   int *next = &listP->next[*cur];
   *cur = listP->next[*cur];
   *next = -1;
@@ -2238,21 +2267,17 @@ void remove_front_nr_list(NR_list_t *listP)
     listP->tail = -1;
 }
 
-int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP)
+NR_UE_info_t * find_nr_UE(NR_UEs_t* UEs, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
-  int UE_id;
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_idP]->UE_info;
-
-  for (UE_id = 0; UE_id < MAX_MOBILES_PER_GNB; UE_id++) {
-    if (UE_info->active[UE_id]) {
-      if (UE_info->rnti[UE_id] == rntiP) {
-        return UE_id;
-      }
+  UE_iterator(UEs->list, UE) {
+    if (UE->rnti == rntiP) {
+      LOG_D(NR_MAC,"Search and found rnti: %04x\n", rntiP);
+      return UE;
     }
   }
-
-  return -1;
+  LOG_W(NR_MAC,"Search for not existing rnti: %04x\n", rntiP);
+  return NULL;
 }
 
 uint16_t get_Y(int cid, int slot, rnti_t rnti) {
@@ -2325,41 +2350,82 @@ int get_ul_bwp_id(const NR_ServingCellConfig_t *servingCellConfig)
     return 1;
 }
 
-//------------------------------------------------------------------------------
-int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup)
-{
-  gNB_MAC_INST *nr_mac = RC.nrmac[mod_idP];
-  NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[0].ServingCellConfigCommon;
-  NR_UE_info_t *UE_info = &nr_mac->UE_info;
-  LOG_I(NR_MAC, "[gNB %d] Adding UE with rnti 0x%04x (num_UEs %d)\n",
-        mod_idP,
-        rntiP,
-        UE_info->num_UEs);
-  dump_nr_list(&UE_info->list);
+/* hack data to remove UE in the phy */
+int rnti_to_remove[10];
+volatile int rnti_to_remove_count;
+pthread_mutex_t rnti_to_remove_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-    if (UE_info->active[i]) {
-      LOG_D(NR_MAC,"UE %x is active, skipping\n",rntiP);
-      continue;
+void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr)
+{
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  destroy_nr_list(&sched_ctrl->available_dl_harq);
+  destroy_nr_list(&sched_ctrl->feedback_dl_harq);
+  destroy_nr_list(&sched_ctrl->retrans_dl_harq);
+  destroy_nr_list(&sched_ctrl->available_ul_harq);
+  destroy_nr_list(&sched_ctrl->feedback_ul_harq);
+  destroy_nr_list(&sched_ctrl->retrans_ul_harq);
+  LOG_I(NR_MAC, "Remove NR rnti 0x%04x\n", UE->rnti);
+  const rnti_t rnti = UE->rnti;
+  free(UE);
+  /* hack to remove UE in the phy */
+  if (pthread_mutex_lock(&rnti_to_remove_mutex))
+    exit(1);
+  if (rnti_to_remove_count == 10)
+    exit(1);
+  rnti_to_remove[rnti_to_remove_count] = rnti;
+  LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
+  rnti_to_remove_count++;
+  if (pthread_mutex_unlock(&rnti_to_remove_mutex))
+    exit(1);
+
+  /* clear RA process(es?) associated to the UE */
+  for (int cc_id = 0; cc_id < NFAPI_CC_MAX; cc_id++) {
+    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+      NR_COMMON_channels_t *cc = &ccPtr[cc_id];
+      if (cc->ra[i].rnti == rnti) {
+        LOG_D(NR_MAC, "free RA process %d for rnti %04x\n", i, rnti);
+        /* is it enough? */
+        cc->ra[i].cfra  = false;
+        cc->ra[i].rnti  = 0;
+        cc->ra[i].crnti = 0;
+      }
     }
-    int UE_id = i;
-    UE_info->num_UEs++;
-    UE_info->active[UE_id] = true;
-    if (CellGroup) UE_info->Msg4_ACKed[UE_id] = true;
-    else           UE_info->Msg4_ACKed[UE_id] = false;
-    UE_info->rnti[UE_id] = rntiP;
-    UE_info->CellGroup[UE_id] = CellGroup;
-    add_nr_list(&UE_info->list, UE_id);
-    memset(&UE_info->mac_stats[UE_id], 0, sizeof(NR_mac_stats_t));
-    if (CellGroup &&
-        CellGroup->spCellConfig &&
-        CellGroup->spCellConfig->spCellConfigDedicated &&
-        CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
-        CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup)
-      compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, mod_idP);
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  }
+}
+
+//------------------------------------------------------------------------------
+NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup)
+{
+  NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[0].ServingCellConfigCommon;
+  NR_UEs_t *UE_info = &nr_mac->UE_info;
+  LOG_I(NR_MAC, "Adding UE with rnti 0x%04x\n",
+        rntiP);
+  dump_nr_list(UE_info->list);
+
+  // We will attach at the end, to mitigate race conditions
+  // This is not good, but we will fix it progressively
+  NR_UE_info_t *UE=calloc(1,sizeof(NR_UE_info_t));
+  if(!UE) {
+    LOG_E(NR_MAC,"want to add UE %04x but the fixed allocated size is full\n",rntiP);
+    return NULL;
+  }
+
+  UE->rnti = rntiP;
+  UE->CellGroup = CellGroup;
+
+  if (CellGroup)
+    UE->Msg4_ACKed = true;
+  else
+    UE->Msg4_ACKed = false;
+  if (CellGroup &&
+      CellGroup->spCellConfig &&
+      CellGroup->spCellConfig->spCellConfigDedicated &&
+      CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
+      CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup)
+    compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     memset(sched_ctrl, 0, sizeof(*sched_ctrl));
-    sched_ctrl->set_mcs = true;
+    sched_ctrl->dl_max_mcs = 28; /* do not limit MCS for individual UEs */
     sched_ctrl->set_pmi = false;
     sched_ctrl->ta_frame = 0;
     sched_ctrl->ta_update = 31;
@@ -2368,7 +2434,6 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->pucch_consecutive_dtx_cnt = 0;
     sched_ctrl->pusch_consecutive_dtx_cnt = 0;
     sched_ctrl->ul_failure                = 0;
-
     sched_ctrl->sched_srs.frame = -1;
     sched_ctrl->sched_srs.slot = -1;
     sched_ctrl->sched_srs.srs_scheduled = false;
@@ -2378,11 +2443,8 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->pusch_semi_static.time_domain_allocation = -1;
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup && CellGroup->spCellConfig ? CellGroup->spCellConfig->spCellConfigDedicated : NULL;
 
-    /* Set default BWPs */
-    const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig ? servingCellConfig->downlinkBWP_ToAddModList : NULL;
-    if (bwpList) AssertFatal(bwpList->list.count <= NR_MAX_NUM_BWP,
-			     "downlinkBWP_ToAddModList has %d BWP!\n",
-			     bwpList->list.count);
+  /* Set default BWPs */
+  const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig ? servingCellConfig->downlinkBWP_ToAddModList : NULL;
 
     const int bwp_id = servingCellConfig ? *servingCellConfig->firstActiveDownlinkBWP_Id : 0;
     sched_ctrl->active_bwp = bwpList && bwp_id > 0 ? bwpList->list.array[bwp_id - 1] : NULL;
@@ -2395,10 +2457,12 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
                                                scc,
                                                sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
                                                target_ss);
-    sched_ctrl->coreset = get_coreset(mod_idP, scc,
-                                      sched_ctrl->active_bwp ? (void*)sched_ctrl->active_bwp->bwp_Dedicated : NULL,
-                                      sched_ctrl->search_space, target_ss);
-    sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[mod_idP],
+  sched_ctrl->coreset = get_coreset(nr_mac,
+                                    scc,
+                                    sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
+                                      sched_ctrl->search_space,
+                                    target_ss);
+    sched_ctrl->sched_pdcch = set_pdcch_structure(nr_mac,
                                                   sched_ctrl->search_space,
                                                   sched_ctrl->coreset,
                                                   scc,
@@ -2407,16 +2471,18 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
     sched_ctrl->next_dl_bwp_id = -1;
     sched_ctrl->next_ul_bwp_id = -1;
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
-    if (ubwpList) AssertFatal(ubwpList->list.count <= NR_MAX_NUM_BWP,
+  if (ubwpList)
+    AssertFatal(ubwpList->list.count <= NR_MAX_NUM_BWP,
 			      "uplinkBWP_ToAddModList has %d BWP!\n",
 			      ubwpList->list.count);
     const int ul_bwp_id = servingCellConfig ? *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id : 0;
     sched_ctrl->active_ubwp = ubwpList && ul_bwp_id > 0 ? ubwpList->list.array[ul_bwp_id - 1] : NULL;
 
     /* get Number of HARQ processes for this UE */
-    if (servingCellConfig) AssertFatal(servingCellConfig->pdsch_ServingCellConfig->present == NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup,
-				       "no pdsch-ServingCellConfig found for UE %d\n",
-				       UE_id);
+  if (servingCellConfig)
+    AssertFatal(servingCellConfig->pdsch_ServingCellConfig->present == NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup,
+                "no pdsch-ServingCellConfig found for UE %04x\n",
+                UE->rnti);
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
     // pdsch == NULL in SA -> will create default (8) number of HARQ processes
     create_dl_harq_list(sched_ctrl, pdsch);
@@ -2427,20 +2493,26 @@ int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellG
       add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
     create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
     create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
-    LOG_D(NR_MAC, "[gNB %d] Add NR UE_id %d : rnti %x\n",
-          mod_idP,
-          UE_id,
-          rntiP);
-    dump_nr_list(&UE_info->list);
-    return (UE_id);
+
+  pthread_mutex_lock(&UE_info->mutex);
+  int i;
+  for(i=0; i<MAX_MOBILES_PER_GNB; i++)
+    if (UE_info->list[i] == NULL) {
+      UE_info->list[i] = UE;
+      break;
+    }
+  if (i == MAX_MOBILES_PER_GNB) {
+    LOG_E(NR_MAC,"Try to add UE %04x but the list is full\n", rntiP);
+    delete_nr_ue_data(UE, nr_mac->common_channels);
+    pthread_mutex_unlock(&UE_info->mutex);
+    return NULL;
   }
+  pthread_mutex_unlock(&UE_info->mutex);
 
-  // printf("MAC: cannot add new UE for rnti %x\n", rntiP);
-  LOG_E(NR_MAC, "error in add_new_ue(), could not find space in UE_info, Dumping UE list\n");
-  dump_nr_list(&UE_info->list);
-  return -1;
+  LOG_D(NR_MAC, "Add NR rnti %x\n", rntiP);
+  dump_nr_list(UE_info->list);
+  return (UE);
 }
-
 
 void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
                          const NR_PDSCH_ServingCellConfig_t *pdsch) {
@@ -2474,66 +2546,30 @@ void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
   }
 }
 
-/* hack data to remove UE in the phy */
-int rnti_to_remove[10];
-volatile int rnti_to_remove_count;
-pthread_mutex_t rnti_to_remove_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti)
+void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
 {
-  int UE_id;
-  int i;
-  int cc_id;
-  NR_UE_info_t *UE_info = &RC.nrmac[mod_id]->UE_info;
+ NR_UEs_t *UE_info = &nr_mac->UE_info;
+ pthread_mutex_lock(&UE_info->mutex);
+ UE_iterator(UE_info->list, UE) {
+   if (UE->rnti==rnti)
+     break;
+ }
 
-  for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+ if (!UE) {
+   LOG_W(NR_MAC,"Call to del rnti %04x, but not existing\n", rnti);
+   pthread_mutex_unlock(&UE_info->mutex);
+   return;
+ }
 
-    if (UE_info->active[i] != TRUE)
-      continue;
-    if (UE_info->rnti[i] != rnti)
-      continue;
+ NR_UE_info_t * newUEs[MAX_MOBILES_PER_GNB+1]={0};
+ int newListIdx=0;
+ for (int i=0; i<MAX_MOBILES_PER_GNB; i++)
+   if(UE_info->list[i] && UE_info->list[i]->rnti != rnti)
+     newUEs[newListIdx++]=UE_info->list[i];
+ memcpy(UE_info->list, newUEs, sizeof(UE_info->list));
+ pthread_mutex_unlock(&UE_info->mutex);
 
-    /* UE found, remove it */
-    UE_id = i;
-
-    UE_info->num_UEs--;
-    UE_info->active[UE_id] = FALSE;
-    UE_info->rnti[UE_id] = 0;
-    remove_nr_list(&UE_info->list, UE_id);
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-    destroy_nr_list(&sched_ctrl->available_dl_harq);
-    destroy_nr_list(&sched_ctrl->feedback_dl_harq);
-    destroy_nr_list(&sched_ctrl->retrans_dl_harq);
-    destroy_nr_list(&sched_ctrl->available_ul_harq);
-    destroy_nr_list(&sched_ctrl->feedback_ul_harq);
-    destroy_nr_list(&sched_ctrl->retrans_ul_harq);
-    LOG_I(NR_MAC, "[gNB %d] Remove NR UE_id %d: rnti 0x%04x\n",
-          mod_id,
-          UE_id,
-          rnti);
-
-    /* hack to remove UE in the phy */
-    if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
-    if (rnti_to_remove_count == 10) exit(1);
-    rnti_to_remove[rnti_to_remove_count] = rnti;
-    LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
-    rnti_to_remove_count++;
-    if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
-  }
-
-  /* clear RA process(es?) associated to the UE */
-  for (cc_id = 0; cc_id < NFAPI_CC_MAX; cc_id++) {
-    NR_COMMON_channels_t *cc = &RC.nrmac[mod_id]->common_channels[cc_id];
-    for (i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-      if (cc->ra[i].rnti == rnti) {
-        LOG_D(NR_MAC, "free RA process %d for rnti %d\n", i, rnti);
-        /* is it enough? */
-        cc->ra[i].cfra  = false;
-        cc->ra[i].rnti  = 0;
-        cc->ra[i].crnti = 0;
-      }
-    }
-  }
+ delete_nr_ue_data(UE, nr_mac->common_channels);
 }
 
 void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
@@ -2557,20 +2593,18 @@ uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
 }
 
 
-void get_pdsch_to_harq_feedback(int Mod_idP,
-                                int UE_id,
+void get_pdsch_to_harq_feedback( NR_UE_info_t * UE,
                                 int bwp_id,
                                 NR_SearchSpace__searchSpaceType_PR ss_type,
                                 int *max_fb_time,
                                 uint8_t *pdsch_to_harq_feedback) {
 
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
+  NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
   NR_BWP_DownlinkDedicated_t *bwpd=NULL;
   NR_BWP_UplinkDedicated_t *ubwpd=NULL;
 
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
-    AssertFatal(CellGroup!=NULL,"Cellgroup is not defined for UE_id %d\n",UE_id);
+    AssertFatal(CellGroup!=NULL,"Cellgroup is not defined for UE %04x\n",UE->rnti);
     AssertFatal(CellGroup->spCellConfig!=NULL,"Cellgroup->spCellConfig is null\n");
     AssertFatal(CellGroup->spCellConfig->spCellConfigDedicated!=NULL,"CellGroup->spCellConfig->spCellConfigDedicated is null\n");
   }
@@ -2654,20 +2688,19 @@ void nr_csirs_scheduling(int Mod_idP,
                          int n_slots_frame){
 
   int CC_id = 0;
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  NR_list_t *UE_list = &UE_info->list;
+  NR_UEs_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
   uint16_t *vrb_map = gNB_mac->common_channels[CC_id].vrb_map;
 
-  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
+  UE_info->sched_csirs = false;
 
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  UE_iterator(UE_info->list, UE) {
 
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     if (sched_ctrl->rrc_processing_timer > 0) {
       continue;
     }
-
-    NR_CellGroupConfig_t *CellGroup = UE_info->CellGroup[UE_id];
+    NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
 
     if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
 	      !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
@@ -2683,6 +2716,7 @@ void nr_csirs_scheduling(int Mod_idP,
       NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
                                     &sched_ctrl->active_bwp->bwp_Common->genericParameters :
                                     &gNB_mac->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
         NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
@@ -2691,6 +2725,7 @@ void nr_csirs_scheduling(int Mod_idP,
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
           LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
+          UE_info->sched_csirs = true;
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
           memset((void*)dl_tti_csirs_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -2858,17 +2893,17 @@ void nr_csirs_scheduling(int Mod_idP,
 void nr_mac_update_timers(module_id_t module_id,
                           frame_t frame,
                           sub_frame_t slot) {
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  const NR_list_t *UE_list = &UE_info->list;
-  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
+
+  UE_iterator(UE_info->list, UE) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     if (sched_ctrl->rrc_processing_timer > 0) {
       sched_ctrl->rrc_processing_timer--;
       if (sched_ctrl->rrc_processing_timer == 0) {
-        LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %d\n", frame, slot, UE_id);
+        LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %04x\n", frame, slot, UE->rnti);
 
         const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-        NR_CellGroupConfig_t *cg = UE_info->CellGroup[UE_id];
+        NR_CellGroupConfig_t *cg = UE->CellGroup;
         NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
         const NR_ServingCellConfig_t *spCellConfigDedicated = cg && cg->spCellConfig ? cg->spCellConfig->spCellConfigDedicated : NULL;
 
@@ -2894,12 +2929,11 @@ void nr_mac_update_timers(module_id_t module_id,
                                            cg->spCellConfig &&
                                            cg->spCellConfig->spCellConfigDedicated ?
                                            cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-        int **preferred_dl_tda = RC.nrmac[module_id]->preferred_dl_tda;
+
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
         const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
-        const int tda = bwp && preferred_dl_tda[bwp->bwp_Id][slot] >= 0 ?
-                        preferred_dl_tda[bwp->bwp_Id][slot] : (ps->time_domain_allocation >= 0 ? ps->time_domain_allocation : 0);
+        const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
 
         nr_set_pdsch_semi_static(sib1,
                                  scc,
@@ -2917,14 +2951,13 @@ void nr_mac_update_timers(module_id_t module_id,
                                           cg->spCellConfig->spCellConfigDedicated &&
                                           cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
                                           cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
-        int **preferred_ul_tda = RC.nrmac[module_id]->preferred_ul_tda;
+
         NR_pusch_semi_static_t *ups = &sched_ctrl->pusch_semi_static;
 
         int dci_format = get_dci_format(sched_ctrl);
         const uint8_t num_dmrs_cdm_grps_no_data = (ubwp || ubwpd) ? 1 : 2;
         const uint8_t nrOfLayers = 1;
-        const int utda = ubwp && preferred_ul_tda[ubwp->bwp_Id][slot] >= 0 ?
-            preferred_ul_tda[ubwp->bwp_Id][slot] : (ups->time_domain_allocation >= 0 ? ups->time_domain_allocation : 0);
+        const int utda = get_ul_tda(RC.nrmac[module_id], scc, slot);
 
         nr_set_pusch_semi_static(sib1,
                                  scc,
@@ -2944,327 +2977,22 @@ void schedule_nr_bwp_switch(module_id_t module_id,
                             frame_t frame,
                             sub_frame_t slot) {
 
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  const NR_list_t *UE_list = &UE_info->list;
+  NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
   // TODO: Implementation of a algorithm to perform:
   //  - DL BWP selection:     sched_ctrl->next_dl_bwp_id = dl_bwp_id
   //  - UL BWP selection:     sched_ctrl->next_ul_bwp_id = ul_bwp_id
 
-  for (int UE_id = UE_list->head; UE_id >= 0; UE_id = UE_list->next[UE_id]) {
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  UE_iterator(UE_info->list, UE) {
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     if (sched_ctrl->rrc_processing_timer == 0 &&
-        UE_info->Msg4_ACKed[UE_id] == true &&
+        UE->Msg4_ACKed &&
         ((sched_ctrl->next_dl_bwp_id >= 0 && sched_ctrl->active_bwp && sched_ctrl->active_bwp->bwp_Id != sched_ctrl->next_dl_bwp_id) ||
         (sched_ctrl->next_ul_bwp_id >= 0 && sched_ctrl->active_ubwp && sched_ctrl->active_ubwp->bwp_Id != sched_ctrl->next_ul_bwp_id))) {
 
-      LOG_W(NR_MAC,"(%d.%d) [UE_id %d] Schedule BWP switch from dl_bwp_id %ld to %ld and from ul_bwp_id %ld to %ld\n",
-            frame, slot, UE_id, sched_ctrl->active_bwp->bwp_Id, sched_ctrl->next_dl_bwp_id, sched_ctrl->active_ubwp->bwp_Id, sched_ctrl->next_ul_bwp_id);
-      nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE_info->rnti[UE_id], sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
+      LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from dl_bwp_id %ld to %ld and from ul_bwp_id %ld to %ld\n",
+            frame, slot, UE->rnti, sched_ctrl->active_bwp->bwp_Id, sched_ctrl->next_dl_bwp_id, sched_ctrl->active_ubwp->bwp_Id, sched_ctrl->next_ul_bwp_id);
+      nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
     }
   }
 }
-
-/*void fill_nfapi_coresets_and_searchspaces(NR_CellGroupConfig_t *cg,
-					  nfapi_nr_coreset_t *coreset,
-					  nfapi_nr_search_space_t *search_space) {
-
-  nfapi_nr_coreset_t *cs;
-  nfapi_nr_search_space_t *ss;
-  NR_ServingCellConfigCommon_t *scc=cg->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-  AssertFatal(cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count == 1,
-	      "downlinkBWP_ToAddModList has %d BWP!\n",
-	      cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count);
-
-  NR_BWP_Downlink_t *bwp=cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
-  struct NR_PDCCH_Config__controlResourceSetToAddModList *coreset_list = bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList;
-  AssertFatal(coreset_list->list.count>0,
-	      "cs list has 0 elements\n");
-  for (int i=0;i<coreset_list->list.count;i++) {
-    NR_ControlResourceSet_t *coreset_i=coreset_list->list.array[i];
-    cs = coreset + coreset_i->controlResourceSetId;
-      
-    cs->coreset_id = coreset_i->controlResourceSetId;
-    AssertFatal(coreset_i->frequencyDomainResources.size <=8 && coreset_i->frequencyDomainResources.size>0,
-		"coreset_i->frequencyDomainResources.size=%d\n",
-		(int)coreset_i->frequencyDomainResources.size);
-  
-    for (int f=0;f<coreset_i->frequencyDomainResources.size;f++)
-      ((uint8_t*)&cs->frequency_domain_resources)[coreset_i->frequencyDomainResources.size-1-f]=coreset_i->frequencyDomainResources.buf[f];
-    
-    cs->frequency_domain_resources>>=coreset_i->frequencyDomainResources.bits_unused;
-    
-    cs->duration = coreset_i->duration;
-    // Need to add information about TCI_StateIDs
-
-    if (coreset_i->cce_REG_MappingType.present == NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved)
-      cs->cce_reg_mapping_type = NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
-    else {
-      cs->cce_reg_mapping_type = NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED;
-
-      if (coreset_i->cce_REG_MappingType.choice.interleaved->reg_BundleSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__reg_BundleSize_n6)
-	cs->reg_bundle_size = 6;
-      else cs->reg_bundle_size = 2+coreset_i->cce_REG_MappingType.choice.interleaved->reg_BundleSize;
-
-      if (coreset_i->cce_REG_MappingType.choice.interleaved->interleaverSize==NR_ControlResourceSet__cce_REG_MappingType__interleaved__interleaverSize_n6)
-	cs->interleaver_size = 6;
-      else cs->interleaver_size = 2+coreset_i->cce_REG_MappingType.choice.interleaved->interleaverSize;
-
-      if (coreset_i->cce_REG_MappingType.choice.interleaved->shiftIndex)
-	cs->shift_index = *coreset_i->cce_REG_MappingType.choice.interleaved->shiftIndex;
-      else cs->shift_index = 0;
-    }
-    
-    if (coreset_i->precoderGranularity == NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle)
-      cs->precoder_granularity = NFAPI_NR_CSET_SAME_AS_REG_BUNDLE;
-    else cs->precoder_granularity = NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS;
-    if (coreset_i->tci_PresentInDCI == NULL) cs->tci_present_in_dci = 0;
-    else                                     cs->tci_present_in_dci = 1;
-
-    if (coreset_i->tci_PresentInDCI == NULL) cs->dmrs_scrambling_id = 0;
-    else                                     cs->dmrs_scrambling_id = *coreset_i->tci_PresentInDCI;
-  }
-
-  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-  AssertFatal(commonSearchSpaceList->list.count>0,
-	      "common SearchSpace list has 0 elements\n");
-  // Common searchspace list
-  for (int i=0;i<commonSearchSpaceList->list.count;i++) {
-    NR_SearchSpace_t *searchSpace_i=commonSearchSpaceList->list.array[i];  
-    ss=search_space + searchSpace_i->searchSpaceId;
-    if (searchSpace_i->controlResourceSetId) ss->coreset_id = *searchSpace_i->controlResourceSetId;
-    switch(searchSpace_i->monitoringSlotPeriodicityAndOffset->present) {
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL1;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL2;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl2;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL4;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl4;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL5;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl5;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL8;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl8;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL10;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl10;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL16;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl16;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL20;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl20;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL40;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl40;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL80;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl80;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL160;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl160;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL320;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl320;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL640;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl640;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL1280;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl1280;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL2560;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl2560;
-      break;
-    default:
-      AssertFatal(1==0,"Shouldn't get here\n");
-      break;    
-    }
-    if (searchSpace_i->duration) ss->duration = *searchSpace_i->duration;
-    else                         ss->duration = 1;
-
-
-    AssertFatal(searchSpace_i->monitoringSymbolsWithinSlot->size == 2,
-		"ss_i->monitoringSymbolsWithinSlot = %d != 2\n",
-		(int)searchSpace_i->monitoringSymbolsWithinSlot->size);
-    ((uint8_t*)&ss->monitoring_symbols_in_slot)[1] = searchSpace_i->monitoringSymbolsWithinSlot->buf[0];
-    ((uint8_t*)&ss->monitoring_symbols_in_slot)[0] = searchSpace_i->monitoringSymbolsWithinSlot->buf[1];
-
-    AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",(int)searchSpace_i->searchSpaceId);
-    if (searchSpace_i->nrofCandidates->aggregationLevel1 == NR_SearchSpace__nrofCandidates__aggregationLevel1_n8)
-      ss->number_of_candidates[0] = 8;
-    else ss->number_of_candidates[0] = searchSpace_i->nrofCandidates->aggregationLevel1;
-    if (searchSpace_i->nrofCandidates->aggregationLevel2 == NR_SearchSpace__nrofCandidates__aggregationLevel2_n8)
-      ss->number_of_candidates[1] = 8;
-    else ss->number_of_candidates[1] = searchSpace_i->nrofCandidates->aggregationLevel2;
-    if (searchSpace_i->nrofCandidates->aggregationLevel4 == NR_SearchSpace__nrofCandidates__aggregationLevel4_n8)
-      ss->number_of_candidates[2] = 8;
-    else ss->number_of_candidates[2] = searchSpace_i->nrofCandidates->aggregationLevel4;
-    if (searchSpace_i->nrofCandidates->aggregationLevel8 == NR_SearchSpace__nrofCandidates__aggregationLevel8_n8)
-      ss->number_of_candidates[3] = 8;
-    else ss->number_of_candidates[3] = searchSpace_i->nrofCandidates->aggregationLevel8;
-    if (searchSpace_i->nrofCandidates->aggregationLevel16 == NR_SearchSpace__nrofCandidates__aggregationLevel16_n8)
-      ss->number_of_candidates[4] = 8;
-    else ss->number_of_candidates[4] = searchSpace_i->nrofCandidates->aggregationLevel16;      
-
-    AssertFatal(searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_common,
-		"searchspace %d is not common\n",(int)searchSpace_i->searchSpaceId);
-    AssertFatal(searchSpace_i->searchSpaceType->choice.common!=NULL,
-		"searchspace %d common is null\n",(int)searchSpace_i->searchSpaceId);
-    ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_COMMON;
-    if (searchSpace_i->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0)
-      ss->css_formats_0_0_and_1_0 = 1;
-    if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_0) {
-      ss->css_format_2_0 = 1;
-      // add aggregation info
-    }
-    if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_1)
-      ss->css_format_2_1 = 1;
-    if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_2)
-      ss->css_format_2_2 = 1;
-    if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_3)
-      ss->css_format_2_3 = 1;
-  }
-
-  struct NR_PDCCH_Config__searchSpacesToAddModList *dedicatedSearchSpaceList = bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList;
-  AssertFatal(dedicatedSearchSpaceList->list.count>0,
-	      "Dedicated Search Space list has 0 elements\n");
-  // Dedicated searchspace list
-  for (int i=0;i<dedicatedSearchSpaceList->list.count;i++) {
-    NR_SearchSpace_t *searchSpace_i=dedicatedSearchSpaceList->list.array[i];  
-    ss=search_space + searchSpace_i->searchSpaceId;
-    ss->search_space_id = searchSpace_i->searchSpaceId;
-    if (searchSpace_i->controlResourceSetId) ss->coreset_id = *searchSpace_i->controlResourceSetId;
-    switch(searchSpace_i->monitoringSlotPeriodicityAndOffset->present) {
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL1;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL2;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl2;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL4;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl4;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL5;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl5;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL8;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl8;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL10;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl10;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL16;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl16;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL20;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl20;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL40;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl40;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL80;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl80;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL160;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl160;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL320;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl320;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL640;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl640;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL1280;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl1280;
-      break;
-    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560:
-      ss->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL2560;
-      ss->slot_monitoring_offset = searchSpace_i->monitoringSlotPeriodicityAndOffset->choice.sl2560;
-      break;
-    default:
-      AssertFatal(1==0,"Shouldn't get here\n");
-      break;    
-    }
-    if (searchSpace_i->duration) ss->duration = *searchSpace_i->duration;
-    else                         ss->duration = 1;
-    
-    
-    AssertFatal(searchSpace_i->monitoringSymbolsWithinSlot->size == 2,
-		"ss_i->monitoringSymbolsWithinSlot = %d != 2\n",
-		(int)searchSpace_i->monitoringSymbolsWithinSlot->size);
-    ((uint8_t*)&ss->monitoring_symbols_in_slot)[1] = searchSpace_i->monitoringSymbolsWithinSlot->buf[0];
-    ((uint8_t*)&ss->monitoring_symbols_in_slot)[0] = searchSpace_i->monitoringSymbolsWithinSlot->buf[1];
-    
-    AssertFatal(searchSpace_i->nrofCandidates!=NULL,"searchSpace_%d->nrofCandidates is null\n",(int)searchSpace_i->searchSpaceId);
-    if (searchSpace_i->nrofCandidates->aggregationLevel1 == NR_SearchSpace__nrofCandidates__aggregationLevel1_n8)
-      ss->number_of_candidates[0] = 8;
-    else ss->number_of_candidates[0] = searchSpace_i->nrofCandidates->aggregationLevel1;
-    if (searchSpace_i->nrofCandidates->aggregationLevel2 == NR_SearchSpace__nrofCandidates__aggregationLevel2_n8)
-      ss->number_of_candidates[1] = 8;
-    else ss->number_of_candidates[1] = searchSpace_i->nrofCandidates->aggregationLevel2;
-    if (searchSpace_i->nrofCandidates->aggregationLevel4 == NR_SearchSpace__nrofCandidates__aggregationLevel4_n8)
-      ss->number_of_candidates[2] = 8;
-    else ss->number_of_candidates[2] = searchSpace_i->nrofCandidates->aggregationLevel4;
-    if (searchSpace_i->nrofCandidates->aggregationLevel8 == NR_SearchSpace__nrofCandidates__aggregationLevel8_n8)
-      ss->number_of_candidates[3] = 8;
-    else ss->number_of_candidates[3] = searchSpace_i->nrofCandidates->aggregationLevel8;
-    if (searchSpace_i->nrofCandidates->aggregationLevel16 == NR_SearchSpace__nrofCandidates__aggregationLevel16_n8)
-      ss->number_of_candidates[4] = 8;
-    else ss->number_of_candidates[4] = searchSpace_i->nrofCandidates->aggregationLevel16;      
-    
-    if (searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_ue_Specific && searchSpace_i->searchSpaceType->choice.ue_Specific!=NULL) {
-      
-      ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC;
-      
-      ss->uss_dci_formats = searchSpace_i->searchSpaceType->choice.ue_Specific-> dci_Formats;
-      
-    } else if (searchSpace_i->searchSpaceType->present==NR_SearchSpace__searchSpaceType_PR_common && searchSpace_i->searchSpaceType->choice.common!=NULL) {
-      ss->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_COMMON;
-      
-      if (searchSpace_i->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0)
-	ss->css_formats_0_0_and_1_0 = 1;
-      if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_0) {
-	ss->css_format_2_0 = 1;
-	// add aggregation info
-      }
-      if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_1)
-	ss->css_format_2_1 = 1;
-      if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_2)
-	ss->css_format_2_2 = 1;
-      if (searchSpace_i->searchSpaceType->choice.common->dci_Format2_3)
-	ss->css_format_2_3 = 1;
-    }
-  }
-}
-*/

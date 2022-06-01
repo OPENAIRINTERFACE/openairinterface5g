@@ -190,7 +190,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 	      pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
 
   NR_gNB_UCI_STATS_t *uci_stats=NULL;
-  NR_gNB_UCI_STATS_t *first_uci_stats=NULL;
+  NR_gNB_UCI_STATS_t *first_uci_stats = gNB->uci_stats;
   for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++)
      if (gNB->uci_stats[i].rnti == pucch_pdu->rnti) {
         uci_stats = &gNB->uci_stats[i];

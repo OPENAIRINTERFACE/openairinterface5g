@@ -426,7 +426,8 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
 
   rrc_rlc_remove_ue(&ctxt);
 
-  mac_remove_nr_ue(rrc->module_id, rnti);
+  // WHAT A RACE CONDITION
+  mac_remove_nr_ue(RC.nrmac[rrc->module_id], rnti);
   gtpv1u_enb_delete_tunnel_req_t tmp={0};
   tmp.rnti=rnti;
   tmp.from_gnb=1;

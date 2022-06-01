@@ -69,7 +69,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   nfapi_nr_pdu_t        *TX_req;
 
   uint16_t rnti = 0x1234;
-  
   //  int time_domain_assignment,k0;
 
   NR_ServingCellConfigCommon_t *scc=cc->ServingCellConfigCommon;
@@ -152,8 +151,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 	NrOfSymbols = NrOfSymbols_tmp;
         StartSymbolIndex = StartSymbolIndex_tmp;
         mappingtype = mappingtype_tmp;
-	//	k0 = *scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list.array[i]->k0;
-	//	time_domain_assignment = i;
       }
     }
     AssertFatal(StartSymbolIndex>=0,"StartSymbolIndex is negative\n");
@@ -165,78 +162,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                                     StartSymbolIndex,
                                                     mappingtype, 1);
 
-    /*
-    AssertFatal(k0==0,"k0 is not zero for Initial DL BWP TimeDomain Alloc\n");
-    nr_configure_css_dci_initial(pdcch_pdu_rel15,
-				 scs, 
-				 scs, 
-				 FR, 
-				 0, 
-				 0, 
-				 0,
-				 sfn_sf, slotP,
-				 slots_per_frame,
-				 dlBWP_carrier_bandwidth);
-    
-    
-    pdu_rel15->frequency_domain_assignment = PRBalloc_to_locationandbandwidth0(pdsch_pdu_rel15->rbSize, 
-                                                                               pdsch_pdu_rel15->rbStart, 
-                                                                               dlBWP_carrier_bandwidth);
-    pdu_rel15->time_domain_assignment = time_domain_assignment;
-    
-    pdu_rel15->vrb_to_prb_mapping = 1;
-    pdu_rel15->mcs = 9;
-    pdu_rel15->tb_scaling = 1;
-    
-    pdu_rel15->ra_preamble_index = 25;
-    pdu_rel15->format_indicator = 1;
-    pdu_rel15->ndi = 1;
-    pdu_rel15->rv = 0;
-    pdu_rel15->harq_pid = 0;
-    pdu_rel15->dai = 2;
-    pdu_rel15->tpc = 2;
-    pdu_rel15->pucch_resource_indicator = 7;
-    pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
-    
-    LOG_D(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
-	  pdu_rel15->frequency_domain_assignment,
-	  pdu_rel15->time_domain_assignment,
-	  pdu_rel15->vrb_to_prb_mapping,
-	  pdu_rel15->mcs,
-	  pdu_rel15->tb_scaling,
-	  pdu_rel15->ndi,
-	  pdu_rel15->rv);
-    
-    params_rel15->rnti = rnti;
-    params_rel15->rnti_type = NFAPI_NR_RNTI_C;
-    params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
-    //params_rel15->aggregation_level = 1;
-    LOG_D(MAC, "DCI type 1 params: rnti %x, rnti_type %d, dci_format %d\n \
-                coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
-                ss params : nb_ss_sets_per_slot %d, first symb %d, nb_slots %d, sfn_mod2 %d, first slot %d\n",
-	  params_rel15->rnti,
-	  params_rel15->rnti_type,
-	  params_rel15->dci_format,
-	  params_rel15->mux_pattern,
-	  params_rel15->n_rb,
-	  params_rel15->n_symb,
-	  params_rel15->rb_offset,
-	  params_rel15->nb_ss_sets_per_slot,
-	  params_rel15->first_symbol,
-	  params_rel15->nb_slots,
-	  params_rel15->sfn_mod2,
-	  params_rel15->first_slot);
-    nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, dl_tti_dci_pdu->dci_dl_pdu,0);
-    LOG_D(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
-	  pdsch_pdu_rel15->rbStart,
-	  pdsch_pdu_rel15->rbSize,
-	  pdsch_pdu_rel15->StartSymbolIndex,
-	  pdsch_pdu_rel15->NrOfSymbols,
-	  pdsch_pdu_rel15->nrOfLayers,
-	  pdsch_pdu_rel15->NrOfCodewords,
-	  pdsch_pdu_rel15->mcsIndex[0]);
-    */
-    
     nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+=2;
     
     TX_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
@@ -266,20 +191,16 @@ void nr_preprocessor_phytest(module_id_t module_id,
 {
   if (!is_xlsch_in_slot(dlsch_slot_bitmap, slot))
     return;
-  NR_UE_info_t *UE_info = &RC.nrmac[module_id]->UE_info;
+  NR_UE_info_t *UE = RC.nrmac[module_id]->UE_info.list[0];
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
-  const int UE_id = 0;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   const int CC_id = 0;
-  AssertFatal(UE_info->active[UE_id],
-              "%s(): expected UE %d to be active\n",
-              __func__,
-              UE_id);
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const int tda = sched_ctrl->active_bwp ? RC.nrmac[module_id]->preferred_dl_tda[sched_ctrl->active_bwp->bwp_Id][slot] : 1;
+
+  const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
-    nr_set_pdsch_semi_static(NULL, scc, UE_info->CellGroup[UE_id], sched_ctrl->active_bwp, NULL, tda, target_dl_Nl, sched_ctrl, ps);
+    nr_set_pdsch_semi_static(NULL, scc, UE->CellGroup, sched_ctrl->active_bwp, NULL, tda, target_dl_Nl,sched_ctrl , ps);
 
   /* find largest unallocated chunk */
   const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
@@ -315,7 +236,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_ctrl->dl_lc_num = 1;
   const int lcid = DL_SCH_LCID_DTCH;
   sched_ctrl->dl_lc_ids[sched_ctrl->dl_lc_num - 1] = lcid;
-  const uint16_t rnti = UE_info->rnti[UE_id];
+  const uint16_t rnti = UE->rnti;
   /* update sched_ctrl->num_total_bytes so that postprocessor schedules data,
    * if available */
   sched_ctrl->rlc_status[lcid] = mac_rlc_status_ind(module_id,
@@ -342,7 +263,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE_info->rnti[UE_id]);
+  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
 
   int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
                                       CC_id,
@@ -353,17 +274,16 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                       Y);
 
   AssertFatal(CCEIndex >= 0,
-              "%s(): could not find CCE for UE %d\n",
+              "%s(): could not find CCE for UE %04x\n",
               __func__,
-              UE_id);
+              UE->rnti);
 
   int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, NULL, CCEIndex);
-  const int alloc = nr_acknack_scheduling(module_id, UE_id, frame, slot, r_pucch, 0);
+  const int alloc = nr_acknack_scheduling(module_id, UE, frame, slot, r_pucch, 0);
   if (alloc < 0) {
     LOG_D(MAC,
-          "%s(): could not find PUCCH for UE %d/%04x@%d.%d\n",
+          "%s(): could not find PUCCH for UE %04x@%d.%d\n",
           __func__,
-          UE_id,
           rnti,
           frame,
           slot);
@@ -421,32 +341,36 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-  NR_UE_info_t *UE_info = &nr_mac->UE_info;
+  NR_UE_info_t *UE = nr_mac->UE_info.list[0];
 
-  AssertFatal(UE_info->num_UEs <= 1,
-              "%s() cannot handle more than one UE, but found %d\n",
-              __func__,
-              UE_info->num_UEs);
-  if (UE_info->num_UEs == 0)
+  AssertFatal(nr_mac->UE_info.list[1] == NULL,
+              "cannot handle more than one UE\n");
+  if (UE == NULL)
     return false;
 
-  const int UE_id = 0;
   const int CC_id = 0;
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
-  const int tda = sched_ctrl->active_ubwp ? RC.nrmac[module_id]->preferred_ul_tda[sched_ctrl->active_ubwp->bwp_Id][slot] : 1;
-  if (tda < 0)
-    return false;
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
     sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  const int temp_tda = get_ul_tda(nr_mac, scc, slot);
+  if (temp_tda < 0)
+    return false;
+  AssertFatal(temp_tda < tdaList->list.count,
+              "time domain assignment %d >= %d\n",
+              temp_tda,
+              tdaList->list.count);
+  int K2 = get_K2(scc,NULL,sched_ctrl->active_ubwp, temp_tda, mu);
+  const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
+  const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
+  const int tda = get_ul_tda(nr_mac, scc, sched_slot);
+  if (tda < 0)
+    return false;
   AssertFatal(tda < tdaList->list.count,
               "time domain assignment %d >= %d\n",
               tda,
               tdaList->list.count);
-  int K2 = get_K2(scc,NULL,sched_ctrl->active_ubwp, tda, mu);
-  const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
-  const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   /* check if slot is UL, and that slot is 8 (assuming K2=6 because of UE
    * limitations).  Note that if K2 or the TDD configuration is changed, below
    * conditions might exclude each other and never be true */
@@ -515,7 +439,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
   const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE_info->rnti[UE_id]);
+  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
 
   int CCEIndex = find_pdcch_candidate(nr_mac,
                                       CC_id,

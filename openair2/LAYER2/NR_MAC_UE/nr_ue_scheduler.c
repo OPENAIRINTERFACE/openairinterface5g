@@ -840,12 +840,14 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                                mappingtype, add_pos, dmrslength,
                                pusch_config_pdu->start_symbol_index,
                                mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    if ((mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled))
+    if ((mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled)) {
       if (*dci_format != NR_UL_DCI_FORMAT_0_1) {
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
       }
-    else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled))
+    } else if (*dci_format == NR_UL_DCI_FORMAT_0_0 ||
+	       (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled)) {
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
+    }
 
     // Num PRB Overhead from PUSCH-ServingCellConfig
     if (mac->cg &&
@@ -891,7 +893,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     rnti_types[rnti_type]);
 
   pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
-  pusch_config_pdu->target_code_rate = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+  uint16_t R = nr_get_code_rate_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
+  pusch_config_pdu->target_code_rate = R;
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
 
   if (pusch_config_pdu->target_code_rate == 0 || pusch_config_pdu->qam_mod_order == 0) {
@@ -910,14 +913,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   // Compute TBS
   pusch_config_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_config_pdu->qam_mod_order,
-                                                        pusch_config_pdu->target_code_rate,
+                                                        R,
                                                         pusch_config_pdu->rb_size,
                                                         pusch_config_pdu->nr_of_symbols,
                                                         nb_dmrs_re_per_rb*number_dmrs_symbols,
                                                         N_PRB_oh,
                                                         0, // TBR to verify tb scaling
-                                                        pusch_config_pdu->nrOfLayers)/8;
-
+                                                        pusch_config_pdu->nrOfLayers)>>3;
   return 0;
 
 }
@@ -1087,7 +1089,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         LOG_D(NR_MAC,"1# scheduled_response transmitted, %d, %d\n", rx_frame, rx_slot);
-        mac->if_module->scheduled_response(&scheduled_response);
+      mac->if_module->scheduled_response(&scheduled_response);
     }
     else {
       // this is for Msg2/Msg4
