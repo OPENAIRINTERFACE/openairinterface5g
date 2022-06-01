@@ -2418,7 +2418,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
       CellGroup->spCellConfig->spCellConfigDedicated &&
       CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
       CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
-    compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
+    compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE->csi_report_template);
   }
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
