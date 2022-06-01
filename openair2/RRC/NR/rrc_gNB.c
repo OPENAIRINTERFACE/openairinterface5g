@@ -1643,7 +1643,7 @@ rrc_gNB_generate_RRCReestablishment(
           ue_context->Srb0.Tx_buffer.payload_size);
 #if(0)
     /* TODO : It may be needed if gNB goes into full stack working. */
-    UE_id = find_nr_UE_id(module_id, rnti);
+    UE = find_nr_UE(module_id, rnti);
     if (UE_id != -1) {
       /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
       RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
@@ -3549,6 +3549,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   FILE *fd=NULL;//fopen("nrRRCstats.log","w");
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti = ue_context_p->ue_id_rnti;
+    gNB_MAC_INST *nrmac=RC.nrmac[ctxt_pP->module_id]; //WHAT A BEAUTIFULL RACE CONDITION !!!
 
     if (fd) {
       if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
@@ -3588,7 +3589,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 
         // Remove here the MAC and RRC context when RRC is not connected or gNB is not connected to CN5G
         if(ue_context_p->ue_context.StatusRrc < NR_RRC_CONNECTED || ue_context_p->ue_context.gNB_ue_ngap_id == 0) {
-          mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
+          mac_remove_nr_ue(nrmac, ctxt_pP->rnti);
           rrc_rlc_remove_ue(ctxt_pP);
           pdcp_remove_UE(ctxt_pP);
 
@@ -3612,7 +3613,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
               ue_context_p->ue_context.rnti);
         ue_context_p->ue_context.ue_release_timer_rrc = 0;
 
-        mac_remove_nr_ue(ctxt_pP->module_id, ctxt_pP->rnti);
+        mac_remove_nr_ue(nrmac, ctxt_pP->rnti);
         rrc_rlc_remove_ue(ctxt_pP);
         pdcp_remove_UE(ctxt_pP);
         newGtpuDeleteAllTunnels(ctxt_pP->instance, ctxt_pP->rnti);
