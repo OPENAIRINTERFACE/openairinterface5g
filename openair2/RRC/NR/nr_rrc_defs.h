@@ -101,6 +101,12 @@ typedef struct nr_uid_linear_allocator_s {
 #define NR_RRC_RECONFIGURATION_DELAY_MS 10
 #define NR_RRC_BWP_SWITCHING_DELAY_MS   6
 
+// 3GPP TS 38.133 - Section 8 - Table 8.2.1.2.7-2: Parameters which cause interruption other than SCS
+// This table was recently added to 3GPP. It shows that changing the parameters locationAndBandwidth, nrofSRS-Ports or
+// maxMIMO-Layers-r16 causes an interruption. This parameter is not yet being used in code, but has been placed here
+// for future reference.
+#define NR_OF_SRS_PORTS_SWITCHING_DELAY_MS 30
+
 #define NR_UE_MODULE_INVALID ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!!
 #define NR_UE_INDEX_INVALID  ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!! used to be -1
 
