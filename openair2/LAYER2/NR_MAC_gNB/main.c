@@ -45,25 +45,30 @@
 extern RAN_CONTEXT_t RC;
 
 
-#define MACSTATSSTRLEN 16384
+#define MACSTATSSTRLEN 65536
 
 void *nrmac_stats_thread(void *arg) {
 
   gNB_MAC_INST *gNB = (gNB_MAC_INST *)arg;
 
-  char output[MACSTATSSTRLEN];
-  memset(output,0,MACSTATSSTRLEN);
-  FILE *fd=fopen("nrMAC_stats.log","w");
-  AssertFatal(fd!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
+  char output[MACSTATSSTRLEN] = {0};
+  FILE *file = fopen("nrMAC_stats.log","w");
+  AssertFatal(file!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
 
   while (oai_exit == 0) {
-    dump_mac_stats(gNB,output,MACSTATSSTRLEN,false);
-     fprintf(fd,"%s\n",output);
-     fflush(fd);
-     usleep(200000);
-     fseek(fd,0,SEEK_SET);
+    size_t stroff = 0;
+    stroff += dump_mac_stats(gNB, output, MACSTATSSTRLEN, false);
+    stroff += snprintf(output + stroff, MACSTATSSTRLEN - stroff, "\n");
+    stroff += print_meas_log(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL, output + stroff);
+    stroff += print_meas_log(&gNB->schedule_dlsch, "dlsch scheduler", NULL, NULL, output + stroff);
+    stroff += print_meas_log(&gNB->rlc_data_req, "rlc_data_req", NULL, NULL, output + stroff);
+    stroff += print_meas_log(&gNB->rlc_status_ind, "rlc_status_ind", NULL, NULL, output + stroff);
+    fwrite(output, stroff, 1, file);
+    fflush(file);
+    sleep(1);
+    fseek(file,0,SEEK_SET);
   }
-  fclose(fd);
+  fclose(file);
   return NULL;
 }
 
@@ -73,7 +78,7 @@ void clear_mac_stats(gNB_MAC_INST *gNB) {
   }
 }
 
-void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp)
+size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp)
 {
   int num = 1;
  
@@ -138,10 +143,7 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
     }
   }
   pthread_mutex_unlock(&gNB->UE_info.mutex);
-  print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
-  print_meas(&gNB->schedule_dlsch,"dlsch scheduler",NULL,NULL);
-  print_meas(&gNB->rlc_data_req, "rlc_data_req",NULL,NULL);
-  print_meas(&gNB->rlc_status_ind,"rlc_status_ind",NULL,NULL);
+  return stroff;
 }
 
 
