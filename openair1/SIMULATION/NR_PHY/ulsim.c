@@ -348,7 +348,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:q:r:s:t:u:w:y:z:F:G:H:I:M:N:PR:S:T:U:L:Z:W:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:q:r:s:t:u:w:y:z:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
