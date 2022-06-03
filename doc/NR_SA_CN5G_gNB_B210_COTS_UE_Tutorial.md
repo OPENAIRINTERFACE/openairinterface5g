@@ -187,6 +187,7 @@ cd cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --sa -E --continuous-tx
 ```
 
+Make sure that during USRP initialization, it shows that USB 3 is used.
 
 # 5. Testing with Quectel RM500Q
 
