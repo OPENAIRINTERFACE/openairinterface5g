@@ -23,6 +23,7 @@
 3. [OAI gNB](#3-oai-gnb)
     1. [OAI gNB pre-requisites](#31-oai-gnb-pre-requisites)
     2. [Build OAI gNB](#32-build-oai-gnb)
+    3. [N300 Ethernet Tuning](#33-n300-ethernet-tuning)
 4. [Run OAI CN5G and OAI gNB with USRP N300](#4-run-oai-cn5g-and-oai-gnb-with-usrp-n300)
     1. [Run OAI CN5G](#41-run-oai-cn5g)
     2. [Run OAI gNB](#42-run-oai-gnb)
@@ -45,7 +46,7 @@ Minimum hardware requirements:
     - CPU: 4 cores x86_64
     - RAM: 8 GB
     - Windows driver for Quectel MUST be equal or higher than version **2.2.4**
-- [USRP N300](https://www.ettus.com/all-products/USRP-N300/)
+- [USRP N300](https://www.ettus.com/all-products/USRP-N300/): Please identify the network interface(s) on which the N300 is connected.
 - Quectel RM500Q
     - Module, M.2 to USB adapter, antennas and SIM card
     - Firmware version of Quectel MUST be equal or higher than **RM500QGLABR11A06M4G**
@@ -168,6 +169,23 @@ cd cmake_targets
 ./build_oai -w USRP --nrUE --gNB --build-lib all -c
 ```
 
+## 3.3 N300 Ethernet Tuning
+
+Please also refer to the official [USRP Host Performance Tuning Tips and Tricks](https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks) tuning guide.
+
+The following steps are recommended. Please change the network interface(s) as required. Also, you should have 10Gbps interface(s): if you use two cables, you should have the XG interface. Refer to the [N300 Getting Started Guide](https://kb.ettus.com/USRP_N300/N310/N320/N321_Getting_Started_Guide) for more information.
+
+* Use an MTU of 9000: how to change this depends on the network management tool. In the case of Network Manager, this can be done from the GUI.
+* Increase the kernel socket buffer (also done by the USRP driver in OAI):
+  ```
+  sysctl -w net.core.rmem_max=8388608
+  sysctl -w net.core.wmem_max=8388608
+  sysctl -w net.core.rmem_default=65536
+  sysctl -w net.core.wmem_default=65536
+  ```
+* Increase Ethernet Ring Buffers: `sudo ethtool -G <ifname> rx 4096 tx 4096`
+* Disable hyper-threading in the BIOS
+* Disable KPTI Protections for Spectre/Meltdown for more performance. **This is a security risk.** Add `mitigations=off nosmt` in your grub config and update grub.
 
 # 4. Run OAI CN5G and OAI gNB with USRP N300
 
