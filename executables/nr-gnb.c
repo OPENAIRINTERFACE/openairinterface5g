@@ -380,7 +380,7 @@ void *tx_reorder_thread(void* param) {
     if (resL1Reserve) {
        resL1=resL1Reserve;
        if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
-         LOG_E(PHY,"order mistake");
+         LOG_E(PHY,"order mistake\n");
 	 resL1Reserve=NULL;
 	 resL1 = pullTpool(gNB->L1_tx_out, gNB->threadPool);
        }
