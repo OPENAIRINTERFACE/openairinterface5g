@@ -106,23 +106,24 @@ queue_t nr_rach_ind_queue;
 
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg);
 
-static int dump_L1_UE_meas_stats(PHY_VARS_NR_UE *ue, char *output, int max_len)
+static size_t dump_L1_UE_meas_stats(PHY_VARS_NR_UE *ue, char *output, size_t max_len)
 {
-  int stroff = 0;
-  stroff += print_meas_log(&ue->phy_proc_tx, "L1 TX processing", NULL, NULL, output);
-  stroff += print_meas_log(&ue->ulsch_encoding_stats, "ULSCH encoding", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->phy_proc_rx[0], "L1 RX processing t0", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->phy_proc_rx[1], "L1 RX processing t1", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->ue_ul_indication_stats, "UL Indication", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->rx_pdsch_stats, "PDSCH receiver", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->dlsch_decoding_stats[0], "PDSCH decoding t0", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->dlsch_decoding_stats[1], "PDSCH decoding t1", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->dlsch_deinterleaving_stats, " -> Deinterleive", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->dlsch_rate_unmatching_stats, " -> Rate Unmatch", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->dlsch_ldpc_decoding_stats, " ->  LDPC Decode", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->dlsch_unscrambling_stats, "PDSCH unscrambling", NULL, NULL, output + stroff);
-  stroff += print_meas_log(&ue->dlsch_rx_pdcch_stats, "PDCCH handling", NULL, NULL, output + stroff);
-  return stroff;
+  const char *begin = output;
+  const char *end = output + max_len;
+  output += print_meas_log(&ue->phy_proc_tx, "L1 TX processing", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->ulsch_encoding_stats, "ULSCH encoding", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->phy_proc_rx[0], "L1 RX processing t0", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->phy_proc_rx[1], "L1 RX processing t1", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->ue_ul_indication_stats, "UL Indication", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->rx_pdsch_stats, "PDSCH receiver", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->dlsch_decoding_stats[0], "PDSCH decoding t0", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->dlsch_decoding_stats[1], "PDSCH decoding t1", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->dlsch_deinterleaving_stats, " -> Deinterleive", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->dlsch_rate_unmatching_stats, " -> Rate Unmatch", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->dlsch_ldpc_decoding_stats, " ->  LDPC Decode", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->dlsch_unscrambling_stats, "PDSCH unscrambling", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->dlsch_rx_pdcch_stats, "PDCCH handling", NULL, NULL, output, end - output);
+  return output - begin;
 }
 
 static void *nrL1_UE_stats_thread(void *param)

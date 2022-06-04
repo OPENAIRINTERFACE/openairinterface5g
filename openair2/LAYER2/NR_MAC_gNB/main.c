@@ -52,18 +52,19 @@ void *nrmac_stats_thread(void *arg) {
   gNB_MAC_INST *gNB = (gNB_MAC_INST *)arg;
 
   char output[MACSTATSSTRLEN] = {0};
+  const char *end = output + MACSTATSSTRLEN;
   FILE *file = fopen("nrMAC_stats.log","w");
   AssertFatal(file!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
 
   while (oai_exit == 0) {
-    size_t stroff = 0;
-    stroff += dump_mac_stats(gNB, output, MACSTATSSTRLEN, false);
-    stroff += snprintf(output + stroff, MACSTATSSTRLEN - stroff, "\n");
-    stroff += print_meas_log(&gNB->eNB_scheduler, "DL & UL scheduling timing", NULL, NULL, output + stroff);
-    stroff += print_meas_log(&gNB->schedule_dlsch, "dlsch scheduler", NULL, NULL, output + stroff);
-    stroff += print_meas_log(&gNB->rlc_data_req, "rlc_data_req", NULL, NULL, output + stroff);
-    stroff += print_meas_log(&gNB->rlc_status_ind, "rlc_status_ind", NULL, NULL, output + stroff);
-    fwrite(output, stroff, 1, file);
+    char *p = output;
+    p += dump_mac_stats(gNB, p, end - p, false);
+    p += snprintf(p, end - p, "\n");
+    p += print_meas_log(&gNB->eNB_scheduler, "DL & UL scheduling timing", NULL, NULL, p, end - p);
+    p += print_meas_log(&gNB->schedule_dlsch, "dlsch scheduler", NULL, NULL, p, end - p);
+    p += print_meas_log(&gNB->rlc_data_req, "rlc_data_req", NULL, NULL, p, end - p);
+    p += print_meas_log(&gNB->rlc_status_ind, "rlc_status_ind", NULL, NULL, p, end - p);
+    fwrite(output, p - output, 1, file);
     fflush(file);
     sleep(1);
     fseek(file,0,SEEK_SET);
