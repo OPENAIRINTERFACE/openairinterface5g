@@ -59,7 +59,7 @@ void *nrmac_stats_thread(void *arg) {
     size_t stroff = 0;
     stroff += dump_mac_stats(gNB, output, MACSTATSSTRLEN, false);
     stroff += snprintf(output + stroff, MACSTATSSTRLEN - stroff, "\n");
-    stroff += print_meas_log(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL, output + stroff);
+    stroff += print_meas_log(&gNB->eNB_scheduler, "DL & UL scheduling timing", NULL, NULL, output + stroff);
     stroff += print_meas_log(&gNB->schedule_dlsch, "dlsch scheduler", NULL, NULL, output + stroff);
     stroff += print_meas_log(&gNB->rlc_data_req, "rlc_data_req", NULL, NULL, output + stroff);
     stroff += print_meas_log(&gNB->rlc_status_ind, "rlc_status_ind", NULL, NULL, output + stroff);
