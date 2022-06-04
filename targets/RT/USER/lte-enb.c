@@ -1135,7 +1135,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
     }
     for (int i=0;i<NUMBER_OF_ULSCH_MAX; i++) {
 
-      LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH %d/%d\n",i,NUMBER_OF_ULSCH_MAX);
+      LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH %d/%d\n",i,NUMBER_OF_ULSCH_MAX);
       eNB->ulsch[i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
 
       if (!eNB->ulsch[i]) {

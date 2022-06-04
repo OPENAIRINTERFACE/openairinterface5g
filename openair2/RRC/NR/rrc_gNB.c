@@ -3642,7 +3642,6 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 
   if (fd) fclose(fd);
 
-
   /* send a tick to x2ap */
   if (is_x2ap_enabled()){
     msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_SUBFRAME_PROCESS);

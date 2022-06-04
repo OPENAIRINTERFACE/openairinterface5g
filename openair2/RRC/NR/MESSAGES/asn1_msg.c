@@ -404,14 +404,12 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   NR_BWP_DownlinkCommon_t  *initialDownlinkBWP=&ServCellCom->downlinkConfigCommon.initialDownlinkBWP;
   initialDownlinkBWP->genericParameters=
     configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-  
 
   for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.count; i++) {
     asn1cSequenceAdd(ServCellCom->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list,
 		     struct NR_NR_MultiBandInfo, nrMultiBandInfo);
     nrMultiBandInfo->freqBandIndicatorNR = configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[i];
   }
-
 
   int scs_scaling0 = 1<<(configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing);
   int scs_scaling  = scs_scaling0;
@@ -521,7 +519,6 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ss7->searchSpaceType->choice.common=calloc(1,sizeof(*ss7->searchSpaceType->choice.common));
   ss7->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss7->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
 
-  
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1,  0);
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation, 7);
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->pagingSearchSpace, 5);
@@ -1280,18 +1277,26 @@ void fill_default_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   pucch_Config->resourceSetToAddModList = calloc(1,sizeof(*pucch_Config->resourceSetToAddModList));
   pucch_Config->resourceSetToReleaseList = NULL;
   NR_PUCCH_ResourceSet_t *pucchresset0=calloc(1,sizeof(*pucchresset0));
+  NR_PUCCH_ResourceSet_t *pucchresset1=calloc(1,sizeof(*pucchresset1));
   pucchresset0->pucch_ResourceSetId = 0;
-  NR_PUCCH_ResourceId_t *pucchres0id0=calloc(1,sizeof(*pucchres0id0));
-  *pucchres0id0=ubwp->bwp_Id; // To uniquely identify each pucchresource lets derive it from the BWPId
-  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchres0id0);
+  NR_PUCCH_ResourceId_t *pucchresset0id0=calloc(1,sizeof(*pucchresset0id0));
+  *pucchresset0id0=0;
+  ASN_SEQUENCE_ADD(&pucchresset0->resourceList.list,pucchresset0id0);
   pucchresset0->maxPayloadSize=NULL;
   ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset0);
+  pucchresset1->pucch_ResourceSetId = 1;
+  NR_PUCCH_ResourceId_t *pucchresset1id0=calloc(1,sizeof(*pucchresset1id0));
+  *pucchresset1id0=1;
+  ASN_SEQUENCE_ADD(&pucchresset1->resourceList.list,pucchresset1id0);
+  pucchresset1->maxPayloadSize=NULL;
+  ASN_SEQUENCE_ADD(&pucch_Config->resourceSetToAddModList->list,pucchresset1);
   pucch_Config->resourceToAddModList = calloc(1,sizeof(*pucch_Config->resourceToAddModList));
   pucch_Config->resourceToReleaseList = NULL;
   int curr_bwp = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
-  pucchres0->pucch_ResourceId=*pucchres0id0;
-  pucchres0->startingPRB=(8+uid) % curr_bwp;
+  pucchres0->pucch_ResourceId=0;
+  pucchres0->startingPRB=(8+uid) % (curr_bwp/2);
+  LOG_D(NR_RRC, "pucchres0->startPRB %ld uid %d curr_bwp %d\n", pucchres0->startingPRB, uid, curr_bwp);
   pucchres0->intraSlotFrequencyHopping=NULL;
   pucchres0->secondHopPRB=NULL;
   pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
@@ -1300,8 +1305,17 @@ void fill_default_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   pucchres0->format.choice.format0->nrofSymbols=1;
   pucchres0->format.choice.format0->startingSymbolIndex=13;
   ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres0);
-
-/*
+  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
+  pucchres2->pucch_ResourceId=1;
+  pucchres2->startingPRB=0;
+  pucchres2->intraSlotFrequencyHopping=NULL;
+  pucchres2->secondHopPRB=NULL;
+  pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
+  pucchres2->format.choice.format2=calloc(1,sizeof(*pucchres2->format.choice.format2));
+  pucchres2->format.choice.format2->nrofPRBs=8;
+  pucchres2->format.choice.format2->nrofSymbols=1;
+  pucchres2->format.choice.format2->startingSymbolIndex=13;
+  ASN_SEQUENCE_ADD(&pucch_Config->resourceToAddModList->list,pucchres2);
   pucch_Config->format2=calloc(1,sizeof(*pucch_Config->format2));
   pucch_Config->format2->present=NR_SetupRelease_PUCCH_FormatConfig_PR_setup;
   NR_PUCCH_FormatConfig_t *pucchfmt2 = calloc(1,sizeof(*pucchfmt2));
@@ -1314,7 +1328,6 @@ void fill_default_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   pucchfmt2->pi2BPSK=NULL;
   pucchfmt2->simultaneousHARQ_ACK_CSI=calloc(1,sizeof(*pucchfmt2->simultaneousHARQ_ACK_CSI));
   *pucchfmt2->simultaneousHARQ_ACK_CSI=NR_PUCCH_FormatConfig__simultaneousHARQ_ACK_CSI_true;
-*/
 
   // PUCCH config - Scheduling request configuration
   pucch_Config->schedulingRequestResourceToAddModList = calloc(1,sizeof(*pucch_Config->schedulingRequestResourceToAddModList));
@@ -1333,7 +1346,7 @@ void fill_default_uplinkBWP(NR_BWP_Uplink_t *ubwp,
               "TDD period != 5ms : %ld\n",scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
   schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 = 8;
   schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
-  *schedulingRequestResourceConfig->resource = *pucchres0id0;
+  *schedulingRequestResourceConfig->resource = 0;
   ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
   pucch_Config->schedulingRequestResourceToReleaseList=NULL;
 
@@ -1635,7 +1648,6 @@ void fill_initial_SpCellConfig(int uid,
   pucchspatial->closedLoopIndex = NR_PUCCH_SpatialRelationInfo__closedLoopIndex_i0;
   ASN_SEQUENCE_ADD(&pucch_Config->spatialRelationInfoToAddModList->list,pucchspatial);
 
-
   initialUplinkBWP->pusch_Config = calloc(1,sizeof(*initialUplinkBWP->pusch_Config));
   initialUplinkBWP->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
   NR_PUSCH_Config_t *pusch_Config = calloc(1,sizeof(*pusch_Config));
@@ -1825,6 +1837,7 @@ void fill_initial_SpCellConfig(int uid,
   // options are 24, 48 or 96
   coreset->frequencyDomainResources.buf = calloc(1,6);
   if (0) {
+     int curr_bwp = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
      if (curr_bwp < 48)
        coreset->frequencyDomainResources.buf[0] = 0xf0;
      else
@@ -1925,7 +1938,7 @@ void fill_initial_SpCellConfig(int uid,
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
 
   if (configuration->do_CSIRS) {
- 
+
     SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
     SpCellConfig->spCellConfigDedicated->csi_MeasConfig->present = NR_SetupRelease_CSI_MeasConfig_PR_setup;
 
@@ -1938,7 +1951,7 @@ void fill_initial_SpCellConfig(int uid,
 
     csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
     csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
-  
+
     NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1,sizeof(*ssbresset0));
     ssbresset0->csi_SSB_ResourceSetId=0;
 
@@ -1983,7 +1996,7 @@ void fill_initial_SpCellConfig(int uid,
    csires0->bwp_Id = 0;
    csires0->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
    ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires0);
- 
+
 
    NR_CSI_ResourceConfig_t *csires1 = calloc(1,sizeof(*csires1));
    csires1->csi_ResourceConfigId=1;
@@ -2036,7 +2049,7 @@ void fill_initial_SpCellConfig(int uid,
      *csirep1->reportFreqConfiguration->cqi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__cqi_FormatIndicator_widebandCQI;
      csirep1->reportFreqConfiguration->pmi_FormatIndicator = calloc(1,sizeof(*csirep1->reportFreqConfiguration->pmi_FormatIndicator));
      *csirep1->reportFreqConfiguration->pmi_FormatIndicator=NR_CSI_ReportConfig__reportFreqConfiguration__pmi_FormatIndicator_widebandPMI;
-     csirep1->reportFreqConfiguration->csi_ReportingBand = NULL; 
+     csirep1->reportFreqConfiguration->csi_ReportingBand = NULL;
      /*calloc(1,sizeof(*csirep1->reportFreqConfiguration->csi_ReportingBand));
      csirep1->reportFreqConfiguration->csi_ReportingBand->present = NR_CSI_ReportConfig__reportFreqConfiguration__csi_ReportingBand_PR_subbands7;
      csirep1->reportFreqConfiguration->csi_ReportingBand->choice.subbands7.size=1;
@@ -2260,7 +2273,6 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   }
 }
 
-
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             NR_UE_NR_Capability_t *uecap,
                             const gNB_RrcConfigurationReq* configuration) {
@@ -2464,7 +2476,7 @@ int16_t do_RRCSetup(rrc_gNB_ue_context_t          *const ue_context_pP,
       return -1;
     }
     
-    LOG_I(NR_RRC,"RRCSetup Encoded %zd bits (%zd bytes)\n",
+    LOG_D(NR_RRC,"RRCSetup Encoded %zd bits (%zd bytes)\n",
             enc_rval.encoded,(enc_rval.encoded+7)/8);
     return((enc_rval.encoded+7)/8);
 }
