@@ -534,7 +534,7 @@ int get_mcs_from_bler(const NR_bler_options_t *bler_options,
 
 void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t frameP, sub_frame_t slotP);
 
-size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp);
+size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset_rsrp);
 
 void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl);
 
