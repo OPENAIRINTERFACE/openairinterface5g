@@ -147,7 +147,7 @@ typedef struct ccparams_eMTC_s {
   int            interval_DLHoppingConfigCommonModeA_r13_val;
   int            interval_DLHoppingConfigCommonModeB_r13_val;
   int            mpdcch_pdsch_HoppingOffset_r13;
-  char          *preambleTransMax_CE_r13;
+  int            preambleTransMax_CE_r13;
   int            prach_HoppingOffset_r13;
   int            schedulingInfoSIB1_BR_r13;
   int64_t        fdd_DownlinkOrTddSubframeBitmapBR_val_r13;
@@ -253,7 +253,7 @@ typedef struct ccparams_eMTC_s {
 {ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_B_R13,         NULL,   0,           strptr:&eMTCconfig->interval_DLHoppingConfigCommonModeB_r13,   defstrval:"interval-FDD-r13",      TYPE_STRING,       0}, \
 {ENB_CONFIG_STRING_INTERVAL_DL_HOPPING_CONFIG_COMMON_MODE_B_R13_VAL,     NULL,   0,           iptr:&eMTCconfig->interval_DLHoppingConfigCommonModeB_r13_val, defintval:0,                       TYPE_UINT,         0}, \
 {ENB_CONFIG_STRING_MPDCCH_PDSCH_HOPPING_OFFSET_R13,                      NULL,   0,           iptr:&eMTCconfig->mpdcch_pdsch_HoppingOffset_r13,              defintval:1,                       TYPE_UINT,         0}, \
-{ENB_CONFIG_STRING_PREAMBLE_TRANSMAX_CE_R13,                             NULL,   0,           strptr:&eMTCconfig->preambleTransMax_CE_r13,                   defstrval:"n10",                   TYPE_STRING,       0},  \
+{ENB_CONFIG_STRING_PREAMBLE_TRANSMAX_CE_R13,                             NULL,   0,           iptr:&eMTCconfig->preambleTransMax_CE_r13,                   defintval:10,                   TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL0,                  NULL,   0,           strptr:&eMTCconfig->pucch_NumRepetitionCE_Msg4_Level0_r13,     defstrval:"n1",                    TYPE_STRING,     0}, \
 {ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL1,                  NULL,   0,           strptr:&eMTCconfig->pucch_NumRepetitionCE_Msg4_Level1_r13,     defstrval:"",                      TYPE_STRING,     0}, \
 {ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL2,                  NULL,   0,           strptr:&eMTCconfig->pucch_NumRepetitionCE_Msg4_Level2_r13,     defstrval:"",                      TYPE_STRING,     0}, \
