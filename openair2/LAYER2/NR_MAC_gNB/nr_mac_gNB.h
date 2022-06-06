@@ -710,6 +710,8 @@ typedef struct {
   NR_UE_sched_ctrl_t UE_sched_ctrl;
   NR_mac_stats_t mac_stats;
   NR_CellGroupConfig_t *CellGroup;
+  char cg_buf[32768]; /* arbitrary size */
+  asn_enc_rval_t enc_rval;
   /// CCE indexing
   int m;
   // UE selected beam index
