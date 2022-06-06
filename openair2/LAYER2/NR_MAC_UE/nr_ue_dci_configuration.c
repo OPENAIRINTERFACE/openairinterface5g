@@ -59,9 +59,9 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,
   uint8_t number_of_candidates=0;
   rel15->number_of_candidates=0;
   int i=0;
-  int Y = 0;
+  uint32_t Y = 0;
   if (slot >= 0)
-    Y = get_Y((*ss->controlResourceSetId)%3, slot, rnti);
+    Y = get_Y(ss, slot, rnti);
   for (int maxL=16;maxL>0;maxL>>=1) {
     find_aggregation_candidates(&aggregation,
                                 &number_of_candidates,

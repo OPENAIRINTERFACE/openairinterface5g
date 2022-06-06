@@ -282,7 +282,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                               sched_ctrl->search_space,4);
 
   sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, sched_ctrl->active_bwp->bwp_Dedicated, sched_ctrl->search_space, target_ss);
-  int Y = get_Y((*sched_ctrl->search_space->controlResourceSetId)%3, slot, UE_info->rnti[0]);
+  uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE_info->rnti[0]);
   int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
                                       /* CC_id = */ 0,
                                       sched_ctrl->aggregation_level,

@@ -446,7 +446,7 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
                          int nr_of_candidates,
                          NR_sched_pdcch_t *pdcch,
                          NR_ControlResourceSet_t *coreset,
-                         uint16_t Y){
+                         uint32_t Y){
 
   uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
   const int N_ci = 0;
