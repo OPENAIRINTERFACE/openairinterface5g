@@ -282,7 +282,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                               sched_ctrl->search_space,4);
 
   sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, sched_ctrl->active_bwp->bwp_Dedicated, sched_ctrl->search_space, target_ss);
-  uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE_info->rnti[0]);
+  uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE_info->rnti);
   int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
                                       /* CC_id = */ 0,
                                       sched_ctrl->aggregation_level,
@@ -290,7 +290,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                       &sched_ctrl->sched_pdcch,
                                       sched_ctrl->coreset,
                                       Y);
-  AssertFatal(CCEIndex>=0, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, 0, UE_info->rnti[0]);
+  AssertFatal(CCEIndex>=0, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, 0, UE_info->rnti);
   sched_ctrl->cce_index = CCEIndex;
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
