@@ -544,8 +544,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   gNB->nr_gold_pdsch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t ***));
   uint32_t ****pdsch_dmrs             = gNB->nr_gold_pdsch_dmrs;
 
-  // ceil(((NB_RB*6(k)*2(QPSK)/32) // 3 RE *2(QPSK)
-  int pdsch_dmrs_init_length =  ((fp->N_RB_DL*12)>>5)+1;
+  // ceil(((NB_RB*12(k)*2(QPSK)/32) // 3 RE *2(QPSK)
+  int pdsch_dmrs_init_length =  ((fp->N_RB_DL*24)>>5)+1;
   for (int slot=0; slot<fp->slots_per_frame; slot++) {
     pdsch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t **));
     AssertFatal(pdsch_dmrs[slot]!=NULL, "NR init: pdsch_dmrs for slot %d - malloc failed\n", slot);

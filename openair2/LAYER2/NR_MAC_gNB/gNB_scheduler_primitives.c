@@ -2903,7 +2903,15 @@ void nr_mac_update_timers(module_id_t module_id,
         LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %04x\n", frame, slot, UE->rnti);
 
         const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-        NR_CellGroupConfig_t *cg = UE->CellGroup;
+
+        NR_CellGroupConfig_t *cg = NULL;
+        uper_decode(NULL,
+                    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                    (void **)&cg,
+                    (uint8_t *)UE->cg_buf,
+                    (UE->enc_rval.encoded+7)/8, 0, 0);
+        UE->CellGroup = cg;
+
         NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
         const NR_ServingCellConfig_t *spCellConfigDedicated = cg && cg->spCellConfig ? cg->spCellConfig->spCellConfigDedicated : NULL;
 
