@@ -701,6 +701,11 @@ typedef struct NR_bler_options {
   uint8_t max_mcs;
 } NR_bler_options_t;
 
+typedef struct NR_UE_BWP {
+  NR_BWP_Id_t dl_bwp_id;
+  NR_BWP_Id_t ul_bwp_id;
+} NR_UE_BWP_t;
+
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 #define MAX_CSI_REPORTCONFIG 48
 typedef struct {
@@ -708,6 +713,7 @@ typedef struct {
   /// scheduling control info
   nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl;
+  NR_UE_BWP_t current_BWP;
   NR_mac_stats_t mac_stats;
   NR_CellGroupConfig_t *CellGroup;
   char cg_buf[32768]; /* arbitrary size */

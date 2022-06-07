@@ -225,8 +225,7 @@ int nr_acknack_scheduling( int Mod_idP,
                            int r_pucch,
                            int do_common);
 
-void get_pdsch_to_harq_feedback(NR_UE_info_t *,
-                                int bwp_id,
+void get_pdsch_to_harq_feedback(NR_UE_info_t *UE,
                                 NR_SearchSpace__searchSpaceType_PR ss_type,
                                 int *max_fb_time,
                                 uint8_t *pdsch_to_harq_feedback);
@@ -406,7 +405,9 @@ NR_UE_info_t * find_nr_UE(NR_UEs_t* UEs, rnti_t rntiP);
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
-NR_UE_info_t*add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
+void configure_UE_BWP(NR_UE_BWP_t *BWP, NR_CellGroupConfig_t *CellGroup);
+
+NR_UE_info_t* add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
 
 void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti);
 

@@ -1526,6 +1526,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     if (sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) continue;
 
     NR_CellGroupConfig_t *cg = UE->CellGroup;
+    NR_UE_BWP_t *current_BWP = &UE->current_BWP;
 
     NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
@@ -1765,7 +1766,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 
     /* look up the PDCCH PDU for this BWP and CORESET. If it does not exist,
      * create it */
-    const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
     NR_SearchSpace_t *ss = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->search_space: RC.nrmac[module_id]->sched_ctrlCommon->search_space;
     NR_ControlResourceSet_t *coreset = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->coreset: RC.nrmac[module_id]->sched_ctrlCommon->coreset;
     const int coresetid = coreset->controlResourceSetId;
@@ -1821,7 +1821,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  ps->time_domain_allocation,
                  UE->UE_sched_ctrl.tpc0,
                  n_ubwp,
-                 bwp_id);
+                 current_BWP->ul_bwp_id);
     fill_dci_pdu_rel15(scc,
                        cg,
                        dci_pdu,
@@ -1829,7 +1829,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                        ps->dci_format,
                        rnti_types[0],
                        pusch_pdu->bwp_size,
-                       bwp_id,
+                       current_BWP->ul_bwp_id,
                        coresetid,
                        nr_mac->cset0_bwp_size);
 

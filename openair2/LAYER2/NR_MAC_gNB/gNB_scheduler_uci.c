@@ -938,13 +938,12 @@ void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot) {
   uint8_t target_ssb_beam_index = curr_ssb_beam_index;
   uint8_t is_triggering_ssb_beam_switch =0;
   uint8_t ssb_idx = 0;
-  int pdsch_bwp_id =0;
+  int pdsch_bwp_id = 0;
   int ssb_index[MAX_NUM_SSB] = {0};
   int ssb_rsrp[MAX_NUM_SSB] = {0};
   uint8_t idx = 0;
-
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  const int bwp_id = sched_ctrl->active_bwp ? 1 : 0;
   NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
 
   //bwp indicator
@@ -960,6 +959,7 @@ void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot) {
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
 
+  const int bwp_id = BWP->dl_bwp_id;
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;
   else
@@ -1632,6 +1632,7 @@ int nr_acknack_scheduling(int mod_id,
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_CellGroupConfig_t *cg = UE->CellGroup;
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
 
   NR_PUCCH_Config_t *pucch_Config = NULL;
   if (sched_ctrl->active_ubwp) {
@@ -1714,10 +1715,9 @@ int nr_acknack_scheduling(int mod_id,
 
   NR_SearchSpace__searchSpaceType_PR ss_type = (is_common==0 && (sched_ctrl->active_bwp || ubwpd)) ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
   uint8_t pdsch_to_harq_feedback[8];
-  const int bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
 
   int max_fb_time = 0;
-  get_pdsch_to_harq_feedback(UE, bwp_id, ss_type, &max_fb_time, pdsch_to_harq_feedback);
+  get_pdsch_to_harq_feedback(UE, ss_type, &max_fb_time, pdsch_to_harq_feedback);
 
   LOG_D(NR_MAC, "In %s: 1b. DL %4d.%2d, UL_ACK %4d.%2d, DAI_C %d\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */

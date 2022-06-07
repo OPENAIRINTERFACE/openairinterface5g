@@ -902,6 +902,7 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id) {
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot) {
+
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
 
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
@@ -918,6 +919,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
   UE_iterator(UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    NR_UE_BWP_t *current_BWP = &UE->current_BWP;
 
     if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
 
@@ -1013,7 +1015,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space : gNB_mac->sched_ctrlCommon->search_space;
 
-    const int bwp_id = bwp ? bwp->bwp_Id : 0;
+    const int bwp_id = current_BWP->dl_bwp_id;
     const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it */
@@ -1166,7 +1168,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     AssertFatal(n_dl_bwp <= NR_MAX_NUM_BWP, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
 
     // as per table 7.3.1.1.2-1 in 38.212
-    dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1) : 0;
+    dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp_id : bwp_id - 1) : 0;
 
     if (bwp) AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                            "Only frequency resource allocation type 1 is currently supported\n");
@@ -1216,7 +1218,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                        dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
-                       bwp ? bwp->bwp_Id : 0,
+                       bwp_id,
                        coresetid,
                        gNB_mac->cset0_bwp_size);
 
