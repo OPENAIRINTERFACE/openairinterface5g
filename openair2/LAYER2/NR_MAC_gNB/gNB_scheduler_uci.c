@@ -39,7 +39,7 @@ extern RAN_CONTEXT_t RC;
 
 
 
-static void nr_fill_nfapi_pucch(gNB_MAC_INST *nrmac, 
+static void nr_fill_nfapi_pucch(gNB_MAC_INST *nrmac,
                                 frame_t frame,
                                 sub_frame_t slot,
                                 const NR_sched_pucch_t *pucch,
@@ -160,7 +160,7 @@ void nr_schedule_pucch(gNB_MAC_INST *nrmac,
           || slotP != curr_pucch->ul_slot)
         continue;
 
-      if (O_csi > 0) 
+      if (O_csi > 0)
          LOG_D(NR_MAC,"Scheduling PUCCH[%d] RX for UE %04x in %4d.%2d O_ack %d, O_sr %d, O_csi %d\n",
                i,UE->rnti,curr_pucch->frame,curr_pucch->ul_slot,O_ack,O_sr,O_csi);
       nr_fill_nfapi_pucch(nrmac, frameP, slotP, curr_pucch, UE);
@@ -289,7 +289,6 @@ void compute_li_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
     }
   }
 }
-
 
 void get_n1n2_o1o2_singlepanel(int *n1, int *n2, int *o1, int *o2,
                                struct NR_CodebookConfig__codebookType__type1__subType__typeI_SinglePanel__nrOfAntennaPorts__moreThanTwo *morethantwo) {
@@ -562,7 +561,6 @@ void compute_cqi_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,
     AssertFatal(1==0,"Sub-band CQI reporting not yet supported");
 }
 
-
 //!TODO : same function can be written to handle csi_resources
 void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE){
   uint8_t csi_report_id = 0;
@@ -748,7 +746,7 @@ void nr_csi_meas_reporting(int Mod_idP,
         if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource)
           break;
       AssertFatal(res_index < n,
-                  "CSI pucch resource %ld not found among PUCCH resources\n",pucchcsires->pucch_Resource);
+                  "CSI pucch resource %ld not found among PUCCH resources\n", pucchcsires->pucch_Resource);
 
       // find free PUCCH that is in order with possibly existing PUCCH
       // schedulings (other CSI, SR)
@@ -762,8 +760,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->frame = frame;
       curr_pucch->ul_slot = sched_slot;
       curr_pucch->resource_indicator = res_index;
-      curr_pucch->csi_bits +=
-          nr_get_csi_bitlen(UE,csi_report_id);
+      curr_pucch->csi_bits += nr_get_csi_bitlen(UE,csi_report_id);
 
       const NR_SIB1_t *sib1 = RC.nrmac[Mod_idP]->common_channels[0].sib1 ? RC.nrmac[Mod_idP]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
       NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
@@ -1608,7 +1605,7 @@ bool test_acknack_vrb_occupation(NR_UE_sched_ctrl_t *sched_ctrl,
 // if the function returns -1 it was not possible to schedule acknack
 // when current pucch is ready to be scheduled nr_fill_nfapi_pucch is called
 int nr_acknack_scheduling(int mod_id,
-                          NR_UE_info_t * UE,
+                          NR_UE_info_t *UE,
                           frame_t frame,
                           sub_frame_t slot,
                           int r_pucch,
@@ -1667,10 +1664,10 @@ int nr_acknack_scheduling(int mod_id,
     const int s = pucch->ul_slot;
     LOG_D(NR_MAC, "In %s: %4d.%2d DAI = 2 pucch currently in %4d.%2d, advancing by 1 slot\n", __FUNCTION__, frame, slot, f, s);
 
-    if (!(csi_pucch 
+    if (!(csi_pucch
           && csi_pucch->csi_bits > 0
           && csi_pucch->frame == f
-          && csi_pucch->ul_slot == s)) 
+          && csi_pucch->ul_slot == s))
     nr_fill_nfapi_pucch(RC.nrmac[mod_id], frame, slot, pucch, UE);
 
     memset(pucch, 0, sizeof(*pucch));
@@ -1781,7 +1778,6 @@ int nr_acknack_scheduling(int mod_id,
                 UE->rnti, frame, slot, pucch->sr_flag, pucch->dai_c, pucch->frame, pucch->ul_slot);
     const int s = next_ul_slot;
     pucch->frame = s < n_slots_frame ? frame : (frame + 1) % 1024;
-
     pucch->ul_slot = s % n_slots_frame;
   }
 
@@ -1972,8 +1968,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-        }
-        else if (pdu->rnti == UE->rnti
+        } else if (pdu->rnti == UE->rnti
             && pdu->format_type == 2 // does not use NR_PUCCH_Resource__format_PR_format0
             && pdu->nr_of_symbols == pucch_res->format.choice.format2->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format2->startingSymbolIndex) {
@@ -1981,9 +1976,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-
-        }
-        else if (pdu->rnti == UE->rnti
+        } else if (pdu->rnti == UE->rnti
             && pdu->format_type == 1 // does not use NR_PUCCH_Resource__format_PR_format0
             && pdu->nr_of_symbols == pucch_res->format.choice.format1->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format1->startingSymbolIndex) {
@@ -1991,9 +1984,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-
-        }
-        else if (pdu->rnti == UE->rnti
+        } else if (pdu->rnti == UE->rnti
             && pdu->format_type == 3 // does not use NR_PUCCH_Resource__format_PR_format0
             && pdu->nr_of_symbols == pucch_res->format.choice.format3->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format3->startingSymbolIndex) {
@@ -2001,9 +1992,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-
-        }
-        else if (pdu->rnti == UE->rnti
+        } else if (pdu->rnti == UE->rnti
             && pdu->format_type == 4 // does not use NR_PUCCH_Resource__format_PR_format0
             && pdu->nr_of_symbols == pucch_res->format.choice.format4->nrofSymbols
             && pdu->start_symbol_index == pucch_res->format.choice.format4->startingSymbolIndex) {
@@ -2011,7 +2000,6 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
           pdu->sr_flag = 1;
           nfapi_allocated = true;
           break;
-
         }
       }
 

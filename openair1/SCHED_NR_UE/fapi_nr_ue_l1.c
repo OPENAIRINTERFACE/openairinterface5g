@@ -44,7 +44,7 @@
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
-const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH"};
+const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH", "CSI_RS", "CSI_IM"};
 const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
 queue_t nr_rx_ind_queue;
 queue_t nr_crc_ind_queue;
@@ -360,12 +360,16 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     NR_UE_DLSCH_t *dlsch0 = NULL;
     NR_UE_ULSCH_t *ulsch = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0];
     NR_UE_PUCCH *pucch_vars = PHY_vars_UE_g[module_id][cc_id]->pucch_vars[thread_id][0];
+    NR_UE_CSI_IM *csiim_vars = PHY_vars_UE_g[module_id][cc_id]->csiim_vars[0];
+    NR_UE_CSI_RS *csirs_vars = PHY_vars_UE_g[module_id][cc_id]->csirs_vars[0];
     NR_UE_PDCCH_CONFIG *phy_pdcch_config = NULL;
 
     if(scheduled_response->dl_config != NULL){
       fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu;
       fapi_nr_dl_config_dci_dl_pdu_rel15_t *pdcch_config;
+      fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu;
+      fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu;
 
       for (int i = 0; i < dl_config->number_pdus; ++i){
         AssertFatal(dl_config->number_pdus < FAPI_NR_DL_CONFIG_LIST_NUM,"dl_config->number_pdus %d out of bounds\n",dl_config->number_pdus);
@@ -387,10 +391,14 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             LOG_D(PHY,"Number of DCI SearchSpaces %d\n",phy_pdcch_config->nb_search_space);
             break;
           case FAPI_NR_DL_CONFIG_TYPE_CSI_IM:
-            LOG_I(PHY,"Received CSI-IM PDU at FAPI\n");
+            csiim_config_pdu = &dl_config->dl_config_list[i].csiim_config_pdu.csiim_config_rel15;
+            memcpy((void*)&(csiim_vars->csiim_config_pdu), (void*)csiim_config_pdu, sizeof(fapi_nr_dl_config_csiim_pdu_rel15_t));
+            csirs_vars->active = true;
             break;
           case FAPI_NR_DL_CONFIG_TYPE_CSI_RS:
-            LOG_I(PHY,"Received CSI-RS PDU at FAPI\n");
+            csirs_config_pdu = &dl_config->dl_config_list[i].csirs_config_pdu.csirs_config_rel15;
+            memcpy((void*)&(csirs_vars->csirs_config_pdu), (void*)csirs_config_pdu, sizeof(fapi_nr_dl_config_csirs_pdu_rel15_t));
+            csirs_vars->active = true;
             break;
           case FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH:
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
