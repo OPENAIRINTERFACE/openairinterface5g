@@ -260,13 +260,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     return -1;
   }
 
-  dlsch0_harq->Qm = nr_get_Qm_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
-  dlsch0_harq->R = nr_get_code_rate_dl(dlsch[0]->harq_processes[harq_pid]->mcs, dlsch[0]->harq_processes[harq_pid]->mcs_table);
-  if (dlsch0_harq->Qm == 0 || dlsch0_harq->R == 0) {
-    LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
-      return -1;
-  }
-
   #ifdef DEBUG_HARQ
     printf("[DEMOD] MIMO mode = %d\n", dlsch0_harq->mimo_mode);
     printf("[DEMOD] cw for TB0 = %d, cw for TB1 = %d\n", codeword_TB0, codeword_TB1);
@@ -2600,7 +2593,7 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
   }
 
   if (dlsch1_harq) {
-    switch (nr_get_Qm_dl(dlsch1_harq->mcs,dlsch1_harq->mcs_table)) {
+    switch (dlsch1_harq->Qm) {
     case 2 :
       if (rx_type==rx_standard) {
         nr_dlsch_qpsk_llr(frame_parms,

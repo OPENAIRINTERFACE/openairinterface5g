@@ -104,167 +104,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   TX_req[CC_idP].Number_of_PDUs                  = 0;
 
 }
-/*
-void check_nr_ul_failure(module_id_t module_idP,
-                         int CC_id,
-                         int UE_id,
-                         frame_t frameP,
-                         sub_frame_t slotP) {
-
-  NR_UE_info_t                 *UE_info  = &RC.nrmac[module_idP]->UE_info;
-  nfapi_nr_dl_dci_request_t  *DL_req   = &RC.nrmac[module_idP]->DL_req[0];
-  uint16_t                      rnti      = UE_RNTI(module_idP, UE_id);
-  NR_COMMON_channels_t          *cc       = RC.nrmac[module_idP]->common_channels;
-
-  // check uplink failure
-  if ((UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 0) &&
-      (UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync == 0)) {
-    LOG_I(MAC, "UE %d rnti %x: UL Failure timer %d \n", UE_id, rnti,
-    UE_info->UE_sched_ctrl[UE_id].ul_failure_timer);
-    if (UE_info->UE_sched_ctrl[UE_id].ra_pdcch_order_sent == 0) {
-      UE_info->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 1;
-
-      // add a format 1A dci for this UE to request an RA procedure (only one UE per subframe)
-      nfapi_nr_dl_dci_request_pdu_t *dl_config_pdu                    = &DL_req[CC_id].dl_tti_request_body.dl_config_pdu_list[DL_req[CC_id].dl_tti_request_body.number_pdu];
-      memset((void *) dl_config_pdu, 0,sizeof(nfapi_dl_dci_request_pdu_t));
-      dl_config_pdu->pdu_type                                         = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
-      dl_config_pdu->pdu_size                                         = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag                = NFAPI_DL_DCI_REQUEST_DCI_DL_PDU_REL8_TAG;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format            = NFAPI_DL_DCI_FORMAT_1A;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level     = get_aggregation(get_bw_index(module_idP, CC_id),
-                      UE_info->UE_sched_ctrl[UE_id].
-                      dl_cqi[CC_id], format1A);
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti                  = rnti;
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type             = 1;  // CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power    = 6000; // equal to RS power
-
-      AssertFatal((cc[CC_id].mib->message.dl_Bandwidth >= 0) && (cc[CC_id].mib->message.dl_Bandwidth < 6),
-      "illegal dl_Bandwidth %d\n",
-      (int) cc[CC_id].mib->message.dl_Bandwidth);
-      dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = nr_pdcch_order_table[cc[CC_id].mib->message.dl_Bandwidth];
-      DL_req[CC_id].dl_tti_request_body.number_dci++;
-      DL_req[CC_id].dl_tti_request_body.number_pdu++;
-      DL_req[CC_id].dl_tti_request_body.tl.tag                      = NFAPI_DL_TTI_REQUEST_BODY_TAG;
-      LOG_I(MAC,
-      "UE %d rnti %x: sending PDCCH order for RAPROC (failure timer %d), resource_block_coding %d \n",
-      UE_id, rnti,
-      UE_info->UE_sched_ctrl[UE_id].ul_failure_timer,
-      dl_config_pdu->dci_dl_pdu.
-      dci_dl_pdu_rel8.resource_block_coding);
-    } else {    // ra_pdcch_sent==1
-      LOG_I(MAC,
-      "UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",
-      UE_id, rnti,
-      UE_info->UE_sched_ctrl[UE_id].ul_failure_timer);
-      if ((UE_info->UE_sched_ctrl[UE_id].ul_failure_timer % 40) == 0) UE_info->UE_sched_ctrl[UE_id].ra_pdcch_order_sent = 0;  // resend every 4 frames
-    }
-
-    UE_info->UE_sched_ctrl[UE_id].ul_failure_timer++;
-    // check threshold
-    if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 20000) {
-      // inform RRC of failure and clear timer
-      LOG_I(MAC,
-      "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
-      UE_id, rnti);
-      mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP, subframeP,rnti);
-      UE_info->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
-      UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
-
-      //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
-      if (rrc_agent_registered[module_idP]) {
-        LOG_W(MAC, "notify flexran Agent of UE state change\n");
-        agent_rrc_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
-            rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
-      }
-    }
-  }       // ul_failure_timer>0
-
-}
-*/
-/*
-void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
-{
-  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  NR_UE_info_t *UE_info = &gNB->UE_info;
-  nfapi_ul_config_request_body_t *ul_req;
-  int CC_id, UE_id;
-  NR_COMMON_channels_t *cc = RC.nrmac[module_idP]->common_channels;
-  SoundingRS_UL_ConfigCommon_t *soundingRS_UL_ConfigCommon;
-  struct SoundingRS_UL_ConfigDedicated *soundingRS_UL_ConfigDedicated;
-  uint8_t TSFC;
-  uint16_t deltaTSFC;   // bitmap
-  uint8_t srs_SubframeConfig;
-
-  // table for TSFC (Period) and deltaSFC (offset)
-  const uint16_t deltaTSFCTabType1[15][2] = { {1, 1}, {1, 2}, {2, 2}, {1, 5}, {2, 5}, {4, 5}, {8, 5}, {3, 5}, {12, 5}, {1, 10}, {2, 10}, {4, 10}, {8, 10}, {351, 10}, {383, 10} };  // Table 5.5.3.3-2 3GPP 36.211 FDD
-  const uint16_t deltaTSFCTabType2[14][2] = { {2, 5}, {6, 5}, {10, 5}, {18, 5}, {14, 5}, {22, 5}, {26, 5}, {30, 5}, {70, 10}, {74, 10}, {194, 10}, {326, 10}, {586, 10}, {210, 10} }; // Table 5.5.3.3-2 3GPP 36.211 TDD
-
-  uint16_t srsPeriodicity, srsOffset;
-
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    soundingRS_UL_ConfigCommon = &cc[CC_id].radioResourceConfigCommon->soundingRS_UL_ConfigCommon;
-    // check if SRS is enabled in this frame/subframe
-    if (soundingRS_UL_ConfigCommon) {
-      srs_SubframeConfig = soundingRS_UL_ConfigCommon->choice.setup.srs_SubframeConfig;
-      if (cc[CC_id].tdd_Config == NULL) { // FDD
-  deltaTSFC = deltaTSFCTabType1[srs_SubframeConfig][0];
-  TSFC = deltaTSFCTabType1[srs_SubframeConfig][1];
-      } else {    // TDD
-  deltaTSFC = deltaTSFCTabType2[srs_SubframeConfig][0];
-  TSFC = deltaTSFCTabType2[srs_SubframeConfig][1];
-      }
-      // Sounding reference signal subframes are the subframes satisfying ns/2 mod TSFC (- deltaTSFC
-      uint16_t tmp = (subframeP % TSFC);
-
-      if ((1 << tmp) & deltaTSFC) {
-  // This is an SRS subframe, loop over UEs
-  for (UE_id = 0; UE_id < MAX_MOBILES_PER_GNB; UE_id++) {
-    if (!RC.nrmac[module_idP]->UE_info.active[UE_id]) continue;
-    ul_req = &RC.nrmac[module_idP]->UL_req[CC_id].ul_config_request_body;
-    // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-    if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
-
-    AssertFatal(UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated != NULL,
-          "physicalConfigDedicated is null for UE %d\n",
-          UE_id);
-
-    if ((soundingRS_UL_ConfigDedicated = UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated) != NULL) {
-      if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
-        get_srs_pos(&cc[CC_id],
-        soundingRS_UL_ConfigDedicated->choice.
-        setup.srs_ConfigIndex,
-        &srsPeriodicity, &srsOffset);
-        if (((10 * frameP + subframeP) % srsPeriodicity) == srsOffset) {
-    // Program SRS
-    ul_req->srs_present = 1;
-    nfapi_ul_config_request_pdu_t * ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
-    memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
-    ul_config_pdu->pdu_type =  NFAPI_UL_CONFIG_SRS_PDU_TYPE;
-    ul_config_pdu->pdu_size =  2 + (uint8_t) (2 + sizeof(nfapi_ul_config_srs_pdu));
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_SRS_PDU_REL8_TAG;
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.size = (uint8_t)sizeof(nfapi_ul_config_srs_pdu);
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.rnti = UE_info->UE_template[CC_id][UE_id].rnti;
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_bandwidth = soundingRS_UL_ConfigDedicated->choice.setup.srs_Bandwidth;
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.frequency_domain_position = soundingRS_UL_ConfigDedicated->choice.setup.freqDomainPosition;
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.srs_hopping_bandwidth = soundingRS_UL_ConfigDedicated->choice.setup.srs_HoppingBandwidth;;
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.transmission_comb = soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb;
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.i_srs = soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex;
-    ul_config_pdu->srs_pdu.srs_pdu_rel8.sounding_reference_cyclic_shift = soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift;    //              ul_config_pdu->srs_pdu.srs_pdu_rel10.antenna_port                   = ;//
-    //              ul_config_pdu->srs_pdu.srs_pdu_rel13.number_of_combs                = ;//
-    RC.nrmac[module_idP]->UL_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
-    RC.nrmac[module_idP]->UL_req[CC_id].header.message_id = NFAPI_UL_CONFIG_REQUEST;
-    ul_req->number_of_pdus++;
-        } // if (((10*frameP+subframeP) % srsPeriodicity) == srsOffset)
-      } // if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup)
-    }   // if ((soundingRS_UL_ConfigDedicated = UE_info->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated)!=NULL)
-  }   // for (UE_id ...
-      }     // if((1<<tmp) & deltaTSFC)
-
-    }     // SRS config
-  }
-}
-*/
-
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
   if (slot>=64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
@@ -372,7 +211,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     schedule_nr_prach(module_idP, f, s);
   }
 
-
   // Schedule CSI-RS transmission
   nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
@@ -398,10 +236,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ue_spec(module_idP, frame, slot); 
   stop_meas(&gNB->schedule_dlsch);
 
-  nr_schedule_pucch(module_idP, frame, slot);
+  nr_schedule_pucch(RC.nrmac[module_idP], frame, slot);
 
   // This schedule SR after PUCCH for multiplexing
-  nr_sr_reporting(module_idP, frame, slot);
+  nr_sr_reporting(RC.nrmac[module_idP], frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

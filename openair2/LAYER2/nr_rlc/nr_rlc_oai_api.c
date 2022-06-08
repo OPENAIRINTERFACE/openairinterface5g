@@ -123,7 +123,7 @@ void nr_drb_config(struct NR_RLC_Config *rlc_Config, NR_RLC_Config_PR rlc_config
       rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;
       break;
     default:
-      LOG_E (RLC, "Error in %s: RLC config type %d is not handled\n", __FUNCTION__, rlc_config_pr);
+      AssertFatal(0, "RLC config type %d not handled\n", rlc_config_pr);
       break;
     }
 

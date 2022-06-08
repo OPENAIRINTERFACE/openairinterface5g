@@ -1371,11 +1371,12 @@ void fill_rf_config(RU_t *ru,
     cfg->tx_gain[i] = (double)ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-(double)ru->att_rx;
     cfg->configFilename = rf_config_file;
-    LOG_I(PHY,"channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
+    LOG_I(PHY,"channel %d, Setting tx_gain offset %.0f, rx_gain offset %.0f, tx_freq %.0f, rx_freq %.0f, tune_offset %.0f Hz\n",
            i, cfg->tx_gain[i],
            cfg->rx_gain[i],
            cfg->tx_freq[i],
-           cfg->rx_freq[i]);
+           cfg->rx_freq[i],
+           cfg->tune_offset);
   }
 }
 
@@ -2971,6 +2972,8 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
       else {
 	ru[j]->openair0_cfg.time_source = unset;
       }      
+
+      ru[j]->openair0_cfg.tune_offset = get_softmodem_params()->tune_offset;
 
       LOG_I(PHY,"RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
 

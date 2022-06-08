@@ -34,47 +34,6 @@
 #define LOG_I(A,B...) printf(A)
 #endif*/
 
-dft_size_idx_t get_dft_size_idx(uint16_t ofdm_symbol_size)
-{
-  switch (ofdm_symbol_size) {
-  case 128:
-    return DFT_128;
-
-  case 256:
-    return DFT_256;
-
-  case 512:
-    return DFT_512;
-
-  case 1024:
-    return DFT_1024;
-
-  case 1536:
-    return DFT_1536;
-
-  case 2048:
-    return DFT_2048;
-
-  case 3072:
-    return DFT_3072;
-
-  case 4096:
-    return DFT_4096;
-
-  case 6144:
-    return DFT_6144;
-
-  case 8192:
-    return DFT_8192;
-
-  default:
-    printf("unsupported ofdm symbol size \n");
-    assert(0);
-  }
-
-  return DFT_SIZE_IDXTABLESIZE;
-}
-
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
                 unsigned char symbol,
@@ -96,7 +55,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     nb_prefix_samples0 = frame_parms->nb_prefix_samples;
   }
 
-  dft_size_idx_t dftsize = get_dft_size_idx(frame_parms->ofdm_symbol_size);
+  dft_size_idx_t dftsize = get_dft(frame_parms->ofdm_symbol_size);
   // This is for misalignment issues
   int32_t tmp_dft_in[8192] __attribute__ ((aligned (32)));
 
@@ -195,7 +154,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
   }
   unsigned int frame_length_samples = frame_parms->samples_per_frame;
 
-  dft_size_idx_t dftsize = get_dft_size_idx(frame_parms->ofdm_symbol_size);
+  dft_size_idx_t dftsize = get_dft(frame_parms->ofdm_symbol_size);
   // This is for misalignment issues
   int32_t tmp_dft_in[8192] __attribute__ ((aligned (32)));
 
@@ -289,7 +248,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   unsigned int nb_prefix_samples  = frame_parms->nb_prefix_samples;
   unsigned int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
   
-  dft_size_idx_t dftsize = get_dft_size_idx(frame_parms->ofdm_symbol_size);
+  dft_size_idx_t dftsize = get_dft(frame_parms->ofdm_symbol_size);
   // This is for misalignment issues
   int32_t tmp_dft_in[8192] __attribute__ ((aligned (32)));
 

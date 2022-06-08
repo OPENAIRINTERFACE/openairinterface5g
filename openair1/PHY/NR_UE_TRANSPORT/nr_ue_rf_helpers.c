@@ -67,7 +67,7 @@ void nr_rf_card_config_gain(openair0_config_t *openair0_cfg,
     openair0_cfg->autocal[i] = 1;
 
     if (i < openair0_cfg->rx_num_channels) {
-      LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_gain %f, rx_gain %f\n",
+      LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_gain %.0f, rx_gain %.0f\n",
         i,
         rf_chain,
         openair0_cfg->tx_gain[i],
@@ -103,11 +103,12 @@ void nr_rf_card_config_freq(openair0_config_t *openair0_cfg,
     openair0_cfg->autocal[i] = 1;
 
     if (i < openair0_cfg->rx_num_channels) {
-      LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_freq %f Hz, rx_freq %f Hz\n",
+      LOG_I(PHY, "HW: Configuring channel %d (rf_chain %d): setting tx_freq %.0f Hz, rx_freq %.0f Hz, tune_offset %.0f\n",
         i,
         rf_chain,
         openair0_cfg->tx_freq[i],
-        openair0_cfg->rx_freq[i]);
+        openair0_cfg->rx_freq[i],
+        openair0_cfg->tune_offset);
     }
 
   }
