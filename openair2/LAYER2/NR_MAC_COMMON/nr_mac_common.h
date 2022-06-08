@@ -55,6 +55,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
                      nr_rnti_type_t rnti_type,
                      uint16_t N_RB,
                      int bwp_id,
+                     NR_ControlResourceSetId_t coreset_id,
                      uint16_t cset0_bwp_size);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
@@ -120,7 +121,31 @@ int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmr
 uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint8_t mcs_table);
 uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB);
 
+uint32_t nr_compute_tbs(uint16_t Qm,
+                        uint16_t R,
+			uint16_t nb_rb,
+			uint16_t nb_symb_sch,
+			uint16_t nb_dmrs_prb,
+                        uint16_t nb_rb_oh,
+                        uint8_t tb_scaling,
+			uint8_t Nl);
+
+/** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
+uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
+uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
+
+/** \brief Computes Q based on I_MCS PDSCH and table_idx for uplink. Implements MCS Tables from 38.214. */
+uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
+uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
+
 uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset);
+
+int get_bw_tbslbrm(NR_BWP_t *genericParameters,
+                   NR_CellGroupConfig_t *cg);
+
+uint32_t nr_compute_tbslbrm(uint16_t table,
+			    uint16_t nb_rb,
+		            uint8_t Nl);
 
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,
@@ -147,6 +172,10 @@ void get_info_from_tda_tables(int default_abc,
 
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
+
+uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
+                                   NR_SRS_Config_t *srs_config,
+                                   dci_field_t srs_resource_indicator);
 
 uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t nr_prbs,

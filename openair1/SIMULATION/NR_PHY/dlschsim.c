@@ -47,14 +47,18 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+
 
 //#define DEBUG_NR_DLSCHSIM
 
+THREAD_STRUCT thread_struct;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 UE_nr_rxtx_proc_t proc;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 double cpuf;
 //uint8_t nfapi_mode = 0;
@@ -119,6 +123,7 @@ int main(int argc, char **argv)
         double DS_TDL = .03;
 	cpuf = get_cpu_freq_GHz();
 	char gNBthreads[128]="n";
+        int Tbslbrm = 950984;
 
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
 		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
@@ -426,13 +431,10 @@ int main(int argc, char **argv)
 	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
-	uint8_t is_crnti = 0, llr8_flag = 0;
+	uint8_t is_crnti = 0;
 	unsigned int TBS = 8424;
-	unsigned int available_bits;
 	uint8_t nb_re_dmrs = 6;  // No data in dmrs symbol
 	uint16_t length_dmrs = 1;
-	unsigned char mod_order;
-        uint16_t rate;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
 	dlsch->rnti = 1;
@@ -440,9 +442,9 @@ int main(int argc, char **argv)
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
 	//    dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
-	mod_order = nr_get_Qm_dl(Imcs, mcs_table);
-        rate = nr_get_code_rate_dl(Imcs, mcs_table);
-	available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
+	unsigned char mod_order = nr_get_Qm_dl(Imcs, mcs_table);
+        uint16_t rate = nr_get_code_rate_dl(Imcs, mcs_table);
+	unsigned int available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
 	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
 	//dlsch->harq_ids[subframe]= 0;
@@ -457,6 +459,7 @@ int main(int argc, char **argv)
 	rel15->dlDmrsSymbPos = 4;
 	rel15->mcsIndex[0] = Imcs;
         rel15->numDmrsCdmGrpsNoData = 1;
+        rel15->maintenance_parms_v3.tbSizeLbrmBytes = Tbslbrm;
 	double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
 	short channel_output_fixed[16 * 68 * 384];
 	//unsigned char *estimated_output;
@@ -473,9 +476,11 @@ int main(int argc, char **argv)
 	harq_process->Qm = mod_order;
 	harq_process->rvidx = rvidx;
 	harq_process->R = rate;
+        harq_process->TBS = TBS;
 	harq_process->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	harq_process->dlDmrsSymbPos = 4;
 	harq_process->n_dmrs_cdm_groups = 1;
+        harq_process->tbslbrm = Tbslbrm;
 	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
 
 	unsigned char *test_input=dlsch->harq_process.pdu;
@@ -492,8 +497,8 @@ int main(int argc, char **argv)
 
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
-	    unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
-    bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
+        unsigned char output[rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS] __attribute__((aligned(32)));
+        bzero(output,rel15->rbSize * NR_SYMBOLS_PER_SLOT * NR_NB_SC_PER_RB * 8 * NR_MAX_NB_LAYERS);
 	if (input_fd == NULL) {
 	  nr_dlsch_encoding(gNB, frame, slot, &dlsch->harq_process, frame_parms,output,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 	}
@@ -545,7 +550,7 @@ int main(int argc, char **argv)
 
 			ret = nr_dlsch_decoding(UE, &proc, 0, channel_output_fixed, &UE->frame_parms,
 					dlsch0_ue, dlsch0_ue->harq_processes[0], frame, nb_symb_sch,
-					slot,harq_pid, is_crnti, llr8_flag);
+					slot,harq_pid, is_crnti);
 
 			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_OUT);
 

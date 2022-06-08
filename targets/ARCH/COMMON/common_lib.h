@@ -188,6 +188,7 @@ typedef struct {
   //! \brief Center frequency in Hz for TX.
   //! index: [0..rx_num_channels[ !!! see lte-ue.c:427 FIXME iterates over rx_num_channels
   double tx_freq[4];
+  double tune_offset;
   //! \brief memory
   //! \brief Pointer to Calibration table for RX gains
   rx_gain_calib_table_t *rx_gain_calib_table;
@@ -239,6 +240,12 @@ typedef struct {
   double tx_sample_rate;
   //! check for threequarter sampling rate
   int8_t threequarter_fs;
+  //! Flag to indicate this configuration is for NR
+  int nr_flag;
+  //! NR band number
+  int nr_band;
+  //! NR scs for raster
+  int nr_scs_for_raster;
 } openair0_config_t;
 
 /*! \brief RF mapping */

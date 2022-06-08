@@ -107,7 +107,6 @@ const char ru_states[6][9] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERRO
 extern const char NB_functions[7][20];
 extern const char NB_timing[2][20];
 
-extern uint16_t sf_ahead;
 
 extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 
@@ -252,8 +251,8 @@ void fh_if4p5_south_in(RU_t *ru,
 
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
   if (get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
-    proc->tti_tx   = (sf+sf_ahead)%10;
-    proc->frame_tx = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
+    proc->tti_tx   = (sf+ru->sf_ahead)%10;
+    proc->frame_tx = (sf>(9-ru->sf_ahead)) ? (f+1)&1023 : f;
   }
 
   LOG_D(PHY,"Setting proc for (%d,%d)\n",sf,f);
@@ -652,13 +651,13 @@ void rx_rf(RU_t *ru,
 
   if (get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->fh_north_asynch_in == NULL) {
 #ifdef PHY_TX_THREAD
-    proc->timestamp_phy_tx = proc->timestamp_rx+((sf_ahead-1)*fp->samples_per_tti);
-    proc->subframe_phy_tx  = (proc->tti_rx+(sf_ahead-1))%10;
-    proc->frame_phy_tx     = (proc->tti_rx>(9-(sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+    proc->timestamp_phy_tx = proc->timestamp_rx+((ru->sf_ahead-1)*fp->samples_per_tti);
+    proc->subframe_phy_tx  = (proc->tti_rx+(ru->sf_ahead-1))%10;
+    proc->frame_phy_tx     = (proc->tti_rx>(9-(ru->sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #else
-    proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-    proc->tti_tx       = (proc->tti_rx+sf_ahead)%10;
-    proc->frame_tx     = (proc->tti_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+    proc->timestamp_tx = proc->timestamp_rx+(ru->sf_ahead*fp->samples_per_tti);
+    proc->tti_tx       = (proc->tti_rx+ru->sf_ahead)%10;
+    proc->frame_tx     = (proc->tti_rx>(9-ru->sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #endif
     //proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
     //proc->subframe_tx  = (proc->tti_rx+sf_ahead)%10;
@@ -1372,11 +1371,12 @@ void fill_rf_config(RU_t *ru,
     cfg->tx_gain[i] = (double)ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-(double)ru->att_rx;
     cfg->configFilename = rf_config_file;
-    LOG_I(PHY,"channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
+    LOG_I(PHY,"channel %d, Setting tx_gain offset %.0f, rx_gain offset %.0f, tx_freq %.0f, rx_freq %.0f, tune_offset %.0f Hz\n",
            i, cfg->tx_gain[i],
            cfg->rx_gain[i],
            cfg->tx_freq[i],
-           cfg->rx_freq[i]);
+           cfg->rx_freq[i],
+           cfg->tune_offset);
   }
 }
 
@@ -2973,6 +2973,8 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
 	ru[j]->openair0_cfg.time_source = unset;
       }      
 
+      ru[j]->openair0_cfg.tune_offset = get_softmodem_params()->tune_offset;
+
       LOG_I(PHY,"RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
 
       if (strcmp(*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr), "yes") == 0) ru[j]->is_slave=1;
@@ -3081,6 +3083,7 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
       ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
+      ru[j]->sf_ahead                          = *(RUParamList.paramarray[j][RU_SF_AHEAD].uptr);
       *ru_mask= (*ru_mask)|(1<<j);
     }// j=0..num_rus
   } 

@@ -644,6 +644,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         break;
      case USRP_X300_DEV:
      case USRP_N300_DEV:
+     case USRP_X400_DEV:
         rxshift=2;
         break;
      default:
@@ -674,27 +675,27 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   }
   if (samples_received == nsamps) s->wait_for_first_pps=0;
 
-  // bring RX data into 12 LSBs for softmodem RX
+    // bring RX data into 12 LSBs for softmodem RX
   for (int i=0; i<cc; i++) {
-    for (int j=0; j<nsamps2; j++) {
+
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-      // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
       if ((((uintptr_t) buff[i])&0x1F)==0) {
-        ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
+        for (int j=0; j<nsamps2; j++) 
+           ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
       } else {
-        ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
-        ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
+        for (int j=0; j<(nsamps2<<1); j++) 
+          ((__m128i *)buff[i])[j]  = _mm_srai_epi16(((__m128i *)buff_tmp[i])[j],rxshift);
       }
-
-#else
-      ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
+#else    
+      for (int j=0; j<nsamps2; j++) 
+        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
 #endif
 #elif defined(__arm__)
-      ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
+      for (int j=0; j<nsamps2; j++) 
+        ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
-    }
   }
 
   if (samples_received < nsamps) {
@@ -746,8 +747,12 @@ static bool is_equal(double a, double b) {
 void *freq_thread(void *arg) {
   openair0_device *device=(openair0_device *)arg;
   usrp_state_t *s = (usrp_state_t *)device->priv;
-  s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
-  s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+  uhd::tune_request_t tx_tune_req(device->openair0_cfg[0].tx_freq[0],
+                                  device->openair0_cfg[0].tune_offset);
+  uhd::tune_request_t rx_tune_req(device->openair0_cfg[0].rx_freq[0],
+                                  device->openair0_cfg[0].tune_offset);
+  s->usrp->set_tx_freq(tx_tune_req);
+  s->usrp->set_rx_freq(rx_tune_req);
   return NULL;
 }
 /*! \brief Set frequencies (TX/RX). Spawns a thread to handle the frequency change to not block the calling thread
@@ -759,14 +764,18 @@ void *freq_thread(void *arg) {
 int trx_usrp_set_freq(openair0_device *device, openair0_config_t *openair0_cfg, int dont_block) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
   pthread_t f_thread;
-  printf("Setting USRP TX Freq %f, RX Freq %f\n",openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0]);
+  printf("Setting USRP TX Freq %f, RX Freq %f, tune_offset: %f, dont_block: %d\n",
+         openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0],
+         openair0_cfg[0].tune_offset, dont_block);
 
   // spawn a thread to handle the frequency change to not block the calling thread
   if (dont_block == 1)
     pthread_create(&f_thread,NULL,freq_thread,(void *)device);
   else {
-    s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
-    s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+    uhd::tune_request_t tx_tune_req(openair0_cfg[0].tx_freq[0], openair0_cfg[0].tune_offset);
+    uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0], openair0_cfg[0].tune_offset);
+    s->usrp->set_tx_freq(tx_tune_req);
+    s->usrp->set_rx_freq(rx_tune_req);
   }
 
   return(0);
@@ -779,9 +788,11 @@ int trx_usrp_set_freq(openair0_device *device, openair0_config_t *openair0_cfg, 
  */
 int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
-  uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0]);
-  rx_tune_req.rf_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
-  rx_tune_req.rf_freq = openair0_cfg[0].rx_freq[0];
+  uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0], openair0_cfg[0].tune_offset);
+  printf("In openair0_set_rx_frequencies, freq: %f, tune offset: %f\n",
+         openair0_cfg[0].rx_freq[0],  openair0_cfg[0].tune_offset);
+  //rx_tune_req.rf_freq_policy = uhd::tune_request_t::POLICY_MANUAL;
+  //rx_tune_req.rf_freq = openair0_cfg[0].rx_freq[0];
   s->usrp->set_rx_freq(rx_tune_req);
   return(0);
 }
@@ -1116,7 +1127,6 @@ extern "C" {
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
-    s->usrp->set_rx_dc_offset(true);
   }
 
   if (device->type==USRP_N300_DEV) {
@@ -1277,7 +1287,9 @@ extern "C" {
   for(int i=0; i<((int) s->usrp->get_rx_num_channels()); i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i+choffset);
-      s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i+choffset);
+      uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[i],
+                                      openair0_cfg[0].tune_offset);
+      s->usrp->set_rx_freq(rx_tune_req, i+choffset);
       set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
       ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i+choffset);
       // limit to maximum gain
@@ -1303,7 +1315,9 @@ extern "C" {
 
     if (i<openair0_cfg[0].tx_num_channels) {
       s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i+choffset);
-      s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i+choffset);
+      uhd::tune_request_t tx_tune_req(openair0_cfg[0].tx_freq[i],
+                                      openair0_cfg[0].tune_offset);
+      s->usrp->set_tx_freq(tx_tune_req, i+choffset);
       s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i+choffset);
       LOG_I(HW,"USRP TX_GAIN:%3.2lf gain_range:%3.2lf tx_gain:%3.2lf\n", gain_range_tx.stop()-openair0_cfg[0].tx_gain[i], gain_range_tx.stop(), openair0_cfg[0].tx_gain[i]);
     }

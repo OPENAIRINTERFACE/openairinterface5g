@@ -167,7 +167,7 @@ typedef struct RadioResourceConfig_s {
   long                    ue_TransmissionMode;
   long                    ue_multiple_max;
   //SIB2 BR Options
-  long       *preambleTransMax_CE_r13;
+  long       preambleTransMax_CE_r13;
   BOOLEAN_t     prach_ConfigCommon_v1310;
   BOOLEAN_t            *mpdcch_startSF_CSS_RA_r13;
   long        mpdcch_startSF_CSS_RA_r13_val;

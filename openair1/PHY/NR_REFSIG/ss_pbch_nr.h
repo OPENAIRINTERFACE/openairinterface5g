@@ -80,8 +80,6 @@
 /* see TS 38211 7.4.1.4 Demodulation reference signals for PBCH */
 #define  DMRS_PBCH_I_SSB              (8)         /* maximum index value for SSB/PBCH which can have alength of L=4 or L=8 */
 #define  DMRS_PBCH_N_HF               (2)         /* half frame indication - 0 for first part of frame and 1 for second part of frame */
-#define  DMRS_ALIGNMENT_32_BIT        (20)        /* it is just for ensuring a 32 bits alignment for storing dmrs pbch into a 32 bits map */
-#define  DMRS_BITMAP_SIZE             ((DMRS_PBCH_NUMBER-DMRS_ALIGNMENT_32_BIT)/32)   /* size is divided by 32 (to get bitmap on uint32) DMRS_PBCH_NUMBER should be a multiple of 32 */
 
 #endif /* SS_PBCH_NR_H */
 

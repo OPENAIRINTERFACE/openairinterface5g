@@ -359,7 +359,8 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
           return;
         }
         nr_rrc_ue_process_rrcReconfiguration(module_id,RRCReconfiguration);
-        }
+        ASN_STRUCT_FREE(asn_DEF_NR_RRCReconfiguration, RRCReconfiguration);
+      }
       break;
     
     case nr_RadioBearerConfigX_r15:
@@ -392,6 +393,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
         else if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
           xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *) RadioBearerConfig);
         }
+        ASN_STRUCT_FREE(asn_DEF_NR_RadioBearerConfig, RadioBearerConfig);
       }
       break;
     
@@ -1338,13 +1340,6 @@ static void rrc_ue_generate_RRCSetupComplete(
   uint8_t size;
   const char *nas_msg;
   int   nas_msg_length;
-  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-
-  if (mac->cg &&
-      mac->cg->spCellConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated &&
-      mac->cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig)
-    AssertFatal(1==0,"2 > csi_MeasConfig is not null\n");
 
  if (AMF_MODE_ENABLED) {
 #if defined(ITTI_SIM)
@@ -1460,8 +1455,8 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 	 nr_rrc_ue_process_RadioBearerConfig(ctxt_pP,
 					     gNB_index,
 					     &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
-	 nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
-	 nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
+	 nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED_NR);
+	 nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED_NR);
 	 NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
 	 rrc_ue_generate_RRCSetupComplete(
 					  ctxt_pP,

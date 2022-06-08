@@ -47,13 +47,16 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "common/utils/threadPool/thread-pool.h"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 
 //#define DEBUG_NR_ULSCHSIM
 
+THREAD_STRUCT thread_struct;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
@@ -137,6 +140,7 @@ int main(int argc, char **argv)
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
+  uint8_t Nl = 1;
 
   double DS_TDL = .03;
 
@@ -150,7 +154,7 @@ int main(int argc, char **argv)
   randominit(0);
 
   //while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
-  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:r:")) != -1) {
+  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:r:W:")) != -1) {
     switch (c) {
       /*case 'f':
          write_output_file = 1;
@@ -251,7 +255,7 @@ int main(int argc, char **argv)
       case 'y':
         n_tx = atoi(optarg);
 
-        if ((n_tx == 0) || (n_tx > 2)) {
+        if ((n_tx == 0) || (n_tx > 4)) {
           printf("Unsupported number of TX antennas %d. Exiting.\n", n_tx);
           exit(-1);
         }
@@ -261,7 +265,7 @@ int main(int argc, char **argv)
       case 'z':
         n_rx = atoi(optarg);
 
-        if ((n_rx == 0) || (n_rx > 2)) {
+        if ((n_rx == 0) || (n_rx > 4)) {
           printf("Unsupported number of RX antennas %d. Exiting.\n", n_rx);
           exit(-1);
         }
@@ -299,6 +303,10 @@ int main(int argc, char **argv)
           printf("Illegal PBCH phase (0-3) got %d\n", pbch_phase);
         break;*/
 
+      case 'W':
+        Nl = atoi(optarg);
+      break;
+
       case 'm':
         Imcs = atoi(optarg);
 #ifdef DEBUG_NR_ULSCHSIM
@@ -335,13 +343,14 @@ int main(int argc, char **argv)
           printf("-z Number of RX antennas used in UE\n");
           //printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
           //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+          printf("-W number of layer\n");
           printf("-M Multiple SSB positions in burst\n");
           printf("-N Nid_cell\n");
           printf("-R N_RB_UL\n");
           printf("-F Input filename (.txt format) for RX conformance testing\n");
-          printf("-m\n");
-          printf("-l\n");
-          printf("-r\n");
+          printf("-m MCS\n");
+          printf("-l number of symbol\n");
+          printf("-r number of RB\n");
           //printf("-O oversampling factor (1,2,4,8,16)\n");
           //printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
           //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
@@ -359,8 +368,8 @@ int main(int argc, char **argv)
     snr1 = snr0 + 10;
 
   gNB2UE = new_channel_desc_scm(n_tx,
-		                n_rx,
-				channel_model,
+                                n_rx,
+                                channel_model,
                                 61.44e6, //N_RB2sampling_rate(N_RB_DL),
                                 40e6, //N_RB2channel_bandwidth(N_RB_DL),
                                 DS_TDL,
@@ -383,14 +392,15 @@ int main(int argc, char **argv)
   initTpool(tp_param, gNB->threadPool, true);
   initNotifiedFIFO(gNB->respDecode);
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
-  frame_parms->nb_antennas_tx = n_tx;
-  frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
   crcTableInit();
 
   memcpy(&gNB->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
+
+  gNB->frame_parms.nb_antennas_tx = 1;
+  gNB->frame_parms.nb_antennas_rx = n_rx;
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
@@ -400,6 +410,9 @@ int main(int argc, char **argv)
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
+  UE->frame_parms.nb_antennas_tx = n_tx;
+  UE->frame_parms.nb_antennas_rx = 1;
+
   //phy_init_nr_top(frame_parms);
   if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation.\n");
@@ -407,7 +420,7 @@ int main(int argc, char **argv)
   }
 
   for (sf = 0; sf < 2; sf++) {
-    UE->ulsch[sf][0] = new_nr_ue_ulsch(N_RB_UL, 8);
+    UE->ulsch[sf][0] = new_nr_ue_ulsch(N_RB_UL, 8, frame_parms);
     if (!UE->ulsch[sf][0]) {
       printf("Can't get ue ulsch structures.\n");
       exit(-1);
@@ -421,8 +434,7 @@ int main(int argc, char **argv)
   uint8_t length_dmrs = 1;
   uint8_t N_PRB_oh;
   uint16_t N_RE_prime,code_rate;
-  unsigned char mod_order;
-  uint8_t Nl = 1;
+  unsigned char mod_order;  
   uint8_t rvidx = 0;
   uint8_t UE_id = 0;
 
@@ -432,9 +444,12 @@ int main(int argc, char **argv)
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0];
 
+  if ((Nl==4)||(Nl==3))
+    nb_re_dmrs = nb_re_dmrs*2;
+
   mod_order = nr_get_Qm_ul(Imcs, 0);
   code_rate = nr_get_code_rate_ul(Imcs, 0);
-  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
+  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
   TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 
   printf("\nAvailable bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
@@ -447,7 +462,7 @@ int main(int argc, char **argv)
   rel15_ul->pusch_data.rv_index = rvidx;
   rel15_ul->nrOfLayers          = Nl;
   rel15_ul->target_code_rate    = code_rate;
-  rel15_ul->pusch_data.tb_size  = TBS/8;
+  rel15_ul->pusch_data.tb_size  = TBS>>3;
   ///////////////////////////////////////////////////
 
   double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
@@ -474,7 +489,9 @@ int main(int argc, char **argv)
   harq_process_ul_ue->pusch_pdu.nr_of_symbols = nb_symb_sch;
   harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
   harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
-  harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS/8;
+  harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS>>3;
+  harq_process_ul_ue->pusch_pdu.target_code_rate = code_rate;
+  harq_process_ul_ue->pusch_pdu.qam_mod_order = mod_order;
   unsigned char *test_input = harq_process_ul_ue->a;
 
   ///////////
@@ -610,7 +627,8 @@ int main(int argc, char **argv)
   }
 
   for (sf = 0; sf < 2; sf++)
-    free_nr_ue_ulsch(&UE->ulsch[sf][0], N_RB_UL);
+    free_nr_ue_ulsch(&UE->ulsch[sf][0], N_RB_UL, frame_parms);
+
   term_nr_ue_signal(UE, 1);
   free(UE);
 

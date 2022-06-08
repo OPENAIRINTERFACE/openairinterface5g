@@ -294,6 +294,9 @@ class Containerize():
 			if image != 'ran-build':
 				mySSH.command('sed -i -e "s#' + "ran-build" + ':latest#' + "ran-build" + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
 			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
+			# Flatten Image
+			if image != 'ran-build':
+				mySSH.command('python3 ./ci-scripts/flatten_image.py --tag ' + image + ':' + imageTag, '\$', 300)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/' + image + '.log', '\$', 5)
