@@ -633,27 +633,27 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 }
 
-int fill_srs_reported_symbol_list(nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list,
+int fill_srs_reported_symbol_list(nfapi_nr_srs_reported_symbol_t *prgs,
                                   nfapi_nr_srs_pdu_t *srs_pdu,
                                   int N_RB_UL,
                                   const int8_t *snr_per_rb,
                                   int srs_est) {
 
-  reported_symbol_list->num_rbs = srs_bandwidth_config[srs_pdu->config_index][srs_pdu->bandwidth_index][0];
+  prgs->num_prgs = srs_pdu->beamforming.num_prgs;
 
-  if (!reported_symbol_list->rb_list) {
-    reported_symbol_list->rb_list = (nfapi_nr_srs_indication_reported_symbol_resource_block_t*) calloc(1, N_RB_UL*sizeof(nfapi_nr_srs_indication_reported_symbol_resource_block_t));
+  if (!prgs->prg_list) {
+    prgs->prg_list = (nfapi_nr_srs_reported_symbol_prgs_t*) calloc(1, N_RB_UL*sizeof(nfapi_nr_srs_reported_symbol_prgs_t));
   }
 
-  for(int rb = 0; rb < reported_symbol_list->num_rbs; rb++) {
+  for(int prg_idx = 0; prg_idx < prgs->num_prgs; prg_idx++) {
     if (srs_est<0) {
-      reported_symbol_list->rb_list[rb].rb_snr = 0xFF;
-    } else if (snr_per_rb[rb] < -64) {
-      reported_symbol_list->rb_list[rb].rb_snr = 0;
-    } else if (snr_per_rb[rb] > 63) {
-      reported_symbol_list->rb_list[rb].rb_snr = 0xFE;
+      prgs->prg_list[prg_idx].rb_snr = 0xFF;
+    } else if (snr_per_rb[prg_idx] < -64) {
+      prgs->prg_list[prg_idx].rb_snr = 0;
+    } else if (snr_per_rb[prg_idx] > 63) {
+      prgs->prg_list[prg_idx].rb_snr = 0xFE;
     } else {
-      reported_symbol_list->rb_list[rb].rb_snr = (snr_per_rb[rb] + 64)<<1;
+      prgs->prg_list[prg_idx].rb_snr = (snr_per_rb[prg_idx] + 64) << 1;
     }
   }
 
@@ -890,36 +890,64 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->UL_INFO.srs_ind.slot = slot_rx;
         gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
         gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
-        gNB->srs_pdu_list[num_srs].timing_advance = nr_est_timing_advance_srs(&gNB->frame_parms, gNB->nr_srs_info[i]->srs_estimated_channel_time[0]);
-        gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
-        gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (*gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
-        gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
-        if(!gNB->srs_pdu_list[num_srs].reported_symbol_list) {
-          gNB->srs_pdu_list[num_srs].reported_symbol_list = (nfapi_nr_srs_indication_reported_symbol_t*) calloc(1, gNB->srs_pdu_list[num_srs].num_reported_symbols*sizeof(nfapi_nr_srs_indication_reported_symbol_t));
-        }
-        fill_srs_reported_symbol_list(&gNB->srs_pdu_list[num_srs].reported_symbol_list[0],
+        gNB->srs_pdu_list[num_srs].timing_advance_offset = nr_est_timing_advance_srs(&gNB->frame_parms, gNB->nr_srs_info[i]->srs_estimated_channel_time[0]);
+        gNB->srs_pdu_list[num_srs].timing_advance_offset_nsec = (int16_t)(( ((int32_t)gNB->srs_pdu_list[num_srs].timing_advance_offset-31) * ((int32_t)TC_NSEC_x32768) ) >> 15);
+        gNB->srs_pdu_list[num_srs].srs_usage = srs_pdu->srs_parameters_v4.usage;
+        gNB->srs_pdu_list[num_srs].report_type = 1;
+
+#ifdef SRS_IND_DEBUG
+        LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.sfn = %i\n", gNB->UL_INFO.srs_ind.sfn);
+        LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.slot = %i\n", gNB->UL_INFO.srs_ind.slot);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].rnti = %04x\n", num_srs, gNB->srs_pdu_list[num_srs].rnti);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].timing_advance = %i\n", num_srs, gNB->srs_pdu_list[num_srs].timing_advance_offset);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].timing_advance_offset_nsec = %i\n", num_srs, gNB->srs_pdu_list[num_srs].timing_advance_offset_nsec);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].srs_usage = %i\n", num_srs, gNB->srs_pdu_list[num_srs].srs_usage);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].report_type = %i\n", num_srs, gNB->srs_pdu_list[num_srs].report_type);
+#endif
+
+        nfapi_nr_srs_beamforming_report_t *nr_srs_beamforming_report = (nfapi_nr_srs_beamforming_report_t*) calloc(1,sizeof(nfapi_nr_srs_beamforming_report_t));
+        nr_srs_beamforming_report->prg_size = srs_pdu->beamforming.prg_size;
+        nr_srs_beamforming_report->num_symbols = 1<<srs_pdu->num_symbols;
+        nr_srs_beamforming_report->wide_band_snr = srs_est >= 0 ? (*gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
+        nr_srs_beamforming_report->num_reported_symbols = 1<<srs_pdu->num_symbols;
+        nr_srs_beamforming_report->prgs = (nfapi_nr_srs_reported_symbol_t*) calloc(1, nr_srs_beamforming_report->num_reported_symbols*sizeof(nfapi_nr_srs_reported_symbol_t));
+        fill_srs_reported_symbol_list(&nr_srs_beamforming_report->prgs[0],
                                       srs_pdu,
                                       gNB->frame_parms.N_RB_UL,
                                       gNB->nr_srs_info[i]->snr_per_rb,
                                       srs_est);
 
-        gNB->UL_INFO.srs_ind.number_of_pdus += 1;
-
 #ifdef SRS_IND_DEBUG
-        LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.sfn = %i\n", gNB->UL_INFO.srs_ind.sfn);
-        LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.slot = %i\n", gNB->UL_INFO.srs_ind.slot);
-        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].rnti = 0x%04x\n", num_srs, gNB->srs_pdu_list[num_srs].rnti);
-        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].timing_advance = %i\n", num_srs, gNB->srs_pdu_list[num_srs].timing_advance);
-        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_symbols);
-        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].wide_band_snr = %i\n", num_srs, gNB->srs_pdu_list[num_srs].wide_band_snr);
-        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_reported_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_reported_symbols);
-        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].reported_symbol_list[0].num_rbs = %i\n", num_srs, gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs);
-        for(int rb = 0; rb < gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs; rb++) {
-          LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].reported_symbol_list[0].rb_list[%3i].rb_snr = %i\n",
-                num_srs, rb, gNB->srs_pdu_list[num_srs].reported_symbol_list[0].rb_list[rb].rb_snr);
+        LOG_I(NR_PHY, "nr_srs_beamforming_report->prg_size = %i\n", nr_srs_beamforming_report->prg_size);
+        LOG_I(NR_PHY, "nr_srs_beamforming_report->num_symbols = %i\n", nr_srs_beamforming_report->num_symbols);
+        LOG_I(NR_PHY, "nr_srs_beamforming_report->wide_band_snr = %i (%i dB)\n", nr_srs_beamforming_report->wide_band_snr, (nr_srs_beamforming_report->wide_band_snr>>1)-64);
+        LOG_I(NR_PHY, "nr_srs_beamforming_report->num_reported_symbols = %i\n", nr_srs_beamforming_report->num_reported_symbols);
+        LOG_I(NR_PHY, "nr_srs_beamforming_report->prgs[0].num_prgs = %i\n", nr_srs_beamforming_report->prgs[0].num_prgs);
+        for(int prg_idx = 0; prg_idx < nr_srs_beamforming_report->prgs[0].num_prgs; prg_idx++) {
+          LOG_I(NR_PHY, "nr_srs_beamforming_report->prgs[0].prg_list[%3i].rb_snr = %i (%i dB)\n",
+                prg_idx,
+                nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr,
+                (nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr>>1)-64);
         }
 #endif
 
+        if(!gNB->srs_pdu_list[num_srs].report_tlv) {
+          gNB->srs_pdu_list[num_srs].report_tlv = (nfapi_srs_report_tlv_t*) calloc(1, sizeof(nfapi_srs_report_tlv_t));
+        }
+        gNB->srs_pdu_list[num_srs].report_tlv->tag = 0;
+        gNB->srs_pdu_list[num_srs].report_tlv->length = pack_nr_srs_beamforming_report(nr_srs_beamforming_report,
+                                                                                       gNB->srs_pdu_list[num_srs].report_tlv->value,
+                                                                                       16384*sizeof(uint32_t));
+
+#ifdef SRS_IND_DEBUG
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].report_tlv->length = %i\n", num_srs, gNB->srs_pdu_list[num_srs].report_tlv->length);
+        char *value = (char*)gNB->srs_pdu_list[num_srs].report_tlv->value;
+        for(int b = 0; b < gNB->srs_pdu_list[num_srs].report_tlv->length; b++) {
+          LOG_I(NR_PHY, "value[%i] = 0x%02x\n", b, value[b]&0xFF);
+        }
+#endif
+
+        gNB->UL_INFO.srs_ind.number_of_pdus += 1;
         srs->active = 0;
       }
     }

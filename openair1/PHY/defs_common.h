@@ -98,6 +98,7 @@
 
 #define NB_RX_ANTENNAS_MAX 64
 
+#define TC_NSEC_x32768 16667
 
 typedef enum {TDD=1,FDD=0} frame_type_t;
 
