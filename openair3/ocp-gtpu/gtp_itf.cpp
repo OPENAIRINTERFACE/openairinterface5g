@@ -462,7 +462,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   auto inst=&globGtp.instances[instance];
   auto it=inst->ue2te_mapping.find(rnti);
 
-  if ( it != inst->ue2te_mapping.end() ) {
+  if ( it != inst->ue2te_mapping.end() &&  it->second.bearers.find(outgoing_bearer_id) != it->second.bearers.end()) {
     LOG_W(GTPU,"[%ld] Create a config for a already existing GTP tunnel (rnti %x)\n", instance, rnti);
     inst->ue2te_mapping.erase(it);
   }

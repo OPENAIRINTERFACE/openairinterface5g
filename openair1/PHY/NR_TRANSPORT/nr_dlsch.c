@@ -214,6 +214,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 #endif
 
     stop_meas(&gNB->dlsch_layer_mapping_stats); 
+
     /// Resource mapping
     
     // Non interleaved VRB to PRB mapping
@@ -235,6 +236,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     for (int nl=0; nl<rel15->nrOfLayers; nl++) {
 
       int dmrs_port = get_dmrs_port(nl,rel15->dmrsPorts);
+
       // DMRS params for this dmrs port
       get_Wt(Wt, dmrs_port, dmrs_Type);
       get_Wf(Wf, dmrs_port, dmrs_Type);
@@ -312,7 +314,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
           for (int i=0; i<rel15->rbSize*NR_NB_SC_PER_RB; i++) {
             /* check if cuurent RE is PTRS RE*/
             is_ptrs_re = 0;
-            if (ptrs_symbol)
+            /* check for PTRS symbol and set flag for PTRS RE */
+            if(ptrs_symbol){
               is_ptrs_re = is_ptrs_subcarrier(k,
                                               rel15->rnti,
                                               nl,
@@ -322,6 +325,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                                               rel15->PTRSReOffset,
                                               start_sc,
                                               frame_parms->ofdm_symbol_size);
+            }
             /* Map DMRS Symbol */
             if ( (dmrs_symbol_map & (1 << l)) &&
                  (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_Type))%(frame_parms->ofdm_symbol_size)))) {
@@ -337,6 +341,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
               k_prime&=1;
               n+=(k_prime)?0:1;
             }
+            /* Map PTRS Symbol */
             else if(is_ptrs_re){
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = (beta_ptrs*amp*mod_ptrs[ptrs_idx<<1]) >> 15;
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (beta_ptrs*amp*mod_ptrs[(ptrs_idx<<1) + 1])>> 15;

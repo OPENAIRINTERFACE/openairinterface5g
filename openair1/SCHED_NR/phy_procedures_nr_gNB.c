@@ -178,8 +178,8 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[i];
     if (csirs->active == 1) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
-      nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
-      nr_generate_csi_rs(gNB, AMP, csi_params, slot);
+      nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params = &csirs->csirs_pdu.csi_rs_pdu_rel15;
+      nr_generate_csi_rs(gNB->frame_parms, gNB->common_vars.txdataF, AMP, gNB->nr_csi_rs_info, csi_params, slot);
       csirs->active = 0;
     }
   }
@@ -346,6 +346,14 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 	number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
 	pusch_pdu->qam_mod_order,
 	pusch_pdu->nrOfLayers);
+
+
+  nr_ulsch_layer_demapping(gNB->pusch_vars[ULSCH_id]->llr,
+                           pusch_pdu->nrOfLayers,
+                           pusch_pdu->qam_mod_order,
+                           G,
+                           gNB->pusch_vars[ULSCH_id]->llr_layers);
+             
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------

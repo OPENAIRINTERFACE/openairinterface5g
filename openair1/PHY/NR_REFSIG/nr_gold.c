@@ -123,27 +123,3 @@ void nr_gold_pusch(PHY_VARS_gNB* gNB, int nscid, uint32_t nid) {
     }
   }
 }
-
-
-void nr_init_csi_rs(PHY_VARS_gNB* gNB, uint32_t Nid)
-{
-  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-  uint32_t ***csi_rs = gNB->nr_gold_csi_rs;
-  uint32_t x1, x2;
-  uint8_t reset;
-  int csi_dmrs_init_length =  ((fp->N_RB_DL<<4)>>5)+1;
-
-  for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
-    for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
-
-      reset = 1;
-      x2 = ((1<<10) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
-
-      for (uint32_t n=0; n<csi_dmrs_init_length; n++) {
-        csi_rs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
-        reset = 0;
-      }
-    }  
-  }
-
-}
