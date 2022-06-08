@@ -455,7 +455,6 @@ int get_nr_table_idx(int nr_bandP, uint8_t scs_index) {
   return i;
 }
 
-
 int get_subband_size(int NPRB,int size) {
   // implements table  5.2.1.4-2 from 36.214
   //

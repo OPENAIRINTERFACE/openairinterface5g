@@ -331,7 +331,7 @@ int nr_process_mac_pdu( instance_t module_idP,
                               0);
           break;
 
-        case UL_SCH_LCID_DTCH:
+        case UL_SCH_LCID_DTCH ... (UL_SCH_LCID_DTCH + 28):
           //  check if LCID is valid at current time.
 	  if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
 	    return 0;
@@ -803,8 +803,7 @@ static bool nr_UE_is_to_be_scheduled(const NR_ServingCellConfigCommon_t *scc,
   if (tdd) { // Force the default transmission in a full slot as early as possible in the UL portion of TDD period (last_ul_slot)
     num_slots_per_period = n*tdd_period_len[tdd->dl_UL_TransmissionPeriodicity]/10000;
     last_ul_slot=1+tdd->nrofDownlinkSlots;
-  }
-  else {
+  } else {
     num_slots_per_period = n;
     last_ul_slot = sched_ctrl->last_ul_slot;
   }

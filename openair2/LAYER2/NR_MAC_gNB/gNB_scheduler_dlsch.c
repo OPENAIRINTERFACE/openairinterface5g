@@ -60,7 +60,7 @@ const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon
 
   // Use special TDA in case of CSI-RS
   if(nrmac->UE_info.sched_csirs)
-      return 1;
+    return 1;
 
   if (tdd && tdd->nrofDownlinkSymbols > 1) { // if there is a mixed slot where we can transmit DL
     const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + 1;
@@ -370,7 +370,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 sub_frame_t slot,
                                 uint16_t *rballoc_mask,
                                 int *n_rb_sched,
-                                NR_UE_info_t * UE,
+                                NR_UE_info_t *UE,
                                 int current_harq_pid) {
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
@@ -588,7 +588,7 @@ void pf_dl(module_id_t module_id,
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
-    UE->layers = ps->nrOfLayers; // initialization of layers to the previous value in the strcuture
+    UE->layers = ps->nrOfLayers; // initialization of layers to the previous value in the structure
     /* Calculate Throughput */
     const float a = 0.0005f; // corresponds to 200ms window
     const uint32_t b = UE->mac_stats.dl.current_bytes;
@@ -607,10 +607,11 @@ void pf_dl(module_id_t module_id,
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
       remainUEs--;
 
+      // we have filled all with mandatory retransmissions
+      // no need to schedule new transmissions
       if (remainUEs == 0)
-	// we have filled all with mandatory retransmissions
-	// no need to schedule new transmissions
-	return;
+        return;
+
     } else {
       /* Check DL buffer and skip this UE if no bytes and no TA necessary */
       if (sched_ctrl->num_total_bytes == 0 && frame != (sched_ctrl->ta_frame + 10) % 1024)
@@ -1274,7 +1275,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             /* limit requested number of bytes to what preprocessor specified, or
              * such that TBS is full */
             const rlc_buffer_occupancy_t ndata = min(sched_ctrl->rlc_status[lcid].bytes_in_buffer,
-                                                 bufEnd-buf-sizeof(NR_MAC_SUBHEADER_LONG));
+                                                     bufEnd-buf-sizeof(NR_MAC_SUBHEADER_LONG));
             tbs_size_t len = mac_rlc_data_req(module_id,
                                               rnti,
                                               module_id,

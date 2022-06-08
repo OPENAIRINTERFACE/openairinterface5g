@@ -160,7 +160,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                                     scc->dmrs_TypeA_Position,
                                                     NrOfSymbols,
                                                     StartSymbolIndex,
-                                                    mappingtype, 1);
+                                                    mappingtype,
+                                                    1);
 
     nr_mac->DL_req[CC_id].dl_tti_request_body.nPDUs+=2;
     

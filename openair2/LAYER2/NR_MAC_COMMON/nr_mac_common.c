@@ -3954,25 +3954,17 @@ void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *ty
   if(ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL)
     ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
 
-  uint32_t duration,periodicity,offset;
-  uint16_t symbols,max_agg;
-
   AssertFatal(type0_PDCCH_CSS_config!=NULL,"No type0 CSS configuration\n");
 
-  max_agg = (type0_PDCCH_CSS_config->num_symbols*type0_PDCCH_CSS_config->num_rbs)/6;
-
-  symbols = (1-(1<<type0_PDCCH_CSS_config->num_symbols))<<type0_PDCCH_CSS_config->first_symbol_index;
-  duration = type0_PDCCH_CSS_config->search_space_duration;
-  periodicity = type0_PDCCH_CSS_config->search_space_frame_period;
-  if (type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1)
-    offset = type0_PDCCH_CSS_config->n_0;
-  else
-    offset = type0_PDCCH_CSS_config->n_c;
+  const uint32_t periodicity = type0_PDCCH_CSS_config->search_space_frame_period;
+  const uint32_t offset = type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1
+      ? type0_PDCCH_CSS_config->n_0 : type0_PDCCH_CSS_config->n_c;
 
   ss0->searchSpaceId = 0;
   *ss0->controlResourceSetId = 0;
   ss0->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss0->monitoringSlotPeriodicityAndOffset));
   set_monitoring_periodicity_offset(ss0,periodicity,offset);
+  const uint32_t duration = type0_PDCCH_CSS_config->search_space_duration;
   if (duration==1)
     ss0->duration = NULL;
   else{
@@ -3980,6 +3972,7 @@ void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *ty
     *ss0->duration = duration;
   }
 
+  const uint16_t symbols = SL_to_bitmap(type0_PDCCH_CSS_config->first_symbol_index, type0_PDCCH_CSS_config->num_symbols);
   ss0->monitoringSymbolsWithinSlot->size = 2;
   ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
   ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
@@ -3989,6 +3982,7 @@ void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *ty
     ss0->monitoringSymbolsWithinSlot->buf[0] |= ((symbols>>i)&0x01)<<(7-i);
   }
 
+  const uint16_t max_agg = (type0_PDCCH_CSS_config->num_symbols*type0_PDCCH_CSS_config->num_rbs)/6;
   // max values are set according to TS38.213 Section 10.1 Table 10.1-1
   ss0->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   ss0->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
