@@ -22,7 +22,7 @@ void nrLDPC_bnProc_BG2_generator_AVX2(int R)
 
 
 
-    fprintf(fd,"void nrLDPC_bnProc_BG2_R%s_AVX2(int8_t* bnProcBuf,int8_t* bnProcBufRes,  int8_t* llrRes, uint16_t Z  ) {\n",ratestr[R]);
+    fprintf(fd,"static inline void nrLDPC_bnProc_BG2_R%s_AVX2(int8_t* bnProcBuf,int8_t* bnProcBufRes,  int8_t* llrRes, uint16_t Z  ) {\n",ratestr[R]);
     const uint8_t*  lut_numBnInBnGroups;
     const uint32_t* lut_startAddrBnGroups;
     const uint16_t* lut_startAddrBnGroupsLlr;
