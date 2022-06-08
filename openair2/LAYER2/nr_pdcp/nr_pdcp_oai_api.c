@@ -36,7 +36,7 @@
 #include "pdcp.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
-#include "openair2/SDAP/nr_sdap/nr_sdap_gnb.h"
+#include "openair2/SDAP/nr_sdap/nr_sdap.h"
 
 #define TODO do { \
     printf("%s:%d:%s: todo\n", __FILE__, __LINE__, __FUNCTION__); \
@@ -438,9 +438,13 @@ static void *enb_tun_read_thread(void *_)
 
     ctxt.rnti = rnti;
 
-    pdcp_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
+    uint8_t qfi = 7;
+    boolean_t rqi = 0;
+    int pdusession_id = 10;
+
+    sdap_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
                   RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
-                  PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
+                  PDCP_TRANSMISSION_MODE_DATA, NULL, NULL, qfi, rqi, pdusession_id);
   }
 
   return NULL;
@@ -481,9 +485,13 @@ static void *ue_tun_read_thread(void *_)
 
     ctxt.rnti = rnti;
 
-    pdcp_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
+    boolean_t dc = SDAP_HDR_UL_DATA_PDU;
+    uint8_t qfi = 7;
+    int pdusession_id = 10;
+
+    sdap_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
                   RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
-                  PDCP_TRANSMISSION_MODE_DATA, NULL, NULL);
+                  PDCP_TRANSMISSION_MODE_DATA, NULL, NULL, qfi, dc, pdusession_id);
   }
 
   return NULL;
@@ -607,28 +615,20 @@ uint64_t nr_pdcp_module_init(uint64_t _pdcp_optmask, int id)
 static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
                             char *buf, int size)
 {
-  extern int nas_sock_fd[];
-  int len;
   nr_pdcp_ue_t *ue = _ue;
-  MessageDef  *message_p;
-  uint8_t     *gtpu_buffer_p;
   int rb_id;
   int i;
 
   if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
-    LOG_D(PDCP, "IP packet received, to be sent to TUN interface");
-
-    if(entity->has_sdapDLheader){
-      size -= SDAP_HDR_LENGTH;
-      len = write(nas_sock_fd[0], &buf[SDAP_HDR_LENGTH], size);
-    } else {
-      len = write(nas_sock_fd[0], buf, size);
-    }
-
-    if (len != size) {
-      LOG_E(PDCP, "%s:%d:%s: fatal error %d: %s\n", __FILE__, __LINE__, __FUNCTION__, errno, strerror(errno));
-    }
-    
+    LOG_D(PDCP, "IP packet received with size %d, to be sent to SDAP interface, UE rnti: %d\n", size, ue->rnti);
+    sdap_data_ind(entity->rb_id,
+                  entity->is_gnb,
+                  entity->has_sdap,
+                  entity->has_sdapULheader,
+                  entity->pdusession_id,
+                  ue->rnti,
+                  buf,
+                  size);
   }
   else{
     for (i = 0; i < 5; i++) {
@@ -644,35 +644,16 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
 
     rb_found:
     {
-      int offset=0;
-      if (entity->has_sdap == 1 && entity->has_sdapULheader == 1)
-	offset = 1; // this is the offset of the SDAP header in bytes
-
-
-      message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
-					       GTPV1U_GNB_TUNNEL_DATA_REQ,
-					       sizeof(gtpv1u_gnb_tunnel_data_req_t) + size
-					       + GTPU_HEADER_OVERHEAD_MAX - offset);
-      AssertFatal(message_p != NULL, "OUT OF MEMORY");
-
-      gtpv1u_gnb_tunnel_data_req_t *req=&GTPV1U_GNB_TUNNEL_DATA_REQ(message_p);
-      gtpu_buffer_p = (uint8_t*)(req+1);
-      memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX, buf+offset, size-offset);
-      req->buffer              = gtpu_buffer_p;
-      req->length              = size-offset;
-      req->offset              = GTPU_HEADER_OVERHEAD_MAX;
-      req->rnti                = ue->rnti;
-      req->pdusession_id       = entity->pdusession_id;
-      if (offset==1) {
-        LOG_I(PDCP, "%s() (drb %d) SDAP header %2x\n",__func__, rb_id, buf[0]);
-        sdap_gnb_ul_header_handler(buf[0]); // Handler for the UL gNB SDAP Header
-      }
-      struct timespec time_request;
-      clock_gettime(CLOCK_REALTIME, &time_request);
-      LOG_D(PDCP, "%s() (drb %d) Time %lu.%lu sending message to gtp size %d\n", __func__, rb_id, time_request.tv_sec,time_request.tv_nsec,
-                                                                                         size-offset);
-      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
-   }
+      LOG_D(PDCP, "%s() (drb %d) sending message to SDAP size %d\n", __func__, rb_id, size);
+      sdap_data_ind(rb_id,
+                    ue->drb[rb_id-1]->is_gnb,
+                    ue->drb[rb_id-1]->has_sdap,
+                    ue->drb[rb_id-1]->has_sdapULheader,
+                    ue->drb[rb_id-1]->pdusession_id,
+                    ue->rnti,
+                    buf,
+                    size);
+    }
   }
 }
 
@@ -730,9 +711,7 @@ rb_found:
     
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
-    struct timespec time_request;
-    clock_gettime(CLOCK_REALTIME, &time_request); 
-    LOG_D(PDCP, "%s(): (rb %d) calling enqueue_rlc_data_req size %d at time %lu.%lu\n", __func__, rb_id, size,time_request.tv_sec,time_request.tv_nsec);
+    LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
     //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
     //printf("\n");
     enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
@@ -972,6 +951,9 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   int has_sdap = 0;
   int has_sdapULheader=0;
   int has_sdapDLheader=0;
+  boolean_t is_sdap_DefaultDRB = false;
+  NR_QFI_t *mappedQFIs2Add = NULL;
+  uint8_t mappedQFIs2AddCount=0;
   if (s->cnAssociation->present == NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity)
      pdusession_id = s->cnAssociation->choice.eps_BearerIdentity;
   else {
@@ -980,9 +962,13 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
       exit(-1);
     }
     pdusession_id = s->cnAssociation->choice.sdap_Config->pdu_Session;
-    has_sdap = 1;
     has_sdapULheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderUL == NR_SDAP_Config__sdap_HeaderUL_present ? 1 : 0;
     has_sdapDLheader = s->cnAssociation->choice.sdap_Config->sdap_HeaderDL == NR_SDAP_Config__sdap_HeaderDL_present ? 1 : 0;
+    has_sdap = has_sdapULheader | has_sdapDLheader;
+    is_sdap_DefaultDRB = s->cnAssociation->choice.sdap_Config->defaultDRB == true ? 1 : 0;
+    mappedQFIs2Add = (NR_QFI_t*)s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.array[0]; 
+    mappedQFIs2AddCount = s->cnAssociation->choice.sdap_Config->mappedQoS_FlowsToAdd->list.count;
+    LOG_D(SDAP, "Captured mappedQoS_FlowsToAdd from RRC: %ld \n", *mappedQFIs2Add);
   }
   /* TODO(?): accept different UL and DL SN sizes? */
   if (sn_size_ul != sn_size_dl) {
@@ -1014,6 +1000,15 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     nr_pdcp_ue_add_drb_pdcp_entity(ue, drb_id, pdcp_drb);
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
+
+    new_nr_sdap_entity(has_sdap,
+                       rnti,
+                       pdusession_id,
+                       is_sdap_DefaultDRB,
+                       drb_id,
+                       mappedQFIs2Add,
+                       mappedQFIs2AddCount);
+    LOG_D(SDAP, "Added SDAP entity to ue rnti %x with pdusession_id %d\n", rnti, pdusession_id);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
@@ -1145,7 +1140,7 @@ void nr_DRB_preconfiguration(uint16_t crnti)
   NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
   drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
   drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
-  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= 5;
+  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= 10;
   drb_ToAddMod->drb_Identity = 1;
   drb_ToAddMod->reestablishPDCP = NULL;
   drb_ToAddMod->recoverPDCP = NULL;
@@ -1341,9 +1336,7 @@ static boolean_t pdcp_data_req_drb(
   const sdu_size_t sdu_buffer_size,
   unsigned char *const sdu_buffer)
 {
-  struct timespec time_request;
-  clock_gettime(CLOCK_REALTIME, &time_request);
-  LOG_D(PDCP, "%s() called at time %lu.%lu, size %d\n", __func__, time_request.tv_sec,time_request.tv_nsec,sdu_buffer_size);
+  LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
   int rnti = ctxt_pP->rnti;
@@ -1456,4 +1449,11 @@ void nr_pdcp_tick(int frame, int subframe)
     nr_pdcp_current_time++;
     nr_pdcp_wakeup_timer_thread(nr_pdcp_current_time);
   }
+}
+
+/*
+ * For the SDAP API
+ */
+nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager(){
+    return nr_pdcp_ue_manager;
 }

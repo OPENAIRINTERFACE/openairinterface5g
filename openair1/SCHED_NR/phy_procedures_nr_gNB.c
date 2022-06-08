@@ -54,8 +54,10 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME
 
   uint8_t sco = 0;
   if (((fp->freq_range == nr_FR1) && (cfg->ssb_table.ssb_subcarrier_offset.value<24)) ||
-      ((fp->freq_range == nr_FR2) && (cfg->ssb_table.ssb_subcarrier_offset.value<12)) )
-    sco = cfg->ssb_table.ssb_subcarrier_offset.value;
+      ((fp->freq_range == nr_FR2) && (cfg->ssb_table.ssb_subcarrier_offset.value<12)) ) {
+    if (fp->freq_range == nr_FR1)
+      sco = cfg->ssb_table.ssb_subcarrier_offset.value>>cfg->ssb_config.scs_common.value;
+  }
 
   fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + sco);
   LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
@@ -158,8 +160,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
-    nr_generate_dci_top(msgTx,
-			gNB->nr_gold_pdcch_dmrs[slot],
+    nr_generate_dci_top(msgTx, slot,
 			&gNB->common_vars.txdataF[0][txdataF_offset],
 			AMP, fp);
 
@@ -178,7 +179,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     if (csirs->active == 1) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
-      nr_generate_csi_rs(gNB, AMP, csi_params, gNB->gNB_config.cell_config.phy_cell_id.value, slot);
+      nr_generate_csi_rs(gNB, AMP, csi_params, slot);
       csirs->active = 0;
     }
   }
@@ -225,7 +226,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
     }
   }
 
-  int dumpsig=0;
+  //int dumpsig=0;
   // if all segments are done
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess) {
@@ -345,6 +346,14 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 	number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
 	pusch_pdu->qam_mod_order,
 	pusch_pdu->nrOfLayers);
+
+
+  nr_ulsch_layer_demapping(gNB->pusch_vars[ULSCH_id]->llr,
+                           pusch_pdu->nrOfLayers,
+                           pusch_pdu->qam_mod_order,
+                           G,
+                           gNB->pusch_vars[ULSCH_id]->llr_layers);
+             
   //----------------------------------------------------------
   //------------------- ULSCH unscrambling -------------------
   //----------------------------------------------------------

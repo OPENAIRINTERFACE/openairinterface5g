@@ -665,8 +665,9 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
 
 void init_timeshift_rotation(NR_DL_FRAME_PARMS *fp)
 {
+  const int sample_offset = fp->nb_prefix_samples / fp->ofdm_offset_divisor;
   for (int i = 0; i < fp->ofdm_symbol_size; i++) {
-    double poff = -i * 2.0 * M_PI * 144.0 / 2048.0 / fp->ofdm_offset_divisor;
+    double poff = -i * 2.0 * M_PI * sample_offset / fp->ofdm_symbol_size;
     double exp_re = cos(poff);
     double exp_im = sin(-poff);
     fp->timeshift_symbol_rotation[i*2] = (int16_t)round(exp_re * 32767);
@@ -719,3 +720,18 @@ int nr_layer_precoder(int16_t **datatx_F_precoding, char *prec_matrix, uint8_t n
   /*  ((int16_t *)precodatatx_F)[0] = (int16_t)((((int16_t *)precodatatx_F)[0]*ONE_OVER_SQRT2_Q15)>>15);
       ((int16_t *)precodatatx_F)[1] = (int16_t)((((int16_t *)precodatatx_F)[1]*ONE_OVER_SQRT2_Q15)>>15);*/
 }
+
+int nr_layer_precoder_cm(int16_t **datatx_F_precoding, int *prec_matrix, uint8_t n_layers, int32_t re_offset)
+{
+  int32_t precodatatx_F = 0;
+  for (int al = 0; al<n_layers; al++) {
+    int16_t antenna_re = datatx_F_precoding[al][re_offset<<1];
+    int16_t antenna_im = datatx_F_precoding[al][(re_offset<<1) +1];
+    //printf("antenna precoding: %d %d\n",((int16_t *)&prec_matrix[al])[0],((int16_t *)&prec_matrix[al])[1]);
+    ((int16_t *) &precodatatx_F)[0] += (int16_t)(((int32_t)(antenna_re*(((int16_t *)&prec_matrix[al])[0])) - (int32_t)(antenna_im* (((int16_t *)&prec_matrix[al])[1])))>>15);
+    ((int16_t *) &precodatatx_F)[1] += (int16_t)(((int32_t)(antenna_re*(((int16_t *)&prec_matrix[al])[1])) + (int32_t)(antenna_im* (((int16_t *)&prec_matrix[al])[0])))>>15);
+  }
+
+  return precodatatx_F;
+}
+

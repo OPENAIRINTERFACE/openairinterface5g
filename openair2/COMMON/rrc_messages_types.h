@@ -188,7 +188,7 @@ typedef struct RrcConfigurationReq_s {
   uint32_t                rrc_inactivity_timer_thres; // for testing, maybe change later
   paging_drx_t            default_drx;
   int16_t                 nb_cc;
-  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  frame_type_t            frame_type[MAX_NUM_CCs];
   uint8_t                 tdd_config[MAX_NUM_CCs];
   uint8_t                 tdd_config_s[MAX_NUM_CCs];
   lte_prefix_type_t       prefix_type[MAX_NUM_CCs];
@@ -339,7 +339,7 @@ typedef struct NbIoTRrcConfigurationReq_s {
   uint16_t                mcc;
   uint16_t                mnc;
   uint8_t                 mnc_digit_length;
-  lte_frame_type_t        frame_type;
+  frame_type_t            frame_type;
   uint8_t                 tdd_config;
   uint8_t                 tdd_config_s;
   lte_prefix_type_t       prefix_type;
@@ -401,6 +401,12 @@ typedef struct NbIoTRrcConfigurationReq_s {
   long                    ue_TimersAndConstants_n311_NB;
 } NbIoTRrcConfigurationReq;
 
+typedef struct {
+  int N1;
+  int N2;
+  int XP;
+} rrc_pdsch_AntennaPorts_t;
+
 // gNB: GNB_APP -> RRC messages
 typedef struct NRRrcConfigurationReq_s {
   uint64_t                cell_identity;
@@ -413,13 +419,15 @@ typedef struct NRRrcConfigurationReq_s {
   NR_ServingCellConfig_t  *scd;
   int                     ssb_SubcarrierOffset;
   int                     sib1_tda;
-  int                     pdsch_AntennaPorts;
+  rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts;
   int                     pusch_AntennaPorts;
   int                     minRXTXTIME;
   int                     do_CSIRS;
   int                     do_SRS;
+  bool                    force_256qam_off;
   int                     pusch_TargetSNRx10;
   int                     pucch_TargetSNRx10;
+  bool                    enable_sdap;
 } gNB_RrcConfigurationReq;
 
 typedef struct NRDuDlReq_s {

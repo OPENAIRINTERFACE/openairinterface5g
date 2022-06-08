@@ -308,6 +308,7 @@ typedef struct
   uint8_t  transform_precoding;
   uint16_t data_scrambling_id;
   uint8_t  nrOfLayers;
+  uint8_t  Tpmi;
   //DMRS
   uint16_t  ul_dmrs_symb_pos;
   uint8_t  dmrs_config_type;
@@ -433,6 +434,9 @@ typedef struct {
   uint8_t mcs;
   uint8_t ndi;
   uint8_t rv;
+  uint16_t targetCodeRate;
+  uint8_t qamModOrder;
+  uint32_t TBS;
   uint8_t tb2_mcs;
   uint8_t tb2_ndi;
   uint8_t tb2_rv;
@@ -464,7 +468,9 @@ typedef struct {
   uint8_t nEpreRatioOfPDSCHToPTRS;
   /// MCS table for this DLSCH
   uint8_t mcs_table;
-
+  uint32_t tbslbrm;
+  uint8_t nscid;
+  uint16_t dlDmrsScramblingId;
   uint16_t pduBitmap;
 } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 

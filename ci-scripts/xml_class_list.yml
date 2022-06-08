@@ -46,3 +46,5 @@
   - UndeployGenObject
   - PingFromContainer
   - IperfFromContainer
+  - StatsFromGenObject
+  - LicenceAndFormattingCheck

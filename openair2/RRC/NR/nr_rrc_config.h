@@ -111,8 +111,18 @@ typedef struct physicalcellgroup_s{
   long        RNTI_Value[MAX_NUM_CCs];
 }physicalcellgroup_t;
 
-void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc);
+void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc,
+                          NR_PDSCH_TimeDomainResourceAllocationList_t	*pdsch_TimeDomainAllocationList,
+                          int curr_bwp);
 void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay);
+void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig,
+                  int uid,
+                  int num_dl_antenna_ports,
+                  int curr_bwp,
+                  int do_csirs);
+void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
+                  NR_CSI_MeasConfig_t *csi_MeasConfig);
 void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
                       NR_SpCellConfig_t *SpCellConfig,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,

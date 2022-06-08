@@ -87,7 +87,8 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
                            fapi_nr_rx_indication_t *rx_ind,
                            UE_nr_rxtx_proc_t *proc,
                            PHY_VARS_NR_UE *ue,
-                           uint8_t gNB_id){
+                           uint8_t gNB_id,
+                           void *phy_data){
 
   memset((void*)dl_ind, 0, sizeof(nr_downlink_indication_t));
 
@@ -97,6 +98,7 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
   dl_ind->frame     = proc->frame_rx;
   dl_ind->slot      = proc->nr_slot_rx;
   dl_ind->thread_id = proc->thread_id;
+  dl_ind->phy_data  = phy_data;
 
   if (dci_ind) {
 
@@ -132,7 +134,6 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
     trace_NRpdu(DIRECTION_DOWNLINK,
 		dlsch0->harq_processes[dlsch0->current_harq_pid]->b,
 		dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS / 8,
-		pdu_type,
 		WS_C_RNTI,
 		dlsch0->rnti,
 		proc->frame_rx,
@@ -282,7 +283,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
-  memset(ue->common_vars.txdataF[0], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
+  for(int i=0; i< ue->frame_parms.nb_antennas_tx; ++i)
+    memset(ue->common_vars.txdataF[i], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
 
   LOG_D(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
@@ -360,7 +362,7 @@ void nr_ue_measurement_procedures(uint16_t l,
 
 static void nr_ue_pbch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
-				  UE_nr_rxtx_proc_t *proc,int estimateSz, struct complex16 dl_ch_estimates[][estimateSz])
+				  UE_nr_rxtx_proc_t *proc,int estimateSz, struct complex16 dl_ch_estimates[][estimateSz], NR_UE_PDCCH_CONFIG *phy_pdcch_config)
 {
   int ret = 0;
 
@@ -380,7 +382,8 @@ static void nr_ue_pbch_procedures(uint8_t gNB_id,
                    gNB_id,
                    (ue->frame_parms.ssb_index)&7,
                    SISO,
-		   &result);
+                   phy_pdcch_config,
+                   &result);
 
   if (ret==0) {
 
@@ -486,6 +489,9 @@ unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
                            PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
+                           int32_t pdcch_est_size,
+                           int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                           NR_UE_PDCCH_CONFIG *phy_pdcch_config,
                            int n_ss)
 {
   int frame_rx = proc->frame_rx;
@@ -494,13 +500,16 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   fapi_nr_dci_indication_t *dci_ind = calloc(1, sizeof(*dci_ind));
   nr_downlink_indication_t dl_indication;
 
-  NR_UE_PDCCH *pdcch_vars = ue->pdcch_vars[proc->thread_id][gNB_id];
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &pdcch_vars->pdcch_config[n_ss];
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &phy_pdcch_config->pdcch_config[n_ss];
 
   start_meas(&ue->dlsch_rx_pdcch_stats);
 
+  /// PDCCH/DCI e-sequence (input to rate matching).
+  int32_t pdcch_e_rx_size = NR_MAX_PDCCH_SIZE;
+  int16_t pdcch_e_rx[pdcch_e_rx_size];
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
-  nr_rx_pdcch(ue, proc, rel15);
+  nr_rx_pdcch(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, pdcch_e_rx, rel15);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
   
 
@@ -511,7 +520,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 	 n_ss);
 #endif
 
-  dci_cnt = nr_dci_decoding_procedure(ue, proc, dci_ind, rel15);
+  dci_cnt = nr_dci_decoding_procedure(ue, proc, pdcch_e_rx, dci_ind, rel15, phy_pdcch_config);
 
 #ifdef NR_PDCCH_SCHED_DEBUG
   LOG_I(PHY,"<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
@@ -531,10 +540,12 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   ue->pdcch_vars[proc->thread_id][gNB_id]->dci_received += dci_cnt;
 
   dci_ind->number_of_dcis = dci_cnt;
+
   // fill dl_indication message
-  nr_fill_dl_indication(&dl_indication, dci_ind, NULL, proc, ue, gNB_id);
+  nr_fill_dl_indication(&dl_indication, dci_ind, NULL, proc, ue, gNB_id, phy_pdcch_config);
   //  send to mac
   ue->if_inst->dl_indication(&dl_indication, NULL);
+
 
   stop_meas(&ue->dlsch_rx_pdcch_stats);
     
@@ -580,6 +591,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
                                       nr_slot_rx,
                                       get_dmrs_port(aatx,dlsch0_harq->dmrs_ports),
                                       m,
+                                      dlsch0_harq->nscid,
+                                      dlsch0_harq->dlDmrsScramblingId,
                                       BWPStart,
                                       dlsch0_harq->dmrsConfigType,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
@@ -788,8 +801,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             nb_symb_sch,
                             nr_slot_rx,
                             harq_pid,
-                            pdsch==PDSCH?1:0,
-                            dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
+                            pdsch==PDSCH);
 
     LOG_T(PHY,"dlsch decoding, ret = %d\n", ret);
 
@@ -799,16 +811,16 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
     switch (pdsch) {
       case RA_PDSCH:
-        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id, NULL);
         nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_RAR, gNB_id, ue, dlsch0, NULL, number_pdus, proc, NULL);
         ue->UE_mode[gNB_id] = RA_RESPONSE;
         break;
       case PDSCH:
-        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id, NULL);
         nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_DLSCH, gNB_id, ue, dlsch0, NULL, number_pdus, proc, NULL);
         break;
       case SI_PDSCH:
-        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id);
+        nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id, NULL);
         nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_SIB, gNB_id, ue, dlsch0, NULL, number_pdus, proc, NULL);
         break;
       default:
@@ -865,8 +877,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                                nb_symb_sch,
                                nr_slot_rx,
                                harq_pid,
-                               pdsch==PDSCH?1:0,//proc->decoder_switch,
-                               dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+                               pdsch==PDSCH);//proc->decoder_switch
       LOG_T(PHY,"CW dlsch decoding, ret1 = %d\n", ret1);
 
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
@@ -905,21 +916,25 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       const double N_TA_max = Ta_max * bw_scaling * tc_factor;
 
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+      NR_BWP_Id_t dl_bwp = mac->DL_BWP_Id;
+      NR_BWP_Id_t ul_bwp = mac->UL_BWP_Id;
 
       NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-      if (mac->ULbwp[0] &&
-          mac->ULbwp[0]->bwp_Dedicated &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
-        pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
-      }
-      else if (mac->ULbwp[0] &&
-               mac->ULbwp[0]->bwp_Common &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-        pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+      if(ul_bwp){
+        if (mac->ULbwp[ul_bwp-1] &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
+        }
+        else if (mac->ULbwp[ul_bwp-1] &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+        }
       }
       else if (mac->scc_SIB &&
                mac->scc_SIB->uplinkConfigCommon &&
@@ -930,12 +945,15 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
       long mapping_type_ul = pusch_TimeDomainAllocationList ? pusch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
 
-      NR_PDSCH_Config_t *pdsch_Config = (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup) ? mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+      NR_PDSCH_Config_t *pdsch_Config = NULL;
       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
-      if (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
-        pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
-      else if (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
-        pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+      if(dl_bwp){
+        pdsch_Config = (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup) ? mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+        if (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
+          pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
+        else if (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
+          pdsch_TimeDomainAllocationList = mac->DLbwp[dl_bwp-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+      }
       else if (mac->scc_SIB && mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup)
         pdsch_TimeDomainAllocationList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
       long mapping_type_dl = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
@@ -989,7 +1007,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         d_2_1 = 1;
 
       /* d_2_2 */
-      const double d_2_2 = 0.0; // set to 0 because there is only 1 BWP: TODO this should corresponds to the switching time as defined in TS 38.133
+      const double d_2_2 = pusch_d_2_2_timing_capability_1[numerology][1];
 
       /* N_t_1 time duration in msec of N_1 symbols corresponding to a PDSCH reception time
       // N_t_2 time duration in msec of N_2 symbols corresponding to a PUSCH preparation time */
@@ -1366,6 +1384,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
                            uint8_t dlsch_parallel,
+                           NR_UE_PDCCH_CONFIG *phy_pdcch_config,
                            notifiedFIFO_t *txFifo
                            )
 {                                         
@@ -1373,10 +1392,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int nr_slot_rx = proc->nr_slot_rx;
   int slot_pbch;
   int slot_ssb;
-  NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[proc->thread_id][0];
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
 
-  uint8_t nb_symb_pdcch = pdcch_vars->nb_search_space > 0 ? pdcch_vars->pdcch_config[0].coreset.duration : 0;
+  uint8_t nb_symb_pdcch = phy_pdcch_config->nb_search_space > 0 ? phy_pdcch_config->pdcch_config[0].coreset.duration : 0;
   uint8_t dci_cnt = 0;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   
@@ -1395,8 +1413,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int coreset_nb_rb=0;
   int coreset_start_rb=0;
 
-  if (pdcch_vars->nb_search_space > 0)
-    get_coreset_rballoc(pdcch_vars->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
+  if (phy_pdcch_config->nb_search_space > 0)
+    get_coreset_rballoc(phy_pdcch_config->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
 
   slot_pbch = is_pbch_in_slot(cfg, frame_rx, nr_slot_rx, fp);
   slot_ssb  = is_ssb_in_slot(cfg, frame_rx, nr_slot_rx, fp);
@@ -1405,16 +1423,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (slot_ssb) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
     LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-    const int estimateSz=7*2*sizeof(int)*fp->ofdm_symbol_size;
+
+    const int estimateSz = fp->symbols_per_slot * fp->ofdm_symbol_size;
     __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates[fp->nb_antennas_rx][estimateSz];
-    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[fp->nb_antennas_rx][estimateSz];
+    __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[fp->nb_antennas_rx][fp->ofdm_symbol_size];
+
     for (int i=1; i<4; i++) {
 
       nr_slot_fep(ue,
                   proc,
                   (ue->symbol_offset+i)%(fp->symbols_per_slot),
                   nr_slot_rx);
-
 
       start_meas(&ue->dlsch_channel_estimation_stats);
       nr_pbch_channel_estimation(ue, estimateSz, dl_ch_estimates, dl_ch_estimates_time,proc,gNB_id,nr_slot_rx,(ue->symbol_offset+i)%(fp->symbols_per_slot),i-1,(fp->ssb_index)&7,fp->half_frame_bit);
@@ -1426,14 +1445,15 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     if ((ue->decode_MIB == 1) && slot_pbch) {
 
       LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-      nr_ue_pbch_procedures(gNB_id, ue, proc, estimateSz, dl_ch_estimates);
+      nr_ue_pbch_procedures(gNB_id, ue, proc, estimateSz, dl_ch_estimates, phy_pdcch_config);
 
       if (ue->no_timing_correction==0) {
         LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
         nr_adjust_synch_ue(fp,
                            ue,
                            gNB_id,
-			   estimateSz, dl_ch_estimates_time,
+                           fp->ofdm_symbol_size,
+                           dl_ch_estimates_time,
                            frame_rx,
                            nr_slot_rx,
                            0,
@@ -1466,13 +1486,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                 nr_slot_rx);
   }
 
+    // Hold the channel estimates in frequency domain.
+  int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
+  __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
+
   dci_cnt = 0;
-  for(int n_ss = 0; n_ss<pdcch_vars->nb_search_space; n_ss++) {
+  for(int n_ss = 0; n_ss<phy_pdcch_config->nb_search_space; n_ss++) {
     for (uint16_t l=0; l<nb_symb_pdcch; l++) {
 
       // note: this only works if RBs for PDCCH are contigous!
       LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d, coreset_nb_rb %d\n",
-            fp->first_carrier_offset, pdcch_vars->pdcch_config[n_ss].BWPStart, coreset_start_rb, coreset_nb_rb);
+            fp->first_carrier_offset, phy_pdcch_config->pdcch_config[n_ss].BWPStart, coreset_start_rb, coreset_nb_rb);
 
       if (coreset_nb_rb > 0)
         nr_pdcch_channel_estimation(ue,
@@ -1480,13 +1504,16 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                                     gNB_id,
                                     nr_slot_rx,
                                     l,
-                                    fp->first_carrier_offset+(pdcch_vars->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
-                                    coreset_nb_rb);
+                                    phy_pdcch_config->pdcch_config[n_ss].coreset.pdcch_dmrs_scrambling_id,
+                                    fp->first_carrier_offset+(phy_pdcch_config->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
+                                    coreset_nb_rb,
+                                    pdcch_est_size,
+                                    pdcch_dl_ch_estimates);
 
       stop_meas(&ue->ofdm_demod_stats);
 
     }
-    dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc, n_ss);
+    dci_cnt = dci_cnt + nr_ue_pdcch_procedures(gNB_id, ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, phy_pdcch_config, n_ss);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_OUT);
 

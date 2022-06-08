@@ -44,9 +44,9 @@
 #define _Assert_(cOND, aCTION, fORMAT, aRGS...)             \
 do {                                                        \
     if (!(cOND)) {                                          \
-        fprintf(stderr, "\nAssertion ("#cOND") failed!\n"   \
+        fprintf(stderr, "\nAssertion (%s) failed!\n"   \
                 "In %s() %s:%d\n" fORMAT,                   \
-                __FUNCTION__, __FILE__, __LINE__, ##aRGS);  \
+                #cOND, __FUNCTION__, __FILE__, __LINE__, ##aRGS);  \
         aCTION;                                             \
     }						\
 } while(0)

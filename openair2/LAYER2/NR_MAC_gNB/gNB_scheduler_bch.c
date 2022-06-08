@@ -426,7 +426,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                      gNB_mac->sched_ctrlCommon->cce_index,
                      gNB_mac->sched_ctrlCommon->aggregation_level);
   for (int rb = 0; rb < gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize; rb++) {
-    vrb_map[rb + rbStart] = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
+    vrb_map[rb + rbStart] |= SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   }
   return TBS;
 }
@@ -504,6 +504,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   LOG_D(NR_MAC,"sib1:rbStart %d, rbSize %d\n",pdsch_pdu_rel15->rbStart,pdsch_pdu_rel15->rbSize);
   LOG_D(NR_MAC,"sib1:dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
 
+  pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(0,
+                                                                             pdsch_pdu_rel15->BWPSize,
+                                                                             1);
+
   /* Fill PDCCH DL DCI PDU */
   nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
   pdcch_pdu_rel15->numDlDci++;
@@ -547,7 +551,9 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      dci_format,
                      rnti_type,
                      pdsch_pdu_rel15->BWPSize,
-                     0);
+                     0,
+                     0,
+                     gNB_mac->cset0_bwp_size);
 
   LOG_D(MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);
   LOG_D(MAC,"BWPStart: %i\n", pdcch_pdu_rel15->BWPStart);
@@ -621,6 +627,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
                                gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                1, &is_typeA,
                                &startSymbolIndex, &nrOfSymbols);
+
+      AssertFatal((startSymbolIndex+nrOfSymbols)<14,"SIB1 TDA %d would cause overlap with CSI-RS. Please select a different SIB1 TDA.\n",time_domain_allocation);
 
       int mappingtype = is_typeA? typeA: typeB;
       uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, nrOfSymbols, startSymbolIndex, mappingtype, 1);

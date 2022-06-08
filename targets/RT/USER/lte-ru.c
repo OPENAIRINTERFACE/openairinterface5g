@@ -732,7 +732,7 @@ void tx_rf(RU_t *ru,
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
-      (SF_type == SF_S)) {
+      (SF_type == SF_S) ) {
     int siglen=fp->samples_per_tti,flags=1;
 
     if (SF_type == SF_S) {
@@ -830,6 +830,23 @@ void tx_rf(RU_t *ru,
       late_control=STATE_BURST_TERMINATE;
       LOG_E(PHY,"TX : Timeout (sent %d/%d) state =%d\n",txs, siglen,late_control);
     }
+  } else if (IS_SOFTMODEM_RFSIM ) {
+    // in case of rfsim, we always enable tx because we need to feed rx of the opposite side
+    // we write 1 single I/Q sample to trigger Rx (rfsim will fill gaps with 0 I/Q)
+    void *dummy_tx[ru->frame_parms->nb_antennas_tx];
+    int16_t dummy_tx_data[ru->frame_parms->nb_antennas_tx][2]; // 2 because the function we call use pairs of int16_t implicitly as complex numbers
+    memset(dummy_tx_data,0,sizeof(dummy_tx_data));
+    for (int i=0; i<ru->frame_parms->nb_antennas_tx; i++)
+      dummy_tx[i]= dummy_tx_data[i];
+    
+    AssertFatal( 1 ==
+                 ru->rfdevice.trx_write_func(&ru->rfdevice,
+                                             timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
+                                             dummy_tx,
+                                             1,
+                                             ru->frame_parms->nb_antennas_tx,
+                                             4),"");
+    
   }
 }
 
@@ -1354,11 +1371,12 @@ void fill_rf_config(RU_t *ru,
     cfg->tx_gain[i] = (double)ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-(double)ru->att_rx;
     cfg->configFilename = rf_config_file;
-    LOG_I(PHY,"channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
+    LOG_I(PHY,"channel %d, Setting tx_gain offset %.0f, rx_gain offset %.0f, tx_freq %.0f, rx_freq %.0f, tune_offset %.0f Hz\n",
            i, cfg->tx_gain[i],
            cfg->rx_gain[i],
            cfg->tx_freq[i],
-           cfg->rx_freq[i]);
+           cfg->rx_freq[i],
+           cfg->tune_offset);
   }
 }
 
@@ -2954,6 +2972,8 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
       else {
 	ru[j]->openair0_cfg.time_source = unset;
       }      
+
+      ru[j]->openair0_cfg.tune_offset = get_softmodem_params()->tune_offset;
 
       LOG_I(PHY,"RU %d is_slave=%s\n",j,*(RUParamList.paramarray[j][RU_IS_SLAVE_IDX].strptr));
 

@@ -53,7 +53,6 @@ include_directories("/usr/local/include/")
 add_list2_option(RF_BOARD "None" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU" "EXMIMO")
 if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
-  include_directories(${LIBBOOST_INCLUDE_DIR})
 
 elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
     include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
@@ -705,11 +704,14 @@ set (SHLIB_LOADER_SOURCES
 # include RF devices / transport protocols library modules
 ######################################################################
 
-include_directories("${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/")
 set(HWLIB_USRP_SOURCE
   ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp
   )
 add_library(oai_usrpdevif MODULE ${HWLIB_USRP_SOURCE} )
+target_include_directories(oai_usrpdevif PRIVATE
+  "${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/"
+  ${Boost_INCLUDE_DIR}
+)
 target_link_libraries(oai_usrpdevif uhd)
 
 include_directories("${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/")
@@ -1779,7 +1781,8 @@ set(NR_PDCP_SRC
   )
 
 set(NR_SDAP_SRC
-  ${OPENAIR2_DIR}/SDAP/nr_sdap/nr_sdap_gnb.c
+  ${OPENAIR2_DIR}/SDAP/nr_sdap/nr_sdap.c
+  ${OPENAIR2_DIR}/SDAP/nr_sdap/nr_sdap_entity.c
   )
   
 set(L2_SRC
@@ -1865,6 +1868,7 @@ set(NR_L2_SRC_UE
   ${NR_RRC_DIR}/nr_rrc_config.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
   ${NR_UE_RRC_DIR}/rrc_nsa.c
+  ${NR_RRC_DIR}/nr_rrc_config.c
   )
 
 set (MAC_SRC
@@ -2838,6 +2842,7 @@ target_link_libraries(ldpctest
 add_executable(nr_dlschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${OPENAIR_DIR}/executables/softmodem-common.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2861,6 +2866,7 @@ target_link_libraries(nr_pbchsim
 add_executable(nr_pucchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${OPENAIR_DIR}/executables/softmodem-common.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2905,6 +2911,7 @@ target_link_libraries(nr_prachsim
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
+  ${OPENAIR_DIR}/executables/softmodem-common.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}

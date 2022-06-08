@@ -66,11 +66,12 @@ void nr_pdcch_scrambling(uint32_t *in,
   }
 }
 
-void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
-                     uint32_t **gold_pdcch_dmrs,
+void nr_generate_dci(PHY_VARS_gNB *gNB,
+                     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
                      int32_t *txdataF,
                      int16_t amp,
-                     NR_DL_FRAME_PARMS *frame_parms) {
+                     NR_DL_FRAME_PARMS *frame_parms,
+                     int slot) {
 
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1] __attribute__((aligned(16))); // 3 for the max coreset duration
   uint16_t cset_start_sc;
@@ -81,7 +82,7 @@ void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
     
   int rb_offset;
   int n_rb;
-  
+
   // compute rb_offset and n_prb based on frequency allocation
   nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   nr_fill_cce_list(cce_list,0,pdcch_pdu_rel15);
@@ -95,20 +96,24 @@ void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
      * in time: by its first slot and its first symbol*/
     const nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[d];
 
+    if(dci_pdu->ScramblingId != gNB->pdcch_gold_init) {
+      gNB->pdcch_gold_init = dci_pdu->ScramblingId;
+      nr_init_pdcch_dmrs(gNB, dci_pdu->ScramblingId);
+    }
+
+    uint32_t **gold_pdcch_dmrs = gNB->nr_gold_pdcch_dmrs[slot];
+
     cset_start_symb = pdcch_pdu_rel15->StartSymbolIndex;
     cset_nsymb = pdcch_pdu_rel15->DurationSymbols;
     dci_idx = 0;
-    if (dci_pdu->RNTI != 0xFFFF) {
-      LOG_D(PHY, "pdcch: Coreset rb_offset %d, nb_rb %d BWP Start %d\n",rb_offset,n_rb,pdcch_pdu_rel15->BWPStart);
-      LOG_D(PHY, "pdcch: Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
-    }
+    LOG_D(PHY, "pdcch: Coreset rb_offset %d, nb_rb %d BWP Start %d\n",rb_offset,n_rb,pdcch_pdu_rel15->BWPStart);
+    LOG_D(PHY, "pdcch: Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
     // DMRS length is per OFDM symbol
     uint32_t dmrs_length = n_rb*6; //2(QPSK)*3(per RB)*6(REG per CCE)
     uint32_t encoded_length = dci_pdu->AggregationLevel*108; //2(QPSK)*9(per RB)*6(REG per CCE)
-    if (dci_pdu->RNTI != 0xFFFF)
-      LOG_D(PHY, "DL_DCI : rb_offset %d, nb_rb %d, DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d),Scrambling_Id %d,ScramblingRNTI %x,PayloadSizeBits %d\n",
-      rb_offset, n_rb,dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType,
-    dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
+    LOG_D(PHY, "DL_DCI : rb_offset %d, nb_rb %d, DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d),Scrambling_Id %d,ScramblingRNTI %x,PayloadSizeBits %d\n",
+          rb_offset, n_rb,dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType,
+          dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
     dmrs_length += rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
       
     /// DMRS QPSK modulation
@@ -117,11 +122,11 @@ void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
       nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
       
 #ifdef DEBUG_PDCCH_DMRS
-      if(dci_pdu->RNTI!=0xFFFF) {      
-      for (int i=0; i<dmrs_length>>1; i++)
-	printf("symb %d i %d %p gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
-	       &gold_pdcch_dmrs[symb][i>>5],gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
-    }  
+       if(dci_pdu->RNTI!=0xFFFF) {      
+         for (int i=0; i<dmrs_length>>1; i++)
+	   printf("symb %d i %d %p gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
+	          &gold_pdcch_dmrs[symb][i>>5],gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
+       }
 #endif
     }
     
@@ -136,6 +141,7 @@ void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
     polar_encoder_fast((uint64_t*)dci_pdu->Payload, (void*)encoder_output, n_RNTI, 1, 
                        NR_POLAR_DCI_MESSAGE_TYPE, dci_pdu->PayloadSizeBits, dci_pdu->AggregationLevel);
 #ifdef DEBUG_CHANNEL_CODING
+//debug dump dci
     printf("polar rnti %x,length %d, L %d\n",n_RNTI, dci_pdu->PayloadSizeBits,pdcch_pdu_rel15->dci_pdu->AggregationLevel);
     printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
 	   ((uint64_t*)dci_pdu->Payload)[0], ((uint64_t*)dci_pdu->Payload)[1]);
@@ -251,15 +257,16 @@ void nr_generate_dci(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15,
 }
 
 void nr_generate_dci_top(processingData_L1tx_t *msgTx,
-                         uint32_t **gold_pdcch_dmrs,
+                         int slot,
                          int32_t *txdataF,
                          int16_t amp,
                          NR_DL_FRAME_PARMS *frame_parms) {
 
+
   for (int i=0; i<msgTx->num_ul_pdcch; i++)
-    nr_generate_dci(&msgTx->ul_pdcch_pdu[i].pdcch_pdu.pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+    nr_generate_dci(msgTx->gNB,&msgTx->ul_pdcch_pdu[i].pdcch_pdu.pdcch_pdu_rel15,txdataF,amp,frame_parms,slot);
   for (int i=0; i<msgTx->num_dl_pdcch; i++)
-    nr_generate_dci(&msgTx->pdcch_pdu[i].pdcch_pdu_rel15,gold_pdcch_dmrs,txdataF,amp,frame_parms);
+    nr_generate_dci(msgTx->gNB,&msgTx->pdcch_pdu[i].pdcch_pdu_rel15,txdataF,amp,frame_parms,slot);
 
 }
 

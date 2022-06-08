@@ -35,9 +35,7 @@ This page is only valid for an `Ubuntu18` host.
 
 # 1. Retrieving the images on Docker-Hub #
 
-Currently the images are hosted under the user account `rdefosseoai`.
-
-This may change in the future.
+Currently the images are hosted under the team account `oaisoftwarealliance`. They were previously hosted under the user account `rdefosseoai`.
 
 Once again you may need to log on [docker-hub](https://hub.docker.com/) if your organization has reached pulling limit as `anonymous`.
 
@@ -52,25 +50,25 @@ Now pull images.
 
 ```bash
 $ docker pull mysql:5.7
-$ docker pull rdefosseoai/oai-amf:latest
-$ docker pull rdefosseoai/oai-nrf:latest
-$ docker pull rdefosseoai/oai-smf:latest
-$ docker pull rdefosseoai/oai-spgwu-tiny:latest
+$ docker pull oaisoftwarealliance/oai-amf:latest
+$ docker pull oaisoftwarealliance/oai-nrf:latest
+$ docker pull oaisoftwarealliance/oai-smf:latest
+$ docker pull oaisoftwarealliance/oai-spgwu-tiny:latest
 
-$ docker pull rdefosseoai/oai-gnb:develop
-$ docker pull rdefosseoai/oai-nr-ue:develop
+$ docker pull oaisoftwarealliance/oai-gnb:develop
+$ docker pull oaisoftwarealliance/oai-nr-ue:develop
 ```
 
 And **re-tag** them for tutorials' docker-compose file to work.
 
 ```bash
-$ docker image tag rdefosseoai/oai-amf:latest oai-amf:latest
-$ docker image tag rdefosseoai/oai-nrf:latest oai-nrf:latest
-$ docker image tag rdefosseoai/oai-smf:latest oai-smf:latest
-$ docker image tag rdefosseoai/oai-spgwu-tiny:latest oai-spgwu-tiny:latest
+$ docker image tag oaisoftwarealliance/oai-amf:latest oai-amf:latest
+$ docker image tag oaisoftwarealliance/oai-nrf:latest oai-nrf:latest
+$ docker image tag oaisoftwarealliance/oai-smf:latest oai-smf:latest
+$ docker image tag oaisoftwarealliance/oai-spgwu-tiny:latest oai-spgwu-tiny:latest
 
-$ docker image tag rdefosseoai/oai-gnb:develop oai-gnb:develop
-$ docker image tag rdefosseoai/oai-nr-ue:develop oai-nr-ue:develop
+$ docker image tag oaisoftwarealliance/oai-gnb:develop oai-gnb:develop
+$ docker image tag oaisoftwarealliance/oai-nr-ue:develop oai-nr-ue:develop
 ```
 
 ```bash
@@ -234,7 +232,7 @@ Making sure the OAI UE is connected:
 $ docker exec -it rfsim5g-oai-nr-ue /bin/bash
 root@bb4d400a832d:/opt/oai-nr-ue# ifconfig 
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet 192.168.71.137  netmask 255.255.255.192  broadcast 192.168.71.191
+        inet 192.168.71.150  netmask 255.255.255.192  broadcast 192.168.71.191
         ether 02:42:c0:a8:47:89  txqueuelen 0  (Ethernet)
         RX packets 224259  bytes 5821372018 (5.8 GB)
         RX errors 0  dropped 0  overruns 0  frame 0
@@ -270,7 +268,7 @@ Create entry for Second UE in docker-compose.yaml file as follows:
         privileged: true
         container_name: rfsim5g-oai-nr-ue2
         environment:
-            RFSIMULATOR: 192.168.71.136
+            RFSIMULATOR: 192.168.71.140
             FULL_IMSI: '208990100001101'
             FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
             OPC: 'C42449363BBAD02B66D16BC975D77CC1'
@@ -282,7 +280,7 @@ Create entry for Second UE in docker-compose.yaml file as follows:
             - oai-gnb
         networks:
             public_net:
-                ipv4_address: 192.168.71.138
+                ipv4_address: 192.168.71.151
         healthcheck:
             test: /bin/bash -c "pgrep nr-uesoftmodem"
             interval: 10s
@@ -326,7 +324,7 @@ Making sure the Second OAI UE is connected:
 $ docker exec -it rfsim5g-oai-nr-ue2 /bin/bash
 root@bb4d400a832d:/opt/oai-nr-ue# ifconfig 
 eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet 192.168.71.138  netmask 255.255.255.192  broadcast 192.168.71.191
+        inet 192.168.71.151  netmask 255.255.255.192  broadcast 192.168.71.191
         ether 02:42:c0:a8:47:8a  txqueuelen 0  (Ethernet)
         RX packets 3192021  bytes 67784900946 (67.7 GB)
         RX errors 0  dropped 0  overruns 0  frame 0

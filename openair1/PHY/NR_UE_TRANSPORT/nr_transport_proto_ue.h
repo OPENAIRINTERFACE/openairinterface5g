@@ -63,10 +63,12 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch, uint16_t N_RB_DL);
 */
 NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint16_t N_RB_DL);
 
+void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,
+                      uint16_t N_RB_UL,
+                      NR_DL_FRAME_PARMS* frame_parms);
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulsch, uint16_t N_RB_UL);
 
-NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids);
+NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, NR_DL_FRAME_PARMS* frame_parms);
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
@@ -733,7 +735,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     @param n_dmrs_cdm_groups
     @param frame_parms Pointer to frame descriptor
 */
-unsigned short nr_dlsch_extract_rbs_multiple(int **rxdataF,
+void nr_dlsch_extract_rbs(int **rxdataF,
                                         int **dl_ch_estimates,
                                         int **rxdataF_ext,
                                         int **dl_ch_estimates_ext,
@@ -824,28 +826,12 @@ void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
                                      int start_point);
 
 void nr_dlsch_deinterleaving(uint8_t symbol,
-							uint8_t start_symbol,
-							uint16_t L,
-							uint16_t *llr,
-							uint16_t *llr_deint,
-							uint16_t nb_rb_pdsch);
+                             uint8_t start_symbol,
+                             uint16_t L,
+                             uint16_t *llr,
+                             uint16_t *llr_deint,
+                             uint16_t nb_rb_pdsch);
 
-void dlsch_dual_stream_correlation(NR_DL_FRAME_PARMS *frame_parms,
-                                   unsigned char symbol,
-                                   unsigned short nb_rb,
-                                   int **dl_ch_estimates_ext,
-                                   int **dl_ch_estimates_ext_i,
-                                   int **dl_ch_rho_ext,
-                                   unsigned char output_shift);
-
-void dlsch_dual_stream_correlationTM34(NR_DL_FRAME_PARMS *frame_parms,
-                                   unsigned char symbol,
-                                   unsigned short nb_rb,
-                                   int **dl_ch_estimates_ext,
-                                   int **dl_ch_estimates_ext_i,
-                                   int **dl_ch_rho_ext,
-                                   unsigned char output_shift0,
-                                   unsigned char output_shift1);
 //This function is used to compute multiplications in Hhermitian * H matrix
 void conjch0_mult_ch1(int *ch0,
                       int *ch1,
@@ -896,19 +882,6 @@ void nr_dlsch_detection_mrc(int **rxdataF_comp,
                             unsigned char symbol,
                             unsigned short nb_rb,
                             int length);
-
-void nr_dlsch_detection_mrc_core(int **rxdataF_comp,
-                              int **rxdataF_comp_i,
-                              int **rho,
-                              int **rho_i,
-                              int **dl_ch_mag,
-                              int **dl_ch_magb,
-                              int **dl_ch_mag_i,
-                              int **dl_ch_magb_i,
-                              unsigned char n_tx,
-                              unsigned char n_rx,
-                              int length,
-                              int start_point);
 
 void det_HhH(int32_t *after_mf_00,
              int32_t *after_mf_01,
@@ -1040,8 +1013,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint16_t nb_symb_sch,
                          uint8_t nr_slot_rx,
                          uint8_t harq_pid,
-                         uint8_t is_crnti,
-                         uint8_t llr8_flag);
+                         uint8_t is_crnti);
 
 int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                      NR_UE_ULSCH_t *ulsch,
@@ -1105,6 +1077,9 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     UE_nr_rxtx_proc_t *proc,
+                    int32_t pdcch_est_size,
+                    int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                    int16_t *pdcch_e_rx,
                     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 
@@ -1159,11 +1134,13 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 uint8_t eNB_id,
                 uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
-		fapiPbch_t* result);
+                NR_UE_PDCCH_CONFIG *phy_pdcch_config,
+                fapiPbch_t* result);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
-		      PHY_VARS_NR_UE *ue,
-                      int pbch_initial_symbol);
+		              PHY_VARS_NR_UE *ue,
+                      int pbch_initial_symbol,
+                      NR_UE_PDCCH_CONFIG *phy_pdcch_config);
 
 uint16_t rx_pbch_emul(PHY_VARS_NR_UE *phy_vars_ue,
                       uint8_t eNB_id,
@@ -1480,16 +1457,6 @@ uint64_t cqi2hex(uint32_t cqi);
 
 uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
-
-/** \brief  This routine extracts a single subband PMI from a bitmap coming from UCI or the pmi_extend function
-    @param N_RB_DL number of resource blocks
-    @param mimo_mode
-    @param pmi_alloc subband PMI bitmap
-    @param rb resource block for which to extract PMI
-    @returns subband PMI
-*/
-uint8_t get_pmi(uint8_t N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb);
-
 int get_nCCE_offset_l1(int *CCE_table,
                        const unsigned char L,
                        const int nCCE,
@@ -1591,7 +1558,7 @@ uint8_t get_num_prach_tdd(module_id_t Mod_id);
   @param frame_type 0-FDD, 1-TDD
   @returns 0-1 accordingly
 */
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,lte_frame_type_t frame_type);
+uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,frame_type_t frame_type);
 
 /*!
   \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
@@ -1613,7 +1580,7 @@ void compute_prach_seq(uint16_t rootSequenceIndex,
 		       uint8_t prach_ConfigIndex,
 		       uint8_t zeroCorrelationZoneConfig,
 		       uint8_t highSpeedFlag,
-		       lte_frame_type_t frame_type,
+		       frame_type_t frame_type,
 		       uint32_t X_u[64][839]);
 
 
@@ -1669,8 +1636,10 @@ uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
 
 uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
+                                  int16_t *pdcch_e_rx,
                                   fapi_nr_dci_indication_t *dci_ind,
-                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
+                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+                                  NR_UE_PDCCH_CONFIG *phy_pdcch_config);
 
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs

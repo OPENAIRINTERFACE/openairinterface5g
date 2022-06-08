@@ -49,11 +49,6 @@ void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type);
 
 void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);
 
-
-uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
-
-uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
-
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint32_t size,
                                   uint8_t q,
@@ -78,9 +73,9 @@ int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 NR_gNB_SCH_STATS_t *find_nr_dlsch_stats(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
 int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-		      unsigned char *a,int frame,
+		      int frame,
 		      uint8_t slot,
-		      NR_gNB_DLSCH_t *dlsch,
+		      NR_DL_gNB_HARQ_t *harq,
 		      NR_DL_FRAME_PARMS* frame_parms,
 		      unsigned char * output,
 		      time_stats_t *tinput,

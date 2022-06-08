@@ -178,12 +178,15 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   OctetString ik = {AUTH_IK_SIZE, authentication_data->ik};
   OctetString res = {AUTH_RES_SIZE, authentication_data->res};
 
-  if (memcmp(authentication_data->rand, rand->value, AUTH_CK_SIZE) != 0) {
+  if ((memcmp(authentication_data->rand, rand->value, AUTH_CK_SIZE) != 0) ||
+      (authentication_data->auth_process_started == FALSE)) {
     /*
      * There is no valid stored RAND in the ME or the stored RAND is
      * different from the new received value in the AUTHENTICATION
-     * REQUEST message
+     * REQUEST message OR if this is first time UE starting the
+     * Authentication process
      */
+	authentication_data->auth_process_started = TRUE;
     OctetString auts;
     auts.length = 0;
     auts.value = (uint8_t *)malloc(AUTH_AUTS_SIZE);

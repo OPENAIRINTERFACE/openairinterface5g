@@ -74,7 +74,10 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
 			   PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
-                           int n_ss) {
+         int32_t pdcch_est_size,
+         int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+         NR_UE_PDCCH_CONFIG *phy_pdcch_config,
+         int n_ss) {
   return 0;
 }
 
@@ -722,6 +725,8 @@ int main(int argc, char **argv)
       }
       else {
 	UE_nr_rxtx_proc_t proc={0};
+  NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
 	const int estimateSz=7*2*sizeof(int)*frame_parms->ofdm_symbol_size;
@@ -750,7 +755,8 @@ int main(int argc, char **argv)
                          0,
                          ssb_index%8,
                          SISO,
-			 &result);
+                         &phy_pdcch_config,
+                         &result);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically

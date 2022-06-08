@@ -18,8 +18,10 @@ extern "C" {
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include <openair2/LAYER2/PDCP_v10.1.0/pdcp.h>
 #include <openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h>
-#include "openair2/SDAP/nr_sdap/nr_sdap_gnb.h"
+#include "openair2/SDAP/nr_sdap/nr_sdap.h"
 //#include <openair1/PHY/phy_extern.h>
+
+static boolean_t is_gnb = false;
 
 #pragma pack(1)
 
@@ -51,7 +53,36 @@ typedef struct DlDataDeliveryStatus_flags {
   uint32_t drbBufferSize;            //Desired buffer size for the data radio bearer
 } __attribute__((packed)) DlDataDeliveryStatus_flagsT;
 
+typedef struct Gtpv1uMsgHeaderOptFields {
+  uint8_t seqNum1Oct;
+  uint8_t seqNum2Oct;
+  uint8_t NPDUNum;
+  uint8_t NextExtHeaderType;    
+} __attribute__((packed)) Gtpv1uMsgHeaderOptFieldsT;
+
+typedef struct PDUSessionContainer {
+  uint8_t spare:4;
+  uint8_t PDU_type:4;
+  uint8_t QFI:6;
+  uint8_t RQI:1;
+  uint8_t PPP:1;
+} __attribute__((packed)) PDUSessionContainerT;
+
+typedef struct Gtpv1uExtHeader {
+  uint8_t ExtHeaderLen;
+  PDUSessionContainerT pdusession_cntr;
+  //uint8_t NextExtHeaderType;
+}__attribute__((packed)) Gtpv1uExtHeaderT;
+
 #pragma pack()
+
+// TS 29.281, fig 5.2.1-3
+#define PDU_SESSION_CONTAINER       (0x85)
+#define NR_RAN_CONTAINER            (0x84)
+
+// TS 29.281, 5.2.1
+#define EXT_HDR_LNTH_OCTET_UNITS    (4)
+#define NO_MORE_EXT_HDRS            (0)
 
 // TS 29.060, table 7.1 defines the possible message types
 // here are all the possible messages (3GPP R16)
@@ -84,6 +115,8 @@ typedef struct {
   ebi_t incoming_rb_id;
   gtpCallback callBack;
   teid_t outgoing_teid;
+  gtpCallbackSDAP callBackSDAP;
+  int pdusession_id;
 } rntiData_t;
 
 class gtpEndPoint {
@@ -560,6 +593,10 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   inst->te2ue_mapping[incoming_teid].outgoing_teid= outgoing_teid;
 
   inst->te2ue_mapping[incoming_teid].callBack=callBack;
+  
+  inst->te2ue_mapping[incoming_teid].callBackSDAP = sdap_data_req;
+
+  inst->te2ue_mapping[incoming_teid].pdusession_id = (uint8_t)outgoing_bearer_id;
 
   gtpv1u_bearer_t *tmp=&inst->ue2te_mapping[rnti].bearers[outgoing_bearer_id];
 
@@ -679,14 +716,14 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->outgoing_teid[0]);
   tcp_udp_port_t dstport=globGtp.instances[compatInst(instance)].get_dstport();
-
+  is_gnb = true;
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
     teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
                                     create_tunnel_req->incoming_rb_id[i],
                                     create_tunnel_req->pdusession_id[i],
                                     create_tunnel_req->outgoing_teid[i],
                                     create_tunnel_req->dst_addr[i], dstport,
-                                    sdap_gnb_data_req);
+                                    pdcp_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
     create_tunnel_resp->num_tunnels=create_tunnel_req->num_tunnels;
@@ -927,52 +964,65 @@ static int Gtpv1uHandleGpdu(int h,
     return GTPNOK;
   }
 
-  /*int offset=8;
+  /* see TS 29.281 5.1 */
+  //Minimum length of GTP-U header if non of the optional fields are present
+  int offset = sizeof(Gtpv1uMsgHeaderT);
 
-  if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
-    offset+=8;*/
-
-  
-//Minimum length of GTP-U header if non of the optional fields are present
-  int offset= sizeof(Gtpv1uMsgHeaderT);
-  
-  //Consider additional length for GTP-U header if at least one of the optional fields is present
-  if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
-    offset+=4;
-  
+  uint8_t qfi = 0;
+  boolean_t rqi = FALSE;
   uint32_t NR_PDCP_PDU_SN = 0;
-  //Consider the length of 1 or more extension headers that can be present in the GTP-U PDU
-  if(msgHdr->E) {
-    while (msgBuf[offset]!=0){
-      if(msgBuf[offset-1] == 0x84){ //Extension header corresponding to NR-RAN container type
-        uint8_t PDU_type = (msgBuf[offset+1]>>4) & 0x0f;
-        if (PDU_type == 0){ //DL USER Data Format
-          int additional_offset = 6; //Additional offset capturing the first non-mandatory octet (TS 38.425, Figure 5.5.2.1-1)
-          if(msgBuf[offset+1]>>2 & 0x1){ //DL Discard Blocks flag is present
-            LOG_I(GTPU, "DL User Data: DL Discard Blocks handling not enabled\n"); 
-            additional_offset = additional_offset + 9; //For the moment ignore
-          }
-          if(msgBuf[offset+1]>>1 & 0x1){ //DL Flush flag is present
-            LOG_I(GTPU, "DL User Data: DL Flush handling not enabled\n");
-            additional_offset = additional_offset + 3; //For the moment ignore
-          }
-          if((msgBuf[offset+2]>>3)& 0x1){ //"Report delivered" enabled (TS 38.425, 5.4)
-            /*Store the NR PDCP PDU SN for which a delivery status report shall be generated once the
-             *PDU gets forwarded to the lower layers*/
-            //NR_PDCP_PDU_SN = msgBuf[offset+6] << 16 | msgBuf[offset+7] << 8 | msgBuf[offset+8];
-            NR_PDCP_PDU_SN = msgBuf[offset+additional_offset] << 16 | msgBuf[offset+additional_offset+1] << 8 | msgBuf[offset+additional_offset+2]; 
-            LOG_D(GTPU, " NR_PDCP_PDU_SN: %u \n",  NR_PDCP_PDU_SN);
-          }
+
+  /* if E, S, or PN is set then there are 4 more bytes of header */
+  if( msgHdr->E ||  msgHdr->S ||msgHdr->PN)
+    offset += 4;
+
+  if (msgHdr->E) {
+    int next_extension_header_type = msgBuf[offset - 1];
+    int extension_header_length;
+
+    while (next_extension_header_type != NO_MORE_EXT_HDRS) {
+      extension_header_length = msgBuf[offset];
+      switch (next_extension_header_type) {
+        case PDU_SESSION_CONTAINER: {
+          PDUSessionContainerT *pdusession_cntr = (PDUSessionContainerT *)(msgBuf + offset + 1);
+          qfi = pdusession_cntr->QFI;
+          rqi = pdusession_cntr->RQI;
+          break;
         }
-        else{
-          LOG_W(GTPU, "NR-RAN container type: %d not supported \n", PDU_type);
+        case NR_RAN_CONTAINER: {
+          uint8_t PDU_type = (msgBuf[offset+1]>>4) & 0x0f;
+          if (PDU_type == 0){ //DL USER Data Format
+            int additional_offset = 6; //Additional offset capturing the first non-mandatory octet (TS 38.425, Figure 5.5.2.1-1)
+            if(msgBuf[offset+1]>>2 & 0x1){ //DL Discard Blocks flag is present
+              LOG_I(GTPU, "DL User Data: DL Discard Blocks handling not enabled\n"); 
+              additional_offset = additional_offset + 9; //For the moment ignore
+            }
+            if(msgBuf[offset+1]>>1 & 0x1){ //DL Flush flag is present
+              LOG_I(GTPU, "DL User Data: DL Flush handling not enabled\n");
+              additional_offset = additional_offset + 3; //For the moment ignore
+            }
+            if((msgBuf[offset+2]>>3)& 0x1){ //"Report delivered" enabled (TS 38.425, 5.4)
+              /*Store the NR PDCP PDU SN for which a delivery status report shall be generated once the
+               *PDU gets forwarded to the lower layers*/
+              //NR_PDCP_PDU_SN = msgBuf[offset+6] << 16 | msgBuf[offset+7] << 8 | msgBuf[offset+8];
+              NR_PDCP_PDU_SN = msgBuf[offset+additional_offset] << 16 | msgBuf[offset+additional_offset+1] << 8 | msgBuf[offset+additional_offset+2]; 
+              LOG_D(GTPU, " NR_PDCP_PDU_SN: %u \n",  NR_PDCP_PDU_SN);
+            }
+          }
+          else{
+            LOG_W(GTPU, "NR-RAN container type: %d not supported \n", PDU_type);
+          }
+          break;
         }
+        default:
+          LOG_W(GTPU, "unhandled extension 0x%2.2x, skipping\n", next_extension_header_type);
+          break;
       }
-      LOG_D(GTPU, "Extension header length in multiple of 4 bytes is: %d \n", msgBuf[offset]);
-      offset+=msgBuf[offset]*4 -1;
-     }
-   offset++;
-   }
+
+      offset += extension_header_length * EXT_HDR_LNTH_OCTET_UNITS;
+      next_extension_header_type = msgBuf[offset - 1];
+    }
+  }
 
   // This context is not good for gtp
   // frame, ... has no meaning
@@ -997,17 +1047,35 @@ static int Gtpv1uHandleGpdu(int h,
   const uint32_t destinationL2Id=0;
   pthread_mutex_unlock(&globGtp.gtp_lock);
 
-  if ( !tunnel->second.callBack(&ctxt,
-                                srb_flag,
-                                rb_id,
-                                mui,
-                                confirm,
-                                sdu_buffer_size,
-                                sdu_buffer,
-                                mode,
-                                &sourceL2Id,
-                                &destinationL2Id) )
-    LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  if(is_gnb && qfi){
+    if ( !tunnel->second.callBackSDAP(&ctxt,
+                                      srb_flag,
+                                      rb_id,
+                                      mui,
+                                      confirm,
+                                      sdu_buffer_size,
+                                      sdu_buffer,
+                                      mode,
+                                      &sourceL2Id,
+                                      &destinationL2Id,
+                                      qfi,
+                                      rqi,
+                                      tunnel->second.pdusession_id) )
+      LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  } else {
+    if ( !tunnel->second.callBack(&ctxt,
+                                  srb_flag,
+                                  rb_id,
+                                  mui,
+                                  confirm,
+                                  sdu_buffer_size,
+                                  sdu_buffer,
+                                  mode,
+                                  &sourceL2Id,
+                                  &destinationL2Id) )
+      LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  }
+
   if(NR_PDCP_PDU_SN > 0 && NR_PDCP_PDU_SN %5 ==0){
     LOG_D (GTPU, "Create and send DL DATA Delivery status for the previously received PDU, NR_PDCP_PDU_SN: %u \n", NR_PDCP_PDU_SN);
     int rlc_tx_buffer_space = nr_rlc_get_available_tx_space(ctxt.rnti, rb_id);

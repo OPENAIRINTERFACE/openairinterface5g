@@ -47,12 +47,13 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
-
+THREAD_STRUCT thread_struct;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 openair0_config_t openair0_cfg[MAX_CARDS];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 double cpuf;
 //uint8_t nfapi_mode = 0;
@@ -551,7 +552,7 @@ int main(int argc, char **argv)
 
       if (n_trials==1) printf("txlev %d (%f dB), offset %d, sigma2 %f ( %f dB)\n",txlev,10*log10(txlev),startingSymbolIndex*frame_parms->ofdm_symbol_size,sigma2,sigma2_dB);
 
-      struct complex16 **rxdataF =  (struct complex16 **)gNB->common_vars.rxdataF;
+      c16_t **rxdataF =  (struct complex16 **)gNB->common_vars.rxdataF;
       for (int symb=0; symb<gNB->frame_parms.symbols_per_slot;symb++) {
         if (symb<startingSymbolIndex || symb >= startingSymbolIndex+nrofSymbols) {
           int i0 = symb*gNB->frame_parms.ofdm_symbol_size;

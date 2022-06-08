@@ -63,7 +63,7 @@
 
 #include "PHY/phy_extern.h"
 
-#include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "common/ran_context.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 #include "common/utils/LOG/log_extern.h"
@@ -74,7 +74,6 @@
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
 #include "gnb_paramdef.h"
-
 
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
@@ -457,6 +456,7 @@ void init_gNB_Tpool(int inst) {
   for (int i=0; i < 2; i++) {
     notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
     processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
+    memset(msgDataTx,0, sizeof(processingData_L1tx_t));
     init_DLSCH_struct(gNB, msgDataTx);
     memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
     pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
@@ -517,7 +517,8 @@ void init_eNB_afterRU(void) {
     RC.nb_nr_inst = 1;
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
     LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
-    gNB                                  =  RC.gNB[inst];
+    gNB = RC.gNB[inst];
+
     phy_init_nr_gNB(gNB,0,0);
 
     // map antennas and PRACH signals to gNB RX

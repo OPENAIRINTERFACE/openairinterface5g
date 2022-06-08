@@ -276,7 +276,6 @@ uint16_t node_number;
 static void get_options(void) {
   int CC_id=0;
   int tddflag=0;
-  char *loopfile=NULL;
   int dumpframe=0;
   int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
@@ -292,14 +291,6 @@ static void get_options(void) {
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   nfapi_setmode(nfapi_mode);
-
-
-  if (loopfile != NULL) {
-    printf("Input file for hardware emulation: %s",loopfile);
-    mode=loop_through_memory;
-    input_fd = fopen(loopfile,"r");
-    AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
-  }
 
   get_softmodem_params()->hw_timing_advance = timingadv;
 
@@ -455,6 +446,7 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
     openair0_cfg[card].num_rb_dl=frame_parms->N_RB_DL;
     openair0_cfg[card].clock_source = get_softmodem_params()->clock_source;
     openair0_cfg[card].time_source = get_softmodem_params()->timing_source;
+    openair0_cfg[card].tune_offset = get_softmodem_params()->tune_offset;
     openair0_cfg[card].tx_num_channels=min(2,frame_parms->nb_antennas_tx);
     openair0_cfg[card].rx_num_channels=min(2,frame_parms->nb_antennas_rx);
 
@@ -473,11 +465,12 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
       openair0_cfg[card].rx_gain[i] = rxgain - rx_gain_off;
       openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+      printf("Card %d, channel %d, Setting tx_gain %.0f, rx_gain %.0f, tx_freq %.0f, rx_freq %.0f, tune_offset %.0f\n",
              card,i, openair0_cfg[card].tx_gain[i],
              openair0_cfg[card].rx_gain[i],
              openair0_cfg[card].tx_freq[i],
-             openair0_cfg[card].rx_freq[i]);
+             openair0_cfg[card].rx_freq[i],
+             openair0_cfg[card].tune_offset);
     }
 
     if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;

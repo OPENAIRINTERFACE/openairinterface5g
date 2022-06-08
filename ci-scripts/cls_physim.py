@@ -32,7 +32,7 @@ import logging
 #to create a SSH object locally in the methods
 import sshconnection
 #to update the HTML object
-import html
+import cls_oai_html
 from multiprocessing import SimpleQueue
 #for log folder maintenance
 import os
@@ -168,7 +168,7 @@ class PhySim:
 
 		mySSH.close()
 		#check build status and update HTML object
-		lHTML = html.HTMLManagement()
+		lHTML = cls_oai_html.HTMLManagement()
 		lHTML=self.__CheckBuild_PhySim(htmlObj,constObj)
 		return lHTML
 
@@ -186,6 +186,6 @@ class PhySim:
 		mySSH.command(self.__workSpacePath+'ran_build/build/ldpctest ' + self.runargs + ' >> '+self.__runLogFile, '\$', 30)
 		mySSH.close()
 		#return updated HTML to main
-		lHTML = html.HTMLManagement()
+		lHTML = cls_oai_html.HTMLManagement()
 		lHTML=self.__CheckResults_PhySim(htmlObj,constObj,testcase_id)
 		return lHTML

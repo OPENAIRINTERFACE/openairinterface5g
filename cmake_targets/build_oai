@@ -59,19 +59,24 @@ BUILD_ECLIPSE=0
 NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
 RU=0
-trap handle_ctrl_c INT
+CMAKE_C_FLAGS=()
+CMAKE_CXX_FLAGS=()
 
 function print_help() {
   echo_info "
-This program installs OpenAirInterface Software
-You should have ubuntu 16.xx or 18.04 updated
-Options
+This script compiles OpenAirInterface Software, and can install dependencies
+for a number of distributions (Ubuntu 18-22, Fedora, RHEL7/8).
+Options:
+--arch-native
+   Passes -march=native to the compiler.
 -c | --clean
    Erase all files to make a rebuild from start
 -C | --clean-all
    Erase all files made by previous compilations, installations
 --clean-kernel
    Erase previously installed features in kernel: iptables, drivers, ...
+--cmake-opt
+   Pass the supplied option verbatim to cmake.
 -d | --build-dir
    Sets build directory (will be <oai-root>/cmake_targets/<build-dir>/build)
 -I | --install-external-packages
@@ -183,6 +188,10 @@ function main() {
   until [ -z "$1" ]
   do
     case "$1" in
+       --arch-native)
+            CMAKE_C_FLAGS+=("-march=native")
+            CMAKE_CXX_FLAGS+=("-march=native")
+            shift;;
        -c | --clean)
             CLEAN=1
             shift;;
@@ -193,9 +202,12 @@ function main() {
             clean_kernel
             echo_info "Erased iptables config and removed modules from kernel"
             shift;;
+       --cmake-opt)
+            CMAKE_CMD="$CMAKE_CMD $2"
+            shift 2;;
        -d | --build-dir)
             BUILD_DIR=$2
-            shift;;
+            shift 2;;
        -I | --install-external-packages)
             INSTALL_EXTERNAL=1
             echo_info "Will install external packages"
@@ -565,8 +577,7 @@ function main() {
       #fi
     fi
     echo_info "Installing protobuf/protobuf-c for flexran agent support"
-    install_protobuf_from_source
-    install_protobuf_c_from_source
+    install_protobuf_c
     echo_success "protobuf/protobuf-c installation successful"
   fi
 
@@ -574,19 +585,6 @@ function main() {
     echo_info "Installing optional packages"
     check_install_additional_tools
   fi
-
-  
-  
-  echo_info "3. building the compilation directives ..."
-
-  DIR=$OPENAIR_DIR/cmake_targets
-
-  [ "$CLEAN" = "1" ] && rm -rf $DIR/$BUILD_DIR/build
-  mkdir -p $DIR/$BUILD_DIR/build
-
-  cd  $DIR/$BUILD_DIR/build
-  echo_info "running $CMAKE_CMD"
-  eval $CMAKE_CMD ../..
 
   execlist=""
   if [ "$eNB" = "1" ] ; then
@@ -607,10 +605,27 @@ function main() {
   if [ "$nrUE" = 1 ] ; then
       execlist="$execlist nr-uesoftmodem"
   fi
-  
   if [ "$ittiSIM" = "1" ] ; then
       execlist="$execlist nr-ittisim"
   fi
+
+  if [[ "$execlist" == "" && "$SIMUS_PHY" != "1" ]]; then
+    echo_success "installing dependencies successful"
+    exit
+  fi
+
+  echo_info "3. building the compilation directives ..."
+
+  DIR=$OPENAIR_DIR/cmake_targets
+
+  [ "$CLEAN" = "1" ] && rm -rf $DIR/$BUILD_DIR/build
+  mkdir -p $DIR/$BUILD_DIR/build
+
+  cd  $DIR/$BUILD_DIR/build
+  if [[ ${#CMAKE_C_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_C_FLAGS=\"${CMAKE_C_FLAGS[*]}\""; fi
+  if [[ ${#CMAKE_CXX_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_CXX_FLAGS=\"${CMAKE_CXX_FLAGS[*]}\""; fi
+  echo_info "running $CMAKE_CMD"
+  eval $CMAKE_CMD ../..
   
   for f in $execlist ; do
       echo_info "Compiling $f..."

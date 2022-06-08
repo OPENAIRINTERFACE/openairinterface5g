@@ -84,9 +84,9 @@ typedef struct {
   /// Pointer to the payload + CRC 
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_NR_ULSCH_SEGMENTS];
+  uint8_t **c;
   /// LDPC-code outputs
-  uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
+  uint8_t **d;
   /// LDPC-code outputs (TS 36.212 V15.4.0, Sec 5.3.2 p. 17)
   uint8_t *e;
   /// Rate matching (Interleaving) outputs (TS 36.212 V15.4.0, Sec 5.4.2.2 p. 30)
@@ -181,9 +181,10 @@ typedef struct {
   /// Pointers to transport block segments
   uint8_t **c;
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
+  /// Accumulates the soft bits for each round to increase decoding success (HARQ)
   int16_t **d;
   /// Index of current HARQ round for this DLSCH
-  uint8_t round;
+  uint8_t DLround;
   /// MCS table for this DLSCH
   uint8_t mcs_table;
   /// MCS format for this DLSCH
@@ -196,8 +197,6 @@ typedef struct {
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_nrmode_t mimo_mode;
-  /// LDPC processing buffers
-  t_nrLDPC_procBuf **p_nrLDPC_procBuf;
   /// Number of code segments 
   uint32_t C;
   /// Number of bits in code segments
@@ -261,6 +260,9 @@ typedef struct {
   uint16_t ptrs_symbols;
   // PTRS symbol index, to be updated every PTRS symbol within a slot.
   uint8_t ptrs_symbol_index;
+  uint32_t tbslbrm;
+  uint8_t nscid;
+  uint16_t dlDmrsScramblingId;
   /// PDU BITMAP 
   uint16_t pduBitmap;
 } NR_DL_UE_HARQ_t;
