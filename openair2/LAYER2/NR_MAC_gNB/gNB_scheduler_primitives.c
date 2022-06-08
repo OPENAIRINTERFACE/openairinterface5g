@@ -245,33 +245,6 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
   }
 }
 
-NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
-                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                       const NR_SIB1_t *sib1) {
-  NR_BWP_t *genericParameters = NULL;
-  if (active_bwp) {
-    genericParameters = &active_bwp->bwp_Common->genericParameters;
-  } else if (ServingCellConfigCommon) {
-    genericParameters = &ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-  } else {
-    genericParameters = &sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
-  }
-  return genericParameters;
-}
-
-NR_BWP_t *get_ul_bwp_genericParameters(NR_BWP_Uplink_t *active_ubwp,
-                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                       const NR_SIB1_t *sib1) {
-  NR_BWP_t *genericParameters = NULL;
-  if (active_ubwp) {
-    genericParameters = &active_ubwp->bwp_Common->genericParameters;
-  } else if (ServingCellConfigCommon) {
-    genericParameters = &ServingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  } else {
-    genericParameters = &sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.genericParameters;
-  }
-  return genericParameters;
-}
 
 NR_PDSCH_TimeDomainResourceAllocationList_t *get_pdsch_TimeDomainAllocationList(const NR_BWP_Downlink_t *active_bwp,
                                                                                 const NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
@@ -1033,13 +1006,11 @@ void config_uldci(const NR_SIB1_t *sib1,
                   int time_domain_assignment,
                   uint8_t tpc,
                   int n_ubwp,
-                  int bwp_id) {
+                  NR_UE_BWP_t *BWP) {
 
-  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters((NR_BWP_Uplink_t *)ubwp,
-                                                             (NR_ServingCellConfigCommon_t *)scc,
-                                                             (NR_SIB1_t *)sib1);
+  int bwp_id = BWP->ul_bwp_id;
 
-  const int bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const int bw = NRRIV2BW(BWP->ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   dci_pdu_rel15->frequency_domain_assignment.val =
       PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
@@ -1176,10 +1147,8 @@ int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
 void nr_configure_pucch(const NR_SIB1_t *sib1,
                         nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_CellGroupConfig_t *CellGroup,
-                        NR_BWP_Uplink_t *bwp,
+                        NR_UE_info_t* UE,
                         NR_BWP_UplinkDedicated_t *bwpd,
-                        uint16_t rnti,
                         uint8_t pucch_resource,
                         uint16_t O_csi,
                         uint16_t O_ack,
@@ -1191,6 +1160,7 @@ void nr_configure_pucch(const NR_SIB1_t *sib1,
   NR_PUCCH_ResourceSet_t *pucchresset;
   NR_PUCCH_FormatConfig_t *pucchfmt;
   NR_PUCCH_ResourceId_t *resource_id = NULL;
+  NR_BWP_Uplink_t *bwp = UE->UE_sched_ctrl.active_ubwp;
 
   long *id0 = NULL;
   int n_list, n_set;
@@ -1252,7 +1222,7 @@ void nr_configure_pucch(const NR_SIB1_t *sib1,
   else
     pucch_pdu->hopping_id = *scc->physCellId;
 
-  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(bwp,scc, sib1);
+  NR_BWP_t *genericParameters = UE->current_BWP.ul_genericParameters;
 
   pucch_pdu->bwp_size  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   pucch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
@@ -1316,7 +1286,7 @@ void nr_configure_pucch(const NR_SIB1_t *sib1,
       if (pucchres->pucch_ResourceId == *resource_id) {
         res_found = 1;
         pucch_pdu->prb_start = pucchres->startingPRB;
-        pucch_pdu->rnti = rnti;
+        pucch_pdu->rnti = UE->rnti;
         // FIXME why there is only one frequency hopping flag
         // what about inter slot frequency hopping?
         pucch_pdu->freq_hop_flag = pucchres->intraSlotFrequencyHopping!= NULL ?  1 : 0;
@@ -1417,7 +1387,7 @@ void nr_configure_pucch(const NR_SIB1_t *sib1,
                       &start_symb);
 
     pucch_pdu->prb_start = prb_start;
-    pucch_pdu->rnti = rnti;
+    pucch_pdu->rnti = UE->rnti;
     pucch_pdu->freq_hop_flag = 1;
     pucch_pdu->second_hop_prb = second_hop_prb;
     pucch_pdu->format_type = default_pucch_fmt[rsetindex];
@@ -2378,7 +2348,12 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr)
   }
 }
 
-void configure_UE_BWP(NR_UE_BWP_t *BWP, NR_CellGroupConfig_t *CellGroup) {
+void configure_UE_BWP(NR_UE_BWP_t *BWP,
+                      NR_ServingCellConfigCommon_t *scc,
+                      NR_CellGroupConfig_t *CellGroup) {
+
+  NR_BWP_Downlink_t *dl_bwp = NULL;
+  NR_BWP_Uplink_t *ul_bwp = NULL;
 
   if (CellGroup &&
       CellGroup->spCellConfig &&
@@ -2394,7 +2369,37 @@ void configure_UE_BWP(NR_UE_BWP_t *BWP, NR_CellGroupConfig_t *CellGroup) {
     }
     if (servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id)
       BWP->ul_bwp_id = *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
+
+    const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
+    if (BWP->dl_bwp_id>0) {
+      for (int i=0; i<bwpList->list.count; i++) {
+        if(dl_bwp->bwp_Id == BWP->dl_bwp_id) {
+          dl_bwp = bwpList->list.array[i - 1];
+          break;
+        }
+      }
+      AssertFatal(dl_bwp!=NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n",BWP->dl_bwp_id);
+    }
+
+    const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
+    if (BWP->ul_bwp_id>0) {
+      for (int i=0; i<ubwpList->list.count; i++) {
+        if(ul_bwp->bwp_Id == BWP->ul_bwp_id) {
+          ul_bwp = ubwpList->list.array[i - 1];
+          break;
+        }
+      }
+      AssertFatal(ul_bwp!=NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n",BWP->ul_bwp_id);
+    }
   }
+
+  BWP->dl_genericParameters = (BWP->dl_bwp_id>0 && dl_bwp) ?
+    &dl_bwp->bwp_Common->genericParameters:
+    &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+
+  BWP->ul_genericParameters = (BWP->ul_bwp_id>0 && ul_bwp) ?
+    &ul_bwp->bwp_Common->genericParameters:
+    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
 }
 
 //------------------------------------------------------------------------------
@@ -2446,7 +2451,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   // initialize UE BWP information
   NR_UE_BWP_t *BWP = &UE->current_BWP;
   memset(BWP, 0, sizeof(*BWP));
-  configure_UE_BWP(BWP, CellGroup);
+  configure_UE_BWP(BWP, scc, CellGroup);
 
   /* set illegal time domain allocation to force recomputation of all fields */
   sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
@@ -2457,9 +2462,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig ? servingCellConfig->downlinkBWP_ToAddModList : NULL;
 
   sched_ctrl->active_bwp = bwpList && BWP->dl_bwp_id > 0 ? bwpList->list.array[BWP->dl_bwp_id - 1] : NULL;
-  NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
-    &sched_ctrl->active_bwp->bwp_Common->genericParameters:
-    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+
   const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
   const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
   sched_ctrl->search_space = get_searchspace(sib1,
@@ -2475,7 +2478,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
                                                 sched_ctrl->search_space,
                                                 sched_ctrl->coreset,
                                                 scc,
-                                                genericParameters,
+                                                BWP->dl_genericParameters,
                                                 NULL);
   sched_ctrl->next_dl_bwp_id = -1;
   sched_ctrl->next_ul_bwp_id = -1;
@@ -2712,6 +2715,7 @@ void nr_csirs_scheduling(int Mod_idP,
       continue;
     }
     NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
+    NR_UE_BWP_t *BWP = &UE->current_BWP;
 
     if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
 	      !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
@@ -2724,9 +2728,7 @@ void nr_csirs_scheduling(int Mod_idP,
       int period, offset;
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
-      NR_BWP_t *genericParameters = sched_ctrl->active_bwp ?
-                                    &sched_ctrl->active_bwp->bwp_Common->genericParameters :
-                                    &gNB_mac->common_channels[0].ServingCellConfigCommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+      NR_BWP_t *genericParameters = BWP->dl_genericParameters;
 
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
@@ -2944,7 +2946,7 @@ void nr_mac_update_timers(module_id_t module_id,
           }
         }
 
-        configure_UE_BWP(BWP, UE->CellGroup);
+        configure_UE_BWP(BWP, scc, UE->CellGroup);
 
         NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
         NR_BWP_DownlinkDedicated_t *bwpd = cg &&

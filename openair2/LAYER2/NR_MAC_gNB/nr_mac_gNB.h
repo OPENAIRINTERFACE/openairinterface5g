@@ -91,6 +91,12 @@ typedef struct {
   int len;
 } NR_list_t;
 
+typedef struct NR_UE_BWP {
+  NR_BWP_Id_t dl_bwp_id;
+  NR_BWP_Id_t ul_bwp_id;
+  NR_BWP_t *dl_genericParameters;
+  NR_BWP_t *ul_genericParameters;
+} NR_UE_BWP_t;
 
 typedef enum {
   RA_IDLE = 0,
@@ -124,10 +130,6 @@ typedef struct NR_sched_pdcch {
 typedef struct {
   /// Flag to indicate this process is active
   RA_gNB_state_t state;
-  /// DL BWP id of RA process
-  int dl_bwp_id;
-  /// UL BWP id of RA process
-  int ul_bwp_id;
   /// CORESET0 configured flag
   int coreset0_configured;
   /// Slot where preamble was received
@@ -199,6 +201,8 @@ typedef struct {
   rnti_t crnti;
   /// CFRA flag
   bool cfra;
+  // BWP for RA
+  NR_UE_BWP_t BWP;
 } NR_RA_t;
 
 /*! \brief gNB common channels */
@@ -701,11 +705,6 @@ typedef struct NR_bler_options {
   uint8_t max_mcs;
 } NR_bler_options_t;
 
-typedef struct NR_UE_BWP {
-  NR_BWP_Id_t dl_bwp_id;
-  NR_BWP_Id_t ul_bwp_id;
-} NR_UE_BWP_t;
-
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 #define MAX_CSI_REPORTCONFIG 48
 typedef struct {
@@ -718,8 +717,6 @@ typedef struct {
   NR_CellGroupConfig_t *CellGroup;
   char cg_buf[32768]; /* arbitrary size */
   asn_enc_rval_t enc_rval;
-  /// CCE indexing
-  int m;
   // UE selected beam index
   uint8_t UE_beam_index;
   bool Msg4_ACKed;

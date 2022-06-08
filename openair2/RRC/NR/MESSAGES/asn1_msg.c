@@ -304,8 +304,8 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
 }
 
 uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier, 
-	               gNB_RrcConfigurationReq *configuration
-                  ) {
+                   gNB_RrcConfigurationReq *configuration) {
+
   asn_enc_rval_t enc_rval;
 
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));

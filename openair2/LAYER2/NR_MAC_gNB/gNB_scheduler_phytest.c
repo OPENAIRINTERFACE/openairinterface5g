@@ -194,6 +194,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   NR_UE_info_t *UE = RC.nrmac[module_id]->UE_info.list[0];
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
   const int CC_id = 0;
 
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
@@ -203,8 +204,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
     nr_set_pdsch_semi_static(NULL, scc, UE->CellGroup, sched_ctrl->active_bwp, NULL, tda, target_dl_Nl,sched_ctrl , ps);
 
   /* find largest unallocated chunk */
-  const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  const int BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const int bwpSize = NRRIV2BW(BWP->dl_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const int BWPStart = NRRIV2PRBOFFSET(BWP->dl_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   int rbStart = 0;
   int rbSize = 0;
@@ -340,7 +341,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   NR_UE_info_t *UE = nr_mac->UE_info.list[0];
 
   AssertFatal(nr_mac->UE_info.list[1] == NULL,
@@ -351,6 +351,9 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   const int CC_id = 0;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
+  NR_BWP_t *genericParameters = BWP->ul_genericParameters;
+  const int mu = genericParameters->subcarrierSpacing;
 
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
     sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -398,12 +401,8 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   uint16_t rbStart = 0;
   uint16_t rbSize;
 
-  const int bw = NRRIV2BW(sched_ctrl->active_ubwp ?
-                          sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth :
-                          scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  const int BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp ?
-                                       sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth :
-                                       scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const int bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const int BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   if (target_ul_bw>bw)
     rbSize = bw;

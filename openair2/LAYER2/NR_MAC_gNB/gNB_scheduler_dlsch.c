@@ -393,12 +393,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
   const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                             RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                             sib1);
 
   const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(UE->current_BWP.dl_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   int rbStart = 0; // start wrt BWPstart
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
@@ -672,9 +669,7 @@ void pf_dl(module_id_t module_id,
       RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 :
       NULL;
 
-    NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                               RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                               sib1);
+    NR_BWP_t *genericParameters = iterator->UE->current_BWP.dl_genericParameters;
 
     const int coresetid = (sched_ctrl->active_bwp||bwpd) ?
       sched_ctrl->coreset->controlResourceSetId :
@@ -828,10 +823,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                             RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                             sib1);
+  NR_BWP_t *genericParameters = UE->current_BWP.dl_genericParameters;
 
   NR_BWP_DownlinkDedicated_t *bwpd =
       UE->CellGroup &&
@@ -1008,10 +1000,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           sched_ctrl->tpc1);
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
 
-    const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-    NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(bwp,
-                                                               RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                               sib1);
+    NR_BWP_t *genericParameters = current_BWP->dl_genericParameters;
 
     NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space : gNB_mac->sched_ctrlCommon->search_space;
 

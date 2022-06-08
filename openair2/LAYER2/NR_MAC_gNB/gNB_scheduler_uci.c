@@ -93,10 +93,8 @@ static void nr_fill_nfapi_pucch(gNB_MAC_INST *nrmac,
   nr_configure_pucch(sib1,
                      pucch_pdu,
                      scc,
-                     UE->CellGroup,
-                     UE->UE_sched_ctrl.active_ubwp,
+                     UE,
                      ubwpd,
-                     UE->rnti,
                      pucch->resource_indicator,
                      pucch->csi_bits,
                      pucch->dai_c,
@@ -706,6 +704,7 @@ void nr_csi_meas_reporting(int Mod_idP,
   UE_iterator(RC.nrmac[Mod_idP]->UE_info.list, UE ) {
     const NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    NR_UE_BWP_t *BWP = &UE->current_BWP;
     if ((sched_ctrl->rrc_processing_timer > 0) || (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0)) {
       continue;
     }
@@ -765,12 +764,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->csi_bits +=
           nr_get_csi_bitlen(UE,csi_report_id);
 
-      const NR_SIB1_t *sib1 = RC.nrmac[Mod_idP]->common_channels[0].sib1 ? RC.nrmac[Mod_idP]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-      NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
-                                                                 scc,
-                                                                 sib1);
-
-      int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+      int bwp_start = NRRIV2PRBOFFSET(BWP->ul_genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
 
       // going through the list of PUCCH resources to find the one indexed by resource_id
       uint16_t *vrb_map_UL = &RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
@@ -1631,8 +1625,8 @@ int nr_acknack_scheduling(int mod_id,
    *   later)
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_CellGroupConfig_t *cg = UE->CellGroup;
   NR_UE_BWP_t *BWP = &UE->current_BWP;
+  NR_CellGroupConfig_t *cg = UE->CellGroup;
 
   NR_PUCCH_Config_t *pucch_Config = NULL;
   if (sched_ctrl->active_ubwp) {
@@ -1644,11 +1638,9 @@ int nr_acknack_scheduling(int mod_id,
              cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
     pucch_Config = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
-  NR_BWP_t *genericParameters = sched_ctrl->active_ubwp ?
-    &sched_ctrl->active_ubwp->bwp_Common->genericParameters:
-    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-  int bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-  int bwp_size = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+
+  int bwp_start = NRRIV2PRBOFFSET(BWP->ul_genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  int bwp_size = NRRIV2BW(BWP->ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
   LOG_D(NR_MAC, "In %s: %4d.%2d Trying to allocate pucch, current DAI %d\n", __FUNCTION__, frame, slot, pucch->dai_c);

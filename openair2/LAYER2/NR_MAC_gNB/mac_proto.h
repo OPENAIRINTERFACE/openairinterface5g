@@ -201,7 +201,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   int time_domain_assignment,
                   uint8_t tpc,
                   int n_ubwp,
-                  int bwp_id);
+                  NR_UE_BWP_t *BWP);
 
 void nr_schedule_pucch(gNB_MAC_INST* nrmac,
                        frame_t frameP,
@@ -257,10 +257,8 @@ int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
 void nr_configure_pucch(const NR_SIB1_t *sib1,
                         nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_CellGroupConfig_t *CellGroup,
-                        NR_BWP_Uplink_t *bwp,
+                        NR_UE_info_t* UE,
                         NR_BWP_UplinkDedicated_t *bwpd,
-                        uint16_t rnti,
                         uint8_t pucch_resource,
                         uint16_t O_csi,
                         uint16_t O_ack,
@@ -321,13 +319,6 @@ void set_r_pucch_parms(int rsetindex,
                        int *nr_of_symbols,
                        int *start_symbol_index);
 
-NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
-                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                       const NR_SIB1_t *sib1);
-
-NR_BWP_t *get_ul_bwp_genericParameters(NR_BWP_Uplink_t *active_ubwp,
-                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                       const NR_SIB1_t *sib1);
 
 NR_PDSCH_TimeDomainResourceAllocationList_t *get_pdsch_TimeDomainAllocationList(const NR_BWP_Downlink_t *active_bwp,
                                                                                 const NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
@@ -405,7 +396,9 @@ NR_UE_info_t * find_nr_UE(NR_UEs_t* UEs, rnti_t rntiP);
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
-void configure_UE_BWP(NR_UE_BWP_t *BWP, NR_CellGroupConfig_t *CellGroup);
+void configure_UE_BWP(NR_UE_BWP_t *BWP,
+                      NR_ServingCellConfigCommon_t *scc,
+                      NR_CellGroupConfig_t *CellGroup);
 
 NR_UE_info_t* add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
 

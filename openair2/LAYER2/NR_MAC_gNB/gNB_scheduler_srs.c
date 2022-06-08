@@ -36,19 +36,15 @@ extern RAN_CONTEXT_t RC;
 
 void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_UE_info_t*  UE, NR_SRS_Resource_t *srs_resource) {
 
-  gNB_MAC_INST *nrmac = RC.nrmac[module_id];
-  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_BWP_t *current_BWP = &UE->current_BWP;
 
-  NR_BWP_t ubwp = sched_ctrl->active_ubwp ?
-                  sched_ctrl->active_ubwp->bwp_Common->genericParameters :
-                  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  NR_BWP_t *ubwp = current_BWP->ul_genericParameters;
 
   srs_pdu->rnti = UE->rnti;
   srs_pdu->handle = 0;
-  srs_pdu->bwp_size = NRRIV2BW(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
-  srs_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
-  srs_pdu->subcarrier_spacing = ubwp.subcarrierSpacing;
+  srs_pdu->bwp_size = NRRIV2BW(ubwp->locationAndBandwidth, MAX_BWP_SIZE);;
+  srs_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp->locationAndBandwidth, MAX_BWP_SIZE);;
+  srs_pdu->subcarrier_spacing = ubwp->subcarrierSpacing;
   srs_pdu->cyclic_prefix = 0;
   srs_pdu->num_ant_ports = srs_resource->nrofSRS_Ports;
   srs_pdu->num_symbols = srs_resource->resourceMapping.nrofSymbols;
@@ -114,9 +110,9 @@ void nr_schedule_srs(int module_id, frame_t frame) {
 
   UE_iterator(UE_info->list, UE) {
     const int CC_id = 0;
-    NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[CC_id].ServingCellConfigCommon;
     NR_CellGroupConfig_t *cg = UE->CellGroup;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    NR_UE_BWP_t *current_BWP = &UE->current_BWP;
 
     sched_ctrl->sched_srs.frame = -1;
     sched_ctrl->sched_srs.slot = -1;
@@ -163,14 +159,10 @@ void nr_schedule_srs(int module_id, frame_t frame) {
         continue;
       }
 
-      NR_BWP_t ubwp = sched_ctrl->active_ubwp ?
-                        sched_ctrl->active_ubwp->bwp_Common->genericParameters :
-                        scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
-
       uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
       uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 
-      int n_slots_frame = nr_slots_per_frame[ubwp.subcarrierSpacing];
+      int n_slots_frame = nr_slots_per_frame[current_BWP->ul_genericParameters->subcarrierSpacing];
 
       // Check if UE will transmit the SRS in this frame
       if ( ((frame - offset/n_slots_frame)*n_slots_frame)%period == 0) {
