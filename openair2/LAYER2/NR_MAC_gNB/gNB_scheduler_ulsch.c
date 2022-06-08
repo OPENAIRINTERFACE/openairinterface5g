@@ -331,11 +331,12 @@ int nr_process_mac_pdu( instance_t module_idP,
                               0);
           break;
 
-          case UL_SCH_LCID_DTCH:
-            //  check if LCID is valid at current time.
-            if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len)) {
-              return 0;
-            }
+        case UL_SCH_LCID_DTCH ... (UL_SCH_LCID_DTCH + 28):
+          //  check if LCID is valid at current time.
+          if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len)) {
+            return 0;
+          }
+
 
             LOG_D(NR_MAC, "[UE %04x] %d.%d : ULSCH -> UL-%s %d (gNB %ld, %d bytes)\n",
                   UE->rnti,
@@ -508,7 +509,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   LOG_D(NR_MAC, "rx_sdu for rnti %04x\n", current_rnti);
   const int target_snrx10 = gNB_mac->pusch_target_snrx10;
   const int pusch_failure_thres = gNB_mac->pusch_failure_thres;
-
+  
   NR_UE_info_t* UE = find_nr_UE(&gNB_mac->UE_info, current_rnti);
   if (UE) {
     NR_UE_sched_ctrl_t *UE_scheduling_control = &UE->UE_sched_ctrl;
@@ -609,7 +610,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
     T(T_GNB_MAC_UL_PDU_WITH_DATA, T_INT(gnb_mod_idP), T_INT(CC_idP),
       T_INT(rntiP), T_INT(frameP), T_INT(slotP), T_INT(-1) /* harq_pid */,
       T_BUFFER(sduP, sdu_lenP));
-
+    
     /* we don't know this UE (yet). Check whether there is a ongoing RA (Msg 3)
      * and check the corresponding UE's RNTI match, in which case we activate
      * it. */
@@ -617,7 +618,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       NR_RA_t *ra = &gNB_mac->common_channels[CC_idP].ra[i];
       if (ra->state != WAIT_Msg3)
         continue;
-
+      
       if(no_sig) {
         LOG_D(NR_MAC, "Random Access %i failed at state %i (no signal)\n", i, ra->state);
         nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
@@ -1024,7 +1025,7 @@ void pf_ul(module_id_t module_id,
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-
+  
   const int min_rb = 5;
   // UEs that could be scheduled
   UEsched_t UE_sched[MAX_MOBILES_PER_GNB] = {0};
@@ -1082,7 +1083,7 @@ void pf_ul(module_id_t module_id,
 	      return;
 
       continue;
-    }
+    } 
     const int B = max(0, sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes);
     /* preprocessor computed sched_frame/sched_slot */
     const bool do_sched = nr_UE_is_to_be_scheduled(scc, 0, UE, sched_pusch->frame, sched_pusch->slot, nrmac->ulsch_max_frame_inactivity);
@@ -1210,7 +1211,7 @@ void pf_ul(module_id_t module_id,
 
   qsort(UE_sched, sizeof(*UE_sched), sizeofArray(UE_sched), comparator);
   UEsched_t *iterator=UE_sched;
-
+  
   const int min_rbSize = 5;
   /* Loop UE_sched to find max coeff and allocate transmission */
   while (remainUEs> 0 && n_rb_sched >= min_rbSize && iterator->UE != NULL) {
@@ -1349,8 +1350,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int mu = scc ? scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing :
                  scc_sib1->uplinkConfigCommon->initialUplinkBWP.genericParameters.subcarrierSpacing;
 
+  // no UEs
   if (nr_mac->UE_info.list[0] == NULL)
-    // no UEs
     return false;
 
   const int CC_id = 0;
