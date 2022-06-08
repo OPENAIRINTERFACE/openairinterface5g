@@ -159,7 +159,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
     *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
     nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
     set_csirs_periodicity(nzpcsi0, uid, nb_slots_per_period);
-    nzpcsi0->qcl_InfoPeriodicCSI_RS = NULL;
+    nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS));
+    *nzpcsi0->qcl_InfoPeriodicCSI_RS = 0;
     ASN_SEQUENCE_ADD(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
   }
   else {
@@ -307,8 +308,7 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
     }
     fs_cc->supportedModulationOrderDL = CALLOC(1,sizeof(*fs_cc->supportedModulationOrderDL));
     *fs_cc->supportedModulationOrderDL = NR_ModulationOrder_qam256;
-    ASN_SEQUENCE_ADD(&fs->featureSetsDownlinkPerCC->list,
-                     fs_cc);
+    ASN_SEQUENCE_ADD(&fs->featureSetsDownlinkPerCC->list, fs_cc);
   }
 
   phy_Parameters->phy_ParametersFRX_Diff = CALLOC(1,sizeof(*phy_Parameters->phy_ParametersFRX_Diff));

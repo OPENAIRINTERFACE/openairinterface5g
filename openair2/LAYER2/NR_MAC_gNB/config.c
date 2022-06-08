@@ -581,11 +581,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
       NR_UE_info_t* UE = add_new_nr_ue(RC.nrmac[Mod_idP], rnti, CellGroup);
-      if (UE)
-	LOG_I(NR_MAC,"Added new UE %x with initial CellGroup\n", rnti);
-      else {
-	LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
-	return -1;
+      if (UE) {
+        LOG_I(NR_MAC,"Added new UE %x with initial CellGroup\n", rnti);
+      } else {
+        LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
+        return -1;
       }
       process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
@@ -636,8 +636,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon;
       NR_UE_info_t * UE = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info,rnti);
       if (!UE) {
-	LOG_E(NR_MAC, "Can't find UE %04x\n", rnti);
-	return -1;
+        LOG_E(NR_MAC, "Can't find UE %04x\n", rnti);
+        return -1;
       }
       int target_ss;
 
@@ -676,12 +676,13 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                                                     genericParameters,
                                                     RC.nrmac[Mod_idP]->type0_PDCCH_CSS_config);
       sched_ctrl->maxL = 2;
+
       if (CellGroup->spCellConfig &&
           CellGroup->spCellConfig->spCellConfigDedicated &&
           CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
-          CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup
-        )
-      compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
+          CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
+        compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
+      }
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
