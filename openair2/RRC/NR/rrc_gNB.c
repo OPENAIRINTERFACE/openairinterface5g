@@ -845,6 +845,9 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   int                            qos_flow_index = 0;
   int                            pdu_sessions_done = 0;
   int i;
+  uint8_t drb_id_to_setup_start = 1;
+  uint8_t nb_drb_to_setup = 0;
+  long drb_priority[1] = {13}; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
   NR_CellGroupConfig_t *cellGroupConfig;
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
@@ -887,6 +890,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
     DRB_config = CALLOC(1, sizeof(*DRB_config));
     DRB_config->drb_Identity = i+1;
+    if (drb_id_to_setup_start == 1) drb_id_to_setup_start = DRB_config->drb_Identity;
+    nb_drb_to_setup++;
     DRB_config->cnAssociation = CALLOC(1, sizeof(*DRB_config->cnAssociation));
     DRB_config->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
     // sdap_Config
@@ -1000,8 +1005,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
   memset(buffer, 0, sizeof(buffer));
   cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-  fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup,
-                             rrc->um_on_default_drb);
+
+  fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup, rrc->um_on_default_drb, (drb_id_to_setup_start < 2) ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
   size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
                                 *SRB_configList2,
@@ -3245,10 +3250,9 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(message_p);
   uint32_t incoming_teid = 0;
 
-
-  NR_CellGroupConfig_t *cellGroupConfig;
-  cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-  fill_mastercellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup,rrc->um_on_default_drb);
+  uint8_t drb_id_to_setup_start = 0;
+  uint8_t nb_drb_to_setup = 0;
+  long drb_priority[1] = {13}; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
 
   /* Configure SRB2 */
   NR_SRB_ToAddMod_t            *SRB2_config          = NULL;
@@ -3277,6 +3281,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
       ue_context_p->ue_context.DRB_configList = CALLOC(1, sizeof(*ue_context_p->ue_context.DRB_configList));
     }
     DRB_configList = ue_context_p->ue_context.DRB_configList;
+    nb_drb_to_setup = req->drbs_to_be_setup_length;
     for (int i=0; i<req->drbs_to_be_setup_length; i++){
       DRB_config = CALLOC(1, sizeof(*DRB_config));
       DRB_config->drb_Identity = req->drbs_to_be_setup[i].drb_id;
@@ -3286,6 +3291,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
       memcpy(addr.buffer, &drb_p.up_ul_tnl[0].tl_address, sizeof(drb_p.up_ul_tnl[0].tl_address));
       addr.length=sizeof(drb_p.up_ul_tnl[0].tl_address)*8;
       extern instance_t DUuniqInstance;
+      if (!drb_id_to_setup_start) drb_id_to_setup_start = drb_p.drb_id;
       incoming_teid=newGtpuCreateTunnel(DUuniqInstance,
           req->rnti,
           drb_p.drb_id,
@@ -3296,6 +3302,10 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
           DURecvCb);
     }
   }
+
+  NR_CellGroupConfig_t *cellGroupConfig;
+  cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
+  fill_mastercellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup, rrc->um_on_default_drb, SRB2_config ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
 
   apply_macrlc_config(rrc, ue_context_p, &ctxt);
   /* Fill the UE context setup response ITTI message to send to F1AP */
@@ -3631,7 +3641,6 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   }
 
   if (fd) fclose(fd);
-
 
   /* send a tick to x2ap */
   if (is_x2ap_enabled()){

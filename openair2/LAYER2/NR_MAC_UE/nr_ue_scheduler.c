@@ -844,8 +844,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       if (*dci_format != NR_UL_DCI_FORMAT_0_1) {
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
       }
-    } else if (*dci_format == NR_UL_DCI_FORMAT_0_0 ||
-	       (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled)) {
+    } else if (*dci_format == NR_UL_DCI_FORMAT_0_0 || (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled)) {
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
     }
 
@@ -1074,9 +1073,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
     if(mac->cg != NULL){ // we have a cg
 
-      nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
-      nr_schedule_csi_for_im(mac, rx_frame, rx_slot);
-
       dcireq.module_id = mod_id;
       dcireq.gNB_index = gNB_index;
       dcireq.cc_id     = cc_id;
@@ -1085,6 +1081,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       dcireq.dl_config_req.number_pdus = 0;
       nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
       mac->dl_config_request = dcireq.dl_config_req;
+
+      nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
+      nr_schedule_csi_for_im(mac, rx_frame, rx_slot);
+      dcireq.dl_config_req = mac->dl_config_request;
 
       fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
@@ -2397,9 +2397,17 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   NR_CSI_IM_Resource_t *imcsi;
   int period, offset;
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-  int mu = mac->DLbwp[dl_bwp_id-1] ?
-    mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
-    mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing;
+
+  NR_BWP_t *genericParameters = NULL;
+  if(dl_bwp_id > 0 && mac->DLbwp[dl_bwp_id-1]) {
+    genericParameters = &mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters;
+  } else {
+    genericParameters = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+  }
+
+  int mu = genericParameters->subcarrierSpacing;
+  uint16_t bwp_size = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  uint16_t bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   for (int id = 0; id < csi_measconfig->csi_IM_ResourceToAddModList->list.count; id++){
     imcsi = csi_measconfig->csi_IM_ResourceToAddModList->list.array[id];
@@ -2407,11 +2415,8 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
     if((frame*nr_slots_per_frame[mu]+slot-offset)%period != 0)
       continue;
     fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csiim_config_pdu.csiim_config_rel15;
-    const NR_BWP_Downlink_t *dlbwp = mac->DLbwp[dl_bwp_id-1];
-    const int locationAndBandwidth = dlbwp != NULL ? dlbwp->bwp_Common->genericParameters.locationAndBandwidth:
-                                     mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth;
-    csiim_config_pdu->bwp_size = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE);
-    csiim_config_pdu->bwp_start = NRRIV2PRBOFFSET(locationAndBandwidth, MAX_BWP_SIZE);
+    csiim_config_pdu->bwp_size = bwp_size;
+    csiim_config_pdu->bwp_start = bwp_start;
     csiim_config_pdu->subcarrier_spacing = mu;
     csiim_config_pdu->start_rb = imcsi->freqBand->startingRB;
     csiim_config_pdu->nr_of_rbs = imcsi->freqBand->nrofRBs;
@@ -2433,7 +2438,7 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
         AssertFatal(1==0, "Invalid CSI-IM pattern\n");
     }
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_CSI_IM;
-    dl_config->number_pdus = dl_config->number_pdus + 1;
+    dl_config->number_pdus += 1;
   }
 }
 
@@ -2457,9 +2462,17 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   NR_NZP_CSI_RS_Resource_t *nzpcsi;
   int period, offset;
   NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-  int mu = mac->DLbwp[dl_bwp_id-1] ?
-    mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing :
-    mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing;
+
+  NR_BWP_t *genericParameters = NULL;
+  if(dl_bwp_id > 0 && mac->DLbwp[dl_bwp_id-1]) {
+    genericParameters = &mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters;
+  } else {
+    genericParameters = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+  }
+
+  int mu = genericParameters->subcarrierSpacing;
+  uint16_t bwp_size = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  uint16_t bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
     nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
@@ -2468,17 +2481,23 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
       continue;
     LOG_D(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n",frame,slot);
     fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csirs_config_pdu.csirs_config_rel15;
-
     NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
-
-    const NR_BWP_Downlink_t *dlbwp = mac->DLbwp[dl_bwp_id-1];
-    const int locationAndBandwidth = dlbwp != NULL ? dlbwp->bwp_Common->genericParameters.locationAndBandwidth:
-                                     mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth;
-    csirs_config_pdu->bwp_size = NRRIV2BW(locationAndBandwidth, MAX_BWP_SIZE);
-    csirs_config_pdu->bwp_start = NRRIV2PRBOFFSET(locationAndBandwidth, MAX_BWP_SIZE);
     csirs_config_pdu->subcarrier_spacing = mu;
-    csirs_config_pdu->start_rb = resourceMapping.freqBand.startingRB;
-    csirs_config_pdu->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
+    csirs_config_pdu->cyclic_prefix = genericParameters->cyclicPrefix ? *genericParameters->cyclicPrefix : 0;
+
+    // According to last paragraph of TS 38.214 5.2.2.3.1
+    if (resourceMapping.freqBand.startingRB < bwp_start) {
+      csirs_config_pdu->start_rb = bwp_start;
+    } else {
+      csirs_config_pdu->start_rb = resourceMapping.freqBand.startingRB;
+    }
+    if (resourceMapping.freqBand.nrofRBs > (bwp_start + bwp_size - csirs_config_pdu->start_rb)) {
+      csirs_config_pdu->nr_of_rbs = bwp_start + bwp_size - csirs_config_pdu->start_rb;
+    } else {
+      csirs_config_pdu->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
+    }
+    AssertFatal(csirs_config_pdu->nr_of_rbs >= 24, "CSI-RS has %d RBs, but the minimum is 24\n", csirs_config_pdu->nr_of_rbs);
+
     csirs_config_pdu->csi_type = 1; // NZP-CSI-RS
     csirs_config_pdu->symb_l0 = resourceMapping.firstOFDMSymbolInTimeDomain;
     if (resourceMapping.firstOFDMSymbolInTimeDomain2)
@@ -2489,6 +2508,11 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
         && (resourceMapping.density.choice.dot5 == NR_CSI_RS_ResourceMapping__density__dot5_evenPRBs))
       csirs_config_pdu->freq_density--;
     csirs_config_pdu->scramb_id = nzpcsi->scramblingID;
+    csirs_config_pdu->power_control_offset = nzpcsi->powerControlOffset + 8;
+    if (nzpcsi->powerControlOffsetSS)
+      csirs_config_pdu->power_control_offset_ss = *nzpcsi->powerControlOffsetSS;
+    else
+      csirs_config_pdu->power_control_offset_ss = 1; // 0 dB
     switch(resourceMapping.frequencyDomainAllocation.present){
       case NR_CSI_RS_ResourceMapping__frequencyDomainAllocation_PR_row1:
         csirs_config_pdu->row = 1;
@@ -2569,7 +2593,7 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
         AssertFatal(1==0,"Invalid freqency domain allocation in CSI-RS resource\n");
     }
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_CSI_RS;
-    dl_config->number_pdus = dl_config->number_pdus + 1;
+    dl_config->number_pdus += 1;
   }
 }
 
