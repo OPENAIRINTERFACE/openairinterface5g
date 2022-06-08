@@ -2270,13 +2270,14 @@ void remove_front_nr_list(NR_list_t *listP)
 NR_UE_info_t * find_nr_UE(NR_UEs_t* UEs, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
+
   UE_iterator(UEs->list, UE) {
     if (UE->rnti == rntiP) {
       LOG_D(NR_MAC,"Search and found rnti: %04x\n", rntiP);
       return UE;
     }
   }
-  LOG_W(NR_MAC,"Search for not existing rnti: %04x\n", rntiP);
+  LOG_W(NR_MAC,"Search for not existing rnti (ignore for RA): %04x\n", rntiP);
   return NULL;
 }
 

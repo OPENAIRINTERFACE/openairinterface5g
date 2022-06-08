@@ -697,8 +697,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->bwp_start = NRRIV2PRBOFFSET(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pusch_config_pdu->bwp_size = n_RB_ULBWP;
 
-    AssertFatal(ubwpd->pusch_Config != NULL,"pusch_Config shouldn't be null\n");
-    NR_PUSCH_Config_t *pusch_Config = ubwpd->pusch_Config->choice.setup;
+    const NR_PUSCH_Config_t *pusch_Config = ubwpd? ubwpd->pusch_Config->choice.setup : NULL;
 
     // Basic sanity check for MCS value to check for a false or erroneous DCI
     if (dci->mcs > 28) {
@@ -776,10 +775,10 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                 pusch_config_pdu->dfts_ofdm.low_papr_group_number);
     }
     else {
-      if (pusch_config_pdu->scid == 0 &&
+      if (pusch_config_pdu->scid == 0 && NR_DMRS_ulconfig &&
           NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID0)
         pusch_config_pdu->ul_dmrs_scrambling_id = *NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID0;
-      if (pusch_config_pdu->scid == 1 &&
+      if (pusch_config_pdu->scid == 1 && NR_DMRS_ulconfig &&
           NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID1)
         pusch_config_pdu->ul_dmrs_scrambling_id = *NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID1;
     }
