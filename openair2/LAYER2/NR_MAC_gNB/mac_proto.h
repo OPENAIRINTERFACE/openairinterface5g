@@ -290,7 +290,7 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
                          int nr_of_candidates,
                          NR_sched_pdcch_t *pdcch,
                          NR_ControlResourceSet_t *coreset,
-                         uint16_t Y);
+                         uint32_t Y);
 
 void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
                         int CC_id,
@@ -373,8 +373,6 @@ void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
                               uint8_t nrOfLayers,
                               NR_pusch_semi_static_t *ps);
 
-uint16_t get_Y(int cid, int slot, rnti_t rnti);
-
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
 int get_spf(nfapi_nr_config_request_scf_t *cfg);
@@ -411,14 +409,6 @@ NR_UE_info_t*add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfi
 void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti);
 
 void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti);
-
-int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
-                     NR_BWP_Downlink_t *bwp,
-                     NR_ControlResourceSet_t *coreset,
-                     int aggregation,
-                     uint16_t Y,
-                     int m,
-                     int nr_of_candidates);
 
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
 

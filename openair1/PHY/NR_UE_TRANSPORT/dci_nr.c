@@ -142,7 +142,8 @@ static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
   int B_rb = reg_bundle_size_L/coreset_time_dur; // nb of RBs occupied by each REG bundle
   int num_bundles_per_cce = 6/reg_bundle_size_L;
-  int max_bundles = NR_MAX_PDCCH_AGG_LEVEL*num_bundles_per_cce;
+  int n_cce = N_regs/6;
+  int max_bundles = n_cce*num_bundles_per_cce;
   int f_bundle_j_list[max_bundles];
 
   // for each bundle
@@ -359,10 +360,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
    * According to this equations, DM-RS PDCCH are mapped on k where k%12==1 || k%12==5 || k%12==9
    *
    */
-  // the bitmap coreset_frq_domain contains 45 bits
-#define CORESET_FREQ_DOMAIN_BITMAP_SIZE   45
-  // each bit is associated to 6 RBs
-#define BIT_TO_NBR_RB_CORESET_FREQ_DOMAIN  6
+
 #define NBR_RE_PER_RB_WITH_DMRS           12
   // after removing the 3 DMRS RE, the RB contains 9 RE with PDCCH
 #define NBR_RE_PER_RB_WITHOUT_DMRS         9

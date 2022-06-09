@@ -683,7 +683,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int ch_offset,symbol_offset;
 
   uint8_t nushift;
-  int **dl_ch_estimates  =ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
+  int **dl_ch_estimates = ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
   ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;

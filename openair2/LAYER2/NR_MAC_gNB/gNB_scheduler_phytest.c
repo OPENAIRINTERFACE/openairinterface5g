@@ -263,8 +263,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   }
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
 
   int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
                                       CC_id,
@@ -288,7 +287,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
           rnti,
           frame,
           slot);
-    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return;
   }
 
@@ -440,8 +438,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   }
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
 
   int CCEIndex = find_pdcch_candidate(nr_mac,
                                       CC_id,
@@ -453,7 +450,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   if (CCEIndex < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-    nr_mac->pdcch_cand[cid]--;
     return false;
   }
 

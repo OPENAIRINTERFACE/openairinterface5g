@@ -440,35 +440,16 @@ NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
 }
 
 
-int cce_to_reg_interleaving(const int R, int k, int n_shift, const int C, int L, const int N_regs) {
-
-  int f;  // interleaving function
-  if(R==0)
-    f = k;
-  else {
-    int c = k/R;
-     int r = k%R;
-     f = (r*C + c + n_shift)%(N_regs/L);
-  }
-  return f;
-}
-
 int find_pdcch_candidate(gNB_MAC_INST *mac,
                          int cc_id,
                          int aggregation,
                          int nr_of_candidates,
                          NR_sched_pdcch_t *pdcch,
                          NR_ControlResourceSet_t *coreset,
-                         uint16_t Y){
+                         uint32_t Y){
 
   uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
-  const int next_cand = mac->pdcch_cand[coreset->controlResourceSetId];
   const int N_ci = 0;
-
-  if(next_cand>=nr_of_candidates) {
-    LOG_D(NR_MAC,"No more available candidates for this coreset\n");
-    return -1;
-  }
 
   const int N_rb = pdcch->n_rb;  // nb of rbs of coreset per symbol
   const int N_symb = coreset->duration; // nb of coreset symbols
@@ -481,9 +462,10 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
 
   // loop over all the available candidates
   // this implements TS 38.211 Sec. 7.3.2.2
-  for(int m=next_cand; m<nr_of_candidates; m++) { // loop over candidates
+  for(int m=0; m<nr_of_candidates; m++) { // loop over candidates
     bool taken = false; // flag if the resource for a given candidate are taken
     int first_cce = aggregation * (( Y + CEILIDIV((m*N_cces),(aggregation*nr_of_candidates)) + N_ci ) % CEILIDIV(N_cces,aggregation));
+    LOG_D(NR_MAC,"Candidate %d of %d first_cce %d (L %d N_cces %d Y %d)\n", m, nr_of_candidates, first_cce, aggregation, N_cces, Y);
     for (int j=first_cce; (j<first_cce+aggregation) && !taken; j++) { // loop over CCEs
       for (int k=6*j/L; (k<(6*j/L+6/L)) && !taken; k++) { // loop over REG bundles
         int f = cce_to_reg_interleaving(R, k, pdcch->ShiftIndex, C, L, N_regs);
@@ -495,10 +477,8 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
         }
       }
     }
-    if(!taken){
-      mac->pdcch_cand[coreset->controlResourceSetId] = m++; // using candidate m, next available is m+1
+    if(!taken)
       return first_cce;
-    }
   }
   return -1;
 }
@@ -1133,7 +1113,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
   for (int i=0;i<6;i++)
     pdcch_pdu->FreqDomainResource[i] = coreset->frequencyDomainResources.buf[i];
 
-  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d,  \n",
+  LOG_D(MAC,"Coreset : BWPstart %d, BWPsize %d, SCS %d, freq %x, , duration %d\n",
         pdcch_pdu->BWPStart,pdcch_pdu->BWPSize,(int)pdcch_pdu->SubcarrierSpacing,(int)coreset->frequencyDomainResources.buf[0],(int)coreset->duration);
 
   pdcch_pdu->CceRegMappingType = pdcch->CceRegMappingType;
@@ -2277,20 +2257,6 @@ NR_UE_info_t *find_nr_UE(NR_UEs_t *UEs, rnti_t rntiP)
   return NULL;
 }
 
-uint16_t get_Y(int cid, int slot, rnti_t rnti) {
-
-  const int A[3] = {39827, 39829, 39839};
-  const int D = 65537;
-  int Y;
-
-  Y = (A[cid] * rnti) % D;
-
-  for (int s = 0; s < slot; s++)
-    Y = (A[cid] * Y) % D;
-
-  return Y;
-}
-
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP) {
 //------------------------------------------------------------------------------
   int RA_id;
@@ -2937,6 +2903,30 @@ void nr_mac_update_timers(module_id_t module_id,
                                            cg->spCellConfig &&
                                            cg->spCellConfig->spCellConfigDedicated ?
                                            cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
+
+        // update coreset/searchspace
+        int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+        NR_BWP_t *genericParameters = NULL;
+        if (sched_ctrl->active_bwp) {
+          target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+          bwpd = (void*)sched_ctrl->active_bwp->bwp_Dedicated;
+          genericParameters = &sched_ctrl->active_bwp->bwp_Common->genericParameters;
+        }
+        else if (cg->spCellConfig &&
+                 cg->spCellConfig->spCellConfigDedicated &&
+                 (cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
+          target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+          genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+        }
+        NR_BCCH_DL_SCH_Message_t *SIB1 = RC.nrmac[module_id]->common_channels[0].sib1;
+        sched_ctrl->search_space = get_searchspace(SIB1 ? SIB1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
+        sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, bwpd, sched_ctrl->search_space, target_ss);
+        sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[module_id],
+                                                      sched_ctrl->search_space,
+                                                      sched_ctrl->coreset,
+                                                      scc,
+                                                      genericParameters,
+                                                      RC.nrmac[module_id]->type0_PDCCH_CSS_config);
 
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
