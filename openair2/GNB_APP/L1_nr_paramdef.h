@@ -51,6 +51,7 @@
 #define CONFIG_STRING_L1_PUCCH0_DTX_THRESHOLD              "pucch0_dtx_threshold"
 #define CONFIG_STRING_L1_PRACH_DTX_THRESHOLD               "prach_dtx_threshold"
 #define CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD               "pusch_dtx_threshold"
+#define CONFIG_STRING_L1_MAX_LDPC_ITERATIONS               "max_ldpc_iterations"
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            L1 configuration parameters                                                                             */
 /*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
@@ -69,7 +70,8 @@
 {CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         uptr:NULL,           defuintval:8,              TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PUCCH0_DTX_THRESHOLD,              NULL,      0,         uptr:NULL,           defintval:100,             TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:150,             TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0}          \
+{CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_MAX_LDPC_ITERATIONS,               NULL,      0,         uptr:NULL,           defintval:5,               TYPE_UINT,     0},          \
 }
 #define L1_CC_IDX                                          0
 #define L1_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -85,6 +87,7 @@
 #define L1_PUCCH0_DTX_THRESHOLD                            11
 #define L1_PRACH_DTX_THRESHOLD                             12
 #define L1_PUSCH_DTX_THRESHOLD                             13
+#define L1_MAX_LDPC_ITERATIONS                             14
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif

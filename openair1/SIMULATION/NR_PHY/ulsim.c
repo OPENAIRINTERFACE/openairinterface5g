@@ -312,16 +312,15 @@ int main(int argc, char **argv)
   float roundStats[100];
   double effRate[100]; 
   double effTP[100]; 
-  float eff_tp_check = 0.7;
+  float eff_tp_check = 100;
   uint8_t snrRun;
-  int prb_inter = 0;
+  int chest_type[2] = {0};
 
   int enable_ptrs = 0;
   int modify_dmrs = 0;
   /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */
   int ptrs_arg[2] = {-1,-1};// Invalid values
-  /* mapping type = dmrs_arg[0], Add Pos = dmrs_arg[1], dmrs config type = dmrs_arg[2] */
-  int dmrs_arg[3] = {-1,-1,-1};// Invalid values
+  int dmrs_arg[4] = {-1,-1,-1,-1};// Invalid values
   uint16_t ptrsSymPos = 0;
   uint16_t ptrsSymbPerSlot = 0;
   uint16_t ptrsRePerSymb = 0;
@@ -338,6 +337,7 @@ int main(int argc, char **argv)
   int ibwps=24;
   int ibwp_rboffset=41;
   int params_from_file = 0;
+  int max_ldpc_iterations = 5;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
   }
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:t:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z:W:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:q:r:s:t:u:w:y:z:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -441,7 +441,9 @@ int main(int argc, char **argv)
       break;
       
     case 'i':
-      prb_inter=1;
+      for(i=0; i < atoi(optarg); i++){
+        chest_type[i] = atoi(argv[optind++]);
+      }
       break;
 	
     case 'k':
@@ -468,6 +470,10 @@ int main(int argc, char **argv)
     case 'p':
       extended_prefix_flag = 1;
       break;
+
+    case 'q':
+      mcs_table = atoi(optarg);
+      break;
       
     case 'r':
       nb_rb = atoi(optarg);
@@ -487,7 +493,7 @@ int main(int argc, char **argv)
       break;
 
     case 't':
-      eff_tp_check = (float)atoi(optarg)/100;
+      eff_tp_check = (float)atoi(optarg);
       break;
 
       /*
@@ -519,7 +525,7 @@ int main(int argc, char **argv)
         exit(-1);
       }
       break;
-      
+
     case 'F':
       input_fd = fopen(optarg, "r");
       if (input_fd == NULL) {
@@ -534,6 +540,10 @@ int main(int argc, char **argv)
 
     case 'H':
       slot = atoi(optarg);
+      break;
+
+    case 'I':
+      max_ldpc_iterations = atoi(optarg);
       break;
 
     case 'M':
@@ -597,13 +607,14 @@ int main(int argc, char **argv)
       printf("-f Number of frames to simulate\n");
       printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
       printf("-h This message\n");
-      printf("-i Activate PRB based averaging for channel estimation. Frequncy domain interpolation by default.\n");
+      printf("-i Change channel estimation technique. Arguments list: Number of arguments=2, Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}. e.g. -i 2 1 0\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
       printf("-p Use extended prefix mode\n");
-      //printf("-t Delay spread for multipath channel\n");
+      printf("-q MCS table\n");
+      printf("-t Delay spread for multipath channel\n");
       printf("-u Set the numerology\n");
       printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
@@ -613,7 +624,8 @@ int main(int argc, char **argv)
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
-      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");
+      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n"); 
+      printf("-I Maximum LDPC decoder iterations\n");
       printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -621,8 +633,8 @@ int main(int argc, char **argv)
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-P Print ULSCH performances\n");
-      printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
-      printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:3}, e.g. -U 2 0 2 \n");
+      printf("-T Enable PTRS, arguments list: Number of arguments=2 L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
+      printf("-U Change DMRS Config, arguments list: Number of arguments=4, DMRS Mapping Type{0=A,1=B}, DMRS AddPos{0:3}, DMRS Config Type{1,2}, Number of CDM groups without data{1,2,3} e.g. -U 4 0 2 0 1 \n");
       printf("-Q If -F used, read parameters from file\n");
       printf("-Z If -Z is used, SC-FDMA or transform precoding is enabled in Uplink \n");
       printf("-W Num of layer for PUSCH\n");
@@ -717,7 +729,7 @@ int main(int argc, char **argv)
   gNB->UL_INFO.crc_ind.crc_list = (nfapi_nr_crc_t *)malloc(NB_UE_INST*sizeof(nfapi_nr_crc_t));
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
-  gNB->prb_interpolation = prb_inter;
+  gNB->max_ldpc_iterations = max_ldpc_iterations;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
   frame_parms->N_RB_DL = N_RB_DL;
@@ -781,6 +793,8 @@ int main(int argc, char **argv)
   cfg->carrier_config.num_tx_ant.value = 1;
   cfg->carrier_config.num_rx_ant.value = n_rx;
 //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
+  gNB->chest_freq = chest_type[0];
+  gNB->chest_time = chest_type[1];
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
@@ -796,7 +810,7 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_tx = n_tx;
-  UE->frame_parms.nb_antennas_rx = 1;
+  UE->frame_parms.nb_antennas_rx = 0;
 
   if (init_nr_ue_signal(UE, 1) != 0) {
     printf("Error at UE NR initialisation\n");
@@ -895,6 +909,7 @@ int main(int argc, char **argv)
       dmrs_config_type = pusch_dmrs_type1;
     else if(dmrs_arg[2] == 2)
       dmrs_config_type = pusch_dmrs_type2;
+    num_dmrs_cdm_grps_no_data = dmrs_arg[3];
   }
 
   uint8_t  length_dmrs         = pusch_len1;
@@ -983,7 +998,6 @@ int main(int argc, char **argv)
   int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
 
   if (input_fd != NULL)	{
-    AssertFatal(frame_parms->nb_antennas_rx == 1, "nb_ant != 1\n");
     // 800 samples is N_TA_OFFSET for FR1 @ 30.72 Ms/s,
     AssertFatal(frame_parms->subcarrier_spacing==30000,"only 30 kHz for file input for now (%d)\n",frame_parms->subcarrier_spacing);
   
@@ -1011,18 +1025,21 @@ int main(int argc, char **argv)
       printf("harq_pid %d\n",harq_pid);
     }
     fseek(input_fd,file_offset*sizeof(int16_t)*2,SEEK_SET);
-    read_errors+=fread((void*)&gNB->common_vars.rxdata[0][slot_offset-delay],
-    sizeof(int16_t),
-    slot_length<<1,
-    input_fd);
-    if (read_errors==0) {
-      printf("error reading file\n");
-      exit(1);
+    for (int irx=0; irx<frame_parms->nb_antennas_rx; irx++) {
+      fseek(input_fd,irx*(slot_length+15)*sizeof(int16_t)*2,SEEK_SET); // matlab adds samlples to the end to emulate channel delay
+      read_errors+=fread((void*)&gNB->common_vars.rxdata[irx][slot_offset-delay],
+      sizeof(int16_t),
+      slot_length<<1,
+      input_fd);
+      if (read_errors==0) {
+        printf("error reading file\n");
+        exit(1);
+      }
+      for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
+             slot_offset,
+             ((int16_t*)&gNB->common_vars.rxdata[irx][slot_offset])[i],
+             ((int16_t*)&gNB->common_vars.rxdata[irx][slot_offset])[1+i]);
     }
-    for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
-				   slot_offset,
-				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[i],
-				   ((int16_t*)&gNB->common_vars.rxdata[0][slot_offset])[1+i]);
 
     mod_order = nr_get_Qm_ul(Imcs, mcs_table);
     code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
@@ -1389,11 +1406,11 @@ int main(int argc, char **argv)
             &gNB->pusch_vars[0]->llr_layers[0][0],(nb_symb_sch-1)*NR_NB_SC_PER_RB * pusch_pdu->rb_size * mod_order,1,0);
 
       if (precod_nbr_layers==2) {
-         LOG_M("rxsigF1_ext.m","rxsF1_ext",
-            &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
+        LOG_M("rxsigF1_ext.m","rxsF1_ext",
+             &gNB->pusch_vars[0]->rxdataF_ext[1][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);
 
         LOG_M("chestF3.m","chF3",
-            &gNB->pusch_vars[0]->ul_ch_estimates[3][start_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
+             &gNB->pusch_vars[0]->ul_ch_estimates[3][start_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
 
         LOG_M("chestF3_ext.m","chF3_ext",
         &gNB->pusch_vars[0]->ul_ch_estimates_ext[3][(start_symbol+1)*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size))],
@@ -1553,7 +1570,12 @@ int main(int argc, char **argv)
 	   roundStats[snrRun],effRate[snrRun],effTP[snrRun],TBS);
 
     FILE *fd=fopen("nr_ulsim.log","w");
+    if (fd == NULL) {
+      printf("Problem with filename %s\n", "nr_ulsim.log");
+      exit(-1);
+    }
     dump_pusch_stats(fd,gNB);
+    fclose(fd);
 
     printf("*****************************************\n");
     printf("\n");
@@ -1583,7 +1605,7 @@ int main(int argc, char **argv)
     if(n_trials==1)
       break;
 
-    if (effRate[snrRun] > (eff_tp_check*TBS)) {
+    if ((float)effTP[snrRun] >= eff_tp_check) {
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
@@ -1613,17 +1635,19 @@ int main(int argc, char **argv)
           length_dmrs,
           num_dmrs_cdm_grps_no_data);
               
-  LOG_M("ulsimStats.m","SNR",snrStats,snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round0",blerStats[0],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round1",blerStats[1],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round2",blerStats[2],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round3",blerStats[3],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round0",berStats[0],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round1",berStats[1],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round2",berStats[2],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round3",berStats[3],snrRun,1,7);
-  LOG_MM("ulsimStats.m","EffRate",effRate,snrRun,1,7);
-  LOG_MM("ulsimStats.m","EffTP",effTP,snrRun,1,7);
+  char opStatsFile[50];
+  sprintf(opStatsFile, "ulsimStats_z%d.m", n_rx);
+  LOG_M(opStatsFile,"SNR",snrStats,snrRun,1,7);
+  LOG_MM(opStatsFile,"BLER_round0",blerStats[0],snrRun,1,7);
+  LOG_MM(opStatsFile,"BLER_round1",blerStats[1],snrRun,1,7);
+  LOG_MM(opStatsFile,"BLER_round2",blerStats[2],snrRun,1,7);
+  LOG_MM(opStatsFile,"BLER_round3",blerStats[3],snrRun,1,7);
+  LOG_MM(opStatsFile,"BER_round0",berStats[0],snrRun,1,7);
+  LOG_MM(opStatsFile,"BER_round1",berStats[1],snrRun,1,7);
+  LOG_MM(opStatsFile,"BER_round2",berStats[2],snrRun,1,7);
+  LOG_MM(opStatsFile,"BER_round3",berStats[3],snrRun,1,7);
+  LOG_MM(opStatsFile,"EffRate",effRate,snrRun,1,7);
+  LOG_MM(opStatsFile,"EffTP",effTP,snrRun,1,7);
   free(test_input_bit);
   free(estimated_output_bit);
 
