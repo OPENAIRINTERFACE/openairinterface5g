@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #define NB_R  3
 void nrLDPC_bnProc_BG1_generator_AVX512(int);
 void nrLDPC_bnProc_BG2_generator_AVX512(int);

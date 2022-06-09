@@ -14,10 +14,13 @@ void nrLDPC_bnProcPc_BG2_generator_AVX2(int R)
 
  // system("mkdir -p ../ldpc_gen_files");
 
-  char fname[50];
-  sprintf(fname,"../ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG2_R%s_AVX2.h",ratestr[R]);
+  char fname[FILENAME_MAX+1];
+  snprintf(fname, sizeof(fname), "../ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG2_R%s_AVX2.h", ratestr[R]);
   FILE *fd=fopen(fname,"w");
-  if (fd == NULL) {printf("Cannot create \n");abort();}
+  if (fd == NULL) {
+    printf("Cannot create file %s\n", fname);
+    abort();
+  }
 
 //  fprintf(fd,"#include <stdint.h>\n");
   //fprintf(fd,"#include <immintrin.h>\n");
