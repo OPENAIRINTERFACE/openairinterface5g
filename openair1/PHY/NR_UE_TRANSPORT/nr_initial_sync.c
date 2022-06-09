@@ -362,6 +362,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
           nr_gold_pdsch(ue, i, ue->scramblingID_dlsch[i]);
         }
 
+        nr_init_csi_rs(fp, ue->nr_csi_rs_info->nr_gold_csi_rs, fp->Nid_cell);
+
         // initialize the pusch dmrs
         for (int i=0; i<NR_NB_NSCID; i++) {
           ue->scramblingID_ulsch[i]=fp->Nid_cell;
