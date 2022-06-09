@@ -1008,6 +1008,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   memset(buffer, 0, sizeof(buffer));
   if(cell_groupConfig_from_DU == NULL){
     cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
+    // FIXME: fill_mastercellGroupConfig() won't fill the right priorities or
+    // bearer IDs for the DRBs
     fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup, rrc->um_on_default_drb, (drb_id_to_setup_start < 2) ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
   }
   else{
@@ -3478,6 +3480,8 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
 
   NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
   if (req->srbs_to_be_setup_length > 0 || req->drbs_to_be_setup_length>0)
+    // FIXME: fill_mastercellGroupConfig() won't fill the right priorities or
+    // bearer IDs for the DRBs
     fill_mastercellGroupConfig(cellGroupConfig, ue_context_p->ue_context.masterCellGroup, rrc->um_on_default_drb, SRB2_config ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
 
   apply_macrlc_config(rrc, ue_context_p, &ctxt);
