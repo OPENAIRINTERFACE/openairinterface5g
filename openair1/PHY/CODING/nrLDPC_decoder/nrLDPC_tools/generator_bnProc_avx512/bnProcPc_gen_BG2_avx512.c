@@ -6,7 +6,7 @@
 #include "../../nrLDPC_types.h"
 
 
-void nrLDPC_bnProcPc_BG2_generator_AVX512(int R)
+void nrLDPC_bnProcPc_BG2_generator_AVX512(const char *dir, int R)
 {
   const char *ratestr[3]={"15","13","23"};
 
@@ -16,7 +16,7 @@ void nrLDPC_bnProcPc_BG2_generator_AVX512(int R)
  // system("mkdir -p ../ldpc_gen_files");
 
   char fname[FILENAME_MAX+1];
-  snprintf(fname, sizeof(fname), "../ldpc_gen_files/bnProcPc_avx512/nrLDPC_bnProcPc_BG2_R%s_AVX512.h", ratestr[R]);
+  snprintf(fname, sizeof(fname), "%s/bnProcPc_avx512/nrLDPC_bnProcPc_BG2_R%s_AVX512.h", dir, ratestr[R]);
   FILE *fd=fopen(fname,"w");
   if (fd == NULL) {
     printf("Cannot create file %s\n", fname);

@@ -10,8 +10,8 @@ mkdir bnProc
 mkdir bnProc_avx512
 mkdir bnProcPc
 mkdir bnProcPc_avx512
-cd ../generator_bnProc; make; make clean; ./bnProc_gen_avx2
-cd ../generator_cnProc; make; make clean; ./cnProc_gen_avx2
-cd ../generator_bnProc_avx512; make; make clean; ./bnProc_gen_avx512
-cd ../generator_cnProc_avx512; make; make clean; ./cnProc_gen_avx512
+cd ../generator_bnProc; make; make clean; ./bnProc_gen_avx2 ../ldpc_gen_files
+cd ../generator_cnProc; make; make clean; ./cnProc_gen_avx2 ../ldpc_gen_files
+cd ../generator_bnProc_avx512; make; make clean; ./bnProc_gen_avx512 ../ldpc_gen_files
+cd ../generator_cnProc_avx512; make; make clean; ./cnProc_gen_avx512 ../ldpc_gen_files
 )
