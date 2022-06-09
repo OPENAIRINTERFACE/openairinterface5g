@@ -25,7 +25,7 @@ gnb :
     L1 Rx processing:
     PUSCH inner-receiver:
     PUSCH decoding:
-    DL & UL scheduling timing stats:
+    DL & UL scheduling timing:
     UL Indication:
   graph : 
     page1:
@@ -45,5 +45,5 @@ gnb :
     page4:
       rt.PUSCH inner-receiver:
       rt.PUSCH decoding:
-      rt.DL & UL scheduling timing stats:
+      rt.DL & UL scheduling timing:
       rt.UL Indication:
