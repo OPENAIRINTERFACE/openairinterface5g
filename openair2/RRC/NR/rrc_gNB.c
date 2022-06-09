@@ -1036,6 +1036,19 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 cellGroupConfig);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
 
+  rrc_mac_config_req_gNB(rrc->module_id,
+                         rrc->configuration.ssb_SubcarrierOffset,
+                         rrc->configuration.pdsch_AntennaPorts,
+                         rrc->configuration.pusch_AntennaPorts,
+                         rrc->configuration.sib1_tda,
+                         rrc->configuration.minRXTXTIME,
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         ue_context_pP->ue_context.masterCellGroup);
+
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
     if (ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer != NULL) {
@@ -1980,6 +1993,20 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                          NULL,
                                          NULL,
                                          masterCellGroup);
+
+  gNB_RrcConfigurationReq *configuration = &RC.nrrrc[ctxt_pP->module_id]->configuration;
+  rrc_mac_config_req_gNB(ctxt_pP->module_id,
+                         configuration->ssb_SubcarrierOffset,
+                         configuration->pdsch_AntennaPorts,
+                         configuration->pusch_AntennaPorts,
+                         configuration->sib1_tda,
+                         configuration->minRXTXTIME,
+                         NULL,
+                         NULL,
+                         NULL,
+                         0,
+                         ue_context_pP->ue_context.rnti,
+                         masterCellGroup);
 
   nr_rrc_data_req(ctxt_pP,
                   DCCH,
