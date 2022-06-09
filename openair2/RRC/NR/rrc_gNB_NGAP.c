@@ -905,7 +905,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
   for (pdusession = 0; pdusession < ue_context_pP->ue_context.setup_pdu_sessions; pdusession++) {
     // if (xid == ue_context_pP->ue_context.pdusession[pdusession].xid) {
       if (ue_context_pP->ue_context.pduSession[pdusession].status == PDU_SESSION_STATUS_DONE) {
-        pdusession_setup_t * tmp=&NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession];
+        pdusession_setup_t * tmp=&NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdu_sessions_done];
         tmp->pdusession_id = ue_context_pP->ue_context.pduSession[pdusession].param.pdusession_id;
         // tmp->pdusession_id = 1;
         tmp->nb_of_qos_flow = ue_context_pP->ue_context.pduSession[pdusession].param.nb_qos;

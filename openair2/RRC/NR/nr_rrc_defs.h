@@ -290,10 +290,10 @@ typedef struct gNB_RRC_UE_s {
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
-  NR_SRB_INFO                           SI;
-  NR_SRB_INFO                           Srb0;
-  NR_SRB_INFO_TABLE_ENTRY               Srb1;
-  NR_SRB_INFO_TABLE_ENTRY               Srb2;
+  NR_SRB_INFO                       SI;
+  NR_SRB_INFO                       Srb0;
+  NR_SRB_INFO_TABLE_ENTRY           Srb1;
+  NR_SRB_INFO_TABLE_ENTRY           Srb2;
   NR_MeasConfig_t                   *measConfig;
   HANDOVER_INFO                     *handover_info;
   NR_MeasResults_t                  *measResults;
