@@ -62,10 +62,6 @@ void nrLDPC_bnProc_BG2_generator_AVX2(int R)
 
 
 
-    fprintf(fd,"        __m256i* p_bnProcBuf; \n");
-    fprintf(fd,"        __m256i* p_bnProcBufRes; \n");
-    fprintf(fd,"        __m256i* p_llrRes; \n");
-    fprintf(fd,"        __m256i* p_res; \n");
      fprintf(fd,"        uint32_t M, i; \n");
 
 
