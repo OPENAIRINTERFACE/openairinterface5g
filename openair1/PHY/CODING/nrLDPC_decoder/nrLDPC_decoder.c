@@ -42,13 +42,13 @@
 //BG1-------------------------------------------------------------------
 #ifdef __AVX512BW__
 
-#include "nrLDPC_tools/ldpc_gen_files/cnProc_avx512/nrLDPC_cnProc_BG1_R13_AVX512.h"
-#include "nrLDPC_tools/ldpc_gen_files/cnProc_avx512/nrLDPC_cnProc_BG1_R23_AVX512.h"
-#include "nrLDPC_tools/ldpc_gen_files/cnProc_avx512/nrLDPC_cnProc_BG1_R89_AVX512.h"
+#include "cnProc_avx512/nrLDPC_cnProc_BG1_R13_AVX512.h"
+#include "cnProc_avx512/nrLDPC_cnProc_BG1_R23_AVX512.h"
+#include "cnProc_avx512/nrLDPC_cnProc_BG1_R89_AVX512.h"
 //BG2-------------------------------------------------------------------
-#include "nrLDPC_tools/ldpc_gen_files/cnProc_avx512/nrLDPC_cnProc_BG2_R15_AVX512.h"
-#include "nrLDPC_tools/ldpc_gen_files/cnProc_avx512/nrLDPC_cnProc_BG2_R13_AVX512.h"
-#include "nrLDPC_tools/ldpc_gen_files/cnProc_avx512/nrLDPC_cnProc_BG2_R23_AVX512.h"
+#include "cnProc_avx512/nrLDPC_cnProc_BG2_R15_AVX512.h"
+#include "cnProc_avx512/nrLDPC_cnProc_BG2_R13_AVX512.h"
+#include "cnProc_avx512/nrLDPC_cnProc_BG2_R23_AVX512.h"
 
 #else
 
@@ -57,13 +57,13 @@
 /----------------------------------------------------------------------*/
 
 //BG1------------------------------------------------------------------
-#include "nrLDPC_tools/ldpc_gen_files/cnProc/nrLDPC_cnProc_BG1_R13_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/cnProc/nrLDPC_cnProc_BG1_R23_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/cnProc/nrLDPC_cnProc_BG1_R89_AVX2.h"
+#include "cnProc/nrLDPC_cnProc_BG1_R13_AVX2.h"
+#include "cnProc/nrLDPC_cnProc_BG1_R23_AVX2.h"
+#include "cnProc/nrLDPC_cnProc_BG1_R89_AVX2.h"
 //BG2 --------------------------------------------------------------------
-#include "nrLDPC_tools/ldpc_gen_files/cnProc/nrLDPC_cnProc_BG2_R15_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/cnProc/nrLDPC_cnProc_BG2_R13_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/cnProc/nrLDPC_cnProc_BG2_R23_AVX2.h"
+#include "cnProc/nrLDPC_cnProc_BG2_R15_AVX2.h"
+#include "cnProc/nrLDPC_cnProc_BG2_R13_AVX2.h"
+#include "cnProc/nrLDPC_cnProc_BG2_R23_AVX2.h"
 
 #endif
 
@@ -73,34 +73,34 @@
 
 //bnProcPc-------------------------------------------------------------
 //BG1------------------------------------------------------------------
-#include "nrLDPC_tools/ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG1_R13_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG1_R23_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG1_R89_AVX2.h"
+#include "bnProcPc/nrLDPC_bnProcPc_BG1_R13_AVX2.h"
+#include "bnProcPc/nrLDPC_bnProcPc_BG1_R23_AVX2.h"
+#include "bnProcPc/nrLDPC_bnProcPc_BG1_R89_AVX2.h"
 //BG2 --------------------------------------------------------------------
-#include "nrLDPC_tools/ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG2_R15_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG2_R13_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProcPc/nrLDPC_bnProcPc_BG2_R23_AVX2.h"
+#include "bnProcPc/nrLDPC_bnProcPc_BG2_R15_AVX2.h"
+#include "bnProcPc/nrLDPC_bnProcPc_BG2_R13_AVX2.h"
+#include "bnProcPc/nrLDPC_bnProcPc_BG2_R23_AVX2.h"
 
 //bnProc----------------------------------------------------------------
 
 #ifdef __AVX512BW__
 //BG1-------------------------------------------------------------------
-#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG1_R13_AVX512.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG1_R23_AVX512.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG1_R89_AVX512.h"
+#include "bnProc_avx512/nrLDPC_bnProc_BG1_R13_AVX512.h"
+#include "bnProc_avx512/nrLDPC_bnProc_BG1_R23_AVX512.h"
+#include "bnProc_avx512/nrLDPC_bnProc_BG1_R89_AVX512.h"
 //BG2 --------------------------------------------------------------------
-#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG2_R15_AVX512.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG2_R13_AVX512.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProc_avx512/nrLDPC_bnProc_BG2_R23_AVX512.h"
+#include "bnProc_avx512/nrLDPC_bnProc_BG2_R15_AVX512.h"
+#include "bnProc_avx512/nrLDPC_bnProc_BG2_R13_AVX512.h"
+#include "bnProc_avx512/nrLDPC_bnProc_BG2_R23_AVX512.h"
 
 #else
-#include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG1_R13_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG1_R23_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG1_R89_AVX2.h"
+#include "bnProc/nrLDPC_bnProc_BG1_R13_AVX2.h"
+#include "bnProc/nrLDPC_bnProc_BG1_R23_AVX2.h"
+#include "bnProc/nrLDPC_bnProc_BG1_R89_AVX2.h"
 //BG2 --------------------------------------------------------------------
-#include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG2_R15_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG2_R13_AVX2.h"
-#include "nrLDPC_tools/ldpc_gen_files/bnProc/nrLDPC_bnProc_BG2_R23_AVX2.h"
+#include "bnProc/nrLDPC_bnProc_BG2_R15_AVX2.h"
+#include "bnProc/nrLDPC_bnProc_BG2_R13_AVX2.h"
+#include "bnProc/nrLDPC_bnProc_BG2_R23_AVX2.h"
 
 #endif
 
