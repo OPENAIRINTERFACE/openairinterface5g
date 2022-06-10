@@ -694,7 +694,7 @@ typedef struct NR_mac_stats {
   uint32_t pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
-  int8_t srs_wide_band_snr;
+  char srs_stats[50]; // Statistics may differ depending on SRS usage
 } NR_mac_stats_t;
 
 typedef struct NR_bler_options {

@@ -84,14 +84,14 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
     NR_mac_stats_t *stats = &UE->mac_stats;
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
 
-    stroff+=sprintf(output+stroff,"UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas), UL-SNR %d dB\n",
+    stroff+=sprintf(output+stroff,"UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
 		    UE->rnti,
 		    num++,
 		    sched_ctrl->ph,
 		    sched_ctrl->pcmax,
 		    avg_rsrp,
-		    stats->num_rsrp_meas,
-        stats->srs_wide_band_snr);
+		    stats->num_rsrp_meas);
+
     stroff+=sprintf(output+stroff,"UE %04x: CQI %d, RI %d, PMI (%d,%d)\n",
                     UE->rnti,
                     UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,
@@ -99,15 +99,19 @@ void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp
                     UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
                     UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
+    if (stats->srs_stats[0] != '\0') {
+      stroff+=sprintf(output+stroff,"UE %04x: %s\n", UE->rnti, stats->srs_stats);
+    }
+
     stroff+=sprintf(output+stroff,"UE %04x: dlsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
                     UE->rnti,
-
                     stats->dl.rounds[0], stats->dl.rounds[1],
                     stats->dl.rounds[2], stats->dl.rounds[3],
                     stats->dl.errors,
                     stats->pucch0_DTX,
                     sched_ctrl->dl_bler_stats.bler,
                     sched_ctrl->dl_bler_stats.mcs);
+
     if (reset_rsrp) {
       stats->num_rsrp_meas = 0;
       stats->cumul_rsrp = 0;

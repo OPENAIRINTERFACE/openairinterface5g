@@ -785,6 +785,9 @@ void handle_nr_srs_measurements(const module_id_t module_id,
     return;
   }
 
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+  NR_mac_stats_t *stats = &UE->mac_stats;
+
   switch (srs_ind->srs_usage) {
 
     case NR_SRS_ResourceSet__usage_beamManagement: {
@@ -809,9 +812,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       }
 #endif
 
-      gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
-      NR_mac_stats_t *stats = &UE->mac_stats;
-      stats->srs_wide_band_snr = (nr_srs_beamforming_report->wide_band_snr>>1)-64;
+      sprintf(stats->srs_stats,"UL-SNR %i dB", (nr_srs_beamforming_report->wide_band_snr>>1)-64);
 
       int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
       uint16_t *ulprbbl = nr_mac->ulprbbl;
@@ -836,7 +837,8 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
       ps->srs_feedback.sri = NR_SRS_SRI_0;
       ps->srs_feedback.tpmi = 0;
-
+      uint8_t ul_ri = 0;
+      sprintf(stats->srs_stats,"UL-RI %d, TPMI %d", ul_ri+1, ps->srs_feedback.tpmi);
       break;
     }
 
