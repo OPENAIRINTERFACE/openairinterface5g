@@ -532,6 +532,7 @@ typedef enum {
 
 typedef struct nr_srs_feedback {
   uint8_t sri;
+  uint8_t ul_ri;
   uint8_t tpmi;
 } nr_srs_feedback_t;
 

@@ -792,7 +792,9 @@ void handle_nr_srs_measurements(const module_id_t module_id,
 
     case NR_SRS_ResourceSet__usage_beamManagement: {
 
-      nfapi_nr_srs_beamforming_report_t *nr_srs_beamforming_report = (nfapi_nr_srs_beamforming_report_t*) calloc(1,sizeof(nfapi_nr_srs_beamforming_report_t));
+      nfapi_nr_srs_beamforming_report_t *nr_srs_beamforming_report =
+          (nfapi_nr_srs_beamforming_report_t*) calloc(1,sizeof(nfapi_nr_srs_beamforming_report_t));
+
       unpack_nr_srs_beamforming_report(srs_ind->report_tlv->value,
                                        srs_ind->report_tlv->length,
                                        nr_srs_beamforming_report,
@@ -832,13 +834,39 @@ void handle_nr_srs_measurements(const module_id_t module_id,
 
     case NR_SRS_ResourceSet__usage_codebook: {
 
+      nfapi_nr_srs_normalized_channel_iq_matrix_t *nr_srs_normalized_channel_iq_matrix =
+          (nfapi_nr_srs_normalized_channel_iq_matrix_t*) calloc(1,sizeof(nfapi_nr_srs_normalized_channel_iq_matrix_t));
+
+      unpack_nr_srs_normalized_channel_iq_matrix(srs_ind->report_tlv->value,
+                                                 srs_ind->report_tlv->length,
+                                                 nr_srs_normalized_channel_iq_matrix,
+                                                 sizeof(nfapi_nr_srs_normalized_channel_iq_matrix_t));
+
+#ifdef SRS_IND_DEBUG
+      LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix->normalized_iq_representation = %i\n", nr_srs_normalized_channel_iq_matrix->normalized_iq_representation);
+      LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements = %i\n", nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements);
+      LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports = %i\n", nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports);
+      LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix->prg_size = %i\n", nr_srs_normalized_channel_iq_matrix->prg_size);
+      LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix->num_prgs = %i\n", nr_srs_normalized_channel_iq_matrix->num_prgs);
+      uint16_t *channel_matrix = (uint16_t*)nr_srs_normalized_channel_iq_matrix->channel_matrix;
+      for(int uI = 0; uI < nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports; uI++) {
+        for(int gI = 0; gI < nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements; gI++) {
+          for(int pI = 0; pI < nr_srs_normalized_channel_iq_matrix->num_prgs; pI++) {
+            uint16_t index = uI*nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements*nr_srs_normalized_channel_iq_matrix->num_prgs + gI*nr_srs_normalized_channel_iq_matrix->num_prgs + pI;
+            LOG_I(NR_MAC, "(uI %i, gI %i, pI %i) channel_matrix --> real %i, imag %i\n",
+                  uI, gI, pI, channel_matrix[(index<<1)], channel_matrix[(index<<1)+1]);
+          }
+        }
+      }
+#endif
+
       // TODO: This should be improved
       NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
       NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
       ps->srs_feedback.sri = NR_SRS_SRI_0;
+      ps->srs_feedback.ul_ri = 0;
       ps->srs_feedback.tpmi = 0;
-      uint8_t ul_ri = 0;
-      sprintf(stats->srs_stats,"UL-RI %d, TPMI %d", ul_ri+1, ps->srs_feedback.tpmi);
+      sprintf(stats->srs_stats,"UL-RI %d, TPMI %d", ps->srs_feedback.ul_ri+1, ps->srs_feedback.tpmi);
       break;
     }
 

@@ -87,10 +87,17 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_U
   srs_pdu->t_offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 
   // TODO: This should be completed
-  srs_pdu->beamforming.trp_scheme = 0;
-  srs_pdu->beamforming.num_prgs = m_SRS[srs_pdu->config_index];
-  srs_pdu->beamforming.prg_size = 1;
-  srs_pdu->srs_parameters_v4.usage = srs_resource_set->usage;
+  srs_pdu->srs_parameters_v4.srs_bandwidth_size = m_SRS[srs_pdu->config_index];
+  srs_pdu->srs_parameters_v4.usage = 1<<srs_resource_set->usage;
+  srs_pdu->srs_parameters_v4.report_type[0] = 1;
+  srs_pdu->srs_parameters_v4.iq_representation = 1;
+  srs_pdu->srs_parameters_v4.prg_size = 1;
+  srs_pdu->srs_parameters_v4.num_total_ue_antennas = 1<<srs_pdu->num_ant_ports;
+  if (srs_resource_set->usage == NR_SRS_ResourceSet__usage_beamManagement) {
+    srs_pdu->beamforming.trp_scheme = 0;
+    srs_pdu->beamforming.num_prgs = m_SRS[srs_pdu->config_index];
+    srs_pdu->beamforming.prg_size = 1;
+  }
 }
 
 void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t slot, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource) {
