@@ -450,7 +450,7 @@ nr_sdap_entity_t *nr_sdap_get_entity(uint16_t rnti, int pdusession_id) {
   if(sdap_entity == NULL)
     return NULL;
 
-  while(sdap_entity->rnti != rnti && sdap_entity->next_entity != NULL) {
+  while(( sdap_entity->rnti != rnti || sdap_entity->pdusession_id != pdusession_id ) && sdap_entity->next_entity != NULL) {
     sdap_entity = sdap_entity->next_entity;
   }
 
@@ -459,6 +459,7 @@ nr_sdap_entity_t *nr_sdap_get_entity(uint16_t rnti, int pdusession_id) {
 
   return NULL;
 }
+
 
 void delete_nr_sdap_entity(uint16_t rnti) {
   nr_sdap_entity_t *entityPtr, *entityPrev = NULL;

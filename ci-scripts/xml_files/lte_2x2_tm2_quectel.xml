@@ -88,7 +88,7 @@
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 20</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
-		<ping_rttavg_threshold>40</ping_rttavg_threshold>
+		<ping_rttavg_threshold>60</ping_rttavg_threshold>
 	</testCase>
 	<testCase id="050003">
 		<class>Ping</class>
@@ -96,7 +96,7 @@
 		<id>nrmodule2_quectel</id>
 		<ping_args>-c 100 -s 1024 -i 0,2</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
-		<ping_rttavg_threshold>40</ping_rttavg_threshold>
+		<ping_rttavg_threshold>60</ping_rttavg_threshold>
 	</testCase>
 
 
