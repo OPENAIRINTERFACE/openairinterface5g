@@ -349,7 +349,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:t:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:ZW:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:p:r:s:t:u:w:y:z:C:F:G:H:M:N:PR:S:T:U:L:ZW:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -478,9 +478,11 @@ int main(int argc, char **argv)
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
       break;
-    case 't':
+
+    case 'C':
       threadCnt = atoi(optarg);
       break;
+
     case 'u':
       mu = atoi(optarg);
       break;
