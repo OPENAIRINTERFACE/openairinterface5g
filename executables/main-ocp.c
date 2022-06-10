@@ -173,7 +173,7 @@ void init_transport(PHY_VARS_eNB *eNB) {
   }
 
   for (int i=0; i<NUMBER_OF_ULSCH_MAX; i++) {
-    LOG_D(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for ULSCH, UE %d\n",i);
     AssertFatal((eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0)) != NULL,
                 "Can't get eNB ulsch structures\n");
     // this is the transmission mode for the signalling channels
