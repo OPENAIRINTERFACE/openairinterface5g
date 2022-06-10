@@ -983,10 +983,8 @@ void config_uldci(const NR_SIB1_t *sib1,
 
   int bwp_id = BWP->ul_bwp_id;
 
-  const int bw = NRRIV2BW(BWP->ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-
   dci_pdu_rel15->frequency_domain_assignment.val =
-      PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, bw);
+      PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, BWP->ul_BWPSize);
   dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
   dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
   dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
@@ -1063,7 +1061,7 @@ int nr_get_default_pucch_res(int pucch_ResourceCommon) {
 
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ControlResourceSet_t *coreset,
-                        NR_BWP_t *bwp,
+                        bool is_sib1,
                         NR_sched_pdcch_t *pdcch) {
 
 
@@ -1087,7 +1085,7 @@ void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
   pdcch_pdu->ShiftIndex = pdcch->ShiftIndex;
 
   if(coreset->controlResourceSetId == 0) {
-    if(bwp == NULL)
+    if(is_sib1)
       pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
     else
       pdcch_pdu->CoreSetType = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0;
@@ -1193,12 +1191,12 @@ void nr_configure_pucch(const NR_SIB1_t *sib1,
   else
     pucch_pdu->hopping_id = *scc->physCellId;
 
-  NR_BWP_t *genericParameters = UE->current_BWP.ul_genericParameters;
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
 
-  pucch_pdu->bwp_size  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-  pucch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-  pucch_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
-  pucch_pdu->cyclic_prefix = (genericParameters->cyclicPrefix==NULL) ? 0 : *genericParameters->cyclicPrefix;
+  pucch_pdu->bwp_size  = BWP->ul_BWPSize;
+  pucch_pdu->bwp_start = BWP->ul_BWPStart;
+  pucch_pdu->subcarrier_spacing = BWP->ul_scs;
+  pucch_pdu->cyclic_prefix = (BWP->ul_cyclicprefix==NULL) ? 0 : *BWP->ul_cyclicprefix;
   if (r_pucch<0 || bwp ){
       LOG_D(NR_MAC,"pucch_acknak: Filling dedicated configuration for PUCCH\n");
    // we have either a dedicated BWP or Dedicated PUCCH configuration on InitialBWP
@@ -2322,6 +2320,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                       NR_UE_BWP_t *BWP,
                       NR_ServingCellConfigCommon_t *scc,
                       NR_UE_sched_ctrl_t *sched_ctrl,
+                      NR_RA_t *ra,
                       NR_CellGroupConfig_t *CellGroup) {
 
   NR_BWP_Downlink_t *dl_bwp = NULL;
@@ -2384,16 +2383,27 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     target_ss = NR_SearchSpace__searchSpaceType_PR_common;
   }
 
-  // acquiring generic parameters
-  BWP->dl_genericParameters = (BWP->dl_bwp_id>0 && dl_bwp) ?
-    &dl_bwp->bwp_Common->genericParameters:
-    &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+  // setting generic parameters
+  NR_BWP_t dl_genericParameters = (BWP->dl_bwp_id>0 && dl_bwp) ?
+    dl_bwp->bwp_Common->genericParameters:
+    scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
-  BWP->ul_genericParameters = (BWP->ul_bwp_id>0 && ul_bwp) ?
-    &ul_bwp->bwp_Common->genericParameters:
-    &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  BWP->dl_scs = dl_genericParameters.subcarrierSpacing;
+  BWP->dl_cyclicprefix = dl_genericParameters.cyclicPrefix;
+  BWP->dl_BWPSize = NRRIV2BW(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  BWP->dl_BWPStart = NRRIV2PRBOFFSET(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
+  NR_BWP_t ul_genericParameters = (BWP->ul_bwp_id>0 && ul_bwp) ?
+    ul_bwp->bwp_Common->genericParameters:
+    scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+
+  BWP->ul_scs = ul_genericParameters.subcarrierSpacing;
+  BWP->ul_cyclicprefix = ul_genericParameters.cyclicPrefix;
+  BWP->ul_BWPSize = NRRIV2BW(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  BWP->ul_BWPStart = NRRIV2PRBOFFSET(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   if(sched_ctrl) {
+    // setting PDCCH related structures for sched_ctrl
     sched_ctrl->search_space = get_searchspace(scc,
                                                bwpd,
                                                target_ss);
@@ -2407,8 +2417,36 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                                                   sched_ctrl->search_space,
                                                   sched_ctrl->coreset,
                                                   scc,
-                                                  BWP->dl_genericParameters,
+                                                  &dl_genericParameters,
                                                   nr_mac->type0_PDCCH_CSS_config);
+  }
+
+  if(ra) {
+    // setting PDCCH related structures for RA
+    struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = NULL;
+    NR_SearchSpaceId_t ra_SearchSpace = 0;
+    if(dl_bwp) {
+      commonSearchSpaceList = dl_bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ra_SearchSpace = *dl_bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    } else {
+      commonSearchSpaceList = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ra_SearchSpace = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    }
+    AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
+    for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
+      NR_SearchSpace_t * ss = commonSearchSpaceList->list.array[i];
+      if (ss->searchSpaceId == ra_SearchSpace)
+        ra->ra_ss = ss;
+    }
+    AssertFatal(ra->ra_ss!=NULL,"SearchSpace cannot be null for RA\n");
+
+    ra->coreset = get_coreset(nr_mac, scc, dl_bwp, ra->ra_ss, NR_SearchSpace__searchSpaceType_PR_common);
+    ra->sched_pdcch = set_pdcch_structure(nr_mac,
+                                          ra->ra_ss,
+                                          ra->coreset,
+                                          scc,
+                                          &dl_genericParameters,
+                                          &nr_mac->type0_PDCCH_CSS_config[ra->beam_id]);
   }
 }
 
@@ -2462,7 +2500,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   // initialize UE BWP information
   NR_UE_BWP_t *BWP = &UE->current_BWP;
   memset(BWP, 0, sizeof(*BWP));
-  configure_UE_BWP(nr_mac, BWP, scc, sched_ctrl, CellGroup);
+  configure_UE_BWP(nr_mac, BWP, scc, sched_ctrl, NULL, CellGroup);
 
   /* set illegal time domain allocation to force recomputation of all fields */
   sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
@@ -2719,7 +2757,6 @@ void nr_csirs_scheduling(int Mod_idP,
       int period, offset;
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
-      NR_BWP_t *genericParameters = BWP->dl_genericParameters;
 
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
@@ -2738,22 +2775,20 @@ void nr_csirs_scheduling(int Mod_idP,
 
           nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csirs_pdu_rel15 = &dl_tti_csirs_pdu->csi_rs_pdu.csi_rs_pdu_rel15;
 
-          csirs_pdu_rel15->subcarrier_spacing = genericParameters->subcarrierSpacing;
-          if (genericParameters->cyclicPrefix)
-            csirs_pdu_rel15->cyclic_prefix = *genericParameters->cyclicPrefix;
+          csirs_pdu_rel15->subcarrier_spacing = BWP->dl_scs;
+          if (BWP->dl_cyclicprefix)
+            csirs_pdu_rel15->cyclic_prefix = *BWP->dl_cyclicprefix;
           else
             csirs_pdu_rel15->cyclic_prefix = 0;
 
           // According to last paragraph of TS 38.214 5.2.2.3.1
-          uint16_t BWPSize = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-          uint16_t BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-          if (resourceMapping.freqBand.startingRB < BWPStart) {
-            csirs_pdu_rel15->start_rb = BWPStart;
+          if (resourceMapping.freqBand.startingRB < BWP->dl_BWPStart) {
+            csirs_pdu_rel15->start_rb = BWP->dl_BWPStart;
           } else {
             csirs_pdu_rel15->start_rb = resourceMapping.freqBand.startingRB;
           }
-          if (resourceMapping.freqBand.nrofRBs > (BWPStart + BWPSize - csirs_pdu_rel15->start_rb)) {
-            csirs_pdu_rel15->nr_of_rbs = BWPStart + BWPSize - csirs_pdu_rel15->start_rb;
+          if (resourceMapping.freqBand.nrofRBs > (BWP->dl_BWPStart + BWP->dl_BWPSize - csirs_pdu_rel15->start_rb)) {
+            csirs_pdu_rel15->nr_of_rbs = BWP->dl_BWPStart + BWP->dl_BWPSize - csirs_pdu_rel15->start_rb;
           } else {
             csirs_pdu_rel15->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
           }
@@ -2961,7 +2996,7 @@ void nr_mac_update_timers(module_id_t module_id,
           }
         }
 
-        configure_UE_BWP(RC.nrmac[module_id], BWP, scc, sched_ctrl, UE->CellGroup);
+        configure_UE_BWP(RC.nrmac[module_id], BWP, scc, sched_ctrl, NULL, UE->CellGroup);
 
         // Update coreset/searchspace
         NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;

@@ -847,9 +847,9 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
                                     cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
   int rbStart = 0; // wrt BWP start
-  const uint16_t bwpSize = NRRIV2BW(UE->current_BWP.ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const uint16_t bwpSize = UE->current_BWP.ul_BWPSize;
   const uint8_t nrOfLayers = 1;
-  const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_bwp || ubwpd) ? 1 : 2;
+  const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
   LOG_D(NR_MAC,"num_dmrs_cdm_grps_no_data %d, tbs %d\n",num_dmrs_cdm_grps_no_data, retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation) {
@@ -1045,7 +1045,7 @@ void pf_ul(module_id_t module_id,
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
-    const uint16_t bwpSize = NRRIV2BW(BWP->ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    const uint16_t bwpSize = BWP->ul_BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
     const NR_mac_dir_stats_t *stats = &UE->mac_stats.ul;
@@ -1242,8 +1242,8 @@ void pf_ul(module_id_t module_id,
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
 
-    int rbStart = sched_ctrl->active_ubwp ? NRRIV2PRBOFFSET(BWP->ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE) : 0;
-    const uint16_t bwpSize = NRRIV2BW(BWP->ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+    int rbStart = sched_ctrl->active_ubwp ? BWP->ul_BWPStart : 0;
+    const uint16_t bwpSize = BWP->ul_BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
@@ -1348,8 +1348,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * schedule now (slot + k2 is not UL slot) */
   NR_UE_sched_ctrl_t *sched_ctrl = &nr_mac->UE_info.list[0]->UE_sched_ctrl;
   NR_UE_BWP_t *BWP = &nr_mac->UE_info.list[0]->current_BWP;
-  NR_BWP_t *genericParameters = BWP->ul_genericParameters;
-  int mu = genericParameters->subcarrierSpacing;
+  int mu = BWP->ul_scs;
   const int temp_tda = get_ul_tda(nr_mac, scc, slot);
   int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, temp_tda, mu);
   const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) & 1023;
@@ -1399,8 +1398,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
 
-  const uint16_t bwpSize = NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-  const uint16_t bwpStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  const uint16_t bwpSize = BWP->ul_BWPSize;
+  const uint16_t bwpStart = BWP->ul_BWPStart;
 
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = NULL;
   if (sched_ctrl->active_ubwp) {
@@ -1642,11 +1641,10 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->handle = 0; //not yet used
 
     /* FAPI: BWP */
-    NR_BWP_t *genericParameters = current_BWP->ul_genericParameters;
 
-    pusch_pdu->bwp_size  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-    pusch_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-    pusch_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
+    pusch_pdu->bwp_size  = current_BWP->ul_BWPSize;
+    pusch_pdu->bwp_start = current_BWP->ul_BWPStart;
+    pusch_pdu->subcarrier_spacing = current_BWP->ul_scs;
     pusch_pdu->cyclic_prefix = 0;
 
     /* FAPI: PUSCH information always included */
@@ -1750,8 +1748,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 
     /* look up the PDCCH PDU for this BWP and CORESET. If it does not exist,
      * create it */
-    NR_SearchSpace_t *ss = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->search_space: RC.nrmac[module_id]->sched_ctrlCommon->search_space;
-    NR_ControlResourceSet_t *coreset = (sched_ctrl->active_bwp || ubwpd) ? sched_ctrl->coreset: RC.nrmac[module_id]->sched_ctrlCommon->coreset;
+    NR_SearchSpace_t *ss = sched_ctrl->search_space;
+    NR_ControlResourceSet_t *coreset = sched_ctrl->coreset;
     const int coresetid = coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = pdcch_pdu_coreset[coresetid];
     if (!pdcch_pdu) {
@@ -1761,7 +1759,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       ul_dci_request_pdu->PDUSize = (uint8_t)(2+sizeof(nfapi_nr_dl_tti_pdcch_pdu));
       pdcch_pdu = &ul_dci_request_pdu->pdcch_pdu.pdcch_pdu_rel15;
       ul_dci_req->numPdus += 1;
-      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, &sched_ctrl->sched_pdcch);
+      nr_configure_pdcch(pdcch_pdu, coreset, false, &sched_ctrl->sched_pdcch);
       pdcch_pdu_coreset[coresetid] = pdcch_pdu;
     }
 

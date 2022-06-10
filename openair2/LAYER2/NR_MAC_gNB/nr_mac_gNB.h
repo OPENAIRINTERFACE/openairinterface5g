@@ -94,8 +94,14 @@ typedef struct {
 typedef struct NR_UE_BWP {
   NR_BWP_Id_t dl_bwp_id;
   NR_BWP_Id_t ul_bwp_id;
-  NR_BWP_t *dl_genericParameters;
-  NR_BWP_t *ul_genericParameters;
+  int dl_scs;
+  int ul_scs;
+  long *dl_cyclicprefix;
+  long *ul_cyclicprefix;
+  uint16_t dl_BWPSize;
+  uint16_t dl_BWPStart;
+  uint16_t ul_BWPSize;
+  uint16_t ul_BWPStart;
 } NR_UE_BWP_t;
 
 typedef enum {

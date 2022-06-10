@@ -205,8 +205,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
     nr_set_pdsch_semi_static(NULL, scc, UE->CellGroup, sched_ctrl->active_bwp, NULL, tda, target_dl_Nl,sched_ctrl , ps);
 
   /* find largest unallocated chunk */
-  const int bwpSize = NRRIV2BW(BWP->dl_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-  const int BWPStart = NRRIV2PRBOFFSET(BWP->dl_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const int bwpSize = BWP->dl_BWPSize;
+  const int BWPStart = BWP->dl_BWPStart;
 
   int rbStart = 0;
   int rbSize = 0;
@@ -353,8 +353,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_UE_BWP_t *BWP = &UE->current_BWP;
-  NR_BWP_t *genericParameters = BWP->ul_genericParameters;
-  const int mu = genericParameters->subcarrierSpacing;
+  const int mu = BWP->ul_scs;
 
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
     sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -402,8 +401,8 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   uint16_t rbStart = 0;
   uint16_t rbSize;
 
-  const int bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-  const int BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const int bw = BWP->ul_BWPSize;
+  const int BWPStart = BWP->ul_BWPStart;
 
   if (target_ul_bw>bw)
     rbSize = bw;

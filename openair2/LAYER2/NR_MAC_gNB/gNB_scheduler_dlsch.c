@@ -394,8 +394,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
 
-  const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(UE->current_BWP.dl_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const int coresetid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : UE->current_BWP.dl_BWPSize;
 
   int rbStart = 0; // start wrt BWPstart
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
@@ -670,14 +670,12 @@ void pf_dl(module_id_t module_id,
       RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 :
       NULL;
 
-    NR_BWP_t *genericParameters = iterator->UE->current_BWP.dl_genericParameters;
+    NR_UE_BWP_t *BWP = &iterator->UE->current_BWP;
 
-    const int coresetid = (sched_ctrl->active_bwp||bwpd) ?
-      sched_ctrl->coreset->controlResourceSetId :
-      RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
+    const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     const uint16_t bwpSize = coresetid == 0 ?
       RC.nrmac[module_id]->cset0_bwp_size :
-      NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      BWP->dl_BWPSize;
     int rbStart = 0; // start wrt BWPstart
 
     if (sched_ctrl->available_dl_harq.head < 0) {
@@ -824,18 +822,12 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  NR_BWP_t *genericParameters = UE->current_BWP.dl_genericParameters;
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
 
-  NR_BWP_DownlinkDedicated_t *bwpd =
-      UE->CellGroup &&
-      UE->CellGroup->spCellConfig &&
-      UE->CellGroup->spCellConfig->spCellConfigDedicated ?
-      UE->CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
+  const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
-  const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
-
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : BWP->dl_BWPSize;
+  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : BWP->dl_BWPStart;
 
   const uint16_t slbitmap = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
@@ -920,12 +912,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
     UE->mac_stats.dl.current_bytes = 0;
     NR_CellGroupConfig_t *cg = UE->CellGroup;
 
-    NR_BWP_DownlinkDedicated_t *bwpd =
-        cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated ?
-        cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-
     /* update TA and set ta_apply every 10 frames.
      * Possible improvement: take the periodicity from input file.
      * If such UE is not scheduled now, it will be by the preprocessor later.
@@ -999,14 +985,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
           pucch->ul_slot,
           sched_pdsch->pucch_allocation,
           sched_ctrl->tpc1);
+
     NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
 
-    NR_BWP_t *genericParameters = current_BWP->dl_genericParameters;
-
-    NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space : gNB_mac->sched_ctrlCommon->search_space;
+    NR_SearchSpace_t *ss = sched_ctrl->search_space;
 
     const int bwp_id = current_BWP->dl_bwp_id;
-    const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
+    const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it */
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][coresetid];
@@ -1020,8 +1005,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %04x, bwp %d, cs %d\n", UE->rnti, bwp_id, coresetid);
-      NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
-      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, &sched_ctrl->sched_pdcch);
+      NR_ControlResourceSet_t *coreset = sched_ctrl->coreset;
+      nr_configure_pdcch(pdcch_pdu, coreset, false, &sched_ctrl->sched_pdcch);
       gNB_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 
@@ -1043,12 +1028,12 @@ void nr_schedule_ue_spec(module_id_t module_id,
       pdsch_pdu->BWPSize  = gNB_mac->cset0_bwp_size;
       pdsch_pdu->BWPStart = gNB_mac->cset0_bwp_start;
     } else {
-      pdsch_pdu->BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-      pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+      pdsch_pdu->BWPSize  = current_BWP->dl_BWPSize;
+      pdsch_pdu->BWPStart = current_BWP->dl_BWPStart;
     }
 
-    pdsch_pdu->SubcarrierSpacing = genericParameters->subcarrierSpacing;
-    pdsch_pdu->CyclicPrefix = genericParameters->cyclicPrefix ? *genericParameters->cyclicPrefix : 0;
+    pdsch_pdu->SubcarrierSpacing = current_BWP->dl_scs;
+    pdsch_pdu->CyclicPrefix = current_BWP->dl_cyclicprefix ? *current_BWP->dl_cyclicprefix : 0;
     // Codeword information
     pdsch_pdu->NrOfCodewords = 1;
     //number of information bits per 1024 coded bits expressed in 0.1 bit units
@@ -1096,7 +1081,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
     int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
     // Maximum number of PRBs across all configured DL BWPs
-    int bw_tbslbrm = get_bw_tbslbrm(genericParameters, cg);
+    int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, cg);
     pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ps->mcsTableIdx,
                                                                          bw_tbslbrm,
                                                                          nl_tbslbrm);

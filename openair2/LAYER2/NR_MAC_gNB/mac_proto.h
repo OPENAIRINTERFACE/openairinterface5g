@@ -271,7 +271,7 @@ void find_search_space(int ss_type,
 
 void nr_configure_pdcch(nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu,
                         NR_ControlResourceSet_t *coreset,
-                        NR_BWP_t *bwp,
+                        bool is_sib1,
                         NR_sched_pdcch_t *pdcch);
 
 NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
@@ -399,6 +399,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                       NR_UE_BWP_t *BWP,
                       NR_ServingCellConfigCommon_t *scc,
                       NR_UE_sched_ctrl_t *sched_ctrl,
+                      NR_RA_t *ra,
                       NR_CellGroupConfig_t *CellGroup);
 
 NR_UE_info_t* add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);

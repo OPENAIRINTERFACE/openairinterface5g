@@ -695,14 +695,11 @@ void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frame,
                            sub_frame_t slot) {
 
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels->ServingCellConfigCommon;
-  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-
-
   UE_iterator(RC.nrmac[Mod_idP]->UE_info.list, UE ) {
     const NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_BWP_t *BWP = &UE->current_BWP;
+    const int n_slots_frame = nr_slots_per_frame[BWP->ul_scs];
     if ((sched_ctrl->rrc_processing_timer > 0) || (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0)) {
       continue;
     }
@@ -761,7 +758,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->resource_indicator = res_index;
       curr_pucch->csi_bits += nr_get_csi_bitlen(UE,csi_report_id);
 
-      int bwp_start = NRRIV2PRBOFFSET(BWP->ul_genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+      int bwp_start = BWP->ul_BWPStart;
 
       // going through the list of PUCCH resources to find the one indexed by resource_id
       uint16_t *vrb_map_UL = &RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
@@ -1313,11 +1310,12 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
                               NR_ServingCellConfigCommon_t *scc)
 {
   /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
-  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   uint8_t *payload = uci_pdu->csi_part1.csi_part1_payload;
   uint16_t bitlen = uci_pdu->csi_part1.csi_part1_bit_len;
   NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type = NR_CSI_ReportConfig__reportQuantity_PR_NOTHING;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
+  const int n_slots_frame = nr_slots_per_frame[BWP->ul_scs];
   int cumul_bits = 0;
   int r_index = -1;
   for (int csi_report_id = 0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
@@ -1607,7 +1605,8 @@ int nr_acknack_scheduling(int mod_id,
   const int CC_id = 0;
   const int minfbtime = RC.nrmac[mod_id]->minRXTXTIMEpdsch;
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels[CC_id].ServingCellConfigCommon;
-  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
+  const int n_slots_frame = nr_slots_per_frame[BWP->ul_scs];
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   AssertFatal(tdd || RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD, "Dynamic TDD not handled yet\n");
   const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
@@ -1622,7 +1621,6 @@ int nr_acknack_scheduling(int mod_id,
    *   later)
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_BWP_t *BWP = &UE->current_BWP;
   NR_CellGroupConfig_t *cg = UE->CellGroup;
 
   NR_PUCCH_Config_t *pucch_Config = NULL;
@@ -1636,8 +1634,8 @@ int nr_acknack_scheduling(int mod_id,
     pucch_Config = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
   }
 
-  int bwp_start = NRRIV2PRBOFFSET(BWP->ul_genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-  int bwp_size = NRRIV2BW(BWP->ul_genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  int bwp_start = BWP->ul_BWPStart;
+  int bwp_size = BWP->ul_BWPSize;
 
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
   LOG_D(NR_MAC, "In %s: %4d.%2d Trying to allocate pucch, current DAI %d\n", __FUNCTION__, frame, slot, pucch->dai_c);
@@ -1692,19 +1690,11 @@ int nr_acknack_scheduling(int mod_id,
 
   LOG_D(NR_MAC, "In %s: pucch_acknak 1. DL %4d.%2d, UL_ACK %4d.%2d, DAI_C %d\n", __FUNCTION__, frame, slot, pucch->frame, pucch->ul_slot, pucch->dai_c);
 
-  // this is hardcoded for now as ue specific only if we are not on the initialBWP (to be fixed to allow ue_Specific also on initialBWP
-  NR_BWP_UplinkDedicated_t *ubwpd=NULL;
+  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_common;
+  if(is_common == 0)
+   ss_type = sched_ctrl->search_space->searchSpaceType->present;
 
-  if (cg &&
-      cg->spCellConfig &&
-      cg->spCellConfig->spCellConfigDedicated &&
-      cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
-    ubwpd = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
-
-  NR_SearchSpace__searchSpaceType_PR ss_type = (is_common==0 && (sched_ctrl->active_bwp || ubwpd)) ? NR_SearchSpace__searchSpaceType_PR_ue_Specific: NR_SearchSpace__searchSpaceType_PR_common;
   uint8_t pdsch_to_harq_feedback[8];
-
   int max_fb_time = 0;
   get_pdsch_to_harq_feedback(UE, ss_type, &max_fb_time, pdsch_to_harq_feedback);
 
@@ -1727,7 +1717,6 @@ int nr_acknack_scheduling(int mod_id,
       // we cannot reach this timing anymore, allocate and try again
       const int f = pucch->frame;
       const int s = pucch->ul_slot;
-      const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
       LOG_D(NR_MAC, "In %s: %4d.%2d DAI > 0, cannot reach timing for pucch in %4d.%2d, advancing slot by 1 and trying again\n", __FUNCTION__, frame, slot, f, s);
       if (!(csi_pucch &&
           csi_pucch->csi_bits > 0 &&
@@ -1890,11 +1879,11 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
 {
   if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slot / 64], slot))
     return;
-  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels->ServingCellConfigCommon;
-  const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+
   UE_iterator(nrmac->UE_info.list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-
+    NR_UE_BWP_t *BWP = &UE->current_BWP;
+    const int n_slots_frame = nr_slots_per_frame[BWP->ul_scs];
     if (sched_ctrl->ul_failure==1) continue;
     NR_PUCCH_Config_t *pucch_Config = NULL;
     if (sched_ctrl->active_ubwp) {
