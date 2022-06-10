@@ -266,6 +266,7 @@ NR_ControlResourceSet_t *get_coreset(gNB_MAC_INST *nrmac,
                                      void *bwp,
                                      NR_SearchSpace_t *ss,
                                      NR_SearchSpace__searchSpaceType_PR ss_type) {
+
   NR_ControlResourceSetId_t coreset_id = *ss->controlResourceSetId;
 
   if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) { // common search space
@@ -297,29 +298,22 @@ NR_ControlResourceSet_t *get_coreset(gNB_MAC_INST *nrmac,
   }
 }
 
-NR_SearchSpace_t *get_searchspace(const NR_SIB1_t *sib1,
-                                  NR_ServingCellConfigCommon_t *scc,
+NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
                                   NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                                   NR_SearchSpace__searchSpaceType_PR target_ss) {
 
   int n = 0;
-  if(bwp_Dedicated) {
+  if(bwp_Dedicated)
     n = bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.count;
-  } else if(scc) {
+  else
     n = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.count;
-  } else {
-    n = sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.count;
-  }
 
   for (int i=0;i<n;i++) {
     NR_SearchSpace_t *ss = NULL;
-    if(bwp_Dedicated) {
+    if(bwp_Dedicated)
       ss = bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list.array[i];
-    } else if(scc) {
+    else
       ss = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.array[i];
-    } else {
-      ss = sib1->servingCellConfigCommon->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list.array[i];
-    }
     AssertFatal(ss->controlResourceSetId != NULL, "ss->controlResourceSetId is null\n");
     AssertFatal(ss->searchSpaceType != NULL, "ss->searchSpaceType is null\n");
     if (ss->searchSpaceType->present == target_ss) {
@@ -2324,19 +2318,27 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr)
   }
 }
 
-void configure_UE_BWP(NR_UE_BWP_t *BWP,
+void configure_UE_BWP(gNB_MAC_INST *nr_mac,
+                      NR_UE_BWP_t *BWP,
                       NR_ServingCellConfigCommon_t *scc,
+                      NR_UE_sched_ctrl_t *sched_ctrl,
                       NR_CellGroupConfig_t *CellGroup) {
 
   NR_BWP_Downlink_t *dl_bwp = NULL;
   NR_BWP_Uplink_t *ul_bwp = NULL;
+  NR_BWP_DownlinkDedicated_t *bwpd = NULL;
+  NR_BWP_UplinkDedicated_t *ubwpd = NULL;
+
+  int target_ss;
 
   if (CellGroup &&
       CellGroup->spCellConfig &&
       CellGroup->spCellConfig->spCellConfigDedicated) {
-    const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
 
-    // (re)configuring BWP ID
+    const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
+    target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+
+    // (re)configuring BWP
     // TODO BWP switching not via RRC reconfiguration
     // via RRC if firstActiveXlinkBWP_Id is NULL, MAC stays on the same BWP as before
     if (servingCellConfig->firstActiveDownlinkBWP_Id) {
@@ -2349,10 +2351,9 @@ void configure_UE_BWP(NR_UE_BWP_t *BWP,
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
     if (BWP->dl_bwp_id>0) {
       for (int i=0; i<bwpList->list.count; i++) {
-        if(dl_bwp->bwp_Id == BWP->dl_bwp_id) {
-          dl_bwp = bwpList->list.array[i - 1];
+        dl_bwp = bwpList->list.array[i];
+        if(dl_bwp->bwp_Id == BWP->dl_bwp_id)
           break;
-        }
       }
       AssertFatal(dl_bwp!=NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n",BWP->dl_bwp_id);
     }
@@ -2360,15 +2361,30 @@ void configure_UE_BWP(NR_UE_BWP_t *BWP,
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
     if (BWP->ul_bwp_id>0) {
       for (int i=0; i<ubwpList->list.count; i++) {
-        if(ul_bwp->bwp_Id == BWP->ul_bwp_id) {
-          ul_bwp = ubwpList->list.array[i - 1];
+        ul_bwp = ubwpList->list.array[i];
+        if(ul_bwp->bwp_Id == BWP->ul_bwp_id)
           break;
-        }
       }
       AssertFatal(ul_bwp!=NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n",BWP->ul_bwp_id);
     }
+
+    // selection of dedicated BWPs
+    if(dl_bwp)
+      bwpd = dl_bwp->bwp_Dedicated;
+    else
+      bwpd = servingCellConfig->initialDownlinkBWP;
+    if(ul_bwp)
+      ubwpd = ul_bwp->bwp_Dedicated;
+    else
+      ubwpd = servingCellConfig->uplinkConfig->initialUplinkBWP;
+  }
+  else {
+    BWP->dl_bwp_id = 0;
+    BWP->ul_bwp_id = 0;
+    target_ss = NR_SearchSpace__searchSpaceType_PR_common;
   }
 
+  // acquiring generic parameters
   BWP->dl_genericParameters = (BWP->dl_bwp_id>0 && dl_bwp) ?
     &dl_bwp->bwp_Common->genericParameters:
     &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
@@ -2376,6 +2392,24 @@ void configure_UE_BWP(NR_UE_BWP_t *BWP,
   BWP->ul_genericParameters = (BWP->ul_bwp_id>0 && ul_bwp) ?
     &ul_bwp->bwp_Common->genericParameters:
     &scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+
+  if(sched_ctrl) {
+    sched_ctrl->search_space = get_searchspace(scc,
+                                               bwpd,
+                                               target_ss);
+    sched_ctrl->coreset = get_coreset(nr_mac,
+                                      scc,
+                                      bwpd,
+                                      sched_ctrl->search_space,
+                                      target_ss);
+
+    sched_ctrl->sched_pdcch = set_pdcch_structure(nr_mac,
+                                                  sched_ctrl->search_space,
+                                                  sched_ctrl->coreset,
+                                                  scc,
+                                                  BWP->dl_genericParameters,
+                                                  nr_mac->type0_PDCCH_CSS_config);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -2428,7 +2462,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   // initialize UE BWP information
   NR_UE_BWP_t *BWP = &UE->current_BWP;
   memset(BWP, 0, sizeof(*BWP));
-  configure_UE_BWP(BWP, scc, CellGroup);
+  configure_UE_BWP(nr_mac, BWP, scc, sched_ctrl, CellGroup);
 
   /* set illegal time domain allocation to force recomputation of all fields */
   sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
@@ -2440,23 +2474,6 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
 
   sched_ctrl->active_bwp = bwpList && BWP->dl_bwp_id > 0 ? bwpList->list.array[BWP->dl_bwp_id - 1] : NULL;
 
-  const int target_ss = sched_ctrl->active_bwp ? NR_SearchSpace__searchSpaceType_PR_ue_Specific : NR_SearchSpace__searchSpaceType_PR_common;
-  const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  sched_ctrl->search_space = get_searchspace(sib1,
-                                             scc,
-                                             sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
-                                             target_ss);
-  sched_ctrl->coreset = get_coreset(nr_mac,
-                                    scc,
-                                    sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL,
-                                    sched_ctrl->search_space,
-                                    target_ss);
-  sched_ctrl->sched_pdcch = set_pdcch_structure(nr_mac,
-                                                sched_ctrl->search_space,
-                                                sched_ctrl->coreset,
-                                                scc,
-                                                BWP->dl_genericParameters,
-                                                NULL);
   sched_ctrl->next_dl_bwp_id = -1;
   sched_ctrl->next_ul_bwp_id = -1;
   const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
@@ -2944,30 +2961,20 @@ void nr_mac_update_timers(module_id_t module_id,
           }
         }
 
-        configure_UE_BWP(BWP, scc, UE->CellGroup);
+        configure_UE_BWP(RC.nrmac[module_id], BWP, scc, sched_ctrl, UE->CellGroup);
 
         // Update coreset/searchspace
         NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
         NR_BWP_DownlinkDedicated_t *bwpd = NULL;
-        int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
         if (bwp) {
-          target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
           bwpd = sched_ctrl->active_bwp->bwp_Dedicated;
         } else if (cg &&
                    cg->spCellConfig &&
                    cg->spCellConfig->spCellConfigDedicated &&
                    (cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
-          target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
           bwpd = cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
         }
-        sched_ctrl->search_space = get_searchspace(sib1, scc, (void*)bwpd, target_ss);
-        sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, (void*)bwpd, sched_ctrl->search_space, target_ss);
-        sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[module_id],
-                                                      sched_ctrl->search_space,
-                                                      sched_ctrl->coreset,
-                                                      scc,
-                                                      BWP->dl_genericParameters,
-                                                      RC.nrmac[module_id]->type0_PDCCH_CSS_config);
+
         sched_ctrl->maxL = 2;
         if (cg &&
             cg->spCellConfig &&

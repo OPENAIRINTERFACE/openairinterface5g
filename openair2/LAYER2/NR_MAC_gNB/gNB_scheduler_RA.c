@@ -570,7 +570,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
         ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
 
       // Configure RA BWP
-      configure_UE_BWP(&ra->BWP, scc, ra->CellGroup);
+      configure_UE_BWP(nr_mac, &ra->BWP, scc, NULL, ra->CellGroup);
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
@@ -601,7 +601,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
       ra->timing_offset = timing_offset;
       ra->preamble_slot = slotP;
 
-      NR_SearchSpaceId_t	ra_SearchSpace = 0;
+      NR_SearchSpaceId_t ra_SearchSpace = 0;
       struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = NULL;
       NR_BWP_Downlink_t *bwp=NULL;
       if (ra->CellGroup && ra->CellGroup->spCellConfig && ra->CellGroup->spCellConfig->spCellConfigDedicated) {
