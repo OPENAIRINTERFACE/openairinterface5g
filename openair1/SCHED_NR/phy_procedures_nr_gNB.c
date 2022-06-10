@@ -905,41 +905,64 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].report_type = %i\n", num_srs, gNB->srs_pdu_list[num_srs].report_type);
 #endif
 
-        nfapi_nr_srs_beamforming_report_t *nr_srs_beamforming_report = (nfapi_nr_srs_beamforming_report_t*) calloc(1,sizeof(nfapi_nr_srs_beamforming_report_t));
-        nr_srs_beamforming_report->prg_size = srs_pdu->beamforming.prg_size;
-        nr_srs_beamforming_report->num_symbols = 1<<srs_pdu->num_symbols;
-        nr_srs_beamforming_report->wide_band_snr = srs_est >= 0 ? (*gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
-        nr_srs_beamforming_report->num_reported_symbols = 1<<srs_pdu->num_symbols;
-        nr_srs_beamforming_report->prgs = (nfapi_nr_srs_reported_symbol_t*) calloc(1, nr_srs_beamforming_report->num_reported_symbols*sizeof(nfapi_nr_srs_reported_symbol_t));
-        fill_srs_reported_symbol_list(&nr_srs_beamforming_report->prgs[0],
-                                      srs_pdu,
-                                      gNB->frame_parms.N_RB_UL,
-                                      gNB->nr_srs_info[i]->snr_per_rb,
-                                      srs_est);
-
-#ifdef SRS_IND_DEBUG
-        LOG_I(NR_PHY, "nr_srs_beamforming_report->prg_size = %i\n", nr_srs_beamforming_report->prg_size);
-        LOG_I(NR_PHY, "nr_srs_beamforming_report->num_symbols = %i\n", nr_srs_beamforming_report->num_symbols);
-        LOG_I(NR_PHY, "nr_srs_beamforming_report->wide_band_snr = %i (%i dB)\n", nr_srs_beamforming_report->wide_band_snr, (nr_srs_beamforming_report->wide_band_snr>>1)-64);
-        LOG_I(NR_PHY, "nr_srs_beamforming_report->num_reported_symbols = %i\n", nr_srs_beamforming_report->num_reported_symbols);
-        LOG_I(NR_PHY, "nr_srs_beamforming_report->prgs[0].num_prgs = %i\n", nr_srs_beamforming_report->prgs[0].num_prgs);
-        for(int prg_idx = 0; prg_idx < nr_srs_beamforming_report->prgs[0].num_prgs; prg_idx++) {
-          LOG_I(NR_PHY, "nr_srs_beamforming_report->prgs[0].prg_list[%3i].rb_snr = %i (%i dB)\n",
-                prg_idx,
-                nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr,
-                (nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr>>1)-64);
-        }
-#endif
-
         if(!gNB->srs_pdu_list[num_srs].report_tlv) {
           gNB->srs_pdu_list[num_srs].report_tlv = (nfapi_srs_report_tlv_t*) calloc(1, sizeof(nfapi_srs_report_tlv_t));
         }
         gNB->srs_pdu_list[num_srs].report_tlv->tag = 0;
-        gNB->srs_pdu_list[num_srs].report_tlv->length = pack_nr_srs_beamforming_report(nr_srs_beamforming_report,
-                                                                                       gNB->srs_pdu_list[num_srs].report_tlv->value,
-                                                                                       16384*sizeof(uint32_t));
+
+        switch (gNB->srs_pdu_list[num_srs].srs_usage) {
+
+          case NR_SRS_ResourceSet__usage_beamManagement: {
+
+            nfapi_nr_srs_beamforming_report_t *nr_srs_beamforming_report = (nfapi_nr_srs_beamforming_report_t*) calloc(1,sizeof(nfapi_nr_srs_beamforming_report_t));
+            nr_srs_beamforming_report->prg_size = srs_pdu->beamforming.prg_size;
+            nr_srs_beamforming_report->num_symbols = 1<<srs_pdu->num_symbols;
+            nr_srs_beamforming_report->wide_band_snr = srs_est >= 0 ? (*gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
+            nr_srs_beamforming_report->num_reported_symbols = 1<<srs_pdu->num_symbols;
+            nr_srs_beamforming_report->prgs = (nfapi_nr_srs_reported_symbol_t*) calloc(1, nr_srs_beamforming_report->num_reported_symbols*sizeof(nfapi_nr_srs_reported_symbol_t));
+            fill_srs_reported_symbol_list(&nr_srs_beamforming_report->prgs[0],
+                                          srs_pdu,
+                                          gNB->frame_parms.N_RB_UL,
+                                          gNB->nr_srs_info[i]->snr_per_rb,
+                                          srs_est);
 
 #ifdef SRS_IND_DEBUG
+            LOG_I(NR_PHY, "nr_srs_beamforming_report->prg_size = %i\n", nr_srs_beamforming_report->prg_size);
+            LOG_I(NR_PHY, "nr_srs_beamforming_report->num_symbols = %i\n", nr_srs_beamforming_report->num_symbols);
+            LOG_I(NR_PHY, "nr_srs_beamforming_report->wide_band_snr = %i (%i dB)\n", nr_srs_beamforming_report->wide_band_snr, (nr_srs_beamforming_report->wide_band_snr>>1)-64);
+            LOG_I(NR_PHY, "nr_srs_beamforming_report->num_reported_symbols = %i\n", nr_srs_beamforming_report->num_reported_symbols);
+            LOG_I(NR_PHY, "nr_srs_beamforming_report->prgs[0].num_prgs = %i\n", nr_srs_beamforming_report->prgs[0].num_prgs);
+            for(int prg_idx = 0; prg_idx < nr_srs_beamforming_report->prgs[0].num_prgs; prg_idx++) {
+              LOG_I(NR_PHY, "nr_srs_beamforming_report->prgs[0].prg_list[%3i].rb_snr = %i (%i dB)\n",
+                    prg_idx,
+                    nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr,
+                    (nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr>>1)-64);
+            }
+#endif
+
+            gNB->srs_pdu_list[num_srs].report_tlv->length = pack_nr_srs_beamforming_report(nr_srs_beamforming_report,
+                                                                                           gNB->srs_pdu_list[num_srs].report_tlv->value,
+                                                                                           16384*sizeof(uint32_t));
+            break;
+          }
+
+          case NR_SRS_ResourceSet__usage_codebook: {
+            gNB->srs_pdu_list[num_srs].report_tlv->length = 0;
+            break;
+          }
+
+          case NR_SRS_ResourceSet__usage_nonCodebook:
+          case NR_SRS_ResourceSet__usage_antennaSwitching:
+            LOG_W(NR_PHY, "PHY procedures for this SRS usage are not implemented yet!\n");
+            gNB->srs_pdu_list[num_srs].report_tlv->length = 0;
+            break;
+
+          default:
+            AssertFatal(1==0,"Invalid SRS usage\n");
+        }
+
+#ifdef SRS_IND_DEBUG
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].report_tlv->tag = %i\n", num_srs, gNB->srs_pdu_list[num_srs].report_tlv->tag);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].report_tlv->length = %i\n", num_srs, gNB->srs_pdu_list[num_srs].report_tlv->length);
         char *value = (char*)gNB->srs_pdu_list[num_srs].report_tlv->value;
         for(int b = 0; b < gNB->srs_pdu_list[num_srs].report_tlv->length; b++) {

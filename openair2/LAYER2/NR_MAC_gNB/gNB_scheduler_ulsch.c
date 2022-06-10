@@ -779,54 +779,76 @@ void handle_nr_srs_measurements(const module_id_t module_id,
   LOG_I(NR_MAC, "srs_ind->report_type = %i\n", srs_ind->report_type);
 #endif
 
-  nfapi_nr_srs_beamforming_report_t *nr_srs_beamforming_report = (nfapi_nr_srs_beamforming_report_t*) calloc(1,sizeof(nfapi_nr_srs_beamforming_report_t));
-  unpack_nr_srs_beamforming_report(srs_ind->report_tlv->value,
-                                   srs_ind->report_tlv->length,
-                                   nr_srs_beamforming_report,
-                                   sizeof(nfapi_nr_srs_beamforming_report_t));
-
-#ifdef SRS_IND_DEBUG
-  LOG_I(NR_MAC, "nr_srs_beamforming_report->prg_size = %i\n", nr_srs_beamforming_report->prg_size);
-  LOG_I(NR_MAC, "nr_srs_beamforming_report->num_symbols = %i\n", nr_srs_beamforming_report->num_symbols);
-  LOG_I(NR_MAC, "nr_srs_beamforming_report->wide_band_snr = %i (%i dB)\n", nr_srs_beamforming_report->wide_band_snr, (nr_srs_beamforming_report->wide_band_snr>>1)-64);
-  LOG_I(NR_MAC, "nr_srs_beamforming_report->num_reported_symbols = %i\n", nr_srs_beamforming_report->num_reported_symbols);
-  LOG_I(NR_MAC, "nr_srs_beamforming_report->prgs[0].num_prgs = %i\n", nr_srs_beamforming_report->prgs[0].num_prgs);
-  for(int prg_idx = 0; prg_idx < nr_srs_beamforming_report->prgs[0].num_prgs; prg_idx++) {
-    LOG_I(NR_MAC, "nr_srs_beamforming_report->prgs[0].prg_list[%3i].rb_snr = %i (%i dB)\n",
-          prg_idx,
-          nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr,
-          (nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr>>1)-64);
-  }
-#endif
-
-  NR_UE_info_t* UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, srs_ind->rnti);
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, srs_ind->rnti);
   if (!UE) {
     LOG_W(NR_MAC, "Could not find UE %04x\n", srs_ind->rnti);
     return;
   }
 
-  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
-  NR_mac_stats_t *stats = &UE->mac_stats;
-  stats->srs_wide_band_snr = (nr_srs_beamforming_report->wide_band_snr>>1)-64;
+  switch (srs_ind->srs_usage) {
 
-  int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
-  uint16_t *ulprbbl = nr_mac->ulprbbl;
+    case NR_SRS_ResourceSet__usage_beamManagement: {
 
-  uint8_t num_rbs = nr_srs_beamforming_report->prg_size * nr_srs_beamforming_report->prgs[0].num_prgs;
-  memset(ulprbbl, 0, num_rbs*sizeof(uint16_t));
-  for (int rb = 0; rb < num_rbs; rb++) {
-    int snr = (nr_srs_beamforming_report->prgs[0].prg_list[rb/nr_srs_beamforming_report->prg_size].rb_snr>>1)-64;
-    if (snr < ul_prbblack_SNR_threshold) {
-      ulprbbl[rb] = 0x3FFF; // all symbols taken
+      nfapi_nr_srs_beamforming_report_t *nr_srs_beamforming_report = (nfapi_nr_srs_beamforming_report_t*) calloc(1,sizeof(nfapi_nr_srs_beamforming_report_t));
+      unpack_nr_srs_beamforming_report(srs_ind->report_tlv->value,
+                                       srs_ind->report_tlv->length,
+                                       nr_srs_beamforming_report,
+                                       sizeof(nfapi_nr_srs_beamforming_report_t));
+
+#ifdef SRS_IND_DEBUG
+      LOG_I(NR_MAC, "nr_srs_beamforming_report->prg_size = %i\n", nr_srs_beamforming_report->prg_size);
+      LOG_I(NR_MAC, "nr_srs_beamforming_report->num_symbols = %i\n", nr_srs_beamforming_report->num_symbols);
+      LOG_I(NR_MAC, "nr_srs_beamforming_report->wide_band_snr = %i (%i dB)\n", nr_srs_beamforming_report->wide_band_snr, (nr_srs_beamforming_report->wide_band_snr>>1)-64);
+      LOG_I(NR_MAC, "nr_srs_beamforming_report->num_reported_symbols = %i\n", nr_srs_beamforming_report->num_reported_symbols);
+      LOG_I(NR_MAC, "nr_srs_beamforming_report->prgs[0].num_prgs = %i\n", nr_srs_beamforming_report->prgs[0].num_prgs);
+      for(int prg_idx = 0; prg_idx < nr_srs_beamforming_report->prgs[0].num_prgs; prg_idx++) {
+        LOG_I(NR_MAC, "nr_srs_beamforming_report->prgs[0].prg_list[%3i].rb_snr = %i (%i dB)\n",
+              prg_idx,
+              nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr,
+              (nr_srs_beamforming_report->prgs[0].prg_list[prg_idx].rb_snr>>1)-64);
+      }
+#endif
+
+      gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+      NR_mac_stats_t *stats = &UE->mac_stats;
+      stats->srs_wide_band_snr = (nr_srs_beamforming_report->wide_band_snr>>1)-64;
+
+      int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
+      uint16_t *ulprbbl = nr_mac->ulprbbl;
+
+      uint8_t num_rbs = nr_srs_beamforming_report->prg_size * nr_srs_beamforming_report->prgs[0].num_prgs;
+      memset(ulprbbl, 0, num_rbs*sizeof(uint16_t));
+      for (int rb = 0; rb < num_rbs; rb++) {
+        int snr = (nr_srs_beamforming_report->prgs[0].prg_list[rb/nr_srs_beamforming_report->prg_size].rb_snr>>1)-64;
+        if (snr < ul_prbblack_SNR_threshold) {
+          ulprbbl[rb] = 0x3FFF; // all symbols taken
+        }
+        LOG_D(NR_MAC, "ulprbbl[%3i] = 0x%x\n", rb, ulprbbl[rb]);
+      }
+
+      break;
     }
-    LOG_D(NR_MAC, "ulprbbl[%3i] = 0x%x\n", rb, ulprbbl[rb]);
+
+    case NR_SRS_ResourceSet__usage_codebook: {
+
+      // TODO: This should be improved
+      NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+      NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
+      ps->srs_feedback.sri = NR_SRS_SRI_0;
+      ps->srs_feedback.tpmi = 0;
+
+      break;
+    }
+
+    case NR_SRS_ResourceSet__usage_nonCodebook:
+    case NR_SRS_ResourceSet__usage_antennaSwitching:
+      LOG_W(NR_MAC, "MAC procedures for this SRS usage are not implemented yet!\n");
+      break;
+
+    default:
+      AssertFatal(1==0,"Invalid SRS usage\n");
   }
 
-  // TODO: This should be improved
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
-  ps->srs_feedback.sri = NR_SRS_SRI_0;
-  ps->srs_feedback.tpmi = 0;
 }
 
 long get_K2(NR_ServingCellConfigCommon_t *scc,
