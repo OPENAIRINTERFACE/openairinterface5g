@@ -2919,7 +2919,19 @@ void nr_mac_update_timers(module_id_t module_id,
         // If needed, update the Dedicated BWP
         const int current_bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
         const int current_ubwp_id = sched_ctrl->active_ubwp ? sched_ctrl->active_ubwp->bwp_Id : 0;
-        if (spCellConfigDedicated &&
+        if (UE->Msg3_dcch_dtch) {
+          // Must use Initial Downlink BWP when there is RA with Msg3 through DCCH
+          sched_ctrl->active_bwp = NULL;
+          if (current_bwp_id != 0) {
+            LOG_I(NR_MAC, "Changing to Initial DL-BWP\n");
+          }
+          // Must use Initial Uplink BWP when there is RA with Msg3 through DCCH
+          sched_ctrl->active_ubwp = NULL;
+          if (current_ubwp_id != 0) {
+            LOG_I(NR_MAC, "Changing to Initial UL-BWP\n");
+          }
+          UE->Msg3_dcch_dtch = false;
+        } else if (spCellConfigDedicated &&
             spCellConfigDedicated->downlinkBWP_ToAddModList &&
             spCellConfigDedicated->uplinkConfig &&
             spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList) {
