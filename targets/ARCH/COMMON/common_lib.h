@@ -254,6 +254,8 @@ typedef struct {
   int nr_band;
   //! NR scs for raster
   int nr_scs_for_raster;
+  //! Core IDs for RX FH
+  int fh_cores[4];
 } openair0_config_t;
 
 /*! \brief RF mapping */

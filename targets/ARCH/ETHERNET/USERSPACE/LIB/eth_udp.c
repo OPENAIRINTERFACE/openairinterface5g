@@ -43,6 +43,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include <sched.h>
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
@@ -148,11 +149,11 @@ int eth_socket_init_udp(openair0_device *device) {
       printf("ETHERNET: Cannot set SO_NO_CHECK option on socket (user %d)",i);
       exit(0);
     }
+#if 0 /*def SO_ATTACH_REUSEPORT_EBPF*/    
     if (setsockopt(eth->sockfdd[i], SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int))) {
       printf("ETHERNET: Cannot set SO_REUSEPORT option on socket (user %d)",i);
       exit(0);
     }
-#ifdef SO_ATTACH_REUSEPORT_EBPF*/    
     struct sock_filter code[]={
               { BPF_LD  | BPF_W | BPF_ABS, 0, 0, SKF_AD_OFF + SKF_AD_CPU }, // A = #cpu
               { BPF_RET | BPF_A, 0, 0, 0 },                                 // return A
@@ -451,8 +452,8 @@ void *udp_read_thread(void *arg) {
       // zero-copy and corrected the header component.   	 
       memcpy((void*)(device->openair0_cfg->rxbase[aid]+offset),
              (void*)&buffer[APP_HEADER_SIZE_BYTES],
-             count-APP_HEADER_SIZE_BYTES); 
-      LOG_D(PHY,"thread_id %d, aid %d, TS %llu, TS0 %llu, offset %d\n",u->thread_id,aid,(unsigned long long)TS,fhstate->TS0,offset);
+             count-APP_HEADER_SIZE_BYTES);
+      LOG_D(PHY,"thread_id %d (%d), aid %d, TS %llu, TS0 %llu, offset %d\n",u->thread_id,sched_getcpu(),aid,(unsigned long long)TS,fhstate->TS0,offset);
     }
     sleep(1);
   }
@@ -473,7 +474,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uin
   // poll/sleep until we accumulated enough samples on each antenna port
   int count=0;
   while (fhstate->first_read == 1 && min_TS < (fhstate->TS0+prev_read_TS + nsamps)) {
-    usleep(100);
+    usleep(50);
     min_TS = fhstate->TS[0];
     for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,fhstate->TS[i]);
     count++;

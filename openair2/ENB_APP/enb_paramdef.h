@@ -103,11 +103,17 @@ typedef enum {
 #define CONFIG_STRING_RU_SL_AHEAD                 "sl_ahead"
 #define CONFIG_STRING_RU_NR_FLAG                  "nr_flag"
 #define CONFIG_STRING_RU_NR_SCS_FOR_RASTER        "nr_scs_for_raster"
+#define CONFIG_STRING_RU_RXFH_CORE_ID             "rxfh_core_id"
+#define CONFIG_STRING_RU_TP_CORES                 "tp_cores"
+#define CONFIG_STRING_RU_NUM_TP_CORES             "num_tp_cores"
 
 #define HLP_RU_SF_AHEAD "LTE TX processing advance"
 #define HLP_RU_SL_AHEAD "NR TX processing advance"
 #define HLP_RU_NR_FLAG "Use NR numerology (for AW2SORI)"
 #define HLP_RU_NR_SCS_FOR_RASTER "NR SCS for raster (for AW2SORI)"
+#define HLP_RU_RXFH_CORE_ID "Core ID for RX Fronthaul thread (ECPRI IF5)"
+#define HLP_RU_TP_CORES "List of cores for RU ThreadPool"
+#define HLP_RU_NUM_TP_CORES "Number of cores for RU ThreadPool"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -142,6 +148,9 @@ typedef enum {
 #define RU_SL_AHEAD                   30 
 #define RU_NR_FLAG                    31 
 #define RU_NR_SCS_FOR_RASTER          32
+#define RU_RXFH_CORE_ID               33
+#define RU_TP_CORES                   34
+#define RU_NUM_TP_CORES               35
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
@@ -180,6 +189,9 @@ typedef enum {
     {CONFIG_STRING_RU_SL_AHEAD,          HLP_RU_SL_AHEAD,      0,       iptr:NULL,       defintval:6,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_NR_FLAG,           HLP_RU_NR_FLAG,       0,       iptr:NULL,       defintval:0,             TYPE_INT,         0}, \
     {CONFIG_STRING_RU_NR_SCS_FOR_RASTER, HLP_RU_NR_SCS_FOR_RASTER, 0,   iptr:NULL,       defintval:1,             TYPE_INT,         0}, \
+    {CONFIG_STRING_RU_RXFH_CORE_ID, HLP_RU_RXFH_CORE_ID,       0,       uptr:NULL,       defintval:0,             TYPE_UINT,         0}, \
+    {CONFIG_STRING_RU_TP_CORES, HLP_RU_TP_CORES,               0,       uptr:NULL,       defintarrayval:DEFRUTPCORES,  TYPE_INTARRAY,    8}, \
+    {CONFIG_STRING_RU_NUM_TP_CORES, HLP_RU_NUM_TP_CORES,       0,       uptr:NULL,       defintval:4,             TYPE_UINT,         0}, \
   }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/

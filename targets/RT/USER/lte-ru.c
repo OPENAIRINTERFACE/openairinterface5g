@@ -66,6 +66,8 @@
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 static int DEFBFW[] = {0x00007fff};
+static int DEFRUTPCORES[] = {2,4,6,8};
+
 
 #include "ENB_APP/enb_paramdef.h"
 #include "common/config/config_userapi.h"

@@ -668,7 +668,12 @@ typedef struct RU_t_s {
   notifiedFIFO_t *respfeprx;
   /// to signal end of feptx
   notifiedFIFO_t *respfeptx;
-
+  /// core id for RX fhaul (IF5 ECPRI)
+  int rxfh_core_id;
+  /// list of cores for RU ThreadPool
+  int tpcores[16];
+  /// number of cores for RU ThreadPool
+  int num_tpcores;
 } RU_t;
 
 

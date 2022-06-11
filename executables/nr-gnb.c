@@ -375,6 +375,8 @@ void *tx_reorder_thread(void* param) {
   resL1Reserve=pullTpool(gNB->L1_tx_out, gNB->threadPool);
   int next_tx_slot=((processingData_L1tx_t *)NotifiedFifoData(resL1Reserve))->slot;
   
+  LOG_I(PHY,"tx_reorder_thread started\n");
+  
   while (!oai_exit) {
     notifiedFIFO_elt_t *resL1;
     if (resL1Reserve) {
@@ -433,6 +435,7 @@ void init_gNB_Tpool(int inst) {
     s_offset += 3;
   }
   if (getenv("noThreads")) strcpy(pool, "n");
+  LOG_I(PHY,"Initializing gNB ThreadPool with %s\n",pool);
   initTpool(pool, gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
   // ULSCH decoder result FIFO
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
@@ -465,7 +468,8 @@ void init_gNB_Tpool(int inst) {
   if (!get_softmodem_params()->emulate_l1) 
      threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
 
-  threadCreate(&proc->pthread_tx_reorder, tx_reorder_thread, (void *)gNB, "thread_tx_reorder", -1, OAI_PRIORITY_RT_MAX);
+  LOG_I(PHY,"Creating thread for TX reordering and dispatching to RU\n");
+  threadCreate(&proc->pthread_tx_reorder, tx_reorder_thread, (void *)gNB, "thread_tx_reorder", gNB->RU_list[0]->tpcores[1], OAI_PRIORITY_RT_MAX);
 
 }
 

@@ -64,7 +64,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 static int DEFBFW[] = {0x00007fff};
-
+static int DEFRUTPCORES[] = {2,4,6,8};
 //static int DEFNRBANDS[] = {7};
 //static int DEFGNBS[] = {0};
 
@@ -279,6 +279,7 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
   int offset = ru->nr_frame_parms->get_samples_slot_timestamp(slot,ru->nr_frame_parms,0);
   start_meas(&ru->tx_fhaul);
+ /* 
   for (int aid=0;aid<ru->nb_tx;aid++)  
     ru->ifdevice.trx_write_func2(&ru->ifdevice,
     		                 timestamp,
@@ -286,6 +287,7 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
 				 aid,
 			         ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
 			         0); 
+  */
   stop_meas(&ru->tx_fhaul);
   LOG_D(PHY,"IF5 TX %d.%d\n",frame,slot);
 }
@@ -338,7 +340,8 @@ void fh_if5_south_in(RU_t *ru,
   }
 
   stop_meas(&ru->rx_fhaul);
-  LOG_D(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0));
+  double fhtime = ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0);
+  if (fhtime > 800) LOG_W(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0));
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );
 
@@ -1555,7 +1558,7 @@ void init_RU_proc(RU_t *ru) {
 
   pthread_mutex_init( &proc->mutex_emulateRF,NULL);
   pthread_cond_init( &proc->cond_emulateRF, NULL);
-  threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "thread_FH", -1, OAI_PRIORITY_RT_MAX );
+  threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "ru_thread", ru->tpcores[0], OAI_PRIORITY_RT_MAX );
 
   if(emulate_rf)
     threadCreate( &proc->pthread_emulateRF, emulatedRF_thread, (void *)proc, "emulateRF", -1, OAI_PRIORITY_RT );
@@ -1872,7 +1875,7 @@ void set_function_spec_param(RU_t *ru) {
 
     case REMOTE_IF5: // the remote unit is IF5 RRU
       ru->do_prach               = 0;
-      ru->txfh_in_fep            = 1;
+      ru->txfh_in_fep            = 0;
 #ifdef USE_TPOOL
       ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_tp   : nr_fep_full;     // this is frequency-shift + DFTs
       ru->feptx_prec             = (get_thread_worker_conf() == WORKER_ENABLE) ? NULL                  : nr_feptx_prec;          // need to do transmit Precoding + IDFTs
@@ -2020,16 +2023,16 @@ void init_NR_RU(char *rf_config_file) {
     set_function_spec_param(ru);
     LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
     init_RU_proc(ru);
-    int threadCnt = ru->nb_rx+ru->nb_tx;
+    int threadCnt = ru->num_tpcores;
     if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
+    else LOG_I(PHY,"RU Thread pool size %d\n",threadCnt);
     char pool[80];
-    sprintf(pool,"-1");
-    int s_offset = 0;
+    int s_offset = sprintf(pool,"%d",ru->tpcores[0]);
     for (int icpu=1; icpu<threadCnt; icpu++) {
-       sprintf(pool+2+s_offset,",-1");
-       s_offset += 3;
+       s_offset+=sprintf(pool+s_offset,",%d",ru->tpcores[icpu]);
     }
 #ifdef USE_TPOOL    
+    LOG_I(PHY,"RU thread-pool core string %s\n",pool);
     ru->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
     initTpool(pool, ru->threadPool, cpumeas(CPUMEAS_GETSTATE));
     // FEP RX result FIFO
@@ -2211,6 +2214,10 @@ static void NRRCconfig_RU(void) {
       RC.ru[j]->openair0_cfg.nr_band              = RC.ru[j]->band[0];
       RC.ru[j]->openair0_cfg.nr_scs_for_raster    = *(RUParamList.paramarray[j][RU_NR_SCS_FOR_RASTER].iptr);
       printf("[RU %d] Setting nr_flag %d, nr_band %d, nr_scs_for_raster %d\n",j,RC.ru[j]->openair0_cfg.nr_flag,RC.ru[j]->openair0_cfg.nr_band,RC.ru[j]->openair0_cfg.nr_scs_for_raster);
+      RC.ru[j]->openair0_cfg.fh_cores[0]          = *(RUParamList.paramarray[j][RU_RXFH_CORE_ID].iptr);
+      RC.ru[j]->num_tpcores                       = *(RUParamList.paramarray[j][RU_NUM_TP_CORES].iptr);
+      AssertFatal(RC.ru[j]->num_tpcores <= RUParamList.paramarray[j][RU_TP_CORES].numelt, "Number of TP cores should be <=16\n");
+      for (i=0; i<RC.ru[j]->num_tpcores; i++) RC.ru[j]->tpcores[i] = RUParamList.paramarray[j][RU_TP_CORES].iptr[i];
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;
 
