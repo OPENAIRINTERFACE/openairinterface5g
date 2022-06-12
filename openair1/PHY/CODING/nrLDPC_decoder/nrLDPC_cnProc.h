@@ -29,8 +29,8 @@
  * \warning
  */
 
-#ifndef __NR_LDPC_CNPROC__H__
-#define __NR_LDPC_CNPROC__H__
+#ifndef __NR_LDPC_DECODER_CNPROC__H__
+#define __NR_LDPC_DECODER_CNPROC__H__
 
 /**
    \brief Performs CN processing for BG2 on the CN processing buffer and stores the results in the CN processing results buffer.
