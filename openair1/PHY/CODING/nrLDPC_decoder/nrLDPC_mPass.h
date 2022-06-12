@@ -41,15 +41,6 @@
    \param Z Lifting size
    \param cshift Circular shift
 */
-//more faster memcpy by using "rep movsb", which on modern processors is highly optimized
-
-void *memcpy1(void *dst, const void *src, size_t n)
-{
-    void *ret = dst;
-    asm volatile("rep movsb" : "+D" (dst) : "c"(n), "S"(src) : "cc", "memory");
-    return ret;
-}
-
 
 static inline void *nrLDPC_inv_circ_memcpy(int8_t *str1, const int8_t *str2, uint16_t Z, uint16_t cshift)
 {

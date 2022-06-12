@@ -96,7 +96,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	  //	  for (i=0; i<M; i++,iprime++)
 	  //            {
 	  
-	  fprintf(fd,"            for (int i=0;i<M;i+=2) {\n");
+	  fprintf(fd,"            for (int i=0;i<M;i++) {\n");
 	  // Abs and sign of 32 CNs (first BN)
 	  //                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
 	  fprintf(fd,"                ymm0 = ((__m256i*)cnProcBuf)[%d+i];\n",(lut_startAddrCnGroups[0]>>5)+lut_idxCnProcG3[j][0]);
