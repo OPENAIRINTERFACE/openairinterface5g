@@ -109,6 +109,7 @@ check_supported_distribution() {
         "ubuntu18.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
         "fedora35")    return 0 ;;
+        "fedora36")    return 0 ;;
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
