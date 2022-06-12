@@ -624,7 +624,6 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         sshpass \
-        nscd \
         bc \
         ntp"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
@@ -649,7 +648,6 @@ check_install_additional_tools (){
       wvdial \
       numpy \
       sshpass \
-      nscd \
       python2-paramiko \
       python-pyroute2 \
       python-netifaces \
@@ -677,7 +675,6 @@ check_install_additional_tools (){
       wvdial \
       python-numpy \
       sshpass \
-      nscd \
       python-paramiko \
       python-pyroute2 \
       python-netifaces \
