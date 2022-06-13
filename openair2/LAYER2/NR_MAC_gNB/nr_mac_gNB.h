@@ -789,7 +789,7 @@ typedef struct gNB_MAC_INST_s {
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t        TX_req[NFAPI_CC_MAX];
-  int pdcch_cand[MAX_NUM_CORESET];
+
   NR_UEs_t UE_info;
 
   /// UL handle

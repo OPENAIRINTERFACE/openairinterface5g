@@ -191,6 +191,19 @@ int PRBalloc_to_locationandbandwidth(int NPRB,int RBstart) {
   return(PRBalloc_to_locationandbandwidth0(NPRB,RBstart,275));
 }
 
+int cce_to_reg_interleaving(const int R, int k, int n_shift, const int C, int L, const int N_regs) {
+
+  int f;  // interleaving function
+  if(R==0)
+    f = k;
+  else {
+    int c = k/R;
+     int r = k%R;
+     f = (r*C + c + n_shift)%(N_regs/L);
+  }
+  return f;
+}
+
 void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
 
   uint8_t count=0, start=0, start_set=0;
