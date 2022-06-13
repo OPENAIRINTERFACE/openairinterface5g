@@ -92,6 +92,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
   int ch_offset,symbol_offset ;
   int32_t **ul_ch_estimates_time =  gNB->pusch_vars[ul_id]->ul_ch_estimates_time;
+  int chest_freq = gNB->chest_freq;
   __m128i *ul_ch_128;
 
 #ifdef DEBUG_CH
@@ -225,8 +226,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     LOG_I(PHY, "In %s ul_ch addr %p nushift %d\n", __FUNCTION__, ul_ch, nushift);
 #endif
 
-    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && gNB->prb_interpolation == 0) {
-
+    if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1 && chest_freq == 0){
       LOG_D(PHY,"PUSCH estimation DMRS type 1, Freq-domain interpolation");
 
       // For configuration type 1: k = 4*n + 2*k' + delta,
@@ -329,7 +329,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       }
 #endif    
     }
-    else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && gNB->prb_interpolation == 0) { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
+    else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && chest_freq == 0) { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
       LOG_D(PHY,"PUSCH estimation DMRS type 2, Freq-domain interpolation");
       // Treat first DMRS specially (left edge)
 
