@@ -1016,61 +1016,8 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
   int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
 
   NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
-  coreset->controlResourceSetId=(bwp->bwp_Id<<1); // To uniquely identify each Coreset lets derive it from the BWPId
-  // frequency domain resources depends on BWP size
-  // options are 24, 48 or 96
-  coreset->frequencyDomainResources.buf = calloc(1,6);
-  if (0) {
-    if (curr_bwp < 48)
-      coreset->frequencyDomainResources.buf[0] = 0xf0;
-    else
-      coreset->frequencyDomainResources.buf[0] = 0xff;
-    if (curr_bwp < 96)
-      coreset->frequencyDomainResources.buf[1] = 0;
-    else
-      coreset->frequencyDomainResources.buf[1] = 0xff;
-  } else {
-    coreset->frequencyDomainResources.buf[0] = 0xf0;
-    coreset->frequencyDomainResources.buf[1] = 0;
-  }
-  coreset->frequencyDomainResources.buf[2] = 0;
-  coreset->frequencyDomainResources.buf[3] = 0;
-  coreset->frequencyDomainResources.buf[4] = 0;
-  coreset->frequencyDomainResources.buf[5] = 0;
-  coreset->frequencyDomainResources.size = 6;
-  coreset->frequencyDomainResources.bits_unused = 3;
-  coreset->duration=1;
-  coreset->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
-  coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
-
-  coreset->tci_StatesPDCCH_ToAddList=calloc(1,sizeof(*coreset->tci_StatesPDCCH_ToAddList));
-  uint64_t bitmap=0;
-  switch (scc->ssb_PositionsInBurst->present) {
-    case 1 :
-      bitmap = ((uint64_t) scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0])<<56;
-      break;
-    case 2 :
-      bitmap = ((uint64_t) scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0])<<56;
-      break;
-    case 3 :
-      for (int i=0; i<8; i++) {
-        bitmap |= (((uint64_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[i])<<((7-i)*8));
-      }
-      break;
-    default:
-      AssertFatal(1==0,"SSB bitmap size value %d undefined (allowed values 1,2,3) \n", scc->ssb_PositionsInBurst->present);
-  }
-  NR_TCI_StateId_t *tci[64];
-  for (int i=0;i<64;i++) {
-    if ((bitmap>>(63-i))&0x01){
-      tci[i]=calloc(1,sizeof(*tci[i]));
-      *tci[i] = i;
-      ASN_SEQUENCE_ADD(&coreset->tci_StatesPDCCH_ToAddList->list,tci[i]);
-    }
-  }
-  coreset->tci_StatesPDCCH_ToReleaseList = NULL;
-  coreset->tci_PresentInDCI = NULL;
-  coreset->pdcch_DMRS_ScramblingID = NULL;
+  uint64_t bitmap = get_ssb_bitmap(scc);
+  rrc_coreset_config(coreset, bwp->bwp_Id, curr_bwp, bitmap);
 
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet = coreset;
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceZero=NULL;
@@ -1128,36 +1075,7 @@ void fill_default_downlinkBWP(NR_BWP_Downlink_t *bwp,
   bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList = calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList));
 
   NR_ControlResourceSet_t *coreset2 = calloc(1,sizeof(*coreset2));
-  coreset2->controlResourceSetId=(bwp->bwp_Id<<1)+1; // To uniquely identify each Coreset lets derive it from the BWPId
-  // frequency domain resources depends on BWP size
-  // options are 24, 48 or 96
-  coreset2->frequencyDomainResources.buf = calloc(1,6);
-  if (0) {
-    if (curr_bwp < 48)
-      coreset2->frequencyDomainResources.buf[0] = 0xf0;
-    else
-      coreset2->frequencyDomainResources.buf[0] = 0xff;
-    if (curr_bwp < 96)
-      coreset2->frequencyDomainResources.buf[1] = 0;
-    else
-      coreset2->frequencyDomainResources.buf[1] = 0xff;
-  } else {
-    coreset2->frequencyDomainResources.buf[0] = 0xf0;
-    coreset2->frequencyDomainResources.buf[1] = 0;
-  }
-  coreset2->frequencyDomainResources.buf[2] = 0;
-  coreset2->frequencyDomainResources.buf[3] = 0;
-  coreset2->frequencyDomainResources.buf[4] = 0;
-  coreset2->frequencyDomainResources.buf[5] = 0;
-  coreset2->frequencyDomainResources.size = 6;
-  coreset2->frequencyDomainResources.bits_unused = 3;
-  coreset2->duration=1;
-  coreset2->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
-  coreset2->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
-  coreset2->tci_StatesPDCCH_ToAddList=NULL;
-  coreset2->tci_StatesPDCCH_ToReleaseList = NULL;
-  coreset2->tci_PresentInDCI = NULL;
-  coreset2->pdcch_DMRS_ScramblingID = NULL;
+  rrc_coreset_config(coreset2, bwp->bwp_Id, curr_bwp, bitmap);
   ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list, coreset2);
 
   bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(*bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
@@ -1736,37 +1654,9 @@ void fill_initial_SpCellConfig(int uid,
   bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList));
 
   NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
-  coreset->controlResourceSetId=1;
-  // frequency domain resources depends on BWP size
-  // options are 24, 48 or 96
-  coreset->frequencyDomainResources.buf = calloc(1,6);
-  if (0) {
-     if (curr_bwp < 48)
-       coreset->frequencyDomainResources.buf[0] = 0xf0;
-     else
-       coreset->frequencyDomainResources.buf[0] = 0xff;
-     if (curr_bwp < 96)
-       coreset->frequencyDomainResources.buf[1] = 0;
-     else
-       coreset->frequencyDomainResources.buf[1] = 0xff;
-  } else {
-     coreset->frequencyDomainResources.buf[0] = 0xf0;
-     coreset->frequencyDomainResources.buf[1] = 0;
-  }
-  coreset->frequencyDomainResources.buf[2] = 0;
-  coreset->frequencyDomainResources.buf[3] = 0;
-  coreset->frequencyDomainResources.buf[4] = 0;
-  coreset->frequencyDomainResources.buf[5] = 0;
-  coreset->frequencyDomainResources.size = 6;
-  coreset->frequencyDomainResources.bits_unused = 3;
-  coreset->duration=1;
-  coreset->cce_REG_MappingType.present = NR_ControlResourceSet__cce_REG_MappingType_PR_nonInterleaved;
-  coreset->precoderGranularity = NR_ControlResourceSet__precoderGranularity_sameAsREG_bundle;
 
-  coreset->tci_StatesPDCCH_ToAddList=NULL;
-  coreset->tci_StatesPDCCH_ToReleaseList = NULL;
-  coreset->tci_PresentInDCI = NULL;
-  coreset->pdcch_DMRS_ScramblingID = NULL;
+  uint64_t bitmap = get_ssb_bitmap(scc);
+  rrc_coreset_config(coreset, 0, curr_bwp, bitmap);
 
   ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list,
                    coreset);
@@ -1777,7 +1667,7 @@ void fill_initial_SpCellConfig(int uid,
  
   ss2->searchSpaceId=2;
   ss2->controlResourceSetId=calloc(1,sizeof(*ss2->controlResourceSetId));
-  *ss2->controlResourceSetId=1;
+  *ss2->controlResourceSetId=coreset->controlResourceSetId;
   ss2->monitoringSlotPeriodicityAndOffset=calloc(1,sizeof(*ss2->monitoringSlotPeriodicityAndOffset));
   ss2->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
   ss2->monitoringSlotPeriodicityAndOffset->choice.sl1=(NULL_t)0;
@@ -1841,7 +1731,7 @@ void fill_initial_SpCellConfig(int uid,
   SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
 
   if (configuration->do_CSIRS) {
- 
+
     SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
     SpCellConfig->spCellConfigDedicated->csi_MeasConfig->present = NR_SetupRelease_CSI_MeasConfig_PR_setup;
 
@@ -1854,7 +1744,7 @@ void fill_initial_SpCellConfig(int uid,
 
     csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
     csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
-  
+
     NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1,sizeof(*ssbresset0));
     ssbresset0->csi_SSB_ResourceSetId=0;
 
