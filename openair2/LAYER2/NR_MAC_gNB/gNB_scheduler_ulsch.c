@@ -932,8 +932,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
   }
 
   /* Find a free CCE */
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
   uint8_t nr_of_candidates;
   for (int i=0; i<5; i++) {
     // for now taking the lowest value among the available aggregation levels
@@ -1102,8 +1101,7 @@ void pf_ul(module_id_t module_id,
     if (B == 0 && do_sched) {
       /* if no data, pre-allocate 5RB */
       /* Find a free CCE */
-      const int cid = sched_ctrl->coreset->controlResourceSetId;
-      const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+      const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
       uint8_t nr_of_candidates;
       for (int i=0; i<5; i++) {
         // for now taking the lowest value among the available aggregation levels
@@ -1218,8 +1216,7 @@ void pf_ul(module_id_t module_id,
 
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
 
-    const int cid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t Y = get_Y(cid%3, slot, iterator->UE->rnti);
+    const uint32_t Y = get_Y(sched_ctrl->search_space, slot, iterator->UE->rnti);
     uint8_t nr_of_candidates;
     for (int i=0; i<5; i++) {
       // for now taking the lowest value among the available aggregation levels

@@ -3498,6 +3498,22 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
   }
 }
 
+uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti) {
+
+  if(ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common)
+    return 0;
+
+  const int cid = *ss->controlResourceSetId%3;
+  const uint32_t A[3] = {39827, 39829, 39839};
+  const uint32_t D = 65537;
+  uint32_t Y;
+
+  Y = (A[cid] * rnti) % D;
+  for (int s = 0; s < slot; s++)
+    Y = (A[cid] * Y) % D;
+
+  return Y;
+}
 
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,

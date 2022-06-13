@@ -646,13 +646,11 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       ra->msg3_dcch_dtch = false;
       LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
-      NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon;
       NR_UE_info_t * UE = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info,rnti);
       if (!UE) {
         LOG_E(NR_MAC, "Can't find UE %04x\n", rnti);
         return -1;
       }
-      int target_ss;
 
       UE->CellGroup = CellGroup;
       LOG_I(NR_MAC,"Modified rnti %04x with CellGroup\n",rnti);
@@ -664,30 +662,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         // add all available DL HARQ processes for this UE in SA
         create_dl_harq_list(sched_ctrl, pdsch);
       }
-      // update coreset/searchspace
-      void *bwpd = NULL;
-      NR_BWP_t *genericParameters = NULL;
-      target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-      if ((sched_ctrl->active_bwp)) {
-        target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-        bwpd = (void*)sched_ctrl->active_bwp->bwp_Dedicated;
-        genericParameters = &sched_ctrl->active_bwp->bwp_Common->genericParameters;
-      }
-      else if (CellGroup->spCellConfig &&
-                 CellGroup->spCellConfig->spCellConfigDedicated &&
-                 (CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
-        target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-        bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
-        genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-      }
-      sched_ctrl->search_space = get_searchspace(sib1 ? sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
-      sched_ctrl->coreset = get_coreset(RC.nrmac[Mod_idP], scc, bwpd, sched_ctrl->search_space, target_ss);
-      sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
-                                                    sched_ctrl->search_space,
-                                                    sched_ctrl->coreset,
-                                                    scc,
-                                                    genericParameters,
-                                                    RC.nrmac[Mod_idP]->type0_PDCCH_CSS_config);
+
       sched_ctrl->maxL = 2;
 
       if (CellGroup->spCellConfig &&

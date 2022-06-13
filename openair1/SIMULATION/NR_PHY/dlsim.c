@@ -66,6 +66,7 @@
 #include "NR_RRCReconfiguration.h"
 #define inMicroS(a) (((double)(a))/(get_cpu_freq_GHz()*1000.0))
 #include "SIMULATION/LTE_PHY/common_sim.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
@@ -263,26 +264,35 @@ void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSi
 void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg);
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
-/* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of
-   dlsim, does not search for CCE/PUCCH occasion but simply sets to 0 */
+/* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of dlsim */
 int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1, g_nrOfLayers = 1;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
+
   NR_UE_info_t *UE_info = RC.nrmac[module_id]->UE_info.list[0];
   AssertFatal(RC.nrmac[module_id]->UE_info.list[1]==NULL, "can have only a single UE\n");
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
-  /* manually set free CCE to 0 */
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   sched_ctrl->search_space = get_searchspace(NULL, scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space,4);
+
   sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, sched_ctrl->active_bwp->bwp_Dedicated, sched_ctrl->search_space, target_ss);
-  sched_ctrl->cce_index = 0;
+  uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE_info->rnti);
+  int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
+                                      /* CC_id = */ 0,
+                                      sched_ctrl->aggregation_level,
+                                      nr_of_candidates,
+                                      &sched_ctrl->sched_pdcch,
+                                      sched_ctrl->coreset,
+                                      Y);
+  AssertFatal(CCEIndex>=0, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, 0, UE_info->rnti);
+  sched_ctrl->cce_index = CCEIndex;
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
@@ -434,7 +444,8 @@ int main(int argc, char **argv)
   uint16_t rbSize = 106;
   uint8_t  mcsIndex = 9;
   uint8_t  dlsch_threads = 0;
-  int      prb_inter = 0;
+  int      chest_type[2] = {0};
+  uint8_t  max_ldpc_iterations = 5;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
@@ -445,7 +456,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:in:s:S:t:x:y:z:M:N:F:GR:dPIL:Ea:b:d:e:q:m:w:T:U:X:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:x:y:z:M:N:F:GR:dPI:L:Ea:b:d:e:m:w:T:U:q:X:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -502,7 +513,9 @@ int main(int argc, char **argv)
       break;
 
     case 'i':
-      prb_inter=1;
+      for(i=0; i < atoi(optarg); i++){
+        chest_type[i] = atoi(argv[optind++]);
+      }
       break;
 
     case 'n':
@@ -589,9 +602,7 @@ int main(int argc, char **argv)
       break;
       
     case 'I':
-      run_initial_sync=1;
-      //target_error_rate=0.1;
-      slot = 0;
+      max_ldpc_iterations = atoi(optarg);
       break;
 
     case 'L':
@@ -655,6 +666,12 @@ int main(int argc, char **argv)
       gNBthreads[sizeof(gNBthreads)-1]=0;
       break;
 
+    case 'Y':
+      run_initial_sync=1;
+      //target_error_rate=0.1;
+      slot = 0;
+      break;
+      
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -670,7 +687,7 @@ int main(int argc, char **argv)
       printf("-g [A,B,C,D,E,F,G,R] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models or R for MIMO model (ignores delay spread and Ricean factor)\n");
       printf("-y Number of TX antennas used in gNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      printf("-i Activate PRB based averaging for channel estimation. Frequncy domain interpolation by default.\n");
+      printf("-i Change channel estimation technique. Arguments list: Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}\n");
       //printf("-j Relative strength of second intefering gNB (in dB) - cell_id mod 3 = 2\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -687,12 +704,14 @@ int main(int argc, char **argv)
       printf("-e MSC index\n");
       printf("-q MCS Table index\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
+      printf("-I Maximum LDPC decoder iterations\n");
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
       printf("-w Write txdata to binary file (one frame)\n");
       printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
-      printf("-X gNB thread pool configuration, n => no threads");
+      printf("-X gNB thread pool configuration, n => no threads\n");
+      printf("-Y Run initial sync in UE\n");
       exit (-1);
       break;
     }
@@ -948,6 +967,7 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_rx = n_rx;
+  UE->max_ldpc_iterations = max_ldpc_iterations;
 
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      {UE->is_synchronized = 1; UE->UE_mode[0]=PUSCH;}
@@ -982,8 +1002,8 @@ int main(int argc, char **argv)
   UE->if_inst->phy_config_request = nr_ue_phy_config_request;
   UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
-  UE->prb_interpolation = prb_inter;
-
+  UE->chest_freq = chest_type[0];
+  UE->chest_time = chest_type[1];
 
   UE_mac->if_module = nr_ue_if_module_init(0);
 
@@ -1103,14 +1123,9 @@ int main(int argc, char **argv)
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
 
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
-
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].ndi = !(trial&1);
-
-
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].round = round;
-        for (int i=0; i<MAX_NUM_CORESET; i++)
-          gNB_mac->pdcch_cand[i] = 0;
-      
+
         if (css_flag == 0) {
           nr_schedule_ue_spec(0, frame, slot);
         } else {
