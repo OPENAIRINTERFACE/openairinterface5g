@@ -1,0 +1,316 @@
+version: '3.8'
+services:
+    mysql:
+        container_name: "mysql"
+        image: mysql:5.7
+        volumes:
+            - ./oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql
+            - ./mysql-healthcheck2.sh:/tmp/mysql-healthcheck.sh
+        environment:
+            - TZ=Europe/Paris
+            - MYSQL_DATABASE=oai_db
+            - MYSQL_USER=test
+            - MYSQL_PASSWORD=test
+            - MYSQL_ROOT_PASSWORD=linux
+        healthcheck:
+            test: /bin/bash -c "/tmp/mysql-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.131
+    oai-udr:
+        container_name: oai-udr
+        image: oai-udr:develop
+        environment:
+            - TZ=Europe/Paris
+            - INSTANCE=0
+            - PID_DIRECTORY=/var/run
+            - UDR_INTERFACE_NAME_FOR_NUDR=eth0
+            - UDR_INTERFACE_PORT_FOR_NUDR=80
+            - UDR_INTERFACE_HTTP2_PORT_FOR_NUDR=8080
+            - UDR_API_VERSION=v1
+            - MYSQL_IPV4_ADDRESS=192.168.70.131
+            - MYSQL_USER=test
+            - MYSQL_PASS=test
+            - MYSQL_DB=oai_db
+            - WAIT_MYSQL=120
+        depends_on:
+            - mysql
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.136
+        volumes:
+            - ./udr-healthcheck.sh:/openair-udr/bin/udr-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-udr/bin/udr-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-udm:
+        container_name: oai-udm
+        image: oai-udm:develop
+        environment:
+            - TZ=Europe/Paris
+            - INSTANCE=0
+            - PID_DIRECTORY=/var/run
+            - UDM_NAME=OAI_UDM
+            - SBI_IF_NAME=eth0
+            - SBI_PORT=80
+            - UDM_VERSION_NB=v1
+            - USE_FQDN_DNS=yes
+            - UDR_IP_ADDRESS=192.168.70.136
+            - UDR_PORT=80
+            - UDR_VERSION_NB=v1
+            - UDR_FQDN=oai-udr
+        depends_on:
+            - oai-udr
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.137
+        volumes:
+            - ./udm-healthcheck.sh:/openair-udm/bin/udm-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-udm/bin/udm-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-ausf:
+        container_name: oai-ausf
+        image: oai-ausf:develop
+        environment:
+            - TZ=Europe/Paris
+            - INSTANCE_ID=0
+            - PID_DIR=/var/run
+            - AUSF_NAME=OAI_AUSF
+            - SBI_IF_NAME=eth0
+            - SBI_PORT=80
+            - USE_FQDN_DNS=yes
+            - UDM_IP_ADDRESS=192.168.70.137
+            - UDM_PORT=80
+            - UDM_VERSION_NB=v1
+            - UDM_FQDN=oai-udm
+        depends_on:
+            - oai-udm
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.138
+        volumes:
+            - ./ausf-healthcheck.sh:/openair-ausf/bin/ausf-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-ausf/bin/ausf-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-nrf:
+        container_name: "oai-nrf"
+        image: oai-nrf:develop
+        environment:
+            - NRF_INTERFACE_NAME_FOR_SBI=eth0
+            - NRF_INTERFACE_PORT_FOR_SBI=80
+            - NRF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
+            - NRF_API_VERSION=v1
+            - INSTANCE=0
+            - PID_DIRECTORY=/var/run
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.130
+        volumes:
+            - ./nrf-healthcheck.sh:/openair-nrf/bin/nrf-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-nrf/bin/nrf-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-amf:
+        container_name: "oai-amf"
+        image: oai-amf:develop
+        environment:
+            - TZ=Europe/paris
+            - INSTANCE=0
+            - PID_DIRECTORY=/var/run
+            - MCC=208
+            - MNC=99
+            - REGION_ID=128
+            - AMF_SET_ID=1
+            - SERVED_GUAMI_MCC_0=208
+            - SERVED_GUAMI_MNC_0=99
+            - SERVED_GUAMI_REGION_ID_0=128
+            - SERVED_GUAMI_AMF_SET_ID_0=1
+            - SERVED_GUAMI_MCC_1=460
+            - SERVED_GUAMI_MNC_1=11
+            - SERVED_GUAMI_REGION_ID_1=10
+            - SERVED_GUAMI_AMF_SET_ID_1=1
+            - PLMN_SUPPORT_MCC=208
+            - PLMN_SUPPORT_MNC=99
+            - PLMN_SUPPORT_TAC=0x0001
+            - SST_0=1
+            - SD_0=1
+            - SST_1=1
+            - SD_1=12
+            - AMF_INTERFACE_NAME_FOR_NGAP=eth0
+            - AMF_INTERFACE_NAME_FOR_N11=eth0
+            - SMF_INSTANCE_ID_0=1
+            - SMF_FQDN_0=oai-smf
+            - SMF_IPV4_ADDR_0=192.168.70.133
+            - SMF_HTTP_VERSION_0=v1
+            - SELECTED_0=true
+            - SMF_INSTANCE_ID_1=2
+            - SMF_FQDN_1=oai-smf
+            - SMF_IPV4_ADDR_1=0.0.0.0
+            - SMF_HTTP_VERSION_1=v1
+            - SELECTED_1=false
+            - MYSQL_SERVER=192.168.70.131
+            - MYSQL_USER=root
+            - MYSQL_PASS=linux
+            - MYSQL_DB=oai_db
+            - OPERATOR_KEY=1006020f0a478bf6b699f15c062e42b3
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_PORT=80
+            - NF_REGISTRATION=yes
+            - SMF_SELECTION=yes
+            - USE_FQDN_DNS=yes
+            - EXTERNAL_AUSF=yes
+            - NRF_API_VERSION=v1
+            - NRF_FQDN=oai-nrf
+            - AUSF_IPV4_ADDRESS=192.168.70.138
+            - AUSF_PORT=80
+            - AUSF_API_VERSION=v1
+            - AUSF_FQDN=oai-ausf
+        depends_on:
+            - mysql
+            - oai-nrf
+            - oai-ausf
+        volumes:
+            - ./amf-healthcheck.sh:/openair-amf/bin/amf-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-amf/bin/amf-healthcheck.sh"
+            interval: 10s
+            timeout: 15s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.132
+    oai-smf:
+        container_name: "oai-smf"
+        image: oai-smf:develop
+        environment:
+            - TZ=Europe/Paris
+            - INSTANCE=0
+            - PID_DIRECTORY=/var/run
+            - SMF_INTERFACE_NAME_FOR_N4=eth0
+            - SMF_INTERFACE_NAME_FOR_SBI=eth0
+            - SMF_INTERFACE_PORT_FOR_SBI=80
+            - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
+            - SMF_API_VERSION=v1
+            - DEFAULT_DNS_IPV4_ADDRESS=8.8.8.8
+            - DEFAULT_DNS_SEC_IPV4_ADDRESS=4.4.4.4
+            - AMF_IPV4_ADDRESS=192.168.70.132
+            - AMF_PORT=80
+            - AMF_API_VERSION=v1
+            - AMF_FQDN=oai-amf
+            - UDM_IPV4_ADDRESS=192.168.70.137
+            - UDM_PORT=80
+            - UDM_API_VERSION=v1
+            - UDM_FQDN=oai-udm
+            - UPF_IPV4_ADDRESS=192.168.70.134
+            - UPF_FQDN_0=oai-spgwu
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_PORT=80
+            - NRF_API_VERSION=v1
+            - USE_LOCAL_SUBSCRIPTION_INFO=yes
+            - NRF_FQDN=oai-nrf
+            - REGISTER_NRF=yes
+            - DISCOVER_UPF=yes
+            - USE_FQDN_DNS=yes
+            - DNN_RANGE1=12.1.1.2 - 12.1.1.128
+            - DNN_RANGE0=12.2.1.2 - 12.2.1.128
+            - DNN_NI1=oai
+        depends_on:
+            - oai-nrf
+            - oai-amf
+        volumes:
+            - ./smf-healthcheck.sh:/openair-smf/bin/smf-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-smf/bin/smf-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.133
+    oai-spgwu:
+        container_name: "oai-spgwu"
+        image: oai-spgwu-tiny:develop
+        environment:
+            - TZ=Europe/Paris
+            - PID_DIRECTORY=/var/run
+            - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
+            - SGW_INTERFACE_NAME_FOR_SX=eth0
+            - PGW_INTERFACE_NAME_FOR_SGI=eth0
+            - NETWORK_UE_NAT_OPTION=yes
+            - NETWORK_UE_IP=12.1.1.0/24
+            - SPGWC0_IP_ADDRESS=192.168.70.133
+            - BYPASS_UL_PFCP_RULES=no
+            - MCC=208
+            - MNC=99
+            - MNC03=099
+            - TAC=1
+            - GW_ID=1
+            - REALM=openairinterface.org
+            - ENABLE_5G_FEATURES=yes
+            - REGISTER_NRF=yes
+            - USE_FQDN_NRF=no
+            - UPF_FQDN_5G=oai-spgwu
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_PORT=80
+            - NRF_API_VERSION=v1
+            - NRF_FQDN=oai-nrf
+            - NSSAI_SST_0=1
+            - NSSAI_SD_0=1
+            - DNN_0=oai
+        depends_on:
+            - oai-nrf
+            - oai-smf
+        cap_add:
+            - NET_ADMIN
+            - SYS_ADMIN
+        cap_drop:
+            - ALL
+        privileged: true
+        volumes:
+            - ./spgwu-healthcheck.sh:/openair-spgwu-tiny/bin/spgwu-healthcheck.sh
+        healthcheck:
+            test: /bin/bash -c "/openair-spgwu-tiny/bin/spgwu-healthcheck.sh"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.134
+    oai-ext-dn:
+        image: ubuntu:bionic
+        privileged: true
+        container_name: oai-ext-dn
+        entrypoint: /bin/bash -c \
+              "apt update; apt install -y iptables iproute2 iperf iperf3 iputils-ping;"\
+              "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;"\
+              "ip route add 12.1.1.0/24 via 192.168.70.134 dev eth0; sleep infinity"
+        depends_on:
+            - oai-spgwu
+        networks:
+            public_net:
+                ipv4_address: 192.168.70.135
+networks:
+    public_net:
+        external:
+            name: demo-oai-public-net
+#    public_net:
+#        driver: bridge
+#        name: demo-oai-public-net
+#        ipam:
+#            config:
+#                - subnet: 192.168.70.128/26
+#        driver_opts:
+#            com.docker.network.bridge.name: "demo-oai"
