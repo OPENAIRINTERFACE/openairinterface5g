@@ -2946,30 +2946,6 @@ void nr_mac_update_timers(module_id_t module_id,
           compute_csi_bitlen (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
         }
 
-        // update coreset/searchspace
-        int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-        NR_BWP_t *genericParameters = NULL;
-        if (sched_ctrl->active_bwp) {
-          target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-          bwpd = (void*)sched_ctrl->active_bwp->bwp_Dedicated;
-          genericParameters = &sched_ctrl->active_bwp->bwp_Common->genericParameters;
-        }
-        else if (cg->spCellConfig &&
-                 cg->spCellConfig->spCellConfigDedicated &&
-                 (cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
-          target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-          genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-        }
-        NR_BCCH_DL_SCH_Message_t *SIB1 = RC.nrmac[module_id]->common_channels[0].sib1;
-        sched_ctrl->search_space = get_searchspace(SIB1 ? SIB1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
-        sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, bwpd, sched_ctrl->search_space, target_ss);
-        sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[module_id],
-                                                      sched_ctrl->search_space,
-                                                      sched_ctrl->coreset,
-                                                      scc,
-                                                      genericParameters,
-                                                      RC.nrmac[module_id]->type0_PDCCH_CSS_config);
-
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
         const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
         const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
