@@ -259,12 +259,10 @@ void init_tpools(uint8_t nun_dlsch_threads) {
 }
 static void get_options(void) {
 
-  nrUE_params.ofdm_offset_divisor = 8;
   paramdef_t cmdline_params[] =CMDLINE_NRUEPARAMS_DESC ;
   int numparams = sizeof(cmdline_params)/sizeof(paramdef_t);
+  config_get(cmdline_params,numparams,NULL);
   config_process_cmdline( cmdline_params,numparams,NULL);
-
-
 
   if (vcdflag > 0)
     ouput_vcd = 1;
@@ -317,8 +315,8 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->rf_map.card          = card_offset;
   UE->rf_map.chain         = CC_id + chain_offset;
 
-  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n, do_prb_interpolation %d\n",
-  	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction, UE->prb_interpolation);
+  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n, chest-freq %d\n",
+  	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction, UE->chest_freq);
 
   // Set FP variables
 
@@ -330,6 +328,7 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d, ssb_start_subcarrier %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs, fp->ssb_start_subcarrier);
 
   fp->ofdm_offset_divisor = nrUE_params.ofdm_offset_divisor;
+  UE->max_ldpc_iterations = nrUE_params.max_ldpc_iterations;
 
 }
 
