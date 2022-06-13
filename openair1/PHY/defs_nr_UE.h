@@ -780,8 +780,8 @@ typedef struct {
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;
 
-  // PRS sequence
-  uint32_t ***nr_gold_prs;
+  // PRS sequence per gNB, per resource
+  uint32_t *****nr_gold_prs;
   
   uint32_t X_u[64][839];
 

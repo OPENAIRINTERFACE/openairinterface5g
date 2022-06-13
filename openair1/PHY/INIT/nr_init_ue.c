@@ -160,9 +160,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRS   **const prs_vars           = ue->prs_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
-  int i,slot,symb, gNB_id, th_id;
-
   NR_UE_SRS **const srs_vars             = ue->srs_vars;
+  int i,slot,symb, gNB_id, th_id;
 
   LOG_I(PHY, "Initializing UE vars for gNB TXant %u, UE RXant %u\n", fp->nb_antennas_tx, fp->nb_antennas_rx);
 
@@ -207,20 +206,29 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   ////////////////////////////////////////////////////////////////////////////////////////////
 
   //PRS init
-  ue->nr_gold_prs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
-  uint32_t ***prs = ue->nr_gold_prs;
+  ue->nr_gold_prs = (uint32_t *****)malloc16(ue->prs_active_gNBs*sizeof(uint32_t ****));
+  uint32_t *****prs = ue->nr_gold_prs;
   AssertFatal(prs!=NULL, "NR UE init: positioning reference signal malloc failed\n");
+  for (int gnb = 0; gnb < ue->prs_active_gNBs; gnb++) {
+    prs[gnb] = (uint32_t ****)malloc16(ue->prs_vars[gnb]->NumPRSResources*sizeof(uint32_t ***));
+    AssertFatal(prs[gnb]!=NULL, "NR UE init: positioning reference signal for gnb %d - malloc failed\n", gnb);
+    
+    for (int rsc = 0; rsc < ue->prs_vars[gnb]->NumPRSResources; rsc++) {
+      prs[gnb][rsc] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
+      AssertFatal(prs[gnb][rsc]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d- malloc failed\n", gnb, rsc);
 
-  for (int slot=0; slot<fp->slots_per_frame; slot++) {
-    prs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
-    AssertFatal(prs[slot]!=NULL, "NR UE init: positioning reference signal for slot %d - malloc failed\n", slot);
+      for (int slot=0; slot<fp->slots_per_frame; slot++) {
+        prs[gnb][rsc][slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
+        AssertFatal(prs[gnb][rsc][slot]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d slot %d - malloc failed\n", gnb, rsc, slot);
 
-    for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-      prs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
-      AssertFatal(prs[slot][symb]!=NULL, "NR UE init: positioning reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
-    }
-  }
-  nr_gold_prs(ue);
+        for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+          prs[gnb][rsc][slot][symb] = (uint32_t *)malloc16(NR_MAX_PRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+          AssertFatal(prs[gnb][rsc][slot][symb]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d slot %d symbol %d - malloc failed\n", gnb, rsc, slot, symb);
+        } // for symb
+      } // for slot
+    } // for rsc
+  } // for gnb
+  init_nr_gold_prs(ue);
 
   /////////////////////////PUSCH DMRS init/////////////////////////
   ///////////

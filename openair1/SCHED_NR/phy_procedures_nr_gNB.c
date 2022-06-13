@@ -163,7 +163,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   if(is_prs_slot)
   {
     LOG_D(PHY,"gNB_TX: frame %d, slot %d, PRS Resource ID %d\n",frame, slot, rsc_id);
-    nr_generate_prs(gNB->nr_gold_prs[slot],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, &gNB->prs_vars.prs_cfg[rsc_id], cfg, fp);
+    nr_generate_prs(gNB->nr_gold_prs[rsc_id][slot],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, &gNB->prs_vars.prs_cfg[rsc_id], cfg, fp);
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);

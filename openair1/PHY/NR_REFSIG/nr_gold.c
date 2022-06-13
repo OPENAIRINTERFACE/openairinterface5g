@@ -156,34 +156,32 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
   unsigned int x1, x2;
   uint16_t Nid;
 
-  nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint8_t reset;
-  uint8_t slotNum, symNum;
+  uint8_t slotNum, symNum, rsc_id;
 
-  Nid = cfg->cell_config.phy_cell_id.value;
+  for (rsc_id = 0; rsc_id < gNB->prs_vars.NumPRSResources; rsc_id++) {
+    Nid = gNB->prs_vars.prs_cfg[rsc_id].NPRSID; // seed value
+    LOG_I(PHY, "Initiaized NR-PRS sequence with PRS_ID %d\n", Nid);
+    for (slotNum = 0; slotNum < fp->slots_per_frame; slotNum++) {
+      for (symNum = 0; symNum < fp->symbols_per_slot ; symNum++) {
+        reset = 1;
+        // initial x2 for prs as ts138.211
+        uint32_t c_init1, c_init2, c_init3;
+        uint32_t pow22=1<<22;
+        uint32_t pow10=1<<10;
+        c_init1 = pow22*ceil(Nid/1024);
+        c_init2 = pow10*(slotNum+symNum+1)*(2*(Nid%1024)+1);
+        c_init3 = Nid%1024;
+        x2 = c_init1 + c_init2 + c_init3;
 
-  for (slotNum = 0; slotNum < fp->slots_per_frame; slotNum++) {
-    for (symNum = 0; symNum < fp->symbols_per_slot ; symNum++) {
-      reset = 1;
-      // initial x2 for prs as ts138.211
-      uint32_t c_init1, c_init2, c_init3;
-      uint32_t pow22=1<<22;
-      uint32_t pow10=1<<10;
-      c_init1 = pow22*ceil(Nid/1024);
-      c_init2 = pow10*(slotNum+symNum+1)*(2*(Nid%1024)+1);
-      c_init3 = Nid%1024;
-      x2 = c_init1 + c_init2 + c_init3;
-      
-
-      for (uint8_t n=0; n<NR_MAX_PRS_INIT_LENGTH_DWORD; n++) {
-        gNB->nr_gold_prs[slotNum][symNum][n] = lte_gold_generic(&x1, &x2, reset);      
-        reset = 0;
-        //printf("%d \n",gNB->nr_gold_prs[slotNum][symNum][n]); 
-	
+        for (uint8_t n=0; n<NR_MAX_PRS_INIT_LENGTH_DWORD; n++) {
+          gNB->nr_gold_prs[rsc_id][slotNum][symNum][n] = lte_gold_generic(&x1, &x2, reset);      
+          reset = 0;
+          //printf("%d \n",gNB->nr_gold_prs[slotNum][symNum][n]); 
+        }
       }
     }
   }
-
 }
 

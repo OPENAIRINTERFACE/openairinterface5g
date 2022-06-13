@@ -817,7 +817,7 @@ typedef struct PHY_VARS_gNB_s {
   uint32_t ***nr_gold_csi_rs;
 
   /// PRS sequence
-  uint32_t ***nr_gold_prs;
+  uint32_t ****nr_gold_prs;
   
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_NR_SR_MAX];
