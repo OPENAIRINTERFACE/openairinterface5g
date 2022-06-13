@@ -7,10 +7,11 @@
 
 
 
-#define  CONFIG_HLP_IF_FREQ                "IF frequency for RF, if needed"
-#define  CONFIG_HLP_IF_FREQ_OFF            "UL IF frequency offset for RF, if needed"
+#define  CONFIG_HLP_IF_FREQ                "IF frequency for RF, if needed\n"
+#define  CONFIG_HLP_IF_FREQ_OFF            "UL IF frequency offset for RF, if needed\n"
 #define  CONFIG_HLP_DLSCH_PARA             "number of threads for dlsch processing 0 for no parallelization\n"
 #define  CONFIG_HLP_OFFSET_DIV             "Divisor for computing OFDM symbol offset in Rx chain (num samples in CP/<the value>). Default value is 8. To set the sample offset to 0, set this value ~ 10e6\n"
+#define  CONFIG_HLP_MAX_LDPC_ITERATIONS    "Maximum LDPC decoder iterations\n"
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument
    when calling config_get or config_getlist functions                                                                                 */
@@ -30,8 +31,9 @@
 #define CMDLINE_NRUEPARAMS_DESC {  \
     {"usrp-args",                CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200", TYPE_STRING,   0},    \
     {"single-thread-disable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,  iptr:&single_thread_flag,           defintval:1,           TYPE_INT,    0}, \
-    {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,  0,               iptr:(int32_t *)&nrUE_params.nr_dlsch_parallel,       defintval:0,           TYPE_UINT8,  0}, \
-    {"offset-divisor",           CONFIG_HLP_OFFSET_DIV,  0,               uptr:(uint32_t *)&nrUE_params.ofdm_offset_divisor,    defuintval:UINT_MAX,           TYPE_UINT32,  0}, \
+    {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,  0,               u8ptr:&nrUE_params.nr_dlsch_parallel,       defintval:0,           TYPE_UINT8,  0}, \
+    {"offset-divisor",           CONFIG_HLP_OFFSET_DIV,  0,               uptr:&nrUE_params.ofdm_offset_divisor,    defuintval:8,           TYPE_UINT32,  0}, \
+    {"max-ldpc-iterations",      CONFIG_HLP_MAX_LDPC_ITERATIONS, 0,       u8ptr:&nrUE_params.max_ldpc_iterations,    defuintval:5,       TYPE_UINT8, 0}, \
     {"nr-dlsch-demod-shift",     CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,     TYPE_INT,    0}, \
     {"V" ,                       CONFIG_HLP_VCD,         PARAMFLAG_BOOL,  iptr:&vcdflag,                      defintval:0,     TYPE_INT,    0}, \
     {"uecap_file",               CONFIG_HLP_UECAP_FILE,  0,               strptr:(char **)&uecap_file,        defstrval:"./uecap.xml", TYPE_STRING, 0}, \
@@ -67,7 +69,8 @@
     {"T" ,                       CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,           TYPE_INT,   0}, \
     {"if_freq" ,                 CONFIG_HLP_IF_FREQ,     0,               u64ptr:&(UE->if_freq),              defuintval:0,          TYPE_UINT64,0}, \
     {"if_freq_off" ,             CONFIG_HLP_IF_FREQ_OFF, 0,               iptr:&(UE->if_freq_off),            defuintval:0,          TYPE_INT,   0}, \
-    {"do-prb-interpolation",     CONFIG_HLP_PRBINTER,    PARAMFLAG_BOOL,  iptr:&(UE->prb_interpolation),      defintval:0,           TYPE_INT,   0}, \
+    {"chest-freq",               CONFIG_HLP_CHESTFREQ,   0,               iptr:&(UE->chest_freq),             defintval:0,           TYPE_INT,   0}, \
+    {"chest-time",               CONFIG_HLP_CHESTTIME,   0,               iptr:&(UE->chest_time),             defintval:0,           TYPE_INT,   0}, \
     {"ue-timing-correction-disable", CONFIG_HLP_DISABLETIMECORR, PARAMFLAG_BOOL, iptr:&(UE->no_timing_correction), defintval:0,      TYPE_INT,   0}, \
 }
 
@@ -76,6 +79,7 @@ typedef struct {
   uint64_t       optmask;   //mask to store boolean config options
   uint32_t       ofdm_offset_divisor; // Divisor for sample offset computation for each OFDM symbol
   uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
+  uint8_t        max_ldpc_iterations; // number of maximum LDPC iterations
   tpool_t        Tpool;             // thread pool 
 } nrUE_params_t;
 extern uint64_t get_nrUE_optmask(void);

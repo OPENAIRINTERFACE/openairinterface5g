@@ -1963,6 +1963,17 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       }
     }
   }
+
+  if (gNB->chest_time == 1) { // averaging time domain channel estimates
+    nr_chest_time_domain_avg(frame_parms,
+                             gNB->pusch_vars[ulsch_id]->ul_ch_estimates,
+                             rel15_ul->nr_of_symbols,
+                             rel15_ul->start_symbol_index,
+                             rel15_ul->ul_dmrs_symb_pos,
+                             rel15_ul->rb_size);
+
+    gNB->pusch_vars[ulsch_id]->dmrs_symbol = get_next_dmrs_symbol_in_slot(rel15_ul->ul_dmrs_symb_pos, rel15_ul->start_symbol_index, rel15_ul->nr_of_symbols);
+  }
   stop_meas(&gNB->ulsch_channel_estimation_stats);
 
 #ifdef __AVX2__
@@ -1978,7 +1989,8 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       if ((rel15_ul->ul_dmrs_symb_pos >> ((symbol + 1) % frame_parms->symbols_per_slot)) & 0x01)
         AssertFatal(1==0,"Double DMRS configuration is not yet supported\n");
 
-      gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
+      if (gNB->chest_time == 0) // Non averaging time domain channel estimates
+        gNB->pusch_vars[ulsch_id]->dmrs_symbol = symbol;
 
       if (rel15_ul->dmrs_config_type == 0) {
         // if no data in dmrs cdm group is 1 only even REs have no data
