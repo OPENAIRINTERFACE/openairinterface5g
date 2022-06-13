@@ -165,7 +165,7 @@ void mac_rlc_data_ind     (
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 8: rb = ue->drb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -206,7 +206,7 @@ tbs_size_t mac_rlc_data_req(
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 8: rb = ue->drb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:
   rb = NULL;
   LOG_E(RLC, "In %s:%d:%s: data request for unknown RB with LCID 0x%02x !\n", __FILE__, __LINE__, __FUNCTION__, channel_idP);
@@ -254,7 +254,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 8: rb = ue->drb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -317,7 +317,7 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 8: rb = ue->drb[channel_idP - 1]; break; //4
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -410,7 +410,7 @@ int nr_rlc_get_available_tx_space(
 
   switch (channel_idP) {
   case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... 8: rb = ue->drb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
   default:      rb = NULL;                     break;
   }
 
@@ -780,7 +780,7 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
   struct NR_RLC_Config *r = rlc_BearerConfig->rlc_Config;
   struct NR_LogicalChannelConfig *l = rlc_BearerConfig->mac_LogicalChannelConfig;
   int drb_id = s->drb_Identity;
-  //int channel_id = rlc_BearerConfig->logicalChannelIdentity;
+  int channel_id = rlc_BearerConfig->logicalChannelIdentity;
   int logical_channel_group;
 
   int t_status_prohibit;
@@ -797,11 +797,11 @@ static void add_drb_am(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
     exit(1);
   }
 
-  /*if (channel_id != drb_id + 3) {
+  if (channel_id != drb_id + 3) {
     LOG_E(RLC, "%s:%d:%s: todo, remove this limitation\n",
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);
-  }*/
+  }
 
   logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
 
@@ -874,11 +874,11 @@ static void add_drb_um(int rnti, struct NR_DRB_ToAddMod *s, NR_RLC_BearerConfig_
     exit(1);
   }
 
-  /*if (channel_id != drb_id + 3) {
+  if (channel_id != drb_id + 3) {
     LOG_E(RLC, "%s:%d:%s: todo, remove this limitation\n",
           __FILE__, __LINE__, __FUNCTION__);
     exit(1);
-  }*/
+  }
 
   logical_channel_group = *l->ul_SpecificParameters->logicalChannelGroup;
 
