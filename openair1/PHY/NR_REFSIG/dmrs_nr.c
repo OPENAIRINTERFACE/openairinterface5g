@@ -338,3 +338,81 @@ int8_t get_valid_dmrs_idx_for_channel_est(uint16_t  dmrs_symb_pos, uint8_t count
   }
   return symbIdx;
 }
+
+/* perform averaging of channel estimates and store result in first symbol buffer */
+void nr_chest_time_domain_avg(NR_DL_FRAME_PARMS *frame_parms,
+                              int **ch_est,
+                              uint8_t num_symbols,
+                              uint8_t start_symbol,
+                              uint16_t dmrs_bitmap,
+                              uint16_t num_rbs)
+{
+  __m128i *ul_ch128_0;
+  __m128i *ul_ch128_1;
+  int16_t *ul_ch16_0;
+  int total_symbols = start_symbol + num_symbols;
+  int num_dmrs_symb = get_dmrs_symbols_in_slot(dmrs_bitmap, total_symbols);
+  int first_dmrs_symb = get_next_dmrs_symbol_in_slot(dmrs_bitmap, start_symbol, total_symbols);
+  AssertFatal(first_dmrs_symb > -1, "No DMRS symbol present in this slot\n");
+  for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+    for (int symb = first_dmrs_symb+1; symb < total_symbols; symb++) {
+      ul_ch128_0 = (__m128i *)&ch_est[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+      if ((dmrs_bitmap >> symb) & 0x01) {
+        ul_ch128_1 = (__m128i *)&ch_est[aarx][symb*frame_parms->ofdm_symbol_size];
+        for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+          ul_ch128_0[0] = _mm_adds_epi16(ul_ch128_0[0], ul_ch128_1[0]);
+          ul_ch128_0[1] = _mm_adds_epi16(ul_ch128_0[1], ul_ch128_1[1]);
+          ul_ch128_0[2] = _mm_adds_epi16(ul_ch128_0[2], ul_ch128_1[2]);
+          ul_ch128_0 += 3;
+          ul_ch128_1 += 3;
+        }
+      }
+    }
+    ul_ch128_0 = (__m128i *)&ch_est[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+    if (num_dmrs_symb == 2) {
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch128_0[0] = _mm_srai_epi16(ul_ch128_0[0], 1);
+        ul_ch128_0[1] = _mm_srai_epi16(ul_ch128_0[1], 1);
+        ul_ch128_0[2] = _mm_srai_epi16(ul_ch128_0[2], 1);
+        ul_ch128_0 += 3;
+      }
+    } else if (num_dmrs_symb == 4) {
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch128_0[0] = _mm_srai_epi16(ul_ch128_0[0], 2);
+        ul_ch128_0[1] = _mm_srai_epi16(ul_ch128_0[1], 2);
+        ul_ch128_0[2] = _mm_srai_epi16(ul_ch128_0[2], 2);
+        ul_ch128_0 += 3;
+      }
+    } else if (num_dmrs_symb == 3) {
+      ul_ch16_0 = (int16_t *)&ch_est[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch16_0[0] /= 3;
+        ul_ch16_0[1] /= 3;
+        ul_ch16_0[2] /= 3;
+        ul_ch16_0[3] /= 3;
+        ul_ch16_0[4] /= 3;
+        ul_ch16_0[5] /= 3;
+        ul_ch16_0[6] /= 3;
+        ul_ch16_0[7] /= 3;
+        ul_ch16_0[8] /= 3;
+        ul_ch16_0[9] /= 3;
+        ul_ch16_0[10] /= 3;
+        ul_ch16_0[11] /= 3;
+        ul_ch16_0[12] /= 3;
+        ul_ch16_0[13] /= 3;
+        ul_ch16_0[14] /= 3;
+        ul_ch16_0[15] /= 3;
+        ul_ch16_0[16] /= 3;
+        ul_ch16_0[17] /= 3;
+        ul_ch16_0[18] /= 3;
+        ul_ch16_0[19] /= 3;
+        ul_ch16_0[20] /= 3;
+        ul_ch16_0[21] /= 3;
+        ul_ch16_0[22] /= 3;
+        ul_ch16_0[23] /= 3;
+        ul_ch16_0 += 24;
+      }
+    } else AssertFatal((num_dmrs_symb < 5) && (num_dmrs_symb > 0), "Illegal number of DMRS symbols in the slot\n");
+  }
+}
+

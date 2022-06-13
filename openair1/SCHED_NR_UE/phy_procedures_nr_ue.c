@@ -36,6 +36,7 @@
 #include "assertions.h"
 #include "defs.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
@@ -609,6 +610,15 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
 #endif
         }
       }
+    }
+
+    if (ue->chest_time == 1) { // averaging time domain channel estimates
+      nr_chest_time_domain_avg(&ue->frame_parms,
+                               ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates,
+                               dlsch0_harq->nb_symbols,
+                               dlsch0_harq->start_symbol,
+                               dlsch0_harq->dlDmrsSymbPos,
+                               pdsch_nb_rb);
     }
 
     uint16_t first_symbol_with_data = s0;
