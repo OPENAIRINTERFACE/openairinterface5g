@@ -716,8 +716,8 @@ typedef struct {
   int m;
   // UE selected beam index
   uint8_t UE_beam_index;
-  bool Msg4_ACKed;
   bool Msg3_dcch_dtch;
+  bool Msg4_ACKed;
   /// Sched CSI-RS: scheduling decisions
   NR_gNB_UCI_STATS_t uci_statS;
   float ul_thr_ue;

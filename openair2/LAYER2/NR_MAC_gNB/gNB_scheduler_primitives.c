@@ -2887,15 +2887,17 @@ void nr_mac_update_timers(module_id_t module_id,
         const int current_bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
         const int current_ubwp_id = sched_ctrl->active_ubwp ? sched_ctrl->active_ubwp->bwp_Id : 0;
         if (UE->Msg3_dcch_dtch) {
-          // Must use Initial Downlink BWP when there is RA with Msg3 through DCCH
+          // 3GPP TS 38.321 Section 5.15 Bandwidth Part (BWP) operation
+          // Currently there are no PRACH occasions configured for any Dedicated BWP, so UE will switch to the initialDownlinkBWP
           sched_ctrl->active_bwp = NULL;
           if (current_bwp_id != 0) {
-            LOG_I(NR_MAC, "Changing to Initial DL-BWP\n");
+            LOG_I(NR_MAC, "(%d.%d) Switching to initialDownlinkBWP\n", frame, slot);
           }
-          // Must use Initial Uplink BWP when there is RA with Msg3 through DCCH
+          // 3GPP TS 38.321 Section 5.15 Bandwidth Part (BWP) operation
+          // Currently there are no PRACH occasions configured for any Dedicated BWP, so UE will switch to the initialUplinkBWP
           sched_ctrl->active_ubwp = NULL;
           if (current_ubwp_id != 0) {
-            LOG_I(NR_MAC, "Changing to Initial UL-BWP\n");
+            LOG_I(NR_MAC, "(%d.%d) Switching to initialUplinkBWP\n", frame, slot);
           }
           UE->Msg3_dcch_dtch = false;
         } else if (spCellConfigDedicated &&
@@ -2904,11 +2906,11 @@ void nr_mac_update_timers(module_id_t module_id,
             spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList) {
           sched_ctrl->active_bwp = spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[*spCellConfigDedicated->firstActiveDownlinkBWP_Id - 1];
           if (*spCellConfigDedicated->firstActiveDownlinkBWP_Id != current_bwp_id) {
-            LOG_I(NR_MAC, "Changing to DL-BWP %li\n", sched_ctrl->active_bwp->bwp_Id);
+            LOG_I(NR_MAC, "(%d.%d) Switching to DL-BWP %li\n", frame, slot, sched_ctrl->active_bwp->bwp_Id);
           }
           sched_ctrl->active_ubwp = spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id - 1];
           if (*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id != current_ubwp_id) {
-            LOG_I(NR_MAC, "Changing to UL-BWP %li\n", sched_ctrl->active_ubwp->bwp_Id);
+            LOG_I(NR_MAC, "(%d.%d) Switching to UL-BWP %li\n", frame, slot, sched_ctrl->active_ubwp->bwp_Id);
           }
         }
 
