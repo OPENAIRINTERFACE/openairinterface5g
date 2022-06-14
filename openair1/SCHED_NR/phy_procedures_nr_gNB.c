@@ -68,11 +68,14 @@ uint8_t check_prs_slot_gNB(uint8_t *prs_rsc_id, NR_gNB_PRS *prs_vars, NR_DL_FRAM
   uint8_t is_prs_slot = 0, rsc_id = 0;
   for(rsc_id = 0; rsc_id < prs_vars->NumPRSResources; rsc_id++)
   {
-    if((prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[1] + prs_vars->prs_cfg[rsc_id].PRSResourceOffset) == ((frame_tx*fp->slots_per_frame+nr_slot_tx)%prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[0]))
+    for (int i = 0; i < prs_vars->prs_cfg[rsc_id].PRSResourceRepetition; i++)
     {
-      is_prs_slot = 1;
-      *prs_rsc_id  = rsc_id;
-      break;
+      if( (((frame_tx*fp->slots_per_frame + nr_slot_tx) - (prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[1] + prs_vars->prs_cfg[rsc_id].PRSResourceOffset))%prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[0]) == i*prs_vars->prs_cfg[rsc_id].PRSResourceTimeGap )
+      {
+        is_prs_slot = 1;
+        *prs_rsc_id  = rsc_id;
+        break;
+      }
     }
   }
   return is_prs_slot;

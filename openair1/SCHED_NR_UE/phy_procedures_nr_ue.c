@@ -1381,13 +1381,15 @@ uint8_t check_prs_slot_nrUE(PHY_VARS_NR_UE *ue, NR_DL_FRAME_PARMS *fp, uint8_t *
   {
     for(rsc_id = 0; rsc_id < ue->prs_vars[gNB_id]->NumPRSResources; rsc_id++)
     {
-      if((ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset) ==
-          ((frame_rx*fp->slots_per_frame + nr_slot_rx)%ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0]))
+      for (int i = 0; i < ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceRepetition; i++)
       {
-        is_prs_slot = 1;
-        *prs_rsc_id = rsc_id;
-        *prs_gNB_id = gNB_id;
-        return is_prs_slot;
+        if( (((frame_rx*fp->slots_per_frame + nr_slot_rx) - (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset))%ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0]) == i*ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceTimeGap)
+        {
+          is_prs_slot = 1;
+          *prs_rsc_id = rsc_id;
+          *prs_gNB_id = gNB_id;
+          return is_prs_slot;
+        }
       }
     }
   }
