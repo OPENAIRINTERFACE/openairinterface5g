@@ -27,6 +27,12 @@ void nrLDPC_bnProc_BG2_generator_AVX2(const char*, int);
 void nrLDPC_bnProcPc_BG1_generator_AVX2(const char*, int);
 void nrLDPC_bnProcPc_BG2_generator_AVX2(const char*, int);
 
+const char *__asan_default_options()
+{
+  /* don't do leak checking in nr_ulsim, creates problems in the CI */
+  return "detect_leaks=0";
+}
+
 int main(int argc, char *argv[])
 {
   if (argc != 2) {
