@@ -293,14 +293,7 @@ class Containerize():
 			mySSH.command('sed -i -e "s#' + baseImage + ':latest#' + baseImage + ':' + baseTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
 			if image != 'ran-build':
 				mySSH.command('sed -i -e "s#' + "ran-build" + ':latest#' + "ran-build" + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
-			cliBuildOptions = self.cliBuildOptions
-			# for the phySim images, we build with ASan. During the
-			# build process, we compile and execute processes, and
-			# therefore need the SYS_PTRACE capability to allow
-			# ASan to attach to these programs
-			if image == 'oai-physim':
-				cliBuildOptions += ' --cap-add SYS_PTRACE'
-			mySSH.command(self.cli + ' build ' + cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
 			# Flatten Image
 			if image != 'ran-build':
 				mySSH.command('python3 ./ci-scripts/flatten_image.py --tag ' + image + ':' + imageTag, '\$', 300)
