@@ -272,25 +272,22 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   NR_UE_info_t *UE_info = RC.nrmac[module_id]->UE_info.list[0];
   AssertFatal(RC.nrmac[module_id]->UE_info.list[1]==NULL, "can have only a single UE\n");
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
+  NR_UE_BWP_t *BWP = &UE_info->current_BWP;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
   /* manually set free CCE to 0 */
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
+
   uint8_t nr_of_candidates;
   find_aggregation_candidates(&sched_ctrl->aggregation_level,
                               &nr_of_candidates,
                               sched_ctrl->search_space,4);
-  sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, sched_ctrl->active_bwp->bwp_Dedicated, sched_ctrl->search_space, target_ss);
   sched_ctrl->cce_index = 0;
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  nr_set_pdsch_semi_static(NULL,
+  nr_set_pdsch_semi_static(BWP,
                            scc,
                            UE_info->CellGroup,
-                           sched_ctrl->active_bwp,
-                           NULL,
                            /* tda = */ 0,
                            g_nrOfLayers,
                            sched_ctrl,
@@ -837,6 +834,8 @@ int main(int argc, char **argv)
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = RC.nrmac[0]->UE_info.list[0];
+
+  configure_UE_BWP(RC.nrmac[0], &UE_info->current_BWP, scc, &UE_info->UE_sched_ctrl, NULL, UE_info->CellGroup);
 
   // stub to configure frame_parms
   //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);

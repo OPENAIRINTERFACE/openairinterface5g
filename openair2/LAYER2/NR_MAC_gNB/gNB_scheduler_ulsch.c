@@ -1806,6 +1806,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  current_BWP);
     fill_dci_pdu_rel15(scc,
                        cg,
+                       current_BWP,
                        dci_pdu,
                        &uldci_payload,
                        ps->dci_format,

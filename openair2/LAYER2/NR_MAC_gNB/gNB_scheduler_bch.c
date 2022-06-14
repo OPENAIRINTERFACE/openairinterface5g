@@ -546,6 +546,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
 
   fill_dci_pdu_rel15(scc,
                      NULL,
+                     NULL,
                      &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                      &dci_payload,
                      dci_format,

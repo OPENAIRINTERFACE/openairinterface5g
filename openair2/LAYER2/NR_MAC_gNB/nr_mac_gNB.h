@@ -94,6 +94,7 @@ typedef struct {
 typedef struct NR_UE_BWP {
   NR_BWP_Id_t dl_bwp_id;
   NR_BWP_Id_t ul_bwp_id;
+  int n_dl_bwp;
   int dl_scs;
   int ul_scs;
   long *dl_cyclicprefix;
@@ -102,6 +103,8 @@ typedef struct NR_UE_BWP {
   uint16_t dl_BWPStart;
   uint16_t ul_BWPSize;
   uint16_t ul_BWPStart;
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList;
+  NR_PDSCH_Config_t *pdsch_Config;
 } NR_UE_BWP_t;
 
 typedef enum {
@@ -576,8 +579,6 @@ typedef struct NR_UE_ul_harq {
 /*! \brief scheduling control information set through an API */
 #define MAX_CSI_REPORTS 48
 typedef struct {
-  /// the currently active BWP in DL
-  NR_BWP_Downlink_t *active_bwp;
   /// the currently active BWP in UL
   NR_BWP_Uplink_t *active_ubwp;
 

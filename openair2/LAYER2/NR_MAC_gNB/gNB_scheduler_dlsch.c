@@ -376,14 +376,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   NR_CellGroupConfig_t *cg = UE->CellGroup;
-
-  NR_BWP_DownlinkDedicated_t *bwpd =
-      cg &&
-      cg->spCellConfig &&
-      cg->spCellConfig->spCellConfigDedicated ?
-      cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
 
   NR_BWP_UplinkDedicated_t *ubwpd =
       cg &&
@@ -391,8 +386,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
       cg->spCellConfig->spCellConfigDedicated &&
       cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
-
-  const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : UE->current_BWP.dl_BWPSize;
@@ -427,11 +420,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
     if (ps->time_domain_allocation != tda) {
-      nr_set_pdsch_semi_static(sib1,
+      nr_set_pdsch_semi_static(BWP,
                                scc,
                                cg,
-                               sched_ctrl->active_bwp,
-                               bwpd,
                                tda,
                                ps->nrOfLayers,
                                sched_ctrl,
@@ -442,11 +433,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
      * that we have enough resources */
     NR_pdsch_semi_static_t temp_ps = *ps;
 
-    nr_set_pdsch_semi_static(sib1,
+    nr_set_pdsch_semi_static(BWP,
                              scc,
                              cg,
-                             sched_ctrl->active_bwp,
-                             bwpd,
                              tda,
                              ps->nrOfLayers,
                              sched_ctrl,
@@ -651,12 +640,6 @@ void pf_dl(module_id_t module_id,
 
     NR_CellGroupConfig_t *cg = iterator->UE->CellGroup;
 
-    NR_BWP_DownlinkDedicated_t *bwpd =
-        cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated ?
-        cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-
     NR_BWP_UplinkDedicated_t *ubwpd =
         cg &&
         cg->spCellConfig &&
@@ -666,9 +649,6 @@ void pf_dl(module_id_t module_id,
 
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
     const uint16_t rnti = iterator->UE->rnti;
-    const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ?
-      RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 :
-      NULL;
 
     NR_UE_BWP_t *BWP = &iterator->UE->current_BWP;
 
@@ -744,11 +724,9 @@ void pf_dl(module_id_t module_id,
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
     if (ps->nrOfLayers != iterator->UE->layers || ps->time_domain_allocation != tda ) {
-      nr_set_pdsch_semi_static(sib1,
+      nr_set_pdsch_semi_static(BWP,
                                scc,
                                iterator->UE->CellGroup,
-                               sched_ctrl->active_bwp,
-                               bwpd,
                                tda,
                                iterator->UE->layers,
                                sched_ctrl,
@@ -813,16 +791,13 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   NR_UE_info_t *UE=UE_info->list[0];
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_BWP_t *BWP = &UE->current_BWP;
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   int startSymbolIndex, nrOfSymbols;
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_bwp ?
-        sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
-        scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = BWP->tdaList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-
-  NR_UE_BWP_t *BWP = &UE->current_BWP;
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
@@ -986,8 +961,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
           sched_pdsch->pucch_allocation,
           sched_ctrl->tpc1);
 
-    NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
-
     NR_SearchSpace_t *ss = sched_ctrl->search_space;
 
     const int bwp_id = current_BWP->dl_bwp_id;
@@ -1087,13 +1060,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                          bw_tbslbrm,
                                                                          nl_tbslbrm);
 
-    NR_PDSCH_Config_t *pdsch_Config=NULL;
-
-    if (bwp &&
-        bwp->bwp_Dedicated &&
-        bwp->bwp_Dedicated->pdsch_Config &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup)
-      pdsch_Config =  bwp->bwp_Dedicated->pdsch_Config->choice.setup;
+    NR_PDSCH_Config_t *pdsch_Config = current_BWP->pdsch_Config;
 
     /* Check and validate PTRS values */
     struct NR_SetupRelease_PTRS_DownlinkConfig *phaseTrackingRS =
@@ -1140,14 +1107,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_pdu_rel15_t dci_payload;
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
-    const int n_dl_bwp = bwp ? cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
-    AssertFatal(n_dl_bwp <= NR_MAX_NUM_BWP, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
-
     // as per table 7.3.1.1.2-1 in 38.212
-    dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp_id : bwp_id - 1) : 0;
+    dci_payload.bwp_indicator.val = current_BWP->n_dl_bwp < 4 ? bwp_id : bwp_id - 1;
 
-    if (bwp) AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
-                           "Only frequency resource allocation type 1 is currently supported\n");
+    AssertFatal(pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
+                "Only frequency resource allocation type 1 is currently supported\n");
 
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu->rbSize,
                                                                                     pdsch_pdu->rbStart,
@@ -1189,6 +1153,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int rnti_type = NR_RNTI_C;
     fill_dci_pdu_rel15(scc,
                        cg,
+                       current_BWP,
                        dci_pdu,
                        &dci_payload,
                        dci_format,

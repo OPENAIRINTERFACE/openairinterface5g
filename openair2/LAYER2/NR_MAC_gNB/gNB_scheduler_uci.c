@@ -833,13 +833,13 @@ static void handle_dl_harq(NR_UE_info_t * UE,
 }
 
 int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, NR_UE_info_t * UE) {
-  NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
-  int nb_tci_states = CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
-  NR_TCI_State_t *tci =NULL;
-  int i;
 
-  for(i=0; i<nb_tci_states && i<64; i++) {
-    tci = (NR_TCI_State_t *)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[i];
+  const NR_PDSCH_Config_t *pdsch_Config = UE->current_BWP.pdsch_Config;
+  int nb_tci_states = pdsch_Config ? pdsch_Config->tci_StatesToAddModList->list.count : 0;
+  NR_TCI_State_t *tci =NULL;
+
+  for(int i=0; i<nb_tci_states && i<64; i++) {
+    tci = (NR_TCI_State_t *)pdsch_Config->tci_StatesToAddModList->list.array[i];
 
     if(tci != NULL) {
       if(tci->qcl_Type1.referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
@@ -859,18 +859,17 @@ int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, NR_UE_info_t *
 }
 
 int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, NR_UE_info_t *UE) {
-  NR_CellGroupConfig_t *CellGroup = UE->CellGroup ;
-  int nb_tci_states = CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.count;
+
   NR_TCI_State_t *tci =NULL;
   NR_TCI_StateId_t *tci_id = NULL;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_ControlResourceSet_t *coreset = sched_ctrl->coreset;
-  int i;
   int flag = 0;
   int tci_stateID = -1;
-
-  for(i=0; i<nb_tci_states && i<128; i++) {
-    tci = (NR_TCI_State_t *)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup->tci_StatesToAddModList->list.array[i];
+  const NR_PDSCH_Config_t *pdsch_Config = UE->current_BWP.pdsch_Config;
+  int nb_tci_states = pdsch_Config ? pdsch_Config->tci_StatesToAddModList->list.count : 0;
+  for(int i=0; i<nb_tci_states && i<128; i++) {
+    tci = (NR_TCI_State_t *)pdsch_Config->tci_StatesToAddModList->list.array[i];
 
     if(tci != NULL && tci->qcl_Type1.referenceSignal.present == NR_QCL_Info__referenceSignal_PR_ssb) {
       if(tci->qcl_Type1.referenceSignal.choice.ssb == ssb_index_t) {
@@ -932,14 +931,6 @@ void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot) {
   uint8_t idx = 0;
   NR_UE_BWP_t *BWP = &UE->current_BWP;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
-
-  //bwp indicator
-  int n_dl_bwp=0;
-  if (CellGroup->spCellConfig &&
-      CellGroup->spCellConfig->spCellConfigDedicated &&
-      CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList)
-    n_dl_bwp = CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
 
   uint8_t nr_ssbri_cri = 0;
   uint8_t nb_of_csi_ssb_report = UE->csi_report_template[cqi_idx].nb_of_csi_ssb_report;
@@ -947,6 +938,8 @@ void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot) {
   uint8_t diff_rsrp_idx = 0;
   uint8_t i, j;
 
+  //bwp indicator
+  int n_dl_bwp = BWP->n_dl_bwp;
   const int bwp_id = BWP->dl_bwp_id;
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;

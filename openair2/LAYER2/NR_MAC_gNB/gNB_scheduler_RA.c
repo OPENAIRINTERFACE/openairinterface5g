@@ -850,6 +850,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     fill_dci_pdu_rel15(scc,
                        ra->CellGroup,
+                       ra_BWP,
                        dci_pdu,
                        &uldci_payload,
                        NR_UL_DCI_FORMAT_0_0,
@@ -1164,21 +1165,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
     NR_SearchSpace_t *ss = ra->ra_ss;
 
-    NR_BWP_Downlink_t *bwp = NULL;
-    NR_ControlResourceSet_t *coreset = NULL;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList=NULL;
-
-    if (ra->CellGroup &&
-        ra->CellGroup->spCellConfig &&
-        ra->CellGroup->spCellConfig->spCellConfigDedicated &&
-        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList &&
-        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra_BWP->dl_bwp_id-1]) {
-      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra_BWP->dl_bwp_id-1];
-      pdsch_TimeDomainAllocationList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    }
-    else {
-      pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    }
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = ra_BWP->tdaList;
 
     long BWPStart = 0;
     long BWPSize = 0;
@@ -1199,7 +1186,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
     AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
 
-    coreset = ra->coreset;
+    NR_ControlResourceSet_t *coreset = ra->coreset;
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg2\n");
 
@@ -1278,13 +1265,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // information to data and is reset every slot.
     const int pduindex = nr_mac->pdu_index[CC_id]++;
 
+    NR_PDSCH_Config_t *pdsch_Config = ra_BWP->pdsch_Config;
     uint8_t mcsTableIdx = 0;
-    if (bwp &&
-        bwp->bwp_Dedicated &&
-        bwp->bwp_Dedicated->pdsch_Config &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table) {
-      if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
+    if (pdsch_Config &&
+        pdsch_Config->mcs_Table) {
+      if (*pdsch_Config->mcs_Table == 0)
         mcsTableIdx = 1;
       else
         mcsTableIdx = 2;
@@ -1292,16 +1277,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     else mcsTableIdx = 0;
 
     int dmrsConfigType=0;
-    if (bwp &&
-        bwp->bwp_Dedicated &&
-        bwp->bwp_Dedicated->pdsch_Config &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type)
+    if (pdsch_Config &&
+        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
+        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup &&
+        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type)
       dmrsConfigType = 1;
-
-    NR_PDSCH_Config_t *pdsch_config = bwp && bwp->bwp_Dedicated && bwp->bwp_Dedicated->pdsch_Config ? bwp->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
 
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = ra->RA_rnti;
@@ -1328,7 +1308,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->VRBtoPRBMapping = 0;
     pdsch_pdu_rel15->StartSymbolIndex = startSymbolIndex;
     pdsch_pdu_rel15->NrOfSymbols = nrOfSymbols;
-    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
+    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(pdsch_Config,
                                                     nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
                                                     nrOfSymbols,
                                                     startSymbolIndex,
@@ -1421,6 +1401,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     fill_dci_pdu_rel15(scc,
                        ra->CellGroup,
+                       ra_BWP,
                        &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                        &dci_payload,
                        NR_DL_DCI_FORMAT_1_0,
@@ -1485,23 +1466,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
     NR_SearchSpace_t *ss = ra->ra_ss;
 
-    NR_BWP_Downlink_t *bwp = NULL;
-    NR_ControlResourceSet_t *coreset = NULL;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList=NULL;
-
-    if (ra->CellGroup &&
-        ra->CellGroup->spCellConfig &&
-        ra->CellGroup->spCellConfig->spCellConfigDedicated &&
-        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList &&
-        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra_BWP->dl_bwp_id-1]) {
-      bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra_BWP->dl_bwp_id-1];
-      pdsch_TimeDomainAllocationList = bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    }
-    else {
-      pdsch_TimeDomainAllocationList = scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    }
-
-    coreset = ra->coreset;
+    NR_ControlResourceSet_t *coreset = ra->coreset;
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = ra_BWP->tdaList;
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
@@ -1635,7 +1601,13 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
 
-    long dmrsConfigType = bwp!=NULL ? (bwp->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type == NULL ? 0 : 1) : 0;
+    NR_PDSCH_Config_t *pdsch_Config = ra_BWP->pdsch_Config;
+    int dmrsConfigType=0;
+    if (pdsch_Config &&
+        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
+        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup &&
+        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type)
+      dmrsConfigType = 1;
 
     nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 2;
     if (nrOfSymbols == 2) {
@@ -1656,12 +1628,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     uint8_t mcsTableIdx = 0;
-    if (bwp &&
-        bwp->bwp_Dedicated &&
-        bwp->bwp_Dedicated->pdsch_Config &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table) {
-      if (*bwp->bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table == 0)
+    if (pdsch_Config &&
+        pdsch_Config->mcs_Table) {
+      if (*pdsch_Config->mcs_Table == 0)
         mcsTableIdx = 1;
       else
         mcsTableIdx = 2;
@@ -1837,6 +1806,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     fill_dci_pdu_rel15(scc,
                        ra->CellGroup,
+                       ra_BWP,
                        &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                        &dci_payload,
                        NR_DL_DCI_FORMAT_1_0,

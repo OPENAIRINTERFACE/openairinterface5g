@@ -202,7 +202,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
-    nr_set_pdsch_semi_static(NULL, scc, UE->CellGroup, sched_ctrl->active_bwp, NULL, tda, target_dl_Nl,sched_ctrl , ps);
+    nr_set_pdsch_semi_static(BWP, scc, UE->CellGroup, tda, target_dl_Nl,sched_ctrl , ps);
 
   /* find largest unallocated chunk */
   const int bwpSize = BWP->dl_BWPSize;
@@ -380,9 +380,8 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
-  const long f = (sched_ctrl->active_bwp && sched_ctrl->search_space &&
-                  sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
-                    sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
+  const long f = (sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
+                  sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
   const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   if ((target_ul_Nl==4)||(target_ul_Nl==3))

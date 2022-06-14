@@ -297,6 +297,7 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,
+                        const NR_UE_BWP_t *BWP,
                         nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int dci_formats,
@@ -307,6 +308,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         uint16_t cset0_bwp_size);
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
+                 const NR_UE_BWP_t *BWP,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);
@@ -318,11 +320,6 @@ void set_r_pucch_parms(int rsetindex,
                        int *second_hop_prb,
                        int *nr_of_symbols,
                        int *start_symbol_index);
-
-
-NR_PDSCH_TimeDomainResourceAllocationList_t *get_pdsch_TimeDomainAllocationList(const NR_BWP_Downlink_t *active_bwp,
-                                                                                const NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
-                                                                                const NR_SIB1_t *sib1);
 
 /* find coreset within the search space */
 NR_ControlResourceSet_t *get_coreset(gNB_MAC_INST *nrmac,
@@ -342,11 +339,9 @@ long get_K2(NR_ServingCellConfigCommon_t *scc,
             int time_domain_assignment,
             int mu);
 
-void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
+void nr_set_pdsch_semi_static(const NR_UE_BWP_t *BWP,
                               const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
-                              const NR_BWP_Downlink_t *bwp,
-                              const NR_BWP_DownlinkDedicated_t *bwpd0,
                               int tda,
                               uint8_t layers,
                               NR_UE_sched_ctrl_t *sched_ctrl,
