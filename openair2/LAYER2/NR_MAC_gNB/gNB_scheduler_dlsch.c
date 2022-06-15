@@ -376,7 +376,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_BWP_t *BWP = &UE->current_BWP;
+  NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   NR_CellGroupConfig_t *cg = UE->CellGroup;
 
@@ -388,7 +388,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : UE->current_BWP.dl_BWPSize;
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : BWP->BWPSize;
 
   int rbStart = 0; // start wrt BWPstart
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
@@ -567,6 +567,7 @@ void pf_dl(module_id_t module_id,
       continue;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
 
     if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
 
@@ -606,12 +607,12 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       const NR_bler_options_t *bo = &mac->dl_bler;
-      const int max_mcs_table = ps->mcsTableIdx == 1 ? 27 : 28;
+      const int max_mcs_table = BWP->mcsTableIdx == 1 ? 27 : 28;
       const int max_mcs = min(sched_ctrl->dl_max_mcs, max_mcs_table);
       sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
       UE->layers = set_dl_nrOfLayers(sched_ctrl);
-      const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-      const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+      const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
+      const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
                                     R,
                                     1, /* rbSize */
@@ -650,12 +651,12 @@ void pf_dl(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
     const uint16_t rnti = iterator->UE->rnti;
 
-    NR_UE_BWP_t *BWP = &iterator->UE->current_BWP;
+    NR_UE_DL_BWP_t *BWP = &iterator->UE->current_DL_BWP;
 
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     const uint16_t bwpSize = coresetid == 0 ?
       RC.nrmac[module_id]->cset0_bwp_size :
-      BWP->dl_BWPSize;
+      BWP->BWPSize;
     int rbStart = 0; // start wrt BWPstart
 
     if (sched_ctrl->available_dl_harq.head < 0) {
@@ -744,8 +745,8 @@ void pf_dl(module_id_t module_id,
     while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
-    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
+    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
@@ -791,7 +792,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   NR_UE_info_t *UE=UE_info->list[0];
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_BWP_t *BWP = &UE->current_BWP;
+  NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   int startSymbolIndex, nrOfSymbols;
   const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = BWP->tdaList;
@@ -801,8 +802,8 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : BWP->dl_BWPSize;
-  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : BWP->dl_BWPStart;
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : BWP->BWPSize;
+  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : BWP->BWPStart;
 
   const uint16_t slbitmap = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
@@ -879,7 +880,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
   UE_iterator(UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    NR_UE_BWP_t *current_BWP = &UE->current_BWP;
+    NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
 
     if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
 
@@ -963,7 +964,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     NR_SearchSpace_t *ss = sched_ctrl->search_space;
 
-    const int bwp_id = current_BWP->dl_bwp_id;
+    const int bwp_id = current_BWP->bwp_id;
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it */
@@ -1001,19 +1002,19 @@ void nr_schedule_ue_spec(module_id_t module_id,
       pdsch_pdu->BWPSize  = gNB_mac->cset0_bwp_size;
       pdsch_pdu->BWPStart = gNB_mac->cset0_bwp_start;
     } else {
-      pdsch_pdu->BWPSize  = current_BWP->dl_BWPSize;
-      pdsch_pdu->BWPStart = current_BWP->dl_BWPStart;
+      pdsch_pdu->BWPSize  = current_BWP->BWPSize;
+      pdsch_pdu->BWPStart = current_BWP->BWPStart;
     }
 
-    pdsch_pdu->SubcarrierSpacing = current_BWP->dl_scs;
-    pdsch_pdu->CyclicPrefix = current_BWP->dl_cyclicprefix ? *current_BWP->dl_cyclicprefix : 0;
+    pdsch_pdu->SubcarrierSpacing = current_BWP->scs;
+    pdsch_pdu->CyclicPrefix = current_BWP->cyclicprefix ? *current_BWP->cyclicprefix : 0;
     // Codeword information
     pdsch_pdu->NrOfCodewords = 1;
     //number of information bits per 1024 coded bits expressed in 0.1 bit units
     pdsch_pdu->targetCodeRate[0] = R;
     pdsch_pdu->qamModOrder[0] = Qm;
     pdsch_pdu->mcsIndex[0] = sched_pdsch->mcs;
-    pdsch_pdu->mcsTable[0] = ps->mcsTableIdx;
+    pdsch_pdu->mcsTable[0] = current_BWP->mcsTableIdx;
     AssertFatal(harq!=NULL,"harq is null\n");
     AssertFatal(harq->round<4,"%d",harq->round);
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
@@ -1056,7 +1057,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     // Maximum number of PRBs across all configured DL BWPs
     int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, cg);
-    pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ps->mcsTableIdx,
+    pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcsTableIdx,
                                                                          bw_tbslbrm,
                                                                          nl_tbslbrm);
 

@@ -195,7 +195,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   NR_UE_info_t *UE = RC.nrmac[module_id]->UE_info.list[0];
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_BWP_t *BWP = &UE->current_BWP;
+  NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
   const int CC_id = 0;
 
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
@@ -205,8 +205,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
     nr_set_pdsch_semi_static(BWP, scc, UE->CellGroup, tda, target_dl_Nl,sched_ctrl , ps);
 
   /* find largest unallocated chunk */
-  const int bwpSize = BWP->dl_BWPSize;
-  const int BWPStart = BWP->dl_BWPStart;
+  const int bwpSize = BWP->BWPSize;
+  const int BWPStart = BWP->BWPStart;
 
   int rbStart = 0;
   int rbSize = 0;
@@ -311,8 +311,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->rbSize = rbSize;
 
   sched_pdsch->mcs = target_dl_mcs;
-  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
+  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
@@ -352,8 +352,8 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   const int CC_id = 0;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_BWP_t *BWP = &UE->current_BWP;
-  const int mu = BWP->ul_scs;
+  NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
+  const int mu = BWP->scs;
 
   const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
     sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
@@ -400,8 +400,8 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   uint16_t rbStart = 0;
   uint16_t rbSize;
 
-  const int bw = BWP->ul_BWPSize;
-  const int BWPStart = BWP->ul_BWPStart;
+  const int bw = BWP->BWPSize;
+  const int BWPStart = BWP->BWPStart;
 
   if (target_ul_bw>bw)
     rbSize = bw;

@@ -201,7 +201,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   int time_domain_assignment,
                   uint8_t tpc,
                   int n_ubwp,
-                  NR_UE_BWP_t *BWP);
+                  NR_UE_UL_BWP_t *BWP);
 
 void nr_schedule_pucch(gNB_MAC_INST* nrmac,
                        frame_t frameP,
@@ -297,7 +297,7 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,
-                        const NR_UE_BWP_t *BWP,
+                        const NR_UE_DL_BWP_t *BWP,
                         nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int dci_formats,
@@ -308,7 +308,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         uint16_t cset0_bwp_size);
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
-                 const NR_UE_BWP_t *BWP,
+                 const NR_UE_DL_BWP_t *BWP,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);
@@ -339,7 +339,7 @@ long get_K2(NR_ServingCellConfigCommon_t *scc,
             int time_domain_assignment,
             int mu);
 
-void nr_set_pdsch_semi_static(const NR_UE_BWP_t *BWP,
+void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
                               const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               int tda,
@@ -391,11 +391,10 @@ NR_UE_info_t * find_nr_UE(NR_UEs_t* UEs, rnti_t rntiP);
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
 void configure_UE_BWP(gNB_MAC_INST *nr_mac,
-                      NR_UE_BWP_t *BWP,
                       NR_ServingCellConfigCommon_t *scc,
                       NR_UE_sched_ctrl_t *sched_ctrl,
                       NR_RA_t *ra,
-                      NR_CellGroupConfig_t *CellGroup);
+                      NR_UE_info_t *UE);
 
 NR_UE_info_t* add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
 

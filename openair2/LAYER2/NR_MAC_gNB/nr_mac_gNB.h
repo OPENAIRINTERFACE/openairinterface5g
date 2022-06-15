@@ -91,21 +91,25 @@ typedef struct {
   int len;
 } NR_list_t;
 
-typedef struct NR_UE_BWP {
-  NR_BWP_Id_t dl_bwp_id;
-  NR_BWP_Id_t ul_bwp_id;
+typedef struct NR_UE_DL_BWP {
+  NR_BWP_Id_t bwp_id;
   int n_dl_bwp;
-  int dl_scs;
-  int ul_scs;
-  long *dl_cyclicprefix;
-  long *ul_cyclicprefix;
-  uint16_t dl_BWPSize;
-  uint16_t dl_BWPStart;
-  uint16_t ul_BWPSize;
-  uint16_t ul_BWPStart;
+  int scs;
+  long *cyclicprefix;
+  uint16_t BWPSize;
+  uint16_t BWPStart;
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList;
   NR_PDSCH_Config_t *pdsch_Config;
-} NR_UE_BWP_t;
+  uint8_t mcsTableIdx;
+} NR_UE_DL_BWP_t;
+
+typedef struct NR_UE_UL_BWP {
+  NR_BWP_Id_t bwp_id;
+  int scs;
+  long *cyclicprefix;
+  uint16_t BWPSize;
+  uint16_t BWPStart;
+} NR_UE_UL_BWP_t;
 
 typedef enum {
   RA_IDLE = 0,
@@ -211,7 +215,8 @@ typedef struct {
   /// CFRA flag
   bool cfra;
   // BWP for RA
-  NR_UE_BWP_t BWP;
+  NR_UE_DL_BWP_t DL_BWP;
+  NR_UE_UL_BWP_t UL_BWP;
 } NR_RA_t;
 
 /*! \brief gNB common channels */
@@ -422,7 +427,6 @@ typedef struct NR_pdsch_semi_static {
   int startSymbolIndex;
   int nrOfSymbols;
   uint8_t nrOfLayers;
-  uint8_t mcsTableIdx;
   uint8_t dmrs_ports_id;
   uint8_t N_PRB_DMRS;
   uint8_t N_DMRS_SLOT;
@@ -719,7 +723,8 @@ typedef struct {
   /// scheduling control info
   nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl;
-  NR_UE_BWP_t current_BWP;
+  NR_UE_DL_BWP_t current_DL_BWP;
+  NR_UE_UL_BWP_t current_UL_BWP;
   NR_mac_stats_t mac_stats;
   NR_CellGroupConfig_t *CellGroup;
   char cg_buf[32768]; /* arbitrary size */

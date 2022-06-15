@@ -847,7 +847,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
                                     cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
   int rbStart = 0; // wrt BWP start
-  const uint16_t bwpSize = UE->current_BWP.ul_BWPSize;
+  const uint16_t bwpSize = UE->current_UL_BWP.BWPSize;
   const uint8_t nrOfLayers = 1;
   const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
@@ -1037,7 +1037,7 @@ void pf_ul(module_id_t module_id,
 
     LOG_D(NR_MAC,"pf_ul: preparing UL scheduling for UE %04x\n",UE->rnti);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    NR_UE_BWP_t *BWP = &UE->current_BWP;
+    NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
 
     int rbStart = 0; // wrt BWP start
     NR_CellGroupConfig_t *cg = UE->CellGroup;
@@ -1045,7 +1045,7 @@ void pf_ul(module_id_t module_id,
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
-    const uint16_t bwpSize = BWP->ul_BWPSize;
+    const uint16_t bwpSize = BWP->BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
     const NR_mac_dir_stats_t *stats = &UE->mac_stats.ul;
@@ -1235,15 +1235,15 @@ void pf_ul(module_id_t module_id,
     }
     else LOG_D(NR_MAC, "%4d.%2d free CCE for UL DCI UE %04x\n",frame,slot, iterator->UE->rnti);
 
-    NR_UE_BWP_t *BWP = &iterator->UE->current_BWP;
+    NR_UE_UL_BWP_t *BWP = &iterator->UE->current_UL_BWP;
     NR_CellGroupConfig_t *cg = iterator->UE->CellGroup;
     NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated
                                       && cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
 
-    int rbStart = sched_ctrl->active_ubwp ? BWP->ul_BWPStart : 0;
-    const uint16_t bwpSize = BWP->ul_BWPSize;
+    int rbStart = sched_ctrl->active_ubwp ? BWP->BWPStart : 0;
+    const uint16_t bwpSize = BWP->BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
@@ -1347,8 +1347,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * TDAs yet). If the TDA is negative, it means that there is no UL slot to
    * schedule now (slot + k2 is not UL slot) */
   NR_UE_sched_ctrl_t *sched_ctrl = &nr_mac->UE_info.list[0]->UE_sched_ctrl;
-  NR_UE_BWP_t *BWP = &nr_mac->UE_info.list[0]->current_BWP;
-  int mu = BWP->ul_scs;
+  NR_UE_UL_BWP_t *BWP = &nr_mac->UE_info.list[0]->current_UL_BWP;
+  int mu = BWP->scs;
   const int temp_tda = get_ul_tda(nr_mac, scc, slot);
   int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, temp_tda, mu);
   const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) & 1023;
@@ -1398,8 +1398,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
 
-  const uint16_t bwpSize = BWP->ul_BWPSize;
-  const uint16_t bwpStart = BWP->ul_BWPStart;
+  const uint16_t bwpSize = BWP->BWPSize;
+  const uint16_t bwpStart = BWP->BWPStart;
 
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = NULL;
   if (sched_ctrl->active_ubwp) {
@@ -1511,7 +1511,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     if (sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) continue;
 
     NR_CellGroupConfig_t *cg = UE->CellGroup;
-    NR_UE_BWP_t *current_BWP = &UE->current_BWP;
+    NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
     NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
                                       cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
@@ -1642,9 +1642,9 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 
     /* FAPI: BWP */
 
-    pusch_pdu->bwp_size  = current_BWP->ul_BWPSize;
-    pusch_pdu->bwp_start = current_BWP->ul_BWPStart;
-    pusch_pdu->subcarrier_spacing = current_BWP->ul_scs;
+    pusch_pdu->bwp_size  = current_BWP->BWPSize;
+    pusch_pdu->bwp_start = current_BWP->BWPStart;
+    pusch_pdu->subcarrier_spacing = current_BWP->scs;
     pusch_pdu->cyclic_prefix = 0;
 
     /* FAPI: PUSCH information always included */
@@ -1806,13 +1806,13 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  current_BWP);
     fill_dci_pdu_rel15(scc,
                        cg,
-                       current_BWP,
+                       &UE->current_DL_BWP,
                        dci_pdu,
                        &uldci_payload,
                        ps->dci_format,
                        rnti_types[0],
                        pusch_pdu->bwp_size,
-                       current_BWP->ul_bwp_id,
+                       current_BWP->bwp_id,
                        coresetid,
                        nr_mac->cset0_bwp_size);
 
