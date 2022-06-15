@@ -1975,6 +1975,10 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
       sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
       LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frameP, slotP, UE->rnti, delay_ms);
+
+      // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE
+      UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
+      UE->UE_sched_ctrl.ul_failure = 0;
     } else {
       ra->state = WAIT_Msg4_ACK;
       LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
