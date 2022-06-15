@@ -135,23 +135,23 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     /* optional */
     /* 6.1 cG_ConfigInfo */
     if(f1ap_ue_context_setup_req->cu_to_du_rrc_information->cG_ConfigInfo!=NULL){
-      const char cG_ConfigInfoStr[]="asdsa1d32sa1d31asd31as";
       asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.cG_ConfigInfo, cG_ConfigInfo);
-      OCTET_STRING_fromBuf(cG_ConfigInfo, cG_ConfigInfoStr, strlen(cG_ConfigInfoStr)) ;
+      OCTET_STRING_fromBuf(cG_ConfigInfo, (const char *)f1ap_ue_context_setup_req->cu_to_du_rrc_information->cG_ConfigInfo,
+        f1ap_ue_context_setup_req->cu_to_du_rrc_information->cG_ConfigInfo_length);
     }
     /* optional */
     /* 6.2 uE_CapabilityRAT_ContainerList */
     if(f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
       asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList, uE_CapabilityRAT_ContainerList );
       OCTET_STRING_fromBuf(uE_CapabilityRAT_ContainerList, (const char *)f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
-          f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
+        f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
     }
     /* optional */
     /* 6.3 measConfig */
     if(f1ap_ue_context_setup_req->cu_to_du_rrc_information->measConfig!=NULL){
-      const char measConfigStr[]="asdsa1d32sa1d31asd31as";
       asn1cCalloc(ie6->value.choice.CUtoDURRCInformation.measConfig,  measConfig);
-      OCTET_STRING_fromBuf(measConfig, measConfigStr, strlen(measConfigStr)) ;
+      OCTET_STRING_fromBuf(measConfig, (const char*)f1ap_ue_context_setup_req->cu_to_du_rrc_information->measConfig,
+        f1ap_ue_context_setup_req->cu_to_du_rrc_information->measConfig_length);
     }
   }
   
@@ -248,201 +248,95 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   /* mandatory */
   /* c11. SRBs_ToBeSetup_List */
   if(f1ap_ue_context_setup_req->srbs_to_be_setup_length > 0){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie11);
-  ie11->id                             = F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List;
-  ie11->criticality                    = F1AP_Criticality_reject;  // ?
-  ie11->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SRBs_ToBeSetup_List;
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie11);
+    ie11->id                             = F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_List;
+    ie11->criticality                    = F1AP_Criticality_reject;  // ?
+    ie11->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SRBs_ToBeSetup_List;
 
-  for (int i=0; i<f1ap_ue_context_setup_req->srbs_to_be_setup_length; i++) {
-    //
-    asn1cSequenceAdd(ie11->value.choice.SRBs_ToBeSetup_List.list, F1AP_SRBs_ToBeSetup_ItemIEs_t, srbs_toBeSetup_item_ies);
-    srbs_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_Item; // 73
-    srbs_toBeSetup_item_ies->criticality   = F1AP_Criticality_ignore;
-    srbs_toBeSetup_item_ies->value.present = F1AP_SRBs_ToBeSetup_ItemIEs__value_PR_SRBs_ToBeSetup_Item;
-    /* 11.1 SRBs_ToBeSetup_Item */
-    F1AP_SRBs_ToBeSetup_Item_t *srbs_toBeSetup_item=&srbs_toBeSetup_item_ies->value.choice.SRBs_ToBeSetup_Item;
-    /* 11.1.1 sRBID */
-    srbs_toBeSetup_item->sRBID = f1ap_ue_context_setup_req->srbs_to_be_setup[i].srb_id;
-    /* OPTIONAL */
-    /* 11.1.2 duplicationIndication */
-    //if (0) {
-    asn1cCallocOne(srbs_toBeSetup_item->duplicationIndication,
+    for (int i=0; i<f1ap_ue_context_setup_req->srbs_to_be_setup_length; i++) {
+      asn1cSequenceAdd(ie11->value.choice.SRBs_ToBeSetup_List.list, F1AP_SRBs_ToBeSetup_ItemIEs_t, srbs_toBeSetup_item_ies);
+      srbs_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_ToBeSetup_Item; // 73
+      srbs_toBeSetup_item_ies->criticality   = F1AP_Criticality_ignore;
+      srbs_toBeSetup_item_ies->value.present = F1AP_SRBs_ToBeSetup_ItemIEs__value_PR_SRBs_ToBeSetup_Item;
+      /* 11.1 SRBs_ToBeSetup_Item */
+      F1AP_SRBs_ToBeSetup_Item_t *srbs_toBeSetup_item=&srbs_toBeSetup_item_ies->value.choice.SRBs_ToBeSetup_Item;
+      /* 11.1.1 sRBID */
+      srbs_toBeSetup_item->sRBID = f1ap_ue_context_setup_req->srbs_to_be_setup[i].srb_id;
+      /* OPTIONAL */
+      /* 11.1.2 duplicationIndication */
+      asn1cCallocOne(srbs_toBeSetup_item->duplicationIndication,
                    F1AP_DuplicationIndication_true); // enum
-    //}
-  }
+    }
   }
 
   /* mandatory */
   /* c12. DRBs_ToBeSetup_List */
   if(f1ap_ue_context_setup_req->drbs_to_be_setup_length){
-  asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie12);
-  ie12->id                             = F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List;
-  ie12->criticality                    = F1AP_Criticality_reject;
-  ie12->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_DRBs_ToBeSetup_List;
-  LOG_I(F1AP, "Length of drbs_to_be_setup: %d \n", f1ap_ue_context_setup_req->drbs_to_be_setup_length);
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextSetupRequestIEs_t, ie12);
+    ie12->id                             = F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List;
+    ie12->criticality                    = F1AP_Criticality_reject;
+    ie12->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_DRBs_ToBeSetup_List;
+    LOG_I(F1AP, "Length of drbs_to_be_setup: %d \n", f1ap_ue_context_setup_req->drbs_to_be_setup_length);
 
-  for (int i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; i++) {
-    //
-    asn1cSequenceAdd(ie12->value.choice.DRBs_ToBeSetup_List.list, F1AP_DRBs_ToBeSetup_ItemIEs_t, drbs_toBeSetup_item_ies);
-    drbs_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_Item;
-    drbs_toBeSetup_item_ies->criticality   = F1AP_Criticality_reject;
-    drbs_toBeSetup_item_ies->value.present = F1AP_DRBs_ToBeSetup_ItemIEs__value_PR_DRBs_ToBeSetup_Item;
-    /* 12.1 DRBs_ToBeSetup_Item */
-    F1AP_DRBs_ToBeSetup_Item_t *drbs_toBeSetup_item=&drbs_toBeSetup_item_ies->value.choice.DRBs_ToBeSetup_Item;
-    /* 12.1.1 dRBID */
-    drbs_toBeSetup_item->dRBID = f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id; // 9
-    /* 12.1.2 qoSInformation */
-    int some_decide_qos = 0; // BK: Need Check
+    for (int i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; i++) {
+      //
+      asn1cSequenceAdd(ie12->value.choice.DRBs_ToBeSetup_List.list, F1AP_DRBs_ToBeSetup_ItemIEs_t, drbs_toBeSetup_item_ies);
+      drbs_toBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_Item;
+      drbs_toBeSetup_item_ies->criticality   = F1AP_Criticality_reject;
+      drbs_toBeSetup_item_ies->value.present = F1AP_DRBs_ToBeSetup_ItemIEs__value_PR_DRBs_ToBeSetup_Item;
+      /* 12.1 DRBs_ToBeSetup_Item */
+      F1AP_DRBs_ToBeSetup_Item_t *drbs_toBeSetup_item=&drbs_toBeSetup_item_ies->value.choice.DRBs_ToBeSetup_Item;
+      /* 12.1.1 dRBID */
+      drbs_toBeSetup_item->dRBID = f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id; // 9
+      /* 12.1.2 qoSInformation */
+      int some_decide_qos = 0; // BK: Need Check
 
-    if (some_decide_qos) {
-      drbs_toBeSetup_item->qoSInformation.present = F1AP_QoSInformation_PR_eUTRANQoS;
-      /*  12.1.2.1 eUTRANQoS */
-      asn1cCalloc(drbs_toBeSetup_item->qoSInformation.choice.eUTRANQoS, eUTRANQoS);
-      /*  12.1.2.1.1 qCI */
-      eUTRANQoS->qCI = 254L;
-      /*  12.1.2.1.2 allocationAndRetentionPriority */
-      {
-        /*  12.1.2.1.2.1 priorityLevel */
-        eUTRANQoS->allocationAndRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
-        /*  12.1.2.1.2.2 pre_emptionCapability */
-        eUTRANQoS->allocationAndRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_may_trigger_pre_emption; // enum
-        /*  12.1.2.1.2.2 pre_emptionVulnerability */
-        eUTRANQoS->allocationAndRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
-      }
-
-      /* OPTIONAL */
-      /*  12.1.2.1.3 gbrQosInformation */
-      if (0) {
-        eUTRANQoS->gbrQosInformation = (F1AP_GBR_QosInformation_t *)calloc(1, sizeof(F1AP_GBR_QosInformation_t));
-        asn_long2INTEGER(&eUTRANQoS->gbrQosInformation->e_RAB_MaximumBitrateDL, 1L);
-        asn_long2INTEGER(&eUTRANQoS->gbrQosInformation->e_RAB_MaximumBitrateUL, 1L);
-        asn_long2INTEGER(&eUTRANQoS->gbrQosInformation->e_RAB_GuaranteedBitrateDL, 1L);
-        asn_long2INTEGER(&eUTRANQoS->gbrQosInformation->e_RAB_GuaranteedBitrateUL, 1L);
-      }
-    } else {
-      /* 12.1.2 DRB_Information */
-      drbs_toBeSetup_item->qoSInformation.present = F1AP_QoSInformation_PR_choice_extension;
-      F1AP_QoSInformation_ExtIEs_t *ie = (F1AP_QoSInformation_ExtIEs_t *)calloc(1, sizeof(*ie));
-      ie->id                             = F1AP_ProtocolIE_ID_id_DRB_Information;
-      ie->criticality                    = F1AP_Criticality_reject;
-      ie->value.present                  = F1AP_QoSInformation_ExtIEs__value_PR_DRB_Information;
-      F1AP_DRB_Information_t   *DRB_Information = &ie->value.choice.DRB_Information;
-      drbs_toBeSetup_item->qoSInformation.choice.choice_extension = (struct F1AP_ProtocolIE_SingleContainer *)ie;
-      /* 12.1.2.1 dRB_QoS */
-      {
-        /* qoS_Characteristics */
+      if (some_decide_qos) {
+        drbs_toBeSetup_item->qoSInformation.present = F1AP_QoSInformation_PR_eUTRANQoS;
+        /*  12.1.2.1 eUTRANQoS */
+        asn1cCalloc(drbs_toBeSetup_item->qoSInformation.choice.eUTRANQoS, eUTRANQoS);
+        /*  12.1.2.1.1 qCI */
+        eUTRANQoS->qCI = 254L;
+        /*  12.1.2.1.2 allocationAndRetentionPriority */
         {
-          int some_decide_qoS_characteristics = 0; // BK: Need Check
-
-          if (some_decide_qoS_characteristics) {
-            DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
-            setQos(DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI);
-          } else {
-            DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
-            asn1cCalloc(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI, tmp);
-            /* qoSPriorityLevel */
-            tmp->qoSPriorityLevel = 1L;
-            /* packetDelayBudget */
-            tmp->packetDelayBudget = 1L;
-            /* packetErrorRate */
-            tmp->packetErrorRate.pER_Scalar = 1L;
-            tmp->packetErrorRate.pER_Exponent = 6L;
-
-            /* OPTIONAL */
-            /* delayCritical */
-            if (0) {
-              asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical, 1L);
-            }
-
-            /* OPTIONAL */
-            /* averagingWindow */
-            if (0) {
-              asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow, 1L);
-            }
-
-            /* OPTIONAL */
-            /* maxDataBurstVolume */
-            if (0) {
-              asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume, 1L);
-            }
-          } // if some_decide_qoS_characteristics
-        } // qoS_Characteristics
-        /* nGRANallocationRetentionPriority */
-        {
-          DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
-          DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
-          DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
-        } // nGRANallocationRetentionPriority
-
-        /* OPTIONAL */
-        /* gBR_QoS_Flow_Information */
-        if (0) {
-          asn1cCalloc(DRB_Information->dRB_QoS.gBR_QoS_Flow_Information, tmp);
-          asn_long2INTEGER(&tmp->maxFlowBitRateDownlink, 1L);
-          asn_long2INTEGER(&tmp->maxFlowBitRateUplink, 1L);
-          asn_long2INTEGER(&tmp->guaranteedFlowBitRateDownlink, 1L);
-          asn_long2INTEGER(&tmp->guaranteedFlowBitRateUplink, 1L);
-
-          /* OPTIONAL */
-          /* maxPacketLossRateDownlink */
-          if (0) {
-            asn1cCallocOne(DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink, 1L);
-          }
-
-          /* OPTIONAL */
-          /* maxPacketLossRateUplink */
-          if (0) {
-            asn1cCallocOne(DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink, 1L);
-          }
+          /*  12.1.2.1.2.1 priorityLevel */
+          eUTRANQoS->allocationAndRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
+          /*  12.1.2.1.2.2 pre_emptionCapability */
+          eUTRANQoS->allocationAndRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_may_trigger_pre_emption; // enum
+          /*  12.1.2.1.2.2 pre_emptionVulnerability */
+          eUTRANQoS->allocationAndRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
         }
 
         /* OPTIONAL */
-        /* reflective_QoS_Attribute */
+        /*  12.1.2.1.3 gbrQosInformation */
         if (0) {
-          asn1cCallocOne(DRB_Information->dRB_QoS.reflective_QoS_Attribute, 1L);
+          eUTRANQoS->gbrQosInformation = (F1AP_GBR_QosInformation_t *)calloc(1, sizeof(F1AP_GBR_QosInformation_t));
+          asn_long2INTEGER(&eUTRANQoS->gbrQosInformation->e_RAB_MaximumBitrateDL, 1L);
+          asn_long2INTEGER(&eUTRANQoS->gbrQosInformation->e_RAB_MaximumBitrateUL, 1L);
+          asn_long2INTEGER(&eUTRANQoS->gbrQosInformation->e_RAB_GuaranteedBitrateDL, 1L);
+          asn_long2INTEGER(&eUTRANQoS->gbrQosInformation->e_RAB_GuaranteedBitrateUL, 1L);
         }
-      } // dRB_QoS
-      /* 12.1.2.2 sNSSAI */
-      {
-        /* sST */
-        OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, "1", 1);
-
-        /* OPTIONAL */
-        /* sD */
-        if (0) {
-          asn1cCalloc(DRB_Information->sNSSAI.sD, tmp);
-          OCTET_STRING_fromBuf(tmp, "asdsa1d32sa1d31asd31as",
-                               strlen("asdsa1d32sa1d31asd31as"));
-        }
-      }
-
-      /* OPTIONAL */
-      /* 12.1.2.3 notificationControl */
-      if (0) {
-        asn1cCallocOne(DRB_Information->notificationControl,
-                       F1AP_NotificationControl_active); // enum
-      }
-
-      /* 12.1.2.4 flows_Mapped_To_DRB_List */  // BK: need verifiy
-
-      for (int k = 0; k < 1; k ++) {
-        asn1cSequenceAdd(DRB_Information->flows_Mapped_To_DRB_List.list,
-                         F1AP_Flows_Mapped_To_DRB_Item_t, flows_mapped_to_drb_item);
-        /* qoSFlowIndicator */
-        flows_mapped_to_drb_item->qoSFlowIdentifier = 1L;
-        /* qoSFlowLevelQoSParameters */
+      } else {
+        /* 12.1.2 DRB_Information */
+        drbs_toBeSetup_item->qoSInformation.present = F1AP_QoSInformation_PR_choice_extension;
+        F1AP_QoSInformation_ExtIEs_t *ie = (F1AP_QoSInformation_ExtIEs_t *)calloc(1, sizeof(*ie));
+        ie->id                             = F1AP_ProtocolIE_ID_id_DRB_Information;
+        ie->criticality                    = F1AP_Criticality_reject;
+        ie->value.present                  = F1AP_QoSInformation_ExtIEs__value_PR_DRB_Information;
+        F1AP_DRB_Information_t   *DRB_Information = &ie->value.choice.DRB_Information;
+        drbs_toBeSetup_item->qoSInformation.choice.choice_extension = (struct F1AP_ProtocolIE_SingleContainer *)ie;
+        /* 12.1.2.1 dRB_QoS */
         {
           /* qoS_Characteristics */
           {
             int some_decide_qoS_characteristics = 0; // BK: Need Check
-            F1AP_QoS_Characteristics_t *QosParams=&flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.qoS_Characteristics;
 
             if (some_decide_qoS_characteristics) {
-              QosParams->present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
-              setQos(QosParams->choice.non_Dynamic_5QI);
+              DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
+              setQos(DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI);
             } else {
-              QosParams->present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
-              asn1cCalloc(QosParams->choice.dynamic_5QI, tmp);
+              DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
+              asn1cCalloc(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI, tmp);
               /* qoSPriorityLevel */
               tmp->qoSPriorityLevel = 1L;
               /* packetDelayBudget */
@@ -454,36 +348,33 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
               /* OPTIONAL */
               /* delayCritical */
               if (0) {
-                asn1cCalloc(QosParams->choice.dynamic_5QI->delayCritical, tmp);
-                *tmp = 1L;
+                asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical, 1L);
               }
 
               /* OPTIONAL */
               /* averagingWindow */
               if (0) {
-                asn1cCalloc(QosParams->choice.dynamic_5QI->averagingWindow, tmp);
-                *tmp = 1L;
+                asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow, 1L);
               }
 
               /* OPTIONAL */
               /* maxDataBurstVolume */
               if (0) {
-                asn1cCalloc(QosParams->choice.dynamic_5QI->maxDataBurstVolume, tmp);
-                *tmp= 1L;
+                asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume, 1L);
               }
             } // if some_decide_qoS_characteristics
           } // qoS_Characteristics
           /* nGRANallocationRetentionPriority */
           {
-            flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
-            flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
-            flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
+            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
+            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
+            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
           } // nGRANallocationRetentionPriority
 
           /* OPTIONAL */
           /* gBR_QoS_Flow_Information */
           if (0) {
-            asn1cCalloc(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information, tmp);
+            asn1cCalloc(DRB_Information->dRB_QoS.gBR_QoS_Flow_Information, tmp);
             asn_long2INTEGER(&tmp->maxFlowBitRateDownlink, 1L);
             asn_long2INTEGER(&tmp->maxFlowBitRateUplink, 1L);
             asn_long2INTEGER(&tmp->guaranteedFlowBitRateDownlink, 1L);
@@ -492,80 +383,186 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
             /* OPTIONAL */
             /* maxPacketLossRateDownlink */
             if (0) {
-              asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateDownlink, 1L);
+              asn1cCallocOne(DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink, 1L);
             }
 
             /* OPTIONAL */
             /* maxPacketLossRateUplink */
             if (0) {
-              asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateUplink, 1L);
+              asn1cCallocOne(DRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink, 1L);
             }
           }
 
           /* OPTIONAL */
           /* reflective_QoS_Attribute */
           if (0) {
-            asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.reflective_QoS_Attribute, 1L);
+            asn1cCallocOne(DRB_Information->dRB_QoS.reflective_QoS_Attribute, 1L);
           }
-        } // qoSFlowLevelQoSParameters
-      }
-    } // if some_decide_qos
+        } // dRB_QoS
+        /* 12.1.2.2 sNSSAI */
+        {
+          /* sST */
+          OCTET_STRING_fromBuf(&DRB_Information->sNSSAI.sST, "1", 1);
 
-    /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
-    for (int j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
-      /*Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU*/
-      transport_layer_addr_t addr;
-      int sz=sizeof(f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].tl_address);
-      memcpy(addr.buffer,&f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].tl_address, sz);
-      addr.length = sz*8;
-      f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid=
-        newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
-                            f1ap_ue_context_setup_req->rnti,
-                            f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
-                            f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
-                            0xFFFF, // We will set the right value from DU answer
-                            addr,
-                            f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].port,
-                            cu_f1u_data_req);
-      /*  12.3.1 ULTunnels_ToBeSetup_Item */
-      asn1cSequenceAdd(drbs_toBeSetup_item->uLUPTNLInformation_ToBeSetup_List.list,
-                       F1AP_ULUPTNLInformation_ToBeSetup_Item_t, uLUPTNLInformation_ToBeSetup_Item);
-      uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
-      asn1cCalloc( uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.choice.gTPTunnel,
-                   gTPTunnel);
-      /* 12.3.1.1.1 transportLayerAddress */
-      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].tl_address,
+          /* OPTIONAL */
+          /* sD */
+          if (0) {
+            asn1cCalloc(DRB_Information->sNSSAI.sD, tmp);
+            OCTET_STRING_fromBuf(tmp, "asdsa1d32sa1d31asd31as",
+                               strlen("asdsa1d32sa1d31asd31as"));
+          }
+        }
+
+        /* OPTIONAL */
+        /* 12.1.2.3 notificationControl */
+        if (0) {
+          asn1cCallocOne(DRB_Information->notificationControl,
+            F1AP_NotificationControl_active); // enum
+        }
+
+        /* 12.1.2.4 flows_Mapped_To_DRB_List */  // BK: need verifiy
+
+        for (int k = 0; k < 1; k ++) {
+          asn1cSequenceAdd(DRB_Information->flows_Mapped_To_DRB_List.list,
+            F1AP_Flows_Mapped_To_DRB_Item_t, flows_mapped_to_drb_item);
+          /* qoSFlowIndicator */
+          flows_mapped_to_drb_item->qoSFlowIdentifier = 1L;
+          /* qoSFlowLevelQoSParameters */
+          {
+            /* qoS_Characteristics */
+            {
+              int some_decide_qoS_characteristics = 0; // BK: Need Check
+              F1AP_QoS_Characteristics_t *QosParams=&flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.qoS_Characteristics;
+
+              if (some_decide_qoS_characteristics) {
+                QosParams->present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
+                setQos(QosParams->choice.non_Dynamic_5QI);
+              } else {
+                QosParams->present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
+                asn1cCalloc(QosParams->choice.dynamic_5QI, tmp);
+                /* qoSPriorityLevel */
+                tmp->qoSPriorityLevel = 1L;
+                /* packetDelayBudget */
+                tmp->packetDelayBudget = 1L;
+                /* packetErrorRate */
+                tmp->packetErrorRate.pER_Scalar = 1L;
+                tmp->packetErrorRate.pER_Exponent = 6L;
+
+                /* OPTIONAL */
+                /* delayCritical */
+                if (0) {
+                  asn1cCalloc(QosParams->choice.dynamic_5QI->delayCritical, tmp);
+                  *tmp = 1L;
+                }
+
+                /* OPTIONAL */
+                /* averagingWindow */
+                if (0) {
+                  asn1cCalloc(QosParams->choice.dynamic_5QI->averagingWindow, tmp);
+                  *tmp = 1L;
+                }
+
+                /* OPTIONAL */
+                /* maxDataBurstVolume */
+                if (0) {
+                  asn1cCalloc(QosParams->choice.dynamic_5QI->maxDataBurstVolume, tmp);
+                  *tmp= 1L;
+                }
+              } // if some_decide_qoS_characteristics
+            } // qoS_Characteristics
+            /* nGRANallocationRetentionPriority */
+            {
+              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
+              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
+              flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
+            } // nGRANallocationRetentionPriority
+
+            /* OPTIONAL */
+            /* gBR_QoS_Flow_Information */
+            if (0) {
+              asn1cCalloc(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information, tmp);
+              asn_long2INTEGER(&tmp->maxFlowBitRateDownlink, 1L);
+              asn_long2INTEGER(&tmp->maxFlowBitRateUplink, 1L);
+              asn_long2INTEGER(&tmp->guaranteedFlowBitRateDownlink, 1L);
+              asn_long2INTEGER(&tmp->guaranteedFlowBitRateUplink, 1L);
+
+              /* OPTIONAL */
+              /* maxPacketLossRateDownlink */
+              if (0) {
+                asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateDownlink, 1L);
+              }
+
+              /* OPTIONAL */
+              /* maxPacketLossRateUplink */
+              if (0) {
+                asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateUplink, 1L);
+              }
+            }
+
+            /* OPTIONAL */
+            /* reflective_QoS_Attribute */
+            if (0) {
+              asn1cCallocOne(flows_mapped_to_drb_item->qoSFlowLevelQoSParameters.reflective_QoS_Attribute, 1L);
+            }
+          } // qoSFlowLevelQoSParameters
+        }
+      } // if some_decide_qos
+
+      /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
+      for (int j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
+        /*Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU*/
+        transport_layer_addr_t addr;
+        int sz=sizeof(f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].tl_address);
+        memcpy(addr.buffer,&f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].tl_address, sz);
+        addr.length = sz*8;
+        f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid=
+            newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
+              f1ap_ue_context_setup_req->rnti,
+              f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
+              f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
+              0xFFFF, // We will set the right value from DU answer
+              addr,
+              f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_dl_tnl[0].port,
+              cu_f1u_data_req);
+        /*  12.3.1 ULTunnels_ToBeSetup_Item */
+        asn1cSequenceAdd(drbs_toBeSetup_item->uLUPTNLInformation_ToBeSetup_List.list,
+          F1AP_ULUPTNLInformation_ToBeSetup_Item_t, uLUPTNLInformation_ToBeSetup_Item);
+        uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
+        asn1cCalloc( uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.choice.gTPTunnel,
+          gTPTunnel);
+        /* 12.3.1.1.1 transportLayerAddress */
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].tl_address,
           &gTPTunnel->transportLayerAddress);
-      /* 12.3.1.1.2 gTP_TEID */
-      INT32_TO_OCTET_STRING(f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid,
-                            &gTPTunnel->gTP_TEID);
-    }
+        /* 12.3.1.1.2 gTP_TEID */
+        INT32_TO_OCTET_STRING(f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid,
+          &gTPTunnel->gTP_TEID);
+      }
 
-    /* 12.1.4 rLCMode */
-    /* TODO use rlc_mode from f1ap_drb_to_be_setup */
-    switch (f1ap_ue_context_setup_req->drbs_to_be_setup[i].rlc_mode) {
-      case RLC_MODE_AM:
-        drbs_toBeSetup_item->rLCMode = F1AP_RLCMode_rlc_am;
-        break;
+      /* 12.1.4 rLCMode */
+      /* TODO use rlc_mode from f1ap_drb_to_be_setup */
+      switch (f1ap_ue_context_setup_req->drbs_to_be_setup[i].rlc_mode) {
+        case RLC_MODE_AM:
+          drbs_toBeSetup_item->rLCMode = F1AP_RLCMode_rlc_am;
+          break;
 
-      default:
-        drbs_toBeSetup_item->rLCMode = F1AP_RLCMode_rlc_um_bidirectional;
-    }
+        default:
+          drbs_toBeSetup_item->rLCMode = F1AP_RLCMode_rlc_um_bidirectional;
+      }
 
-    /* OPTIONAL */
-    /* 12.1.5 ULConfiguration */
-    if (0) {
-      asn1cCalloc(drbs_toBeSetup_item->uLConfiguration, tmp);
-      tmp->uLUEConfiguration = F1AP_ULUEConfiguration_no_data;
-    }
+      /* OPTIONAL */
+      /* 12.1.5 ULConfiguration */
+      if (0) {
+        asn1cCalloc(drbs_toBeSetup_item->uLConfiguration, tmp);
+        tmp->uLUEConfiguration = F1AP_ULUEConfiguration_no_data;
+      }
 
-    /* OPTIONAL */
-    /* 12.1.6 duplicationActivation */
-    if (0) {
-      asn1cCalloc(drbs_toBeSetup_item->duplicationActivation, tmp);
-      *tmp = F1AP_DuplicationActivation_active;  // enum
+      /* OPTIONAL */
+      /* 12.1.6 duplicationActivation */
+      if (0) {
+        asn1cCalloc(drbs_toBeSetup_item->duplicationActivation, tmp);
+        *tmp = F1AP_DuplicationActivation_active;  // enum
+      }
     }
-  }
   }
 
   /* OPTIONAL */
@@ -673,9 +670,10 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
     return -1;
   }
 
-  f1ap_ue_context_setup_resp->du_to_cu_rrc_information = (uint8_t *)calloc(1,ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
-  memcpy(f1ap_ue_context_setup_resp->du_to_cu_rrc_information, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.buf, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
-  f1ap_ue_context_setup_resp->du_to_cu_rrc_information_length = ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size;
+  f1ap_ue_context_setup_resp->du_to_cu_rrc_information = (du_to_cu_rrc_information_t *)calloc(1,sizeof(du_to_cu_rrc_information_t));
+  f1ap_ue_context_setup_resp->du_to_cu_rrc_information->cellGroupConfig = (uint8_t *)calloc(1,ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
+  memcpy(f1ap_ue_context_setup_resp->du_to_cu_rrc_information->cellGroupConfig, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.buf, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
+  f1ap_ue_context_setup_resp->du_to_cu_rrc_information->cellGroupConfig_length = ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size;
   // DRBs_Setup_List
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_DRBs_Setup_List, false);
@@ -1143,7 +1141,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
 
   /* optional */
   /* c7. RRCRconfigurationCompleteIndicator */
-  if (0) {
+  if (f1ap_ue_context_modification_req->ReconfigComplOutcome == RRCreconf_success) {
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie71);
     ie71->id                             = F1AP_ProtocolIE_ID_id_RRCReconfigurationCompleteIndicator;
     ie71->criticality                    = F1AP_Criticality_ignore;
@@ -1153,13 +1151,13 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
 
   /* optional */
   /* c8. RRCContainer */
-  if (0) {
+  if (f1ap_ue_context_modification_req->rrc_container != NULL) {
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie81);
     ie81->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
     ie81->criticality                    = F1AP_Criticality_ignore;
     ie81->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_RRCContainer;
-    OCTET_STRING_fromBuf(&ie81->value.choice.RRCContainer, "asdsa1d32sa1d31asd31as",
-                         strlen("asdsa1d32sa1d31asd31as"));
+    OCTET_STRING_fromBuf(&ie81->value.choice.RRCContainer, (const char*)f1ap_ue_context_modification_req->rrc_container,
+        f1ap_ue_context_modification_req->rrc_container_length);
   }
 
   /* optional */
@@ -1232,10 +1230,8 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
       srbs_toBeSetupMod_item->sRBID = f1ap_ue_context_modification_req->srbs_to_be_setup[i].srb_id;
       /* OPTIONAL */
       /* 11.1.2 duplicationIndication */
-      //if (0) {
       asn1cCallocOne(srbs_toBeSetupMod_item->duplicationIndication,
                    F1AP_DuplicationIndication_true); // enum
-      //}
     }
   }
 
@@ -1310,42 +1306,42 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
               DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_non_Dynamic_5QI;
               setQos(DRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI);
             } else {
-              DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
-              asn1cCalloc(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI, tmp);
-              /* qoSPriorityLevel */
-              tmp->qoSPriorityLevel = 1L;
-              /* packetDelayBudget */
-              tmp->packetDelayBudget = 1L;
-              /* packetErrorRate */
-              tmp->packetErrorRate.pER_Scalar = 1L;
-              tmp->packetErrorRate.pER_Exponent = 6L;
+                DRB_Information->dRB_QoS.qoS_Characteristics.present = F1AP_QoS_Characteristics_PR_dynamic_5QI;
+                asn1cCalloc(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI, tmp);
+                /* qoSPriorityLevel */
+                tmp->qoSPriorityLevel = 1L;
+                /* packetDelayBudget */
+                tmp->packetDelayBudget = 1L;
+                /* packetErrorRate */
+                tmp->packetErrorRate.pER_Scalar = 1L;
+                tmp->packetErrorRate.pER_Exponent = 6L;
 
-              /* OPTIONAL */
-              /* delayCritical */
-              if (0) {
-                asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical, 1L);
-              }
+                /* OPTIONAL */
+                /* delayCritical */
+                if (0) {
+                  asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical, 1L);
+                }
 
-              /* OPTIONAL */
-              /* averagingWindow */
-              if (0) {
-                asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow, 1L);
-              }
+                /* OPTIONAL */
+                /* averagingWindow */
+                if (0) {
+                  asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow, 1L);
+                }
 
-              /* OPTIONAL */
-              /* maxDataBurstVolume */
-              if (0) {
-                asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume, 1L);
-              }
-            } // if some_decide_qoS_characteristics
+                /* OPTIONAL */
+                /* maxDataBurstVolume */
+                if (0) {
+                  asn1cCallocOne(DRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume, 1L);
+                }
+              } // if some_decide_qoS_characteristics
 
-          } // qoS_Characteristics
-          /* nGRANallocationRetentionPriority */
-          {
-            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
-            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
-            DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
-          } // nGRANallocationRetentionPriority
+            } // qoS_Characteristics
+            /* nGRANallocationRetentionPriority */
+            {
+              DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.priorityLevel = F1AP_PriorityLevel_highest; // enum
+              DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionCapability = F1AP_Pre_emptionCapability_shall_not_trigger_pre_emption; // enum
+              DRB_Information->dRB_QoS.nGRANallocationRetentionPriority.pre_emptionVulnerability = F1AP_Pre_emptionVulnerability_not_pre_emptable; // enum
+            } // nGRANallocationRetentionPriority
 
           /* OPTIONAL */
           /* gBR_QoS_Flow_Information */
@@ -1682,10 +1678,11 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextModificationResponseIEs_t, ie, container,
                                F1AP_ProtocolIE_ID_id_DUtoCURRCInformation, false);
     if(ie!=NULL){
-      f1ap_ue_context_modification_resp->du_to_cu_rrc_information = (uint8_t *)calloc(1,ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
+      f1ap_ue_context_modification_resp->du_to_cu_rrc_information = (du_to_cu_rrc_information_t *)calloc(1, sizeof(du_to_cu_rrc_information_t));
+      f1ap_ue_context_modification_resp->du_to_cu_rrc_information->cellGroupConfig = (uint8_t *)calloc(1,ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
 
-      memcpy(f1ap_ue_context_modification_resp->du_to_cu_rrc_information, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.buf, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
-      f1ap_ue_context_modification_resp->du_to_cu_rrc_information_length = ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size;
+      memcpy(f1ap_ue_context_modification_resp->du_to_cu_rrc_information->cellGroupConfig, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.buf, ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size);
+      f1ap_ue_context_modification_resp->du_to_cu_rrc_information->cellGroupConfig_length = ie->value.choice.DUtoCURRCInformation.cellGroupConfig.size;
     }
 
     // DRBs_SetupMod_List

@@ -908,10 +908,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   //if (slot==7 || slot == 17) return;
 
   /* PREPROCESSOR */
-  //Following commented section condition should be removed before update with develop.
-  /*if(slot!= 1 && slot!=11){
-    return;
-  }*/
   gNB_mac->pre_processor_dl(module_id, frame, slot);
   const int CC_id = 0;
   NR_ServingCellConfigCommon_t *scc = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;

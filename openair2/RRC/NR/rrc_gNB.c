@@ -1464,49 +1464,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
                                NULL,
                                get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
   }
-  /*else if(SRB_configList!=NULL || DRB_configList!=NULL){
-    MessageDef *message_p;
-    message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
-    f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_SETUP_REQ (message_p);
-    req->gNB_CU_ue_id     = 0;
-    req->gNB_DU_ue_id = 0;
-    req->rnti = ue_context_pP->ue_context.rnti;
-    req->mcc              = rrc->configuration.mcc[0];
-    req->mnc              = rrc->configuration.mnc[0];
-    req->mnc_digit_length = rrc->configuration.mnc_digit_length[0];
-    req->nr_cellid        = rrc->nr_cellid;
-    if(SRB_configList!=NULL){
-      req->srbs_to_be_setup = malloc(SRB_configList->list.count*sizeof(f1ap_srb_to_be_setup_t));
-      req->srbs_to_be_setup_length = SRB_configList->list.count;
-      f1ap_srb_to_be_setup_t *SRBs=req->srbs_to_be_setup;
-      for (int i = 0; i < SRB_configList->list.count; i++){
-        if(SRB_configList->list.array[i]->srb_Identity > 1){
-          SRBs[i].srb_id = SRB_configList->list.array[i]->srb_Identity;
-          SRBs[i].lcid = SRB_configList->list.array[i]->srb_Identity;
-        }
-      }
-    }
-    if(DRB_configList!=NULL){
-      gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
-      memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
-      req->drbs_to_be_setup = malloc(DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
-      req->drbs_to_be_setup_length = DRB_configList->list.count;
-      f1ap_drb_to_be_setup_t *DRBs=req->drbs_to_be_setup;
-      LOG_I(RRC, "Length of DRB list:%d, %d \n", DRB_configList->list.count, req->drbs_to_be_setup_length);
-      for (int i = 0; i < DRB_configList->list.count; i++){
-        DRBs[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
-        DRBs[i].rlc_mode = RLC_MODE_AM;
-        DRBs[i].up_ul_tnl[0].tl_address = inet_addr(rrc->eth_params_s.my_addr);
-        DRBs[i].up_ul_tnl[0].port=rrc->eth_params_s.my_portd;
-        DRBs[i].up_ul_tnl_length = 1;
-        DRBs[i].up_dl_tnl[0].tl_address = inet_addr(rrc->eth_params_s.remote_addr);
-        DRBs[i].up_dl_tnl[0].port=rrc->eth_params_s.remote_portd;
-        DRBs[i].up_dl_tnl_length = 1;
-      }
-      LOG_I(RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
-    }
-    itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-  }*/
 #endif
 
   /* Set the SRB active in UE context */
@@ -1604,18 +1561,6 @@ rrc_gNB_process_RRCReconfigurationComplete(
 
     free(DRB_Release_configList2);
     ue_context_pP->ue_context.DRB_Release_configList2[xid] = NULL;
-  }
-  //Temporarily trigger artificially UE context release for the CU case just to be able to test it with OAI UE. To be removed later
-  if(0){
-    if(NODE_IS_CU(RC.nrrrc[ctxt_pP->instance]->node_type)){
-      MessageDef *message_p;
-      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
-      f1ap_ue_context_release_cmd_t *rel_cmd=&F1AP_UE_CONTEXT_RELEASE_CMD (message_p);
-      rel_cmd->rnti = ctxt_pP->rnti;
-      rel_cmd->cause = F1AP_CAUSE_RADIO_NETWORK;
-      rel_cmd->cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
-      itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, message_p);
-    }
   }
 }
 
@@ -2857,17 +2802,22 @@ rrc_gNB_decode_dcch(
                 NR_UECapabilityInformation__criticalExtensions_PR_ueCapabilityInformation ) {
           struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList =
               ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
-
-          req->cu_to_du_rrc_information = calloc(1,sizeof(cu_to_du_rrc_information_t));
-          req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = calloc(1,4096);
-          asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
+          if(ue_CapabilityRAT_ContainerList!=NULL){
+            LOG_I(NR_RRC, "ue_CapabilityRAT_ContainerList is present \n");
+            req->cu_to_du_rrc_information = calloc(1,sizeof(cu_to_du_rrc_information_t));
+            req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = calloc(1,4096);
+            asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
               NULL,
-              (void *)ue_CapabilityRAT_ContainerList,
+              ue_CapabilityRAT_ContainerList,
               req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
               4096);
-          AssertFatal (enc_rval.encoded > 0, "ASN1 ue_CapabilityRAT_ContainerList encoding failed (%s, %jd)!\n",
+            AssertFatal (enc_rval.encoded > 0, "ASN1 ue_CapabilityRAT_ContainerList encoding failed (%s, %jd)!\n",
                              enc_rval.failed_type->name, enc_rval.encoded);
-          req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = (enc_rval.encoded+7)>>3;
+            req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = (enc_rval.encoded+7)>>3;
+          }
+          else{
+            LOG_I(NR_RRC, "ue_CapabilityRAT_ContainerList is not present \n");
+          }
         }
         itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
       }
@@ -2984,9 +2934,6 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         memset(mib->message.choice.mib,0,sizeof(struct NR_MIB));
         memcpy(mib->message.choice.mib, mib_DU->message.choice.mib, sizeof(struct NR_MIB));
 
-        /*rrc->carrier.SIB1 = malloc(f1_setup_req->sib1_length[i]);
-        rrc->carrier.sizeof_SIB1 = f1_setup_req->sib1_length[i];
-        memcpy((void *)rrc->carrier.SIB1,f1_setup_req->sib1[i],f1_setup_req->sib1_length[i]);*/
         dec_rval = uper_decode_complete(NULL,
                                         &asn_DEF_NR_SIB1, //&asn_DEF_NR_BCCH_DL_SCH_Message,
                                         (void **)&rrc->carrier.siblock1_DU,
@@ -3004,12 +2951,6 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
           xer_fprint(stdout, &asn_DEF_NR_SIB1,(void *)rrc->carrier.sib1);
         }
 
-        /*NR_BCCH_DL_SCH_Message_t *bcch_message = rrc->carrier.siblock1_DU;
-        AssertFatal(bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1,
-                    "bcch_message->message.present != NR_BCCH_DL_SCH_MessageType_PR_c1\n");
-        AssertFatal(bcch_message->message.choice.c1->present == NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1,
-                    "bcch_message->message.choice.c1->present != NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1\n");
-        rrc->carrier.sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;*/
         rrc->carrier.physCellId = f1_setup_req->cell[i].nr_pci;
 
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).gNB_CU_name                                = rrc->node_name;
@@ -3340,7 +3281,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   if(req->cu_to_du_rrc_information!=NULL){
     if(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
       LOG_I(NR_RRC, "Length of ue_CapabilityRAT_ContainerList is: %d \n", (int) req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
-      struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList;
+      struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList = NULL;
       asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
           &asn_DEF_NR_UE_CapabilityRAT_ContainerList,
           (void **)&ue_CapabilityRAT_ContainerList,
@@ -3532,20 +3473,20 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
     LOG_W(NR_RRC, "No SRB added upon reception of F1 UE Context setup request at the DU\n");
   }
   /* fixme:
-   * Here we should be encoding the updates on cellgroupconfig. Currently the content of
-   * celGroupConfig is empty because update_cellGroupConfig() function that is previously called is empty.
+   * Here we should be encoding the updates on cellgroupconfig based on the content of UE capabilities
    */
-  resp->du_to_cu_rrc_information = calloc(1,1024*sizeof(uint8_t));
+  resp->du_to_cu_rrc_information = calloc(1, sizeof(du_to_cu_rrc_information_t));
+  resp->du_to_cu_rrc_information->cellGroupConfig = calloc(1,1024);
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                 NULL,
                                 ue_context_p->ue_context.masterCellGroup, //(void *)cellGroupConfig,
-                                resp->du_to_cu_rrc_information,
+                                resp->du_to_cu_rrc_information->cellGroupConfig,
                                 1024);
   if (enc_rval.encoded == -1) {
         LOG_E(F1AP,"Could not encode ue_context.masterCellGroup, failed element %s\n",enc_rval.failed_type->name);
         exit(-1);
   }
-  resp->du_to_cu_rrc_information_length = (enc_rval.encoded+7)>>3;
+  resp->du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded+7)>>3;
   free(cellGroupConfig);
   itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
 }
@@ -3610,7 +3551,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
           drb_p.drb_id,
           drb_p.up_ul_tnl[0].teid,
           addr,
-          2152,
+          drb_p.up_ul_tnl[0].port,
           DURecvCb);
     }
   }
@@ -3687,13 +3628,14 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
   }
 
   //if(cellGroupConfig != NULL) {
-    resp->du_to_cu_rrc_information = calloc(1,1024*sizeof(uint8_t));
+    resp->du_to_cu_rrc_information = calloc(1,sizeof(du_to_cu_rrc_information_t));
+    resp->du_to_cu_rrc_information->cellGroupConfig = calloc(1,1024);
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                 NULL,
                                 ue_context_p->ue_context.masterCellGroup, //(void *)cellGroupConfig,
-                                resp->du_to_cu_rrc_information,
+                                resp->du_to_cu_rrc_information->cellGroupConfig,
                                 1024);
-    resp->du_to_cu_rrc_information_length = (enc_rval.encoded+7)>>3;
+    resp->du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded+7)>>3;
   //}
   itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
 }
@@ -3713,8 +3655,8 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
   asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
     &asn_DEF_NR_CellGroupConfig,
     (void **)&cellGroupConfig,
-    (uint8_t *)resp->du_to_cu_rrc_information,
-    (int) resp->du_to_cu_rrc_information_length);
+    (uint8_t *)resp->du_to_cu_rrc_information->cellGroupConfig,
+    (int) resp->du_to_cu_rrc_information->cellGroupConfig_length);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
     AssertFatal(1==0,"Cell group config decode error\n");
@@ -3768,12 +3710,12 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, c
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rnti);
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
 
-  if(resp->du_to_cu_rrc_information!=NULL){
+  if(resp->du_to_cu_rrc_information->cellGroupConfig!=NULL){
     asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
       &asn_DEF_NR_CellGroupConfig,
       (void **)&cellGroupConfig,
-      (uint8_t *)resp->du_to_cu_rrc_information,
-      (int) resp->du_to_cu_rrc_information_length);
+      (uint8_t *)resp->du_to_cu_rrc_information->cellGroupConfig,
+      (int) resp->du_to_cu_rrc_information->cellGroupConfig_length);
 
     if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
       AssertFatal(1==0,"Cell group config decode error\n");
@@ -3786,15 +3728,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, c
     if(ue_context_p->ue_context.masterCellGroup == NULL){
       ue_context_p->ue_context.masterCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
     }
-    /*if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
-      if(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList != NULL){
-        LOG_I(NR_RRC, "rlc_BearerToAddModList not empty before filling it \n");
-        free(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList);
-      }
-      ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
-      memcpy(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList,
-          sizeof(*cellGroupConfig->rlc_BearerToAddModList));
-    }*/
+
     if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
       if(ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList != NULL){
         int ue_ctxt_rlc_Bearers = ue_context_p->ue_context.masterCellGroup->rlc_BearerToAddModList->list.count;
