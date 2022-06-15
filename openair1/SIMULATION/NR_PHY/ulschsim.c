@@ -141,6 +141,7 @@ int main(int argc, char **argv)
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   uint8_t Nl = 1;
+  uint8_t max_ldpc_iterations = 5;
 
   double DS_TDL = .03;
 
@@ -395,6 +396,8 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
+  gNB->max_ldpc_iterations = max_ldpc_iterations;
+
   crcTableInit();
 
   memcpy(&gNB->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
