@@ -452,6 +452,7 @@ function main() {
             MAKE_CMD=ninja
             shift;;
         --sanitize-address | -fsanitize=address)
+            grep -sq "Ubuntu 18.04" /etc/os-release && echo_error "Bug in OS with this option, see CMakeLists.txt"
             CMAKE_CMD="$CMAKE_CMD -DSANITIZE_ADDRESS=True"
             shift;;
         --ittiSIM)
