@@ -897,8 +897,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->UL_INFO.srs_ind.slot = slot_rx;
         gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
         gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
-        gNB->srs_pdu_list[num_srs].timing_advance = nr_est_timing_advance_srs(&gNB->frame_parms,
-                                                                              (const int32_t **)gNB->nr_srs_info[i]->srs_estimated_channel_time);
+        gNB->srs_pdu_list[num_srs].timing_advance = srs_est >= 0 ? nr_est_timing_advance_srs(&gNB->frame_parms,
+                                                                                             (const int32_t **)gNB->nr_srs_info[i]->srs_estimated_channel_time) : 0xFFFF;
         gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
         gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (*gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
         gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
