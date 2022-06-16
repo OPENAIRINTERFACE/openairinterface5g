@@ -950,7 +950,7 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
   }//Antenna loop
 }
 
-uint32_t calc_power(const int16_t *x, uint32_t size) {
+uint32_t calc_power(const int16_t *x, const uint32_t size) {
   int64_t sum_x = 0;
   int64_t sum_x2 = 0;
   for(int k = 0; k<size; k++) {
@@ -960,13 +960,13 @@ uint32_t calc_power(const int16_t *x, uint32_t size) {
   return sum_x2/size - (sum_x/size)*(sum_x/size);
 }
 
-int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
-                              int frame,
-                              int slot,
-                              nfapi_nr_srs_pdu_t *srs_pdu,
-                              nr_srs_info_t *nr_srs_info,
-                              int32_t *srs_generated_signal,
-                              int32_t **srs_received_signal,
+int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
+                              const int frame,
+                              const int slot,
+                              const nfapi_nr_srs_pdu_t *srs_pdu,
+                              const nr_srs_info_t *nr_srs_info,
+                              const int32_t *srs_generated_signal,
+                              const int32_t **srs_received_signal,
                               int32_t **srs_estimated_channel_freq,
                               int32_t **srs_estimated_channel_time,
                               int32_t **srs_estimated_channel_time_shifted,
@@ -981,7 +981,7 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
     return -1;
   }
 
-  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+  const NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   int32_t **srs_ls_estimated_channel = nr_srs_info->srs_ls_estimated_channel;
 
   int16_t ch_real[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];
@@ -1110,13 +1110,13 @@ int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
 
   // Compute noise power
 
-  uint8_t signal_power_bits = log2_approx(*signal_power);
-  uint8_t factor_bits = signal_power_bits < 32 ? 32 - signal_power_bits : 0; // 32 due to input of dB_fixed(uint32_t x)
-  int32_t factor_dB = dB_fixed(1<<factor_bits);
+  const uint8_t signal_power_bits = log2_approx(*signal_power);
+  const uint8_t factor_bits = signal_power_bits < 32 ? 32 - signal_power_bits : 0; // 32 due to input of dB_fixed(uint32_t x)
+  const int32_t factor_dB = dB_fixed(1<<factor_bits);
 
-  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
-  uint8_t srs_symbols_per_rb = srs_pdu->comb_size == 0 ? 6 : 3;
-  uint8_t n_noise_estimates = frame_parms->nb_antennas_rx*srs_symbols_per_rb;
+  const uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
+  const uint8_t srs_symbols_per_rb = srs_pdu->comb_size == 0 ? 6 : 3;
+  const uint8_t n_noise_estimates = frame_parms->nb_antennas_rx*srs_symbols_per_rb;
   uint8_t count_estimates = 0;
   uint64_t sum_re = 0;
   uint64_t sum_re2 = 0;

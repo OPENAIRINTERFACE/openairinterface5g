@@ -41,9 +41,9 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_U
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
   const NR_SIB1_t *sib1 = nrmac->common_channels[0].sib1 ? nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
-                                                             scc,
-                                                             sib1);
+  const NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                                   scc,
+                                                                   sib1);
 
   srs_pdu->rnti = UE->rnti;
   srs_pdu->handle = 0;
@@ -173,14 +173,14 @@ void nr_schedule_srs(int module_id, frame_t frame) {
       }
 
       const NR_SIB1_t *sib1 = nrmac->common_channels[0].sib1 ? nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-      NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
-                                                                 scc,
-                                                                 sib1);
+      const NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                                       scc,
+                                                                       sib1);
 
       uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
       uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 
-      int n_slots_frame = nr_slots_per_frame[genericParameters->subcarrierSpacing];
+      const int n_slots_frame = nr_slots_per_frame[genericParameters->subcarrierSpacing];
 
       // Check if UE will transmit the SRS in this frame
       if ( ((frame - offset/n_slots_frame)*n_slots_frame)%period == 0) {

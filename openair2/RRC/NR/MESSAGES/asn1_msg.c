@@ -2067,7 +2067,7 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
 }
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
-                            int uid,
+                            const int uid,
                             NR_UE_NR_Capability_t *uecap,
                             const gNB_RrcConfigurationReq* configuration) {
 
