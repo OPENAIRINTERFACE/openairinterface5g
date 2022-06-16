@@ -561,8 +561,6 @@ int main(int argc, char **argv)
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      UE->is_synchronized = 1;
                       
-  UE->perfect_ce = 0;
-
   if(eps!=0.0)
 	UE->UE_fo_compensation = 1; // if a frequency offset is set then perform fo estimation and compensation
 
