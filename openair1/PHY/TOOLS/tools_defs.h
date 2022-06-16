@@ -37,6 +37,7 @@ extern "C" {
 #include <stdint.h>
 #include <assert.h>
 #include "PHY/sse_intrin.h"
+#include "common/utils/assertions.h"
 
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
@@ -103,15 +104,6 @@ void multadd_complex_vector_real_scalar(int16_t *x,
                                         int16_t *y,
                                         uint8_t zero_flag,
                                         uint32_t N);
-
-int rotate_cpx_vector(int16_t *x,
-                      int16_t *alpha,
-                      int16_t *y,
-                      uint32_t N,
-                      uint16_t output_shift);
-
-
-
 
 /*!\fn void init_fft(uint16_t size,uint8_t logsize,uint16_t *rev)
 \brief Initialize the FFT engine for a given size
@@ -471,7 +463,7 @@ This function performs componentwise multiplication of a vector with a complex s
 
 The function implemented is : \f$\mathbf{y} = \alpha\mathbf{x}\f$
 */
-int32_t rotate_cpx_vector(int16_t *x,
+void rotate_cpx_vector(int16_t *x,
                           int16_t *alpha,
                           int16_t *y,
                           uint32_t N,
