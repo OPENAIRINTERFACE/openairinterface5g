@@ -60,6 +60,7 @@ void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
   uint8_t reset;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint32_t ***pdcch_dmrs = gNB->nr_gold_pdcch_dmrs;
+  int pdcch_dmrs_init_length =  (((fp->N_RB_DL<<1)*3)>>5)+1;
 
   for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
     for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
@@ -67,7 +68,7 @@ void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
       reset = 1;
       x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid<<1));
       LOG_D(PHY,"PDCCH DMRS slot %d, symb %d, Nid %d, x2 %x\n",slot,symb,Nid,x2);
-      for (uint32_t n=0; n<NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD; n++) {
+      for (uint32_t n=0; n<pdcch_dmrs_init_length; n++) {
         pdcch_dmrs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
@@ -77,79 +78,48 @@ void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
 }
 
 
-void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
-{
+void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint8_t nscid, uint32_t Nid) {
   
   uint32_t x1, x2;
-  uint8_t reset, q;
+  uint8_t reset;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint32_t ****pdsch_dmrs = gNB->nr_gold_pdsch_dmrs;
+  int pdsch_dmrs_init_length =  ((fp->N_RB_DL*12)>>5)+1;
 
-  uint16_t N_n_scid[NR_MAX_NB_CODEWORDS]={Nid, Nid}; // Not correct, appropriate scrambling IDs have to be updated to support DCI 1_1
-  uint8_t n_scid=0; // again works only for 1_0
   for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
 
     for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
-        reset = 1;
-        x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid[n_scid]<<1)+1) +((N_n_scid[n_scid]<<1)+n_scid));
-	      LOG_D(PHY,"PDSCH DMRS slot %d, symb %d x2 %x, N_n_scid %d,n_scid %d\n",slot,symb,x2,N_n_scid[n_scid],n_scid);
-        for (uint32_t n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
-          pdsch_dmrs[slot][symb][0][n] = lte_gold_generic(&x1, &x2, reset);
-          reset = 0;
-        }
-
-        for (q = 1; q < NR_MAX_NB_CODEWORDS; q++)
-          memcpy(pdsch_dmrs[slot][symb][q],pdsch_dmrs[slot][symb][0],sizeof(uint32_t)*NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD);
+      reset = 1;
+      x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) +((Nid<<1)+nscid));
+      LOG_D(PHY,"PDSCH DMRS slot %d, symb %d x2 %x, Nid %d,nscid %d\n",slot,symb,x2,Nid,nscid);
+      for (uint32_t n=0; n<pdsch_dmrs_init_length; n++) {
+        pdsch_dmrs[slot][symb][nscid][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }
     }
   }
 }
 
 
-void nr_gold_pusch(PHY_VARS_gNB* gNB, uint32_t *Nid) {
+void nr_gold_pusch(PHY_VARS_gNB* gNB, int nscid, uint32_t nid) {
 
   unsigned char ns;
   unsigned int n,x1,x2;
-  int nscid, reset;
-  unsigned int nid;
+  int reset;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   unsigned short l;
+  int pusch_dmrs_init_length =  ((fp->N_RB_UL*12)>>5)+1;
 
-  for (nscid=0; nscid<2; nscid++) {
-    nid = Nid[nscid];
-    for (ns=0; ns<fp->slots_per_frame; ns++) {
-      for (l=0; l<fp->symbols_per_slot; l++) {
-        reset = 1;
-        x2 = ((1<<17) * (fp->symbols_per_slot*ns+l+1) * ((nid<<1)+1) +((nid<<1)+nscid));
-        LOG_D(PHY,"DMRS slot %d, symb %d x2 %x\n",ns,l,x2);
+  for (ns=0; ns<fp->slots_per_frame; ns++) {
+    for (l=0; l<fp->symbols_per_slot; l++) {
+      reset = 1;
+      x2 = ((1<<17) * (fp->symbols_per_slot*ns+l+1) * ((nid<<1)+1) +((nid<<1)+nscid));
+      LOG_D(PHY,"DMRS slot %d, symb %d x2 %x\n",ns,l,x2);
 
-        for (n=0; n<NR_MAX_PUSCH_DMRS_INIT_LENGTH_DWORD; n++) {
-          gNB->nr_gold_pusch_dmrs[nscid][ns][l][n] = lte_gold_generic(&x1, &x2, reset);
-          reset = 0;
-        }
+      for (n=0; n<pusch_dmrs_init_length; n++) {
+        gNB->nr_gold_pusch_dmrs[nscid][ns][l][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
       }
     }
   }
-}
-
-
-void nr_init_csi_rs(PHY_VARS_gNB* gNB, uint32_t Nid)
-{
-  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-  uint32_t ***csi_rs = gNB->nr_gold_csi_rs;
-  uint32_t x1, x2;
-  uint8_t reset;
-
-  for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
-    for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
-
-      reset = 1;
-      x2 = ((1<<10) * (fp->symbols_per_slot*slot+symb+1) * ((Nid<<1)+1) + (Nid));
-
-      for (uint32_t n=0; n<NR_MAX_CSI_RS_INIT_LENGTH_DWORD; n++) {
-        csi_rs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
-        reset = 0;
-      }
-    }  
-  }
-
 }

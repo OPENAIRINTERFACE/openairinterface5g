@@ -38,21 +38,28 @@ void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(void);
 
+void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl);
+
 void config_common(int Mod_idP,
                    int ssb_SubcarrierOffset,
                    int pdsch_AntennaPorts,
                    int pusch_AntennaPorts,
-		   NR_ServingCellConfigCommon_t *scc
-		   );
+                   NR_ServingCellConfigCommon_t *scc);
+
+int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
+                                          rnti_t rnti,
+                                          NR_SubcarrierSpacing_t subcarrierSpacing,
+                                          uint32_t rrc_reconfiguration_delay);
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int ssb_SubcarrierOffset,
-                           int pdsch_AntennaPorts,
+                           rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
                            int minRXTXTIMEpdsch,
                            NR_ServingCellConfigCommon_t *scc,
                            NR_BCCH_BCH_Message_t *mib,
+                           NR_BCCH_DL_SCH_Message_t *sib1,
                            int add_ue,
                            uint32_t rnti,
                            NR_CellGroupConfig_t *CellGroup);
@@ -62,8 +69,16 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 frame_t frameP, 
                                 sub_frame_t subframeP);
 
+void nr_mac_update_timers(module_id_t module_id,
+                          frame_t frame,
+                          sub_frame_t slot);
+
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 			       frame_t frame_rxP, sub_frame_t slot_rxP);
+
+void schedule_nr_bwp_switch(module_id_t module_id,
+                            frame_t frame,
+                            sub_frame_t slot);
 
 /* \brief main DL scheduler function. Calls a preprocessor to decide on
  * resource allocation, then "post-processes" resource allocation (nFAPI
@@ -176,7 +191,8 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234);
 
 
-void config_uldci(const NR_BWP_Uplink_t *ubwp,
+void config_uldci(const NR_SIB1_t *sib1,
+                  const NR_BWP_Uplink_t *ubwp,
                   const NR_BWP_UplinkDedicated_t *ubwpd,
                   const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
@@ -187,7 +203,7 @@ void config_uldci(const NR_BWP_Uplink_t *ubwp,
                   int n_ubwp,
                   int bwp_id);
 
-void nr_schedule_pucch(int Mod_idP,
+void nr_schedule_pucch(gNB_MAC_INST* nrmac,
                        frame_t frameP,
                        sub_frame_t slotP);
 
@@ -202,15 +218,14 @@ void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
                            sub_frame_t slotP);
 
-int nr_acknack_scheduling(int Mod_idP,
-                           int UE_id,
+int nr_acknack_scheduling( int Mod_idP,
+			   NR_UE_info_t * UE,
                            frame_t frameP,
                            sub_frame_t slotP,
                            int r_pucch,
                            int do_common);
 
-void get_pdsch_to_harq_feedback(int Mod_idP,
-                                int UE_id,
+void get_pdsch_to_harq_feedback(NR_UE_info_t *,
                                 int bwp_id,
                                 NR_SearchSpace__searchSpaceType_PR ss_type,
                                 int *max_fb_time,
@@ -219,7 +234,7 @@ void get_pdsch_to_harq_feedback(int Mod_idP,
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                                   nr_scs_e scs_common,
                                   nr_scs_e pdcch_scs,
-                                  nr_frequency_range_e freq_range,
+                                  frequency_range_t freq_range,
                                   uint8_t rmsi_pdcch_config,
                                   uint8_t ssb_idx,
                                   uint8_t k_ssb,
@@ -235,7 +250,13 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                           nfapi_nr_config_request_scf_t cfg);
 */
 
-void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
+int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
+                          NR_BWP_Uplink_t *bwp,
+                          NR_BWP_UplinkDedicated_t *bwpd,
+                          int CCEIndex);
+
+void nr_configure_pucch(const NR_SIB1_t *sib1,
+                        nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_CellGroupConfig_t *CellGroup,
                         NR_BWP_Uplink_t *bwp,
@@ -269,7 +290,7 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
                          int nr_of_candidates,
                          NR_sched_pdcch_t *pdcch,
                          NR_ControlResourceSet_t *coreset,
-                         uint16_t Y);
+                         uint32_t Y);
 
 void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
                         int CC_id,
@@ -284,28 +305,56 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int dci_formats,
                         int rnti_types,
                         int N_RB,
-                        int bwp_id);
+                        int bwp_id,
+                        NR_ControlResourceSetId_t coreset_id,
+                        uint16_t cset0_bwp_size);
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
                  int bwp_id);
 
+void set_r_pucch_parms(int rsetindex,
+                       int r_pucch,
+                       int bwp_size,
+                       int *prb_start,
+                       int *second_hop_prb,
+                       int *nr_of_symbols,
+                       int *start_symbol_index);
+
+NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
+                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
+                                       const NR_SIB1_t *sib1);
+
+NR_BWP_t *get_ul_bwp_genericParameters(NR_BWP_Uplink_t *active_ubwp,
+                                       NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
+                                       const NR_SIB1_t *sib1);
+
+NR_PDSCH_TimeDomainResourceAllocationList_t *get_pdsch_TimeDomainAllocationList(const NR_BWP_Downlink_t *active_bwp,
+                                                                                const NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
+                                                                                const NR_SIB1_t *sib1);
+
 /* find coreset within the search space */
-NR_ControlResourceSet_t *get_coreset(module_id_t module_idP,
+NR_ControlResourceSet_t *get_coreset(gNB_MAC_INST *nrmac,
                                      NR_ServingCellConfigCommon_t *scc,
                                      void *bwp,
                                      NR_SearchSpace_t *ss,
                                      NR_SearchSpace__searchSpaceType_PR ss_type);
 
 /* find a search space within a BWP */
-NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
+NR_SearchSpace_t *get_searchspace(const NR_SIB1_t *sib1,
+                                  NR_ServingCellConfigCommon_t *scc,
                                   NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                                   NR_SearchSpace__searchSpaceType_PR target_ss);
 
-long get_K2(NR_ServingCellConfigCommon_t *scc, NR_BWP_Uplink_t *ubwp, int time_domain_assignment, int mu);
+long get_K2(NR_ServingCellConfigCommon_t *scc,
+            NR_ServingCellConfigCommonSIB_t *scc_sib1,
+            NR_BWP_Uplink_t *ubwp,
+            int time_domain_assignment,
+            int mu);
 
-void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
+                              const NR_ServingCellConfigCommon_t *scc,
                               const NR_CellGroupConfig_t *secondaryCellGroup,
                               const NR_BWP_Downlink_t *bwp,
                               const NR_BWP_DownlinkDedicated_t *bwpd0,
@@ -314,15 +363,15 @@ void nr_set_pdsch_semi_static(const NR_ServingCellConfigCommon_t *scc,
                               NR_UE_sched_ctrl_t *sched_ctrl,
                               NR_pdsch_semi_static_t *ps);
 
-void nr_set_pusch_semi_static(const NR_ServingCellConfigCommon_t *scc,
+void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
+                              const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
-			                        const NR_BWP_UplinkDedicated_t *ubwpd,
+                              const NR_BWP_UplinkDedicated_t *ubwpd,
                               long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
+                              uint8_t nrOfLayers,
                               NR_pusch_semi_static_t *ps);
-
-uint16_t get_Y(int cid, int slot, rnti_t rnti);
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
@@ -336,20 +385,12 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
 		   int x_overhead,
                    uint8_t numdmrscdmgroupnodata,
                    uint8_t tb_scaling);
-/** \brief Computes Q based on I_MCS PDSCH and table_idx for downlink. Implements MCS Tables from 38.214. */
-uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx);
-uint32_t nr_get_code_rate_dl(uint8_t Imcs, uint8_t table_idx);
-
-/** \brief Computes Q based on I_MCS PDSCH and table_idx for uplink. Implements MCS Tables from 38.214. */
-uint8_t nr_get_Qm_ul(uint8_t Imcs, uint8_t table_idx);
-uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
 int NRRIV2BW(int locationAndBandwidth,int N_RB);
 
 int NRRIV2PRBOFFSET(int locationAndBandwidth,int N_RB);
 
 /* Functions to manage an NR_list_t */
-void dump_nr_list(NR_list_t *listP);
 void create_nr_list(NR_list_t *listP, int len);
 void resize_nr_list(NR_list_t *list, int new_len);
 void destroy_nr_list(NR_list_t *list);
@@ -359,27 +400,19 @@ void add_tail_nr_list(NR_list_t *listP, int id);
 void add_front_nr_list(NR_list_t *listP, int id);
 void remove_front_nr_list(NR_list_t *listP);
 
-int find_nr_UE_id(module_id_t mod_idP, rnti_t rntiP);
+NR_UE_info_t * find_nr_UE(NR_UEs_t* UEs, rnti_t rntiP);
 
 int find_nr_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 
-int add_new_nr_ue(module_id_t mod_idP, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
+NR_UE_info_t*add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
 
-void mac_remove_nr_ue(module_id_t mod_id, rnti_t rnti);
+void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti);
 
 void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti);
 
-int allocate_nr_CCEs(gNB_MAC_INST *nr_mac,
-                     NR_BWP_Downlink_t *bwp,
-                     NR_ControlResourceSet_t *coreset,
-                     int aggregation,
-                     uint16_t Y,
-                     int m,
-                     int nr_of_candidates);
-
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
 
-void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE_info, int UE_id, module_id_t Mod_idP);
+void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
@@ -456,17 +489,21 @@ void find_SSB_and_RO_available(module_id_t module_idP);
 
 void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
 
-void set_dl_mcs(NR_sched_pdsch_t *sched_pdsch,
-                NR_UE_sched_ctrl_t *sched_ctrl,
-                uint8_t *target_mcs,
-                uint8_t mcs_table_idx);
+uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
+                      int layers,
+                      int N1, int N2,
+                      int xp_pdsch_antenna_ports,
+                      int codebook_mode);
+
+uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx);
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
-void calculate_preferred_dl_tda(module_id_t module_id, const NR_BWP_Downlink_t *bwp);
-void calculate_preferred_ul_tda(module_id_t module_id, const NR_BWP_Uplink_t *ubwp);
+int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl);
+const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
+const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 
-bool find_free_CCE(module_id_t module_id, sub_frame_t slot, int UE_id);
+bool find_free_CCE(sub_frame_t slot, NR_UE_info_t *UE);
 
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
@@ -479,7 +516,16 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint32_t *tbs,
                    uint16_t *nb_rb);
 
-void nr_sr_reporting(int Mod_idP, frame_t frameP, sub_frame_t slotP);
+int get_mcs_from_bler(const NR_bler_options_t *bler_options,
+                      const NR_mac_dir_stats_t *stats,
+                      NR_bler_stats_t *bler_stats,
+                      int max_mcs,
+                      frame_t frame);
 
-void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp);
+void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t frameP, sub_frame_t slotP);
+
+size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset_rsrp);
+
+void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

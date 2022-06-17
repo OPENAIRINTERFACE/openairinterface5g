@@ -230,7 +230,6 @@ int8_t get_next_estimate_in_slot(uint16_t  ptrsSymbPos,uint16_t  dmrsSymbPos, ui
  *                dmrsConfigType: DMRS configuration type
  *                nb_rb         : No. of resource blocks
  *                rnti          : RNTI
- *                ptrs_ch_p     : pointer to ptrs channel structure
  *                Ns            :
  *                symbol        : OFDM symbol
  *              ofdm_symbol_size: OFDM Symbol Size
@@ -249,7 +248,6 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
                             uint8_t dmrsConfigType,
                             uint16_t nb_rb,
                             uint16_t rnti,
-                            int16_t *ptrs_ch_p,
                             unsigned char Ns,
                             unsigned char symbol,
                             uint16_t ofdm_symbol_size,
@@ -268,8 +266,9 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
     return;
   }
   uint16_t              sc_per_symbol    = (nb_rb + K_ptrs - 1)/K_ptrs;
-  struct complex16      ptrs_p[(1 + sc_per_symbol/4)*4];
-  struct complex16      dmrs_comp_p[(1 + sc_per_symbol/4)*4];
+  c16_t      ptrs_p[(1 + sc_per_symbol/4)*4];
+  c16_t      ptrs_ch_p[(1 + sc_per_symbol/4)*4];
+  c16_t      dmrs_comp_p[(1 + sc_per_symbol/4)*4];
   double                abs              = 0.0;
   double                real             = 0.0;
   double                imag             = 0.0;
@@ -306,13 +305,13 @@ void nr_ptrs_cpe_estimation(uint8_t K_ptrs,
   *ptrs_sc = re_cnt;
 
   /*Multiple compensated data with conj of PTRS */
-  mult_cpx_vector((int16_t*)dmrs_comp_p, (int16_t*)ptrs_p, ptrs_ch_p,(1 + sc_per_symbol/4)*4,15); // 2^15 shifted
+  mult_cpx_vector((int16_t*)dmrs_comp_p, (int16_t*)ptrs_p, (int16_t*)ptrs_ch_p, (1 + sc_per_symbol/4)*4, 15); // 2^15 shifted
 
   /* loop over all ptrs sub carriers in a symbol */
   /* sum the error vector */
   for(int i = 0;i < sc_per_symbol; i++) {
-    real+= ptrs_ch_p[(2*i)];
-    imag+= ptrs_ch_p[(2*i)+1];
+    real += ptrs_ch_p[i].r;
+    imag += ptrs_ch_p[i].i;
   }
 #ifdef DEBUG_PTRS
   alpha = atan(imag/real);
@@ -422,7 +421,7 @@ void get_slope_from_estimates(uint8_t start, uint8_t end, int16_t *est_p, double
 /* estimate from slope */
 void ptrs_estimate_from_slope(int16_t *error_est, double *slope_p, uint8_t start, uint8_t end)
 {
-  struct complex16 *error=(struct complex16 *) error_est;
+  c16_t *error=(struct complex16 *) error_est;
   for(uint8_t i = 1; i< (end -start);i++) {
     error[start+i].r = error[start].r + (int16_t)(i * slope_p[0]);// real
     error[start+i].i = error[start].i + (int16_t)(i * slope_p[1]); //imag

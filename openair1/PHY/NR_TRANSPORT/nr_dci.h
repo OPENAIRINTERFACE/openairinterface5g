@@ -30,7 +30,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                          uint16_t N_RB);
 
 void nr_generate_dci_top(processingData_L1tx_t *msgTx,
-                         uint32_t **gold_pdcch_dmrs,
+                         int slot,
                          int32_t *txdataF,
                          int16_t amp,
                          NR_DL_FRAME_PARMS *frame_parms);
@@ -55,6 +55,6 @@ void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
 		    int slot,
 		    nfapi_nr_ul_dci_request_pdus_t *pdcch_pdu);
 
-void nr_fill_cce_list(nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL], uint8_t m,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15);
+void nr_fill_cce_list(nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL], nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15);
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

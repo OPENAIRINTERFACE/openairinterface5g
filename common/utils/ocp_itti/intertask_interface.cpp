@@ -450,6 +450,7 @@ extern "C" {
   void itti_wait_tasks_end(void) {
     shutting_down = false;
     signal(SIGTERM, catch_sigterm);
+    //signal(SIGINT, catch_sigterm);
     while (! shutting_down)
     {
       sleep(24 * 3600);

@@ -1052,7 +1052,7 @@ static inline int64_t clock_difftime_ns(struct timespec start, struct timespec e
 void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seqno, uint16_t packet_type) {      
   
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
-  int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
+  int32_t *txp[ru->nb_tx], *rxp[ru->nb_rx]; 
   int32_t *tx_buffer=NULL;
   uint16_t packet_id=0, i=0;
 
@@ -1106,9 +1106,9 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
 
       NR_DL_FRAME_PARMS *nrfp = ru->nr_frame_parms;
 
-      int offset,siglen;
+      int offset,siglen,factor=1;
       if (nrfp) {
-         offset =  nrfp->get_samples_slot_timestamp(tti,nrfp,0);
+         offset = nrfp->get_samples_slot_timestamp(tti,nrfp,0);
          siglen = nrfp->get_samples_per_slot(tti,nrfp);
       }
       else {
@@ -1116,6 +1116,13 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
          siglen = spsf;
       }
 
+      if (ru->openair0_cfg.nr_flag==1) {
+         if (nrfp->N_RB_DL <= 162 && nrfp->N_RB_DL >= 106) factor = 2;
+         else if (nrfp->N_RB_DL < 106) factor=4;
+      }
+      else {
+         factor = 30720/spsf;
+      }
       for (i=0; i < ru->nb_tx; i++)
         txp[i] = (int32_t*)&ru->common.txdata[i][offset];
     
@@ -1124,8 +1131,9 @@ void send_IF5(RU_t *ru, openair0_timestamp proc_timestamp, int tti, uint8_t *seq
           //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF5_PKT_ID, packet_id );
           //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0, 1 );
           clock_gettime( CLOCK_MONOTONIC, &start_comp);
+	  
           ru->ifdevice.trx_write_func2(&ru->ifdevice,
-	  			       (proc_timestamp + packet_id*spp_eth-500)*(30720/spsf),
+	  			       (proc_timestamp + packet_id*spp_eth-600)*factor,
 				       (void*)txp[aid],
 				       spp_eth,
 				       aid,
@@ -1326,6 +1334,8 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
       NR_DL_FRAME_PARMS *nrfp = ru->nr_frame_parms;
 
       int offset,siglen;
+      int factor=1;
+      int ts_offset;
       if (nrfp) {
          offset =  nrfp->get_samples_slot_timestamp(tti,nrfp,0);
          siglen = nrfp->get_samples_per_slot(tti,nrfp);
@@ -1333,6 +1343,15 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
       else {
          offset = tti*fp->samples_per_subframe;
          siglen = spsf;
+      }
+      if (ru->openair0_cfg.nr_flag==1) { // This check if RRU knows about NR numerologies
+         if (nrfp->N_RB_DL <= 162 && nrfp->N_RB_DL >= 106) factor = 2;
+         else if (nrfp->N_RB_DL < 106) factor=4;
+         ts_offset = 64;
+      }
+      else {
+         factor = 30720/spsf;
+         ts_offset = 256;
       }
       for (i=0; i < ru->nb_rx; i++)
         rxp[i] = &ru->common.rxdata[i][offset];
@@ -1352,12 +1371,12 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
 				   &aid);
         clock_gettime( CLOCK_MONOTONIC, &if_time);
         timeout[packet_id] = if_time.tv_nsec;
-        timestamp[packet_id] /= (30720/spsf);
-        LOG_D(PHY,"TTI %d: Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld, \n",tti,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
+        timestamp[packet_id] /= factor; // for LTE this is the sample rate reduction w.r.t 30.72, for NR 122.88
+        LOG_D(PHY,"TTI %d: factor = %d Received packet %d: aid %d, TS %llu, oldTS %llu, diff %lld, \n",tti,factor,packet_id,aid,(unsigned long long)timestamp[packet_id],(unsigned long long)oldTS,(unsigned long long)(timestamp[packet_id]-timestamp[0]));
 
         if (aid==0) {
            if (firstTS==1) firstTS=0;
-           else if (oldTS + 256 != timestamp[packet_id]) {
+           else if (oldTS + ts_offset != timestamp[packet_id]) {
               LOG_I(PHY,"oldTS %llu, newTS %llu, diff %llu, timein %lu, timeout %lu\n",(long long unsigned int)oldTS,(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[packet_id]-oldTS,timein[packet_id],timeout[packet_id]); 
               for (int i=0;i<=packet_id;i++) LOG_I(PHY,"packet %d TS %llu, timein %lu, timeout %lu\n",i,(long long unsigned int)timestamp[i],timein[i],timeout[i]);
               AssertFatal(1==0,"fronthaul problem\n");
@@ -1369,7 +1388,7 @@ void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int tti, uint16_t pa
 
         // HYPOTHESIS: first packet per subframe has lowest timestamp of subframe
         // should detect out of order and act accordingly ....
-        AssertFatal(aid==0 || aid==1,"aid %d != 0 or 1\n",aid);
+        AssertFatal(aid==0 || aid==1 || aid==2 || aid==3,"aid %d != 0,1,2 or 3\n",aid);
         LOG_D(PHY,"rxp[%d] %p, dest %p, offset %d (%llu,%llu)\n",aid,rxp[aid],rxp[aid]+(timestamp[packet_id]-timestamp[0]),(int)(timestamp[packet_id]-timestamp[0]),(long long unsigned int)timestamp[packet_id],(long long unsigned int)timestamp[0]);
         memcpy((void*)(rxp[aid]+(timestamp[packet_id]-timestamp[0])),
                (void*)temp_rx,

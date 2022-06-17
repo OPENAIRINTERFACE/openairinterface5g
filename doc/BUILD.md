@@ -77,7 +77,7 @@ cd cmake_targets/
 ./build_oai -I -w USRP --eNB --UE --nrUE --gNB
 ```
 
-- The `-I` option is to install pre-requisites, you only need it the first time you build the softmodem or when some oai dependencies have changed. Note: for Ubuntu 20 use cmake_targets/install_external_packages.ubuntu20 instead!
+- The `-I` option is to install pre-requisites, you only need it the first time you build the softmodem or when some oai dependencies have changed.
 - The `-w` option is to select the radio head support you want to include in your build. Radio head support is provided via a shared library, which is called the "oai device" The build script creates a soft link from `liboai_device.so` to the true device which will be used at run-time (here the USRP one,`liboai_usrpdevif.so` . USRP is the only hardware tested today in the Continuous Integration process. The RF simulator[RF simulator](../targets/ARCH/rfsimulator/README.md) is implemented as a specific device replacing RF hardware, it can be specifically built using `-w SIMU` option, but is also built during any softmodem build.
 - `--eNB` is to build the `lte-softmodem` executable and all required shared libraries
 - `--gNB` is to build the `nr-softmodem` executable and all required shared libraries
@@ -193,6 +193,7 @@ Using the help option of the build script you can get the list of available opti
 | --UE                                                        | maintained and tested in CI                 | build `lte-uesoftmodem` the LTE UE                           |
 | --gNB                                                       | maintained and tested in CI                 | build `nr-softmodem` the 5G gNodeB                           |
 | --nrUE                                                      | maintained and tested in CI                 | build `nr-uesoftmodem` the 5G UE                             |
+| --arch-native                                               | maintained                                  | build with native architecture optimization                  |
 | --usrp-recplay                                              | deprecated                                  | use the USRP configuration parameters to use the record player. |
 | --build-lib                                                 | maintained                                  | build  optional shared library(ies), which can then be loaded at run time via command line option. Use the --help option to get the list of supported optional libraries. `all` can be used to build all available optional libraries. |
 | --UE-conf-nvram                                             | maintained                                  | Specifies the path to the input file used by the conf2uedata utility. defaults to [openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf](../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf) |

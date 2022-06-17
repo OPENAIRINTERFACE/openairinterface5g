@@ -36,6 +36,8 @@
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                         PHY_VARS_NR_UE *ue,
                         module_id_t gNB_id,
+                        const int estimateSz,
+                        struct complex16 dl_ch_estimates_time[][estimateSz],
                         uint8_t frame,
                         uint8_t subframe,
                         unsigned char clear,
@@ -60,8 +62,8 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
     int j = (i < 0) ? (i + frame_parms->ofdm_symbol_size) : i;
     for (int aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
-      int Re = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[(j<<1)];
-      int Im = ((int16_t*)ue->pbch_vars[gNB_id]->dl_ch_estimates_time[aa])[1+(j<<1)];
+      int Re = dl_ch_estimates_time[aa][j].r;
+      int Im = dl_ch_estimates_time[aa][j].i;
       temp += (Re*Re/2) + (Im*Im/2);
     }
 

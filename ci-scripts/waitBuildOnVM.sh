@@ -47,7 +47,7 @@ function wait_on_vm_build {
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
     echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
 
-    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]]
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]] || [[ "$VM_NAME" == *"-basic-sim"* ]] || [[ "$VM_NAME" == *"-flexran-rtc"* ]]
     then
         echo "This VM type is no longer supported in the pipeline framework"
         return
@@ -93,7 +93,7 @@ function wait_on_vm_build {
 }
 
 function check_on_vm_build {
-    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]]
+    if [[ "$VM_NAME" == *"-enb-usrp"* ]] || [[ "$VM_NAME" == *"-cppcheck"* ]] || [[ "$VM_NAME" == *"-phy-sim"* ]] || [[ "$VM_NAME" == *"-basic-sim"* ]] || [[ "$VM_NAME" == *"-flexran-rtc"* ]]
     then
         echo "This VM type is no longer supported in the pipeline framework"
         return
@@ -174,13 +174,13 @@ function check_on_vm_build {
     fi
 
     # If we were building the FlexRan Controller, flag-touch for basic-simulator to continue
-    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
-    then
-        if [[ $STATUS -eq 0 ]]
-        then
-            touch $JENKINS_WKSP/flexran/flexran_build_complete.txt
-        fi
-    fi
+    #if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    #then
+    #    if [[ $STATUS -eq 0 ]]
+    #    then
+    #        touch $JENKINS_WKSP/flexran/flexran_build_complete.txt
+    #    fi
+    #fi
 
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
     then

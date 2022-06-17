@@ -113,6 +113,21 @@ pipeline {
                         GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult + ' '
                         echo GitPostArgs
 
+                        //calling SA-AmariS
+                        jobName = "RAN-SA-AmariS-CN5G"
+                        jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
+                            string(name: 'eNB_MR', value: String.valueOf(MR)),
+                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        ]
+                        jobResult = jobStatus.getResult()
+                        build_url = jobStatus.getAbsoluteUrl()
+                        build_id = jobStatus.getNumber().toString()
+                        GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult + ' '
+                        echo GitPostArgs
+
                         //calling OAIUE N310-X300
                         jobName = "RAN-SA-OAIUE-N310-X300-CN5G"
                         jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [

@@ -42,5 +42,4 @@ extern nrLDPC_decoffloadfunc_t nrLDPC_decoder_offload;
 extern nrLDPC_dectopfunc_t top_testsuite;
 
 // inline functions:
-#include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_init_mem.h"
 #endif

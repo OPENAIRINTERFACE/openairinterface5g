@@ -200,8 +200,6 @@ static uint8_t pack_tpm_value(nfapi_dl_config_dci_dl_tpm_t *value, uint8_t **ppW
 static uint8_t pack_dl_tti_csi_rs_pdu_rel15_value(void *tlv, uint8_t **ppWritePackedMsg, uint8_t *end) {
   nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *value = (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *)tlv;
   return(
-          push16(value->bwp_size, ppWritePackedMsg, end) &&
-          push16(value->bwp_start, ppWritePackedMsg, end) &&
           push8(value->subcarrier_spacing, ppWritePackedMsg, end) &&
           push8(value->cyclic_prefix, ppWritePackedMsg, end) &&
           push16(value->start_rb, ppWritePackedMsg, end) &&
@@ -1048,7 +1046,7 @@ static uint8_t pack_ul_tti_request_srs_pdu(nfapi_nr_srs_pdu_t *srs_pdu, uint8_t 
           push8(srs_pdu->comb_offset, ppWritePackedMsg, end) &&
           push8(srs_pdu->cyclic_shift, ppWritePackedMsg, end) &&
           push8(srs_pdu->frequency_position, ppWritePackedMsg, end) &&
-          push8(srs_pdu->frequency_shift, ppWritePackedMsg, end) &&
+          push16(srs_pdu->frequency_shift, ppWritePackedMsg, end) &&
           push8(srs_pdu->frequency_hopping, ppWritePackedMsg, end) &&
           push8(srs_pdu->group_or_sequence_hopping, ppWritePackedMsg, end) &&
           push8(srs_pdu->resource_type, ppWritePackedMsg, end) &&
@@ -1583,13 +1581,19 @@ static uint8_t pack_ul_config_request_body_value(void *tlv, uint8_t **ppWritePac
 static uint8_t pack_ul_tti_request(void *msg, uint8_t **ppWritePackedMsg, uint8_t *end, nfapi_p7_codec_config_t *config) {
   nfapi_nr_ul_tti_request_t *pNfapiMsg = (nfapi_nr_ul_tti_request_t *)msg;
 
-  if (!(push16(pNfapiMsg->SFN, ppWritePackedMsg, end) &&
-        push16(pNfapiMsg->Slot, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->n_pdus, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->rach_present, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->n_ulsch, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->n_ulcch, ppWritePackedMsg, end) &&
-        push8(pNfapiMsg->n_group, ppWritePackedMsg, end) ))
+  if (!push16(pNfapiMsg->SFN, ppWritePackedMsg, end))
+    return 0;
+  if (!push16(pNfapiMsg->Slot, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->n_pdus, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->n_group, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->rach_present, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->n_ulsch, ppWritePackedMsg, end))
+    return 0;
+  if (!push8(pNfapiMsg->n_ulcch, ppWritePackedMsg, end))
     return 0;
 
   for(int i=0; i<pNfapiMsg->n_pdus; i++) {
@@ -1893,15 +1897,23 @@ static uint8_t pack_tx_data_pdu_list_value(void *tlv, uint8_t **ppWritePackedMsg
 
     switch(value->TLVs[i].tag) {
       case 0: {
-        if(!pusharray32(value->TLVs[i].value.direct, 16384, value->TLVs[i].length, ppWritePackedMsg, end))
+        if (!pusharray32(value->TLVs[i].value.direct, sizeof(value->TLVs[i].value.direct) / sizeof(uint32_t),
+                        value->TLVs[i].length / sizeof(uint32_t), ppWritePackedMsg, end)) {
+          NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s():%d. value->TLVs[i].length %d \n",
+                      __FUNCTION__, __LINE__, value->TLVs[i].length);
           return 0;
+        }
 
         break;
       }
 
       case 1: {
-        if(!pusharray32(value->TLVs[i].value.ptr, value->TLVs[i].length, value->TLVs[i].length, ppWritePackedMsg, end))
+        if (!pusharray32(value->TLVs[i].value.ptr, value->TLVs[i].length / sizeof(uint32_t),
+                         value->TLVs[i].length / sizeof(uint32_t), ppWritePackedMsg, end)) {
+          NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s():%d. value->TLVs[i].length %d \n",
+                      __FUNCTION__, __LINE__, value->TLVs[i].length);
           return 0;
+        }
 
         break;
       }
@@ -3008,10 +3020,8 @@ return 1;
 
 //RX DATA INDICATION
 
-static uint8_t pack_nr_rx_data_indication_body(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
+static uint8_t pack_nr_rx_data_indication_body(nfapi_nr_rx_data_pdu_t *value, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
-	nfapi_nr_rx_data_pdu_t* value = (nfapi_nr_rx_data_pdu_t*)tlv;
-
 	if(!(push32(value->handle, ppWritePackedMsg, end) &&
 	 	 push16(value->rnti, ppWritePackedMsg, end) &&
 		 push8(value->harq_id, ppWritePackedMsg, end) &&
@@ -3041,7 +3051,7 @@ static uint8_t pack_nr_rx_data_indication(void *msg, uint8_t **ppWritePackedMsg,
 
 	for (int i = 0; i < pNfapiMsg->number_of_pdus; i++)
 	{
-		if(!pack_nr_rx_data_indication_body(&(pNfapiMsg->pdu_list[i]), ppWritePackedMsg, end))
+		if(!pack_nr_rx_data_indication_body(&(pNfapiMsg->pdu_list[i]), ppWritePackedMsg, end))	
 		        return 0;
 	}
 
@@ -3089,10 +3099,8 @@ return 1;
 
 //SRS INDICATION
 
-static uint8_t pack_nr_srs_indication_body(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
+static uint8_t pack_nr_srs_indication_body(nfapi_nr_srs_indication_pdu_t *value, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
-	nfapi_nr_srs_indication_pdu_t* value = (nfapi_nr_srs_indication_pdu_t*)tlv;
-
 	if(!(push32(value->handle, ppWritePackedMsg, end) &&
 	 	 push16(value->rnti, ppWritePackedMsg, end) &&
 		 push16(value->timing_advance, ppWritePackedMsg, end) &&
@@ -3104,8 +3112,7 @@ static uint8_t pack_nr_srs_indication_body(void* tlv, uint8_t **ppWritePackedMsg
 		  return 0;
 	for(int i = 0; i < value->reported_symbol_list->num_rbs; i++)
 	{
-		if(!(push8(value->reported_symbol_list->rb_list->rb_snr, ppWritePackedMsg, end)
-			))
+		if (!push8(value->reported_symbol_list->rb_list[i].rb_snr, ppWritePackedMsg, end))
 			return 0;
 	}
 	return 1;
@@ -3181,32 +3188,36 @@ return 1;
 static uint8_t pack_nr_uci_pucch_0_1(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end) {
 	nfapi_nr_uci_pucch_pdu_format_0_1_t* value = (nfapi_nr_uci_pucch_pdu_format_0_1_t*)tlv;
 
-	if(!(push8(value->pduBitmap, ppWritePackedMsg, end) &&
-	 	 push32(value->handle, ppWritePackedMsg, end) &&
-		 push16(value->rnti, ppWritePackedMsg, end) &&
-		 push8(value->pucch_format, ppWritePackedMsg, end) &&
-		 push8(value->ul_cqi, ppWritePackedMsg, end) &&
-		 push16(value->timing_advance, ppWritePackedMsg, end) &&
-		 push16(value->rssi, ppWritePackedMsg, end)
-		 ))
-		  return 0;
+	if (!push8(value->pduBitmap, ppWritePackedMsg, end))
+		return 0;
+	if (!push32(value->handle, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->rnti, ppWritePackedMsg, end))
+		return 0;
+	if (!push8(value->pucch_format, ppWritePackedMsg, end))
+		return 0;
+	if (!push8(value->ul_cqi, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->timing_advance, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->rssi, ppWritePackedMsg, end))
+		return 0;
 	if (value->pduBitmap & 0x01) { //SR
-		if (!(push8(value->sr->sr_indication, ppWritePackedMsg, end) &&
-		 push8(value->sr->sr_confidence_level, ppWritePackedMsg, end)
-		 ))
-		  return 0;
+		if (!push8(value->sr->sr_indication, ppWritePackedMsg, end))
+			return 0;
+		if (!push8(value->sr->sr_confidence_level, ppWritePackedMsg, end))
+			return 0;
 	}
 
 	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
-		if (!(push8(value->harq->num_harq, ppWritePackedMsg, end) &&
-		 push8(value->harq->harq_confidence_level, ppWritePackedMsg, end)
-		 ))
+		if (!push8(value->harq->num_harq, ppWritePackedMsg, end))
+			return 0;
+		if (!push8(value->harq->harq_confidence_level, ppWritePackedMsg, end))
 			return 0;
 		for (int i = 0; i < value->harq->num_harq; i++)
 		{
-			if (!(push8(value->harq->harq_list[i].harq_value, ppWritePackedMsg, end)
-			))
-			        return 0;
+			if (!push8(value->harq->harq_list[i].harq_value, ppWritePackedMsg, end))
+				return 0;
 		}
 	}
 
@@ -3216,57 +3227,79 @@ static uint8_t pack_nr_uci_pucch_0_1(void* tlv, uint8_t **ppWritePackedMsg, uint
 static uint8_t pack_nr_uci_pucch_2_3_4(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end) {
 	nfapi_nr_uci_pucch_pdu_format_2_3_4_t* value = (nfapi_nr_uci_pucch_pdu_format_2_3_4_t*) tlv;
 
-	if(!(push8(value->pduBitmap, ppWritePackedMsg, end) &&
-	 	 push32(value->handle, ppWritePackedMsg, end) &&
-		 push16(value->rnti, ppWritePackedMsg, end) &&
-		 push8(value->pucch_format, ppWritePackedMsg, end) &&
-		 push8(value->ul_cqi, ppWritePackedMsg, end) &&
-		 push16(value->timing_advance, ppWritePackedMsg, end) &&
-		 push16(value->rssi, ppWritePackedMsg, end)
-		 ))
-		  return 0;
+	if (!push8(value->pduBitmap, ppWritePackedMsg, end))
+		return 0;
+	if (!push32(value->handle, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->rnti, ppWritePackedMsg, end))
+		return 0;
+	if (!push8(value->pucch_format, ppWritePackedMsg, end))
+		return 0;
+	if (!push8(value->ul_cqi, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->timing_advance, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->rssi, ppWritePackedMsg, end))
+		return 0;
 
 	if (value->pduBitmap & 0x01) { //SR
-		if(!(push8(value->sr.sr_bit_len, ppWritePackedMsg, end) &&
-	 	 pusharray8(value->sr.sr_payload, (int)(value->sr.sr_bit_len / 8) + 1, (int)(value->sr.sr_bit_len / 8) + 1, ppWritePackedMsg, end)
-		 ))
-		  return 0;
-	}
-
-	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
-		if(!(push8(value->harq.harq_crc, ppWritePackedMsg, end) &&
-			push8(value->harq.harq_bit_len, ppWritePackedMsg, end) &&
-	 	 	pusharray8(value->harq.harq_payload, (int)(value->harq.harq_bit_len / 8) + 1, (int)(value->harq.harq_bit_len / 8) + 1, ppWritePackedMsg, end)
-			))
+		if (!push16(value->sr.sr_bit_len, ppWritePackedMsg, end))
+			return 0;
+		if (!pusharray8(value->sr.sr_payload,
+                               (int)((value->sr.sr_bit_len / 8) + 1),
+                               (int)((value->sr.sr_bit_len / 8) + 1),
+                               ppWritePackedMsg,
+                               end))
 			return 0;
 	}
 
-	if (((value->pduBitmap >> 2) & 0x01)) { //CSI-1
-		if(!(push8(value->csi_part1.csi_part1_crc, ppWritePackedMsg, end) &&
-			push8(value->csi_part1.csi_part1_bit_len, ppWritePackedMsg, end) &&
-	 	 	pusharray8(value->csi_part1.csi_part1_payload, (int)(value->csi_part1.csi_part1_bit_len / 8) + 1, (int)(value->csi_part1.csi_part1_bit_len / 8) + 1, ppWritePackedMsg, end)
-			))
+	if ((value->pduBitmap >> 1) & 0x01) { //HARQ
+		if (!push8(value->harq.harq_crc, ppWritePackedMsg, end))
+			return 0;
+		if (!push16(value->harq.harq_bit_len, ppWritePackedMsg, end))
+			return 0;
+		if (!pusharray8(value->harq.harq_payload,
+                                (int)((value->harq.harq_bit_len / 8) + 1),
+                                (int)((value->harq.harq_bit_len / 8) + 1),
+                                ppWritePackedMsg,
+                                end))
 			return 0;
 	}
 
-	if (((value->pduBitmap >> 3) & 0x01)) { //CSI-2
-		if(!(push8(value->csi_part2.csi_part2_crc, ppWritePackedMsg, end) &&
-			push8(value->csi_part2.csi_part2_bit_len, ppWritePackedMsg, end) &&
-	 	 	pusharray8(value->csi_part2.csi_part2_payload, (int)(value->csi_part2.csi_part2_bit_len / 8) + 1, (int)(value->csi_part2.csi_part2_bit_len / 8) + 1, ppWritePackedMsg, end)
-			))
+	if ((value->pduBitmap >> 2) & 0x01) { //CSI-1
+		if (!push8(value->csi_part1.csi_part1_crc, ppWritePackedMsg, end))
+			return 0;
+		if (!push16(value->csi_part1.csi_part1_bit_len, ppWritePackedMsg, end))
+			return 0;
+		if (!pusharray8(value->csi_part1.csi_part1_payload,
+                                (int)((value->csi_part1.csi_part1_bit_len / 8) + 1),
+                                (int)((value->csi_part1.csi_part1_bit_len / 8) + 1),
+                                ppWritePackedMsg,
+                                end))
+			return 0;
+	}
+
+	if ((value->pduBitmap >> 3) & 0x01) { //CSI-2
+		if (!push8(value->csi_part2.csi_part2_crc, ppWritePackedMsg, end))
+			return 0;
+		if (!push16(value->csi_part2.csi_part2_bit_len, ppWritePackedMsg, end))
+			return 0;
+		if (!pusharray8(value->csi_part2.csi_part2_payload,
+                                (int)((value->csi_part2.csi_part2_bit_len / 8) + 1),
+                                (int)((value->csi_part2.csi_part2_bit_len / 8) + 1),
+                                ppWritePackedMsg,
+                                end))
 			return 0;
 	}
 
 	return 1;
 }
 
-static uint8_t pack_nr_uci_indication_body(void* tlv, uint8_t **ppWritePackedMsg, uint8_t *end)
+static uint8_t pack_nr_uci_indication_body(nfapi_nr_uci_t* value, uint8_t **ppWritePackedMsg, uint8_t *end)
 {
-	nfapi_nr_uci_t* value = (nfapi_nr_uci_t*)tlv;
-
-	if(!(push16(value->pdu_type, ppWritePackedMsg, end) &&
-		push16(value->pdu_size, ppWritePackedMsg, end)
-		))
+	if (!push16(value->pdu_type, ppWritePackedMsg, end))
+		return 0;
+	if (!push16(value->pdu_size, ppWritePackedMsg, end))
 		return 0;
 
 	switch (value->pdu_type) {
@@ -3290,13 +3323,14 @@ static uint8_t pack_nr_uci_indication(void *msg, uint8_t **ppWritePackedMsg, uin
 {
 	nfapi_nr_uci_indication_t *pNfapiMsg = (nfapi_nr_uci_indication_t*)msg;
 
-	if (!(push16(pNfapiMsg->sfn , ppWritePackedMsg, end) &&
-		push16(pNfapiMsg->slot , ppWritePackedMsg, end) &&
-		push16(pNfapiMsg->num_ucis, ppWritePackedMsg, end)
-		))
+	if (!push16(pNfapiMsg->sfn , ppWritePackedMsg, end))
+			return 0;
+	if (!push16(pNfapiMsg->slot , ppWritePackedMsg, end))
+			return 0;
+	if (!push16(pNfapiMsg->num_ucis, ppWritePackedMsg, end))
 			return 0;
 
-	for(int i=0; i<pNfapiMsg->num_ucis;i++)
+	for (int i = 0; i < pNfapiMsg->num_ucis; i++)
 	{
 		if (!pack_nr_uci_indication_body(&pNfapiMsg->uci_list[i], ppWritePackedMsg, end))
 		        return 0;
@@ -3627,8 +3661,6 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
 static uint8_t unpack_dl_tti_csi_rs_pdu_rel15_value(void *tlv, uint8_t **ppReadPackedMsg, uint8_t *end) {
   nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *value = (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *)tlv;
   return(
-          pull16(ppReadPackedMsg, &value->bwp_size, end) &&
-          pull16(ppReadPackedMsg, &value->bwp_start, end) &&
           pull8(ppReadPackedMsg, &value->subcarrier_spacing, end) &&
           pull8(ppReadPackedMsg, &value->cyclic_prefix, end) &&
           pull16(ppReadPackedMsg, &value->start_rb, end) &&
@@ -4620,14 +4652,19 @@ static uint8_t unpack_ul_tti_groups_list_value(uint8_t **ppReadPackedMsg, uint8_
 static uint8_t unpack_ul_tti_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t *config) {
   nfapi_nr_ul_tti_request_t *pNfapiMsg = (nfapi_nr_ul_tti_request_t *)msg;
 
-  if (!(
-        pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end) &&
-        pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->n_pdus, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->n_group, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->rach_present, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->n_ulcch, end) &&
-        pull8(ppReadPackedMsg, &pNfapiMsg->n_ulsch, end) ))
+  if (!pull16(ppReadPackedMsg, &pNfapiMsg->SFN, end))
+    return 0;
+  if (!pull16(ppReadPackedMsg, &pNfapiMsg->Slot, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_pdus, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_group, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->rach_present, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_ulcch, end))
+    return 0;
+  if (!pull8(ppReadPackedMsg, &pNfapiMsg->n_ulsch, end))
     return 0;
 
   for(int i=0; i< pNfapiMsg->n_pdus; i++) {
@@ -5510,14 +5547,18 @@ static uint8_t unpack_tx_data_pdu_list_value(uint8_t **ppReadPackedMsg, uint8_t 
 
     switch(pNfapiMsg->TLVs[i].tag) {
       case 0: {
-        if(!pullarray32(ppReadPackedMsg, pNfapiMsg->TLVs[i].value.direct, 16384, pNfapiMsg->TLVs[i].length, end))
+        if (!pullarray32(ppReadPackedMsg, pNfapiMsg->TLVs[i].value.direct,
+                        sizeof(pNfapiMsg->TLVs[i].value.direct) / sizeof(uint32_t),
+                        pNfapiMsg->TLVs[i].length / sizeof(uint32_t), end))
           return 0;
 
         break;
       }
 
       case 1: {
-        if(!pullarray32(ppReadPackedMsg, pNfapiMsg->TLVs[i].value.ptr, pNfapiMsg->TLVs[i].length, pNfapiMsg->TLVs[i].length, end))
+        if (!pullarray32(ppReadPackedMsg,pNfapiMsg->TLVs[i].value.ptr,
+                        pNfapiMsg->TLVs[i].length / sizeof(uint32_t),
+                        pNfapiMsg->TLVs[i].length / sizeof(uint32_t), end))
           return 0;
 
         break;
@@ -5671,7 +5712,7 @@ static uint8_t unpack_nr_rx_data_indication_body(nfapi_nr_rx_data_pdu_t* value,
 		return 0;
 
         uint16_t length = value->pdu_length;
-        value->pdu = nfapi_p7_allocate(length, config);
+        value->pdu = nfapi_p7_allocate(sizeof(*value->pdu) * length, config);
 
         if (pullarray8(ppReadPackedMsg, value->pdu, length, length, end) == 0)
         {
@@ -5752,10 +5793,8 @@ return 1;
 
 //SRS INDICATION
 
-static uint8_t unpack_nr_srs_indication_body(void* tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
+static uint8_t unpack_nr_srs_indication_body(nfapi_nr_srs_indication_pdu_t* value, uint8_t **ppReadPackedMsg, uint8_t *end)
 {
-	nfapi_nr_srs_indication_pdu_t* value = (nfapi_nr_srs_indication_pdu_t*)tlv;
-
 	if(!(pull32(ppReadPackedMsg, &value->handle, end) &&
 	 	 pull16(ppReadPackedMsg, &value->rnti, end) &&
 		 pull16(ppReadPackedMsg, &value->timing_advance, end) &&
@@ -5767,17 +5806,14 @@ static uint8_t unpack_nr_srs_indication_body(void* tlv, uint8_t **ppReadPackedMs
 		  return 0;
 	for(int i = 0; i < value->reported_symbol_list->num_rbs; i++)
 	{
-		if(!(pull8(ppReadPackedMsg, &value->reported_symbol_list->rb_list->rb_snr, end)
-			))
+		if (!pull8(ppReadPackedMsg, &value->reported_symbol_list->rb_list[i].rb_snr, end))
 			return 0;
 	}
 	return 1;
 }
 
-static uint8_t unpack_nr_srs_indication(uint8_t **ppReadPackedMsg, uint8_t *end, void *msg, nfapi_p7_codec_config_t* config)
+static uint8_t unpack_nr_srs_indication(uint8_t **ppReadPackedMsg, uint8_t *end, nfapi_nr_srs_indication_t *pNfapiMsg, nfapi_p7_codec_config_t* config)
 {
-	nfapi_nr_srs_indication_t *pNfapiMsg = (nfapi_nr_srs_indication_t*)msg;
-
 	if (!(pull16(ppReadPackedMsg,&pNfapiMsg->sfn , end) &&
 		pull16(ppReadPackedMsg,&pNfapiMsg->slot , end) &&
 		pull8(ppReadPackedMsg,&pNfapiMsg->number_of_pdus, end)
@@ -5786,7 +5822,7 @@ static uint8_t unpack_nr_srs_indication(uint8_t **ppReadPackedMsg, uint8_t *end,
 
 	for(int i=0; i<pNfapiMsg->number_of_pdus;i++)
 	{
-		if(!unpack_nr_srs_indication_body(&pNfapiMsg->pdu_list,ppReadPackedMsg,end))
+		if (!unpack_nr_srs_indication_body(&pNfapiMsg->pdu_list[i], ppReadPackedMsg, end))
 		return 0;
 	}
 
@@ -5907,58 +5943,111 @@ static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *valu
 }
 
 
-static uint8_t unpack_nr_uci_pucch_2_3_4(nfapi_nr_uci_pucch_pdu_format_2_3_4_t* tlv, uint8_t **ppReadPackedMsg, uint8_t *end) {
-	nfapi_nr_uci_pucch_pdu_format_2_3_4_t* value = (nfapi_nr_uci_pucch_pdu_format_2_3_4_t*) tlv;
+static uint8_t unpack_nr_uci_pucch_2_3_4(nfapi_nr_uci_pucch_pdu_format_2_3_4_t* value,
+                                         uint8_t **ppReadPackedMsg,
+                                         uint8_t *end,
+                                         nfapi_p7_codec_config_t *config) {
 
-	if(!(pull8(ppReadPackedMsg, &value->pduBitmap, end) &&
-	 	 pull32(ppReadPackedMsg, &value->handle, end) &&
-		 pull16(ppReadPackedMsg, &value->rnti, end) &&
-		 pull8(ppReadPackedMsg, &value->pucch_format, end) &&
-		 pull8(ppReadPackedMsg, &value->ul_cqi, end) &&
-		 pull16(ppReadPackedMsg, &value->timing_advance, end) &&
-		 pull16(ppReadPackedMsg, &value->rssi, end)
-		 ))
-		  return 0;
+	if (!pull8(ppReadPackedMsg, &value->pduBitmap, end))
+		return 0;
+	if (!pull32(ppReadPackedMsg, &value->handle, end))
+                return 0;
+	if (!pull16(ppReadPackedMsg, &value->rnti, end))
+                return 0;
+	if (!pull8(ppReadPackedMsg, &value->pucch_format, end))
+                return 0;
+	if (!pull8(ppReadPackedMsg, &value->ul_cqi, end))
+                return 0;
+	if (!pull16(ppReadPackedMsg, &value->timing_advance, end))
+                return 0;
+	if (!pull16(ppReadPackedMsg, &value->rssi, end))
+                return 0;
+
 	if (value->pduBitmap & 0x01) { //SR
-		if(!(pull16(ppReadPackedMsg, &value->sr.sr_bit_len, end)))
+		if (!pull16(ppReadPackedMsg, &value->sr.sr_bit_len, end))
 			return 0;
 
-		value->sr.sr_payload = (uint8_t*) malloc(sizeof(uint8_t) * ((value->sr.sr_bit_len/8)));
+		value->sr.sr_payload = nfapi_p7_allocate(sizeof(*value->sr.sr_payload) *
+                                                         (int)((value->sr.sr_bit_len / 8) + 1),
+                                                         config);
+		if (value->sr.sr_payload == NULL)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate value->sr.sr_payload\n", __FUNCTION__);
+			return 0;
+		}
 
-	 	if(!(pullarray8(ppReadPackedMsg, &value->sr.sr_payload[0], (int)(value->sr.sr_bit_len / 8), (int)(value->sr.sr_bit_len / 8), end)))
-		  	return 0;
+		if (!pullarray8(ppReadPackedMsg, value->sr.sr_payload,
+				(int)((value->sr.sr_bit_len / 8) + 1),
+				(int)((value->sr.sr_bit_len / 8) + 1),
+                                end))
+			return 0;
 	}
 
-	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
-		if(!(pull8(ppReadPackedMsg, &value->harq.harq_crc, end)) &&
-			(pull16(ppReadPackedMsg, &value->harq.harq_bit_len, end)))
+	if ((value->pduBitmap >> 1) & 0x01) { //HARQ
+		if (!pull8(ppReadPackedMsg, &value->harq.harq_crc, end))
+			return 0;
+		if (!pull16(ppReadPackedMsg, &value->harq.harq_bit_len, end))
 			return 0;
 
-		value->harq.harq_payload = (uint8_t*) malloc(sizeof(uint8_t) * ((value->harq.harq_bit_len/8 )));
+		value->harq.harq_payload = nfapi_p7_allocate(sizeof(*value->harq.harq_payload) *
+                                                             (int)((value->harq.harq_bit_len / 8) + 1),
+                                                             config);
+		if (value->harq.harq_payload == NULL)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate value->harq.harq_payload\n", __FUNCTION__);
+			return 0;
+		}
 
-	 	if(!(pullarray8(ppReadPackedMsg, value->harq.harq_payload, (int)(value->harq.harq_bit_len / 8), (int)(value->harq.harq_bit_len / 8), end)))
+		if (!pullarray8(ppReadPackedMsg, value->harq.harq_payload,
+				(int)((value->harq.harq_bit_len / 8) + 1),
+				(int)((value->harq.harq_bit_len / 8) + 1),
+                                end))
 			return 0;
 	}
 
-	if (((value->pduBitmap >> 2) & 0x01)) { //CSI-1
-		if(!(pull8(ppReadPackedMsg, &value->csi_part1.csi_part1_crc, end)) &&
-			(pull16(ppReadPackedMsg, &value->csi_part1.csi_part1_bit_len, end)))
+	if ((value->pduBitmap >> 2) & 0x01) { //CSI-1
+		if (!pull8(ppReadPackedMsg, &value->csi_part1.csi_part1_crc, end))
+			return 0;
+		if (!pull16(ppReadPackedMsg, &value->csi_part1.csi_part1_bit_len, end))
 			return 0;
 
-		value->csi_part1.csi_part1_payload = (uint8_t*) malloc(sizeof(uint8_t) * ((value->csi_part1.csi_part1_bit_len/8)));
+		value->csi_part1.csi_part1_payload = nfapi_p7_allocate(sizeof(*value->csi_part1.csi_part1_payload) *
+                                                                       (int)((value->csi_part1.csi_part1_bit_len / 8) + 1),
+                                                                       config);
+		if (value->csi_part1.csi_part1_payload == NULL)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate value->csi_part1.csi_part1_payload\n",
+				    __FUNCTION__);
+			return 0;
+		}
 
-//		if(!(pullarray8(ppReadPackedMsg, value->csi_part1.csi_part1_payload, (int)(value->csi_part1.csi_part1_bit_len / 8), (int)(value->csi_part1.csi_part1_bit_len / 8), end)))
-//			return 0;
+		if (!pullarray8(ppReadPackedMsg, value->csi_part1.csi_part1_payload,
+                                (int)((value->csi_part1.csi_part1_bit_len / 8) + 1),
+                                (int)((value->csi_part1.csi_part1_bit_len / 8) + 1),
+                                end))
+			return 0;
 	}
 
-	if (((value->pduBitmap >> 3) & 0x01)) { //CSI-2
-		if(!(pull8(ppReadPackedMsg, &value->csi_part2.csi_part2_crc, end)) &&
-			(pull16(ppReadPackedMsg, &value->csi_part2.csi_part2_bit_len, end)))
+	if ((value->pduBitmap >> 3) & 0x01) { //CSI-2
+		if (!pull8(ppReadPackedMsg, &value->csi_part2.csi_part2_crc, end))
+			return 0;
+		if (!pull16(ppReadPackedMsg, &value->csi_part2.csi_part2_bit_len, end))
 			return 0;
 
-		value->csi_part2.csi_part2_payload = (uint8_t*) malloc(sizeof(uint8_t) * ((value->csi_part2.csi_part2_bit_len/8 )));
+		value->csi_part2.csi_part2_payload = nfapi_p7_allocate(sizeof(*value->csi_part2.csi_part2_payload) *
+                                                                       (int)((value->csi_part2.csi_part2_bit_len / 8) + 1),
+                                                                       config);
+		if (value->csi_part2.csi_part2_payload == NULL)
+		{
+			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate value->csi_part2.csi_part2_payload\n",
+			            __FUNCTION__);
+			return 0;
+		}
 
-		if(!(pullarray8(ppReadPackedMsg, value->csi_part2.csi_part2_payload, (int)(value->csi_part2.csi_part2_bit_len / 8) , (int)(value->csi_part2.csi_part2_bit_len / 8) , end)))
+		if (!pullarray8(ppReadPackedMsg, value->csi_part2.csi_part2_payload,
+                                (int)((value->csi_part2.csi_part2_bit_len / 8) + 1),
+                                (int)((value->csi_part2.csi_part2_bit_len / 8) + 1),
+                                end))
 			return 0;
 	}
 
@@ -5970,9 +6059,9 @@ static uint8_t unpack_nr_uci_indication_body(nfapi_nr_uci_t *value,
                                              uint8_t *end,
                                              nfapi_p7_codec_config_t *config)
 {
-	if(!(pull16(ppReadPackedMsg, &value->pdu_type, end) &&
-		pull16(ppReadPackedMsg, &value->pdu_size, end)
-		))
+	if (!pull16(ppReadPackedMsg, &value->pdu_type, end))
+		return 0;
+	if (!pull16(ppReadPackedMsg, &value->pdu_size, end))
 		return 0;
 
 	switch (value->pdu_type) {
@@ -5988,7 +6077,7 @@ static uint8_t unpack_nr_uci_indication_body(nfapi_nr_uci_t *value,
                 }
                 case NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE: {
                         nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu = &value->pucch_pdu_format_2_3_4;
-                        if (!unpack_nr_uci_pucch_2_3_4(uci_pdu, ppReadPackedMsg, end))
+                        if (!unpack_nr_uci_pucch_2_3_4(uci_pdu, ppReadPackedMsg, end, config))
                                 return 0;
                         break;
                 }
@@ -6004,17 +6093,18 @@ static uint8_t unpack_nr_uci_indication(uint8_t **ppReadPackedMsg, uint8_t *end,
 {
 	nfapi_nr_uci_indication_t *pNfapiMsg = (nfapi_nr_uci_indication_t*)msg;
 
-	if (!(pull16(ppReadPackedMsg, &pNfapiMsg->sfn , end) &&
-		pull16(ppReadPackedMsg, &pNfapiMsg->slot , end) &&
-		pull16(ppReadPackedMsg, &pNfapiMsg->num_ucis, end)
-		))
-			return 0;
+	if (!pull16(ppReadPackedMsg, &pNfapiMsg->sfn , end))
+		return 0;
+	if (!pull16(ppReadPackedMsg, &pNfapiMsg->slot , end))
+		return 0;
+	if (!pull16(ppReadPackedMsg, &pNfapiMsg->num_ucis, end))
+		return 0;
 
 	pNfapiMsg->uci_list = nfapi_p7_allocate(sizeof(*pNfapiMsg->uci_list) * pNfapiMsg->num_ucis, config);
 	for (int i = 0; i < pNfapiMsg->num_ucis; i++)
 	{
-		if(!unpack_nr_uci_indication_body(&pNfapiMsg->uci_list[i], ppReadPackedMsg, end, config))
-		        return 0;
+		if (!unpack_nr_uci_indication_body(&pNfapiMsg->uci_list[i], ppReadPackedMsg, end, config))
+			return 0;
 	}
 
         return 1;

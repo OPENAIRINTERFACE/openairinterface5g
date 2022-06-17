@@ -40,7 +40,7 @@ void nr_codeword_scrambling(uint8_t *in,
     __m256i c = ((__m256i*)in)[i];
     uint32_t in32 = _mm256_movemask_epi8(_mm256_slli_epi16(c,7));
     out[i]=(in32^s);
-    //printf("in[%d] %x => %x\n",i,in32,out[i]);
+    LOG_D(PHY,"in[%d] %x => %x\n",i,in32,out[i]);
     s=lte_gold_generic(&x1, &x2, 0);
   }
 #elif defined(__SSE4__)
@@ -52,6 +52,7 @@ void nr_codeword_scrambling(uint8_t *in,
     ((uint16_t*)&in32)[0] = _mm_movemask_epi8(_mm_slli_epi16(in128[0],7));
     ((uint16_t*)&in32)[1] = _mm_movemask_epi8(_mm_slli_epi16(in128[1],7));
     out[i]=(in32^s);
+    LOG_D(PHY,"in[%d] %x => %x\n",i,in32,out[i]);
     s=lte_gold_generic(&x1, &x2, 0);
   }
 //#elsif defined(__arm__) || defined(__aarch64)

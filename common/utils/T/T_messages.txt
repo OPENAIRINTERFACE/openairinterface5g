@@ -944,6 +944,27 @@ ID = LEGACY_GTPU_TRACE
     GROUP = ALL:LEGACY_GTPU:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
+ID = LEGACY_SDAP_INFO
+    DESC = SDAP legacy logs - info level
+    GROUP = ALL:LEGACY_SDAP:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_SDAP_ERROR
+    DESC = SDAP legacy logs - error level
+    GROUP = ALL:LEGACY_SDAP:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_SDAP_WARNING
+    DESC = SDAP legacy logs - warning level
+    GROUP = ALL:LEGACY_SDAP:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_SDAP_DEBUG
+    DESC = SDAP legacy logs - debug level
+    GROUP = ALL:LEGACY_SDAP:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_SDAP_TRACE
+    DESC = SDAP legacy logs - trace level
+    GROUP = ALL:LEGACY_SDAP:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+
 ID = LEGACY_TMR_INFO
     DESC = TMR legacy logs - info level
     GROUP = ALL:LEGACY_TMR:LEGACY_GROUP_INFO:LEGACY

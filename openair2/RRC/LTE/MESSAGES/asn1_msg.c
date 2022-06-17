@@ -1331,10 +1331,8 @@ uint8_t do_SIB23(uint8_t Mod_id,
     (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1 = calloc(1, sizeof(struct LTE_RACH_ConfigCommon__ext1));
     memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1, 0, sizeof(struct LTE_RACH_ConfigCommon__ext1));
 
-    if (rrconfig->preambleTransMax_CE_r13) {
-      (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = calloc(1, sizeof(LTE_PreambleTransMax_t));
-      *(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = *rrconfig->preambleTransMax_CE_r13; // to be re-initialized when we find the enum
-    } else (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = NULL;
+    (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = calloc(1, sizeof(LTE_PreambleTransMax_t));
+    *(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = rrconfig->preambleTransMax_CE_r13; // to be re-initialized when we find the enum
 
     (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13 = calloc(1, sizeof(LTE_RACH_CE_LevelInfoList_r13_t));
     memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13, 0, sizeof(LTE_RACH_CE_LevelInfoList_r13_t));
@@ -4297,6 +4295,7 @@ ssize_t do_nrMeasurementReport(uint8_t *buffer,
      If we delete this asn1cCalloc statement, eNB will crash in NSA mode.
      Please don't delete the following line unless the bug has been found. */
   asn1cCalloc(measresulteutra_list->cgi_Info, measresult_cgi2);
+  (void) measresult_cgi2;
   struct LTE_MeasResultEUTRA__measResult* measResult= &measresulteutra_list->measResult;
   asn1cCallocOne(measResult->rsrpResult, rsrp_tar);
   asn1cCallocOne(measResult->rsrqResult, rsrq_tar);

@@ -151,11 +151,5 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
     else if (eNB->frame_parms.N_RB_DL == 25)  ru->N_TA_offset = 624/4;
   } else ru->N_TA_offset=0;
 
-  if (IS_SOFTMODEM_BASICSIM)
-    /* this is required for the basic simulator in TDD mode
-     * TODO: find a proper cleaner solution
-     */
-    UE->N_TA_offset = 0;
-
   printf("Done lte_param_init\n");
 }
