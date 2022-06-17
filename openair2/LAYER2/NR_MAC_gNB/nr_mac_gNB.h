@@ -109,6 +109,11 @@ typedef struct NR_UE_UL_BWP {
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
+  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList;
+  NR_PUSCH_Config_t *pusch_Config;
+  uint8_t transform_precoding;
+  uint8_t mcs_table;
+  nr_dci_format_t dci_format;
 } NR_UE_UL_BWP_t;
 
 typedef enum {
@@ -364,18 +369,11 @@ typedef struct NR_sched_pucch {
  * recalculate all S/L, MCS table, or DMRS-related parameters over and over
  * again. Hence, we store them in this struct for easy reference. */
 typedef struct NR_pusch_semi_static_t {
-  int dci_format;
   int time_domain_allocation;
   uint8_t nrOfLayers;
   uint8_t num_dmrs_cdm_grps_no_data;
-
   int startSymbolIndex;
   int nrOfSymbols;
-
-  NR_PUSCH_Config_t *pusch_Config;
-  uint8_t transform_precoding;
-  uint8_t mcs_table;
-
   long mapping_type;
   NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
   uint16_t dmrs_config_type;

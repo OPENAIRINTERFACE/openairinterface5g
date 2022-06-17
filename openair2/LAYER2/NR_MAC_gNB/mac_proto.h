@@ -197,7 +197,6 @@ void config_uldci(const NR_SIB1_t *sib1,
                   const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
-                  int dci_format,
                   int time_domain_assignment,
                   uint8_t tpc,
                   int n_ubwp,
@@ -333,9 +332,7 @@ NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
                                   NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                                   NR_SearchSpace__searchSpaceType_PR target_ss);
 
-long get_K2(NR_ServingCellConfigCommon_t *scc,
-            NR_ServingCellConfigCommonSIB_t *scc_sib1,
-            NR_BWP_Uplink_t *ubwp,
+long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu);
 
@@ -347,11 +344,10 @@ void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
                               NR_UE_sched_ctrl_t *sched_ctrl,
                               NR_pdsch_semi_static_t *ps);
 
-void nr_set_pusch_semi_static(const NR_SIB1_t *sib1,
+void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *BWP,
                               const NR_ServingCellConfigCommon_t *scc,
                               const NR_BWP_Uplink_t *ubwp,
                               const NR_BWP_UplinkDedicated_t *ubwpd,
-                              long dci_format,
                               int tda,
                               uint8_t num_dmrs_cdm_grps_no_data,
                               uint8_t nrOfLayers,
@@ -499,7 +495,6 @@ uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx);
 
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
-int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl);
 const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 

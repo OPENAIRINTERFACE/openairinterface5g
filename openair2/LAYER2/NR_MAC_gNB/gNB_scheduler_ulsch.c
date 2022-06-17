@@ -37,15 +37,6 @@
 
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
-int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl) {
-
-  int dci_format = sched_ctrl->search_space && sched_ctrl->search_space->searchSpaceType &&
-                   sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
-                   NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-
-  return(dci_format);
-}
-
 const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot) {
 
   /* there is a mixed slot only when in TDD */
@@ -760,23 +751,14 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   }
 }
 
-long get_K2(NR_ServingCellConfigCommon_t *scc,
-            NR_ServingCellConfigCommonSIB_t *scc_sib1,
-            NR_BWP_Uplink_t *ubwp,
+long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu) {
 
-  NR_PUSCH_TimeDomainResourceAllocation_t *tda_list = NULL;
-  if(ubwp) {
-    tda_list = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
-  } else if(scc) {
-    tda_list = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
-  } else if(scc_sib1) {
-    tda_list = scc_sib1->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[time_domain_assignment];
-  }
+  NR_PUSCH_TimeDomainResourceAllocation_t *tda = tdaList->list.array[time_domain_assignment];
 
-  if (tda_list->k2)
-    return *tda_list->k2;
+  if (tda->k2)
+    return *tda->k2;
   else if (mu < 2)
     return 1;
   else if (mu == 2)
@@ -857,17 +839,13 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
      * (re-)transmission */
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
-    int dci_format = get_dci_format(sched_ctrl);
-
     if (ps->time_domain_allocation != tda
-        || ps->dci_format != dci_format
         || ps->nrOfLayers != nrOfLayers
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
-      nr_set_pusch_semi_static(sib1,
+      nr_set_pusch_semi_static(&UE->current_UL_BWP,
                                scc,
                                sched_ctrl->active_ubwp,
                                ubwpd,
-                               dci_format,
                                tda,
                                num_dmrs_cdm_grps_no_data,
                                nrOfLayers,
@@ -885,12 +863,10 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
   } else {
     NR_pusch_semi_static_t temp_ps;
-    int dci_format = get_dci_format(sched_ctrl);
-    nr_set_pusch_semi_static(sib1,
+    nr_set_pusch_semi_static(&UE->current_UL_BWP,
                              scc,
                              sched_ctrl->active_ubwp,
                              ubwpd,
-                             dci_format,
                              tda,
                              num_dmrs_cdm_grps_no_data,
                              nrOfLayers,
@@ -988,13 +964,13 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
   return true;
 }
 
-void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_pusch_semi_static_t *ps)
-{
-  const int mcs = sched_pusch->mcs;
-  sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
-  sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
+void update_ul_ue_R_Qm(NR_sched_pusch_t *sched_pusch, const NR_PUSCH_Config_t *pusch_Config, const int mcs_table) {
 
-  if (ps->pusch_Config && ps->pusch_Config->tp_pi2BPSK && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+  const int mcs = sched_pusch->mcs;
+  sched_pusch->R = nr_get_code_rate_ul(mcs, mcs_table);
+  sched_pusch->Qm = nr_get_Qm_ul(mcs, mcs_table);
+
+  if (pusch_Config && pusch_Config->tp_pi2BPSK && ((mcs_table == 3 && mcs < 2) || (mcs_table == 4 && mcs < 6))) {
     sched_pusch->R >>= 1;
     sched_pusch->Qm <<= 1;
   }
@@ -1127,21 +1103,18 @@ void pf_ul(module_id_t module_id,
 
       /* Save PUSCH field */
       /* we want to avoid a lengthy deduction of DMRS and other parameters in
-       * every TTI if we can save it, so check whether dci_format, TDA, or
+       * every TTI if we can save it, so check whether TDA, or
        * num_dmrs_cdm_grps_no_data has changed and only then recompute */
       const uint8_t nrOfLayers = 1;
       const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
-      int dci_format = get_dci_format(sched_ctrl);
       const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
       if (ps->time_domain_allocation != tda
-          || ps->dci_format != dci_format
           || ps->nrOfLayers != nrOfLayers
           || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
-        nr_set_pusch_semi_static(sib1,
+        nr_set_pusch_semi_static(BWP,
                                  scc,
                                  sched_ctrl->active_ubwp,
                                  ubwpd,
-                                 dci_format,
                                  tda,
                                  num_dmrs_cdm_grps_no_data,
                                  nrOfLayers,
@@ -1168,7 +1141,7 @@ void pf_ul(module_id_t module_id,
 
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = min(nrmac->min_grant_mcs, sched_pusch->mcs);
-      update_ul_ue_R_Qm(sched_pusch, ps);
+      update_ul_ue_R_Qm(sched_pusch, BWP->pusch_Config, BWP->mcs_table);
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
       sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
@@ -1191,7 +1164,7 @@ void pf_ul(module_id_t module_id,
 
     /* Create UE_sched for UEs eligibale for new data transmission*/
     /* Calculate coefficient*/
-    const uint32_t tbs = ul_pf_tbs[ps->mcs_table][sched_pusch->mcs];
+    const uint32_t tbs = ul_pf_tbs[BWP->mcs_table][sched_pusch->mcs];
     float coeff_ue = (float) tbs / UE->ul_thr_ue;
     LOG_D(NR_MAC,"rnti %04x b %d, ul_thr_ue %f, tbs %d, coeff_ue %f\n",
           UE->rnti, b, UE->ul_thr_ue, tbs, coeff_ue);
@@ -1249,27 +1222,24 @@ void pf_ul(module_id_t module_id,
 
     /* Save PUSCH field */
     /* we want to avoid a lengthy deduction of DMRS and other parameters in
-     * every TTI if we can save it, so check whether dci_format, TDA, or
+     * every TTI if we can save it, so check whether TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
     const uint8_t nrOfLayers = 1;
     const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
-    int dci_format = get_dci_format(sched_ctrl);
     const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
     if (ps->time_domain_allocation != tda
-        || ps->dci_format != dci_format
         || ps->nrOfLayers != nrOfLayers
         || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
-      nr_set_pusch_semi_static(sib1,
+      nr_set_pusch_semi_static(BWP,
                                scc,
                                sched_ctrl->active_ubwp,
                                ubwpd,
-                               dci_format,
                                tda,
                                num_dmrs_cdm_grps_no_data,
                                nrOfLayers,
                                ps);
     }
-    update_ul_ue_R_Qm(sched_pusch, ps);
+    update_ul_ue_R_Qm(sched_pusch, BWP->pusch_Config, BWP->mcs_table);
 
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
@@ -1350,13 +1320,13 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   NR_UE_UL_BWP_t *BWP = &nr_mac->UE_info.list[0]->current_UL_BWP;
   int mu = BWP->scs;
   const int temp_tda = get_ul_tda(nr_mac, scc, slot);
-  int K2 = get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, temp_tda, mu);
+  int K2 = get_K2(BWP->tdaList, temp_tda, mu);
   const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) & 1023;
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   const int tda = get_ul_tda(nr_mac, scc, sched_slot);
   if (tda < 0)
     return false;
-  DevAssert(K2 == get_K2(scc, scc_sib1, sched_ctrl->active_ubwp, tda, mu));
+  DevAssert(K2 == get_K2(BWP->tdaList, tda, mu));
 
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
     return false;
@@ -1385,9 +1355,9 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   sched_ctrl->sched_pusch.frame = sched_frame;
   UE_iterator(nr_mac->UE_info.list, UE2) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE2->UE_sched_ctrl;
-    AssertFatal(K2 == get_K2(scc,scc_sib1,sched_ctrl->active_ubwp, tda, mu),
+    AssertFatal(K2 == get_K2(BWP->tdaList, tda, mu),
                 "Different K2, %d(UE%d) != %ld(UE%04x)\n",
-		K2, 0, get_K2(scc,scc_sib1,sched_ctrl->active_ubwp, tda, mu), UE2->rnti);
+		K2, 0, get_K2(BWP->tdaList, tda, mu), UE2->rnti);
     sched_ctrl->sched_pusch.slot = sched_slot;
     sched_ctrl->sched_pusch.frame = sched_frame;
   }
@@ -1401,17 +1371,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   const uint16_t bwpSize = BWP->BWPSize;
   const uint16_t bwpStart = BWP->BWPStart;
 
-  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = NULL;
-  if (sched_ctrl->active_ubwp) {
-    tdaList = sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  } else if (scc) {
-    tdaList = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  } else {
-    NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
-    tdaList = sib1->servingCellConfigCommon->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  }
-
-  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  const int startSymbolAndLength = BWP->tdaList->list.array[tda]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
   const uint16_t symb = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
@@ -1651,10 +1611,10 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->target_code_rate = sched_pusch->R;
     pusch_pdu->qam_mod_order = sched_pusch->Qm;
     pusch_pdu->mcs_index = sched_pusch->mcs;
-    pusch_pdu->mcs_table = ps->mcs_table;
-    pusch_pdu->transform_precoding = ps->transform_precoding;
-    if (ps->pusch_Config && ps->pusch_Config->dataScramblingIdentityPUSCH)
-      pusch_pdu->data_scrambling_id = *ps->pusch_Config->dataScramblingIdentityPUSCH;
+    pusch_pdu->mcs_table = current_BWP->mcs_table;
+    pusch_pdu->transform_precoding = current_BWP->transform_precoding;
+    if (current_BWP->pusch_Config && current_BWP->pusch_Config->dataScramblingIdentityPUSCH)
+      pusch_pdu->data_scrambling_id = *current_BWP->pusch_Config->dataScramblingIdentityPUSCH;
     else
       pusch_pdu->data_scrambling_id = *scc->physCellId;
     pusch_pdu->nrOfLayers = ps->nrOfLayers;
@@ -1690,7 +1650,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->rb_start = sched_pusch->rbStart;
     pusch_pdu->rb_size = sched_pusch->rbSize;
     pusch_pdu->vrb_to_prb_mapping = 0;
-    if (ps->pusch_Config==NULL || ps->pusch_Config->frequencyHopping==NULL)
+    if (current_BWP->pusch_Config==NULL || current_BWP->pusch_Config->frequencyHopping==NULL)
       pusch_pdu->frequency_hopping = 0;
     else
       pusch_pdu->frequency_hopping = 1;
@@ -1724,7 +1684,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       else
         AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
 
-      LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, ps->mcs_table);
+      LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, current_BWP->mcs_table);
     }
 
     /*-----------------------------------------------------------------------------*/
@@ -1799,7 +1759,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  scc,
                  pusch_pdu,
                  &uldci_payload,
-                 ps->dci_format,
                  ps->time_domain_allocation,
                  UE->UE_sched_ctrl.tpc0,
                  n_ubwp,
@@ -1809,7 +1768,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                        &UE->current_DL_BWP,
                        dci_pdu,
                        &uldci_payload,
-                       ps->dci_format,
+                       current_BWP->dci_format,
                        rnti_types[0],
                        pusch_pdu->bwp_size,
                        current_BWP->bwp_id,

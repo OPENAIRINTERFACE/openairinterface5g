@@ -355,8 +355,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
   const int mu = BWP->scs;
 
-  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
-    sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = BWP->tdaList;
   const int temp_tda = get_ul_tda(nr_mac, scc, slot);
   if (temp_tda < 0)
     return false;
@@ -364,7 +363,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
               "time domain assignment %d >= %d\n",
               temp_tda,
               tdaList->list.count);
-  int K2 = get_K2(scc,NULL,sched_ctrl->active_ubwp, temp_tda, mu);
+  int K2 = get_K2(BWP->tdaList, temp_tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   const int tda = get_ul_tda(nr_mac, scc, sched_slot);
@@ -380,22 +379,18 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
-  const long f = (sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
-                  sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
-  const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   if ((target_ul_Nl==4)||(target_ul_Nl==3))
     num_dmrs_cdm_grps_no_data = 2;
   
   /* we want to avoid a lengthy deduction of DMRS and other parameters in
-   * every TTI if we can save it, so check whether dci_format, TDA, or
+   * every TTI if we can save it, so check whether TDA, or
    * num_dmrs_cdm_grps_no_data has changed and only then recompute */
   NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
   if (ps->time_domain_allocation != tda
-      || ps->dci_format != dci_format
       || ps->nrOfLayers != target_ul_Nl
       || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-    nr_set_pusch_semi_static(NULL, scc, sched_ctrl->active_ubwp, NULL,dci_format, tda, num_dmrs_cdm_grps_no_data,target_ul_Nl,ps);
+    nr_set_pusch_semi_static(BWP, scc, sched_ctrl->active_ubwp, NULL, tda, num_dmrs_cdm_grps_no_data,target_ul_Nl,ps);
 
   uint16_t rbStart = 0;
   uint16_t rbSize;
@@ -465,10 +460,10 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   /* Calculate TBS from MCS */
   ps->nrOfLayers = target_ul_Nl;
-  sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
-  sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-  if (ps->pusch_Config->tp_pi2BPSK
-      && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+  sched_pusch->R = nr_get_code_rate_ul(mcs, BWP->mcs_table);
+  sched_pusch->Qm = nr_get_Qm_ul(mcs, BWP->mcs_table);
+  if (BWP->pusch_Config->tp_pi2BPSK
+      && ((BWP->mcs_table == 3 && mcs < 2) || (BWP->mcs_table == 4 && mcs < 6))) {
     sched_pusch->R >>= 1;
     sched_pusch->Qm <<= 1;
   }
