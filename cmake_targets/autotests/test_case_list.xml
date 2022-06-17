@@ -1136,7 +1136,7 @@
                   -n10 -s20 -U 3 0 0 2 -gR -x1 -y4 -z4
                   -n10 -s20 -U 3 0 0 2 -gR -x2 -y4 -z4
                   -n100 -m0 -e0 -R25 -b25 -i 2 1 0
-                  -n100 -e0 -t99 -S-1.0 -i 2 1 0</main_exec_args>
+                  -n100 -e0 -t95 -S-1.0 -i 2 1 0</main_exec_args>
       <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3 nr_dlsim.test4 nr_dlsim.test5 nr_dlsim.test6 nr_dlsim.test7 nr_dlsim.test8 nr_dlsim.test9 nr_dlsim.test10 nr_dlsim.test11 nr_dlsim.test12 nr_dlsim.test13 nr_dlsim.test14 nr_dlsim.test15 nr_dlsim.test16 nr_dlsim.test17 nr_dlsim.test18 nr_dlsim.test19 nr_dlsim.test20 nr_dlsim.test21 nr_dlsim.test22 nr_dlsim.test23 nr_dlsim.test24</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
