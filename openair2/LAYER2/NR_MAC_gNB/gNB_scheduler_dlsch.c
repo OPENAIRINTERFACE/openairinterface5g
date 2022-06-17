@@ -948,8 +948,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
           sched_pdsch->pucch_allocation,
           sched_ctrl->tpc1);
 
-    NR_SearchSpace_t *ss = sched_ctrl->search_space;
-
     const int bwp_id = current_BWP->bwp_id;
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
@@ -1037,7 +1035,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                             csi_report->codebook_mode);
     }
     // TBS_LBRM according to section 5.4.2.1 of 38.212
-    long *maxMIMO_Layers = cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
+    long *maxMIMO_Layers = current_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
     AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
     int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
     // Maximum number of PRBs across all configured DL BWPs
@@ -1134,20 +1132,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tpc,
           pucch->timing_indicator);
 
-    int dci_format = ss && ss->searchSpaceType && ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
-                     NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-
     const int rnti_type = NR_RNTI_C;
     fill_dci_pdu_rel15(scc,
                        cg,
                        current_BWP,
                        dci_pdu,
                        &dci_payload,
-                       dci_format,
+                       current_BWP->dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
                        bwp_id,
-                       coresetid,
+                       sched_ctrl->coreset,
                        gNB_mac->cset0_bwp_size);
 
     LOG_D(NR_MAC,

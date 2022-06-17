@@ -100,7 +100,9 @@ typedef struct NR_UE_DL_BWP {
   uint16_t BWPStart;
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList;
   NR_PDSCH_Config_t *pdsch_Config;
+  NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig;
   uint8_t mcsTableIdx;
+  nr_dci_format_t dci_format;
 } NR_UE_DL_BWP_t;
 
 typedef struct NR_UE_UL_BWP {

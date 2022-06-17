@@ -220,8 +220,8 @@ int nr_acknack_scheduling( int Mod_idP,
                            int r_pucch,
                            int do_common);
 
-void get_pdsch_to_harq_feedback(NR_UE_info_t *UE,
-                                NR_SearchSpace__searchSpaceType_PR ss_type,
+void get_pdsch_to_harq_feedback(NR_PUCCH_Config_t *pucch_Config,
+                                nr_dci_format_t dci_format,
                                 int *max_fb_time,
                                 uint8_t *pdsch_to_harq_feedback);
   
@@ -296,14 +296,14 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         int rnti_types,
                         int N_RB,
                         int bwp_id,
-                        NR_ControlResourceSetId_t coreset_id,
+                        NR_ControlResourceSet_t *coreset,
                         uint16_t cset0_bwp_size);
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  const NR_UE_DL_BWP_t *BWP,
+                 const NR_ControlResourceSet_t *coreset,
                  dci_pdu_rel15_t *dci_pdu_rel15,
-                 nr_dci_format_t format,
-                 int bwp_id);
+                 nr_dci_format_t format);
 
 void set_r_pucch_parms(int rsetindex,
                        int r_pucch,

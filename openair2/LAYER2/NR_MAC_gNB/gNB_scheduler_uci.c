@@ -1583,7 +1583,7 @@ int nr_acknack_scheduling(int mod_id,
   const int CC_id = 0;
   const int minfbtime = RC.nrmac[mod_id]->minRXTXTIMEpdsch;
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels[CC_id].ServingCellConfigCommon;
-  NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
+  const NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
   const int n_slots_frame = nr_slots_per_frame[BWP->scs];
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   AssertFatal(tdd || RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD, "Dynamic TDD not handled yet\n");
@@ -1657,13 +1657,13 @@ int nr_acknack_scheduling(int mod_id,
 
   LOG_D(NR_MAC, "In %s: pucch_acknak 1. DL %4d.%2d, UL_ACK %4d.%2d, DAI_C %d\n", __FUNCTION__, frame, slot, pucch->frame, pucch->ul_slot, pucch->dai_c);
 
-  NR_SearchSpace__searchSpaceType_PR ss_type = NR_SearchSpace__searchSpaceType_PR_common;
+  nr_dci_format_t dci_format = NR_DL_DCI_FORMAT_1_0;
   if(is_common == 0)
-   ss_type = sched_ctrl->search_space->searchSpaceType->present;
+   dci_format = UE->current_DL_BWP.dci_format;
 
   uint8_t pdsch_to_harq_feedback[8];
   int max_fb_time = 0;
-  get_pdsch_to_harq_feedback(UE, ss_type, &max_fb_time, pdsch_to_harq_feedback);
+  get_pdsch_to_harq_feedback(pucch_Config, dci_format, &max_fb_time, pdsch_to_harq_feedback);
 
   LOG_D(NR_MAC, "In %s: 1b. DL %4d.%2d, UL_ACK %4d.%2d, DAI_C %d\n", __FUNCTION__, frame,slot,pucch->frame,pucch->ul_slot,pucch->dai_c);
   /* there is a HARQ. Check whether we can use it for this ACKNACK */
@@ -1859,7 +1859,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
 
     AssertFatal(pucch_Config->schedulingRequestResourceToAddModList->list.count>0,"NO SR configuration available");
 
-    for (int SR_resource_id =0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++) {
+    for (int SR_resource_id = 0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++) {
       NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig = pucch_Config->schedulingRequestResourceToAddModList->list.array[SR_resource_id];
 
       int SR_period; int SR_offset;

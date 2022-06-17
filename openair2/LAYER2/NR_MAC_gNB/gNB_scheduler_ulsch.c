@@ -1725,7 +1725,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                        rnti_types[0],
                        pusch_pdu->bwp_size,
                        current_BWP->bwp_id,
-                       coresetid,
+                       coreset,
                        nr_mac->cset0_bwp_size);
 
     memset(sched_pusch, 0, sizeof(*sched_pusch));
