@@ -576,6 +576,26 @@ void nr_set_pdsch_semi_static(const NR_SIB1_t *sib1,
     bwpd = (NR_BWP_DownlinkDedicated_t*)bwpd0;
   }
 
+  // Prevent gNB to enable 256QAM table while the RRCProcessing timer is running.
+  // For example, after the RRC created RRC Reconfiguration message we need to prevent gNB to apply another MCS table
+  // before the RRC Reconfiguration being received by the UE, otherwise UE will not be able to decode PDSCH
+  // and the connection will drop.
+  if (sched_ctrl->rrc_processing_timer == 0) {
+    if (bwpd &&
+        bwpd->pdsch_Config &&
+        bwpd->pdsch_Config->choice.setup &&
+        bwpd->pdsch_Config->choice.setup->mcs_Table) {
+      if (*bwpd->pdsch_Config->choice.setup->mcs_Table == 0) {
+        ps->mcsTableIdx = 1;
+      } else {
+        ps->mcsTableIdx = 2;
+      }
+    } else {
+      ps->mcsTableIdx = 0;
+    }
+  }
+  LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
+
   NR_PDSCH_Config_t *pdsch_Config = NULL;
   if (bwpd && bwpd->pdsch_Config) pdsch_Config = bwpd->pdsch_Config->choice.setup;
   LOG_D(NR_MAC,"tda %d, ps->time_domain_allocation %d,layers %d, ps->nrOfLayers %d, pdsch_config %p\n",tda,ps->time_domain_allocation,layers,ps->nrOfLayers,pdsch_Config);
@@ -2989,21 +3009,6 @@ void nr_mac_update_timers(module_id_t module_id,
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
         const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
         const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
-
-        // Update downlink MCS table
-        if (bwpd &&
-            bwpd->pdsch_Config &&
-            bwpd->pdsch_Config->choice.setup &&
-            bwpd->pdsch_Config->choice.setup->mcs_Table) {
-          if (*bwpd->pdsch_Config->choice.setup->mcs_Table == 0) {
-            ps->mcsTableIdx = 1;
-          } else {
-            ps->mcsTableIdx = 2;
-          }
-        } else {
-          ps->mcsTableIdx = 0;
-        }
-        LOG_D(NR_MAC,"MCS Table Index: %d\n",ps->mcsTableIdx);
 
         nr_set_pdsch_semi_static(sib1,
                                  scc,
