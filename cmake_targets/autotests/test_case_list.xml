@@ -1345,7 +1345,7 @@
                       -m16 -r106 -s8.8 -S9.4 -z2 -n200 -U 4 1 1 1 2 -gI -b14 -t70 -I15 -i 2 1 0
                       -m16 -r106 -s5.4 -S6 -z4 -n200 -U 4 1 1 1 2 -gI -b14 -t70 -I15 -i 2 1 0
                       -m16 -r106 -s3.4 -S3.8 -z8 -n200 -U 4 1 1 1 2 -gI -b14 -t70 -I15 -i 2 1 0
-                      -n100 -m0 -S -0.8 -i 2 1 0</main_exec_args>
+                      -n100 -m0 -S -0.6 -i 2 1 0</main_exec_args>
       <tags>nr_ulsim.test1 nr_ulsim.test2 nr_ulsim.test3 nr_ulsim.test4 nr_ulsim.test5 nr_ulsim.test6 nr_ulsim.test7 nr_ulsim.test8 nr_ulsim.test9 nr_ulsim.test10 nr_ulsim.test11 nr_ulsim.test12 nr_ulsim.test13 nr_ulsim.test14 nr_ulsim.test15 nr_ulsim.test16 nr_ulsim.test17 nr_ulsim.test18 nr_ulsim.test19 nr_ulsim.test20 nr_ulsim.test21 nr_ulsim.test22</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
