@@ -351,11 +351,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-<<<<<<< HEAD
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:q:r:s:u:w:y:z:F:G:H:M:N:PR:S:T:U:L:Z")) != -1) {
-=======
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:q:r:s:t:u:w:y:z:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
->>>>>>> develop
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:ikl:m:n:o:p:q:r:s:t:u:v:w:y:z:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -483,11 +479,7 @@ int main(int argc, char **argv)
       break;
 
     case 'q':
-<<<<<<< HEAD
-      max_rounds = atoi(optarg);
-=======
       mcs_table = atoi(optarg);
->>>>>>> develop
       break;
       
     case 'r':
@@ -501,6 +493,10 @@ int main(int argc, char **argv)
 
     case 'u':
       mu = atoi(optarg);
+      break;
+
+    case 'v':
+      max_rounds = atoi(optarg);
       break;
 
     case 'w':
@@ -809,14 +805,10 @@ int main(int argc, char **argv)
   cfg->carrier_config.num_rx_ant.value = n_rx;
 
 //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
-<<<<<<< HEAD
-
   gNB->ldpc_offload_flag = ldpc_offload_flag;
-
-=======
   gNB->chest_freq = chest_type[0];
   gNB->chest_time = chest_type[1];
->>>>>>> develop
+
   phy_init_nr_gNB(gNB,0,1);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
@@ -871,13 +863,9 @@ int main(int argc, char **argv)
 
 
   unsigned char harq_pid = 0;
-<<<<<<< HEAD
-  
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
-=======
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id];
->>>>>>> develop
+
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
   NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
@@ -1550,16 +1538,6 @@ int main(int argc, char **argv)
 	errors_decoding++;
       }
     }
-<<<<<<< HEAD
-    /*if (n_trials == 1) {
-      for (int r=0;r<ulsch_ue[0]->harq_processes[harq_pid]->C;r++) 
-	for (int i=0;i<ulsch_ue[0]->harq_processes[harq_pid]->K>>3;i++) {
-	  if ((ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0) 
-	    printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
-	    i,ulsch_ue[0]->harq_processes[harq_pid]->c[r][i],
-	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-	    ulsch_ue[0]->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);
-=======
     if (n_trials == 1) {
       for (int r=0;r<ulsch_ue->harq_processes[harq_pid]->C;r++)
 	for (int i=0;i<ulsch_ue->harq_processes[harq_pid]->K>>3;i++) {
@@ -1568,9 +1546,8 @@ int main(int argc, char **argv)
 	    i,ulsch_ue->harq_processes[harq_pid]->c[r][i],
 	    i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
 	    ulsch_ue->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
->>>>>>> develop
 	}
-    }*/
+    }
     if (errors_decoding > 0 && error_flag == 0) {
       n_false_positive++;
       if (n_trials==1)
@@ -1676,20 +1653,6 @@ int main(int argc, char **argv)
           length_dmrs,
           num_dmrs_cdm_grps_no_data);
               
-<<<<<<< HEAD
-  LOG_M("ulsimStats.m","SNR",snrStats,snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round0",blerStats[0],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round1",blerStats[1],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round2",blerStats[2],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BLER_round3",blerStats[3],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round0",berStats[0],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round1",berStats[1],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round2",berStats[2],snrRun,1,7);
-  LOG_MM("ulsimStats.m","BER_round3",berStats[3],snrRun,1,7);
-  LOG_MM("ulsimStats.m","EffRate",effRate,snrRun,1,7);
-  LOG_MM("ulsimStats.m","EffTP",effTP,snrRun,1,7);
-  LOG_MM("ulsimStats.m","LDPC_dec_time",ldpcDecStats,snrRun,1,7);
-=======
   char opStatsFile[50];
   sprintf(opStatsFile, "ulsimStats_z%d.m", n_rx);
   LOG_M(opStatsFile,"SNR",snrStats,snrRun,1,7);
@@ -1703,7 +1666,7 @@ int main(int argc, char **argv)
   LOG_MM(opStatsFile,"BER_round3",berStats[3],snrRun,1,7);
   LOG_MM(opStatsFile,"EffRate",effRate,snrRun,1,7);
   LOG_MM(opStatsFile,"EffTP",effTP,snrRun,1,7);
->>>>>>> develop
+
   free(test_input_bit);
   free(estimated_output_bit);
   if (gNB->ldpc_offload_flag)
