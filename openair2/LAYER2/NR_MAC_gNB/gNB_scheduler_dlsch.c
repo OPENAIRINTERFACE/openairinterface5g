@@ -377,15 +377,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
   const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
+  NR_UE_UL_BWP_t *UBWP = &UE->current_UL_BWP;
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   NR_CellGroupConfig_t *cg = UE->CellGroup;
-
-  NR_BWP_UplinkDedicated_t *ubwpd =
-      cg &&
-      cg->spCellConfig &&
-      cg->spCellConfig->spCellConfigDedicated &&
-      cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : BWP->BWPSize;
@@ -506,7 +500,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
 
-  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, ubwpd, CCEIndex);
+  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, UBWP->pucch_Config, CCEIndex);
   const int alloc = nr_acknack_scheduling(module_id, UE, frame, slot, r_pucch, 0);
   if (alloc<0) {
     LOG_D(MAC,
@@ -639,19 +633,11 @@ void pf_dl(module_id_t module_id,
   /* Loop UE_sched to find max coeff and allocate transmission */
   while (remainUEs> 0 && n_rb_sched >= min_rbSize && iterator->UE != NULL) {
 
-    NR_CellGroupConfig_t *cg = iterator->UE->CellGroup;
-
-    NR_BWP_UplinkDedicated_t *ubwpd =
-        cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated &&
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
-
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
     const uint16_t rnti = iterator->UE->rnti;
 
     NR_UE_DL_BWP_t *BWP = &iterator->UE->current_DL_BWP;
+    NR_UE_UL_BWP_t *UBWP = &iterator->UE->current_UL_BWP;
 
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     const uint16_t bwpSize = coresetid == 0 ?
@@ -697,7 +683,7 @@ void pf_dl(module_id_t module_id,
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
 
-    int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, ubwpd, CCEIndex);
+    int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, UBWP->pucch_Config, CCEIndex);
     const int alloc = nr_acknack_scheduling(module_id, iterator->UE, frame, slot, r_pucch, 0);
 
     if (alloc<0) {

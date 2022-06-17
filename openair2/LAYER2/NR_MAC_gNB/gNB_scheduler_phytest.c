@@ -280,7 +280,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE->rnti);
 
-  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, NULL, CCEIndex);
+  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, UE->current_UL_BWP.pucch_Config, CCEIndex);
   const int alloc = nr_acknack_scheduling(module_id, UE, frame, slot, r_pucch, 0);
   if (alloc < 0) {
     LOG_D(MAC,
@@ -379,18 +379,13 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
-  uint8_t num_dmrs_cdm_grps_no_data = 1;
-  if ((target_ul_Nl==4)||(target_ul_Nl==3))
-    num_dmrs_cdm_grps_no_data = 2;
-  
   /* we want to avoid a lengthy deduction of DMRS and other parameters in
    * every TTI if we can save it, so check whether TDA, or
    * num_dmrs_cdm_grps_no_data has changed and only then recompute */
   NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
   if (ps->time_domain_allocation != tda
-      || ps->nrOfLayers != target_ul_Nl
-      || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-    nr_set_pusch_semi_static(BWP, scc, sched_ctrl->active_ubwp, NULL, tda, num_dmrs_cdm_grps_no_data,target_ul_Nl,ps);
+      || ps->nrOfLayers != target_ul_Nl)
+    nr_set_pusch_semi_static(BWP, scc, tda, target_ul_Nl,ps);
 
   uint16_t rbStart = 0;
   uint16_t rbSize;

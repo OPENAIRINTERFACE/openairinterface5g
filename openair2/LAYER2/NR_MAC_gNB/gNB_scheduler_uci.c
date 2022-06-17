@@ -80,21 +80,13 @@ static void nr_fill_nfapi_pucch(gNB_MAC_INST *nrmac,
         pucch->resource_indicator);
   NR_COMMON_channels_t * common_ch=nrmac->common_channels;
   NR_ServingCellConfigCommon_t *scc = common_ch->ServingCellConfigCommon;
-  NR_CellGroupConfig_t *cg=UE->CellGroup;
 
-  NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
-                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+  LOG_D(NR_MAC,"%4d.%2d Calling nr_configure_pucch (pucch_Config %p,r_pucch %d) pucch to be scheduled in %4d.%2d\n",
+        frame,slot,UE->current_UL_BWP.pucch_Config,pucch->r_pucch,pucch->frame,pucch->ul_slot);
 
-  LOG_D(NR_MAC,"%4d.%2d Calling nr_configure_pucch (ubwpd %p,r_pucch %d) pucch to be scheduled in %4d.%2d\n",
-        frame,slot,ubwpd,pucch->r_pucch,pucch->frame,pucch->ul_slot);
-
-  const NR_SIB1_t *sib1 = common_ch->sib1 ? common_ch->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  nr_configure_pucch(sib1,
-                     pucch_pdu,
+  nr_configure_pucch(pucch_pdu,
                      scc,
                      UE,
-                     ubwpd,
                      pucch->resource_indicator,
                      pucch->csi_bits,
                      pucch->dai_c,
@@ -708,17 +700,7 @@ void nr_csi_meas_reporting(int Mod_idP,
     const NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
     AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
                 "NO CSI report configuration available");
-    NR_PUCCH_Config_t *pucch_Config = NULL;
-    if (sched_ctrl->active_ubwp) {
-      pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-    } else if (CellGroup &&
-               CellGroup->spCellConfig &&
-               CellGroup->spCellConfig->spCellConfigDedicated &&
-               CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-               CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
-               CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
-      pucch_Config = CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
-    }
+    NR_PUCCH_Config_t *pucch_Config = UL_BWP->pucch_Config;
 
     for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
       NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
@@ -1617,18 +1599,7 @@ int nr_acknack_scheduling(int mod_id,
    *   later)
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_CellGroupConfig_t *cg = UE->CellGroup;
-
-  NR_PUCCH_Config_t *pucch_Config = NULL;
-  if (sched_ctrl->active_ubwp) {
-    pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-  } else if (cg &&
-             cg->spCellConfig &&
-             cg->spCellConfig->spCellConfigDedicated &&
-             cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-             cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-    pucch_Config = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
-  }
+  NR_PUCCH_Config_t *pucch_Config = BWP->pucch_Config;
 
   int bwp_start = BWP->BWPStart;
   int bwp_size = BWP->BWPSize;
@@ -1881,21 +1852,10 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
     NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
     const int n_slots_frame = nr_slots_per_frame[BWP->scs];
     if (sched_ctrl->ul_failure==1) continue;
-    NR_PUCCH_Config_t *pucch_Config = NULL;
-    if (sched_ctrl->active_ubwp) {
-      pucch_Config = sched_ctrl->active_ubwp->bwp_Dedicated->pucch_Config->choice.setup;
-    } else if (UE->CellGroup &&
-             UE->CellGroup->spCellConfig &&
-             UE->CellGroup->spCellConfig->spCellConfigDedicated &&
-             UE->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-             UE->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP &&
-             UE->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
-      pucch_Config = UE->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
-    }
+    NR_PUCCH_Config_t *pucch_Config = BWP->pucch_Config;
 
-    else continue;
-    if (!pucch_Config->schedulingRequestResourceToAddModList) 
-        continue;
+    if (!pucch_Config || !pucch_Config->schedulingRequestResourceToAddModList)
+      continue;
 
     AssertFatal(pucch_Config->schedulingRequestResourceToAddModList->list.count>0,"NO SR configuration available");
 

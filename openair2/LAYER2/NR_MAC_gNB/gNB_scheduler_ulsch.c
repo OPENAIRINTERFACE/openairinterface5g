@@ -822,32 +822,22 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
   const int CC_id = 0;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_sched_pusch_t *retInfo = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;
-  NR_CellGroupConfig_t *cg = UE->CellGroup;
-
-  NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
-                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-                                    cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
   int rbStart = 0; // wrt BWP start
   const uint16_t bwpSize = UE->current_UL_BWP.BWPSize;
   const uint8_t nrOfLayers = 1;
-  const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
-  LOG_D(NR_MAC,"num_dmrs_cdm_grps_no_data %d, tbs %d\n",num_dmrs_cdm_grps_no_data, retInfo->tb_size);
+  LOG_D(NR_MAC,"tbs %d\n",retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation) {
     /* check whether we need to switch the TDA allocation since tha last
      * (re-)transmission */
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
     if (ps->time_domain_allocation != tda
-        || ps->nrOfLayers != nrOfLayers
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
+        || ps->nrOfLayers != nrOfLayers) {
       nr_set_pusch_semi_static(&UE->current_UL_BWP,
                                scc,
-                               sched_ctrl->active_ubwp,
-                               ubwpd,
                                tda,
-                               num_dmrs_cdm_grps_no_data,
                                nrOfLayers,
                                ps);
     }
@@ -865,10 +855,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     NR_pusch_semi_static_t temp_ps;
     nr_set_pusch_semi_static(&UE->current_UL_BWP,
                              scc,
-                             sched_ctrl->active_ubwp,
-                             ubwpd,
                              tda,
-                             num_dmrs_cdm_grps_no_data,
                              nrOfLayers,
                              &temp_ps);
     /* the retransmission will use a different time domain allocation, check
@@ -1016,10 +1003,6 @@ void pf_ul(module_id_t module_id,
     NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
 
     int rbStart = 0; // wrt BWP start
-    NR_CellGroupConfig_t *cg = UE->CellGroup;
-    NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
-                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
     const uint16_t bwpSize = BWP->BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
@@ -1106,17 +1089,12 @@ void pf_ul(module_id_t module_id,
        * every TTI if we can save it, so check whether TDA, or
        * num_dmrs_cdm_grps_no_data has changed and only then recompute */
       const uint8_t nrOfLayers = 1;
-      const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
       const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
       if (ps->time_domain_allocation != tda
-          || ps->nrOfLayers != nrOfLayers
-          || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
+          || ps->nrOfLayers != nrOfLayers) {
         nr_set_pusch_semi_static(BWP,
                                  scc,
-                                 sched_ctrl->active_ubwp,
-                                 ubwpd,
                                  tda,
-                                 num_dmrs_cdm_grps_no_data,
                                  nrOfLayers,
                                  ps);
       }
@@ -1209,13 +1187,7 @@ void pf_ul(module_id_t module_id,
     else LOG_D(NR_MAC, "%4d.%2d free CCE for UL DCI UE %04x\n",frame,slot, iterator->UE->rnti);
 
     NR_UE_UL_BWP_t *BWP = &iterator->UE->current_UL_BWP;
-    NR_CellGroupConfig_t *cg = iterator->UE->CellGroup;
-    NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated
-                                      && cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
-
-    int rbStart = sched_ctrl->active_ubwp ? BWP->BWPStart : 0;
     const uint16_t bwpSize = BWP->BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
@@ -1225,22 +1197,18 @@ void pf_ul(module_id_t module_id,
      * every TTI if we can save it, so check whether TDA, or
      * num_dmrs_cdm_grps_no_data has changed and only then recompute */
     const uint8_t nrOfLayers = 1;
-    const uint8_t num_dmrs_cdm_grps_no_data = (sched_ctrl->active_ubwp || ubwpd) ? 1 : 2;
     const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
     if (ps->time_domain_allocation != tda
-        || ps->nrOfLayers != nrOfLayers
-        || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data) {
+        || ps->nrOfLayers != nrOfLayers) {
       nr_set_pusch_semi_static(BWP,
                                scc,
-                               sched_ctrl->active_ubwp,
-                               ubwpd,
                                tda,
-                               num_dmrs_cdm_grps_no_data,
                                nrOfLayers,
                                ps);
     }
     update_ul_ue_R_Qm(sched_pusch, BWP->pusch_Config, BWP->mcs_table);
 
+    int rbStart = 0;
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
     while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
@@ -1340,7 +1308,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
                     is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot);
 
   // FIXME: Avoid mixed slots for initialUplinkBWP
-  if (sched_ctrl->active_ubwp==NULL && is_mixed_slot)
+  if (BWP->bwp_id==0 && is_mixed_slot)
     return false;
 
   // Avoid slots with the SRS
@@ -1472,10 +1440,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 
     NR_CellGroupConfig_t *cg = UE->CellGroup;
     NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
-
-    NR_BWP_UplinkDedicated_t *ubwpd = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
-                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-                                      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
 
     UE->mac_stats.ul.current_bytes = 0;
 
@@ -1744,24 +1708,13 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
-    int n_ubwp=1;
-    if (cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated &&
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList) {
-      n_ubwp = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
-    }
 
     config_uldci(sib1,
-                 sched_ctrl->active_ubwp,
-                 ubwpd,
                  scc,
                  pusch_pdu,
                  &uldci_payload,
                  ps->time_domain_allocation,
                  UE->UE_sched_ctrl.tpc0,
-                 n_ubwp,
                  current_BWP);
     fill_dci_pdu_rel15(scc,
                        cg,

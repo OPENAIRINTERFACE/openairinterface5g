@@ -699,13 +699,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   NR_UE_UL_BWP_t *UL_BWP = &ra->UL_BWP;
 
-  NR_BWP_Uplink_t *ubwp = NULL;
-  NR_BWP_UplinkDedicated_t *ubwpd = NULL;
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = UL_BWP->tdaList;
-  if(ra->CellGroup) {
-    ubwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[UL_BWP->bwp_id-1];
-    ubwpd = ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
-  }
   int mu = UL_BWP->scs;
   uint8_t K2 = *pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
@@ -834,14 +828,11 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     const NR_SIB1_t *sib1 = cc->sib1 ? cc->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
     config_uldci(sib1,
-                 ubwp,
-                 ubwpd,
                  scc,
                  pusch_pdu,
                  &uldci_payload,
                  ra->Msg3_tda_id,
                  ra->msg3_TPC,
-                 0, // not used in format 0_0
                  &ra->UL_BWP);
 
     fill_dci_pdu_rel15(scc,
@@ -879,7 +870,6 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 void nr_get_Msg3alloc(module_id_t module_id,
                       int CC_id,
                       NR_ServingCellConfigCommon_t *scc,
-                      NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_slot,
                       frame_t current_frame,
                       NR_RA_t *ra,
@@ -1393,10 +1383,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     nfapi_nr_pdu_t *tx_req = &nr_mac->TX_req[CC_id].pdu_list[nr_mac->TX_req[CC_id].Number_of_PDUs];
 
     // Program UL processing for Msg3
-    NR_BWP_Uplink_t *ubwp = ra->CellGroup ?
-      ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[ra->UL_BWP.bwp_id-1] :
-      NULL;
-    nr_get_Msg3alloc(module_idP, CC_id, scc, ubwp, slotP, frameP, ra, nr_mac->tdd_beam_association);
+    nr_get_Msg3alloc(module_idP, CC_id, scc, slotP, frameP, ra, nr_mac->tdd_beam_association);
     nr_add_msg3(module_idP, CC_id, frameP, slotP, ra, (uint8_t *) &tx_req->TLVs[0].value.direct[0]);
 
     if(ra->cfra) {
@@ -1520,7 +1507,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     const int delta_PRI=0;
-    int r_pucch = nr_get_pucch_resource(coreset, sched_ctrl->active_ubwp, NULL, CCEIndex);
+    int r_pucch = nr_get_pucch_resource(coreset, ra->UL_BWP.pucch_Config, CCEIndex);
 
     LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, nb_of_candidates %d, delta_PRI %d)\n", r_pucch, CCEIndex, nr_of_candidates, delta_PRI);
 

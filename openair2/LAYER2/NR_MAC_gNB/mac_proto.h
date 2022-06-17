@@ -134,7 +134,6 @@ int nr_allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t slo
 void nr_get_Msg3alloc(module_id_t module_id,
                       int CC_id,
                       NR_ServingCellConfigCommon_t *scc,
-                      NR_BWP_Uplink_t *ubwp,
                       sub_frame_t current_subframe,
                       frame_t current_frame,
                       NR_RA_t *ra,
@@ -192,14 +191,11 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
 
 
 void config_uldci(const NR_SIB1_t *sib1,
-                  const NR_BWP_Uplink_t *ubwp,
-                  const NR_BWP_UplinkDedicated_t *ubwpd,
                   const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int time_domain_assignment,
                   uint8_t tpc,
-                  int n_ubwp,
                   NR_UE_UL_BWP_t *BWP);
 
 void nr_schedule_pucch(gNB_MAC_INST* nrmac,
@@ -249,15 +245,12 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
 */
 
 int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
-                          NR_BWP_Uplink_t *bwp,
-                          NR_BWP_UplinkDedicated_t *bwpd,
+                          NR_PUCCH_Config_t *pucch_Config,
                           int CCEIndex);
 
-void nr_configure_pucch(const NR_SIB1_t *sib1,
-                        nfapi_nr_pucch_pdu_t* pucch_pdu,
+void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
                         NR_UE_info_t* UE,
-                        NR_BWP_UplinkDedicated_t *bwpd,
                         uint8_t pucch_resource,
                         uint16_t O_csi,
                         uint16_t O_ack,
@@ -346,10 +339,7 @@ void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
 
 void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *BWP,
                               const NR_ServingCellConfigCommon_t *scc,
-                              const NR_BWP_Uplink_t *ubwp,
-                              const NR_BWP_UplinkDedicated_t *ubwpd,
                               int tda,
-                              uint8_t num_dmrs_cdm_grps_no_data,
                               uint8_t nrOfLayers,
                               NR_pusch_semi_static_t *ps);
 

@@ -105,12 +105,15 @@ typedef struct NR_UE_DL_BWP {
 
 typedef struct NR_UE_UL_BWP {
   NR_BWP_Id_t bwp_id;
+  int n_ul_bwp;
   int scs;
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList;
   NR_PUSCH_Config_t *pusch_Config;
+  NR_PUCCH_Config_t *pucch_Config;
+  NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon;
   uint8_t transform_precoding;
   uint8_t mcs_table;
   nr_dci_format_t dci_format;
@@ -581,9 +584,6 @@ typedef struct NR_UE_ul_harq {
 /*! \brief scheduling control information set through an API */
 #define MAX_CSI_REPORTS 48
 typedef struct {
-  /// the currently active BWP in UL
-  NR_BWP_Uplink_t *active_ubwp;
-
   /// the next active BWP ID in DL
   NR_BWP_Id_t next_dl_bwp_id;
   /// the next active BWP ID in UL
@@ -598,8 +598,6 @@ typedef struct {
   /// corresponding to the sched_pusch/sched_pdsch structures below
   int cce_index;
   uint8_t aggregation_level;
-  /// maximum aggregation level for UE, can be used to select level
-  int maxL;
   /// PUCCH scheduling information. Array of two: HARQ+SR in the first field,
   /// CSI in second.  This order is important for nr_acknack_scheduling()!
   NR_sched_pucch_t sched_pucch[2];
