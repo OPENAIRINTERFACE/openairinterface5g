@@ -2505,6 +2505,8 @@ void reset_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
   }
 
   for (int i = 0; i < NR_MAX_NB_HARQ_PROCESSES; i++) {
+    sched_ctrl->harq_processes[i].feedback_slot = -1;
+    sched_ctrl->harq_processes[i].round = 0;
     sched_ctrl->harq_processes[i].is_waiting = false;
   }
 }
@@ -2522,6 +2524,8 @@ void reset_ul_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
   }
 
   for (int i = 0; i < NR_MAX_NB_HARQ_PROCESSES; i++) {
+    sched_ctrl->ul_harq_processes[i].feedback_slot = -1;
+    sched_ctrl->ul_harq_processes[i].round = 0;
     sched_ctrl->ul_harq_processes[i].is_waiting = false;
   }
 }
