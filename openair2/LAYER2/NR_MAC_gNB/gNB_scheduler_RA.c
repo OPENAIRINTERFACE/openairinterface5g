@@ -1952,6 +1952,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       // If the UE used MSG3 to transfer a DCCH or DTCH message, then contention resolution is successful upon transmission of PDCCH
       LOG_A(NR_MAC, "(ue rnti 0x%04x) CBRA procedure succeeded!\n", ra->rnti);
       nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
+      UE->Msg3_dcch_dtch = true;
       UE->Msg4_ACKed = true;
 
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
@@ -1960,6 +1961,24 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       add_tail_nr_list(&sched_ctrl->available_dl_harq, current_harq_pid);
       harq->round = 0;
       harq->ndi ^= 1;
+
+      // Pause scheduling according to:
+      // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
+      const NR_COMMON_channels_t *common_channels = &RC.nrmac[module_idP]->common_channels[0];
+      const NR_SIB1_t *sib1 = common_channels->sib1 ? common_channels->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+      const NR_ServingCellConfig_t *servingCellConfig = UE->CellGroup ? UE->CellGroup->spCellConfig->spCellConfigDedicated : NULL;
+      NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
+                                                                 common_channels->ServingCellConfigCommon,
+                                                                 sib1);
+      uint32_t delay_ms = servingCellConfig && servingCellConfig->downlinkBWP_ToAddModList ?
+                          NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
+
+      sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
+      LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frameP, slotP, UE->rnti, delay_ms);
+
+      // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE
+      UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
+      UE->UE_sched_ctrl.ul_failure = 0;
     } else {
       ra->state = WAIT_Msg4_ACK;
       LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
