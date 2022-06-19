@@ -41,13 +41,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <linux/version.h>
-#if RHEL_RELEASE_CODE >= 1796
-  #include <lapacke/lapacke_utils.h>
-  #include <lapacke/lapacke.h>
-#else
-  #include <lapacke_utils.h>
-  #include <lapacke.h>
-#endif
+#include <lapacke_utils.h>
+#include <lapacke.h>
 #include <cblas.h>
 #include "linear_preprocessing_rec.h"
 

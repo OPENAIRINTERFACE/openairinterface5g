@@ -198,7 +198,7 @@ int nas_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
 
     // End debug information
     netif_stop_queue(dev);
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) ||  (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE>=1796)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
     netif_trans_update(dev);
 #else
     dev->trans_start = jiffies;
@@ -267,7 +267,7 @@ void nas_tx_timeout(struct net_device *dev)
   printk("TX_TIMEOUT: begin\n");
   //  (struct nas_priv *)(dev->priv)->stats.tx_errors++;
   (priv->stats).tx_errors++;
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) ||  (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE>=1796)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0)
   netif_trans_update(dev);
 #else
   dev->trans_start = jiffies;
@@ -285,7 +285,7 @@ static const struct net_device_ops nasmesh_netdev_ops = {
   .ndo_set_mac_address  = NULL,
   .ndo_set_config     = nas_set_config,
   .ndo_do_ioctl       = nas_CTL_ioctl,
-#if (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE>=1797 && LINUX_VERSION_CODE <= KERNEL_VERSION(3,11,0))
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,11,0)
   .extended.ndo_change_mtu   = nas_change_mtu,
 #else
   .ndo_change_mtu   = nas_change_mtu,
