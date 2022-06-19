@@ -712,10 +712,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 return;
               } else {
                 // The UE identified by C-RNTI still exists at the gNB
-                // Reset uplink failure flags/counters/timers at MAC and at RRC so gNB will resume again scheduling resources for this UE
-                UE_C->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
-                UE_C->UE_sched_ctrl.ul_failure = 0;
+                // Reset uplink failure flags/counters/timers at RRC
                 nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->crnti);
+
+                // Reset HARQ processes
+                reset_dl_harq_list(&UE_C->UE_sched_ctrl);
+                reset_ul_harq_list(&UE_C->UE_sched_ctrl);
               }
             }
             LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
@@ -816,7 +818,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
 
       sprintf(stats->srs_stats,"UL-SNR %i dB", (nr_srs_beamforming_report->wide_band_snr>>1)-64);
 
-      int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
+      const int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
       uint16_t *ulprbbl = nr_mac->ulprbbl;
 
       uint8_t num_rbs = nr_srs_beamforming_report->prg_size * nr_srs_beamforming_report->prgs[0].num_prgs;

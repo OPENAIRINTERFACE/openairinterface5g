@@ -324,7 +324,7 @@ void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
 }
 
 // TODO: Implement to b_SRS = 1 and b_SRS = 2
-long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
+long rrc_get_max_nr_csrs(const uint8_t max_rbs, const long b_SRS) {
 
   if(b_SRS>0) {
     LOG_E(NR_RRC,"rrc_get_max_nr_csrs(): Not implemented yet for b_SRS>0\n");
@@ -349,10 +349,10 @@ long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS) {
 }
 
 void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
-                NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-                NR_UE_NR_Capability_t *uecap,
-                int uid,
-                int do_srs) {
+                const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                const NR_UE_NR_Capability_t *uecap,
+                const int uid,
+                const int do_srs) {
 
   setup_release_srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
 
