@@ -337,6 +337,7 @@ int main(int argc, char **argv)
   int ibwps=24;
   int ibwp_rboffset=41;
   int params_from_file = 0;
+  int threadCnt=0;
   int max_ldpc_iterations = 5;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
@@ -348,7 +349,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:q:r:s:t:u:w:y:z:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:q:r:s:t:u:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -474,7 +475,7 @@ int main(int argc, char **argv)
     case 'q':
       mcs_table = atoi(optarg);
       break;
-      
+
     case 'r':
       nb_rb = atoi(optarg);
       break;
@@ -482,6 +483,10 @@ int main(int argc, char **argv)
     case 's':
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
+      break;
+
+    case 'C':
+      threadCnt = atoi(optarg);
       break;
 
     case 'u':
@@ -601,7 +606,7 @@ int main(int argc, char **argv)
 
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
+      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -i Intefrence0 -j Interference1 -n n_frames -s snr0 -S snr1 -t Delayspread -x transmission_mode -y TXant -z RXant -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
       //printf("-d Use TDD\n");
       printf("-d Introduce delay in terms of number of samples\n");
       printf("-f Number of frames to simulate\n");
@@ -624,7 +629,7 @@ int main(int argc, char **argv)
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
-      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n"); 
+      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");
       printf("-I Maximum LDPC decoder iterations\n");
       printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
@@ -710,7 +715,18 @@ int main(int argc, char **argv)
   gNB->ofdm_offset_divisor = UINT_MAX;
   gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  char tp_param[] = "n";
+  initNotifiedFIFO(gNB->respDecode);
+  char tp_param[80];
+  if (threadCnt>0)
+   sprintf(tp_param,"-1");
+  else
+   tp_param[0]='n';
+  int s_offset = 0;
+  for (int icpu=1; icpu<threadCnt; icpu++) {
+    sprintf(tp_param+2+s_offset,",-1");
+    s_offset += 3;
+  }
+
   initTpool(tp_param, gNB->threadPool, false);
   initNotifiedFIFO(gNB->respDecode);
   gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
@@ -730,6 +746,7 @@ int main(int argc, char **argv)
   gNB->UL_INFO.rx_ind.number_of_pdus = 0;
   gNB->UL_INFO.crc_ind.number_crcs = 0;
   gNB->max_ldpc_iterations = max_ldpc_iterations;
+  gNB->pusch_thres = -20;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 
   frame_parms->N_RB_DL = N_RB_DL;
