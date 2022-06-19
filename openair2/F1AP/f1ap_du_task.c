@@ -126,7 +126,8 @@ void *F1AP_DU_task(void *arg) {
         LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
         f1ap_setup_req_t *msgSetup=&F1AP_SETUP_REQ(msg);
         createF1inst(false, myInstance, msgSetup);
-        getCxt(DUtype, myInstance)->gtpInst=du_create_gtpu_instance_to_cu("172.21.10.9",//"172.21.9.5", //msgSetup->CU_f1_ip_address.ipv4_address, //"192.168.18.91"
+printf("XXXXXXXXXXXXXXX old 172.21.6.9 new %s\n", msgSetup->CU_f1_ip_address.ipv4_address);
+        getCxt(DUtype, myInstance)->gtpInst=du_create_gtpu_instance_to_cu(msgSetup->CU_f1_ip_address.ipv4_address, //"172.21.6.9", //"172.21.10.9",//"172.21.9.5", //msgSetup->CU_f1_ip_address.ipv4_address, //"192.168.18.91"
                                             msgSetup->CUport,
                                             msgSetup->DU_f1_ip_address.ipv4_address,
                                             msgSetup->DUport);
