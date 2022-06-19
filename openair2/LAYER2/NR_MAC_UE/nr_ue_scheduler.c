@@ -839,7 +839,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                                mappingtype, add_pos, dmrslength,
                                pusch_config_pdu->start_symbol_index,
                                mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    if ((mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled)) {
+    if (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
       if (*dci_format != NR_UL_DCI_FORMAT_0_1) {
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
       }
@@ -928,7 +928,7 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
   bool srs_scheduled = false;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+  const NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
 
   NR_SRS_Config_t *srs_config = NULL;
   if (ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1]) {

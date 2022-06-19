@@ -1338,19 +1338,15 @@ int main(int argc, char **argv) {
       break;
   }
 
-  for (k=0; k<NUMBER_OF_UE_MAX; k++) {
-    // Create transport channel structures for 2 transport blocks (MIMO)
-    for (i=0; i<2; i++) {
-      eNB->dlsch[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
+    // Create transport channel structures for 1 transport block
+  eNB->dlsch[0][0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&eNB->frame_parms);
 
-      if (!eNB->dlsch[k][i]) {
-        printf("Can't get eNB dlsch structures\n");
-        exit(-1);
-      }
-
-      eNB->dlsch[k][i]->rnti = n_rnti+k;
-    }
+  if (!eNB->dlsch[0][0]) {
+      printf("Can't get eNB dlsch structures\n");
+      exit(-1);
   }
+
+  eNB->dlsch[0][0]->rnti = n_rnti+k;
 
 #ifdef ENABLE_MBMS_SIM
   eNB->dlsch_MCH = new_eNB_dlsch(1,8,Nsoft,N_RB_DL, 0, &eNB->frame_parms);

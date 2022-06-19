@@ -918,7 +918,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
               proc->frame_rx, proc->nr_slot_rx,n_rnti,nr_dci_format_string[rel15->dci_format_options[k]],CCEind,dci_length,*(unsigned long long*)dci_estimation);
         uint16_t mb = nr_dci_false_detection(dci_estimation,tmp_e,L*108,n_rnti, NR_POLAR_DCI_MESSAGE_TYPE, dci_length, L);
         ue->dci_thres = (ue->dci_thres + mb) / 2;
-        if (mb > (ue->dci_thres+20)) {
+        if (mb > (ue->dci_thres+30)) {
           LOG_W(PHY,"DCI false positive. Dropping DCI index %d. Mismatched bits: %d/%d. Current DCI threshold: %d\n",j,mb,L*108,ue->dci_thres);
           continue;
         }

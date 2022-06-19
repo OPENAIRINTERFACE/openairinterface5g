@@ -230,8 +230,8 @@ void handle_nr_srs(NR_UL_IND_t *UL_info) {
   const module_id_t module_id = UL_info->module_id;
   const frame_t frame = UL_info->srs_ind.sfn;
   const sub_frame_t slot = UL_info->srs_ind.slot;
-  int num_srs = UL_info->srs_ind.number_of_pdus;
-  nfapi_nr_srs_indication_pdu_t *srs_list = UL_info->srs_ind.pdu_list;
+  const int num_srs = UL_info->srs_ind.number_of_pdus;
+  const nfapi_nr_srs_indication_pdu_t *srs_list = UL_info->srs_ind.pdu_list;
 
   for (int i = 0; i < num_srs; i++) {
     const nfapi_nr_srs_indication_pdu_t *srs_ind = &srs_list[i];

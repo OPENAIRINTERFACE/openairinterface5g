@@ -32,7 +32,7 @@
 	<testCase id="000001">
 		<class>Build_PhySim</class>
 		<desc>Build for physical simulator</desc>
-		<physim_build_args>--phy_simulators --ninja</physim_build_args>
+		<physim_build_args>--phy_simulators --ninja --noavx512</physim_build_args>
 		<forced_workspace_cleanup>FALSE</forced_workspace_cleanup>
 	</testCase>
 

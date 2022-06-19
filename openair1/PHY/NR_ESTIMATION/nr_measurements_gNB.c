@@ -67,8 +67,8 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
   return max_pos - sync_pos;
 }
 
-int nr_est_timing_advance_srs(NR_DL_FRAME_PARMS *frame_parms,
-                              int32_t **srs_estimated_channel_time) {
+int nr_est_timing_advance_srs(const NR_DL_FRAME_PARMS *frame_parms,
+                              const int32_t **srs_estimated_channel_time) {
   int timing_advance = 0;
   int max_val = 0;
 
@@ -90,7 +90,7 @@ int nr_est_timing_advance_srs(NR_DL_FRAME_PARMS *frame_parms,
   }
 
   // Scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
-  uint16_t bw_scaling = frame_parms->ofdm_symbol_size >> 7;
+  const uint16_t bw_scaling = frame_parms->ofdm_symbol_size >> 7;
 
   // do some integer rounding to improve TA accuracy
   int sync_pos_rounded;
