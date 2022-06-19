@@ -3002,7 +3002,7 @@ void nr_mac_update_timers(module_id_t module_id,
             cg->spCellConfig->spCellConfigDedicated &&
             cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
             cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
-          compute_csi_bitlen (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
+          compute_csi_bitlen (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE->csi_report_template);
         }
 
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
