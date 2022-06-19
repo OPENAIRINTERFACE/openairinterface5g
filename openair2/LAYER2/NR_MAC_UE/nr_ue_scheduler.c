@@ -839,7 +839,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                                mappingtype, add_pos, dmrslength,
                                pusch_config_pdu->start_symbol_index,
                                mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    if ((mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled)) {
+    if (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
       if (*dci_format != NR_UL_DCI_FORMAT_0_1) {
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
       }
