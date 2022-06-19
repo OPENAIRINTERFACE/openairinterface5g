@@ -38,7 +38,7 @@ RUN yum install -y libasan
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --phy_simulators --ninja --verbose-ci --sanitize-address
+    ./build_oai --phy_simulators --ninja --verbose-ci --sanitize-address --noavx512
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-physim

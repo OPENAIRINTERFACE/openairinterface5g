@@ -32,7 +32,7 @@
 	<testCase id="000001">
 		<class>Build_eNB</class>
 		<desc>Build gNB</desc>
-		<Build_eNB_args>-w USRP -c --gNB --ninja</Build_eNB_args>
+		<Build_eNB_args>-w USRP -c --gNB --ninja --noavx512</Build_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<forced_workspace_cleanup>True</forced_workspace_cleanup>

@@ -773,8 +773,6 @@ typedef struct {
 
   uint32_t X_u[64][839];
 
-
-  uint32_t perfect_ce;
   // flag to activate PRB based averaging of channel estimates
   // when off, defaults to frequency domain interpolation
   int chest_freq;
