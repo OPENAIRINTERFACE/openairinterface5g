@@ -2957,6 +2957,10 @@ void nr_mac_update_timers(module_id_t module_id,
             LOG_I(NR_MAC, "(%d.%d) Switching to initialUplinkBWP\n", frame, slot);
           }
           UE->Msg3_dcch_dtch = false;
+
+          // Schedule BWP switching to the first active BWP (previous active BWP before RA with Msg3 carrying DCCH or DTCH message)
+          sched_ctrl->next_dl_bwp_id = current_bwp_id;
+          sched_ctrl->next_ul_bwp_id = current_ubwp_id;
         } else if (spCellConfigDedicated &&
             spCellConfigDedicated->downlinkBWP_ToAddModList &&
             spCellConfigDedicated->uplinkConfig &&
@@ -2969,6 +2973,19 @@ void nr_mac_update_timers(module_id_t module_id,
           if (*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id != current_ubwp_id) {
             LOG_I(NR_MAC, "(%d.%d) Switching to UL-BWP %li\n", frame, slot, sched_ctrl->active_ubwp->bwp_Id);
           }
+
+          // Update next_dl_bwp_id to not trigger BWP switching, UE should be already on active_bwp
+          sched_ctrl->next_dl_bwp_id = sched_ctrl->active_bwp->bwp_Id;
+          // Update next_ul_bwp_id to not trigger BWP switching, UE should be already on active_ubwp
+          sched_ctrl->next_ul_bwp_id = sched_ctrl->active_ubwp->bwp_Id;
+        } else {
+          sched_ctrl->active_bwp = NULL;
+          sched_ctrl->active_ubwp = NULL;
+
+          // Update next_dl_bwp_id to not trigger BWP switching, UE should be already on Initial BWP
+          sched_ctrl->next_dl_bwp_id = 0;
+          // Update next_ul_bwp_id to not trigger BWP switching, UE should be already on Initial BWP
+          sched_ctrl->next_ul_bwp_id = 0;
         }
 
         // Update coreset/searchspace
@@ -3062,14 +3079,27 @@ void schedule_nr_bwp_switch(module_id_t module_id,
 
   UE_iterator(UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    if (sched_ctrl->rrc_processing_timer == 0 &&
-        UE->Msg4_ACKed &&
-        ((sched_ctrl->next_dl_bwp_id >= 0 && sched_ctrl->active_bwp && sched_ctrl->active_bwp->bwp_Id != sched_ctrl->next_dl_bwp_id) ||
-        (sched_ctrl->next_ul_bwp_id >= 0 && sched_ctrl->active_ubwp && sched_ctrl->active_ubwp->bwp_Id != sched_ctrl->next_ul_bwp_id))) {
+    if (sched_ctrl->rrc_processing_timer == 0 && UE->Msg4_ACKed && sched_ctrl->next_dl_bwp_id >= 0) {
 
-      LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from dl_bwp_id %ld to %ld and from ul_bwp_id %ld to %ld\n",
-            frame, slot, UE->rnti, sched_ctrl->active_bwp->bwp_Id, sched_ctrl->next_dl_bwp_id, sched_ctrl->active_ubwp->bwp_Id, sched_ctrl->next_ul_bwp_id);
-      nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
+      int schedule_bwp_switching = false;
+      if (sched_ctrl->active_bwp == NULL) {
+        // Switching from Initial BWP to Dedicated BWP
+        if (sched_ctrl->next_dl_bwp_id > 0 && sched_ctrl->next_ul_bwp_id > 0) {
+          schedule_bwp_switching = true;
+          LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from Initial DL BWP to %ld and from Initial UL BWP to %ld\n",
+                frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
+        }
+      } else if (sched_ctrl->active_bwp->bwp_Id != sched_ctrl->next_dl_bwp_id && sched_ctrl->active_ubwp->bwp_Id != sched_ctrl->next_ul_bwp_id) {
+        // Switching between Dedicated BWPs
+        schedule_bwp_switching = true;
+        LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from dl_bwp_id %ld to %ld and from ul_bwp_id %ld to %ld\n",
+              frame, slot, UE->rnti, sched_ctrl->active_bwp->bwp_Id, sched_ctrl->next_dl_bwp_id, sched_ctrl->active_ubwp->bwp_Id, sched_ctrl->next_ul_bwp_id);
+      }
+
+      if (schedule_bwp_switching) {
+        AssertFatal(sched_ctrl->next_dl_bwp_id > 0 && sched_ctrl->next_ul_bwp_id > 0, "BWP switching from a Dedicated BWP to the Initial BWP not handled yet!");
+        nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
+      }
     }
   }
 }
