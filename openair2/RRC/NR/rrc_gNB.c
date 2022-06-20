@@ -809,6 +809,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   }
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
     rrc_mac_config_req_gNB(rrc->module_id,
                            rrc->configuration.ssb_SubcarrierOffset,
                            rrc->configuration.pdsch_AntennaPorts,
