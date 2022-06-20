@@ -850,13 +850,16 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports = %i\n", nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports);
       LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix->prg_size = %i\n", nr_srs_normalized_channel_iq_matrix->prg_size);
       LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix->num_prgs = %i\n", nr_srs_normalized_channel_iq_matrix->num_prgs);
-      uint16_t *channel_matrix = (uint16_t*)nr_srs_normalized_channel_iq_matrix->channel_matrix;
+      c16_t *channel_matrix16 = (c16_t*)nr_srs_normalized_channel_iq_matrix->channel_matrix;
+      c8_t *channel_matrix8 = (c8_t*)nr_srs_normalized_channel_iq_matrix->channel_matrix;
       for(int uI = 0; uI < nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports; uI++) {
         for(int gI = 0; gI < nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements; gI++) {
           for(int pI = 0; pI < nr_srs_normalized_channel_iq_matrix->num_prgs; pI++) {
             uint16_t index = uI*nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements*nr_srs_normalized_channel_iq_matrix->num_prgs + gI*nr_srs_normalized_channel_iq_matrix->num_prgs + pI;
             LOG_I(NR_MAC, "(uI %i, gI %i, pI %i) channel_matrix --> real %i, imag %i\n",
-                  uI, gI, pI, channel_matrix[(index<<1)], channel_matrix[(index<<1)+1]);
+                  uI, gI, pI,
+                  nr_srs_normalized_channel_iq_matrix->normalized_iq_representation == 0 ? channel_matrix8[index].r : channel_matrix16[index].r,
+                  nr_srs_normalized_channel_iq_matrix->normalized_iq_representation == 0 ? channel_matrix8[index].i : channel_matrix16[index].i);
           }
         }
       }

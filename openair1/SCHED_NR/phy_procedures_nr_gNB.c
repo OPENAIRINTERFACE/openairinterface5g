@@ -660,6 +660,55 @@ int fill_srs_reported_symbol_list(nfapi_nr_srs_reported_symbol_t *prgs,
   return 0;
 }
 
+int fill_srs_channel_matrix(uint8_t *channel_matrix,
+                            const nfapi_nr_srs_pdu_t *srs_pdu,
+                            const nr_srs_info_t *nr_srs_info,
+                            const uint8_t normalized_iq_representation,
+                            const uint16_t num_gnb_antenna_elements,
+                            const uint16_t num_ue_srs_ports,
+                            const uint16_t prg_size,
+                            const uint16_t num_prgs,
+                            const NR_DL_FRAME_PARMS *frame_parms) {
+
+  const uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*NR_NB_SC_PER_RB;
+  const uint16_t step = prg_size*NR_NB_SC_PER_RB;
+
+  c16_t *channel_matrix16 = (c16_t*)channel_matrix;
+  c8_t *channel_matrix8 = (c8_t*)channel_matrix;
+
+  for(int uI = 0; uI < num_ue_srs_ports; uI++) {
+    for(int gI = 0; gI < num_gnb_antenna_elements; gI++) {
+
+      uint16_t subcarrier = subcarrier_offset + nr_srs_info->k_0_p[uI][0];
+      if (subcarrier>frame_parms->ofdm_symbol_size) {
+        subcarrier -= frame_parms->ofdm_symbol_size;
+      }
+
+      for(int pI = 0; pI < num_prgs; pI++) {
+
+        c16_t *srs_estimated_channel16 = (c16_t *)&nr_srs_info->srs_estimated_channel_freq[gI][uI][subcarrier];
+        uint16_t index = uI*num_gnb_antenna_elements*num_prgs + gI*num_prgs + pI;
+
+        if (normalized_iq_representation == 0) {
+          channel_matrix8[index].r = (int8_t)(srs_estimated_channel16->r>>8);
+          channel_matrix8[index].i = (int8_t)(srs_estimated_channel16->i>>8);
+        } else {
+          channel_matrix16[index].r = srs_estimated_channel16->r;
+          channel_matrix16[index].i = srs_estimated_channel16->i;
+        }
+
+        // Subcarrier increment
+        subcarrier += step;
+        if (subcarrier >= frame_parms->ofdm_symbol_size) {
+          subcarrier=subcarrier-frame_parms->ofdm_symbol_size;
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
 int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   /* those variables to log T_GNB_PHY_PUCCH_PUSCH_IQ only when we try to decode */
   int pucch_decode_done = 0;
@@ -985,6 +1034,15 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports = srs_pdu->srs_parameters_v4.num_total_ue_antennas;
             nr_srs_normalized_channel_iq_matrix->prg_size = srs_pdu->srs_parameters_v4.prg_size;
             nr_srs_normalized_channel_iq_matrix->num_prgs = srs_pdu->srs_parameters_v4.srs_bandwidth_size/srs_pdu->srs_parameters_v4.prg_size;
+            fill_srs_channel_matrix(nr_srs_normalized_channel_iq_matrix->channel_matrix,
+                                    srs_pdu,
+                                    gNB->nr_srs_info[i],
+                                    nr_srs_normalized_channel_iq_matrix->normalized_iq_representation,
+                                    nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements,
+                                    nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports,
+                                    nr_srs_normalized_channel_iq_matrix->prg_size,
+                                    nr_srs_normalized_channel_iq_matrix->num_prgs,
+                                    &gNB->frame_parms);
 
 #ifdef SRS_IND_DEBUG
             LOG_I(NR_PHY, "nr_srs_normalized_channel_iq_matrix->normalized_iq_representation = %i\n", nr_srs_normalized_channel_iq_matrix->normalized_iq_representation);
@@ -992,6 +1050,19 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             LOG_I(NR_PHY, "nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports = %i\n", nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports);
             LOG_I(NR_PHY, "nr_srs_normalized_channel_iq_matrix->prg_size = %i\n", nr_srs_normalized_channel_iq_matrix->prg_size);
             LOG_I(NR_PHY, "nr_srs_normalized_channel_iq_matrix->num_prgs = %i\n", nr_srs_normalized_channel_iq_matrix->num_prgs);
+            c16_t *channel_matrix16 = (c16_t*)nr_srs_normalized_channel_iq_matrix->channel_matrix;
+            c8_t *channel_matrix8 = (c8_t*)nr_srs_normalized_channel_iq_matrix->channel_matrix;
+            for(int uI = 0; uI < nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports; uI++) {
+              for(int gI = 0; gI < nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements; gI++) {
+                for(int pI = 0; pI < nr_srs_normalized_channel_iq_matrix->num_prgs; pI++) {
+                  uint16_t index = uI*nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements*nr_srs_normalized_channel_iq_matrix->num_prgs + gI*nr_srs_normalized_channel_iq_matrix->num_prgs + pI;
+                  LOG_I(NR_PHY, "(uI %i, gI %i, pI %i) channel_matrix --> real %i, imag %i\n",
+                        uI, gI, pI,
+                        nr_srs_normalized_channel_iq_matrix->normalized_iq_representation == 0 ? channel_matrix8[index].r : channel_matrix16[index].r,
+                        nr_srs_normalized_channel_iq_matrix->normalized_iq_representation == 0 ? channel_matrix8[index].i : channel_matrix16[index].i);
+                }
+              }
+            }
 #endif
 
             gNB->srs_pdu_list[num_srs].report_tlv->length = pack_nr_srs_normalized_channel_iq_matrix(nr_srs_normalized_channel_iq_matrix,

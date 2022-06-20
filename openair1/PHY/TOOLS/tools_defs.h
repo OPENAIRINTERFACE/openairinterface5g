@@ -51,6 +51,11 @@ typedef struct complexf {
   float i;
 } cf_t;
 
+typedef struct complex8 {
+  int8_t r;
+  int8_t i;
+} c8_t;
+
 typedef struct complex16 {
   int16_t r;
   int16_t i;
