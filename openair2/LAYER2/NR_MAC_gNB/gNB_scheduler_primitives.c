@@ -2218,13 +2218,21 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     csi_MeasConfig = servingCellConfig->csi_MeasConfig ? servingCellConfig->csi_MeasConfig->choice.setup : NULL;
     target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
 
-    // (re)configuring BWP
-    // TODO BWP switching not via RRC reconfiguration
-    // via RRC if firstActiveXlinkBWP_Id is NULL, MAC stays on the same BWP as before
-    if (servingCellConfig->firstActiveDownlinkBWP_Id)
-      DL_BWP->bwp_id = *servingCellConfig->firstActiveDownlinkBWP_Id;
-    if (servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id)
-      UL_BWP->bwp_id = *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
+    if(UE && UE->Msg3_dcch_dtch) {
+      // switching to initial BWP
+      DL_BWP->bwp_id = 0;
+      UL_BWP->bwp_id = 0;
+      UE->Msg3_dcch_dtch = false;
+    }
+    else {
+      // (re)configuring BWP
+      // TODO BWP switching not via RRC reconfiguration
+      // via RRC if firstActiveXlinkBWP_Id is NULL, MAC stays on the same BWP as before
+      if (servingCellConfig->firstActiveDownlinkBWP_Id)
+        DL_BWP->bwp_id = *servingCellConfig->firstActiveDownlinkBWP_Id;
+      if (servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id)
+        UL_BWP->bwp_id = *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
+    }
 
     const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
     if(bwpList)

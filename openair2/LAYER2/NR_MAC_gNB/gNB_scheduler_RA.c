@@ -1834,19 +1834,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->round = 0;
       harq->ndi ^= 1;
 
-      // Pause scheduling according to:
-      // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-      const NR_COMMON_channels_t *common_channels = &RC.nrmac[module_idP]->common_channels[0];
-      const NR_SIB1_t *sib1 = common_channels->sib1 ? common_channels->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-      const NR_ServingCellConfig_t *servingCellConfig = UE->CellGroup ? UE->CellGroup->spCellConfig->spCellConfigDedicated : NULL;
-      NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                                 common_channels->ServingCellConfigCommon,
-                                                                 sib1);
-      uint32_t delay_ms = servingCellConfig && servingCellConfig->downlinkBWP_ToAddModList ?
-                          NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
-
-      sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
-      LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frameP, slotP, UE->rnti, delay_ms);
+      configure_UE_BWP(nr_mac,
+                      scc,
+                      sched_ctrl,
+                      NULL,
+                      UE);
 
       // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE
       UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
