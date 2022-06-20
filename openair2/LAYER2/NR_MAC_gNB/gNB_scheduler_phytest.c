@@ -264,8 +264,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   }
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
 
   int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
                                       CC_id,
@@ -289,7 +288,6 @@ void nr_preprocessor_phytest(module_id_t module_id,
           rnti,
           frame,
           slot);
-    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return;
   }
 
@@ -313,6 +311,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->mcs = target_dl_mcs;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
+  sched_ctrl->dl_bler_stats.mcs = target_dl_mcs; /* for logging output */
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
@@ -426,8 +425,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   }
   AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
 
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
 
   int CCEIndex = find_pdcch_candidate(nr_mac,
                                       CC_id,
@@ -439,7 +437,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   if (CCEIndex < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
-    nr_mac->pdcch_cand[cid]--;
     return false;
   }
 
@@ -448,6 +445,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   const int mcs = target_ul_mcs;
   NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
   sched_pusch->mcs = mcs;
+  sched_ctrl->ul_bler_stats.mcs = mcs; /* for logging output */
   sched_pusch->rbStart = rbStart;
   sched_pusch->rbSize = rbSize;
   /* get the PID of a HARQ process awaiting retransmission, or -1 for "any new" */

@@ -34,6 +34,7 @@
 //#define DEBUG_PDSCH
 //#define DEBUG_PDCCH
 
+#define CH_INTERP 0
 #define NO_INTERP 1
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
@@ -477,7 +478,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned char aarx;
   unsigned short k;
   unsigned int pilot_cnt;
-  int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
+  int16_t ch[2],*pil,*rxF,*dl_ch;
   int ch_offset,symbol_offset;
 
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
@@ -492,9 +493,11 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
          proc->thread_id, gNB_id,ch_offset,ue->frame_parms.ofdm_symbol_size,ue->frame_parms.Ncp,Ns,symbol);
 #endif
 
-  fl = filt16a_l1;
-  fm = filt16a_m1;
-  fr = filt16a_r1;
+#if CH_INTERP
+  int16_t *fl = filt16a_l1;
+  int16_t *fm = filt16a_m1;
+  int16_t *fr = filt16a_r1;
+#endif
 
   // checking if re-initialization of scrambling IDs is needed (should be done here but scrambling ID for PDCCH is not taken from RRC)
   if (scrambling_id != ue->scramblingID_pdcch){
@@ -523,6 +526,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
     printf("dl_ch addr %p\n",dl_ch);
 #endif
+  #if CH_INTERP
     //    if ((ue->frame_parms.N_RB_DL&1)==0) {
     // Treat first 2 pilots specially (left edge)
     ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -651,6 +655,33 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
       rxF += 8;
       k   += 4;
     }
+  #else //ELSE CH_INTERP
+    int ch_sum[2] = {0, 0};
+
+    for (pilot_cnt = 0; pilot_cnt < 3*nb_rb_coreset; pilot_cnt++) {
+      if (k >= ue->frame_parms.ofdm_symbol_size) {
+        k  -= ue->frame_parms.ofdm_symbol_size;
+        rxF = (int16_t *)&rxdataF[aarx][(symbol_offset+k+1)];
+      }
+#ifdef DEBUG_PDCCH
+      printf("pilot[%d] = (%d, %d)\trxF[%d] = (%d, %d)\n", pilot_cnt, pil[0], pil[1], k+1, rxF[0], rxF[1]);
+#endif
+      ch_sum[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+      ch_sum[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+      pil += 2;
+      rxF += 8;
+      k   += 4;
+
+      if (pilot_cnt % 3 == 2) {
+        ch[0] = ch_sum[0] / 3;
+        ch[1] = ch_sum[1] / 3;
+        multadd_real_vector_complex_scalar(filt16a_1, ch, dl_ch, 16);
+        dl_ch += 24;
+        ch_sum[0] = 0;
+        ch_sum[1] = 0;
+      }
+    }
+  #endif //END CH_INTERP
 
 
     //}
@@ -683,7 +714,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int ch_offset,symbol_offset;
 
   uint8_t nushift;
-  int **dl_ch_estimates  =ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
+  int **dl_ch_estimates = ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
 
   ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
@@ -808,7 +839,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     printf("rxF addr %p p %d\n", rxF,p);
     printf("dl_ch addr %p nushift %d\n",dl_ch,nushift);
 #endif
-    if (config_type == NFAPI_NR_DMRS_TYPE1 && ue->prb_interpolation == 0) {
+    if (config_type == NFAPI_NR_DMRS_TYPE1 && ue->chest_freq == 0) {
 
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
@@ -985,7 +1016,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                      8);
         }
       }
-    } else if (config_type == NFAPI_NR_DMRS_TYPE2 && ue->prb_interpolation == 0){ //pdsch_dmrs_type2  |dmrs_r,dmrs_l,0,0,0,0,dmrs_r,dmrs_l,0,0,0,0|
+    } else if (config_type == NFAPI_NR_DMRS_TYPE2 && ue->chest_freq == 0){ //pdsch_dmrs_type2  |dmrs_r,dmrs_l,0,0,0,0,dmrs_r,dmrs_l,0,0,0,0|
 
       // Treat first 4 pilots specially (left edge)
       ch_l[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);

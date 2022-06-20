@@ -734,19 +734,6 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 NULL,
                                 ue_p->masterCellGroup);
 
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->configuration.ssb_SubcarrierOffset,
-                         rrc->configuration.pdsch_AntennaPorts,
-                         rrc->configuration.pusch_AntennaPorts,
-                         rrc->configuration.sib1_tda,
-                         rrc->configuration.minRXTXTIME,
-                         NULL,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_p->rnti,
-                         ue_p->masterCellGroup);
-
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,(char *)buffer, size, "[MSG] RRC Reconfiguration\n");
@@ -821,6 +808,19 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   }
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->configuration.ssb_SubcarrierOffset,
+                           rrc->configuration.pdsch_AntennaPorts,
+                           rrc->configuration.pusch_AntennaPorts,
+                           rrc->configuration.sib1_tda,
+                           rrc->configuration.minRXTXTIME,
+                           NULL,
+                           NULL,
+                           NULL,
+                           0,
+                           ue_p->rnti,
+                           ue_p->masterCellGroup);
+
     uint32_t delay_ms = ue_context_pP->ue_context.masterCellGroup &&
                         ue_context_pP->ue_context.masterCellGroup->spCellConfig &&
                         ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&
@@ -1036,19 +1036,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
                                 cellGroupConfig);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
 
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->configuration.ssb_SubcarrierOffset,
-                         rrc->configuration.pdsch_AntennaPorts,
-                         rrc->configuration.pusch_AntennaPorts,
-                         rrc->configuration.sib1_tda,
-                         rrc->configuration.minRXTXTIME,
-                         NULL,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_context_pP->ue_context.rnti,
-                         ue_context_pP->ue_context.masterCellGroup);
-
   /* Free all NAS PDUs */
   for (i = 0; i < ue_context_pP->ue_context.nb_of_pdusessions; i++) {
     if (ue_context_pP->ue_context.pduSession[i].param.nas_pdu.buffer != NULL) {
@@ -1087,6 +1074,19 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 #endif
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
+    rrc_mac_config_req_gNB(rrc->module_id,
+                           rrc->configuration.ssb_SubcarrierOffset,
+                           rrc->configuration.pdsch_AntennaPorts,
+                           rrc->configuration.pusch_AntennaPorts,
+                           rrc->configuration.sib1_tda,
+                           rrc->configuration.minRXTXTIME,
+                           NULL,
+                           NULL,
+                           NULL,
+                           0,
+                           ue_context_pP->ue_context.rnti,
+                           ue_context_pP->ue_context.masterCellGroup);
+
     uint32_t delay_ms = ue_context_pP->ue_context.masterCellGroup &&
                         ue_context_pP->ue_context.masterCellGroup->spCellConfig &&
                         ue_context_pP->ue_context.masterCellGroup->spCellConfig->spCellConfigDedicated &&

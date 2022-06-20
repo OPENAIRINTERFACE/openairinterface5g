@@ -773,11 +773,10 @@ typedef struct {
 
   uint32_t X_u[64][839];
 
-
-  uint32_t perfect_ce;
   // flag to activate PRB based averaging of channel estimates
   // when off, defaults to frequency domain interpolation
-  int prb_interpolation;
+  int chest_freq;
+  int chest_time;
   int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
@@ -864,6 +863,8 @@ typedef struct {
 
   /// N0 (used for abstraction)
   double N0;
+
+  uint8_t max_ldpc_iterations;
 
   /// PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];

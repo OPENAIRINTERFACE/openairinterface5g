@@ -469,8 +469,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
   }
 
   /* Find a free CCE */
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
   uint8_t nr_of_candidates;
 
   for (int i=0; i<5; i++) {
@@ -508,7 +508,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
           UE->rnti,
           frame,
           slot);
-    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return false;
   }
 
@@ -652,8 +651,7 @@ void pf_dl(module_id_t module_id,
     }
 
     /* Find a free CCE */
-    const int cid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t Y = get_Y(cid%3, slot, iterator->UE->rnti);
+    const uint32_t Y = get_Y(sched_ctrl->search_space, slot, iterator->UE->rnti);
     uint8_t nr_of_candidates;
 
     for (int i=0; i<5; i++) {
@@ -692,7 +690,6 @@ void pf_dl(module_id_t module_id,
             rnti,
             frame,
             slot);
-      mac->pdcch_cand[cid]--;
       iterator++;
       continue;
     }

@@ -664,6 +664,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
               UE->enc_rval.failed_type->name, UE->enc_rval.encoded);
         exit(1);
       }
+
+      process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

@@ -304,32 +304,36 @@ void rx_func(void *param) {
        );
 #endif
 }
-static void dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output) {
-  int stroff = 0;
-  stroff += print_meas_log(&gNB->phy_proc_tx, "L1 Tx processing", NULL, NULL, output);
-  stroff += print_meas_log(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL, output+stroff);
-  stroff += print_meas_log(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL, output+stroff);
-  stroff += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output+stroff);
-  stroff += print_meas_log(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL, output+stroff);
-  stroff += print_meas_log(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL, output+stroff);
-  stroff += print_meas_log(&gNB->schedule_response_stats, "Schedule Response",NULL,NULL, output+stroff);
-  if (ru->feprx) stroff += print_meas_log(&ru->ofdm_demod_stats,"feprx",NULL,NULL, output+stroff);
+static size_t dump_L1_meas_stats(PHY_VARS_gNB *gNB, RU_t *ru, char *output, size_t outputlen) {
+  const char *begin = output;
+  const char *end = output + outputlen;
+  output += print_meas_log(&gNB->phy_proc_tx, "L1 Tx processing", NULL, NULL, output, end - output);
+  output += print_meas_log(&gNB->dlsch_encoding_stats, "DLSCH encoding", NULL, NULL, output, end - output);
+  output += print_meas_log(&gNB->phy_proc_rx, "L1 Rx processing", NULL, NULL, output, end - output);
+  output += print_meas_log(&gNB->ul_indication_stats, "UL Indication", NULL, NULL, output, end - output);
+  output += print_meas_log(&gNB->rx_pusch_stats, "PUSCH inner-receiver", NULL, NULL, output, end - output);
+  output += print_meas_log(&gNB->ulsch_decoding_stats, "PUSCH decoding", NULL, NULL, output, end - output);
+  output += print_meas_log(&gNB->schedule_response_stats, "Schedule Response", NULL, NULL, output, end - output);
+  if (ru->feprx)
+    output += print_meas_log(&ru->ofdm_demod_stats, "feprx", NULL, NULL, output, end - output);
 
   if (ru->feptx_ofdm) {
-    stroff += print_meas_log(&ru->precoding_stats,"feptx_prec",NULL,NULL, output+stroff);
-    stroff += print_meas_log(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL, output+stroff);
-    stroff += print_meas_log(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL, output+stroff);
-    stroff += print_meas_log(&ru->ofdm_total_stats,"feptx_total",NULL,NULL, output+stroff);
+    output += print_meas_log(&ru->precoding_stats,"feptx_prec",NULL,NULL, output, end - output);
+    output += print_meas_log(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL, output, end - output);
+    output += print_meas_log(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL, output, end - output);
+    output += print_meas_log(&ru->ofdm_total_stats,"feptx_total",NULL,NULL, output, end - output);
   }
 
-  if (ru->fh_north_asynch_in) stroff += print_meas_log(&ru->rx_fhaul,"rx_fhaul",NULL,NULL, output+stroff);
+  if (ru->fh_north_asynch_in)
+    output += print_meas_log(&ru->rx_fhaul,"rx_fhaul",NULL,NULL, output, end - output);
 
-  stroff += print_meas_log(&ru->tx_fhaul,"tx_fhaul",NULL,NULL, output+stroff);
+  output += print_meas_log(&ru->tx_fhaul,"tx_fhaul",NULL,NULL, output, end - output);
 
   if (ru->fh_north_out) {
-    stroff += print_meas_log(&ru->compression,"compression",NULL,NULL, output+stroff);
-    stroff += print_meas_log(&ru->transport,"transport",NULL,NULL, output+stroff);
+    output += print_meas_log(&ru->compression,"compression",NULL,NULL, output, end - output);
+    output += print_meas_log(&ru->transport,"transport",NULL,NULL, output, end - output);
   }
+  return output - begin;
 }
 
 void *nrL1_stats_thread(void *param) {
@@ -355,7 +359,7 @@ void *nrL1_stats_thread(void *param) {
     dump_nr_I0_stats(fd,gNB);
     dump_pdsch_stats(fd,gNB);
     dump_pusch_stats(fd,gNB);
-    dump_L1_meas_stats(gNB, ru, output);
+    dump_L1_meas_stats(gNB, ru, output, L1STATSSTRLEN);
     fprintf(fd,"%s\n",output);
     fflush(fd);
     fseek(fd,0,SEEK_SET);
@@ -380,7 +384,7 @@ void *tx_reorder_thread(void* param) {
     if (resL1Reserve) {
        resL1=resL1Reserve;
        if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
-         LOG_E(PHY,"order mistake");
+         LOG_E(PHY,"order mistake\n");
 	 resL1Reserve=NULL;
 	 resL1 = pullTpool(gNB->L1_tx_out, gNB->threadPool);
        }
@@ -600,7 +604,8 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
     gNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = gNB->cqi_raw_pdu_list;*/
 
     gNB->prach_energy_counter = 0;
-    gNB->prb_interpolation = get_softmodem_params()->prb_interpolation;
+    gNB->chest_time = get_softmodem_params()->chest_time;
+    gNB->chest_freq = get_softmodem_params()->chest_freq;
   }
   
 
