@@ -344,7 +344,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling) - 10;
     cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
 
-    // NSA -> take ssb offset from SSC
+    // NSA -> take ssb offset from SCS
     cfg->ssb_table.ssb_subcarrier_offset = absolute_diff%(12*scs_scaling);
     
     switch (scc->ssb_PositionsInBurst->present) {

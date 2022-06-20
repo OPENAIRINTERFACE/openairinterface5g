@@ -236,7 +236,7 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   if (get_softmodem_params()->sa) {
     ssb_subcarrier_offset = absolute_diff%(12*scs_scaling);
     if(frequency_range == FR1)
-      ssb_subcarrier_offset = ssb_subcarrier_offset<<*scc->ssbSubcarrierSpacing;
+      ssb_subcarrier_offset <<= *scc->ssbSubcarrierSpacing;
   }
   mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset&15;
 

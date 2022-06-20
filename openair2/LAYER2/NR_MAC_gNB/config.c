@@ -343,14 +343,12 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
 
   RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = absolute_diff%(12*scs_scaling);
-  int sco;
+  int sco = 31; // no SIB1
   if(get_softmodem_params()->sa) {
     sco = RC.nrmac[Mod_idP]->ssb_SubcarrierOffset;
     if(frequency_range == FR1)
-      sco = sco<<cfg->ssb_config.scs_common.value;
+      sco <<= cfg->ssb_config.scs_common.value; // 38.211 section 7.4.3.1 in FR1 it is expresses in terms of 15kHz SCS
   }
-  else
-    sco = 31; // no SIB1
 
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
