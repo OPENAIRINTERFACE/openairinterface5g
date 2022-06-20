@@ -41,8 +41,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <linux/version.h>
-#include <lapacke_utils.h>
-#include <lapacke.h>
+#if defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(7,4) \
+                              && RHEL_RELEASE_CODE != RHEL_RELEASE_VERSION(9,99)
+  #include <lapacke/lapacke_utils.h>
+  #include <lapacke/lapacke.h>
+#else
+  #include <lapacke_utils.h>
+  #include <lapacke.h>
+#endif
 #include <cblas.h>
 #include "linear_preprocessing_rec.h"
 
