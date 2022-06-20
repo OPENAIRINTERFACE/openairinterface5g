@@ -710,10 +710,13 @@ typedef struct {
   NR_UE_sched_ctrl_t UE_sched_ctrl;
   NR_mac_stats_t mac_stats;
   NR_CellGroupConfig_t *CellGroup;
+  char cg_buf[32768]; /* arbitrary size */
+  asn_enc_rval_t enc_rval;
   /// CCE indexing
   int m;
   // UE selected beam index
   uint8_t UE_beam_index;
+  bool Msg3_dcch_dtch;
   bool Msg4_ACKed;
   /// Sched CSI-RS: scheduling decisions
   NR_gNB_UCI_STATS_t uci_statS;
@@ -789,7 +792,7 @@ typedef struct gNB_MAC_INST_s {
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure
   nfapi_nr_tx_data_request_t        TX_req[NFAPI_CC_MAX];
-  int pdcch_cand[MAX_NUM_CORESET];
+
   NR_UEs_t UE_info;
 
   /// UL handle

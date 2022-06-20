@@ -697,8 +697,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->bwp_start = NRRIV2PRBOFFSET(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     pusch_config_pdu->bwp_size = n_RB_ULBWP;
 
-    AssertFatal(ubwpd->pusch_Config != NULL,"pusch_Config shouldn't be null\n");
-    NR_PUSCH_Config_t *pusch_Config = ubwpd->pusch_Config->choice.setup;
+    const NR_PUSCH_Config_t *pusch_Config = ubwpd? ubwpd->pusch_Config->choice.setup : NULL;
 
     // Basic sanity check for MCS value to check for a false or erroneous DCI
     if (dci->mcs > 28) {
@@ -776,10 +775,10 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                 pusch_config_pdu->dfts_ofdm.low_papr_group_number);
     }
     else {
-      if (pusch_config_pdu->scid == 0 &&
+      if (pusch_config_pdu->scid == 0 && NR_DMRS_ulconfig &&
           NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID0)
         pusch_config_pdu->ul_dmrs_scrambling_id = *NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID0;
-      if (pusch_config_pdu->scid == 1 &&
+      if (pusch_config_pdu->scid == 1 && NR_DMRS_ulconfig &&
           NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID1)
         pusch_config_pdu->ul_dmrs_scrambling_id = *NR_DMRS_ulconfig->transformPrecodingDisabled->scramblingID1;
     }
@@ -840,7 +839,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                                mappingtype, add_pos, dmrslength,
                                pusch_config_pdu->start_symbol_index,
                                mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    if ((mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled)) {
+    if (mac->ULbwp[ul_bwp_id-1] && pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
       if (*dci_format != NR_UL_DCI_FORMAT_0_1) {
         pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
       }
@@ -1100,7 +1099,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
           rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0; // msg3 retransmission
         config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , mac->ra.ss->searchSpaceId);
-        fill_dci_search_candidates(mac->ra.ss, rel15);
+        fill_dci_search_candidates(mac->ra.ss, rel15, -1 , -1);
         dl_config->number_pdus = 1;
         LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d\n",mac->cg,rel15->rnti,dl_config->number_pdus);
         fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
@@ -2790,7 +2789,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
   rel15->num_dci_options = 1;
   rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
   config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
-  fill_dci_search_candidates(mac->search_space_zero, rel15);
+  fill_dci_search_candidates(mac->search_space_zero, rel15, -1, -1);
 
   if(mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern == 1){
     // same frame as ssb

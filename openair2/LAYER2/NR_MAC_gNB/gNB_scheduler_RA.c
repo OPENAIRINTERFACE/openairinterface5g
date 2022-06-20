@@ -537,167 +537,164 @@ void nr_initiate_ra_proc(module_id_t module_idP,
   }
 
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+
     NR_RA_t *ra = &cc->ra[i];
-    pr_found = 0;
-    const NR_UE_info_t * UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
-    if (UE) {
-      // the UE is already registered
-      LOG_W(NR_MAC, "Received RA for existing RNTI %04x\n", ra->rnti);
+    if (ra->state != RA_IDLE)
       continue;
+
+    pr_found = 0;
+
+    for(int j = 0; j < ra->preambles.num_preambles; j++) {
+      //check if the preamble received correspond to one of the listed or configured preambles
+      if (preamble_index == ra->preambles.preamble_list[j]) {
+        if (ra->rnti == 0 && get_softmodem_params()->nsa)
+          continue;
+        pr_found=1;
+        break;
+      }
     }
-    if (ra->state == RA_IDLE) {
-      for(int j = 0; j < ra->preambles.num_preambles; j++) {
-        //check if the preamble received correspond to one of the listed or configured preambles
-        if (preamble_index == ra->preambles.preamble_list[j]) {
-          if (ra->rnti == 0 && get_softmodem_params()->nsa)
-            continue;
-          pr_found=1;
-          break;
-        }
+    if (pr_found == 0) {
+       continue;
+    }
+
+    uint16_t ra_rnti;
+
+    // ra_rnti from 5.1.3 in 38.321
+    // FK: in case of long PRACH the phone seems to expect the subframe number instead of the slot number here.
+    if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present
+        == NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839)
+      ra_rnti = 1 + symbol + (9 /*slotP*/ * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
+    else
+      ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
+
+    // This should be handled differently when we use the initialBWP for RA
+    ra->dl_bwp_id = 0;//TODO
+    ra->ul_bwp_id = 0;
+    NR_BWP_Downlink_t *bwp=NULL;
+    if (ra->CellGroup && ra->CellGroup->spCellConfig && ra->CellGroup->spCellConfig->spCellConfigDedicated) {
+      if (ra->CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id &&
+        ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
+        ra->dl_bwp_id = *ra->CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
+        bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->dl_bwp_id - 1];
       }
-      if (pr_found == 0) {
-         continue;
-      }
+      if (ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+          ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id)
+        ra->ul_bwp_id = *ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id;
+   }
 
-      uint16_t ra_rnti;
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
 
-      // ra_rnti from 5.1.3 in 38.321
-      // FK: in case of long PRACH the phone seems to expect the subframe number instead of the slot number here.
-      if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present
-          == NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l839)
-        ra_rnti = 1 + symbol + (9 /*slotP*/ * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
-      else
-        ra_rnti = 1 + symbol + (slotP * 14) + (freq_index * 14 * 80) + (ul_carrier_id * 14 * 80 * 8);
+    LOG_D(NR_MAC,
+          "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n",
+          module_idP,
+          CC_id,
+          frameP,
+          slotP,
+          preamble_index);
 
-      // This should be handled differently when we use the initialBWP for RA
-      ra->dl_bwp_id = 0;//TODO
-      ra->ul_bwp_id = 0;
-      NR_BWP_Downlink_t *bwp=NULL;
-      if (ra->CellGroup && ra->CellGroup->spCellConfig && ra->CellGroup->spCellConfig->spCellConfigDedicated) {
-        if (ra->CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id &&
-          ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
-          ra->dl_bwp_id = *ra->CellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id;
-          bwp = ra->CellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[ra->dl_bwp_id - 1];
-        }
-        if (ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-            ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id)
-          ra->ul_bwp_id = *ra->CellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id;
-     }
+    uint8_t beam_index = ssb_index_from_prach(module_idP, frameP, slotP, preamble_index, freq_index, symbol);
 
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 1);
-
-      LOG_D(NR_MAC,
-            "[gNB %d][RAPROC] CC_id %d Frame %d, Slot %d  Initiating RA procedure for preamble index %d\n",
+    // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
+    if (ra->cfra) {
+      // if the preamble received correspond to one of the listed
+      if (!(preamble_index == ra->preambles.preamble_list[beam_index])) {
+        LOG_E(
+            NR_MAC,
+            "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
             module_idP,
-            CC_id,
-            frameP,
-            slotP,
             preamble_index);
-
-      uint8_t beam_index = ssb_index_from_prach(module_idP, frameP, slotP, preamble_index, freq_index, symbol);
-
-      // the UE sent a RACH either for starting RA procedure or RA procedure failed and UE retries
-      if (ra->cfra) {
-        // if the preamble received correspond to one of the listed
-        if (!(preamble_index == ra->preambles.preamble_list[beam_index])) {
-          LOG_E(
-              NR_MAC,
-              "[gNB %d][RAPROC] FAILURE: preamble %d does not correspond to any of the ones in rach_ConfigDedicated\n",
-              module_idP,
-              preamble_index);
-          continue; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
-        }
+        continue; // if the PRACH preamble does not correspond to any of the ones sent through RRC abort RA proc
       }
-      LOG_D(NR_MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
-      ra->state = Msg2;
-      ra->timing_offset = timing_offset;
-      ra->preamble_slot = slotP;
-
-      NR_SearchSpaceId_t	ra_SearchSpace = 0;
-      struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = NULL;
-      NR_BWP_t *genericParameters = NULL;
-      if(bwp) {
-        commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-        ra_SearchSpace = *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-        genericParameters = &bwp->bwp_Common->genericParameters;
-      } else {
-        commonSearchSpaceList = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-        ra_SearchSpace = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-        genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-      }
-      AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
-
-      // Common SearchSpace list
-      for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
-        ss = commonSearchSpaceList->list.array[i];
-        if (ss->searchSpaceId == ra_SearchSpace)
-          ra->ra_ss = ss;
-      }
-
-      AssertFatal(ra->ra_ss!=NULL,"SearchSpace cannot be null for RA\n");
-
-      ra->coreset = get_coreset(nr_mac, scc, bwp, ra->ra_ss, NR_SearchSpace__searchSpaceType_PR_common);
-      ra->sched_pdcch = set_pdcch_structure(nr_mac,
-                                            ra->ra_ss,
-                                            ra->coreset,
-                                            scc,
-                                            genericParameters,
-                                            &nr_mac->type0_PDCCH_CSS_config[ra->beam_id]);
-
-      // retrieving ra pdcch monitoring period and offset
-      find_monitoring_periodicity_offset_common(ra->ra_ss, &monitoring_slot_period, &monitoring_offset);
-
-      nr_schedule_msg2(frameP,
-                       slotP,
-                       &msg2_frame,
-                       &msg2_slot,
-                       scc,
-                       frame_type,
-                       monitoring_slot_period,
-                       monitoring_offset,
-                       beam_index,
-                       cc->num_active_ssb,
-                       nr_mac->tdd_beam_association,
-		       nr_mac->if_inst->sl_ahead);
-
-      ra->Msg2_frame = msg2_frame;
-      ra->Msg2_slot = msg2_slot;
-
-      LOG_D(NR_MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
-
-      int loop = 0;
-      if (ra->rnti == 0) { // This condition allows for the usage of a preconfigured rnti for the CFRA
-        do {
-          ra->rnti = (taus() % 65518) + 1;
-          loop++;
-        } while (loop != 100
-                 && !((find_nr_UE(&nr_mac->UE_info, ra->rnti) == NULL) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
-                      && ra->rnti >= 1 && ra->rnti <= 65519));
-        if (loop == 100) {
-          LOG_E(NR_MAC, "%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
-          abort();
-        }
-      }
-
-      ra->RA_rnti = ra_rnti;
-      ra->preamble_index = preamble_index;
-      ra->beam_id = beam_index;
-
-      LOG_I(NR_MAC,
-            "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB, new rnti %04x "
-            "index %u RA index %d\n",
-            module_idP,
-            CC_id,
-            frameP,
-            ra->Msg2_frame,
-            ra->Msg2_slot,
-            ra->RA_rnti,
-	    ra->rnti,
-            cc->ssb_index[beam_index],
-            i);
-
-      return;
     }
+    LOG_D(NR_MAC, "Frame %d, Slot %d: Activating RA process \n", frameP, slotP);
+    ra->state = Msg2;
+    ra->timing_offset = timing_offset;
+    ra->preamble_slot = slotP;
+
+    NR_SearchSpaceId_t	ra_SearchSpace = 0;
+    struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = NULL;
+    NR_BWP_t *genericParameters = NULL;
+    if(bwp) {
+      commonSearchSpaceList = bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ra_SearchSpace = *bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      genericParameters = &bwp->bwp_Common->genericParameters;
+    } else {
+      commonSearchSpaceList = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ra_SearchSpace = *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+    }
+    AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
+
+    // Common SearchSpace list
+    for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
+      ss = commonSearchSpaceList->list.array[i];
+      if (ss->searchSpaceId == ra_SearchSpace)
+        ra->ra_ss = ss;
+    }
+
+    AssertFatal(ra->ra_ss!=NULL,"SearchSpace cannot be null for RA\n");
+
+    ra->coreset = get_coreset(nr_mac, scc, bwp, ra->ra_ss, NR_SearchSpace__searchSpaceType_PR_common);
+    ra->sched_pdcch = set_pdcch_structure(nr_mac,
+                                          ra->ra_ss,
+                                          ra->coreset,
+                                          scc,
+                                          genericParameters,
+                                          &nr_mac->type0_PDCCH_CSS_config[ra->beam_id]);
+
+    // retrieving ra pdcch monitoring period and offset
+    find_monitoring_periodicity_offset_common(ra->ra_ss, &monitoring_slot_period, &monitoring_offset);
+
+    nr_schedule_msg2(frameP,
+                     slotP,
+                     &msg2_frame,
+                     &msg2_slot,
+                     scc,
+                     frame_type,
+                     monitoring_slot_period,
+                     monitoring_offset,
+                     beam_index,
+                     cc->num_active_ssb,
+                     nr_mac->tdd_beam_association,
+         nr_mac->if_inst->sl_ahead);
+
+    ra->Msg2_frame = msg2_frame;
+    ra->Msg2_slot = msg2_slot;
+
+    LOG_D(NR_MAC, "%s() Msg2[%04d%d] SFN/SF:%04d%d\n", __FUNCTION__, ra->Msg2_frame, ra->Msg2_slot, frameP, slotP);
+
+    int loop = 0;
+    if (ra->rnti == 0) { // This condition allows for the usage of a preconfigured rnti for the CFRA
+      do {
+        ra->rnti = (taus() % 65518) + 1;
+        loop++;
+      } while (loop != 100
+               && !((find_nr_UE(&nr_mac->UE_info, ra->rnti) == NULL) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
+                    && ra->rnti >= 1 && ra->rnti <= 65519));
+      if (loop == 100) {
+        LOG_E(NR_MAC, "%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
+        abort();
+      }
+    }
+
+    ra->RA_rnti = ra_rnti;
+    ra->preamble_index = preamble_index;
+    ra->beam_id = beam_index;
+
+    LOG_I(NR_MAC,
+          "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB, new rnti %04x "
+          "index %u RA index %d\n",
+          module_idP,
+          CC_id,
+          frameP,
+          ra->Msg2_frame,
+          ra->Msg2_slot,
+          ra->RA_rnti,
+    ra->rnti,
+          cc->ssb_index[beam_index],
+          i);
+
+    return;
   }
   LOG_E(NR_MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
 
@@ -787,8 +784,9 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     uint16_t *vrb_map_UL = &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
 
-    int BWPStart = nr_mac->type0_PDCCH_CSS_config[ra->beam_id].cset_start_rb;
-    int BWPSize  = nr_mac->type0_PDCCH_CSS_config[ra->beam_id].num_rbs;
+    const int BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    const int BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
     int rbStart = 0;
     for (int i = 0; (i < ra->msg3_nb_rb) && (rbStart <= (BWPSize - ra->msg3_nb_rb)); i++) {
       if (vrb_map_UL[rbStart + BWPStart + i]&SL_to_bitmap(StartSymbolIndex, NrOfSymbols)) {
@@ -1326,7 +1324,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dl_req->nPDUs+=1;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
-    LOG_D(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg2 DCI, rnti 0x%x, state %d, CoreSetType %d\n",
+    LOG_A(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg2 DCI, rnti 0x%x, state %d, CoreSetType %d\n",
           module_idP, CC_id, frameP, slotP, ra->RA_rnti, ra->state,pdcch_pdu_rel15->CoreSetType);
 
     // SCF222: PDU index incremented for each PDSCH PDU sent in TX control message. This is used to associate control
@@ -1787,7 +1785,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     dl_req->nPDUs+=1;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
 
-    LOG_D(NR_MAC, "[gNB %d] [RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg4 DCI, state %d\n", module_idP, CC_id, frameP, slotP, ra->state);
+    LOG_A(NR_MAC, "[gNB %d] [RAPROC] CC_id %d Frame %d, slotP %d: Generating RA-Msg4 DCI, state %d\n", module_idP, CC_id, frameP, slotP, ra->state);
 
     // SCF222: PDU index incremented for each PDSCH PDU sent in TX control message. This is used to associate control
     // information to data and is reset every slot.
@@ -1952,8 +1950,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     if(ra->msg3_dcch_dtch) {
       // If the UE used MSG3 to transfer a DCCH or DTCH message, then contention resolution is successful upon transmission of PDCCH
-      LOG_I(NR_MAC, "(ue rnti 0x%04x) CBRA procedure succeeded!\n", ra->rnti);
+      LOG_A(NR_MAC, "(ue rnti 0x%04x) CBRA procedure succeeded!\n", ra->rnti);
       nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
+      UE->Msg3_dcch_dtch = true;
       UE->Msg4_ACKed = true;
 
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
@@ -1962,6 +1961,24 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       add_tail_nr_list(&sched_ctrl->available_dl_harq, current_harq_pid);
       harq->round = 0;
       harq->ndi ^= 1;
+
+      // Pause scheduling according to:
+      // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
+      const NR_COMMON_channels_t *common_channels = &RC.nrmac[module_idP]->common_channels[0];
+      const NR_SIB1_t *sib1 = common_channels->sib1 ? common_channels->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+      const NR_ServingCellConfig_t *servingCellConfig = UE->CellGroup ? UE->CellGroup->spCellConfig->spCellConfigDedicated : NULL;
+      NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
+                                                                 common_channels->ServingCellConfigCommon,
+                                                                 sib1);
+      uint32_t delay_ms = servingCellConfig && servingCellConfig->downlinkBWP_ToAddModList ?
+                          NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
+
+      sched_ctrl->rrc_processing_timer = (delay_ms << genericParameters->subcarrierSpacing);
+      LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frameP, slotP, UE->rnti, delay_ms);
+
+      // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE
+      UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
+      UE->UE_sched_ctrl.ul_failure = 0;
     } else {
       ra->state = WAIT_Msg4_ACK;
       LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);

@@ -710,10 +710,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 return;
               } else {
                 // The UE identified by C-RNTI still exists at the gNB
-                // Reset uplink failure flags/counters/timers at MAC and at RRC so gNB will resume again scheduling resources for this UE
-                UE_C->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
-                UE_C->UE_sched_ctrl.ul_failure = 0;
+                // Reset uplink failure flags/counters/timers at RRC
                 nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->crnti);
+
+                // Reset HARQ processes
+                reset_dl_harq_list(&UE_C->UE_sched_ctrl);
+                reset_ul_harq_list(&UE_C->UE_sched_ctrl);
               }
             }
             LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
@@ -933,8 +935,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
   }
 
   /* Find a free CCE */
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
   uint8_t nr_of_candidates;
   for (int i=0; i<5; i++) {
     // for now taking the lowest value among the available aggregation levels
@@ -1101,8 +1102,7 @@ void pf_ul(module_id_t module_id,
     if (B == 0 && do_sched) {
       /* if no data, pre-allocate 5RB */
       /* Find a free CCE */
-      const int cid = sched_ctrl->coreset->controlResourceSetId;
-      const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+      const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
       uint8_t nr_of_candidates;
       for (int i=0; i<5; i++) {
 	// for now taking the lowest value among the available aggregation levels
@@ -1216,8 +1216,7 @@ void pf_ul(module_id_t module_id,
 
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
 
-    const int cid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t Y = get_Y(cid%3, slot, iterator->UE->rnti);
+    const uint32_t Y = get_Y(sched_ctrl->search_space, slot, iterator->UE->rnti);
     uint8_t nr_of_candidates;
     for (int i=0; i<5; i++) {
       // for now taking the lowest value among the available aggregation levels

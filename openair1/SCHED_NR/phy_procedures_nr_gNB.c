@@ -782,10 +782,14 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot),gNB->pusch_thres);
              gNB->pusch_vars[ULSCH_id]->ulsch_power_tot = gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot;
-             nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
              gNB->pusch_vars[ULSCH_id]->DTX=1;
              if (stats) stats->DTX++;
-             return 1;
+             if (!get_softmodem_params()->phy_test) {
+               /* in case of phy_test mode, we still want to decode to measure execution time. 
+                  Therefore, we don't yet call nr_fill_indication, it will be called later */
+               nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
+               return 1;
+             }
           } else {
             LOG_D(PHY, "PUSCH detected in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
                   dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
@@ -845,10 +849,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   }
 
   stop_meas(&gNB->phy_proc_rx);
-  // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
-  if ((frame_rx&127) == 0 && slot_rx==19) {
-    LOG_I(NR_PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
-  }
 
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));
