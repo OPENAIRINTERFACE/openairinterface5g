@@ -240,8 +240,7 @@ int ue_ip_hard_start_xmit(struct sk_buff *skb_pP, struct net_device *dev_pP) {
     // End debug information
     netif_stop_queue(dev_pP);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) \
-    || (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(7,4) \
-                                  && RHEL_RELEASE_CODE != RHEL_RELEASE_VERSION(9,99))
+    || (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= 1796 && RHEL_RELEASE_CODE != 2403)
     netif_trans_update(dev_pP);
 #else
     dev_pP->trans_start = jiffies;
@@ -317,9 +316,8 @@ void ue_ip_tx_timeout(struct net_device *dev_pP)
   printk("[UE_IP_DRV][%s] begin\n", __FUNCTION__);
   //  (ue_ip_priv_t *)(dev_pP->priv_p)->stats.tx_errors++;
   (priv_p->stats).tx_errors++;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) \\
-    || (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(7,4) \
-                                  && RHEL_RELEASE_CODE != RHEL_RELEASE_VERSION(9,99))
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,7,0) \
+    || (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= 1796 && RHEL_RELEASE_CODE != 2403)
   netif_trans_update(dev_pP);
 #else
   dev_pP->trans_start = jiffies;
@@ -337,8 +335,7 @@ static const struct net_device_ops ue_ip_netdev_ops = {
   .ndo_set_mac_address    = ue_ip_set_mac_address,
   .ndo_set_config         = ue_ip_set_config,
   .ndo_do_ioctl           = NULL,
-#if defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(7,5) \
-                              && RHEL_RELEASE_CODE != RHEL_RELEASE_VERSION(9,99)
+#if defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= 1797 && RHEL_RELEASE_CODE != 2403
   .extended.ndo_change_mtu         = ue_ip_change_mtu,
 #else
   .ndo_change_mtu   = ue_ip_change_mtu,
