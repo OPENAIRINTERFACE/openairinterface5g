@@ -379,7 +379,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
   NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
   NR_UE_UL_BWP_t *UBWP = &UE->current_UL_BWP;
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
-  NR_CellGroupConfig_t *cg = UE->CellGroup;
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : BWP->BWPSize;
@@ -416,7 +415,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
     if (ps->time_domain_allocation != tda) {
       nr_set_pdsch_semi_static(BWP,
                                scc,
-                               cg,
                                tda,
                                ps->nrOfLayers,
                                sched_ctrl,
@@ -429,7 +427,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
     nr_set_pdsch_semi_static(BWP,
                              scc,
-                             cg,
                              tda,
                              ps->nrOfLayers,
                              sched_ctrl,
@@ -710,7 +707,6 @@ void pf_dl(module_id_t module_id,
     if (ps->nrOfLayers != iterator->UE->layers || ps->time_domain_allocation != tda ) {
       nr_set_pdsch_semi_static(BWP,
                                scc,
-                               iterator->UE->CellGroup,
                                tda,
                                iterator->UE->layers,
                                sched_ctrl,

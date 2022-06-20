@@ -331,7 +331,6 @@ long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
 
 void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
                               const NR_ServingCellConfigCommon_t *scc,
-                              const NR_CellGroupConfig_t *secondaryCellGroup,
                               int tda,
                               uint8_t layers,
                               NR_UE_sched_ctrl_t *sched_ctrl,

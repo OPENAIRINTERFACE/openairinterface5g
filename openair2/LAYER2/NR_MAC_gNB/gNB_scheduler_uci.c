@@ -688,16 +688,14 @@ void nr_csi_meas_reporting(int Mod_idP,
                            sub_frame_t slot) {
 
   UE_iterator(RC.nrmac[Mod_idP]->UE_info.list, UE ) {
-    const NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_UL_BWP_t *UL_BWP = &UE->current_UL_BWP;
     const int n_slots_frame = nr_slots_per_frame[UL_BWP->scs];
     if ((sched_ctrl->rrc_processing_timer > 0) || (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0)) {
       continue;
     }
-    if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
-	      !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
-    const NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+    const NR_CSI_MeasConfig_t *csi_measconfig = UL_BWP->csi_MeasConfig;
+    if (!csi_measconfig) continue;
     AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
                 "NO CSI report configuration available");
     NR_PUCCH_Config_t *pucch_Config = UL_BWP->pucch_Config;
@@ -1472,15 +1470,10 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     LOG_E(NR_MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
     return;
   }
-  AssertFatal(UE->CellGroup,"Cellgroup is null for UE %04x\n", uci_234->rnti);
-  AssertFatal(UE->CellGroup->spCellConfig,
-             "Cellgroup->spCellConfig is null for UE %04x\n", uci_234->rnti);
-  AssertFatal(UE->CellGroup->spCellConfig->spCellConfigDedicated,
-              "Cellgroup->spCellConfig->spCellConfigDedicated is null for UE %04x\n", uci_234->rnti);
-  if ( UE->CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig==NULL)
-    return;
 
-  NR_CSI_MeasConfig_t *csi_MeasConfig = UE->CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+  NR_CSI_MeasConfig_t *csi_MeasConfig = UE->current_UL_BWP.csi_MeasConfig;
+  if (csi_MeasConfig==NULL)
+    return;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
   // tpc (power control)

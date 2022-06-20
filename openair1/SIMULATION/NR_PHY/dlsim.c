@@ -304,7 +304,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   nr_set_pdsch_semi_static(BWP,
                            scc,
-                           UE_info->CellGroup,
                            /* tda = */ 0,
                            g_nrOfLayers,
                            sched_ctrl,

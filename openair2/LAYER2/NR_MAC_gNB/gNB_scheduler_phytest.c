@@ -202,7 +202,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
-    nr_set_pdsch_semi_static(BWP, scc, UE->CellGroup, tda, target_dl_Nl,sched_ctrl , ps);
+    nr_set_pdsch_semi_static(BWP, scc, tda, target_dl_Nl,sched_ctrl , ps);
 
   /* find largest unallocated chunk */
   const int bwpSize = BWP->BWPSize;

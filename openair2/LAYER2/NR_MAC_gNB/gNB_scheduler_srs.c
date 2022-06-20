@@ -108,7 +108,6 @@ void nr_schedule_srs(int module_id, frame_t frame) {
 
   UE_iterator(UE_info->list, UE) {
     const int CC_id = 0;
-    NR_CellGroupConfig_t *cg = UE->CellGroup;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
@@ -120,16 +119,9 @@ void nr_schedule_srs(int module_id, frame_t frame) {
       continue;
     }
 
-    NR_SRS_Config_t *srs_config = NULL;
-    if (cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated &&
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-      srs_config = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;
-    } else {
+    NR_SRS_Config_t *srs_config = current_BWP->srs_Config;
+    if (!srs_config)
       continue;
-    }
 
     for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
 

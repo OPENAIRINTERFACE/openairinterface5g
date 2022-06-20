@@ -510,7 +510,6 @@ bool nr_find_nb_rb(uint16_t Qm,
 
 void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
                               const NR_ServingCellConfigCommon_t *scc,
-                              const NR_CellGroupConfig_t *secondaryCellGroup,
                               int tda,
                               uint8_t layers,
                               NR_UE_sched_ctrl_t *sched_ctrl,
@@ -2201,7 +2200,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   NR_BWP_Uplink_t *ul_bwp = NULL;
   NR_BWP_DownlinkDedicated_t *bwpd = NULL;
   NR_BWP_UplinkDedicated_t *ubwpd = NULL;
-  NR_CSI_MeasConfig_t *csi_MeasConfig = NULL;
   DL_BWP->n_dl_bwp = 1;
   UL_BWP->n_ul_bwp = 1;
   int old_dl_bwp_id = DL_BWP->bwp_id;
@@ -2215,7 +2213,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
     DL_BWP->pdsch_servingcellconfig = servingCellConfig->pdsch_ServingCellConfig? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-    csi_MeasConfig = servingCellConfig->csi_MeasConfig ? servingCellConfig->csi_MeasConfig->choice.setup : NULL;
     target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
 
     if(UE && UE->Msg3_dcch_dtch) {
@@ -2271,6 +2268,8 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     DL_BWP->pdsch_Config = bwpd->pdsch_Config->choice.setup;
     UL_BWP->pusch_Config = ubwpd->pusch_Config->choice.setup;
     UL_BWP->pucch_Config = ubwpd->pucch_Config->choice.setup;
+    UL_BWP->srs_Config = ubwpd->srs_Config->choice.setup;
+    UL_BWP->csi_MeasConfig = servingCellConfig->csi_MeasConfig ? servingCellConfig->csi_MeasConfig->choice.setup : NULL;
   }
   else {
     DL_BWP->bwp_id = 0;
@@ -2279,6 +2278,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     DL_BWP->pdsch_Config = NULL;
     UL_BWP->pusch_Config = NULL;
     UL_BWP->pucch_Config = NULL;
+    UL_BWP->csi_MeasConfig = NULL;
   }
 
   if (old_dl_bwp_id != DL_BWP->bwp_id)
@@ -2369,8 +2369,8 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                          NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0) :
                          NR_UL_DCI_FORMAT_0_0;
 
-    if (csi_MeasConfig)
-      compute_csi_bitlen (csi_MeasConfig, UE);
+    if (UL_BWP->csi_MeasConfig)
+      compute_csi_bitlen (UL_BWP->csi_MeasConfig, UE);
 
   }
 
@@ -2671,13 +2671,13 @@ void nr_csirs_scheduling(int Mod_idP,
     if (sched_ctrl->rrc_processing_timer > 0) {
       continue;
     }
-    NR_CellGroupConfig_t *CellGroup = UE->CellGroup;
+
     NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
+    NR_UE_UL_BWP_t *UBWP = &UE->current_UL_BWP;
 
-    if (!CellGroup || !CellGroup->spCellConfig || !CellGroup->spCellConfig->spCellConfigDedicated ||
-	      !CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig) continue;
+    if (!UBWP->csi_MeasConfig) continue;
 
-    NR_CSI_MeasConfig_t *csi_measconfig = CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup;
+    NR_CSI_MeasConfig_t *csi_measconfig = UBWP->csi_MeasConfig;
 
     if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList != NULL) {
 
@@ -2913,7 +2913,6 @@ void nr_mac_update_timers(module_id_t module_id,
 
         nr_set_pdsch_semi_static(&UE->current_DL_BWP,
                                  scc,
-                                 cg,
                                  tda,
                                  layers,
                                  sched_ctrl,

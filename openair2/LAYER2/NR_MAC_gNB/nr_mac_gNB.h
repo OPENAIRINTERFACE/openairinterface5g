@@ -116,6 +116,8 @@ typedef struct NR_UE_UL_BWP {
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;
   NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon;
+  NR_CSI_MeasConfig_t *csi_MeasConfig;
+  NR_SRS_Config_t *srs_Config;
   uint8_t transform_precoding;
   uint8_t mcs_table;
   nr_dci_format_t dci_format;
