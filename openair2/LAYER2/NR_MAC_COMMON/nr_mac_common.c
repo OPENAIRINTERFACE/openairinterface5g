@@ -312,6 +312,16 @@ const uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[16][4]={
     {1,0,2,6}   // row index 16
 };
 
+// TS 38.211 - Table 6.3.1.5-1: Precoding matrix W for single-layer transmission using two antenna ports, 'n' = -1 and 'o' = -j
+const char table_38211_6_3_1_5_1[6][2][1] = {
+    {{'1'}, {'0'}},//pmi 0
+    {{'0'}, {'1'}},
+    {{'1'}, {'1'}},
+    {{'1'}, {'n'}},
+    {{'1'}, {'j'}},
+    {{'1'}, {'o'}} //pmi 5
+};
+
 void get_info_from_tda_tables(int default_abc,
                               int tda,
                               int dmrs_TypeA_Position,

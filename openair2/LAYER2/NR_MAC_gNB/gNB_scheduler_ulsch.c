@@ -764,6 +764,308 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   }
 }
 
+uint32_t calc_power_complex(const int16_t *x, const int16_t *y, const uint32_t size) {
+
+  // Real part value
+  int64_t sum_x = 0;
+  int64_t sum_x2 = 0;
+  for(int k = 0; k<size; k++) {
+    sum_x = sum_x + x[k];
+    sum_x2 = sum_x2 + x[k]*x[k];
+  }
+  uint32_t power_re = sum_x2/size - (sum_x/size)*(sum_x/size);
+
+  // Imaginary part power
+  int64_t sum_y = 0;
+  int64_t sum_y2 = 0;
+  for(int k = 0; k<size; k++) {
+    sum_y = sum_y + y[k];
+    sum_y2 = sum_y2 + y[k]*y[k];
+  }
+  uint32_t power_im = sum_y2/size - (sum_y/size)*(sum_y/size);
+
+  return power_re+power_im;
+}
+
+c16_t nr_h_times_w(c16_t h, char w) {
+  c16_t output;
+    switch (w) {
+      case '0': // 0
+        output.r = 0;
+        output.i = 0;
+        break;
+      case '1': // 1
+        output.r = h.r;
+        output.i = h.i;
+        break;
+      case 'n': // -1
+        output.r = -h.r;
+        output.i = -h.i;
+        break;
+      case 'j': // j
+        output.r = -h.i;
+        output.i = h.r;
+        break;
+      case 'o': // -j
+        output.r = h.i;
+        output.i = -h.r;
+        break;
+      default:
+        AssertFatal(1==0,"Invalid precoder value %c\n", w);
+    }
+  return output;
+}
+
+uint8_t get_max_tpmi(const NR_PUSCH_Config_t *pusch_Config,
+                     const uint16_t num_ue_srs_ports,
+                     const uint8_t *nrOfLayers,
+                     int *additional_max_tpmi) {
+
+  uint8_t max_tpmi = 0;
+
+  if ((pusch_Config && pusch_Config->txConfig != NULL && *pusch_Config->txConfig == NR_PUSCH_Config__txConfig_nonCodebook) ||
+      num_ue_srs_ports == 1) {
+    return max_tpmi;
+  }
+
+  long max_rank = *pusch_Config->maxRank;
+  long *ul_FullPowerTransmission = pusch_Config->ext1 ? pusch_Config->ext1->ul_FullPowerTransmission_r16 : NULL;
+  long *codebookSubset = pusch_Config->codebookSubset;
+
+  if (num_ue_srs_ports == 2) {
+
+    if (max_rank == 1) {
+      if (ul_FullPowerTransmission && *ul_FullPowerTransmission == NR_PUSCH_Config__ext1__ul_FullPowerTransmission_r16_fullpowerMode1) {
+        max_tpmi = 2;
+      } else {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          max_tpmi = 1;
+        } else {
+          max_tpmi = 5;
+        }
+      }
+    } else {
+      if (ul_FullPowerTransmission && *ul_FullPowerTransmission == NR_PUSCH_Config__ext1__ul_FullPowerTransmission_r16_fullpowerMode1) {
+        max_tpmi = *nrOfLayers == 1 ? 2 : 0;
+      } else {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          max_tpmi = *nrOfLayers == 1 ? 1 : 0;
+        } else {
+          max_tpmi = *nrOfLayers == 1 ? 5 : 2;
+        }
+      }
+    }
+
+  } else if (num_ue_srs_ports == 4) {
+
+    if (max_rank == 1) {
+      if (ul_FullPowerTransmission && *ul_FullPowerTransmission == NR_PUSCH_Config__ext1__ul_FullPowerTransmission_r16_fullpowerMode1) {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          max_tpmi = 3;
+          *additional_max_tpmi = 13;
+        } else {
+          max_tpmi = 15;
+        }
+      } else {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          max_tpmi = 3;
+        } else if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_partialAndNonCoherent) {
+          max_tpmi = 11;
+        } else {
+          max_tpmi = 27;
+        }
+      }
+    } else {
+      if (ul_FullPowerTransmission && *ul_FullPowerTransmission == NR_PUSCH_Config__ext1__ul_FullPowerTransmission_r16_fullpowerMode1) {
+        if (max_rank == 2) {
+          if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+            max_tpmi = *nrOfLayers == 1 ? 3 : 6;
+            if (*nrOfLayers == 1) {
+              *additional_max_tpmi = 13;
+            }
+          } else {
+            max_tpmi = *nrOfLayers == 1 ? 15 : 13;
+          }
+        } else {
+          if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+            switch (*nrOfLayers) {
+              case 1:
+                max_tpmi = 3;
+                *additional_max_tpmi = 13;
+                break;
+              case 2:
+                max_tpmi = 6;
+                break;
+              case 3:
+                max_tpmi = 1;
+                break;
+              case 4:
+                max_tpmi = 0;
+                break;
+              default:
+                LOG_E(NR_MAC,"Number of layers %d is invalid!\n", *nrOfLayers);
+            }
+          } else {
+            switch (*nrOfLayers) {
+              case 1:
+                max_tpmi = 15;
+                break;
+              case 2:
+                max_tpmi = 13;
+                break;
+              case 3:
+              case 4:
+                max_tpmi = 2;
+                break;
+              default:
+                LOG_E(NR_MAC,"Number of layers %d is invalid!\n", *nrOfLayers);
+            }
+          }
+        }
+      } else {
+        if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_nonCoherent) {
+          switch (*nrOfLayers) {
+            case 1:
+              max_tpmi = 3;
+              break;
+            case 2:
+              max_tpmi = 5;
+              break;
+            case 3:
+            case 4:
+              max_tpmi = 0;
+              break;
+            default:
+              LOG_E(NR_MAC,"Number of layers %d is invalid!\n", *nrOfLayers);
+          }
+        } else if (codebookSubset && *codebookSubset == NR_PUSCH_Config__codebookSubset_partialAndNonCoherent) {
+          switch (*nrOfLayers) {
+            case 1:
+              max_tpmi = 11;
+              break;
+            case 2:
+              max_tpmi = 13;
+              break;
+            case 3:
+            case 4:
+              max_tpmi = 2;
+              break;
+            default:
+              LOG_E(NR_MAC,"Number of layers %d is invalid!\n", *nrOfLayers);
+          }
+        } else {
+          switch (*nrOfLayers) {
+            case 1:
+              max_tpmi = 28;
+              break;
+            case 2:
+              max_tpmi = 22;
+              break;
+            case 3:
+              max_tpmi = 7;
+              break;
+            case 4:
+              max_tpmi = 5;
+              break;
+            default:
+              LOG_E(NR_MAC,"Number of layers %d is invalid!\n", *nrOfLayers);
+          }
+        }
+      }
+    }
+
+  }
+
+  return max_tpmi;
+}
+
+void get_precoder_matrix_coef(char *w, uint8_t tpmi, uint8_t uI) {
+  // TODO: Add the remaining tables
+  *w = *table_38211_6_3_1_5_1[tpmi][uI];
+}
+
+int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
+                           const uint8_t *channel_matrix,
+                           const uint8_t normalized_iq_representation,
+                           const uint16_t num_gnb_antenna_elements,
+                           const uint16_t num_ue_srs_ports,
+                           const uint16_t prg_size,
+                           const uint16_t num_prgs,
+                           const uint8_t ul_ri) {
+
+  uint8_t tpmi_sel = 0;
+  int16_t precoded_channel_matrix_re[num_prgs*num_gnb_antenna_elements];
+  int16_t precoded_channel_matrix_im[num_prgs*num_gnb_antenna_elements];
+  c16_t *channel_matrix16 = (c16_t*)channel_matrix;
+  uint32_t max_precoded_signal_power = 0;
+  int additional_max_tpmi = -1;
+  char w;
+
+  uint8_t max_tpmi = get_max_tpmi(pusch_Config,
+                                  num_ue_srs_ports,
+                                  &ul_ri,
+                                  &additional_max_tpmi);
+
+  uint8_t end_tpmi_loop = additional_max_tpmi > max_tpmi ? additional_max_tpmi : max_tpmi;
+
+  //                      channel_matrix                          x   precoder_matrix
+  // [ (gI=0,uI=0) (gI=0,uI=1) ... (gI=0,uI=num_ue_srs_ports-1) ] x   [uI=0]
+  // [ (gI=1,uI=0) (gI=1,uI=1) ... (gI=1,uI=num_ue_srs_ports-1) ]     [uI=1]
+  // [ (gI=2,uI=0) (gI=2,uI=1) ... (gI=2,uI=num_ue_srs_ports-1) ]     [uI=2]
+  //                           ...                                     ...
+
+  for(uint8_t tpmi = 0; tpmi<=end_tpmi_loop; tpmi++) {
+
+    if (tpmi > max_tpmi) {
+      tpmi = end_tpmi_loop;
+    }
+
+    for(int pI = 0; pI <num_prgs; pI++) {
+      for(int gI = 0; gI < num_gnb_antenna_elements; gI++) {
+
+        uint16_t index_gI_pI = gI*num_prgs + pI;
+        precoded_channel_matrix_re[index_gI_pI] = 0;
+        precoded_channel_matrix_im[index_gI_pI] = 0;
+
+        for(int uI = 0; uI < num_ue_srs_ports; uI++) {
+
+          uint16_t index = uI*num_gnb_antenna_elements*num_prgs + index_gI_pI;
+          get_precoder_matrix_coef(&w, tpmi, uI);
+          c16_t h_times_w = nr_h_times_w(channel_matrix16[index], w);
+
+          precoded_channel_matrix_re[index_gI_pI] += h_times_w.r;
+          precoded_channel_matrix_im[index_gI_pI] += h_times_w.i;
+
+#ifdef SRS_IND_DEBUG
+          LOG_I(NR_MAC, "(uI %i, gI %i, pI %i) channel_matrix --> real %i, imag %i\n",
+                uI, gI, pI, channel_matrix16[index].r, channel_matrix16[index].i);
+#endif
+        }
+
+#ifdef SRS_IND_DEBUG
+        LOG_I(NR_MAC, "(gI %i, pI %i) precoded_channel_coef --> real %i, imag %i\n",
+              gI, pI, precoded_channel_matrix_re[index_gI_pI], precoded_channel_matrix_im[index_gI_pI]);
+#endif
+      }
+    }
+
+    uint32_t precoded_signal_power = calc_power_complex(precoded_channel_matrix_re,
+                                                        precoded_channel_matrix_im,
+                                                        num_prgs*num_gnb_antenna_elements);
+
+#ifdef SRS_IND_DEBUG
+    LOG_I(NR_MAC, "(tpmi %i) precoded_signal_power = %i\n", tpmi, precoded_signal_power);
+#endif
+
+    if (precoded_signal_power > max_precoded_signal_power) {
+      max_precoded_signal_power = precoded_signal_power;
+      tpmi_sel = tpmi;
+    }
+  }
+
+  return tpmi_sel;
+}
+
 void handle_nr_srs_measurements(const module_id_t module_id,
                                 const frame_t frame,
                                 const sub_frame_t slot,
@@ -869,8 +1171,15 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
       NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
       ps->srs_feedback.sri = NR_SRS_SRI_0;
-      ps->srs_feedback.ul_ri = 0;
-      ps->srs_feedback.tpmi = 0;
+      ps->srs_feedback.ul_ri = 0; // TODO: Compute this
+      ps->srs_feedback.tpmi = nr_srs_tpmi_estimation(ps->pusch_Config,
+                                                     nr_srs_normalized_channel_iq_matrix->channel_matrix,
+                                                     nr_srs_normalized_channel_iq_matrix->normalized_iq_representation,
+                                                     nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements,
+                                                     nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports,
+                                                     nr_srs_normalized_channel_iq_matrix->prg_size,
+                                                     nr_srs_normalized_channel_iq_matrix->num_prgs,
+                                                     ps->srs_feedback.ul_ri);
       sprintf(stats->srs_stats,"UL-RI %d, TPMI %d", ps->srs_feedback.ul_ri+1, ps->srs_feedback.tpmi);
       break;
     }
