@@ -276,9 +276,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   NR_UE_DL_BWP_t *BWP = &UE_info->current_DL_BWP;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
-  /* manually set free CCE to 0 */
-
-  uint8_t nr_of_candidates;
+  uint8_t nr_of_candidates = 0;
   if (g_mcsIndex < 4) {
     find_aggregation_candidates(&sched_ctrl->aggregation_level,
                                 &nr_of_candidates,
