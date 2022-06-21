@@ -105,7 +105,7 @@ def main():
                   templine = line
                 elif re.search(r'mnc_length', line) and key["key"] == "mnc":
                   continue
-                elif re.search(r'plmn_list', line):
+                elif re.search(r'plmn_list', line) and type(key["env"]) is dict:
                   templine = re.sub(r'[0-9]+', '""', line)
                   templine = re.sub(r'\"\"', key["env"]["mcc"], templine, 1)
                   templine = re.sub(r'\"\"', key["env"]["mnc"], templine, 1) 
