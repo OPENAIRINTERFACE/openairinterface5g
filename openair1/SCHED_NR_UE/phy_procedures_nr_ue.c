@@ -1696,6 +1696,19 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   // do procedures for CSI-IM
   if ((ue->csiim_vars[gNB_id]) && (ue->csiim_vars[gNB_id]->active == 1)) {
+    int l_csiim[4] = {-1, -1, -1, -1};
+    for(int symb_idx = 0; symb_idx < 4; symb_idx++) {
+      bool nr_slot_fep_done = false;
+      for (int symb_idx2 = 0; symb_idx2 < symb_idx; symb_idx2++) {
+        if (l_csiim[symb_idx2] == ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx]) {
+          nr_slot_fep_done = true;
+        }
+      }
+      l_csiim[symb_idx] = ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx];
+      if(nr_slot_fep_done == false) {
+        nr_slot_fep(ue, proc, ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx], nr_slot_rx);
+      }
+    }
     nr_ue_csi_im_procedures(ue, proc, gNB_id);
     ue->csiim_vars[gNB_id]->active = 0;
   }
