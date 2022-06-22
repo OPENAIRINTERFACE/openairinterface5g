@@ -600,6 +600,80 @@ int nr_csi_rs_cqi_estimation(uint32_t precoded_sinr,
   return 0;
 }
 
+int nr_csi_im_power_estimation(PHY_VARS_NR_UE *ue,
+                               UE_nr_rxtx_proc_t *proc,
+                               fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu,
+                               uint32_t *interference_plus_noise_power) {
+
+  int32_t **rxdataF = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+
+  uint16_t end_rb = csiim_config_pdu->start_rb + csiim_config_pdu->nr_of_rbs > csiim_config_pdu->bwp_size ?
+                    csiim_config_pdu->bwp_size : csiim_config_pdu->start_rb + csiim_config_pdu->nr_of_rbs;
+
+  int32_t count = 0;
+  int32_t sum_re = 0;
+  int32_t sum_im = 0;
+  int32_t sum2_re = 0;
+  int32_t sum2_im = 0;
+
+  int l_csiim[4] = {-1, -1, -1, -1};
+
+  for(int symb_idx = 0; symb_idx < 4; symb_idx++) {
+
+    uint8_t symb = csiim_config_pdu->l_csiim[symb_idx];
+    bool done = false;
+    for (int symb_idx2 = 0; symb_idx2 < symb_idx; symb_idx2++) {
+      if (l_csiim[symb_idx2] == symb) {
+        done = true;
+      }
+    }
+
+    if (done) {
+      continue;
+    }
+
+    l_csiim[symb_idx] = symb;
+    uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
+
+    for (int ant_rx = 0; ant_rx < frame_parms->nb_antennas_rx; ant_rx++) {
+
+      c16_t *rx_signal = (c16_t*)&rxdataF[ant_rx][symbol_offset];
+
+      for (int rb = csiim_config_pdu->start_rb; rb < end_rb; rb++) {
+
+        uint16_t sc0_offset = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
+
+        for (int sc_idx = 0; sc_idx<4; sc_idx++) {
+
+          uint16_t sc = sc0_offset + csiim_config_pdu->k_csiim[sc_idx];
+
+#ifdef NR_CSIIM_DEBUG
+          LOG_I(NR_PHY, "(ant_rx %i, sc %i) real %i, imag %i\n", ant_rx, rb, rx_signal[sc].r, rx_signal[sc].i);
+#endif
+
+          sum_re += rx_signal[sc].r;
+          sum_im += rx_signal[sc].i;
+          sum2_re += rx_signal[sc].r*rx_signal[sc].r;
+          sum2_im += rx_signal[sc].i*rx_signal[sc].i;
+          count++;
+        }
+      }
+    }
+  }
+
+  int32_t power_re = sum2_re/count - (sum_re/count)*(sum_re/count);
+  int32_t power_im = sum2_im/count - (sum_im/count)*(sum_im/count);
+
+  *interference_plus_noise_power = power_re + power_im;
+
+#ifdef NR_CSIIM_DEBUG
+  LOG_I(NR_PHY, "interference_plus_noise_power based on CSI-IM = %i\n", *interference_plus_noise_power);
+#endif
+
+  return 0;
+}
+
 int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
 
   if(!ue->csiim_vars[gNB_id]->active) {
@@ -617,6 +691,8 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   LOG_I(NR_PHY, "csiim_config_pdu->k_csiim = %i.%i.%i.%i\n", csiim_config_pdu->k_csiim[0], csiim_config_pdu->k_csiim[1], csiim_config_pdu->k_csiim[2], csiim_config_pdu->k_csiim[3]);
   LOG_I(NR_PHY, "csiim_config_pdu->l_csiim = %i.%i.%i.%i\n", csiim_config_pdu->l_csiim[0], csiim_config_pdu->l_csiim[1], csiim_config_pdu->l_csiim[2], csiim_config_pdu->l_csiim[3]);
 #endif
+
+  nr_csi_im_power_estimation(ue, proc, csiim_config_pdu, &ue->nr_csi_im_info->interference_plus_noise_power);
 
   return 0;
 }

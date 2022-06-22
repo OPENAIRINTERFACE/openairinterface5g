@@ -381,6 +381,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       }
     }
 
+    ue->nr_csi_im_info = (nr_csi_im_info_t *)malloc16_clear(sizeof(nr_csi_im_info_t));
+
     ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
     ue->nr_srs_info->sc_list = (uint16_t *) malloc16_clear(6*fp->N_RB_UL*sizeof(uint16_t));
     ue->nr_srs_info->srs_generated_signal = (int32_t *) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
@@ -529,6 +531,8 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     free_and_zero(ue->nr_csi_rs_info->csi_rs_ls_estimated_channel);
     free_and_zero(ue->nr_csi_rs_info->csi_rs_estimated_channel_freq);
     free_and_zero(ue->nr_csi_rs_info);
+
+    free_and_zero(ue->nr_csi_im_info);
 
     for (int i = 0; i < fp->nb_antennas_rx; i++) {
       free_and_zero(ue->nr_srs_info->srs_received_signal[i]);

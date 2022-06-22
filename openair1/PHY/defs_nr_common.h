@@ -284,6 +284,10 @@ typedef struct {
   uint8_t *cqi;
 } nr_csi_rs_info_t;
 
+typedef struct {
+  uint32_t interference_plus_noise_power;
+} nr_csi_im_info_t;
+
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
 typedef uint32_t (*get_samples_per_slot_t)(int slot, NR_DL_FRAME_PARMS* fp);
