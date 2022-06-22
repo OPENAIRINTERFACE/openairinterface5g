@@ -19,12 +19,17 @@
  *      contact@openairinterface.org
  */
 
+/* SPDX-License-Identifier: BSD-3-Clause
+ * Copyright(c) 2017 Intel Corporation
+ */
+
 /*!\file nrLDPC_decoder_offload.c
  * \brief Defines the LDPC decoder
  * \author openairinterface 
  * \date 12-06-2021
  * \version 1.0
- * \note
+ * \note: based on testbbdev functions. Harq buffer offset added.
+ * \mbuf and mempool allocated at the init step, LDPC parameters updated from OAI.
  * \warning
  */
 
