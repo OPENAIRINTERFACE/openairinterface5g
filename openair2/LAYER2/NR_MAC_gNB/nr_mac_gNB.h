@@ -440,6 +440,7 @@ typedef struct NR_sched_pdsch {
   /// only important for retransmissions; otherwise, the TDA in
   /// NR_pdsch_semi_static_t has precedence
   int time_domain_allocation;
+  uint8_t nrOfLayers;
 } NR_sched_pdsch_t;
 
 typedef struct NR_UE_harq {
