@@ -2512,6 +2512,44 @@ void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
   }
 }
 
+void reset_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
+  int harq;
+  while ((harq = sched_ctrl->feedback_dl_harq.head) >= 0) {
+    remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
+    add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
+  }
+
+  while ((harq = sched_ctrl->retrans_dl_harq.head) >= 0) {
+    remove_front_nr_list(&sched_ctrl->retrans_dl_harq);
+    add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
+  }
+
+  for (int i = 0; i < NR_MAX_NB_HARQ_PROCESSES; i++) {
+    sched_ctrl->harq_processes[i].feedback_slot = -1;
+    sched_ctrl->harq_processes[i].round = 0;
+    sched_ctrl->harq_processes[i].is_waiting = false;
+  }
+}
+
+void reset_ul_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
+  int harq;
+  while ((harq = sched_ctrl->feedback_ul_harq.head) >= 0) {
+    remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
+    add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
+  }
+
+  while ((harq = sched_ctrl->retrans_ul_harq.head) >= 0) {
+    remove_front_nr_list(&sched_ctrl->retrans_ul_harq);
+    add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
+  }
+
+  for (int i = 0; i < NR_MAX_NB_HARQ_PROCESSES; i++) {
+    sched_ctrl->ul_harq_processes[i].feedback_slot = -1;
+    sched_ctrl->ul_harq_processes[i].round = 0;
+    sched_ctrl->ul_harq_processes[i].is_waiting = false;
+  }
+}
+
 void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
 {
  NR_UEs_t *UE_info = &nr_mac->UE_info;
@@ -2877,59 +2915,98 @@ void nr_mac_update_timers(module_id_t module_id,
         LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %04x\n", frame, slot, UE->rnti);
 
         const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-        NR_CellGroupConfig_t *cg = UE->CellGroup;
+
+        NR_CellGroupConfig_t *cg = NULL;
+        uper_decode(NULL,
+                    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                    (void **)&cg,
+                    (uint8_t *)UE->cg_buf,
+                    (UE->enc_rval.encoded+7)/8, 0, 0);
+        UE->CellGroup = cg;
+
+        if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+          xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) UE->CellGroup);
+        }
+
         NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
         const NR_ServingCellConfig_t *spCellConfigDedicated = cg && cg->spCellConfig ? cg->spCellConfig->spCellConfigDedicated : NULL;
+
+        LOG_I(NR_MAC,"Modified rnti %04x with CellGroup\n", UE->rnti);
+        process_CellGroup(cg,&UE->UE_sched_ctrl);
+        NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+
+        const NR_PDSCH_ServingCellConfig_t *pdsch = spCellConfigDedicated ? spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup : NULL;
+        if (get_softmodem_params()->sa) {
+          // add all available DL HARQ processes for this UE in SA
+          create_dl_harq_list(sched_ctrl, pdsch);
+        }
 
         // If needed, update the Dedicated BWP
         const int current_bwp_id = sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Id : 0;
         const int current_ubwp_id = sched_ctrl->active_ubwp ? sched_ctrl->active_ubwp->bwp_Id : 0;
-        if (spCellConfigDedicated &&
-           spCellConfigDedicated->downlinkBWP_ToAddModList &&
-           spCellConfigDedicated->uplinkConfig &&
-           spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList) {
+        if (UE->Msg3_dcch_dtch) {
+          // 3GPP TS 38.321 Section 5.15 Bandwidth Part (BWP) operation
+          // Currently there are no PRACH occasions configured for any Dedicated BWP, so UE will switch to the initialDownlinkBWP
+          sched_ctrl->active_bwp = NULL;
+          if (current_bwp_id != 0) {
+            LOG_I(NR_MAC, "(%d.%d) Switching to initialDownlinkBWP\n", frame, slot);
+          }
+          // 3GPP TS 38.321 Section 5.15 Bandwidth Part (BWP) operation
+          // Currently there are no PRACH occasions configured for any Dedicated BWP, so UE will switch to the initialUplinkBWP
+          sched_ctrl->active_ubwp = NULL;
+          if (current_ubwp_id != 0) {
+            LOG_I(NR_MAC, "(%d.%d) Switching to initialUplinkBWP\n", frame, slot);
+          }
+          UE->Msg3_dcch_dtch = false;
+        } else if (spCellConfigDedicated &&
+            spCellConfigDedicated->downlinkBWP_ToAddModList &&
+            spCellConfigDedicated->uplinkConfig &&
+            spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList) {
+          sched_ctrl->active_bwp = spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[*spCellConfigDedicated->firstActiveDownlinkBWP_Id - 1];
           if (*spCellConfigDedicated->firstActiveDownlinkBWP_Id != current_bwp_id) {
-            sched_ctrl->active_bwp = spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[*spCellConfigDedicated->firstActiveDownlinkBWP_Id - 1];
-            LOG_I(NR_MAC, "Changing to DL-BWP %li\n", sched_ctrl->active_bwp->bwp_Id);
+            LOG_I(NR_MAC, "(%d.%d) Switching to DL-BWP %li\n", frame, slot, sched_ctrl->active_bwp->bwp_Id);
           }
+          sched_ctrl->active_ubwp = spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id - 1];
           if (*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id != current_ubwp_id) {
-            sched_ctrl->active_ubwp = spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[*spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id - 1];
-            LOG_I(NR_MAC, "Changing to UL-BWP %li\n", sched_ctrl->active_ubwp->bwp_Id);
+            LOG_I(NR_MAC, "(%d.%d) Switching to UL-BWP %li\n", frame, slot, sched_ctrl->active_ubwp->bwp_Id);
           }
         }
 
+        // Update coreset/searchspace
         NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
-        NR_BWP_DownlinkDedicated_t *bwpd = cg &&
-                                           cg->spCellConfig &&
-                                           cg->spCellConfig->spCellConfigDedicated ?
-                                           cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-
-        // update coreset/searchspace
-        int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+        NR_BWP_DownlinkDedicated_t *bwpd = NULL;
         NR_BWP_t *genericParameters = NULL;
-        if (sched_ctrl->active_bwp) {
+        int target_ss = NR_SearchSpace__searchSpaceType_PR_common;
+        if (bwp) {
           target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-          bwpd = (void*)sched_ctrl->active_bwp->bwp_Dedicated;
+          bwpd = sched_ctrl->active_bwp->bwp_Dedicated;
           genericParameters = &sched_ctrl->active_bwp->bwp_Common->genericParameters;
-        }
-        else if (cg->spCellConfig &&
-                 cg->spCellConfig->spCellConfigDedicated &&
-                 (cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
+        } else if (cg &&
+                   cg->spCellConfig &&
+                   cg->spCellConfig->spCellConfigDedicated &&
+                   (cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
           target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
+          bwpd = cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
           genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
         }
-        NR_BCCH_DL_SCH_Message_t *SIB1 = RC.nrmac[module_id]->common_channels[0].sib1;
-        sched_ctrl->search_space = get_searchspace(SIB1 ? SIB1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
-        sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, bwpd, sched_ctrl->search_space, target_ss);
+        sched_ctrl->search_space = get_searchspace(sib1, scc, (void*)bwpd, target_ss);
+        sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, (void*)bwpd, sched_ctrl->search_space, target_ss);
         sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[module_id],
                                                       sched_ctrl->search_space,
                                                       sched_ctrl->coreset,
                                                       scc,
                                                       genericParameters,
                                                       RC.nrmac[module_id]->type0_PDCCH_CSS_config);
+        sched_ctrl->maxL = 2;
+        if (cg &&
+            cg->spCellConfig &&
+            cg->spCellConfig->spCellConfigDedicated &&
+            cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
+            cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
+          compute_csi_bitlen (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
+        }
 
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-
         const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
         const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
 
@@ -2944,14 +3021,17 @@ void nr_mac_update_timers(module_id_t module_id,
                                  ps);
 
         NR_BWP_Uplink_t *ubwp = sched_ctrl->active_ubwp;
-        NR_BWP_UplinkDedicated_t *ubwpd = cg &&
-                                          cg->spCellConfig &&
-                                          cg->spCellConfig->spCellConfigDedicated &&
-                                          cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-                                          cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
+        NR_BWP_UplinkDedicated_t *ubwpd = NULL;
+        if (ubwp) {
+          ubwpd = sched_ctrl->active_ubwp->bwp_Dedicated;
+        } else if (cg &&
+                   cg->spCellConfig &&
+                   cg->spCellConfig->spCellConfigDedicated &&
+                   (cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
+          ubwpd = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
+        }
 
         NR_pusch_semi_static_t *ups = &sched_ctrl->pusch_semi_static;
-
         int dci_format = get_dci_format(sched_ctrl);
         const uint8_t num_dmrs_cdm_grps_no_data = (ubwp || ubwpd) ? 1 : 2;
         const uint8_t nrOfLayers = 1;

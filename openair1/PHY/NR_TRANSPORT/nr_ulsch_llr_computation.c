@@ -44,19 +44,19 @@ void nr_ulsch_qpsk_llr(int32_t *rxdataF_comp,
                       uint32_t nb_re,
                       uint8_t  symbol)
 {
-  uint32_t *rxF   = (uint32_t*)rxdataF_comp;
-  uint32_t *llr32 = (uint32_t*)ulsch_llr;
+  c16_t *rxF   = (c16_t *)rxdataF_comp;
+  c16_t *llr32 = (c16_t *)ulsch_llr;
 
   if (!llr32) {
     LOG_E(PHY,"nr_ulsch_qpsk_llr: llr is null, symbol %d, llr32 = %p\n",symbol, llr32);
   }
-  /*
-  for (i = 0; i < nb_re; i++) {
-    *llr32 = *rxF;
+  for (int i = 0; i < nb_re; i++) {
+    //*llr32 = *rxF;
+    llr32->r = rxF->r >> 3;
+    llr32->i = rxF->i >> 3;
     rxF++;
     llr32++;
-    }*/
-  memcpy1((void*)llr32,(void*)rxF,nb_re<<2);
+  }
 }
 
 //----------------------------------------------------------------------------------------------

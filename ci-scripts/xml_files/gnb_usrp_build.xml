@@ -34,7 +34,7 @@
 		<mode>TesteNB</mode>	
 		<class>Build_eNB</class>
 		<desc>Build gNB (USRP)</desc>
-		<Build_eNB_args>--gNB -w USRP --ninja --cmake-opt -DBoost_INCLUDE_DIR=/usr/include/boost169</Build_eNB_args>
+		<Build_eNB_args>--gNB -w USRP --ninja --cmake-opt -DBoost_INCLUDE_DIR=/usr/include/boost169 --noavx512</Build_eNB_args>
 		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 	</testCase>
 
