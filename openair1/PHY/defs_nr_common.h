@@ -285,6 +285,7 @@ typedef struct {
 } nr_csi_rs_info_t;
 
 typedef struct {
+  bool meas_computed;
   uint32_t interference_plus_noise_power;
 } nr_csi_im_info_t;
 

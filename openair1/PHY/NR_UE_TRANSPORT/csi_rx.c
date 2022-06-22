@@ -468,7 +468,7 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
                              fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                              nr_csi_rs_info_t *nr_csi_rs_info,
                              int32_t ***csi_rs_estimated_channel_freq,
-                             uint32_t noise_power,
+                             uint32_t interference_plus_noise_power,
                              uint8_t rank_indicator,
                              uint8_t *i1,
                              uint8_t *i2,
@@ -487,7 +487,7 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
   // The first column is applicable if the UE is reporting a Rank = 1, whereas the second column is applicable if the
   // UE is reporting a Rank = 2.
 
-  if(nr_csi_rs_info->N_ports == 1 || noise_power == 0) {
+  if(nr_csi_rs_info->N_ports == 1 || interference_plus_noise_power == 0) {
     return 0;
   }
 
@@ -542,7 +542,7 @@ int nr_csi_rs_pmi_estimation(PHY_VARS_NR_UE *ue,
     for(int p = 0; p<4; p++) {
       int32_t power_re = sum2_re[p] - (sum_re[p]>>nr_csi_rs_info->log2_re)*(sum_re[p]>>nr_csi_rs_info->log2_re);
       int32_t power_im = sum2_im[p] - (sum_im[p]>>nr_csi_rs_info->log2_re)*(sum_im[p]>>nr_csi_rs_info->log2_re);
-      tested_precoded_sinr[p] = (power_re+power_im)/(int32_t)noise_power;
+      tested_precoded_sinr[p] = (power_re+power_im)/(int32_t)interference_plus_noise_power;
     }
 
     if(rank_indicator == 0) {
@@ -693,6 +693,7 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 #endif
 
   nr_csi_im_power_estimation(ue, proc, csiim_config_pdu, &ue->nr_csi_im_info->interference_plus_noise_power);
+  ue->nr_csi_im_info->meas_computed = true;
 
   return 0;
 }
@@ -754,7 +755,7 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                            csirs_config_pdu,
                            ue->nr_csi_rs_info,
                            ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
-                           *ue->nr_csi_rs_info->noise_power,
+                           ue->nr_csi_im_info->meas_computed ? ue->nr_csi_im_info->interference_plus_noise_power : *ue->nr_csi_rs_info->noise_power,
                            *ue->nr_csi_rs_info->rank_indicator,
                            ue->nr_csi_rs_info->i1,
                            ue->nr_csi_rs_info->i2,
