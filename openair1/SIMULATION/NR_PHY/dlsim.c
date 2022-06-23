@@ -243,6 +243,8 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 
 void processSlotTX(void *arg) {}
 
+nr_bler_struct nr_bler_data[NR_NUM_MCS];
+
 //nFAPI P7 dummy functions to avoid linking errors 
 
 int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
