@@ -878,11 +878,11 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     gNB->nr_srs_info[i]->srs_estimated_channel_freq,
                                     gNB->nr_srs_info[i]->srs_estimated_channel_time,
                                     gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted,
-                                    gNB->nr_srs_info[i]->signal_power,
+                                    &gNB->nr_srs_info[i]->signal_power,
                                     gNB->nr_srs_info[i]->noise_power_per_rb,
-                                    gNB->nr_srs_info[i]->noise_power,
+                                    &gNB->nr_srs_info[i]->noise_power,
                                     gNB->nr_srs_info[i]->snr_per_rb,
-                                    gNB->nr_srs_info[i]->snr);
+                                    &gNB->nr_srs_info[i]->snr);
         }
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
@@ -900,7 +900,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->srs_pdu_list[num_srs].timing_advance = srs_est >= 0 ? nr_est_timing_advance_srs(&gNB->frame_parms,
                                                                                              (const int32_t **)gNB->nr_srs_info[i]->srs_estimated_channel_time[0]) : 0xFFFF;
         gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
-        gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (*gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
+        gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
         gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
         if(!gNB->srs_pdu_list[num_srs].reported_symbol_list) {
           gNB->srs_pdu_list[num_srs].reported_symbol_list = (nfapi_nr_srs_indication_reported_symbol_t*) calloc(1, gNB->srs_pdu_list[num_srs].num_reported_symbols*sizeof(nfapi_nr_srs_indication_reported_symbol_t));

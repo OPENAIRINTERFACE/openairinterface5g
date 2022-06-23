@@ -124,7 +124,7 @@ void nr_schedule_srs(int module_id, frame_t frame) {
     sched_ctrl->sched_srs.srs_scheduled = false;
 
     if((sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) ||
-       !UE->Msg4_ACKed || sched_ctrl->rrc_processing_timer > 0) {
+       sched_ctrl->rrc_processing_timer > 0) {
       continue;
     }
 
