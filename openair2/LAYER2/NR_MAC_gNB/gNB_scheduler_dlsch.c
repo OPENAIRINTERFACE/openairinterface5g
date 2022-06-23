@@ -398,6 +398,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     LOG_W(NR_MAC,"Cannot schedule retransmission. RI changed from %d to %d\n",
           retInfo->nrOfLayers, ps->nrOfLayers);
     abort_nr_dl_harq(UE, current_harq_pid);
+    remove_front_nr_list(&sched_ctrl->retrans_dl_harq);
     return false;
   }
 
