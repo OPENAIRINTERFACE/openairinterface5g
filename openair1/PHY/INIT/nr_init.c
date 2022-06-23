@@ -613,13 +613,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-    gNB->nr_srs_info[id]->sc_list = (uint16_t *) malloc16_clear(6*fp->N_RB_UL*sizeof(uint16_t));
-    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-    gNB->nr_srs_info[id]->signal_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
-    gNB->nr_srs_info[id]->noise_power_per_rb = (uint32_t*)malloc16_clear(fp->N_RB_UL*sizeof(uint32_t));
-    gNB->nr_srs_info[id]->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
-    gNB->nr_srs_info[id]->snr_per_rb = (int8_t*)malloc16_clear(fp->N_RB_UL*sizeof(int8_t));
-    gNB->nr_srs_info[id]->snr = (int8_t*)malloc16_clear(sizeof(int8_t));
     gNB->nr_srs_info[id]->srs_received_signal = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     gNB->nr_srs_info[id]->srs_ls_estimated_channel = (int32_t **)malloc16(Prx*sizeof(int32_t*));
     gNB->nr_srs_info[id]->srs_estimated_channel_freq = (int32_t **)malloc16(Prx*sizeof(int32_t*));
@@ -796,13 +789,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time[i]);
       free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i]);
     }
-    free_and_zero(gNB->nr_srs_info[id]->sc_list);
-    free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal);
-    free_and_zero(gNB->nr_srs_info[id]->signal_power);
-    free_and_zero(gNB->nr_srs_info[id]->noise_power_per_rb);
-    free_and_zero(gNB->nr_srs_info[id]->noise_power);
-    free_and_zero(gNB->nr_srs_info[id]->snr_per_rb);
-    free_and_zero(gNB->nr_srs_info[id]->snr);
     free_and_zero(gNB->nr_srs_info[id]->srs_received_signal);
     free_and_zero(gNB->nr_srs_info[id]->srs_ls_estimated_channel);
     free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_freq);

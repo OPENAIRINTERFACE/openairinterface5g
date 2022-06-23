@@ -241,19 +241,19 @@ typedef struct {
 
 typedef struct {
   uint16_t sc_list_length;
-  uint16_t *sc_list;
+  uint16_t sc_list[6*273];
   uint8_t srs_generated_signal_bits;
-  int32_t *srs_generated_signal;
+  int32_t srs_generated_signal[OFDM_SYMBOL_SIZE_SAMPLES_MAX * MAX_NUM_NR_SRS_SYMBOLS];
   int32_t **srs_received_signal;
   int32_t **srs_ls_estimated_channel;
   int32_t **srs_estimated_channel_freq;
   int32_t **srs_estimated_channel_time;
   int32_t **srs_estimated_channel_time_shifted;
-  uint32_t *signal_power;
-  uint32_t *noise_power_per_rb;
-  uint32_t *noise_power;
-  int8_t *snr_per_rb;
-  int8_t *snr;
+  uint32_t signal_power;
+  uint32_t noise_power_per_rb[273];
+  uint32_t noise_power;
+  int8_t snr_per_rb[273];
+  int8_t snr;
 } nr_srs_info_t;
 
 typedef struct {
