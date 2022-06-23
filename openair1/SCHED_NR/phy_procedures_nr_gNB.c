@@ -927,11 +927,11 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     gNB->nr_srs_info[i]->srs_estimated_channel_freq,
                                     gNB->nr_srs_info[i]->srs_estimated_channel_time,
                                     gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted,
-                                    gNB->nr_srs_info[i]->signal_power,
+                                    &gNB->nr_srs_info[i]->signal_power,
                                     gNB->nr_srs_info[i]->noise_power_per_rb,
-                                    gNB->nr_srs_info[i]->noise_power,
+                                    &gNB->nr_srs_info[i]->noise_power,
                                     gNB->nr_srs_info[i]->snr_per_rb,
-                                    gNB->nr_srs_info[i]->snr);
+                                    &gNB->nr_srs_info[i]->snr);
         }
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
@@ -995,7 +995,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
             nr_srs_beamforming_report->prg_size = srs_pdu->beamforming.prg_size;
             nr_srs_beamforming_report->num_symbols = 1<<srs_pdu->num_symbols;
-            nr_srs_beamforming_report->wide_band_snr = srs_est >= 0 ? (*gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
+            nr_srs_beamforming_report->wide_band_snr = srs_est >= 0 ? (gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
             nr_srs_beamforming_report->num_reported_symbols = 1<<srs_pdu->num_symbols;
             nr_srs_beamforming_report->prgs = (nfapi_nr_srs_reported_symbol_t*) calloc(1, nr_srs_beamforming_report->num_reported_symbols*sizeof(nfapi_nr_srs_reported_symbol_t));
             fill_srs_reported_symbol_list(&nr_srs_beamforming_report->prgs[0],
