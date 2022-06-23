@@ -447,7 +447,8 @@ typedef struct {
 
   NR_BCCH_BCH_Message_t                     mib;
   NR_BCCH_BCH_Message_t                    *mib_DU;
-  NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
+  NR_SIB1_t                                *siblock1_DU;
+  //NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
   NR_SIB1_t                                *sib1;
   NR_SIB2_t                                *sib2;
   NR_SIB3_t                                *sib3;

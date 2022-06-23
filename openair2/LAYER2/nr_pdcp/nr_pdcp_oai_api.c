@@ -274,9 +274,8 @@ static void do_pdcp_data_ind(
   if (rb != NULL) {
     rb->recv_pdu(rb, (char *)sdu_buffer->data, sdu_buffer_size);
   } else {
-    LOG_E(PDCP, "%s:%d:%s: fatal: no RB found (rb_id %ld, srb_flag %d)\n",
+    LOG_E(PDCP, "%s:%d:%s: no RB found (rb_id %ld, srb_flag %d)\n",
           __FILE__, __LINE__, __FUNCTION__, rb_id, srb_flagP);
-    exit(1);
   }
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
