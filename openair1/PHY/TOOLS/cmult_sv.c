@@ -145,40 +145,9 @@ void multadd_real_four_symbols_vector_complex_scalar(int16_t *x,
 
 }
 #ifdef __AVX2__
-void rotate_cpx_vector(int16_t *x,
-                      int16_t *alpha,
-                      int16_t *y,
-                      uint32_t N,
-                      uint16_t output_shift)
-{
-  // multiply a complex vector with a complex value (alpha)
-  // stores result in y
-  // N is the number of complex numbers
-  // output_shift reduces the result of the multiplication by this number of bits
-  AssertFatal(N%8==0, "To be developped");
-  const c16_t for_re={alpha[0], -alpha[1]};
-  __m256i const alpha_for_real =  _mm256_set1_epi32(*(uint32_t*)&for_re);
-  const c16_t for_im={alpha[1], alpha[0]};
-  __m256i const alpha_for_im= _mm256_set1_epi32(*(uint32_t*)&for_im);
-  __m256i const perm_mask =
-    _mm256_set_epi8(31,30,23,22,29,28,21,20,27,26,19,18,25,24,17,16,
-		    15,14,7,6,13,12,5,4,11,10,3,2,9,8,1,0);
- __m256i* xd= (__m256i*)x;
-  const __m256i *end=xd+N/8;
-  for( __m256i* yd = (__m256i *)y; xd<end ; yd++, xd++) {
-    const __m256i xre = _mm256_srai_epi32(_mm256_madd_epi16(*xd,alpha_for_real),
-					  output_shift);
-    const __m256i xim = _mm256_srai_epi32(_mm256_madd_epi16(*xd,alpha_for_im),
-					  output_shift);
-    // a bit faster than unpacklo+unpackhi+packs
-    const __m256i tmp=_mm256_packs_epi32(xre,xim);
-    *yd=_mm256_shuffle_epi8(tmp,perm_mask);
-  }
-}
-#else 
-void rotate_cpx_vector(int16_t *x,
-                      int16_t *alpha,
-                      int16_t *y,
+void rotate_cpx_vector(c16_t *x,
+                      c16_t *alpha,
+                      c16_t *y,
                       uint32_t N,
                       uint16_t output_shift)
 {
@@ -206,28 +175,28 @@ void rotate_cpx_vector(int16_t *x,
   __m128i shift = _mm_cvtsi32_si128(output_shift);
   register simd_q15_t m0,m1,m2,m3;
 
-  ((int16_t *)&alpha_128)[0] = alpha[0];
-  ((int16_t *)&alpha_128)[1] = -alpha[1];
-  ((int16_t *)&alpha_128)[2] = alpha[1];
-  ((int16_t *)&alpha_128)[3] = alpha[0];
-  ((int16_t *)&alpha_128)[4] = alpha[0];
-  ((int16_t *)&alpha_128)[5] = -alpha[1];
-  ((int16_t *)&alpha_128)[6] = alpha[1];
-  ((int16_t *)&alpha_128)[7] = alpha[0];
+  ((int16_t *)&alpha_128)[0] = alpha->r;
+  ((int16_t *)&alpha_128)[1] = -alpha->i;
+  ((int16_t *)&alpha_128)[2] = alpha->i;
+  ((int16_t *)&alpha_128)[3] = alpha->r;
+  ((int16_t *)&alpha_128)[4] = alpha->r;
+  ((int16_t *)&alpha_128)[5] = -alpha->i;
+  ((int16_t *)&alpha_128)[6] = alpha->i;
+  ((int16_t *)&alpha_128)[7] = alpha->r;
 #elif defined(__arm__)
   int32x4_t shift;
   int32x4_t ab_re0,ab_re1,ab_im0,ab_im1,re32,im32;
   int16_t reflip[8]  __attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
   int32x4x2_t xtmp;
 
-  ((int16_t *)&alpha_128)[0] = alpha[0];
-  ((int16_t *)&alpha_128)[1] = alpha[1];
-  ((int16_t *)&alpha_128)[2] = alpha[0];
-  ((int16_t *)&alpha_128)[3] = alpha[1];
-  ((int16_t *)&alpha_128)[4] = alpha[0];
-  ((int16_t *)&alpha_128)[5] = alpha[1];
-  ((int16_t *)&alpha_128)[6] = alpha[0];
-  ((int16_t *)&alpha_128)[7] = alpha[1];
+  ((int16_t *)&alpha_128)[0] = alpha->r;
+  ((int16_t *)&alpha_128)[1] = alpha->i;
+  ((int16_t *)&alpha_128)[2] = alpha->r;
+  ((int16_t *)&alpha_128)[3] = alpha->i;
+  ((int16_t *)&alpha_128)[4] = alpha->r;
+  ((int16_t *)&alpha_128)[5] = alpha->i;
+  ((int16_t *)&alpha_128)[6] = alpha->r;
+  ((int16_t *)&alpha_128)[7] = alpha->i;
   int16x8_t bflip = vrev32q_s16(alpha_128);
   int16x8_t bconj = vmulq_s16(alpha_128,*(int16x8_t *)reflip);
   shift = vdupq_n_s32(-output_shift);
@@ -370,7 +339,7 @@ main ()
   int16_t input[256] __attribute__((aligned(16)));
   int16_t input2[256] __attribute__((aligned(16)));
   int16_t output[256] __attribute__((aligned(16)));
-  int16_t alpha[2];
+  c16_t alpha;
 
   int i;
 
@@ -408,8 +377,8 @@ main ()
   input2[14] = 1000;
   input2[15] = 2000;
 
-  alpha[0]=32767;
-  alpha[1]=0;
+  alpha->r=32767;
+  alpha->i=0;
 
   //mult_cpx_vector(input,input2,output,L,0);
   rotate_cpx_vector_norep(input,alpha,input,L,15);

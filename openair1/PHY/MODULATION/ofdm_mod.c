@@ -360,9 +360,9 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
       symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
       symbol_rotation[1 + 2 * (sidx + first_symbol + symb_offset)]);
 
-    rotate_cpx_vector(trxdata + (sidx * length * 2),
-                      &symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
-                      trxdata + (sidx * length * 2),
+    rotate_cpx_vector((c16_t*)trxdata + (sidx * length * 2),
+                      (c16_t*)&symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
+		      (c16_t*) trxdata + (sidx * length * 2),
                       length,
                       15);
   }

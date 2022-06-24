@@ -453,7 +453,7 @@ idft_size_idx_t get_idft(int ofdm_symbol_size)
 }
 
 
-/*!\fn int32_t rotate_cpx_vector(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N,uint16_t output_shift)
+/*!\fn int32_t rotate_cpx_vector(c16_t *x,c16_t *alpha,c16_t *y,uint32_t N,uint16_t output_shift)
 This function performs componentwise multiplication of a vector with a complex scalar.
 @param x Vector input (Q1.15)  in the format  |Re0  Im0|,......,|Re(N-1) Im(N-1)|
 @param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
@@ -463,11 +463,11 @@ This function performs componentwise multiplication of a vector with a complex s
 
 The function implemented is : \f$\mathbf{y} = \alpha\mathbf{x}\f$
 */
-void rotate_cpx_vector(int16_t *x,
-                          int16_t *alpha,
-                          int16_t *y,
-                          uint32_t N,
-                          uint16_t output_shift);
+void rotate_cpx_vector(c16_t *x,
+		       c16_t *alpha,
+		       c16_t *y,
+		       uint32_t N,
+		       uint16_t output_shift);
 
 
 //cadd_sv.c
