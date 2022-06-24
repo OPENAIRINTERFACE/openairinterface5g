@@ -600,8 +600,7 @@ rrc_gNB_process_RRCSetupComplete(
 void 
 rrc_gNB_generate_defaultRRCReconfiguration(
   const protocol_ctxt_t     *const ctxt_pP,
-  rrc_gNB_ue_context_t      *ue_context_pP,
-  NR_CellGroupConfig_t      *cellGroupConfig
+  rrc_gNB_ue_context_t      *ue_context_pP
 )
 //-----------------------------------------------------------------------------
 {
@@ -716,6 +715,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   }
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   memset(buffer, 0, sizeof(buffer));
   size = do_RRCReconfiguration(ctxt_pP, buffer, sizeof(buffer),
                                 xid,
@@ -730,7 +730,7 @@ rrc_gNB_generate_defaultRRCReconfiguration(
                                 &rrc->carrier,
                                 &rrc->configuration,
                                 NULL,
-                                cellGroupConfig);
+                                ue_p->masterCellGroup);
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
@@ -2778,7 +2778,7 @@ rrc_gNB_decode_dcch(
         if (ue_context_p->ue_context.established_pdu_sessions_flag == 1) {
           rrc_gNB_generate_dedicatedRRCReconfiguration(ctxt_pP, ue_context_p, NULL);
         } else {
-          rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p, NULL);
+          rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
         }
       }
       else{
@@ -3711,7 +3711,7 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
   if (ue_context_p->ue_context.established_pdu_sessions_flag == 1) {
     rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, cellGroupConfig);
   } else {
-    rrc_gNB_generate_defaultRRCReconfiguration(&ctxt, ue_context_p, NULL);
+    rrc_gNB_generate_defaultRRCReconfiguration(&ctxt, ue_context_p);
   }
 
   free(cellGroupConfig->rlc_BearerToAddModList);
