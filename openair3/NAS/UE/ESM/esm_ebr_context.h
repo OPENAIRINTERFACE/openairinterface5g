@@ -66,7 +66,7 @@ typedef enum {
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-int esm_ebr_context_create(esm_data_t *esm_data, int ueid, int pid, int ebi, int is_default,
+int esm_ebr_context_create(esm_data_t *esm_data, int ueid, int pid, int ebi, bool is_default,
                            const network_qos_t *qos, const network_tft_t *tft);
 
 int esm_ebr_context_release(nas_user_t *user, int ebi, int *pid, int *bid);

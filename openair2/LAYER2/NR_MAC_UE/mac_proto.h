@@ -85,14 +85,12 @@ int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
    \param cc_id                     component carrier id
    \param gNB_index                 gNB index
    \param long                      logicalChannelIdentity
-   \param boolean_t                 status*/
-int nr_rrc_mac_config_req_ue_logicalChannelBearer(
-	    module_id_t                 module_id,
-	    int                         cc_idP,
-	    uint8_t                     gNB_index,
-	    long                        logicalChannelIdentity,
-	    boolean_t                   status
-);
+   \param bool                      status*/
+int nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
+                                                  int         cc_idP,
+                                                  uint8_t     gNB_index,
+                                                  long        logicalChannelIdentity,
+                                                  bool        status);
 
 /**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
    \param module_id                 module id
@@ -154,14 +152,14 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
 */
 int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
 
-/*! \fn  boolean_t update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index)
+/*! \fn  bool update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index)
    \brief get the rlc stats and update the bsr level for each lcid
 \param[in] Mod_id instance of the UE
 \param[in] frameP Frame index
 \param[in] slot slotP number
 \param[in] uint8_t gNB_index
 */
-boolean_t nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index);
+bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index);
 
 /*! \fn  nr_locate_BsrIndexByBufferSize (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 38.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.

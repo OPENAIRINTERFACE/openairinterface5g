@@ -100,7 +100,7 @@ int main(int argc, char **argv)
   list_init(&test_pdu_rx_list, NULL);
   logInit();
 
-  if (init_pdcp_entity(&pdcp_array[0]) == TRUE && init_pdcp_entity(&pdcp_array[1]) == TRUE)
+  if (init_pdcp_entity(&pdcp_array[0]) == true && init_pdcp_entity(&pdcp_array[1]) == true)
     msg("[TEST] PDCP entity initialization OK\n");
   else {
     msg("[TEST] Cannot initialize PDCP entities!\n");
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 
   /* Initialize PDCP state variables */
   for (index = 0; index < 2; ++index) {
-    if (pdcp_init_seq_numbers(&pdcp_array[index]) == FALSE) {
+    if (pdcp_init_seq_numbers(&pdcp_array[index]) == false) {
       msg("[TEST] Cannot initialize sequence numbers of PDCP entity %d!\n", index);
       exit(1);
     } else {
@@ -120,11 +120,11 @@ int main(int argc, char **argv)
 #if TEST_RX_AND_TX_WINDOW
 
   /* Test TX window */
-  if (test_tx_window() == FALSE)
+  if (test_tx_window() == false)
     test_result = 1;
 
   /* Test RX window */
-  if (test_rx_window() == FALSE)
+  if (test_rx_window() == false)
     test_result = 1;
 
 #endif
@@ -132,11 +132,11 @@ int main(int argc, char **argv)
 #if TEST_PDCP_DATA_REQUEST_AND_INDICATION
 
   /* Test pdcp_data_req() method in pdcp.c */
-  if (test_pdcp_data_req() == FALSE)
+  if (test_pdcp_data_req() == false)
     test_result = 1;
 
   /* Test pdcp_data_ind() method in pdcp.c */
-  if (test_pdcp_data_ind() == FALSE)
+  if (test_pdcp_data_ind() == false)
     test_result = 1;
 
 #endif
@@ -150,10 +150,10 @@ int main(int argc, char **argv)
   return test_result;
 }
 
-BOOL init_pdcp_entity(pdcp_t *pdcp_entity)
+bool init_pdcp_entity(pdcp_t *pdcp_entity)
 {
   if (pdcp_entity == NULL)
-    return FALSE;
+    return false;
 
   /*
    * Initialize sequence number state variables of relevant PDCP entity
@@ -171,10 +171,10 @@ BOOL init_pdcp_entity(pdcp_t *pdcp_entity)
       pdcp_entity->next_pdcp_rx_sn, pdcp_entity->tx_hfn, pdcp_entity->rx_hfn, \
       pdcp_entity->last_submitted_pdcp_rx_sn, pdcp_entity->seq_num_size);
 
-  return TRUE;
+  return true;
 }
 
-BOOL test_tx_window(void)
+bool test_tx_window(void)
 {
   unsigned long index = 0;
 
@@ -185,33 +185,33 @@ BOOL test_tx_window(void)
       msg("TX packet # %07lu seq # %04d hfn # %04d\n", index, pseudo_tx_sn, pdcp_array[0].tx_hfn);
     else {
       msg("TX packet is out-of-window!\n");
-      return FALSE;
+      return false;
     }
   }
 
-  return TRUE;
+  return true;
 }
 
-BOOL test_rx_window(void)
+bool test_rx_window(void)
 {
   unsigned long index = 0;
 
   for (index = 0; index < NUMBER_OF_TEST_PACKETS; ++index) {
     u16 pseudo_rx_sn = (index == 0) ? 0 : index % WINDOW_SIZE;
 
-    if (pdcp_is_rx_seq_number_valid(pseudo_rx_sn, &pdcp_array[1]) == TRUE) {
+    if (pdcp_is_rx_seq_number_valid(pseudo_rx_sn, &pdcp_array[1]) == true) {
       msg("RX packet # %07lu seq # %04d last-submitted # %04d hfn # %04d\n", \
           index, pdcp_array[1].next_pdcp_rx_sn, pdcp_array[1].last_submitted_pdcp_rx_sn, pdcp_array[1].rx_hfn);
     } else {
       msg("RX packet seq # %04lu is not valid!\n", index);
-      return FALSE;
+      return false;
     }
   }
 
-  return TRUE;
+  return true;
 }
 
-BOOL test_pdcp_data_req(void)
+bool test_pdcp_data_req(void)
 {
   unsigned char* pdcp_test_pdu_buffer = NULL;
   unsigned char pdcp_test_pdu_buffer_size = DUMMY_BUFFER_SIZE + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
@@ -224,7 +224,7 @@ BOOL test_pdcp_data_req(void)
 
   if (pdcp_test_pdu_buffer == NULL) {
     msg("Cannot allocate a buffer for test!\n");
-    return FALSE;
+    return false;
   }
 
   /*
@@ -241,7 +241,7 @@ BOOL test_pdcp_data_req(void)
     /*
      * Ask PDCP to create a PDU with given buffer and enqueue it to `test_pdu_tx_list`
      */
-    if (pdcp_data_req(0, 0, 10, DUMMY_BUFFER, &pdcp_array[0], &test_pdu_tx_list) == TRUE) {
+    if (pdcp_data_req(0, 0, 10, DUMMY_BUFFER, &pdcp_array[0], &test_pdu_tx_list) == true) {
       msg("[TEST] Starting to dissect PDU created by PDCP...\n");
 
       /*
@@ -251,7 +251,7 @@ BOOL test_pdcp_data_req(void)
 
       if (pdcp_test_pdu_buffer_size == 0 ) {
         msg("[TEST] PDU created by pdcp_data_req() is invalid!\n");
-        return FALSE;
+        return false;
       }
 
       /*
@@ -269,7 +269,7 @@ BOOL test_pdcp_data_req(void)
        */
       if (pdcp_test_pdu_buffer[0] & 0x80) {
         msg("[TEST] First bit is not 0, which means this is not a Data PDU!\n");
-        return FALSE;
+        return false;
       } else {
         msg("[TEST] First bit is 0 so this is a Data PDU, OK\n");
       }
@@ -279,7 +279,7 @@ BOOL test_pdcp_data_req(void)
        */
       if ((pdcp_test_pdu_buffer[0] & 0x70) != 0) {
         msg("[TEST] Reserved bits are not 0!\n");
-        return FALSE;
+        return false;
       } else {
         msg("[TEST] Reserved bits are all 0, OK\n");
       }
@@ -292,21 +292,21 @@ BOOL test_pdcp_data_req(void)
 
       if (sequence_number != index % WINDOW_SIZE) {
         msg("[TEST] Sequence numbers are out-of-order!\n");
-        return FALSE;
+        return false;
       } else {
         msg("[TEST] Sequence number is correct\n");
       }
 
     } else {
       msg("[TEST] pdcp_data_req() returned FALSE!\n");
-      return FALSE;
+      return false;
     }
   }
 
-  return TRUE;
+  return true;
 }
 
-BOOL test_pdcp_data_ind(void)
+bool test_pdcp_data_ind(void)
 {
   /*
    * This is the list that pdcp_data_ind() takes to put pdcp_data_ind_header_t
@@ -341,9 +341,9 @@ BOOL test_pdcp_data_ind(void)
 
     test_sdu = list_remove_head(&test_pdu_rx_list);
 
-    if (pdcp_data_ind(0, 0, test_sdu_size, test_sdu, &pdcp_array[0], &test_pdu_indication_list) == FALSE) {
+    if (pdcp_data_ind(0, 0, test_sdu_size, test_sdu, &pdcp_array[0], &test_pdu_indication_list) == false) {
       msg("[TEST] pdcp_data_ind() failed to handle data indication!\n");
-      return FALSE;
+      return false;
     } else {
       msg("[TEST] pdcp_data_ind() succcessfuly handled data indication\n");
     }
@@ -359,7 +359,7 @@ BOOL test_pdcp_data_ind(void)
 
     if (test_data_ind_header == NULL) {
       msg("[TEST] Data indication header is not valid!\n");
-      return FALSE;
+      return false;
     } else {
       pdcp_data_ind_header_t* indication_header = (pdcp_data_ind_header_t*)test_data_ind_header->data;
 
@@ -370,7 +370,7 @@ BOOL test_pdcp_data_ind(void)
         msg("[TEST] Radio bearer ID is correct\n");
       } else {
         msg("[TEST] Radio bearer ID is not correct! (expected: 0, parsed: %d)\n", indication_header->rb_id);
-        return FALSE;
+        return false;
       }
 
       /*
@@ -380,7 +380,7 @@ BOOL test_pdcp_data_ind(void)
         msg("[TEST] SDU size is correct\n");
       } else {
         msg("[TEST] SDU size is not correct! (expected: %d, parsed: %d)\n", DUMMY_BUFFER_SIZE, indication_header->data_size);
-        return FALSE;
+        return false;
       }
 
       /*
@@ -412,11 +412,11 @@ BOOL test_pdcp_data_ind(void)
       print_byte_stream("[TEST] TXed data: ", DUMMY_BUFFER, DUMMY_BUFFER_SIZE);
       print_byte_stream("[TEST] RXed data: ", (unsigned char*)&(test_data_ind_header->data[data_index]), DUMMY_BUFFER_SIZE);
 
-      return FALSE;
+      return false;
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 

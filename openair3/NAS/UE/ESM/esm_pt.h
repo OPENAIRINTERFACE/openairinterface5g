@@ -64,7 +64,7 @@ Description Defines functions used to handle ESM procedure transactions.
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-int esm_pt_is_reserved(int pti);
+bool esm_pt_is_reserved(int pti);
 
 esm_pt_data_t *esm_pt_initialize(void);
 
@@ -79,6 +79,6 @@ int esm_pt_set_status(esm_pt_data_t *esm_pt_data, int pti, esm_pt_state status);
 esm_pt_state esm_pt_get_status(esm_pt_data_t *esm_pt_data, int pti);
 int esm_pt_get_pending_pti(esm_pt_data_t *esm_pt_data, esm_pt_state status);
 
-int esm_pt_is_not_in_use(esm_pt_data_t *esm_pt_data, int pti);
+bool esm_pt_is_not_in_use(esm_pt_data_t *esm_pt_data, int pti);
 
 #endif /* __ESM_PT_H__*/

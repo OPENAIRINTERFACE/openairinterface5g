@@ -40,14 +40,13 @@
 * \brief Structure containing a RLC TM instance protocol variables, allocation variables, buffers and other miscellaneous variables.
 */
 typedef struct rlc_tm_entity {
-  boolean_t            allocation;         /*!< \brief Boolean for rlc_tm_entity_t struct allocation. */
+  bool                 allocation;         /*!< \brief Boolean for rlc_tm_entity_t struct allocation. */
   rlc_protocol_state_t protocol_state;     /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
-  boolean_t            is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */
-  boolean_t            is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
+  bool                 is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */
+  bool                 is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
   // for stats and trace purpose :
   logical_chan_id_t    channel_id;         /*!< \brief Transport channel identifier. */
   rb_id_t              rb_id;              /*!< \brief Radio bearer identifier, for statistics and trace purpose. */
-  //boolean_t            is_enb;             /*!< \brief To know if the RLC belongs to a eNB or UE. */
   //-----------------------------
   // tranmission
   //-----------------------------

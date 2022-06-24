@@ -37,6 +37,7 @@ Description Defines internal private data handled by EPS Session
 
 *****************************************************************************/
 #include <stdio.h>  // sprintf
+#include <stdbool.h>
 
 #include "networkDef.h"
 #include "OctetString.h"
@@ -92,7 +93,7 @@ typedef enum {
 typedef struct esm_ebr_context_s {
   unsigned char ebi;      /* EPS bearer identity          */
   esm_ebr_state status;   /* EPS bearer context status        */
-  int is_default_ebr;     /* TRUE if the bearer context is associated
+  bool is_default_ebr;     /* bool if the bearer context is associated
                  * to a default EPS bearer      */
   char cid;           /* Identifier of the PDN context the EPS
                  * bearer context has been assigned to  */
@@ -137,7 +138,7 @@ typedef struct esm_bearer_s {
 typedef struct esm_pdn_s {
   unsigned int pti;   /* Identity of the procedure transaction executed
              * to activate the PDN connection entry     */
-  int is_emergency;   /* Emergency bearer services indicator      */
+  bool is_emergency;   /* Emergency bearer services indicator      */
   OctetString apn;    /* Access Point Name currently in used      */
   int ambr;       /* Aggregate Maximum Bit Rate of this APN   */
   int type;       /* Address PDN type (IPv4, IPv6, IPv4v6)    */
@@ -147,7 +148,7 @@ typedef struct esm_pdn_s {
                                      ESM_DATA_IPV6_ADDRESS_SIZE)
   /* IPv4 PDN address and/or IPv6 prefix      */
   char ip_addr[ESM_DATA_IP_ADDRESS_SIZE+1];
-  int addr_realloc;   /* Indicates whether the UE is allowed to subsequently
+  bool addr_realloc;   /* Indicates whether the UE is allowed to subsequently
              * request another PDN connectivity to the same APN
              * using an address PDN type (IPv4 or IPv6) other
              * than the one already activated       */
@@ -175,7 +176,7 @@ typedef struct esm_data_context_s {
 #define ESM_DATA_PDN_MAX    4
   struct {
     int pid;     /* Identifier of the PDN connection        */
-    int is_active;   /* TRUE/FALSE if the PDN connection is active/inactive
+    bool is_active;   /* true/false if the PDN connection is active/inactive
               * or the process to activate/deactivate the PDN
               * connection is in progress           */
     esm_pdn_t *data; /* Active PDN connection data          */

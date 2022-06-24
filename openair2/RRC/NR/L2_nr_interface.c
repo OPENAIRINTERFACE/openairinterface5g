@@ -168,7 +168,7 @@ nr_rrc_data_req(
 {
   if(sdu_sizeP == 255) {
     LOG_D(RRC,"sdu_sizeP == 255");
-    return FALSE;
+    return false;
   }
 
   MessageDef *message_p;
@@ -204,7 +204,7 @@ nr_rrc_data_req(
   if (ctxt_pP->enb_flag && NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type))
     pdcp_run(ctxt_pP);
 
-  return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
+  return true; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 }
 
 uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
@@ -315,7 +315,7 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
                            const rb_id_t         srb_idP,
                            const uint8_t        *sduP,
                            const sdu_size_t      sdu_lenP,
-                           const boolean_t   brOption) {
+                           const bool            brOption) {
 
   if (NODE_IS_DU(RC.nrrrc[module_idP]->node_type)) {
     LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %ld length %d for UE id %d RNTI %x \n",

@@ -32,12 +32,11 @@
 #include "common/utils/LOG/log.h"
 
 //-----------------------------------------------------------------------------
-void rlc_am_pdu_polling (
-  const protocol_ctxt_t* const  ctxt_pP,
-  rlc_am_entity_t *const rlc_pP,
-  rlc_am_pdu_sn_10_t *const pdu_pP,
-  const int16_t payload_sizeP,
-  boolean_t is_new_pdu)
+void rlc_am_pdu_polling(const protocol_ctxt_t* const  ctxt_pP,
+                        rlc_am_entity_t *const rlc_pP,
+                        rlc_am_pdu_sn_10_t *const pdu_pP,
+                        const int16_t payload_sizeP,
+                        bool is_new_pdu)
 {
   // 5.2.2 Polling
   // An AM RLC entity can poll its peer AM RLC entity in order to trigger STATUS reporting at the peer AM RLC entity.
