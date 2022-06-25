@@ -979,12 +979,29 @@ uint8_t get_max_tpmi(const NR_PUSCH_Config_t *pusch_Config,
   return max_tpmi;
 }
 
-void get_precoder_matrix_coef(char *w, uint8_t tpmi, uint8_t uI) {
-  // TODO: Add the remaining tables
-  *w = *table_38211_6_3_1_5_1[tpmi][uI];
+void get_precoder_matrix_coef(char *w,
+                              const uint8_t ul_ri,
+                              const uint16_t num_ue_srs_ports,
+                              const uint8_t transform_precoding,
+                              const uint8_t tpmi,
+                              const uint8_t uI) {
+  if (ul_ri == 0) {
+    if (num_ue_srs_ports == 2) {
+      *w = *table_38211_6_3_1_5_1[tpmi][uI];
+    } else {
+      if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
+        *w = *table_38211_6_3_1_5_2[tpmi][uI];
+      } else {
+        *w = *table_38211_6_3_1_5_3[tpmi][uI];
+      }
+    }
+  } else {
+    AssertFatal(1==0,"Function get_precoder_matrix_coef() does not support %i layers yet!\n", ul_ri+1);
+  }
 }
 
 int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
+                           const uint8_t transform_precoding,
                            const uint8_t *channel_matrix,
                            const uint8_t normalized_iq_representation,
                            const uint16_t num_gnb_antenna_elements,
@@ -1030,7 +1047,7 @@ int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
         for(int uI = 0; uI < num_ue_srs_ports; uI++) {
 
           uint16_t index = uI*num_gnb_antenna_elements*num_prgs + index_gI_pI;
-          get_precoder_matrix_coef(&w, tpmi, uI);
+          get_precoder_matrix_coef(&w, ul_ri, num_ue_srs_ports, transform_precoding, tpmi, uI);
           c16_t h_times_w = nr_h_times_w(channel_matrix16[index], w);
 
           precoded_channel_matrix_re[index_gI_pI] += h_times_w.r;
@@ -1169,6 +1186,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       ps->srs_feedback.sri = NR_SRS_SRI_0;
       ps->srs_feedback.ul_ri = 0; // TODO: Compute this
       ps->srs_feedback.tpmi = nr_srs_tpmi_estimation(ps->pusch_Config,
+                                                     ps->transform_precoding,
                                                      nr_srs_normalized_channel_iq_matrix.channel_matrix,
                                                      nr_srs_normalized_channel_iq_matrix.normalized_iq_representation,
                                                      nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements,
