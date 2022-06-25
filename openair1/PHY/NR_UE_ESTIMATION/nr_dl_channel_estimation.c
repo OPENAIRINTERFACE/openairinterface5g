@@ -519,11 +519,11 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
       T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
       T_INT(rxAnt), T_BUFFER(&rxdataF[rxAnt][0], frame_params->samples_per_slot_wCP*sizeof(int32_t)));
 
-    T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(gNB_id),
+    T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(gNB_id), T_INT(rsc_id),
       T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
       T_INT(rxAnt), T_BUFFER(&prs_chestF[rxAnt][0], frame_params->ofdm_symbol_size*sizeof(int32_t)));
 
-    T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(gNB_id),
+    T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(gNB_id), T_INT(rsc_id),
       T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
       T_INT(rxAnt), T_BUFFER(&prs_chestT[rxAnt][0], frame_params->ofdm_symbol_size*sizeof(int32_t)));
   }
