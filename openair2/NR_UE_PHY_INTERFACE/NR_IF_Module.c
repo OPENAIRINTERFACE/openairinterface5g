@@ -1347,7 +1347,7 @@ void RCconfig_nr_ue_L1(void) {
 
 void RCconfig_nrUE_prs(void *cfg)
 {
-  int j = 0, k = 0, gNB_id = 0, prs_start = 0, prs_end = 0;
+  int j = 0, k = 0, gNB_id = 0;
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];
   PHY_VARS_NR_UE *ue = (PHY_VARS_NR_UE *)cfg;
 
@@ -1393,17 +1393,6 @@ void RCconfig_nrUE_prs(void *cfg)
             ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg.MutingPattern1[l]      = PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN1_LIST].uptr[l];
           for (int l = 0; l < PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN2_LIST].numelt; l++)
             ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg.MutingPattern2[l]      = PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN2_LIST].uptr[l];
-
-          if(gNB_id==0 && k==0)
-          {
-            prs_start = ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg.SymbolStart;
-            prs_end   = ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg.SymbolStart+ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg.NumPRSSymbols;
-          }
-          else
-          {
-            prs_start = MIN((prs_start), (ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg.SymbolStart));
-            prs_end   = MAX((prs_end),   (ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg.SymbolStart+ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg.NumPRSSymbols));
-          }
         } // for k
 
         k = 0;
@@ -1454,10 +1443,6 @@ void RCconfig_nrUE_prs(void *cfg)
       LOG_I(NR_PHY,"No %s configuration found\n", PRS_ParamList.listname);
     }
   }
-  ue->prs_start_symb = prs_start;
-  ue->prs_end_symb   = prs_end;
-  LOG_I(PHY, "prs_active_gNBs %d, prs_start_symb %d, prs_end_symb %d\n", ue->prs_active_gNBs, ue->prs_start_symb, ue->prs_end_symb);
-  AssertFatal((prs_start <= prs_end) || (prs_end > NR_SYMBOLS_PER_SLOT), "Invalid PRS symbol allocation, please check the start and end symbols\n");
 }
 
 /*

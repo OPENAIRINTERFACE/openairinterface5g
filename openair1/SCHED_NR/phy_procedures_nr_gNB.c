@@ -63,24 +63,6 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME
   LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
 }
 
-uint8_t check_prs_slot_gNB(uint8_t *prs_rsc_id, NR_gNB_PRS *prs_vars, NR_DL_FRAME_PARMS *fp, int frame_tx, int nr_slot_tx)
-{
-  uint8_t is_prs_slot = 0, rsc_id = 0;
-  for(rsc_id = 0; rsc_id < prs_vars->NumPRSResources; rsc_id++)
-  {
-    for (int i = 0; i < prs_vars->prs_cfg[rsc_id].PRSResourceRepetition; i++)
-    {
-      if( (((frame_tx*fp->slots_per_frame + nr_slot_tx) - (prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[1] + prs_vars->prs_cfg[rsc_id].PRSResourceOffset))%prs_vars->prs_cfg[rsc_id].PRSResourceSetPeriod[0]) == i*prs_vars->prs_cfg[rsc_id].PRSResourceTimeGap )
-      {
-        is_prs_slot = 1;
-        *prs_rsc_id  = rsc_id;
-        break;
-      }
-    }
-  }
-  return is_prs_slot;
-}
-
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu) {
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
@@ -146,8 +128,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   PHY_VARS_gNB *gNB = msgTx->gNB;
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-  int offset = gNB->CC_id;
-  uint8_t rsc_id = 0, is_prs_slot = 0;
+  int offset = gNB->CC_id, slot_prs;
   int txdataF_offset = slot*fp->samples_per_slot_wCP;
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
@@ -162,11 +143,21 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   }
 
   // Check for PRS slot
-  is_prs_slot = check_prs_slot_gNB(&rsc_id, &gNB->prs_vars, fp, frame, slot);
-  if(is_prs_slot)
+  for(int rsc_id = 0; rsc_id < gNB->prs_vars.NumPRSResources; rsc_id++)
   {
-    LOG_D(PHY,"gNB_TX: frame %d, slot %d, PRS Resource ID %d\n",frame, slot, rsc_id);
-    nr_generate_prs(gNB->nr_gold_prs[rsc_id][slot],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, &gNB->prs_vars.prs_cfg[rsc_id], cfg, fp);
+    for (int i = 0; i < gNB->prs_vars.prs_cfg[rsc_id].PRSResourceRepetition; i++)
+    {
+      if( (((frame*fp->slots_per_frame + slot) - (gNB->prs_vars.prs_cfg[rsc_id].PRSResourceSetPeriod[1] + gNB->prs_vars.prs_cfg[rsc_id].PRSResourceOffset))%gNB->prs_vars.prs_cfg[rsc_id].PRSResourceSetPeriod[0]) == i*gNB->prs_vars.prs_cfg[rsc_id].PRSResourceTimeGap )
+      {
+        if (gNB->prs_vars.prs_cfg[rsc_id].PRSResourceRepetition > 1)
+          slot_prs = slot - gNB->prs_vars.prs_cfg[rsc_id].PRSResourceTimeGap;
+        else
+          slot_prs = slot;
+
+        LOG_D(PHY,"gNB_TX: frame %d, slot %d, PRS Resource ID %d\n",frame, slot, rsc_id);
+        nr_generate_prs(gNB->nr_gold_prs[rsc_id][slot_prs],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, &gNB->prs_vars.prs_cfg[rsc_id], cfg, fp);
+      }
+    }
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_COMMON_TX,1);

@@ -54,7 +54,6 @@ void nr_fep_full(RU_t *ru, int slot);
 void nr_fep_full_2thread(RU_t *ru, int slot);
 void feptx_prec(RU_t *ru,int frame_tx,int tti_tx);
 int nr_phy_init_RU(RU_t *ru);
-uint8_t check_prs_slot_gNB(uint8_t *prs_rsc_id, NR_gNB_PRS *prs_vars, NR_DL_FRAME_PARMS *fp, int frame_tx, int nr_slot_tx);
 void nr_phy_free_RU(RU_t *ru);
 
 #endif

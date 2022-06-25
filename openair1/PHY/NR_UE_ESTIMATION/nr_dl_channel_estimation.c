@@ -57,11 +57,17 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                               NR_DL_FRAME_PARMS *frame_params)
 {
   int32_t **rxdataF      = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
-  uint32_t **nr_gold_prs = ue->nr_gold_prs[gNB_id][rsc_id][proc->nr_slot_rx];
   prs_data_t *prs_cfg    = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
   prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
   int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates;
   int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates_time;
+  int slot_prs;
+  if(prs_cfg->PRSResourceRepetition > 1)
+    slot_prs = proc->nr_slot_rx - prs_cfg->PRSResourceTimeGap;
+  else
+    slot_prs = proc->nr_slot_rx;
+
+  uint32_t **nr_gold_prs = ue->nr_gold_prs[gNB_id][rsc_id][slot_prs];
   
   uint8_t rxAnt = 0, idx = 0;
   int16_t *rxF, *pil, *fl, *fm, *fmm, *fml, *fmr, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
