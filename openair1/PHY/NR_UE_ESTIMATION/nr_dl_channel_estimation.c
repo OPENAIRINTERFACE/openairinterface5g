@@ -52,6 +52,7 @@ static inline int abs32(int x)
 
 int nr_prs_channel_estimation(uint8_t gNB_id,
                               uint8_t rsc_id,
+                              uint8_t rep_num,
                               PHY_VARS_NR_UE *ue,
                               UE_nr_rxtx_proc_t *proc,
                               NR_DL_FRAME_PARMS *frame_params)
@@ -62,8 +63,8 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates;
   int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates_time;
   int slot_prs;
-  if(prs_cfg->PRSResourceRepetition > 1)
-    slot_prs = proc->nr_slot_rx - prs_cfg->PRSResourceTimeGap;
+  if(rep_num > 0)
+    slot_prs = (proc->nr_slot_rx - prs_cfg->PRSResourceTimeGap)%frame_params->slots_per_frame;
   else
     slot_prs = proc->nr_slot_rx;
 

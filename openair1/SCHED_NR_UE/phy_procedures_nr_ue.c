@@ -1387,7 +1387,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int slot_pbch;
   int slot_ssb;
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
-  int num_prs = 0;
 
   uint8_t nb_symb_pdcch = phy_pdcch_config->nb_search_space > 0 ? phy_pdcch_config->pdcch_config[0].coreset.duration : 0;
   uint8_t dci_cnt = 0;
@@ -1470,15 +1469,14 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       {
         if( (((frame_rx*fp->slots_per_frame + nr_slot_rx) - (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset))%ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0]) == i*ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceTimeGap)
         {
-          for(int j = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.SymbolStart; (j < (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.SymbolStart+ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.NumPRSSymbols)); j++)
+          for(int j = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.SymbolStart; j < (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.SymbolStart+ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.NumPRSSymbols); j++)
           {
             nr_slot_fep(ue,
                         proc,
                         (j%fp->symbols_per_slot),
                         nr_slot_rx);
           }
-          nr_prs_channel_estimation(gNB_id,rsc_id,ue,proc,fp);
-          num_prs++;
+          nr_prs_channel_estimation(gNB_id,rsc_id,i,ue,proc,fp);
         }
       } // for i
     } // for rsc_id
