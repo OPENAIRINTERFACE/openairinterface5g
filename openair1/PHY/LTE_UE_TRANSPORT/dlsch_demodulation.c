@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <linux/version.h>
-#if RHEL_RELEASE_CODE >= 1796
+#if defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= 1796 && RHEL_RELEASE_CODE != 2403
   #include <lapacke/lapacke_utils.h>
   #include <lapacke/lapacke.h>
 #else

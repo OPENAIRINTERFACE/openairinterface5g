@@ -251,7 +251,6 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
     if (number_dl_pdu>0)
       oai_nfapi_dl_tti_req(DL_req);
-
   }
   stop_meas(&gNB->schedule_response_stats);
 }
