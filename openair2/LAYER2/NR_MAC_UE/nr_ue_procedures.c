@@ -2433,11 +2433,9 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
     // start the sr-prohibittimer : rel 9 and above
     if (mac->scheduling_info.sr_ProhibitTimer > 0) { // timer configured
       mac->scheduling_info.sr_ProhibitTimer--;
-      mac->scheduling_info.
-      sr_ProhibitTimer_Running = 1;
+      mac->scheduling_info.sr_ProhibitTimer_Running = 1;
     } else {
-      mac->scheduling_info.
-      sr_ProhibitTimer_Running = 0;
+      mac->scheduling_info.sr_ProhibitTimer_Running = 0;
     }
     //mac->ul_active =1;
     return (1);   //instruct phy to signal SR

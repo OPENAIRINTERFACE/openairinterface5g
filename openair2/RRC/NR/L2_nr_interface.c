@@ -357,7 +357,8 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
     memcpy(msg->rrc_container, sduP, sdu_lenP);
     msg->rrc_container_length=sdu_lenP;
     itti_send_msg_to_task(TASK_DU_F1, 0, tmp);
-    return(0);
+
+    return 0;
   }
 
   protocol_ctxt_t ctxt;
@@ -370,7 +371,6 @@ int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
       nr_rrc_gNB_decode_ccch(&ctxt, sduP, sdu_lenP, NULL, CC_id);
     }
   }
-
   return 0;
 }
 
