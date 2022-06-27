@@ -3074,3 +3074,20 @@ void schedule_nr_bwp_switch(module_id_t module_id,
     }
   }
 }
+
+void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCommon_t *scc, int n, int CCid) {
+
+  if(gNB->UL_tti_req_ahead[CCid]) return;
+
+  gNB->UL_tti_req_ahead[CCid] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
+  AssertFatal(gNB->UL_tti_req_ahead[CCid],
+              "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
+  /* fill in slot/frame numbers: slot is fixed, frame will be updated by scheduler
+   * consider that scheduler runs sl_ahead: the first sl_ahead slots are
+   * already "in the past" and thus we put frame 1 instead of 0! */
+  for (int i = 0; i < n; ++i) {
+    nfapi_nr_ul_tti_request_t *req = &gNB->UL_tti_req_ahead[CCid][i];
+    req->SFN = i < (gNB->if_inst->sl_ahead-1);
+    req->Slot = i;
+  }
+}

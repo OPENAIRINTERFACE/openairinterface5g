@@ -800,9 +800,9 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 1,
+  rrc_mac_config_req_gNB(0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 1,
                          secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
   frame_parms->nb_antennas_tx = 1;
   frame_parms->nb_antennas_rx = n_rx;

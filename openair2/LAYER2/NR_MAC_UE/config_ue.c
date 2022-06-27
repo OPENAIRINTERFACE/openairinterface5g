@@ -343,7 +343,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
     cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling) - 10;
     cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
-    cfg->ssb_table.ssb_subcarrier_offset = mac->ssb_subcarrier_offset;
+
+    // NSA -> take ssb offset from SCS
+    cfg->ssb_table.ssb_subcarrier_offset = absolute_diff%(12*scs_scaling);
     
     switch (scc->ssb_PositionsInBurst->present) {
     case 1 :

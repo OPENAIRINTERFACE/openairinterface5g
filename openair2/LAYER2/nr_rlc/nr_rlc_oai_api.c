@@ -101,6 +101,7 @@ void nr_drb_config(struct NR_RLC_Config *rlc_Config, NR_RLC_Config_PR rlc_config
   switch (rlc_config_pr){
     case NR_RLC_Config_PR_um_Bi_Directional:
       // RLC UM Bi-directional Bearer configuration
+      LOG_I(RLC, "RLC UM Bi-directional Bearer configuration selected \n");
       rlc_Config->choice.um_Bi_Directional                            = calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional));
       rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength  = calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
       *rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = NR_SN_FieldLengthUM_size12;
@@ -213,10 +214,12 @@ tbs_size_t mac_rlc_data_req(
   }
 
   if (rb != NULL) {
+    LOG_D(RLC, "MAC PDU to get created for channel_idP:%d \n", channel_idP);
     rb->set_time(rb, nr_rlc_current_time);
     maxsize = tb_sizeP;
     ret = rb->generate_pdu(rb, buffer_pP, maxsize);
   } else {
+    LOG_D(RLC, "MAC PDU failed to get created for channel_idP:%d \n", channel_idP);
     ret = 0;
   }
 
@@ -392,6 +395,35 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   free_mem_block(sdu_pP, __func__);
 
   return RLC_OP_STATUS_OK;
+}
+
+int nr_rlc_get_available_tx_space(
+  const rnti_t            rntiP,
+  const logical_chan_id_t channel_idP)
+{
+  nr_rlc_ue_t *ue;
+  nr_rlc_entity_t *rb;
+  int ret;
+
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
+
+  switch (channel_idP) {
+  case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_idP - 4]; break;
+  default:      rb = NULL;                     break;
+  }
+
+  if (rb != NULL) {
+    ret = rb->available_tx_space(rb);
+  } else {
+    LOG_E(RLC, "[%s] Radio Bearer (channel ID %d) is NULL for UE with rntiP %x\n", __FUNCTION__, channel_idP, rntiP);
+    ret = -1;
+  }
+
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+
+  return ret;
 }
 
 int rlc_module_init(int enb_flag)

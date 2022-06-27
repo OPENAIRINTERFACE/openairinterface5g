@@ -102,7 +102,7 @@ uint8_t do_RRCReject(uint8_t Mod_id,
                      uint8_t *const buffer);
 
 void fill_initial_SpCellConfig(int uid,
-                               NR_SpCellConfig_t *SpCellConfig,
+                               NR_CellGroupConfig_t *cellGroupConfig,
                                NR_ServingCellConfigCommon_t *scc,
                                NR_ServingCellConfig_t *servingcellconfigdedicated,
                                const gNB_RrcConfigurationReq *configuration);
