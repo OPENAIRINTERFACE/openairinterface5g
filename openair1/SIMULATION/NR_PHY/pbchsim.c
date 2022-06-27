@@ -171,6 +171,7 @@ int main(int argc, char **argv)
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
   uint64_t SSB_positions=0x01;
+  int ssb_subcarrier_offset = 0;
 
   channel_desc_t *gNB2UE;
 
@@ -214,7 +215,7 @@ int main(int argc, char **argv)
     exit_fun("[NR_PBCHSIM] Error, configuration module init failed\n");
   }
 
-  while ((c = getopt (argc, argv, "F:g:hIL:m:M:n:N:o:P:r:R:s:S:x:y:z:")) != -1) {
+  while ((c = getopt (argc, argv, "F:g:hIL:m:M:n:N:o:O:P:r:R:s:S:x:y:z:")) != -1) {
     switch (c) {
     /*case 'f':
       write_output_file=1;
@@ -310,6 +311,10 @@ int main(int argc, char **argv)
 
     case 'N':
       Nid_cell = atoi(optarg);
+      break;
+
+    case 'O':
+      ssb_subcarrier_offset = atoi(optarg);
       break;
 
     case 'o':
@@ -414,6 +419,7 @@ int main(int argc, char **argv)
       printf("-n Number of frames to simulate\n");
       printf("-N Nid_cell\n");
       printf("-o Carrier frequency offset in Hz\n");
+      printf("-O SSB subcarrier offset\n");
       //printf("-O oversampling factor (1,2,4,8,16)\n");
       //printf("-p Use extended prefix mode\n");
       printf("-P PBCH phase, allowed values 0-3\n");
@@ -457,7 +463,7 @@ int main(int argc, char **argv)
 
   nr_phy_config_request_sim_pbchsim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,1);
-  nr_set_ssb_first_subcarrier(&gNB->gNB_config,frame_parms);
+  frame_parms->ssb_start_subcarrier = 12 * gNB->gNB_config.ssb_table.ssb_offset_point_a.value + ssb_subcarrier_offset;
 
   uint8_t n_hf = 0;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
@@ -580,6 +586,7 @@ int main(int argc, char **argv)
 
         msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.bchPayload = 0x55dd33;
         msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = i;
+        msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = ssb_subcarrier_offset;
 
         start_symbol = nr_get_ssb_start_symbol(frame_parms,i);
         int slot = start_symbol/14;
@@ -722,8 +729,8 @@ int main(int argc, char **argv)
 	if (ret<0) n_errors++;
       }
       else {
-	UE_nr_rxtx_proc_t proc={0};
-  NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+        UE_nr_rxtx_proc_t proc={0};
+        NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
 
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;

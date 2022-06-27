@@ -640,6 +640,7 @@ int main(int argc, char **argv)
         pucch_pdu.initial_cyclic_shift  = 0;
         pucch_pdu.start_symbol_index    = startingSymbolIndex;
         pucch_pdu.prb_start             = startingPRB;
+        pucch_pdu.prb_size              = 1;
         pucch_pdu.bwp_start             = 0;
         pucch_pdu.bwp_size              = N_RB_DL;
         if (nrofSymbols>1) {
