@@ -27,6 +27,7 @@
 #include "nr_rlc_pdu.h"
 
 #include "LOG/log.h"
+#include "common/utils/time_stat.h"
 
 /* for a given SDU/SDU segment, computes the corresponding PDU header size */
 static int compute_pdu_header_size(nr_rlc_entity_um_t *entity,
@@ -516,12 +517,19 @@ static int generate_tx_pdu(nr_rlc_entity_um_t *entity, char *buffer, int size)
   ret = serialize_sdu(entity, sdu, buffer, size);
 
   entity->tx_size -= sdu->size;
-  nr_rlc_free_sdu_segment(sdu);
 
   entity->common.stats.txpdu_pkts++;
   entity->common.stats.txpdu_bytes += size;
 
+  if (sdu->sdu->time_of_arrival) {
+    uint64_t time_now = time_average_now();
+    uint64_t waited_time = time_now - sdu->sdu->time_of_arrival;
+    /* set time_of_arrival to 0 so as to update stats only once */
+    sdu->sdu->time_of_arrival = 0;
+    time_average_add(entity->common.txsdu_avg_time_to_tx, time_now, waited_time);
+  }
 
+  nr_rlc_free_sdu_segment(sdu);
 
   return ret;
 }
@@ -736,6 +744,7 @@ void nr_rlc_entity_um_delete(nr_rlc_entity_t *_entity)
 {
   nr_rlc_entity_um_t *entity = (nr_rlc_entity_um_t *)_entity;
   clear_entity(entity);
+  time_average_free(entity->common.txsdu_avg_time_to_tx);
   free(entity);
 }
 

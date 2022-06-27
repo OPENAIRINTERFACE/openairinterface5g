@@ -24,6 +24,8 @@
 
 #include <stdint.h>
 
+#include "common/utils/time_stat.h"
+
 #define NR_SDU_MAX 16000   /* max NR PDCP SDU size is 9000, let's take more */
 
 typedef struct {
@@ -77,6 +79,16 @@ typedef struct {
   uint32_t rxsdu_bytes;        /* number of bytes of SDUs received */
   uint32_t rxsdu_dd_pkts;      /* number of dropped or discarded SDUs */
   uint32_t rxsdu_dd_bytes;     /* number of bytes of SDUs dropped or discarded */
+
+  /* Average time for an SDU to be passed to MAC.
+   * Actually measures the time it takes for any part of an SDU to be
+   * passed to MAC for the first time, that is: the first TX of (part of) the
+   * SDU.
+   * Since the MAC schedules in advance, it does not measure the time of
+   * transmission over the air, just the time to reach the MAC layer.
+   */
+  double txsdu_avg_time_to_tx;
+
 } nr_rlc_statistics_t;
 
 typedef struct {
@@ -124,6 +136,7 @@ typedef struct nr_rlc_entity_t {
   nr_rlc_entity_buffer_status_t bstatus;
 
   nr_rlc_statistics_t stats;
+  time_average_t *txsdu_avg_time_to_tx;
 } nr_rlc_entity_t;
 
 nr_rlc_entity_t *new_nr_rlc_entity_am(
