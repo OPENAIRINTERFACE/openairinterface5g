@@ -70,8 +70,8 @@
 /* Convert an integer on 16 bits to the given bUFFER */
 #define INT16_TO_BUFFER(x, buf) \
 do {                            \
-    (buf)[0] = (x) >> 8;        \
-    (buf)[1] = (x);             \
+    (buf)[0] = ((x) >> 8) & 0xff; \
+    (buf)[1] = (x)      & 0xff; \
 } while(0)
 
 /* Convert an array of char containing vALUE to x */
@@ -84,9 +84,9 @@ do {                            \
 /* Convert an integer on 24 bits to the given bUFFER */
 #define INT24_TO_BUFFER(x, buf) \
 do {                            \
-    (buf)[0] = (x) >> 16;       \
-    (buf)[1] = (x) >> 8;        \
-    (buf)[2] = (x);             \
+    (buf)[0] = ((x) >> 16) & 0xff;\
+    (buf)[1] = ((x) >> 8) & 0xff; \
+    (buf)[2] = (x)      & 0xff; \
 } while(0)
 
 /* Convert an array of char containing vALUE to x */
@@ -101,10 +101,10 @@ do {                            \
 /* Convert an integer on 32 bits to the given bUFFER */
 #define INT32_TO_BUFFER(x, buf) \
 do {                            \
-    (buf)[0] = (x) >> 24;       \
-    (buf)[1] = (x) >> 16;       \
-    (buf)[2] = (x) >> 8;        \
-    (buf)[3] = (x);             \
+    (buf)[0] = ((x) >> 24) & 0xff;\
+    (buf)[1] = ((x) >> 16) & 0xff;\
+    (buf)[2] = ((x) >> 8) & 0xff; \
+    (buf)[3] = (x)      & 0xff; \
 } while(0)
 
 /* Convert an array of char containing vALUE to x */

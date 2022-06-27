@@ -1062,7 +1062,8 @@
                                    (Test3: PBCH-only, 217 PRB),
                                    (Test4: PBCH and synchronization, 217 RPB),
                                    (Test5: PBCH-only, 273 PRB),
-                                   (Test6: PBCH and synchronization, 273 PRB)</desc>
+                                   (Test6: PBCH and synchronization, 273 PRB),
+                                   (Test7: PBCH and synchronization, 106PBR, SSB SC OFFSET 6)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1074,8 +1075,9 @@
                       -s-11 -S-8 -n10 -R217
                       -s-11 -S-8 -n10 -o8000 -I -R217
                       -s-11 -S-8 -n10 -R273
-                      -s-11 -S-8 -n10 -o8000 -I -R273</main_exec_args>
-      <tags>nr_pbchsim.test1 nr_pbchsim.test2 nr_pbchsim.test3 nr_pbchsim.test4 nr_pbchsim.test5 nr_pbchsim.test6</tags>
+                      -s-11 -S-8 -n10 -o8000 -I -R273
+                      -s-11 -S-8 -n10 -R106 -O6</main_exec_args>
+      <tags>nr_pbchsim.test1 nr_pbchsim.test2 nr_pbchsim.test3 nr_pbchsim.test4 nr_pbchsim.test5 nr_pbchsim.test6 nr_pbchsim.test7</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
