@@ -464,10 +464,10 @@ This function performs componentwise multiplication of a vector with a complex s
 The function implemented is : \f$\mathbf{y} = \alpha\mathbf{x}\f$
 */
 void rotate_cpx_vector(c16_t *x,
-		       c16_t *alpha,
-		       c16_t *y,
-		       uint32_t N,
-		       uint16_t output_shift);
+                       c16_t *alpha,
+                       c16_t *y,
+                       uint32_t N,
+                       uint16_t output_shift);
 
 
 //cadd_sv.c

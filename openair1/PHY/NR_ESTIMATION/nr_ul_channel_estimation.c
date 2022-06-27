@@ -854,7 +854,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               uint32_t nb_re_pusch)
 {
   //#define DEBUG_UL_PTRS 1
-  c16_t *phase_per_symbol = NULL;
   int32_t *ptrs_re_symbol   = NULL;
   int8_t   ret = 0;
 
@@ -871,7 +870,7 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
   uint8_t  *ptrsReOffset    = &rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset;
   /* loop over antennas */
   for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    phase_per_symbol = (c16_t*)gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx];
+    c16_t *phase_per_symbol = (c16_t*)gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx];
     ptrs_re_symbol = &gNB->pusch_vars[ulsch_id]->ptrs_re_per_slot;
     *ptrs_re_symbol = 0;
     phase_per_symbol[symbol].i = 0; 

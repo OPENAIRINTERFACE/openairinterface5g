@@ -598,8 +598,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   for(ap = 0; ap < n_antenna_ports; ap++) {
     for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
       c16_t rot=((c16_t*)frame_parms->symbol_rotation[1])[s + symb_offset];
-      LOG_D(PHY,"In %s: rotating txdataF symbol %d (%d) => (%d.%d)\n",
-	    __FUNCTION__,
+      LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
 	    s,
 	    s + symb_offset,
 	    rot.r, rot.i);
