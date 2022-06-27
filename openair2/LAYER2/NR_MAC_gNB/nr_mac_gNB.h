@@ -423,24 +423,20 @@ typedef struct NR_sched_srs {
   bool srs_scheduled;
 } NR_sched_srs_t;
 
-/* PDSCH semi-static configuratio: as long as the TDA/DMRS/mcsTable remains the
- * same, there is no need to recalculate all S/L or DMRS-related parameters
- * over and over again.  Hence, we store them in this struct for easy
- * reference. */
-typedef struct NR_pdsch_semi_static {
-  int time_domain_allocation;
-  uint8_t numDmrsCdmGrpsNoData;
-  uint8_t frontloaded_symb;
+typedef struct NR_pdsch_tda_info {
   int mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;
-  uint8_t nrOfLayers;
+} NR_pdsch_tda_info_t;
+
+typedef struct NR_pdsch_dmrs {
   uint8_t dmrs_ports_id;
   uint8_t N_PRB_DMRS;
   uint8_t N_DMRS_SLOT;
   uint16_t dl_dmrs_symb_pos;
+  uint8_t numDmrsCdmGrpsNoData;
   nfapi_nr_dmrs_type_e dmrsConfigType;
-} NR_pdsch_semi_static_t;
+} NR_pdsch_dmrs_t;
 
 typedef struct NR_sched_pdsch {
   /// RB allocation within active BWP
@@ -465,7 +461,10 @@ typedef struct NR_sched_pdsch {
   /// only important for retransmissions; otherwise, the TDA in
   /// NR_pdsch_semi_static_t has precedence
   int time_domain_allocation;
+
   uint8_t nrOfLayers;
+  NR_pdsch_dmrs_t dmrs_parms;
+  NR_pdsch_tda_info_t tda_info;
 } NR_sched_pdsch_t;
 
 typedef struct NR_UE_harq {
@@ -596,8 +595,6 @@ typedef struct {
   /// PHR info: nominal UE transmit power levels (dBm)
   int pcmax;
 
-  /// PDSCH semi-static configuration: is not cleared across TTIs
-  NR_pdsch_semi_static_t pdsch_semi_static;
   /// Sched PDSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pdsch_t sched_pdsch;
   /// UE-estimated maximum MCS (from CSI-RS)
@@ -720,7 +717,6 @@ typedef struct {
   NR_gNB_UCI_STATS_t uci_statS;
   float ul_thr_ue;
   float dl_thr_ue;
-  int layers; 
 } NR_UE_info_t;
 
 typedef struct {

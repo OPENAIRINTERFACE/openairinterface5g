@@ -179,8 +179,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   }
 }
 
-extern int getNrOfSymbols(NR_BWP_Downlink_t *bwp, int tda);
-extern uint8_t getN_PRB_DMRS(NR_BWP_Downlink_t *bwp, int numDmrsCdmGrpsNoData);
 uint32_t target_dl_mcs = 9;
 uint32_t target_dl_Nl = 1;
 uint32_t target_dl_bw = 50;
@@ -199,10 +197,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const int CC_id = 0;
 
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
-  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-  ps->nrOfLayers = target_dl_Nl;
-  if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
-    nr_set_pdsch_semi_static(dl_bwp, scc, tda, target_dl_Nl,sched_ctrl , ps);
+  NR_pdsch_tda_info_t *tda_info = &sched_ctrl->sched_pdsch.tda_info;
+  nr_get_pdsch_tda_info(dl_bwp, tda, tda_info);
 
   /* find largest unallocated chunk */
   const int bwpSize = dl_bwp->BWPSize;
@@ -217,12 +213,12 @@ void nr_preprocessor_phytest(module_id_t module_id,
   while (true) {
     /* advance to first free RB */
     while (rbStart < bwpSize &&
-           (vrb_map[rbStart + BWPStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)))
+           (vrb_map[rbStart + BWPStart]&SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols)))
       rbStart++;
     rbSize = 1;
     /* iterate until we are at target_dl_bw or no available RBs */
     while (rbStart + rbSize < bwpSize &&
-           !(vrb_map[rbStart + rbSize + BWPStart]&SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)) &&
+           !(vrb_map[rbStart + rbSize + BWPStart]&SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols)) &&
            rbSize < target_dl_bw)
       rbSize++;
     /* found target_dl_bw? */
@@ -308,18 +304,25 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->rbStart = rbStart;
   sched_pdsch->rbSize = rbSize;
 
+  set_dl_dmrs_params(&sched_pdsch->dmrs_parms,
+                     scc,
+                     dl_bwp,
+                     tda_info,
+                     target_dl_Nl);
+
   sched_pdsch->mcs = target_dl_mcs;
+  sched_pdsch->nrOfLayers = target_dl_Nl;
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
   sched_ctrl->dl_bler_stats.mcs = target_dl_mcs; /* for logging output */
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
-                                        ps->nrOfSymbols,
-                                        ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
+                                        tda_info->nrOfSymbols,
+                                        sched_pdsch->dmrs_parms.N_PRB_DMRS * sched_pdsch->dmrs_parms.N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        ps->nrOfLayers)
+                                        sched_pdsch->nrOfLayers)
                          >> 3;
 
   /* get the PID of a HARQ process awaiting retransmission, or -1 otherwise */
@@ -327,7 +330,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
 
   /* mark the corresponding RBs as used */
   for (int rb = 0; rb < sched_pdsch->rbSize; rb++)
-    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+    vrb_map[rb + sched_pdsch->rbStart + BWPStart] = SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols);
 
   if ((frame&127) == 0) LOG_D(MAC,"phytest: %d.%d DL mcs %d, DL rbStart %d, DL rbSize %d\n", frame, slot, sched_pdsch->mcs, rbStart,rbSize);
 }

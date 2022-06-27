@@ -87,9 +87,8 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                int CC_id,
                                NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                int time_domain_allocation,
-                               int startSymbolIndex,
-                               int nrOfSymbols,
-                               uint16_t dlDmrsSymbPos,
+                               NR_pdsch_dmrs_t *dmrs_parms,
+                               NR_pdsch_tda_info_t *tda_info,
                                uint8_t candidate_idx,
                                uint16_t num_total_bytes);
 
@@ -325,12 +324,9 @@ long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu);
 
-void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *dl_bwp,
-                              const NR_ServingCellConfigCommon_t *scc,
-                              int tda,
-                              uint8_t layers,
-                              NR_UE_sched_ctrl_t *sched_ctrl,
-                              NR_pdsch_semi_static_t *ps);
+void nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
+                           int tda,
+                           NR_pdsch_tda_info_t *tda_info);
 
 void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *ul_bwp,
                               const NR_ServingCellConfigCommon_t *scc,
@@ -460,7 +456,11 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 void find_SSB_and_RO_available(module_id_t module_idP);
 
-void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps);
+void set_dl_dmrs_params(NR_pdsch_dmrs_t *dmrs,
+                        const NR_ServingCellConfigCommon_t *scc,
+                        NR_UE_DL_BWP_t *BWP,
+                        NR_pdsch_tda_info_t *tda_info,
+                        int Layers);
 
 uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int layers,
@@ -469,7 +469,8 @@ uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int codebook_mode);
 
 uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx);
-uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
+
+uint8_t get_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl, nr_dci_format_t dci_format);
 
 const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
