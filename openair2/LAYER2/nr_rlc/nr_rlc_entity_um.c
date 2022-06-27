@@ -695,3 +695,9 @@ void nr_rlc_entity_um_delete(nr_rlc_entity_t *_entity)
   clear_entity(entity);
   free(entity);
 }
+
+int nr_rlc_entity_um_available_tx_space(nr_rlc_entity_t *_entity)
+{
+  nr_rlc_entity_um_t *entity = (nr_rlc_entity_um_t *)_entity;
+  return entity->tx_maxsize - entity->tx_size;
+}

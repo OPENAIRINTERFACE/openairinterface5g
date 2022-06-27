@@ -21,7 +21,7 @@
 //#include "openair1/PHY/LTE_TRANSPORT/defs.h"
 #include "queue_t.h"
 
-#define NUM_MCS 28
+#define NUM_MCS 29
 #define NUM_SINR 100
 #define NUM_BLER_COL 13
 #define LTE_NUM_LAYER 1

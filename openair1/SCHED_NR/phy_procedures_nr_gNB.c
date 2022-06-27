@@ -50,19 +50,6 @@ uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,25
 
 extern uint8_t nfapi_mode;
 
-void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_scf_t *cfg, NR_DL_FRAME_PARMS *fp) {
-
-  uint8_t sco = 0;
-  if (((fp->freq_range == nr_FR1) && (cfg->ssb_table.ssb_subcarrier_offset.value<24)) ||
-      ((fp->freq_range == nr_FR2) && (cfg->ssb_table.ssb_subcarrier_offset.value<12)) ) {
-    if (fp->freq_range == nr_FR1)
-      sco = cfg->ssb_table.ssb_subcarrier_offset.value>>cfg->ssb_config.scs_common.value;
-  }
-
-  fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + sco);
-  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,sco);
-}
-
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu) {
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
@@ -84,7 +71,9 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   int ssb_start_symbol_abs = nr_get_ssb_start_symbol(fp,ssb_index); // computing the starting symbol for current ssb
   ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
 
-  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
+  // setting the first subcarrier
+  fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset);
+  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset);
 
   LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
   nr_generate_pss(&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
@@ -178,8 +167,8 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[i];
     if (csirs->active == 1) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
-      nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params = csirs->csirs_pdu.csi_rs_pdu_rel15;
-      nr_generate_csi_rs(gNB, AMP, csi_params, slot);
+      nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params = &csirs->csirs_pdu.csi_rs_pdu_rel15;
+      nr_generate_csi_rs(gNB->frame_parms, gNB->common_vars.txdataF, AMP, gNB->nr_csi_rs_info, csi_params, slot);
       csirs->active = 0;
     }
   }
@@ -793,10 +782,14 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot),gNB->pusch_thres);
              gNB->pusch_vars[ULSCH_id]->ulsch_power_tot = gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot;
-             nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
              gNB->pusch_vars[ULSCH_id]->DTX=1;
              if (stats) stats->DTX++;
-             return 1;
+             if (!get_softmodem_params()->phy_test) {
+               /* in case of phy_test mode, we still want to decode to measure execution time. 
+                  Therefore, we don't yet call nr_fill_indication, it will be called later */
+               nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
+               return 1;
+             }
           } else {
             LOG_D(PHY, "PUSCH detected in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
                   dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
@@ -856,10 +849,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   }
 
   stop_meas(&gNB->phy_proc_rx);
-  // figure out a better way to choose slot_rx, 19 is ok for a particular TDD configuration with 30kHz SCS
-  if ((frame_rx&127) == 0 && slot_rx==19) {
-    LOG_I(NR_PHY, "Number of bad PUCCH received: %lu\n", gNB->bad_pucch);
-  }
 
   if (pucch_decode_done || pusch_decode_done) {
     T(T_GNB_PHY_PUCCH_PUSCH_IQ, T_INT(frame_rx), T_INT(slot_rx), T_BUFFER(&gNB->common_vars.rxdataF[0][0], gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size * 4));

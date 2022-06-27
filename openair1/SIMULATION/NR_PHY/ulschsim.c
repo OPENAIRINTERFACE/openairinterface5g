@@ -47,6 +47,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "common/utils/threadPool/thread-pool.h"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 
 //#define DEBUG_NR_ULSCHSIM
 
@@ -140,6 +141,7 @@ int main(int argc, char **argv)
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   uint8_t Nl = 1;
+  uint8_t max_ldpc_iterations = 5;
 
   double DS_TDL = .03;
 
@@ -394,6 +396,8 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
+  gNB->max_ldpc_iterations = max_ldpc_iterations;
+
   crcTableInit();
 
   memcpy(&gNB->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
@@ -461,7 +465,7 @@ int main(int argc, char **argv)
   rel15_ul->pusch_data.rv_index = rvidx;
   rel15_ul->nrOfLayers          = Nl;
   rel15_ul->target_code_rate    = code_rate;
-  rel15_ul->pusch_data.tb_size  = TBS/8;
+  rel15_ul->pusch_data.tb_size  = TBS>>3;
   ///////////////////////////////////////////////////
 
   double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
@@ -488,7 +492,9 @@ int main(int argc, char **argv)
   harq_process_ul_ue->pusch_pdu.nr_of_symbols = nb_symb_sch;
   harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
   harq_process_ul_ue->pusch_pdu.pusch_data.rv_index = rvidx;
-  harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS/8;
+  harq_process_ul_ue->pusch_pdu.pusch_data.tb_size  = TBS>>3;
+  harq_process_ul_ue->pusch_pdu.target_code_rate = code_rate;
+  harq_process_ul_ue->pusch_pdu.qam_mod_order = mod_order;
   unsigned char *test_input = harq_process_ul_ue->a;
 
   ///////////

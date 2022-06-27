@@ -55,6 +55,6 @@ void nr_fill_ul_dci(PHY_VARS_gNB *gNB,
 		    int slot,
 		    nfapi_nr_ul_dci_request_pdus_t *pdcch_pdu);
 
-void nr_fill_cce_list(nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL], uint8_t m,nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15);
+void nr_fill_cce_list(nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL], nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15);
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

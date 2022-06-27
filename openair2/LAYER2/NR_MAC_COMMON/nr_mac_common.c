@@ -1686,7 +1686,7 @@ int get_nr_prach_info_from_index(uint8_t index,
         }
         if ( (s_map>>subframe)&0x01 ) {
          *N_RA_slot = table_6_3_3_2_3_prachConfig_Index[index][6]; // Number of RACH slots within a subframe
-          if (mu == 1) {
+          if (mu == 1 && index >= 67) {
             if ( (*N_RA_slot <= 1) && (slot%2 == 0) )
               return 0; // no prach in even slots @ 30kHz for 1 prach per subframe 
           } 
@@ -2095,17 +2095,15 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
   uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS*dmrs_length - N_PRB_oh;
   LOG_D(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
-  uint16_t R;
   uint32_t TBS=0;
-  uint8_t table_idx, Qm;
 
   /*uint8_t mcs_table = config.pdsch_config.mcs_table.value;
   uint8_t ss_type = params_rel15.search_space_type;
   uint8_t dci_format = params_rel15.dci_format;
   get_table_idx(mcs_table, dci_format, rnti_type, ss_type);*/
-  table_idx = 0;
-  R = nr_get_code_rate_dl(Imcs, table_idx);
-  Qm = nr_get_Qm_dl(Imcs, table_idx);
+  uint8_t table_idx = 0;
+  uint16_t R = nr_get_code_rate_dl(Imcs, table_idx);
+  uint8_t Qm = nr_get_Qm_dl(Imcs, table_idx);
 
   TBS = nr_compute_tbs(Qm,
                        R,
@@ -2126,25 +2124,25 @@ void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
   TBS, N_PRB_DMRS, N_sh_symb, N_PRB_oh, R, Qm, table_idx,N_RE_prime*pdsch_rel15->rbSize*pdsch_rel15->NrOfCodewords );
 }
 
+// the following tables contain 10 times the value reported in 214 (in line with SCF specification and to avoid fractional values)
 //Table 5.1.3.1-1 of 38.214
-uint16_t Table_51311[29][2] = {{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{2,679},{4,340},{4,378},{4,434},{4,490},{4,553},{4,616},
-		{4,658},{6,438},{6,466},{6,517},{6,567},{6,616},{6,666},{6,719},{6,772},{6,822},{6,873}, {6,910}, {6,948}};
+uint16_t Table_51311[29][2] = {{2,1200},{2,1570},{2,1930},{2,2510},{2,3080},{2,3790},{2,4490},{2,5260},{2,6020},{2,6790},{4,3400},{4,3780},{4,4340},{4,4900},{4,5530},{4,6160},
+                               {4,6580},{6,4380},{6,4660},{6,5170},{6,5670},{6,6160},{6,6660},{6,7190},{6,7720},{6,8220},{6,8730}, {6,9100}, {6,9480}};
 
 //Table 5.1.3.1-2 of 38.214
 // Imcs values 20 and 26 have been multiplied by 2 to avoid the floating point
-uint16_t Table_51312[28][2] = {{2,120},{2,193},{2,308},{2,449},{2,602},{4,378},{4,434},{4,490},{4,553},{4,616},{4,658},{6,466},{6,517},{6,567},{6,616},{6,666},
-		{6,719},{6,772},{6,822},{6,873},{8,1365},{8,711},{8,754},{8,797},{8,841},{8,885},{8,1833},{8,948}};
+uint16_t Table_51312[28][2] = {{2,1200},{2,1930},{2,3080},{2,4490},{2,6020},{4,3780},{4,4340},{4,4900},{4,5530},{4,6160},{4,6580},{6,4660},{6,5170},{6,5670},{6,6160},{6,6660},
+                               {6,7190},{6,7720},{6,8220},{6,8730},{8,6825},{8,7110},{8,7540},{8,7970},{8,8410},{8,8850},{8,9165},{8,9480}};
 
 //Table 5.1.3.1-3 of 38.214
-uint16_t Table_51313[29][2] = {{2,30},{2,40},{2,50},{2,64},{2,78},{2,99},{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{4,340},
-		{4,378},{4,434},{4,490},{4,553},{4,616},{6,438},{6,466},{6,517},{6,567},{6,616},{6,666}, {6,719}, {6,772}};
+uint16_t Table_51313[29][2] = {{2,300},{2,400},{2,500},{2,640},{2,780},{2,990},{2,1200},{2,1570},{2,1930},{2,2510},{2,3080},{2,3790},{2,4490},{2,5260},{2,6020},{4,3400},
+                              {4,3780},{4,4340},{4,4900},{4,5530},{4,6160},{6,4380},{6,4660},{6,5170},{6,5670},{6,6160},{6,6660},{6,7190},{6,7720}};
 
-uint16_t Table_61411[28][2] = {{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{2,679},{4,340},{4,378},{4,434},{4,490},{4,553},{4,616},
-		{4,658},{6,466},{6,517},{6,567},{6,616},{6,666},{6,719},{6,772},{6,822},{6,873}, {6,910}, {6,948}};
+uint16_t Table_61411[28][2] = {{2,1200},{2,1570},{2,1930},{2,2510},{2,3080},{2,3790},{2,4490},{2,5260},{2,6020},{2,6790},{4,3400},{4,3780},{4,4340},{4,4900},{4,5530},{4,6160},
+                               {4,6580},{6,4660},{6,5170},{6,5670},{6,6160},{6,6660},{6,7190},{6,7720},{6,8220},{6,8730},{6,9100},{6,9480}};
 
-uint16_t Table_61412[28][2] = {{2,30},{2,40},{2,50},{2,64},{2,78},{2,99},{2,120},{2,157},{2,193},{2,251},{2,308},{2,379},{2,449},{2,526},{2,602},{2,679},
-		{4,378},{4,434},{4,490},{4,553},{4,616},{4,658},{4,699},{4,772},{6,567},{6,616},{6,666}, {6,772}};
-
+uint16_t Table_61412[28][2] = {{2,300},{2,400},{2,500},{2,640},{2,780},{2,990},{2,1200},{2,1570},{2,1930},{2,2510},{2,3080},{2,3790},{2,4490},{2,5260},{2,6020},{2,6790},
+                               {4,3780},{4,4340},{4,4900},{4,5530},{4,6160},{4,6580},{4,6990},{4,7720},{6,5670},{6,6160},{6,6660},{6,7720}};
 
 
 uint8_t nr_get_Qm_dl(uint8_t Imcs, uint8_t table_idx) {
@@ -3500,6 +3498,22 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
   }
 }
 
+uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti) {
+
+  if(ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common)
+    return 0;
+
+  const int cid = *ss->controlResourceSetId%3;
+  const uint32_t A[3] = {39827, 39829, 39839};
+  const uint32_t D = 65537;
+  uint32_t Y;
+
+  Y = (A[cid] * rnti) % D;
+  for (int s = 0; s < slot; s++)
+    Y = (A[cid] * Y) % D;
+
+  return Y;
+}
 
 void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                            frame_t frameP,
@@ -3940,25 +3954,17 @@ void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *ty
   if(ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 == NULL)
     ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss0->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
 
-  uint32_t duration,periodicity,offset;
-  uint16_t symbols,max_agg;
-
   AssertFatal(type0_PDCCH_CSS_config!=NULL,"No type0 CSS configuration\n");
 
-  max_agg = (type0_PDCCH_CSS_config->num_symbols*type0_PDCCH_CSS_config->num_rbs)/6;
-
-  symbols = (1-(1<<type0_PDCCH_CSS_config->num_symbols))<<type0_PDCCH_CSS_config->first_symbol_index;
-  duration = type0_PDCCH_CSS_config->search_space_duration;
-  periodicity = type0_PDCCH_CSS_config->search_space_frame_period;
-  if (type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1)
-    offset = type0_PDCCH_CSS_config->n_0;
-  else
-    offset = type0_PDCCH_CSS_config->n_c;
+  const uint32_t periodicity = type0_PDCCH_CSS_config->search_space_frame_period;
+  const uint32_t offset = type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1
+      ? type0_PDCCH_CSS_config->n_0 : type0_PDCCH_CSS_config->n_c;
 
   ss0->searchSpaceId = 0;
   *ss0->controlResourceSetId = 0;
   ss0->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss0->monitoringSlotPeriodicityAndOffset));
   set_monitoring_periodicity_offset(ss0,periodicity,offset);
+  const uint32_t duration = type0_PDCCH_CSS_config->search_space_duration;
   if (duration==1)
     ss0->duration = NULL;
   else{
@@ -3966,6 +3972,7 @@ void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *ty
     *ss0->duration = duration;
   }
 
+  const uint16_t symbols = SL_to_bitmap(type0_PDCCH_CSS_config->first_symbol_index, type0_PDCCH_CSS_config->num_symbols);
   ss0->monitoringSymbolsWithinSlot->size = 2;
   ss0->monitoringSymbolsWithinSlot->bits_unused = 2;
   ss0->monitoringSymbolsWithinSlot->buf[1] = 0;
@@ -3975,6 +3982,7 @@ void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *ty
     ss0->monitoringSymbolsWithinSlot->buf[0] |= ((symbols>>i)&0x01)<<(7-i);
   }
 
+  const uint16_t max_agg = (type0_PDCCH_CSS_config->num_symbols*type0_PDCCH_CSS_config->num_rbs)/6;
   // max values are set according to TS38.213 Section 10.1 Table 10.1-1
   ss0->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
   ss0->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;

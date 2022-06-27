@@ -36,6 +36,7 @@
 #include "assertions.h"
 #include "defs.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
@@ -134,7 +135,6 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
     trace_NRpdu(DIRECTION_DOWNLINK,
 		dlsch0->harq_processes[dlsch0->current_harq_pid]->b,
 		dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS / 8,
-		pdu_type,
 		WS_C_RNTI,
 		dlsch0->rnti,
 		proc->frame_rx,
@@ -612,6 +612,15 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
       }
     }
 
+    if (ue->chest_time == 1) { // averaging time domain channel estimates
+      nr_chest_time_domain_avg(&ue->frame_parms,
+                               ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates,
+                               dlsch0_harq->nb_symbols,
+                               dlsch0_harq->start_symbol,
+                               dlsch0_harq->dlDmrsSymbPos,
+                               pdsch_nb_rb);
+    }
+
     uint16_t first_symbol_with_data = s0;
     uint32_t dmrs_data_re;
 
@@ -802,8 +811,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             nb_symb_sch,
                             nr_slot_rx,
                             harq_pid,
-                            pdsch==PDSCH?1:0,
-                            dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
+                            pdsch==PDSCH);
 
     LOG_T(PHY,"dlsch decoding, ret = %d\n", ret);
 
@@ -879,8 +887,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                                nb_symb_sch,
                                nr_slot_rx,
                                harq_pid,
-                               pdsch==PDSCH?1:0,//proc->decoder_switch,
-                               dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+                               pdsch==PDSCH);//proc->decoder_switch
       LOG_T(PHY,"CW dlsch decoding, ret1 = %d\n", ret1);
 
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
@@ -1382,7 +1389,6 @@ int is_pbch_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL
   }
 }
 
-
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
@@ -1683,6 +1689,23 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
  }
+
+  // do procedures for CSI-IM
+  if ((ue->csiim_vars[gNB_id]) && (ue->csiim_vars[gNB_id]->active == 1)) {
+    nr_ue_csi_im_procedures(ue, proc, gNB_id);
+    ue->csiim_vars[gNB_id]->active = 0;
+  }
+
+  // do procedures for CSI-RS
+  if ((ue->csirs_vars[gNB_id]) && (ue->csirs_vars[gNB_id]->active == 1)) {
+    for(int symb = 0; symb < NR_SYMBOLS_PER_SLOT; symb++) {
+      if(is_csi_rs_in_symbol(ue->csirs_vars[gNB_id]->csirs_config_pdu,symb)) {
+        nr_slot_fep(ue, proc, symb, nr_slot_rx);
+      }
+    }
+    nr_ue_csi_rs_procedures(ue, proc, gNB_id);
+    ue->csirs_vars[gNB_id]->active = 0;
+  }
 
   start_meas(&ue->generic_stat);
 

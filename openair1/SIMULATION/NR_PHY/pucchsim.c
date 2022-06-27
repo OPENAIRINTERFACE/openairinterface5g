@@ -476,7 +476,6 @@ int main(int argc, char **argv)
   UE = calloc(1,sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_rx=1;
-  UE->perfect_ce = 0;
 
   if(eps!=0.0)
     UE->UE_fo_compensation = 1; // if a frequency offset is set then perform fo estimation and compensation

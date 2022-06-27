@@ -42,7 +42,6 @@ void randominit(unsigned seed_init)
 {
   int i;
   // this need to be integrated with the existing rng, like taus: navid
-  printf("Initializing random number generator, seed %x\n",seed_init);
 
   if (seed_init == 0) {
     srand((unsigned)time(NULL));
@@ -51,6 +50,7 @@ void randominit(unsigned seed_init)
   } else {
     seed = seed_init;
   }
+  printf("Initializing random number generator, seed %x\n",seed);
 
   if (seed % 2 == 0) seed += 1; /* seed and mod are relative prime */
 

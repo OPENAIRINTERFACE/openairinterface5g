@@ -171,7 +171,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   trace_NRpdu(DIRECTION_UPLINK,
               harq_process_ul_ue->a,
               harq_process_ul_ue->pusch_pdu.pusch_data.tb_size,
-              0, WS_C_RNTI, rnti, frame, slot, 0, 0);
+              WS_C_RNTI, rnti, frame, slot, 0, 0);
 
   if (nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G) == -1)
     return;

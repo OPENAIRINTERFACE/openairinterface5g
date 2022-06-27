@@ -63,11 +63,6 @@
 #define CCCH_PAYLOAD_SIZE_MAX 512 
 #define RAR_PAYLOAD_SIZE_MAX  128
 
-typedef enum frequency_range_e {
-  FR1 = 0,
-  FR2
-} frequency_range_t;
-
 #define NR_BSR_TRIGGER_NONE      (0) /* No BSR Trigger */
 #define NR_BSR_TRIGGER_REGULAR   (1) /* For Regular and ReTxBSR Expiry Triggers */
 #define NR_BSR_TRIGGER_PERIODIC  (2) /* For BSR Periodic Timer Expiry Trigger */

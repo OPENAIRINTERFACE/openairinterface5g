@@ -83,7 +83,6 @@ void fix_servingcellconfigdedicated(NR_ServingCellConfig_t *scd) {
 
 }
 
-
 void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                                      NR_ServingCellConfig_t *servingcellconfigdedicated,
                                      NR_CellGroupConfig_t *secondaryCellGroup,
@@ -108,9 +107,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
   AssertFatal(uid>=0 && uid<30, "gNB cannot allocate the SRS resources\n");
 
-  fix_servingcellconfigdedicated(servingcellconfigdedicated);
-
   uint64_t bitmap = get_ssb_bitmap(servingcellconfigcommon);
+  fix_servingcellconfigdedicated(servingcellconfigdedicated);
 
   memset(secondaryCellGroup,0,sizeof(NR_CellGroupConfig_t));
   secondaryCellGroup->cellGroupId = scg_id;
@@ -123,31 +121,33 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->rlc_BearerToAddModList = calloc(1,sizeof(*secondaryCellGroup->rlc_BearerToAddModList));
   ASN_SEQUENCE_ADD(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
 
-  secondaryCellGroup->mac_CellGroupConfig=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig));
-  secondaryCellGroup->mac_CellGroupConfig->drx_Config = NULL;
+  NR_MAC_CellGroupConfig_t *mac_CellGroupConfig = secondaryCellGroup->mac_CellGroupConfig;
 
-  secondaryCellGroup->mac_CellGroupConfig->bsr_Config=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->bsr_Config));
-  secondaryCellGroup->mac_CellGroupConfig->bsr_Config->periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf10;
-  secondaryCellGroup->mac_CellGroupConfig->bsr_Config->retxBSR_Timer     = NR_BSR_Config__retxBSR_Timer_sf160;
-  secondaryCellGroup->mac_CellGroupConfig->tag_Config=calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->tag_Config));
-  secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
-  secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList  = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList));
+  mac_CellGroupConfig=calloc(1,sizeof(*mac_CellGroupConfig));
+  mac_CellGroupConfig->drx_Config = NULL;
+
+  mac_CellGroupConfig->bsr_Config=calloc(1,sizeof(*mac_CellGroupConfig->bsr_Config));
+  mac_CellGroupConfig->bsr_Config->periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf10;
+  mac_CellGroupConfig->bsr_Config->retxBSR_Timer     = NR_BSR_Config__retxBSR_Timer_sf160;
+  mac_CellGroupConfig->tag_Config=calloc(1,sizeof(*mac_CellGroupConfig->tag_Config));
+  mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
+  mac_CellGroupConfig->tag_Config->tag_ToAddModList  = calloc(1,sizeof(*mac_CellGroupConfig->tag_Config->tag_ToAddModList));
   struct NR_TAG *tag=calloc(1,sizeof(*tag));
   tag->tag_Id             = 0;
   tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
-  ASN_SEQUENCE_ADD(&secondaryCellGroup->mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config  = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->phr_Config));
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->present = NR_SetupRelease_PHR_Config_PR_setup;
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup  = calloc(1,sizeof(*secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup));
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_PeriodicTimer = NR_PHR_Config__phr_PeriodicTimer_sf20;
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_ProhibitTimer = NR_PHR_Config__phr_ProhibitTimer_sf0;
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_Tx_PowerFactorChange = NR_PHR_Config__phr_Tx_PowerFactorChange_dB3;
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->multiplePHR=false;
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->dummy=false;
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_Type2OtherCell = false;
-  secondaryCellGroup->mac_CellGroupConfig->phr_Config->choice.setup->phr_ModeOtherCG = NR_PHR_Config__phr_ModeOtherCG_real;
-  secondaryCellGroup->mac_CellGroupConfig->skipUplinkTxDynamic=false;
-  secondaryCellGroup->mac_CellGroupConfig->ext1 = NULL;
+  ASN_SEQUENCE_ADD(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
+  mac_CellGroupConfig->phr_Config  = calloc(1,sizeof(*mac_CellGroupConfig->phr_Config));
+  mac_CellGroupConfig->phr_Config->present = NR_SetupRelease_PHR_Config_PR_setup;
+  mac_CellGroupConfig->phr_Config->choice.setup  = calloc(1,sizeof(*mac_CellGroupConfig->phr_Config->choice.setup));
+  mac_CellGroupConfig->phr_Config->choice.setup->phr_PeriodicTimer = NR_PHR_Config__phr_PeriodicTimer_sf20;
+  mac_CellGroupConfig->phr_Config->choice.setup->phr_ProhibitTimer = NR_PHR_Config__phr_ProhibitTimer_sf0;
+  mac_CellGroupConfig->phr_Config->choice.setup->phr_Tx_PowerFactorChange = NR_PHR_Config__phr_Tx_PowerFactorChange_dB3;
+  mac_CellGroupConfig->phr_Config->choice.setup->multiplePHR=false;
+  mac_CellGroupConfig->phr_Config->choice.setup->dummy=false;
+  mac_CellGroupConfig->phr_Config->choice.setup->phr_Type2OtherCell = false;
+  mac_CellGroupConfig->phr_Config->choice.setup->phr_ModeOtherCG = NR_PHR_Config__phr_ModeOtherCG_real;
+  mac_CellGroupConfig->skipUplinkTxDynamic=false;
+  mac_CellGroupConfig->ext1 = NULL;
   secondaryCellGroup->physicalCellGroupConfig = calloc(1,sizeof(*secondaryCellGroup->physicalCellGroupConfig));
   secondaryCellGroup->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH=NULL;
   secondaryCellGroup->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUSCH=NULL;
@@ -616,6 +616,14 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList= NULL;
   secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToReleaseList = NULL;
 
+  mac_CellGroupConfig->schedulingRequestConfig = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
+  mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
+  struct NR_SchedulingRequestToAddMod *schedulingrequestlist = CALLOC(1,sizeof(*schedulingrequestlist));
+  schedulingrequestlist->schedulingRequestId  = 0;
+  schedulingrequestlist->sr_ProhibitTimer = NULL;
+  schedulingrequestlist->sr_TransMax      = NR_SchedulingRequestToAddMod__sr_TransMax_n64;
+  ASN_SEQUENCE_ADD(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
+
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig = calloc(1,sizeof(*secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig));
  NR_PUSCH_ServingCellConfig_t *pusch_scc = calloc(1,sizeof(*pusch_scc));
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->present = NR_SetupRelease_PUSCH_ServingCellConfig_PR_setup;
@@ -892,7 +900,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
     xer_fprint(stdout, &asn_DEF_NR_SpCellConfig, (void *)secondaryCellGroup->spCellConfig);
   }
 }
-
 
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_ServingCellConfig_t *servingcellconfigdedicated,

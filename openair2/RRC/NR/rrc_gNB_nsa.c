@@ -349,7 +349,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   // configure MAC and RLC
   if (NODE_IS_DU(rrc->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.ssb_SubcarrierOffset,
                            rrc->configuration.pdsch_AntennaPorts,
                            rrc->configuration.pusch_AntennaPorts,
                            rrc->configuration.sib1_tda,
@@ -362,7 +361,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                            ue_context_p->ue_context.secondaryCellGroup);
   } else {
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.ssb_SubcarrierOffset,
                            rrc->configuration.pdsch_AntennaPorts,
                            rrc->configuration.pusch_AntennaPorts,
                            rrc->configuration.sib1_tda,
@@ -426,7 +424,8 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
 
   rrc_rlc_remove_ue(&ctxt);
 
-  mac_remove_nr_ue(rrc->module_id, rnti);
+  // WHAT A RACE CONDITION
+  mac_remove_nr_ue(RC.nrmac[rrc->module_id], rnti);
   gtpv1u_enb_delete_tunnel_req_t tmp={0};
   tmp.rnti=rnti;
   tmp.from_gnb=1;

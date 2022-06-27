@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -28,8 +29,8 @@
  * \warning
  */
 
-#ifndef __NR_LDPC_CNPROC__H__
-#define __NR_LDPC_CNPROC__H__
+#ifndef __NR_LDPC_DECODER_CNPROC__H__
+#define __NR_LDPC_DECODER_CNPROC__H__
 
 /**
    \brief Performs CN processing for BG2 on the CN processing buffer and stores the results in the CN processing results buffer.
@@ -37,6 +38,13 @@
    \param p_procBuf Pointer to processing buffers
    \param Z Lifting size
 */
+
+
+#ifdef __AVX512BW__
+#include "nrLDPC_cnProc_avx512.h"
+
+#else
+
 static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
@@ -92,14 +100,14 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
             for (i=0; i<M; i++)
             {
                 // Abs and sign of 32 CNs (first BN)
-	      //                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
-	        ymm0 = pj0[i];
+              //                ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][0] + i];
+                ymm0 = pj0[i];
                 sgn  = _mm256_sign_epi8(*p_ones, ymm0);
                 min  = _mm256_abs_epi8(ymm0);
 
                 // 32 CNs of second BN
-		//  ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
-		ymm0 = pj1[i];
+                //  ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
+                ymm0 = pj1[i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
 
@@ -107,7 +115,7 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
                 min = _mm256_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
                 //*p_cnProcBufResBit = _mm256_sign_epi8(min, sgn);
                 //p_cnProcBufResBit++;
-		p_cnProcBufResBit[i]=_mm256_sign_epi8(min, sgn);
+                p_cnProcBufResBit[i]=_mm256_sign_epi8(min, sgn);
             }
         }
     }
@@ -364,6 +372,15 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
 
 }
 
+
+/**
+   \brief Performs CN processing for BG1 on the CN processing buffer and stores the results in the CN processing results buffer.
+   \param p_lut Pointer to decoder LUTs
+   \param Z Lifting size
+*/
+
+
+
 /**
    \brief Performs CN processing for BG1 on the CN processing buffer and stores the results in the CN processing results buffer.
    \param p_lut Pointer to decoder LUTs
@@ -430,6 +447,7 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
                 ymm0 = p_cnProcBuf[lut_idxCnProcG3[j][1] + i];
                 min  = _mm256_min_epu8(min, _mm256_abs_epi8(ymm0));
                 sgn  = _mm256_sign_epi8(sgn, ymm0);
+
 
                 // Store result
                 min = _mm256_min_epu8(min, *p_maxLLR); // 128 in epi8 is -127
@@ -859,6 +877,7 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
 
 }
 
+#endif
 /**
    \brief Performs parity check for BG1 on the CN processing buffer. Stops as soon as error is detected.
    \param p_lut Pointer to decoder LUTs
@@ -1922,3 +1941,6 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
 }
 
 #endif
+
+
+

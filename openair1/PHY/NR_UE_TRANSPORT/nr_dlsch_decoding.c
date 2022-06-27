@@ -430,8 +430,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                            uint16_t nb_symb_sch,
                            uint8_t nr_slot_rx,
                            uint8_t harq_pid,
-                           uint8_t is_crnti,
-                           uint8_t llr8_flag) {
+                           uint8_t is_crnti) {
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
@@ -449,7 +448,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   LOG_D(PHY,"Round %d RV idx %d\n",harq_process->DLround,harq_process->rvidx);
   uint8_t kc;
   uint16_t nb_rb;// = 30;
-  double Coderate;// = 0.0;
   uint8_t dmrs_Type = harq_process->dmrsConfigType;
   AssertFatal(dmrs_Type == 0 || dmrs_Type == 1, "Illegal dmrs_type %d\n", dmrs_Type);
   uint8_t nb_re_dmrs;
@@ -499,21 +497,18 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   */
   nb_rb = harq_process->nb_rb;
   harq_process->trials[harq_process->DLround]++;
-  uint16_t nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
-  harq_process->TBS = nr_compute_tbs(harq_process->Qm,harq_process->R,nb_rb,nb_symb_sch,nb_re_dmrs*dmrs_length, nb_rb_oh, 0, harq_process->Nl);
+
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations + 1;
   dlsch->last_iteration_cnt = ret;
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, dmrs_length, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
 
-  LOG_D(PHY,"%d.%d DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d length dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",
-        frame,nr_slot_rx,harq_pid,A,A/8,G, nb_re_dmrs, dmrs_length, harq_process->mcs, harq_process->Nl, nb_symb_sch,nb_rb);
+  // target_code_rate is in 0.1 units
+  float Coderate = (float) harq_process->R / 10240.0f;
 
-  if ((harq_process->R)<1024)
-    Coderate = (float) (harq_process->R) /(float) 1024;
-  else
-    Coderate = (float) (harq_process->R) /(float) 2048;
+  LOG_D(PHY,"%d.%d DLSCH Decoding, harq_pid %d TBS %d (%d) G %d nb_re_dmrs %d length dmrs %d mcs %d Nl %d nb_symb_sch %d nb_rb %d Qm %d Coderate %f\n",
+        frame,nr_slot_rx,harq_pid,A,A/8,G, nb_re_dmrs, dmrs_length, harq_process->mcs, harq_process->Nl, nb_symb_sch, nb_rb, harq_process->Qm, Coderate);
 
   if ((A <=292) || ((A <= NR_MAX_PDSCH_TBS) && (Coderate <= 0.6667)) || Coderate <= 0.25) {
     p_decParams->BG = 2;

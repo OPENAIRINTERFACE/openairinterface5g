@@ -274,9 +274,8 @@ static void do_pdcp_data_ind(
   if (rb != NULL) {
     rb->recv_pdu(rb, (char *)sdu_buffer->data, sdu_buffer_size);
   } else {
-    LOG_E(PDCP, "%s:%d:%s: fatal: no RB found (rb_id %ld, srb_flag %d)\n",
+    LOG_E(PDCP, "%s:%d:%s: no RB found (rb_id %ld, srb_flag %d)\n",
           __FILE__, __LINE__, __FUNCTION__, rb_id, srb_flagP);
-    exit(1);
   }
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
@@ -977,11 +976,6 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
     exit(1);
   }
 
-  if (drb_id != 1) {
-    LOG_E(PDCP, "%s:%d:%s: fatal, bad drb id %d\n",
-          __FILE__, __LINE__, __FUNCTION__, drb_id);
-    exit(1);
-  }
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);

@@ -295,74 +295,6 @@ uint16_t get_dmrs_freq_idx_ul(uint16_t n, uint8_t k_prime, uint8_t delta, uint8_
 
 #define CHECK_DMRS_PBCH_SEQUENCE
 
-void generate_dmrs_pbch(uint32_t dmrs_pbch_bitmap[DMRS_PBCH_I_SSB][DMRS_PBCH_N_HF][DMRS_BITMAP_SIZE], uint16_t Nid_cell)
-{
-  uint32_t cinit;
-  int i_ssb;
-  int n_hf;
-  int _i_ssb;
-
-#ifdef CHECK_DMRS_PBCH_SEQUENCE
-
-  uint32_t dmrs_bitmap[DMRS_PBCH_I_SSB][DMRS_PBCH_N_HF][DMRS_BITMAP_SIZE];
-  uint32_t *dmrs_sequence =  calloc(CELL_DMRS_LENGTH, sizeof(uint32_t));
-  if (dmrs_sequence == NULL) {
-    msg("Fatal error: memory allocation problem \n");
-  	assert(0);
-  }
-  else
-  {
-    printf("Check of demodulation reference signal of pbch sequence \n");
-  }
-
-#endif
-
-  /* for each slot number */
-  for (i_ssb = 0; i_ssb<DMRS_PBCH_I_SSB; i_ssb++) {
-
-    /* for each ofdm position */
-    for (n_hf=0; n_hf<DMRS_PBCH_N_HF; n_hf++) {
-
-      _i_ssb = i_ssb + 4*n_hf;
-
-      cinit = (((_i_ssb + 1)*((Nid_cell>>4) + 1))<<11) + ((_i_ssb + 1)<<6) + (Nid_cell%4);
-
-      pseudo_random_sequence_optimised(DMRS_BITMAP_SIZE, &(dmrs_pbch_bitmap[i_ssb][n_hf][0]), cinit);
-
-#ifdef CHECK_DMRS_PBCH_SEQUENCE
-
-      /* it allows checking generated with standard generation code */
-      pseudo_random_sequence(DMRS_BITMAP_SIZE*sizeof(uint32_t), dmrs_sequence, cinit);
-
-      int j = 0;
-      int k = 0;
-
-      /* format for getting bitmap from uint32_t */
-      for (int i=0; i<DMRS_BITMAP_SIZE; i++) {
-    	dmrs_bitmap[i_ssb][n_hf][i] = 0;
-    	/* convert to bitmap */
-      	for (; j < k + 32; j++) {
-          dmrs_bitmap[i_ssb][n_hf][i] |= (dmrs_sequence[j]<<j);
-      	}
-      	k = j;
-      }
-
-      for (int i=0; i<DMRS_BITMAP_SIZE; i++) {
-        if (dmrs_pbch_bitmap[i_ssb][n_hf][i] != dmrs_bitmap[i_ssb][n_hf][i]) {
-          printf("Error in gold sequence computation for ns %d l %d and index %i : 0x%x 0x%x \n", i_ssb, n_hf, i, dmrs_pbch_bitmap[i_ssb][n_hf][i], dmrs_bitmap[i_ssb][n_hf][i]);
-      	  assert(0);
-        }
-      }
-
-#endif
-
-    }
-  }
-
-#ifdef CHECK_DMRS_PBCH_SEQUENCE
-  free(dmrs_sequence);
-#endif
-}
 /* return the position of next dmrs symbol in a slot */
 int8_t get_next_dmrs_symbol_in_slot(uint16_t  ul_dmrs_symb_pos, uint8_t counter, uint8_t end_symbol)
 {
@@ -406,3 +338,81 @@ int8_t get_valid_dmrs_idx_for_channel_est(uint16_t  dmrs_symb_pos, uint8_t count
   }
   return symbIdx;
 }
+
+/* perform averaging of channel estimates and store result in first symbol buffer */
+void nr_chest_time_domain_avg(NR_DL_FRAME_PARMS *frame_parms,
+                              int **ch_est,
+                              uint8_t num_symbols,
+                              uint8_t start_symbol,
+                              uint16_t dmrs_bitmap,
+                              uint16_t num_rbs)
+{
+  __m128i *ul_ch128_0;
+  __m128i *ul_ch128_1;
+  int16_t *ul_ch16_0;
+  int total_symbols = start_symbol + num_symbols;
+  int num_dmrs_symb = get_dmrs_symbols_in_slot(dmrs_bitmap, total_symbols);
+  int first_dmrs_symb = get_next_dmrs_symbol_in_slot(dmrs_bitmap, start_symbol, total_symbols);
+  AssertFatal(first_dmrs_symb > -1, "No DMRS symbol present in this slot\n");
+  for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+    for (int symb = first_dmrs_symb+1; symb < total_symbols; symb++) {
+      ul_ch128_0 = (__m128i *)&ch_est[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+      if ((dmrs_bitmap >> symb) & 0x01) {
+        ul_ch128_1 = (__m128i *)&ch_est[aarx][symb*frame_parms->ofdm_symbol_size];
+        for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+          ul_ch128_0[0] = _mm_adds_epi16(ul_ch128_0[0], ul_ch128_1[0]);
+          ul_ch128_0[1] = _mm_adds_epi16(ul_ch128_0[1], ul_ch128_1[1]);
+          ul_ch128_0[2] = _mm_adds_epi16(ul_ch128_0[2], ul_ch128_1[2]);
+          ul_ch128_0 += 3;
+          ul_ch128_1 += 3;
+        }
+      }
+    }
+    ul_ch128_0 = (__m128i *)&ch_est[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+    if (num_dmrs_symb == 2) {
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch128_0[0] = _mm_srai_epi16(ul_ch128_0[0], 1);
+        ul_ch128_0[1] = _mm_srai_epi16(ul_ch128_0[1], 1);
+        ul_ch128_0[2] = _mm_srai_epi16(ul_ch128_0[2], 1);
+        ul_ch128_0 += 3;
+      }
+    } else if (num_dmrs_symb == 4) {
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch128_0[0] = _mm_srai_epi16(ul_ch128_0[0], 2);
+        ul_ch128_0[1] = _mm_srai_epi16(ul_ch128_0[1], 2);
+        ul_ch128_0[2] = _mm_srai_epi16(ul_ch128_0[2], 2);
+        ul_ch128_0 += 3;
+      }
+    } else if (num_dmrs_symb == 3) {
+      ul_ch16_0 = (int16_t *)&ch_est[aarx][first_dmrs_symb*frame_parms->ofdm_symbol_size];
+      for (int rbIdx = 0; rbIdx < num_rbs; rbIdx++) {
+        ul_ch16_0[0] /= 3;
+        ul_ch16_0[1] /= 3;
+        ul_ch16_0[2] /= 3;
+        ul_ch16_0[3] /= 3;
+        ul_ch16_0[4] /= 3;
+        ul_ch16_0[5] /= 3;
+        ul_ch16_0[6] /= 3;
+        ul_ch16_0[7] /= 3;
+        ul_ch16_0[8] /= 3;
+        ul_ch16_0[9] /= 3;
+        ul_ch16_0[10] /= 3;
+        ul_ch16_0[11] /= 3;
+        ul_ch16_0[12] /= 3;
+        ul_ch16_0[13] /= 3;
+        ul_ch16_0[14] /= 3;
+        ul_ch16_0[15] /= 3;
+        ul_ch16_0[16] /= 3;
+        ul_ch16_0[17] /= 3;
+        ul_ch16_0[18] /= 3;
+        ul_ch16_0[19] /= 3;
+        ul_ch16_0[20] /= 3;
+        ul_ch16_0[21] /= 3;
+        ul_ch16_0[22] /= 3;
+        ul_ch16_0[23] /= 3;
+        ul_ch16_0 += 24;
+      }
+    } else AssertFatal((num_dmrs_symb < 5) && (num_dmrs_symb > 0), "Illegal number of DMRS symbols in the slot\n");
+  }
+}
+

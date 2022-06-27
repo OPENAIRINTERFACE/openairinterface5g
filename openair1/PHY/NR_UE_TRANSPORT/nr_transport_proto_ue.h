@@ -709,7 +709,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                         unsigned short nb_rb_pdsch,
                                         uint8_t n_dmrs_cdm_groups,
                                         NR_DL_FRAME_PARMS *frame_parms,
-                                        uint16_t dlDmrsSymbPos);
+                                        uint16_t dlDmrsSymbPos,
+                                        int chest_time_type);
 
 /** \fn dlsch_extract_rbs_multiple(int32_t **rxdataF,
     int32_t **dl_ch_estimates,
@@ -747,7 +748,8 @@ void nr_dlsch_extract_rbs(int **rxdataF,
                                         uint8_t n_dmrs_cdm_groups,
                                         uint8_t Nl,
                                         NR_DL_FRAME_PARMS *frame_parms,
-                                        uint16_t dlDmrsSymbPos);
+                                        uint16_t dlDmrsSymbPos,
+                                        int chest_time_type);
 
 /** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
     int32_t **dl_bf_ch_estimates,
@@ -1013,8 +1015,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint16_t nb_symb_sch,
                          uint8_t nr_slot_rx,
                          uint8_t harq_pid,
-                         uint8_t is_crnti,
-                         uint8_t llr8_flag);
+                         uint8_t is_crnti);
 
 int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                      NR_UE_ULSCH_t *ulsch,

@@ -160,7 +160,7 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 }
 
-void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
   nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
   RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
@@ -341,26 +341,22 @@ void config_common(int Mod_idP, int ssb_SubcarrierOffset, int pdsch_AntennaPorts
   if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
     scs_scaling = scs_scaling>>2;
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
-  uint16_t sco = absolute_diff%(12*scs_scaling);
-  // values of subcarrier offset larger than the limit only indicates CORESET for Type0-PDCCH CSS set is not present
-  int ssb_SubcarrierOffset_limit = 0;
-  int offset_scaling = 0;  //15kHz
-  if(frequency_range == FR1) {
-    ssb_SubcarrierOffset_limit = 24;
-    if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
-      offset_scaling = cfg->ssb_config.scs_common.value;
-  } else
-    ssb_SubcarrierOffset_limit = 12;
-  if (ssb_SubcarrierOffset<ssb_SubcarrierOffset_limit)
-    AssertFatal(sco==(scs_scaling * ssb_SubcarrierOffset),
-                "absoluteFrequencySSB has a subcarrier offset of %d while it should be %d\n",sco/scs_scaling,ssb_SubcarrierOffset);
+
+  RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = absolute_diff%(12*scs_scaling);
+  int sco = 31; // no SIB1
+  if(get_softmodem_params()->sa) {
+    sco = RC.nrmac[Mod_idP]->ssb_SubcarrierOffset;
+    if(frequency_range == FR1)
+      sco <<= cfg->ssb_config.scs_common.value; // 38.211 section 7.4.3.1 in FR1 it is expresses in terms of 15kHz SCS
+  }
+
   cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scs_scaling) - 10; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
   cfg->num_tlv++;
-  cfg->ssb_table.ssb_subcarrier_offset.value = ssb_SubcarrierOffset<<offset_scaling;
+  cfg->ssb_table.ssb_subcarrier_offset.value = sco;
   cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
   cfg->num_tlv++;
 
@@ -455,24 +451,21 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
   if (rrc_reconfiguration_delay == 0) {
     return -1;
   }
-  const int UE_id = find_nr_UE_id(Mod_idP,rnti);
-  if (UE_id < 0) {
+
+  NR_UE_info_t *UE_info = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info,rnti);
+  if (!UE_info) {
     LOG_W(NR_MAC, "Could not find UE for RNTI 0x%04x\n", rnti);
     return -1;
   }
-
-  NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-  const uint16_t sf_ahead = 6/(0x01<<subcarrierSpacing) + ((6%(0x01<<subcarrierSpacing))>0);
-  const uint16_t sl_ahead = sf_ahead * (0x01<<subcarrierSpacing);
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
+  const uint16_t sl_ahead = RC.nrmac[Mod_idP]->if_inst->sl_ahead;
   sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
-  LOG_I(NR_MAC, "Activating RRC processing timer for UE %d with %d ms\n", UE_id, rrc_reconfiguration_delay);
+  LOG_I(NR_MAC, "Activating RRC processing timer for UE %04x with %d ms\n", UE_info->rnti, rrc_reconfiguration_delay);
 
   return 0;
 }
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP,
-                           int ssb_SubcarrierOffset,
                            rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                            int pusch_AntennaPorts,
                            int sib1_tda,
@@ -487,19 +480,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if (scc != NULL ) {
     AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
 
-    /* dimension UL_tti_req_ahead for number of slots in frame */
     const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-    RC.nrmac[Mod_idP]->UL_tti_req_ahead[0] = calloc(n, sizeof(nfapi_nr_ul_tti_request_t));
-    AssertFatal(RC.nrmac[Mod_idP]->UL_tti_req_ahead[0],
-                "could not allocate memory for RC.nrmac[]->UL_tti_req_ahead[]\n");
-    /* fill in slot/frame numbers: slot is fixed, frame will be updated by scheduler
-     * consider that scheduler runs sl_ahead: the first sl_ahead slots are
-     * already "in the past" and thus we put frame 1 instead of 0! */
-    for (int i = 0; i < n; ++i) {
-      nfapi_nr_ul_tti_request_t *req = &RC.nrmac[Mod_idP]->UL_tti_req_ahead[0][i];
-      req->SFN = i < (RC.nrmac[Mod_idP]->if_inst->sl_ahead-1);
-      req->Slot = i;
-    }
     RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL =
         calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
     AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
@@ -510,7 +491,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
     RC.nrmac[Mod_idP]->xp_pdsch_antenna_ports = pdsch_AntennaPorts.XP;
     config_common(Mod_idP,
-                  ssb_SubcarrierOffset,
                   num_pdsch_antenna_ports,
                   pusch_AntennaPorts,
 		  scc);
@@ -524,7 +504,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         printf("Waiting for PHY_config_req\n");
       }
     }
-    RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = ssb_SubcarrierOffset;
     RC.nrmac[Mod_idP]->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
 
     NR_PHY_Config_t phycfg;
@@ -551,9 +530,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD,"Dynamic TDD not handled yet\n");
 
     for (int slot = 0; slot < n; ++slot) {
-      if (RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD ||
-          (slot != 0))
-        RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
+      RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
       RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
 
       LOG_I(NR_MAC, "In %s: slot %d DL %d UL %d\n",
@@ -591,37 +568,15 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
   if (CellGroup) {
 
-    if (get_softmodem_params()->sa) {
-      calculate_preferred_dl_tda(Mod_idP, NULL);
-    }
-
-    const NR_ServingCellConfig_t *servingCellConfig = NULL;
-    if(CellGroup->spCellConfig && CellGroup->spCellConfig->spCellConfigDedicated) {
-      servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
-      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = servingCellConfig->downlinkBWP_ToAddModList;
-      if(bwpList) {
-        AssertFatal(bwpList->list.count > 0, "downlinkBWP_ToAddModList has no BWPs!\n");
-        for (int i = 0; i < bwpList->list.count; ++i) {
-          const NR_BWP_Downlink_t *bwp = bwpList->list.array[i];
-          calculate_preferred_dl_tda(Mod_idP, bwp);
-        }
-      }
-
-      const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
-      if(ubwpList) {
-        AssertFatal(ubwpList->list.count > 0, "uplinkBWP_ToAddModList no BWPs!\n");
-        for (int i = 0; i < ubwpList->list.count; ++i) {
-          const NR_BWP_Uplink_t *ubwp = ubwpList->list.array[i];
-          calculate_preferred_ul_tda(Mod_idP, ubwp);
-        }
-      }
-    }
-
-    NR_UE_info_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
     if (add_ue == 1 && get_softmodem_params()->phy_test) {
-      const int UE_id = add_new_nr_ue(Mod_idP, rnti, CellGroup);
-      LOG_I(NR_MAC,"Added new UE_id %d/%x with initial CellGroup\n",UE_id,rnti);
-      process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
+      NR_UE_info_t* UE = add_new_nr_ue(RC.nrmac[Mod_idP], rnti, CellGroup);
+      if (UE) {
+        LOG_I(NR_MAC,"Added new UE %x with initial CellGroup\n", rnti);
+      } else {
+        LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
+        return -1;
+      }
+      process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
     } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
       const int CC_id = 0;
       NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[CC_id];
@@ -667,49 +622,30 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       ra->msg3_dcch_dtch = false;
       LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
-      NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon;
-      const int UE_id = find_nr_UE_id(Mod_idP,rnti);
-      int target_ss;
-      UE_info->CellGroup[UE_id] = CellGroup;
-      LOG_I(NR_MAC,"Modified UE_id %d/%x with CellGroup\n",UE_id,rnti);
-      process_CellGroup(CellGroup,&UE_info->UE_sched_ctrl[UE_id]);
-      NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl[UE_id];
-      const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-      if (get_softmodem_params()->sa) {
-        // add all available DL HARQ processes for this UE in SA
-        create_dl_harq_list(sched_ctrl, pdsch);
+      NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info, rnti);
+      if (!UE) {
+        LOG_E(NR_MAC, "Can't find UE %04x\n", rnti);
+        return -1;
       }
-      // update coreset/searchspace
-      void *bwpd = NULL;
-      NR_BWP_t *genericParameters = NULL;
-      target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-      if ((sched_ctrl->active_bwp)) {
-        target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-        bwpd = (void*)sched_ctrl->active_bwp->bwp_Dedicated;
-        genericParameters = &sched_ctrl->active_bwp->bwp_Common->genericParameters;
+
+      /* copy CellGroup by calling asn1c encode
+         this is a temporary hack to avoid the gNB having
+         a pointer to RRC CellGroup structure
+         (otherwise it would be applied to early)
+         TODO remove once we have a proper implementation */
+      UE->enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+                                           NULL,
+                                           (void *) CellGroup,
+                                           UE->cg_buf,
+                                           32768);
+
+      if (UE->enc_rval.encoded == -1) {
+        LOG_E(NR_MAC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n",
+              UE->enc_rval.failed_type->name, UE->enc_rval.encoded);
+        exit(1);
       }
-      else if (CellGroup->spCellConfig &&
-                 CellGroup->spCellConfig->spCellConfigDedicated &&
-                 (CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP)) {
-        target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-        bwpd = (void*)CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
-        genericParameters = &scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
-      }
-      sched_ctrl->search_space = get_searchspace(sib1 ? sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL, scc, bwpd, target_ss);
-      sched_ctrl->coreset = get_coreset(Mod_idP, scc, bwpd, sched_ctrl->search_space, target_ss);
-      sched_ctrl->sched_pdcch = set_pdcch_structure(RC.nrmac[Mod_idP],
-                                                    sched_ctrl->search_space,
-                                                    sched_ctrl->coreset,
-                                                    scc,
-                                                    genericParameters,
-                                                    RC.nrmac[Mod_idP]->type0_PDCCH_CSS_config);
-      sched_ctrl->maxL = 2;
-      if (CellGroup->spCellConfig &&
-          CellGroup->spCellConfig->spCellConfigDedicated &&
-          CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
-          CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup
-        )
-      compute_csi_bitlen (CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE_info, UE_id, Mod_idP);
+
+      process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);

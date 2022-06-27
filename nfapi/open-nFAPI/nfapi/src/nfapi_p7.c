@@ -200,8 +200,6 @@ static uint8_t pack_tpm_value(nfapi_dl_config_dci_dl_tpm_t *value, uint8_t **ppW
 static uint8_t pack_dl_tti_csi_rs_pdu_rel15_value(void *tlv, uint8_t **ppWritePackedMsg, uint8_t *end) {
   nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *value = (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *)tlv;
   return(
-          push16(value->bwp_size, ppWritePackedMsg, end) &&
-          push16(value->bwp_start, ppWritePackedMsg, end) &&
           push8(value->subcarrier_spacing, ppWritePackedMsg, end) &&
           push8(value->cyclic_prefix, ppWritePackedMsg, end) &&
           push16(value->start_rb, ppWritePackedMsg, end) &&
@@ -3663,8 +3661,6 @@ int nfapi_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packedBu
 static uint8_t unpack_dl_tti_csi_rs_pdu_rel15_value(void *tlv, uint8_t **ppReadPackedMsg, uint8_t *end) {
   nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *value = (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *)tlv;
   return(
-          pull16(ppReadPackedMsg, &value->bwp_size, end) &&
-          pull16(ppReadPackedMsg, &value->bwp_start, end) &&
           pull8(ppReadPackedMsg, &value->subcarrier_spacing, end) &&
           pull8(ppReadPackedMsg, &value->cyclic_prefix, end) &&
           pull16(ppReadPackedMsg, &value->start_rb, end) &&

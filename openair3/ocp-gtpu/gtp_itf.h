@@ -43,6 +43,11 @@ typedef struct openAddr_s {
   instance_t originInstance;
 } openAddr_t;
 
+typedef struct extensionHeader_s{
+  uint8_t buffer[500];
+  uint8_t length;
+}extensionHeader_t;
+
 // the init function create a gtp instance and return the gtp instance id
 // the parameter originInstance will be sent back in each message from gtp to the creator
 void gtpv1uReceiver(int h);

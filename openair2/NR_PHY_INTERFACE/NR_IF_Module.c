@@ -77,7 +77,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info)
   bool in_timewindow = frame_diff == 0 || (frame_diff == 1 && UL_info->slot < 7);
 
   if (UL_info->rach_ind.number_of_pdus > 0 && in_timewindow) {
-    LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",
+    LOG_A(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SLOT:%d/%d\n",
           UL_info->frame, UL_info->slot, UL_info->rach_ind.sfn, UL_info->rach_ind.slot);
     for (int i = 0; i < UL_info->rach_ind.number_of_pdus; i++) {
       UL_info->rach_ind.number_of_pdus--;
@@ -372,9 +372,6 @@ static void match_crc_rx_pdu(nfapi_nr_rx_data_indication_t *rx_ind, nfapi_nr_crc
 
 void NR_UL_indication(NR_UL_IND_t *UL_info) {
   AssertFatal(UL_info!=NULL,"UL_info is null\n");
-#ifdef DUMP_FAPI
-  dump_ul(UL_info);
-#endif
   module_id_t      module_id   = UL_info->module_id;
   int              CC_id       = UL_info->CC_id;
   NR_Sched_Rsp_t   *sched_info = &NR_Sched_INFO[module_id][CC_id];

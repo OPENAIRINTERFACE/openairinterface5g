@@ -60,7 +60,7 @@ int nr_phy_init_RU(RU_t *ru) {
 
     for (i=0; i<ru->nb_tx; i++) {
       // Allocate 10 subframes of I/Q TX signal data (time) if not
-      ru->common.txdata[i]  = (int32_t*)malloc16_clear( ru->sf_extension + (fp->samples_per_frame*sizeof(int32_t) ));
+      ru->common.txdata[i]  = (int32_t*)malloc16_clear((ru->sf_extension + fp->samples_per_frame)*sizeof(int32_t));
       LOG_I(PHY,"[INIT] common.txdata[%d] = %p (%lu bytes,sf_extension %d)\n",i,ru->common.txdata[i],
 	     (ru->sf_extension + fp->samples_per_frame)*sizeof(int32_t),ru->sf_extension);
       ru->common.txdata[i] =  &ru->common.txdata[i][ru->sf_extension];
@@ -124,9 +124,10 @@ int nr_phy_init_RU(RU_t *ru) {
 		ru->num_gNB,NUMBER_OF_gNB_MAX);
 
     LOG_I(PHY,"[INIT] %s() ru->num_gNB:%d \n", __FUNCTION__, ru->num_gNB);
-    if (ru->do_precoding == 1) { 
+
+    if (ru->do_precoding == 1) {
       int beam_count = 0;
-      if (ru->nb_tx>1) {//Enable beamforming when nb_tx > 1
+      if (ru->nb_tx>1) { //Enable beamforming when nb_tx > 1
 
         for (p=0;p<ru->nb_log_antennas;p++) {
           //if ((fp->L_ssb >> (63-p)) & 0x01)//64 bit-map with the MSB @2⁶³ corresponds to SSB ssb_index 0
@@ -149,7 +150,7 @@ int nr_phy_init_RU(RU_t *ru) {
             } // for j
           //}
           } // for p
-        } //for i
+        } // for i
       }
 
       ru->common.beam_id = (uint8_t**)malloc16_clear(ru->nb_tx*sizeof(uint8_t*));
