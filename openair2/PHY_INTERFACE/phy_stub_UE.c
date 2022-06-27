@@ -1956,7 +1956,7 @@ static int get_mcs_from_sinr(float sinr)
 
 static int get_cqi_from_mcs(void)
 {
-  static const int mcs_to_cqi[] = {0, 1, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15};
+  static const int mcs_to_cqi[] = {0, 1, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15};
   assert(NUM_ELEMENTS(mcs_to_cqi) == NUM_MCS);
   int sf = 0;
   while(sf < NUM_NFAPI_SUBFRAME)

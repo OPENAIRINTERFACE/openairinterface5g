@@ -1235,8 +1235,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 		      (NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l] == 3),"BAD MNC DIGIT LENGTH %d",
 		      NRRRC_CONFIGURATION_REQ (msg_p).mnc_digit_length[l]);
 	}
-        LOG_I(GNB_APP,"SSB SCO %d\n",*GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr);
-        NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset = *GNBParamList.paramarray[i][GNB_SSB_SUBCARRIEROFFSET_IDX].iptr;
         LOG_I(GNB_APP,"pdsch_AntennaPorts N1 %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).pdsch_AntennaPorts.N1 = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr;
         LOG_I(GNB_APP,"pdsch_AntennaPorts N2 %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr);
@@ -1957,9 +1955,38 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         f1Setup->measurement_timing_information[k]             = "0";
         f1Setup->ranac[k]                                      = 0;
         f1Setup->mib[k]                                        = rrc->carrier.MIB;
-        f1Setup->sib1[k]                                       = rrc->carrier.SIB1;
         f1Setup->mib_length[k]                                 = rrc->carrier.sizeof_MIB;
-        f1Setup->sib1_length[k]                                = rrc->carrier.sizeof_SIB1;
+
+        NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
+
+        asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+            &asn_DEF_NR_BCCH_DL_SCH_Message,
+            (void **)&bcch_message,
+            (const void *)rrc->carrier.SIB1,
+            rrc->carrier.sizeof_SIB1);
+
+        if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+          LOG_E(RRC,"SIB1 decode error\n");
+          // free the memory
+          SEQUENCE_free( &asn_DEF_NR_BCCH_DL_SCH_Message, bcch_message, 1 );
+          exit(1);
+        }
+       
+        NR_SIB1_t *bcch_SIB1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+        f1Setup->sib1[k] = calloc(1,rrc->carrier.sizeof_SIB1);
+        asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_SIB1,
+            NULL,
+            (void *)bcch_SIB1,
+            f1Setup->sib1[k],
+            NR_MAX_SIB_LENGTH/8);
+        AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+            enc_rval.failed_type->name, enc_rval.encoded);
+
+        //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+          LOG_I(NR_RRC, "SIB1 container to be integrated in F1 Setup request:\n");
+          xer_fprint(stdout, &asn_DEF_NR_SIB1,(void *)bcch_message->message.choice.c1->choice.systemInformationBlockType1 );
+        //}
+        f1Setup->sib1_length[k]                                = (enc_rval.encoded+7)/8;
         break;
       }
     }
@@ -2121,7 +2148,6 @@ void configure_gnb_du_mac(int inst) {
   // LOG_I(GNB_APP,"Configuring MAC/L1 %d, carrier->sib2 %p\n", inst, &carrier->sib2->radioResourceConfigCommon);
   LOG_I(GNB_APP,"Configuring gNB DU MAC/L1 %d \n", inst);
   rrc_mac_config_req_gNB(rrc->module_id,
-                        rrc->configuration.ssb_SubcarrierOffset,
                         rrc->configuration.pdsch_AntennaPorts,
                         rrc->configuration.pusch_AntennaPorts,
                         rrc->configuration.sib1_tda,

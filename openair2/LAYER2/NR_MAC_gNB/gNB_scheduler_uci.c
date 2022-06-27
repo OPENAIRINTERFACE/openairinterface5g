@@ -1844,7 +1844,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
     const int n_slots_frame = nr_slots_per_frame[BWP->scs];
-    if (sched_ctrl->ul_failure==1) continue;
+    if (sched_ctrl->ul_failure==1 || sched_ctrl->rrc_processing_timer>0) continue;
     NR_PUCCH_Config_t *pucch_Config = BWP->pucch_Config;
 
     if (!pucch_Config || !pucch_Config->schedulingRequestResourceToAddModList)

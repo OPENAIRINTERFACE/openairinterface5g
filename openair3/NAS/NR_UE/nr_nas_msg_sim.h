@@ -80,7 +80,6 @@ typedef struct {
   uint8_t kgnb[32];
 } ue_sa_security_key_t;
 
-
 typedef enum fgs_protocol_discriminator_e {
   /* Protocol discriminator identifier for 5GS Mobility Management */
   FGS_MOBILITY_MANAGEMENT_MESSAGE =   0x7E,
