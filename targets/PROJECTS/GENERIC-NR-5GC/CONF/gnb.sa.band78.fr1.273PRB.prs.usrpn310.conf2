@@ -49,7 +49,7 @@ gNBs =
     {
  #spCellConfigCommon
 
-      physCellId                                                    = 1;
+      physCellId                                                    = 0;
 
 #  downlinkConfigCommon
     #frequencyInfoDL
@@ -218,17 +218,17 @@ MACRLCs = (
 prs_config = (
 {
   NumPRSResources = 1;
-  PRSResourceSetPeriod = [40, 0];
+  PRSResourceSetPeriod = [20, 2];
   SymbolStart = [7];
-  NumPRSSymbols = [7];
-  NumRB = 240;
+  NumPRSSymbols = [6];
+  NumRB = 272;
   RBOffset = 0;
   CombSize = 4;
-  REOffset = [1];
-  PRSResourceOffset = [0];
+  REOffset = [0];
+  PRSResourceOffset = [1];
   PRSResourceRepetition = 1;
   PRSResourceTimeGap = 1;
-  NPRS_ID = [1];
+  NPRS_ID = [5];
   MutingPattern1 = [];
   MutingPattern2 = [];
   MutingBitRepetition = 1;

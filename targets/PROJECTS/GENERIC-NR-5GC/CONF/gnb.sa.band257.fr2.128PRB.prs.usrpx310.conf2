@@ -139,7 +139,7 @@ gNBs =
 # ssb_PositionsInBurs_BitmapPR
 # 1=short, 2=medium, 3=long
       ssb_PositionsInBurst_PR                                       = 3;
-      ssb_PositionsInBurst_Bitmap                                   = 0x0001000100010001L;
+      ssb_PositionsInBurst_Bitmap                                   = 0x0010001000100010L;
 
 # ssb_periodicityServingCell
 # 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1
@@ -223,11 +223,11 @@ prs_config = (
   NumRB = 128;
   RBOffset = 0;
   CombSize = 4;
-  REOffset = [0,0,0,0,0,0,0,0];
+  REOffset = [1,1,1,1,1,1,1,1];
   PRSResourceOffset = [0,10,20,30,40,50,60,70];
   PRSResourceRepetition = 1;
   PRSResourceTimeGap = 1;
-  NPRS_ID = [0,1,2,3,4,5,6,7];
+  NPRS_ID = [10,11,12,13,14,15,16,17];
   MutingPattern1 = [];
   MutingPattern2 = [];
   MutingBitRepetition = 1;

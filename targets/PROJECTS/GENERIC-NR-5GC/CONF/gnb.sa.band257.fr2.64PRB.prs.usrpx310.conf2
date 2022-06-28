@@ -62,7 +62,7 @@ gNBs =
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
         dl_subcarrierSpacing                                           = 3;
-        dl_carrierBandwidth                                            = 128;
+        dl_carrierBandwidth                                            = 64;
      #initialDownlinkBWP
       #genericParameters
         # this is RBstart=27,L=48 (275*(L-1))+RBstart
@@ -82,7 +82,7 @@ gNBs =
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
       ul_subcarrierSpacing                                          = 3;
-      ul_carrierBandwidth                                           = 128;
+      ul_carrierBandwidth                                           = 64;
       pMax                                                          = 20;
      #initialUplinkBWP
       #genericParameters
@@ -139,7 +139,7 @@ gNBs =
 # ssb_PositionsInBurs_BitmapPR
 # 1=short, 2=medium, 3=long
       ssb_PositionsInBurst_PR                                       = 3;
-      ssb_PositionsInBurst_Bitmap                                   = 0x0001000100010001L;
+      ssb_PositionsInBurst_Bitmap                                   = 0x0010001000100010L;
 
 # ssb_periodicityServingCell
 # 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1
@@ -220,14 +220,14 @@ prs_config = (
   PRSResourceSetPeriod = [80, 0];
   SymbolStart = [7,7,7,7,7,7,7,7];
   NumPRSSymbols = [6,6,6,6,6,6,6,6];
-  NumRB = 128;
+  NumRB = 64;
   RBOffset = 0;
   CombSize = 4;
-  REOffset = [0,0,0,0,0,0,0,0];
+  REOffset = [1,1,1,1,1,1,1,1];
   PRSResourceOffset = [0,10,20,30,40,50,60,70];
   PRSResourceRepetition = 1;
   PRSResourceTimeGap = 1;
-  NPRS_ID = [0,1,2,3,4,5,6,7];
+  NPRS_ID = [10,11,12,13,14,15,16,17];
   MutingPattern1 = [];
   MutingPattern2 = [];
   MutingBitRepetition = 1;
@@ -257,10 +257,10 @@ RUs = (
   max_rxgain                    = 114;
   sf_extension                  = 0;
   eNB_instances  = [0];
-  ##beamforming 1x2 matrix: 1 layer x 2 antennas
-  bf_weights = [0x00007fff, 0x0000];
+  #beamforming 1x4 matrix:
+  bf_weights = [0x00007fff, 0x0000, 0x0000, 0x0000];
   #clock_src = "internal";
-  sdr_addrs = "addr=192.168.50.2,clock_source=gpsdo,time_source=gpsdo"
+  sdr_addrs = "addr=192.168.10.2,clock_source=gpsdo,time_source=gpsdo"
   if_freq = 50000000L;
 }
 );
@@ -268,7 +268,7 @@ RUs = (
 THREAD_STRUCT = (
 {
   #three config for level of parallelism "PARALLEL_SINGLE_THREAD", "PARALLEL_RU_L1_SPLIT", or "PARALLEL_RU_L1_TRX_SPLIT"
-  parallel_config    = "PARALLEL_RU_L1_TRX_SPLIT";
+  parallel_config    = "PARALLEL_SINGLE_THREAD";
   #two option for worker "WORKER_DISABLE" or "WORKER_ENABLE"
   worker_config      = "WORKER_ENABLE";
 }
@@ -278,7 +278,7 @@ rfsimulator :
 {
   serveraddr = "server";
   serverport = "4043";
-  options = ("saviq"); #or/and "chanmod"
+  options = (); #("saviq"); or/and "chanmod"
   modelname = "AWGN";
   IQfile = "/tmp/rfsimulator.iqs";
 };
