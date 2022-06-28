@@ -44,7 +44,7 @@ extern uint16_t NB_UE_INST;
       {"sqn",              "USIM sqn\n",           0,         strptr:&uicc->sqnStr,               defstrval:"000000",  TYPE_STRING,    0 }, \
       {"dnn",              "UE dnn (apn)\n",       0,         strptr:&uicc->dnnStr,               defstrval:"oai",     TYPE_STRING,    0 }, \
       {"nssai_sst",            "UE nssai\n",           0,         iptr:&uicc->nssai_sst,             defintval:1,    TYPE_INT,    0 }, \
-      {"nssai_sd",            "UE nssai\n",           0,         iptr:&uicc->nssai_sd,             defintval:1,    TYPE_INT,    0 }, \
+      {"nssai_sd",            "UE nssai\n",           0,         iptr:&uicc->nssai_sd,            defintval:0xffffff,  TYPE_INT,       0 }, \
   };
 
 static uicc_t** uiccArray=NULL;
@@ -73,7 +73,10 @@ uicc_t *init_uicc(char *sectionName) {
   // key, OPc, sqn, amf don't need to be read from the true USIM 
   int ret = config_get( uicc_params,sizeof(uicc_params)/sizeof(paramdef_t),sectionName);
   AssertFatal(ret >= 0, "configuration couldn't be performed for uicc name: %s", sectionName);
-  LOG_I(SIM, "UICC simulation: IMSI=%s, Ki=%s, OPc=%s\n", uicc->imsiStr, uicc->keyStr, uicc->opcStr);
+  LOG_I(SIM,
+        "UICC simulation: IMSI=%s, Ki=%s, OPc=%s, DNN=%s, SST=0x%02x, SD=0x%06x\n",
+        uicc->imsiStr, uicc->keyStr, uicc->opcStr,
+        uicc->dnnStr, uicc->nssai_sst, uicc->nssai_sd);
   to_hex(uicc->keyStr,uicc->key, sizeof(uicc->key) );
   to_hex(uicc->opcStr,uicc->opc, sizeof(uicc->opc) );
   to_hex(uicc->sqnStr,uicc->sqn, sizeof(uicc->sqn) );
