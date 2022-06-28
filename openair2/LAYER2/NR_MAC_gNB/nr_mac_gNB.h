@@ -462,6 +462,7 @@ typedef struct NR_sched_pdsch {
   /// NR_pdsch_semi_static_t has precedence
   int time_domain_allocation;
 
+  uint16_t pm_index;
   uint8_t nrOfLayers;
   NR_pdsch_dmrs_t dmrs_parms;
   NR_pdsch_tda_info_t tda_info;
@@ -629,7 +630,6 @@ typedef struct {
   int ul_failure;
   struct CSI_Report CSI_report;
   bool SR;
-  bool set_pmi;
   /// information about every HARQ process
   NR_UE_harq_t harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// HARQ processes that are free

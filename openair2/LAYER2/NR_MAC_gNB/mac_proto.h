@@ -462,11 +462,10 @@ void set_dl_dmrs_params(NR_pdsch_dmrs_t *dmrs,
                         NR_pdsch_tda_info_t *tda_info,
                         int Layers);
 
-uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
+uint16_t set_pm_index(NR_UE_info_t *UE,
+                      NR_UE_sched_ctrl_t *sched_ctrl,
                       int layers,
-                      int N1, int N2,
-                      int xp_pdsch_antenna_ports,
-                      int codebook_mode);
+                      int xp_pdsch_antenna_ports);
 
 uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx);
 

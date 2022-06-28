@@ -397,6 +397,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   // we need to verify if it is not decreased
   // othwise it wouldn't be possible to transmit the same TBS
   int layers = (curInfo->nrOfLayers < retInfo->nrOfLayers) ? curInfo->nrOfLayers : retInfo->nrOfLayers;
+  int pm_index = (curInfo->nrOfLayers < retInfo->nrOfLayers) ? curInfo->pm_index : retInfo->pm_index;
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
   const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : dl_bwp->BWPSize;
@@ -472,6 +473,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     retInfo->rbSize = new_rbSize;
     retInfo->time_domain_allocation = tda;
     retInfo->nrOfLayers = layers;
+    retInfo->pm_index = pm_index;
     retInfo->dmrs_parms = temp_dmrs;
     retInfo->tda_info = temp_tda;
   }
@@ -621,6 +623,10 @@ void pf_dl(module_id_t module_id,
       else
         sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
       sched_pdsch->nrOfLayers = get_dl_nrOfLayers(sched_ctrl, current_BWP->dci_format);
+      sched_pdsch->pm_index = set_pm_index(UE,
+                                           sched_ctrl,
+                                           sched_pdsch->nrOfLayers,
+                                           mac->xp_pdsch_antenna_ports);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
@@ -1032,17 +1038,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->StartSymbolIndex = tda_info->startSymbolIndex;
     pdsch_pdu->NrOfSymbols = tda_info->nrOfSymbols;
     // Precoding
-    if (sched_ctrl->set_pmi) {
-      const int report_id = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id;
-      nr_csi_report_t *csi_report = &UE->csi_report_template[report_id];
-      pdsch_pdu->precodingAndBeamforming.prg_size = pdsch_pdu->rbSize;
-      pdsch_pdu->precodingAndBeamforming.prgs_list[0].pm_idx = set_pm_index(sched_ctrl,
-                                                                            nrOfLayers,
-                                                                            csi_report->N1,
-                                                                            csi_report->N2,
-                                                                            gNB_mac->xp_pdsch_antenna_ports,
-                                                                            csi_report->codebook_mode);
-    }
+    pdsch_pdu->precodingAndBeamforming.prg_size = pdsch_pdu->rbSize;
+    pdsch_pdu->precodingAndBeamforming.prgs_list[0].pm_idx = sched_pdsch->pm_index;
     // TBS_LBRM according to section 5.4.2.1 of 38.212
     // TODO: verify the case where pdsch_servingcellconfig is NULL, in which case
     //       in principle maxMIMO_layers should be given by the maximum number of layers
