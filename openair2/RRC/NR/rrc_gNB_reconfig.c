@@ -861,7 +861,7 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
      NR_CSI_ReportConfig_t *csirep2 = calloc(1,sizeof(*csirep2));
      csirep2->reportConfigId=bwp->bwp_Id+10;
      csirep2->carrier=NULL;
-     csirep2->resourcesForChannelMeasurement=1;
+     csirep2->resourcesForChannelMeasurement=bwp->bwp_Id+20;
      csirep2->csi_IM_ResourcesForInterference=NULL;
      csirep2->nzp_CSI_RS_ResourcesForInterference=NULL;
      csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
