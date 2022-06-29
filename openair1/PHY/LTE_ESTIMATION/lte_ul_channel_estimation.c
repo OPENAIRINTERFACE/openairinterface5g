@@ -341,7 +341,7 @@ int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                               15);
             rotate_cpx_vector((c16_t *) ul_ch2,
                               (c16_t *)&ru2[2*current_phase2],
-                              (c16_t *) &tmp_estimates[0],
+                              (c16_t *) tmp_estimates,
                               Msc_RS,
                               15);
             // Combine the two rotated estimates
@@ -658,12 +658,12 @@ int32_t lte_ul_channel_estimation_RRU(LTE_DL_FRAME_PARMS *frame_parms,
           //          msg("sym: %d, current_phase1: %d, ru: %d + j%d, current_phase2: %d, ru: %d + j%d\n",k,current_phase1,ru1[2*current_phase1],ru1[2*current_phase1+1],current_phase2,ru2[2*current_phase2],ru2[2*current_phase2+1]);
           // rotate channel estimates by estimated phase
           rotate_cpx_vector((c16_t *) ul_ch1,
-                            (c16_t *)&ru1[2*current_phase1],
+                            (c16_t *) &ru1[2*current_phase1],
                             (c16_t *) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],
                             Msc_RS,
                             15);
           rotate_cpx_vector((c16_t *) ul_ch2,
-                            (c16_t *)&ru2[2*current_phase2],
+                            (c16_t *) &ru2[2*current_phase2],
                             (c16_t *) &tmp_estimates[0],
                             Msc_RS,
                             15);

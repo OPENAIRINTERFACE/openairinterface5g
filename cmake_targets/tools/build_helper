@@ -197,8 +197,8 @@ check_warnings() {
 #argument:
 #    $1: log file
 check_errors() {
-  #we look for 'warning:' in the compilation log file
-  error_count=`grep "error:" "$1" | wc -l`
+  #we look for 'error:' in the compilation log file
+  error_count=`grep -c "error:" "$1"`
   if [ $error_count -gt 0 ]; then
     echo_error "ERROR: $error_count error. See $1"
   fi

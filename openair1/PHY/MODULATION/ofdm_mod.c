@@ -348,7 +348,7 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
                        int length) {
   int symb_offset = (slot%fp->slots_per_subframe)*fp->symbols_per_slot;
 
-  int16_t *symbol_rotation = fp->symbol_rotation[0];
+  c16_t *symbol_rotation = fp->symbol_rotation[0];
 
   for (int sidx=0;sidx<nsymb;sidx++) {
 
@@ -357,12 +357,12 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
       slot,
       sidx + first_symbol + symb_offset,
       length,
-      symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
-      symbol_rotation[1 + 2 * (sidx + first_symbol + symb_offset)]);
+      symbol_rotation[sidx + first_symbol + symb_offset].r,
+      symbol_rotation[sidx + first_symbol + symb_offset].i);
 
-    rotate_cpx_vector((c16_t*)trxdata + (sidx * length * 2),
-                      (c16_t*)&symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
-                      (c16_t*) trxdata + (sidx * length * 2),
+    rotate_cpx_vector(((c16_t*) trxdata) + sidx * length,
+                      symbol_rotation + sidx + first_symbol + symb_offset,
+                      ((c16_t*) trxdata) + sidx * length,
                       length,
                       15);
   }
