@@ -225,15 +225,16 @@ enum  blocking_t {
 };
 
 static void setblocking(int sock, enum blocking_t active) {
-  int opts;
-  AssertFatal( (opts = fcntl(sock, F_GETFL)) >= 0,"");
+  int opts = fcntl(sock, F_GETFL);
+  AssertFatal(opts >= 0, "fcntl(): errno %d, %s\n", errno, strerror(errno));
 
   if (active==blocking)
     opts = opts & ~O_NONBLOCK;
   else
     opts = opts | O_NONBLOCK;
 
-  AssertFatal(fcntl(sock, F_SETFL, opts) >= 0, "");
+  opts = fcntl(sock, F_SETFL, opts);
+  AssertFatal(opts >= 0, "fcntl(): errno %d, %s\n", errno, strerror(errno));
 }
 
 static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps);
@@ -248,7 +249,6 @@ static void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t)
               "Bug: %d/%p/%zd/%p", fd, _buf, count, t);
   char *buf = _buf;
   ssize_t l;
-  setblocking(fd, notBlocking);
 
   while (count) {
     l = write(fd, buf, count);
