@@ -1669,6 +1669,21 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   }
 }
 
+//TODO temp function (to remove once CSI meas config harmonization is done)
+void update_cqitables(struct NR_SetupRelease_PDSCH_Config *pdsch_Config,
+                     NR_CSI_MeasConfig_t *csi_MeasConfig) {
+  int nb_csi = csi_MeasConfig->csi_ReportConfigToAddModList->list.count;
+  for (int i = 0; i < nb_csi; i++) {
+    NR_CSI_ReportConfig_t *csirep = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[i];
+    if(csirep->cqi_Table) {
+      if(pdsch_Config->choice.setup->mcs_Table!=NULL)
+        *csirep->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table2;
+      else
+        *csirep->cqi_Table = NR_CSI_ReportConfig__cqi_Table_table1;
+    }
+  }
+}
+
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             NR_UE_NR_Capability_t *uecap,
                             const gNB_RrcConfigurationReq* configuration) {
@@ -1692,6 +1707,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
         set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, scc);
       }
     }
+    update_cqitables(bwp_Dedicated->pdsch_Config, SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup);
   }
 }
 
