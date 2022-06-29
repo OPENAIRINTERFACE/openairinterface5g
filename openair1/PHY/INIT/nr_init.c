@@ -627,6 +627,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+  /* Do NOT allocate per-antenna txdataF/rxdataF: the gNB gets a pointer to the
+   * RU to copy/recover freq-domain memory from there */
   common_vars->beam_id = (uint8_t **)malloc16(Ptx*sizeof(uint8_t*));
 
   for (i=0;i<Ptx;i++){
@@ -636,9 +638,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
           fp->samples_per_frame_wCP*sizeof(int32_t));
     common_vars->beam_id[i] = (uint8_t*)malloc16_clear(fp->symbols_per_slot*fp->slots_per_frame*sizeof(uint8_t));
     memset(common_vars->beam_id[i],255,fp->symbols_per_slot*fp->slots_per_frame);
-  }
-  for (i=0;i<Prx;i++){
-    common_vars->rxdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t));
   }
   common_vars->debugBuff = (int32_t*)malloc16_clear(fp->samples_per_frame*sizeof(int32_t)*100);	
   common_vars->debugBuff_sample_offset = 0; 
@@ -782,10 +781,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(common_vars->beam_id[i]);
   }
 
-  for (int i = 0; i < Prx; ++i) {
-    free_and_zero(common_vars->rxdataF[i]);
-  }
-
+  /* Do NOT free per-antenna txdataF/rxdataF: the gNB gets a pointer to the
+   * RU's txdataF/rxdataF, and the RU will free that */
   free_and_zero(common_vars->txdataF);
   free_and_zero(common_vars->rxdataF);
   free_and_zero(common_vars->beam_id);

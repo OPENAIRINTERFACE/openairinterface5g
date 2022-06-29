@@ -396,10 +396,6 @@ typedef struct {
 } NR_gNB_SRS_t;
 
 typedef struct {
-  /// \brief Pointers (dynamic) to the received data in the time domain.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[
-  int32_t **rxdata;
   /// \brief Pointers (dynamic) to the received data in the frequency domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: ? [0..2*ofdm_symbol_size*frame_parms->symbols_per_tti[

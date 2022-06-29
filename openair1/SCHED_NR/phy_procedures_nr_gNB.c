@@ -582,33 +582,6 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
 }
 
-void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
-
-  uint8_t symbol;
-  unsigned char aa;
-
-  for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
-    for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
-      nr_slot_fep_ul(&gNB->frame_parms,
-                     gNB->common_vars.rxdata[aa],
-                     gNB->common_vars.rxdataF[aa],
-                     symbol,
-                     slot_rx,
-                     0);
-    }
-  }
-
-  for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
-    apply_nr_rotation_ul(&gNB->frame_parms,
-			 gNB->common_vars.rxdataF[aa],
-			 slot_rx,
-			 0,
-			 gNB->frame_parms.Ncp==EXTENDED?12:14,
-			 gNB->frame_parms.ofdm_symbol_size);
-  }
-
-}
-
 int fill_srs_reported_symbol_list(nfapi_nr_srs_indication_reported_symbol_t *reported_symbol_list,
                                   const nfapi_nr_srs_pdu_t *srs_pdu,
                                   const int N_RB_UL,

@@ -201,10 +201,8 @@ void nr_phy_free_RU(RU_t *ru)
     free_and_zero(ru->common.txdataF_BF);
 
     // free FFT output buffers (RX)
-    // HACK: cannot free here, or the gNB code in phy_free_nr_gNB() will
-    // segfault. The rxdataF memory between RU and gNB is not properly handled!
-    //for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdataF[i]);
-    //free_and_zero(ru->common.rxdataF);
+    for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdataF[i]);
+      free_and_zero(ru->common.rxdataF);
 
     for (j=0;j<NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX;j++) {
       for (i = 0; i < ru->nb_rx; i++)
