@@ -667,6 +667,10 @@ typedef struct NR_mac_dir_stats {
   uint64_t errors;
   uint64_t total_bytes;
   uint32_t current_bytes;
+  uint32_t total_rbs;
+  uint32_t total_rbs_retx;
+  uint32_t num_mac_sdu;
+  uint32_t current_rbs;
 } NR_mac_dir_stats_t;
 
 typedef struct NR_mac_stats {
@@ -849,6 +853,10 @@ typedef struct gNB_MAC_INST_s {
   uint8_t min_grant_mcs;
 
   nr_mac_rrc_ul_if_t mac_rrc;
+
+  int16_t frame;
+  int16_t slot;
+
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */
