@@ -1110,3 +1110,39 @@ void rlc_tick(int a, int b)
         __FILE__, __LINE__, __FUNCTION__);
   exit(1);
 }
+
+/* returns 0 in case of error, 1 if everything ok */
+int const nr_rlc_get_statistics(
+  int rnti,
+  int srb_flag,
+  int rb_id,
+  nr_rlc_statistics_t *out)
+{
+  nr_rlc_ue_t     *ue;
+  nr_rlc_entity_t *rb;
+  int             ret;
+
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+
+  rb = NULL;
+
+  if (srb_flag) {
+    if (rb_id >= 1 && rb_id <= 2)
+      rb = ue->srb[rb_id - 1];
+  } else {
+    if (rb_id >= 1 && rb_id <= 5)
+      rb = ue->drb[rb_id - 1];
+  }
+
+  if (rb != NULL) {
+    rb->get_stats(rb, out);
+    ret = 1;
+  } else {
+    ret = 0;
+  }
+
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+
+  return ret;
+}
