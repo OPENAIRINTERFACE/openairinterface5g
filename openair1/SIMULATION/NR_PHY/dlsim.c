@@ -276,6 +276,13 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
   sched_ctrl->search_space = get_searchspace(NULL, scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
+  //TODO better implementation needed
+  //for now artificially set candidates for the required aggregation levels
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
   uint8_t nr_of_candidates = 0;
   if (g_mcsIndex < 4) {
     find_aggregation_candidates(&sched_ctrl->aggregation_level,
