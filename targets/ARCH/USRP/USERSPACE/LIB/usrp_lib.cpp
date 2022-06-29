@@ -1030,9 +1030,13 @@ extern "C" {
     }
 
     if (device_adds[0].get("type") == "n3xx") {
-      printf("Found USRP n300\n");
+      const std::string product = device_adds[0].get("product");
+      printf("Found USRP %s\n", product.c_str());
       device->type=USRP_N300_DEV;
-      usrp_master_clock = 122.88e6;
+      if (product == "n320")
+        usrp_master_clock = 245.76e6; // N320 does not support 122.88e6 master clock rate
+      else
+        usrp_master_clock = 122.88e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
 
       if ( 0 != system("sysctl -w net.core.rmem_max=62500000 net.core.wmem_max=62500000") )
