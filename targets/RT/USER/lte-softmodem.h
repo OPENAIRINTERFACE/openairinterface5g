@@ -29,6 +29,7 @@
 #include "flexran_agent.h"
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
+#include "targets/ARCH/COMMON/common_lib.h"
 #include "executables/softmodem-common.h"
 
 
@@ -213,5 +214,19 @@ extern void init_UE_standalone_thread(int ue_idx);
 extern PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms, uint8_t UE_id, uint8_t abstraction_flag);
 
 extern void init_bler_table(void);
-
+void feptx_ofdm_2thread(RU_t *ru,
+                        int frame,
+                        int subframe);
+void* ru_thread_control( void* param );
+void wait_eNBs(void);
+void kill_feptx_thread(RU_t *ru);
+void init_fep_thread(RU_t *ru, pthread_attr_t *attr_fep);
+void init_feptx_thread(RU_t *ru, pthread_attr_t *attr_feptx);
+void fep_full(RU_t *ru, int subframe);
+void configure_ru(int, void *arg);
+void configure_rru(int, void *arg);
+void ru_fep_full_2thread(RU_t *ru,int subframe);
+void feptx_ofdm(RU_t*ru, int frame_tx, int tti_tx);
+void feptx_prec(struct RU_t_s *ru, int frame_tx, int tti_tx);
+void fill_rf_config(RU_t *ru, char *rf_config_file);
 #endif

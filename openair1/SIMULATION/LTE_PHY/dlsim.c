@@ -514,10 +514,10 @@ int main(int argc, char **argv) {
   LTE_DL_FRAME_PARMS *frame_parms;
   double s_re0[30720*2],s_im0[30720*2],r_re0[30720*2],r_im0[30720*2];
   double s_re1[30720*2],s_im1[30720*2],r_re1[30720*2],r_im1[30720*2];
-  double *s_re[2]= {s_re0,s_re1};
-  double *s_im[2]= {s_im0,s_im1};
-  double *r_re[2]= {r_re0,r_re1};
-  double *r_im[2]= {r_im0,r_im1};
+  double *s_re[NB_ANTENNAS_TX]= {s_re0,s_re1};
+  double *s_im[NB_ANTENNAS_TX]= {s_im0,s_im1};
+  double *r_re[NB_ANTENNAS_RX]= {r_re0,r_re1};
+  double *r_im[NB_ANTENNAS_RX]= {r_im0,r_im1};
   uint8_t transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=2;
   int eNB_id = 0;
   unsigned char round;

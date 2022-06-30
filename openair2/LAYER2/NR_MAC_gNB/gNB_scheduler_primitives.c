@@ -2437,16 +2437,15 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
     sched_ctrl->next_dl_bwp_id = -1;
     sched_ctrl->next_ul_bwp_id = -1;
     const struct NR_UplinkConfig__uplinkBWP_ToAddModList *ubwpList = servingCellConfig ? servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList : NULL;
-  if (ubwpList)
-    AssertFatal(ubwpList->list.count <= NR_MAX_NUM_BWP,
-			      "uplinkBWP_ToAddModList has %d BWP!\n",
-			      ubwpList->list.count);
+    AssertFatal(ubwpList == NULL || ubwpList->list.count <= NR_MAX_NUM_BWP,
+                "uplinkBWP_ToAddModList has %d BWP!\n",
+                ubwpList->list.count);
     const int ul_bwp_id = servingCellConfig ? *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id : 0;
     sched_ctrl->active_ubwp = ubwpList && ul_bwp_id > 0 ? ubwpList->list.array[ul_bwp_id - 1] : NULL;
 
     /* get Number of HARQ processes for this UE */
-  if (servingCellConfig)
-    AssertFatal(servingCellConfig->pdsch_ServingCellConfig->present == NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup,
+    AssertFatal(servingCellConfig == NULL
+                || servingCellConfig->pdsch_ServingCellConfig->present == NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup,
                 "no pdsch-ServingCellConfig found for UE %04x\n",
                 UE->rnti);
     const NR_PDSCH_ServingCellConfig_t *pdsch = servingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
