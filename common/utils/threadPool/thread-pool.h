@@ -131,13 +131,17 @@ static inline void pushNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf, notifiedFIF
 
 static inline void pushNotifiedFIFO(notifiedFIFO_t *nf, notifiedFIFO_elt_t *msg) {
   mutexlock(nf->lockF);
-  pushNotifiedFIFO_nothreadSafe(nf,msg);
-  condsignal(nf->notifF);
+  if (!nf->abortFIFO) {
+    pushNotifiedFIFO_nothreadSafe(nf,msg);
+    condsignal(nf->notifF);
+  }
   mutexunlock(nf->lockF);
 }
 
 static inline  notifiedFIFO_elt_t *pullNotifiedFIFO_nothreadSafe(notifiedFIFO_t *nf) {
   if (nf->outF == NULL)
+    return NULL;
+  if (nf->abortFIFO)
     return NULL;
 
   notifiedFIFO_elt_t *ret=nf->outF;
