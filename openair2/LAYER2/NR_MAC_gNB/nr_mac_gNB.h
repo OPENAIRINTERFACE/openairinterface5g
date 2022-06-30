@@ -373,23 +373,20 @@ typedef struct NR_sched_pucch {
   int start_symb;
 } NR_sched_pucch_t;
 
-/* PUSCH semi-static configuration: as long as the TDA and DCI format remain
- * the same over the same uBWP and search space, there is no need to
- * recalculate all S/L, MCS table, or DMRS-related parameters over and over
- * again. Hence, we store them in this struct for easy reference. */
-typedef struct NR_pusch_semi_static_t {
-  int time_domain_allocation;
-  uint8_t nrOfLayers;
-  uint8_t num_dmrs_cdm_grps_no_data;
+typedef struct NR_pusch_tda_info {
+  int mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;
-  long mapping_type;
-  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
-  uint16_t dmrs_config_type;
-  uint16_t ul_dmrs_symb_pos;
-  uint8_t num_dmrs_symb;
+} NR_pusch_tda_info_t;
+
+typedef struct NR_pusch_dmrs {
   uint8_t N_PRB_DMRS;
-} NR_pusch_semi_static_t;
+  uint8_t num_dmrs_symb;
+  uint16_t ul_dmrs_symb_pos;
+  uint8_t num_dmrs_cdm_grps_no_data;
+  nfapi_nr_dmrs_type_e dmrs_config_type;
+  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig;
+} NR_pusch_dmrs_t;
 
 typedef struct NR_sched_pusch {
   int frame;
@@ -411,10 +408,10 @@ typedef struct NR_sched_pusch {
   /// UL HARQ PID to use for this UE, or -1 for "any new"
   int8_t ul_harq_pid;
 
-  /// the Time Domain Allocation used for this transmission. Note that this is
-  /// only important for retransmissions; otherwise, the TDA in
-  /// NR_pusch_semi_static_t has precedence
+  uint8_t nrOfLayers;
   int time_domain_allocation;
+  NR_pusch_dmrs_t dmrs_info;
+  NR_pusch_tda_info_t tda_info;
 } NR_sched_pusch_t;
 
 typedef struct NR_sched_srs {
@@ -457,9 +454,6 @@ typedef struct NR_sched_pdsch {
   // pucch format allocation
   uint8_t pucch_allocation;
 
-  /// the Time Domain Allocation used for this transmission. Note that this is
-  /// only important for retransmissions; otherwise, the TDA in
-  /// NR_pdsch_semi_static_t has precedence
   int time_domain_allocation;
 
   uint16_t pm_index;
@@ -578,8 +572,6 @@ typedef struct {
   /// CSI in second.  This order is important for nr_acknack_scheduling()!
   NR_sched_pucch_t sched_pucch[2];
 
-  /// PUSCH semi-static configuration: is not cleared across TTIs
-  NR_pusch_semi_static_t pusch_semi_static;
   /// Sched PUSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pusch_t sched_pusch;
 

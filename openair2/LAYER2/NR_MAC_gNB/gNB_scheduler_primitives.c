@@ -562,55 +562,58 @@ void nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
   SLIV2SL(startSymbolAndLength, &tda_info->startSymbolIndex, &tda_info->nrOfSymbols);
 }
 
-void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *ul_bwp,
-                              const NR_ServingCellConfigCommon_t *scc,
-                              int tda,
-                              uint8_t nrOfLayers,
-                              NR_pusch_semi_static_t *ps) {
+void nr_get_pusch_tda_info(const NR_UE_UL_BWP_t *ul_bwp,
+                           int tda,
+                           NR_pusch_tda_info_t *tda_info) {
 
-  ps->time_domain_allocation = tda;
+  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = ul_bwp->tdaList;
+  AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  tda_info->mapping_type = tdaList->list.array[tda]->mappingType;
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, &tda_info->startSymbolIndex, &tda_info->nrOfSymbols);
+}
 
-  const int startSymbolAndLength = ul_bwp->tdaList->list.array[tda]->startSymbolAndLength;
-  SLIV2SL(startSymbolAndLength,
-          &ps->startSymbolIndex,
-          &ps->nrOfSymbols);
+void set_ul_dmrs_params(NR_pusch_dmrs_t *dmrs,
+                        const NR_ServingCellConfigCommon_t *scc,
+                        NR_UE_UL_BWP_t *ul_bwp,
+                        NR_pusch_tda_info_t *tda_info,
+                        int Layers) {
 
-  ps->nrOfLayers = nrOfLayers;
   // TODO setting of cdm groups with no data to be redone for MIMO
-  if (ul_bwp->transform_precoding || nrOfLayers<3)
-    ps->num_dmrs_cdm_grps_no_data = (ul_bwp->dci_format == NR_UL_DCI_FORMAT_0_1) ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2);
+  if (ul_bwp->transform_precoding || Layers<3)
+    dmrs->num_dmrs_cdm_grps_no_data = (ul_bwp->dci_format == NR_UL_DCI_FORMAT_0_1) ? 1 : (tda_info->nrOfSymbols == 2 ? 1 : 2);
   else
-    ps->num_dmrs_cdm_grps_no_data = 2;
+    dmrs->num_dmrs_cdm_grps_no_data = 2;
 
-  /* DMRS calculations */
-  ps->mapping_type = ul_bwp->tdaList->list.array[tda]->mappingType;
-  ps->NR_DMRS_UplinkConfig = ul_bwp->pusch_Config ?
-    (ps->mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA ?
+  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = ul_bwp->pusch_Config ?
+     (tda_info->mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA ?
      ul_bwp->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup :
      ul_bwp->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup) : NULL;
-  ps->dmrs_config_type = ps->NR_DMRS_UplinkConfig ? ((ps->NR_DMRS_UplinkConfig->dmrs_Type == NULL ? 0 : 1)) : 0;
-  const pusch_dmrs_AdditionalPosition_t additional_pos =
-						     ps->NR_DMRS_UplinkConfig ? (ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL
-										 ? 2
-										 : (*ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition ==
-										    NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3
-										    ? 3
-										    : *ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition)):2;
-  const pusch_maxLength_t pusch_maxLength =
-    ps->NR_DMRS_UplinkConfig ? (ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2) : 1;
-  ps->ul_dmrs_symb_pos = get_l_prime(ps->nrOfSymbols,
-                                            ps->mapping_type,
-                                            additional_pos,
-                                            pusch_maxLength,
-                                            ps->startSymbolIndex,
-                                            scc->dmrs_TypeA_Position);
+
+  dmrs->dmrs_config_type = NR_DMRS_UplinkConfig ? ((NR_DMRS_UplinkConfig->dmrs_Type == NULL ? 0 : 1)) : 0;
+
+  const pusch_dmrs_AdditionalPosition_t additional_pos = NR_DMRS_UplinkConfig ? (NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL ?
+                                                         2 : (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition ==
+                                                         NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3 ?
+                                                         3 : *NR_DMRS_UplinkConfig->dmrs_AdditionalPosition)) : 2;
+
+  const pusch_maxLength_t pusch_maxLength = NR_DMRS_UplinkConfig ? (NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2) : 1;
+  dmrs->ul_dmrs_symb_pos = get_l_prime(tda_info->nrOfSymbols,
+                                       tda_info->mapping_type,
+                                       additional_pos,
+                                       pusch_maxLength,
+                                       tda_info->startSymbolIndex,
+                                       scc->dmrs_TypeA_Position);
+
   uint8_t num_dmrs_symb = 0;
-  for(int i = ps->startSymbolIndex; i < ps->startSymbolIndex + ps->nrOfSymbols; i++)
-    num_dmrs_symb += (ps->ul_dmrs_symb_pos >> i) & 1;
-  ps->num_dmrs_symb = num_dmrs_symb;
-  ps->N_PRB_DMRS = ps->dmrs_config_type == 0
-      ? ps->num_dmrs_cdm_grps_no_data * 6
-      : ps->num_dmrs_cdm_grps_no_data * 4;
+  for(int i = tda_info->startSymbolIndex; i < tda_info->startSymbolIndex + tda_info->nrOfSymbols; i++)
+    num_dmrs_symb += (dmrs->ul_dmrs_symb_pos >> i) & 1;
+  dmrs->num_dmrs_symb = num_dmrs_symb;
+  dmrs->N_PRB_DMRS = dmrs->dmrs_config_type == 0 ?
+                     dmrs->num_dmrs_cdm_grps_no_data * 6 :
+                     dmrs->num_dmrs_cdm_grps_no_data * 4;
+
+  dmrs->NR_DMRS_UplinkConfig = NR_DMRS_UplinkConfig;
 }
 
 #define BLER_UPDATE_FRAME 10
@@ -2496,7 +2499,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
 
   /* set illegal time domain allocation to force recomputation of all fields */
   sched_ctrl->sched_pdsch.time_domain_allocation = -1;
-  sched_ctrl->pusch_semi_static.time_domain_allocation = -1;
+  sched_ctrl->sched_pusch.time_domain_allocation = -1;
 
   /* Set default BWPs */
   sched_ctrl->next_dl_bwp_id = -1;

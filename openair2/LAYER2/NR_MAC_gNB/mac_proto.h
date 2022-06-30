@@ -328,11 +328,15 @@ void nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
                            int tda,
                            NR_pdsch_tda_info_t *tda_info);
 
-void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *ul_bwp,
-                              const NR_ServingCellConfigCommon_t *scc,
-                              int tda,
-                              uint8_t nrOfLayers,
-                              NR_pusch_semi_static_t *ps);
+void nr_get_pusch_tda_info(const NR_UE_UL_BWP_t *ul_bwp,
+                           int tda,
+                           NR_pusch_tda_info_t *tda_info);
+
+void set_ul_dmrs_params(NR_pusch_dmrs_t *dmrs,
+                        const NR_ServingCellConfigCommon_t *scc,
+                        NR_UE_UL_BWP_t *ul_bwp,
+                        NR_pusch_tda_info_t *tda_info,
+                        int Layers);
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 

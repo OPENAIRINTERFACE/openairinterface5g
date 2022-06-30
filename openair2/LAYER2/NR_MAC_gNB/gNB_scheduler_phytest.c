@@ -381,14 +381,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
-  /* we want to avoid a lengthy deduction of DMRS and other parameters in
-   * every TTI if we can save it, so check whether TDA, or
-   * num_dmrs_cdm_grps_no_data has changed and only then recompute */
-  NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
-  if (ps->time_domain_allocation != tda
-      || ps->nrOfLayers != target_ul_Nl)
-    nr_set_pusch_semi_static(ul_bwp, scc, tda, target_ul_Nl,ps);
-
   uint16_t rbStart = 0;
   uint16_t rbSize;
 
@@ -400,10 +392,13 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   else
     rbSize = target_ul_bw;
 
+  NR_pusch_tda_info_t *tda_info = &sched_ctrl->sched_pusch.tda_info;
+  nr_get_pusch_tda_info(ul_bwp, tda, tda_info);
+
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
   for (int i = rbStart; i < rbStart + rbSize; ++i) {
-    if ((vrb_map_UL[i+BWPStart] & SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols)) != 0) {
+    if ((vrb_map_UL[i+BWPStart] & SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols)) != 0) {
       LOG_E(MAC,
             "%s(): %4d.%2d RB %d is already reserved, cannot schedule UE\n",
             __func__,
@@ -455,7 +450,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   sched_pusch->ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
 
   /* Calculate TBS from MCS */
-  ps->nrOfLayers = target_ul_Nl;
+  sched_pusch->nrOfLayers = target_ul_Nl;
   sched_pusch->R = nr_get_code_rate_ul(mcs, ul_bwp->mcs_table);
   sched_pusch->Qm = nr_get_Qm_ul(mcs, ul_bwp->mcs_table);
   if (ul_bwp->pusch_Config->tp_pi2BPSK
@@ -463,14 +458,22 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
     sched_pusch->R >>= 1;
     sched_pusch->Qm <<= 1;
   }
+
+  NR_pusch_dmrs_t *dmrs = &sched_ctrl->sched_pusch.dmrs_info;
+  set_ul_dmrs_params(dmrs,
+                     scc,
+                     ul_bwp,
+                     tda_info,
+                     sched_pusch->nrOfLayers);
+
   sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
                                         sched_pusch->R,
                                         sched_pusch->rbSize,
-                                        ps->nrOfSymbols,
-                                        ps->N_PRB_DMRS * ps->num_dmrs_symb,
+                                        tda_info->nrOfSymbols,
+                                        dmrs->N_PRB_DMRS * dmrs->num_dmrs_symb,
                                         0, // nb_rb_oh
                                         0,
-                                        ps->nrOfLayers /* NrOfLayers */)
+                                        sched_pusch->nrOfLayers /* NrOfLayers */)
                          >> 3;
 
   /* mark the corresponding RBs as used */
@@ -481,6 +484,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
                      sched_ctrl->aggregation_level);
 
   for (int rb = rbStart; rb < rbStart + rbSize; rb++)
-    vrb_map_UL[rb+BWPStart] |= SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
+    vrb_map_UL[rb+BWPStart] |= SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols);
   return true;
 }
