@@ -222,6 +222,24 @@ static inline int abortNotifiedFIFOJob(notifiedFIFO_t *nf, uint64_t key) {
   return nbDeleted;
 }
 
+// This functions aborts all messages in the queue, and marks the queue as
+// "aborted", such that every call to it will return NULL
+static inline void abortNotifiedFIFO(notifiedFIFO_t *nf) {
+  mutexlock(nf->lockF);
+  nf->abortFIFO = true;
+  notifiedFIFO_elt_t **elt = &nf->outF;
+  while(*elt != NULL) {
+    notifiedFIFO_elt_t *p = *elt;
+    *elt = (*elt)->next;
+    delNotifiedFIFO_elt(p);
+  }
+
+  if (nf->outF == NULL)
+    nf->inF = NULL;
+  mutexunlock(nf->lockF);
+  condsignal(nf->notifF);
+}
+
 struct one_thread {
   pthread_t  threadID;
   int id;

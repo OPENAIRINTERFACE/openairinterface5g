@@ -477,6 +477,11 @@ void init_gNB_Tpool(int inst) {
 void term_gNB_Tpool(int inst) {
   PHY_VARS_gNB *gNB = RC.gNB[inst];
   abortTpool(&gNB->threadPool);
+  abortNotifiedFIFO(&gNB->respDecode);
+  abortNotifiedFIFO(&gNB->resp_L1);
+  abortNotifiedFIFO(&gNB->L1_tx_free);
+  abortNotifiedFIFO(&gNB->L1_tx_filled);
+  abortNotifiedFIFO(&gNB->L1_tx_out);
 }
 
 /*!
