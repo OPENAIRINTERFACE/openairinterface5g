@@ -1163,7 +1163,6 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
   *snr = dB_fixed((int32_t)((*signal_power<<factor_bits)/(*noise_power))) - factor_dB;
 
 #ifdef SRS_DEBUG
-  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
   uint8_t R = srs_pdu->comb_size == 0 ? 2 : 4;
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
     for(int sc_idx = 0; sc_idx < nr_srs_info->sc_list_length; sc_idx++) {
