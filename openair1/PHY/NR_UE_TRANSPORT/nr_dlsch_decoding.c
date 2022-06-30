@@ -615,6 +615,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   for (r=0; r<nbDecode; r++) {
     notifiedFIFO_elt_t *req=pullTpool(&nf, &(pool_dl));
+    if (req == NULL)
+      break; // Tpool has been stopped
     bool last = false;
     if (r == nbDecode - 1)
       last = true;

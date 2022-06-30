@@ -364,6 +364,8 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
 
   while (gNB->nbDecode > 0) {
     notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
+    if (req == NULL)
+      break; // Tpool has been stopped
     nr_postDecode(gNB, req);
     delNotifiedFIFO_elt(req);
   }

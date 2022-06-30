@@ -248,6 +248,8 @@ void rx_func(void *param) {
     // Its a FIFO so it maitains the order in which the MAC fills the messages
     // so no need for checking for right slot
     res = pullTpool(&gNB->L1_tx_filled, &gNB->threadPool);
+    if (res == NULL)
+      return; // Tpool has been stopped
     syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
     syncMsg->timestamp_tx = info->timestamp_tx;
@@ -255,6 +257,8 @@ void rx_func(void *param) {
     pushTpool(&gNB->threadPool, res);
   } else if (get_softmodem_params()->continuous_tx) {
     notifiedFIFO_elt_t *res = pullTpool(&gNB->L1_tx_free, &gNB->threadPool);
+    if (res == NULL)
+      return; // Tpool has been stopped
     processingData_L1tx_t *syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
     syncMsg->timestamp_tx = info->timestamp_tx;
@@ -377,6 +381,7 @@ void *tx_reorder_thread(void* param) {
   
 
   resL1Reserve = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
+  AssertFatal(resL1Reserve != NULL, "pullTpool() did not return start message in %s\n", __func__);
   int next_tx_slot=((processingData_L1tx_t *)NotifiedFifoData(resL1Reserve))->slot;
   
   while (!oai_exit) {
@@ -390,7 +395,7 @@ void *tx_reorder_thread(void* param) {
        }
      } else { 
        resL1 = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
-       if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
+       if (resL1 != NULL && ((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
           if (resL1Reserve)
               LOG_E(PHY,"error, have a stored packet, then a second one\n");
           resL1Reserve = resL1;
@@ -399,6 +404,8 @@ void *tx_reorder_thread(void* param) {
             LOG_E(PHY,"error, pull two msg, none is good\n");
        }
     }
+    if (resL1 == NULL)
+      break; // Tpool has been stopped
     processingData_L1tx_t *syncMsgL1= (processingData_L1tx_t *)NotifiedFifoData(resL1);
     processingData_RU_t syncMsgRU;
     syncMsgRU.frame_tx = syncMsgL1->frame;

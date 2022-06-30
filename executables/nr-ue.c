@@ -692,6 +692,8 @@ void processSlotRX(void *arg) {
     // Wait for PUSCH processing to finish
     notifiedFIFO_elt_t *res;
     res = pullTpool(&rxtxD->txFifo,&(get_nrUE_params()->Tpool));
+    if (res == NULL)
+      return; // Tpool has been stopped
     delNotifiedFIFO_elt(res);
 
     // calling UL_indication to schedule things other than PUSCH (eg, PUCCH)
@@ -1008,6 +1010,8 @@ void *UE_thread(void *arg) {
 
     while (nbSlotProcessing >= NR_RX_NB_TH) {
       res=pullTpool(&nf, &(get_nrUE_params()->Tpool));
+      if (res == NULL)
+        break; // Tpool has been stopped
       nbSlotProcessing--;
       nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
 

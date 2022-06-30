@@ -432,7 +432,10 @@ bool dlsch_procedures(PHY_VARS_eNB *eNB,
     if ( proc->threadPool->activated ) {
     // Wait all other threads finish to process
     while (proc->nbEncode) {
-      delNotifiedFIFO_elt(pullTpool(proc->respEncode, proc->threadPool));
+      notifiedFIFO_elt_t *res = pullTpool(proc->respEncode, proc->threadPool);
+      if (res == NULL)
+        break; // Tpool has been stopped
+      delNotifiedFIFO_elt(res);
       proc->nbEncode--;
     }
   }
@@ -1502,6 +1505,8 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
   
   while (proc->nbDecode > 0) {
     notifiedFIFO_elt_t *req=pullTpool(proc->respDecode, proc->threadPool);
+    if (req == NULL)
+      break; // Tpool has been stopped
     postDecode(proc, req);
     delNotifiedFIFO_elt(req);
   }

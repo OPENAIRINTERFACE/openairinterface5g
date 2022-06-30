@@ -1252,6 +1252,8 @@ void *ru_thread( void *param ) {
 
     // At this point, all information for subframe has been received on FH interface
     res = pullTpool(&gNB->resp_L1, &gNB->threadPool);
+    if (res == NULL)
+      break; // Tpool has been stopped
     syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
     syncMsg->frame_rx = proc->frame_rx;

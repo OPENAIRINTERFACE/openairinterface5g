@@ -430,6 +430,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   }
   while(nbJobs) {
     notifiedFIFO_elt_t *req=pullTpool(&nf, &gNB->threadPool);
+    if (req == NULL)
+      break; // Tpool has been stopped
     delNotifiedFIFO_elt(req);
     nbJobs--;
 
