@@ -208,7 +208,7 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
   } else {
     if ( !last ) {
       int nb=abortTpoolJob(&(pool_dl), req->key);
-      nb+=abortNotifiedFIFO(nf_p, req->key);
+      nb+=abortNotifiedFIFOJob(nf_p, req->key);
       LOG_D(PHY,"downlink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
       LOG_D(PHY, "DLSCH %d in error\n",rdata->dlsch_id);
       last = true;

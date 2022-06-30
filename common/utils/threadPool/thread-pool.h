@@ -200,7 +200,7 @@ static inline time_stats_t exec_time_stats_NotifiedFIFO(const notifiedFIFO_elt_t
 // This function aborts all messages matching the key
 // If the queue is used in thread pools, it doesn't cancels already running processing
 // because the message has already been picked
-static inline int abortNotifiedFIFO(notifiedFIFO_t *nf, uint64_t key) {
+static inline int abortNotifiedFIFOJob(notifiedFIFO_t *nf, uint64_t key) {
   mutexlock(nf->lockF);
   int nbDeleted=0;
   notifiedFIFO_elt_t **start=&nf->outF;

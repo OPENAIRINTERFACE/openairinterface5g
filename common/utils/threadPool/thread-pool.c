@@ -203,12 +203,12 @@ int main() {
   tmp=pullNotifiedFIFO(&myFifo);
   printf("pulled: %lu\n", tmp->key);
   displayList(&myFifo);
-  abortNotifiedFIFO(&myFifo,1005);
+  abortNotifiedFIFOJob(&myFifo,1005);
   printf("aborted 1005\n");
   displayList(&myFifo);
   pushNotifiedFIFO(&myFifo,newNotifiedFIFO_elt(sizeof(struct testData), 12345678, NULL, NULL));
   displayList(&myFifo);
-  abortNotifiedFIFO(&myFifo,12345678);
+  abortNotifiedFIFOJob(&myFifo,12345678);
   printf("aborted 12345678\n");
   displayList(&myFifo);
 
