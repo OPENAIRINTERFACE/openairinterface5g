@@ -123,7 +123,6 @@ void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name
   char *saveptr, * curptr;
   char *parms_cpy=strdup(params);
   pool->nbThreads=0;
-  pool->restrictRNTI=false;
   curptr=strtok_r(parms_cpy,",",&saveptr);
   struct one_thread * ptr;
   char *tname = (name == NULL ? "Tpool" : name);
@@ -131,10 +130,6 @@ void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name
     int c=toupper(curptr[0]);
 
     switch (c) {
-      case 'U':
-        pool->restrictRNTI=true;
-        break;
-
       case 'N':
         pool->activated=false;
         break;

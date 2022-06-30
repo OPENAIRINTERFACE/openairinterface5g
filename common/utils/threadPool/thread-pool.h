@@ -260,7 +260,6 @@ typedef struct thread_pool {
   uint64_t cpuCyclesMicroSec;
   uint64_t startProcessingUE;
   int nbThreads;
-  bool restrictRNTI;
   notifiedFIFO_t incomingFifo;
   struct one_thread *allthreads;
 } tpool_t;
