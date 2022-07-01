@@ -823,21 +823,21 @@ int main( int argc, char **argv ) {
       }
 
   #endif*/
-  printf("stopping MODEM threads\n");
-  // cleanup
-  stop_gNB(NB_gNB_INST);
 
-  if (RC.nb_nr_L1_inst > 0) {
-    stop_RU(NB_RU);
-  }
+  // cleanup
+  if (RC.nb_nr_L1_inst > 0)
+    stop_gNB(RC.nb_nr_L1_inst);
+
+  if (RC.nb_RU > 0)
+    stop_RU(RC.nb_RU);
 
   /* release memory used by the RU/gNB threads (incomplete), after all
    * threads have been stopped (they partially use the same memory) */
-  for (int inst = 0; inst < NB_RU; inst++) {
+  for (int inst = 0; inst < RC.nb_RU; inst++) {
     nr_phy_free_RU(RC.ru[inst]);
   }
 
-  for (int inst = 0; inst < NB_gNB_INST; inst++) {
+  for (int inst = 0; inst < RC.nb_nr_L1_inst; inst++) {
     phy_free_nr_gNB(RC.gNB[inst]);
   }
 
@@ -849,7 +849,7 @@ int main( int argc, char **argv ) {
 
   // *** Handle per CC_id openair0
 
-  for(ru_id=0; ru_id<NB_RU; ru_id++) {
+  for(ru_id = 0; ru_id < RC.nb_RU; ru_id++) {
     if (RC.ru[ru_id]->ifdevice.trx_end_func)
       RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);
   }
