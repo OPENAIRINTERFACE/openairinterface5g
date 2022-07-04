@@ -891,24 +891,6 @@ void nr_a_sum_b(__m128i *input_x,
                 __m128i *input_y,
                 unsigned short nb_rb);
 
-void nr_det_A_MF_2x2(int32_t *a_mf_00,
-                     int32_t *a_mf_01,
-                     int32_t *a_mf_10,
-                     int32_t *a_mf_11,
-                     int32_t *det_fin,
-                     unsigned short nb_rb);
-
-void nr_squared_matrix_element(int32_t *a,
-                               int32_t *a_sq,
-                               unsigned short nb_rb);
-
-void nr_numer_2x2(int32_t *a_00_sq,
-                  int32_t *a_01_sq,
-                  int32_t *a_10_sq,
-                  int32_t *a_11_sq,
-                  int32_t *num_fin,
-                  unsigned short nb_rb);
-
 uint8_t rank_estimation_tm3_tm4(int *dl_ch_estimates_00,
                                 int *dl_ch_estimates_01,
                                 int *dl_ch_estimates_10,
