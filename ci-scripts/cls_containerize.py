@@ -914,12 +914,26 @@ class Containerize():
 		logging.debug(cmd)
 		subprocess.run(cmd, shell=True)
 
-		# if the containers are running, recover the logs!
+		# check which containers are running for log recovery later
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
 		logging.debug(cmd)
-		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+		deployStatusLogs = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+
+		# Stop the containers to shut down objects
+		logging.debug('\u001B[1m Stopping containers \u001B[0m')
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml stop'
+		logging.debug(cmd)
+		try:
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
+		except Exception as e:
+			self.exitStatus = 1
+			logging.error('Could not stop containers')
+			HTML.CreateHtmlTestRow('Could not stop', 'KO', CONST.ALL_PROCESSES_OK)
+			logging.error('\u001B[1m Undeploying OAI Object(s) FAILED\u001B[0m')
+			return
+
 		anyLogs = False
-		for state in deployStatus.split('\n'):
+		for state in deployStatusLogs.split('\n'):
 			res = re.search('Name|----------', state)
 			if res is not None:
 				continue
