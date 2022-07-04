@@ -217,7 +217,7 @@ void nr_csi_meas_reporting(int Mod_idP,
                            sub_frame_t slotP);
 
 int nr_acknack_scheduling(int Mod_idP,
-			                    NR_UE_info_t * UE,
+                          NR_UE_info_t *UE,
                           frame_t frameP,
                           sub_frame_t slotP,
                           int r_pucch,

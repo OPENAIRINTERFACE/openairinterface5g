@@ -1018,7 +1018,7 @@ static int comparator(const void *p, const void *q) {
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
-	         NR_UE_info_t *UE_list[],
+           NR_UE_info_t *UE_list[],
            int max_num_ue,
            int n_rb_sched,
            uint16_t *rballoc_mask) {
