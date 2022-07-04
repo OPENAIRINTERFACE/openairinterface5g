@@ -532,9 +532,12 @@ uint32_t conv_1C_RIV(int32_t rballoc,uint32_t N_RB_DL) {
 
 }
 
+// FIXME: this function is compting PRB outside the range, so I FORCED in the range
+// I can't understand the 3GPP spec, see below note
 uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
 
   int offset;
+  int ret=-1;
 
   switch (N_RB_DL) {
 
@@ -545,16 +548,16 @@ uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
     switch (vrb) {
     case 0:  // even: 0->0, 1->2, odd: 0->3, 1->5
     case 1:
-      return ((3*odd_slot) + 2*(vrb&3))%6;
+      ret=  ((3*odd_slot) + 2*(vrb&3))%6;
       break;
     case 2:  // even: 2->3, 3->5, odd: 2->0, 3->2
     case 3:
-      return ((3*odd_slot) + 2*(vrb&3) + 5)%6;
+      ret=  ((3*odd_slot) + 2*(vrb&3) + 5)%6;
       break;
     case 4:  // even: 4->1, odd: 4->4
-      return ((3*odd_slot) + 1)%6;
+      ret=  ((3*odd_slot) + 1)%6;
     case 5:  // even: 5->4, odd: 5->1
-      return ((3*odd_slot) + 4)%6;
+      ret=  ((3*odd_slot) + 4)%6;
       break;
     }
     break;
@@ -562,21 +565,21 @@ uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
   case 15:
     if (vrb<12) {
       if ((vrb&3) < 2)     // even: 0->0, 1->4, 4->1, 5->5, 8->2, 9->6 odd: 0->7, 1->11
-        return(((7*odd_slot) + 4*(vrb&3) + (vrb>>2))%14) + 14*(vrb/14);
+  ret= (((7*odd_slot) + 4*(vrb&3) + (vrb>>2))%14) + 14*(vrb/14);
       else if (vrb < 12) // even: 2->7, 3->11, 6->8, 7->12, 10->9, 11->13
-        return (((7*odd_slot) + 4*(vrb&3) + (vrb>>2) +13 )%14) + 14*(vrb/14);
+  ret=  (((7*odd_slot) + 4*(vrb&3) + (vrb>>2) +13 )%14) + 14*(vrb/14);
     }
     if (vrb==12)
-      return (3+(7*odd_slot)) % 14;
+      ret=  (3+(7*odd_slot)) % 14;
     if (vrb==13)
-      return (10+(7*odd_slot)) % 14;
-    return 14;
+      ret=  (10+(7*odd_slot)) % 14;
+    ret=  14;
     break;
 
     // Formula in TS 36.211, chap 6.2.3.2
     // Fix me: returns a PRB number > 24 when vrb is 24
   case 25:
-    return (((12*odd_slot) + 6*(vrb&3) + (vrb>>2))%24) + 24*(vrb/24);
+    ret=  (((12*odd_slot) + 6*(vrb&3) + (vrb>>2))%24) + 24*(vrb/24);
     break;
 
   case 50: // P=3
@@ -588,22 +591,22 @@ uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
         offset=0;
       if (vrb<44) {
         if ((vrb&3)>=2)
-          return offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2) + 45)%46;
+    ret=  offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2) + 45)%46;
         else
-          return offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2))%46;
+    ret=  offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2))%46;
       }
       if (vrb==44)  // even: 44->11, odd: 45->34
-        return offset+((23*odd_slot) + 22-12+1);
+        ret=  offset+((23*odd_slot) + 22-12+1);
       if (vrb==45)  // even: 45->10, odd: 45->33
-        return offset+((23*odd_slot) + 22+12);
+        ret=  offset+((23*odd_slot) + 22+12);
       if (vrb==46)
-        return offset+46+((23*odd_slot) + 23-12+1) % 46;
+        ret=  offset+46+((23*odd_slot) + 23-12+1) % 46;
       if (vrb==47)
-        return offset+46+((23*odd_slot) + 23+12) % 46;
+        ret=  offset+46+((23*odd_slot) + 23+12) % 46;
       if (vrb==48)
-        return offset+46+((23*odd_slot) + 23-12+1) % 46;
+        ret=  offset+46+((23*odd_slot) + 23-12+1) % 46;
       if (vrb==49)
-        return offset+46+((23*odd_slot) + 23+12) % 46;
+        ret=  offset+46+((23*odd_slot) + 23+12) % 46;
     }
     else {
       // Nrow=6,Nnull=6,NVRBDL=18,Ngap1= 27
@@ -614,39 +617,38 @@ uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
 
       if (vrb<12) {
         if ((vrb&3)>=2)
-          return offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2) + 17)%18;
+          ret=  offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2) + 17)%18;
         else
-          return offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2))%18;
+          ret=  offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2))%18;
       }
       else {
-        // Same issue as for 25 PRB: returns larger than 0..49
-        return ((9*odd_slot) + 12*(vrb&1) + (vrb>>1))%18 + 18*(vrb/18);
+        ret=  offset+((9*odd_slot) + 12*(vrb&1)+(vrb>>1) )%18 + 18*(vrb/18);
       }
     }
     break;
   case 75:
     // Ngap1 = 32, NVRBRL=64, P=4, Nrow= 16, Nnull=0
     if (Ngap ==0) {
-      return ((32*odd_slot) + 16*(vrb&3) + (vrb>>2))%64 + (vrb/64);
+      ret=  ((32*odd_slot) + 16*(vrb&3) + (vrb>>2))%64 + (vrb/64);
     } else {
       // Ngap2 = 16, NVRBDL=32, Nrow=8, Nnull=0
-      return ((16*odd_slot) + 8*(vrb&3) + (vrb>>2))%32 + (vrb/32);
+      ret=  ((16*odd_slot) + 8*(vrb&3) + (vrb>>2))%32 + (vrb/32);
     }
     break;
   case 100:
     // Ngap1 = 48, NVRBDL=96, Nrow=24, Nnull=0
     if (Ngap ==0) {
-      return ((48*odd_slot) + 24*(vrb&3) + (vrb>>2))%96 + (vrb/96);
+      ret=  ((48*odd_slot) + 24*(vrb&3) + (vrb>>2))%96 + (vrb/96);
     } else {
       // Ngap2 = 16, NVRBDL=32, Nrow=8, Nnull=0
-      return ((16*odd_slot) + 8*(vrb&3) + (vrb>>2))%32 + (vrb/32);
+      ret=  ((16*odd_slot) + 8*(vrb&3) + (vrb>>2))%32 + (vrb/32);
     }
     break;
   default:
     LOG_E(PHY,"Unknown N_RB_DL %d\n",N_RB_DL);
-    return 0;
+    ret=  0;
   }
-  return 0;
+  return ret%N_RB_DL;
 
 }
 
