@@ -306,7 +306,7 @@ rrc_rx_tx(
       LOG_D(RRC,"SFN.SN %d.%d => release timer %d/%d\n",ctxt_pP->frame,ctxt_pP->subframe,
 	    ue_context_p->ue_context.ue_release_timer,ue_context_p->ue_context.ue_release_timer_thres);
       if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
-	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
+	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == true) {
 	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/20000\n",
 		ue_context_p->ue_context.rnti,
 		ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,

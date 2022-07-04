@@ -237,7 +237,7 @@ rlc_am_receive_process_control_pdu(
   rlc_sn_t        nack_sn,prev_nack_sn;
   sdu_size_t    data_cnf_so_stop = 0x7FFF;
   unsigned int nack_index;
-  boolean_t status = TRUE;
+  bool status = true;
 
   if (rlc_am_get_control_pdu_infos(rlc_am_pdu_sn_10_p, tb_size_in_bytes_pP, &rlc_pP->control_pdu_info) >= 0) {
     rlc_am_tx_buffer_display(ctxt_pP, rlc_pP, " TX BUFFER BEFORE PROCESS OF STATUS PDU");
@@ -282,7 +282,7 @@ rlc_am_receive_process_control_pdu(
     if (RLC_AM_DIFF_SN(rlc_pP->vt_s,rlc_pP->vt_a) >= RLC_AM_DIFF_SN(ack_sn,rlc_pP->vt_a)) {
       if (rlc_pP->control_pdu_info.num_nack == 0) {
         while (sn_cursor != ack_sn) {
-          rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor,TRUE);
+          rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor, true);
           sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
         }
 
@@ -294,7 +294,7 @@ rlc_am_receive_process_control_pdu(
         prev_nack_sn = 0x3FFF;
 
         while (sn_cursor != nack_sn) {
-          rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor,TRUE);
+          rlc_am_ack_pdu(ctxt_pP, rlc_pP, sn_cursor, true);
           sn_cursor = RLC_AM_NEXT_SN(sn_cursor);
         }
 
@@ -316,7 +316,7 @@ rlc_am_receive_process_control_pdu(
             rlc_am_ack_pdu(ctxt_pP,
                            rlc_pP,
                            sn_cursor,
-                           FALSE);
+                           false);
           } else {
             status = rlc_am_nack_pdu (ctxt_pP,
                                       rlc_pP,
@@ -348,13 +348,13 @@ rlc_am_receive_process_control_pdu(
       LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN %d OUT OF WINDOW vtA=%d vtS=%d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),ack_sn,rlc_pP->vt_a,rlc_pP->vt_s);
       *tb_size_in_bytes_pP = 0;
-      status = FALSE;
+      status = false;
     }
   } else {
     LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR IN DECODING CONTROL PDU\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
     *tb_size_in_bytes_pP = 0;
-    status = FALSE;
+    status = false;
   }
 
   if (status) {
@@ -480,8 +480,8 @@ rlc_am_send_status_pdu(
   int                           waited_so             = 0;
   mem_block_t                  *tb_p                  = NULL;
   sdu_size_t                    pdu_size              = 0;
-  boolean_t           status_report_completed = false;
-  boolean_t           segment_loop_end    = false;
+  bool                          status_report_completed = false;
+  bool                          segment_loop_end    = false;
   memset(&control_pdu_info, 0, sizeof(rlc_am_control_pdu_info_t));
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] nb_bits_to_transmit %d (15 already allocated for header)\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),

@@ -299,7 +299,7 @@ mac_rrc_data_ind(
   const uint8_t        *sduP,
   const sdu_size_t      sdu_lenP,
   const uint8_t         mbsfn_sync_areaP,
-  const boolean_t   brOption
+  const bool            brOption
 )
 //--------------------------------------------------------------------------
 {

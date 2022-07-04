@@ -153,7 +153,7 @@ void esm_ebr_register_callback(esm_indication_callback_t cb)
  **      ebi:       Identity of the new EPS bearer context     **
  **      cid:       Identifier of the PDN context the EPS bea- **
  **             rer context is associated to               **
- **      default_ebr    TRUE if the new bearer context is associa- **
+ **      default_ebr    bool if the new bearer context is associa- **
  **             ted to a default EPS bearer                **
  **      Others:    None                                       **
  **                                                                        **
@@ -163,7 +163,7 @@ void esm_ebr_register_callback(esm_indication_callback_t cb)
  **             the not assigned EBI (0) otherwise.        **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_assign(esm_ebr_data_t *esm_ebr_data, int ebi, int cid, int default_ebr)
+int esm_ebr_assign(esm_ebr_data_t *esm_ebr_data, int ebi, int cid, bool default_ebr)
 {
   esm_ebr_context_t *ebr_ctx = NULL;
   int                i;
@@ -284,7 +284,7 @@ int esm_ebr_release(esm_ebr_data_t *esm_ebr_data,
  **                                                                        **
  **      ebi:       The identity of the EPS bearer             **
  **      status:    The new EPS bearer context status          **
- **      ue_requested:  TRUE/FALSE if the modification of the EPS  **
+ **      ue_requested:  true/false if the modification of the EPS  **
  **             bearer context status was requested by the **
  **             UE/network                                 **
  **      Others:    None                                       **
@@ -294,7 +294,7 @@ int esm_ebr_release(esm_ebr_data_t *esm_ebr_data,
  **                                                                        **
  ***************************************************************************/
 int esm_ebr_set_status(user_api_id_t *user_api_id, esm_ebr_data_t *esm_ebr_data,
-  int ebi, esm_ebr_state status, int ue_requested)
+  int ebi, esm_ebr_state status, bool ue_requested)
 {
   esm_ebr_context_t *ebr_ctx;
   esm_ebr_state old_status;
@@ -385,11 +385,11 @@ esm_ebr_state esm_ebr_get_status(esm_ebr_data_t *esm_ebr_data,
  **      Others:    None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
- **      Return:    TRUE, FALSE                                **
+ **      Return:    true, false                                **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_is_reserved(esm_ebr_data_t *esm_ebr_data, int ebi)
+bool esm_ebr_is_reserved(esm_ebr_data_t *esm_ebr_data, int ebi)
 {
   return ( (ebi != ESM_EBI_UNASSIGNED) && (ebi < ESM_EBI_MIN) );
 }
@@ -404,12 +404,11 @@ int esm_ebr_is_reserved(esm_ebr_data_t *esm_ebr_data, int ebi)
  **      ebi:       The identity of the EPS bearer             **
  **                                                                        **
  ** Outputs:     None                                                      **
- **      Return:    TRUE, FALSE                                **
+ **      Return:    true, false                                **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_is_not_in_use(esm_ebr_data_t *esm_ebr_data,
-  int ebi)
+bool esm_ebr_is_not_in_use(esm_ebr_data_t *esm_ebr_data, int ebi)
 {
 
   return ( (ebi == ESM_EBI_UNASSIGNED) ||

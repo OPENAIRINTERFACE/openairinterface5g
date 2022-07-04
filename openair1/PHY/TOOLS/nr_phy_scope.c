@@ -60,7 +60,7 @@ typedef struct OAIgraph {
   int h;
   int waterFallh;
   double *waterFallAvg;
-  boolean_t initDone;
+  bool initDone;
   int iteration;
   void (*gNBfunct) (struct OAIgraph *graph, scopeData_t *p, int UE_id);
   void (*nrUEfunct)(scopeGraphData_t **data, struct OAIgraph *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id);
@@ -208,7 +208,7 @@ static void oai_xygraph_getbuff(OAIgraph_t *graph, float **x, float **y, int len
   *y=old_y;
 }
 
-static void oai_xygraph(OAIgraph_t *graph, float *x, float *y, int len, int layer, boolean_t NoAutoScale) {
+static void oai_xygraph(OAIgraph_t *graph, float *x, float *y, int len, int layer, bool NoAutoScale) {
   fl_redraw_object(graph->graph);
 
   if ( NoAutoScale && graph->iteration%NoAutoScale == 0) {

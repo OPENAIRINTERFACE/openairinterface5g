@@ -124,7 +124,7 @@ static void _security_release(emm_security_context_t *ctx);
  **      grity algorithm and ciphered with the selected NAS ciphe-         **
  **      ring algorithm.                                                   **
  **                                                                        **
- ** Inputs:  native_ksi:    TRUE if the security context is of type        **
+ ** Inputs:  native_ksi:    true if the security context is of type        **
  **             native (for KSIASME)                                       **
  **      ksi:       The NAS ket sey identifier                             **
  **      seea:      Selected EPS cyphering algorithm                       **
@@ -145,7 +145,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
 
   int rc = RETURNerror;
   int emm_cause = EMM_CAUSE_SUCCESS;
-  int security_context_is_new = FALSE;
+  int security_context_is_new = false;
   security_data_t *security_data = user->security_data;
 
   LOG_TRACE(INFO, "EMM-PROC  - Security mode control requested (ksi=%d)",
@@ -263,7 +263,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
           user->emm_data->security->ul_count.overflow = 0;
           user->emm_data->security->ul_count.seq_num = 0;
           /* Set new security context indicator */
-          security_context_is_new = TRUE;
+          security_context_is_new = true;
         }
       }
 
@@ -328,7 +328,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
   emm_sap.u.emm_as.u.security.emm_cause = emm_cause;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           user->emm_data->security, security_context_is_new, TRUE);
+                           user->emm_data->security, security_context_is_new, true);
   rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);

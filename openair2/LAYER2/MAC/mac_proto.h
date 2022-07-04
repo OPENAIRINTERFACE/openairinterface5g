@@ -400,7 +400,7 @@ int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 rnti_t UE_RNTI(module_id_t module_idP, int UE_id);
 int UE_PCCID(module_id_t module_idP, int UE_id);
 uint8_t find_active_UEs(module_id_t module_idP);
-boolean_t is_UE_active(module_id_t module_idP, int UE_id);
+bool is_UE_active(module_id_t module_idP, int UE_id);
 uint8_t get_aggregation(uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt);
 
 int8_t find_active_UEs_with_traffic(module_id_t module_idP);
@@ -416,11 +416,11 @@ int get_nCCE_offset(int *CCE_table,
 
 int allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, int test_only);
 
-boolean_t CCE_allocation_infeasible(int module_idP,
-                                    int CC_idP,
-                                    int common_flag,
-                                    int subframe,
-                                    int aggregation, int rnti);
+bool CCE_allocation_infeasible(int module_idP,
+                               int CC_idP,
+                               int common_flag,
+                               int subframe,
+                               int aggregation, int rnti);
 /* tries to allocate a CCE. If it succeeds, reserves NFAPI DCI and DLSCH config */
 int CCE_try_allocate_dlsch(int module_id,
                            int CC_id,
@@ -741,13 +741,12 @@ BSR_SHORT *get_bsr_short(module_id_t module_idP, uint8_t bsr_len);
 */
 BSR_LONG *get_bsr_long(module_id_t module_idP, uint8_t bsr_len);
 
-/*! \fn  boolean_t update_bsr(module_id_t module_idP, frame_t frameP,sub_frame_t subframeP)
+/*! \fn  bool update_bsr(module_id_t module_idP, frame_t frameP,sub_frame_t subframeP)
    \brief get the rlc stats and update the bsr level for each lcid
 \param[in] Mod_id instance of the UE
 \param[in] frame Frame index
 */
-boolean_t update_bsr(module_id_t module_idP, frame_t frameP,
-                     sub_frame_t subframeP, eNB_index_t eNB_index);
+bool update_bsr(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, eNB_index_t eNB_index);
 
 /*! \fn  locate_BsrIndexByBufferSize (int *table, int size, int value)
    \brief locate the BSR level in the table as defined in 36.321. This function requires that he values in table to be monotonic, either increasing or decreasing. The returned value is not less than 0, nor greater than n-1, where n is the size of table.

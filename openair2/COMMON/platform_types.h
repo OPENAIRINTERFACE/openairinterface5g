@@ -32,34 +32,11 @@
 
 #if !defined(NAS_NETLINK)
 #include <stdint.h>
+#include <stdbool.h>
 #else
 #include <linux/types.h>
 typedef void * intptr_t;
 #endif
-
-//-----------------------------------------------------------------------------
-// GENERIC TYPES
-//-----------------------------------------------------------------------------
-
-/* boolean_t is also defined in openair2/COMMON/commonDef.h,
- * let's protect potential redefinition
- */
-#ifndef _BOOLEAN_T_DEFINED_
-  #define _BOOLEAN_T_DEFINED_
-
-  typedef signed char        boolean_t;
-
-  #if !defined(TRUE)
-    #define TRUE               (boolean_t)0x01
-  #endif
-
-  #if !defined(FALSE)
-    #define FALSE              (boolean_t)0x00
-  #endif
-
-  #define BOOL_NOT(b) (b^TRUE)
-
-#endif /* _BOOLEAN_T_DEFINED_ */
 
 //-----------------------------------------------------------------------------
 // GENERIC ACCESS STRATUM TYPES
@@ -77,25 +54,25 @@ typedef int16_t               smodule_id_t;
 typedef long              rb_id_t;
 typedef long              srb_id_t;
 
-typedef boolean_t             MBMS_flag_t;
-#define  MBMS_FLAG_NO         FALSE
-#define  MBMS_FLAG_YES        TRUE
+typedef bool MBMS_flag_t;
+#define MBMS_FLAG_NO  false
+#define MBMS_FLAG_YES true
 
-typedef boolean_t             eNB_flag_t;
-#define  ENB_FLAG_NO          FALSE
-#define  ENB_FLAG_YES         TRUE
+typedef bool eNB_flag_t;
+#define ENB_FLAG_NO  false
+#define ENB_FLAG_YES true
 
-typedef boolean_t             gNB_flag_t;
-#define  GNB_FLAG_NO          FALSE
-#define  GNB_FLAG_YES         TRUE
+typedef bool gNB_flag_t;
+#define GNB_FLAG_NO  false
+#define GNB_FLAG_YES true
 
-typedef boolean_t             srb_flag_t;
-#define  SRB_FLAG_NO          FALSE
-#define  SRB_FLAG_YES         TRUE
+typedef bool srb_flag_t;
+#define SRB_FLAG_NO  false
+#define SRB_FLAG_YES true
 
-typedef boolean_t             sl_discovery_flag_t;
-#define  SL_DISCOVERY_FLAG_NO          FALSE
-#define  SL_DISCOVERY_FLAG_YES         TRUE
+typedef bool sl_discovery_flag_t;
+#define SL_DISCOVERY_FLAG_NO  false
+#define SL_DISCOVERY_FLAG_YES true
 
 typedef enum link_direction_e {
   UNKNOWN_DIR          = 0,
@@ -152,8 +129,8 @@ typedef uint16_t           rlc_usn_t;
 typedef int32_t            rlc_buffer_occupancy_t;
 typedef signed int         rlc_op_status_t;
 
-#define  SDU_CONFIRM_NO          FALSE
-#define  SDU_CONFIRM_YES         TRUE
+#define  SDU_CONFIRM_NO          false
+#define  SDU_CONFIRM_YES         true
 //-----------------------------------------------------------------------------
 // PDCP TYPES
 //-----------------------------------------------------------------------------
@@ -242,7 +219,7 @@ typedef struct protocol_ctxt_s {
   frame_t     frame;         /*!< \brief  LTE frame number.*/
   sub_frame_t subframe;      /*!< \brief  LTE sub frame number.*/
   eNB_index_t eNB_index;     /*!< \brief  valid for UE indicating the index of connected eNB(s)      */
-  boolean_t		brOption;
+  bool        brOption;
 } protocol_ctxt_t;
 // warning time hardcoded
 #define PROTOCOL_CTXT_TIME_MILLI_SECONDS(CtXt_h) ((CtXt_h)->frame*10+(CtXt_h)->subframe)

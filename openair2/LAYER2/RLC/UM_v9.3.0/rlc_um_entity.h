@@ -53,12 +53,11 @@ typedef struct rlc_um_timer_s {
 */
 
 typedef struct rlc_um_entity_s {
-  boolean_t            initialized;        /*!< \brief Boolean for rlc_am_entity_t struct initialization. */
-  boolean_t            is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */
+  bool                 initialized;        /*!< \brief Boolean for rlc_am_entity_t struct initialization. */
+  bool                 is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */
   rlc_protocol_state_t protocol_state;     /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
-  boolean_t            is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
-  //boolean_t            is_enb;             /*!< \brief To know if the RLC belongs to a eNB or UE. */
-  boolean_t            is_mxch;            /*!< \brief To know if the RLC belongs to a MBMS bearer. */
+  bool                 is_data_plane;      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
+  bool                 is_mxch;            /*!< \brief To know if the RLC belongs to a MBMS bearer. */
   //-----------------------------
   // PROTOCOL VARIABLES
   //-----------------------------
@@ -114,7 +113,7 @@ typedef struct rlc_um_entity_s {
   //-----------------------------
   // STATISTICS
   //-----------------------------
-  boolean_t         first_pdu;                        /*!< \brief Act as a boolean, tells if the next PDU is the first PDU to be received. */
+  bool              first_pdu;                        /*!< \brief Act as a boolean, tells if the next PDU is the first PDU to be received. */
 
   unsigned int stat_tx_pdcp_sdu;                      /*!< \brief Number of SDUs received from upper layers. */
   unsigned int stat_tx_pdcp_bytes;                    /*!< \brief Number of SDU bytes received from upper layers. */

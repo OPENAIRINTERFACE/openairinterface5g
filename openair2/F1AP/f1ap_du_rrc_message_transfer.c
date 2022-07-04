@@ -509,7 +509,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", srb_id);
   rlc_op_status_t    rlc_status;
-  boolean_t          ret             = TRUE;
+  bool               ret             = true;
   mem_block_t       *pdcp_pdu_p      = NULL;
   pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
 
@@ -539,27 +539,27 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     switch (rlc_status) {
       case RLC_OP_STATUS_OK:
         //LOG_I(F1AP, "Data sending request over RLC succeeded!\n");
-        ret=TRUE;
+        ret=true;
         break;
 
       case RLC_OP_STATUS_BAD_PARAMETER:
         LOG_W(F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-        ret= FALSE;
+        ret= false;
         break;
 
       case RLC_OP_STATUS_INTERNAL_ERROR:
         LOG_W(F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-        ret= FALSE;
+        ret= false;
         break;
 
       case RLC_OP_STATUS_OUT_OF_RESSOURCES:
         LOG_W(F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-        ret= FALSE;
+        ret= false;
         break;
 
       default:
         LOG_W(F1AP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-        ret= FALSE;
+        ret= false;
         break;
     } // switch case
 
@@ -667,9 +667,9 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
           UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_info.UE_sched_ctrl[UE_id_mac]);
 
-          if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
-            UE_scheduling_control->cdrx_waiting_ack = FALSE;
-            UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
+          if (UE_scheduling_control->cdrx_waiting_ack == true) {
+            UE_scheduling_control->cdrx_waiting_ack = false;
+            UE_scheduling_control->cdrx_configured = true; // Set to TRUE when RRC Connection Reconfiguration Complete is received
             LOG_I(F1AP, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
           }
 

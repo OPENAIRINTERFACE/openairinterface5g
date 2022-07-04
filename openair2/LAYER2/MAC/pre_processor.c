@@ -638,7 +638,7 @@ dlsch_scheduler_pre_processor(module_id_t Mod_id,
       LOG_E(MAC, "UE %d has RNTI NOT_A_RNTI!\n", UE_id);
       continue;
     }
-    if (UE_info->active[UE_id] != TRUE) {
+    if (UE_info->active[UE_id] != true) {
       LOG_E(MAC, "UE %d RNTI %x is NOT active!\n", UE_id, rnti);
       continue;
     }
