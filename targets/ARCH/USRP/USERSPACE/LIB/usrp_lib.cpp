@@ -711,13 +711,6 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 	      ((__m64 *)buff[i])[4*j+3] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+3],rxshift);
 	    }
     }
-      if ((((uintptr_t) buff[i])&0x1F)==0) {
-        for (int j=0; j<nsamps2; j++) 
-           ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
-      } else {
-        for (int j=0; j<(nsamps2<<1); j++) 
-          ((__m128i *)buff[i])[j]  = _mm_srai_epi16(((__m128i *)buff_tmp[i])[j],rxshift);
-      }
 #else    
       for (int j=0; j<nsamps2; j++) 
         ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
