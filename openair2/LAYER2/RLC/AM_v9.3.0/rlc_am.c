@@ -52,7 +52,7 @@ rlc_am_get_status_pdu_buffer_occupancy(
   rlc_sn_t sn_cursor = rlc_pP->vr_r;
   rlc_sn_t sn_prev = rlc_pP->vr_r;
   rlc_sn_t sn_end = rlc_pP->vr_ms;
-  boolean_t segment_loop_end    = false;
+  bool segment_loop_end    = false;
 
   if (sn_prev != sn_end) {
     while ((RLC_AM_DIFF_SN(sn_prev,rlc_pP->vr_r) < RLC_AM_DIFF_SN(sn_end,rlc_pP->vr_r)) && (cursor_p != NULL)) {

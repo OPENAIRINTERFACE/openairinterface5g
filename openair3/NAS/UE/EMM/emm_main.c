@@ -113,7 +113,7 @@ void _emm_attach_initialize(emm_attach_data_t *emm_attach_data) {
 
 void _emm_detach_initialize(emm_detach_data_t *emm_detach) {
   emm_detach->count = 0;
-  emm_detach->switch_off = FALSE;
+  emm_detach->switch_off = false;
   emm_detach->type = EMM_DETACH_TYPE_RESERVED;
 }
 
@@ -137,7 +137,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   LOG_FUNC_IN;
   user->emm_data = calloc_or_fail(sizeof(emm_data_t));
   /* USIM validity indicator */
-  user->emm_data->usim_is_valid = FALSE;
+  user->emm_data->usim_is_valid = false;
   /* The IMEI read from the UE's non-volatile memory  */
   user->emm_data->imei = (imei_t *)malloc(sizeof(imei_t));
   user->emm_data->imei->length = _emm_main_get_imei(user->emm_data->imei, imei);
@@ -157,14 +157,14 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   user->emm_data->plmn_rat = NET_ACCESS_UNAVAILABLE;
   /* Selected PLMN */
   memset(&user->emm_data->splmn, 0xFF, sizeof(plmn_t));
-  user->emm_data->is_rplmn = FALSE;
-  user->emm_data->is_eplmn = FALSE;
+  user->emm_data->is_rplmn = false;
+  user->emm_data->is_eplmn = false;
   /* Radio Access Technology of the serving cell */
   user->emm_data->rat = NET_ACCESS_UNAVAILABLE;
   /* Network registration status */
   user->emm_data->stat = NET_REG_STATE_OFF;
-  user->emm_data->is_attached = FALSE;
-  user->emm_data->is_emergency = FALSE;
+  user->emm_data->is_attached = false;
+  user->emm_data->is_emergency = false;
   /* Location/Tracking area code */
   user->emm_data->tac = 0;  // two byte in hexadecimal format
   /* Identifier of the serving cell */
@@ -201,7 +201,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
 
     /* The USIM application is present and valid */
     LOG_TRACE(INFO, "EMM-MAIN  - USIM application data successfully read");
-    user->emm_data->usim_is_valid = TRUE;
+    user->emm_data->usim_is_valid = true;
 
     /* print keys (for debugging) */
     {
@@ -844,12 +844,12 @@ AcT_t emm_main_get_plmn_rat(emm_data_t *emm_data)
  **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
- **      Return:    TRUE if the UE is currently attached to    **
- **             the network; FALSE otherwise.              **
+ **      Return:    true if the UE is currently attached to    **
+ **             the network; false otherwise.              **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_main_is_attached(emm_data_t *emm_data)
+bool emm_main_is_attached(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
   LOG_FUNC_RETURN (emm_data->is_attached);
@@ -866,13 +866,13 @@ int emm_main_is_attached(emm_data_t *emm_data)
  **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
- **      Return:    TRUE if the UE is currently attached or is **
+ **      Return:    true if the UE is currently attached or is **
  **             attempting to attach to the network for    **
- **             emergency bearer services; FALSE otherwise **
+ **             emergency bearer services; false otherwise **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_main_is_emergency(emm_data_t *emm_data)
+bool emm_main_is_emergency(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
   LOG_FUNC_RETURN (emm_data->is_attached && emm_data->is_emergency);
@@ -967,8 +967,8 @@ static int _emm_main_get_imei(imei_t *imei, const char *imei_str)
  **      Others:    None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
- **      Return:    TRUE if the first IMSI is found to match   **
- **             the second; FALSE otherwise.               **
+ **      Return:    true if the first IMSI is found to match   **
+ **             the second; false otherwise.               **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
@@ -977,16 +977,16 @@ static int _emm_main_imsi_cmp(imsi_t *imsi1, imsi_t *imsi2)
   int i;
 
   if (imsi1->length != imsi2->length) {
-    return FALSE;
+    return false;
   }
 
   for (i = 0; i < imsi1->length; i++) {
     if (imsi1->u.value[i] != imsi2->u.value[i]) {
-      return FALSE;
+      return false;
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 /****************************************************************************

@@ -480,7 +480,7 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   /* for no gcc warnings */
   (void)lcid;
 
-  if (MBMS_flagP == TRUE) {
+  if (MBMS_flagP == true) {
     if (ctxt_pP->enb_flag) {
       lcid = rlc_mbms_enb_get_lcid_by_rb_id(ctxt_pP->module_id,rb_idP);
       mbms_id_p = &rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid];
@@ -581,7 +581,7 @@ rlc_union_t *rrc_rlc_add_rlc   (
   rlc_mbms_id_t         *mbms_id_p  = NULL;
   logical_chan_id_t      lcid            = 0;
 
-  if (MBMS_flagP == FALSE) {
+  if (MBMS_flagP == false) {
     //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
     //AssertFatal (chan_idP < RLC_MAX_LC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
     if(rb_idP >= NB_RB_MAX) {
@@ -595,7 +595,7 @@ rlc_union_t *rrc_rlc_add_rlc   (
     }
   }
 
-  if (MBMS_flagP == TRUE) {
+  if (MBMS_flagP == true) {
     if (ctxt_pP->enb_flag) {
       lcid = rlc_mbms_enb_get_lcid_by_rb_id(ctxt_pP->module_id,rb_idP);
       mbms_id_p = &rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid];
@@ -640,11 +640,11 @@ rlc_union_t *rrc_rlc_add_rlc   (
   } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
     rlc_union_p = calloc(1, sizeof(rlc_union_t));
     h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);
-    if(MBMS_flagP != TRUE)
+    if(MBMS_flagP != true)
     	h_lcid_rc = hashtable_insert(rlc_coll_p, key_lcid, rlc_union_p);
 
     if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
-      if (MBMS_flagP == TRUE) {
+      if (MBMS_flagP == true) {
         LOG_I(RLC, PROTOCOL_CTXT_FMT" RLC service id %u session id %u rrc_rlc_add_rlc\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               mbms_id_p->service_id,

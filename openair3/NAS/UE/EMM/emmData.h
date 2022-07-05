@@ -112,7 +112,7 @@ typedef struct {
 #define EMM_DETACH_COUNTER_MAX  5
   unsigned int count;      /* Counter used to limit the number of
                   * subsequently detach attempts    */
-  int switch_off;      /* UE switch-off indicator     */
+  bool switch_off;      /* UE switch-off indicator     */
   emm_proc_detach_type_t type; /* Type of the detach procedure
                   * currently in progress       */
 } emm_detach_data_t;
@@ -249,8 +249,8 @@ typedef struct emm_data_s {
 
   emm_eps_update_t    status;    /* The current EPS update status           */
   emm_ecm_state_t     ecm_status; /* The EPS Connection Management status   */
-  int                 is_attached;    /* Network attachment indicator       */
-  int                 is_emergency;   /* Emergency bearer services indicator*/
+  bool                is_attached;    /* Network attachment indicator       */
+  bool                is_emergency;   /* Emergency bearer services indicator*/
 
   /* Tracking Areas list the UE is registered to
    * Contains the list of TAIs that identify the tracking areas that

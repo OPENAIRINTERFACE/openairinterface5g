@@ -121,7 +121,7 @@ static nas_timer_database_t _nas_timer_db = {
 static void _nas_timer_db_init(void);
 
 static int _nas_timer_db_get_id(void);
-static int _nas_timer_db_is_active(int id);
+static bool _nas_timer_db_is_active(int id);
 static nas_timer_entry_t *_nas_timer_db_create_entry(long sec,
     nas_timer_callback_t cb, void *args);
 static void _nas_timer_db_delete_entry(int id);
@@ -130,7 +130,7 @@ static void _nas_timer_db_insert_entry(int id, nas_timer_entry_t *te);
 static int _nas_timer_db_insert(timer_queue_t *entry);
 
 static nas_timer_entry_t *_nas_timer_db_remove_entry(int id);
-static int _nas_timer_db_remove(timer_queue_t *entry);
+static bool _nas_timer_db_remove(timer_queue_t *entry);
 
 /*
  * -----------------------------------------------------------------------------
@@ -408,12 +408,12 @@ static int _nas_timer_db_get_id(void)
  **      Others:    _nas_timer_db                              **
  **                                                                        **
  ** Outputs:     None                                                      **
- **      Return:    TRUE if the timer entry is active; FALSE   **
+ **      Return:    true if the timer entry is active; false   **
  **             if it is not an active timer entry.        **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _nas_timer_db_is_active(int id)
+static bool _nas_timer_db_is_active(int id)
 {
   return ( (id != NAS_TIMER_INACTIVE_ID) &&
            (_nas_timer_db.tq[id].id != NAS_TIMER_INACTIVE_ID) );
@@ -562,11 +562,11 @@ static int _nas_timer_db_insert(timer_queue_t *entry)
   } else {
     /* The new entry is the first entry of the list */
     _nas_timer_db.head = entry;
-    return TRUE;
+    return true;
   }
 
   /* The new entry is NOT the first entry of the list */
-  return FALSE;
+  return false;
 }
 
 /****************************************************************************
@@ -588,7 +588,7 @@ static int _nas_timer_db_insert(timer_queue_t *entry)
  ***************************************************************************/
 static nas_timer_entry_t *_nas_timer_db_remove_entry(int id)
 {
-  int restart;
+  bool restart;
 
   /* The identifier of the timer is valid within the timer queue */
   assert(_nas_timer_db.tq[id].id == id);
@@ -622,7 +622,7 @@ static nas_timer_entry_t *_nas_timer_db_remove_entry(int id)
   return (_nas_timer_db.tq[id].entry);
 }
 
-static int _nas_timer_db_remove(timer_queue_t *entry)
+static bool _nas_timer_db_remove(timer_queue_t *entry)
 {
   /* Update the pointer from the previous entry */
   /* prev ---> entry ---> next */
@@ -644,12 +644,12 @@ static int _nas_timer_db_remove(timer_queue_t *entry)
 
     if (_nas_timer_db.head != NULL) {
       /* Other timers are scheduled to expire */
-      return TRUE;
+      return true;
     }
   }
 
   /* The entry was NOT the first entry of the list */
-  return FALSE;
+  return false;
 }
 
 /*

@@ -80,7 +80,7 @@ Description Defines the PDN connectivity ESM procedure executed by the
  * PDN connection handlers
  */
 static int _pdn_connectivity_create(esm_data_t *esm_data, int pid, const OctetString *apn,
-                                    esm_proc_pdn_type_t pdn_type, int is_emergency);
+                                    esm_proc_pdn_type_t pdn_type, bool is_emergency);
 static int _pdn_connectivity_update(esm_data_t *esm_data, int pid, const OctetString *apn,
                                     esm_proc_pdn_type_t pdn_type, const OctetString *pdn_addr, int esm_cause);
 static int _pdn_connectivity_delete(esm_data_t *esm_data, int pid);
@@ -121,7 +121,7 @@ static void *_pdn_connectivity_t3482_handler(void *);
  **             to be defined or undefined                 **
  **      pdn_type:  PDN connection type (IPv4, IPv6, IPv4v6)   **
  **      apn:       Access Point logical Name to be used       **
- **      is_emergency:  TRUE if the PDN connection has to be esta- **
+ **      is_emergency:  true if the PDN connection has to be esta- **
  **             blished for emergency bearer services      **
  **      Others:    None                                       **
  **                                                                        **
@@ -133,7 +133,7 @@ static void *_pdn_connectivity_t3482_handler(void *);
  ***************************************************************************/
 int esm_proc_pdn_connectivity(nas_user_t *user, int cid, int is_to_define,
                               esm_proc_pdn_type_t pdn_type,
-                              const OctetString *apn, int is_emergency,
+                              const OctetString *apn, bool is_emergency,
                               unsigned int *pti)
 {
     LOG_FUNC_IN;
@@ -270,7 +270,7 @@ int esm_proc_pdn_connectivity(nas_user_t *user, int cid, int is_to_define,
  **      pti:       Procedure transaction identity             **
  **      msg:       Encoded PDN connectivity request message   **
  **             to be sent                                 **
- **      sent_by_ue:    Not used - Always TRUE                     **
+ **      sent_by_ue:    Not used - Always true                     **
  **      Others:    None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
@@ -278,8 +278,8 @@ int esm_proc_pdn_connectivity(nas_user_t *user, int cid, int is_to_define,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_request(nas_user_t *user, int is_standalone, int pti,
-                                      OctetString *msg, int sent_by_ue)
+int esm_proc_pdn_connectivity_request(nas_user_t *user, bool is_standalone, int pti,
+                                      OctetString *msg, bool sent_by_ue)
 {
     LOG_FUNC_IN;
     esm_pt_data_t *esm_pt_data = user->esm_pt_data;
@@ -523,7 +523,7 @@ int esm_proc_pdn_connectivity_complete(nas_user_t *user)
  **      PDN connectivity procedure which is still pending in the  **
  **      PROCEDURE TRANSACTION INACTIVE or PENDING state.          **
  **                                                                        **
- ** Inputs:  is_pending:    TRUE if this PDN connectivity procedure    **
+ ** Inputs:  is_pending:    true if this PDN connectivity procedure    **
  **             transaction is in the PENDING state        **
  **      Others:    None                                       **
  **                                                                        **
@@ -679,7 +679,7 @@ static void *_pdn_connectivity_t3482_handler(void *args)
  ** Inputs:  pid:       Identifier of the PDN connection entry     **
  **      apn:       Access Point Name of the PDN connection    **
  **      pdn_type:  PDN type (IPv4, IPv6, IPv4v6)              **
- **      is_emergency:  TRUE if the PDN connection has to be esta- **
+ **      is_emergency:  true if the PDN connection has to be esta- **
  **             blished for emergency bearer services      **
  **                                                                        **
  ** Outputs:     None                                                      **
@@ -688,7 +688,7 @@ static void *_pdn_connectivity_t3482_handler(void *args)
  ***************************************************************************/
 static int _pdn_connectivity_create(esm_data_t *esm_data, int pid, const OctetString *apn,
                                     esm_proc_pdn_type_t pdn_type,
-                                    int is_emergency)
+                                    bool is_emergency)
 {
     esm_pdn_t *pdn = NULL;
 
@@ -720,7 +720,7 @@ static int _pdn_connectivity_create(esm_data_t *esm_data, int pid, const OctetSt
         /* Set the PDN connection identifier */
         esm_data->pdn[pid].pid = pid;
         /* Reset the PDN connection active indicator */
-        esm_data->pdn[pid].is_active = FALSE;
+        esm_data->pdn[pid].is_active = false;
         /* Setup the PDN connection data */
         esm_data->pdn[pid].data = pdn;
     }
@@ -744,7 +744,7 @@ static int _pdn_connectivity_create(esm_data_t *esm_data, int pid, const OctetSt
     }
 
     pdn->type = pdn_type;
-    pdn->addr_realloc = FALSE;
+    pdn->addr_realloc = false;
 
     return (RETURNok);
 }
@@ -825,7 +825,7 @@ static int _pdn_connectivity_update(esm_data_t *esm_data, int pid, const OctetSt
          * the other IP version using the UE requested PDN connectivity
          * procedure to the same APN with a single address PDN type
          * (IPv4 or IPv6) other than the one already activated */
-        pdn->addr_realloc = TRUE;
+        pdn->addr_realloc = true;
     } else if ( (esm_cause == ESM_CAUSE_PDN_TYPE_IPV4_ONLY_ALLOWED) ||
                 (esm_cause == ESM_CAUSE_PDN_TYPE_IPV6_ONLY_ALLOWED) ) {
         /* The UE requested IPv4 or IPv6 address and the network allows
@@ -833,9 +833,9 @@ static int _pdn_connectivity_update(esm_data_t *esm_data, int pid, const OctetSt
          * The UE shall not subsequently initiate another UE requested
          * PDN connectivity procedure to the same APN to obtain a PDN
          * type different from the one allowed by the network */
-        pdn->addr_realloc = FALSE;
+        pdn->addr_realloc = false;
     } else if (pdn_type != ESM_PDN_TYPE_IPV4V6) {
-        pdn->addr_realloc = TRUE;
+        pdn->addr_realloc = true;
     }
 
     return (RETURNok);

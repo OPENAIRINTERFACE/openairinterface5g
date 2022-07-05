@@ -183,12 +183,10 @@ rlc_am_send_sdu (
   }
 }
 //-----------------------------------------------------------------------------
-void
-rlc_am_reassemble_pdu(
-  const protocol_ctxt_t *const ctxt_pP,
-  rlc_am_entity_t *const      rlc_pP,
-  mem_block_t *const          tb_pP,
-  boolean_t free_rlc_pdu) {
+void rlc_am_reassemble_pdu(const protocol_ctxt_t *const ctxt_pP,
+                           rlc_am_entity_t *const      rlc_pP,
+                           mem_block_t *const          tb_pP,
+                           bool free_rlc_pdu) {
   int i,j;
   rlc_am_pdu_info_t *pdu_info        = &((rlc_am_rx_pdu_management_t *)(tb_pP->data))->pdu_info;
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[REASSEMBLY PDU] TRY REASSEMBLY PDU SN=%03d\n",

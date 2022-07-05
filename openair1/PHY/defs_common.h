@@ -755,7 +755,7 @@ typedef struct {
   /// Position of first CCE of the dci
   int firstCCE;
   /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
+  bool ra_flag;
   /// rnti
   rnti_t rnti;
   /// harq_pid
@@ -776,7 +776,7 @@ typedef struct {
   /// Position of first CCE of the dci
   int firstCCE;
   /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
+  bool ra_flag;
   /// rnti
   rnti_t rnti;
   /// Format
@@ -807,7 +807,7 @@ typedef struct {
   /// Position of first CCE of the dci
   int firstCCE;
   /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
+  bool ra_flag;
   /// rnti
   rnti_t rnti;
   /// Format

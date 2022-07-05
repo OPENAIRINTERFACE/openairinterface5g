@@ -165,7 +165,7 @@ void common_pucch_configuration(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int pucch_in
 int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 {
   int v_return = 0;
-  bool reset_harq = FALSE;
+  bool reset_harq = false;
 
   printf("%s", tst_separator);
 
@@ -175,7 +175,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   common_pucch_configuration(ue, gNB_id, TST_PUCCH_COMMON_CONFIG_INDEX_KO);
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -186,7 +186,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   printf("\n  => Test : Error due to acknownlegment not set \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -194,7 +194,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   printf("\n  => Test : Error due to DAI not set \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -202,7 +202,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   harq_status->vDAI_DL = NR_DL_MAX_DAI + 1;
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -210,7 +210,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   harq_status->vDAI_DL = 0;
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -218,7 +218,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   harq_status->send_harq_status = 1;  /* ack ready to be send */
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -228,7 +228,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   harq_status->vDAI_DL = 1;
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -236,7 +236,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 
   printf("\n  => Test : Error due to PUCCH format with multiple cells not already implemented \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -260,7 +260,7 @@ int test_pucch_basic_error(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pr
 int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 {
   int v_return = 0;
-  bool reset_harq = FALSE;
+  bool reset_harq = false;
 
   printf("%s", tst_separator);
 
@@ -273,7 +273,7 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
 
   printf("\n  => Test : PUCCH format from common config in prach mode: one positive downlink ACKnowledgment \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
    v_return = -1;
   }
 
@@ -281,7 +281,7 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
 
   printf("\n  => Test : PUCCH format from common config in prach mode: one negative downlink ACKnowledgment \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
    v_return = -1;
   }
 
@@ -304,7 +304,7 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
 
   printf("\n  => Test : PUCCH format from common config in dedicated mode: two positive downlink ACKnowledgments \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     v_return = -1;
   }
 
@@ -312,7 +312,7 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
 
   printf("\n  => Test : PUCCH format from common config in dedicated mode: one positive and one negative downlink ACKnowledgments \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     v_return = -1;
   }
 
@@ -320,22 +320,22 @@ int test_pucch_common_config_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_
 
   printf("\n  => Test : PUCCH format from common config in dedicated mode: two negative downlink ACKnowledgments \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     v_return = -1;
   }
 
   harq_status->ack = DL_ACK;
-  reset_harq = TRUE;
+  reset_harq = true;
 
   printf("\n  => Test : PUCCH format from common config in dedicated mode: no resource is found \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
   printf("\n  => Test : PUCCH format from common config in dedicated mode: no PUCCH after reset of pending harq ACKnowledgments \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -362,7 +362,7 @@ void init_pucch_dedicated_configuration(PHY_VARS_NR_UE *ue, uint8_t gNB_id)
   int i,j;
 
   /* set cell group parameters which are supported */
-  ue->cell_group_config.physicalCellGroupConfig.harq_ACK_SpatialBundlingPUCCH = FALSE;
+  ue->cell_group_config.physicalCellGroupConfig.harq_ACK_SpatialBundlingPUCCH = false;
   ue->cell_group_config.physicalCellGroupConfig.pdsch_HARQ_ACK_Codebook = dynamic;
 
   ue->PDSCH_ServingCellConfig.codeBlockGroupTransmission = NULL;
@@ -554,7 +554,7 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
 #define   TST_NB_STEP_SINGLE_TRANSPORT_BLOCK      (4)
 
   int v_return = 0;
-  int reset_harq = FALSE;
+  int reset_harq = false;
   int dl_harq_pid[TST_NB_STEP_SINGLE_TRANSPORT_BLOCK] = {TST_DL_HARQ_PID_FIRST, TST_DL_HARQ_PID_SECOND, TST_DL_HARQ_PID_THIRD, TST_DL_HARQ_PID_FOURTH };
   int pucch_resource_indicator[TST_NB_STEP_SINGLE_TRANSPORT_BLOCK][2] = { { 0, 4 }, { 1, 0 } , { 1, 3 } , { 5, 7 } };
   NR_UE_HARQ_STATUS_t *harq_status;
@@ -575,7 +575,7 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
 
   printf("\n  => Test : PUCCH format from dedicated config : pucch resource indicator is invalid \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
     v_return = -1;
   }
 
@@ -595,14 +595,14 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
 
       /* reset ack context on last test */
       if ((i == (TST_NB_STEP_SINGLE_TRANSPORT_BLOCK-1)) && (j == 1)) {
-        reset_harq = TRUE;
+        reset_harq = true;
       }
 
       harq_status->pucch_resource_indicator = pucch_resource_indicator[i][j];
 
       printf("\n  => Test : PUCCH format from dedicated config with 1 transport block : with %d downlink ACKnowledgments and pucch resource indicator %d \n", i+1, pucch_resource_indicator[i][j]);
 
-      if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+      if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
         v_return = -1;
       }
     }
@@ -627,11 +627,11 @@ int test_pucch_dedicated_single_transport_block(PHY_VARS_NR_UE *ue, int gNB_id, 
     harq_status->pucch_resource_indicator = pucch_resource_indicator[i][0];
   }
 
-  reset_harq = TRUE;
+  reset_harq = true;
 
   printf("\n  => Test : PUCCH format from dedicated config with 1 transport block and missed PDSCH : with %d downlink ACKnowledgments and pucch resource indicator %d \n", i+1, pucch_resource_indicator[3][0]);
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     v_return = -1;
   }
 
@@ -659,7 +659,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 #define   TST_NB_STEP_TWO_TRANSPORT_BLOCKS      (4)
 
   int v_return = 0;
-  int reset_harq = FALSE;
+  int reset_harq = false;
   int dl_harq_pid[TST_NB_STEP_TWO_TRANSPORT_BLOCKS] = {TST_DL_HARQ_PID_FIRST, TST_DL_HARQ_PID_SECOND, TST_DL_HARQ_PID_THIRD, TST_DL_HARQ_PID_FOURTH };
   int pucch_resource_indicator[TST_NB_STEP_TWO_TRANSPORT_BLOCKS][2] = { { 0, 1 }, { 3, 7 } , { 2 , 4 } , { 4 , 6 } };
   NR_UE_HARQ_STATUS_t *harq_status;
@@ -694,7 +694,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
       /* reset ack context on last test */
       if ((i == (TST_NB_STEP_TWO_TRANSPORT_BLOCKS-1)) && (j == 1)) {
-        reset_harq = TRUE;
+        reset_harq = true;
       }
 
       harq_status = &ue->dlsch[proc->thread_id][gNB_id][0]->harq_processes[dl_harq_pid[i]].harq_ack;
@@ -703,7 +703,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
       printf("\n  => Test : PUCCH format from dedicated config with 2 transport blocks : with %d downlink ACKnowledgments and pucch resource indicator %d \n", i+1, pucch_resource_indicator[i][j]);
 
-      if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+      if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
         printf("Test fail \n");
         v_return = -1;
       }
@@ -714,7 +714,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
   /* some transport blocks have been missed and they need to be nack by UE in order to be retransmitted by the network */
   /* here first and third block receptions have been missed */
 
-  reset_harq = TRUE;
+  reset_harq = true;
 
   for (int i = 1; i < TST_NB_STEP_TWO_TRANSPORT_BLOCKS; i = i + 1) {
 
@@ -743,7 +743,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
 
   printf("\n  => Test : PUCCH format from dedicated config with 2 transport blocks and 1 missed PDSCH : with %d downlink ACKnowledgments and pucch resource indicator %d \n", 4, pucch_resource_indicator[3][0]);
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -775,7 +775,7 @@ int test_pucch_dedicated_two_transport_blocks(PHY_VARS_NR_UE *ue, int gNB_id, UE
     }
   }
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
    printf("Test fail \n");
    v_return = -1;
   }
@@ -907,7 +907,7 @@ int test_sr_alone_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *p
 
   tst_scheduling_request_payload = 0;
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != FALSE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != false) {
    printf("Test fail \n");
    v_return = -1;
   }
@@ -916,7 +916,7 @@ int test_sr_alone_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *p
 
   tst_scheduling_request_payload = 1;
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -929,7 +929,7 @@ int test_sr_alone_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *p
 
   tst_scheduling_request_payload = 1;
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -958,7 +958,7 @@ int test_sr_alone_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *p
 int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 {
   int v_return = 0;
-  int reset_harq = 0;
+  bool reset_harq = false;
   int sr_config_id = 0;
   int sr_resource_id = 0;
   int sr_offset = 0;
@@ -988,7 +988,7 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 
   tst_scheduling_request_payload = 0;  /* set sr payload */
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -997,7 +997,7 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 
   tst_scheduling_request_payload = 1;  /* set sr payload */
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
    printf("Test fail \n");
    v_return = -1;
   }
@@ -1006,7 +1006,7 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 
   harq_status->pucch_resource_indicator = pucch_resource_indicator[1];
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -1027,7 +1027,7 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 
   tst_scheduling_request_payload = 1;  /* set sr payload */
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -1035,9 +1035,9 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
   printf("\n  => Test : PUCCH format from dedicated config with a positive scheduling request and two positive acks \n");
 
   harq_status->pucch_resource_indicator = pucch_resource_indicator[1];
-  reset_harq = TRUE;
+  reset_harq = true;
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
    printf("Test fail \n");
    v_return = -1;
   }
@@ -1065,7 +1065,7 @@ int test_sr_ack_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *pro
 int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 {
   int v_return = 0;
-  int reset_harq = FALSE;
+  int reset_harq = false;
   int sr_config_id = 0;
   int sr_resource_id = 0;
   int sr_offset = 0;
@@ -1079,7 +1079,7 @@ int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 
   printf("\n  => Test : PUCCH format from dedicated config with CSI alone \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -1102,7 +1102,7 @@ int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 
   ue->pucch_config_dedicated_nr[gNB_id].formatConfig[2-1]->simultaneousHARQ_ACK_CSI = enable_feature; /* format 2 */
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -1115,9 +1115,9 @@ int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 
   tst_scheduling_request_payload = 0;  /* set sr payload */
 
-  reset_harq = TRUE;
+  reset_harq = true;
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -1126,7 +1126,7 @@ int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 
   harq_status->pucch_resource_indicator = pucch_resource_indicator[4];
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }
@@ -1135,7 +1135,7 @@ int test_csi_dedicated(PHY_VARS_NR_UE *ue, int gNB_id, UE_nr_rxtx_proc_t *proc)
 
   printf("\n  => Test : PUCCH format from dedicated config with positive SR and CSI \n");
 
-  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != TRUE) {
+  if (pucch_procedures_ue_nr(ue, gNB_id, proc, reset_harq) != true) {
     printf("Test fail \n");
     v_return = -1;
   }

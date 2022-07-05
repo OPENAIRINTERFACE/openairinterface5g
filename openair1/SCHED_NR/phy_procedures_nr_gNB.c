@@ -657,7 +657,8 @@ int fill_srs_channel_matrix(uint8_t *channel_matrix,
                             const uint16_t num_ue_srs_ports,
                             const uint16_t prg_size,
                             const uint16_t num_prgs,
-                            const NR_DL_FRAME_PARMS *frame_parms) {
+                            const NR_DL_FRAME_PARMS *frame_parms,
+                            const int32_t srs_estimated_channel_freq[][MAX_NUM_NR_SRS_AP][frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)]) {
 
   const uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*NR_NB_SC_PER_RB;
   const uint16_t step = prg_size*NR_NB_SC_PER_RB;
@@ -675,7 +676,7 @@ int fill_srs_channel_matrix(uint8_t *channel_matrix,
 
       for(int pI = 0; pI < num_prgs; pI++) {
 
-        c16_t *srs_estimated_channel16 = (c16_t *)&nr_srs_info->srs_estimated_channel_freq[gI][uI][subcarrier];
+        c16_t *srs_estimated_channel16 = (c16_t *)&srs_estimated_channel_freq[gI][uI][subcarrier];
         uint16_t index = uI*num_gnb_antenna_elements*num_prgs + gI*num_prgs + pI;
 
         if (normalized_iq_representation == 0) {
@@ -702,6 +703,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   /* those variables to log T_GNB_PHY_PUCCH_PUSCH_IQ only when we try to decode */
   int pucch_decode_done = 0;
   int pusch_decode_done = 0;
+  int phy_procedures_errors = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
@@ -841,7 +843,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           if (no_sig) {
             LOG_D(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
             nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
-            return 1;
+            phy_procedures_errors++;
+            continue;
           }
           gNB->pusch_vars[ULSCH_id]->ulsch_power_tot=0;
           gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot=0;
@@ -865,7 +868,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                /* in case of phy_test mode, we still want to decode to measure execution time. 
                   Therefore, we don't yet call nr_fill_indication, it will be called later */
                nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
-               return 1;
+               phy_procedures_errors++;
+               continue;
              }
           } else {
             LOG_D(PHY, "PUSCH detected in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
@@ -896,14 +900,26 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
         LOG_D(NR_PHY, "(%d.%d) gNB is waiting for SRS, id = %i\n", frame_rx, slot_rx, i);
 
+        NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
         nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
+        uint8_t N_symb_SRS = 1<<srs_pdu->num_symbols;
+        int32_t srs_received_signal[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
+        int32_t srs_ls_estimated_channel[frame_parms->nb_antennas_rx][MAX_NUM_NR_SRS_AP][frame_parms->ofdm_symbol_size*N_symb_SRS];
+        int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][MAX_NUM_NR_SRS_AP][frame_parms->ofdm_symbol_size*N_symb_SRS];
+        int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][MAX_NUM_NR_SRS_AP][frame_parms->ofdm_symbol_size];
+        int32_t srs_estimated_channel_time_shifted[frame_parms->nb_antennas_rx][MAX_NUM_NR_SRS_AP][frame_parms->ofdm_symbol_size];
+        uint32_t noise_power_per_rb[srs_pdu->bwp_size];
+        int8_t snr_per_rb[srs_pdu->bwp_size];
+        uint32_t signal_power;
+        uint32_t noise_power;
+        int8_t snr;
 
         // At least currently, the configuration is constant, so it is enough to generate the sequence just once.
         if(gNB->nr_srs_info[i]->srs_generated_signal_bits == 0) {
-          generate_srs_nr(srs_pdu, &gNB->frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
+          generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
         }
 
-        const int srs_est = nr_get_srs_signal(gNB,frame_rx,slot_rx,srs_pdu, gNB->nr_srs_info[i], gNB->nr_srs_info[i]->srs_received_signal);
+        const int srs_est = nr_get_srs_signal(gNB,frame_rx,slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
 
         if (srs_est >= 0) {
           nr_srs_channel_estimation(gNB,
@@ -911,23 +927,24 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     slot_rx,
                                     srs_pdu,
                                     gNB->nr_srs_info[i],
-                                    (const int32_t **)gNB->nr_srs_info[i]->srs_generated_signal,
-                                    (const int32_t **)gNB->nr_srs_info[i]->srs_received_signal,
-                                    gNB->nr_srs_info[i]->srs_estimated_channel_freq,
-                                    gNB->nr_srs_info[i]->srs_estimated_channel_time,
-                                    gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted,
-                                    &gNB->nr_srs_info[i]->signal_power,
-                                    gNB->nr_srs_info[i]->noise_power_per_rb,
-                                    &gNB->nr_srs_info[i]->noise_power,
-                                    gNB->nr_srs_info[i]->snr_per_rb,
-                                    &gNB->nr_srs_info[i]->snr);
+                                    (const int32_t **) gNB->nr_srs_info[i]->srs_generated_signal,
+                                    srs_received_signal,
+                                    srs_ls_estimated_channel,
+                                    srs_estimated_channel_freq,
+                                    srs_estimated_channel_time,
+                                    srs_estimated_channel_time_shifted,
+                                    &signal_power,
+                                    noise_power_per_rb,
+                                    &noise_power,
+                                    snr_per_rb,
+                                    &snr);
         }
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0][0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
+          T_BUFFER(srs_estimated_channel_freq[0][0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
 
         T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted[0][0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
+          T_BUFFER(srs_estimated_channel_time_shifted[0][0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
 
         const uint16_t num_srs = gNB->UL_INFO.srs_ind.number_of_pdus;
         gNB->UL_INFO.srs_ind.pdu_list = &gNB->srs_pdu_list[0];
@@ -935,8 +952,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->UL_INFO.srs_ind.slot = slot_rx;
         gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
         gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
-        gNB->srs_pdu_list[num_srs].timing_advance_offset = srs_est >= 0 ? nr_est_timing_advance_srs(&gNB->frame_parms,
-                                                                                                    (const int32_t **)gNB->nr_srs_info[i]->srs_estimated_channel_time[0]) : 0xFFFF;
+        gNB->srs_pdu_list[num_srs].timing_advance_offset = srs_est >= 0 ? nr_est_timing_advance_srs(frame_parms,
+                                                                                                    srs_estimated_channel_time[0]) : 0xFFFF;
         gNB->srs_pdu_list[num_srs].timing_advance_offset_nsec = srs_est >= 0 ? (int16_t)(( ((int32_t)gNB->srs_pdu_list[num_srs].timing_advance_offset-31) * ((int32_t)TC_NSEC_x32768) ) >> 15) : 0xFFFF;
         switch (srs_pdu->srs_parameters_v4.usage) {
           case 0:
@@ -982,13 +999,13 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             nfapi_nr_srs_beamforming_report_t nr_srs_beamforming_report;
             nr_srs_beamforming_report.prg_size = srs_pdu->beamforming.prg_size;
             nr_srs_beamforming_report.num_symbols = 1<<srs_pdu->num_symbols;
-            nr_srs_beamforming_report.wide_band_snr = srs_est >= 0 ? (gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
+            nr_srs_beamforming_report.wide_band_snr = srs_est >= 0 ? (snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
             nr_srs_beamforming_report.num_reported_symbols = 1<<srs_pdu->num_symbols;
             nr_srs_beamforming_report.prgs = (nfapi_nr_srs_reported_symbol_t*) calloc(1, nr_srs_beamforming_report.num_reported_symbols*sizeof(nfapi_nr_srs_reported_symbol_t));
             fill_srs_reported_symbol_list(&nr_srs_beamforming_report.prgs[0],
                                           srs_pdu,
-                                          gNB->frame_parms.N_RB_UL,
-                                          gNB->nr_srs_info[i]->snr_per_rb,
+                                          frame_parms->N_RB_UL,
+                                          snr_per_rb,
                                           srs_est);
 
 #ifdef SRS_IND_DEBUG
@@ -1027,7 +1044,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     nr_srs_normalized_channel_iq_matrix.num_ue_srs_ports,
                                     nr_srs_normalized_channel_iq_matrix.prg_size,
                                     nr_srs_normalized_channel_iq_matrix.num_prgs,
-                                    &gNB->frame_parms);
+                                    &gNB->frame_parms,
+                                    srs_estimated_channel_freq);
 
 #ifdef SRS_IND_DEBUG
             LOG_I(NR_PHY, "nr_srs_normalized_channel_iq_matrix.normalized_iq_representation = %i\n", nr_srs_normalized_channel_iq_matrix.normalized_iq_representation);
@@ -1088,5 +1106,5 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
-  return 0;
+  return phy_procedures_errors;
 }

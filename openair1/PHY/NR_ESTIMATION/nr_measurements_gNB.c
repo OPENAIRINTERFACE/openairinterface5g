@@ -68,15 +68,15 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
 }
 
 int nr_est_timing_advance_srs(const NR_DL_FRAME_PARMS *frame_parms,
-                              const int32_t **srs_estimated_channel_time) {
+                              const int32_t srs_estimated_channel_time[][frame_parms->ofdm_symbol_size]) {
   int timing_advance = 0;
   int max_val = 0;
 
   for (int i = 0; i < frame_parms->ofdm_symbol_size; i++) {
     int temp = 0;
     for (int aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
-      int Re = ((int16_t*)srs_estimated_channel_time[aa])[(i<<1)];
-      int Im = ((int16_t*)srs_estimated_channel_time[aa])[1+(i<<1)];
+      int Re = ((c16_t*)srs_estimated_channel_time[aa])[i].r;
+      int Im = ((c16_t*)srs_estimated_channel_time[aa])[i].i;
       temp += (Re*Re/2) + (Im*Im/2);
     }
     if (temp > max_val) {

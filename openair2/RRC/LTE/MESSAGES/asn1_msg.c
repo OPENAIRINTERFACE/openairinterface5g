@@ -343,7 +343,7 @@ uint8_t do_MIB_SL(const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,
 
   if (in_coverage > 0 ) {
     //in coverage
-    mib_sl->inCoverage_r12 = TRUE;
+    mib_sl->inCoverage_r12 = true;
     mib_sl->sl_Bandwidth_r12 = *UE_rrc_inst[ctxt_pP->module_id].sib2[eNB_index]->freqInfo.ul_Bandwidth;
 
     if (UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->tdd_Config) {
@@ -366,7 +366,7 @@ uint8_t do_MIB_SL(const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index,
   } else {
     //Todo - out of coverage for V2X
     // Todo - UE has a selected SyncRef UE
-    mib_sl->inCoverage_r12 = FALSE;
+    mib_sl->inCoverage_r12 = false;
     //set sl-Bandwidth, subframeAssignmentSL and reserved from the pre-configured parameters
   }
 
@@ -989,7 +989,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   sib1_1250->nonCriticalExtension = NULL;
   ////Rel1310
   if ((configuration->schedulingInfoSIB1_BR_r13[CC_id] != 0) &&
-      (brOption==TRUE)) {
+      (brOption==true)) {
     sib1_1250->nonCriticalExtension = calloc(1, sizeof(LTE_SystemInformationBlockType1_v1310_IEs_t));
     memset(sib1_1250->nonCriticalExtension, 0, sizeof(LTE_SystemInformationBlockType1_v1310_IEs_t));
     LTE_SystemInformationBlockType1_v1310_IEs_t *sib1_1310 = sib1_1250->nonCriticalExtension;
@@ -1279,7 +1279,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   *sib2 = &sib2_part->choice.sib2;
   *sib3 = &sib3_part->choice.sib3;
 
-  if ((configuration->eMBMS_configured > 0) && (brOption==FALSE)) {
+  if ((configuration->eMBMS_configured > 0) && (brOption==false)) {
     sib13_part = CALLOC(1,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     memset(sib13_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     sib13_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
@@ -2781,7 +2781,7 @@ do_RRCConnectionSetup(
   mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx; // max number of UL HARQ transmission
   mac_MainConfig->ul_SCH_Config->periodicBSR_Timer = periodicBSR_Timer;
   mac_MainConfig->ul_SCH_Config->retxBSR_Timer = LTE_RetxBSR_Timer_r12_sf320; // LTE_RetxBSR_Timer_r12_sf5120  // regular BSR timer
-  mac_MainConfig->ul_SCH_Config->ttiBundling = 0; // FALSE
+  mac_MainConfig->ul_SCH_Config->ttiBundling = 0; // false
   //* timeAlignmentTimerDedicated *//
   mac_MainConfig->timeAlignmentTimerDedicated = LTE_TimeAlignmentTimer_infinity;
   //* DRX Config *//
@@ -3135,7 +3135,7 @@ uint8_t do_RRCConnectionSetup_BR(
   //mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
   mac_MainConfig->ul_SCH_Config->periodicBSR_Timer = periodicBSR_Timer;
   mac_MainConfig->ul_SCH_Config->retxBSR_Timer = LTE_RetxBSR_Timer_r12_sf320;
-  mac_MainConfig->ul_SCH_Config->ttiBundling = 0; // FALSE
+  mac_MainConfig->ul_SCH_Config->ttiBundling = 0; // false
   mac_MainConfig->timeAlignmentTimerDedicated = LTE_TimeAlignmentTimer_infinity;
   mac_MainConfig->drx_Config = NULL;
   mac_MainConfig->phr_Config = CALLOC(1, sizeof(*mac_MainConfig->phr_Config));

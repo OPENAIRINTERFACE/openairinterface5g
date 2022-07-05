@@ -415,7 +415,7 @@ typedef struct {
   uint8_t BSR_reporting_active;
 
   /// LogicalChannelConfig has bearer.
-  boolean_t logicalChannelBearer_exist[NR_MAX_NUM_LCID];
+  bool logicalChannelBearer_exist[NR_MAX_NUM_LCID];
   NR_UE_SCHEDULING_INFO   scheduling_info;
 
   /// PHR
@@ -546,7 +546,7 @@ typedef struct prach_association_pattern {
 
 // SSB details
 typedef struct ssb_info {
-  boolean_t transmitted; // True if the SSB index is transmitted according to the SSB positions map configuration
+  bool transmitted; // True if the SSB index is transmitted according to the SSB positions map configuration
   prach_occasion_info_t *mapped_ro[MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN]; // List of mapped RACH Occasions to this SSB index
   uint16_t nb_mapped_ro; // Total number of mapped ROs to this SSB index
 } ssb_info_t;

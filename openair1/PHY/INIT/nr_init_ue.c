@@ -377,10 +377,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     }
 
     ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-    ue->nr_srs_info->k_0_p = (uint8_t**)malloc16_clear(fp->nb_antennas_rx*sizeof(uint8_t*));
-    for (i=0; i<fp->nb_antennas_rx; i++) {
-      ue->nr_srs_info->k_0_p[i] = (uint8_t*)malloc16_clear(MAX_NUM_NR_SRS_SYMBOLS*sizeof(uint8_t));
-    }
 
     // RACH
     prach_vars[gNB_id]->prachF             = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
@@ -507,10 +503,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     free_and_zero(ue->nr_csi_rs_info->csi_rs_estimated_channel_freq);
     free_and_zero(ue->nr_csi_rs_info);
 
-    for (int i = 0; i < fp->nb_antennas_rx; i++) {
-      free_and_zero(ue->nr_srs_info->k_0_p[i]);
-    }
-    free_and_zero(ue->nr_srs_info->k_0_p);
     free_and_zero(ue->nr_srs_info);
 
     free_and_zero(ue->csiim_vars[gNB_id]);
