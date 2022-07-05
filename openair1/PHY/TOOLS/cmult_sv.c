@@ -144,207 +144,10 @@ void multadd_real_four_symbols_vector_complex_scalar(int16_t *x,
   _m_empty();
 
 }
-
-/*
-int rotate_cpx_vector(int16_t *x,
-                      int16_t *alpha,
-                      int16_t *y,
-                      uint32_t N,
-                      uint16_t output_shift,
-                      uint8_t format)
-{
-  // Multiply elementwise two complex vectors of N elements
-  // x        - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-  //            We assume x1 with a dynamic of 15 bit maximum
-  //
-  // alpha      - input 2    in the format  |Re0 Im0|
-  //            We assume x2 with a dynamic of 15 bit maximum
-  //
-  // y        - output     in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-  //
-  // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
-  //
-  // output_shift - shift at output to return in Q1.15
-  // format - 0 means alpha is in shuffled format, 1 means x is in shuffled format
-
-  uint32_t i;                 // loop counter
-
-  register __m128i m0,m1;
-
-
-
-  __m128i *x_128;
-  __m128i *y_128;
-
-
-  shift = _mm_cvtsi32_si128(output_shift);
-  x_128 = (__m128i *)&x[0];
-
-  if (format==0) {  // alpha is in shuffled format for complex multiply
-    ((int16_t *)&alpha_128)[0] = alpha[0];
-    ((int16_t *)&alpha_128)[1] = -alpha[1];
-    ((int16_t *)&alpha_128)[2] = alpha[1];
-    ((int16_t *)&alpha_128)[3] = alpha[0];
-    ((int16_t *)&alpha_128)[4] = alpha[0];
-    ((int16_t *)&alpha_128)[5] = -alpha[1];
-    ((int16_t *)&alpha_128)[6] = alpha[1];
-    ((int16_t *)&alpha_128)[7] = alpha[0];
-  } else { // input is in shuffled format for complex multiply
-    ((int16_t *)&alpha_128)[0] = alpha[0];
-    ((int16_t *)&alpha_128)[1] = alpha[1];
-    ((int16_t *)&alpha_128)[2] = alpha[0];
-    ((int16_t *)&alpha_128)[3] = alpha[1];
-    ((int16_t *)&alpha_128)[4] = alpha[0];
-    ((int16_t *)&alpha_128)[5] = alpha[1];
-    ((int16_t *)&alpha_128)[6] = alpha[0];
-    ((int16_t *)&alpha_128)[7] = alpha[1];
-  }
-
-  y_128 = (__m128i *)&y[0];
-
-  //  _mm_empty();
-  //  return(0);
-
-  // we compute 4 cpx multiply for each loop
-  for(i=0; i<(N>>3); i++) {
-
-    m0 = _mm_madd_epi16(x_128[0],alpha_128); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
-    m1=m0;
-    m0 = _mm_packs_epi32(m1,m0);        // 1- pack in a 128 bit register [re im re im]
-    y_128[0] = _mm_unpacklo_epi32(m0,m0);        // 1- pack in a 128 bit register [re im re im]
-    m0 = _mm_madd_epi16(x_128[1],alpha_128); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
-    m1 = m0;
-    m1 = _mm_packs_epi32(m1,m0);        // 1- pack in a 128 bit register [re im re im]
-    y_128[1] = _mm_unpacklo_epi32(m1,m1);        // 1- pack in a 128 bit register [re im re im]
-    m0 = _mm_madd_epi16(x_128[2],alpha_128); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
-    m1 = m0;
-    m1 = _mm_packs_epi32(m1,m0);        // 1- pack in a 128 bit register [re im re im]
-    y_128[2] = _mm_unpacklo_epi32(m1,m1);        // 1- pack in a 128 bit register [re im re im]
-    m0 = _mm_madd_epi16(x_128[3],alpha_128); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
-    m1 = m0;
-    m1 = _mm_packs_epi32(m1,m0);        // 1- pack in a 128 bit register [re im re im]
-    y_128[3] = _mm_unpacklo_epi32(m1,m1);        // 1- pack in a 128 bit register [re im re im]
-    if (format==1) {  // Put output in proper format (Re,-Im,Im,Re), shuffle = (0,1,3,2) = 0x1e
-
-      y_128[0] = _mm_shufflelo_epi16(y_128[0],0x1e);
-      y_128[0] = _mm_shufflehi_epi16(y_128[0],0x1e);
-      ((int16_t*)&y_128[0])[1] = -((int16_t*)&y_128[0])[1];
-      ((int16_t*)&y_128[0])[5] = -((int16_t*)&y_128[0])[5];
-      y_128[1] = _mm_shufflelo_epi16(y_128[1],0x1e);
-      y_128[1] = _mm_shufflehi_epi16(y_128[1],0x1e);
-      ((int16_t*)&y_128[1])[1] = -((int16_t*)&y_128[1])[1];
-      ((int16_t*)&y_128[1])[5] = -((int16_t*)&y_128[1])[5];
-      y_128[2] = _mm_shufflelo_epi16(y_128[2],0x1e);
-      y_128[2] = _mm_shufflehi_epi16(y_128[2],0x1e);
-      ((int16_t*)&y_128[2])[1] = -((int16_t*)&y_128[2])[1];
-      ((int16_t*)&y_128[2])[5] = -((int16_t*)&y_128[2])[5];
-      y_128[3] = _mm_shufflelo_epi16(y_128[3],0x1e);
-      y_128[3] = _mm_shufflehi_epi16(y_128[3],0x1e);
-      ((int16_t*)&y_128[3])[1] = -((int16_t*)&y_128[3])[1];
-      ((int16_t*)&y_128[3])[5] = -((int16_t*)&y_128[3])[5];
-    }
-
-
-    x_128+=4;
-    y_128 +=4;
-  }
-
-
-  _mm_empty();
-  _m_empty();
-
-  return(0);
-}
-
-int rotate_cpx_vector2(int16_t *x,
-                       int16_t *alpha,
-                       int16_t *y,
-                       uint32_t N,
-                       uint16_t output_shift,
-                       uint8_t format)
-{
-  // Multiply elementwise two complex vectors of N elements
-  // x        - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-  //            We assume x1 with a dynamic of 15 bit maximum
-  //
-  // alpha      - input 2    in the format  |Re0 Im0|
-  //            We assume x2 with a dynamic of 15 bit maximum
-  //
-  // y        - output     in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-  //
-  // N        - the size f the vectors (this function does N cpx mpy. WARNING: N>=4;
-  //
-  // log2_amp - increase the output amplitude by a factor 2^log2_amp (default is 0)
-  //            WARNING: log2_amp>0 can cause overflow!!
-
-  uint32_t i;                 // loop counter
-
-  register __m128i m0,m1;
-
-
-  __m128i *x_128;
-  __m128i *y_128;
-
-
-  shift = _mm_cvtsi32_si128(output_shift);
-  x_128 = (__m128i *)&x[0];
-
-  if (format==0) {  // alpha is in shuffled format for complex multiply
-    ((int16_t *)&alpha_128)[0] = alpha[0];
-    ((int16_t *)&alpha_128)[1] = -alpha[1];
-    ((int16_t *)&alpha_128)[2] = alpha[1];
-    ((int16_t *)&alpha_128)[3] = alpha[0];
-    ((int16_t *)&alpha_128)[4] = alpha[0];
-    ((int16_t *)&alpha_128)[5] = -alpha[1];
-    ((int16_t *)&alpha_128)[6] = alpha[1];
-    ((int16_t *)&alpha_128)[7] = alpha[0];
-  } else { // input is in shuffled format for complex multiply
-    ((int16_t *)&alpha_128)[0] = alpha[0];
-    ((int16_t *)&alpha_128)[1] = alpha[1];
-    ((int16_t *)&alpha_128)[2] = alpha[0];
-    ((int16_t *)&alpha_128)[3] = alpha[1];
-    ((int16_t *)&alpha_128)[4] = alpha[0];
-    ((int16_t *)&alpha_128)[5] = alpha[1];
-    ((int16_t *)&alpha_128)[6] = alpha[0];
-    ((int16_t *)&alpha_128)[7] = alpha[1];
-  }
-
-  y_128 = (__m128i *)&y[0];
-
-  // we compute 4 cpx multiply for each loop
-  for(i=0; i<(N>>1); i++) {
-
-
-    m0 = _mm_madd_epi16(x_128[i],alpha_128); //pmaddwd_r2r(mm1,mm0);         // 1- compute x1[0]*x2[0]
-    m0 = _mm_sra_epi32(m0,shift);        // 1- shift right by shift in order to  compensate for the input amplitude
-    m1=m0;
-    m1 = _mm_packs_epi32(m1,m0);        // 1- pack in a 128 bit register [re im re im]
-    y_128[i] = _mm_unpacklo_epi32(m1,m1);        // 1- pack in a 128 bit register [re im re im]
-    if (format==1) {  // Put output in proper format (Re,-Im,Im,Re), shuffle = (0,1,3,2) = 0x1e
-
-      y_128[i] = _mm_shufflelo_epi16(y_128[i],0x1e);
-      y_128[i] = _mm_shufflehi_epi16(y_128[i],0x1e);
-      ((int16_t*)&y_128[i])[1] = -((int16_t*)&y_128[i])[1];
-      ((int16_t*)&y_128[i])[5] = -((int16_t*)&y_128[i])[5];
-    }
-  }
-
-
-  _mm_empty();
-  _m_empty();
-
-
-  return(0);
-}
-*/
-
-int rotate_cpx_vector(int16_t *x,
-                      int16_t *alpha,
-                      int16_t *y,
+#ifdef __AVX2__
+void rotate_cpx_vector(c16_t *x,
+                      c16_t *alpha,
+                      c16_t *y,
                       uint32_t N,
                       uint16_t output_shift)
 {
@@ -372,28 +175,28 @@ int rotate_cpx_vector(int16_t *x,
   __m128i shift = _mm_cvtsi32_si128(output_shift);
   register simd_q15_t m0,m1,m2,m3;
 
-  ((int16_t *)&alpha_128)[0] = alpha[0];
-  ((int16_t *)&alpha_128)[1] = -alpha[1];
-  ((int16_t *)&alpha_128)[2] = alpha[1];
-  ((int16_t *)&alpha_128)[3] = alpha[0];
-  ((int16_t *)&alpha_128)[4] = alpha[0];
-  ((int16_t *)&alpha_128)[5] = -alpha[1];
-  ((int16_t *)&alpha_128)[6] = alpha[1];
-  ((int16_t *)&alpha_128)[7] = alpha[0];
+  ((int16_t *)&alpha_128)[0] = alpha->r;
+  ((int16_t *)&alpha_128)[1] = -alpha->i;
+  ((int16_t *)&alpha_128)[2] = alpha->i;
+  ((int16_t *)&alpha_128)[3] = alpha->r;
+  ((int16_t *)&alpha_128)[4] = alpha->r;
+  ((int16_t *)&alpha_128)[5] = -alpha->i;
+  ((int16_t *)&alpha_128)[6] = alpha->i;
+  ((int16_t *)&alpha_128)[7] = alpha->r;
 #elif defined(__arm__)
   int32x4_t shift;
   int32x4_t ab_re0,ab_re1,ab_im0,ab_im1,re32,im32;
   int16_t reflip[8]  __attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
   int32x4x2_t xtmp;
 
-  ((int16_t *)&alpha_128)[0] = alpha[0];
-  ((int16_t *)&alpha_128)[1] = alpha[1];
-  ((int16_t *)&alpha_128)[2] = alpha[0];
-  ((int16_t *)&alpha_128)[3] = alpha[1];
-  ((int16_t *)&alpha_128)[4] = alpha[0];
-  ((int16_t *)&alpha_128)[5] = alpha[1];
-  ((int16_t *)&alpha_128)[6] = alpha[0];
-  ((int16_t *)&alpha_128)[7] = alpha[1];
+  ((int16_t *)&alpha_128)[0] = alpha->r;
+  ((int16_t *)&alpha_128)[1] = alpha->i;
+  ((int16_t *)&alpha_128)[2] = alpha->r;
+  ((int16_t *)&alpha_128)[3] = alpha->i;
+  ((int16_t *)&alpha_128)[4] = alpha->r;
+  ((int16_t *)&alpha_128)[5] = alpha->i;
+  ((int16_t *)&alpha_128)[6] = alpha->r;
+  ((int16_t *)&alpha_128)[7] = alpha->i;
   int16x8_t bflip = vrev32q_s16(alpha_128);
   int16x8_t bconj = vmulq_s16(alpha_128,*(int16x8_t *)reflip);
   shift = vdupq_n_s32(-output_shift);
@@ -439,9 +242,9 @@ int rotate_cpx_vector(int16_t *x,
   _mm_empty();
   _m_empty();
 
-  return(0);
+  return;
 }
-
+#endif
 /*
 int mult_vector32_scalar(int16_t *x1,
                          int x2,
@@ -536,7 +339,7 @@ main ()
   int16_t input[256] __attribute__((aligned(16)));
   int16_t input2[256] __attribute__((aligned(16)));
   int16_t output[256] __attribute__((aligned(16)));
-  int16_t alpha[2];
+  c16_t alpha;
 
   int i;
 
@@ -574,8 +377,8 @@ main ()
   input2[14] = 1000;
   input2[15] = 2000;
 
-  alpha[0]=32767;
-  alpha[1]=0;
+  alpha->r=32767;
+  alpha->i=0;
 
   //mult_cpx_vector(input,input2,output,L,0);
   rotate_cpx_vector_norep(input,alpha,input,L,15);

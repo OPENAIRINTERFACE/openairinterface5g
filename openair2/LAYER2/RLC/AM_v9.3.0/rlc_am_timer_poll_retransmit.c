@@ -111,7 +111,7 @@ rlc_am_check_timer_poll_retransmit(
 	  }
 
 
-      rlc_pP->force_poll= TRUE;
+      rlc_pP->force_poll = true;
       //BugFix : new ms_time_out is computed when next poll is transmitter
     }
   }

@@ -597,17 +597,15 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
   for(ap = 0; ap < n_antenna_ports; ap++) {
     for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
+      c16_t rot=((c16_t*)frame_parms->symbol_rotation[1])[s + symb_offset];
+      LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
+	    s,
+	    s + symb_offset,
+	    rot.r, rot.i);
 
-      LOG_D(PHY,"In %s: rotating txdataF symbol %d (%d) => (%d.%d)\n",
-        __FUNCTION__,
-        s,
-        s + symb_offset,
-        frame_parms->symbol_rotation[1][2 * (s + symb_offset)],
-        frame_parms->symbol_rotation[1][1 + (2 * (s + symb_offset))]);
-
-      rotate_cpx_vector((int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
-                        &frame_parms->symbol_rotation[1][2 * (s + symb_offset)],
-                        (int16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+      rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+                        &rot,
+                        (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
                         frame_parms->ofdm_symbol_size,
                         15);
     }

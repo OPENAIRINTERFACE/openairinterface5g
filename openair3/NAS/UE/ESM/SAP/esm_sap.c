@@ -63,9 +63,9 @@ Description Defines the ESM Service Access Points at which the EPS
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
 
-static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
+static int _esm_sap_recv(nas_user_t *user, int msg_type, bool is_standalone,
                          const OctetString *req, OctetString *rsp, esm_sap_error_t *err);
-static int _esm_sap_send(nas_user_t *user, int msg_type, int is_standalone, int pti, int ebi,
+static int _esm_sap_send(nas_user_t *user, int msg_type, bool is_standalone, int pti, int ebi,
                          const esm_sap_data_t *data, OctetString *rsp);
 
 
@@ -171,7 +171,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
       }
 
       /* Define new PDN context */
-      rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, TRUE,
+      rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, true,
                                      pdn_connect->pdn_type, &apn,
                                      pdn_connect->is_emergency, NULL);
 
@@ -183,7 +183,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
     if (pdn_connect->is_defined) {
       unsigned int pti;
       /* Assign new procedure transaction identity */
-      rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, TRUE,
+      rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, true,
                                      pdn_connect->pdn_type, NULL,
                                      pdn_connect->is_emergency, &pti);
 
@@ -205,7 +205,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
 
       if ( msg->is_standalone && pdn_connect->is_defined ) {
         /* Undefine the specified PDN context */
-        rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, FALSE,
+        rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, false,
                                        pdn_connect->pdn_type, NULL,
                                        pdn_connect->is_emergency, NULL);
       } else if (msg->recv != NULL) {
@@ -214,7 +214,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
                            msg->recv, &msg->send, &msg->err);
       } else {
         /* The PDN connectivity procedure locally failed */
-        rc = esm_proc_pdn_connectivity_failure(user, TRUE);
+        rc = esm_proc_pdn_connectivity_failure(user, true);
       }
     }
     break;
@@ -230,7 +230,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
 
     if (rc != RETURNerror) {
       /* Send PDN disconnect request */
-      rc = _esm_sap_send(user, PDN_DISCONNECT_REQUEST, TRUE, pti, ebi,
+      rc = _esm_sap_send(user, PDN_DISCONNECT_REQUEST, true, pti, ebi,
                          &msg->data, &msg->send);
     }
   }
@@ -278,7 +278,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
     rc = esm_proc_default_eps_bearer_context_failure(user);
 
     if (rc != RETURNerror) {
-      rc = esm_proc_pdn_connectivity_failure(user, FALSE);
+      rc = esm_proc_pdn_connectivity_failure(user, false);
     }
 
     break;
@@ -306,7 +306,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
     /*
      * Locally deactivate EPS bearer context
      */
-    rc = esm_proc_eps_bearer_context_deactivate(user, TRUE,
+    rc = esm_proc_eps_bearer_context_deactivate(user, true,
          msg->data.eps_bearer_context_deactivate.ebi, &pid, &bid);
   }
   break;
@@ -359,7 +359,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
  **      Return:    RETURNok, RETURNerror                      **
  **                                                                        **
  ***************************************************************************/
-static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
+static int _esm_sap_recv(nas_user_t *user, int msg_type, bool is_standalone,
                          const OctetString *req, OctetString *rsp,
                          esm_sap_error_t *err)
 {
@@ -422,7 +422,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
    * was triggered network-internally */
   int triggered_by_ue = (pti != PROCEDURE_TRANSACTION_IDENTITY_UNASSIGNED);
   /* Indicate whether the received message shall be ignored */
-  int is_discarded = FALSE;
+  bool is_discarded = false;
 
   if (esm_cause != ESM_CAUSE_SUCCESS) {
     LOG_TRACE(ERROR, "ESM-SAP   - Failed to decode expected ESM message "
@@ -455,7 +455,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
            * of already accepted activate default EPS bearer context
            * request message
            */
-          is_discarded = TRUE;
+          is_discarded = true;
         }
       } else {
         /* Return reject message */
@@ -493,7 +493,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
            * of already accepted activate dedicated EPS bearer context
            * request message
            */
-          is_discarded = TRUE;
+          is_discarded = true;
         }
       } else {
         /* Return reject message */
@@ -525,7 +525,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
          * received with PTI reserved value, or assigned value
          * that does not match any PTI in use
          */
-        is_discarded = TRUE;
+        is_discarded = true;
       } else if ( (esm_cause == ESM_CAUSE_SUCCESS) ||
                   (esm_cause == ESM_CAUSE_INVALID_EPS_BEARER_IDENTITY) ) {
         /* Return accept message */
@@ -541,7 +541,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
            * message with the EPS bearer identity set to the received
            * EPS bearer identity
            */
-          is_discarded = TRUE;
+          is_discarded = true;
         }
       }
 
@@ -565,7 +565,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
          * Ignore PDN connectivity reject message received with
          * reserved or unassigned EPS bearer identity value
          */
-        is_discarded = TRUE;
+        is_discarded = true;
       }
 
       break;
@@ -588,7 +588,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
          * Ignore PDN disconnect reject message received with
          * reserved or unassigned EPS bearer identity value
          */
-        is_discarded = TRUE;
+        is_discarded = true;
       }
 
       break;
@@ -629,7 +629,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
        * onto the network */
       esm_procedure = esm_proc_status;
       /* Discard received ESM message */
-      is_discarded = TRUE;
+      is_discarded = true;
     }
   } else {
     /* ESM message processing succeed */
@@ -687,7 +687,7 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
  **      Return:    RETURNok, RETURNerror                      **
  **                                                                        **
  ***************************************************************************/
-static int _esm_sap_send(nas_user_t *user, int msg_type, int is_standalone,
+static int _esm_sap_send(nas_user_t *user, int msg_type, bool is_standalone,
                          int pti, int ebi, const esm_sap_data_t *data,
                          OctetString *rsp)
 {
@@ -697,7 +697,7 @@ static int _esm_sap_send(nas_user_t *user, int msg_type, int is_standalone,
   int rc = RETURNok;
 
   /* Indicate whether the message is sent by the UE or the MME */
-  int sent_by_ue = TRUE;
+  bool sent_by_ue = true;
 
   ESM_msg esm_msg;
   memset(&esm_msg, 0 , sizeof(ESM_msg));

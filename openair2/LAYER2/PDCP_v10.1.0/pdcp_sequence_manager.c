@@ -33,12 +33,12 @@
 /*
  * Initializes sequence numbering state
  * @param pdcp_entity The PDCP entity to be initialized
- * @return boolean_t TRUE on success, FALSE otherwise
+ * @return bool true on success, false otherwise
  */
-boolean_t pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
+bool pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
 {
   if (pdcp_entity == NULL) {
-    return FALSE;
+    return false;
   }
 
   /* Sequence number state variables */
@@ -55,34 +55,34 @@ boolean_t pdcp_init_seq_numbers(pdcp_t* pdcp_entity)
   // Shall UE and eNB behave differently on initialization? (see 7.1.e)
   pdcp_entity->last_submitted_pdcp_rx_sn = 4095;
 
-  return TRUE;
+  return true;
 }
 
-boolean_t pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
+bool pdcp_is_seq_num_size_valid(pdcp_t* pdcp_entity)
 {
   if (pdcp_entity == NULL) {
-    return FALSE;
+    return false;
   }
 
   // Check if the size of SN is valid (see 3GPP TS 36.323 v10.1.0 item 6.3.2)
   if (pdcp_entity->seq_num_size != 5 && pdcp_entity->seq_num_size != 7 && pdcp_entity->seq_num_size != 12) {
     LOG_W(PDCP, "Incoming SN size is invalid! (Expected: {5 | 7 | 12}, Received: %d\n", pdcp_entity->seq_num_size);
-    return FALSE;
+    return false;
   }
 
-  return TRUE;
+  return true;
 }
 
 /**
  * Check if SN number is in the range according to SN size
  */
-boolean_t pdcp_is_seq_num_valid(uint16_t seq_num, uint8_t seq_num_size)
+bool pdcp_is_seq_num_valid(uint16_t seq_num, uint8_t seq_num_size)
 {
   if (seq_num >= 0 && seq_num <= pdcp_calculate_max_seq_num_for_given_size(seq_num_size)) {
-    return TRUE;
+    return true;
   }
 
-  return FALSE;
+  return false;
 }
 
 uint16_t pdcp_calculate_max_seq_num_for_given_size(uint8_t seq_num_size)
@@ -96,7 +96,7 @@ uint16_t pdcp_calculate_max_seq_num_for_given_size(uint8_t seq_num_size)
 
 uint16_t pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
 {
-  if (pdcp_is_seq_num_size_valid(pdcp_entity) == FALSE) {
+  if (pdcp_is_seq_num_size_valid(pdcp_entity) == false) {
     return -1;
   }
 
@@ -118,10 +118,10 @@ uint16_t pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity)
   return pdcp_seq_num;
 }
 
-boolean_t pdcp_advance_rx_window(pdcp_t* pdcp_entity)
+bool pdcp_advance_rx_window(pdcp_t* pdcp_entity)
 {
-  if (pdcp_is_seq_num_size_valid(pdcp_entity) == FALSE) {
-    return FALSE;
+  if (pdcp_is_seq_num_size_valid(pdcp_entity) == false) {
+    return false;
   }
 
   /*
@@ -137,10 +137,10 @@ boolean_t pdcp_advance_rx_window(pdcp_t* pdcp_entity)
     pdcp_entity->next_pdcp_rx_sn++;
   }
 
-  return TRUE;
+  return true;
 }
 
-boolean_t pdcp_mark_current_pdu_as_received(uint16_t seq_num, pdcp_t* pdcp_entity)
+bool pdcp_mark_current_pdu_as_received(uint16_t seq_num, pdcp_t* pdcp_entity)
 {
   /*
    * Incoming sequence number and PDCP entity were already
@@ -158,5 +158,5 @@ boolean_t pdcp_mark_current_pdu_as_received(uint16_t seq_num, pdcp_t* pdcp_entit
   LOG_D(PDCP, "Marking %d. bit of %d. octet of status bitmap\n", (seq_num % 8) + 1, octet_index);
   util_mark_nth_bit_of_octet(&pdcp_entity->missing_pdu_bitmap[octet_index], seq_num % 8);
   util_print_binary_representation((uint8_t*)"Current state of relevant octet: ", pdcp_entity->missing_pdu_bitmap[octet_index]);
-  return TRUE;
+  return true;
 }

@@ -242,7 +242,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       }
 
       /* CDRX UL HARQ timers */
-      if (UE_scheduling_control->cdrx_configured == TRUE) {
+      if (UE_scheduling_control->cdrx_configured == true) {
         /* Synchronous UL HARQ */
         UE_scheduling_control->ul_synchronous_harq_timer[CC_idP][harq_pid] = 5;
         /*
@@ -1003,7 +1003,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
   /* CDRX UL HARQ timers */
   if (UE_id != -1) {
-    if (UE_scheduling_control->cdrx_configured == TRUE) {
+    if (UE_scheduling_control->cdrx_configured == true) {
       /* Synchronous UL HARQ */
       UE_scheduling_control->ul_synchronous_harq_timer[CC_idP][harq_pid] = 5;
       /*
@@ -1447,7 +1447,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       continue;
 
     // don't schedule if Msg5 is not received yet
-    if (UE_info->UE_template[CC_id][UE_id].configured == FALSE) {
+    if (UE_info->UE_template[CC_id][UE_id].configured == false) {
       LOG_D(MAC,
             "[eNB %d] frame %d, subframe %d, UE %d: not configured, skipping "
             "UE scheduling \n",
@@ -2033,7 +2033,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
     }
 
     /* Don't schedule if Msg4 is not received yet */
-    if (UE_template->configured == FALSE) {
+    if (UE_template->configured == false) {
       LOG_D(MAC,"[eNB %d] frame %d subframe %d, UE %d: not configured, skipping UE scheduling \n",
             module_idP,
             frameP,

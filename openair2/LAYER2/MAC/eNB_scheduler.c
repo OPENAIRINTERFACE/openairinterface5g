@@ -135,7 +135,7 @@ void schedule_SRS(module_id_t module_idP,
           UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
           /* Test if Active Time not running since 6+ subframes */
-          if (UE_scheduling_control->cdrx_configured == TRUE && UE_scheduling_control->in_active_time == FALSE) {
+          if (UE_scheduling_control->cdrx_configured == true && UE_scheduling_control->in_active_time == false) {
             /*
              * TODO: 6+ subframes condition not checked here
              */
@@ -204,7 +204,7 @@ void schedule_CSI(module_id_t module_idP,
     cc = &eNB->common_channels[CC_id];
 
     for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
-      if (UE_info->active[UE_id] == FALSE) {
+      if (UE_info->active[UE_id] == false) {
         continue;
       }
 
@@ -223,9 +223,9 @@ void schedule_CSI(module_id_t module_idP,
       */
       UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
-      if (UE_scheduling_control->cdrx_configured == TRUE) {
+      if (UE_scheduling_control->cdrx_configured == true) {
         /* Test if CQI masking activated */
-        if (UE_scheduling_control->cqi_mask_boolean == TRUE) {
+        if (UE_scheduling_control->cqi_mask_boolean == true) {
           // CQI masking => test if onDurationTime not running since 6+ subframe
           if (UE_scheduling_control->on_duration_timer == 0) {
             /*
@@ -234,7 +234,7 @@ void schedule_CSI(module_id_t module_idP,
             continue;
           }
         } else { // No CQI masking => test if Active Time not running since 6+ subframe
-          if (UE_scheduling_control->in_active_time == FALSE) {
+          if (UE_scheduling_control->in_active_time == false) {
             /*
              * TODO: 6+ subframes condition not checked here
              */
@@ -677,8 +677,8 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       }
 
       /* Set and increment CDRX related timers */
-      if (UE_scheduling_control->cdrx_configured == TRUE) {
-        boolean_t harq_active_time_condition = FALSE;
+      if (UE_scheduling_control->cdrx_configured == true) {
+        bool harq_active_time_condition = false;
         UE_TEMPLATE *UE_template = NULL;
         unsigned long active_time_condition = 0; // variable used only for tracing purpose
 
@@ -721,7 +721,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             UE_scheduling_control->ul_synchronous_harq_timer[CC_id][harq_process_id]++;
 
             if (UE_scheduling_control->ul_synchronous_harq_timer[CC_id][harq_process_id] > 5) {
-              harq_active_time_condition = TRUE;
+              harq_active_time_condition = true;
               UE_scheduling_control->ul_synchronous_harq_timer[CC_id][harq_process_id] = 0;
               active_time_condition = 5; // for tracing purpose
             }
@@ -747,24 +747,24 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
             /* When timer expires switch into short or long DRX cycle */
             if (UE_scheduling_control->drx_shortCycle_timer_thres > 0) {
-              UE_scheduling_control->in_short_drx_cycle = TRUE;
+              UE_scheduling_control->in_short_drx_cycle = true;
               UE_scheduling_control->drx_shortCycle_timer = 0;
-              UE_scheduling_control->in_long_drx_cycle = FALSE;
+              UE_scheduling_control->in_long_drx_cycle = false;
             } else {
-              UE_scheduling_control->in_long_drx_cycle = TRUE;
+              UE_scheduling_control->in_long_drx_cycle = true;
             }
           }
         }
 
         /* Short DRX Cycle */
-        if (UE_scheduling_control->in_short_drx_cycle == TRUE) {
+        if (UE_scheduling_control->in_short_drx_cycle == true) {
           UE_scheduling_control->drx_shortCycle_timer++;
 
           /* When the Short DRX cycles are over, switch to long DRX cycle */
           if (UE_scheduling_control->drx_shortCycle_timer > UE_scheduling_control->drx_shortCycle_timer_thres) {
             UE_scheduling_control->drx_shortCycle_timer = 0;
-            UE_scheduling_control->in_short_drx_cycle = FALSE;
-            UE_scheduling_control->in_long_drx_cycle = TRUE;
+            UE_scheduling_control->in_short_drx_cycle = false;
+            UE_scheduling_control->in_long_drx_cycle = true;
             UE_scheduling_control->drx_longCycle_timer = 0;
           }
         } else {
@@ -772,7 +772,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         }
 
         /* Long DRX Cycle */
-        if (UE_scheduling_control->in_long_drx_cycle == TRUE) {
+        if (UE_scheduling_control->in_long_drx_cycle == true) {
           UE_scheduling_control->drx_longCycle_timer++;
 
           if (UE_scheduling_control->drx_longCycle_timer > UE_scheduling_control->drx_longCycle_timer_thres) {
@@ -783,18 +783,18 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         }
 
         /* Check for error cases */
-        if ((UE_scheduling_control->in_short_drx_cycle == TRUE) && (UE_scheduling_control->in_long_drx_cycle == TRUE)) {
+        if ((UE_scheduling_control->in_short_drx_cycle == true) && (UE_scheduling_control->in_long_drx_cycle == true)) {
           LOG_E(MAC, "Error in C-DRX: UE id %d is in both short and long DRX cycle. Should not happen. Back it to long cycle only\n", UE_id);
-          UE_scheduling_control->in_short_drx_cycle = FALSE;
+          UE_scheduling_control->in_short_drx_cycle = false;
         }
 
         /* Condition to start On Duration Timer */
-        if (UE_scheduling_control->in_short_drx_cycle == TRUE && UE_scheduling_control->on_duration_timer == 0) {
+        if (UE_scheduling_control->in_short_drx_cycle == true && UE_scheduling_control->on_duration_timer == 0) {
           if (((frameP * 10) + subframeP) % (UE_scheduling_control->short_drx_cycle_duration) ==
               (UE_scheduling_control->drx_start_offset) % (UE_scheduling_control->short_drx_cycle_duration)) {
             UE_scheduling_control->on_duration_timer = 1;
           }
-        } else if (UE_scheduling_control->in_long_drx_cycle == TRUE && UE_scheduling_control->on_duration_timer == 0) {
+        } else if (UE_scheduling_control->in_long_drx_cycle == true && UE_scheduling_control->on_duration_timer == 0) {
           if (((frameP * 10) + subframeP) % (UE_scheduling_control->drx_longCycle_timer_thres) ==
               (UE_scheduling_control->drx_start_offset)) {
             UE_scheduling_control->on_duration_timer = 1;
@@ -811,7 +811,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         /* (a)synchronous HARQ processes handling for Active Time */
         for (int harq_process_id = 0; harq_process_id < 8; harq_process_id++) {
           if (UE_scheduling_control->drx_retransmission_timer[harq_process_id] > 0) {
-            harq_active_time_condition = TRUE;
+            harq_active_time_condition = true;
             active_time_condition = 2; // for tracing purpose
             break;
           }
@@ -822,9 +822,9 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             UE_scheduling_control->drx_inactivity_timer > 1 ||
             harq_active_time_condition ||
             UE_template->ul_SR > 0) {
-          UE_scheduling_control->in_active_time = TRUE;
+          UE_scheduling_control->in_active_time = true;
         } else {
-          UE_scheduling_control->in_active_time = FALSE;
+          UE_scheduling_control->in_active_time = false;
         }
 
         /* BEGIN VCD */

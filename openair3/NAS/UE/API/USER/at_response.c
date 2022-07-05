@@ -52,10 +52,10 @@ Description Defines structure of the AT command response returned after
 /*
  * Response format indicator (set by ATV0 and ATV1)
  * -----------------------------------------------
- *  TRUE  - <CR><LF><text><CR><LF>, <CR><LF><verbose code><CR><LF>
- *  FALSE - <text><CR><LF>, <numeric code><CR><LF>
+ *  true  - <CR><LF><text><CR><LF>, <CR><LF><verbose code><CR><LF>
+ *  false - <text><CR><LF>, <numeric code><CR><LF>
  */
-int at_response_format_v1 = TRUE;
+bool at_response_format_v1 = true;
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/

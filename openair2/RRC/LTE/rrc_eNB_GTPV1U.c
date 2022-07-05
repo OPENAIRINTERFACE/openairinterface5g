@@ -84,23 +84,20 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 }
 
 //------------------------------------------------------------------------------
-boolean_t
-gtpv_data_req(
-  const protocol_ctxt_t*   const ctxt_pP,
-  const rb_id_t                  rb_idP,
-  const mui_t                    muiP,
-  const confirm_t                confirmP,
-  const sdu_size_t               sdu_sizeP,
-  uint8_t*                 const buffer_pP,
-  const pdcp_transmission_mode_t modeP,
-  uint32_t task_id
-)
+bool gtpv_data_req(const protocol_ctxt_t*   const ctxt_pP,
+                   const rb_id_t                  rb_idP,
+                   const mui_t                    muiP,
+                   const confirm_t                confirmP,
+                   const sdu_size_t               sdu_sizeP,
+                   uint8_t*                 const buffer_pP,
+                   const pdcp_transmission_mode_t modeP,
+                   uint32_t task_id)
 //------------------------------------------------------------------------------
 {
   if(sdu_sizeP == 0)
   {
     LOG_I(GTPU,"gtpv_data_req sdu_sizeP == 0");
-    return FALSE;
+    return false;
   }
   LOG_D(GTPU,"gtpv_data_req ue rnti %x sdu_sizeP %d rb id %ld", ctxt_pP->rnti, sdu_sizeP, rb_idP);
   MessageDef *message_p;
@@ -129,7 +126,7 @@ gtpv_data_req(
     GTPV1U_ENB_DATA_FORWARDING_IND (message_p).eNB_index = ctxt_pP->eNB_index;
     
     itti_send_msg_to_task (TASK_DATA_FORWARDING, ctxt_pP->instance, message_p);
-    return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
+    return true; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
   } else if (task_id == TASK_END_MARKER){
     
     LOG_I(GTPU,"gtpv_data_req task_id = TASK_END_MARKER\n");
@@ -152,23 +149,22 @@ gtpv_data_req(
     GTPV1U_ENB_END_MARKER_IND (message_p).eNB_index = ctxt_pP->eNB_index;
     
     itti_send_msg_to_task (TASK_END_MARKER, ctxt_pP->instance, message_p);
-    return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
+    return true; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
   }
   LOG_E(RRC, "Impossible state\n");
-  return FALSE;
+  return false;
 }
 
-boolean_t gtpv_data_req_new (
-  protocol_ctxt_t  *ctxt,
-  const srb_flag_t     srb_flagP,
-  const rb_id_t        rb_idP,
-  const mui_t          muiP,
-  const confirm_t      confirmP,
-  const sdu_size_t     sdu_buffer_sizeP,
-  unsigned char *const sdu_buffer_pP,
-  const pdcp_transmission_mode_t modeP,
-  const uint32_t *sourceL2Id,
-  const uint32_t *destinationL2Id) {
+bool gtpv_data_req_new(protocol_ctxt_t  *ctxt,
+                       const srb_flag_t     srb_flagP,
+                       const rb_id_t        rb_idP,
+                       const mui_t          muiP,
+                       const confirm_t      confirmP,
+                       const sdu_size_t     sdu_buffer_sizeP,
+                       unsigned char *const sdu_buffer_pP,
+                       const pdcp_transmission_mode_t modeP,
+                       const uint32_t *sourceL2Id,
+                       const uint32_t *destinationL2Id) {
   int task;
 
   if (sdu_buffer_sizeP==0)

@@ -46,18 +46,18 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
 
   
   PHY_ofdm_mod(txdataF,        // input
-	       txdata,         // output
-	       frame_parms->ofdm_symbol_size,                
+               txdata,         // output
+               frame_parms->ofdm_symbol_size,                
 
-	       1,                 // number of symbols
-	       frame_parms->nb_prefix_samples0,               // number of prefix samples
-	       CYCLIC_PREFIX);
+               1,                 // number of symbols
+               frame_parms->nb_prefix_samples0,               // number of prefix samples
+               CYCLIC_PREFIX);
   PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,        // input
-	       txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0,         // output
-	       frame_parms->ofdm_symbol_size,                
-	       nsymb-1,
-	       frame_parms->nb_prefix_samples,               // number of prefix samples
-	       CYCLIC_PREFIX);
+               txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0,         // output
+               frame_parms->ofdm_symbol_size,                
+               nsymb-1,
+               frame_parms->nb_prefix_samples,               // number of prefix samples
+               CYCLIC_PREFIX);
   
 
   
@@ -341,14 +341,14 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
 }
 
 void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
-		       int16_t* trxdata,
-		       int slot,
-		       int first_symbol,
-		       int nsymb,
-		       int length) {
+                       int16_t* trxdata,
+                       int slot,
+                       int first_symbol,
+                       int nsymb,
+                       int length) {
   int symb_offset = (slot%fp->slots_per_subframe)*fp->symbols_per_slot;
 
-  int16_t *symbol_rotation = fp->symbol_rotation[0];
+  c16_t *symbol_rotation = fp->symbol_rotation[0];
 
   for (int sidx=0;sidx<nsymb;sidx++) {
 
@@ -357,14 +357,14 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
       slot,
       sidx + first_symbol + symb_offset,
       length,
-      symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
-      symbol_rotation[1 + 2 * (sidx + first_symbol + symb_offset)]);
+      symbol_rotation[sidx + first_symbol + symb_offset].r,
+      symbol_rotation[sidx + first_symbol + symb_offset].i);
 
-    rotate_cpx_vector(trxdata + (sidx * length * 2),
-                      &symbol_rotation[2 * (sidx + first_symbol + symb_offset)],
-                      trxdata + (sidx * length * 2),
+    rotate_cpx_vector(((c16_t*) trxdata) + sidx * length,
+                      symbol_rotation + sidx + first_symbol + symb_offset,
+                      ((c16_t*) trxdata) + sidx * length,
                       length,
                       15);
   }
 }
-		       
+                       

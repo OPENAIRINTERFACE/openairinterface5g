@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   }
 
   uint64_t typeStamp=ENB_MAGICDL;
-  boolean_t raw=false;
+  bool raw = false;
 
   if ( argc == 5 ) {
     raw=true;

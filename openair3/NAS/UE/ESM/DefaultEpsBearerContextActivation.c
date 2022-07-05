@@ -103,7 +103,7 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
             "requested by the network (ebi=%d)", ebi);
 
   /* Assign default EPS bearer context */
-  int new_ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, TRUE);
+  int new_ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, true);
 
   if (new_ebi == ESM_EBI_UNASSIGNED) {
     /* 3GPP TS 24.301, section 6.4.1.5, abnormal cases a and b
@@ -113,7 +113,7 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
     int old_pid, old_bid;
     /* Locally deactivate the existing EPS bearer context and proceed
      * with the requested default EPS bearer context activation */
-    rc = esm_proc_eps_bearer_context_deactivate(user, TRUE, ebi,
+    rc = esm_proc_eps_bearer_context_deactivate(user, true, ebi,
          &old_pid, &old_bid);
 
     if (rc != RETURNok) {
@@ -121,13 +121,13 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
       *esm_cause = ESM_CAUSE_PROTOCOL_ERROR;
     } else {
       /* Assign new default EPS bearer context */
-      ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, TRUE);
+      ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, true);
     }
   }
 
   if (ebi != ESM_EBI_UNASSIGNED) {
     /* Create new default EPS bearer context */
-    ebi = esm_ebr_context_create(esm_data, user->ueid, pid, ebi, TRUE, qos, NULL);
+    ebi = esm_ebr_context_create(esm_data, user->ueid, pid, ebi, true, qos, NULL);
 
     if (ebi != ESM_EBI_UNASSIGNED) {
       /* Default EPS bearer contextx successfully created */
@@ -165,9 +165,9 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
  **             te message                                 **
  **      ebi:       EPS bearer identity                        **
  **      msg:       Encoded ESM message to be sent             **
- **      ue_triggered:  TRUE if the EPS bearer context procedure   **
+ **      ue_triggered:  true if the EPS bearer context procedure   **
  **             was triggered by the UE (should be always  **
- **             TRUE)                                      **
+ **             true)                                      **
  **      Others:    None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
@@ -175,8 +175,8 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_default_eps_bearer_context_accept(nas_user_t *user, int is_standalone, int ebi,
-    OctetString *msg, int ue_triggered)
+int esm_proc_default_eps_bearer_context_accept(nas_user_t *user, bool is_standalone, int ebi,
+    OctetString *msg, bool ue_triggered)
 {
   LOG_FUNC_IN;
 
@@ -245,8 +245,8 @@ int esm_proc_default_eps_bearer_context_accept(nas_user_t *user, int is_standalo
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_default_eps_bearer_context_reject(nas_user_t *user, int is_standalone, int ebi,
-    OctetString *msg, int ue_triggered)
+int esm_proc_default_eps_bearer_context_reject(nas_user_t *user, bool is_standalone, int ebi,
+    OctetString *msg, bool ue_triggered)
 {
   LOG_FUNC_IN;
 
@@ -344,7 +344,7 @@ int esm_proc_default_eps_bearer_context_failure(nas_user_t *user)
             "ESM-PROC  - Default EPS bearer context activation failure");
 
   /* Release the default EPS bearer context and enter state INACTIVE */
-  int rc = esm_proc_eps_bearer_context_deactivate(user, TRUE, ebi, &pid, &bid);
+  int rc = esm_proc_eps_bearer_context_deactivate(user, true, ebi, &pid, &bid);
 
   if (rc != RETURNerror) {
     /* Reset default EPS bearer context internal data */

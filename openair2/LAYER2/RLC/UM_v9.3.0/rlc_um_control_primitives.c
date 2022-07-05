@@ -263,7 +263,7 @@ rlc_um_init (
     }
 
     rlc_pP->first_pdu = 1;
-    rlc_pP->initialized = TRUE;
+    rlc_pP->initialized = true;
   }
 }
 //-----------------------------------------------------------------------------

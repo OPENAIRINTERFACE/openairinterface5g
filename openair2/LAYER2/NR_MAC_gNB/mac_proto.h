@@ -532,4 +532,6 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
 
 void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl);
 
+void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

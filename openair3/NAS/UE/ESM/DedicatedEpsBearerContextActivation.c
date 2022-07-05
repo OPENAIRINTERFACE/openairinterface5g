@@ -131,7 +131,7 @@ int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int
   }
 
   /* Assign dedicated EPS bearer context */
-  int new_ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, FALSE);
+  int new_ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, false);
 
   if (new_ebi == ESM_EBI_UNASSIGNED) {
     /* 3GPP TS 24.301, section 6.4.2.5, abnormal cases a and b
@@ -141,7 +141,7 @@ int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int
     int old_pid, old_bid;
     /* Locally deactivate the existing EPS bearer context and proceed
      * with the requested dedicated EPS bearer context activation */
-    rc = esm_proc_eps_bearer_context_deactivate(user, TRUE, ebi,
+    rc = esm_proc_eps_bearer_context_deactivate(user, true, ebi,
          &old_pid, &old_bid);
 
     if (rc != RETURNok) {
@@ -149,7 +149,7 @@ int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int
       *esm_cause = ESM_CAUSE_PROTOCOL_ERROR;
     } else {
       /* Assign new dedicated EPS bearer context */
-      ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, FALSE);
+      ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, false);
     }
   }
 
@@ -165,7 +165,7 @@ int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int
       *esm_cause = ESM_CAUSE_SYNTACTICAL_ERROR_IN_PACKET_FILTER;
     } else {
       /* Create new dedicated EPS bearer context */
-      default_ebi = esm_ebr_context_create(esm_data, user->ueid, pid, ebi, FALSE, qos, tft);
+      default_ebi = esm_ebr_context_create(esm_data, user->ueid, pid, ebi, false, qos, tft);
 
       if (default_ebi != ESM_EBI_UNASSIGNED) {
         /* Dedicated EPS bearer contextx successfully created */
@@ -197,7 +197,7 @@ int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int
  ** Inputs:  is_standalone: Not used                                   **
  **      ebi:       EPS bearer identity                        **
  **      msg:       Encoded ESM message to be sent             **
- **      ue_triggered:  TRUE if the EPS bearer context procedure   **
+ **      ue_triggered:  true if the EPS bearer context procedure   **
  **             was triggered by the UE                    **
  **      Others:    None                                       **
  **                                                                        **
@@ -206,8 +206,8 @@ int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, int is_standalone, int ebi,
-    OctetString *msg, int ue_triggered)
+int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, bool is_standalone, int ebi,
+    OctetString *msg, bool ue_triggered)
 {
   LOG_FUNC_IN;
 
@@ -268,8 +268,8 @@ int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, int is_standa
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_reject(nas_user_t *user, int is_standalone, int ebi,
-    OctetString *msg, int ue_triggered)
+int esm_proc_dedicated_eps_bearer_context_reject(nas_user_t *user, bool is_standalone, int ebi,
+    OctetString *msg, bool ue_triggered)
 {
   LOG_FUNC_IN;
 
