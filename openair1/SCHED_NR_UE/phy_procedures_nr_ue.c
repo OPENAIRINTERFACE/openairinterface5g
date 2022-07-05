@@ -1467,7 +1467,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     {
       for (int i = 0; i < ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceRepetition; i++)
       {
-        if( (((frame_rx*fp->slots_per_frame + nr_slot_rx) - (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset))%ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0]) == i*ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceTimeGap)
+        if( (((frame_rx*fp->slots_per_frame + nr_slot_rx) - (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset) + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0])%ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0]) == i*ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceTimeGap)
         {
           for(int j = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.SymbolStart; j < (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.SymbolStart+ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.NumPRSSymbols); j++)
           {
