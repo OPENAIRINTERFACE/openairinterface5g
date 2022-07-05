@@ -848,6 +848,11 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         LOG_D(NR_PHY, "(%d.%d) gNB is waiting for SRS, id = %i\n", frame_rx, slot_rx, i);
 
         nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
+        uint32_t noise_power_per_rb[srs_pdu->bwp_size];
+        int8_t snr_per_rb[srs_pdu->bwp_size];
+        uint32_t signal_power;
+        uint32_t noise_power;
+        int8_t snr;
 
         // At least currently, the configuration is constant, so it is enough to generate the sequence just once.
         if(gNB->nr_srs_info[i]->sc_list_length == 0) {
@@ -867,11 +872,11 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     gNB->nr_srs_info[i]->srs_estimated_channel_freq,
                                     gNB->nr_srs_info[i]->srs_estimated_channel_time,
                                     gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted,
-                                    &gNB->nr_srs_info[i]->signal_power,
-                                    gNB->nr_srs_info[i]->noise_power_per_rb,
-                                    &gNB->nr_srs_info[i]->noise_power,
-                                    gNB->nr_srs_info[i]->snr_per_rb,
-                                    &gNB->nr_srs_info[i]->snr);
+                                    &signal_power,
+                                    noise_power_per_rb,
+                                    &noise_power,
+                                    snr_per_rb,
+                                    &snr);
         }
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
@@ -889,7 +894,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->srs_pdu_list[num_srs].timing_advance = srs_est >= 0 ? nr_est_timing_advance_srs(&gNB->frame_parms,
                                                                                              (const int32_t **)gNB->nr_srs_info[i]->srs_estimated_channel_time) : 0xFFFF;
         gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
-        gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (gNB->nr_srs_info[i]->snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
+        gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
         gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
         if(!gNB->srs_pdu_list[num_srs].reported_symbol_list) {
           gNB->srs_pdu_list[num_srs].reported_symbol_list = (nfapi_nr_srs_indication_reported_symbol_t*) calloc(1, gNB->srs_pdu_list[num_srs].num_reported_symbols*sizeof(nfapi_nr_srs_indication_reported_symbol_t));
@@ -897,7 +902,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         fill_srs_reported_symbol_list(&gNB->srs_pdu_list[num_srs].reported_symbol_list[0],
                                       srs_pdu,
                                       gNB->frame_parms.N_RB_UL,
-                                      gNB->nr_srs_info[i]->snr_per_rb,
+                                      snr_per_rb,
                                       srs_est);
 
         gNB->UL_INFO.srs_ind.number_of_pdus += 1;
