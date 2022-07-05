@@ -708,7 +708,7 @@ rrc_gNB_process_security(
   rrc_gNB_ue_context_t *const ue_context_pP,
   ngap_security_capabilities_t *security_capabilities_pP
 ) {
-  boolean_t                                             changed = FALSE;
+  bool                                                  changed = false;
   NR_CipheringAlgorithm_t                               cipheringAlgorithm;
   e_NR_IntegrityProtAlgorithm                           integrityProtAlgorithm;
   /* Save security parameters */
@@ -726,14 +726,14 @@ rrc_gNB_process_security(
 
   if (ue_context_pP->ue_context.ciphering_algorithm != cipheringAlgorithm) {
     ue_context_pP->ue_context.ciphering_algorithm = cipheringAlgorithm;
-    changed = TRUE;
+    changed = true;
   }
 
   integrityProtAlgorithm = rrc_gNB_select_integrity(ctxt_pP, ue_context_pP->ue_context.security_capabilities.nRintegrity_algorithms);
 
   if (ue_context_pP->ue_context.integrity_algorithm != integrityProtAlgorithm) {
     ue_context_pP->ue_context.integrity_algorithm = integrityProtAlgorithm;
-    changed = TRUE;
+    changed = true;
   }
 
   LOG_I (NR_RRC, "[gNB %d][UE %x] Selected security algorithms (%p): %lx, %x, %s\n",
@@ -1126,17 +1126,17 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
     ue_context_p->ue_context.gNB_ue_ngap_id = gNB_ue_ngap_id;
     {
       int j;
-      boolean_t is_treated[NGAP_MAX_PDUSESSION] = {FALSE};
+      bool is_treated[NGAP_MAX_PDUSESSION] = {false};
       uint8_t nb_of_failed_pdusessions = 0;
 
       for (i = 0; i < nb_pdusessions_tomodify; i++) {
-        if (is_treated[i] == TRUE) {
+        if (is_treated[i] == true) {
           continue;
         }
         
         //Check if same PDU session ID to handle multiple pdu sessions
         for (j = i+1; j < nb_pdusessions_tomodify; j++) {
-          if (is_treated[j] == FALSE &&
+          if (is_treated[j] == false &&
               NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[j].pdusession_id == 
                 NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[i].pdusession_id) {
             // handle multiple pdu session id
@@ -1147,12 +1147,12 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
             ue_context_p->ue_context.modify_pdusession[j].cause               = NGAP_CAUSE_RADIO_NETWORK;
             ue_context_p->ue_context.modify_pdusession[j].cause_value         = NGAP_CauseRadioNetwork_multiple_PDU_session_ID_instances;
             nb_of_failed_pdusessions++;
-            is_treated[i] = TRUE;
-            is_treated[j] = TRUE;
+            is_treated[i] = true;
+            is_treated[j] = true;
           }
         }
         // handle multiple pdu session id case
-        if (is_treated[i] == TRUE) {
+        if (is_treated[i] == true) {
           LOG_D(NR_RRC, "handle multiple pdu session id \n");
           ue_context_p->ue_context.modify_pdusession[i].status              = PDU_SESSION_STATUS_NEW;
           ue_context_p->ue_context.modify_pdusession[i].param.pdusession_id = 
@@ -1195,13 +1195,13 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
             ue_context_p->ue_context.modify_pdusession[i].param.gtp_teid = 
               ue_context_p->ue_context.pduSession[j].param.gtp_teid;
             
-            is_treated[i] = TRUE;
+            is_treated[i] = true;
             break;
           }
         }
 
         // handle Unknown pdu session ID
-        if (is_treated[i] == FALSE) {
+        if (is_treated[i] == false) {
           LOG_D(NR_RRC, "handle Unknown pdu session ID \n");
           ue_context_p->ue_context.modify_pdusession[i].status              = PDU_SESSION_STATUS_NEW;
           ue_context_p->ue_context.modify_pdusession[i].param.pdusession_id = 
@@ -1209,7 +1209,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
           ue_context_p->ue_context.modify_pdusession[i].cause               = NGAP_CAUSE_RADIO_NETWORK;
           ue_context_p->ue_context.modify_pdusession[i].cause_value         = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
           nb_of_failed_pdusessions++;
-          is_treated[i] = TRUE;
+          is_treated[i] = true;
         }
       }
 

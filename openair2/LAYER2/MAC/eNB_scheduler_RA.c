@@ -1225,7 +1225,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
     LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:IDLE\n", module_idP, frameP, subframeP);
     UE_id = find_UE_id(module_idP, ra->rnti);
     DevAssert(UE_id != -1);
-    mac->UE_info.UE_template[UE_PCCID(module_idP, UE_id)][UE_id].configured = TRUE;
+    mac->UE_info.UE_template[UE_PCCID(module_idP, UE_id)][UE_id].configured = true;
     mac->UE_info.UE_template[UE_PCCID(module_idP, UE_id)][UE_id].pusch_repetition_levels=ra->pusch_repetition_levels;
     cancel_ra_proc(module_idP, CC_idP, frameP, ra->rnti);
   }

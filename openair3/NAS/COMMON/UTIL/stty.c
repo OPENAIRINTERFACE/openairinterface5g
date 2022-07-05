@@ -192,7 +192,7 @@ static sttyset_t stty_params[] = {
   { NULL, 0,  0,    0 }
 };
 
-static int _stty_set_this(struct termios *term, const sttyset_t *p, int turnon);
+static int _stty_set_this(struct termios *term, const sttyset_t *p, bool turnon);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -207,7 +207,7 @@ static int _stty_set_this(struct termios *term, const sttyset_t *p, int turnon);
  **                                                                        **
  ** Inputs:  p:   The TTY parameters                         **
  **    turnon:  Indicate whether the parameter should be   **
- **                             turned on (TRUE) or turned off (FALSE)     **
+ **                             turned on (true) or turned off (false)     **
  **    Others:  None                                       **
  **                                                                        **
  ** Outputs:   term:    The termios structure to fill              **
@@ -223,7 +223,7 @@ int stty_set(int fd, const char *params)
   register char *s;
   struct termios term;
   register int i;
-  int mode;
+  bool mode;
 
   /* Get current tty attributes */
   if ( tcgetattr(fd, &term) < 0 ) {
@@ -234,10 +234,10 @@ int stty_set(int fd, const char *params)
   p = strtok(s," \t\n");
 
   while (p && (rc != RETURNerror)) {
-    mode = 1;
+    mode = true;
 
     if ( *p == '-' ) {
-      mode = 0;
+      mode = false;
       p++;
     }
 
@@ -275,7 +275,7 @@ int stty_set(int fd, const char *params)
  **                                                                        **
  ** Inputs:  p:   The TTY parameters                         **
  **    turnon:  Indicate whether the parameter should be   **
- **                             turned on (TRUE) or turned off (FALSE)     **
+ **                             turned on (true) or turned off (false)     **
  **    Others:  None                                       **
  **                                                                        **
  ** Outputs:   term:    The termios structure to fill              **
@@ -283,7 +283,7 @@ int stty_set(int fd, const char *params)
  **    Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _stty_set_this(struct termios *term, const sttyset_t *p, int turnon)
+static int _stty_set_this(struct termios *term, const sttyset_t *p, bool turnon)
 {
   int rc = RETURNok;
 

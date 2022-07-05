@@ -72,7 +72,7 @@ int emm_proc_lowerlayer_initialize(lowerlayer_data_t *lowerlayer_data, lowerlaye
                                    lowerlayer_release_callback_t release,
                                    void *args);
 int emm_proc_lowerlayer_success(lowerlayer_data_t *lowerlayer_data);
-int emm_proc_lowerlayer_failure(lowerlayer_data_t *lowerlayer_data, int is_initial);
+int emm_proc_lowerlayer_failure(lowerlayer_data_t *lowerlayer_data, bool is_initial);
 int emm_proc_lowerlayer_release(lowerlayer_data_t *lowerlayer_data);
 
 

@@ -31,14 +31,13 @@
 #include "common/utils/LOG/log.h"
 
 
-boolean_t rlc_am_rx_check_vr_reassemble(
-		  const protocol_ctxt_t* const ctxt_pP,
-		  const rlc_am_entity_t* const rlc_pP)
+bool rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,
+                                   const rlc_am_entity_t* const rlc_pP)
 {
 	mem_block_t*       cursor_p                    = rlc_pP->receiver_buffer.head;
 	rlc_am_rx_pdu_management_t * pdu_cursor_mgnt_p = NULL;
 	sdu_size_t          next_waited_so = 0;
-	boolean_t reassemble = FALSE;
+	bool reassemble = false;
 
 	if (cursor_p != NULL) {
 
@@ -48,7 +47,7 @@ boolean_t rlc_am_rx_check_vr_reassemble(
 		if (sn_ref != rlc_pP->vr_r) {
 			/* Case vrR has advanced from head : most likely case */
 
-			reassemble = TRUE;
+			reassemble = true;
 			/* Handle first SN if it is made of PDU segments : set them all to be reassembled */
 			if (pdu_info_p->rf) {
 				pdu_cursor_mgnt_p = (rlc_am_rx_pdu_management_t *) (cursor_p->data);
@@ -58,7 +57,7 @@ boolean_t rlc_am_rx_check_vr_reassemble(
                 {
                    LOG_E(RLC, "AM Rx Check Reassembly head SN=%d with PDU segments != vrR=%d should be fully received LCID=%d\n",
                          sn_ref,rlc_pP->vr_r,rlc_pP->channel_id);
-                   return FALSE;
+                   return false;
                 }
 /*
 				AssertFatal(pdu_cursor_mgnt_p->all_segments_received > 0,"AM Rx Check Reassembly head SN=%d with PDU segments != vrR=%d should be fully received LCID=%d\n",
@@ -94,7 +93,7 @@ boolean_t rlc_am_rx_check_vr_reassemble(
               {
                  LOG_E(RLC, "AM Rx Check Reassembly vr=%d should be partly received SNHead=%d LCID=%d\n",
                        rlc_pP->vr_r,sn_ref,rlc_pP->channel_id);
-                 return FALSE;
+                 return false;
               }
 /*
 				AssertFatal(pdu_cursor_mgnt_p->all_segments_received == 0,"AM Rx Check Reassembly vr=%d should be partly received SNHead=%d LCID=%d\n",
@@ -123,7 +122,7 @@ boolean_t rlc_am_rx_check_vr_reassemble(
             {
                LOG_E(RLC, "AM Rx Check Reassembly SNHead=vr=%d should be partly received LCID=%d\n",
                      rlc_pP->vr_r,rlc_pP->channel_id);
-               return FALSE;
+               return false;
             }
 /*
 			AssertFatal(pdu_cursor_mgnt_p->all_segments_received == 0,"AM Rx Check Reassembly SNHead=vr=%d should be partly received LCID=%d\n",
@@ -132,7 +131,7 @@ boolean_t rlc_am_rx_check_vr_reassemble(
 			while ((cursor_p != NULL) && (pdu_info_p->sn == rlc_pP->vr_r) && (pdu_info_p->so == next_waited_so)) {
 				if (pdu_cursor_mgnt_p->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_NO) {
 					pdu_cursor_mgnt_p->segment_reassembled = RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING;
-					reassemble = TRUE;
+					reassemble = true;
 				}
 				next_waited_so += pdu_info_p->payload_size;
 				cursor_p = cursor_p->next;
@@ -157,7 +156,7 @@ mem_block_t * create_new_segment_from_pdu(
 	int16_t  new_li_list[RLC_AM_MAX_SDU_IN_PDU];
 	int16_t header_size = 0;
 	uint8_t	num_li = 0;
-	boolean_t fi_start, fi_end, lsf;
+	bool fi_start, fi_end, lsf;
 
 	/* Init some PDU Segment header fixed parameters */
 	fi_start = !((pdu_rx_info_p->fi & 0x2) >> 1);
@@ -170,11 +169,11 @@ mem_block_t * create_new_segment_from_pdu(
 		header_size = RLC_AM_PDU_SEGMENT_HEADER_MIN_SIZE;
 
 		if (so_offset) {
-			fi_start = FALSE;
+			fi_start = false;
 		}
 		if (so_offset + data_length_to_copy != pdu_rx_info_p->payload_size) {
-			fi_end = FALSE;
-			lsf = FALSE;
+			fi_end = false;
+			lsf = false;
 		}
 	} // end no LI in original segment
 	else {
@@ -185,7 +184,7 @@ mem_block_t * create_new_segment_from_pdu(
 
 		/* set LSF to false if we know that end of the original segment will not be copied */
 		if (so_offset + data_length_to_copy != pdu_rx_info_p->payload_size) {
-			lsf = FALSE;
+			lsf = false;
 		}
 
 		/* catch the first LI containing so_offset */
@@ -223,7 +222,7 @@ mem_block_t * create_new_segment_from_pdu(
 				num_li = j;
 				/* set FI End if remaining size = 0  */
 				if (remaining_size == 0) {
-					fi_end = TRUE;
+					fi_end = true;
 				}
 			}
 		}
@@ -263,7 +262,7 @@ mem_block_t * create_new_segment_from_pdu(
 		}
 
 		/* Fill Header part in the buffer */
-		/* Content is supposed to be init with 0 so with FIStart=FIEnd=TRUE */
+		/* Content is supposed to be init with 0 so with FIStart=FIEnd=true */
 		/* copy first two bytes from original: D/C + RF + FI + E+ SN*/
 		memset(pdu_segment_header_p, 0, header_size);
 		RLC_AM_PDU_SET_D_C(*pdu_segment_header_p);
@@ -1106,7 +1105,7 @@ rlc_am_rx_list_reassemble_rlc_sdus(
   do {
     if (rlc_am_rx_pdu_management_p->all_segments_received > 0) {
       cursor_p = list2_remove_head(&rlc_pP->receiver_buffer);
-      rlc_am_reassemble_pdu(ctxt_pP, rlc_pP, cursor_p,TRUE);
+      rlc_am_reassemble_pdu(ctxt_pP, rlc_pP, cursor_p, true);
       rlc_am_rx_old_pdu_management = rlc_am_rx_pdu_management_p;
       cursor_p = list2_get_head(&rlc_pP->receiver_buffer);
 
@@ -1123,7 +1122,7 @@ rlc_am_rx_list_reassemble_rlc_sdus(
     else if (rlc_am_rx_pdu_management_p->segment_reassembled == RLC_AM_RX_PDU_SEGMENT_REASSEMBLE_PENDING) {
     	rlc_am_rx_pdu_management_p->segment_reassembled = RLC_AM_RX_PDU_SEGMENT_REASSEMBLED;
 
-        rlc_am_reassemble_pdu(ctxt_pP, rlc_pP, cursor_p,FALSE);
+        rlc_am_reassemble_pdu(ctxt_pP, rlc_pP, cursor_p, false);
         rlc_am_rx_old_pdu_management = rlc_am_rx_pdu_management_p;
         cursor_p = cursor_p->next;
 

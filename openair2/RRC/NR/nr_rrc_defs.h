@@ -173,7 +173,7 @@ typedef struct UE_RRC_INFO_NR_s {
 } __attribute__ ((__packed__)) NR_UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_NR_s {
-  boolean_t                                           presence;
+  bool                                                presence;
   uint16_t                                            amf_set_id;
   uint8_t                                             amf_pointer;
   uint32_t                                            fiveg_tmsi;

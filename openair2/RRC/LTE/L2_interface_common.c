@@ -58,7 +58,7 @@ rrc_data_req(
 {
   if(sdu_sizeP == 255) {
     LOG_I(RRC,"sdu_sizeP == 255");
-    return FALSE;
+    return false;
   }
 
   MessageDef *message_p;
@@ -94,7 +94,7 @@ rrc_data_req(
   if (ctxt_pP->enb_flag && NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type))
     pdcp_run(ctxt_pP);
 
-  return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
+  return true; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 }
 
 //------------------------------------------------------------------------------

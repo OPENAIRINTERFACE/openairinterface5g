@@ -130,9 +130,9 @@ void util_print_binary_representation(unsigned char* message, uint8_t octet)
  *
  * @param octet 8-bit data
  * @param index Index of bit to be set
- * @return TRUE on success, FALSE otherwise
+ * @return true on success, false otherwise
  */
-boolean_t util_mark_nth_bit_of_octet(uint8_t* octet, uint8_t index)
+bool util_mark_nth_bit_of_octet(uint8_t* octet, uint8_t index)
 {
   uint8_t mask = 0x80;
 
@@ -148,6 +148,6 @@ boolean_t util_mark_nth_bit_of_octet(uint8_t* octet, uint8_t index)
    */
   *octet |= mask;
 
-  return TRUE;
+  return true;
 }
 

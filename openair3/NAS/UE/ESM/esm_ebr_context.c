@@ -84,7 +84,7 @@ static int _esm_ebr_context_check_precedence(const network_tft_t *,
  ** Inputs: **
  **      pid:       PDN connection identifier                  **
  **      ebi:       EPS bearer identity                        **
- **      is_default:    TRUE if the new bearer is a default EPS    **
+ **      is_default:    true if the new bearer is a default EPS    **
  **             bearer context                             **
  **      esm_qos:   EPS bearer level QoS parameters            **
  **      tft:       Traffic flow template parameters           **
@@ -98,7 +98,7 @@ static int _esm_ebr_context_check_precedence(const network_tft_t *,
  ***************************************************************************/
 int esm_ebr_context_create(
   esm_data_t *esm_data, int ueid,
-  int pid, int ebi, int is_default,
+  int pid, int ebi, bool is_default,
   const network_qos_t *qos, const network_tft_t *tft) {
   int                 bid     = 0;
   esm_data_context_t *esm_ctx = NULL;
@@ -185,11 +185,11 @@ int esm_ebr_context_create(
 
       if (is_default) {
         /* Set the PDN connection activation indicator */
-        esm_ctx->pdn[pid].is_active = TRUE;
+        esm_ctx->pdn[pid].is_active = true;
 
         /* Update the emergency bearer services indicator */
         if (pdn->is_emergency) {
-          esm_ctx->emergency = TRUE;
+          esm_ctx->emergency = true;
         }
 
         // LG ADD TEMP
@@ -383,7 +383,7 @@ int esm_ebr_context_create(
  ***************************************************************************/
 int esm_ebr_context_release(nas_user_t *user,
                             int ebi, int *pid, int *bid) {
-  int found = FALSE;
+  bool found = false;
   esm_pdn_t *pdn = NULL;
   esm_data_context_t *esm_ctx;
   esm_ebr_data_t *esm_ebr_data = user->esm_ebr_data;
@@ -416,7 +416,7 @@ int esm_ebr_context_release(nas_user_t *user,
             }
 
             /* The EPS bearer context entry is found */
-            found = TRUE;
+            found = true;
             break;
           }
         }
@@ -450,7 +450,7 @@ int esm_ebr_context_release(nas_user_t *user,
 
         if (pdn->bearer[*bid] != NULL) {
           ebi = pdn->bearer[*bid]->ebi;
-          found = TRUE;
+          found = true;
         }
       }
     }
@@ -503,7 +503,7 @@ int esm_ebr_context_release(nas_user_t *user,
 
           /* Set the EPS bearer context state to INACTIVE */
           esm_ebr_set_status(user_api_id, esm_ebr_data, pdn->bearer[i]->ebi,
-                             ESM_EBR_INACTIVE, TRUE);
+                             ESM_EBR_INACTIVE, true);
           /* Release EPS bearer data */
           esm_ebr_release(esm_ebr_data, pdn->bearer[i]->ebi);
           // esm_ebr_release()
@@ -519,11 +519,11 @@ int esm_ebr_context_release(nas_user_t *user,
       }
 
       /* Reset the PDN connection activation indicator */
-      esm_ctx->pdn[*pid].is_active = FALSE;
+      esm_ctx->pdn[*pid].is_active = false;
 
       /* Update the emergency bearer services indicator */
       if (pdn->is_emergency) {
-        esm_ctx->emergency = FALSE;
+        esm_ctx->emergency = false;
       }
     }
 
@@ -534,7 +534,7 @@ int esm_ebr_context_release(nas_user_t *user,
     if (esm_ctx->n_ebrs == 0) {
       emm_sap_t emm_sap;
       emm_sap.primitive = EMMESM_ESTABLISH_CNF;
-      emm_sap.u.emm_esm.u.establish.is_attached = FALSE;
+      emm_sap.u.emm_esm.u.establish.is_attached = false;
       (void) emm_sap_send(user, &emm_sap);
     }
     /* 3GPP TS 24.301, section 6.4.4.3, 6.4.4.6
@@ -546,8 +546,8 @@ int esm_ebr_context_release(nas_user_t *user,
     else if (esm_ctx->emergency && (esm_ctx->n_ebrs == 1) ) {
       emm_sap_t emm_sap;
       emm_sap.primitive = EMMESM_ESTABLISH_CNF;
-      emm_sap.u.emm_esm.u.establish.is_attached = TRUE;
-      emm_sap.u.emm_esm.u.establish.is_emergency = TRUE;
+      emm_sap.u.emm_esm.u.establish.is_attached = true;
+      emm_sap.u.emm_esm.u.establish.is_emergency = true;
       (void) emm_sap_send(user, &emm_sap);
     }
 

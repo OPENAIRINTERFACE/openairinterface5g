@@ -187,10 +187,10 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
  **                             from which data have been received         **
  **              Others:        None                                       **
  **                                                                        **
- ** Outputs:     Return:        FALSE, TRUE                                **
+ ** Outputs:     Return:        false, true                                **
  **                                                                        **
  ***************************************************************************/
-int nas_user_receive_and_process(nas_user_t *user, char *message)
+bool nas_user_receive_and_process(nas_user_t *user, char *message)
 {
   LOG_FUNC_IN;
 
@@ -212,13 +212,13 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
        * exit from the receiving loop */
       LOG_TRACE (ERROR, "UE-MAIN   - "
                  "Failed to read data from the user application layer");
-      LOG_FUNC_RETURN(TRUE);
+      LOG_FUNC_RETURN(true);
     }
   }
 
   if (bytes == 0) {
     /* A signal was caught before any data were available */
-    LOG_FUNC_RETURN(FALSE);
+    LOG_FUNC_RETURN(false);
   }
 
   /* Decode the user data message */
@@ -268,12 +268,12 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
          * exit from the receiving loop */
         LOG_TRACE (ERROR, "UE-MAIN   - "
                    "Failed to send data to the user application layer");
-        LOG_FUNC_RETURN(TRUE);
+        LOG_FUNC_RETURN(true);
       }
     }
   }
 
-  LOG_FUNC_RETURN(FALSE);
+  LOG_FUNC_RETURN(false);
 }
 
 /****************************************************************************
@@ -989,7 +989,7 @@ static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
   char oper_buffer[NET_FORMAT_MAX_SIZE], *oper = oper_buffer;
   memset(oper, 0, NET_FORMAT_MAX_SIZE);
 
-  int oper_is_selected;
+  bool oper_is_selected;
 
   at_response->id = data->id;
   at_response->type = data->type;
@@ -1266,7 +1266,7 @@ static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
       if (data->command.cgatt.state == AT_CGATT_ATTACHED) {
         ret_code = nas_proc_attach(user);
       } else if (data->command.cgatt.state == AT_CGATT_DETACHED) {
-        ret_code = nas_proc_detach(user, FALSE);
+        ret_code = nas_proc_detach(user, false);
       }
 
       if (ret_code != RETURNok) {
@@ -1284,7 +1284,7 @@ static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
     /*
      * Read command returns the current EPS service state.
      */
-    if (nas_proc_get_attach_status(user) != TRUE) {
+    if (nas_proc_get_attach_status(user) != true) {
       cgatt->state = AT_CGATT_DETACHED;
     } else {
       cgatt->state = AT_CGATT_ATTACHED;
@@ -1821,7 +1821,7 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
   int emergency = AT_CGDCONT_EBS_DEFAULT;
   int p_cscf = AT_CGDCONT_PCSCF_DEFAULT;
   int im_cn_signalling = AT_CGDCONT_IM_CM_DEFAULT;
-  int reset_pdn = TRUE;
+  bool reset_pdn = true;
 
   at_response->id = data->id;
   at_response->type = data->type;
@@ -1870,7 +1870,7 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
         break;
       }
 
-      reset_pdn = FALSE;
+      reset_pdn = false;
     }
 
     if (data->mask & AT_CGDCONT_APN_MASK) {

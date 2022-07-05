@@ -4351,8 +4351,8 @@ void rrc_ue_generate_nrMeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t
         AssertFatal(size >= 0, "do_nrMeasurementReport failed \n");
         LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index);
-        int result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
-        AssertFatal (result == TRUE, "PDCP data request failed!\n");
+        const bool result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
+        AssertFatal (result == true, "PDCP data request failed!\n");
       }
     }
   }
@@ -4370,7 +4370,6 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
   long             nElem, nElem1;
   float            rsrp_filtered, rsrq_filtered;
   static frame_t   pframe=0;
-  int              result;
   nElem = 98;
   nElem1 = 35;
   target_eNB_offset = UE_rrc_inst[ctxt_pP->module_id].Info[0].handoverTarget; // eNB_offset of target eNB: used to obtain the mod_id of target eNB
@@ -4420,8 +4419,8 @@ void rrc_ue_generate_MeasurementReport(protocol_ctxt_t *const ctxt_pP, uint8_t e
         AssertFatal(size >= 0, "do_MeasurementReport failed \n");
         LOG_I(RRC, "[UE %d] Frame %d : Generating Measurement Report for eNB %d. Size is %zu\n",
               ctxt_pP->module_id, ctxt_pP->frame, eNB_index, size);
-        result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
-        AssertFatal (result == TRUE, "PDCP data request failed!\n");
+        const bool result = pdcp_data_req(ctxt_pP,  SRB_FLAG_YES, DCCH, rrc_mui++, 0, size, buffer, PDCP_TRANSMISSION_MODE_DATA,NULL, NULL);
+        AssertFatal (result == true, "PDCP data request failed!\n");
         //LOG_D(RRC, "[UE %d] Frame %d Sending MeasReport (%d bytes) through DCCH%d to PDCP \n",ue_mod_idP,frameP, size, DCCH);
       }
 

@@ -462,6 +462,7 @@ typedef struct NR_sched_pdsch {
   /// only important for retransmissions; otherwise, the TDA in
   /// NR_pdsch_semi_static_t has precedence
   int time_domain_allocation;
+  uint8_t nrOfLayers;
 } NR_sched_pdsch_t;
 
 typedef struct NR_UE_harq {
@@ -688,7 +689,6 @@ typedef struct {
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
-  boolean_t fiveG_connected;
   uicc_t *uicc;
 } NRUEcontext_t;
 
