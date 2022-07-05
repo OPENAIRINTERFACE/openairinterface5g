@@ -98,7 +98,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_srs_pdu_t *srs_pdu,
                       nr_srs_info_t *nr_srs_info,
-                      int32_t **srs_received_signal) {
+                      int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)]) {
 
   if(nr_srs_info->sc_list_length == 0) {
     LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);

@@ -965,10 +965,11 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
                               const nfapi_nr_srs_pdu_t *srs_pdu,
                               const nr_srs_info_t *nr_srs_info,
                               const int32_t *srs_generated_signal,
-                              const int32_t **srs_received_signal,
-                              int32_t **srs_estimated_channel_freq,
-                              int32_t **srs_estimated_channel_time,
-                              int32_t **srs_estimated_channel_time_shifted,
+                              int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
+                              int32_t srs_ls_estimated_channel[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
+                              int32_t srs_estimated_channel_freq[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
+                              int32_t srs_estimated_channel_time[][gNB->frame_parms.ofdm_symbol_size],
+                              int32_t srs_estimated_channel_time_shifted[][gNB->frame_parms.ofdm_symbol_size],
                               uint32_t *signal_power,
                               uint32_t *noise_power_per_rb,
                               uint32_t *noise_power,
@@ -981,7 +982,6 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
   }
 
   const NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  int32_t **srs_ls_estimated_channel = nr_srs_info->srs_ls_estimated_channel;
 
   int16_t ch_real[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];
   int16_t ch_imag[frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length];

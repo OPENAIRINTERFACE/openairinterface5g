@@ -613,18 +613,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-    gNB->nr_srs_info[id]->srs_received_signal = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    gNB->nr_srs_info[id]->srs_ls_estimated_channel = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    gNB->nr_srs_info[id]->srs_estimated_channel_freq = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    gNB->nr_srs_info[id]->srs_estimated_channel_time = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted = (int32_t **)malloc16(Prx*sizeof(int32_t*));
-    for (i=0;i<Prx;i++){
-      gNB->nr_srs_info[id]->srs_received_signal[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      gNB->nr_srs_info[id]->srs_ls_estimated_channel[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      gNB->nr_srs_info[id]->srs_estimated_channel_freq[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      gNB->nr_srs_info[id]->srs_estimated_channel_time[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-    }
   }
 
   generate_ul_reference_signal_sequences(SHRT_MAX);
@@ -782,18 +770,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(gNB->nr_csi_rs_info);
 
   for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
-    for (int i = 0; i < Prx; i++) {
-      free_and_zero(gNB->nr_srs_info[id]->srs_received_signal[i]);
-      free_and_zero(gNB->nr_srs_info[id]->srs_ls_estimated_channel[i]);
-      free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_freq[i]);
-      free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time[i]);
-      free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted[i]);
-    }
-    free_and_zero(gNB->nr_srs_info[id]->srs_received_signal);
-    free_and_zero(gNB->nr_srs_info[id]->srs_ls_estimated_channel);
-    free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_freq);
-    free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time);
-    free_and_zero(gNB->nr_srs_info[id]->srs_estimated_channel_time_shifted);
     free_and_zero(gNB->nr_srs_info[id]);
   }
 
