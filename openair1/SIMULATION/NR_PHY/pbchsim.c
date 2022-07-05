@@ -67,7 +67,10 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 uint64_t get_softmodem_optmask(void) {return 0;}
-softmodem_params_t *get_softmodem_params(void) {return 0;}
+static softmodem_params_t softmodem_params;
+softmodem_params_t *get_softmodem_params(void) {
+  return &softmodem_params;
+}
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
@@ -174,6 +177,7 @@ int main(int argc, char **argv)
   int ssb_subcarrier_offset = 0;
 
   channel_desc_t *gNB2UE;
+  get_softmodem_params()->sa = 0;
 
   //uint8_t extended_prefix_flag=0;
   //int8_t interf1=-21,interf2=-21;

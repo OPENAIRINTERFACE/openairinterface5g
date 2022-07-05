@@ -226,17 +226,13 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
   int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
   frequency_range_t frequency_range = band<100?FR1:FR2;
-  int scs_scaling = 1<<*scc->ssbSubcarrierSpacing;
-  if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000)
-    scs_scaling = scs_scaling*3;
-  if (scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA > 2016666)
-    scs_scaling = scs_scaling>>2;
-  uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   int ssb_subcarrier_offset = 31; // default value for NSA
   if (get_softmodem_params()->sa) {
-    ssb_subcarrier_offset = absolute_diff%(12*scs_scaling);
-    if(frequency_range == FR1)
-      ssb_subcarrier_offset <<= *scc->ssbSubcarrierSpacing;
+    uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+    int scs_scaling = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000 ? 3 : 1;
+    ssb_subcarrier_offset = (absolute_diff*scs_scaling)%24;
+    if(frequency_range == FR2)
+      ssb_subcarrier_offset >>= 1; // this assumes 120kHz SCS for SSB and subCarrierSpacingCommon (only option supported by OAI for now)
   }
   mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset&15;
 
