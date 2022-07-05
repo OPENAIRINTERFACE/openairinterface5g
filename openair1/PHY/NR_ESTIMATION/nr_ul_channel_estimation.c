@@ -999,11 +999,11 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
 
     for(int sc_idx = 0; sc_idx < nr_srs_info->sc_list_length; sc_idx++) {
 
-      int16_t generated_real = srs_generated_signal[nr_srs_info->sc_list[sc_idx]] & 0xFFFF;
-      int16_t generated_imag = (srs_generated_signal[nr_srs_info->sc_list[sc_idx]] >> 16) & 0xFFFF;
+      int16_t generated_real = ((c16_t*)srs_generated_signal)[nr_srs_info->sc_list[sc_idx]].r;
+      int16_t generated_imag = ((c16_t*)srs_generated_signal)[nr_srs_info->sc_list[sc_idx]].i;
 
-      int16_t received_real = srs_received_signal[ant][nr_srs_info->sc_list[sc_idx]] & 0xFFFF;
-      int16_t received_imag = (srs_received_signal[ant][nr_srs_info->sc_list[sc_idx]] >> 16) & 0xFFFF;
+      int16_t received_real = ((c16_t*)srs_received_signal[ant])[nr_srs_info->sc_list[sc_idx]].r;
+      int16_t received_imag = ((c16_t*)srs_received_signal[ant])[nr_srs_info->sc_list[sc_idx]].i;
 
       // We know that nr_srs_info->srs_generated_signal_bits bits are enough to represent the generated_real and generated_imag.
       // So we only need a nr_srs_info->srs_generated_signal_bits shift to ensure that the result fits into 16 bits.
@@ -1074,10 +1074,10 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
 
     // Compute noise
     for(int sc_idx = 0; sc_idx < nr_srs_info->sc_list_length; sc_idx++) {
-      ch_real[ant*nr_srs_info->sc_list_length + sc_idx] = (int16_t)(srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx]] & 0xFFFF);
-      ch_imag[ant*nr_srs_info->sc_list_length + sc_idx] = (int16_t)((srs_estimated_channel_freq[ant][nr_srs_info->sc_list[sc_idx]] >> 16) & 0xFFFF);
-      noise_real[ant*nr_srs_info->sc_list_length + sc_idx] = abs((int16_t)(srs_ls_estimated_channel[ant][nr_srs_info->sc_list[sc_idx]] & 0xFFFF) - ch_real[ant*nr_srs_info->sc_list_length + sc_idx]);
-      noise_imag[ant*nr_srs_info->sc_list_length + sc_idx] = abs((int16_t)((srs_ls_estimated_channel[ant][nr_srs_info->sc_list[sc_idx]] >> 16) & 0xFFFF) - ch_imag[ant*nr_srs_info->sc_list_length + sc_idx]);
+      ch_real[ant*nr_srs_info->sc_list_length + sc_idx] = ((c16_t*)srs_estimated_channel_freq[ant])[nr_srs_info->sc_list[sc_idx]].r;
+      ch_imag[ant*nr_srs_info->sc_list_length + sc_idx] = ((c16_t*)srs_estimated_channel_freq[ant])[nr_srs_info->sc_list[sc_idx]].i;
+      noise_real[ant*nr_srs_info->sc_list_length + sc_idx] = abs(((c16_t*)srs_ls_estimated_channel[ant])[nr_srs_info->sc_list[sc_idx]].r - ch_real[ant*nr_srs_info->sc_list_length + sc_idx]);
+      noise_imag[ant*nr_srs_info->sc_list_length + sc_idx] = abs(((c16_t*)srs_ls_estimated_channel[ant])[nr_srs_info->sc_list[sc_idx]].i - ch_imag[ant*nr_srs_info->sc_list_length + sc_idx]);
     }
 
     // Convert to time domain
