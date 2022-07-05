@@ -1028,11 +1028,11 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
 
           for (int cdm_idx = 0; cdm_idx < fd_cdm; cdm_idx++) {
 
-            int16_t generated_real = srs_generated_signal[p_index][subcarrier_cdm] & 0xFFFF;
-            int16_t generated_imag = (srs_generated_signal[p_index][subcarrier_cdm] >> 16) & 0xFFFF;
+            int16_t generated_real = ((c16_t*)srs_generated_signal[p_index])[subcarrier_cdm].r;
+            int16_t generated_imag = ((c16_t*)srs_generated_signal[p_index])[subcarrier_cdm].i;
 
-            int16_t received_real = srs_received_signal[ant][subcarrier_cdm] & 0xFFFF;
-            int16_t received_imag = (srs_received_signal[ant][subcarrier_cdm] >> 16) & 0xFFFF;
+            int16_t received_real = ((c16_t*)srs_received_signal[ant])[subcarrier_cdm].r;
+            int16_t received_imag = ((c16_t*)srs_received_signal[ant])[subcarrier_cdm].i;
 
             // We know that nr_srs_info->srs_generated_signal_bits bits are enough to represent the generated_real and generated_imag.
             // So we only need a nr_srs_info->srs_generated_signal_bits shift to ensure that the result fits into 16 bits.
@@ -1118,10 +1118,10 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
       }
       uint16_t base_idx = ant*N_ap*M_sc_b_SRS + p_index*M_sc_b_SRS;
       for (int k = 0; k < M_sc_b_SRS; k++) {
-        ch_real[base_idx+k] = (int16_t)(srs_estimated_channel_freq[ant][p_index][subcarrier] & 0xFFFF);
-        ch_imag[base_idx+k] = (int16_t)((srs_estimated_channel_freq[ant][p_index][subcarrier] >> 16) & 0xFFFF);
-        noise_real[base_idx+k] = abs((int16_t)(srs_ls_estimated_channel[ant][p_index][subcarrier] & 0xFFFF) - ch_real[base_idx+k]);
-        noise_imag[base_idx+k] = abs((int16_t)((srs_ls_estimated_channel[ant][p_index][subcarrier] >> 16) & 0xFFFF) - ch_imag[base_idx+k]);
+        ch_real[base_idx+k] = ((c16_t*)srs_estimated_channel_freq[ant][p_index])[subcarrier].r;
+        ch_imag[base_idx+k] = ((c16_t*)srs_estimated_channel_freq[ant][p_index])[subcarrier].i;
+        noise_real[base_idx+k] = abs(((c16_t*)srs_ls_estimated_channel[ant][p_index])[subcarrier].r - ch_real[base_idx+k]);
+        noise_imag[base_idx+k] = abs(((c16_t*)srs_ls_estimated_channel[ant][p_index])[subcarrier].i - ch_imag[base_idx+k]);
         subcarrier += K_TC;
         if (subcarrier >= frame_parms->ofdm_symbol_size) {
           subcarrier=subcarrier-frame_parms->ofdm_symbol_size;

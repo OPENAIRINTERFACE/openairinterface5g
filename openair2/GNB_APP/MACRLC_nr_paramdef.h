@@ -97,7 +97,7 @@
 {CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY,        NULL,     0,          uptr:NULL,           defintval:10,              TYPE_UINT,     0},        \
 {CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:150,             TYPE_INT,      0},        \
-{CONFIG_STRING_MACRLC_UL_PRBBLACK_SNR_THRESHOLD,         NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_UL_PRBBLACK_SNR_THRESHOLD, "SNR threshold to decide whether a PRB will be blacklisted or not",     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_PUSCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
 {CONFIG_STRING_MACRLC_DL_BLER_TARGET_UPPER,   "Upper threshold of BLER to decrease DL MCS",   0, dblptr:NULL,  defdblval:0.15,  TYPE_DOUBLE,  0},        \
