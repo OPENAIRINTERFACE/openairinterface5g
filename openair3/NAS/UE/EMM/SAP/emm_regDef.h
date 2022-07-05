@@ -100,7 +100,7 @@ typedef struct {
  * -------------------------------------
  */
 typedef struct {
-  int is_emergency;   /* TRUE if the UE was attempting to register to
+  bool is_emergency;   /* true if the UE was attempting to register to
              * the network for emergency services only  */
 } emm_reg_attach_t;
 
@@ -109,7 +109,7 @@ typedef struct {
  * -------------------------------------
  */
 typedef struct {
-  int switch_off; /* TRUE if the UE is switched off       */
+  bool switch_off; /* true if the UE is switched off       */
   int type;       /* Network detach type              */
 } emm_reg_detach_t;
 

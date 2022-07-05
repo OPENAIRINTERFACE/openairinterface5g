@@ -208,7 +208,7 @@ int lowerlayer_data_ind(nas_user_t *user, const OctetString *data)
   LOG_FUNC_IN;
 
   esm_sap.primitive = ESM_UNITDATA_IND;
-  esm_sap.is_standalone = TRUE;
+  esm_sap.is_standalone = true;
   esm_sap.ueid = user->ueid;
 
   esm_sap.recv = data;
@@ -250,7 +250,7 @@ int lowerlayer_data_req(nas_user_t *user, const OctetString *data)
   emm_sap.u.emm_as.u.data.NASmsg.length = data->length;
   emm_sap.u.emm_as.u.data.NASmsg.value = data->value;
   /* Setup EPS NAS security data */
-  emm_as_set_security_data(&emm_sap.u.emm_as.u.data.sctx, sctx, FALSE, TRUE);
+  emm_as_set_security_data(&emm_sap.u.emm_as.u.data.sctx, sctx, false, true);
   rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
@@ -336,7 +336,7 @@ int emm_proc_lowerlayer_success(lowerlayer_data_t *lowerlayer_data)
  ** Description: Handles EMM procedure to be executed upon receiving noti- **
  **      fication that data failed to be delivered to the network. **
  **                                                                        **
- ** Inputs:  is_initial:    TRUE if the NAS message that failed to be  **
+ ** Inputs:  is_initial:    true if the NAS message that failed to be  **
  **             transfered is an initial NAS message       **
  **      Others:    None                                       **
  **                                                                        **
@@ -345,7 +345,7 @@ int emm_proc_lowerlayer_success(lowerlayer_data_t *lowerlayer_data)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_failure(lowerlayer_data_t *lowerlayer_data, int is_initial)
+int emm_proc_lowerlayer_failure(lowerlayer_data_t *lowerlayer_data, bool is_initial)
 {
   LOG_FUNC_IN;
 

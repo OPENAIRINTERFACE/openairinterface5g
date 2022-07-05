@@ -21,7 +21,7 @@ extern "C" {
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 //#include <openair1/PHY/phy_extern.h>
 
-static boolean_t is_gnb = false;
+static bool is_gnb = false;
 
 #pragma pack(1)
 
@@ -969,7 +969,7 @@ static int Gtpv1uHandleGpdu(int h,
   int offset = sizeof(Gtpv1uMsgHeaderT);
 
   uint8_t qfi = 0;
-  boolean_t rqi = FALSE;
+  bool rqi = false;
   uint32_t NR_PDCP_PDU_SN = 0;
 
   /* if E, S, or PN is set then there are 4 more bytes of header */

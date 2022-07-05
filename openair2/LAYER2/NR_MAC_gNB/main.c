@@ -211,8 +211,8 @@ void mac_top_init_gNB(void)
         RC.nrmac[i]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(i, 0);
         RC.nrmac[i]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(i, 0);
       }
-      pthread_create(&RC.nrmac[i]->stats_thread,NULL,nrmac_stats_thread,(void*)RC.nrmac[i]);
-
+      if (!IS_SOFTMODEM_NOSTATS_BIT)
+        pthread_create(&RC.nrmac[i]->stats_thread, NULL, nrmac_stats_thread, (void*)RC.nrmac[i]);
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
     AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");

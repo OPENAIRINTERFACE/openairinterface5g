@@ -2014,7 +2014,7 @@ nr_rrc_ue_establish_srb2(
    int i, cnt;
 
    if( radioBearerConfig->srb3_ToRelease != NULL){
-     if( *radioBearerConfig->srb3_ToRelease == TRUE){
+     if( *radioBearerConfig->srb3_ToRelease == true){
        //TODO (release the PDCP entity and the srb-Identity of the SRB3.)
      }
    }

@@ -142,18 +142,18 @@ uint8_t pdcp_get_sequence_number_of_pdu_with_SRB_sn(unsigned char* pdu_buffer);
  * Fills the incoming buffer with the fields of the header for SRB1
  *
  * @param pdu_buffer PDCP PDU buffer
- * @return TRUE on success, FALSE otherwise
+ * @return true on success, false otherwise
  */
-boolean_t pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char* pdu_buffer, \
-    pdcp_control_plane_data_pdu_header* pdu);
+bool pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char* pdu_buffer,
+                                                              pdcp_control_plane_data_pdu_header* pdu);
 /*
  * Fills the incoming buffer with the fields of the header for long SN (RLC UM and AM)
  *
  * @param pdu_buffer PDCP PDU buffer
- * @return TRUE on success, FALSE otherwise
+ * @return true on success, false otherwise
  */
-boolean_t pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_buffer, \
-    pdcp_user_plane_data_pdu_header_with_long_sn* pdu);
+bool pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_buffer,
+                                                            pdcp_user_plane_data_pdu_header_with_long_sn* pdu);
 
 /*
  * Fills the incoming status report header with given value of bitmap
@@ -162,10 +162,11 @@ boolean_t pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* 
  * @param FMS First Missing PDCP SN
  * @param bitmap Received/Missing sequence number bitmap
  * @param pdu A status report header
- * @return TRUE on success, FALSE otherwise
+ * @return true on success, false otherwise
  */
-boolean_t pdcp_serialize_control_pdu_for_pdcp_status_report(unsigned char* pdu_buffer, \
-    uint8_t bitmap[512], pdcp_control_pdu_for_pdcp_status_report* pdu);
+bool pdcp_serialize_control_pdu_for_pdcp_status_report(unsigned char* pdu_buffer,
+                                                       uint8_t bitmap[512],
+                                                       pdcp_control_pdu_for_pdcp_status_report* pdu);
 
 int pdcp_netlink_dequeue_element(const protocol_ctxt_t* const  ctxt_pP,
                                  struct pdcp_netlink_element_s **data_ppP);

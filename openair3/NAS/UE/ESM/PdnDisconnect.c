@@ -155,7 +155,7 @@ int esm_proc_pdn_disconnect(esm_data_t *esm_data, int cid, unsigned int *pti, un
  **      PDN DISCONNECT REQUEST message to the MME, starting timer **
  **      T3492 and entering state PROCEDURE TRANSACTION PENDING.   **
  **                                                                        **
- ** Inputs:  is_standalone: Should be always TRUE                      **
+ ** Inputs:  is_standalone: Should be always true                      **
  **      pti:       Procedure transaction identity             **
  **      msg:       Encoded PDN disconnect request message to  **
  **             be sent                                    **
@@ -167,8 +167,8 @@ int esm_proc_pdn_disconnect(esm_data_t *esm_data, int cid, unsigned int *pti, un
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti,
-                                    OctetString *msg, int sent_by_ue)
+int esm_proc_pdn_disconnect_request(nas_user_t *user, bool is_standalone, int pti,
+                                    OctetString *msg, bool sent_by_ue)
 {
   LOG_FUNC_IN;
 
@@ -326,7 +326,7 @@ int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause)
        */
       esm_sap_t esm_sap;
       esm_sap.primitive = ESM_EPS_BEARER_CONTEXT_DEACTIVATE_REQ;
-      esm_sap.is_standalone = TRUE;
+      esm_sap.is_standalone = true;
       esm_sap.recv = NULL;
       esm_sap.send.length = 0;
       esm_sap.data.eps_bearer_context_deactivate.ebi = ebi;
@@ -444,7 +444,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
          */
         esm_sap_t esm_sap;
         esm_sap.primitive = ESM_EPS_BEARER_CONTEXT_DEACTIVATE_REQ;
-        esm_sap.is_standalone = TRUE;
+        esm_sap.is_standalone = true;
         esm_sap.recv = NULL;
         esm_sap.send.length = 0;
         esm_sap.data.eps_bearer_context_deactivate.ebi = ebi;
