@@ -54,10 +54,10 @@ gNBs =
 #  downlinkConfigCommon
     #frequencyInfoDL
       # this is 3600 MHz + 43 PRBs@30kHz SCS (same as initial BWP)
-      absoluteFrequencySSB                                             = 650000;
+      absoluteFrequencySSB                                             = 621984;
       dl_frequencyBand                                                 = 78;
       # this is 3600 MHz
-      dl_absoluteFrequencyPointA                                       = 647408;
+      dl_absoluteFrequencyPointA                                       = 620712;
       #scs-SpecificCarrierList
         dl_offstToCarrier                                              = 0;
 # subcarrierSpacing
@@ -140,7 +140,7 @@ gNBs =
 # ssb_PositionsInBurs_BitmapPR
 # 1=short, 2=medium, 3=long
       ssb_PositionsInBurst_PR                                       = 2;
-      ssb_PositionsInBurst_Bitmap                                   = 2;
+      ssb_PositionsInBurst_Bitmap                                   = 8;
 
 # ssb_periodicityServingCell
 # 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1
@@ -225,10 +225,10 @@ prs_config = (
   RBOffset = 0;
   CombSize = 4;
   REOffset = [0];
-  PRSResourceOffset = [1];
+  PRSResourceOffset = [3];
   PRSResourceRepetition = 1;
   PRSResourceTimeGap = 1;
-  NPRS_ID = [1];
+  NPRS_ID = [3];
   MutingPattern1 = [];
   MutingPattern2 = [];
   MutingBitRepetition = 1;
@@ -261,7 +261,7 @@ RUs = (
   #beamforming 1x4 matrix:
   bf_weights = [0x00007fff, 0x0000, 0x0000, 0x0000];
   #clock_src = "internal";
-  sdr_addrs = "addr=192.168.10.2,clock_source=gpsdo,time_source=gpsdo"
+  sdr_addrs = "addr=192.168.50.2,second_addr=192.168.60.2,clock_source=external,time_source=external"
 }
 );
 
