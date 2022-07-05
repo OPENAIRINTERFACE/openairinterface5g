@@ -89,7 +89,7 @@ int emm_proc_attach_accept(nas_user_t *user, long T3412, long T3402, long T3423,
                            const OctetString *esm_msg);
 int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *esm_msg);
 int emm_proc_attach_complete(void *args);
-int emm_proc_attach_failure(int is_initial, void *args);
+int emm_proc_attach_failure(bool is_initial, void *args);
 int emm_proc_attach_release(void *args);
 int emm_proc_attach_restart(nas_user_t *user);
 
@@ -103,10 +103,10 @@ int emm_proc_attach_set_detach(void *user);
  *              Detach procedure
  * --------------------------------------------------------------------------
  */
-int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, int switch_off);
+int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, bool switch_off);
 int emm_proc_detach_request(void *args);
 int emm_proc_detach_accept(void *args);
-int emm_proc_detach_failure(int is_initial, void *args);
+int emm_proc_detach_failure(bool is_initial, void *args);
 int emm_proc_detach_release(void *args);
 
 

@@ -42,17 +42,17 @@ int pdcp_fifo_flush_sdus (void) { return 0; }
 int pdcp_fifo_read_input_sdus_remaining_bytes (void) { return 0; }
 int pdcp_fifo_read_input_sdus (void) { return 0; }
 
-BOOL init_pdcp_entity(pdcp_t *pdcp_entity);
-BOOL test_tx_window(void);
-BOOL test_rx_window(void);
-BOOL test_pdcp_data_req(void);
-BOOL test_pdcp_data_ind(void);
+bool init_pdcp_entity(pdcp_t *pdcp_entity);
+bool test_tx_window(void);
+bool test_rx_window(void);
+bool test_pdcp_data_req(void);
+bool test_pdcp_data_ind(void);
 
 /*
  * PDCP methods that are going to be utilised throughout the test
  */
-extern BOOL pdcp_init_seq_numbers(pdcp_t* pdcp_entity);
+extern bool pdcp_init_seq_numbers(pdcp_t* pdcp_entity);
 extern u16 pdcp_get_next_tx_seq_number(pdcp_t* pdcp_entity);
-extern BOOL pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity);
+extern bool pdcp_is_rx_seq_number_valid(u16 seq_num, pdcp_t* pdcp_entity);
 
 #endif

@@ -47,9 +47,6 @@
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "nr_rrc_config.h"
 
-#define false 0
-#define true 1
-
 void fix_servingcellconfigdedicated(NR_ServingCellConfig_t *scd) {
 
   int b = 0;

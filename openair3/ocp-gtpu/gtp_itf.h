@@ -8,32 +8,30 @@
 extern "C" {
 #endif
 
-typedef boolean_t (*gtpCallback)(
-  protocol_ctxt_t  *ctxt_pP,
-  const srb_flag_t     srb_flagP,
-  const rb_id_t        rb_idP,
-  const mui_t          muiP,
-  const confirm_t      confirmP,
-  const sdu_size_t     sdu_buffer_sizeP,
-  unsigned char *const sdu_buffer_pP,
-  const pdcp_transmission_mode_t modeP,
-  const uint32_t *sourceL2Id,
-  const uint32_t *destinationL2Id);
+typedef bool (*gtpCallback)(protocol_ctxt_t  *ctxt_pP,
+                            const srb_flag_t     srb_flagP,
+                            const rb_id_t        rb_idP,
+                            const mui_t          muiP,
+                            const confirm_t      confirmP,
+                            const sdu_size_t     sdu_buffer_sizeP,
+                            unsigned char *const sdu_buffer_pP,
+                            const pdcp_transmission_mode_t modeP,
+                            const uint32_t *sourceL2Id,
+                            const uint32_t *destinationL2Id);
 
-typedef boolean_t (*gtpCallbackSDAP)(
-  protocol_ctxt_t  *ctxt_pP,
-  const srb_flag_t     srb_flagP,
-  const rb_id_t        rb_idP,
-  const mui_t          muiP,
-  const confirm_t      confirmP,
-  const sdu_size_t     sdu_buffer_sizeP,
-  unsigned char *const sdu_buffer_pP,
-  const pdcp_transmission_mode_t modeP,
-  const uint32_t *sourceL2Id,
-  const uint32_t *destinationL2Id,
-  const uint8_t   qfi,
-  const boolean_t rqi,
-  const int       pdusession_id);
+typedef bool (*gtpCallbackSDAP)(protocol_ctxt_t  *ctxt_pP,
+                                const srb_flag_t     srb_flagP,
+                                const rb_id_t        rb_idP,
+                                const mui_t          muiP,
+                                const confirm_t      confirmP,
+                                const sdu_size_t     sdu_buffer_sizeP,
+                                unsigned char *const sdu_buffer_pP,
+                                const pdcp_transmission_mode_t modeP,
+                                const uint32_t *sourceL2Id,
+                                const uint32_t *destinationL2Id,
+                                const uint8_t   qfi,
+                                const bool      rqi,
+                                const int       pdusession_id);
 
 typedef struct openAddr_s {
   char originHost[HOST_NAME_MAX];

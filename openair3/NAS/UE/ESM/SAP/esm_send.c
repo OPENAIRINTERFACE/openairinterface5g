@@ -132,7 +132,7 @@ int esm_send_status(int pti, int ebi, esm_status_msg *msg, int esm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_send_pdn_connectivity_request(int pti, int is_emergency, int pdn_type,
+int esm_send_pdn_connectivity_request(int pti, bool is_emergency, int pdn_type,
                                       const char *apn,
                                       pdn_connectivity_request_msg *msg)
 {

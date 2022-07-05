@@ -51,7 +51,7 @@ typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *cons
 						     const rb_id_t, const mui_t,
     confirm_t, sdu_size_t, mem_block_t *,const uint32_t *const, const uint32_t *const);
 
-typedef boolean_t (pdcp_data_ind_t)( const protocol_ctxt_t *, const srb_flag_t,
+typedef bool (pdcp_data_ind_t)( const protocol_ctxt_t *, const srb_flag_t,
 						 const MBMS_flag_t, const rb_id_t, const sdu_size_t,
 						 mem_block_t *,const uint32_t *const, const uint32_t *const);
 typedef pdcp_data_ind_t* pdcp_data_ind_func_t;
@@ -153,14 +153,13 @@ typedef struct pdcp_stats_s {
 
 
 typedef struct pdcp_s {
-  //boolean_t     instanciated_instance;
   uint16_t       header_compression_profile;
 
   /* SR: added this flag to distinguish UE/eNB instance as pdcp_run for virtual
    * mode can receive data on NETLINK for eNB while eNB_flag = 0 and for UE when eNB_flag = 1
    */
-  boolean_t is_ue;
-  boolean_t is_srb;
+  bool is_ue;
+  bool is_srb;
 
   /* Configured security algorithms */
   uint8_t cipheringAlgorithm;
@@ -217,7 +216,7 @@ typedef struct pdcp_s {
 } pdcp_t;
 
 typedef struct pdcp_mbms_s {
-  boolean_t instanciated_instance;
+  bool instanciated_instance;
   rb_id_t   rb_id;
 } pdcp_mbms_t;
 
@@ -230,7 +229,7 @@ typedef struct pdcp_mbms_s {
  * under targets/TEST/PDCP/
  */
 
-/*! \fn boolean_t pdcp_data_req(const protocol_ctxt_t* const  , srb_flag_t , rb_id_t , mui_t , confirm_t ,sdu_size_t , unsigned char* , pdcp_transmission_mode_t )
+/*! \fn bool pdcp_data_req(const protocol_ctxt_t* const  , srb_flag_t , rb_id_t , mui_t , confirm_t ,sdu_size_t , unsigned char* , pdcp_transmission_mode_t )
 * \brief This functions handles data transfer requests coming either from RRC or from IP
 * \param[in] ctxt_pP        Running context.
 * \param[in] rab_id         Radio Bearer ID
@@ -239,38 +238,34 @@ typedef struct pdcp_mbms_s {
 * \param[in] sdu_buffer_size Size of incoming SDU in bytes
 * \param[in] sdu_buffer      Buffer carrying SDU
 * \param[in] mode            flag to indicate whether the userplane data belong to the control plane or data plane or transparent
-* \return TRUE on success, FALSE otherwise
+* \return true on success, false otherwise
 * \note None
 * @ingroup _pdcp
 */
 
-boolean_t pdcp_data_req(
-  protocol_ctxt_t  *ctxt_pP,
-  const srb_flag_t srb_flagP,
-  const rb_id_t rb_id,
-  const mui_t muiP,
-  const confirm_t confirmP,
-  const sdu_size_t sdu_buffer_size,
-  unsigned char *const sdu_buffer,
-  const pdcp_transmission_mode_t mode,
-  const uint32_t * sourceL2Id,
-  const uint32_t * destinationL2Id
-);
+bool pdcp_data_req(protocol_ctxt_t  *ctxt_pP,
+                   const srb_flag_t srb_flagP,
+                   const rb_id_t rb_id,
+                   const mui_t muiP,
+                   const confirm_t confirmP,
+                   const sdu_size_t sdu_buffer_size,
+                   unsigned char *const sdu_buffer,
+                   const pdcp_transmission_mode_t mode,
+                   const uint32_t * sourceL2Id,
+                   const uint32_t * destinationL2Id);
 
-boolean_t cu_f1u_data_req(
-  protocol_ctxt_t  *ctxt_pP,
-  const srb_flag_t srb_flagP,
-  const rb_id_t rb_id,
-  const mui_t muiP,
-  const confirm_t confirmP,
-  const sdu_size_t sdu_buffer_size,
-  unsigned char *const sdu_buffer,
-  const pdcp_transmission_mode_t mode,
-  const uint32_t *const sourceL2Id,
-  const uint32_t *const destinationL2Id
-  );
+bool cu_f1u_data_req(protocol_ctxt_t  *ctxt_pP,
+                     const srb_flag_t srb_flagP,
+                     const rb_id_t rb_id,
+                     const mui_t muiP,
+                     const confirm_t confirmP,
+                     const sdu_size_t sdu_buffer_size,
+                     unsigned char *const sdu_buffer,
+                     const pdcp_transmission_mode_t mode,
+                     const uint32_t *const sourceL2Id,
+                     const uint32_t *const destinationL2Id);
 
-/*! \fn boolean_t pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, mem_block_t*, boolean_t)
+/*! \fn bool pdcp_data_ind(const protocol_ctxt_t* const, srb_flag_t, MBMS_flag_t, rb_id_t, sdu_size_t, mem_block_t*, bool)
 * \brief This functions handles data transfer indications coming from RLC
 * \param[in] ctxt_pP        Running context.
 * \param[in] Shows if rb is SRB
@@ -279,7 +274,7 @@ boolean_t cu_f1u_data_req(
 * \param[in] sdu_buffer_size Size of incoming SDU in bytes
 * \param[in] sdu_buffer Buffer carrying SDU
 * \param[in] is_data_plane flag to indicate whether the userplane data belong to the control plane or data plane
-* \return TRUE on success, FALSE otherwise
+* \return TRUE on success, false otherwise
 * \note None
 * @ingroup _pdcp
 */
@@ -316,20 +311,18 @@ void rrc_pdcp_config_req (
 * \param[in]  defaultDRB        Default DRB ID
 * \return     A status about the processing, OK or error code.
 */
-boolean_t rrc_pdcp_config_asn1_req (
-  const protocol_ctxt_t *const  ctxt_pP,
-  LTE_SRB_ToAddModList_t  *const srb2add_list,
-  LTE_DRB_ToAddModList_t  *const drb2add_list,
-  LTE_DRB_ToReleaseList_t *const drb2release_list,
-  const uint8_t                   security_modeP,
-  uint8_t                  *const kRRCenc,
-  uint8_t                  *const kRRCint,
-  uint8_t                  *const kUPenc,
-  LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9,
-  rb_id_t                 *const defaultDRB
-);
+bool rrc_pdcp_config_asn1_req(const protocol_ctxt_t *const  ctxt_pP,
+                              LTE_SRB_ToAddModList_t  *const srb2add_list,
+                              LTE_DRB_ToAddModList_t  *const drb2add_list,
+                              LTE_DRB_ToReleaseList_t *const drb2release_list,
+                              const uint8_t                   security_modeP,
+                              uint8_t                  *const kRRCenc,
+                              uint8_t                  *const kRRCint,
+                              uint8_t                  *const kUPenc,
+                              LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9,
+                              rb_id_t                 *const defaultDRB);
 
-/*! \fn boolean_t pdcp_config_req_asn1 (const protocol_ctxt_t* const ctxt_pP, srb_flag_t srb_flagP, uint32_t  action, rb_id_t rb_id, uint8_t rb_sn, uint8_t rb_report, uint16_t header_compression_profile, uint8_t security_mode)
+/*! \fn bool pdcp_config_req_asn1 (const protocol_ctxt_t* const ctxt_pP, srb_flag_t srb_flagP, uint32_t  action, rb_id_t rb_id, uint8_t rb_sn, uint8_t rb_report, uint16_t header_compression_profile, uint8_t security_mode)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  ctxt_pP           Running context.
 * \param[in]  pdcp_pP            Pointer on PDCP structure.
@@ -349,22 +342,21 @@ boolean_t rrc_pdcp_config_asn1_req (
 * \param[in]  kUPenc             User-Plane encryption key
 * \return     A status about the processing, OK or error code.
 */
-boolean_t pdcp_config_req_asn1 (
-  const protocol_ctxt_t *const  ctxt_pP,
-  pdcp_t         *const pdcp_pP,
-  const srb_flag_t       srb_flagP,
-  const rlc_mode_t       rlc_mode,
-  const uint32_t         action,
-  const uint16_t         lc_id,
-  const uint16_t         mch_id,
-  const rb_id_t          rb_id,
-  const uint8_t          rb_sn,
-  const uint8_t          rb_report,
-  const uint16_t         header_compression_profile,
-  const uint8_t          security_mode,
-  uint8_t         *const kRRCenc,
-  uint8_t         *const kRRCint,
-  uint8_t         *const kUPenc);
+bool pdcp_config_req_asn1(const protocol_ctxt_t *const  ctxt_pP,
+                          pdcp_t         *const pdcp_pP,
+                          const srb_flag_t       srb_flagP,
+                          const rlc_mode_t       rlc_mode,
+                          const uint32_t         action,
+                          const uint16_t         lc_id,
+                          const uint16_t         mch_id,
+                          const rb_id_t          rb_id,
+                          const uint8_t          rb_sn,
+                          const uint8_t          rb_report,
+                          const uint16_t         header_compression_profile,
+                          const uint8_t          security_mode,
+                          uint8_t         *const kRRCenc,
+                          uint8_t         *const kRRCint,
+                          uint8_t         *const kUPenc);
 
 /*! \fn void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP)
 * \brief  Function (for RRC) to add a new UE in PDCP module
@@ -373,13 +365,12 @@ boolean_t pdcp_config_req_asn1 (
 */
 void pdcp_add_UE(const protocol_ctxt_t *const  ctxt_pP);
 
-/*! \fn boolean_t pdcp_remove_UE(const protocol_ctxt_t* const  ctxt_pP)
+/*! \fn bool pdcp_remove_UE(const protocol_ctxt_t* const  ctxt_pP)
 * \brief  Function for RRC to remove UE from PDCP module hashtable
 * \param[in]  ctxt_pP           Running context.
 * \return     A status about the processing, OK or error code.
 */
-boolean_t pdcp_remove_UE(
-  const protocol_ctxt_t *const  ctxt_pP);
+bool pdcp_remove_UE(const protocol_ctxt_t *const  ctxt_pP);
 
 /*! \fn void rrc_pdcp_config_release( const protocol_ctxt_t* const, rb_id_t)
 * \brief This functions is unused

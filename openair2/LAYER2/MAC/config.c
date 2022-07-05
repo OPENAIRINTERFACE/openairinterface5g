@@ -1104,7 +1104,7 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
 
   /* Get struct to modify */
   UE_scheduling_control = &(UE_info_mac->UE_sched_ctrl[UE_id]);
-  UE_scheduling_control->cdrx_configured = FALSE; // will be set to true when no error
+  UE_scheduling_control->cdrx_configured = false; // will be set to true when no error
 
   /* Check drx_Configuration */
   if (drx_Configuration == NULL) {
@@ -1119,9 +1119,9 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
   }
 
   /* Modify scheduling control structure according to DRX configuration: doesn't support every configurations! */  
-  UE_scheduling_control->cdrx_configured = FALSE; // will be set to true when receiving RRC Reconfiguration Complete
-  UE_scheduling_control->cdrx_waiting_ack = TRUE; // waiting for RRC Reconfiguration Complete message
-  UE_scheduling_control->in_active_time = FALSE;
+  UE_scheduling_control->cdrx_configured = false; // will be set to true when receiving RRC Reconfiguration Complete
+  UE_scheduling_control->cdrx_waiting_ack = true; // waiting for RRC Reconfiguration Complete message
+  UE_scheduling_control->in_active_time = false;
   UE_scheduling_control->dci0_ongoing_timer = 0;
   UE_scheduling_control->on_duration_timer = 0;
   struct LTE_DRX_Config__setup *choiceSetup = &drx_Configuration->choice.setup;
@@ -1297,13 +1297,13 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
   }
 
   if (choiceSetup->shortDRX == NULL) {
-    UE_scheduling_control->in_short_drx_cycle = FALSE;
+    UE_scheduling_control->in_short_drx_cycle = false;
     UE_scheduling_control->drx_shortCycle_timer_value = 0;
     UE_scheduling_control->short_drx_cycle_duration = 0;
     UE_scheduling_control->drx_shortCycle_timer = 0;
     UE_scheduling_control->drx_shortCycle_timer_thres = -1;
   } else {
-    UE_scheduling_control->in_short_drx_cycle = FALSE;
+    UE_scheduling_control->in_short_drx_cycle = false;
     UE_scheduling_control->drx_shortCycle_timer_value = (uint8_t) choiceSetup->shortDRX->drxShortCycleTimer;
 
     switch (choiceSetup->shortDRX->shortDRX_Cycle) {
@@ -1380,7 +1380,7 @@ void eNB_Config_Local_DRX(instance_t Mod_id,
     UE_scheduling_control->drx_shortCycle_timer_thres = UE_scheduling_control->drx_shortCycle_timer_value * UE_scheduling_control->short_drx_cycle_duration;
   }
 
-  UE_scheduling_control->in_long_drx_cycle = FALSE;
+  UE_scheduling_control->in_long_drx_cycle = false;
   UE_scheduling_control->drx_longCycle_timer = 0;
 
   switch (choiceSetup->longDRX_CycleStartOffset.present) {

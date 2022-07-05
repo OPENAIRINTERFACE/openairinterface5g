@@ -64,8 +64,8 @@ Description NAS procedure call manager
 #define NAS_PROC_RSRP_UNKNOWN   255
 
 
-static int _nas_proc_activate(nas_user_t *user, int cid, int apply_to_all);
-static int _nas_proc_deactivate(nas_user_t *user, int cid, int apply_to_all);
+static int _nas_proc_activate(nas_user_t *user, int cid, bool apply_to_all);
+static int _nas_proc_deactivate(nas_user_t *user, int cid, bool apply_to_all);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -93,7 +93,7 @@ void nas_proc_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
   LOG_FUNC_IN;
 
   /* Initialize local NAS data */
-  user->proc.EPS_capability_status = FALSE;
+  user->proc.EPS_capability_status = false;
   user->proc.rsrq = NAS_PROC_RSRQ_UNKNOWN;
   user->proc.rsrp = NAS_PROC_RSRP_UNKNOWN;
 
@@ -129,7 +129,7 @@ void nas_proc_cleanup(nas_user_t *user)
   LOG_FUNC_IN;
 
   /* Detach the UE from the EPS network */
-  int rc = nas_proc_detach(user, TRUE);
+  int rc = nas_proc_detach(user, true);
 
   if (rc != RETURNok) {
     LOG_TRACE(ERROR, "NAS-PROC  - Failed to detach from the network");
@@ -176,7 +176,7 @@ int nas_proc_enable_s1_mode(nas_user_t *user)
    * Notify the EMM procedure call manager that EPS capability
    * of the UE is enabled
    */
-  user->proc.EPS_capability_status = TRUE;
+  user->proc.EPS_capability_status = true;
   emm_sap.primitive = EMMREG_S1_ENABLED;
   rc = emm_sap_send(user, &emm_sap);
 
@@ -209,7 +209,7 @@ int nas_proc_disable_s1_mode(nas_user_t *user)
    * Notify the EMM procedure call manager that EPS capability
    * of the UE is disabled
    */
-  user->proc.EPS_capability_status = FALSE;
+  user->proc.EPS_capability_status = false;
   emm_sap.primitive = EMMREG_S1_DISABLED;
   rc = emm_sap_send(user, &emm_sap);
 
@@ -231,7 +231,7 @@ int nas_proc_disable_s1_mode(nas_user_t *user)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_eps(nas_user_t *user, int *stat)
+int nas_proc_get_eps(nas_user_t *user, bool *stat)
 {
   LOG_FUNC_IN;
 
@@ -449,7 +449,7 @@ int nas_proc_deregister(nas_user_t *user)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_reg_data(nas_user_t *user, int *mode, int *selected, int format,
+int nas_proc_get_reg_data(nas_user_t *user, int *mode, bool *selected, int format,
                           network_plmn_t *oper, int *AcT)
 {
   LOG_FUNC_IN;
@@ -462,12 +462,12 @@ int nas_proc_get_reg_data(nas_user_t *user, int *mode, int *selected, int format
 
   if (oper_name != NULL) {
     /* An operator is currently selected */
-    *selected = TRUE;
+    *selected = true;
     /* Get the supported Radio Access Technology */
     *AcT = emm_main_get_plmn_rat(user->emm_data);
   } else {
     /* No any operator is selected */
-    *selected = FALSE;
+    *selected = false;
     *AcT = NET_ACCESS_UNAVAILABLE;
   }
 
@@ -558,7 +558,7 @@ int nas_proc_get_loc_info(nas_user_t *user, char *tac, char *ci, int *AcT)
  **                                                                        **
  ** Description: Initiates a detach procedure                              **
  **                                                                        **
- ** Inputs:  switch_off:    TRUE if the detach is due to UE switch-off **
+ ** Inputs:  switch_off:    true if the detach is due to UE switch-off **
  **      Others:    None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
@@ -566,7 +566,7 @@ int nas_proc_get_loc_info(nas_user_t *user, char *tac, char *ci, int *AcT)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_detach(nas_user_t *user, int switch_off)
+int nas_proc_detach(nas_user_t *user, bool switch_off)
 {
   LOG_FUNC_IN;
 
@@ -607,7 +607,7 @@ int nas_proc_attach(nas_user_t *user)
   if ( !emm_main_is_attached(user->emm_data) ) {
     /* Initiate an Attach procedure */
     emm_sap.primitive = EMMREG_ATTACH_INIT;
-    emm_sap.u.emm_reg.u.attach.is_emergency = FALSE;
+    emm_sap.u.emm_reg.u.attach.is_emergency = false;
     rc = emm_sap_send(user, &emm_sap);
   }
 
@@ -624,16 +624,16 @@ int nas_proc_attach(nas_user_t *user)
  **      Others:    None                                       **
  **                                                                        **
  ** Outputs:     None                                                      **
- **      Return:    TRUE if the UE is currently attached to    **
+ **      Return:    true if the UE is currently attached to    **
  **             the network                                **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_attach_status(nas_user_t *user)
+bool nas_proc_get_attach_status(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
-  int is_attached = emm_main_is_attached(user->emm_data);
+  bool is_attached = emm_main_is_attached(user->emm_data);
 
   LOG_FUNC_RETURN (is_attached);
 }
@@ -690,10 +690,10 @@ int nas_proc_get_pdn_status(nas_user_t *user, int *cids, int *states, int n_pdn_
   /* For all PDN contexts */
   for (cid = 1; (cid < n_pdn+1) && (n_defined_pdn < n_pdn_max); cid++) {
     /* Get the status of this PDN */
-    int state = FALSE;
-    int is_defined = esm_main_get_pdn_status(user, cid, &state);
+    bool state = false;
+    bool is_defined = esm_main_get_pdn_status(user, cid, &state);
 
-    if (is_defined != FALSE) {
+    if (is_defined != false) {
       /* This PDN has been defined */
       *(cids++) = cid;
       *(states++) = state;
@@ -734,7 +734,7 @@ int nas_proc_get_pdn_param(esm_data_t *esm_data, int *cids, int *types, const ch
 
   /* For all PDN contexts */
   for (cid = 1; (cid < n_pdn+1) && (n_defined_pdn < n_pdn_max); cid++) {
-    int emergency, active;
+    bool emergency, active;
     /* Get PDN connection parameters */
     int rc = esm_main_get_pdn(esm_data, cid, types, apns, &emergency, &active);
 
@@ -845,8 +845,8 @@ int nas_proc_set_pdn(nas_user_t *user, int cid, int type, const char *apn, int i
 
   esm_sap_t esm_sap;
   esm_sap.primitive = ESM_PDN_CONNECTIVITY_REQ;
-  esm_sap.is_standalone = TRUE;
-  esm_sap.data.pdn_connect.is_defined = FALSE;
+  esm_sap.is_standalone = true;
+  esm_sap.data.pdn_connect.is_defined = false;
   esm_sap.data.pdn_connect.cid = cid;
   esm_sap.data.pdn_connect.pdn_type = type;
   esm_sap.data.pdn_connect.apn = apn;
@@ -882,8 +882,8 @@ int nas_proc_reset_pdn(nas_user_t *user, int cid)
 
   esm_sap_t esm_sap;
   esm_sap.primitive = ESM_PDN_CONNECTIVITY_REJ;
-  esm_sap.is_standalone = TRUE;
-  esm_sap.data.pdn_connect.is_defined = TRUE;
+  esm_sap.is_standalone = true;
+  esm_sap.data.pdn_connect.is_defined = true;
   esm_sap.data.pdn_connect.cid = cid;
   /*
    * Notify ESM that the specified PDN context has to be undefined
@@ -916,7 +916,7 @@ int nas_proc_deactivate_pdn(nas_user_t *user, int cid)
 
   if (cid > 0) {
     /* Deactivate only the specified PDN context */
-    rc = _nas_proc_deactivate(user, cid, FALSE);
+    rc = _nas_proc_deactivate(user, cid, false);
   } else {
     /* Do not deactivate the PDN connection established during initial
      * network attachment (identifier 1) */
@@ -924,7 +924,7 @@ int nas_proc_deactivate_pdn(nas_user_t *user, int cid)
 
     /* Deactivate all active PDN contexts */
     while ((rc != RETURNerror) && (cid < esm_main_get_nb_pdns_max(user->esm_data)+1)) {
-      rc = _nas_proc_deactivate(user, cid++, TRUE);
+      rc = _nas_proc_deactivate(user, cid++, true);
     }
   }
 
@@ -970,13 +970,13 @@ int nas_proc_activate_pdn(nas_user_t *user, int cid)
   if (rc != RETURNerror) {
     if (cid > 0) {
       /* Activate only the specified PDN context */
-      rc = _nas_proc_activate(user, cid, FALSE);
+      rc = _nas_proc_activate(user, cid, false);
     } else {
       cid = 1;
 
       /* Activate all defined PDN contexts */
       while ((rc != RETURNerror) && (cid < esm_main_get_nb_pdns_max(user->esm_data)+1)) {
-        rc = _nas_proc_activate(user, cid++, TRUE);
+        rc = _nas_proc_activate(user, cid++, true);
       }
     }
   }
@@ -1177,7 +1177,7 @@ int nas_proc_ul_transfer_cnf(nas_user_t *user)
    */
   emm_sap.primitive = EMMAS_DATA_IND;
   emm_sap.u.emm_as.u.data.ueid = user->ueid;
-  emm_sap.u.emm_as.u.data.delivered = TRUE;
+  emm_sap.u.emm_as.u.data.delivered = true;
   emm_sap.u.emm_as.u.data.NASmsg.length = 0;
   rc = emm_sap_send(user, &emm_sap);
 
@@ -1214,7 +1214,7 @@ int nas_proc_ul_transfer_rej(nas_user_t *user)
    */
   emm_sap.primitive = EMMAS_DATA_IND;
   emm_sap.u.emm_as.u.data.ueid = user->ueid;
-  emm_sap.u.emm_as.u.data.delivered = FALSE;
+  emm_sap.u.emm_as.u.data.delivered = false;
   emm_sap.u.emm_as.u.data.NASmsg.length = 0;
   rc = emm_sap_send(user, &emm_sap);
 
@@ -1251,7 +1251,7 @@ int nas_proc_dl_transfer_ind(nas_user_t *user, const Byte_t *data, uint32_t len)
      */
     emm_sap.primitive = EMMAS_DATA_IND;
     emm_sap.u.emm_as.u.data.ueid = user->ueid;
-    emm_sap.u.emm_as.u.data.delivered = TRUE;
+    emm_sap.u.emm_as.u.data.delivered = true;
     emm_sap.u.emm_as.u.data.NASmsg.length = len;
     emm_sap.u.emm_as.u.data.NASmsg.value = (uint8_t *)data;
     rc = emm_sap_send(user, &emm_sap);
@@ -1274,7 +1274,7 @@ int nas_proc_dl_transfer_ind(nas_user_t *user, const Byte_t *data, uint32_t len)
  **                                                                        **
  ** Inputs:  cid:       Identifier of the PDN context used to es-  **
  **             tablished connectivity to specified PDN    **
- **      apply_to_all:  TRUE if the PDN connectivity procedure is  **
+ **      apply_to_all:  true if the PDN connectivity procedure is  **
  **             initiated to establish connectivity to all **
  **             defined PDNs                               **
  **      Others:    None                                       **
@@ -1284,12 +1284,12 @@ int nas_proc_dl_transfer_ind(nas_user_t *user, const Byte_t *data, uint32_t len)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _nas_proc_activate(nas_user_t *user, int cid, int apply_to_all)
+static int _nas_proc_activate(nas_user_t *user, int cid, bool apply_to_all)
 {
   LOG_FUNC_IN;
 
   int rc;
-  int active = FALSE;
+  bool active = false;
 
   esm_sap_t esm_sap;
 
@@ -1332,8 +1332,8 @@ static int _nas_proc_activate(nas_user_t *user, int cid, int apply_to_all)
    * for the specified PDN
    */
   esm_sap.primitive = ESM_PDN_CONNECTIVITY_REQ;
-  esm_sap.is_standalone = TRUE;
-  esm_sap.data.pdn_connect.is_defined = TRUE;
+  esm_sap.is_standalone = true;
+  esm_sap.data.pdn_connect.is_defined = true;
   esm_sap.data.pdn_connect.cid = cid;
   rc = esm_sap_send(user, &esm_sap);
 
@@ -1347,7 +1347,7 @@ static int _nas_proc_activate(nas_user_t *user, int cid, int apply_to_all)
  ** Description: Initiates a PDN disconnect procedure                      **
  **                                                                        **
  ** Inputs:  cid:       Identifier of the PDN context              **
- **      apply_to_all:  TRUE if the PDN disconnect procedure is    **
+ **      apply_to_all:  true if the PDN disconnect procedure is    **
  **             initiated to request disconnection from    **
  **             all active PDNs                            **
  **      Others:    None                                       **
@@ -1357,15 +1357,15 @@ static int _nas_proc_activate(nas_user_t *user, int cid, int apply_to_all)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _nas_proc_deactivate(nas_user_t *user, int cid, int apply_to_all)
+static int _nas_proc_deactivate(nas_user_t *user, int cid, bool apply_to_all)
 {
   LOG_FUNC_IN;
 
   int rc;
   int pdn_type;
   const char *apn;
-  int emergency = FALSE;
-  int active = FALSE;
+  bool emergency = false;
+  bool active = false;
 
   /* Get PDN context parameters */
   rc = esm_main_get_pdn(user->esm_data, cid, &pdn_type, &apn, &emergency, &active);

@@ -29,13 +29,12 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "common/utils/LOG/log.h"
 //-----------------------------------------------------------------------------
-boolean_t rlc_am_nack_pdu (
-  const protocol_ctxt_t* const  ctxt_pP,
-  rlc_am_entity_t *const rlc_pP,
-  const rlc_sn_t snP,
-  const rlc_sn_t prev_nack_snP,
-  sdu_size_t so_startP,
-  sdu_size_t so_endP)
+bool rlc_am_nack_pdu(const protocol_ctxt_t* const  ctxt_pP,
+                     rlc_am_entity_t *const rlc_pP,
+                     const rlc_sn_t snP,
+                     const rlc_sn_t prev_nack_snP,
+                     sdu_size_t so_startP,
+                     sdu_size_t so_endP)
 {
   // 5.2.1 Retransmission
   // ...
@@ -54,8 +53,8 @@ boolean_t rlc_am_nack_pdu (
   rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer_p = &rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE];
   //int          pdu_sdu_index;
   //int          sdu_index;
-  boolean_t status = TRUE;
-  boolean_t retx_count_increment = FALSE;
+  bool status = true;
+  bool retx_count_increment = false;
   sdu_size_t pdu_data_to_retx = 0;
 
   if (mb_p != NULL) {
@@ -63,7 +62,7 @@ boolean_t rlc_am_nack_pdu (
     if(so_startP > so_endP) {
       LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[NACK-PDU] ERROR NACK MISSING PDU, so_startP %d, so_endP %d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),so_startP, so_endP);
-      status = FALSE;
+      status = false;
     }
     // Handle full PDU NACK first
     else if ((so_startP == 0) && (so_endP == 0x7FFF)) {
@@ -71,9 +70,7 @@ boolean_t rlc_am_nack_pdu (
     		pdu_data_to_retx = tx_data_pdu_buffer_p->payload_size;
             /* Increment VtReTxNext if this is the first NACK or if some segments have already been transmitted */
             if ((tx_data_pdu_buffer_p->flags.retransmit == 0) || (tx_data_pdu_buffer_p->nack_so_start))
-            {
-            	retx_count_increment = TRUE;
-            }
+              retx_count_increment = true;
 
             tx_data_pdu_buffer_p->nack_so_start = 0;
             tx_data_pdu_buffer_p->num_holes     = 0;
@@ -89,11 +86,11 @@ boolean_t rlc_am_nack_pdu (
     	      if(tx_data_pdu_buffer_p->nack_so_start >= tx_data_pdu_buffer_p->payload_size){
               LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[NACK-PDU] ERROR NACK MISSING PDU, nack_so_start %d, payload_size %d\n",
                     PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),tx_data_pdu_buffer_p->nack_so_start, tx_data_pdu_buffer_p->payload_size);
-    	        status = FALSE;
+              status = false;
     	      }
     	}
     	else {
-    		status = FALSE;
+        status = false;
     	}
     }
     else if (tx_data_pdu_buffer_p->flags.max_retransmit == 0) {
@@ -107,9 +104,8 @@ boolean_t rlc_am_nack_pdu (
 	    	if (prev_nack_snP != snP) {
 	    		/* New NACK_SN with SO */
                 /* check whether a new segment is to be placed in Retransmission Buffer, then increment vrReTx */
-                if ((tx_data_pdu_buffer_p->flags.retransmit == 0) || (so_startP < tx_data_pdu_buffer_p->nack_so_start)) {
-                	retx_count_increment = TRUE;
-                }
+                if ((tx_data_pdu_buffer_p->flags.retransmit == 0) || (so_startP < tx_data_pdu_buffer_p->nack_so_start))
+                  retx_count_increment = true;
 
 	            tx_data_pdu_buffer_p->num_holes     = 1;
 	            tx_data_pdu_buffer_p->retx_hole_index = 0;
@@ -129,21 +125,18 @@ boolean_t rlc_am_nack_pdu (
 		            tx_data_pdu_buffer_p->nack_so_stop = so_endP;
 		            tx_data_pdu_buffer_p->num_holes ++;
 		            pdu_data_to_retx = so_endP - so_startP + 1;
+          } else {
+            status = false;
 	    		}
-	    		else {
-	    			status = FALSE;
-	    		}
-	    	}
-	    	else {
-	    		status = FALSE;
+        } else {
+          status = false;
 	    	}
 		}
 		else {
-			status = FALSE;
+      status = false;
 		}
-    }
-    else {
-    	status = FALSE;
+    } else {
+      status = false;
     }
 
     if (status) {
@@ -175,17 +168,16 @@ boolean_t rlc_am_nack_pdu (
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[NACK-PDU] ERROR NACK MISSING PDU SN %05d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP);
-    status = FALSE;
+    status = false;
   }
 
   return status;
 }
 //-----------------------------------------------------------------------------
-void rlc_am_ack_pdu (
-  const protocol_ctxt_t* const  ctxt_pP,
-  rlc_am_entity_t *const rlc_pP,
-  const rlc_sn_t snP,
-  boolean_t free_pdu)
+void rlc_am_ack_pdu(const protocol_ctxt_t* const  ctxt_pP,
+                    rlc_am_entity_t *const rlc_pP,
+                    const rlc_sn_t snP,
+                    bool free_pdu)
 {
   mem_block_t* mb_p         = rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE].mem_block;
   rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer = &rlc_pP->tx_data_pdu_buffer[snP % RLC_AM_WINDOW_SIZE];
@@ -283,7 +275,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 	sdu_size_t     retx_so_start,retx_so_stop; //starting and ending SO for retransmission in this PDU
 	rlc_sn_t sn = pdu_mngt->sn;
 	uint16_t	header_so_part;
-	boolean_t fi_start, fi_end;
+	bool fi_start, fi_end;
 	uint8_t sdu_index = 0;
 	uint8_t sdu_segment_index = 0;
 	uint8_t num_LIs_pdu_segment = pdu_mngt->nb_sdus - 1;
@@ -377,11 +369,11 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		/* Set FI part to false if SO Start and SO End are different from PDU boundaries */
 		if (retx_so_start)
 		{
-			fi_start = FALSE;
+			fi_start = false;
 		}
 		if (retx_so_stop < pdu_mngt->payload_size - 1)
 		{
-			fi_end = FALSE;
+			fi_end = false;
 		}
 
 		/* Header content is filled at the end */
@@ -423,7 +415,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			else
 			{
 				/* if retx_so_start is still not included then set data_size with full original PDU data size */
-				/* Set fi_start to FALSE in this case */
+				/* Set fi_start to false in this case */
 				data_size = pdu_mngt->payload_size;
 			}
 			sdu_index ++;
@@ -432,7 +424,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		if (retx_so_start == data_size)
 		{
 			/* Set FI Start if retx_so_start = cumulated data size */
-			fi_start = TRUE;
+			fi_start = true;
 			/* there must be at least one SDU more */
 //Assertion(eNB)_PRAN_DesignDocument_annex No.778
             if(sdu_index >= pdu_mngt->nb_sdus)
@@ -464,8 +456,8 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 		}
 		else if (retx_so_start != 0)
 		{
-			/* in all other cases set fi_start to FALSE if it SO Start is not 0 */
-			fi_start = FALSE;
+			/* in all other cases set fi_start to false if it SO Start is not 0 */
+			fi_start = false;
 		}
 
 		/* Set first SDU portion of the segment */
@@ -582,10 +574,10 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 				"RLC AM Tx PDU Segment Data Error: retx_so_stop=%d OriginalPDUDataLength=%d SOStart=%d SegmentLength=%d numLISegment=%d numLIPDU=%d sn=%d LcId=%d !\n",
 				retx_so_stop,pdu_mngt->payload_size,retx_so_start,*payload_sizeP,num_LIs_pdu_segment,pdu_mngt->nb_sdus - 1,sn,rlc_pP->channel_id);
 */
-		/* init FI End to FALSE if retx_so_stop is not end of PDU */
+		/* init FI End to false if retx_so_stop is not end of PDU */
 		if (retx_so_stop != pdu_mngt->payload_size - 1)
 		{
-			fi_end = FALSE;
+			fi_end = false;
 		}
 
 		/* Check consistency between sdus_segment_size and payload_sizeP */
@@ -596,7 +588,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			data_size += sdus_segment_size[i];
 			if ((retx_so_stop == data_size - 1) && (i < num_LIs_pdu_segment))
 			{
-				fi_end = TRUE;
+				fi_end = true;
 			}
 		}
 //Assertion(eNB)_PRAN_DesignDocument_annex No.782
@@ -665,7 +657,7 @@ mem_block_t* rlc_am_retransmit_get_am_segment(
 			pdu_mngt->nack_so_start = pdu_mngt->hole_so_start[pdu_mngt->retx_hole_index];
 		}
 
-		/* Content is supposed to be init with 0 so with FIStart=FIEnd=TRUE */
+		/* Content is supposed to be init with 0 so with FIStart=FIEnd=true */
 		RLC_AM_PDU_SET_D_C(*pdu_segment_header_p);
 		RLC_AM_PDU_SET_RF(*pdu_segment_header_p);
 		/* Change FI */

@@ -127,7 +127,7 @@ int flexran_get_mac_ue_id_rnti(mid_t mod_id, rnti_t rnti) {
 
   /* get the (active) UE with RNTI i */
   for (n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
-    if (RC.mac[mod_id]->UE_info.active[n] == TRUE
+    if (RC.mac[mod_id]->UE_info.active[n] == true
         && rnti == UE_RNTI(mod_id, n)) {
       return n;
     }
@@ -143,7 +143,7 @@ int flexran_get_mac_ue_id(mid_t mod_id, int i) {
 
   /* get the (i+1)'th active UE */
   for (n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
-    if (RC.mac[mod_id]->UE_info.active[n] == TRUE) {
+    if (RC.mac[mod_id]->UE_info.active[n] == true) {
       if (i == 0)
         return n;
 
@@ -580,7 +580,7 @@ uint8_t flexran_get_n_SB(mid_t mod_id, uint8_t cc_id) {
 Protocol__FlexQam flexran_get_enable64QAM(mid_t mod_id, uint8_t cc_id) {
   if (!phy_is_present(mod_id, cc_id)) return 0;
 
-  if (RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.enable64QAM == TRUE)
+  if (RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.enable64QAM == true)
     return PROTOCOL__FLEX_QAM__FLEQ_MOD_64QAM;
   else
     return PROTOCOL__FLEX_QAM__FLEQ_MOD_16QAM;
@@ -3585,7 +3585,7 @@ int flexran_set_new_plmn_id(mid_t mod_id, int CC_id, size_t n_plmn, Protocol__Fl
                          int CC_id,
                          BOOLEAN_t brOption,
                          RrcConfigurationReq *configuration);
-  carrier->sizeof_SIB1 = do_SIB1(carrier, mod_id, CC_id, FALSE, conf);
+  carrier->sizeof_SIB1 = do_SIB1(carrier, mod_id, CC_id, false, conf);
   if (carrier->sizeof_SIB1 < 0)
     return -1337; /* SIB1 encoding failed, hell will probably break loose */
 
