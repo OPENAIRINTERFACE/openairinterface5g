@@ -243,7 +243,7 @@ typedef struct {
 typedef struct {
   uint8_t **k_0_p;
   uint8_t srs_generated_signal_bits;
-  int32_t srs_generated_signal[OFDM_SYMBOL_SIZE_SAMPLES_MAX * MAX_NUM_NR_SRS_SYMBOLS];
+  int32_t **srs_generated_signal;
 } nr_srs_info_t;
 
 typedef struct {
