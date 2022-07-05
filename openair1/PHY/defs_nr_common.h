@@ -241,7 +241,7 @@ typedef struct {
 } NR_PRACH_RESOURCES_t;
 
 typedef struct {
-  uint8_t **k_0_p;
+  uint8_t k_0_p[MAX_NUM_NR_SRS_AP][MAX_NUM_NR_SRS_SYMBOLS];
   uint8_t srs_generated_signal_bits;
   int32_t **srs_generated_signal;
 } nr_srs_info_t;
