@@ -358,12 +358,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
         AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
       }
     }
-    ue->nr_csi_rs_info->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
-    ue->nr_csi_rs_info->rank_indicator = (uint8_t*)malloc16_clear(sizeof(uint8_t));
-    ue->nr_csi_rs_info->i1 = (uint8_t*)malloc16_clear(3*sizeof(uint8_t));
-    ue->nr_csi_rs_info->i2 = (uint8_t*)malloc16_clear(sizeof(uint8_t));
-    ue->nr_csi_rs_info->precoded_sinr_dB = (uint32_t*)malloc16_clear(sizeof(uint32_t));
-    ue->nr_csi_rs_info->cqi = (uint8_t*)malloc16_clear(sizeof(uint8_t));
     ue->nr_csi_rs_info->csi_rs_generated_signal = (int32_t **)malloc16(NR_MAX_NB_PORTS * sizeof(int32_t *) );
     for (i=0; i<NR_MAX_NB_PORTS; i++) {
       ue->nr_csi_rs_info->csi_rs_generated_signal[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
@@ -497,7 +491,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
     }
 
@@ -519,17 +512,7 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       }
       free_and_zero(ue->nr_csi_rs_info->nr_gold_csi_rs[slot]);
     }
-    free_and_zero(ue->nr_csi_rs_info->noise_power);
-    free_and_zero(ue->nr_csi_rs_info->rank_indicator);
-    free_and_zero(ue->nr_csi_rs_info->i1);
-    free_and_zero(ue->nr_csi_rs_info->i2);
-    free_and_zero(ue->nr_csi_rs_info->precoded_sinr_dB);
-    free_and_zero(ue->nr_csi_rs_info->cqi);
     free_and_zero(ue->nr_csi_rs_info->nr_gold_csi_rs);
-    free_and_zero(ue->nr_csi_rs_info->csi_rs_generated_signal);
-    free_and_zero(ue->nr_csi_rs_info->csi_rs_received_signal);
-    free_and_zero(ue->nr_csi_rs_info->csi_rs_ls_estimated_channel);
-    free_and_zero(ue->nr_csi_rs_info->csi_rs_estimated_channel_freq);
     free_and_zero(ue->nr_csi_rs_info);
 
     free_and_zero(ue->nr_csi_im_info);

@@ -48,10 +48,10 @@ typedef struct {
 } fapi_nr_uci_pdu_rel15_t;
 
 typedef struct {
-  uint8_t *rank_indicator;
-  uint8_t *i1;
-  uint8_t *i2;
-  uint8_t *cqi;
+  uint8_t rank_indicator;
+  uint8_t i1;
+  uint8_t i2;
+  uint8_t cqi;
 } fapi_nr_csirs_measurements_t;
 
 typedef struct {
