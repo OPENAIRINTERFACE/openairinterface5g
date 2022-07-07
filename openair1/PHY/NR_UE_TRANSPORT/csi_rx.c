@@ -178,13 +178,12 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          const UE_nr_rxtx_proc_t *proc,
                          const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                          const nr_csi_rs_info_t *nr_csi_rs_info,
-                         int32_t **csi_rs_received_signal) {
+                         int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int32_t **rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   for (int ant_rx = 0; ant_rx < frame_parms->nb_antennas_rx; ant_rx++) {
-    memset(csi_rs_received_signal[ant_rx], 0, frame_parms->samples_per_frame_wCP*sizeof(int32_t));
 
     for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
 
@@ -254,7 +253,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
                                  const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                                  const nr_csi_rs_info_t *nr_csi_rs_info,
                                  const int32_t **csi_rs_generated_signal,
-                                 const int32_t **csi_rs_received_signal,
+                                 const int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP],
                                  int32_t ***csi_rs_ls_estimated_channel,
                                  int32_t ***csi_rs_estimated_channel_freq,
                                  int16_t *log2_re,
@@ -811,6 +810,9 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   LOG_I(NR_PHY, "csirs_config_pdu->power_control_offset_ss = %i\n", csirs_config_pdu->power_control_offset_ss);
 #endif
 
+  const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  int32_t csi_rs_received_signal[frame_parms->nb_antennas_rx][frame_parms->samples_per_slot_wCP];
+
   int16_t log2_re = 0;
   int16_t log2_maxh = 0;
   uint32_t noise_power = 0;
@@ -820,7 +822,7 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   uint8_t i1[3];
   uint8_t i2[1];
 
-  nr_generate_csi_rs(ue->frame_parms,
+  nr_generate_csi_rs(frame_parms,
                      ue->nr_csi_rs_info->csi_rs_generated_signal,
                      AMP,
                      ue->nr_csi_rs_info,
@@ -831,14 +833,14 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                        proc,
                        csirs_config_pdu,
                        ue->nr_csi_rs_info,
-                       ue->nr_csi_rs_info->csi_rs_received_signal);
+                       csi_rs_received_signal);
 
   nr_csi_rs_channel_estimation(ue,
                                proc,
                                csirs_config_pdu,
                                ue->nr_csi_rs_info,
                                (const int32_t **) ue->nr_csi_rs_info->csi_rs_generated_signal,
-                               (const int32_t **) ue->nr_csi_rs_info->csi_rs_received_signal,
+                               csi_rs_received_signal,
                                ue->nr_csi_rs_info->csi_rs_ls_estimated_channel,
                                ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
                                &log2_re,
