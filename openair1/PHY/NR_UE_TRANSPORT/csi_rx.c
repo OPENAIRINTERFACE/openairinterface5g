@@ -178,6 +178,10 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          const UE_nr_rxtx_proc_t *proc,
                          const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                          const nr_csi_rs_info_t *nr_csi_rs_info,
+                         const uint8_t N_cdm_groups,
+                         const uint8_t CDM_group_size,
+                         const uint8_t k_prime,
+                         const uint8_t l_prime,
                          int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int32_t **rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
@@ -192,16 +196,16 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
         continue;
       }
 
-      for (int cdm_id = 0; cdm_id < nr_csi_rs_info->N_cdm_groups; cdm_id++) {
-        for (int s = 0; s < nr_csi_rs_info->CDM_group_size; s++)  {
+      for (int cdm_id = 0; cdm_id < N_cdm_groups; cdm_id++) {
+        for (int s = 0; s < CDM_group_size; s++)  {
 
           // loop over frequency resource elements within a group
-          for (int kp = 0; kp <= nr_csi_rs_info->kprime; kp++) {
+          for (int kp = 0; kp <= k_prime; kp++) {
 
             uint16_t k = (frame_parms->first_carrier_offset + (rb*NR_NB_SC_PER_RB)+nr_csi_rs_info->koverline[cdm_id] + kp) % frame_parms->ofdm_symbol_size;
 
             // loop over time resource elements within a group
-            for (int lp = 0; lp <= nr_csi_rs_info->lprime; lp++) {
+            for (int lp = 0; lp <= l_prime; lp++) {
               uint16_t symb = lp + nr_csi_rs_info->loverline[cdm_id];
               uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
               c16_t *rx_signal = (c16_t*)&rxdataF[ant_rx][symbol_offset];
@@ -211,7 +215,7 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
 
 #ifdef NR_CSIRS_DEBUG
               int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
-              uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*nr_csi_rs_info->CDM_group_size;
+              uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*CDM_group_size;
               c16_t *tx_csi_rs_signal = (c16_t*)&nr_csi_rs_info->csi_rs_generated_signal[port_tx][symbol_offset+dataF_offset];
               LOG_I(NR_PHY, "l,k (%2d,%4d) |\tport_tx %d (%4d,%4d)\tant_rx %d (%4d,%4d)\n",
                     symb,
@@ -254,8 +258,13 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
                                  const nr_csi_rs_info_t *nr_csi_rs_info,
                                  const int32_t **csi_rs_generated_signal,
                                  const int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP],
-                                 int32_t csi_rs_ls_estimated_channel[][ue->nr_csi_rs_info->N_ports][ue->frame_parms.ofdm_symbol_size],
-                                 int32_t csi_rs_estimated_channel_freq[][ue->nr_csi_rs_info->N_ports][ue->frame_parms.ofdm_symbol_size],
+                                 const uint8_t N_cdm_groups,
+                                 const uint8_t CDM_group_size,
+                                 const uint8_t k_prime,
+                                 const uint8_t l_prime,
+                                 const uint8_t N_ports,
+                                 int32_t csi_rs_ls_estimated_channel[][N_ports][ue->frame_parms.ofdm_symbol_size],
+                                 int32_t csi_rs_estimated_channel_freq[][N_ports][ue->frame_parms.ofdm_symbol_size],
                                  int16_t *log2_re,
                                  int16_t *log2_maxh,
                                  uint32_t *noise_power) {
@@ -270,7 +279,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
 
     /// LS channel estimation
 
-    for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+    for(uint16_t port_tx = 0; port_tx<N_ports; port_tx++) {
       memset(csi_rs_ls_estimated_channel[ant_rx][port_tx], 0, frame_parms->ofdm_symbol_size*sizeof(int32_t));
     }
 
@@ -281,19 +290,19 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
         continue;
       }
 
-      for (int cdm_id = 0; cdm_id < nr_csi_rs_info->N_cdm_groups; cdm_id++) {
-        for (int s = 0; s < nr_csi_rs_info->CDM_group_size; s++)  {
+      for (int cdm_id = 0; cdm_id < N_cdm_groups; cdm_id++) {
+        for (int s = 0; s < CDM_group_size; s++)  {
 
-          uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*nr_csi_rs_info->CDM_group_size;
+          uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*CDM_group_size;
 
           // loop over frequency resource elements within a group
-          for (int kp = 0; kp <= nr_csi_rs_info->kprime; kp++) {
+          for (int kp = 0; kp <= k_prime; kp++) {
 
             uint16_t kinit = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
             uint16_t k = kinit + nr_csi_rs_info->koverline[cdm_id] + kp;
 
             // loop over time resource elements within a group
-            for (int lp = 0; lp <= nr_csi_rs_info->lprime; lp++) {
+            for (int lp = 0; lp <= l_prime; lp++) {
               uint16_t symb = lp + nr_csi_rs_info->loverline[cdm_id];
               uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
               c16_t *tx_csi_rs_signal = (c16_t*)&csi_rs_generated_signal[port_tx][symbol_offset+dataF_offset];
@@ -320,7 +329,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
       }
       for(int k = 0; k<frame_parms->ofdm_symbol_size; k++) {
         LOG_I(NR_PHY, "l,k (%2d,%4d) | ", symb, k);
-        for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+        for(uint16_t port_tx = 0; port_tx<N_ports; port_tx++) {
           uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
           c16_t *tx_csi_rs_signal = (c16_t*)&csi_rs_generated_signal[port_tx][symbol_offset+dataF_offset];
           c16_t *rx_csi_rs_signal = (c16_t*)&csi_rs_received_signal[ant_rx][symbol_offset];
@@ -338,7 +347,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
 
     /// Channel interpolation
 
-    for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+    for(uint16_t port_tx = 0; port_tx<N_ports; port_tx++) {
       memset(csi_rs_estimated_channel_freq[ant_rx][port_tx], 0, frame_parms->ofdm_symbol_size*sizeof(int32_t));
     }
 
@@ -352,7 +361,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
       count++;
 
       uint16_t k = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
-      for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+      for(uint16_t port_tx = 0; port_tx<N_ports; port_tx++) {
         int16_t *csi_rs_ls_estimated_channel16 = (int16_t*)&csi_rs_ls_estimated_channel[ant_rx][port_tx][k];
         int16_t *csi_rs_estimated_channel16 = (int16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][k];
         if( (k == 0) || (k == frame_parms->first_carrier_offset) ) { // Start of OFDM symbol case or first occupied subcarrier case
@@ -367,14 +376,14 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
     }
 
     /// Power noise estimation
-    uint16_t noise_real[frame_parms->nb_antennas_rx][nr_csi_rs_info->N_ports][csirs_config_pdu->nr_of_rbs];
-    uint16_t noise_imag[frame_parms->nb_antennas_rx][nr_csi_rs_info->N_ports][csirs_config_pdu->nr_of_rbs];
+    uint16_t noise_real[frame_parms->nb_antennas_rx][N_ports][csirs_config_pdu->nr_of_rbs];
+    uint16_t noise_imag[frame_parms->nb_antennas_rx][N_ports][csirs_config_pdu->nr_of_rbs];
     for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
       if (csirs_config_pdu->freq_density <= 1 && csirs_config_pdu->freq_density != (rb % 2)) {
         continue;
       }
       uint16_t k = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
-      for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+      for(uint16_t port_tx = 0; port_tx<N_ports; port_tx++) {
         c16_t *csi_rs_ls_estimated_channel16 = (c16_t*)&csi_rs_ls_estimated_channel[ant_rx][port_tx][k];
         c16_t *csi_rs_estimated_channel16 = (c16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][k];
         noise_real[ant_rx][port_tx][rb-csirs_config_pdu->start_rb] = abs(csi_rs_ls_estimated_channel16->r-csi_rs_estimated_channel16->r);
@@ -382,7 +391,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
         maxh = cmax3(maxh, abs(csi_rs_estimated_channel16->r), abs(csi_rs_estimated_channel16->i));
       }
     }
-    for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+    for(uint16_t port_tx = 0; port_tx<N_ports; port_tx++) {
       *noise_power += (calc_power_csirs(noise_real[ant_rx][port_tx], csirs_config_pdu) + calc_power_csirs(noise_imag[ant_rx][port_tx],csirs_config_pdu));
     }
 
@@ -392,7 +401,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
                (k - frame_parms->first_carrier_offset)/NR_NB_SC_PER_RB :
                (k + frame_parms->ofdm_symbol_size - frame_parms->first_carrier_offset)/NR_NB_SC_PER_RB;
       LOG_I(NR_PHY, "(k = %4d) |\t", k);
-      for(uint16_t port_tx = 0; port_tx<nr_csi_rs_info->N_ports; port_tx++) {
+      for(uint16_t port_tx = 0; port_tx<N_ports; port_tx++) {
         c16_t *csi_rs_ls_estimated_channel16 = (c16_t*)&csi_rs_ls_estimated_channel[ant_rx][port_tx][0];
         c16_t *csi_rs_estimated_channel16 = (c16_t *)&csi_rs_estimated_channel_freq[ant_rx][port_tx][0];
         printf("Channel port_tx %d --> ant_rx %d : ls (%4d,%4d), int (%4d,%4d), noise (%4d,%4d) | ",
@@ -408,7 +417,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
 
   }
 
-  *noise_power /= (frame_parms->nb_antennas_rx*nr_csi_rs_info->N_ports);
+  *noise_power /= (frame_parms->nb_antennas_rx*N_ports);
   *log2_maxh = log2_approx(maxh-1);
   *log2_re = log2_approx(count-1);
 
@@ -422,7 +431,8 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
 int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
                             const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                             const nr_csi_rs_info_t *nr_csi_rs_info,
-                            int32_t csi_rs_estimated_channel_freq[][ue->nr_csi_rs_info->N_ports][ue->frame_parms.ofdm_symbol_size],
+                            const uint8_t N_ports,
+                            int32_t csi_rs_estimated_channel_freq[][N_ports][ue->frame_parms.ofdm_symbol_size],
                             const int16_t log2_maxh,
                             uint8_t *rank_indicator) {
 
@@ -431,11 +441,11 @@ int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
   int count = 0;
   *rank_indicator = 0;
 
-  if (ue->frame_parms.nb_antennas_rx == 1 || ue->nr_csi_rs_info->N_ports == 1) {
+  if (ue->frame_parms.nb_antennas_rx == 1 || N_ports == 1) {
     return 0;
-  } else if( !(ue->frame_parms.nb_antennas_rx == 2 && ue->nr_csi_rs_info->N_ports == 2) ) {
+  } else if( !(ue->frame_parms.nb_antennas_rx == 2 && N_ports == 2) ) {
     LOG_W(NR_PHY, "Rank indicator computation is not implemented for %i x %i system\n",
-          ue->frame_parms.nb_antennas_rx, ue->nr_csi_rs_info->N_ports);
+          ue->frame_parms.nb_antennas_rx, N_ports);
     return -1;
   }
 
@@ -444,9 +454,9 @@ int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
   *            | conjch01 conjch11 |   | ch10 ch11 |   | conjch01*ch00+conjch11*ch10 conjch01*ch01+conjch11*ch11 |
   */
 
-  int32_t csi_rs_estimated_conjch_ch[frame_parms->nb_antennas_rx][nr_csi_rs_info->N_ports][frame_parms->nb_antennas_rx][nr_csi_rs_info->N_ports][frame_parms->ofdm_symbol_size] __attribute__((aligned(32)));
-  int32_t csi_rs_estimated_A_MF[nr_csi_rs_info->N_ports][nr_csi_rs_info->N_ports][frame_parms->ofdm_symbol_size] __attribute__((aligned(32)));
-  int32_t csi_rs_estimated_A_MF_sq[nr_csi_rs_info->N_ports][nr_csi_rs_info->N_ports][frame_parms->ofdm_symbol_size] __attribute__((aligned(32)));
+  int32_t csi_rs_estimated_conjch_ch[frame_parms->nb_antennas_rx][N_ports][frame_parms->nb_antennas_rx][N_ports][frame_parms->ofdm_symbol_size] __attribute__((aligned(32)));
+  int32_t csi_rs_estimated_A_MF[N_ports][N_ports][frame_parms->ofdm_symbol_size] __attribute__((aligned(32)));
+  int32_t csi_rs_estimated_A_MF_sq[N_ports][N_ports][frame_parms->ofdm_symbol_size] __attribute__((aligned(32)));
   int32_t csi_rs_estimated_determ_fin[frame_parms->ofdm_symbol_size] __attribute__((aligned(32)));
   int32_t csi_rs_estimated_numer_fin[frame_parms->ofdm_symbol_size] __attribute__((aligned(32)));
 
@@ -460,9 +470,9 @@ int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
     uint16_t k = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
 
     for (int ant_rx_conjch = 0; ant_rx_conjch < frame_parms->nb_antennas_rx; ant_rx_conjch++) {
-      for(uint16_t port_tx_conjch = 0; port_tx_conjch < nr_csi_rs_info->N_ports; port_tx_conjch++) {
+      for(uint16_t port_tx_conjch = 0; port_tx_conjch < N_ports; port_tx_conjch++) {
         for (int ant_rx_ch = 0; ant_rx_ch < frame_parms->nb_antennas_rx; ant_rx_ch++) {
-          for(uint16_t port_tx_ch = 0; port_tx_ch < nr_csi_rs_info->N_ports; port_tx_ch++) {
+          for(uint16_t port_tx_ch = 0; port_tx_ch < N_ports; port_tx_ch++) {
 
             // conjch x ch computation
             nr_conjch0_mult_ch1(&csi_rs_estimated_channel_freq[ant_rx_conjch][port_tx_conjch][k],
@@ -503,8 +513,8 @@ int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
                  1);
 
 #ifdef NR_CSIRS_DEBUG
-    for(uint16_t port_tx_conjch = 0; port_tx_conjch < nr_csi_rs_info->N_ports; port_tx_conjch++) {
-      for(uint16_t port_tx_ch = 0; port_tx_ch < nr_csi_rs_info->N_ports; port_tx_ch++) {
+    for(uint16_t port_tx_conjch = 0; port_tx_conjch < N_ports; port_tx_conjch++) {
+      for(uint16_t port_tx_ch = 0; port_tx_ch < N_ports; port_tx_ch++) {
         c16_t *csi_rs_estimated_A_MF_k = (c16_t *) &csi_rs_estimated_A_MF[port_tx_conjch][port_tx_ch][k];
         LOG_I(NR_PHY, "(%i) csi_rs_estimated_A_MF[%i][%i] = (%i, %i)\n",
               k, port_tx_conjch, port_tx_ch, csi_rs_estimated_A_MF_k->r, csi_rs_estimated_A_MF_k->i);
@@ -553,7 +563,8 @@ int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
 int nr_csi_rs_pmi_estimation(const PHY_VARS_NR_UE *ue,
                              const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                              const nr_csi_rs_info_t *nr_csi_rs_info,
-                             const int32_t csi_rs_estimated_channel_freq[][ue->nr_csi_rs_info->N_ports][ue->frame_parms.ofdm_symbol_size],
+                             const uint8_t N_ports,
+                             const int32_t csi_rs_estimated_channel_freq[][N_ports][ue->frame_parms.ofdm_symbol_size],
                              const uint32_t interference_plus_noise_power,
                              const uint8_t rank_indicator,
                              const int16_t log2_re,
@@ -574,7 +585,7 @@ int nr_csi_rs_pmi_estimation(const PHY_VARS_NR_UE *ue,
   // The first column is applicable if the UE is reporting a Rank = 1, whereas the second column is applicable if the
   // UE is reporting a Rank = 2.
 
-  if(nr_csi_rs_info->N_ports == 1 || interference_plus_noise_power == 0) {
+  if(N_ports == 1 || interference_plus_noise_power == 0) {
     return 0;
   }
 
@@ -812,6 +823,11 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int32_t csi_rs_received_signal[frame_parms->nb_antennas_rx][frame_parms->samples_per_slot_wCP];
+  uint8_t N_cdm_groups = 0;
+  uint8_t CDM_group_size = 0;
+  uint8_t k_prime = 0;
+  uint8_t l_prime = 0;
+  uint8_t N_ports = 0;
   int16_t log2_re = 0;
   int16_t log2_maxh = 0;
   uint32_t noise_power = 0;
@@ -826,15 +842,24 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                      AMP,
                      ue->nr_csi_rs_info,
                      (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *) csirs_config_pdu,
-                     proc->nr_slot_rx);
+                     proc->nr_slot_rx,
+                     &N_cdm_groups,
+                     &CDM_group_size,
+                     &k_prime,
+                     &l_prime,
+                     &N_ports);
 
-  int32_t csi_rs_ls_estimated_channel[frame_parms->nb_antennas_rx][ue->nr_csi_rs_info->N_ports][frame_parms->ofdm_symbol_size];
-  int32_t csi_rs_estimated_channel_freq[frame_parms->nb_antennas_rx][ue->nr_csi_rs_info->N_ports][frame_parms->ofdm_symbol_size];
+  int32_t csi_rs_ls_estimated_channel[frame_parms->nb_antennas_rx][N_ports][frame_parms->ofdm_symbol_size];
+  int32_t csi_rs_estimated_channel_freq[frame_parms->nb_antennas_rx][N_ports][frame_parms->ofdm_symbol_size];
 
   nr_get_csi_rs_signal(ue,
                        proc,
                        csirs_config_pdu,
                        ue->nr_csi_rs_info,
+                       N_cdm_groups,
+                       CDM_group_size,
+                       k_prime,
+                       l_prime,
                        csi_rs_received_signal);
 
   nr_csi_rs_channel_estimation(ue,
@@ -843,6 +868,11 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                                ue->nr_csi_rs_info,
                                (const int32_t **) ue->nr_csi_rs_info->csi_rs_generated_signal,
                                csi_rs_received_signal,
+                               N_cdm_groups,
+                               CDM_group_size,
+                               k_prime,
+                               l_prime,
+                               N_ports,
                                csi_rs_ls_estimated_channel,
                                csi_rs_estimated_channel_freq,
                                &log2_re,
@@ -852,6 +882,7 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   nr_csi_rs_ri_estimation(ue,
                           csirs_config_pdu,
                           ue->nr_csi_rs_info,
+                          N_ports,
                           csi_rs_estimated_channel_freq,
                           log2_maxh,
                           &rank_indicator);
@@ -859,6 +890,7 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   nr_csi_rs_pmi_estimation(ue,
                            csirs_config_pdu,
                            ue->nr_csi_rs_info,
+                           N_ports,
                            csi_rs_estimated_channel_freq,
                            ue->nr_csi_im_info->meas_computed ? ue->nr_csi_im_info->interference_plus_noise_power : noise_power,
                            rank_indicator,

@@ -339,10 +339,15 @@ uint8_t get_nr_prach_duration(uint8_t prach_format);
 
 void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
                         int32_t **dataF,
-                        int16_t amp,
+                        const int16_t amp,
                         nr_csi_rs_info_t *nr_csi_rs_info,
-                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
-                        int slot);
+                        const nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
+                        const int slot,
+                        uint8_t *N_cdm_groups,
+                        uint8_t *CDM_group_size,
+                        uint8_t *k_prime,
+                        uint8_t *l_prime,
+                        uint8_t *N_ports);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 

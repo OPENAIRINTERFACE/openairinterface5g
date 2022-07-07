@@ -254,11 +254,6 @@ typedef struct {
 } nr_srs_info_t;
 
 typedef struct {
-  uint8_t N_cdm_groups;
-  uint8_t CDM_group_size;
-  uint8_t kprime;
-  uint8_t lprime;
-  uint8_t N_ports;
   uint8_t j[16];
   uint8_t koverline[16];
   uint8_t loverline[16];
