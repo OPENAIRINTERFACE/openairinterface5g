@@ -254,9 +254,6 @@ typedef struct {
 } nr_srs_info_t;
 
 typedef struct {
-  uint8_t j[16];
-  uint8_t koverline[16];
-  uint8_t loverline[16];
   uint16_t csi_gold_init;
   uint32_t ***nr_gold_csi_rs;
   uint8_t csi_rs_generated_signal_bits;

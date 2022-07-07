@@ -347,7 +347,10 @@ void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
                         uint8_t *CDM_group_size,
                         uint8_t *k_prime,
                         uint8_t *l_prime,
-                        uint8_t *N_ports);
+                        uint8_t *N_ports,
+                        uint8_t *j_cdm,
+                        uint8_t *k_overline,
+                        uint8_t *l_overline);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 

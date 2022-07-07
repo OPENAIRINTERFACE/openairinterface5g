@@ -182,6 +182,9 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          const uint8_t CDM_group_size,
                          const uint8_t k_prime,
                          const uint8_t l_prime,
+                         const uint8_t *j_cdm,
+                         const uint8_t *k_overline,
+                         const uint8_t *l_overline,
                          int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int32_t **rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
@@ -202,11 +205,11 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
           // loop over frequency resource elements within a group
           for (int kp = 0; kp <= k_prime; kp++) {
 
-            uint16_t k = (frame_parms->first_carrier_offset + (rb*NR_NB_SC_PER_RB)+nr_csi_rs_info->koverline[cdm_id] + kp) % frame_parms->ofdm_symbol_size;
+            uint16_t k = (frame_parms->first_carrier_offset + (rb*NR_NB_SC_PER_RB)+k_overline[cdm_id] + kp) % frame_parms->ofdm_symbol_size;
 
             // loop over time resource elements within a group
             for (int lp = 0; lp <= l_prime; lp++) {
-              uint16_t symb = lp + nr_csi_rs_info->loverline[cdm_id];
+              uint16_t symb = lp + l_overline[cdm_id];
               uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
               c16_t *rx_signal = (c16_t*)&rxdataF[ant_rx][symbol_offset];
               c16_t *rx_csi_rs_signal = (c16_t*)&csi_rs_received_signal[ant_rx][symbol_offset];
@@ -215,7 +218,7 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
 
 #ifdef NR_CSIRS_DEBUG
               int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
-              uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*CDM_group_size;
+              uint16_t port_tx = s+j_cdm[cdm_id]*CDM_group_size;
               c16_t *tx_csi_rs_signal = (c16_t*)&nr_csi_rs_info->csi_rs_generated_signal[port_tx][symbol_offset+dataF_offset];
               LOG_I(NR_PHY, "l,k (%2d,%4d) |\tport_tx %d (%4d,%4d)\tant_rx %d (%4d,%4d)\n",
                     symb,
@@ -263,6 +266,9 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
                                  const uint8_t k_prime,
                                  const uint8_t l_prime,
                                  const uint8_t N_ports,
+                                 const uint8_t *j_cdm,
+                                 const uint8_t *k_overline,
+                                 const uint8_t *l_overline,
                                  int32_t csi_rs_ls_estimated_channel[][N_ports][ue->frame_parms.ofdm_symbol_size],
                                  int32_t csi_rs_estimated_channel_freq[][N_ports][ue->frame_parms.ofdm_symbol_size],
                                  int16_t *log2_re,
@@ -293,17 +299,17 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
       for (int cdm_id = 0; cdm_id < N_cdm_groups; cdm_id++) {
         for (int s = 0; s < CDM_group_size; s++)  {
 
-          uint16_t port_tx = s+nr_csi_rs_info->j[cdm_id]*CDM_group_size;
+          uint16_t port_tx = s+j_cdm[cdm_id]*CDM_group_size;
 
           // loop over frequency resource elements within a group
           for (int kp = 0; kp <= k_prime; kp++) {
 
             uint16_t kinit = (frame_parms->first_carrier_offset + rb*NR_NB_SC_PER_RB) % frame_parms->ofdm_symbol_size;
-            uint16_t k = kinit + nr_csi_rs_info->koverline[cdm_id] + kp;
+            uint16_t k = kinit + k_overline[cdm_id] + kp;
 
             // loop over time resource elements within a group
             for (int lp = 0; lp <= l_prime; lp++) {
-              uint16_t symb = lp + nr_csi_rs_info->loverline[cdm_id];
+              uint16_t symb = lp + l_overline[cdm_id];
               uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
               c16_t *tx_csi_rs_signal = (c16_t*)&csi_rs_generated_signal[port_tx][symbol_offset+dataF_offset];
               c16_t *rx_csi_rs_signal = (c16_t*)&csi_rs_received_signal[ant_rx][symbol_offset];
@@ -828,6 +834,9 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   uint8_t k_prime = 0;
   uint8_t l_prime = 0;
   uint8_t N_ports = 0;
+  uint8_t j_cdm[16];
+  uint8_t k_overline[16];
+  uint8_t l_overline[16];
   int16_t log2_re = 0;
   int16_t log2_maxh = 0;
   uint32_t noise_power = 0;
@@ -847,7 +856,10 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                      &CDM_group_size,
                      &k_prime,
                      &l_prime,
-                     &N_ports);
+                     &N_ports,
+                     j_cdm,
+                     k_overline,
+                     l_overline);
 
   int32_t csi_rs_ls_estimated_channel[frame_parms->nb_antennas_rx][N_ports][frame_parms->ofdm_symbol_size];
   int32_t csi_rs_estimated_channel_freq[frame_parms->nb_antennas_rx][N_ports][frame_parms->ofdm_symbol_size];
@@ -860,6 +872,9 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                        CDM_group_size,
                        k_prime,
                        l_prime,
+                       j_cdm,
+                       k_overline,
+                       l_overline,
                        csi_rs_received_signal);
 
   nr_csi_rs_channel_estimation(ue,
@@ -873,6 +888,9 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                                k_prime,
                                l_prime,
                                N_ports,
+                               j_cdm,
+                               k_overline,
+                               l_overline,
                                csi_rs_ls_estimated_channel,
                                csi_rs_estimated_channel_freq,
                                &log2_re,

@@ -53,7 +53,10 @@ void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
                         uint8_t *CDM_group_size,
                         uint8_t *k_prime,
                         uint8_t *l_prime,
-                        uint8_t *N_ports) {
+                        uint8_t *N_ports,
+                        uint8_t *j_cdm,
+                        uint8_t *k_overline,
+                        uint8_t *l_overline) {
 
 #ifdef NR_CSIRS_DEBUG
   LOG_I(NR_PHY, "csi_params->subcarrier_spacing = %i\n", csi_params->subcarrier_spacing);
@@ -648,9 +651,9 @@ void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
   if (k_prime) *k_prime = kprime;
   if (l_prime) *l_prime = lprime;
   if (N_ports) *N_ports = ports;
-  memcpy(nr_csi_rs_info->j,j,16*sizeof(uint8_t));
-  memcpy(nr_csi_rs_info->koverline,koverline,16*sizeof(uint8_t));
-  memcpy(nr_csi_rs_info->loverline,loverline,16*sizeof(uint8_t));
+  if (j_cdm) memcpy(j_cdm,j,16*sizeof(uint8_t));
+  if (k_overline) memcpy(k_overline,koverline,16*sizeof(uint8_t));
+  if (l_overline) memcpy(l_overline,loverline,16*sizeof(uint8_t));
 
 #ifdef NR_CSIRS_DEBUG
   if (N_ports) LOG_I(NR_PHY, "nr_csi_rs_info->N_ports = %d\n", *N_ports);
@@ -660,7 +663,7 @@ void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
   if (l_prime) LOG_I(NR_PHY, "nr_csi_rs_info->lprime = %d\n", *l_prime);
   if (N_cdm_groups) {
     for(int ji=0; ji<*N_cdm_groups; ji++) {
-      LOG_I(NR_PHY, "(CDM group %d) j = %d, koverline = %d, loverline = %d\n", ji, nr_csi_rs_info->j[ji], nr_csi_rs_info->koverline[ji], nr_csi_rs_info->loverline[ji]);
+      LOG_I(NR_PHY, "(CDM group %d) j = %d, koverline = %d, loverline = %d\n", ji, j[ji], koverline[ji], loverline[ji]);
     }
   }
 #endif
