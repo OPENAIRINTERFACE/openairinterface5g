@@ -254,8 +254,8 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
                                  const nr_csi_rs_info_t *nr_csi_rs_info,
                                  const int32_t **csi_rs_generated_signal,
                                  const int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP],
-                                 int32_t ***csi_rs_ls_estimated_channel,
-                                 int32_t ***csi_rs_estimated_channel_freq,
+                                 int32_t csi_rs_ls_estimated_channel[][ue->nr_csi_rs_info->N_ports][ue->frame_parms.ofdm_symbol_size],
+                                 int32_t csi_rs_estimated_channel_freq[][ue->nr_csi_rs_info->N_ports][ue->frame_parms.ofdm_symbol_size],
                                  int16_t *log2_re,
                                  int16_t *log2_maxh,
                                  uint32_t *noise_power) {
@@ -422,7 +422,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
 int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
                             const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                             const nr_csi_rs_info_t *nr_csi_rs_info,
-                            int32_t ***csi_rs_estimated_channel_freq,
+                            int32_t csi_rs_estimated_channel_freq[][ue->nr_csi_rs_info->N_ports][ue->frame_parms.ofdm_symbol_size],
                             const int16_t log2_maxh,
                             uint8_t *rank_indicator) {
 
@@ -553,7 +553,7 @@ int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
 int nr_csi_rs_pmi_estimation(const PHY_VARS_NR_UE *ue,
                              const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
                              const nr_csi_rs_info_t *nr_csi_rs_info,
-                             const int32_t ***csi_rs_estimated_channel_freq,
+                             const int32_t csi_rs_estimated_channel_freq[][ue->nr_csi_rs_info->N_ports][ue->frame_parms.ofdm_symbol_size],
                              const uint32_t interference_plus_noise_power,
                              const uint8_t rank_indicator,
                              const int16_t log2_re,
@@ -812,7 +812,6 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int32_t csi_rs_received_signal[frame_parms->nb_antennas_rx][frame_parms->samples_per_slot_wCP];
-
   int16_t log2_re = 0;
   int16_t log2_maxh = 0;
   uint32_t noise_power = 0;
@@ -829,6 +828,9 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                      (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *) csirs_config_pdu,
                      proc->nr_slot_rx);
 
+  int32_t csi_rs_ls_estimated_channel[frame_parms->nb_antennas_rx][ue->nr_csi_rs_info->N_ports][frame_parms->ofdm_symbol_size];
+  int32_t csi_rs_estimated_channel_freq[frame_parms->nb_antennas_rx][ue->nr_csi_rs_info->N_ports][frame_parms->ofdm_symbol_size];
+
   nr_get_csi_rs_signal(ue,
                        proc,
                        csirs_config_pdu,
@@ -841,8 +843,8 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                                ue->nr_csi_rs_info,
                                (const int32_t **) ue->nr_csi_rs_info->csi_rs_generated_signal,
                                csi_rs_received_signal,
-                               ue->nr_csi_rs_info->csi_rs_ls_estimated_channel,
-                               ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
+                               csi_rs_ls_estimated_channel,
+                               csi_rs_estimated_channel_freq,
                                &log2_re,
                                &log2_maxh,
                                &noise_power);
@@ -850,14 +852,14 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   nr_csi_rs_ri_estimation(ue,
                           csirs_config_pdu,
                           ue->nr_csi_rs_info,
-                          ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
+                          csi_rs_estimated_channel_freq,
                           log2_maxh,
                           &rank_indicator);
 
   nr_csi_rs_pmi_estimation(ue,
                            csirs_config_pdu,
                            ue->nr_csi_rs_info,
-                           (const int32_t ***) ue->nr_csi_rs_info->csi_rs_estimated_channel_freq,
+                           csi_rs_estimated_channel_freq,
                            ue->nr_csi_im_info->meas_computed ? ue->nr_csi_im_info->interference_plus_noise_power : noise_power,
                            rank_indicator,
                            log2_re,

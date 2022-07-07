@@ -266,8 +266,6 @@ typedef struct {
   uint32_t ***nr_gold_csi_rs;
   uint8_t csi_rs_generated_signal_bits;
   int32_t **csi_rs_generated_signal;
-  int32_t ***csi_rs_ls_estimated_channel;
-  int32_t ***csi_rs_estimated_channel_freq;
 } nr_csi_rs_info_t;
 
 typedef struct {
