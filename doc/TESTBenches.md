@@ -89,7 +89,10 @@ Webhook
     currently only ping
 - [RAN-NSA-B200-Module-LTEBOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-NSA-B200-Module-LTEBOX-Container/)
   - obelix + B200, nepes + B200, idefix + Quectel, porcepix w/ ltebox
-  - basic NSA test, known to be instable
+  - basic NSA test
+- [RAN-SA-B200-Module-SABOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-SA-B200-Module-SABOX-Container/)
+  - obelix + B200, nepes + B200, idefix + Quectel, porcepix w/ sabox
+  - basic SA test (40 MHz TDD)
 - [RAN-PhySim-Cluster](https://jenkins-oai.eurecom.fr/job/RAN-PhySim-Cluster/)
   - asterix (`Asterix-OC-oaicicd-session` resource), tests in OpenShift Cluster
   - unitary simulators (`nr_dlsim`, etc.)
