@@ -177,7 +177,7 @@ bool is_csi_rs_in_symbol(const fapi_nr_dl_config_csirs_pdu_rel15_t csirs_config_
 int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          const UE_nr_rxtx_proc_t *proc,
                          const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
-                         const nr_csi_rs_info_t *nr_csi_rs_info,
+                         const nr_csi_info_t *nr_csi_info,
                          const uint8_t N_cdm_groups,
                          const uint8_t CDM_group_size,
                          const uint8_t k_prime,
@@ -219,7 +219,7 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
 #ifdef NR_CSIRS_DEBUG
               int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
               uint16_t port_tx = s+j_cdm[cdm_id]*CDM_group_size;
-              c16_t *tx_csi_rs_signal = (c16_t*)&nr_csi_rs_info->csi_rs_generated_signal[port_tx][symbol_offset+dataF_offset];
+              c16_t *tx_csi_rs_signal = (c16_t*)&nr_csi_info->csi_rs_generated_signal[port_tx][symbol_offset+dataF_offset];
               LOG_I(NR_PHY, "l,k (%2d,%4d) |\tport_tx %d (%4d,%4d)\tant_rx %d (%4d,%4d)\n",
                     symb,
                     k,
@@ -258,7 +258,7 @@ uint32_t calc_power_csirs(const uint16_t *x, const fapi_nr_dl_config_csirs_pdu_r
 int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
                                  const UE_nr_rxtx_proc_t *proc,
                                  const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
-                                 const nr_csi_rs_info_t *nr_csi_rs_info,
+                                 const nr_csi_info_t *nr_csi_info,
                                  const int32_t **csi_rs_generated_signal,
                                  const int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP],
                                  const uint8_t N_cdm_groups,
@@ -315,8 +315,8 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
               c16_t *rx_csi_rs_signal = (c16_t*)&csi_rs_received_signal[ant_rx][symbol_offset];
               c16_t *csi_rs_ls_estimated_channel16 = (c16_t*)&csi_rs_ls_estimated_channel[ant_rx][port_tx][0];
 
-              int16_t csi_rs_ls_estimated_channel_re = (int16_t)(((int32_t)tx_csi_rs_signal[k].r*rx_csi_rs_signal[k].r + (int32_t)tx_csi_rs_signal[k].i*rx_csi_rs_signal[k].i)>>nr_csi_rs_info->csi_rs_generated_signal_bits);
-              int16_t csi_rs_ls_estimated_channel_im = (int16_t)(((int32_t)tx_csi_rs_signal[k].r*rx_csi_rs_signal[k].i - (int32_t)tx_csi_rs_signal[k].i*rx_csi_rs_signal[k].r)>>nr_csi_rs_info->csi_rs_generated_signal_bits);
+              int16_t csi_rs_ls_estimated_channel_re = (int16_t)(((int32_t)tx_csi_rs_signal[k].r*rx_csi_rs_signal[k].r + (int32_t)tx_csi_rs_signal[k].i*rx_csi_rs_signal[k].i)>>nr_csi_info->csi_rs_generated_signal_bits);
+              int16_t csi_rs_ls_estimated_channel_im = (int16_t)(((int32_t)tx_csi_rs_signal[k].r*rx_csi_rs_signal[k].i - (int32_t)tx_csi_rs_signal[k].i*rx_csi_rs_signal[k].r)>>nr_csi_info->csi_rs_generated_signal_bits);
 
               // This is not just the LS estimation for each (k,l), but also the sum of the different contributions
               // for the sake of optimizing the memory used.
@@ -436,7 +436,7 @@ int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,
 
 int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
                             const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
-                            const nr_csi_rs_info_t *nr_csi_rs_info,
+                            const nr_csi_info_t *nr_csi_info,
                             const uint8_t N_ports,
                             int32_t csi_rs_estimated_channel_freq[][N_ports][ue->frame_parms.ofdm_symbol_size],
                             const int16_t log2_maxh,
@@ -568,7 +568,7 @@ int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
 
 int nr_csi_rs_pmi_estimation(const PHY_VARS_NR_UE *ue,
                              const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu,
-                             const nr_csi_rs_info_t *nr_csi_rs_info,
+                             const nr_csi_info_t *nr_csi_info,
                              const uint8_t N_ports,
                              const int32_t csi_rs_estimated_channel_freq[][N_ports][ue->frame_parms.ofdm_symbol_size],
                              const uint32_t interference_plus_noise_power,
@@ -641,7 +641,7 @@ int nr_csi_rs_pmi_estimation(const PHY_VARS_NR_UE *ue,
       }
     }
 
-    // We should perform >>nr_csi_rs_info->log2_re here for all terms, but since sum2_re and sum2_im can be high values,
+    // We should perform >>nr_csi_info->log2_re here for all terms, but since sum2_re and sum2_im can be high values,
     // we performed this above.
     for(int p = 0; p<4; p++) {
       int32_t power_re = sum2_re[p] - (sum_re[p]>>log2_re)*(sum_re[p]>>log2_re);
@@ -796,8 +796,8 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   LOG_I(NR_PHY, "csiim_config_pdu->l_csiim = %i.%i.%i.%i\n", csiim_config_pdu->l_csiim[0], csiim_config_pdu->l_csiim[1], csiim_config_pdu->l_csiim[2], csiim_config_pdu->l_csiim[3]);
 #endif
 
-  nr_csi_im_power_estimation(ue, proc, csiim_config_pdu, &ue->nr_csi_im_info->interference_plus_noise_power);
-  ue->nr_csi_im_info->meas_computed = true;
+  nr_csi_im_power_estimation(ue, proc, csiim_config_pdu, &ue->nr_csi_info->interference_plus_noise_power);
+  ue->nr_csi_info->csi_im_meas_computed = true;
 
   return 0;
 }
@@ -847,9 +847,9 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   uint8_t i2[1];
 
   nr_generate_csi_rs(frame_parms,
-                     ue->nr_csi_rs_info->csi_rs_generated_signal,
+                     ue->nr_csi_info->csi_rs_generated_signal,
                      AMP,
-                     ue->nr_csi_rs_info,
+                     ue->nr_csi_info,
                      (nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *) csirs_config_pdu,
                      proc->nr_slot_rx,
                      &N_cdm_groups,
@@ -867,7 +867,7 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   nr_get_csi_rs_signal(ue,
                        proc,
                        csirs_config_pdu,
-                       ue->nr_csi_rs_info,
+                       ue->nr_csi_info,
                        N_cdm_groups,
                        CDM_group_size,
                        k_prime,
@@ -880,8 +880,8 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   nr_csi_rs_channel_estimation(ue,
                                proc,
                                csirs_config_pdu,
-                               ue->nr_csi_rs_info,
-                               (const int32_t **) ue->nr_csi_rs_info->csi_rs_generated_signal,
+                               ue->nr_csi_info,
+                               (const int32_t **) ue->nr_csi_info->csi_rs_generated_signal,
                                csi_rs_received_signal,
                                N_cdm_groups,
                                CDM_group_size,
@@ -899,7 +899,7 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   nr_csi_rs_ri_estimation(ue,
                           csirs_config_pdu,
-                          ue->nr_csi_rs_info,
+                          ue->nr_csi_info,
                           N_ports,
                           csi_rs_estimated_channel_freq,
                           log2_maxh,
@@ -907,10 +907,10 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   nr_csi_rs_pmi_estimation(ue,
                            csirs_config_pdu,
-                           ue->nr_csi_rs_info,
+                           ue->nr_csi_info,
                            N_ports,
                            csi_rs_estimated_channel_freq,
-                           ue->nr_csi_im_info->meas_computed ? ue->nr_csi_im_info->interference_plus_noise_power : noise_power,
+                           ue->nr_csi_info->csi_im_meas_computed ? ue->nr_csi_info->interference_plus_noise_power : noise_power,
                            rank_indicator,
                            log2_re,
                            i1,

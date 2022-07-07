@@ -46,7 +46,7 @@ void nr_init_csi_rs(const NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Ni
 void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
                         int32_t **dataF,
                         const int16_t amp,
-                        nr_csi_rs_info_t *nr_csi_rs_info,
+                        nr_csi_info_t *nr_csi_info,
                         const nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
                         const int slot,
                         uint8_t *N_cdm_groups,
@@ -76,7 +76,7 @@ void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
 #endif
 
   int dataF_offset = slot*frame_parms->samples_per_slot_wCP;
-  uint32_t **nr_gold_csi_rs = nr_csi_rs_info->nr_gold_csi_rs[slot];
+  uint32_t **nr_gold_csi_rs = nr_csi_info->nr_gold_csi_rs[slot];
   //*8(max allocation per RB)*2(QPSK))
   int csi_rs_length =  frame_parms->N_RB_DL<<4;
   int16_t mod_csi[frame_parms->symbols_per_slot][csi_rs_length>>1] __attribute__((aligned(16)));
@@ -89,14 +89,14 @@ void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
   uint8_t fi = 0;
   double rho, alpha;
   uint32_t beta = amp;
-  nr_csi_rs_info->csi_rs_generated_signal_bits = log2_approx(amp);
+  nr_csi_info->csi_rs_generated_signal_bits = log2_approx(amp);
 
   AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
 
   // if the scrambling id is not the one previously used to initialize we need to re-initialize the rs
-  if (csi_params->scramb_id != nr_csi_rs_info->csi_gold_init) {
-    nr_csi_rs_info->csi_gold_init = csi_params->scramb_id;
-    nr_init_csi_rs(frame_parms, nr_csi_rs_info->nr_gold_csi_rs, csi_params->scramb_id);
+  if (csi_params->scramb_id != nr_csi_info->csi_gold_init) {
+    nr_csi_info->csi_gold_init = csi_params->scramb_id;
+    nr_init_csi_rs(frame_parms, nr_csi_info->nr_gold_csi_rs, csi_params->scramb_id);
   }
 
   switch (csi_params->row) {
@@ -656,11 +656,11 @@ void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
   if (l_overline) memcpy(l_overline,loverline,16*sizeof(uint8_t));
 
 #ifdef NR_CSIRS_DEBUG
-  if (N_ports) LOG_I(NR_PHY, "nr_csi_rs_info->N_ports = %d\n", *N_ports);
-  if (N_cdm_groups) LOG_I(NR_PHY, "nr_csi_rs_info->N_cdm_groups = %d\n", *N_cdm_groups);
-  if (CDM_group_size) LOG_I(NR_PHY, "nr_csi_rs_info->CDM_group_size = %d\n", *CDM_group_size);
-  if (k_prime) LOG_I(NR_PHY, "nr_csi_rs_info->kprime = %d\n", *k_prime);
-  if (l_prime) LOG_I(NR_PHY, "nr_csi_rs_info->lprime = %d\n", *l_prime);
+  if (N_ports) LOG_I(NR_PHY, "nr_csi_info->N_ports = %d\n", *N_ports);
+  if (N_cdm_groups) LOG_I(NR_PHY, "nr_csi_info->N_cdm_groups = %d\n", *N_cdm_groups);
+  if (CDM_group_size) LOG_I(NR_PHY, "nr_csi_info->CDM_group_size = %d\n", *CDM_group_size);
+  if (k_prime) LOG_I(NR_PHY, "nr_csi_info->kprime = %d\n", *k_prime);
+  if (l_prime) LOG_I(NR_PHY, "nr_csi_info->lprime = %d\n", *l_prime);
   if (N_cdm_groups) {
     for(int ji=0; ji<*N_cdm_groups; ji++) {
       LOG_I(NR_PHY, "(CDM group %d) j = %d, koverline = %d, loverline = %d\n", ji, j[ji], koverline[ji], loverline[ji]);

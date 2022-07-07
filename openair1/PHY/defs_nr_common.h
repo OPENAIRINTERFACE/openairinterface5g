@@ -258,12 +258,9 @@ typedef struct {
   uint32_t ***nr_gold_csi_rs;
   uint8_t csi_rs_generated_signal_bits;
   int32_t **csi_rs_generated_signal;
-} nr_csi_rs_info_t;
-
-typedef struct {
-  bool meas_computed;
+  bool csi_im_meas_computed;
   uint32_t interference_plus_noise_power;
-} nr_csi_im_info_t;
+} nr_csi_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
