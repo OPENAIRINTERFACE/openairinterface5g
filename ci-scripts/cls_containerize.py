@@ -567,7 +567,9 @@ class Containerize():
 		if status:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		else:
+			self.exitStatus = 1
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
+
 
 	def UndeployObject(self, HTML, RAN):
 		if self.eNB_serverId[self.eNB_instance] == '0':
