@@ -483,6 +483,7 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     for (int i=0; i<NR_MAX_NB_PORTS; i++) {
       free_and_zero(ue->nr_csi_info->csi_rs_generated_signal[i]);
     }
+    free_and_zero(ue->nr_csi_info->csi_rs_generated_signal);
     for (int slot=0; slot<fp->slots_per_frame; slot++) {
       for (int symb=0; symb<fp->symbols_per_slot; symb++) {
         free_and_zero(ue->nr_csi_info->nr_gold_csi_rs[slot][symb]);
