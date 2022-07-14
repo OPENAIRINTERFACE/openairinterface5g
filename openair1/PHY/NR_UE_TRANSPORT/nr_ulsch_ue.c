@@ -603,16 +603,29 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
 	    s + symb_offset,
 	    rot.r, rot.i);
 
-      rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
-                        &rot,
-                        (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
-                        frame_parms->N_RB_UL * 6,
-                        15);
-      rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s + frame_parms->first_carrier_offset],
-                        &rot,
-                        (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s + frame_parms->first_carrier_offset],
-                        frame_parms->N_RB_UL * 6,
-                        15);
+      if (frame_parms->N_RB_UL & 1) {
+        rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+                          &rot,
+                          (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+                          (frame_parms->N_RB_UL + 1) * 6,
+                          15);
+        rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s + frame_parms->first_carrier_offset - 6],
+                          &rot,
+                          (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s + frame_parms->first_carrier_offset - 6],
+                          (frame_parms->N_RB_UL + 1) * 6,
+                          15);
+      } else {
+        rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+                          &rot,
+                          (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
+                          frame_parms->N_RB_UL * 6,
+                          15);
+        rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s + frame_parms->first_carrier_offset],
+                          &rot,
+                          (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s + frame_parms->first_carrier_offset],
+                          frame_parms->N_RB_UL * 6,
+                          15);
+      }
     }
   }
 
