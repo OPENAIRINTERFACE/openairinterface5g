@@ -60,7 +60,7 @@ class SSHConnection():
 		count = 0
 		connect_status = False
 		while count < 4:
-			self.ssh = pexpect.spawn('ssh -o PubkeyAuthentication=no {}@{}'.format(username,ipaddress))
+			self.ssh = pexpect.spawn('ssh -o PubkeyAuthentication=yes {}@{}'.format(username,ipaddress))
 			# Longer timeout at connection due to asterix slowness
 			self.ssh.timeout = 25
 			self.sshresponse = self.ssh.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', 'Last login', pexpect.EOF, pexpect.TIMEOUT])
@@ -85,13 +85,15 @@ class SSHConnection():
 					logging.debug('self.sshresponse = ' + str(self.sshresponse))
 			elif self.sshresponse == 2:
 				# Checking if we are really on the remote client defined by its IP address
-				self.command('stdbuf -o0 ifconfig | egrep --color=never "inet addr:|inet "', prompt, 5)
-				result = re.search(str(ipaddress), str(self.ssh.before))
-				if result is None:
-					self.close()
-				else:
+				self.ssh.sendline('stdbuf -o0 ifconfig | egrep --color=never "inet addr:|inet "')
+				self.sshresponse = self.ssh.expect([ipaddress, pexpect.EOF, pexpect.TIMEOUT])
+				if self.sshresponse == 0:
 					count = 10
 					connect_status = True
+					# this expect seems to be necessary to advance the read buffer until the prompt, or getBefore() will not return the last command
+					self.sshresponse = self.ssh.expect([prompt])
+				else:
+					logging.error('logged in to ' + ipaddress + ' without password but IP is not found via ifconfig on remote host, aborting')
 			else:
 				# debug output
 				logging.debug(str(self.ssh.before))
