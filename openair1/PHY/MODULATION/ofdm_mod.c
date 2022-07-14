@@ -341,29 +341,33 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
 }
 
 void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
-                       int16_t* trxdata,
+                       int16_t* txdataF,
                        int slot,
                        int first_symbol,
-                       int nsymb,
-                       int length) {
+                       int nsymb)
+{
   int symb_offset = (slot%fp->slots_per_subframe)*fp->symbols_per_slot;
 
   c16_t *symbol_rotation = fp->symbol_rotation[0];
 
   for (int sidx=0;sidx<nsymb;sidx++) {
 
-    LOG_D(PHY,"Rotating symbol %d, slot %d, symbol_subframe_index %d, length %d (%d,%d)\n",
+    LOG_D(PHY,"Rotating symbol %d, slot %d, symbol_subframe_index %d (%d,%d)\n",
       first_symbol + sidx,
       slot,
       sidx + first_symbol + symb_offset,
-      length,
       symbol_rotation[sidx + first_symbol + symb_offset].r,
       symbol_rotation[sidx + first_symbol + symb_offset].i);
 
-    rotate_cpx_vector(((c16_t*) trxdata) + sidx * length,
+    rotate_cpx_vector(((c16_t*) txdataF) + sidx * fp->ofdm_symbol_size,
                       symbol_rotation + sidx + first_symbol + symb_offset,
-                      ((c16_t*) trxdata) + sidx * length,
-                      length,
+                      ((c16_t*) txdataF) + sidx * fp->ofdm_symbol_size,
+                      fp->N_RB_DL * 6,
+                      15);
+    rotate_cpx_vector(((c16_t*) txdataF) + sidx * fp->ofdm_symbol_size + fp->first_carrier_offset,
+                      symbol_rotation + sidx + first_symbol + symb_offset,
+                      ((c16_t*) txdataF) + sidx * fp->ofdm_symbol_size + fp->first_carrier_offset,
+                      fp->N_RB_DL * 6,
                       15);
   }
 }

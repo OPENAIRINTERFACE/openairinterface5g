@@ -606,7 +606,12 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
       rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
                         &rot,
                         (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
-                        frame_parms->ofdm_symbol_size,
+                        frame_parms->N_RB_UL * 6,
+                        15);
+      rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s + frame_parms->first_carrier_offset],
+                        &rot,
+                        (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s + frame_parms->first_carrier_offset],
+                        frame_parms->N_RB_UL * 6,
                         15);
     }
   }
