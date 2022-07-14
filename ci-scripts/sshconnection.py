@@ -274,4 +274,4 @@ class SSHConnection():
 			sys.exit('SCP failed')
 
 	def getBefore(self):
-		return str(self.ssh.before)
+		return self.ssh.before.decode('utf-8')
