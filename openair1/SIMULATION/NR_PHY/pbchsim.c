@@ -606,6 +606,13 @@ int main(int argc, char **argv)
 
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
           if (cyclic_prefix_type == 1) {
+            apply_nr_rotation(frame_parms,
+                              (int16_t*)gNB->common_vars.txdataF[aa],
+                              slot,
+                              0,
+                              12,
+                              frame_parms->ofdm_symbol_size);
+
             PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
             &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
             frame_parms->ofdm_symbol_size,
@@ -613,10 +620,18 @@ int main(int argc, char **argv)
             frame_parms->nb_prefix_samples,
             CYCLIC_PREFIX);
           } else {
+            apply_nr_rotation(frame_parms,
+                              (int16_t*)gNB->common_vars.txdataF[aa],
+                              slot,
+                              0,
+                              14,
+                              frame_parms->ofdm_symbol_size);
+
             /*nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
               &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
               14,
               frame_parms);*/
+
             PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
                          (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
                          frame_parms->ofdm_symbol_size,
@@ -624,26 +639,12 @@ int main(int argc, char **argv)
                          frame_parms->nb_prefix_samples0,
                          CYCLIC_PREFIX);
 
-            apply_nr_rotation(frame_parms,
-                              (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
-                              slot,
-                              0,
-                              1,
-                              frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
-
             PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
                          (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
                          frame_parms->ofdm_symbol_size,
                          13,
                          frame_parms->nb_prefix_samples,
                          CYCLIC_PREFIX);
-
-            apply_nr_rotation(frame_parms,
-                              (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
-                              slot,
-                              1,
-                              13,
-                              frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
           }
         }
       }
