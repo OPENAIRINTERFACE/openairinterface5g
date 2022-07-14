@@ -207,7 +207,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 {
 
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
-  int32_t accumulated_freq_offset = 0;
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
   double im, re;
@@ -257,8 +256,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
     LOG_I(PHY,"sync_pos %d ssb_offset %d \n",sync_pos,ue->ssb_offset);
 #endif
-
-     accumulated_freq_offset += ue->common_vars.freq_offset;
 
     // digital compensation of FFO for SSB symbols
     if (ue->UE_fo_compensation){
@@ -310,8 +307,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
       int freq_offset_sss = 0;
       ret = rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss);
 
-      accumulated_freq_offset += freq_offset_sss;
-
       // digital compensation of FFO for SSB symbols
       if (ue->UE_fo_compensation){
         double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
@@ -334,6 +329,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
             ((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
           }
         }
+
+        ue->common_vars.freq_offset += freq_offset_sss;
       }
 
       if (ret==0) { //we got sss channel
@@ -603,8 +600,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     }
     if (dec == false) // sib1 not decoded
       ret = -1;
-
-    ue->common_vars.freq_offset = accumulated_freq_offset;
   }
   //  exit_fun("debug exit");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);
