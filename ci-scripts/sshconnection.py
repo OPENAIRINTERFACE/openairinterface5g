@@ -84,16 +84,11 @@ class SSHConnection():
 				else:
 					logging.debug('self.sshresponse = ' + str(self.sshresponse))
 			elif self.sshresponse == 2:
-				# Checking if we are really on the remote client defined by its IP address
-				self.ssh.sendline('stdbuf -o0 ifconfig | egrep --color=never "inet addr:|inet "')
-				self.sshresponse = self.ssh.expect([ipaddress, pexpect.EOF, pexpect.TIMEOUT])
-				if self.sshresponse == 0:
-					count = 10
-					connect_status = True
-					# this expect seems to be necessary to advance the read buffer until the prompt, or getBefore() will not return the last command
-					self.sshresponse = self.ssh.expect([prompt])
-				else:
-					logging.error('logged in to ' + ipaddress + ' without password but IP is not found via ifconfig on remote host, aborting')
+				# We directly ended up on the remote server because of pubkey auth
+				count = 10
+				connect_status = True
+				# this expect() seems to be necessary to advance the read buffer until the prompt, or getBefore() will not return the last command
+				self.sshresponse = self.ssh.expect([prompt])
 			else:
 				# debug output
 				logging.debug(str(self.ssh.before))
