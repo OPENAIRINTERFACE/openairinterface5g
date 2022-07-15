@@ -303,7 +303,7 @@ static void nr_sdap_rx_entity(nr_sdap_entity_t *entity,
   }
 }
 
-void nr_sdap_qfi2drb_map_update(nr_sdap_entity_t *entity, uint8_t qfi, rb_id_t drb, bool hasSdap) {
+void nr_sdap_qfi2drb_map_update(nr_sdap_entity_t *entity, uint8_t qfi, rb_id_t drb, bool hasSdap){
   if(qfi < SDAP_MAX_QFI &&
      qfi > SDAP_MAP_RULE_EMPTY &&
      drb > 0 &&
@@ -381,7 +381,7 @@ void nr_sdap_ue_qfi2drb_config(nr_sdap_entity_t *existing_sdap_entity,
 {
   LOG_D(SDAP, "RRC Configuring SDAP Entity\n");
   uint8_t qfi = 0;
-  boolean_t hasSdap = true;
+  bool hasSdap = true;
 
   for(int i = 0; i < mappedQFIs2AddCount; i++){
     qfi = mapped_qfi_2_add[i];

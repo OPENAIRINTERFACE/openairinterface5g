@@ -755,10 +755,9 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   }
 }
 
-NR_DRB_ToAddMod_t *generateDRB(rrc_gNB_ue_context_t *ue_context_pP,
-                               int iter,
+NR_DRB_ToAddMod_t *generateDRB(const pdu_session_param_t *pduSession,
                                long drb_id,
-                               boolean_t enable_sdap,
+                               bool enable_sdap,
                                int do_drb_integrity,
                                int do_drb_ciphering)
 {
@@ -776,23 +775,23 @@ NR_DRB_ToAddMod_t *generateDRB(rrc_gNB_ue_context_t *ue_context_pP,
   SDAP_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
   memset(SDAP_config->mappedQoS_FlowsToAdd, 0, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
   
-  SDAP_config->pdu_Session = ue_context_pP->ue_context.pduSession[iter].param.pdusession_id;
+  SDAP_config->pdu_Session = pduSession->param.pdusession_id;
   
   if (enable_sdap) {
-      SDAP_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
-      SDAP_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
+    SDAP_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
+    SDAP_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
   } else {
-      SDAP_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
-      SDAP_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
+    SDAP_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
+    SDAP_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
   }
   
   SDAP_config->defaultDRB = true;
   
-  for (int qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[iter].param.nb_qos; qos_flow_index++) 
+  for (int qos_flow_index = 0; qos_flow_index < pduSession->param.nb_qos; qos_flow_index++) 
   {
-      NR_QFI_t *qfi = calloc(1, sizeof(NR_QFI_t));
-      *qfi = ue_context_pP->ue_context.pduSession[iter].param.qos[qos_flow_index].qfi;
-      ASN_SEQUENCE_ADD(&SDAP_config->mappedQoS_FlowsToAdd->list, qfi);
+    NR_QFI_t *qfi = calloc(1, sizeof(NR_QFI_t));
+    *qfi = pduSession->param.qos[qos_flow_index].qfi;
+    ASN_SEQUENCE_ADD(&SDAP_config->mappedQoS_FlowsToAdd->list, qfi);
   }
   
   SDAP_config->mappedQoS_FlowsToRelease = NULL;
@@ -860,7 +859,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   int                            pdu_sessions_done = 0;
   int i;
   uint8_t drb_id_to_setup_start = 1;
-  uint8_t nb_drb_to_setup = 0;
+  uint8_t nb_drb_to_setup = 1;
   long drb_priority[1] = {13}; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
 
@@ -902,12 +901,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
       continue;
     }
 
-    for(long drb_id_add = 0; drb_id_add <= nb_drb_to_setup; drb_id_add++){
-      if(drb_id_add > MAX_DRB_PER_PDUSESSION)
-        break;
-
-      NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_context_pP,
-                                                  i,
+    for(long drb_id_add = 1; drb_id_add <= nb_drb_to_setup; drb_id_add++){
+      NR_DRB_ToAddMod_t *DRB_config = generateDRB(&ue_context_pP->ue_context.pduSession[i],
                                                   drb_id_add,
                                                   rrc->configuration.enable_sdap,
                                                   rrc->security.do_drb_integrity,
