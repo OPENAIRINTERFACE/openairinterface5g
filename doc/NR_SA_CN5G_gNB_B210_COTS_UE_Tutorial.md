@@ -158,7 +158,7 @@ cd cmake_targets
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets
-./build_oai -w USRP --nrUE --gNB --build-lib all -c
+./build_oai -w USRP --ninja --nrUE --gNB --build-lib all -c
 ```
 
 
@@ -191,10 +191,9 @@ With [PuTTY](https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe), send th
 AT+QMBNCFG="Select","ROW_Commercial"
 AT+QMBNCFG="AutoSel",0
 AT+CFUN=1,1
-AT+CGDCONT=1
+AT+CGDCONT=1,"IP","oai"
 AT+CGDCONT=2
 AT+CGDCONT=3
-AT+CGDCONT=1,"IP","oai"
 
 # (Optional, debug only, AT commands) Activate PDP context, retrieve IP address and test with ping
 AT+CGACT=1,1
@@ -205,7 +204,7 @@ AT+QPING=1,"openairinterface.org"
 ## 5.2 Ping test
 - UE host
 ```bash
-ping 192.168.70.135 -n 1000 -S 12.1.1.2
+ping 192.168.70.135 -t -S 12.1.1.2
 ```
 - CN5G host
 ```bash

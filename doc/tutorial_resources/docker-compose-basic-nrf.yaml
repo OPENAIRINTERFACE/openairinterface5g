@@ -181,6 +181,8 @@ services:
             - UDM_PORT=80
             - UDM_API_VERSION=v2
             - UDM_FQDN=oai-udm
+            - INT_ALGO_LIST=["NIA1", "NIA2"]
+            - CIPH_ALGO_LIST=["NEA0", "NEA2"]
         depends_on:
             - mysql
             - oai-nrf

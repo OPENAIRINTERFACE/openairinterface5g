@@ -159,7 +159,7 @@ cd cmake_targets
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets
-./build_oai -w USRP --nrUE --gNB --build-lib all -c
+./build_oai -w USRP --ninja --nrUE --gNB --build-lib all -c
 ```
 
 ## 3.3 N300 Ethernet Tuning
@@ -195,7 +195,7 @@ python3 core-network.py --type start-basic --scenario 1
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
-sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.162PRB.2x2.usrpn300.conf --sa --usrp-tx-thread-config 1
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf --sa --usrp-tx-thread-config 1
 ```
 
 
@@ -208,10 +208,9 @@ With [PuTTY](https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe), send th
 AT+QMBNCFG="Select","ROW_Commercial"
 AT+QMBNCFG="AutoSel",0
 AT+CFUN=1,1
-AT+CGDCONT=1
+AT+CGDCONT=1,"IP","oai"
 AT+CGDCONT=2
 AT+CGDCONT=3
-AT+CGDCONT=1,"IP","oai"
 
 # (Optional, debug only, AT commands) Activate PDP context, retrieve IP address and test with ping
 AT+CGACT=1,1
@@ -222,7 +221,7 @@ AT+QPING=1,"openairinterface.org"
 ## 5.2 Ping test
 - UE host
 ```bash
-ping 192.168.70.135 -n 1000 -S 12.1.1.2
+ping 192.168.70.135 -t -S 12.1.1.2
 ```
 - CN5G host
 ```bash
@@ -240,5 +239,5 @@ iperf -s -u -i 1 -B 12.1.1.2
 
 - CN5G host
 ```bash
-docker exec -it oai-ext-dn iperf -u -t 86400 -i 1 -fk -B 192.168.70.135 -b 200M -c 12.1.1.2
+docker exec -it oai-ext-dn iperf -u -t 86400 -i 1 -fk -B 192.168.70.135 -b 640M -c 12.1.1.2
 ```
