@@ -653,7 +653,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   /* those variables to log T_GNB_PHY_PUCCH_PUSCH_IQ only when we try to decode */
   int pucch_decode_done = 0;
   int pusch_decode_done = 0;
-  int phy_procedures_errors = 0;
+  int pusch_DTX = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
@@ -793,7 +793,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           if (no_sig) {
             LOG_D(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
             nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
-            phy_procedures_errors++;
+            pusch_DTX++;
             continue;
           }
           gNB->pusch_vars[ULSCH_id]->ulsch_power_tot=0;
@@ -818,7 +818,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                /* in case of phy_test mode, we still want to decode to measure execution time. 
                   Therefore, we don't yet call nr_fill_indication, it will be called later */
                nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
-               phy_procedures_errors++;
+               pusch_DTX++;
                continue;
              }
           } else {
@@ -945,5 +945,5 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
-  return phy_procedures_errors;
+  return pusch_DTX;
 }
