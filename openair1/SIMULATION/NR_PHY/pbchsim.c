@@ -67,7 +67,10 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
 uint64_t get_softmodem_optmask(void) {return 0;}
-softmodem_params_t *get_softmodem_params(void) {return 0;}
+static softmodem_params_t softmodem_params;
+softmodem_params_t *get_softmodem_params(void) {
+  return &softmodem_params;
+}
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
@@ -174,6 +177,7 @@ int main(int argc, char **argv)
   int ssb_subcarrier_offset = 0;
 
   channel_desc_t *gNB2UE;
+  get_softmodem_params()->sa = 1;
 
   //uint8_t extended_prefix_flag=0;
   //int8_t interf1=-21,interf2=-21;
@@ -460,6 +464,7 @@ int main(int argc, char **argv)
   frame_parms->Nid_cell = Nid_cell;
   frame_parms->nushift = Nid_cell%4;
   frame_parms->ssb_type = nr_ssb_type_C;
+  frame_parms->freq_range = mu<2 ? nr_FR1 : nr_FR2;
 
   nr_phy_config_request_sim_pbchsim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,1);
@@ -584,9 +589,12 @@ int main(int argc, char **argv)
     for (i=0; i<frame_parms->Lmax; i++) {
       if((SSB_positions >> i) & 0x01) {
 
+        const int sc_offset = frame_parms->freq_range == nr_FR1 ? ssb_subcarrier_offset<<mu : ssb_subcarrier_offset;
+        const int prb_offset = frame_parms->freq_range == nr_FR1 ? gNB->gNB_config.ssb_table.ssb_offset_point_a.value<<mu : gNB->gNB_config.ssb_table.ssb_offset_point_a.value << (mu - 2);
         msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.bchPayload = 0x55dd33;
         msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.SsbBlockIndex = i;
-        msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = ssb_subcarrier_offset;
+        msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset = sc_offset;
+        msgDataTx.ssb[i].ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA = prb_offset;
 
         start_symbol = nr_get_ssb_start_symbol(frame_parms,i);
         int slot = start_symbol/14;
