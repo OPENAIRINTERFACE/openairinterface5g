@@ -309,6 +309,9 @@ static int trx_usrp_start(openair0_device *device) {
 
   return 0;
 }
+
+static void trx_usrp_write_reset(openair0_thread_t *wt);
+
 /*! \brief Terminate operation of the USRP transceiver -- free all associated resources
  * \param device the hardware to use
  */
@@ -322,6 +325,8 @@ static void trx_usrp_end(openair0_device *device) {
   iqrecorder_end(device);
 
   LOG_I(HW, "releasing USRP\n");
+  if (usrp_tx_thread != 0)
+    trx_usrp_write_reset(&device->write_thread);
 
   s->tx_stream->~tx_streamer();
   s->rx_stream->~rx_streamer();
@@ -518,6 +523,8 @@ void *trx_usrp_write_thread(void * arg){
     while (write_thread->count_write == 0) {
       pthread_cond_wait(&write_thread->cond_write,&write_thread->mutex_write); // this unlocks mutex_rxtx while waiting and then locks it again
     }
+    if (write_thread->write_thread_exit)
+      break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_THREAD, 1 );
     s = (usrp_state_t *)device->priv;
     start = write_thread->start;
@@ -612,12 +619,24 @@ int trx_usrp_write_init(openair0_device *device){
   write_thread->start              = 0;
   write_thread->end                = 0;
   write_thread->count_write        = 0;
+  write_thread->write_thread_exit  = false;
   printf("end of tx write thread\n");
   pthread_mutex_init(&write_thread->mutex_write, NULL);
   pthread_cond_init(&write_thread->cond_write, NULL);
   pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
 
   return(0);
+}
+
+static void trx_usrp_write_reset(openair0_thread_t *wt) {
+  pthread_mutex_lock(&wt->mutex_write);
+  wt->count_write = 1;
+  wt->write_thread_exit = true;
+  pthread_mutex_unlock(&wt->mutex_write);
+  pthread_cond_signal(&wt->cond_write);
+  void *retval = NULL;
+  pthread_join(wt->pthread_write, &retval);
+  LOG_I(HW, "stopped USRP write thread\n");
 }
 
 //---------------------end-------------------------
