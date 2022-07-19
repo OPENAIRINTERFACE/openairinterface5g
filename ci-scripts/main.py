@@ -102,7 +102,7 @@ def AssignParams(params_dict):
 
 
 def GetParametersFromXML(action):
-	if action == 'Build_eNB' or action == 'Build_Image':
+	if action == 'Build_eNB' or action == 'Build_Image' or action == 'Build_Proxy':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		CONTAINERS.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
@@ -138,6 +138,9 @@ def GetParametersFromXML(action):
 				RAN.backgroundBuild=True
 			else:
 				RAN.backgroundBuild=False
+		proxy_commit = test.findtext('proxy_commit')
+		if proxy_commit is not None:
+			CONTAINERS.proxyCommit = proxy_commit
 
 	elif action == 'WaitEndBuild_eNB':
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
@@ -915,6 +918,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					HTML=ldpc.Run_PhySim(HTML,CONST,id)
 				elif action == 'Build_Image':
 					CONTAINERS.BuildImage(HTML)
+				elif action == 'Build_Proxy':
+					CONTAINERS.BuildProxy(HTML)
 				elif action == 'Copy_Image_to_Test':
 					CONTAINERS.Copy_Image_to_Test_Server(HTML)
 				elif action == 'Deploy_Object':
