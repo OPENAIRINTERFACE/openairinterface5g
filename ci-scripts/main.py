@@ -919,6 +919,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CONTAINERS.Copy_Image_to_Test_Server(HTML)
 				elif action == 'Deploy_Object':
 					CONTAINERS.DeployObject(HTML, EPC)
+					if CONTAINERS.exitStatus==1:
+						RAN.prematureExit = True
 				elif action == 'Undeploy_Object':
 					CONTAINERS.UndeployObject(HTML, RAN)
 				elif action == 'Cppcheck_Analysis':
