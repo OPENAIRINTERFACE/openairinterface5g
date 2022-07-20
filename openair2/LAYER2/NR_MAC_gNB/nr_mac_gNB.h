@@ -769,6 +769,7 @@ typedef struct gNB_MAC_INST_s {
   int                             pusch_failure_thres;
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
+  int                             ssb_OffsetPointA;
   /// SIB1 Time domain allocation
   int                             sib1_tda;
   int                             minRXTXTIMEpdsch;

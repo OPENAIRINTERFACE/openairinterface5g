@@ -436,7 +436,7 @@ int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
 
-void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, uint16_t symStart, int CC_id);
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int ssb_subcarrier_offset, uint16_t symStart, int CC_id);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.
