@@ -31,10 +31,6 @@ spec:
     strategy:
         dockerStrategy:
             dockerfilePath: "docker/Dockerfile.phySim.rhel8.2"
-            from:
-                kind: ImageStreamTag
-                namespace: oaicicd-ran
-                name: oai-ran-base:latest
     output:
         to:
             kind: "ImageStreamTag"
