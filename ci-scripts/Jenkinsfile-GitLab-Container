@@ -278,6 +278,26 @@ pipeline {
             }
           }
         }
+        stage ("SA B200 Sanity Check") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-SA-B200-Module-SABOX-Container', 'Test-SA-B200')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-SA-B200-Module-SABOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
         stage ("Test OAI NR UE - OAI gNB - TDD - Band 78 - N300") {
           when { expression {doMandatoryTests} }
           steps {

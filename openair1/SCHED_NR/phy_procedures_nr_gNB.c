@@ -45,6 +45,7 @@
 #include "intertask_interface.h"
 
 //#define DEBUG_RXDATA
+//#define SRS_IND_DEBUG
 
 uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,254,32,34,36,38,40,42,44,46,254,254,48,50,52,54,56,58,60,62};
 
@@ -72,8 +73,11 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
   ssb_start_symbol = ssb_start_symbol_abs % fp->symbols_per_slot;  // start symbol wrt slot
 
   // setting the first subcarrier
-  fp->ssb_start_subcarrier = (12 * cfg->ssb_table.ssb_offset_point_a.value + ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset);
-  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,cfg->ssb_table.ssb_offset_point_a.value,ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset);
+  const int scs = cfg->ssb_config.scs_common.value;
+  const int prb_offset = (fp->freq_range == nr_FR1) ? ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA>>scs : ssb_pdu.ssb_pdu_rel15.ssbOffsetPointA>>(scs-2);
+  const int sc_offset = (fp->freq_range == nr_FR1) ? ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset>>scs : ssb_pdu.ssb_pdu_rel15.SsbSubcarrierOffset;
+  fp->ssb_start_subcarrier = (12 * prb_offset + sc_offset);
+  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier, prb_offset, sc_offset);
 
   LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
   nr_generate_pss(&txdataF[0][txdataF_offset], AMP, ssb_start_symbol, cfg, fp);
@@ -621,11 +625,38 @@ void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) 
 
 }
 
+int fill_srs_reported_symbol_list(nfapi_nr_srs_indication_reported_symbol_t *reported_symbol_list,
+                                  const nfapi_nr_srs_pdu_t *srs_pdu,
+                                  const int N_RB_UL,
+                                  const int8_t *snr_per_rb,
+                                  const int srs_est) {
+
+  reported_symbol_list->num_rbs = srs_bandwidth_config[srs_pdu->config_index][srs_pdu->bandwidth_index][0];
+
+  if (!reported_symbol_list->rb_list) {
+    reported_symbol_list->rb_list = (nfapi_nr_srs_indication_reported_symbol_resource_block_t*) calloc(1, N_RB_UL*sizeof(nfapi_nr_srs_indication_reported_symbol_resource_block_t));
+  }
+
+  for(int rb = 0; rb < reported_symbol_list->num_rbs; rb++) {
+    if (srs_est<0) {
+      reported_symbol_list->rb_list[rb].rb_snr = 0xFF;
+    } else if (snr_per_rb[rb] < -64) {
+      reported_symbol_list->rb_list[rb].rb_snr = 0;
+    } else if (snr_per_rb[rb] > 63) {
+      reported_symbol_list->rb_list[rb].rb_snr = 0xFE;
+    } else {
+      reported_symbol_list->rb_list[rb].rb_snr = (snr_per_rb[rb] + 64)<<1;
+    }
+  }
+
+  return 0;
+}
+
 int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   /* those variables to log T_GNB_PHY_PUCCH_PUSCH_IQ only when we try to decode */
   int pucch_decode_done = 0;
   int pusch_decode_done = 0;
-  int phy_procedures_errors = 0;
+  int pusch_DTX = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,1);
   LOG_D(PHY,"phy_procedures_gNB_uespec_RX frame %d, slot %d\n",frame_rx,slot_rx);
@@ -765,7 +796,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           if (no_sig) {
             LOG_D(PHY, "PUSCH not detected in frame %d, slot %d\n", frame_rx, slot_rx);
             nr_fill_indication(gNB, frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
-            phy_procedures_errors++;
+            pusch_DTX++;
             continue;
           }
           gNB->pusch_vars[ULSCH_id]->ulsch_power_tot=0;
@@ -790,7 +821,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                /* in case of phy_test mode, we still want to decode to measure execution time. 
                   Therefore, we don't yet call nr_fill_indication, it will be called later */
                nr_fill_indication(gNB,frame_rx, slot_rx, ULSCH_id, harq_pid, 1,1);
-               phy_procedures_errors++;
+               pusch_DTX++;
                continue;
              }
           } else {
@@ -822,29 +853,88 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
         LOG_D(NR_PHY, "(%d.%d) gNB is waiting for SRS, id = %i\n", frame_rx, slot_rx, i);
 
+        NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
         nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
+        uint8_t N_symb_SRS = 1<<srs_pdu->num_symbols;
+        int32_t srs_received_signal[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
+        int32_t srs_ls_estimated_channel[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
+        int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
+        int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
+        int32_t srs_estimated_channel_time_shifted[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
+        uint32_t noise_power_per_rb[srs_pdu->bwp_size];
+        int8_t snr_per_rb[srs_pdu->bwp_size];
+        uint32_t signal_power;
+        uint32_t noise_power;
+        int8_t snr;
 
         // At least currently, the configuration is constant, so it is enough to generate the sequence just once.
         if(gNB->nr_srs_info[i]->sc_list_length == 0) {
-          generate_srs_nr(srs_pdu, &gNB->frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
+          generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
         }
 
-        nr_get_srs_signal(gNB,frame_rx,slot_rx,srs_pdu, gNB->nr_srs_info[i], gNB->nr_srs_info[i]->srs_received_signal);
+        const int srs_est = nr_get_srs_signal(gNB,frame_rx,slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
 
-        nr_srs_channel_estimation(gNB,frame_rx,slot_rx,srs_pdu,
-                                  gNB->nr_srs_info[i],
-                                  gNB->nr_srs_info[i]->srs_generated_signal,
-                                  gNB->nr_srs_info[i]->srs_received_signal,
-                                  gNB->nr_srs_info[i]->srs_estimated_channel_freq,
-                                  gNB->nr_srs_info[i]->srs_estimated_channel_time,
-                                  gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted,
-                                  gNB->nr_srs_info[i]->noise_power);
+        if (srs_est >= 0) {
+          nr_srs_channel_estimation(gNB,
+                                    frame_rx,
+                                    slot_rx,
+                                    srs_pdu,
+                                    gNB->nr_srs_info[i],
+                                    gNB->nr_srs_info[i]->srs_generated_signal,
+                                    srs_received_signal,
+                                    srs_ls_estimated_channel,
+                                    srs_estimated_channel_freq,
+                                    srs_estimated_channel_time,
+                                    srs_estimated_channel_time_shifted,
+                                    &signal_power,
+                                    noise_power_per_rb,
+                                    &noise_power,
+                                    snr_per_rb,
+                                    &snr);
+        }
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_freq[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
+          T_BUFFER(srs_estimated_channel_freq[0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
 
         T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(gNB->nr_srs_info[i]->srs_estimated_channel_time_shifted[0], gNB->frame_parms.ofdm_symbol_size*sizeof(int32_t)));
+          T_BUFFER(srs_estimated_channel_time_shifted[0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
+
+        const uint16_t num_srs = gNB->UL_INFO.srs_ind.number_of_pdus;
+        gNB->UL_INFO.srs_ind.pdu_list = &gNB->srs_pdu_list[0];
+        gNB->UL_INFO.srs_ind.sfn = frame_rx;
+        gNB->UL_INFO.srs_ind.slot = slot_rx;
+        gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
+        gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
+        gNB->srs_pdu_list[num_srs].timing_advance = srs_est >= 0 ? nr_est_timing_advance_srs(frame_parms,
+                                                                                             srs_estimated_channel_time) : 0xFFFF;
+        gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
+        gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
+        gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
+        if(!gNB->srs_pdu_list[num_srs].reported_symbol_list) {
+          gNB->srs_pdu_list[num_srs].reported_symbol_list = (nfapi_nr_srs_indication_reported_symbol_t*) calloc(1, gNB->srs_pdu_list[num_srs].num_reported_symbols*sizeof(nfapi_nr_srs_indication_reported_symbol_t));
+        }
+        fill_srs_reported_symbol_list(&gNB->srs_pdu_list[num_srs].reported_symbol_list[0],
+                                      srs_pdu,
+                                      frame_parms->N_RB_UL,
+                                      snr_per_rb,
+                                      srs_est);
+
+        gNB->UL_INFO.srs_ind.number_of_pdus += 1;
+
+#ifdef SRS_IND_DEBUG
+        LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.sfn = %i\n", gNB->UL_INFO.srs_ind.sfn);
+        LOG_I(NR_PHY, "gNB->UL_INFO.srs_ind.slot = %i\n", gNB->UL_INFO.srs_ind.slot);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].rnti = 0x%04x\n", num_srs, gNB->srs_pdu_list[num_srs].rnti);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].timing_advance = %i\n", num_srs, gNB->srs_pdu_list[num_srs].timing_advance);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_symbols);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].wide_band_snr = %i\n", num_srs, gNB->srs_pdu_list[num_srs].wide_band_snr);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_reported_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_reported_symbols);
+        LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].reported_symbol_list[0].num_rbs = %i\n", num_srs, gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs);
+        for(int rb = 0; rb < gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs; rb++) {
+          LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].reported_symbol_list[0].rb_list[%3i].rb_snr = %i\n",
+                num_srs, rb, gNB->srs_pdu_list[num_srs].reported_symbol_list[0].rb_list[rb].rb_snr);
+        }
+#endif
 
         srs->active = 0;
       }
@@ -858,5 +948,5 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_UESPEC_RX,0);
-  return phy_procedures_errors;
+  return pusch_DTX;
 }
