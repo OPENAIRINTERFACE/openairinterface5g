@@ -35,6 +35,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/sse_intrin.h"
+#include "executables/softmodem-common.h"
 
 //#define DEBUG_PBCH
 //#define DEBUG_PBCH_ENCODING
@@ -248,6 +249,9 @@ int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
   for (int i=0; i<NR_PBCH_PDU_BITS; i++)
     pbch->pbch_a |= ((pbch_pdu[i>>3]>>(7-(i&7)))&1)<<i;
 
+  // NSA to signal no coreset0
+  const int ssb_sc_offset = get_softmodem_params()->sa ? config->ssb_table.ssb_subcarrier_offset.value : 31;
+
   #ifdef DEBUG_PBCH_ENCODING
   for (int i=0; i<3; i++)
     printf("pbch_pdu[%d]: 0x%02x\n", i, pbch_pdu[i]);
@@ -265,7 +269,7 @@ int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
     for (int i=0; i<3; i++)
       pbch->pbch_a |= ((ssb_index>>(5-i))&1)<<(29+i); // resp. 6th, 5th and 4th bits of ssb_index
   else
-    pbch->pbch_a |= ((config->ssb_table.ssb_subcarrier_offset.value>>4)&1)<<29; //MSB of k_SSB (bit index 4)
+    pbch->pbch_a |= ((ssb_sc_offset>>4)&1)<<29; //MSB of k_SSB (bit index 4)
 
   LOG_D(PHY,"After extra byte: pbch_a = 0x%08x\n",pbch->pbch_a);
 

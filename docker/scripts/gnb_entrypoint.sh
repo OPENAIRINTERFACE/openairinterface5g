@@ -10,6 +10,7 @@ THREAD_PARALLEL_CONFIG=${THREAD_PARALLEL_CONFIG:-PARALLEL_SINGLE_THREAD}
 
 if [[ -v USE_NSA_TDD_MONO ]]; then cp $PREFIX/etc/gnb.nsa.tdd.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_TDD_MONO ]]; then cp $PREFIX/etc/gnb.sa.tdd.conf $PREFIX/etc/gnb.conf; fi
+if [[ -v USE_SA_TDD_MONO_B2XX ]]; then cp $PREFIX/etc/gnb.sa.tdd.b2xx.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_FDD_MONO ]]; then cp $PREFIX/etc/gnb.sa.fdd.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_CU ]]; then cp $PREFIX/etc/gnb.sa.cu.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_TDD_CU ]]; then cp $PREFIX/etc/gnb.sa.du.tdd.conf $PREFIX/etc/gnb.conf; fi
