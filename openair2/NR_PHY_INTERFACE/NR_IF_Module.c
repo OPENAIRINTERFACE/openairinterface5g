@@ -215,6 +215,41 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info)
   UL_info->crc_ind.number_crcs = 0;
 }
 
+void handle_nr_srs(NR_UL_IND_t *UL_info) {
+
+  if(NFAPI_MODE == NFAPI_MODE_PNF) {
+    if (UL_info->srs_ind.number_of_pdus > 0) {
+      LOG_D(PHY,"PNF Sending UL_info->srs_ind.number_of_pdus: %d, SFN/SF:%d.%d \n",
+            UL_info->srs_ind.number_of_pdus, UL_info->frame, UL_info->slot);
+      oai_nfapi_nr_srs_indication(&UL_info->srs_ind);
+      UL_info->srs_ind.number_of_pdus = 0;
+    }
+    return;
+  }
+
+  const module_id_t module_id = UL_info->module_id;
+  const frame_t frame = UL_info->srs_ind.sfn;
+  const sub_frame_t slot = UL_info->srs_ind.slot;
+  const int num_srs = UL_info->srs_ind.number_of_pdus;
+  const nfapi_nr_srs_indication_pdu_t *srs_list = UL_info->srs_ind.pdu_list;
+
+  for (int i = 0; i < num_srs; i++) {
+    const nfapi_nr_srs_indication_pdu_t *srs_ind = &srs_list[i];
+    LOG_D(NR_PHY, "(%d.%d) UL_info->srs_ind.pdu_list[%d].rnti: 0x%04x\n", frame, slot, i, srs_ind->rnti);
+    handle_nr_srs_measurements(module_id,
+                               frame,
+                               slot,
+                               srs_ind->rnti,
+                               srs_ind->timing_advance,
+                               srs_ind->num_symbols,
+                               srs_ind->wide_band_snr,
+                               srs_ind->num_reported_symbols,
+                               srs_ind->reported_symbol_list);
+  }
+
+  UL_info->srs_ind.number_of_pdus = 0;
+}
+
 static void free_unqueued_nfapi_indications(nfapi_nr_rach_indication_t *rach_ind,
                                             nfapi_nr_uci_indication_t *uci_ind,
                                             nfapi_nr_rx_data_indication_t *rx_ind,
@@ -431,6 +466,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info) {
   // clear UL DCI prior to handling ULSCH
   mac->UL_dci_req[CC_id].numPdus = 0;
   handle_nr_ulsch(UL_info);
+  handle_nr_srs(UL_info);
 
   if (get_softmodem_params()->emulate_l1) {
     free_unqueued_nfapi_indications(rach_ind, uci_ind, rx_ind, crc_ind);

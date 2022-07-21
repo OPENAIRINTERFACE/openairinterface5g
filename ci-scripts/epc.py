@@ -311,6 +311,8 @@ class EPCManagement():
 				tmp = str(response[0],'utf-8')
 				self.MmeIPAddress = tmp.rstrip()
 				logging.debug('AMF IP Address ' + self.MmeIPAddress)
+			else:
+				logging.error('no container with name oai-amf found, could not retrieve AMF IP address')
 			mySSH.close()
 
 	def CheckHSSProcess(self, status_queue):

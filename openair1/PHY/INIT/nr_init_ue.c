@@ -377,22 +377,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     }
 
     ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-    ue->nr_srs_info->sc_list = (uint16_t *) malloc16_clear(6*fp->N_RB_UL*sizeof(uint16_t));
-    ue->nr_srs_info->srs_generated_signal = (int32_t *) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
-    ue->nr_srs_info->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
-    ue->nr_srs_info->srs_received_signal = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    ue->nr_srs_info->srs_ls_estimated_channel = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    ue->nr_srs_info->srs_estimated_channel_freq = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    ue->nr_srs_info->srs_estimated_channel_time = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    ue->nr_srs_info->srs_estimated_channel_time_shifted = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    for (i=0; i<fp->nb_antennas_rx; i++) {
-      ue->nr_srs_info->srs_received_signal[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      ue->nr_srs_info->srs_ls_estimated_channel[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      ue->nr_srs_info->srs_estimated_channel_freq[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      ue->nr_srs_info->srs_estimated_channel_time[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      ue->nr_srs_info->srs_estimated_channel_time_shifted[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-    }
-
 
     // RACH
     prach_vars[gNB_id]->prachF             = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
@@ -520,21 +504,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     free_and_zero(ue->nr_csi_rs_info->csi_rs_estimated_channel_freq);
     free_and_zero(ue->nr_csi_rs_info);
 
-    for (int i = 0; i < fp->nb_antennas_rx; i++) {
-      free_and_zero(ue->nr_srs_info->srs_received_signal[i]);
-      free_and_zero(ue->nr_srs_info->srs_ls_estimated_channel[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_freq[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_time[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_time_shifted[i]);
-    }
-    free_and_zero(ue->nr_srs_info->sc_list);
-    free_and_zero(ue->nr_srs_info->srs_generated_signal);
-    free_and_zero(ue->nr_srs_info->noise_power);
-    free_and_zero(ue->nr_srs_info->srs_received_signal);
-    free_and_zero(ue->nr_srs_info->srs_ls_estimated_channel);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_freq);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_time);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_time_shifted);
     free_and_zero(ue->nr_srs_info);
 
     free_and_zero(ue->csiim_vars[gNB_id]);

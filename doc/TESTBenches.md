@@ -9,19 +9,19 @@
 
 | Machine       | IP address      | Lockable Resource     | Function           | Connected devices                                     |
 | ------------- | --------------- | --------------------- | ------------------ | ----------------------------------------------------- |
-| asterix       | 172.21.16.127   | CI-Asterix-Usage      | gNB                | 173.21.19.14                                          |
-| obelix        | 172.21.16.128   | CI-Obelix-Usage       | eNB, UE (5G)       | 172.21.19.13, X300 (192.168.60.2), B200mini (30C51EB) |
+| asterix       | 172.21.16.127   | CI-Asterix-Usage      | gNB (n78)          | 173.21.19.14                                          |
+| obelix        | 172.21.16.128   | CI-Obelix-Usage       | eNB (n40, n78), nrUE | 172.21.19.13, X300 (192.168.60.2), B200mini (30C51EB) |
 | porcepix      | 172.21.16.136   | CI-NSA-MiniBench      | Executor, EPC, 5GC | --                                                    |
 | nrmodule2     | 172.21.16.139   | CI-NSA-MiniBench      | Quectel            | Quectel module                                        |
-| nepes         | 172.21.16.137   | CI-NSA-MiniBench      | gNB                | B200mini (30C51D4)                                    |
+| nepes         | 172.21.16.137   | CI-NSA-MiniBench      | gNB (n78)          | B200mini (30C51D4)                                    |
 | caracal       | 172.21.16.132   | CI-Caracal            | gNB/phytest        | N300 (192.168.10.2)                                   |
 | idefix        | 172.21.16.135   | CI-NSA-MiniBench      | Quectel            | Quectel module                                        |
-| amariue       | 172.21.16.144   | CI-Amarisoft-UE-Usage | TBD                | Amarisoft UE simulator                                |
+| amariue       | 172.21.16.144   | CI-Amarisoft-UE-Usage | nrUE               | Amarisoft UE simulator                                |
 | bellatrix     | 192.168.117.115 | CI-RAN-VM-Deployment  | Executor           | --                                                    |
 | nano          | 192.168.12.62   | CI-Bench-1-Phones     | EPC, adb           | 2x COTS (adb)                                         |
 | hutch         | 192.168.12.19   | CI-Bench-1-Phones     | eNB (B7)           | B200mini (30C5239)                                    |
 | starsky       | 192.168.12.18   | CI-Bench-1-Phones     | eNB (B40)          | b200mini (30A3E3C)                                    |
-| carabe        | 192.168.12.211  | CI-Bench-2-OAI-Phone  | UE 4G (B)          | B200mini (30AE8C9)                                    |
+| carabe        | 192.168.12.211  | CI-Bench-2-OAI-Phone  | UE (B7UE)          | B200mini (30AE8C9)                                    |
 
 Note: The available resources, and their current usage, is indicated here:
 - [Lockable resources of jenkins-oai](https://jenkins-oai.eurecom.fr/lockable-resources/):
@@ -40,7 +40,7 @@ Note: The available resources, and their current usage, is indicated here:
 
 ### OTA Testbench
 
-[Proper image to be followed up. TBD: add antennas/circulators]
+**Purpose**: Over-the-air 4G/5G (NSA/SA) tests
 
 Note: obelix and porcepix are both used in the OTA testbench and the 5G
 NSA/Faraday Cage testbench!
@@ -89,7 +89,10 @@ Webhook
     currently only ping
 - [RAN-NSA-B200-Module-LTEBOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-NSA-B200-Module-LTEBOX-Container/)
   - obelix + B200, nepes + B200, idefix + Quectel, porcepix w/ ltebox
-  - basic NSA test, known to be instable
+  - basic NSA test
+- [RAN-SA-B200-Module-SABOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-SA-B200-Module-SABOX-Container/)
+  - obelix + B200, nepes + B200, idefix + Quectel, porcepix w/ sabox
+  - basic SA test (40 MHz TDD)
 - [RAN-PhySim-Cluster](https://jenkins-oai.eurecom.fr/job/RAN-PhySim-Cluster/)
   - asterix (`Asterix-OC-oaicicd-session` resource), tests in OpenShift Cluster
   - unitary simulators (`nr_dlsim`, etc.)

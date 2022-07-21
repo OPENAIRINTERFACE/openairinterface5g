@@ -115,7 +115,8 @@ void nr_schedule_srs(int module_id, frame_t frame) {
     sched_ctrl->sched_srs.slot = -1;
     sched_ctrl->sched_srs.srs_scheduled = false;
 
-    if(!UE->Msg4_ACKed || sched_ctrl->rrc_processing_timer > 0) {
+    if((sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) ||
+       sched_ctrl->rrc_processing_timer > 0) {
       continue;
     }
 
@@ -151,7 +152,6 @@ void nr_schedule_srs(int module_id, frame_t frame) {
 
       uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
       uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
-
       int n_slots_frame = nr_slots_per_frame[current_BWP->scs];
 
       // Check if UE will transmit the SRS in this frame
