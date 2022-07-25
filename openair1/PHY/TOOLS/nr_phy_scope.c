@@ -323,7 +323,7 @@ static void timeSignal (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy
 */
 
 static void timeResponse (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
-  const int len=2*p->gNB->frame_parms.ofdm_symbol_size;
+  const int len=p->gNB->frame_parms.ofdm_symbol_size;
   float *values, *time;
   oai_xygraph_getbuff(graph, &time, &values, len, 0);
   const int ant=0; // display antenna 0 for each UE
@@ -363,8 +363,10 @@ static void frequencyResponse (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU
 */
 
 static void puschLLR (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
-  //int Qm = 2;
-  int coded_bits_per_codeword =3*8*6144+12; // (8*((3*8*6144)+12)); // frame_parms->N_RB_UL*12*Qm*frame_parms->symbols_per_tti;
+  NR_DL_FRAME_PARMS *frame_parms=&p->gNB->frame_parms;
+  int num_re = frame_parms->N_RB_UL*12*frame_parms->symbols_per_slot;
+  int Qm = 2;
+  int coded_bits_per_codeword = num_re*Qm;
 
   for (int ue=0; ue<nb_UEs; ue++) {
     if ( p->gNB->pusch_vars &&
