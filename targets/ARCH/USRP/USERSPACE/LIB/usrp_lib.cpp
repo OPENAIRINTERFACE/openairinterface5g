@@ -331,7 +331,7 @@ static void trx_usrp_end(openair0_device *device) {
       @param buff Buffer which holds the samples
       @param nsamps number of samples to be sent
       @param antenna_id index of the antenna if the device has multiple antennas
-      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+      @param flags flags must be set to true if timestamp parameter needs to be applied
 */
 static int trx_usrp_write(openair0_device *device,
 			  openair0_timestamp timestamp,
@@ -352,7 +352,7 @@ static int trx_usrp_write(openair0_device *device,
 
   AssertFatal( MAX_WRITE_THREAD_BUFFER_SIZE >= cc,"Do not support more than %d cc number\n", MAX_WRITE_THREAD_BUFFER_SIZE);
 
-    boolean_t first_packet_state=false,last_packet_state=false;
+  bool first_packet_state=false,last_packet_state=false;
 
     if (flags_lsb == 2) { // start of burst
       //      s->tx_md.start_of_burst = true;
@@ -481,7 +481,7 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHI
       @param buff Buffer which holds the samples
       @param nsamps number of samples to be sent
       @param antenna_id index of the antenna if the device has multiple antennas
-      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+      @param flags flags must be set to true if timestamp parameter needs to be applied
 */
 void *trx_usrp_write_thread(void * arg){
   int ret=0;
@@ -1030,9 +1030,13 @@ extern "C" {
     }
 
     if (device_adds[0].get("type") == "n3xx") {
-      printf("Found USRP n300\n");
+      const std::string product = device_adds[0].get("product");
+      printf("Found USRP %s\n", product.c_str());
       device->type=USRP_N300_DEV;
-      usrp_master_clock = 122.88e6;
+      if (product == "n320")
+        usrp_master_clock = 245.76e6; // N320 does not support 122.88e6 master clock rate
+      else
+        usrp_master_clock = 122.88e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
 
       if ( 0 != system("sysctl -w net.core.rmem_max=62500000 net.core.wmem_max=62500000") )

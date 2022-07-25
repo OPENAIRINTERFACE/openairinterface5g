@@ -61,13 +61,13 @@ rlc_am_rx_pdu_status_t rlc_am_rx_list_check_duplicate_insert_pdu(const protocol_
 */
 signed int rlc_am_rx_list_insert_pdu(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP,  mem_block_t* const tbP);
 
-/*! \fn boolean_t rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP)
+/*! \fn bool rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP)
 * \brief      Check if reassembly taking into account potential new vrR value
 * \param[in]  ctxt_pP        Running context.
 * \param[in]  rlcP         RLC AM protocol instance pointer.
-* \return     TRUE if reassembly must be done, FALSE else
+* \return     true if reassembly must be done, false else
 */
-boolean_t rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP);
+bool rlc_am_rx_check_vr_reassemble(const protocol_ctxt_t* const ctxt_pP,const rlc_am_entity_t* const rlc_pP);
 
 /*! \fn void rlc_am_rx_check_all_byte_segments(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlcP, mem_block_t* const tbP)
 * \brief      Check if all sub-segments of a PDU are received, if yes then call rlc_am_rx_mark_all_segments_received() procedure.

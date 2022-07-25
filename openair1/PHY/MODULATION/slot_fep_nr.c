@@ -98,25 +98,25 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     stop_meas(&ue->rx_dft_stats);
 
     int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-    int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[0])[symbol+symb_offset];
-    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+    c16_t rot2 = frame_parms->symbol_rotation[0][symbol+symb_offset];
+    rot2.i=-rot2.i;
 
 #ifdef DEBUG_FEP
     //  if (ue->frame <100)
     printf("slot_fep: slot %d, symbol %d rx_offset %u, rotation symbol %d %d.%d\n", Ns,symbol, rx_offset,
-	   symbol+symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
+	   symbol+symb_offset,rot2.r,rot2.i);
 #endif
 
-    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
-		      (int16_t*)&rot2,
-		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+    rotate_cpx_vector((c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      &rot2,
+		      (c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      frame_parms->ofdm_symbol_size,
 		      15);
 
-    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
+    c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
 
     multadd_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
-          shift_rot,
+          (int16_t *)shift_rot,
           (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
           1,
           frame_parms->ofdm_symbol_size,
@@ -214,18 +214,18 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
     stop_meas(&ue->rx_dft_stats);
 
     int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-    int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[0])[symbol + symb_offset];
-    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+    c16_t rot2 = frame_parms->symbol_rotation[0][symbol + symb_offset];
+    rot2.i=-rot2.i;
 
 #ifdef DEBUG_FEP
     //  if (ue->frame <100)
     printf("slot_fep: slot %d, symbol %d rx_offset %u, rotation symbol %d %d.%d\n", Ns,symbol, rx_offset,
-	   symbol+symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
+	   symbol+symb_offset,rot2.r,rot2.i);
 #endif
 
-    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
-		      (int16_t*)&rot2,
-		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+    rotate_cpx_vector((c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      &rot2,
+		      (c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      frame_parms->ofdm_symbol_size,
 		      15);
   }
@@ -310,19 +310,19 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 
   for (int symbol=first_symbol;symbol<nsymb;symbol++) {
     
-    uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[1])[symbol + symb_offset];
-    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
-    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
-    rotate_cpx_vector((int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
-		      (int16_t*)&rot2,
-		      (int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
+    c16_t rot2 = frame_parms->symbol_rotation[1][symbol + symb_offset];
+    rot2.i=-rot2.i;
+    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,rot2.r,rot2.i);
+    rotate_cpx_vector((c16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
+		      &rot2,
+		      (c16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
 		      length,
 		      15);
 
-    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
+    c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
 
     multadd_cpx_vector((int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
-          shift_rot,
+          (int16_t *)shift_rot,
           (int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
           1,
           length,

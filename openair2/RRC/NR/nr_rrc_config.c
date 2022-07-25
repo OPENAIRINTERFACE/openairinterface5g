@@ -138,7 +138,6 @@ void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_sl
   }
 }
 
-
 void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   NR_CSI_MeasConfig_t *csi_MeasConfig,
                   int uid,
@@ -325,6 +324,130 @@ void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
  csi_MeasConfig->csi_IM_ResourceSetToReleaseList = NULL;
 }
 
+// TODO: Implement to b_SRS = 1 and b_SRS = 2
+long rrc_get_max_nr_csrs(const uint8_t max_rbs, const long b_SRS) {
+
+  if(b_SRS>0) {
+    LOG_E(NR_RRC,"rrc_get_max_nr_csrs(): Not implemented yet for b_SRS>0\n");
+    return 0; // This c_srs is always valid
+  }
+
+  const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 48, 52, 56, 60, 64, 72, 72, 76, 80, 88,
+                               96, 96, 104, 112, 120, 120, 120, 128, 128, 128, 132, 136, 144, 144, 144, 144, 152, 160,
+                               160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
+                               256, 264, 272, 272, 272 };
+
+  long c_srs = 0;
+  uint16_t m = 4;
+  for(int c = 1; c<64; c++) {
+    if(m_SRS[c]>m && m_SRS[c]<max_rbs) {
+      c_srs = c;
+      m = m_SRS[c];
+    }
+  }
+
+  return c_srs;
+}
+
+void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
+                const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                const int uid,
+                const int do_srs) {
+
+  setup_release_srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
+
+  NR_SRS_Config_t *srs_Config;
+  if (setup_release_srs_Config->choice.setup) {
+    srs_Config = setup_release_srs_Config->choice.setup;
+    if (srs_Config->srs_ResourceSetToReleaseList) {
+      free(srs_Config->srs_ResourceSetToReleaseList);
+    }
+    if (srs_Config->srs_ResourceSetToAddModList) {
+      free(srs_Config->srs_ResourceSetToAddModList);
+    }
+    if (srs_Config->srs_ResourceToReleaseList) {
+      free(srs_Config->srs_ResourceToReleaseList);
+    }
+    if (srs_Config->srs_ResourceToAddModList) {
+      free(srs_Config->srs_ResourceToAddModList);
+    }
+    free(srs_Config);
+  }
+
+  setup_release_srs_Config->choice.setup = calloc(1,sizeof(*setup_release_srs_Config->choice.setup));
+  srs_Config = setup_release_srs_Config->choice.setup;
+
+  srs_Config->srs_ResourceSetToReleaseList = NULL;
+
+  srs_Config->srs_ResourceSetToAddModList = calloc(1,sizeof(*srs_Config->srs_ResourceSetToAddModList));
+  NR_SRS_ResourceSet_t *srs_resset0 = calloc(1,sizeof(*srs_resset0));
+  srs_resset0->srs_ResourceSetId = 0;
+  srs_resset0->srs_ResourceIdList = calloc(1,sizeof(*srs_resset0->srs_ResourceIdList));
+  NR_SRS_ResourceId_t *srs_resset0_id = calloc(1,sizeof(*srs_resset0_id));
+  *srs_resset0_id = 0;
+  ASN_SEQUENCE_ADD(&srs_resset0->srs_ResourceIdList->list, srs_resset0_id);
+  srs_Config->srs_ResourceToReleaseList=NULL;
+  if (do_srs) {
+    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_periodic;
+    srs_resset0->resourceType.choice.periodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.periodic));
+    srs_resset0->resourceType.choice.periodic->associatedCSI_RS = NULL;
+  } else {
+    srs_resset0->resourceType.present =  NR_SRS_ResourceSet__resourceType_PR_aperiodic;
+    srs_resset0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic));
+    srs_resset0->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger=1;
+    srs_resset0->resourceType.choice.aperiodic->csi_RS=NULL;
+    srs_resset0->resourceType.choice.aperiodic->slotOffset = calloc(1,sizeof(*srs_resset0->resourceType.choice.aperiodic->slotOffset));
+    *srs_resset0->resourceType.choice.aperiodic->slotOffset = 2;
+    srs_resset0->resourceType.choice.aperiodic->ext1 = NULL;
+  }
+  srs_resset0->usage=NR_SRS_ResourceSet__usage_codebook;
+  srs_resset0->alpha = calloc(1,sizeof(*srs_resset0->alpha));
+  *srs_resset0->alpha = NR_Alpha_alpha1;
+  srs_resset0->p0 = calloc(1,sizeof(*srs_resset0->p0));
+  *srs_resset0->p0 =-80;
+  srs_resset0->pathlossReferenceRS = NULL;
+  srs_resset0->srs_PowerControlAdjustmentStates = NULL;
+  ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceSetToAddModList->list,srs_resset0);
+
+  srs_Config->srs_ResourceToReleaseList = NULL;
+
+  srs_Config->srs_ResourceToAddModList = calloc(1,sizeof(*srs_Config->srs_ResourceToAddModList));
+  NR_SRS_Resource_t *srs_res0=calloc(1,sizeof(*srs_res0));
+  srs_res0->srs_ResourceId = 0;
+  srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
+  srs_res0->ptrs_PortIndex = NULL;
+  srs_res0->transmissionComb.present = NR_SRS_Resource__transmissionComb_PR_n2;
+  srs_res0->transmissionComb.choice.n2 = calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));
+  srs_res0->transmissionComb.choice.n2->combOffset_n2 = 0;
+  srs_res0->transmissionComb.choice.n2->cyclicShift_n2 = 0;
+  srs_res0->resourceMapping.startPosition = 2 + uid%2;
+  srs_res0->resourceMapping.nrofSymbols = NR_SRS_Resource__resourceMapping__nrofSymbols_n1;
+  srs_res0->resourceMapping.repetitionFactor = NR_SRS_Resource__resourceMapping__repetitionFactor_n1;
+  srs_res0->freqDomainPosition = 0;
+  srs_res0->freqDomainShift = 0;
+  srs_res0->freqHopping.b_SRS = 0;
+  srs_res0->freqHopping.b_hop = 0;
+  srs_res0->freqHopping.c_SRS = servingcellconfigcommon ?
+                                rrc_get_max_nr_csrs(
+                                    NRRIV2BW(servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, 275),
+                                    srs_res0->freqHopping.b_SRS) : 0;
+  srs_res0->groupOrSequenceHopping = NR_SRS_Resource__groupOrSequenceHopping_neither;
+  if (do_srs) {
+    srs_res0->resourceType.present = NR_SRS_Resource__resourceType_PR_periodic;
+    srs_res0->resourceType.choice.periodic = calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
+    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
+    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl160 = 17 + (uid>1)*10; // 17/17/.../147/157 are mixed slots
+  } else {
+    srs_res0->resourceType.present = NR_SRS_Resource__resourceType_PR_aperiodic;
+    srs_res0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
+  }
+  srs_res0->sequenceId = 40;
+  srs_res0->spatialRelationInfo = calloc(1,sizeof(*srs_res0->spatialRelationInfo));
+  srs_res0->spatialRelationInfo->servingCellId = NULL;
+  srs_res0->spatialRelationInfo->referenceSignal.present = NR_SRS_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
+  srs_res0->spatialRelationInfo->referenceSignal.choice.csi_RS_Index = 0;
+  ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceToAddModList->list,srs_res0);
+}
 
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        NR_ServingCellConfigCommon_t *scc,

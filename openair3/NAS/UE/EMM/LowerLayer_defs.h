@@ -11,7 +11,7 @@ typedef int (*lowerlayer_success_callback_t)(void *);
  * Type of EMM procedure callback function executed when data are not
  * delivered to the network because a lower layer failure occurred
  */
-typedef int (*lowerlayer_failure_callback_t)(int, void *);
+typedef int (*lowerlayer_failure_callback_t)(bool, void *);
 
 /*
  * Type of EMM procedure callback function executed when NAS signalling

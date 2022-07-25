@@ -71,9 +71,9 @@ typedef enum {
  * ---------------------------------------------
  */
 typedef struct {
-  int is_emergency;   /* Indicates whether the PDN connection is established
+  bool is_emergency;   /* Indicates whether the PDN connection is established
              * for emergency bearer services only       */
-  int is_attached;    /* Indicates whether the UE remains attached to the
+  bool is_attached;    /* Indicates whether the UE remains attached to the
              * network                  */
 } emm_esm_establish_t;
 

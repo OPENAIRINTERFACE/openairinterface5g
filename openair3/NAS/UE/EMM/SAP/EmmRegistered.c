@@ -143,7 +143,7 @@ int EmmRegistered(nas_user_t *user, const emm_reg_t *evt)
     /*
      * Data transfer message failed to be delivered
      */
-    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, FALSE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, false);
     break;
 
   case _EMMREG_LOWERLAYER_RELEASE:

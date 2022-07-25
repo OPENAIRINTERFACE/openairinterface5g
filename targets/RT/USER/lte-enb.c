@@ -231,9 +231,9 @@ static inline int rxtx(PHY_VARS_eNB *eNB,
     dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
     // L2-emulator can work only one eNB.
     //      memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
-    //      memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+    //      memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.active, sizeof(bool)*NUMBER_OF_UE_MAX);
     memcpy(&pre_scd_eNB_UE_stats,&RC.mac[0]->UE_info.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
-    memcpy(&pre_scd_activeUE, &RC.mac[0]->UE_info.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+    memcpy(&pre_scd_activeUE, &RC.mac[0]->UE_info.active, sizeof(bool)*NUMBER_OF_UE_MAX);
     AssertFatal((ret= pthread_mutex_lock(&ru->proc.mutex_pre_scd))==0,"[eNB] error locking proc mutex for eNB pre scd, return %d\n",ret);
     ru->proc.instance_pre_scd++;
 

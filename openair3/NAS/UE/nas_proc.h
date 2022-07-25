@@ -74,7 +74,7 @@ void nas_proc_cleanup(nas_user_t *user);
 
 int nas_proc_enable_s1_mode(nas_user_t *user);
 int nas_proc_disable_s1_mode(nas_user_t *user);
-int nas_proc_get_eps(nas_user_t *user, int *stat);
+int nas_proc_get_eps(nas_user_t *user, bool *stat);
 
 int nas_proc_get_imsi(emm_data_t *emm_data, char *imsi_str);
 int nas_proc_get_msisdn(nas_user_t *user, char *msisdn_str, int *ton_npi);
@@ -83,16 +83,16 @@ int nas_proc_get_signal_quality(nas_user_t *user, int *rsrq, int *rsrp);
 
 int nas_proc_register(nas_user_t *user, int mode, int format, const network_plmn_t *oper, int AcT);
 int nas_proc_deregister(nas_user_t *user);
-int nas_proc_get_reg_data(nas_user_t *user, int *mode, int *selected, int format,
+int nas_proc_get_reg_data(nas_user_t *user, int *mode, bool *selected, int format,
                           network_plmn_t *oper, int *AcT);
 int nas_proc_get_oper_list(nas_user_t *user, const char **oper_list);
 
 int nas_proc_get_reg_status(nas_user_t *user, int *stat);
 int nas_proc_get_loc_info(nas_user_t *user, char *tac, char *ci, int *AcT);
 
-int nas_proc_detach(nas_user_t *user, int switch_off);
+int nas_proc_detach(nas_user_t *user, bool switch_off);
 int nas_proc_attach(nas_user_t *user);
-int nas_proc_get_attach_status(nas_user_t *user);
+bool nas_proc_get_attach_status(nas_user_t *user);
 
 int nas_proc_reset_pdn(nas_user_t *user, int cid);
 int nas_proc_set_pdn(nas_user_t *user, int cid, int type, const char *apn, int ipv4_addr,

@@ -84,23 +84,23 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
   int num = 1;
   const char *begin = output;
   const char *end = output + strlen;
- 
+
   pthread_mutex_lock(&gNB->UE_info.mutex);
   UE_iterator(gNB->UE_info.list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_mac_stats_t *stats = &UE->mac_stats;
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
 
-
     output += snprintf(output,
                        end - output,
-                       "UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
+                       "UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas), UL-SNR %d dB\n",
                        UE->rnti,
                        num++,
                        sched_ctrl->ph,
                        sched_ctrl->pcmax,
                        avg_rsrp,
-                       stats->num_rsrp_meas);
+                       stats->num_rsrp_meas,
+                       stats->srs_wide_band_snr);
     output += snprintf(output,
                        end - output,
                        "UE %04x: CQI %d, RI %d, PMI (%d,%d)\n",
@@ -211,8 +211,8 @@ void mac_top_init_gNB(void)
         RC.nrmac[i]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(i, 0);
         RC.nrmac[i]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(i, 0);
       }
-      pthread_create(&RC.nrmac[i]->stats_thread,NULL,nrmac_stats_thread,(void*)RC.nrmac[i]);
-
+      if (!IS_SOFTMODEM_NOSTATS_BIT)
+        pthread_create(&RC.nrmac[i]->stats_thread, NULL, nrmac_stats_thread, (void*)RC.nrmac[i]);
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
     AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");
@@ -232,7 +232,6 @@ void mac_top_init_gNB(void)
 
   // Initialize Linked-List for Active UEs
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++) {
-
     nrmac = RC.nrmac[i];
     nrmac->if_inst = NR_IF_Module_init(i);
     memset(&nrmac->UE_info, 0, sizeof(nrmac->UE_info));

@@ -78,27 +78,24 @@ void rlc_tm_init (
 * \brief    Reset protocol variables and state variables to initial values.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 */
-void rlc_tm_reset_state_variables (
-                        const protocol_ctxt_t* const  ctxt_pP,
-                        rlc_tm_entity_t * const rlcP);
+void rlc_tm_reset_state_variables(const protocol_ctxt_t* const ctxt_pP,
+                                  rlc_tm_entity_t * const rlcP);
 
 /*! \fn void rlc_tm_cleanup(rlc_tm_entity_t * const rlcP)
 * \brief    Free all allocated memory (lists and buffers) previously allocated by this RLC TM instance.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 */
-void rlc_tm_cleanup(
-                        rlc_tm_entity_t * const rlcP);
+void rlc_tm_cleanup(rlc_tm_entity_t * const rlcP);
 
-/*! \fn void rlc_tm_configure(const protocol_ctxt_t* const  ctxt_pP,rlc_tm_entity_t * const rlcP, const boolean_t is_uplink_downlinkP)
+/*! \fn void rlc_tm_configure(const protocol_ctxt_t* const  ctxt_pP,rlc_tm_entity_t * const rlcP, const bool is_uplink_downlinkP)
 * \brief    Configure RLC TM protocol parameters.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 * \param[in]  is_uplink_downlinkP       Is this instance is TRANSMITTER_ONLY,
 RECEIVER_ONLY, or TRANSMITTER_AND_RECEIVER.
 */
-void rlc_tm_configure(
-                        const protocol_ctxt_t* const  ctxt_pP,
-                        rlc_tm_entity_t * const rlcP,
-                        const boolean_t is_uplink_downlinkP);
+void rlc_tm_configure(const protocol_ctxt_t* const  ctxt_pP,
+                      rlc_tm_entity_t * const rlcP,
+                      const bool is_uplink_downlinkP);
 
 /*! \fn void rlc_tm_set_debug_infos(const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP, const rb_id_t rb_idP, const srb_flag_t srb_flagP)
 * \brief    Set debug informations for a RLC TM protocol instance, these informations are only for trace purpose.

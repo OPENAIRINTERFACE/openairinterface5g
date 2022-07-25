@@ -129,7 +129,7 @@ static int _authentication_kasme(const OctetString *autn,
  **      authentication challenge data and respond with an AUTHEN- **
  **      TICATION RESPONSE message to the network.                 **
  **                                                                        **
- ** Inputs:  native_ksi:    TRUE if the security context is of type    **
+ ** Inputs:  native_ksi:    true if the security context is of type    **
  **             native (for KSIASME)                       **
  **      ksi:       The NAS ket sey identifier                 **
  **      rand:      Authentication parameter RAND              **
@@ -179,14 +179,14 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   OctetString res = {AUTH_RES_SIZE, authentication_data->res};
 
   if ((memcmp(authentication_data->rand, rand->value, AUTH_CK_SIZE) != 0) ||
-      (authentication_data->auth_process_started == FALSE)) {
+      (authentication_data->auth_process_started == false)) {
     /*
      * There is no valid stored RAND in the ME or the stored RAND is
      * different from the new received value in the AUTHENTICATION
      * REQUEST message OR if this is first time UE starting the
      * Authentication process
      */
-	authentication_data->auth_process_started = TRUE;
+	authentication_data->auth_process_started = true;
     OctetString auts;
     auts.length = 0;
     auts.value = (uint8_t *)malloc(AUTH_AUTS_SIZE);
@@ -308,7 +308,7 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   emm_sap.u.emm_as.u.security.res = &res;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           user->emm_data->security, FALSE, TRUE);
+                           user->emm_data->security, false, true);
   rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
@@ -398,7 +398,7 @@ int emm_proc_authentication_reject(nas_user_t *user)
   }
 
   /* Consider the USIM invalid */
-  user->emm_data->usim_is_valid = FALSE;
+  user->emm_data->usim_is_valid = false;
 
   /* Stop timer T3410 */
   if (emm_timers->T3410.id != NAS_TIMER_INACTIVE_ID) {
@@ -652,7 +652,7 @@ static int _authentication_abnormal_cases_cde(nas_user_t *user, int emm_cause,
   emm_sap.u.emm_as.u.security.auts = auts;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           user->emm_data->security, FALSE, TRUE);
+                           user->emm_data->security, false, true);
   rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {

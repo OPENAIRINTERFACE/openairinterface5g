@@ -929,15 +929,23 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
   bool srs_scheduled = false;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
+  const NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
 
   NR_SRS_Config_t *srs_config = NULL;
-  if (mac->cg &&
-      mac->cg->spCellConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
+  if (ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1]) {
+    if (mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated &&
+        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->srs_Config) {
+      srs_config = mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->srs_Config->choice.setup;
+    }
+  } else if (mac->cg &&
+             mac->cg->spCellConfig &&
+             mac->cg->spCellConfig->spCellConfigDedicated &&
+             mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+             mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
     srs_config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;
-  } else {
+  }
+
+  if (!srs_config) {
     return false;
   }
 
@@ -965,7 +973,6 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
       continue;
     }
 
-    NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
     NR_BWP_t ubwp = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
                     mac->ULbwp[ul_bwp_id-1]->bwp_Common->genericParameters :
                     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters;
@@ -1248,7 +1255,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   }
 
   //Check whether Regular BSR is triggered
-  if (nr_update_bsr(mod_id, txFrameP, txSlotP, gNB_indexP) == TRUE) {
+  if (nr_update_bsr(mod_id, txFrameP, txSlotP, gNB_indexP) == true) {
     // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
     // outlined in Sections 5.4.4 an 5.4.5 of 38.321
     mac->scheduling_info.SR_pending = 1;
@@ -1261,10 +1268,10 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
 
 }
 
-boolean_t
+bool
 nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index) {
   mac_rlc_status_resp_t rlc_status;
-  boolean_t bsr_regular_triggered = FALSE;
+  bool bsr_regular_triggered = false;
   uint8_t lcid;
   uint8_t lcgid;
   uint8_t num_lcid_with_data = 0; // for LCID with data only if LCGID is defined
@@ -1357,7 +1364,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_
          which belong to any LCG and for which data is already available for transmission
        */
       {
-        bsr_regular_triggered = TRUE;
+        bsr_regular_triggered = true;
         LOG_D(NR_MAC, "[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%d data become available at frame %d slot %d\n",
               module_idP, lcid,
               mac->scheduling_info.LCGID[lcid],
@@ -1368,7 +1375,7 @@ nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_
 
     // Trigger Regular BSR if ReTxBSR Timer has expired and UE has data for transmission
     if (mac->scheduling_info.retxBSR_SF == 0) {
-      bsr_regular_triggered = TRUE;
+      bsr_regular_triggered = true;
 
       if ((mac->BSR_reporting_active & NR_BSR_TRIGGER_REGULAR) == 0) {
         LOG_I(NR_MAC, "[UE %d] PDCCH Tick : MAC BSR Triggered ReTxBSR Timer expiry at frame %d slot %d\n",
@@ -1629,7 +1636,7 @@ static void build_ro_list(NR_UE_MAC_INST_t *mac) {
   int y2;  // PRACH Configuration Index table additional variable used to compute the valid frame numbers
   uint8_t slot_shift_for_map;
   uint8_t map_shift;
-  boolean_t even_slot_invalid;
+  bool even_slot_invalid;
   int64_t s_map;
   uint8_t prach_conf_start_symbol; // Starting symbol of the PRACH occasions in the PRACH slot
   uint8_t N_t_slot; // Number of PRACH occasions in a 14-symbols PRACH slot
@@ -1901,7 +1908,7 @@ static void map_ssb_to_ro(NR_UE_MAC_INST_t *mac) {
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigCommon__ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR ssb_perRACH_config = setup->ssb_perRACH_OccasionAndCB_PreamblesPerSSB->present;
 
-  boolean_t multiple_ssb_per_ro; // true if more than one or exactly one SSB per RACH occasion, false if more than one RO per SSB
+  bool multiple_ssb_per_ro; // true if more than one or exactly one SSB per RACH occasion, false if more than one RO per SSB
   uint8_t ssb_rach_ratio; // Nb of SSBs per RACH or RACHs per SSB
   uint16_t required_nb_of_prach_occasion; // Nb of RACH occasions required to map all the SSBs
   uint8_t required_nb_of_prach_conf_period; // Nb of PRACH configuration periods required to map all the SSBs

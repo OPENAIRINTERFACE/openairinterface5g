@@ -811,9 +811,9 @@ typedef struct {
   /// TBS from last UL scheduling
   int TBS_UL[8];
   /// Flag to indicate UL has been scheduled at least once
-  boolean_t ul_active;
+  bool ul_active;
   /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
-  boolean_t configured;
+  bool configured;
 
   /// MCS from last scheduling
   uint8_t mcs[8];
@@ -1026,16 +1026,16 @@ typedef struct {
 
   /* C-DRX related timers */
   /* Note: only valid for FDD and LTE UE when this comment is written (11-01-19)*/
-  /// is TRUE if the cqi mask feature is activated by RRC configuration
-  boolean_t cqi_mask_boolean;
-  /// is TRUE if the following drx parameters are configured for UE
-  boolean_t cdrx_configured;
+  /// is true if the cqi mask feature is activated by RRC configuration
+  bool cqi_mask_boolean;
+  /// is true if the following drx parameters are configured for UE
+  bool cdrx_configured;
   /*
-   * if TRUE, the eNB has configured the CDRX locally, but is waiting for the UE to acknowledge
+   * if true, the eNB has configured the CDRX locally, but is waiting for the UE to acknowledge
    * the activation. This is needed, during the RRC configuration process, when the context is
    * configured on the eNB side, but not yet on the UE side...
    */
-  boolean_t cdrx_waiting_ack;
+  bool cdrx_waiting_ack;
   /*
    * Is set when a ULSCH scheduling is done and run until the first corresponding transmission is done (4 subframes).
    * When set, SR cannot be set for the UE. This allows OAI to avoid concidering a SR as uncompleted if the UE sends
@@ -1043,16 +1043,16 @@ typedef struct {
    * create a lost in timers synchronization.
    */
   uint8_t dci0_ongoing_timer;
-  /// is TRUE if the UE is in "Active Time", hence listening to PDCCH
-  boolean_t in_active_time;
+  /// is true if the UE is in "Active Time", hence listening to PDCCH
+  bool in_active_time;
   /// OnDurationTimer
   uint16_t  on_duration_timer;
   uint16_t  on_duration_timer_thres;
   /// drx-InactivityTimer
   uint16_t  drx_inactivity_timer;
   uint16_t  drx_inactivity_timer_thres;
-  /// is TRUE if UE is currently in short DRX cycle
-  boolean_t in_short_drx_cycle;
+  /// is true if UE is currently in short DRX cycle
+  bool in_short_drx_cycle;
   /// drxShortCycleTimer int (1..16) (number of short DRX cycles duration before long DRX cycles)
   uint8_t  drx_shortCycle_timer_value;
   /// shortDRX-Cycle (duration of one short DRX cycle)
@@ -1060,8 +1060,8 @@ typedef struct {
   /// DRX short cycle timer before switching to long DRX cycle = drx_shortCycle_timer_value * short_drx_cycle_duration
   uint16_t  drx_shortCycle_timer;
   uint16_t  drx_shortCycle_timer_thres;
-  /// is TRUE if UE is currently in long DRX cycle
-  boolean_t in_long_drx_cycle;
+  /// is true if UE is currently in long DRX cycle
+  bool in_long_drx_cycle;
   /// longDRX-CycleStartOffset (long DRX cycle timer)
   uint16_t  drx_longCycle_timer;
   uint16_t  drx_longCycle_timer_thres;
@@ -1183,7 +1183,7 @@ typedef struct {
   UE_sched_ctrl_t UE_sched_ctrl[MAX_MOBILES_PER_ENB];
   UE_list_t list;
   int num_UEs;
-  boolean_t active[MAX_MOBILES_PER_ENB];
+  bool active[MAX_MOBILES_PER_ENB];
 } UE_info_t;
 
 /*! \brief deleting control information*/
@@ -1191,9 +1191,9 @@ typedef struct {
   ///rnti of UE
   rnti_t rnti;
   ///remove UE context flag
-  boolean_t removeContextFlg;
+  bool removeContextFlg;
   ///remove RA flag
-  boolean_t raFlag;
+  bool raFlag;
 } UE_free_ctrl_t;
 /*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
 typedef struct {

@@ -192,7 +192,7 @@ int main (int argc, const char* argv[])
   /*
    * User simulator main loop
    */
-  while (TRUE) {
+  while (true) {
     char c;
     int len;
 
@@ -293,7 +293,7 @@ static void _signal_handler(int signal_number)
  */
 static void* _receive_thread(void* arg)
 {
-  while (TRUE) {
+  while (true) {
     /* Receive AT response from the NAS sublayer */
     int rbytes = USER_RECV(_user_simulator_recv_buffer,
                            USER_SIMULATOR_BUFFER_SIZE);

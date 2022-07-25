@@ -116,16 +116,16 @@ uint8_t first_rrcreconfiguration = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-boolean_t DURecvCb( protocol_ctxt_t  *ctxt_pP,
-                    const srb_flag_t     srb_flagP,
-                    const rb_id_t        rb_idP,
-                    const mui_t          muiP,
-                    const confirm_t      confirmP,
-                    const sdu_size_t     sdu_buffer_sizeP,
-                    unsigned char *const sdu_buffer_pP,
-                    const pdcp_transmission_mode_t modeP,
-                    const uint32_t *sourceL2Id,
-                    const uint32_t *destinationL2Id) {
+bool DURecvCb(protocol_ctxt_t  *ctxt_pP,
+              const srb_flag_t     srb_flagP,
+              const rb_id_t        rb_idP,
+              const mui_t          muiP,
+              const confirm_t      confirmP,
+              const sdu_size_t     sdu_buffer_sizeP,
+              unsigned char *const sdu_buffer_pP,
+              const pdcp_transmission_mode_t modeP,
+              const uint32_t *sourceL2Id,
+              const uint32_t *destinationL2Id) {
   // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
   mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
   memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
@@ -197,7 +197,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 }
 
 char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration) {
-  protocol_ctxt_t      ctxt;
+  protocol_ctxt_t      ctxt = { 0 };
   gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gnb_mod_idP, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,gnb_mod_idP);
   LOG_I(NR_RRC,
@@ -917,7 +917,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
       sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
       sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
     }
-    sdap_config->defaultDRB = TRUE;
+    sdap_config->defaultDRB = true;
     sdap_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
     memset(sdap_config->mappedQoS_FlowsToAdd, 0, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
 
@@ -1826,7 +1826,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
   ue_context_pP->ue_context.rnti               = ctxt_pP->rnti;
 
   if (AMF_MODE_ENABLED) {
-    uint8_t send_security_mode_command = FALSE;
+    uint8_t send_security_mode_command = false;
     nr_rrc_pdcp_config_security(
       ctxt_pP,
       ue_context_pP,
@@ -1949,7 +1949,7 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                          NULL,
                                          NULL,
                                          NULL,
-                                         NULL,
+                                         ue_context_pP,
                                          NULL,
                                          NULL,
                                          NULL,
@@ -2113,7 +2113,7 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
               }
 
               if (ue_context_p != NULL) {
-                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence = TRUE;
+                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence = true;
                 ue_context_p->ue_context.ng_5G_S_TMSI_Part1 = s_tmsi_part1;
               }
             }
@@ -2590,7 +2590,7 @@ rrc_gNB_decode_dcch(
                   fiveg_s_TMSI, fiveg_s_TMSI >> 38, fiveg_s_TMSI >> 38,
                   (fiveg_s_TMSI >> 32) & 0x3F, (fiveg_s_TMSI >> 32) & 0x3F,
                   (uint32_t)fiveg_s_TMSI);
-              if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
+              if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == true) {
                   ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.amf_set_id = fiveg_s_TMSI >> 38;
                   ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.amf_pointer = (fiveg_s_TMSI >> 32) & 0x3F;
                   ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi = (uint32_t)fiveg_s_TMSI;
@@ -3030,11 +3030,13 @@ void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC
 
 static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_t instance) {
   NRDuDlReq_t * req=&NRDuDlReq(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = req->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
+  protocol_ctxt_t ctxt = {
+    .rnti = req->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p =
     rrc_gNB_get_ue_context(rrc, ctxt.rnti);
@@ -3235,7 +3237,6 @@ static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_
   
   LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", req->srb_id);
   //   rlc_op_status_t    rlc_status;
-  //   boolean_t          ret             = TRUE;
   
   //LOG_I(F1AP, "PRRCContainer size %lu:", ie->value.choice.RRCContainer.size);
   //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
@@ -3260,23 +3261,23 @@ static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_
   //   switch (rlc_status) {
   //     case RLC_OP_STATUS_OK:
   //       //LOG_I(F1AP, "Data sending request over RLC succeeded!\n");
-  //       ret=TRUE;
+  //       ret=true;
   //       break;
   //     case RLC_OP_STATUS_BAD_PARAMETER:
   //       LOG_W(F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-  //       ret= FALSE;
+  //       ret= false;
   //       break;
   //     case RLC_OP_STATUS_INTERNAL_ERROR:
   //       LOG_W(F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-  //       ret= FALSE;
+  //       ret= false;
   //       break;
   //     case RLC_OP_STATUS_OUT_OF_RESSOURCES:
   //       LOG_W(F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-  //       ret= FALSE;
+  //       ret= false;
   //       break;
   //     default:
   //       LOG_W(F1AP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-  //       ret= FALSE;
+  //       ret= false;
   //       break;
   //   } // switch case
   //   return ret;
@@ -3286,11 +3287,13 @@ return 0;
 static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
   f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = req->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
+  protocol_ctxt_t ctxt = {
+    .rnti = req->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p =
@@ -3516,11 +3519,13 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
 static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
   f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = req->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
+  protocol_ctxt_t ctxt = {
+    .rnti = req->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p =
@@ -3665,11 +3670,13 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
 static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
   f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = resp->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
+  protocol_ctxt_t ctxt = {
+    .rnti = resp->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rnti);
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
@@ -3722,12 +3729,13 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
 static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
   f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = resp->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
-  ctxt.eNB_index = instance;
+  protocol_ctxt_t ctxt = {
+    .rnti = resp->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rnti);
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
@@ -3940,7 +3948,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
     gNB_MAC_INST *nrmac=RC.nrmac[ctxt_pP->module_id]; //WHAT A BEAUTIFULL RACE CONDITION !!!
 
     if (fd) {
-      if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == TRUE) {
+      if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == true) {
         fprintf(fd,"NR RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
                 ue_context_p->ue_id_rnti,
                 ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi,

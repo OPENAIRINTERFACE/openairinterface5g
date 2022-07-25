@@ -114,7 +114,7 @@ static int _emm_detach_abort(nas_user_t *user, emm_proc_detach_type_t type);
  **      Return:    RETURNok, RETURNerror                      **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, int switch_off)
+int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, bool switch_off)
 {
   LOG_FUNC_IN;
 
@@ -154,7 +154,7 @@ int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, int switch_of
   emm_as->guti = user->emm_data->guti;
   emm_as->ueid = user->ueid;
   /* Setup EPS NAS security data */
-  emm_as_set_security_data(&emm_as->sctx, user->emm_data->security, FALSE, TRUE);
+  emm_as_set_security_data(&emm_as->sctx, user->emm_data->security, false, true);
 
   /*
    * Notify EMM-AS SAP that Detach Request message has to
@@ -280,7 +280,7 @@ int emm_proc_detach_accept(void* args)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_detach_failure(int is_initial, void *args)
+int emm_proc_detach_failure(bool is_initial, void *args)
 {
   LOG_FUNC_IN;
 
@@ -405,8 +405,7 @@ void *emm_detach_t3421_handler(void *args)
     emm_as->guti = user->emm_data->guti;
     emm_as->ueid = user->ueid;
     /* Setup EPS NAS security data */
-    emm_as_set_security_data(&emm_as->sctx, user->emm_data->security,
-                             FALSE, TRUE);
+    emm_as_set_security_data(&emm_as->sctx, user->emm_data->security, false, true);
 
     /*
      * Notify EMM-AS SAP that Detach Request message has to
