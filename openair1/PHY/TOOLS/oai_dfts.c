@@ -5363,7 +5363,7 @@ void idft8192(int16_t *x,int16_t *y,unsigned char scale)
 
 #endif
 
-int16_t tw16384[3*2*4096];
+int16_t tw16384[3*2*4096] __attribute__((aligned(32)));
 
 #ifndef __AVX2__
 void dft16384(int16_t *x,int16_t *y,unsigned char scale)
@@ -7012,6 +7012,122 @@ void idft49152(int16_t *input, int16_t *output,uint8_t scale) {
   _mm_empty();
   _m_empty();
 }
+
+int16_t tw65536[3*2*4096] __attribute__((aligned(32)));
+
+#ifndef __AVX2__
+void idft65536(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simd_q15_t xtmp[16384],ytmp[16384],*tw65536_128p=(simd_q15_t *)tw65536,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
+  simd_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<16384; i+=4,j++) {
+    transpose16_ooff(x128+i,xtmp+j,4096);
+  }
+
+
+  idft16384((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  idft16384((int16_t*)(xtmp+4096),(int16_t*)(ytmp+4096),1);
+  idft16384((int16_t*)(xtmp+8192),(int16_t*)(ytmp+8192),1);
+  idft16384((int16_t*)(xtmp+12288),(int16_t*)(ytmp+12288),1);
+
+  for (i=0; i<4096; i++) {
+    ibfly4(ytmpp,ytmpp+4096,ytmpp+8192,ytmpp+12288,
+           y128p,y128p+4096,y128p+8192,y128p+12288,
+           tw65536_128p,tw63536_128p+4096,tw65536_128p+8192);
+    tw65536_128p++;
+    y128p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<1024; i++) {
+      y128[0]  = shiftright_int16(y128[0],scale);
+      y128[1]  = shiftright_int16(y128[1],scale);
+      y128[2]  = shiftright_int16(y128[2],scale);
+      y128[3]  = shiftright_int16(y128[3],scale);
+      y128[4]  = shiftright_int16(y128[4],scale);
+      y128[5]  = shiftright_int16(y128[5],scale);
+      y128[6]  = shiftright_int16(y128[6],scale);
+      y128[7]  = shiftright_int16(y128[7],scale);
+      y128[8]  = shiftright_int16(y128[8],scale);
+      y128[9]  = shiftright_int16(y128[9],scale);
+      y128[10] = shiftright_int16(y128[10],scale);
+      y128[11] = shiftright_int16(y128[11],scale);
+      y128[12] = shiftright_int16(y128[12],scale);
+      y128[13] = shiftright_int16(y128[13],scale);
+      y128[14] = shiftright_int16(y128[14],scale);
+      y128[15] = shiftright_int16(y128[15],scale);
+
+      y128+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+}
+
+#else // __AVX2__
+void idft65536(int16_t *x,int16_t *y,unsigned char scale)
+{
+
+  simd256_q15_t xtmp[8192],ytmp[8192],*tw65536_256p=(simd256_q15_t *)tw65536,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<8192; i+=4,j++) {
+    transpose16_ooff_simd256(x256+i,xtmp+j,2048);
+  }
+
+
+  idft16384((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  idft16384((int16_t*)(xtmp+2048),(int16_t*)(ytmp+2048),1);
+  idft16384((int16_t*)(xtmp+4096),(int16_t*)(ytmp+4096),1);
+  idft16384((int16_t*)(xtmp+6144),(int16_t*)(ytmp+6144),1);
+
+  for (i=0; i<2048; i++) {
+    ibfly4_256(ytmpp,ytmpp+2048,ytmpp+4096,ytmpp+6144,
+           y256p,y256p+2048,y256p+4096,y256p+6144,
+           tw65536_256p,tw65536_256p+4096,tw65536_256p+8192);
+    tw65536_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<512; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],scale);
+      y256[1]  = shiftright_int16_simd256(y256[1],scale);
+      y256[2]  = shiftright_int16_simd256(y256[2],scale);
+      y256[3]  = shiftright_int16_simd256(y256[3],scale);
+      y256[4]  = shiftright_int16_simd256(y256[4],scale);
+      y256[5]  = shiftright_int16_simd256(y256[5],scale);
+      y256[6]  = shiftright_int16_simd256(y256[6],scale);
+      y256[7]  = shiftright_int16_simd256(y256[7],scale);
+      y256[8]  = shiftright_int16_simd256(y256[8],scale);
+      y256[9]  = shiftright_int16_simd256(y256[9],scale);
+      y256[10] = shiftright_int16_simd256(y256[10],scale);
+      y256[11] = shiftright_int16_simd256(y256[11],scale);
+      y256[12] = shiftright_int16_simd256(y256[12],scale);
+      y256[13] = shiftright_int16_simd256(y256[13],scale);
+      y256[14] = shiftright_int16_simd256(y256[14],scale);
+      y256[15] = shiftright_int16_simd256(y256[15],scale);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+}
+
+#endif //__AVX2__
 
 int16_t twa73728[49152] __attribute__((aligned(32)));
 int16_t twb73728[49152] __attribute__((aligned(32)));
@@ -10708,6 +10824,7 @@ int dfts_autoinit(void)
   init_rad2(8192,tw8192);
   init_rad4(16384,tw16384);
   init_rad2(32768,tw32768);
+  init_rad4(65536,tw65536);
 
   init_rad3(768,twa768,twb768);
   init_rad3(1536,twa1536,twb1536);

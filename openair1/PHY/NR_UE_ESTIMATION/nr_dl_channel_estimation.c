@@ -38,6 +38,7 @@
 //#define DEBUG_CH
 //#define DEBUG_PRS_CHEST
 //#define DEBUG_PRS_PRINTS
+#define IDFT_INTERPOL_FACTOR 1
 extern short nr_qpsk_mod_table[8];
 int k_prime_table[4][12] = {
       {0,1,0,1,0,1,0,1,0,1,0,1},
@@ -62,12 +63,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
   int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates;
   int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates_time;
-  int slot_prs;
-  if(rep_num > 0)
-    slot_prs = (proc->nr_slot_rx - prs_cfg->PRSResourceTimeGap)%frame_params->slots_per_frame;
-  else
-    slot_prs = proc->nr_slot_rx;
-
+  int slot_prs           = (proc->nr_slot_rx - rep_num*prs_cfg->PRSResourceTimeGap + frame_params->slots_per_frame)%frame_params->slots_per_frame;
   uint32_t **nr_gold_prs = ue->nr_gold_prs[gNB_id][rsc_id][slot_prs];
   
   uint8_t rxAnt = 0, idx = 0;
@@ -76,13 +72,18 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   int16_t k_prime = 0, k = 0, re_offset = 0, first_half = 0, second_half = 0;
   int16_t *ch_tmp  = (int16_t *)malloc16_clear(frame_params->ofdm_symbol_size*sizeof(int32_t));
   AssertFatal((ch_tmp != NULL), "[%s] channel estimate buffer initialization failed!!", __FUNCTION__);
+  int16_t *chF_interpol  = (int16_t *)malloc16_clear(IDFT_INTERPOL_FACTOR*frame_params->ofdm_symbol_size*sizeof(int32_t));
+  AssertFatal((chF_interpol != NULL), "[%s] channel estimate buffer initialization failed!!", __FUNCTION__);
+  int16_t *chT_interpol  = (int16_t *)malloc16_clear(IDFT_INTERPOL_FACTOR*frame_params->ofdm_symbol_size*sizeof(int32_t));
+  AssertFatal((chT_interpol != NULL), "[%s] channel estimate buffer initialization failed!!", __FUNCTION__);
   int32_t ch_pwr = 0, snr = 0;
 #ifdef DEBUG_PRS_CHEST
   char filename[64] = {0}, varname[64] = {0};
 #endif
-  int16_t *ch_init = ch_tmp;
+  int16_t *ch_init     = ch_tmp;
   int16_t scale_factor = (1.0f/(float)(prs_cfg->NumPRSSymbols))*(1<<15);
-  int16_t num_pilots = (12/prs_cfg->CombSize)*prs_cfg->NumRB;
+  int16_t num_pilots   = (12/prs_cfg->CombSize)*prs_cfg->NumRB;
+  int16_t start_offset = (IDFT_INTERPOL_FACTOR-1)*frame_params->ofdm_symbol_size>>1;
 
   for(int l = prs_cfg->SymbolStart; l < prs_cfg->SymbolStart+prs_cfg->NumPRSSymbols; l++)
   {
@@ -434,9 +435,12 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     if(second_half > 0)
       memcpy((int16_t *)&prs_chestF[rxAnt][0], &ch_tmp[(first_half<<1)], second_half*sizeof(int32_t));
 
+    memcpy((int16_t *)&chF_interpol[start_offset+re_offset], &ch_tmp[0], first_half*sizeof(int32_t));
+    memcpy((int16_t *)&chF_interpol[start_offset], &ch_tmp[(first_half<<1)], second_half*sizeof(int32_t));
+
     // Time domain IMPULSE response
     idft_size_idx_t idftsizeidx;
-    switch (frame_params->ofdm_symbol_size) {
+    switch (IDFT_INTERPOL_FACTOR*frame_params->ofdm_symbol_size) {
     case 128:
       idftsizeidx = IDFT_128;
       break;
@@ -473,18 +477,46 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
       idftsizeidx = IDFT_4096;
       break;
 
+    case 8192:
+      idftsizeidx = IDFT_8192;
+      break;
+
+    case 12288:
+      idftsizeidx = IDFT_12288;
+      break;
+
+    case 16384:
+      idftsizeidx = IDFT_16384;
+      break;
+
+    case 24576:
+      idftsizeidx = IDFT_24576;
+      break;
+
+    case 32768:
+      idftsizeidx = IDFT_32768;
+      break;
+
+    case 49152:
+      idftsizeidx = IDFT_49152;
+      break;
+
+    case 65536:
+      idftsizeidx = IDFT_65536;
+      break;
+
     default:
       LOG_I(PHY, "%s: unsupported ofdm symbol size \n", __FUNCTION__);
       assert(0);
     }
 
     idft(idftsizeidx,
-         (int16_t *)&prs_chestF[rxAnt][0],
-         (int16_t *)&ch_tmp[0],1);
+         (int16_t *)&chF_interpol[0],
+         (int16_t *)&chT_interpol[0],1);
 
     // rearrange impulse response
-    memcpy((int16_t *)&prs_chestT[rxAnt][0], &ch_tmp[frame_params->ofdm_symbol_size], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
-    memcpy((int16_t *)&prs_chestT[rxAnt][(frame_params->ofdm_symbol_size>>1)], &ch_tmp[0], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
+    memcpy((int16_t *)&prs_chestT[rxAnt][0], &chT_interpol[IDFT_INTERPOL_FACTOR*frame_params->ofdm_symbol_size], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
+    memcpy((int16_t *)&prs_chestT[rxAnt][(frame_params->ofdm_symbol_size>>1)], &chT_interpol[start_offset], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
 
     // peak estimator
     peak_estimator(&prs_chestT[rxAnt][0],
@@ -530,6 +562,8 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   }
 
   free(ch_tmp);
+  free(chF_interpol);
+  free(chT_interpol);
   return(0);
 }
 

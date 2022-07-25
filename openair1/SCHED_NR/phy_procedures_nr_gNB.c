@@ -149,11 +149,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     {
       if( (((frame*fp->slots_per_frame + slot) - (gNB->prs_vars.prs_cfg[rsc_id].PRSResourceSetPeriod[1] + gNB->prs_vars.prs_cfg[rsc_id].PRSResourceOffset)+gNB->prs_vars.prs_cfg[rsc_id].PRSResourceSetPeriod[0])%gNB->prs_vars.prs_cfg[rsc_id].PRSResourceSetPeriod[0]) == i*gNB->prs_vars.prs_cfg[rsc_id].PRSResourceTimeGap )
       {
-        if (i > 0)
-          slot_prs = (slot - gNB->prs_vars.prs_cfg[rsc_id].PRSResourceTimeGap + fp->slots_per_frame)%fp->slots_per_frame;
-        else
-          slot_prs = slot;
-
+        slot_prs = (slot - i*gNB->prs_vars.prs_cfg[rsc_id].PRSResourceTimeGap + fp->slots_per_frame)%fp->slots_per_frame;
         LOG_D(PHY,"gNB_TX: frame %d, slot %d, slot_prs %d, PRS Resource ID %d\n",frame, slot, slot_prs, rsc_id);
         nr_generate_prs(gNB->nr_gold_prs[rsc_id][slot_prs],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, &gNB->prs_vars.prs_cfg[rsc_id], cfg, fp);
       }

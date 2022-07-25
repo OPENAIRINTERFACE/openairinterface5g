@@ -275,10 +275,13 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
   SZ_DEF(8192) \
   SZ_DEF(9216) \
   SZ_DEF(12288) \
+  SZ_DEF(16384) \
   SZ_DEF(18432) \
   SZ_DEF(24576) \
+  SZ_DEF(32768) \
   SZ_DEF(36864) \
   SZ_DEF(49152) \
+  SZ_DEF(65536) \
   SZ_DEF(73728) \
   SZ_DEF(98304)
 
