@@ -1306,9 +1306,10 @@ int nr_acknack_scheduling(int mod_id,
       csi_pucch->ul_slot == pucch->ul_slot) {
     // skip the CSI PUCCH if it is present and if in the next frame/slot
     // and if we don't multiplex
-    // FIXME currently we support at most 11 bits in pucch2 so skip also in that case
+    /* FIXME currently we support at most 11 bits in pucch2 so skip also in that case.
+       We need to set the limit to 10 because SR scheduling has been moved afterwards */
     if(!csi_pucch->simultaneous_harqcsi
-       || ((csi_pucch->csi_bits + csi_pucch->dai_c) >= 11)) {
+       || ((csi_pucch->csi_bits + csi_pucch->dai_c) >= 10)) {
       LOG_D(NR_MAC,"Cannot multiplex csi_pucch %d +csi_pucch->dai_c %d for %d.%d\n",csi_pucch->csi_bits,csi_pucch->dai_c,csi_pucch->frame,csi_pucch->ul_slot);
       nr_fill_nfapi_pucch(RC.nrmac[mod_id], frame, slot, csi_pucch, UE);
       memset(csi_pucch, 0, sizeof(*csi_pucch));
@@ -1328,9 +1329,7 @@ int nr_acknack_scheduling(int mod_id,
     else {
       csi_pucch->timing_indicator = ind_found;
       csi_pucch->dai_c++;
-      // keep updating format 2 indicator
-      pucch->timing_indicator = ind_found; // index in the list of timing indicators
-      pucch->dai_c++;
+      memset(pucch,0,sizeof(*pucch));
 
       LOG_D(NR_MAC,"multiplexing csi_pucch %d +csi_pucch->dai_c %d for %d.%d\n",csi_pucch->csi_bits,csi_pucch->dai_c,csi_pucch->frame,csi_pucch->ul_slot);
       return 1;

@@ -711,6 +711,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
           LOG_D(PHY,"%d.%d Calling nr_decode_pucch2\n",frame_rx,slot_rx);
           nr_decode_pucch2(gNB,
+                           frame_rx,
                            slot_rx,
                            uci_pdu_format2,
                            pucch_pdu);
