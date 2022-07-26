@@ -337,7 +337,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
   // SSB Table Configuration
   uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   const int scaling_5khz = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000 ? 3 : 1;
-  int sco = (absolute_diff*scaling_5khz) % 24;
+  int sco = (absolute_diff/scaling_5khz) % 24;
   if(frequency_range == FR2)
     sco >>= 1; // this assumes 120kHz SCS for SSB and subCarrierSpacingCommon (only option supported by OAI for
   const int scs_scaling = frequency_range == FR2 ? 1 << (*scc->ssbSubcarrierSpacing - 2) : 1 << *scc->ssbSubcarrierSpacing;

@@ -230,7 +230,7 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   if (get_softmodem_params()->sa) {
     uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
     int scs_scaling = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000 ? 3 : 1;
-    ssb_subcarrier_offset = (absolute_diff*scs_scaling)%24;
+    ssb_subcarrier_offset = (absolute_diff/scs_scaling)%24;
     if(frequency_range == FR2)
       ssb_subcarrier_offset >>= 1; // this assumes 120kHz SCS for SSB and subCarrierSpacingCommon (only option supported by OAI for now)
   }
