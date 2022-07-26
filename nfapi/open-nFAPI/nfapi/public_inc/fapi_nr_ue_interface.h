@@ -48,6 +48,8 @@ typedef struct {
 } fapi_nr_uci_pdu_rel15_t;
 
 typedef struct {
+  uint32_t rsrp;
+  int rsrp_dBm;
   uint8_t rank_indicator;
   uint8_t i1;
   uint8_t i2;

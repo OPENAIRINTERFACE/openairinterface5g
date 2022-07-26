@@ -33,12 +33,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "executables/nr-softmodem-common.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/nr/nr_common.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_ESTIMATION/filt16a_32.h"
 
+// 10*log10(pow(2,30))
+#define pow_2_30_dB 90
 
 //#define NR_CSIRS_DEBUG
 //#define NR_CSIIM_DEBUG
@@ -185,10 +188,14 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          const uint8_t *j_cdm,
                          const uint8_t *k_overline,
                          const uint8_t *l_overline,
-                         int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP]) {
+                         int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP],
+                         uint32_t *rsrp,
+                         int *rsrp_dBm) {
 
   int32_t **rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  uint16_t meas_count = 0;
+  uint32_t rsrp_sum = 0;
 
   for (int ant_rx = 0; ant_rx < frame_parms->nb_antennas_rx; ant_rx++) {
 
@@ -216,6 +223,11 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
               rx_csi_rs_signal[k].r = rx_signal[k].r;
               rx_csi_rs_signal[k].i = rx_signal[k].i;
 
+              rsrp_sum += (((int32_t)(rx_csi_rs_signal[k].r)*rx_csi_rs_signal[k].r) +
+                           ((int32_t)(rx_csi_rs_signal[k].i)*rx_csi_rs_signal[k].i));
+
+              meas_count++;
+
 #ifdef NR_CSIRS_DEBUG
               int dataF_offset = proc->nr_slot_rx*ue->frame_parms.samples_per_slot_wCP;
               uint16_t port_tx = s+j_cdm[cdm_id]*CDM_group_size;
@@ -236,6 +248,15 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
       }
     }
   }
+
+
+  *rsrp = rsrp_sum/meas_count;
+  *rsrp_dBm = dB_fixed(*rsrp) + 30 - pow_2_30_dB
+      - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - dB_fixed(ue->frame_parms.ofdm_symbol_size);
+
+#ifdef NR_CSIRS_DEBUG
+  LOG_I(NR_PHY, "RSRP = %i (%i dBm)\n", *rsrp, *rsrp_dBm);
+#endif
 
   return 0;
 }
@@ -839,6 +860,8 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   uint8_t l_overline[16];
   int16_t log2_re = 0;
   int16_t log2_maxh = 0;
+  uint32_t rsrp = 0;
+  int rsrp_dBm = 0;
   uint32_t noise_power = 0;
   uint8_t rank_indicator = 0;
   uint32_t precoded_sinr_dB = 0;
@@ -875,7 +898,9 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                        j_cdm,
                        k_overline,
                        l_overline,
-                       csi_rs_received_signal);
+                       csi_rs_received_signal,
+                       &rsrp,
+                       &rsrp_dBm);
 
   nr_csi_rs_channel_estimation(ue,
                                proc,
@@ -919,11 +944,13 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   nr_csi_rs_cqi_estimation(precoded_sinr_dB, &cqi);
 
-  LOG_I(NR_PHY, "RI = %i, i1 = %i.%i.%i, i2 = %i, SINR = %i dB, CQI = %i\n",
-        rank_indicator+1, i1[0], i1[1], i1[2], i2[0], precoded_sinr_dB, cqi);
+  LOG_I(NR_PHY, "RSRP = %i dBm, RI = %i, i1 = %i.%i.%i, i2 = %i, SINR = %i dB, CQI = %i\n",
+        rsrp_dBm, rank_indicator+1, i1[0], i1[1], i1[2], i2[0], precoded_sinr_dB, cqi);
 
   // Send CSI measurements to MAC
   fapi_nr_csirs_measurements_t csirs_measurements;
+  csirs_measurements.rsrp = rsrp;
+  csirs_measurements.rsrp_dBm = rsrp_dBm;
   csirs_measurements.rank_indicator = rank_indicator;
   csirs_measurements.i1 = *i1;
   csirs_measurements.i2 = *i2;
