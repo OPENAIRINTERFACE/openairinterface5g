@@ -1804,7 +1804,15 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_timer_thread.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_security_nea2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia2.c
+  ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia1.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
+  #hack: include these files to compile the nr phy simulators
+  #these files should not be here, will be removed at some point when the
+  #computation is done directly inside nr_pdcp_integrity_nia1.c instead
+  #of reusing code of osa_stream_eia.c
+  ${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eia.c
+  ${OPENAIR2_DIR}/UTIL/OSA/osa_snow3g.c
+  ${OPENAIR2_DIR}/UTIL/OSA/osa_rijndael.c
   )
 
 set(NR_SDAP_SRC
