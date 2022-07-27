@@ -2756,10 +2756,10 @@ uint8_t get_csirs_RSRP_payload(NR_UE_MAC_INST_t *mac,
           // TODO: Improvements will be needed to cri_ssbri_bitlen>0
           // TS 38.133 - Table 10.1.6.1-1
           int rsrp_dBm = mac->csirs_measurements.rsrp_dBm;
-          if (rsrp_dBm < -139) {
-            temp_payload = 17;
-          } else if (rsrp_dBm > -45) {
-            temp_payload = 112;
+          if (rsrp_dBm < -140) {
+            temp_payload = 16;
+          } else if (rsrp_dBm > -44) {
+            temp_payload = 113;
           } else {
             temp_payload = mac->csirs_measurements.rsrp_dBm + 157;
           }
