@@ -123,7 +123,6 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                           rel15->dlDmrsSymbPos);
       n_ptrs = (rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity;
     }
-    int16_t mod_ptrs[n_ptrs<<1] __attribute__ ((aligned(16)));
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
@@ -302,12 +301,14 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
         /* calculate if current symbol is PTRS symbols */
         ptrs_idx = 0;
-
+        int16_t *mod_ptrs = NULL;
         if(rel15->pduBitmap & 0x1) {
           ptrs_symbol = is_ptrs_symbol(l,dlPtrsSymPos);
           if(ptrs_symbol) {
             /* PTRS QPSK Modulation for each OFDM symbol in a slot */
             LOG_D(PHY,"Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
+            int16_t mod_ptrsBuf[n_ptrs<<1] __attribute__ ((aligned(16)));
+            mod_ptrs =mod_ptrsBuf;
             nr_modulation(pdsch_dmrs[l][rel15->SCID], (n_ptrs<<1), DMRS_MOD_ORDER, mod_ptrs);
           }
         }

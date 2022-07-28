@@ -1142,7 +1142,7 @@ int main(int argc, char **argv)
         Sched_INFO.frame     = frame;
         Sched_INFO.slot      = slot;
         Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
-        Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[slot];
+        Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[0];
         Sched_INFO.UL_dci_req  = NULL;
         Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
         pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx);

@@ -171,8 +171,12 @@ Options:
    Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
 --ninja
   Tell cmake to use the Ninja build system. Without, will generate make files
+--sanitize
+  Shortcut for usage of --sanitize-address --sanitize-undefined
 --sanitize-address | -fsanitize=address
-   Enable the address sanitizer on all targets
+  Enable the address sanitizer on all targets
+--sanitize-undefined | -fsanitize=undefined
+  Enable the undefined behavior sanitizer on all targets
 --ittiSIM
   Makes the itti simulator
 -h | --help
@@ -451,9 +455,15 @@ function main() {
             CMAKE_CMD="$CMAKE_CMD -GNinja"
             MAKE_CMD=ninja
             shift;;
+        --sanitize)
+            CMAKE_CMD="$CMAKE_CMD -DSANITIZE_ADDRESS=True -DSANITIZE_UNDEFINED=True"
+            shift;;
         --sanitize-address | -fsanitize=address)
             grep -sq "Ubuntu 18.04" /etc/os-release && echo_error "Bug in OS with this option, see CMakeLists.txt"
             CMAKE_CMD="$CMAKE_CMD -DSANITIZE_ADDRESS=True"
+            shift;;
+        --sanitize-undefined | -fundefined=address)
+            CMAKE_CMD="$CMAKE_CMD -DSANITIZE_UNDEFINED=True"
             shift;;
         --ittiSIM)
             ittiSIM=1
