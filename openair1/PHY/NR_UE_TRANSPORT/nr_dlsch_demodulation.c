@@ -466,88 +466,87 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   if (cpumeas(CPUMEAS_GETSTATE))
     LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine and zero forcing %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
-    start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
   /* Store the valid DL RE's */
-    pdsch_vars[gNB_id]->dl_valid_re[symbol-1] = nb_re_pdsch;
+  pdsch_vars[gNB_id]->dl_valid_re[symbol-1] = nb_re_pdsch;
 
-    if(dlsch0_harq->status == ACTIVE) {
-      startSymbIdx = dlsch0_harq->start_symbol;
-      nbSymb = dlsch0_harq->nb_symbols;
-      pduBitmap = dlsch0_harq->pduBitmap;
-    }
-    if(dlsch1_harq) {
-      startSymbIdx = dlsch1_harq->start_symbol;
-      nbSymb = dlsch1_harq->nb_symbols;
-      pduBitmap = dlsch1_harq->pduBitmap;
-    }
+  if(dlsch0_harq->status == ACTIVE) {
+    startSymbIdx = dlsch0_harq->start_symbol;
+    nbSymb = dlsch0_harq->nb_symbols;
+    pduBitmap = dlsch0_harq->pduBitmap;
+  }
+  if(dlsch1_harq) {
+    startSymbIdx = dlsch1_harq->start_symbol;
+    nbSymb = dlsch1_harq->nb_symbols;
+    pduBitmap = dlsch1_harq->pduBitmap;
+  }
 
-    /* Check for PTRS bitmap and process it respectively */
-    if((pduBitmap & 0x1) && (type == PDSCH)) {
-      nr_pdsch_ptrs_processing(ue,
-                               pdsch_vars,
-                               frame_parms,
-                               dlsch0_harq,
-                               dlsch1_harq,
-                               gNB_id,
-                               nr_slot_rx,
-                               symbol,
-                               (nb_rb_pdsch*12),
-                               dlsch[0]->rnti,rx_type);
-      pdsch_vars[gNB_id]->dl_valid_re[symbol-1] -= pdsch_vars[gNB_id]->ptrs_re_per_slot[0][symbol];
-    }
+  /* Check for PTRS bitmap and process it respectively */
+  if((pduBitmap & 0x1) && (type == PDSCH)) {
+    nr_pdsch_ptrs_processing(ue,
+			     pdsch_vars,
+			     frame_parms,
+			     dlsch0_harq,
+			     dlsch1_harq,
+			     gNB_id,
+			     nr_slot_rx,
+			     symbol,
+			     (nb_rb_pdsch*12),
+			     dlsch[0]->rnti,rx_type);
+    pdsch_vars[gNB_id]->dl_valid_re[symbol-1] -= pdsch_vars[gNB_id]->ptrs_re_per_slot[0][symbol];
+  }
 
-    /* at last symbol in a slot calculate LLR's for whole slot */
-    if(symbol == (startSymbIdx + nbSymb -1)) {
-      for(uint8_t i =startSymbIdx; i < (startSymbIdx+nbSymb);i++) {
-        /* re evaluating the first symbol flag as LLR's are done in symbol loop  */
-        if(i == startSymbIdx && i < 3) {
-          first_symbol_flag =1;
-        }
-        else {
-          first_symbol_flag=0;
-        }
-        /* Calculate LLR's for each symbol */
-        nr_dlsch_llr(pdsch_vars, frame_parms,
-                     rxdataF_comp_ptr, dl_ch_mag_ptr,
-                     dlsch0_harq, dlsch1_harq,
-                     rx_type, harq_pid,
-                     gNB_id, gNB_id_i,
-                     first_symbol_flag,
-                     i, nb_rb_pdsch,
-                     codeword_TB0, codeword_TB1,
-                     pdsch_vars[gNB_id]->dl_valid_re[i-1],
-                     nr_slot_rx, beamforming_mode);
+  /* at last symbol in a slot calculate LLR's for whole slot */
+  if(symbol == (startSymbIdx + nbSymb -1)) {
+    for(uint8_t i =startSymbIdx; i < (startSymbIdx+nbSymb);i++) {
+      /* re evaluating the first symbol flag as LLR's are done in symbol loop  */
+      if(i == startSymbIdx && i < 3) {
+	first_symbol_flag =1;
       }
-
-      int dmrs_type = dlsch[0]->harq_processes[harq_pid]->dmrsConfigType;
-      uint8_t nb_re_dmrs;
-      uint16_t dmrs_len = get_num_dmrs(dlsch[0]->harq_processes[harq_pid]->dlDmrsSymbPos);
-      if (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
-        nb_re_dmrs = 6*dlsch[0]->harq_processes[harq_pid]->n_dmrs_cdm_groups;
-      } else {
-        nb_re_dmrs = 4*dlsch[0]->harq_processes[harq_pid]->n_dmrs_cdm_groups;
+      else {
+	first_symbol_flag=0;
       }
-      dlsch[0]->harq_processes[harq_pid]->G = nr_get_G(dlsch[0]->harq_processes[harq_pid]->nb_rb,
-                                                       dlsch[0]->harq_processes[harq_pid]->nb_symbols,
-                                                       nb_re_dmrs,
-                                                       dmrs_len,
-                                                       dlsch[0]->harq_processes[harq_pid]->Qm,
-                                                       dlsch[0]->harq_processes[harq_pid]->Nl);
-      nr_dlsch_layer_demapping(pdsch_vars[gNB_id]->llr,
-                               dlsch[0]->harq_processes[harq_pid]->Nl,
-                               dlsch[0]->harq_processes[harq_pid]->Qm,
-                               dlsch[0]->harq_processes[harq_pid]->G,
-                               codeword_TB0,
-                               codeword_TB1,
-                               pdsch_vars[gNB_id]->layer_llr);
-
+      /* Calculate LLR's for each symbol */
+      nr_dlsch_llr(pdsch_vars, frame_parms,
+		   rxdataF_comp_ptr, dl_ch_mag_ptr,
+		   dlsch0_harq, dlsch1_harq,
+		   rx_type, harq_pid,
+		   gNB_id, gNB_id_i,
+		   first_symbol_flag,
+		   i, nb_rb_pdsch,
+		   codeword_TB0, codeword_TB1,
+		   pdsch_vars[gNB_id]->dl_valid_re[i-1],
+		   nr_slot_rx, beamforming_mode);
     }
 
-    stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
-    if (cpumeas(CPUMEAS_GETSTATE))
-      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    int dmrs_type = dlsch[0]->harq_processes[harq_pid]->dmrsConfigType;
+    uint8_t nb_re_dmrs;
+    uint16_t dmrs_len = get_num_dmrs(dlsch[0]->harq_processes[harq_pid]->dlDmrsSymbPos);
+    if (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
+      nb_re_dmrs = 6*dlsch[0]->harq_processes[harq_pid]->n_dmrs_cdm_groups;
+    } else {
+      nb_re_dmrs = 4*dlsch[0]->harq_processes[harq_pid]->n_dmrs_cdm_groups;
+    }
+    dlsch[0]->harq_processes[harq_pid]->G = nr_get_G(dlsch[0]->harq_processes[harq_pid]->nb_rb,
+						     dlsch[0]->harq_processes[harq_pid]->nb_symbols,
+						     nb_re_dmrs,
+						     dmrs_len,
+						     dlsch[0]->harq_processes[harq_pid]->Qm,
+						     dlsch[0]->harq_processes[harq_pid]->Nl);
+    nr_dlsch_layer_demapping(pdsch_vars[gNB_id]->llr,
+			     dlsch[0]->harq_processes[harq_pid]->Nl,
+			     dlsch[0]->harq_processes[harq_pid]->Qm,
+			     dlsch[0]->harq_processes[harq_pid]->G,
+			     codeword_TB0,
+			     codeword_TB1,
+			     pdsch_vars[gNB_id]->layer_llr);
+  }
 
-// Please keep it: useful for debugging
+  stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  if (cpumeas(CPUMEAS_GETSTATE))
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+
+  // Please keep it: useful for debugging
 #ifdef DEBUG_PDSCH_RX
   char filename[50];
   uint8_t aa = 0;

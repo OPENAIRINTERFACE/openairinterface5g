@@ -573,7 +573,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
               LOG_D(PHY,"symbol %d Filling rb_mask_ul rb_size %d\n",symbol,ulsch_harq->ulsch_pdu.rb_size);
               for (rb=0; rb<ulsch_harq->ulsch_pdu.rb_size; rb++) {
                 rb2 = rb+ulsch_harq->ulsch_pdu.rb_start+ulsch_harq->ulsch_pdu.bwp_start;
-                gNB->rb_mask_ul[symbol][rb2>>5] |= (1<<(rb2&31));
+                gNB->rb_mask_ul[symbol][rb2 >> 5] |= 1U << (rb2 & 31);
               }
             }
           }

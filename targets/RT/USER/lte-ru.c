@@ -89,7 +89,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,int br_flag);
 
 void stop_RU(RU_t **rup,int nb_ru);
 
-void do_ru_synch(RU_t *ru);
+static void do_ru_synch(RU_t *ru);
 
 void configure_ru(int idx,
                   void *arg);
@@ -1059,7 +1059,7 @@ int wakeup_synch(RU_t *ru) {
 }
 
 
-void do_ru_synch(RU_t *ru) {
+static void do_ru_synch(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp  = ru->frame_parms;
   RU_proc_t *proc         = &ru->proc;
   int rxs, ic, ret, i;
@@ -1924,7 +1924,7 @@ static void *ru_thread( void *param ) {
 
 
 // This thread run the initial synchronization like a UE
-void *ru_thread_synch(void *arg) {
+static void *ru_thread_synch(void *arg) {
   RU_t *ru = (RU_t *)arg;
   __attribute__((unused))
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
