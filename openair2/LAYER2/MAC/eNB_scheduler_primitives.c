@@ -2366,22 +2366,6 @@ rrc_mac_remove_ue(module_id_t mod_idP,
   return 0;
 }
 
-//------------------------------------------------------------------------------
-/*
- * Returns the previous UE_id in the scheduling list in UL or DL
- */
-inline int prev(UE_list_t *listP, int nodeP) {
-  if (nodeP == listP->head)
-      return -1; /* there is no previous of the head */
-
-  for (int j = listP->head; j >= 0; j = listP->next[j])
-    if (listP->next[j] == nodeP)
-      return j;
-
-  LOG_E(MAC, "%s(): could not find previous to %d in UE_list\n", __func__, nodeP);
-  dump_ue_list(listP);
-  return -1;
-}
 
 // This has to be updated to include BSR information
 //------------------------------------------------------------------------------

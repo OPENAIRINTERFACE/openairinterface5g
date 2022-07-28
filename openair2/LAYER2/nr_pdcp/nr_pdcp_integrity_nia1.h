@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-/*!\brief SCHED external variables */
+#ifndef _NR_PDCP_INTEGRITY_NIA1_H_
+#define _NR_PDCP_INTEGRITY_NIA1_H_
 
-#ifndef __SCHED_EXTERN_H__
-#define __SCHED_EXTERN_H__
+void *nr_pdcp_integrity_nia1_init(unsigned char *integrity_key);
 
-#include "sched_eNB.h"
+void nr_pdcp_integrity_nia1_integrity(void *integrity_context,
+                            unsigned char *out,
+                            unsigned char *buffer, int length,
+                            int bearer, int count, int direction);
 
-extern int16_t hundred_times_delta_TF[100];
-extern uint16_t hundred_times_log10_NPRB[100];
+void nr_pdcp_integrity_nia1_free_integrity(void *integrity_context);
 
-void kill_fep_thread(RU_t *ru);
-
-#endif /*__SCHED_EXTERN_H__ */
+#endif /* _NR_PDCP_INTEGRITY_NIA1_H_ */

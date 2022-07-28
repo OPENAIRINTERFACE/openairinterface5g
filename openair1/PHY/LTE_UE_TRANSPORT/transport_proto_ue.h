@@ -1272,14 +1272,6 @@ uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb);
     @return Transport block size */
 uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb);
 
-/* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
-   @param N_RB_DL number of PRB on DL
-   @param indicator for even/odd slot
-   @param vrb vrb index
-   @param Ngap Gap indicator
-*/
-uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap);
-
 /* \brief Return prb for a given vrb index
    @param vrb_type VRB type (0=localized,1=distributed)
    @param rb_alloc_dci rballoc field from DCI
