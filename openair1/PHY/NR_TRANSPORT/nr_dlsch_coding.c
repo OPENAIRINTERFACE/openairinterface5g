@@ -376,11 +376,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     memcpy(harq->b, a, (A / 8) + 3); // using 3 bytes to mimic the case of 24 bit crc
   }
 
-  // target_code_rate is in 0.1 units
-  float Coderate = (float) rel15->targetCodeRate[0] / 10240.0f;
-  LOG_D(PHY,"DLSCH Coderate %f\n",Coderate);
-
-  impp.BG = get_BG(A, Coderate);
+  impp.BG = rel15->maintenance_parms_v3.ldpcBaseGraph;
 
   start_meas(dlsch_segmentation_stats);
   impp.Kb = nr_segmentation(harq->b, harq->c, harq->B, &impp.n_segments, &impp.K, impp.Zc, &impp.F, impp.BG);

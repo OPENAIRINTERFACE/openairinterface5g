@@ -777,6 +777,7 @@ typedef struct {
 }  nfapi_nr_dl_tti_pdcch_pdu_rel15_t;
 
 typedef struct {
+  uint8_t ldpcBaseGraph;
   uint32_t tbSizeLbrmBytes;
 }nfapi_v3_pdsch_maintenance_parameters_t;
 
@@ -1193,6 +1194,7 @@ typedef struct
 #define PUSCH_PDU_BITMAP_DFTS_OFDM  0x8
 
 typedef struct {
+  uint8_t ldpcBaseGraph;
   uint32_t tbSizeLbrmBytes;
 }nfapi_v3_pusch_maintenance_parameters_t;
 

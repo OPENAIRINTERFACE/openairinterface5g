@@ -495,9 +495,3 @@ void SLIV2SL(int SLIV,int *S,int *L) {
   }
 }
 
-int get_BG(uint32_t A, float code_rate) {
-  if ((A <=292) || ((A<=3824) && (code_rate <= 0.6667)) || code_rate <= 0.25)
-    return 2;
-  else
-    return 1;
-}

@@ -498,7 +498,7 @@ uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
                       int codebook_mode);
 
 uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx);
-
+uint8_t get_BG(uint32_t A, uint16_t R);
 uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl);
 
 int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl);

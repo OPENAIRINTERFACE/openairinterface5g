@@ -1837,6 +1837,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
     pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = 0;
+    pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(sched_pusch->tb_size<<3,sched_pusch->R);
 
     LOG_D(NR_MAC,"PUSCH PDU : data_scrambling_identity %x, dmrs_scrambling_id %x\n",pusch_pdu->data_scrambling_id,pusch_pdu->ul_dmrs_scrambling_id);
     /* TRANSFORM PRECODING --------------------------------------------------------*/

@@ -245,6 +245,15 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
   }
 }
 
+uint8_t get_BG(uint32_t A, uint16_t R) {
+
+  float code_rate = (float) R / 10240.0f;
+  if ((A <=292) || ((A<=3824) && (code_rate <= 0.6667)) || code_rate <= 0.25)
+    return 2;
+  else
+    return 1;
+}
+
 NR_BWP_t *get_dl_bwp_genericParameters(NR_BWP_Downlink_t *active_bwp,
                                        NR_ServingCellConfigCommon_t *ServingCellConfigCommon,
                                        const NR_SIB1_t *sib1) {
