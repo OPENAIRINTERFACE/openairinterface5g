@@ -409,6 +409,12 @@ def GetParametersFromXML(action):
 		string_field = test.findtext('yaml_path')
 		if (string_field is not None):
 			CONTAINERS.yamlPath[CONTAINERS.eNB_instance] = string_field
+		string_field=test.findtext('d_retx_th')
+		if (string_field is not None):
+			CONTAINERS.ran_checkers['d_retx_th'] = [float(x) for x in string_field.split(',')]
+		string_field=test.findtext('u_retx_th')
+		if (string_field is not None):
+			CONTAINERS.ran_checkers['u_retx_th'] = [float(x) for x in string_field.split(',')]
 
 	elif action == 'DeployGenObject' or action == 'UndeployGenObject' or action == 'StatsFromGenObject':
 		string_field=test.findtext('yaml_path')

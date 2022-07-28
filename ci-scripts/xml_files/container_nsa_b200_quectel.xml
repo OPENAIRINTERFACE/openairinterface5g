@@ -180,6 +180,8 @@
 		<yaml_path>ci-scripts/yaml_files/nsa_b200_gnb</yaml_path>
         <eNB_instance>1</eNB_instance>
         <eNB_serverId>1</eNB_serverId>
+        <d_retx_th>1,100,100,100</d_retx_th>
+        <u_retx_th>1,100,100,100</u_retx_th>
     </testCase>
 
 </testCaseList>
