@@ -87,7 +87,7 @@ typedef struct {
   // N_CCE is L, or number of CCEs for DCI
   int N_CCE;
   uint8_t payloadSize;
-  uint8_t payloadBits[16];
+  uint8_t payloadBits[16] __attribute__((aligned(16))); // will be cast as uint64
   //fapi_nr_dci_pdu_rel15_t dci;
 } fapi_nr_dci_indication_pdu_t;
 
