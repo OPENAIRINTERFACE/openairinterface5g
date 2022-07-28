@@ -1120,9 +1120,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                             csi_report->codebook_mode);
     }
     // TBS_LBRM according to section 5.4.2.1 of 38.212
-    long *maxMIMO_Layers = cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
-    AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+    long maxMIMO_Layers = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated ? *cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
+    int nl_tbslbrm = maxMIMO_Layers < 4 ? maxMIMO_Layers : 4;
     // Maximum number of PRBs across all configured DL BWPs
     int bw_tbslbrm = get_bw_tbslbrm(genericParameters, cg);
     pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ps->mcsTableIdx,
