@@ -134,6 +134,13 @@ const initial_pucch_resource_t initial_pucch_resource[16] = {
 };
 
 
+static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+                            uint8_t dci_format,
+                            uint8_t dci_length,
+                            uint16_t rnti,
+                            uint64_t *dci_pdu,
+                            dci_pdu_rel15_t *nr_pdci_info_extracted);
+
 void nr_ue_init_mac(module_id_t module_idP) {
   int i;
 
@@ -985,7 +992,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     if (dci->tpc == 3) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 3;
     // Sanity check for pucch_resource_indicator value received to check for false DCI.
     valid = 0;
-    if (mac->ULbwp[ul_bwp_id-1] &&
+    if (ul_bwp_id > 0 &&
+        mac->ULbwp[ul_bwp_id-1] &&
         mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated &&
         mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config &&
         mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup&&
@@ -1522,13 +1530,12 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
   NR_BWP_UplinkCommon_t *initialUplinkBWP;
   if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
   else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
-  NR_BWP_Uplink_t *ubwp = mac->ULbwp[bwp_id-1];
-  if (mac->cg && ubwp &&
+  if (mac->cg && bwp_id > 1 && mac->ULbwp[bwp_id - 1] &&
       mac->cg->spCellConfig &&
       mac->cg->spCellConfig->spCellConfigDedicated &&
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-    scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+    scs = mac->ULbwp[bwp_id - 1]->bwp_Common->genericParameters.subcarrierSpacing;
   }
   else
     scs = initialUplinkBWP->genericParameters.subcarrierSpacing;
@@ -2350,17 +2357,16 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
   NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
   NR_PUCCH_Config_t *pucch_Config = NULL;
   int scs;
-  NR_BWP_Uplink_t *ubwp = mac->ULbwp[bwp_id-1];
   NR_BWP_UplinkCommon_t *initialUplinkBWP;
   if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
   else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
 
-  if (mac->cg && ubwp &&
+  if (mac->cg && bwp_id && mac->ULbwp[bwp_id - 1] &&
       mac->cg->spCellConfig &&
       mac->cg->spCellConfig->spCellConfigDedicated &&
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-    scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
+    scs = mac->ULbwp[bwp_id - 1]->bwp_Common->genericParameters.subcarrierSpacing;
   }
   else
     scs = initialUplinkBWP->genericParameters.subcarrierSpacing;
@@ -2862,7 +2868,7 @@ int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
 
 }
 
-uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                             uint8_t dci_format,
                             uint8_t dci_size,
                             uint16_t rnti,
