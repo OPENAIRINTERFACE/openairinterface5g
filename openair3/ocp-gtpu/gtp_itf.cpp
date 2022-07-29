@@ -21,8 +21,6 @@ extern "C" {
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 //#include <openair1/PHY/phy_extern.h>
 
-static bool is_gnb = false;
-
 #pragma pack(1)
 
 typedef struct Gtpv1uMsgHeader {
@@ -60,18 +58,21 @@ typedef struct Gtpv1uMsgHeaderOptFields {
   uint8_t NextExtHeaderType;    
 } __attribute__((packed)) Gtpv1uMsgHeaderOptFieldsT;
 
-typedef struct PDUSessionContainer {
+#define DL_PDU_SESSION_INFORMATION 0
+#define UL_PDU_SESSION_INFORMATION 1
+
+  typedef struct PDUSessionContainer {
   uint8_t spare:4;
   uint8_t PDU_type:4;
   uint8_t QFI:6;
-  uint8_t RQI:1;
-  uint8_t PPP:1;
+  uint8_t Reflective_QoS_activation:1;
+  uint8_t Paging_Policy_Indicator:1;
 } __attribute__((packed)) PDUSessionContainerT;
 
 typedef struct Gtpv1uExtHeader {
   uint8_t ExtHeaderLen;
   PDUSessionContainerT pdusession_cntr;
-  //uint8_t NextExtHeaderType;
+  uint8_t NextExtHeaderType;
 }__attribute__((packed)) Gtpv1uExtHeaderT;
 
 #pragma pack()
@@ -103,6 +104,7 @@ typedef struct gtpv1u_bearer_s {
   tcp_udp_port_t  outgoing_port;
   uint16_t        seqNum;
   uint8_t         npduNum;
+  int outgoing_qfi;
 } gtpv1u_bearer_t;
 
 typedef struct {
@@ -159,75 +161,80 @@ instance_t legacyInstanceMapping=0;
 
 #define GTPV1U_HEADER_SIZE                                  (8)
   
-  
-  static int gtpv1uCreateAndSendMsg(int h, uint32_t peerIp, uint16_t peerPort, int msgType, teid_t teid, uint8_t *Msg,int msgLen,
-                                   bool seqNumFlag, bool  npduNumFlag, bool extHdrFlag, int seqNum, int npduNum, int extHdrType,
-                                   uint8_t *extensionHeader_buffer, uint8_t extensionHeader_length) {
+  #define HDR_MAX 256 // 256 is supposed to be larger than any gtp header
+static int gtpv1uCreateAndSendMsg(int h,
+                                  uint32_t peerIp,
+                                  uint16_t peerPort,
+                                  int msgType,
+                                  teid_t teid,
+                                  uint8_t *Msg,
+                                  int msgLen,
+                                  bool seqNumFlag,
+                                  bool npduNumFlag,
+                                  int seqNum,
+                                  int npduNum,
+                                  int extHdrType,
+                                  uint8_t *extensionHeader_buffer,
+                                  uint8_t extensionHeader_length) {
   LOG_D(GTPU, "Peer IP:%u peer port:%u outgoing teid:%u \n", peerIp, peerPort, teid);
-  int headerAdditional=0;
 
-  if ( seqNumFlag || npduNumFlag || extHdrFlag)
-    headerAdditional=4;
-
-  int fullSize=GTPV1U_HEADER_SIZE+headerAdditional+msgLen+extensionHeader_length;
-  uint8_t buffer[fullSize];
+  uint8_t buffer[msgLen+HDR_MAX]; 
+  uint8_t *curPtr=buffer;
   Gtpv1uMsgHeaderT      *msgHdr = (Gtpv1uMsgHeaderT *)buffer ;
   // N should be 0 for us (it was used only in 2G and 3G)
   msgHdr->PN=npduNumFlag;
   msgHdr->S=seqNumFlag;
-  msgHdr->E=extHdrFlag;
+  msgHdr->E = extHdrType;
   msgHdr->spare=0;
   //PT=0 is for GTP' TS 32.295 (charging)
   msgHdr->PT=1;
   msgHdr->version=1;
   msgHdr->msgType=msgType;
-  msgHdr->msgLength=htons(msgLen+extensionHeader_length);
-
-  if ( seqNumFlag || extHdrFlag || npduNumFlag)
-    msgHdr->msgLength+=htons(4);
-
+  msgHdr->msgLength = htons(msgLen + extensionHeader_length);
   msgHdr->teid=htonl(teid);
 
-  if(seqNumFlag || extHdrFlag || npduNumFlag) {
-    *((uint16_t *) (buffer+8)) = seqNumFlag ? seqNum : 0x0000;
-    *((uint8_t *) (buffer+10)) = npduNumFlag ? npduNum : 0x00;
-    *((uint8_t *) (buffer+11)) = extHdrFlag ? extHdrType : 0x00;
+  curPtr+=sizeof(Gtpv1uMsgHeaderT);
 
-    /**(buffer+8) = seqNumFlag ? htons(seqNum) : 0x0000;
-    *(buffer+10) = npduNumFlag ? htons(npduNum) : 0x00;
-    *(buffer+11) = extHdrFlag ? htons(extHdrType) : 0x00;
-    *(buffer+11) = extHdrType;*/
+  if (seqNumFlag || (extHdrType != NO_MORE_EXT_HDRS) || npduNumFlag) {
+    msgHdr->msgLength += htons(4);
+    *(uint16_t *)curPtr = seqNumFlag ? seqNum : 0x0000;
+    curPtr+=sizeof(uint16_t);
+    *(uint8_t *)curPtr = npduNumFlag ? npduNum : 0x00;
+    curPtr++;
+    *(uint8_t *)curPtr = extHdrType;
+    curPtr++;
   }
 
-  if(extHdrFlag){
-    while (extHdrType){
-      if (extensionHeader_length > 0 && extHdrType == 0x84){
-        memcpy(buffer+GTPV1U_HEADER_SIZE+headerAdditional, extensionHeader_buffer, extensionHeader_length);
-        LOG_D(GTPU, "Extension Header for DDD added. The length is: %d, extension header type is: %x \n", extensionHeader_length, *((uint8_t *) (buffer+11))); 
-        extHdrType = extensionHeader_buffer[extensionHeader_length -1];
-        LOG_D(GTPU, "Next extension header type is: %x \n", *((uint8_t *) (buffer+11)));
-      }
-      else {
-        LOG_W(GTPU, "Extension header type not supported, returning... \n");
-        return GTPNOK;
-      }
+  // Bug: if there is more than one extension, infinite loop on extensionHeader_buffer
+  while (extHdrType != NO_MORE_EXT_HDRS) {
+    if (extensionHeader_length > 0) {
+      memcpy(curPtr, extensionHeader_buffer, extensionHeader_length);
+      curPtr += extensionHeader_length;
+      LOG_D(GTPU, "Extension Header for DDD added. The length is: %d, extension header type is: %x \n", extensionHeader_length, *((uint8_t *)(buffer + 11)));
+      extHdrType = extensionHeader_buffer[extensionHeader_length - 1];
+      LOG_D(GTPU, "Next extension header type is: %x \n", *((uint8_t *)(buffer + 11)));
+    } else {
+      LOG_W(GTPU, "Extension header type not supported, returning... \n");
     }
   }
+
   if (Msg!= NULL){
-    memcpy(buffer+GTPV1U_HEADER_SIZE+headerAdditional+extensionHeader_length, Msg, msgLen);
+    memcpy(curPtr, Msg, msgLen);
+    curPtr+=msgLen;
   }
 
+  AssertFatal(curPtr-(buffer+msgLen) < HDR_MAX, "");
   // Fix me: add IPv6 support, using flag ipVersion
   static struct sockaddr_in to= {0};
   to.sin_family      = AF_INET;
   to.sin_port        = htons(peerPort);
   to.sin_addr.s_addr = peerIp ;
-  LOG_D(GTPU,"sending packet size: %d to %s\n",fullSize, inet_ntoa(to.sin_addr) );
+  LOG_D(GTPU,"sending packet size: %ld to %s\n",curPtr-buffer, inet_ntoa(to.sin_addr) );
   int ret;
 
-  if ((ret=sendto(h, (void *)buffer, (size_t)fullSize, 0,(struct sockaddr *)&to, sizeof(to) )) != fullSize ) {
-    LOG_E(GTPU, "[SD %d] Failed to send data to " IPV4_ADDR " on port %d, buffer size %u, ret: %d, errno: %d\n",
-          h, IPV4_ADDR_FORMAT(peerIp), peerPort, fullSize, ret, errno);
+  if ((ret=sendto(h, (void *)buffer, curPtr-buffer, 0,(struct sockaddr *)&to, sizeof(to) )) != curPtr-buffer ) {
+    LOG_E(GTPU, "[SD %d] Failed to send data to " IPV4_ADDR " on port %d, buffer size %lu, ret: %d, errno: %d\n",
+          h, IPV4_ADDR_FORMAT(peerIp), peerPort, curPtr-buffer, ret, errno);
     return GTPNOK;
   }
 
@@ -269,12 +276,8 @@ static void gtpv1uSend(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req, b
   // copy to release the mutex
   gtpv1u_bearer_t tmp=ptr2->second;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  gtpv1uCreateAndSendMsg(compatInst(instance),
-                         tmp.outgoing_ip_addr,
-                         tmp.outgoing_port,
-                         GTP_GPDU,
-                         tmp.teid_outgoing,
-                         buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0, NULL, 0) ;
+  gtpv1uCreateAndSendMsg(
+      compatInst(instance), tmp.outgoing_ip_addr, tmp.outgoing_port, GTP_GPDU, tmp.teid_outgoing, buffer, length, seqNumFlag, npduNumFlag, tmp.seqNum, tmp.npduNum, NO_MORE_EXT_HDRS, NULL, 0);
 }
 
 static void gtpv1uSend2(instance_t instance, gtpv1u_gnb_tunnel_data_req_t *req, bool seqNumFlag, bool npduNumFlag) {
@@ -312,12 +315,35 @@ static void gtpv1uSend2(instance_t instance, gtpv1u_gnb_tunnel_data_req_t *req, 
   // copy to release the mutex
   gtpv1u_bearer_t tmp=ptr2->second;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  gtpv1uCreateAndSendMsg(compatInst(instance),
-                         tmp.outgoing_ip_addr,
-                         tmp.outgoing_port,
-                         GTP_GPDU,
-                         tmp.teid_outgoing,
-                         buffer, length, seqNumFlag, npduNumFlag, false, tmp.seqNum, tmp.npduNum, 0, NULL, 0) ;
+
+  if (tmp.outgoing_qfi != -1) {
+    Gtpv1uExtHeaderT ext = { 0 };
+    ext.ExtHeaderLen = 1; // in quad bytes  EXT_HDR_LNTH_OCTET_UNITS
+    ext.pdusession_cntr.spare = 0;
+    ext.pdusession_cntr.PDU_type = UL_PDU_SESSION_INFORMATION;
+    ext.pdusession_cntr.QFI = tmp.outgoing_qfi;
+    ext.pdusession_cntr.Reflective_QoS_activation = false;
+    ext.pdusession_cntr.Paging_Policy_Indicator = false;
+    ext.NextExtHeaderType = NO_MORE_EXT_HDRS;
+
+    gtpv1uCreateAndSendMsg(compatInst(instance),
+                           tmp.outgoing_ip_addr,
+                           tmp.outgoing_port,
+                           GTP_GPDU,
+                           tmp.teid_outgoing,
+                           buffer,
+                           length,
+                           seqNumFlag,
+                           npduNumFlag,
+                           tmp.seqNum,
+                           tmp.npduNum,
+                           PDU_SESSION_CONTAINER,
+                           (uint8_t *)&ext,
+                           sizeof(ext));
+  } else {
+    gtpv1uCreateAndSendMsg(
+        compatInst(instance), tmp.outgoing_ip_addr, tmp.outgoing_port, GTP_GPDU, tmp.teid_outgoing, buffer, length, seqNumFlag, npduNumFlag, tmp.seqNum, tmp.npduNum, NO_MORE_EXT_HDRS, NULL, 0);
+  }
 }
 
 static void fillDlDeliveryStatusReport(extensionHeader_t *extensionHeader, uint32_t RLC_buffer_availability, uint32_t NR_PDCP_PDU_SN){
@@ -379,13 +405,8 @@ static void gtpv1uSendDlDeliveryStatus(instance_t instance, gtpv1u_DU_buffer_rep
   // copy to release the mutex
   gtpv1u_bearer_t tmp=ptr2->second;
   pthread_mutex_unlock(&globGtp.gtp_lock);
-  gtpv1uCreateAndSendMsg(compatInst(instance),
-      tmp.outgoing_ip_addr,
-      tmp.outgoing_port,
-      GTP_GPDU,
-      tmp.teid_outgoing,
-      NULL, 0, false, false, true, 0, 0, 0x84, extensionHeader->buffer, extensionHeader->length) ;
-
+  gtpv1uCreateAndSendMsg(
+      compatInst(instance), tmp.outgoing_ip_addr, tmp.outgoing_port, GTP_GPDU, tmp.teid_outgoing, NULL, 0, false, false, 0, 0, NR_RAN_CONTAINER, extensionHeader->buffer, extensionHeader->length);
 }
 
 static void gtpv1uEndTunnel(instance_t instance, gtpv1u_enb_tunnel_data_req_t *req) {
@@ -567,8 +588,16 @@ void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer
   return;
 }
 
-teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
-                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
+teid_t newGtpuCreateTunnel(instance_t instance,
+                           rnti_t rnti,
+                           int incoming_bearer_id,
+                           int outgoing_bearer_id,
+                           teid_t outgoing_teid,
+                           int outgoing_qfi,
+                           transport_layer_addr_t remoteAddr,
+                           int port,
+                           gtpCallback callBack,
+                           gtpCallbackSDAP callBackSDAP) {
   pthread_mutex_lock(&globGtp.gtp_lock);
   instance=compatInst(instance);
   auto inst=&globGtp.instances[instance];
@@ -593,8 +622,8 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   inst->te2ue_mapping[incoming_teid].outgoing_teid= outgoing_teid;
 
   inst->te2ue_mapping[incoming_teid].callBack=callBack;
-  
-  inst->te2ue_mapping[incoming_teid].callBackSDAP = sdap_data_req;
+
+  inst->te2ue_mapping[incoming_teid].callBackSDAP = callBackSDAP;
 
   inst->te2ue_mapping[incoming_teid].pdusession_id = (uint8_t)outgoing_bearer_id;
 
@@ -625,6 +654,7 @@ teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer
   tmp->teid_incoming = incoming_teid;
   tmp->outgoing_port=port;
   tmp->teid_outgoing= outgoing_teid;
+  tmp->outgoing_qfi=outgoing_qfi;
   pthread_mutex_unlock(&globGtp.gtp_lock);
   char ip4[INET_ADDRSTRLEN];
   char ip6[INET6_ADDRSTRLEN];
@@ -653,12 +683,16 @@ int gtpv1u_create_s1u_tunnel(instance_t instance,
                 "From legacy code not clear, seems impossible (bearer=%d)\n",
                 create_tunnel_req->eps_bearer_id[i]);
     int incoming_rb_id=create_tunnel_req->eps_bearer_id[i]-4;
-    teid_t teid=newGtpuCreateTunnel(compatInst(instance), create_tunnel_req->rnti,
-                                    incoming_rb_id,
-                                    create_tunnel_req->eps_bearer_id[i],
-                                    create_tunnel_req->sgw_S1u_teid[i],
-                                    create_tunnel_req->sgw_addr[i],  dstport,
-                                    pdcp_data_req);
+    teid_t teid = newGtpuCreateTunnel(compatInst(instance),
+                                      create_tunnel_req->rnti,
+                                      incoming_rb_id,
+                                      create_tunnel_req->eps_bearer_id[i],
+                                      create_tunnel_req->sgw_S1u_teid[i],
+                                      -1, // no pdu session in 4G
+                                      create_tunnel_req->sgw_addr[i],
+                                      dstport,
+                                      pdcp_data_req,
+                                      NULL);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
     create_tunnel_resp->num_tunnels=create_tunnel_req->num_tunnels;
@@ -715,15 +749,18 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
         create_tunnel_req->rnti,
         create_tunnel_req->num_tunnels,
         create_tunnel_req->outgoing_teid[0]);
-  tcp_udp_port_t dstport=globGtp.instances[compatInst(instance)].get_dstport();
-  is_gnb = true;
+  tcp_udp_port_t dstport = globGtp.instances[compatInst(instance)].get_dstport();
   for (int i = 0; i < create_tunnel_req->num_tunnels; i++) {
-    teid_t teid=newGtpuCreateTunnel(instance, create_tunnel_req->rnti,
-                                    create_tunnel_req->incoming_rb_id[i],
-                                    create_tunnel_req->pdusession_id[i],
-                                    create_tunnel_req->outgoing_teid[i],
-                                    create_tunnel_req->dst_addr[i], dstport,
-                                    pdcp_data_req);
+    teid_t teid = newGtpuCreateTunnel(instance,
+                                      create_tunnel_req->rnti,
+                                      create_tunnel_req->incoming_rb_id[i],
+                                      create_tunnel_req->pdusession_id[i],
+                                      create_tunnel_req->outgoing_teid[i],
+                                      create_tunnel_req->outgoing_qfi[i],
+                                      create_tunnel_req->dst_addr[i],
+                                      dstport,
+                                      pdcp_data_req,
+                                      sdap_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
     create_tunnel_resp->num_tunnels=create_tunnel_req->num_tunnels;
@@ -853,9 +890,7 @@ static int Gtpv1uHandleEchoReq(int h,
   uint16_t seq=ntohs(*(uint16_t *)(msgHdr+1));
   LOG_D(GTPU, "[%d] Received a echo request, TEID: %d, seq: %hu\n", h, msgHdr->teid, seq);
   uint8_t recovery[2]= {14,0};
-  return gtpv1uCreateAndSendMsg(h, peerIp, peerPort, GTP_ECHO_RSP, ntohl(msgHdr->teid),
-			 recovery, sizeof recovery,
-			 1, 0, 0, seq, 0, 0, NULL, 0);
+  return gtpv1uCreateAndSendMsg(h, peerIp, peerPort, GTP_ECHO_RSP, ntohl(msgHdr->teid), recovery, sizeof recovery, true, false, seq, 0, NO_MORE_EXT_HDRS, NULL, 0);
 }
 
 static int Gtpv1uHandleError(int h,
@@ -968,7 +1003,7 @@ static int Gtpv1uHandleGpdu(int h,
   //Minimum length of GTP-U header if non of the optional fields are present
   int offset = sizeof(Gtpv1uMsgHeaderT);
 
-  uint8_t qfi = 0;
+  uint8_t qfi = -1;
   bool rqi = false;
   uint32_t NR_PDCP_PDU_SN = 0;
 
@@ -986,7 +1021,7 @@ static int Gtpv1uHandleGpdu(int h,
         case PDU_SESSION_CONTAINER: {
           PDUSessionContainerT *pdusession_cntr = (PDUSessionContainerT *)(msgBuf + offset + 1);
           qfi = pdusession_cntr->QFI;
-          rqi = pdusession_cntr->RQI;
+          rqi = pdusession_cntr->Reflective_QoS_activation;
           break;
         }
         case NR_RAN_CONTAINER: {
@@ -1047,7 +1082,7 @@ static int Gtpv1uHandleGpdu(int h,
   const uint32_t destinationL2Id=0;
   pthread_mutex_unlock(&globGtp.gtp_lock);
 
-  if(is_gnb && qfi){
+  if (qfi != -1 && tunnel->second.callBackSDAP) {
     if ( !tunnel->second.callBackSDAP(&ctxt,
                                       srb_flag,
                                       rb_id,
@@ -1106,12 +1141,8 @@ static int Gtpv1uHandleGpdu(int h,
      * 1 octet for padding + 1 octet for next extension header type,
      * according to TS 38.425: Fig. 5.5.2.2-1 and section 5.5.3.24*/
     extensionHeader->length  = 1+sizeof(DlDataDeliveryStatus_flagsT)+3+1+1;
-    gtpv1uCreateAndSendMsg(h,
-        peerIp,
-        peerPort,
-        GTP_GPDU,
-        inst->te2ue_mapping[ntohl(msgHdr->teid)].outgoing_teid,
-        NULL, 0, false, false, true, 0, 0, 0x84, extensionHeader->buffer, extensionHeader->length) ;
+    gtpv1uCreateAndSendMsg(
+        h, peerIp, peerPort, GTP_GPDU, inst->te2ue_mapping[ntohl(msgHdr->teid)].outgoing_teid, NULL, 0, false, false, 0, 0, NR_RAN_CONTAINER, extensionHeader->buffer, extensionHeader->length);
   }
 
   LOG_D(GTPU,"[%d] Received a %d bytes packet for: teid:%x\n", h,
