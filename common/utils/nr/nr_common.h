@@ -49,10 +49,9 @@ typedef struct nr_bandentry_s {
 } nr_bandentry_t;
 
 extern const nr_bandentry_t nr_bandtable[];
+
 static inline int get_num_dmrs(uint16_t dmrs_mask ) {
-
   int num_dmrs=0;
-
   for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
   return(num_dmrs);
 }
