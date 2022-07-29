@@ -1141,6 +1141,11 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
       if (count_estimates == n_noise_estimates) {
         noise_power_per_rb[rb] = sum_re2/n_noise_estimates - (sum_re/n_noise_estimates)*(sum_re/n_noise_estimates) +
                                  sum_im2/n_noise_estimates - (sum_im/n_noise_estimates)*(sum_im/n_noise_estimates);
+
+        if (noise_power_per_rb[rb] == 0) {
+          noise_power_per_rb[rb] = 1;
+        }
+
         snr_per_rb[rb] = dB_fixed((int32_t)((*signal_power<<factor_bits)/noise_power_per_rb[rb])) - factor_dB;
         count_estimates = 0;
         sum_re = 0;
