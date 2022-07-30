@@ -141,7 +141,7 @@ int EmmDeregisteredNormalService(nas_user_t *user, const emm_reg_t *evt)
     /*
      * Initial NAS message failed to be delivered to the network
      */
-    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, TRUE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, true);
     break;
 
   case _EMMREG_LOWERLAYER_RELEASE:

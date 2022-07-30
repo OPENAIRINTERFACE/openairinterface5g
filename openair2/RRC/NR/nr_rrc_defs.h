@@ -173,7 +173,7 @@ typedef struct UE_RRC_INFO_NR_s {
 } __attribute__ ((__packed__)) NR_UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_NR_s {
-  boolean_t                                           presence;
+  bool                                                presence;
   uint16_t                                            amf_set_id;
   uint8_t                                             amf_pointer;
   uint32_t                                            fiveg_tmsi;
@@ -447,7 +447,8 @@ typedef struct {
 
   NR_BCCH_BCH_Message_t                     mib;
   NR_BCCH_BCH_Message_t                    *mib_DU;
-  NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
+  NR_SIB1_t                                *siblock1_DU;
+  //NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
   NR_SIB1_t                                *sib1;
   NR_SIB2_t                                *sib2;
   NR_SIB3_t                                *sib3;

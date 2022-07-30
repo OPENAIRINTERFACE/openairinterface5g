@@ -208,7 +208,7 @@ static const OctetString* _network_simulator_pdn[NETWORK_IP_MAX][2] = {
 static int _set_signal_handler(int signal, void (handler)(int));
 static void _signal_handler(int signal_number);
 static int _process_message(int msgID, const as_message_t* req);
-static int _assign_pdn_address(int ue_pdn_type, int is_initial, int* pdn_type, OctetString* pdn);
+static int _assign_pdn_address(int ue_pdn_type, bool is_initial, int* pdn_type, OctetString* pdn);
 
 /* Functions used to process messages received from the Access Stratum */
 static int _process_cell_info_req(const cell_info_req_t* req, cell_info_cnf_t* rsp);
@@ -283,7 +283,7 @@ int main (int argc, const char* argv[])
   /*
    * Network simulator main loop
    */
-  while (TRUE) {
+  while (true) {
     as_message_t msg;
 
     /* Receive message from the NAS */
@@ -1072,11 +1072,11 @@ static int _process_pdn_connectivity_request(const pdn_connectivity_request_msg*
     /* Assign PDN address */
     if (apn.length > 0) {
       request->accesspointname.accesspointnamevalue = apn;
-      esm_cause = _assign_pdn_address(requested_pdn_type, FALSE, &pdn_type,
+      esm_cause = _assign_pdn_address(requested_pdn_type, false, &pdn_type,
                                       &request->pdnaddress.pdnaddressinformation);
     } else {
       request->accesspointname.accesspointnamevalue = EURECOM_APN;
-      esm_cause = _assign_pdn_address(requested_pdn_type, TRUE, &pdn_type,
+      esm_cause = _assign_pdn_address(requested_pdn_type, true, &pdn_type,
                                       &request->pdnaddress.pdnaddressinformation);
     }
 

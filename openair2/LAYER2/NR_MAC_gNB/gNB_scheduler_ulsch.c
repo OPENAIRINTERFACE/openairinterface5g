@@ -36,6 +36,9 @@
 #include <openair2/UTIL/OPT/opt.h>
 
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+extern void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl);
+
+//#define SRS_IND_DEBUG
 
 int get_dci_format(NR_UE_sched_ctrl_t *sched_ctrl) {
 
@@ -710,10 +713,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 return;
               } else {
                 // The UE identified by C-RNTI still exists at the gNB
-                // Reset uplink failure flags/counters/timers at MAC and at RRC so gNB will resume again scheduling resources for this UE
-                UE_C->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
-                UE_C->UE_sched_ctrl.ul_failure = 0;
+                // Reset uplink failure flags/counters/timers at RRC
                 nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->crnti);
+
+                // Reset HARQ processes
+                reset_dl_harq_list(&UE_C->UE_sched_ctrl);
+                reset_ul_harq_list(&UE_C->UE_sched_ctrl);
               }
             }
             LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
@@ -757,6 +762,56 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       ra->msg3_round++;
       ra->state = Msg3_retransmission;
     }
+  }
+}
+
+void handle_nr_srs_measurements(const module_id_t module_id,
+                                const frame_t frame,
+                                const sub_frame_t slot,
+                                const rnti_t rnti,
+                                const uint16_t timing_advance,
+                                const uint8_t num_symbols,
+                                const uint8_t wide_band_snr,
+                                const uint8_t num_reported_symbols,
+                                nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list) {
+
+  LOG_D(NR_MAC, "(%d.%d) Received SRS indication for rnti: 0x%04x\n", frame, slot, rnti);
+
+#ifdef SRS_IND_DEBUG
+  LOG_I(NR_MAC, "frame = %i\n", frame);
+  LOG_I(NR_MAC, "slot = %i\n", slot);
+  LOG_I(NR_MAC, "rnti = 0x%04x\n", rnti);
+  LOG_I(NR_MAC, "timing_advance = %i\n", timing_advance);
+  LOG_I(NR_MAC, "num_symbols = %i\n", num_symbols);
+  LOG_I(NR_MAC, "wide_band_snr = %i (%i dB)\n", wide_band_snr, (wide_band_snr>>1)-64);
+  LOG_I(NR_MAC, "num_reported_symbols = %i\n", num_reported_symbols);
+  LOG_I(NR_MAC, "reported_symbol_list[0].num_rbs = %i\n", reported_symbol_list[0].num_rbs);
+  for(int rb = 0; rb < reported_symbol_list[0].num_rbs; rb++) {
+    LOG_I(NR_MAC, "reported_symbol_list[0].rb_list[%3i].rb_snr = %i (%i dB)\n",
+          rb, reported_symbol_list[0].rb_list[rb].rb_snr, (reported_symbol_list[0].rb_list[rb].rb_snr>>1)-64);
+  }
+#endif
+
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, rnti);
+  if (!UE) {
+    LOG_W(NR_MAC, "Could not find UE for RNTI 0x%04x\n", rnti);
+    return;
+  }
+
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+  NR_mac_stats_t *stats = &UE->mac_stats;
+  stats->srs_wide_band_snr = (wide_band_snr>>1)-64;
+
+  const int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
+  uint16_t *ulprbbl = nr_mac->ulprbbl;
+
+  memset(ulprbbl, 0, reported_symbol_list[0].num_rbs*sizeof(uint16_t));
+  for (int rb = 0; rb < reported_symbol_list[0].num_rbs; rb++) {
+    int snr = (reported_symbol_list[0].rb_list[rb].rb_snr>>1)-64;
+    if (snr < ul_prbblack_SNR_threshold) {
+      ulprbbl[rb] = 0x3FFF; // all symbols taken
+    }
+    LOG_D(NR_MAC, "ulprbbl[%3i] = 0x%x\n", rb, ulprbbl[rb]);
   }
 }
 
@@ -933,8 +988,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
   }
 
   /* Find a free CCE */
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
   uint8_t nr_of_candidates;
   for (int i=0; i<5; i++) {
     // for now taking the lowest value among the available aggregation levels
@@ -1101,8 +1155,7 @@ void pf_ul(module_id_t module_id,
     if (B == 0 && do_sched) {
       /* if no data, pre-allocate 5RB */
       /* Find a free CCE */
-      const int cid = sched_ctrl->coreset->controlResourceSetId;
-      const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+      const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
       uint8_t nr_of_candidates;
       for (int i=0; i<5; i++) {
 	// for now taking the lowest value among the available aggregation levels
@@ -1216,8 +1269,7 @@ void pf_ul(module_id_t module_id,
 
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
 
-    const int cid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t Y = get_Y(cid%3, slot, iterator->UE->rnti);
+    const uint32_t Y = get_Y(sched_ctrl->search_space, slot, iterator->UE->rnti);
     uint8_t nr_of_candidates;
     for (int i=0; i<5; i++) {
       // for now taking the lowest value among the available aggregation levels

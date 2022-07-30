@@ -29,4 +29,6 @@
 extern int16_t hundred_times_delta_TF[100];
 extern uint16_t hundred_times_log10_NPRB[100];
 
+void kill_fep_thread(RU_t *ru);
+
 #endif /*__SCHED_EXTERN_H__ */

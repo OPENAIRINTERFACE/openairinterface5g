@@ -61,18 +61,18 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 
 
   if (!strcmp(eMTCconfig->cellSelectionInfoCE_r13, "ENABLE")) {
-    RRC_CONFIGURATION_REQ(msg_p).cellSelectionInfoCE_r13[cc_idx] = TRUE;
+    RRC_CONFIGURATION_REQ(msg_p).cellSelectionInfoCE_r13[cc_idx] = true;
     RRC_CONFIGURATION_REQ(msg_p).q_RxLevMinCE_r13[cc_idx]= eMTCconfig->q_RxLevMinCE_r13;
     //                            RRC_CONFIGURATION_REQ(msg_p).q_QualMinRSRQ_CE_r13[cc_idx]= calloc(1, sizeof(long));
     //                            *RRC_CONFIGURATION_REQ(msg_p).q_QualMinRSRQ_CE_r13[cc_idx]= q_QualMinRSRQ_CE_r13;
   } else {
-    RRC_CONFIGURATION_REQ(msg_p).cellSelectionInfoCE_r13[cc_idx] = FALSE;
+    RRC_CONFIGURATION_REQ(msg_p).cellSelectionInfoCE_r13[cc_idx] = false;
   }
 
 
 
   if (!strcmp(eMTCconfig->bandwidthReducedAccessRelatedInfo_r13, "ENABLE")) {
-    RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[cc_idx] = TRUE;
+    RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[cc_idx] = true;
 
 
 
@@ -106,7 +106,7 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
     }
 
   } else {
-    RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[cc_idx] = FALSE;
+    RRC_CONFIGURATION_REQ(msg_p).bandwidthReducedAccessRelatedInfo_r13[cc_idx] = false;
   }
 
   char schedulingInfoBrPath[MAX_OPTNAME_SIZE * 2];
@@ -127,10 +127,10 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 
   RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[cc_idx] = CALLOC(1, sizeof(BOOLEAN_t));
   if (!strcmp(eMTCconfig->fdd_DownlinkOrTddSubframeBitmapBR_r13, "subframePattern40-r13")) {
-    *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[cc_idx] = FALSE;
+    *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[cc_idx] = false;
     RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_val_r13[cc_idx] = eMTCconfig->fdd_DownlinkOrTddSubframeBitmapBR_val_r13;
   } else {
-    *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[cc_idx] = TRUE;
+    *RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_r13[cc_idx] = true;
     RRC_CONFIGURATION_REQ(msg_p).fdd_DownlinkOrTddSubframeBitmapBR_val_r13[cc_idx] = eMTCconfig->fdd_DownlinkOrTddSubframeBitmapBR_val_r13;
   }
 
@@ -156,18 +156,18 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 
   if (!strcmp(eMTCconfig->freqHoppingParametersDL_r13, "ENABLE"))
     {
-      RRC_CONFIGURATION_REQ(msg_p).freqHoppingParametersDL_r13[cc_idx] = TRUE;
+      RRC_CONFIGURATION_REQ(msg_p).freqHoppingParametersDL_r13[cc_idx] = true;
 
       if (!strcmp(eMTCconfig->interval_DLHoppingConfigCommonModeA_r13, "interval-TDD-r13"))
-	RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeA_r13[cc_idx] = FALSE;
+	RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeA_r13[cc_idx] = false;
       else
-	RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeA_r13[cc_idx] = TRUE;
+	RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeA_r13[cc_idx] = true;
       RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeA_r13_val[cc_idx] = eMTCconfig->interval_DLHoppingConfigCommonModeA_r13_val;
 
       if (!strcmp(eMTCconfig->interval_DLHoppingConfigCommonModeB_r13, "interval-TDD-r13"))
-	RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeB_r13[cc_idx] = FALSE;
+	RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeB_r13[cc_idx] = false;
       else
-	RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeB_r13[cc_idx] = TRUE;
+	RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeB_r13[cc_idx] = true;
       RRC_CONFIGURATION_REQ(msg_p).interval_DLHoppingConfigCommonModeB_r13_val[cc_idx] = eMTCconfig->interval_DLHoppingConfigCommonModeB_r13_val;
 
       RRC_CONFIGURATION_REQ(msg_p).mpdcch_pdsch_HoppingNB_r13[cc_idx] = calloc(1, sizeof(long));
@@ -188,7 +188,7 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
     }
   else
     {
-      RRC_CONFIGURATION_REQ(msg_p).freqHoppingParametersDL_r13[cc_idx] = FALSE;
+      RRC_CONFIGURATION_REQ(msg_p).freqHoppingParametersDL_r13[cc_idx] = false;
     }
 
   /** ------------------------------SIB2/3 BR------------------------------------------ */
@@ -213,9 +213,9 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 		 "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
 		 config_fname, cell_idx,ENB_CONFIG_STRING_PRACH_HIGH_SPEED);
   else if (strcmp(eMTCconfig->ccparams.prach_high_speed, "ENABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].prach_high_speed = TRUE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].prach_high_speed = true;
   } else if (strcmp(eMTCconfig->ccparams.prach_high_speed, "DISABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].prach_high_speed = FALSE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].prach_high_speed = false;
   } else
     AssertFatal (0,
 		 "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prach_config choice: ENABLE,DISABLE !\n",
@@ -310,9 +310,9 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 		 "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
 		 config_fname, cell_idx,ENB_CONFIG_STRING_PUSCH_ENABLE64QAM);
   else if (strcmp(eMTCconfig->ccparams.pusch_enable64QAM, "ENABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_enable64QAM = TRUE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_enable64QAM = true;
   }  else if (strcmp(eMTCconfig->ccparams.pusch_enable64QAM, "DISABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_enable64QAM = FALSE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_enable64QAM = false;
   } else
     AssertFatal (0,
 		 "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_enable64QAM choice: ENABLE,DISABLE!\n",
@@ -323,9 +323,9 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 		 "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
 		 config_fname, cell_idx,ENB_CONFIG_STRING_PUSCH_GROUP_HOPPING_EN);
   else if (strcmp(eMTCconfig->ccparams.pusch_groupHoppingEnabled, "ENABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_groupHoppingEnabled = TRUE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_groupHoppingEnabled = true;
   }  else if (strcmp(eMTCconfig->ccparams.pusch_groupHoppingEnabled, "DISABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_groupHoppingEnabled= FALSE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_groupHoppingEnabled= false;
   } else
     AssertFatal (0,
 		 "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_groupHoppingEnabled choice: ENABLE,DISABLE!\n",
@@ -343,9 +343,9 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 		 "Failed to parse eNB configuration file %s, enb %d define %s: ENABLE,DISABLE!\n",
 		 config_fname, cell_idx,ENB_CONFIG_STRING_PUSCH_SEQUENCE_HOPPING_EN);
   else if (strcmp(eMTCconfig->ccparams.pusch_sequenceHoppingEnabled, "ENABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_sequenceHoppingEnabled = TRUE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_sequenceHoppingEnabled = true;
   }  else if (strcmp(eMTCconfig->ccparams.pusch_sequenceHoppingEnabled, "DISABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_sequenceHoppingEnabled = FALSE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].pusch_sequenceHoppingEnabled = false;
   } else
     AssertFatal (0,
 		 "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_sequenceHoppingEnabled choice: ENABLE,DISABLE!\n",
@@ -385,15 +385,15 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 	 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].phich_duration,eMTCconfig->ccparams.phich_duration);
 
   if (strcmp(eMTCconfig->ccparams.srs_enable, "ENABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_enable= TRUE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_enable= true;
   } else if (strcmp(eMTCconfig->ccparams.srs_enable, "DISABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_enable= FALSE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_enable= false;
   } else
     AssertFatal (0,
 		 "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
 		 config_fname, cell_idx,eMTCconfig->ccparams.srs_enable);
 
-  if (RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_enable== TRUE) {
+  if (RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_enable== true) {
     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_BandwidthConfig= eMTCconfig->ccparams.srs_BandwidthConfig;
 
     if ((eMTCconfig->ccparams.srs_BandwidthConfig < 0) || (eMTCconfig->ccparams.srs_BandwidthConfig >7))
@@ -408,18 +408,18 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 		   config_fname, cell_idx,eMTCconfig->ccparams.srs_SubframeConfig);
 
     if (strcmp(eMTCconfig->ccparams.srs_ackNackST, "ENABLE") == 0) {
-      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_ackNackST= TRUE;
+      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_ackNackST= true;
     } else if (strcmp(eMTCconfig->ccparams.srs_ackNackST, "DISABLE") == 0) {
-      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_ackNackST= FALSE;
+      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_ackNackST= false;
     } else
       AssertFatal (0,
 		   "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
 		   config_fname, cell_idx,eMTCconfig->ccparams.srs_ackNackST);
 
     if (strcmp(eMTCconfig->ccparams.srs_MaxUpPts, "ENABLE") == 0) {
-      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_MaxUpPts= TRUE;
+      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_MaxUpPts= true;
     } else if (strcmp(eMTCconfig->ccparams.srs_MaxUpPts, "DISABLE") == 0) {
-      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_MaxUpPts= FALSE;
+      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].srs_MaxUpPts= false;
     } else
       AssertFatal (0,
 		   "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_MaxUpPts choice: ENABLE,DISABLE !\n",
@@ -535,7 +535,7 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 		 config_fname, cell_idx,eMTCconfig->ccparams.rach_numberOfRA_Preambles);
 
   if (strcmp(eMTCconfig->ccparams.rach_preamblesGroupAConfig, "ENABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].rach_preamblesGroupAConfig= TRUE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].rach_preamblesGroupAConfig= true;
     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].rach_sizeOfRA_PreamblesGroupA= (eMTCconfig->ccparams.rach_sizeOfRA_PreamblesGroupA/4)-1;
 
     if ((eMTCconfig->ccparams.rach_numberOfRA_Preambles <4) || (eMTCconfig->ccparams.rach_numberOfRA_Preambles>60) || ((eMTCconfig->ccparams.rach_numberOfRA_Preambles&3)!=0))
@@ -588,7 +588,7 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 		   "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rach_messagePowerOffsetGroupB choice: minusinfinity,dB0,dB5,dB8,dB10,dB12,dB15,dB18!\n",
 		   config_fname, cell_idx,eMTCconfig->ccparams.rach_messagePowerOffsetGroupB);
   } else if (strcmp(eMTCconfig->ccparams.rach_preamblesGroupAConfig, "DISABLE") == 0) {
-    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].rach_preamblesGroupAConfig= FALSE;
+    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig_BR[cc_idx].rach_preamblesGroupAConfig= false;
   } else
     AssertFatal (0,
 		 "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rach_preamblesGroupAConfig choice: ENABLE,DISABLE !\n",
@@ -847,14 +847,14 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 
 
   if (!strcmp(eMTCconfig->prach_ConfigCommon_v1310, "ENABLE")) {
-    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].prach_ConfigCommon_v1310 = TRUE;
+    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].prach_ConfigCommon_v1310 = true;
 
     RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].mpdcch_startSF_CSS_RA_r13 = calloc(1, sizeof(BOOLEAN_t));
 
     if (!strcmp(eMTCconfig->mpdcch_startSF_CSS_RA_r13, "tdd-r13")) {
-      *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].mpdcch_startSF_CSS_RA_r13 = FALSE;
+      *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].mpdcch_startSF_CSS_RA_r13 = false;
     } else {
-      *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].mpdcch_startSF_CSS_RA_r13 = TRUE;
+      *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].mpdcch_startSF_CSS_RA_r13 = true;
     }
 
     if (!strcmp(eMTCconfig->mpdcch_startSF_CSS_RA_r13_val, "v1")) {
@@ -882,7 +882,7 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
     RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].prach_HoppingOffset_r13 = calloc(1, sizeof(long));
     *RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].prach_HoppingOffset_r13 = eMTCconfig->prach_HoppingOffset_r13;
   } else {
-    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].prach_ConfigCommon_v1310 = FALSE;
+    RRC_CONFIGURATION_REQ(msg_p).radioresourceconfig_BR[cc_idx].prach_ConfigCommon_v1310 = false;
   }
 
 
@@ -1169,7 +1169,7 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 
 
   /** PCCH CONFIG V1310 */
-  RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[cc_idx] = TRUE;
+  RRC_CONFIGURATION_REQ(msg_p).pcch_config_v1310[cc_idx] = true;
   RRC_CONFIGURATION_REQ(msg_p).paging_narrowbands_r13[cc_idx] = eMTCconfig->paging_narrowbands_r13;
   RRC_CONFIGURATION_REQ(msg_p).mpdcch_numrepetition_paging_r13[cc_idx] = eMTCconfig->mpdcch_numrepetition_paging_r13;
 
@@ -1220,7 +1220,7 @@ void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, in
 
 
   /** SIB2 FREQ HOPPING PARAMETERS R13 */
-  RRC_CONFIGURATION_REQ(msg_p).sib2_freq_hoppingParameters_r13_exists[cc_idx] = TRUE;
+  RRC_CONFIGURATION_REQ(msg_p).sib2_freq_hoppingParameters_r13_exists[cc_idx] = true;
 
   char sib2FreqHoppingParametersR13Path[MAX_OPTNAME_SIZE*2 + 16];
   sprintf(sib2FreqHoppingParametersR13Path, "%s.%s", brparamspath, ENB_CONFIG_STRING_SIB2_FREQ_HOPPINGPARAMETERS_R13);

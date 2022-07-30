@@ -663,8 +663,8 @@ int emm_proc_plmn_selection(nas_user_t *user, int index)
  **      to camp on an acceptable cell, irrespective of its PLMN   **
  **      identity, so that only emergency calls can be made.       **
  **                                                                        **
- ** Inputs:  found:     TRUE if a suitable cell of the chosen      **
- **             PLMN has been found; FALSE otherwise.      **
+ ** Inputs:  found:     true if a suitable cell of the chosen      **
+ **             PLMN has been found; false otherwise.      **
  **      tac:       The code of the location/tracking area the **
  **             chosen PLMN belongs to                     **
  **      ci:        The identifier of the cell                 **
@@ -685,7 +685,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
   emm_plmn_list_t *emm_plmn_list = user->emm_plmn_list;
   user_api_id_t *user_api_id = user->user_api_id;
   int index = emm_plmn_list->index;
-  int select_next_plmn = FALSE;
+  bool select_next_plmn = false;
 
   LOG_TRACE(INFO, "EMM-IDLE  - %s cell found for PLMN %d in %s mode",
             (found)? "One" : "No", index,
@@ -694,7 +694,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
             "Automatic/manual");
 
   if (found) {
-    int is_forbidden = FALSE;
+    bool is_forbidden = false;
 
     /* Select the PLMN of which a suitable cell has been found */
     emm_data->splmn = *emm_plmn_list->plmn[index];
@@ -721,7 +721,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
       /* Check if the selected PLMN is in the forbidden list */
       for (i = 0; i < emm_data->fplmn.n_plmns; i++) {
         if (PLMNS_ARE_EQUAL(emm_data->splmn, emm_data->fplmn.plmn[i])) {
-          is_forbidden = TRUE;
+          is_forbidden = true;
           break;
         }
       }
@@ -730,7 +730,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
         for (i = 0; i < emm_data->fplmn_gprs.n_plmns; i++) {
           if (PLMNS_ARE_EQUAL(emm_data->splmn,
                               emm_data->fplmn_gprs.plmn[i])) {
-            is_forbidden = TRUE;
+            is_forbidden = true;
             break;
           }
         }
@@ -745,7 +745,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
       if (!is_forbidden) {
         for (i = 0; i < emm_data->ftai.n_tais; i++) {
           if (TAIS_ARE_EQUAL(tai, emm_data->ftai.tai[i])) {
-            is_forbidden = TRUE;
+            is_forbidden = true;
             break;
           }
         }
@@ -754,7 +754,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
       if (!is_forbidden) {
         for (i = 0; i < emm_data->ftai_roaming.n_tais; i++) {
           if (TAIS_ARE_EQUAL(tai, emm_data->ftai_roaming.tai[i])) {
-            is_forbidden = TRUE;
+            is_forbidden = true;
             break;
           }
         }
@@ -793,7 +793,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
      * Try to select the next PLMN in the ordered list of available PLMNs
      */
     index += 1;
-    select_next_plmn = TRUE;
+    select_next_plmn = true;
 
     /* Bypass the previously selected PLMN */
     if (index == emm_plmn_list->splmn) {
@@ -809,7 +809,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
      * registered or equivalent PLMNs is ongoing
      */
     index += 1;
-    select_next_plmn = TRUE;
+    select_next_plmn = true;
   }
 
   else if (emm_data->plmn_mode == EMM_DATA_PLMN_MANUAL) {
@@ -830,7 +830,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
      */
     emm_data->plmn_mode = EMM_DATA_PLMN_AUTO;
     index = emm_plmn_list->hplmn;
-    select_next_plmn = TRUE;
+    select_next_plmn = true;
   }
 
   /*
@@ -851,7 +851,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
     } else {
       /* No suitable cell of any PLMN within the ordered list
        * of available PLMNs has been found */
-      select_next_plmn = FALSE;
+      select_next_plmn = false;
       emm_sap.primitive = EMMREG_NO_CELL;
     }
   }
@@ -892,11 +892,11 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
       if (emm_plmn_list->splmn == emm_plmn_list->rplmn) {
         /* The selected PLMN is the registered PLMN */
         LOG_TRACE(INFO, "EMM-IDLE  - The selected PLMN is the registered PLMN");
-        emm_data->is_rplmn = TRUE;
+        emm_data->is_rplmn = true;
       } else if (emm_plmn_list->splmn < emm_plmn_list->hplmn) {
         /* The selected PLMN is in the list of equivalent PLMNs */
         LOG_TRACE(INFO, "EMM-IDLE  - The selected PLMN is in the list of equivalent PLMNs");
-        emm_data->is_eplmn = TRUE;
+        emm_data->is_eplmn = true;
       }
 
       /*

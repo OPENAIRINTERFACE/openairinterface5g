@@ -55,10 +55,10 @@ extern int at_response_format_v1;
 /*
  * Result code suppression indicator (set by ATQ0 and ATQ1)
  * -------------------------------------------------------
- *  FALSE - Result codes are transmitted to the user application
- *  TRUE  - Result codes are suppressed and not transmitted
+ *  false - Result codes are transmitted to the user application
+ *  true  - Result codes are suppressed and not transmitted
  */
-int at_error_code_suppression_q1 = FALSE;
+bool at_error_code_suppression_q1 = false;
 
 /*
  * Verbose mode indicator (set by ATV0, ATV1 and AT+CMEE)

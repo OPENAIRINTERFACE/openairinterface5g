@@ -45,25 +45,31 @@
 extern RAN_CONTEXT_t RC;
 
 
-#define MACSTATSSTRLEN 16384
+#define MACSTATSSTRLEN 65536
 
 void *nrmac_stats_thread(void *arg) {
 
   gNB_MAC_INST *gNB = (gNB_MAC_INST *)arg;
 
-  char output[MACSTATSSTRLEN];
-  memset(output,0,MACSTATSSTRLEN);
-  FILE *fd=fopen("nrMAC_stats.log","w");
-  AssertFatal(fd!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
+  char output[MACSTATSSTRLEN] = {0};
+  const char *end = output + MACSTATSSTRLEN;
+  FILE *file = fopen("nrMAC_stats.log","w");
+  AssertFatal(file!=NULL,"Cannot open nrMAC_stats.log, error %s\n",strerror(errno));
 
   while (oai_exit == 0) {
-    dump_mac_stats(gNB,output,MACSTATSSTRLEN,false);
-     fprintf(fd,"%s\n",output);
-     fflush(fd);
-     usleep(200000);
-     fseek(fd,0,SEEK_SET);
+    char *p = output;
+    p += dump_mac_stats(gNB, p, end - p, false);
+    p += snprintf(p, end - p, "\n");
+    p += print_meas_log(&gNB->eNB_scheduler, "DL & UL scheduling timing", NULL, NULL, p, end - p);
+    p += print_meas_log(&gNB->schedule_dlsch, "dlsch scheduler", NULL, NULL, p, end - p);
+    p += print_meas_log(&gNB->rlc_data_req, "rlc_data_req", NULL, NULL, p, end - p);
+    p += print_meas_log(&gNB->rlc_status_ind, "rlc_status_ind", NULL, NULL, p, end - p);
+    fwrite(output, p - output, 1, file);
+    fflush(file);
+    sleep(1);
+    fseek(file,0,SEEK_SET);
   }
-  fclose(fd);
+  fclose(file);
   return NULL;
 }
 
@@ -73,75 +79,90 @@ void clear_mac_stats(gNB_MAC_INST *gNB) {
   }
 }
 
-void dump_mac_stats(gNB_MAC_INST *gNB, char *output, int strlen, bool reset_rsrp)
+size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset_rsrp)
 {
   int num = 1;
- 
-  int stroff=0;
+  const char *begin = output;
+  const char *end = output + strlen;
+
   pthread_mutex_lock(&gNB->UE_info.mutex);
   UE_iterator(gNB->UE_info.list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_mac_stats_t *stats = &UE->mac_stats;
     const int avg_rsrp = stats->num_rsrp_meas > 0 ? stats->cumul_rsrp / stats->num_rsrp_meas : 0;
 
+    output += snprintf(output,
+                       end - output,
+                       "UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas), UL-SNR %d dB\n",
+                       UE->rnti,
+                       num++,
+                       sched_ctrl->ph,
+                       sched_ctrl->pcmax,
+                       avg_rsrp,
+                       stats->num_rsrp_meas,
+                       stats->srs_wide_band_snr);
+    output += snprintf(output,
+                       end - output,
+                       "UE %04x: CQI %d, RI %d, PMI (%d,%d)\n",
+                       UE->rnti,
+                       UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,
+                       UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.ri+1,
+                       UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
+                       UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
-    stroff+=sprintf(output+stroff,"UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
-		    UE->rnti,
-		    num++,
-		    sched_ctrl->ph,
-		    sched_ctrl->pcmax,
-		    avg_rsrp,
-		    stats->num_rsrp_meas);
-    stroff+=sprintf(output+stroff,"UE %04x: CQI %d, RI %d, PMI (%d,%d)\n",
-                    UE->rnti,
-                    UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,
-                    UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.ri+1,
-                    UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
-                    UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
-    
-    stroff+=sprintf(output+stroff,"UE %04x: dlsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
-                    UE->rnti,
-
-                    stats->dl.rounds[0], stats->dl.rounds[1],
-                    stats->dl.rounds[2], stats->dl.rounds[3],
-                    stats->dl.errors,
-                    stats->pucch0_DTX,
-                    sched_ctrl->dl_bler_stats.bler,
-                    sched_ctrl->dl_bler_stats.mcs);
+    output += snprintf(output,
+                       end - output,
+                       "UE %04x: dlsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
+                       UE->rnti,
+                       stats->dl.rounds[0], stats->dl.rounds[1],
+                       stats->dl.rounds[2], stats->dl.rounds[3],
+                       stats->dl.errors,
+                       stats->pucch0_DTX,
+                       sched_ctrl->dl_bler_stats.bler,
+                       sched_ctrl->dl_bler_stats.mcs);
     if (reset_rsrp) {
       stats->num_rsrp_meas = 0;
       stats->cumul_rsrp = 0;
     }
-    stroff+=sprintf(output+stroff,"UE %04x: dlsch_total_bytes %"PRIu64"\n", UE->rnti, stats->dl.total_bytes);
-    stroff+=sprintf(output+stroff,"UE %04x: ulsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", ulsch_DTX %d, ulsch_errors %"PRIu64", BLER %.5f MCS %d\n",
-                    UE->rnti,
-                    stats->ul.rounds[0], stats->ul.rounds[1],
-                    stats->ul.rounds[2], stats->ul.rounds[3],
-                    stats->ulsch_DTX,
-                    stats->ul.errors,
-                    sched_ctrl->ul_bler_stats.bler,
-                    sched_ctrl->ul_bler_stats.mcs);
-    stroff+=sprintf(output+stroff,
-                    "UE %04x: ulsch_total_bytes_scheduled %"PRIu64", ulsch_total_bytes_received %"PRIu64"\n",
-                    UE->rnti,
-                    stats->ulsch_total_bytes_scheduled, stats->ul.total_bytes);
+    output += snprintf(output,
+                       end - output,
+                       "UE %04x: dlsch_total_bytes %"PRIu64"\n",
+                       UE->rnti,
+                       stats->dl.total_bytes);
+    output += snprintf(output,
+                       end - output,
+                       "UE %04x: ulsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", ulsch_DTX %d, ulsch_errors %"PRIu64", BLER %.5f MCS %d\n",
+                       UE->rnti,
+                       stats->ul.rounds[0], stats->ul.rounds[1],
+                       stats->ul.rounds[2], stats->ul.rounds[3],
+                       stats->ulsch_DTX,
+                       stats->ul.errors,
+                       sched_ctrl->ul_bler_stats.bler,
+                       sched_ctrl->ul_bler_stats.mcs);
+    output += snprintf(output,
+                       end - output,
+                      "UE %04x: ulsch_total_bytes_scheduled %"PRIu64", ulsch_total_bytes_received %"PRIu64"\n",
+                      UE->rnti,
+                      stats->ulsch_total_bytes_scheduled, stats->ul.total_bytes);
     for (int lc_id = 0; lc_id < 63; lc_id++) {
-      if (stats->dl.lc_bytes[lc_id] > 0) {
-        stroff+=sprintf(output+stroff, "UE %04x: LCID %d: %"PRIu64" bytes TX\n", UE->rnti, lc_id, stats->dl.lc_bytes[lc_id]);
-	LOG_D(NR_MAC, "UE %04x: LCID %d: %"PRIu64" bytes TX\n", UE->rnti, lc_id, stats->dl.lc_bytes[lc_id]);
-      }
-      if (stats->ul.lc_bytes[lc_id] > 0) {
-        stroff+=sprintf(output+stroff, "UE %04x: LCID %d: %"PRIu64" bytes RX\n", UE->rnti, lc_id, stats->ul.lc_bytes[lc_id]);
-	LOG_D(NR_MAC, "UE %04x: LCID %d: %"PRIu64" bytes RX\n", UE->rnti, lc_id, stats->ul.lc_bytes[lc_id]);
-
-      }
+      if (stats->dl.lc_bytes[lc_id] > 0)
+        output += snprintf(output,
+                           end - output,
+                           "UE %04x: LCID %d: %"PRIu64" bytes TX\n",
+                           UE->rnti,
+                           lc_id,
+                           stats->dl.lc_bytes[lc_id]);
+      if (stats->ul.lc_bytes[lc_id] > 0)
+        output += snprintf(output,
+                           end - output,
+                           "UE %04x: LCID %d: %"PRIu64" bytes RX\n",
+                           UE->rnti,
+                           lc_id,
+                           stats->ul.lc_bytes[lc_id]);
     }
   }
   pthread_mutex_unlock(&gNB->UE_info.mutex);
-  print_meas(&gNB->eNB_scheduler, "DL & UL scheduling timing stats", NULL, NULL);
-  print_meas(&gNB->schedule_dlsch,"dlsch scheduler",NULL,NULL);
-  print_meas(&gNB->rlc_data_req, "rlc_data_req",NULL,NULL);
-  print_meas(&gNB->rlc_status_ind,"rlc_status_ind",NULL,NULL);
+  return output - begin;
 }
 
 
@@ -190,8 +211,8 @@ void mac_top_init_gNB(void)
         RC.nrmac[i]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(i, 0);
         RC.nrmac[i]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(i, 0);
       }
-      pthread_create(&RC.nrmac[i]->stats_thread,NULL,nrmac_stats_thread,(void*)RC.nrmac[i]);
-
+      if (!IS_SOFTMODEM_NOSTATS_BIT)
+        pthread_create(&RC.nrmac[i]->stats_thread, NULL, nrmac_stats_thread, (void*)RC.nrmac[i]);
     }//END for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
 
     AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");
@@ -211,7 +232,6 @@ void mac_top_init_gNB(void)
 
   // Initialize Linked-List for Active UEs
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++) {
-
     nrmac = RC.nrmac[i];
     nrmac->if_inst = NR_IF_Module_init(i);
     memset(&nrmac->UE_info, 0, sizeof(nrmac->UE_info));

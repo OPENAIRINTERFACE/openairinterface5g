@@ -39,6 +39,8 @@
 
 #define GTPV1U_GNB_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.NRGtpv1uTunnelDataReq
 
+#define GTPV1U_DU_BUFFER_REPORT_REQ(mSGpTR)    (mSGpTR)->ittiMsg.NRGtpv1uBufferReportReq
+
 #define GTPV1U_ALL_TUNNELS_TEID (teid_t)0xFFFFFFFF
 
 typedef struct gtpv1u_enb_create_x2u_tunnel_req_s {
@@ -212,5 +214,11 @@ typedef struct gtpv1u_gnb_tunnel_data_req_s {
   rnti_t                 rnti;
   pdusessionid_t         pdusession_id;
 } gtpv1u_gnb_tunnel_data_req_t;
+
+typedef struct gtpv1u_DU_buffer_report_req_s {
+  uint32_t               buffer_availability;
+  rnti_t                 rnti;
+  pdusessionid_t         pdusession_id;
+} gtpv1u_DU_buffer_report_req_t;
 
 #endif /* GTPV1_U_MESSAGES_TYPES_H_ */

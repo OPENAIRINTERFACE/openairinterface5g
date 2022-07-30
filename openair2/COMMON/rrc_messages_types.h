@@ -417,7 +417,6 @@ typedef struct NRRrcConfigurationReq_s {
   uint8_t                 num_plmn;
   NR_ServingCellConfigCommon_t *scc;
   NR_ServingCellConfig_t  *scd;
-  int                     ssb_SubcarrierOffset;
   int                     sib1_tda;
   rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts;
   int                     pusch_AntennaPorts;

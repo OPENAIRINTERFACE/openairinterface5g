@@ -69,7 +69,7 @@ int last_ulsch_ue_id_volte[MAX_NUM_CCs] = {-1};
   uint16_t pre_nb_rbs_required[2][MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   uint8_t dlsch_ue_select_tbl_in_use;
   uint8_t new_dlsch_ue_select_tbl_in_use;
-  boolean_t pre_scd_activeUE[NUMBER_OF_UE_MAX];
+  bool pre_scd_activeUE[NUMBER_OF_UE_MAX];
   eNB_UE_STATS pre_scd_eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 #endif
 
@@ -125,7 +125,7 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
   UE_info_t *UE_info = &RC.mac[module_idP]->UE_info;
 
   for (UE_id = 0; UE_id <NUMBER_OF_UE_MAX; UE_id++) {
-    if (pre_scd_activeUE[UE_id] != TRUE)
+    if (pre_scd_activeUE[UE_id] != true)
       continue;
 
     // store dlsch buffer
@@ -210,7 +210,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
     DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
 
     for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {
-      if (UE_info->active[UE_id] == FALSE) {
+      if (UE_info->active[UE_id] == false) {
         continue;
       }
 
@@ -331,7 +331,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
         break;
       }
 
-      if (UE_info->active[UE_id] == FALSE) {
+      if (UE_info->active[UE_id] == false) {
         continue;
       }
 
@@ -459,7 +459,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
         break;
       }
 
-      if (UE_info->active[UE_id] == FALSE) {
+      if (UE_info->active[UE_id] == false) {
         continue;
       }
 
@@ -607,7 +607,7 @@ static void dlsch_scheduler_pre_processor_reset_fairRR(
       if (rnti == NOT_A_RNTI)
         continue;
 
-      if (UE_info->active[UE_id] != TRUE)
+      if (UE_info->active[UE_id] != true)
         continue;
 
       LOG_D(MAC, "Running preprocessor for UE %d (%x)\n", UE_id, rnti);
@@ -755,7 +755,7 @@ static void assign_rbs_required_fairRR(
 
   // clear rb allocations across all CC_id
   for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
-    if (UE_info->active[UE_id] != TRUE)
+    if (UE_info->active[UE_id] != true)
       continue;
 
     pCCid = UE_PCCID(Mod_id, UE_id);
@@ -945,7 +945,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
     min_rb_unit[CC_id] = get_min_rb_unit(Mod_id, CC_id);
 
     for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
-      if (UE_info->active[i] != TRUE)
+      if (UE_info->active[i] != true)
         continue;
 
       UE_id = i;
@@ -2241,7 +2241,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
 
   // UE round >0
   for ( UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++ ) {
-    if (UE_info->active[UE_id] == FALSE)
+    if (UE_info->active[UE_id] == false)
       continue;
 
     rnti = UE_RNTI(module_idP,UE_id);
@@ -2251,7 +2251,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
 
     CC_id = UE_PCCID(module_idP,UE_id);
 
-    if (UE_info->UE_template[CC_id][UE_id].configured == FALSE)
+    if (UE_info->UE_template[CC_id][UE_id].configured == false)
       continue;
 
     if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 0
@@ -2401,7 +2401,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
   }
 
   for ( UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++ ) {
-    if (UE_info->active[UE_id] == FALSE)
+    if (UE_info->active[UE_id] == false)
       continue;
 
     rnti = UE_RNTI(module_idP,UE_id);
@@ -2414,7 +2414,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     if (UE_id > last_ulsch_ue_id[CC_id])
       continue;
 
-    if (UE_info->UE_template[CC_id][UE_id].configured == FALSE)
+    if (UE_info->UE_template[CC_id][UE_id].configured == false)
       continue;
 
     if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 0

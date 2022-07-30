@@ -68,6 +68,8 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   NR_ServingCellConfigCommon_t *scc = gNB->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
+  UL_tti_req_ahead_initialization(gNB, scc, num_slots, CC_idP);
+
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t **pdcch = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t **)gNB->pdcch_pdu_idx[CC_idP];
   nfapi_nr_ul_tti_request_t    *future_ul_tti_req =
@@ -117,8 +119,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   protocol_ctxt_t   ctxt={0};
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frame, slot,module_idP);
 
-  char stats_output[16384];
-
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t        *scc     = cc->ServingCellConfigCommon;
@@ -146,8 +146,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_rrc_trigger(&ctxt, 0 /*CC_id*/, frame, slot >> *scc->ssbSubcarrierSpacing);
   }
 
-  for (int i=0; i<MAX_NUM_CORESET; i++)
-    RC.nrmac[module_idP]->pdcch_cand[i] = 0;
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
 
@@ -180,9 +178,10 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 
   if ((slot == 0) && (frame & 127) == 0) {
-     stats_output[0]='\0';
-     dump_mac_stats(RC.nrmac[module_idP],stats_output,16384,true);
-     LOG_I(NR_MAC,"Frame.Slot %d.%d\n%s\n",frame,slot,stats_output);
+    char stats_output[16384];
+    stats_output[0] = '\0';
+    dump_mac_stats(RC.nrmac[module_idP], stats_output, sizeof(stats_output), true);
+    LOG_I(NR_MAC, "Frame.Slot %d.%d\n%s\n", frame, slot, stats_output);
   }
 
   nr_mac_update_timers(module_idP, frame, slot);

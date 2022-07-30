@@ -97,7 +97,7 @@ static int _eps_bearer_release(nas_user_t *user, int ebi, int *pid, int *bid);
  **      has an EPS bearer context with specified EPS bearer iden- **
  **      tity activated.                                           **
  **                                                                        **
- ** Inputs:  is local:  TRUE if the EPS bearer context has to be   **
+ ** Inputs:  is local:  true if the EPS bearer context has to be   **
  **             locally released without peer-to-peer si-  **
  **             gnalling between the UE and the MME        **
  **      ebi:       EPS bearer identity of the EPS bearer con- **
@@ -111,7 +111,7 @@ static int _eps_bearer_release(nas_user_t *user, int ebi, int *pid, int *bid);
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_eps_bearer_context_deactivate(nas_user_t *user, int is_local, int ebi,
+int esm_proc_eps_bearer_context_deactivate(nas_user_t *user, bool is_local, int ebi,
     int *pid, int *bid)
 {
   LOG_FUNC_IN;
@@ -213,7 +213,7 @@ int esm_proc_eps_bearer_context_deactivate_request(nas_user_t *user, int ebi, in
      * the PDN connection */
     if (*esm_cause == ESM_CAUSE_REACTIVATION_REQUESTED) {
       esm_sap_t esm_sap;
-      int active = FALSE;
+      bool active = false;
 
       /* 3GPP TS 24.301, section 6.4.4.3
        * The UE should re-initiate the UE requested PDN connectivity
@@ -242,8 +242,8 @@ int esm_proc_eps_bearer_context_deactivate_request(nas_user_t *user, int ebi, in
          * Notify ESM to re-initiate PDN connectivity procedure
          */
         esm_sap.primitive = ESM_PDN_CONNECTIVITY_REQ;
-        esm_sap.is_standalone = TRUE;
-        esm_sap.data.pdn_connect.is_defined = TRUE;
+        esm_sap.is_standalone = true;
+        esm_sap.data.pdn_connect.is_defined = true;
         esm_sap.data.pdn_connect.cid = pid + 1;
         rc = esm_sap_send(user, &esm_sap);
       }
@@ -265,10 +265,10 @@ int esm_proc_eps_bearer_context_deactivate_request(nas_user_t *user, int ebi, in
  **      DEACTIVATE EPS BEARER CONTEXT ACCEPT message and entering **
  **      the state BEARER CONTEXT INACTIVE.                        **
  **                                                                        **
- ** Inputs:  is_standalone: Should be always TRUE                      **
+ ** Inputs:  is_standalone: Should be always true                      **
  **      ebi:       EPS bearer identity                        **
  **      msg:       Encoded ESM message to be sent             **
- **      ue_triggered:  TRUE if the EPS bearer context procedure   **
+ **      ue_triggered:  true if the EPS bearer context procedure   **
  **             was triggered by the UE                    **
  **      Others:    None                                       **
  **                                                                        **
@@ -277,8 +277,8 @@ int esm_proc_eps_bearer_context_deactivate_request(nas_user_t *user, int ebi, in
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_eps_bearer_context_deactivate_accept(nas_user_t *user, int is_standalone, int ebi,
-    OctetString *msg, int ue_triggered)
+int esm_proc_eps_bearer_context_deactivate_accept(nas_user_t *user, bool is_standalone, int ebi,
+    OctetString *msg, bool ue_triggered)
 {
   LOG_FUNC_IN;
 
@@ -371,7 +371,7 @@ static int _eps_bearer_release(nas_user_t *user, int ebi, int *pid, int *bid)
     LOG_TRACE(WARNING, "ESM-PROC  - Failed to release EPS bearer context");
   } else {
     /* Set the EPS bearer context state to INACTIVE */
-    rc = esm_ebr_set_status(user_api_id, esm_ebr_data, ebi, ESM_EBR_INACTIVE, FALSE);
+    rc = esm_ebr_set_status(user_api_id, esm_ebr_data, ebi, ESM_EBR_INACTIVE, false);
 
     if (rc != RETURNok) {
       /* The EPS bearer context was already in INACTIVE state */

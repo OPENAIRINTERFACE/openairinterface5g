@@ -52,11 +52,6 @@
 # define M3AP_PORT 36444
 #endif
 
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
-
 extern int asn1_xer_print;
 
 #if defined(ENB_MODE)

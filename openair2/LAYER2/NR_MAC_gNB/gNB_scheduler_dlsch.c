@@ -365,6 +365,18 @@ void nr_store_dlsch_buffer(module_id_t module_id,
   }
 }
 
+void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid) {
+
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_harq_t *harq = &sched_ctrl->harq_processes[harq_pid];
+
+  harq->ndi ^= 1;
+  harq->round = 0;
+  UE->mac_stats.dl.errors++;
+  add_tail_nr_list(&sched_ctrl->available_dl_harq, harq_pid);
+
+}
+
 bool allocate_dl_retransmission(module_id_t module_id,
                                 frame_t frame,
                                 sub_frame_t slot,
@@ -378,6 +390,17 @@ bool allocate_dl_retransmission(module_id_t module_id,
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   NR_CellGroupConfig_t *cg = UE->CellGroup;
+  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
+
+  //TODO remove this and handle retransmission with old nrOfLayers
+  //     once ps structure is removed
+  if(ps->nrOfLayers < retInfo->nrOfLayers) {
+    LOG_W(NR_MAC,"Cannot schedule retransmission. RI changed from %d to %d\n",
+          retInfo->nrOfLayers, ps->nrOfLayers);
+    abort_nr_dl_harq(UE, current_harq_pid);
+    remove_front_nr_list(&sched_ctrl->retrans_dl_harq);
+    return false;
+  }
 
   NR_BWP_DownlinkDedicated_t *bwpd =
       cg &&
@@ -401,7 +424,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
   const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
   int rbStart = 0; // start wrt BWPstart
-  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   int rbSize = 0;
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
@@ -489,8 +511,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
   }
 
   /* Find a free CCE */
-  const int cid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t Y = get_Y(cid%3, slot, UE->rnti);
+
+  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
   uint8_t nr_of_candidates;
 
   for (int i=0; i<5; i++) {
@@ -528,7 +550,6 @@ bool allocate_dl_retransmission(module_id_t module_id,
           UE->rnti,
           frame,
           slot);
-    RC.nrmac[module_id]->pdcch_cand[cid]--;
     return false;
   }
 
@@ -692,8 +713,7 @@ void pf_dl(module_id_t module_id,
     }
 
     /* Find a free CCE */
-    const int cid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t Y = get_Y(cid%3, slot, iterator->UE->rnti);
+    const uint32_t Y = get_Y(sched_ctrl->search_space, slot, iterator->UE->rnti);
     uint8_t nr_of_candidates;
 
     for (int i=0; i<5; i++) {
@@ -732,7 +752,6 @@ void pf_dl(module_id_t module_id,
             rnti,
             frame,
             slot);
-      mac->pdcch_cand[cid]--;
       iterator++;
       continue;
     }
@@ -1330,6 +1349,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
           header->L = htons(bufEnd-buf);
           dlsch_total_bytes += bufEnd-buf;
 
+          for (; ((intptr_t)buf) % 4; buf++)
+            *buf = lrand48() & 0xff;
           for (; buf < bufEnd - 3; buf += 4) {
             uint32_t *buf32 = (uint32_t *)buf;
             *buf32 = lrand48();
@@ -1358,6 +1379,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
       /* save which time allocation has been used, to be used on
        * retransmissions */
       harq->sched_pdsch.time_domain_allocation = ps->time_domain_allocation;
+      /* save nr of layers for retransmissions */
+      harq->sched_pdsch.nrOfLayers = ps->nrOfLayers;
 
       // ta command is sent, values are reset
       if (sched_ctrl->ta_apply) {

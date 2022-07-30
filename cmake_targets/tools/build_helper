@@ -109,6 +109,7 @@ check_supported_distribution() {
         "ubuntu18.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
         "fedora35")    return 0 ;;
+        "fedora36")    return 0 ;;
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
@@ -196,8 +197,8 @@ check_warnings() {
 #argument:
 #    $1: log file
 check_errors() {
-  #we look for 'warning:' in the compilation log file
-  error_count=`grep "error:" "$1" | wc -l`
+  #we look for 'error:' in the compilation log file
+  error_count=`grep -c "error:" "$1"`
   if [ $error_count -gt 0 ]; then
     echo_error "ERROR: $error_count error. See $1"
   fi
@@ -623,7 +624,6 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         sshpass \
-        nscd \
         bc \
         ntp"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
@@ -648,7 +648,6 @@ check_install_additional_tools (){
       wvdial \
       numpy \
       sshpass \
-      nscd \
       python2-paramiko \
       python-pyroute2 \
       python-netifaces \
@@ -676,7 +675,6 @@ check_install_additional_tools (){
       wvdial \
       python-numpy \
       sshpass \
-      nscd \
       python-paramiko \
       python-pyroute2 \
       python-netifaces \

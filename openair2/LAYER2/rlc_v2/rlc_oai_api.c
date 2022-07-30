@@ -1065,3 +1065,15 @@ void du_rlc_data_req(const protocol_ctxt_t *const ctxt_pP,
 		sdu_sizeP,
 		sdu_pP, NULL, NULL);
 }
+
+/* HACK to be removed: nr_rlc_get_available_tx_space is needed by
+ * openair3/ocp-gtpu/gtp_itf.cpp which is compiled in lte-softmodem
+ * so let's put a dummy nr_rlc_get_available_tx_space here
+ */
+int nr_rlc_get_available_tx_space(
+  const rnti_t            rntiP,
+  const logical_chan_id_t channel_idP)
+{
+  abort();
+  return 0;
+}

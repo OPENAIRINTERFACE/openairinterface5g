@@ -1320,11 +1320,11 @@ nr_rrc_ue_process_masterCellGroup(
     //TODO (perform SCell addition/modification as specified in 5.3.5.5.9)
   }
 
-  if( cellGroupConfig->ext2->bh_RLC_ChannelToReleaseList_r16 != NULL){
+  if(cellGroupConfig->ext2 != NULL && cellGroupConfig->ext2->bh_RLC_ChannelToReleaseList_r16 != NULL){
     //TODO (perform the BH RLC channel addition/modification as specified in 5.3.5.5.11)
   }
 
-  if( cellGroupConfig->ext2->bh_RLC_ChannelToAddModList_r16 != NULL){
+  if(cellGroupConfig->ext2 != NULL && cellGroupConfig->ext2->bh_RLC_ChannelToAddModList_r16 != NULL){
     //TODO (perform the BH RLC channel addition/modification as specified in 5.3.5.5.11)
   }
 }
@@ -2014,7 +2014,7 @@ nr_rrc_ue_establish_srb2(
    int i, cnt;
 
    if( radioBearerConfig->srb3_ToRelease != NULL){
-     if( *radioBearerConfig->srb3_ToRelease == TRUE){
+     if( *radioBearerConfig->srb3_ToRelease == true){
        //TODO (release the PDCP entity and the srb-Identity of the SRB3.)
      }
    }

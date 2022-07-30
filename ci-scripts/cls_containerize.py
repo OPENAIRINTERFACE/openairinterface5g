@@ -74,6 +74,7 @@ class Containerize():
 		self.eNB2SourceCodePath = ''
 		self.forcedWorkspaceCleanup = False
 		self.imageKind = ''
+		self.proxyCommit = None
 		self.eNB_instance = 0
 		self.eNB_serverId = ['', '', '']
 		self.yamlPath = ['', '', '']
@@ -421,6 +422,124 @@ class Containerize():
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
+	def BuildProxy(self, HTML):
+		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		if self.eNB_serverId[self.eNB_instance] == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.eNB_serverId[self.eNB_instance] == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.eNB_serverId[self.eNB_instance] == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		if self.proxyCommit is None:
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter (need proxyCommit for proxy build)')
+		logging.debug('Building on server: ' + lIpAddr)
+		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
+
+		# Check that we are on Ubuntu
+		mySSH.command('hostnamectl', '\$', 5)
+		result = re.search('Ubuntu',  mySSH.getBefore())
+		self.host = result.group(0)
+		if self.host != 'Ubuntu':
+			logging.error('\u001B[1m Can build proxy only on Ubuntu server\u001B[0m')
+			mySSH.close()
+			sys.exit(1)
+
+		self.cli = 'docker'
+		self.cliBuildOptions = '--no-cache'
+
+		# Workaround for some servers, we need to erase completely the workspace
+		if self.forcedWorkspaceCleanup:
+			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf ' + lSourcePath, '\$', 15)
+
+		oldRanCommidID = self.ranCommitID
+		oldRanRepository = self.ranRepository
+		oldRanAllowMerge = self.ranAllowMerge
+		self.ranCommitID = self.proxyCommit
+		self.ranRepository = 'https://github.com/EpiSci/oai-lte-5g-multi-ue-proxy.git'
+		self.ranAllowMerge = False
+		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+		# to prevent accidentally overwriting data that might be used later
+		self.ranCommitID = oldRanCommidID
+		self.ranRepository = oldRanRepository
+		self.ranAllowMerge = oldRanAllowMerge
+
+		# Let's remove any previous run artifacts if still there
+		mySSH.command(self.cli + ' image prune --force', '\$', 30)
+		# Remove any previous proxy image
+		mySSH.command(self.cli + ' image rm oai-lte-multi-ue-proxy:latest || true', '\$', 30)
+
+		tag = self.proxyCommit
+		logging.debug('building L2sim proxy image for tag ' + tag)
+		# check if the corresponding proxy image with tag exists. If not, build it
+		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
+		buildProxy = mySSH.getBefore().count('o such image') != 0
+		if buildProxy:
+			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target oai-lte-multi-ue-proxy --tag proxy:' + tag + ' --file docker/Dockerfile.ubuntu18.04 . > cmake_targets/log/proxy-build.log 2>&1', '\$', 180)
+			# Note: at this point, OAI images are flattened, but we cannot do this
+			# here, as the flatten script is not in the proxy repo
+			mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
+			if mySSH.getBefore().count('o such image') != 0:
+				logging.error('\u001B[1m Build of L2sim proxy failed\u001B[0m')
+				mySSH.close()
+				HTML.CreateHtmlTestRow('commit ' + tag, 'KO', CONST.ALL_PROCESSES_OK)
+				HTML.CreateHtmlTabFooter(False)
+				sys.exit(1)
+		else:
+			logging.debug('L2sim proxy image for tag ' + tag + ' already exists, skipping build')
+
+		# retag the build images to that we pick it up later
+		mySSH.command('docker image tag proxy:' + tag + ' oai-lte-multi-ue-proxy:latest', '\$', 5)
+
+		# no merge: is a push to develop, tag the image so we can push it to the registry
+		if not self.ranAllowMerge:
+			mySSH.command('docker image tag proxy:' + tag + ' proxy:develop', '\$', 5)
+
+		# we assume that the host on which this is built will also run the proxy. The proxy
+		# currently requires the following command, and the docker-compose up mechanism of
+		# the CI does not allow to run arbitrary commands. Note that the following actually
+		# belongs to the deployment, not the build of the proxy...
+		logging.warning('the following command belongs to deployment, but no mechanism exists to exec it there!')
+		mySSH.command('sudo ifconfig lo: 127.0.0.2 netmask 255.0.0.0 up', '\$', 5)
+
+		# Analyzing the logs
+		if buildProxy:
+			self.testCase_id = HTML.testCase_id
+			mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
+			mySSH.command('mkdir -p proxy_build_log_' + self.testCase_id, '\$', 5)
+			mySSH.command('mv log/* ' + 'proxy_build_log_' + self.testCase_id, '\$', 5)
+			if (os.path.isfile('./proxy_build_log_' + self.testCase_id + '.zip')):
+				os.remove('./proxy_build_log_' + self.testCase_id + '.zip')
+			if (os.path.isdir('./proxy_build_log_' + self.testCase_id)):
+				shutil.rmtree('./proxy_build_log_' + self.testCase_id)
+			mySSH.command('zip -r -qq proxy_build_log_' + self.testCase_id + '.zip proxy_build_log_' + self.testCase_id, '\$', 5)
+			mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '.zip', '.')
+			# don't delete such that we might recover the zips
+			#mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
+
+		# Cleaning any created tmp volume
+		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
+		mySSH.close()
+
+		logging.info('\u001B[1m Building L2sim Proxy Image Pass\u001B[0m')
+		HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
+
 	def Copy_Image_to_Test_Server(self, HTML):
 		imageTag = 'develop'
 		if (self.ranAllowMerge):
@@ -567,7 +686,9 @@ class Containerize():
 		if status:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		else:
+			self.exitStatus = 1
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
+
 
 	def UndeployObject(self, HTML, RAN):
 		if self.eNB_serverId[self.eNB_instance] == '0':
@@ -588,7 +709,7 @@ class Containerize():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		logging.debug('\u001B[1m Deploying OAI Object on server: ' + lIpAddr + '\u001B[0m')
+		logging.debug('\u001B[1m Undeploying OAI Object from server: ' + lIpAddr + '\u001B[0m')
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
