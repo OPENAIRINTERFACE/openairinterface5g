@@ -193,4 +193,10 @@ extern short filt8_end[8];
 extern short filt16_start[16];
 extern short filt16_middle4[16];
 extern short filt16_end[16];
+
+/*CSI-RS*/
+extern short filt24_start[24];
+extern short filt24_end[24];
+extern short filt24_middle[24];
+
 #endif

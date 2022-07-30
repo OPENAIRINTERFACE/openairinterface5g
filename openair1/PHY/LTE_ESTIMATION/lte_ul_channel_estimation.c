@@ -41,10 +41,10 @@ extern int16_t *ul_ref_sigs_rx[30][2][34];
 
 int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                   L1_rxtx_proc_t *proc,
-                        				  LTE_eNB_ULSCH_t * ulsch,
-				                          int32_t **ul_ch_estimates,
-				                          int32_t **ul_ch_estimates_time,
-				                          int32_t **rxdataF_ext,
+				  LTE_eNB_ULSCH_t * ulsch,
+				  int32_t **ul_ch_estimates,
+				  int32_t **ul_ch_estimates_time,
+				  int32_t **rxdataF_ext,
                                   module_id_t UE_id,
                                   unsigned char l,
                                   unsigned char Ns) {
@@ -88,7 +88,7 @@ int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   uint16_t N_rb_alloc = ulsch->harq_processes[harq_pid]->nb_rb;
-  int32_t tmp_estimates[N_rb_alloc*12] __attribute__((aligned(16)));
+  int32_t tmp_estimates[N_rb_alloc*12] __attribute__((aligned(32)));
   Msc_RS = N_rb_alloc*12;
   cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
                   ulsch->harq_processes[harq_pid]->n_DMRS2 +
@@ -334,14 +334,14 @@ int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
             current_phase2 = cmin(abs(current_phase2),127);
             //          msg("sym: %d, current_phase1: %d, ru: %d + j%d, current_phase2: %d, ru: %d + j%d\n",k,current_phase1,ru1[2*current_phase1],ru1[2*current_phase1+1],current_phase2,ru2[2*current_phase2],ru2[2*current_phase2+1]);
             // rotate channel estimates by estimated phase
-            rotate_cpx_vector((int16_t *) ul_ch1,
-                              &ru1[2*current_phase1],
-                              (int16_t *) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],
+            rotate_cpx_vector((c16_t *) ul_ch1,
+                              (c16_t *)&ru1[2*current_phase1],
+                              (c16_t *) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],
                               Msc_RS,
                               15);
-            rotate_cpx_vector((int16_t *) ul_ch2,
-                              &ru2[2*current_phase2],
-                              (int16_t *) &tmp_estimates[0],
+            rotate_cpx_vector((c16_t *) ul_ch2,
+                              (c16_t *)&ru2[2*current_phase2],
+                              (c16_t *) tmp_estimates,
                               Msc_RS,
                               15);
             // Combine the two rotated estimates
@@ -657,14 +657,14 @@ int32_t lte_ul_channel_estimation_RRU(LTE_DL_FRAME_PARMS *frame_parms,
           current_phase2 = cmin(abs(current_phase2),127);
           //          msg("sym: %d, current_phase1: %d, ru: %d + j%d, current_phase2: %d, ru: %d + j%d\n",k,current_phase1,ru1[2*current_phase1],ru1[2*current_phase1+1],current_phase2,ru2[2*current_phase2],ru2[2*current_phase2+1]);
           // rotate channel estimates by estimated phase
-          rotate_cpx_vector((int16_t *) ul_ch1,
-                            &ru1[2*current_phase1],
-                            (int16_t *) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],
+          rotate_cpx_vector((c16_t *) ul_ch1,
+                            (c16_t *) &ru1[2*current_phase1],
+                            (c16_t *) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],
                             Msc_RS,
                             15);
-          rotate_cpx_vector((int16_t *) ul_ch2,
-                            &ru2[2*current_phase2],
-                            (int16_t *) &tmp_estimates[0],
+          rotate_cpx_vector((c16_t *) ul_ch2,
+                            (c16_t *) &ru2[2*current_phase2],
+                            (c16_t *) &tmp_estimates[0],
                             Msc_RS,
                             15);
           // Combine the two rotated estimates

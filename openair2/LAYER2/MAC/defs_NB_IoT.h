@@ -243,7 +243,6 @@ typedef struct {
   // -1:No UE in list
   int tail;
   int num_UEs;
-  //boolean_t active[MAX_MAX_MOBILES_PER_ENB_NB_IoT];
 
 } UE_list_NB_IoT_t;
 
@@ -403,7 +402,7 @@ typedef struct schedule_result{
   // pointer to DCI
   void *DCI_pdu;
   // when all the procedure related to this DCI, enable this flag
-  boolean_t DCI_release;
+  bool DCI_release;
   // Indicate the channel which to transmit
   channel_NB_IoT_t channel;
   // rnti
@@ -452,7 +451,7 @@ typedef enum ce_level_e{
 /*! \brief eNB template for the Random access information */
 typedef struct RA_TEMPLATE_NB_IoT_s{
 
-  boolean_t active;
+  bool active;
   uint32_t msg3_retransmit_count;
   uint32_t msg4_retransmit_count;
   uint16_t ta;
@@ -461,8 +460,8 @@ typedef struct RA_TEMPLATE_NB_IoT_s{
   rnti_t ue_rnti;
   rnti_t ra_rnti;
   struct RA_TEMPLATE_NB_IoT_s *next, *prev;
-  boolean_t wait_msg4_ack;
-  boolean_t wait_msg3_ack;
+  bool wait_msg4_ack;
+  bool wait_msg3_ack;
   uint8_t rar_buffer[7];
 
 } RA_TEMPLATE_NB_IoT;
@@ -530,7 +529,7 @@ typedef  struct {
   uint32_t       pdus_in_buffer;  /*!< \brief Number of PDUs buffered in RLC protocol instance (OBSOLETE). */
   uint32_t       head_sdu_creation_time;           /*!< \brief Head SDU creation time. */
   uint32_t       head_sdu_remaining_size_to_send;  /*!< \brief remaining size of sdu: could be the total size or the remaining size of already segmented sdu */
-  boolean_t      head_sdu_is_segmented;     /*!< \brief 0 if head SDU has not been segmented, 1 if already segmented */
+  bool           head_sdu_is_segmented;     /*!< \brief 0 if head SDU has not been segmented, 1 if already segmented */
 } mac_rlc_status_resp_NB_IoT_t;
 
 // global variables

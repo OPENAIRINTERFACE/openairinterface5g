@@ -132,7 +132,7 @@ typedef enum UE_STATE_NR_e {
 #define MAX_MEAS_ID                                   7
 
 #define PAYLOAD_SIZE_MAX                              1024
-#define RRC_BUF_SIZE                                  512
+#define RRC_BUF_SIZE                                  1024
 #define UNDEF_SECURITY_MODE                           0xff
 #define NO_SECURITY_MODE                              0x20
 
@@ -173,7 +173,7 @@ typedef struct UE_RRC_INFO_NR_s {
 } __attribute__ ((__packed__)) NR_UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_NR_s {
-  boolean_t                                           presence;
+  bool                                                presence;
   uint16_t                                            amf_set_id;
   uint8_t                                             amf_pointer;
   uint32_t                                            fiveg_tmsi;
@@ -217,7 +217,7 @@ typedef struct HANDOVER_INFO_NR_s {
 typedef struct {
   char                                                Payload[NR_RRC_BUFFER_SIZE_MAX];
   char                                                Header[NR_RRC_HEADER_SIZE_MAX];
-  int                                                 payload_size;
+  uint16_t                                            payload_size;
 } NR_RRC_BUFFER;
 
 #define NR_RRC_BUFFER_SIZE                            sizeof(RRC_BUFFER_NR)
@@ -290,10 +290,10 @@ typedef struct gNB_RRC_UE_s {
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
-  NR_SRB_INFO                           SI;
-  NR_SRB_INFO                           Srb0;
-  NR_SRB_INFO_TABLE_ENTRY               Srb1;
-  NR_SRB_INFO_TABLE_ENTRY               Srb2;
+  NR_SRB_INFO                       SI;
+  NR_SRB_INFO                       Srb0;
+  NR_SRB_INFO_TABLE_ENTRY           Srb1;
+  NR_SRB_INFO_TABLE_ENTRY           Srb2;
   NR_MeasConfig_t                   *measConfig;
   HANDOVER_INFO                     *handover_info;
   NR_MeasResults_t                  *measResults;
@@ -447,13 +447,15 @@ typedef struct {
 
   NR_BCCH_BCH_Message_t                     mib;
   NR_BCCH_BCH_Message_t                    *mib_DU;
-  NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
+  NR_SIB1_t                                *siblock1_DU;
+  //NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
   NR_SIB1_t                                *sib1;
   NR_SIB2_t                                *sib2;
   NR_SIB3_t                                *sib3;
   NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
+  NR_ServingCellConfig_t                    *servingcellconfig;
   NR_PDCCH_ConfigSIB1_t                     *pdcch_ConfigSIB1;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;

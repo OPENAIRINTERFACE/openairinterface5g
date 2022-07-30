@@ -529,14 +529,14 @@ class Dashboard:
             mr_notes = editable_mr.notes.list(all=True)
 
             body =  '[Consolidated Test Results](https://oaitestdashboard.s3.eu-west-1.amazonaws.com/MR'+mr+'/index.html)\\\n'
-            body += 'Tested CommitID: ' + commit + '\\\n'
+            body += 'Tested CommitID: ' + commit
 
             for i in range(0,n_tests):
                 jobname = args[4*i]
                 buildurl = args[4*i+1]
                 buildid = args[4*i+2]
                 status = args[4*i+3]
-                body += jobname+': **'+status+'** ([' + buildid + '](' + buildurl + '))\\\n'
+                body += '\\\n' + jobname + ': **'+status+'** ([' + buildid + '](' + buildurl + '))'
 
             #create new note
             mr_note = editable_mr.notes.create({

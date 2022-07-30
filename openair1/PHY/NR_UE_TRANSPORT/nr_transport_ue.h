@@ -84,9 +84,9 @@ typedef struct {
   /// Pointer to the payload + CRC 
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_NR_ULSCH_SEGMENTS];
+  uint8_t **c;
   /// LDPC-code outputs
-  uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
+  uint8_t **d;
   /// LDPC-code outputs (TS 36.212 V15.4.0, Sec 5.3.2 p. 17)
   uint8_t *e;
   /// Rate matching (Interleaving) outputs (TS 36.212 V15.4.0, Sec 5.4.2.2 p. 30)
@@ -342,7 +342,7 @@ typedef struct {
   /// Position of first CCE of the dci
   int firstCCE;
   /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
+  bool ra_flag;
   /// rnti
   rnti_t rnti;
   /// rnti type

@@ -65,13 +65,19 @@ int trx_eth_start(openair0_device *device)
        AssertFatal(device->thirdparty_init(device) == 0, "third-party init failed\n");
        device->openair0_cfg->samples_per_packet = 256;
        eth->num_fd = 1; //max(device->openair0_cfg->rx_num_channels,device->openair0_cfg->tx_num_channels); 
-       udp_read_t *u[2];
+       udp_ctx_t *u[1+eth->num_fd];
+       device->utx = (udp_ctx_t**)malloc(sizeof(device->utx));
        for (int i=0;i<eth->num_fd;i++) {
-          u[i] = malloc(sizeof(udp_read_t));
+          u[i] = malloc(sizeof(udp_ctx_t));
           u[i]->thread_id=i;
           u[i]->device = device;
-	  printf("UDP Read Thread %d on core %d\n",i,device->openair0_cfg->fh_cores[i]);
-          threadCreate(&u[i]->pthread,udp_read_thread,u[i],"udp read thread",device->openair0_cfg->fh_cores[i],OAI_PRIORITY_RT_MAX);
+	  printf("UDP Read Thread %d on core %d\n",i,device->openair0_cfg->rxfh_cores[i]);
+          threadCreate(&u[i]->pthread,udp_read_thread,u[i],"udp read thread",device->openair0_cfg->rxfh_cores[i],OAI_PRIORITY_RT_MAX);
+          device->utx[i] = malloc(sizeof(udp_ctx_t));
+          device->utx[i]->thread_id=i;
+          device->utx[i]->device = device;
+	  printf("UDP Write Thread %d on core %d\n",i,device->openair0_cfg->txfh_cores[i]);
+          threadCreate(&device->utx[i]->pthread,udp_write_thread,device->utx[i],"udp write thread",device->openair0_cfg->txfh_cores[i],OAI_PRIORITY_RT_MAX);
        }
        device->sampling_rate_ratio_n=1;
        device->sampling_rate_ratio_d=1;
@@ -125,7 +131,7 @@ int trx_eth_start(openair0_device *device)
        device->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
        initTpool(pool, device->threadPool, cpumeas(CPUMEAS_GETSTATE));
        // ULSCH decoder result FIFO
-       device->respudpTX = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+       device->respudpTX = (notifiedFIFO_elt_t*) malloc(sizeof(notifiedFIFO_elt_t));
        initNotifiedFIFO(device->respudpTX);
 #endif
    }

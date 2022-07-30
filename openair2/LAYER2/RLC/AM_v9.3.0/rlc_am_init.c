@@ -32,7 +32,7 @@ rlc_am_init(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const        rlc_pP)
 {
-  if (rlc_pP->initialized == TRUE) {
+  if (rlc_pP->initialized == true) {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] INITIALIZATION ALREADY DONE, DOING NOTHING\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
   } else {
@@ -79,7 +79,7 @@ rlc_am_init(
 
     rlc_pP->last_absolute_subframe_status_indication = 0xFFFFFFFF; // any value > 1
 
-    rlc_pP->initialized                  = TRUE;
+    rlc_pP->initialized                  = true;
   }
 }
 //-----------------------------------------------------------------------------
@@ -134,7 +134,7 @@ rlc_am_reestablish(
 
   rlc_pP->last_absolute_subframe_status_indication = 0xFFFFFFFF; // any value > 1
 
-  rlc_pP->initialized                  = TRUE;
+  rlc_pP->initialized                  = true;
 
 }
 
@@ -197,7 +197,7 @@ rlc_am_configure(
   const uint32_t                t_reorderingP,
   const uint32_t                t_status_prohibitP)
 {
-  if (rlc_pP->configured == TRUE) {
+  if (rlc_pP->configured == true) {
     LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RECONFIGURE] max_retx_threshold %d poll_pdu %d poll_byte %d t_poll_retransmit %d t_reordering %d t_status_prohibit %d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           max_retx_thresholdP,
@@ -235,7 +235,7 @@ rlc_am_configure(
     rlc_am_init_timer_reordering     (ctxt_pP, rlc_pP, t_reorderingP);
     rlc_am_init_timer_status_prohibit(ctxt_pP, rlc_pP, t_status_prohibitP);
 
-    rlc_pP->configured = TRUE;
+    rlc_pP->configured = true;
   }
 
 }

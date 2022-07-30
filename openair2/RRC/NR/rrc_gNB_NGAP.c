@@ -307,7 +307,6 @@ nr_rrc_pdcp_config_security(
   //uint8_t                            *k_kdf  = NULL;
   static int                          print_keys= 1;
 
-
   /* Derive the keys from kgnb */
   if (SRB_configList != NULL) {
     nr_derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
@@ -709,7 +708,7 @@ rrc_gNB_process_security(
   rrc_gNB_ue_context_t *const ue_context_pP,
   ngap_security_capabilities_t *security_capabilities_pP
 ) {
-  boolean_t                                             changed = FALSE;
+  bool                                                  changed = false;
   NR_CipheringAlgorithm_t                               cipheringAlgorithm;
   e_NR_IntegrityProtAlgorithm                           integrityProtAlgorithm;
   /* Save security parameters */
@@ -727,14 +726,14 @@ rrc_gNB_process_security(
 
   if (ue_context_pP->ue_context.ciphering_algorithm != cipheringAlgorithm) {
     ue_context_pP->ue_context.ciphering_algorithm = cipheringAlgorithm;
-    changed = TRUE;
+    changed = true;
   }
 
   integrityProtAlgorithm = rrc_gNB_select_integrity(ctxt_pP, ue_context_pP->ue_context.security_capabilities.nRintegrity_algorithms);
 
   if (ue_context_pP->ue_context.integrity_algorithm != integrityProtAlgorithm) {
     ue_context_pP->ue_context.integrity_algorithm = integrityProtAlgorithm;
-    changed = TRUE;
+    changed = true;
   }
 
   LOG_I (NR_RRC, "[gNB %d][UE %x] Selected security algorithms (%p): %lx, %x, %s\n",
@@ -905,7 +904,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
   for (pdusession = 0; pdusession < ue_context_pP->ue_context.setup_pdu_sessions; pdusession++) {
     // if (xid == ue_context_pP->ue_context.pdusession[pdusession].xid) {
       if (ue_context_pP->ue_context.pduSession[pdusession].status == PDU_SESSION_STATUS_DONE) {
-        pdusession_setup_t * tmp=&NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdusession];
+        pdusession_setup_t * tmp=&NGAP_PDUSESSION_SETUP_RESP(msg_p).pdusessions[pdu_sessions_done];
         tmp->pdusession_id = ue_context_pP->ue_context.pduSession[pdusession].param.pdusession_id;
         // tmp->pdusession_id = 1;
         tmp->nb_of_qos_flow = ue_context_pP->ue_context.pduSession[pdusession].param.nb_qos;
@@ -1050,7 +1049,46 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     // TEST 
     // ue_context_p->ue_context.pdusession[0].status = PDU_SESSION_STATUS_DONE;
     // rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(&ctxt, ue_context_p, 0);
-    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p);
+    if(!NODE_IS_CU(RC.nrrrc[ctxt.module_id]->node_type)){
+      rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, NULL);
+    }
+    else{
+      /*Generate a UE context modification request message towards the DU to instruct the DU
+       *for SRB2 and DRB configuration and get the updates on master cell group config from the DU*/
+      MessageDef *message_p;
+      message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REQ);
+      f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_MODIFICATION_REQ (message_p);
+      req->rnti             = ue_context_p->ue_context.rnti;
+      req->mcc              = RC.nrrrc[ctxt.module_id]->configuration.mcc[0];
+      req->mnc              = RC.nrrrc[ctxt.module_id]->configuration.mnc[0];
+      req->mnc_digit_length = RC.nrrrc[ctxt.module_id]->configuration.mnc_digit_length[0];
+      req->nr_cellid        = RC.nrrrc[ctxt.module_id]->nr_cellid;
+
+      /*Instruction towards the DU for SRB2 configuration*/
+      req->srbs_to_be_setup = malloc(1*sizeof(f1ap_srb_to_be_setup_t));
+      req->srbs_to_be_setup_length = 1;
+      f1ap_srb_to_be_setup_t *SRBs=req->srbs_to_be_setup;
+      SRBs[0].srb_id = 2;
+      SRBs[0].lcid = 2;
+
+      /*Instruction towards the DU for DRB configuration and tunnel creation*/
+      gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
+      memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
+      req->drbs_to_be_setup = malloc(1*sizeof(f1ap_drb_to_be_setup_t));
+      req->drbs_to_be_setup_length = 1;
+      f1ap_drb_to_be_setup_t *DRBs=req->drbs_to_be_setup;
+      LOG_D(RRC, "Length of DRB list:%d \n", req->drbs_to_be_setup_length);
+      DRBs[0].drb_id = 1;
+      DRBs[0].rlc_mode = RLC_MODE_AM;
+      DRBs[0].up_ul_tnl[0].tl_address = inet_addr(RC.nrrrc[ctxt.module_id]->eth_params_s.my_addr);
+      DRBs[0].up_ul_tnl[0].port=RC.nrrrc[ctxt.module_id]->eth_params_s.my_portd;
+      DRBs[0].up_ul_tnl_length = 1;
+      DRBs[0].up_dl_tnl[0].tl_address = inet_addr(RC.nrrrc[ctxt.module_id]->eth_params_s.remote_addr);
+      DRBs[0].up_dl_tnl[0].port=RC.nrrrc[ctxt.module_id]->eth_params_s.remote_portd;
+      DRBs[0].up_dl_tnl_length = 1;
+
+      itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+    }
     return(0);
   }
 }
@@ -1088,17 +1126,17 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
     ue_context_p->ue_context.gNB_ue_ngap_id = gNB_ue_ngap_id;
     {
       int j;
-      boolean_t is_treated[NGAP_MAX_PDUSESSION] = {FALSE};
+      bool is_treated[NGAP_MAX_PDUSESSION] = {false};
       uint8_t nb_of_failed_pdusessions = 0;
 
       for (i = 0; i < nb_pdusessions_tomodify; i++) {
-        if (is_treated[i] == TRUE) {
+        if (is_treated[i] == true) {
           continue;
         }
         
         //Check if same PDU session ID to handle multiple pdu sessions
         for (j = i+1; j < nb_pdusessions_tomodify; j++) {
-          if (is_treated[j] == FALSE &&
+          if (is_treated[j] == false &&
               NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[j].pdusession_id == 
                 NGAP_PDUSESSION_MODIFY_REQ(msg_p).pdusession_modify_params[i].pdusession_id) {
             // handle multiple pdu session id
@@ -1109,12 +1147,12 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
             ue_context_p->ue_context.modify_pdusession[j].cause               = NGAP_CAUSE_RADIO_NETWORK;
             ue_context_p->ue_context.modify_pdusession[j].cause_value         = NGAP_CauseRadioNetwork_multiple_PDU_session_ID_instances;
             nb_of_failed_pdusessions++;
-            is_treated[i] = TRUE;
-            is_treated[j] = TRUE;
+            is_treated[i] = true;
+            is_treated[j] = true;
           }
         }
         // handle multiple pdu session id case
-        if (is_treated[i] == TRUE) {
+        if (is_treated[i] == true) {
           LOG_D(NR_RRC, "handle multiple pdu session id \n");
           ue_context_p->ue_context.modify_pdusession[i].status              = PDU_SESSION_STATUS_NEW;
           ue_context_p->ue_context.modify_pdusession[i].param.pdusession_id = 
@@ -1157,13 +1195,13 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
             ue_context_p->ue_context.modify_pdusession[i].param.gtp_teid = 
               ue_context_p->ue_context.pduSession[j].param.gtp_teid;
             
-            is_treated[i] = TRUE;
+            is_treated[i] = true;
             break;
           }
         }
 
         // handle Unknown pdu session ID
-        if (is_treated[i] == FALSE) {
+        if (is_treated[i] == false) {
           LOG_D(NR_RRC, "handle Unknown pdu session ID \n");
           ue_context_p->ue_context.modify_pdusession[i].status              = PDU_SESSION_STATUS_NEW;
           ue_context_p->ue_context.modify_pdusession[i].param.pdusession_id = 
@@ -1171,7 +1209,7 @@ rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(
           ue_context_p->ue_context.modify_pdusession[i].cause               = NGAP_CAUSE_RADIO_NETWORK;
           ue_context_p->ue_context.modify_pdusession[i].cause_value         = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
           nb_of_failed_pdusessions++;
-          is_treated[i] = TRUE;
+          is_treated[i] = true;
         }
       }
 

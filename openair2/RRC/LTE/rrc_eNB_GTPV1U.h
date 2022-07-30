@@ -60,16 +60,13 @@ void rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(
   rrc_eNB_ue_context_t* ue_context_pP
 );
 
-boolean_t
-gtpv_data_req(
-  const protocol_ctxt_t*   const ctxt_pP,
-  const rb_id_t                  rb_idP,
-  const mui_t                    muiP,
-  const confirm_t                confirmP,
-  const sdu_size_t               sdu_sizeP,
-  uint8_t*                 const buffer_pP,
-  const pdcp_transmission_mode_t modeP,
-  uint32_t task_id
-);
+bool gtpv_data_req(const protocol_ctxt_t*   const ctxt_pP,
+                   const rb_id_t                  rb_idP,
+                   const mui_t                    muiP,
+                   const confirm_t                confirmP,
+                   const sdu_size_t               sdu_sizeP,
+                   uint8_t*                 const buffer_pP,
+                   const pdcp_transmission_mode_t modeP,
+                   uint32_t task_id);
 
 #endif /* RRC_ENB_GTPV1U_H_ */

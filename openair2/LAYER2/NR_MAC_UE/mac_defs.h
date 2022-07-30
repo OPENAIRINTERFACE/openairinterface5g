@@ -74,7 +74,7 @@
 // ==========
 
 #define NB_NR_UE_MAC_INST 1
-#define MAX_NUM_BWP       2
+#define MAX_NUM_BWP_UE       4
 #define NUM_SLOT_FRAME    10
 
 /*!\brief value for indicating BSR Timer is not running */
@@ -364,10 +364,10 @@ typedef struct {
   NR_RNTI_Value_t                 *cs_RNTI;
   NR_MIB_t                        *mib;
 
-  NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP];
-  NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP];
-  NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP];
-  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_SS];
+  NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP_UE];
+  NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP_UE];
+  NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
+  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
 
   frame_type_t frame_type;
 
@@ -415,7 +415,7 @@ typedef struct {
   uint8_t BSR_reporting_active;
 
   /// LogicalChannelConfig has bearer.
-  boolean_t logicalChannelBearer_exist[NR_MAX_NUM_LCID];
+  bool logicalChannelBearer_exist[NR_MAX_NUM_LCID];
   NR_UE_SCHEDULING_INFO   scheduling_info;
 
   /// PHR
@@ -546,7 +546,7 @@ typedef struct prach_association_pattern {
 
 // SSB details
 typedef struct ssb_info {
-  boolean_t transmitted; // True if the SSB index is transmitted according to the SSB positions map configuration
+  bool transmitted; // True if the SSB index is transmitted according to the SSB positions map configuration
   prach_occasion_info_t *mapped_ro[MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN]; // List of mapped RACH Occasions to this SSB index
   uint16_t nb_mapped_ro; // Total number of mapped ROs to this SSB index
 } ssb_info_t;
@@ -558,7 +558,6 @@ typedef struct ssb_list_info {
 } ssb_list_info_t;
 
 void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
-void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

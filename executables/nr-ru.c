@@ -278,18 +278,20 @@ int connect_rau(RU_t *ru) {
 void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
   int offset = ru->nr_frame_parms->get_samples_slot_timestamp(slot,ru->nr_frame_parms,0);
-  start_meas(&ru->tx_fhaul);
- /* 
-  for (int aid=0;aid<ru->nb_tx;aid++)  
-    ru->ifdevice.trx_write_func2(&ru->ifdevice,
-    		                 timestamp,
-			         (void*)&ru->common.txdata[aid][offset],
-				 aid,
-			         ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
-			         0); 
-  */
-  stop_meas(&ru->tx_fhaul);
-  LOG_D(PHY,"IF5 TX %d.%d\n",frame,slot);
+  void *buffs[ru->nb_tx]; 
+  for (int aid=0;aid<ru->nb_tx;aid++) buffs[aid] = (void*)&ru->common.txdata[aid][offset]; 
+  struct timespec txmeas;
+  clock_gettime(CLOCK_MONOTONIC, &txmeas);
+  LOG_D(PHY,"IF5 TX %d.%d, TS %llu, buffs[0] %p, buffs[1] %p ener0 %f dB, tx start %d\n",frame,slot,(unsigned long long)timestamp,buffs[0],buffs[1],
+  10*log10((double)signal_energy(buffs[0],offset)),txmeas.tv_nsec);
+  ru->ifdevice.trx_write_func2(&ru->ifdevice,
+  		               timestamp,
+                               buffs,
+			       0,
+			       ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms),
+			       0,
+			       ru->nb_tx); 
+
 }
 
 // southbound IF4p5 fronthaul
@@ -340,8 +342,11 @@ void fh_if5_south_in(RU_t *ru,
   }
 
   stop_meas(&ru->rx_fhaul);
+  struct timespec rxmeas;
+  clock_gettime(CLOCK_MONOTONIC, &rxmeas);
   double fhtime = ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0);
-  if (fhtime > 800) LOG_W(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0));
+  if (fhtime > 800) LOG_W(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f, rxstart %d\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0),rxmeas.tv_nsec);
+  else LOG_D(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f, rxstart %d\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0),rxmeas.tv_nsec);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );
 
@@ -735,10 +740,17 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 
       AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
 
-      if(slot%(fp->slots_per_subframe/2))
-        siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
-      else
-        siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      if (fp->slots_per_subframe == 1) {
+        if (txsymb <= 7)
+          siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        else
+          siglen = 2 * (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 2) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      } else {
+        if(slot%(fp->slots_per_subframe/2))
+          siglen = txsymb * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        else
+          siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0) + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      }
 
       //+ ru->end_of_burst_delay;
       flags = 3; // end of burst
@@ -1066,11 +1078,12 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_gain[i] = ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-ru->att_rx;
     cfg->configFilename = rf_config_file;
-    LOG_I(PHY, "Channel %d: setting tx_gain offset %f, rx_gain offset %f, tx_freq %lu Hz, rx_freq %lu Hz\n",
+    LOG_I(PHY, "Channel %d: setting tx_gain offset %.0f, rx_gain offset %.0f, tx_freq %.0f Hz, rx_freq %.0f Hz, tune_offset %.0f Hz\n",
           i, cfg->tx_gain[i],
           cfg->rx_gain[i],
-          (unsigned long)cfg->tx_freq[i],
-          (unsigned long)cfg->rx_freq[i]);
+          cfg->tx_freq[i],
+          cfg->rx_freq[i],
+          cfg->tune_offset);
   }
 }
 
@@ -1184,15 +1197,11 @@ void *ru_stats_thread(void *param) {
         print_meas(&ru->precoding_stats,"feptx_prec (per port)",NULL,NULL);
         print_meas(&ru->txdataF_copy_stats,"txdataF_copy",NULL,NULL);
         print_meas(&ru->ofdm_mod_stats,"feptx_ofdm (per port)",NULL,NULL);
-        if (ru->txfh_in_fep) {
-	  print_meas(&ru->ofdm_total_stats,"feptx_total (all ports/fh)",NULL,NULL);
-	} 
-        else {
-          print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
-  	}
+        print_meas(&ru->ofdm_total_stats,"feptx_total",NULL,NULL);
       }
       print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
-      print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
+      if (ru->if_south == REMOTE_IF5) print_meas(&ru->ifdevice.tx_fhaul,"tx_fhaul (IF5)",NULL,NULL); 
+      else print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
 
       if (ru->fh_north_out) {
         print_meas(&ru->compression,"compression",NULL,NULL);
@@ -1406,7 +1415,8 @@ void *ru_thread( void *param ) {
     }
     if (initial_wait == 0 && ru->rx_fhaul.trials > 1000) {
         reset_meas(&ru->rx_fhaul);
-        reset_meas(&ru->tx_fhaul);
+        /*if (ru->if_south == REMOTE_IF5) reset_meas(&ru->ifdevice.tx_fhaul);
+        else*/ reset_meas(&ru->tx_fhaul);
     }
     proc->timestamp_tx = proc->timestamp_rx;
     int sl=proc->tti_tx;
@@ -1431,13 +1441,6 @@ void *ru_thread( void *param ) {
         ru->feprx(ru,proc->tti_rx);
         //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
         LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
-/*
-        LOG_D(PHY,"Copying rxdataF from RU to gNB\n");
-
-        for (int aa=0; aa<ru->nb_rx; aa++)
-          memcpy((void *)RC.gNB[0]->common_vars.rxdataF[aa],
-                 (void *)ru->common.rxdataF[aa], fp->symbols_per_slot*fp->ofdm_symbol_size*sizeof(int32_t));
-*/
         if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData)
           ((scopeData_t *)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
 
@@ -1451,20 +1454,6 @@ void *ru_thread( void *param ) {
             T_BUFFER(&ru->common.rxdata[0][fp->get_samples_slot_timestamp(proc->tti_rx-1,fp,0)]/*-ru->N_TA_offset*/, fp->get_samples_per_slot(proc->tti_rx,fp)*4*2));
           N_dur = get_nr_prach_duration(ru->prach_list[prach_id].fmt);
 
-          /*
-          get_nr_prach_info_from_index(ru->config.prach_config.prach_ConfigurationIndex.value,
-                     proc->frame_rx,proc->tti_rx,
-                     ru->config.carrier_config.dl_frequency.value,
-                     fp->numerology_index,
-                     fp->frame_type,
-                     &format,
-                     &start_symbol,
-                     &N_t_slot,
-                     &N_dur,
-                     &RA_sfn_index,
-                     &N_RA_slot,
-                     &config_period);
-          */
           for (int prach_oc = 0; prach_oc<ru->prach_list[prach_id].num_prach_ocas; prach_oc++) {
             prachStartSymbol = ru->prach_list[prach_id].prachStartSymbol+prach_oc*N_dur;
             //comment FK: the standard 38.211 section 5.3.2 has one extra term +14*N_RA_slot. This is because there prachStartSymbol is given wrt to start of the 15kHz slot or 60kHz slot. Here we work slot based, so this function is anyway only called in slots where there is PRACH. Its up to the MAC to schedule another PRACH PDU in the case there are there N_RA_slot \in {0,1}.
@@ -1523,6 +1512,7 @@ int start_streaming(RU_t *ru) {
 int nr_start_if(struct RU_t_s *ru, struct PHY_VARS_gNB_s *gNB) {
   for (int i=0;i<ru->nb_rx;i++) ru->openair0_cfg.rxbase[i] = ru->common.rxdata[i];
   ru->openair0_cfg.rxsize = ru->nr_frame_parms->samples_per_subframe*10;
+  reset_meas(&ru->ifdevice.tx_fhaul);
   return(ru->ifdevice.trx_start_func(&ru->ifdevice));
 }
 
@@ -2126,6 +2116,8 @@ static void NRRCconfig_RU(void) {
         RC.ru[j]->openair0_cfg.time_source = internal;
       }
 
+      RC.ru[j]->openair0_cfg.tune_offset = get_softmodem_params()->tune_offset;
+
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
         if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
           RC.ru[j]->if_south                        = LOCAL_RF;
@@ -2214,7 +2206,8 @@ static void NRRCconfig_RU(void) {
       RC.ru[j]->openair0_cfg.nr_band              = RC.ru[j]->band[0];
       RC.ru[j]->openair0_cfg.nr_scs_for_raster    = *(RUParamList.paramarray[j][RU_NR_SCS_FOR_RASTER].iptr);
       printf("[RU %d] Setting nr_flag %d, nr_band %d, nr_scs_for_raster %d\n",j,RC.ru[j]->openair0_cfg.nr_flag,RC.ru[j]->openair0_cfg.nr_band,RC.ru[j]->openair0_cfg.nr_scs_for_raster);
-      RC.ru[j]->openair0_cfg.fh_cores[0]          = *(RUParamList.paramarray[j][RU_RXFH_CORE_ID].iptr);
+      RC.ru[j]->openair0_cfg.rxfh_cores[0]        = *(RUParamList.paramarray[j][RU_RXFH_CORE_ID].iptr);
+      RC.ru[j]->openair0_cfg.txfh_cores[0]        = *(RUParamList.paramarray[j][RU_TXFH_CORE_ID].iptr);
       RC.ru[j]->num_tpcores                       = *(RUParamList.paramarray[j][RU_NUM_TP_CORES].iptr);
       AssertFatal(RC.ru[j]->num_tpcores <= RUParamList.paramarray[j][RU_TP_CORES].numelt, "Number of TP cores should be <=16\n");
       for (i=0; i<RC.ru[j]->num_tpcores; i++) RC.ru[j]->tpcores[i] = RUParamList.paramarray[j][RU_TP_CORES].iptr[i];

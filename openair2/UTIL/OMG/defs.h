@@ -29,12 +29,6 @@
 
 #include <stdlib.h>
 
-// TYPEDEFS
-
-#define true 1
-#define false 0
-
-//typedef char bool;
 #include <stdbool.h>
 #include "omg_constants.h"
 

@@ -159,7 +159,9 @@ typedef struct {
   openair0_device *device;
   int thread_id;
   pthread_t pthread;
-} udp_read_t;
+  notifiedFIFO_t *resp;
+} udp_ctx_t;
+
 
 /*! \brief RF frontend parameters set by application */
 typedef struct {
@@ -197,6 +199,7 @@ typedef struct {
   //! \brief Center frequency in Hz for TX.
   //! index: [0..rx_num_channels[ !!! see lte-ue.c:427 FIXME iterates over rx_num_channels
   double tx_freq[4];
+  double tune_offset;
   //! \brief memory
   //! \brief Pointer to Calibration table for RX gains
   rx_gain_calib_table_t *rx_gain_calib_table;
@@ -255,7 +258,9 @@ typedef struct {
   //! NR scs for raster
   int nr_scs_for_raster;
   //! Core IDs for RX FH
-  int fh_cores[4];
+  int rxfh_cores[4];
+  //! Core IDs for TX FH
+  int txfh_cores[4];
 } openair0_config_t;
 
 /*! \brief RF mapping */
@@ -372,11 +377,11 @@ struct openair0_device_t {
   /*!brief pointer to FH state, used in ECPRI split 8*/
   fhstate_t fhstate;
 
-  /*!brief threadpool for UDP write*/
-  tpool_t *threadPool;
-
   /*!brief message response for notification fifo*/
   notifiedFIFO_t *respudpTX;
+
+  /*!brief UDP TX thread context*/
+  udp_ctx_t **utx;
 
   /*!brief Used in ECPRI split 8 to indicate numerator of sampling rate ratio*/
   int sampling_rate_ratio_n;
@@ -421,7 +426,7 @@ struct openair0_device_t {
       @param buff Buffer which holds the samples (2 dimensional)
       @param nsamps number of samples to be sent
       @param number of antennas 
-      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+      @param flags flags must be set to true if timestamp parameter needs to be applied
   */
   int (*trx_write_func)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id, int flags);
 
@@ -431,9 +436,9 @@ struct openair0_device_t {
       @param buff Buffer which holds the samples (1 dimensional)
       @param nsamps number of samples to be sent
       @param antenna_id index of the antenna if the device has multiple anteannas
-      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+      @param flags flags must be set to true if timestamp parameter needs to be applied
   */
-  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void *buff, int aid, int nsamps, int flags);
+  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void **buff, int fd_ind,int nsamps, int flags,int nant);
 
   /*! \brief Receive samples from hardware.
    * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
@@ -537,6 +542,9 @@ struct openair0_device_t {
    * \return a pointer to the parameter
    */
   void *(*get_internal_parameter)(char *id);
+  /* \brief timing statistics for TX fronthaul (ethernet)
+   */
+  time_stats_t tx_fhaul;
 };
 
 /* type of device init function, implemented in shared lib */

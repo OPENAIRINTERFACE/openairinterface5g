@@ -34,47 +34,6 @@
 #define LOG_I(A,B...) printf(A)
 #endif*/
 
-dft_size_idx_t get_dft_size_idx(uint16_t ofdm_symbol_size)
-{
-  switch (ofdm_symbol_size) {
-  case 128:
-    return DFT_128;
-
-  case 256:
-    return DFT_256;
-
-  case 512:
-    return DFT_512;
-
-  case 1024:
-    return DFT_1024;
-
-  case 1536:
-    return DFT_1536;
-
-  case 2048:
-    return DFT_2048;
-
-  case 3072:
-    return DFT_3072;
-
-  case 4096:
-    return DFT_4096;
-
-  case 6144:
-    return DFT_6144;
-
-  case 8192:
-    return DFT_8192;
-
-  default:
-    printf("unsupported ofdm symbol size \n");
-    assert(0);
-  }
-
-  return DFT_SIZE_IDXTABLESIZE;
-}
-
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
                 unsigned char symbol,
@@ -96,7 +55,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     nb_prefix_samples0 = frame_parms->nb_prefix_samples;
   }
 
-  dft_size_idx_t dftsize = get_dft_size_idx(frame_parms->ofdm_symbol_size);
+  dft_size_idx_t dftsize = get_dft(frame_parms->ofdm_symbol_size);
   // This is for misalignment issues
   int32_t tmp_dft_in[8192] __attribute__ ((aligned (32)));
 
@@ -139,25 +98,25 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     stop_meas(&ue->rx_dft_stats);
 
     int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-    int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[0])[symbol+symb_offset];
-    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+    c16_t rot2 = frame_parms->symbol_rotation[0][symbol+symb_offset];
+    rot2.i=-rot2.i;
 
 #ifdef DEBUG_FEP
     //  if (ue->frame <100)
     printf("slot_fep: slot %d, symbol %d rx_offset %u, rotation symbol %d %d.%d\n", Ns,symbol, rx_offset,
-	   symbol+symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
+	   symbol+symb_offset,rot2.r,rot2.i);
 #endif
 
-    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
-		      (int16_t*)&rot2,
-		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+    rotate_cpx_vector((c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      &rot2,
+		      (c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      frame_parms->ofdm_symbol_size,
 		      15);
 
-    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
+    c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
 
     multadd_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
-          shift_rot,
+          (int16_t *)shift_rot,
           (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
           1,
           frame_parms->ofdm_symbol_size,
@@ -195,7 +154,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
   }
   unsigned int frame_length_samples = frame_parms->samples_per_frame;
 
-  dft_size_idx_t dftsize = get_dft_size_idx(frame_parms->ofdm_symbol_size);
+  dft_size_idx_t dftsize = get_dft(frame_parms->ofdm_symbol_size);
   // This is for misalignment issues
   int32_t tmp_dft_in[8192] __attribute__ ((aligned (32)));
 
@@ -255,18 +214,18 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
     stop_meas(&ue->rx_dft_stats);
 
     int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-    int32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[0])[symbol + symb_offset];
-    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
+    c16_t rot2 = frame_parms->symbol_rotation[0][symbol + symb_offset];
+    rot2.i=-rot2.i;
 
 #ifdef DEBUG_FEP
     //  if (ue->frame <100)
     printf("slot_fep: slot %d, symbol %d rx_offset %u, rotation symbol %d %d.%d\n", Ns,symbol, rx_offset,
-	   symbol+symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
+	   symbol+symb_offset,rot2.r,rot2.i);
 #endif
 
-    rotate_cpx_vector((int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
-		      (int16_t*)&rot2,
-		      (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+    rotate_cpx_vector((c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+		      &rot2,
+		      (c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
 		      frame_parms->ofdm_symbol_size,
 		      15);
   }
@@ -289,7 +248,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   unsigned int nb_prefix_samples  = frame_parms->nb_prefix_samples;
   unsigned int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
   
-  dft_size_idx_t dftsize = get_dft_size_idx(frame_parms->ofdm_symbol_size);
+  dft_size_idx_t dftsize = get_dft(frame_parms->ofdm_symbol_size);
   // This is for misalignment issues
   int32_t tmp_dft_in[8192] __attribute__ ((aligned (32)));
 
@@ -351,19 +310,19 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 
   for (int symbol=first_symbol;symbol<nsymb;symbol++) {
     
-    uint32_t rot2 = ((uint32_t*)frame_parms->symbol_rotation[1])[symbol + symb_offset];
-    ((int16_t*)&rot2)[1]=-((int16_t*)&rot2)[1];
-    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,((int16_t*)&rot2)[0],((int16_t*)&rot2)[1]);
-    rotate_cpx_vector((int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
-		      (int16_t*)&rot2,
-		      (int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
+    c16_t rot2 = frame_parms->symbol_rotation[1][symbol + symb_offset];
+    rot2.i=-rot2.i;
+    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,rot2.r,rot2.i);
+    rotate_cpx_vector((c16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
+		      &rot2,
+		      (c16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
 		      length,
 		      15);
 
-    int16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
+    c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
 
     multadd_cpx_vector((int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
-          shift_rot,
+          (int16_t *)shift_rot,
           (int16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)],
           1,
           length,

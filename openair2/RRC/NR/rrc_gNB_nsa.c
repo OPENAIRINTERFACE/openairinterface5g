@@ -106,6 +106,9 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   }
   LOG_A(NR_RRC, "Successfully decoded UE NR capabilities (NR and MRDC)\n");
 
+  ue_context_p->ue_context.spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
+  ue_context_p->ue_context.spCellConfig->spCellConfigDedicated = rrc->carrier.servingcellconfig;
+  LOG_I(NR_RRC,"Adding new NSA user (%p)\n",ue_context_p);
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }
 
@@ -241,6 +244,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                           cipher_algo,
                           NR_SecurityConfig__keyToUse_secondary);
   }
+
   NR_ServingCellConfig_t *scc = ue_context_p->ue_context.spCellConfig ?
       ue_context_p->ue_context.spCellConfig->spCellConfigDedicated : NULL;
   fill_default_reconfig(carrier->servingcellconfigcommon,
@@ -250,6 +254,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                         ue_context_p->ue_context.UE_Capability_nr,
                         configuration,
                         ue_context_p->local_uid);
+
   ue_context_p->ue_id_rnti = ue_context_p->ue_context.secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
@@ -344,7 +349,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   // configure MAC and RLC
   if (NODE_IS_DU(rrc->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.ssb_SubcarrierOffset,
                            rrc->configuration.pdsch_AntennaPorts,
                            rrc->configuration.pusch_AntennaPorts,
                            rrc->configuration.sib1_tda,
@@ -357,7 +361,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                            ue_context_p->ue_context.secondaryCellGroup);
   } else {
     rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.ssb_SubcarrierOffset,
                            rrc->configuration.pdsch_AntennaPorts,
                            rrc->configuration.pusch_AntennaPorts,
                            rrc->configuration.sib1_tda,
@@ -421,7 +424,8 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
 
   rrc_rlc_remove_ue(&ctxt);
 
-  mac_remove_nr_ue(rrc->module_id, rnti);
+  // WHAT A RACE CONDITION
+  mac_remove_nr_ue(RC.nrmac[rrc->module_id], rnti);
   gtpv1u_enb_delete_tunnel_req_t tmp={0};
   tmp.rnti=rnti;
   tmp.from_gnb=1;

@@ -402,15 +402,13 @@ static e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_inte
  *\param mod_id Instance ID of eNB.
  *\param ue_index Instance ID of UE in the eNB.
  *\param security_capabilities The security capabilities received from S1AP.
- *\return TRUE if at least one algorithm has been changed else FALSE.
+ *\return true if at least one algorithm has been changed else false.
  */
 int
-rrc_eNB_process_security(
-  const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t *const ue_context_pP,
-  security_capabilities_t *security_capabilities_pP
-) {
-  boolean_t                                             changed = FALSE;
+rrc_eNB_process_security(const protocol_ctxt_t *const ctxt_pP,
+                         rrc_eNB_ue_context_t *const ue_context_pP,
+                         security_capabilities_t *security_capabilities_pP) {
+  bool                                                  changed = false;
   LTE_CipheringAlgorithm_r12_t                          cipheringAlgorithm;
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrityProtAlgorithm;
   /* Save security parameters */
@@ -428,14 +426,14 @@ rrc_eNB_process_security(
 
   if (ue_context_pP->ue_context.ciphering_algorithm != cipheringAlgorithm) {
     ue_context_pP->ue_context.ciphering_algorithm = cipheringAlgorithm;
-    changed = TRUE;
+    changed = true;
   }
 
   integrityProtAlgorithm = rrc_eNB_select_integrity (ue_context_pP->ue_context.security_capabilities.integrity_algorithms);
 
   if (ue_context_pP->ue_context.integrity_algorithm != integrityProtAlgorithm) {
     ue_context_pP->ue_context.integrity_algorithm = integrityProtAlgorithm;
-    changed = TRUE;
+    changed = true;
   }
 
   LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%p): %lx, %x, %s\n",
@@ -532,7 +530,7 @@ rrc_pdcp_config_security(
       pdcp_p,
       DCCH,
       DCCH+2,
-      (send_security_mode_command == TRUE)  ?
+      (send_security_mode_command == true)  ?
       0 | (ue_context_pP->ue_context.integrity_algorithm << 4) :
       (ue_context_pP->ue_context.ciphering_algorithm )         |
       (ue_context_pP->ue_context.integrity_algorithm << 4),
@@ -960,12 +958,12 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
       ue_context_p,
       S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
     {
-      uint8_t send_security_mode_command = TRUE;
+      uint8_t send_security_mode_command = true;
 #ifndef EXMIMO_IOT
 
       if ((ue_context_p->ue_context.ciphering_algorithm == SecurityAlgorithmConfig__cipheringAlgorithm_eea0)
           && (ue_context_p->ue_context.integrity_algorithm == INTEGRITY_ALGORITHM_NONE)) {
-        send_security_mode_command = FALSE;
+        send_security_mode_command = false;
       }
 
 #endif
@@ -978,7 +976,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
         rrc_eNB_generate_SecurityModeCommand (
           &ctxt,
           ue_context_p);
-        send_security_mode_command = FALSE;
+        send_security_mode_command = false;
         // apply ciphering after RRC security command mode
         rrc_pdcp_config_security(
           &ctxt,
@@ -1414,19 +1412,19 @@ int rrc_eNB_process_S1AP_E_RAB_MODIFY_REQ(MessageDef *msg_p, const char *msg_nam
     /* Save e RAB information for later */
     {
       int j;
-      boolean_t is_treated[S1AP_MAX_E_RAB] = {FALSE};
+      bool is_treated[S1AP_MAX_E_RAB] = {false};
       uint8_t nb_of_failed_e_rabs = 0;
 
       // keep the previous bearer
       // the index for the rec
       for (i = 0; i < S1AP_E_RAB_MODIFY_REQ (msg_p).nb_e_rabs_tomodify; i++) {
-        if (is_treated[i] == TRUE) {
+        if (is_treated[i] == true) {
           // already treated
           continue;
         }
 
         for (j = i+1; j < S1AP_E_RAB_MODIFY_REQ (msg_p).nb_e_rabs_tomodify; j++) {
-          if (is_treated[j] == FALSE &&
+          if (is_treated[j] == false &&
               S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[j].e_rab_id == S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id) {
             // handle multiple E-RAB ID
             ue_context_p->ue_context.modify_e_rab[j].status = E_RAB_STATUS_NEW;
@@ -1434,12 +1432,12 @@ int rrc_eNB_process_S1AP_E_RAB_MODIFY_REQ(MessageDef *msg_p, const char *msg_nam
             ue_context_p->ue_context.modify_e_rab[j].cause = S1AP_CAUSE_RADIO_NETWORK;
             ue_context_p->ue_context.modify_e_rab[j].cause_value = 31;//S1ap_CauseRadioNetwork_multiple_E_RAB_ID_instances;
             nb_of_failed_e_rabs++;
-            is_treated[i] = TRUE;
-            is_treated[j] = TRUE;
+            is_treated[i] = true;
+            is_treated[j] = true;
           }
         }
 
-        if (is_treated[i] == TRUE) {
+        if (is_treated[i] == true) {
           // handle multiple E-RAB ID
           ue_context_p->ue_context.modify_e_rab[i].status = E_RAB_STATUS_NEW;
           ue_context_p->ue_context.modify_e_rab[i].param.e_rab_id = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id;
@@ -1456,7 +1454,7 @@ int rrc_eNB_process_S1AP_E_RAB_MODIFY_REQ(MessageDef *msg_p, const char *msg_nam
           ue_context_p->ue_context.modify_e_rab[i].cause = S1AP_CAUSE_NAS;
           ue_context_p->ue_context.modify_e_rab[i].cause_value = 3;//S1ap_CauseNas_unspecified;
           nb_of_failed_e_rabs++;
-          is_treated[i] = TRUE;
+          is_treated[i] = true;
           continue;
         }
 
@@ -1474,19 +1472,19 @@ int rrc_eNB_process_S1AP_E_RAB_MODIFY_REQ(MessageDef *msg_p, const char *msg_nam
             ue_context_p->ue_context.modify_e_rab[i].param.nas_pdu.buffer = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].nas_pdu.buffer;
             ue_context_p->ue_context.modify_e_rab[i].param.sgw_addr = ue_context_p->ue_context.e_rab[j].param.sgw_addr;
             ue_context_p->ue_context.modify_e_rab[i].param.gtp_teid = ue_context_p->ue_context.e_rab[j].param.gtp_teid;
-            is_treated[i] = TRUE;
+            is_treated[i] = true;
             break;
           }
         }
 
-        if (is_treated[i] == FALSE) {
+        if (is_treated[i] == false) {
           // handle Unknown E-RAB ID
           ue_context_p->ue_context.modify_e_rab[i].status = E_RAB_STATUS_NEW;
           ue_context_p->ue_context.modify_e_rab[i].param.e_rab_id = S1AP_E_RAB_MODIFY_REQ(msg_p).e_rab_modify_params[i].e_rab_id;
           ue_context_p->ue_context.modify_e_rab[i].cause = S1AP_CAUSE_RADIO_NETWORK;
           ue_context_p->ue_context.modify_e_rab[i].cause_value = 30;//S1ap_CauseRadioNetwork_unknown_E_RAB_ID;
           nb_of_failed_e_rabs++;
-          is_treated[i] = TRUE;
+          is_treated[i] = true;
         }
       }
 
@@ -1824,8 +1822,8 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
           uint8_t i = 0;
 
           for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-            if ((UE_PF_PO[CC_id][i].enable_flag == TRUE && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(S1AP_PAGING_IND(msg_p).ue_index_value))
-                || (UE_PF_PO[CC_id][i].enable_flag != TRUE)) {
+            if ((UE_PF_PO[CC_id][i].enable_flag == true && UE_PF_PO[CC_id][i].ue_index_value == (uint16_t)(S1AP_PAGING_IND(msg_p).ue_index_value))
+                || (UE_PF_PO[CC_id][i].enable_flag != true)) {
               /* set T = min(Tc,Tue) */
               UE_PF_PO[CC_id][i].T = T;
               /* set UE_ID */
@@ -1845,12 +1843,12 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                 UE_PF_PO[CC_id][i].PO = (frame_type==FDD) ? (4*(i_s&1)+(5*(i_s>>1))) : ((i_s&1)+(5*(i_s>>1)));
               }
 
-              if (UE_PF_PO[CC_id][i].enable_flag == TRUE) {
+              if (UE_PF_PO[CC_id][i].enable_flag == true) {
                 //paging exist UE log
                 LOG_D(RRC,"[eNB %ld] CC_id %d In S1AP_PAGING_IND: Update exist UE %d, T %d, PF %d, PO %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value, T, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].PO);
               } else {
                 /* set enable_flag */
-                UE_PF_PO[CC_id][i].enable_flag = TRUE;
+                UE_PF_PO[CC_id][i].enable_flag = true;
                 //paging new UE log
                 LOG_D(RRC,"[eNB %ld] CC_id %d In S1AP_PAGING_IND: Insert a new UE %d, T %d, PF %d, PO %d\n", instance, CC_id, UE_PF_PO[CC_id][i].ue_index_value, T, UE_PF_PO[CC_id][i].PF_min, UE_PF_PO[CC_id][i].PO);
               }

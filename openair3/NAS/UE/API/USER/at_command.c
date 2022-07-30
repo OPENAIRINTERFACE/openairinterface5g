@@ -354,7 +354,7 @@ static int ParseString(char * at_str, at_command_t* at_command)
   char* terminal_character_index = NULL;
   int num_of_chars_to_compare = -1;
   int handler_index;
-  int handler_found = FALSE;
+  bool handler_found = false;
   int check_for_carriage_return_index = 0;
 
   /*
@@ -415,7 +415,7 @@ static int ParseString(char * at_str, at_command_t* at_command)
     if (strncasecmp(at_str, _at_command_handler[handler_index].command,
                     num_of_chars_to_compare) != 0) continue;
 
-    handler_found = TRUE;
+    handler_found = true;
     break;
   }
 
@@ -681,7 +681,7 @@ static unsigned int NumberOfParameters(const unsigned char* str)
  **      Others:  None                                       **
  **                                                                        **
  ** Outputs:   None                                                      **
- **      Return:  TRUE, FALSE                                **
+ **      Return:  true, false                                **
  **      Others:  None                                       **
  **                                                                        **
  ***************************************************************************/
@@ -689,11 +689,11 @@ static unsigned int IsNumeric(const char* str, size_t len)
 {
   while (len-- > 0) {
     if (!isdigit(str[len])) {
-      return FALSE;
+      return false;
     }
   }
 
-  return TRUE;
+  return true;
 }
 
 /****************************************************************************/
@@ -719,7 +719,7 @@ static int parse_e1(const char* string, int position, at_command_t* at_command)
 static int parse_q0(const char* string, int position, at_command_t* at_command)
 {
   /* Result code suppression Q0 */
-  at_error_code_suppression_q1 = FALSE;
+  at_error_code_suppression_q1 = false;
   at_command->id = 0;
   at_command->mask = AT_COMMAND_NO_PARAM;
   return at_command->id;
@@ -728,7 +728,7 @@ static int parse_q0(const char* string, int position, at_command_t* at_command)
 static int parse_q1(const char* string, int position, at_command_t* at_command)
 {
   /* Result code suppression Q1 */
-  at_error_code_suppression_q1 = TRUE;
+  at_error_code_suppression_q1 = true;
   at_command->id = 0;
   at_command->mask = AT_COMMAND_NO_PARAM;
   return at_command->id;
@@ -738,7 +738,7 @@ static int parse_v0(const char* string, int position, at_command_t* at_command)
 {
   /* Response format V0 (numeric result code + limited header) */
   at_error_format = AT_ERROR_NUMERIC;
-  at_response_format_v1 = FALSE;
+  at_response_format_v1 = false;
   at_command->id = 0;
   at_command->mask = AT_COMMAND_NO_PARAM;
   return at_command->id;
@@ -748,7 +748,7 @@ static int parse_v1(const char* string, int position, at_command_t* at_command)
 {
   /* Response format V1 (verbose result code + full header) */
   at_error_format = AT_ERROR_VERBOSE;
-  at_response_format_v1 = TRUE;
+  at_response_format_v1 = true;
   at_command->id = 0;
   at_command->mask = AT_COMMAND_NO_PARAM;
   return at_command->id;

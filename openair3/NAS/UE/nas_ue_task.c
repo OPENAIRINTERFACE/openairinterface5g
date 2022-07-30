@@ -43,10 +43,10 @@ uint16_t ue_idx_standalone = 0xFFFF;
 
 char *make_port_str_from_ueid(const char *base_port_str, int ueid);
 
-static int nas_ue_process_events(nas_user_container_t *users, struct epoll_event *events, int nb_events)
+static bool nas_ue_process_events(nas_user_container_t *users, struct epoll_event *events, int nb_events)
 {
   int event;
-  int exit_loop = FALSE;
+  bool exit_loop = false;
 
   LOG_I(NAS, "[UE] Received %d events\n", nb_events);
 
@@ -310,7 +310,7 @@ void *nas_ue_task(void *args_p)
     nb_events = itti_get_events(TASK_NAS_UE, &events);
 
     if ((nb_events > 0) && (events != NULL)) {
-      if (nas_ue_process_events(users, events, nb_events) == TRUE) {
+      if (nas_ue_process_events(users, events, nb_events) == true) {
         LOG_E(NAS, "[UE] Received exit loop\n");
       }
     }
