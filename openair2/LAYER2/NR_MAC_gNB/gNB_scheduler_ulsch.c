@@ -69,8 +69,6 @@ int compute_delta_tf(int tbs_bits,
   // if the PUSCH transmission is over more than one layer delta_tf = 0
   if(deltaMCS == NULL || n_layers>1)
     return 0;
-  else
-    AssertFatal(1==0,"Compute DeltaTF not yet fully supported\n");
 
   const int n_re = (NR_NB_SC_PER_RB * n_symbols - n_dmrs) * rb;
   const int BPRE = tbs_bits/n_re;  //TODO change for PUSCH with CSI
@@ -114,7 +112,6 @@ int nr_process_mac_pdu(instance_t module_idP,
 {
 
   uint8_t done = 0;
-
   int sdus = 0;
   NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -250,9 +247,9 @@ int nr_process_mac_pdu(instance_t module_idP,
                          compute_bw_factor(sched_pusch->mu, sched_pusch->rbSize) +
                          compute_delta_tf(sched_pusch->tb_size<<3,
                                           sched_pusch->rbSize,
-                                          0, //n_layers
-                                          0, //n_symbols
-                                          0, //n_dmrs
+                                          sched_pusch->nrOfLayers,
+                                          sched_pusch->tda_info.nrOfSymbols, //n_symbols
+                                          sched_pusch->dmrs_info.num_dmrs_symb*sched_pusch->dmrs_info.N_PRB_DMRS, //n_dmrs
                                           deltaMCS);
         /* 38.133 Table10.1.18.1-1 */
         sched_ctrl->pcmax = PCMAX - 29;
@@ -910,7 +907,6 @@ void update_ul_ue_R_Qm(int mcs, int mcs_table, const NR_PUSCH_Config_t *pusch_Co
   }
 }
 
-
 void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_sched_pusch_t *sched_pusch, NR_UE_UL_BWP_t *ul_bwp, uint16_t minRb, uint32_t tbs, uint16_t *Rb, uint8_t *mcs)
 {
   AssertFatal(*Rb >= minRb, "illegal Rb %d < minRb %d\n", *Rb, minRb);
@@ -1339,6 +1335,7 @@ void pf_ul(module_id_t module_id,
                        current_BWP,
                        tda_info,
                        sched_pusch->nrOfLayers);
+
     update_ul_ue_R_Qm(sched_pusch->mcs, current_BWP->mcs_table, current_BWP->pusch_Config, &sched_pusch->R, &sched_pusch->Qm);
 
     int rbStart = 0;
