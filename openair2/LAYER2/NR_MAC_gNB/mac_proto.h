@@ -434,7 +434,7 @@ int binomial(int n, int k);
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot);
 
-void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, uint16_t symStart, int CC_id);
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int ssb_subcarrier_offset, uint16_t symStart, int CC_id);
 
 
 /* \brief Function to indicate a received SDU on ULSCH.
@@ -470,9 +470,19 @@ void handle_nr_ul_harq(const int CC_idP,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu);
 
+void handle_nr_srs_measurements(const module_id_t module_id,
+                                const frame_t frame,
+                                const sub_frame_t slot,
+                                const rnti_t rnti,
+                                const uint16_t timing_advance,
+                                const uint8_t num_symbols,
+                                const uint8_t wide_band_snr,
+                                const uint8_t num_reported_symbols,
+                                nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list);
+
 int16_t ssb_index_from_prach(module_id_t module_idP,
                              frame_t frameP,
-			     sub_frame_t slotP,
+                             sub_frame_t slotP,
                              uint16_t preamble_index,
                              uint8_t freq_index,
                              uint8_t symbol);

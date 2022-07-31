@@ -71,6 +71,7 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch) {
         for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
           if (ulsch->harq_processes[i]->c[r]) {
             free16(ulsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
+            free16(ulsch->harq_processes[i]->d[r],0);
             ulsch->harq_processes[i]->c[r] = NULL;
           }
         }
@@ -86,7 +87,7 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch) {
 
 LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag) {
   LTE_UE_ULSCH_t *ulsch;
-  unsigned char exit_flag = 0,i,j,r;
+  unsigned char exit_flag = 0;
   unsigned char bw_scaling =1;
 
   switch (N_RB_UL) {
@@ -113,7 +114,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag) {
     memset(ulsch,0,sizeof(LTE_UE_ULSCH_t));
     ulsch->Mlimit = 4;
 
-    for (i=0; i<8; i++) {
+    for (int i=0; i<8; i++) {
       ulsch->harq_processes[i] = (LTE_UL_UE_HARQ_t *)malloc16(sizeof(LTE_UL_UE_HARQ_t));
 
       //      printf("ulsch->harq_processes[%d] %p\n",i,ulsch->harq_processes[i]);
@@ -129,15 +130,11 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag) {
         }
 
         if (abstraction_flag==0) {
-          for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
-            ulsch->harq_processes[i]->c[r] = (unsigned char *)malloc16(((r==0)?8:0) + 3+768); // account for filler in first segment and CRCs for multiple segment case
-
-            if (ulsch->harq_processes[i]->c[r])
-              memset(ulsch->harq_processes[i]->c[r],0,((r==0)?8:0) + 3+768);
-            else {
-              LOG_E(PHY,"Can't get c\n");
-              exit_flag=2;
-            }
+          for (int r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
+            ulsch->harq_processes[i]->c[r] = malloc16_clear(((r==0)?8:0) + 3+768); // account for filler in first segment and CRCs for multiple segment case
+            AssertFatal(ulsch->harq_processes[i]->c[r], "");
+            ulsch->harq_processes[i]->d[r] = malloc16_clear(96+3+(3*6144));
+            AssertFatal(ulsch->harq_processes[i]->d[r], "");
           }
         }
 
@@ -148,15 +145,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag) {
         exit_flag=3;
       }
     }
-
-    if ((abstraction_flag == 0) && (exit_flag==0)) {
-      for (i=0; i<8; i++)
-        for (j=0; j<96; j++)
-          for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++)
-            ulsch->harq_processes[i]->d[r][j] = LTE_NULL;
-
-      return(ulsch);
-    } else if (abstraction_flag==1)
+    if (!exit_flag)
       return(ulsch);
   }
 
@@ -191,7 +180,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   uint32_t Qprime_ACK=0,Qprime_CQI=0,Qprime_RI=0,len_ACK=0,len_RI=0;
   //  uint32_t E;
   uint8_t ack_parity;
-  uint32_t i,q,j,iprime,j2;
+  uint32_t q,j,iprime,j2;
   uint16_t o_RCC;
   uint8_t o_flip[8];
   uint32_t wACK_idx;
@@ -327,6 +316,8 @@ uint32_t ulsch_encoding(uint8_t *a,
 #endif
         //  offset=0;
         start_meas(te_stats);
+        for (int z=0; z<96; z++)
+            ulsch->harq_processes[harq_pid]->d[r][z] = LTE_NULL;
         encoder(ulsch->harq_processes[harq_pid]->c[r],
                 Kr>>3,
                 &ulsch->harq_processes[harq_pid]->d[r][96],
@@ -539,8 +530,6 @@ uint32_t ulsch_encoding(uint8_t *a,
                          ulsch->q);
   }
 
-  i=0;
-
   //  Do RI coding
   if (ulsch->O_RI == 1) {
     switch (Q_m) {
@@ -691,7 +680,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
   j=0;
 
-  for (i=0; i<Qprime_RI; i++) {
+  for (int i=0; i<Qprime_RI; i++) {
     r = Rmux_prime - 1 - (i>>2);
 
     for (q=0; q<Q_m; q++)  {
@@ -725,7 +714,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   }
   */
 
-  for (i=0; i<Qprime_CQI; i++) {
+  for (int i=0; i<Qprime_CQI; i++) {
     while (y[Q_m*j] != LTE_NULL) j++;
 
     for (q=0; q<Q_m; q++) {
@@ -788,7 +777,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
   j=0;
 
-  for (i=0; i<Qprime_ACK; i++) {
+  for (int i=0; i<Qprime_ACK; i++) {
     r = Rmux_prime - 1 - (i>>2);
 
     for (q=0; q<Q_m; q++) {
@@ -808,7 +797,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
   switch (Q_m) {
     case 2:
-      for (i=0; i<Cmux; i++)
+      for (int i=0; i<Cmux; i++)
         for (r=0; r<Rmux_prime; r++) {
           yptr=&y[((r*Cmux)+i)<<1];
           ulsch->h[j++] = *yptr++;
@@ -818,7 +807,7 @@ uint32_t ulsch_encoding(uint8_t *a,
       break;
 
     case 4:
-      for (i=0; i<Cmux; i++)
+      for (int i=0; i<Cmux; i++)
         for (r=0; r<Rmux_prime; r++) {
           yptr = &y[((r*Cmux)+i)<<2];
           ulsch->h[j++] = *yptr++;
@@ -830,7 +819,7 @@ uint32_t ulsch_encoding(uint8_t *a,
       break;
 
     case 6:
-      for (i=0; i<Cmux; i++)
+      for (int i=0; i<Cmux; i++)
         for (r=0; r<Rmux_prime; r++) {
           yptr = &y[((r*Cmux)+i)*6];
           ulsch->h[j++] = *yptr++;

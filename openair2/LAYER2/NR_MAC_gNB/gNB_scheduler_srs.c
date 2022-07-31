@@ -40,15 +40,16 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_U
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
-  NR_BWP_t ubwp = sched_ctrl->active_ubwp ?
-                  sched_ctrl->active_ubwp->bwp_Common->genericParameters :
-                  scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+  const NR_SIB1_t *sib1 = nrmac->common_channels[0].sib1 ? nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+  const NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                                   scc,
+                                                                   sib1);
 
   srs_pdu->rnti = UE->rnti;
   srs_pdu->handle = 0;
-  srs_pdu->bwp_size = NRRIV2BW(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
-  srs_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
-  srs_pdu->subcarrier_spacing = ubwp.subcarrierSpacing;
+  srs_pdu->bwp_size = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);;
+  srs_pdu->bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);;
+  srs_pdu->subcarrier_spacing = genericParameters->subcarrierSpacing;
   srs_pdu->cyclic_prefix = 0;
   srs_pdu->num_ant_ports = srs_resource->nrofSRS_Ports;
   srs_pdu->num_symbols = srs_resource->resourceMapping.nrofSymbols;
@@ -122,18 +123,26 @@ void nr_schedule_srs(int module_id, frame_t frame) {
     sched_ctrl->sched_srs.slot = -1;
     sched_ctrl->sched_srs.srs_scheduled = false;
 
-    if(!UE->Msg4_ACKed || sched_ctrl->rrc_processing_timer > 0) {
+    if((sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) ||
+       sched_ctrl->rrc_processing_timer > 0) {
       continue;
     }
 
     NR_SRS_Config_t *srs_config = NULL;
-    if (cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated &&
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
+    if (sched_ctrl->active_ubwp) {
+      if (sched_ctrl->active_ubwp->bwp_Dedicated &&
+          sched_ctrl->active_ubwp->bwp_Dedicated->srs_Config) {
+        srs_config = sched_ctrl->active_ubwp->bwp_Dedicated->srs_Config->choice.setup;
+      }
+    } else if (cg &&
+               cg->spCellConfig &&
+               cg->spCellConfig->spCellConfigDedicated &&
+               cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+               cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
       srs_config = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;
-    } else {
+    }
+
+    if (!srs_config) {
       continue;
     }
 
@@ -163,14 +172,15 @@ void nr_schedule_srs(int module_id, frame_t frame) {
         continue;
       }
 
-      NR_BWP_t ubwp = sched_ctrl->active_ubwp ?
-                        sched_ctrl->active_ubwp->bwp_Common->genericParameters :
-                        scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+      const NR_SIB1_t *sib1 = nrmac->common_channels[0].sib1 ? nrmac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+      const NR_BWP_t *genericParameters = get_ul_bwp_genericParameters(sched_ctrl->active_ubwp,
+                                                                       scc,
+                                                                       sib1);
 
       uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
       uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 
-      int n_slots_frame = nr_slots_per_frame[ubwp.subcarrierSpacing];
+      const int n_slots_frame = nr_slots_per_frame[genericParameters->subcarrierSpacing];
 
       // Check if UE will transmit the SRS in this frame
       if ( ((frame - offset/n_slots_frame)*n_slots_frame)%period == 0) {

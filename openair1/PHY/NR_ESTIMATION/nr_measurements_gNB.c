@@ -67,6 +67,49 @@ int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
   return max_pos - sync_pos;
 }
 
+int nr_est_timing_advance_srs(const NR_DL_FRAME_PARMS *frame_parms,
+                              const int32_t srs_estimated_channel_time[][frame_parms->ofdm_symbol_size]) {
+  int timing_advance = 0;
+  int max_val = 0;
+
+  for (int i = 0; i < frame_parms->ofdm_symbol_size; i++) {
+    int temp = 0;
+    for (int aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
+      int Re = ((c16_t*)srs_estimated_channel_time[aa])[i].r;
+      int Im = ((c16_t*)srs_estimated_channel_time[aa])[i].i;
+      temp += (Re*Re/2) + (Im*Im/2);
+    }
+    if (temp > max_val) {
+      timing_advance = i;
+      max_val = temp;
+    }
+  }
+
+  if (timing_advance > frame_parms->ofdm_symbol_size/2) {
+    timing_advance = timing_advance - frame_parms->ofdm_symbol_size;
+  }
+
+  // Scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
+  const uint16_t bw_scaling = frame_parms->ofdm_symbol_size >> 7;
+
+  // do some integer rounding to improve TA accuracy
+  int sync_pos_rounded;
+  if (timing_advance > 0) {
+    sync_pos_rounded = timing_advance + (bw_scaling >> 1) - 1;
+  } else {
+    sync_pos_rounded = timing_advance - (bw_scaling >> 1) + 1;
+  }
+
+  int timing_advance_update = sync_pos_rounded / bw_scaling;
+
+  // put timing advance command in 0..63 range
+  timing_advance_update += 31;
+
+  if (timing_advance_update < 0)  timing_advance_update = 0;
+  if (timing_advance_update > 63) timing_advance_update = 63;
+
+  return timing_advance_update;
+}
 
 void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
@@ -119,8 +162,8 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx;aarx++) 
            measurements->n0_subband_power[aarx][rb]=0;   
       }
-      offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
-      if ((gNB->rb_mask_ul[s][rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
+      int offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
+      if ((gNB->rb_mask_ul[s][rb >> 5] & (1U << (rb & 31))) == 0) {  // check that rb was not used in this subframe
         nb_symb[rb]++;          
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
           int offset = offset0 + (s*frame_parms->ofdm_symbol_size);

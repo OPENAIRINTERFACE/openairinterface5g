@@ -197,7 +197,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 }
 
 char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration) {
-  protocol_ctxt_t      ctxt;
+  protocol_ctxt_t      ctxt = { 0 };
   gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gnb_mod_idP, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,gnb_mod_idP);
   LOG_I(NR_RRC,
@@ -1950,7 +1950,7 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                          NULL,
                                          NULL,
                                          NULL,
-                                         NULL,
+                                         ue_context_pP,
                                          NULL,
                                          NULL,
                                          NULL,
@@ -3031,11 +3031,13 @@ void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC
 
 static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_t instance) {
   NRDuDlReq_t * req=&NRDuDlReq(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = req->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
+  protocol_ctxt_t ctxt = {
+    .rnti = req->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p =
     rrc_gNB_get_ue_context(rrc, ctxt.rnti);
@@ -3286,11 +3288,13 @@ return 0;
 static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
   f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = req->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
+  protocol_ctxt_t ctxt = {
+    .rnti = req->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p =
@@ -3516,11 +3520,13 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
 static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
   f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = req->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
+  protocol_ctxt_t ctxt = {
+    .rnti = req->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p =
@@ -3665,11 +3671,13 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
 static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
   f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = resp->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
+  protocol_ctxt_t ctxt = {
+    .rnti = resp->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rnti);
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
@@ -3722,12 +3730,13 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
 static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
 
   f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
-  protocol_ctxt_t ctxt;
-  ctxt.rnti      = resp->rnti;
-  ctxt.module_id = instance;
-  ctxt.instance  = instance;
-  ctxt.enb_flag  = 1;
-  ctxt.eNB_index = instance;
+  protocol_ctxt_t ctxt = {
+    .rnti = resp->rnti,
+    .module_id = instance,
+    .instance  = instance,
+    .enb_flag  = 1,
+    .eNB_index = instance
+  };
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rnti);
   NR_CellGroupConfig_t *cellGroupConfig = NULL;

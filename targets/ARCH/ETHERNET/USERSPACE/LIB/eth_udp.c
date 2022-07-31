@@ -307,9 +307,11 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
   //sendto_flag|=flags;
   eth->tx_nsamps=nsamps;
 
-  struct timespec txstart;
-  clock_gettime(CLOCK_MONOTONIC, &txstart);
-  LOG_D(PHY,"Starting TX FH for TS %llu @ %d\n",(unsigned long long)timestamp,txstart.tv_nsec);
+  uint64_t last_rxTS = fhstate->TS[0]-fhstate->TS0;
+  uint64_t TS_advance=0;
+  if (timestamp > last_rxTS) TS_advance = timestamp - last_rxTS;
+
+  LOG_D(PHY,"Starting TX FH for TS %llu absslot %d(%d) last_rxTS %llu TS_advance %llu samples\n",timestamp,timestamp/nsamps,(timestamp/nsamps)%20,last_rxTS,TS_advance);
   void *buff2;
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
@@ -469,6 +471,7 @@ void *udp_read_thread(void *arg) {
       else offset = TS % device->openair0_cfg->rxsize + ((((uint64_t)1)<<63)-(fhstate->TS0-1)) % device->openair0_cfg->rxsize;   
       // need to do memcpy since there is no guarantee that aid is the same each time, otherwise we could have used
       // zero-copy and corrected the header component.   	 
+
       memcpy((void*)(device->openair0_cfg->rxbase[aid]+offset),
              (void*)&buffer[APP_HEADER_SIZE_BYTES],
              count-APP_HEADER_SIZE_BYTES);
@@ -500,7 +503,7 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uin
   }
 
   if (fhstate->first_read == 0) {
-     *timestamp = min_TS - fhstate->TS0;
+     *timestamp = 0;
      fhstate->TS_read = *timestamp+nsamps;
      LOG_D(PHY,"first read : TS_read %llu, TS %llu state (%d,%d,%d,%d,%d,%d,%d,%d)\n",fhstate->TS_read,*timestamp,
            fhstate->r[0],fhstate->r[1],fhstate->r[2],fhstate->r[3],fhstate->r[4],fhstate->r[5],fhstate->r[6],fhstate->r[7]);

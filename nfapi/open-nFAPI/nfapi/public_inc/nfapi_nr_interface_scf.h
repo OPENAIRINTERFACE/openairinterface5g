@@ -738,7 +738,7 @@ typedef struct {
   // The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0->DCI_PAYLOAD_BYTE_LEN*8
   uint16_t PayloadSizeBits;
   // DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB
-  uint8_t Payload[DCI_PAYLOAD_BYTE_LEN];
+  uint8_t Payload[DCI_PAYLOAD_BYTE_LEN] __attribute__((aligned(32)));
 
 } nfapi_nr_dl_dci_pdu_t;
 
@@ -1666,41 +1666,34 @@ typedef struct
 
 } nfapi_nr_uci_indication_t;
 
-//3.4.10 srs_indication
-//table 3-73
 
-typedef struct
-{
-  uint8_t  rb_snr;
-}nfapi_nr_srs_indication_reported_symbol_resource_block_t;
+/// 5G PHY FAPI Specification: SRS indication - Section 3.4.10, Table 3-73
 
-typedef struct
-{
-  uint16_t num_rbs;
+typedef struct {
+  uint8_t rb_snr;                 // SNR value in dB. Value: 0 -> 255 representing -64 dB to 63 dB with a step size 0.5 dB, 0xff will be set if this field is invalid.
+} nfapi_nr_srs_indication_reported_symbol_resource_block_t;
+
+typedef struct {
+  uint16_t num_rbs;               // Number of PRBs to be reported for this SRS PDU. Value: 0 -> 272.
   nfapi_nr_srs_indication_reported_symbol_resource_block_t* rb_list;
-}nfapi_nr_srs_indication_reported_symbol_t;
+} nfapi_nr_srs_indication_reported_symbol_t;
 
-#define NFAPI_NR_SRS_IND_MAX_PDU 100
-typedef struct
-{
-  uint32_t handle;
-  uint16_t rnti;
-  uint16_t timing_advance;
-  uint8_t  num_symbols;
-  uint8_t  wide_band_snr;
-  uint8_t  num_reported_symbols;
+typedef struct {
+  uint32_t handle;                // The handle passed to the PHY in the the UL_TTI.request SRS PDU.
+  uint16_t rnti;                  // The RNTI passed to the PHY in the UL_TTI.request SRS PDU. Value: 1 -> 65535.
+  uint16_t timing_advance;        // Timing advance TA measured for the UE [TS 38.213, Section 4.2]. NTA_new = NTA_old + (TA − 31) * 16 * 64 / (2^u). Value: 0 -> 63. 0xffff should be set if this field is invalid.
+  uint8_t num_symbols;            // Number of symbols for SRS. Value: 1 -> 4. If a PHY does not report for individual symbols then this parameter should be set to 1.
+  uint8_t wide_band_snr;          // SNR value in dB measured within configured SRS bandwidth on each symbol. Value: 0 -> 255 representing -64 dB to 63 dB with a step size 0.5 dB. 0xff will be set if this field is invalid.
+  uint8_t num_reported_symbols;   // Number of symbols reported in this message. This allows PHY to report individual symbols or aggregated symbols where this field will be set to 1. Value: 1 -> 4.
   nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list;
+} nfapi_nr_srs_indication_pdu_t;
 
-}nfapi_nr_srs_indication_pdu_t;
-
-typedef struct
-{
+typedef struct {
   nfapi_p7_message_header_t header;
-  uint16_t sfn;
-  uint16_t slot;
-  uint8_t number_of_pdus;
+  uint16_t sfn;                   // SFN. Value: 0 -> 1023
+  uint16_t slot;                  // Slot. Value: 0 -> 159
+  uint8_t number_of_pdus;         // Number of PDUs included in this message. Value: 0 -> 255
   nfapi_nr_srs_indication_pdu_t* pdu_list;
-
 } nfapi_nr_srs_indication_t;
 
 
