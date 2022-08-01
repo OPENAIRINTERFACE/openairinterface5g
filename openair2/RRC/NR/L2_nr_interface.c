@@ -49,102 +49,6 @@
 
 extern RAN_CONTEXT_t RC;
 
-int generate_pdcch_ConfigSIB1(NR_PDCCH_ConfigSIB1_t *pdcch_ConfigSIB1,
-                              long ssbSubcarrierSpacing,
-                              long subCarrierSpacingCommon,
-                              channel_bandwidth_t min_channel_bw) {
-
-  nr_ssb_and_cset_mux_pattern_type_t mux_pattern = 0;
-
-  switch (ssbSubcarrierSpacing) {
-
-    case NR_SubcarrierSpacing_kHz15:
-      if (subCarrierSpacingCommon == NR_SubcarrierSpacing_kHz15) {
-        pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_1_NUM_INDEXES;
-        mux_pattern = table_38213_13_1_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-      } else if (subCarrierSpacingCommon == NR_SubcarrierSpacing_kHz30) {
-        pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_2_NUM_INDEXES;
-        mux_pattern = table_38213_13_2_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-      } else {
-        AssertFatal(true,"Invalid subCarrierSpacingCommon\n");
-      }
-      break;
-
-    case NR_SubcarrierSpacing_kHz30:
-      if (subCarrierSpacingCommon == NR_SubcarrierSpacing_kHz15) {
-
-        if ( (min_channel_bw == bw_5MHz) || (min_channel_bw == bw_10MHz) ) {
-          pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_3_NUM_INDEXES;
-          mux_pattern = table_38213_13_3_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-        } else if (min_channel_bw == bw_40MHz) {
-          pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_5_NUM_INDEXES;
-          mux_pattern = table_38213_13_5_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-        } else {
-          AssertFatal(true,"Invalid min_bandwidth\n");
-        }
-
-      } else if (subCarrierSpacingCommon == NR_SubcarrierSpacing_kHz30) {
-
-        if ( (min_channel_bw == bw_5MHz) || (min_channel_bw == bw_10MHz) ) {
-          pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_4_NUM_INDEXES;
-          mux_pattern = table_38213_13_4_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-        } else if (min_channel_bw == bw_40MHz) {
-          pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_6_NUM_INDEXES;
-          mux_pattern = table_38213_13_6_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-        } else {
-          AssertFatal(true,"Invalid min_bandwidth\n");
-        }
-
-      } else {
-        AssertFatal(true,"Invalid subCarrierSpacingCommon\n");
-      }
-      break;
-
-    case NR_SubcarrierSpacing_kHz120:
-      if (subCarrierSpacingCommon == NR_SubcarrierSpacing_kHz60) {
-        pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_7_NUM_INDEXES;
-        mux_pattern = table_38213_13_7_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-      } else if (subCarrierSpacingCommon == NR_SubcarrierSpacing_kHz120) {
-        pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_8_NUM_INDEXES;
-        mux_pattern = table_38213_13_8_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-      } else {
-        AssertFatal(true,"Invalid subCarrierSpacingCommon\n");
-      }
-      break;
-
-    case NR_SubcarrierSpacing_kHz240:
-      if (subCarrierSpacingCommon == NR_SubcarrierSpacing_kHz60) {
-        pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_9_NUM_INDEXES;
-        mux_pattern = table_38213_13_9_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-      } else if (subCarrierSpacingCommon == NR_SubcarrierSpacing_kHz120) {
-        pdcch_ConfigSIB1->controlResourceSetZero = rand() % TABLE_38213_13_10_NUM_INDEXES;
-        mux_pattern = table_38213_13_10_c1[pdcch_ConfigSIB1->controlResourceSetZero];
-      } else {
-        AssertFatal(true,"Invalid subCarrierSpacingCommon\n");
-      }
-      break;
-
-    default:
-      AssertFatal(true,"Invalid ssbSubcarrierSpacing\n");
-      break;
-  }
-
-
-  frequency_range_t frequency_range = FR1;
-  if(ssbSubcarrierSpacing>=60) {
-    frequency_range = FR2;
-  }
-
-  pdcch_ConfigSIB1->searchSpaceZero = 0;
-  if(mux_pattern == NR_SSB_AND_CSET_MUX_PATTERN_TYPE1 && frequency_range == FR1){
-    pdcch_ConfigSIB1->searchSpaceZero = rand() % TABLE_38213_13_11_NUM_INDEXES;
-  }
-  if(mux_pattern == NR_SSB_AND_CSET_MUX_PATTERN_TYPE1 && frequency_range == FR2){
-    pdcch_ConfigSIB1->searchSpaceZero = rand() % TABLE_38213_13_12_NUM_INDEXES;
-  }
-
-  return 0;
-}
 
 int
 nr_rrc_mac_remove_ue(module_id_t mod_idP,
@@ -226,14 +130,6 @@ uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
     uint8_t sfn_msb = (uint8_t)((frameP>>4)&0x3f);
     rrc_gNB_carrier_data_t *carrier = &RC.nrrrc[Mod_idP]->carrier;
     NR_BCCH_BCH_Message_t *mib = &carrier->mib;
-
-    // Currently we are getting the pdcch_ConfigSIB1 from the configuration file.
-    // Uncomment this function for a dynamic pdcch_ConfigSIB1.
-    //channel_bandwidth_t min_channel_bw = bw_10MHz; // Must be obtained based on TS 38.101-1 Table 5.3.5-1
-    //generate_pdcch_ConfigSIB1(carrier->pdcch_ConfigSIB1,
-    //                          *carrier->servingcellconfigcommon->ssbSubcarrierSpacing,
-    //                          carrier->mib.message.choice.mib->subCarrierSpacingCommon,
-    //                          min_channel_bw);
 
     mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = carrier->pdcch_ConfigSIB1->controlResourceSetZero;
     mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = carrier->pdcch_ConfigSIB1->searchSpaceZero;

@@ -435,7 +435,7 @@ typedef struct {
   uint8_t                                   sizeof_MIB;
 
   uint8_t                                   *SIB1;
-  uint8_t                                   sizeof_SIB1;
+  uint16_t                                  sizeof_SIB1;
 
   uint8_t                                   *SIB23;
   uint8_t                                   sizeof_SIB23;
