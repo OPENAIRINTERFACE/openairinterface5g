@@ -161,15 +161,13 @@ typedef struct {
   //uint8_t num_cba_dci[10];
   /// allocated CBA RNTI
   //uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
-  /// UL max-harq-retransmission
-  uint16_t Mlimit;
 } NR_UE_ULSCH_t;
 
 typedef struct {
   /// Indicator of first reception
   uint8_t first_rx;
   /// Last Ndi received for this process on DCI (used for C-RNTI only)
-  uint8_t DCINdi;
+  uint8_t Ndi;
   /// DLSCH status flag indicating
   SCH_status_t status;
   /// Transport block size
@@ -241,10 +239,6 @@ typedef struct {
   vrb_t vrb_type;
   /// downlink power offset field
   uint8_t dl_power_off;
-  /// trials per round statistics
-  uint32_t trials[8];
-  /// error statistics per round
-  uint32_t errors[8];
   /// codeword this transport block is mapped to
   uint8_t codeword;
   /// HARQ-ACKs
@@ -311,9 +305,7 @@ typedef struct {
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last turbo decoding
-  uint8_t last_iteration_cnt;  
-  /// Maximum number of HARQ rounds 
-  uint8_t Mlimit;
+  uint8_t last_iteration_cnt;
 } NR_UE_DLSCH_t;
 
 typedef enum {format0_0,
