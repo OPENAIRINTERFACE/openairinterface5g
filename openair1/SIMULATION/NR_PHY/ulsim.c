@@ -95,9 +95,17 @@ nfapi_ue_release_request_body_t release_rntis;
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
-teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
-                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
-return 0;
+teid_t newGtpuCreateTunnel(instance_t instance,
+                           rnti_t rnti,
+                           int incoming_bearer_id,
+                           int outgoing_bearer_id,
+                           teid_t outgoing_teid,
+                           int qfi,
+                           transport_layer_addr_t remoteAddr,
+                           int port,
+                           gtpCallback callBack,
+                           gtpCallbackSDAP callBackSDAP) {
+  return 0;
 }
 
 int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
