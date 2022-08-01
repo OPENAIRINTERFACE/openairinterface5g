@@ -858,8 +858,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         uint8_t N_symb_SRS = 1<<srs_pdu->num_symbols;
         int32_t srs_received_signal[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
         int32_t srs_ls_estimated_channel[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
-        int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
-        int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
+        int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS] __attribute__ ((aligned(32)));
+        int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size] __attribute__ ((aligned(32)));
         int32_t srs_estimated_channel_time_shifted[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
         uint32_t noise_power_per_rb[srs_pdu->bwp_size];
         int8_t snr_per_rb[srs_pdu->bwp_size];
