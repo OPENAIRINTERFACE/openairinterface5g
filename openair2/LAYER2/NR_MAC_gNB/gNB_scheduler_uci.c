@@ -929,7 +929,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      NR_UE_harq_t *harq = find_harq(frame, slot, UE, RC.nrmac[mod_id]->harq_round_max);
+      NR_UE_harq_t *harq = find_harq(frame, slot, UE, RC.nrmac[mod_id]->dl_bler.harq_round_max);
       if (!harq) {
         LOG_E(NR_MAC, "Oh no! Could not find a harq in %s!\n", __FUNCTION__);
         break;
@@ -938,7 +938,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       LOG_D(NR_MAC,"%4d.%2d bit %d pid %d ack/nack %d\n",frame, slot, harq_bit,pid,harq_value);
-      handle_dl_harq(UE, pid, harq_value == 0 && harq_confidence == 0, RC.nrmac[mod_id]->harq_round_max);
+      handle_dl_harq(UE, pid, harq_value == 0 && harq_confidence == 0, RC.nrmac[mod_id]->dl_bler.harq_round_max);
       if (harq_confidence == 1)  UE->mac_stats.pucch0_DTX++;
     }
   }
@@ -991,13 +991,13 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
       const int acknack = ((uci_234->harq.harq_payload[harq_bit >> 3]) >> harq_bit) & 0x01;
-      NR_UE_harq_t *harq = find_harq(frame, slot, UE, RC.nrmac[mod_id]->harq_round_max);
+      NR_UE_harq_t *harq = find_harq(frame, slot, UE, RC.nrmac[mod_id]->dl_bler.harq_round_max);
       if (!harq)
         break;
       DevAssert(harq->is_waiting);
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      handle_dl_harq(UE, pid, uci_234->harq.harq_crc != 1 && acknack, RC.nrmac[mod_id]->harq_round_max);
+      handle_dl_harq(UE, pid, uci_234->harq.harq_crc != 1 && acknack, RC.nrmac[mod_id]->dl_bler.harq_round_max);
     }
   }
   if ((uci_234->pduBitmap >> 2) & 0x01) {

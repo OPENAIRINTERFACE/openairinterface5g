@@ -643,7 +643,10 @@ void pf_dl(module_id_t module_id,
       const NR_bler_options_t *bo = &mac->dl_bler;
       const int max_mcs_table = ps->mcsTableIdx == 1 ? 27 : 28;
       const int max_mcs = min(sched_ctrl->dl_max_mcs, max_mcs_table);
-      sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
+      if (bo->harq_round_max == 1)
+        sched_pdsch->mcs = max_mcs;
+      else
+        sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
       UE->layers = set_dl_nrOfLayers(sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -1015,7 +1018,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           TBS,
           current_harq_pid,
           harq->round,
-          nr_rv_round_map[harq->round],
+          nr_rv_round_map[harq->round%4],
           harq->ndi,
           pucch->timing_indicator,
           pucch->frame,
@@ -1083,8 +1086,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->mcsIndex[0] = sched_pdsch->mcs;
     pdsch_pdu->mcsTable[0] = ps->mcsTableIdx;
     AssertFatal(harq!=NULL,"harq is null\n");
-    AssertFatal(harq->round<4,"%d",harq->round);
-    pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
+    AssertFatal(harq->round<gNB_mac->dl_bler.harq_round_max,"%d",harq->round);
+    pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round%4];
     pdsch_pdu->TBSize[0] = TBS;
     pdsch_pdu->dataScramblingId = *scc->physCellId;
     pdsch_pdu->nrOfLayers = nrOfLayers;

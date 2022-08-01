@@ -75,7 +75,6 @@
 #define MAX_NUM_BWP 5
 #define MAX_NUM_CORESET 12
 #define MAX_NUM_CCE 90
-#define MAX_HARQ_ROUNDS 4
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
@@ -668,6 +667,7 @@ typedef struct NR_bler_options {
   double upper;
   double lower;
   uint8_t max_mcs;
+  uint8_t harq_round_max;
 } NR_bler_options_t;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
@@ -821,7 +821,6 @@ typedef struct gNB_MAC_INST_s {
   bool first_MIB;
   NR_bler_options_t dl_bler;
   NR_bler_options_t ul_bler;
-  uint8_t harq_round_max;
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
 } gNB_MAC_INST;

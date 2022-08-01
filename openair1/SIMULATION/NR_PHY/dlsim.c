@@ -769,6 +769,8 @@ int main(int argc, char **argv)
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
 
+  gNB_mac->dl_bler.harq_round_max = num_rounds;
+
   /*
   // read in SCGroupConfig
   AssertFatal(scg_fd != NULL,"no reconfig.raw file\n");

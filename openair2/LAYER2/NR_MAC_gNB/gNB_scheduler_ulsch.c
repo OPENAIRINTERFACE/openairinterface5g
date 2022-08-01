@@ -455,7 +455,7 @@ void handle_nr_ul_harq(const int CC_idP,
     remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
     sched_ctrl->ul_harq_processes[harq_pid].is_waiting = false;
 
-    if(sched_ctrl->ul_harq_processes[harq_pid].round >= RC.nrmac[mod_id]->harq_round_max - 1) {
+    if(sched_ctrl->ul_harq_processes[harq_pid].round >= RC.nrmac[mod_id]->ul_bler.harq_round_max - 1) {
       abort_nr_ul_harq(UE, harq_pid);
     } else {
       sched_ctrl->ul_harq_processes[harq_pid].round++;
@@ -476,7 +476,7 @@ void handle_nr_ul_harq(const int CC_idP,
           harq_pid,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq_pid);
-  } else if (harq->round >= RC.nrmac[mod_id]->harq_round_max  - 1) {
+  } else if (harq->round >= RC.nrmac[mod_id]->ul_bler.harq_round_max  - 1) {
     abort_nr_ul_harq(UE, harq_pid);
     LOG_D(NR_MAC,
           "RNTI %04x: Ulharq id %d crc failed in all rounds\n",
@@ -751,8 +751,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
         return;
       }
 
-      if (ra->msg3_round >= MAX_HARQ_ROUNDS - 1) {
-        LOG_D(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
+      if (ra->msg3_round >= gNB_mac->ul_bler.harq_round_max - 1) {
+        LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
         nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
         return;
@@ -1149,7 +1149,10 @@ void pf_ul(module_id_t module_id,
 
     const NR_bler_options_t *bo = &nrmac->ul_bler;
     const int max_mcs = bo->max_mcs; /* no per-user maximum MCS yet */
-    sched_pusch->mcs = get_mcs_from_bler(bo, stats, &UE->UE_sched_ctrl.ul_bler_stats, max_mcs, frame);
+    if (bo->harq_round_max == 1)
+      sched_pusch->mcs = max_mcs;
+    else
+      sched_pusch->mcs = get_mcs_from_bler(bo, stats, &UE->UE_sched_ctrl.ul_bler_stats, max_mcs, frame);
 
     /* Schedule UE on SR or UL inactivity and no data (otherwise, will be scheduled
      * based on data to transmit) */
@@ -1627,7 +1630,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
     /* Statistics */
-    AssertFatal(cur_harq->round < 8, "Indexing ulsch_rounds[%d] is out of bounds\n", cur_harq->round);
+    AssertFatal(cur_harq->round < nr_mac->ul_bler.harq_round_max, "Indexing ulsch_rounds[%d] is out of bounds\n", cur_harq->round);
     UE->mac_stats.ul.rounds[cur_harq->round]++;
     if (cur_harq->round == 0) {
       UE->mac_stats.ulsch_total_bytes_scheduled += sched_pusch->tb_size;
@@ -1673,7 +1676,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           sched_pusch->tb_size,
           harq_id,
           cur_harq->round,
-          nr_rv_round_map[cur_harq->round],
+          nr_rv_round_map[cur_harq->round%4],
           cur_harq->ndi,
           sched_ctrl->estimated_ul_buffer,
           sched_ctrl->sched_ul_bytes,
@@ -1769,8 +1772,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->nr_of_symbols = ps->nrOfSymbols;
 
     /* PUSCH PDU */
-    AssertFatal(cur_harq->round < 4, "Indexing nr_rv_round_map[%d] is out of bounds\n", cur_harq->round);
-    pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
+    AssertFatal(cur_harq->round < nr_mac->ul_bler.harq_round_max, "Indexing nr_rv_round_map[%d] is out of bounds\n", cur_harq->round%4);
+    pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round%4];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
