@@ -878,8 +878,8 @@ typedef struct {
   /// SRS variables
   nr_srs_info_t *nr_srs_info;
 
-  /// CSI-RS variables
-  nr_csi_rs_info_t *nr_csi_rs_info;
+  /// CSI variables
+  nr_csi_info_t *nr_csi_info;
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1

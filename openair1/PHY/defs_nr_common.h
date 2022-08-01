@@ -43,6 +43,7 @@
 #define nr_slot_t lte_subframe_t
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
+#define NR_MAX_OFDM_SYMBOL_SIZE 4096
 
 #define NR_NB_SC_PER_RB 12
 #define NR_NB_REG_PER_CCE 6
@@ -247,23 +248,13 @@ typedef struct {
 } nr_srs_info_t;
 
 typedef struct {
-  uint8_t N_cdm_groups;
-  uint8_t CDM_group_size;
-  uint8_t kprime;
-  uint8_t lprime;
-  uint8_t N_ports;
-  uint8_t j[16];
-  uint8_t koverline[16];
-  uint8_t loverline[16];
   uint16_t csi_gold_init;
   uint32_t ***nr_gold_csi_rs;
   uint8_t csi_rs_generated_signal_bits;
   int32_t **csi_rs_generated_signal;
-  int32_t **csi_rs_received_signal;
-  int32_t ***csi_rs_ls_estimated_channel;
-  int32_t ***csi_rs_estimated_channel_freq;
-  uint32_t *noise_power;
-} nr_csi_rs_info_t;
+  bool csi_im_meas_computed;
+  uint32_t interference_plus_noise_power;
+} nr_csi_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 

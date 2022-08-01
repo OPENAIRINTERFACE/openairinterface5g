@@ -159,7 +159,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   NR_UE_CSI_RS **const csirs_vars        = ue->csirs_vars;
   NR_UE_SRS **const srs_vars             = ue->srs_vars;
 
-  int i, j, slot, symb, gNB_id, th_id;
+  int i, slot, symb, gNB_id, th_id;
 
   LOG_I(PHY, "Initializing UE vars for gNB TXant %u, UE RXant %u\n", fp->nb_antennas_tx, fp->nb_antennas_rx);
 
@@ -347,33 +347,20 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
     // ceil((NB_RB*8(max allocation per RB)*2(QPSK))/32)
     int csi_dmrs_init_length =  ((fp->N_RB_DL<<4)>>5)+1;
-    ue->nr_csi_rs_info = (nr_csi_rs_info_t *)malloc16_clear(sizeof(nr_csi_rs_info_t));
-    ue->nr_csi_rs_info->nr_gold_csi_rs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
-    AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs!=NULL, "NR init: csi reference signal malloc failed\n");
+    ue->nr_csi_info = (nr_csi_info_t *)malloc16_clear(sizeof(nr_csi_info_t));
+    ue->nr_csi_info->nr_gold_csi_rs = (uint32_t ***)malloc16(fp->slots_per_frame * sizeof(uint32_t **));
+    AssertFatal(ue->nr_csi_info->nr_gold_csi_rs != NULL, "NR init: csi reference signal malloc failed\n");
     for (int slot=0; slot<fp->slots_per_frame; slot++) {
-      ue->nr_csi_rs_info->nr_gold_csi_rs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
-      AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs[slot]!=NULL, "NR init: csi reference signal for slot %d - malloc failed\n", slot);
+      ue->nr_csi_info->nr_gold_csi_rs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot * sizeof(uint32_t *));
+      AssertFatal(ue->nr_csi_info->nr_gold_csi_rs[slot] != NULL, "NR init: csi reference signal for slot %d - malloc failed\n", slot);
       for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-        ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb] = (uint32_t *)malloc16(csi_dmrs_init_length*sizeof(uint32_t));
-        AssertFatal(ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb]!=NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
+        ue->nr_csi_info->nr_gold_csi_rs[slot][symb] = (uint32_t *)malloc16(csi_dmrs_init_length * sizeof(uint32_t));
+        AssertFatal(ue->nr_csi_info->nr_gold_csi_rs[slot][symb] != NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
       }
     }
-    ue->nr_csi_rs_info->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
-    ue->nr_csi_rs_info->csi_rs_generated_signal = (int32_t **)malloc16(NR_MAX_NB_PORTS * sizeof(int32_t *) );
+    ue->nr_csi_info->csi_rs_generated_signal = (int32_t **)malloc16(NR_MAX_NB_PORTS * sizeof(int32_t *) );
     for (i=0; i<NR_MAX_NB_PORTS; i++) {
-      ue->nr_csi_rs_info->csi_rs_generated_signal[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
-    }
-    ue->nr_csi_rs_info->csi_rs_received_signal = (int32_t **)malloc16(fp->nb_antennas_rx * sizeof(int32_t *) );
-    ue->nr_csi_rs_info->csi_rs_ls_estimated_channel = (int32_t ***)malloc16(fp->nb_antennas_rx * sizeof(int32_t **) );
-    ue->nr_csi_rs_info->csi_rs_estimated_channel_freq = (int32_t ***)malloc16(fp->nb_antennas_rx * sizeof(int32_t **) );
-    for (i=0; i<fp->nb_antennas_rx; i++) {
-      ue->nr_csi_rs_info->csi_rs_received_signal[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
-      ue->nr_csi_rs_info->csi_rs_ls_estimated_channel[i] = (int32_t **) malloc16_clear(NR_MAX_NB_PORTS * sizeof(int32_t *));
-      ue->nr_csi_rs_info->csi_rs_estimated_channel_freq[i] = (int32_t **) malloc16_clear(NR_MAX_NB_PORTS * sizeof(int32_t *));
-      for (j=0; j<NR_MAX_NB_PORTS; j++) {
-        ue->nr_csi_rs_info->csi_rs_ls_estimated_channel[i][j] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size * sizeof(int32_t));
-        ue->nr_csi_rs_info->csi_rs_estimated_channel_freq[i][j] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size * sizeof(int32_t));
-      }
+      ue->nr_csi_info->csi_rs_generated_signal[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
     }
 
     ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
@@ -470,39 +457,25 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]);
     }
   }
-  
+
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
     }
 
     for (int i=0; i<NR_MAX_NB_PORTS; i++) {
-      free_and_zero(ue->nr_csi_rs_info->csi_rs_generated_signal[i]);
+      free_and_zero(ue->nr_csi_info->csi_rs_generated_signal[i]);
     }
-    for (int i = 0; i < fp->nb_antennas_rx; i++) {
-      free_and_zero(ue->nr_csi_rs_info->csi_rs_received_signal[i]);
-      for (int j=0; j<NR_MAX_NB_PORTS; j++) {
-        free_and_zero(ue->nr_csi_rs_info->csi_rs_ls_estimated_channel[i][j]);
-        free_and_zero(ue->nr_csi_rs_info->csi_rs_estimated_channel_freq[i][j]);
-      }
-      free_and_zero(ue->nr_csi_rs_info->csi_rs_ls_estimated_channel[i]);
-      free_and_zero(ue->nr_csi_rs_info->csi_rs_estimated_channel_freq[i]);
-    }
+    free_and_zero(ue->nr_csi_info->csi_rs_generated_signal);
     for (int slot=0; slot<fp->slots_per_frame; slot++) {
       for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-        free_and_zero(ue->nr_csi_rs_info->nr_gold_csi_rs[slot][symb]);
+        free_and_zero(ue->nr_csi_info->nr_gold_csi_rs[slot][symb]);
       }
-      free_and_zero(ue->nr_csi_rs_info->nr_gold_csi_rs[slot]);
+      free_and_zero(ue->nr_csi_info->nr_gold_csi_rs[slot]);
     }
-    free_and_zero(ue->nr_csi_rs_info->noise_power);
-    free_and_zero(ue->nr_csi_rs_info->nr_gold_csi_rs);
-    free_and_zero(ue->nr_csi_rs_info->csi_rs_generated_signal);
-    free_and_zero(ue->nr_csi_rs_info->csi_rs_received_signal);
-    free_and_zero(ue->nr_csi_rs_info->csi_rs_ls_estimated_channel);
-    free_and_zero(ue->nr_csi_rs_info->csi_rs_estimated_channel_freq);
-    free_and_zero(ue->nr_csi_rs_info);
+    free_and_zero(ue->nr_csi_info->nr_gold_csi_rs);
+    free_and_zero(ue->nr_csi_info);
 
     free_and_zero(ue->nr_srs_info);
 

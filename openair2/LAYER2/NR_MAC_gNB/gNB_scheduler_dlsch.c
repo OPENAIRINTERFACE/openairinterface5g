@@ -927,8 +927,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
 
-  //if (slot==7 || slot == 17) return;
-
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
   const int CC_id = 0;
@@ -1317,7 +1315,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   lcid < 4 ? "DCCH" : "DTCH",
                   lcid,
                   ndata,
-                  bufEnd-buf-+sizeof(NR_MAC_SUBHEADER_LONG));
+                  bufEnd-buf-sizeof(NR_MAC_SUBHEADER_LONG));
 
             if (len == 0)
               break;

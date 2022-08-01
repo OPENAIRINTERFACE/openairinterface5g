@@ -670,7 +670,7 @@ int main(int argc, char **argv)
       break;
 
     case 'X':
-      strncpy(gNBthreads, optarg, sizeof(gNBthreads));
+      strncpy(gNBthreads, optarg, sizeof(gNBthreads)-1);
       gNBthreads[sizeof(gNBthreads)-1]=0;
       break;
 

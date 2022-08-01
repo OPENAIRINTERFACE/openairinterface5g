@@ -1436,7 +1436,6 @@ void set_r_pucch_parms(int rsetindex,
   *start_symbol_index = default_pucch_firstsymb[rsetindex];
 }
 
-
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format,
@@ -2386,7 +2385,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
       CellGroup->spCellConfig->spCellConfigDedicated &&
       CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
       CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
-    compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
+    compute_csi_bitlen(CellGroup->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE->csi_report_template);
   }
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -3019,7 +3018,7 @@ void nr_mac_update_timers(module_id_t module_id,
             cg->spCellConfig->spCellConfigDedicated &&
             cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig &&
             cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup) {
-          compute_csi_bitlen (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE);
+          compute_csi_bitlen (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup, UE->csi_report_template);
         }
 
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
