@@ -1834,11 +1834,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->round = 0;
       harq->ndi ^= 1;
 
-      configure_UE_BWP(nr_mac,
-                      scc,
-                      sched_ctrl,
-                      NULL,
-                      UE);
+      sched_ctrl->rrc_processing_timer = 1; // No need to wait at this point in time, setting it to 1 just to enter in function nr_mac_update_timers
+      LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frameP, slotP, UE->rnti, 1);
 
       // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE
       UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
