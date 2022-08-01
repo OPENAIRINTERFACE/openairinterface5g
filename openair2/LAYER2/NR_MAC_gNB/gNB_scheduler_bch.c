@@ -285,7 +285,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                int nrOfSymbols,
                                uint16_t dlDmrsSymbPos,
                                uint8_t candidate_idx,
-                               int num_total_bytes) {
+                               uint16_t num_total_bytes) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = &gNB_mac->common_channels[CC_id];
@@ -570,7 +570,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
       // Get SIB1
       uint8_t sib1_payload[NR_MAX_SIB_LENGTH/8];
-      uint8_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, SI_RNTI, 1, sib1_payload);
+      uint16_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, SI_RNTI, 1, sib1_payload);
       LOG_D(NR_MAC,"sib1_sdu_length = %i\n", sib1_sdu_length);
       LOG_D(NR_MAC,"SIB1: \n");
       for (int k=0;k<sib1_sdu_length;k++)
@@ -598,7 +598,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
                                            startSymbolIndex,
                                            nrOfSymbols,
                                            dlDmrsSymbPos,
-                                           candidate_idx, sib1_sdu_length);
+                                           candidate_idx,
+                                           sib1_sdu_length);
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
       int pdu_index = gNB_mac->pdu_index[0]++;
