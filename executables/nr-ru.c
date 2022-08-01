@@ -283,7 +283,7 @@ void fh_if5_south_out(RU_t *ru, int frame, int slot, uint64_t timestamp) {
   struct timespec txmeas;
   clock_gettime(CLOCK_MONOTONIC, &txmeas);
   LOG_D(PHY,"IF5 TX %d.%d, TS %llu, buffs[0] %p, buffs[1] %p ener0 %f dB, tx start %d\n",frame,slot,(unsigned long long)timestamp,buffs[0],buffs[1],
-  10*log10((double)signal_energy(buffs[0],ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms))),txmeas.tv_nsec);
+  10*log10((double)signal_energy(buffs[0],ru->nr_frame_parms->get_samples_per_slot(slot,ru->nr_frame_parms))),(int)txmeas.tv_nsec);
   ru->ifdevice.trx_write_func2(&ru->ifdevice,
   		               timestamp,
                                buffs,
@@ -345,8 +345,8 @@ void fh_if5_south_in(RU_t *ru,
   struct timespec rxmeas;
   clock_gettime(CLOCK_MONOTONIC, &rxmeas);
   double fhtime = ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0);
-  if (fhtime > 800) LOG_W(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f, rxstart %d\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0),rxmeas.tv_nsec);
-  else LOG_D(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f, rxstart %d\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0),rxmeas.tv_nsec);
+  if (fhtime > 800) LOG_W(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f, rxstart %d\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0),(int)rxmeas.tv_nsec);
+  else LOG_D(PHY,"IF5 %d.%d => RX %d.%d first_rx %d: time %f, rxstart %d\n",*frame,*tti,proc->frame_rx,proc->tti_rx,proc->first_rx,ru->rx_fhaul.p_time/(cpu_freq_GHz*1000.0),(int)rxmeas.tv_nsec);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );
 

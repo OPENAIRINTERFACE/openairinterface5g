@@ -311,7 +311,7 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
   uint64_t TS_advance=0;
   if (timestamp > last_rxTS) TS_advance = timestamp - last_rxTS;
 
-  LOG_D(PHY,"Starting TX FH for TS %llu absslot %d(%d) last_rxTS %llu TS_advance %llu samples\n",timestamp,timestamp/nsamps,(timestamp/nsamps)%20,last_rxTS,TS_advance);
+  LOG_D(PHY,"Starting TX FH for TS %llu absslot %llu(%llu) last_rxTS %llu TS_advance %llu samples\n",(unsigned long long)timestamp,(unsigned long long)timestamp/nsamps,((unsigned long long)timestamp/nsamps)%20,(unsigned long long)last_rxTS,(unsigned long long)TS_advance);
   void *buff2;
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
@@ -343,7 +343,7 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
   int TSinc = (6*256*device->sampling_rate_ratio_d)/device->sampling_rate_ratio_n;
   int len=256;
   LOG_D(PHY,"TS %llu (%llu),txrx_offset %d,d %d, n %d, buff[0] %p buff[1] %p\n",
-        (unsigned long long)TS,timestamp,device->txrx_offset,device->sampling_rate_ratio_d,device->sampling_rate_ratio_n,
+        (unsigned long long)TS,(unsigned long long)timestamp,device->txrx_offset,device->sampling_rate_ratio_d,device->sampling_rate_ratio_n,
 	buff[0],buff[1]);
   for (int offset=0;offset<nsamps;offset+=256,TS+=TSinc) {
     // OAI modified SEQ_ID (4 bytes)
@@ -398,6 +398,7 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
     } // aid
   } // offset
   free(buff);  
+  return(NULL);
 }
 
 int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int fd_ind, int nsamps, int flags, int nant) {	
@@ -415,21 +416,22 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     udptxelem->nant = nant;
     pushNotifiedFIFO(device->utx[fd_ind]->resp, req);
     LOG_D(PHY,"Pushed to TX FH FIFO, TS %llu, nsamps %d, nant %d buffs[0] %p buffs[1] %p\n",
-          timestamp,nsamps,nant,udptxelem->buff[0],udptxelem->buff[1]);
+          (unsigned long long)timestamp,nsamps,nant,udptxelem->buff[0],udptxelem->buff[1]);
+    return(0);
 }
 extern int oai_exit;
 
 void *udp_write_thread(void *arg) {
 
    udp_ctx_t *utx = (udp_ctx_t *)arg;
-   utx->resp = (notifiedFIFO_elt_t*) malloc(sizeof(notifiedFIFO_elt_t));
+   utx->resp = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_elt_t));
    initNotifiedFIFO(utx->resp);
    LOG_D(PHY,"UDP write thread started on core %d\n",sched_getcpu()); 
    reset_meas(&utx->device->tx_fhaul);
    while (oai_exit == 0) {
       notifiedFIFO_elt_t *res = pullNotifiedFIFO(utx->resp);
       udpTXelem_t *udptxelem = (udpTXelem_t *)NotifiedFifoData(res);
-      LOG_D(PHY,"Pulled from TX FH FIFO, TS %llu, nsamps %d, nant %d\n",udptxelem->timestamp,udptxelem->nsamps,udptxelem->nant);
+      LOG_D(PHY,"Pulled from TX FH FIFO, TS %llu, nsamps %d, nant %d\n",(unsigned long long)udptxelem->timestamp,udptxelem->nsamps,udptxelem->nant);
       start_meas(&utx->device->tx_fhaul);
       trx_eth_write_udp_cmd(udptxelem);
       stop_meas(&utx->device->tx_fhaul);
@@ -437,6 +439,7 @@ void *udp_write_thread(void *arg) {
       delNotifiedFIFO_elt(res);
    }
    free(utx->resp);
+   return(NULL);
 }
 
 void *udp_read_thread(void *arg) {
@@ -475,7 +478,7 @@ void *udp_read_thread(void *arg) {
       memcpy((void*)(device->openair0_cfg->rxbase[aid]+offset),
              (void*)&buffer[APP_HEADER_SIZE_BYTES],
              count-APP_HEADER_SIZE_BYTES);
-      LOG_D(PHY,"UDP read thread_id %d (%d), aid %d, TS %llu, TS0 %llu, offset %d\n",u->thread_id,sched_getcpu(),aid,(unsigned long long)TS,fhstate->TS0,offset);
+      LOG_D(PHY,"UDP read thread_id %d (%d), aid %d, TS %llu, TS0 %llu, offset %d\n",(int)u->thread_id,(int)sched_getcpu(),aid,(unsigned long long)TS,(unsigned long long)fhstate->TS0,offset);
     }
     sleep(1);
   }
@@ -505,13 +508,13 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uin
   if (fhstate->first_read == 0) {
      *timestamp = 0;
      fhstate->TS_read = *timestamp+nsamps;
-     LOG_D(PHY,"first read : TS_read %llu, TS %llu state (%d,%d,%d,%d,%d,%d,%d,%d)\n",fhstate->TS_read,*timestamp,
+     LOG_D(PHY,"first read : TS_read %llu, TS %llu state (%d,%d,%d,%d,%d,%d,%d,%d)\n",(unsigned long long)fhstate->TS_read,(unsigned long long)*timestamp,
            fhstate->r[0],fhstate->r[1],fhstate->r[2],fhstate->r[3],fhstate->r[4],fhstate->r[5],fhstate->r[6],fhstate->r[7]);
   }
   else {  
      *timestamp = fhstate->TS_read;
      fhstate->TS_read = prev_read_TS + nsamps;
-     LOG_D(PHY,"TS_read %llu, min_TS %llu, prev_read_TS %llu, nsamps %d, fhstate->TS0+prev_TS+nsamps %llu, wait count %d x 100us\n",fhstate->TS_read,min_TS,prev_read_TS,nsamps,fhstate->TS0+prev_read_TS+nsamps,count);
+     LOG_D(PHY,"TS_read %llu (%llu, %llu), min_TS %llu, prev_read_TS %llu, nsamps %d, fhstate->TS0+prev_TS+nsamps %llu, wait count %d x 100us\n",(unsigned long long)fhstate->TS_read,(unsigned long long)*timestamp/nsamps,((unsigned long long)*timestamp/nsamps)%20,(unsigned long long)min_TS,(unsigned long long)prev_read_TS,nsamps,(unsigned long long)(fhstate->TS0+prev_read_TS+nsamps),count);
   }
   fhstate->first_read = 1;
   return (nsamps);
