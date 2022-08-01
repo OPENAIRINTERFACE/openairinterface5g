@@ -114,7 +114,7 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
                        end - output,
                        "UE %04x: dlsch_rounds ", UE->rnti);
     output += snprintf(output, end - output, "%"PRIu64, stats->dl.rounds[0]);
-    for (int i = 1; i < gNB->harq_round_max; i++)
+    for (int i = 1; i < gNB->dl_bler.harq_round_max; i++)
       output += snprintf(output, end - output, "/%"PRIu64, stats->dl.rounds[i]);
 
     output += snprintf(output,
@@ -136,7 +136,7 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
                        end - output,
                        "UE %04x: ulsch_rounds ", UE->rnti);
     output += snprintf(output, end - output, "%"PRIu64, stats->ul.rounds[0]);
-    for (int i = 1; i < gNB->harq_round_max; i++)
+    for (int i = 1; i < gNB->ul_bler.harq_round_max; i++)
       output += snprintf(output, end - output, "/%"PRIu64, stats->ul.rounds[i]);
 
     output += snprintf(output,
