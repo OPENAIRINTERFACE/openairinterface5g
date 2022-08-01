@@ -437,7 +437,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = gNB_mac->sched_ctrlCommon->sched_pdsch.mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[0];
+  pdsch_pdu_rel15->rvIndex[0] = 0;
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;
   pdsch_pdu_rel15->transmissionScheme = 0;

@@ -1672,7 +1672,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           sched_pusch->tb_size,
           harq_id,
           cur_harq->round,
-          nr_rv_round_map[cur_harq->round],
+          nr_rv_round_map[cur_harq->round%4],
           cur_harq->ndi,
           sched_ctrl->estimated_ul_buffer,
           sched_ctrl->sched_ul_bytes,
@@ -1768,8 +1768,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->nr_of_symbols = ps->nrOfSymbols;
 
     /* PUSCH PDU */
-    AssertFatal(cur_harq->round < 4, "Indexing nr_rv_round_map[%d] is out of bounds\n", cur_harq->round);
-    pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round];
+    AssertFatal(cur_harq->round < nr_mac->harq_round_max, "Indexing nr_rv_round_map[%d] is out of bounds\n", cur_harq->round%4);
+    pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round%4];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
     pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
