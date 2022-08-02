@@ -311,7 +311,7 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
   uint64_t TS_advance=0;
   if (timestamp > last_rxTS) TS_advance = timestamp - last_rxTS;
 
-  LOG_D(PHY,"Starting TX FH for TS %llu absslot %llu(%llu) last_rxTS %llu TS_advance %llu samples\n",(unsigned long long)timestamp,(unsigned long long)timestamp/nsamps,((unsigned long long)timestamp/nsamps)%20,(unsigned long long)last_rxTS,(unsigned long long)TS_advance);
+  if (TS_advance < (nsamps/2)) LOG_W(PHY,"Starting TX FH for TS %llu absslot %llu(%llu) last_rxTS %llu TS_advance %llu samples\n",(unsigned long long)timestamp,(unsigned long long)timestamp/nsamps,((unsigned long long)timestamp/nsamps)%20,(unsigned long long)last_rxTS,(unsigned long long)TS_advance);
   void *buff2;
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
