@@ -123,7 +123,6 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   bzero(dlsch,sizeof(NR_gNB_DLSCH_t));
   dlsch->Kmimo = Kmimo;
   dlsch->Mdlharq = Mdlharq;
-  dlsch->Mlimit = 4;
   dlsch->Nsoft = Nsoft;
 
   int txdataf_size = frame_parms->N_RB_DL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8; // max pdsch encoded length for each layer

@@ -72,10 +72,6 @@ reboot
 # https://docs.docker.com/compose/install/
 sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
-
-docker network create --driver=bridge --subnet=192.168.70.128/26 -o "com.docker.network.bridge.name"="demo-oai" demo-oai-public-net
-sudo service docker restart
-
 ```
 
 ## 2.2 OAI CN5G Setup
@@ -83,39 +79,36 @@ sudo service docker restart
 ```bash
 # Git oai-cn5g-fed repository
 git clone https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed.git ~/oai-cn5g-fed
-cd ~/oai-cn5g-fed
-git checkout master
-./scripts/syncComponents.sh --nrf-branch develop --amf-branch develop --smf-branch develop --spgwu-tiny-branch develop --ausf-branch develop --udm-branch develop --udr-branch develop --upf-vpp-branch develop --nssf-branch develop
 
+# Pull docker images
 docker pull oaisoftwarealliance/oai-amf:develop
 docker pull oaisoftwarealliance/oai-nrf:develop
 docker pull oaisoftwarealliance/oai-smf:develop
 docker pull oaisoftwarealliance/oai-udr:develop
 docker pull oaisoftwarealliance/oai-udm:develop
 docker pull oaisoftwarealliance/oai-ausf:develop
-docker pull oaisoftwarealliance/oai-upf-vpp:develop
 docker pull oaisoftwarealliance/oai-spgwu-tiny:develop
-docker pull oaisoftwarealliance/oai-nssf:develop
+docker pull oaisoftwarealliance/trf-gen-cn5g:latest
 
+# Tag docker images
 docker image tag oaisoftwarealliance/oai-amf:develop oai-amf:develop
 docker image tag oaisoftwarealliance/oai-nrf:develop oai-nrf:develop
 docker image tag oaisoftwarealliance/oai-smf:develop oai-smf:develop
 docker image tag oaisoftwarealliance/oai-udr:develop oai-udr:develop
 docker image tag oaisoftwarealliance/oai-udm:develop oai-udm:develop
 docker image tag oaisoftwarealliance/oai-ausf:develop oai-ausf:develop
-docker image tag oaisoftwarealliance/oai-upf-vpp:develop oai-upf-vpp:develop
 docker image tag oaisoftwarealliance/oai-spgwu-tiny:develop oai-spgwu-tiny:develop
-docker image tag oaisoftwarealliance/oai-nssf:develop oai-nssf:develop
+docker image tag oaisoftwarealliance/trf-gen-cn5g:latest trf-gen-cn5g:latest
 ```
 
 ## 2.3 OAI CN5G Configuration files
-Download and copy the configuration files to ~/oai-cn5g-fed/docker-compose:
-- [docker-compose-basic-nrf.yaml](tutorial_resources/docker-compose-basic-nrf.yaml)
-- [oai_db.sql](tutorial_resources/oai_db.sql)
+Download and copy configuration files:
+- Copy [docker-compose-basic-nrf.yaml](tutorial_resources/docker-compose-basic-nrf.yaml) to `~/oai-cn5g-fed/docker-compose`
+- Copy [oai_db.sql](tutorial_resources/oai_db.sql) to `~/oai-cn5g-fed/docker-compose/database`
 
 Change permissions on oai_db.sql to prevent mysql permission denied error:
 ```bash
-chmod 644 ~/oai-cn5g-fed/docker-compose/oai_db.sql
+chmod 644 ~/oai-cn5g-fed/docker-compose/database/oai_db.sql
 ```
 
 ## 2.4  SIM Card
@@ -193,7 +186,7 @@ The following steps are recommended. Please change the network interface(s) as r
 
 ```bash
 cd ~/oai-cn5g-fed/docker-compose
-python3 core-network.py --type start-basic --fqdn yes --scenario 1
+python3 core-network.py --type start-basic --scenario 1
 ```
 
 ## 4.2 Run OAI gNB

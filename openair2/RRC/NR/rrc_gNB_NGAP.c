@@ -474,7 +474,6 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
     rrc_gNB_ue_context_t            *ue_context_p = NULL;
     protocol_ctxt_t                 ctxt={0};
     uint8_t                         pdu_sessions_done = 0;
-    gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
     gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp;
     uint8_t                         inde_list[NR_NB_RB_MAX - 3]= {0};
     int                             ret = 0;
@@ -503,7 +502,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
 
       uint8_t nb_pdusessions_tosetup = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_pdusessions;
       if (nb_pdusessions_tosetup != 0) {
-        memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
+        gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
         for (int i = 0; i < NR_NB_RB_MAX - 3; i++) {
           if(ue_context_p->ue_context.pduSession[i].status >= PDU_SESSION_STATUS_DONE)
             continue;
@@ -512,6 +511,8 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
           create_tunnel_req.pdusession_id[pdu_sessions_done]   = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].pdusession_id;
           create_tunnel_req.incoming_rb_id[pdu_sessions_done]  = i+1;
           create_tunnel_req.outgoing_teid[pdu_sessions_done]    = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].gtp_teid;
+          // To be developped: hardcoded first flow 
+          create_tunnel_req.outgoing_qfi[pdu_sessions_done]    = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].qos[0].qfi;
           create_tunnel_req.dst_addr[pdu_sessions_done].length = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].upf_addr.length;
           memcpy(create_tunnel_req.dst_addr[pdu_sessions_done].buffer,
                   NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).pdusession_param[pdu_sessions_done].upf_addr.buffer,
@@ -1003,6 +1004,7 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
       create_tunnel_req.pdusession_id[pdu_sessions_done] = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].pdusession_id;
       create_tunnel_req.incoming_rb_id[pdu_sessions_done]= i+1;
       create_tunnel_req.outgoing_teid[pdu_sessions_done]  = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].gtp_teid;
+      create_tunnel_req.outgoing_qfi[pdu_sessions_done]  = NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].qos[0].qfi;
       memcpy(create_tunnel_req.dst_addr[pdu_sessions_done].buffer,
               NGAP_PDUSESSION_SETUP_REQ(msg_p).pdusession_setup_params[pdu_sessions_done].upf_addr.buffer,
               sizeof(uint8_t)*20);
