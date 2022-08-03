@@ -140,7 +140,6 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
     dlsch->Mdlharq = Mdlharq;
     dlsch->number_harq_processes_for_pdsch = Mdlharq;
     dlsch->Nsoft = Nsoft;
-    dlsch->Mlimit = 4;
     dlsch->max_ldpc_iterations = max_ldpc_iterations;
 
     for (int i=0; i<Mdlharq; i++) {
@@ -222,7 +221,6 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
       //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
       harq_process->status = SCH_IDLE;
-      harq_process->DLround  = 0;
       harq_process->ack = 1;
 
       //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d)\n",
@@ -237,11 +235,6 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
       //LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id, frame, nr_slot_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
       harq_process->ack = 0;
-      if (harq_process->DLround >= dlsch->Mlimit) {
-        harq_process->status = SCH_IDLE;
-        harq_process->DLround  = 0;
-        phy_vars_ue->dl_stats[4]++;
-      }
 
       //if(is_crnti) {
       //  LOG_D(PHY,"[UE %d] DLSCH: Setting NACK for nr_slot_rx %d (pid %d, pid status %d, round %d/Max %d, TBS %d)\n",
@@ -496,8 +489,6 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   */
   nb_rb = harq_process->nb_rb;
-  harq_process->trials[harq_process->DLround]++;
-
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations + 1;
   dlsch->last_iteration_cnt = ret;

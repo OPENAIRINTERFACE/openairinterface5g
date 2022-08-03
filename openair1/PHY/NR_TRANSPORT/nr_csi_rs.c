@@ -27,7 +27,7 @@
 //#define NR_CSIRS_DEBUG
 
 
-void nr_init_csi_rs(NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Nid) {
+void nr_init_csi_rs(const NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Nid) {
   uint32_t x1, x2;
   uint8_t reset;
   int csi_dmrs_init_length =  ((fp->N_RB_DL<<4)>>5)+1;
@@ -43,12 +43,20 @@ void nr_init_csi_rs(NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Nid) {
   }
 }
 
-void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
+void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
                         int32_t **dataF,
-                        int16_t amp,
-                        nr_csi_rs_info_t *nr_csi_rs_info,
-                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
-                        int slot){
+                        const int16_t amp,
+                        nr_csi_info_t *nr_csi_info,
+                        const nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
+                        const int slot,
+                        uint8_t *N_cdm_groups,
+                        uint8_t *CDM_group_size,
+                        uint8_t *k_prime,
+                        uint8_t *l_prime,
+                        uint8_t *N_ports,
+                        uint8_t *j_cdm,
+                        uint8_t *k_overline,
+                        uint8_t *l_overline) {
 
 #ifdef NR_CSIRS_DEBUG
   LOG_I(NR_PHY, "csi_params->subcarrier_spacing = %i\n", csi_params->subcarrier_spacing);
@@ -67,11 +75,11 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
   LOG_I(NR_PHY, "csi_params->power_control_offset_ss = %i\n", csi_params->power_control_offset_ss);
 #endif
 
-  int dataF_offset = slot*frame_parms.samples_per_slot_wCP;
-  uint32_t **nr_gold_csi_rs = nr_csi_rs_info->nr_gold_csi_rs[slot];
+  int dataF_offset = slot*frame_parms->samples_per_slot_wCP;
+  uint32_t **nr_gold_csi_rs = nr_csi_info->nr_gold_csi_rs[slot];
   //*8(max allocation per RB)*2(QPSK))
-  int csi_rs_length =  frame_parms.N_RB_DL<<4;
-  int16_t mod_csi[frame_parms.symbols_per_slot][csi_rs_length>>1] __attribute__((aligned(16)));
+  int csi_rs_length =  frame_parms->N_RB_DL<<4;
+  int16_t mod_csi[frame_parms->symbols_per_slot][csi_rs_length>>1] __attribute__((aligned(16)));
   uint16_t b = csi_params->freq_domain;
   uint16_t n, p, k, l, mprime, na, kpn;
   uint8_t size, ports, kprime, lprime, i, gs;
@@ -81,14 +89,14 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
   uint8_t fi = 0;
   double rho, alpha;
   uint32_t beta = amp;
-  nr_csi_rs_info->csi_rs_generated_signal_bits = log2_approx(amp);
+  nr_csi_info->csi_rs_generated_signal_bits = log2_approx(amp);
 
   AssertFatal(b!=0, "Invalid CSI frequency domain mapping: no bit selected in bitmap\n");
 
   // if the scrambling id is not the one previously used to initialize we need to re-initialize the rs
-  if (csi_params->scramb_id != nr_csi_rs_info->csi_gold_init) {
-    nr_csi_rs_info->csi_gold_init = csi_params->scramb_id;
-    nr_init_csi_rs(&frame_parms, nr_csi_rs_info->nr_gold_csi_rs, csi_params->scramb_id);
+  if (csi_params->scramb_id != nr_csi_info->csi_gold_init) {
+    nr_csi_info->csi_gold_init = csi_params->scramb_id;
+    nr_init_csi_rs(frame_parms, nr_csi_info->nr_gold_csi_rs, csi_params->scramb_id);
   }
 
   switch (csi_params->row) {
@@ -584,7 +592,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
   }
 
-  uint16_t start_sc = frame_parms.first_carrier_offset;
+  uint16_t start_sc = frame_parms->first_carrier_offset;
 
   // resource mapping according to 38.211 7.4.1.5.3
   for (n=csi_params->start_rb; n<(csi_params->start_rb+csi_params->nr_of_rbs); n++) {
@@ -593,7 +601,7 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
       for (int s=0 ; s<gs; s++)  { // loop over each CDM group size
         p = s+j[ji]*gs; // port index
         for (kp=0; kp<=kprime; kp++) { // loop over frequency resource elements within a group
-          k = (start_sc+(n*NR_NB_SC_PER_RB)+koverline[ji]+kp)%(frame_parms.ofdm_symbol_size);  // frequency index of current resource element
+          k = (start_sc+(n*NR_NB_SC_PER_RB)+koverline[ji]+kp)%(frame_parms->ofdm_symbol_size);  // frequency index of current resource element
           // wf according to tables 7.4.5.3-2 to 7.4.5.3-5
           if (kp == 0)
             wf = 1;
@@ -620,17 +628,17 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
 
             // ZP CSI RS
             if (csi_params->csi_type == 2) {
-              ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*dataF_offset)] = 0;
-              ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)] = 0;
+              ((int16_t*)dataF[p])[((l*frame_parms->ofdm_symbol_size + k)<<1)+(2*dataF_offset)] = 0;
+              ((int16_t*)dataF[p])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)] = 0;
             }
             else {
-              ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*dataF_offset)] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
-              ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
+              ((int16_t*)dataF[p])[((l*frame_parms->ofdm_symbol_size + k)<<1)+(2*dataF_offset)] = (beta*wt*wf*mod_csi[l][mprime<<1]) >> 15;
+              ((int16_t*)dataF[p])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)] = (beta*wt*wf*mod_csi[l][(mprime<<1) + 1]) >> 15;
             }
 #ifdef NR_CSIRS_DEBUG
             printf("l,k (%d,%d)  seq. index %d \t port %d \t (%d,%d)\n",l,k,mprime,p+3000,
-                   ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+(2*dataF_offset)],
-                   ((int16_t*)dataF[p])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)]);
+                   ((int16_t*)dataF[p])[((l*frame_parms->ofdm_symbol_size + k)<<1)+(2*dataF_offset)],
+                   ((int16_t*)dataF[p])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1+(2*dataF_offset)]);
 #endif
           }
         }
@@ -638,23 +646,25 @@ void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
     }
    }
   }
-  nr_csi_rs_info->N_cdm_groups = size;
-  nr_csi_rs_info->CDM_group_size = gs;
-  nr_csi_rs_info->kprime = kprime;
-  nr_csi_rs_info->lprime = lprime;
-  nr_csi_rs_info->N_ports = ports;
-  memcpy(nr_csi_rs_info->j,j,16*sizeof(uint8_t));
-  memcpy(nr_csi_rs_info->koverline,koverline,16*sizeof(uint8_t));
-  memcpy(nr_csi_rs_info->loverline,loverline,16*sizeof(uint8_t));
+  if (N_cdm_groups) *N_cdm_groups = size;
+  if (CDM_group_size) *CDM_group_size = gs;
+  if (k_prime) *k_prime = kprime;
+  if (l_prime) *l_prime = lprime;
+  if (N_ports) *N_ports = ports;
+  if (j_cdm) memcpy(j_cdm,j,16*sizeof(uint8_t));
+  if (k_overline) memcpy(k_overline,koverline,16*sizeof(uint8_t));
+  if (l_overline) memcpy(l_overline,loverline,16*sizeof(uint8_t));
 
 #ifdef NR_CSIRS_DEBUG
-  LOG_I(NR_PHY, "nr_csi_rs_info->N_ports = %d\n", nr_csi_rs_info->N_ports);
-  LOG_I(NR_PHY, "nr_csi_rs_info->N_cdm_groups = %d\n", nr_csi_rs_info->N_cdm_groups);
-  LOG_I(NR_PHY, "nr_csi_rs_info->CDM_group_size = %d\n", nr_csi_rs_info->CDM_group_size);
-  LOG_I(NR_PHY, "nr_csi_rs_info->kprime = %d\n", nr_csi_rs_info->kprime);
-  LOG_I(NR_PHY, "nr_csi_rs_info->lprime = %d\n", nr_csi_rs_info->lprime);
-  for(int ji=0; ji<nr_csi_rs_info->N_cdm_groups; ji++) {
-    LOG_I(NR_PHY, "(CDM group %d) j = %d, koverline = %d, loverline = %d\n", ji, nr_csi_rs_info->j[ji], nr_csi_rs_info->koverline[ji], nr_csi_rs_info->loverline[ji]);
+  if (N_ports) LOG_I(NR_PHY, "nr_csi_info->N_ports = %d\n", *N_ports);
+  if (N_cdm_groups) LOG_I(NR_PHY, "nr_csi_info->N_cdm_groups = %d\n", *N_cdm_groups);
+  if (CDM_group_size) LOG_I(NR_PHY, "nr_csi_info->CDM_group_size = %d\n", *CDM_group_size);
+  if (k_prime) LOG_I(NR_PHY, "nr_csi_info->kprime = %d\n", *k_prime);
+  if (l_prime) LOG_I(NR_PHY, "nr_csi_info->lprime = %d\n", *l_prime);
+  if (N_cdm_groups) {
+    for(int ji=0; ji<*N_cdm_groups; ji++) {
+      LOG_I(NR_PHY, "(CDM group %d) j = %d, koverline = %d, loverline = %d\n", ji, j[ji], koverline[ji], loverline[ji]);
+    }
   }
 #endif
 }

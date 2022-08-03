@@ -1280,7 +1280,6 @@ void set_r_pucch_parms(int rsetindex,
   *start_symbol_index = default_pucch_firstsymb[rsetindex];
 }
 
-
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
                  const NR_UE_DL_BWP_t *BWP,
                  const NR_ControlResourceSet_t *coreset,
@@ -2370,7 +2369,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                          NR_UL_DCI_FORMAT_0_0;
 
     if (UL_BWP->csi_MeasConfig)
-      compute_csi_bitlen (UL_BWP->csi_MeasConfig, UE);
+      compute_csi_bitlen (UL_BWP->csi_MeasConfig, UE->csi_report_template);
 
   }
 
@@ -2905,8 +2904,6 @@ void nr_mac_update_timers(module_id_t module_id,
           create_dl_harq_list(sched_ctrl, UE->current_DL_BWP.pdsch_servingcellconfig);
         }
 
-        // Update coreset/searchspace
-
         NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
         const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
         const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
@@ -2947,14 +2944,27 @@ void schedule_nr_bwp_switch(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_DL_BWP_t *DLBWP = &UE->current_DL_BWP;
     NR_UE_UL_BWP_t *ULBWP = &UE->current_UL_BWP;
-    if (sched_ctrl->rrc_processing_timer == 0 &&
-        UE->Msg4_ACKed &&
-        ((sched_ctrl->next_dl_bwp_id >= 0 && DLBWP->bwp_id != sched_ctrl->next_dl_bwp_id) ||
-        (sched_ctrl->next_ul_bwp_id >= 0 && ULBWP->bwp_id != sched_ctrl->next_ul_bwp_id))) {
+    if (sched_ctrl->rrc_processing_timer == 0 && UE->Msg4_ACKed && sched_ctrl->next_dl_bwp_id >= 0) {
 
-      LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from dl_bwp_id %ld to %ld and from ul_bwp_id %ld to %ld\n",
-            frame, slot, UE->rnti, DLBWP->bwp_id, sched_ctrl->next_dl_bwp_id, ULBWP->bwp_id, sched_ctrl->next_ul_bwp_id);
-      nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
+      int schedule_bwp_switching = false;
+      if (DLBWP->bwp_id == 0) {
+        // Switching from Initial BWP to Dedicated BWP
+        if (sched_ctrl->next_dl_bwp_id > 0 && sched_ctrl->next_ul_bwp_id > 0) {
+          schedule_bwp_switching = true;
+          LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from Initial DL BWP to %ld and from Initial UL BWP to %ld\n",
+                frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
+        }
+      } else if (DLBWP->bwp_id != sched_ctrl->next_dl_bwp_id && ULBWP->bwp_id != sched_ctrl->next_ul_bwp_id) {
+        // Switching between Dedicated BWPs
+        schedule_bwp_switching = true;
+        LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from dl_bwp_id %ld to %ld and from ul_bwp_id %ld to %ld\n",
+              frame, slot, UE->rnti, DLBWP->bwp_id, sched_ctrl->next_dl_bwp_id, ULBWP->bwp_id, sched_ctrl->next_ul_bwp_id);
+      }
+
+      if (schedule_bwp_switching) {
+        AssertFatal(sched_ctrl->next_dl_bwp_id > 0 && sched_ctrl->next_ul_bwp_id > 0, "BWP switching from a Dedicated BWP to the Initial BWP not handled yet!");
+        nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
+      }
     }
   }
 }

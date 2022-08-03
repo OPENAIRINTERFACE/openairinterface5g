@@ -172,7 +172,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     if (csirs->active == 1) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params = &csirs->csirs_pdu.csi_rs_pdu_rel15;
-      nr_generate_csi_rs(gNB->frame_parms, gNB->common_vars.txdataF, AMP, gNB->nr_csi_rs_info, csi_params, slot);
+      nr_generate_csi_rs(&gNB->frame_parms, gNB->common_vars.txdataF, AMP, gNB->nr_csi_info, csi_params, slot, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       csirs->active = 0;
     }
   }
@@ -242,13 +242,6 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 	          ulsch_harq->ulsch_pdu.rb_size,
 	          ulsch_harq->TBS,
 	          r);
-      ulsch_harq->round++;
-      if (ulsch_harq->round >= ulsch->Mlimit) {
-        ulsch_harq->status = SCH_IDLE;
-        ulsch_harq->round  = 0;
-        ulsch_harq->handled  = 0;
-        ulsch->harq_mask &= ~(1 << rdata->harq_pid);
-      }
       ulsch_harq->handled  = 1;
 
       LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
@@ -413,17 +406,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   if (timing_advance_update > 63) timing_advance_update = 63;
 
   if (crc_flag == 0) LOG_D(PHY, "%d.%d : Received PUSCH : Estimated timing advance PUSCH is  = %d, timing_advance_update is %d \n", frame,slot_rx,sync_pos,timing_advance_update);
-  else if (harq_process->round>0 || dtx_flag == 0) { // increment round if crc_flag == 1 and not(dtx_flag ==1 and round==0)
-      harq_process->round++;
-      if (harq_process->round >= ulsch->Mlimit) {
-        harq_process->status = SCH_IDLE;
-        harq_process->round  = 0;
-        harq_process->handled  = 0;
-        ulsch->harq_mask &= ~(1 << harq_pid);
-      }
-  }
-  // estimate UL_CQI for MAC
 
+  // estimate UL_CQI for MAC
   int SNRtimes10 = dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot) -
                    dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot);
 
@@ -858,8 +842,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         uint8_t N_symb_SRS = 1<<srs_pdu->num_symbols;
         int32_t srs_received_signal[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
         int32_t srs_ls_estimated_channel[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
-        int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
-        int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
+        int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS] __attribute__ ((aligned(32)));
+        int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size] __attribute__ ((aligned(32)));
         int32_t srs_estimated_channel_time_shifted[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
         uint32_t noise_power_per_rb[srs_pdu->bwp_size];
         int8_t snr_per_rb[srs_pdu->bwp_size];
