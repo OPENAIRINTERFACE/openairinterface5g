@@ -547,7 +547,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
   pusch_timedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
   *pusch_timedomainresourceallocation->k2 = k2;
   pusch_timedomainresourceallocation->mappingType = NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
-  pusch_timedomainresourceallocation->startSymbolAndLength = get_SLIV(0,13); 
+  pusch_timedomainresourceallocation->startSymbolAndLength = get_SLIV(0,13);
   ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation); 
 
   if(frame_type==TDD) {
@@ -779,7 +779,8 @@ void scheduling_request_config(NR_ServingCellConfigCommon_t *scc,
   ASN_SEQUENCE_ADD(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
 }
 
-void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+void set_dl_mcs_table(int scs,
+                      NR_UE_NR_Capability_t *cap,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                       NR_ServingCellConfigCommon_t *scc) {
 

@@ -1090,13 +1090,16 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->vrb_to_prb_mapping = 0;
 
   pusch_pdu->frequency_hopping = fh;
-  //pusch_pdu->tx_direct_current_location;//The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299, which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300, which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
+  //pusch_pdu->tx_direct_current_location;
+  //The uplink Tx Direct Current location for the carrier. Only values in the value range of this field between 0 and 3299,
+  //which indicate the subcarrier index within the carrier corresponding 1o the numerology of the corresponding uplink BWP and value 3300,
+  //which indicates "Outside the carrier" and value 3301, which indicates "Undetermined position within the carrier" are used. [TS38.331, UplinkTxDirectCurrentBWP IE]
   pusch_pdu->uplink_frequency_shift_7p5khz = 0;
   //Resource Allocation in time domain
   pusch_pdu->start_symbol_index = start_symbol_index;
   pusch_pdu->nr_of_symbols = nr_of_symbols;
   //Optional Data only included if indicated in pduBitmap
-  pusch_pdu->pusch_data.rv_index = nr_rv_round_map[round];
+  pusch_pdu->pusch_data.rv_index = nr_rv_round_map[round%4];
   pusch_pdu->pusch_data.harq_process_id = 0;
   pusch_pdu->pusch_data.new_data_indicator = 1;
   pusch_pdu->pusch_data.num_cb = 0;
@@ -1804,7 +1807,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->qamModOrder[0] = 2;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
-    pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[harq->round];
+    pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[harq->round%4];
     pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->nrOfLayers = 1;
     pdsch_pdu_rel15->transmissionScheme = 0;

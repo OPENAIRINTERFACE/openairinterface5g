@@ -66,8 +66,16 @@ int gtpv1u_create_x2u_tunnel(
 
 
 // New API
-teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_rb_id, teid_t teid,
-                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack);
+teid_t newGtpuCreateTunnel(instance_t instance,
+                           rnti_t rnti,
+                           int incoming_bearer_id,
+                           int outgoing_rb_id,
+                           teid_t teid,
+                           int outgoing_qfi,
+                           transport_layer_addr_t remoteAddr,
+                           int port,
+                           gtpCallback callBack,
+                           gtpCallbackSDAP callBackSDAP);
 void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer_id, teid_t newOutgoingTeid);
 int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti);
 int newGtpuDeleteTunnels(instance_t instance, rnti_t rnti, int nbTunnels, pdusessionid_t *pdusession_id);
