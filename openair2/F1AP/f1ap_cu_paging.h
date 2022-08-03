@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file f1ap_du_interface_management.h
- * \brief f1ap interface management for DU
+/*! \file f1ap_cu_paging.h
+ * \brief f1ap interface paging for CU
  * \author EURECOM/NTUST
  * \date 2018
  * \version 0.1
@@ -29,3 +29,8 @@
  * \note
  * \warning
  */
+
+#ifndef F1AP_CU_PAGING_H_
+#define F1AP_CU_PAGING_H_
+int CU_send_Paging(instance_t instance, f1ap_paging_ind_t *paging);
+#endif /* F1AP_DU_PAGING_H_ */

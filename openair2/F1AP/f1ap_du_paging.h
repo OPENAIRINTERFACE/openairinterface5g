@@ -29,3 +29,13 @@
  * \note
  * \warning
  */
+
+#ifndef F1AP_DU_PAGING_H_
+#define F1AP_DU_PAGING_H_
+
+int DU_handle_Paging(instance_t       instance,
+                     uint32_t         assoc_id,
+                     uint32_t         stream,
+                     F1AP_F1AP_PDU_t *pdu);
+
+#endif /* F1AP_DU_PAGING_H_ */

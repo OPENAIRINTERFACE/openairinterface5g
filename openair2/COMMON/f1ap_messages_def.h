@@ -40,7 +40,6 @@ MESSAGE_DEF(F1AP_UL_RRC_MESSAGE                , MESSAGE_PRIORITY_MED, f1ap_ul_r
 MESSAGE_DEF(F1AP_UE_CONTEXT_RELEASE_REQ, MESSAGE_PRIORITY_MED, f1ap_ue_context_release_req_t, f1ap_ue_context_release_req)
 MESSAGE_DEF(F1AP_UE_CONTEXT_RELEASE_CMD, MESSAGE_PRIORITY_MED, f1ap_ue_context_release_cmd_t, f1ap_ue_context_release_cmd)
 
-
 /* RRC -> F1AP  messages */
 MESSAGE_DEF(F1AP_DL_RRC_MESSAGE              , MESSAGE_PRIORITY_MED, f1ap_dl_rrc_message_t              , f1ap_dl_rrc_message )
 //MESSAGE_DEF(F1AP_INITIAL_CONTEXT_SETUP_REQ , MESSAGE_PRIORITY_MED, f1ap_initial_context_setup_req_t , f1ap_initial_context_setup_req )
@@ -49,6 +48,5 @@ MESSAGE_DEF(F1AP_UE_CONTEXT_SETUP_RESP, MESSAGE_PRIORITY_MED, f1ap_ue_context_se
 MESSAGE_DEF(F1AP_UE_CONTEXT_MODIFICATION_REQ,  MESSAGE_PRIORITY_MED, f1ap_ue_context_setup_t, f1ap_ue_context_modification_req)
 MESSAGE_DEF(F1AP_UE_CONTEXT_MODIFICATION_RESP, MESSAGE_PRIORITY_MED, f1ap_ue_context_setup_t, f1ap_ue_context_modification_resp)
 
-
-
-
+/* CU -> DU*/
+MESSAGE_DEF(F1AP_PAGING_IND, MESSAGE_PRIORITY_MED, f1ap_paging_ind_t, f1ap_paging_ind)
