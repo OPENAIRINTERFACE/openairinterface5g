@@ -40,6 +40,7 @@
 #include "defs_common.h"
 #include "nfapi_nr_interface_scf.h"
 #include <common/utils/threadPool/thread-pool.h>
+#include <executables/rt_profiling.h>
 
 #define MAX_BANDS_PER_RRU 4
 #define MAX_RRU_CONFIG_SIZE 1024
@@ -678,6 +679,8 @@ typedef struct RU_t_s {
   int tpcores[16];
   /// number of cores for RU ThreadPool
   int num_tpcores;
+  /// structure for analyzing high-level RT measurements
+  rt_ru_profiling_t rt_ru_profiling; 
 } RU_t;
 
 

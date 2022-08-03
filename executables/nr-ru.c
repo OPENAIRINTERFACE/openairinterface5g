@@ -34,6 +34,7 @@
 #include "common/utils/assertions.h"
 #include "common/utils/system.h"
 #include "common/ran_context.h"
+#include "rt_profiling.h"
 
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
@@ -1221,7 +1222,13 @@ void ru_tx_func(void *param) {
   int slot_tx = info->slot_tx;
   int print_frame = 8;
   char filename[40];
+ 
 
+  // note that this will break for 60/120 kHz, to be handled
+  int absslot_tx = info->timestamp_tx/fp->get_samples_per_slot(slot_tx,fp);
+  int absslot_rx = absslot_tx-ru->sl_ahead;
+  int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
+  clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.start_RU_TX[rt_prof_idx]);
   // do TX front-end processing if needed (precoding and/or IDFTs)
   if (ru->feptx_prec) ru->feptx_prec(ru,frame_tx,slot_tx);
 
@@ -1264,6 +1271,11 @@ void ru_tx_func(void *param) {
       }//for (i=0; i<ru->nb_tx; i++)
     }//if(frame_tx == print_frame)
   }//else  emulate_rf
+  clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_TX[rt_prof_idx]);
+  struct timespec *t0=&ru->rt_ru_profiling.start_RU_TX[rt_prof_idx];
+  struct timespec *t1=&ru->rt_ru_profiling.return_RU_TX[rt_prof_idx];
+
+  LOG_D(PHY,"rt_prof_idx %d : RU_TX time %d\n",rt_prof_idx,(int)(1e9 * (t1->tv_sec - t0->tv_sec) + (t1->tv_nsec-t0->tv_nsec)));
 }
 
 void *ru_thread( void *param ) {
@@ -1424,6 +1436,9 @@ void *ru_thread( void *param ) {
        proc->timestamp_tx += fp->get_samples_per_slot((sl+slidx)%fp->slots_per_frame,fp);
     proc->frame_tx     = (proc->tti_rx > (fp->slots_per_frame-1-(ru->sl_ahead))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
     proc->tti_tx      = (proc->tti_rx + ru->sl_ahead)%fp->slots_per_frame;
+    int absslot_rx = proc->timestamp_rx/fp->get_samples_per_slot(proc->tti_rx,fp);
+    int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
+    clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_south_in[rt_prof_idx]);
     LOG_D(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0]:[RX:%d%d TX(SFN):%d]\n",
           frame,slot,
           proc->frame_rx,proc->tti_rx,
@@ -1439,6 +1454,7 @@ void *ru_thread( void *param ) {
     if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
       if (ru->feprx) {
         ru->feprx(ru,proc->tti_rx);
+        clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_feprx[rt_prof_idx]);
         //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
         LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
         if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData)
@@ -1464,14 +1480,18 @@ void *ru_thread( void *param ) {
                            prach_oc,
                            proc->frame_rx,proc->tti_rx);
           }
-
+          clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_prachrx[rt_prof_idx]);
           free_nr_ru_prach_entry(ru,prach_id);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 0 );
-        }
+        } // end if (prach_id > 0)
+      } // end if (ru->feprx)
+      else {
+         memset(&ru->rt_ru_profiling.return_RU_feprx[rt_prof_idx],0,sizeof(struct timespec));
+         memset(&ru->rt_ru_profiling.return_RU_prachrx[rt_prof_idx],0,sizeof(struct timespec));
       }
-    }
+    } // end if (slot_type == NR_UPLINK_SLOT || slot_type == NR_MIXED_SLOT) {
 
-    // At this point, all information for subframe has been received on FH interface
+    // At this point, all RX information for slot has been received on FH interface and processed by RU
     res = pullTpool(gNB->resp_L1, gNB->threadPool);
     syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
@@ -1483,7 +1503,7 @@ void *ru_thread( void *param ) {
     res->key = proc->tti_rx;
     pushTpool(gNB->threadPool, res);
 
-  }
+  } //end while (!oai_exit)
 
   printf( "Exiting ru_thread \n");
 

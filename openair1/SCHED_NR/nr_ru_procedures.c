@@ -56,7 +56,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
 
-  unsigned int slot_offset,slot_offsetF,initial_slot_offset,num_samples;;
+  unsigned int slot_offset,slot_offsetF;
   int slot = tti_tx;
 
 
@@ -72,7 +72,6 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
     slot_offset += (idx_sym%(0x7<<fp->numerology_index)) ? fp->nb_prefix_samples : fp->nb_prefix_samples0;
 
   slot_offset += fp->ofdm_symbol_size*first_symbol;
-  initial_slot_offset = slot_offset;
 
   LOG_D(PHY,"SFN/SF:RU:TX:%d/%d aa %d Generating slot %d (first_symbol %d num_symbols %d) slot_offset %d, slot_offsetF %d\n",ru->proc.frame_tx, ru->proc.tti_tx,aa,slot,first_symbol,num_symbols,slot_offset,slot_offsetF);
   
@@ -83,7 +82,6 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                  num_symbols,
                  fp->nb_prefix_samples,
                  CYCLIC_PREFIX);
-    num_samples=num_symbols*(fp->nb_prefix_samples+fp->ofdm_symbol_size);
   } else {
     if (fp->numerology_index != 0) {
       
@@ -101,8 +99,6 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                      num_symbols-1,
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
-        num_samples=(num_symbols-1)*(fp->nb_prefix_samples+fp->ofdm_symbol_size)+
-		    fp->nb_prefix_samples0+fp->ofdm_symbol_size;
       }
       else { // all symbols in slot have shorter prefix
         PHY_ofdm_mod(&ru->common.txdataF_BF[aa][slot_offsetF],
@@ -111,7 +107,6 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
                      num_symbols,
                      fp->nb_prefix_samples,
                      CYCLIC_PREFIX);
-        num_samples=num_symbols*(fp->nb_prefix_samples+fp->ofdm_symbol_size);
       }
     } // numerology_index!=0
     else { //numerology_index == 0
@@ -137,7 +132,6 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
           slot_offsetF += fp->ofdm_symbol_size;
         }
       } // for(idx_symbol..
-      num_samples=slot_offset-initial_slot_offset;
     } //  numerology 0
   }
 
