@@ -194,6 +194,7 @@ int nr_get_sf_retxBSRTimer(uint8_t retxBSR_Timer);
 
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, fapi_nr_dci_indication_pdu_t *dci_ind);
 int nr_ue_process_dci_indication_pdu(module_id_t module_id, int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci);
+int8_t nr_ue_process_csirs_measurements(module_id_t module_id, frame_t frame, int slot, fapi_nr_csirs_measurements_t *csirs_measurements);
 
 uint32_t get_ssb_frame(uint32_t test);
 
@@ -212,6 +213,18 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
                              struct NR_CSI_ReportConfig *csi_reportconfig,
                              NR_CSI_ResourceConfigId_t csi_ResourceConfigId,
                              NR_CSI_MeasConfig_t *csi_MeasConfig);
+
+uint8_t get_csirs_RI_PMI_CQI_payload(NR_UE_MAC_INST_t *mac,
+                                     PUCCH_sched_t *pucch,
+                                     struct NR_CSI_ReportConfig *csi_reportconfig,
+                                     NR_CSI_ResourceConfigId_t csi_ResourceConfigId,
+                                     NR_CSI_MeasConfig_t *csi_MeasConfig);
+
+uint8_t get_csirs_RSRP_payload(NR_UE_MAC_INST_t *mac,
+                               PUCCH_sched_t *pucch,
+                               struct NR_CSI_ReportConfig *csi_reportconfig,
+                               NR_CSI_ResourceConfigId_t csi_ResourceConfigId,
+                               NR_CSI_MeasConfig_t *csi_MeasConfig);
 
 uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch,

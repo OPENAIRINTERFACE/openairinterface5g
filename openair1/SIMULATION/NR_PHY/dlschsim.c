@@ -114,16 +114,16 @@ int main(int argc, char **argv)
 	//int run_initial_sync=0;
 	int loglvl = OAILOG_WARNING;
 	uint8_t dlsch_threads = 0;
-	float target_error_rate = 0.01;
-        uint64_t SSB_positions=0x01;
-	uint16_t nb_symb_sch = 12;
-	uint16_t nb_rb = 50;
-	uint8_t Imcs = 9;
-        uint8_t mcs_table = 0;
-        double DS_TDL = .03;
-	cpuf = get_cpu_freq_GHz();
-	char gNBthreads[128]="n";
-        int Tbslbrm = 950984;
+  float target_error_rate = 0.01;
+  uint64_t SSB_positions=0x01;
+  uint16_t nb_symb_sch = 12;
+  uint16_t nb_rb = 50;
+  uint8_t Imcs = 9;
+  uint8_t mcs_table = 0;
+  double DS_TDL = .03;
+  cpuf = get_cpu_freq_GHz();
+  char gNBthreads[128]="n";
+  int Tbslbrm = 950984;
 
 	if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == 0) {
 		exit_fun("[NR_DLSCHSIM] Error, configuration module init failed\n");
@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 			break;
 
 		case 'X':
-		  strncpy(gNBthreads, optarg, sizeof(gNBthreads));
+		  strncpy(gNBthreads, optarg, sizeof(gNBthreads)-1);
 		  gNBthreads[sizeof(gNBthreads)-1]=0;
 		  break;
 

@@ -643,7 +643,10 @@ void pf_dl(module_id_t module_id,
       const NR_bler_options_t *bo = &mac->dl_bler;
       const int max_mcs_table = ps->mcsTableIdx == 1 ? 27 : 28;
       const int max_mcs = min(sched_ctrl->dl_max_mcs, max_mcs_table);
-      sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
+      if (bo->harq_round_max == 1)
+        sched_pdsch->mcs = max_mcs;
+      else
+        sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
       UE->layers = set_dl_nrOfLayers(sched_ctrl);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
       const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
@@ -927,8 +930,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;
 
-  //if (slot==7 || slot == 17) return;
-
   /* PREPROCESSOR */
   gNB_mac->pre_processor_dl(module_id, frame, slot);
   const int CC_id = 0;
@@ -1017,7 +1018,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           TBS,
           current_harq_pid,
           harq->round,
-          nr_rv_round_map[harq->round],
+          nr_rv_round_map[harq->round%4],
           harq->ndi,
           pucch->timing_indicator,
           pucch->frame,
@@ -1085,8 +1086,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->mcsIndex[0] = sched_pdsch->mcs;
     pdsch_pdu->mcsTable[0] = ps->mcsTableIdx;
     AssertFatal(harq!=NULL,"harq is null\n");
-    AssertFatal(harq->round<4,"%d",harq->round);
-    pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round];
+    AssertFatal(harq->round<gNB_mac->dl_bler.harq_round_max,"%d",harq->round);
+    pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round%4];
     pdsch_pdu->TBSize[0] = TBS;
     pdsch_pdu->dataScramblingId = *scc->physCellId;
     pdsch_pdu->nrOfLayers = nrOfLayers;
@@ -1120,9 +1121,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                             csi_report->codebook_mode);
     }
     // TBS_LBRM according to section 5.4.2.1 of 38.212
-    long *maxMIMO_Layers = cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
-    AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+    long maxMIMO_Layers = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated ? *cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
+    int nl_tbslbrm = maxMIMO_Layers < 4 ? maxMIMO_Layers : 4;
     // Maximum number of PRBs across all configured DL BWPs
     int bw_tbslbrm = get_bw_tbslbrm(genericParameters, cg);
     pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ps->mcsTableIdx,
@@ -1318,7 +1318,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   lcid < 4 ? "DCCH" : "DTCH",
                   lcid,
                   ndata,
-                  bufEnd-buf-+sizeof(NR_MAC_SUBHEADER_LONG));
+                  bufEnd-buf-sizeof(NR_MAC_SUBHEADER_LONG));
 
             if (len == 0)
               break;

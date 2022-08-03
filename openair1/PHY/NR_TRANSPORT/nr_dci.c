@@ -111,9 +111,10 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     // DMRS length is per OFDM symbol
     uint32_t dmrs_length = n_rb*6; //2(QPSK)*3(per RB)*6(REG per CCE)
     uint32_t encoded_length = dci_pdu->AggregationLevel*108; //2(QPSK)*9(per RB)*6(REG per CCE)
-    LOG_D(PHY, "DL_DCI : rb_offset %d, nb_rb %d, DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d,reg_mapping %d),Scrambling_Id %d,ScramblingRNTI %x,PayloadSizeBits %d\n",
-          rb_offset, n_rb,dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType,
-          dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
+    if (dci_pdu->RNTI != 0xFFFF)
+      LOG_D(PHY, "DL_DCI : rb_offset %d, nb_rb %d, DMRS length per symbol %d\t DCI encoded length %d (precoder_granularity %d, reg_mapping %d), Scrambling_Id %d, ScramblingRNTI %x, PayloadSizeBits %d\n",
+            rb_offset, n_rb,dmrs_length, encoded_length,pdcch_pdu_rel15->precoderGranularity,pdcch_pdu_rel15->CceRegMappingType,
+            dci_pdu->ScramblingId,dci_pdu->ScramblingRNTI,dci_pdu->PayloadSizeBits);
     dmrs_length += rb_offset*6; // To accommodate more DMRS symbols in case of rb offset
       
     /// DMRS QPSK modulation
@@ -122,11 +123,11 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
       nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
       
 #ifdef DEBUG_PDCCH_DMRS
-       if(dci_pdu->RNTI!=0xFFFF) {      
-         for (int i=0; i<dmrs_length>>1; i++)
-	   printf("symb %d i %d %p gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
-	          &gold_pdcch_dmrs[symb][i>>5],gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
-       }
+      if(dci_pdu->RNTI!=0xFFFF) {
+        for (int i=0; i<dmrs_length>>1; i++)
+          printf("symb %d i %d %p gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
+                 &gold_pdcch_dmrs[symb][i>>5],gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1]);
+      }
 #endif
     }
     
@@ -264,7 +265,6 @@ void nr_generate_dci_top(processingData_L1tx_t *msgTx,
                          int32_t *txdataF,
                          int16_t amp,
                          NR_DL_FRAME_PARMS *frame_parms) {
-
 
   for (int i=0; i<msgTx->num_ul_pdcch; i++)
     nr_generate_dci(msgTx->gNB,&msgTx->ul_pdcch_pdu[i].pdcch_pdu.pdcch_pdu_rel15,txdataF,amp,frame_parms,slot);

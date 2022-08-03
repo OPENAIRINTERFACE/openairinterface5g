@@ -151,9 +151,9 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
   NR_gNB_COMMON *common_vars = &gNB->common_vars;
   PHY_MEASUREMENTS_gNB *measurements = &gNB->measurements;
   int rb, nb_symb[275]={0};
-   
+
   memset(measurements->n0_subband_power, 0, sizeof(measurements->n0_subband_power));
-    
+
   for (int s=first_symb;s<(first_symb+num_symb);s++) {
     for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
       if (s==first_symb /*&& ((gNB->rb_mask_ul[s][rb>>5]&(1<<(rb&31))) == 0)*/) {
@@ -168,7 +168,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
           int offset = offset0 + (s*frame_parms->ofdm_symbol_size);
           int32_t *ul_ch  = &common_vars->rxdataF[aarx][offset];
           int len = 12;
-          if (((frame_parms->N_RB_UL&1) == 1) && 
+          if (((frame_parms->N_RB_UL&1) == 1) &&
               (rb==(frame_parms->N_RB_UL>>1))) {
             len=6;
           }

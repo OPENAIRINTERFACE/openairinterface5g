@@ -331,8 +331,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
           corr[aa][l].r += xr[aa][l][n].r * idft12_re[seq_index][n] + xr[aa][l][n].i * idft12_im[seq_index][n];
           corr[aa][l].i += xr[aa][l][n].r * idft12_im[seq_index][n] - xr[aa][l][n].i * idft12_re[seq_index][n];
         }
-	corr[aa][l].r >>= 31;
-	corr[aa][l].i >>= 31;
+        corr[aa][l].r >>= 31;
+        corr[aa][l].i >>= 31;
       }
     }
     LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%ld,%ld)=>%f\n",
