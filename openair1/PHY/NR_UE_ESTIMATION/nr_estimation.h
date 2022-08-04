@@ -35,6 +35,7 @@
 /* A function to perform the channel estimation of DL PRS signal */
 int nr_prs_channel_estimation(uint8_t gNB_id,
                               uint8_t rsc_id,
+                              uint8_t rep_num,
                               PHY_VARS_NR_UE *ue,
                               UE_nr_rxtx_proc_t *proc,
                               NR_DL_FRAME_PARMS *frame_params);
@@ -54,8 +55,11 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 uint8_t gNB_id,
                                 unsigned char Ns,
                                 unsigned char symbol,
+                                unsigned short scrambling_id,
                                 unsigned short coreset_start_subcarrier,
-                                unsigned short nb_rb_coreset);
+                                unsigned short nb_rb_coreset,
+                                int32_t pdcch_est_size,
+                                int32_t pdcch_dl_ch_estimates[][pdcch_est_size]);
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,
@@ -66,7 +70,10 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              NR_UE_SSB *current_ssb);
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-                               UE_nr_rxtx_proc_t *proc,
+                               int estimateSz,
+			       struct complex16 dl_ch_estimates [][estimateSz],
+			       struct complex16 dl_ch_estimates_time [][estimateSz],
+			       UE_nr_rxtx_proc_t *proc,
                                uint8_t gNB_id,
                                unsigned char Ns,
                                unsigned char symbol,
@@ -81,13 +88,18 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
+                                unsigned char nscid,
+                                unsigned short scrambling_id,
                                 unsigned short BWPStart,
+                                uint8_t config_type,
                                 unsigned short bwp_start_subcarrier,
                                 unsigned short nb_rb_pdsch);
 
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                         PHY_VARS_NR_UE *ue,
                         module_id_t gNB_id,
+			int estimateSz,
+			struct complex16 dl_ch_estimates_time [][estimateSz],
                         uint8_t frame,
                         uint8_t subframe,
                         unsigned char clear,

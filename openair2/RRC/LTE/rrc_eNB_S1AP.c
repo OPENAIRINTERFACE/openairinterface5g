@@ -36,7 +36,6 @@
 #include "rrc_eNB_S1AP.h"
 #include "enb_config.h"
 #include "common/ran_context.h"
-#include "gtpv1u.h"
 
 #include "s1ap_eNB.h"
 #include "s1ap_eNB_defs.h"
@@ -48,7 +47,6 @@
 #include "pdcp_primitives.h"
 
 #include "UTIL/OSA/osa_defs.h"
-#include <common/utils/msc/msc.h>
 
 #include "LTE_UERadioAccessCapabilityInformation.h"
 
@@ -586,17 +584,6 @@ rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(
       // TODO add cause when it will be integrated
     }
   }
-
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_ENB,
-    MSC_S1AP_ENB,
-    (const char *)&S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p),
-    sizeof(s1ap_initial_context_setup_resp_t),
-    MSC_AS_TIME_FMT" INITIAL_CONTEXT_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_id_rnti,
-    S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).eNB_ue_s1ap_id,
-    e_rabs_done, e_rabs_failed);
 }
 
 //------------------------------------------------------------------------------
@@ -804,14 +791,6 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
         ue_context_pP->ue_context.ue_gummei.mnc_len = S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc_len;
         ue_context_pP->ue_context.ue_gummei.mme_code = S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code;
         ue_context_pP->ue_context.ue_gummei.mme_group_id = S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id;
-        MSC_LOG_TX_MESSAGE(MSC_S1AP_ENB,
-                           MSC_S1AP_MME,
-                           (const char *)&message_p->ittiMsg.s1ap_nas_first_req,
-                           sizeof(s1ap_nas_first_req_t),
-                           MSC_AS_TIME_FMT" S1AP_NAS_FIRST_REQ eNB %u UE %x",
-                           MSC_AS_TIME_ARGS(ctxt_pP),
-                           ctxt_pP->module_id,
-                           ctxt_pP->rnti);
         LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI mme_code %u mme_group_id %u ue %x\n",
               ctxt_pP->module_id,
               S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code,
@@ -852,15 +831,6 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
         eNB_ue_s1ap_id);
 
   if (ue_context_p == NULL) {
-    MSC_LOG_RX_MESSAGE(
-      MSC_RRC_ENB,
-      MSC_S1AP_ENB,
-      NULL,
-      0,
-      MSC_AS_TIME_FMT" DOWNLINK-NAS UE initial id %u eNB_ue_s1ap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_initial_id,
-      eNB_ue_s1ap_id);
     /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
     MessageDef *msg_fail_p;
     LOG_W(RRC, "[eNB %ld] In S1AP_DOWNLINK_NAS: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, eNB_ue_s1ap_id);
@@ -869,15 +839,6 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
     S1AP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.length = S1AP_DOWNLINK_NAS (msg_p).nas_pdu.length;
     S1AP_NAS_NON_DELIVERY_IND (msg_fail_p).nas_pdu.buffer = S1AP_DOWNLINK_NAS (msg_p).nas_pdu.buffer;
     // TODO add failure cause when defined!
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_ENB,
-      MSC_S1AP_ENB,
-      (const char *)NULL,
-      0,
-      MSC_AS_TIME_FMT" S1AP_NAS_NON_DELIVERY_IND UE initial id %u eNB_ue_s1ap_id %u (ue ctxt !found)",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_initial_id,
-      eNB_ue_s1ap_id);
     itti_send_msg_to_task (TASK_S1AP, instance, msg_fail_p);
     return (-1);
   } else {
@@ -889,15 +850,6 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
       ue_context_p->ue_context.eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
     }
 
-    MSC_LOG_RX_MESSAGE(
-      MSC_RRC_ENB,
-      MSC_S1AP_ENB,
-      (const char *)NULL,
-      0,
-      MSC_AS_TIME_FMT" DOWNLINK-NAS UE initial id %u eNB_ue_s1ap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_initial_id,
-      S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id);
     /* Create message for PDCP (DLInformationTransfer_t) */
     length = do_DLInformationTransfer (
                instance,
@@ -1195,12 +1147,6 @@ rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
   if (ue_context_pP == NULL) {
     LOG_E(RRC, "[eNB] In S1AP_UE_CONTEXT_RELEASE_REQ: invalid UE\n");
   } else {
-    MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
-                       MSC_S1AP_ENB,
-                       NULL,
-                       0,
-                       "0 S1AP_UE_CONTEXT_RELEASE_REQ eNB_ue_s1ap_id 0x%06"PRIX32" ",
-                       ue_context_pP->ue_context.eNB_ue_s1ap_id);
     MessageDef *msg_context_release_req_p = NULL;
     msg_context_release_req_p = itti_alloc_new_message(TASK_RRC_ENB, 0, S1AP_UE_CONTEXT_RELEASE_REQ);
     S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
@@ -1214,9 +1160,6 @@ void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(
   module_id_t enb_mod_idP,
   uint32_t eNB_ue_s1ap_id
 ) {
-  MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_S1AP_ENB, NULL, 0,
-                     "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
-                     eNB_ue_s1ap_id);
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_ENB, 0, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
   S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
   itti_send_msg_to_task(TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_mod_idP), msg);
@@ -1247,14 +1190,6 @@ rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(
     LOG_W(RRC, "[eNB %ld] In S1AP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from eNB_ue_s1ap_id (%d)\n",
           instance,
           eNB_ue_s1ap_id);
-    MSC_LOG_EVENT(MSC_RRC_ENB, "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" context not found",
-                  eNB_ue_s1ap_id);
-    MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
-                       MSC_S1AP_ENB,
-                       NULL,
-                       0,
-                       "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
-                       eNB_ue_s1ap_id);
     msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, 0, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
     S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
     itti_send_msg_to_task(TASK_S1AP, instance, msg_complete_p);
@@ -1432,16 +1367,6 @@ int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t *const ctxt_pP,
   if ((e_rabs_done > 0) ) {
     LOG_I(RRC,"S1AP_E_RAB_SETUP_RESP: sending the message: nb_of_erabs %d, total e_rabs %d, index %d\n",
           ue_context_pP->ue_context.nb_of_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_ENB,
-      MSC_S1AP_ENB,
-      (const char *)&S1AP_E_RAB_SETUP_RESP (msg_p),
-      sizeof(s1ap_e_rab_setup_resp_t),
-      MSC_AS_TIME_FMT" E_RAB_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_pP->ue_id_rnti,
-      S1AP_E_RAB_SETUP_RESP (msg_p).eNB_ue_s1ap_id,
-      e_rabs_done, e_rabs_failed);
     itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
   }
 
@@ -1667,16 +1592,6 @@ int rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(const protocol_ctxt_t *const ctxt_pP,
   if (e_rabs_done > 0 || e_rabs_failed > 0) {
     LOG_D(RRC,"S1AP_E_RAB_MODIFY_RESP: sending the message: nb_of_modify_e_rabs %d, total e_rabs %d, index %d\n",
           ue_context_pP->ue_context.nb_of_modify_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_ENB,
-      MSC_S1AP_ENB,
-      (const char *)&S1AP_E_RAB_SETUP_RESP (msg_p),
-      sizeof(s1ap_e_rab_setup_resp_t),
-      MSC_AS_TIME_FMT" E_RAB_MODIFY_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_pP->ue_id_rnti,
-      S1AP_E_RAB_MODIFY_RESP (msg_p).eNB_ue_s1ap_id,
-      e_rabs_done, e_rabs_failed);
     itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
   } else {
     itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
@@ -1842,7 +1757,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
           && RC.rrc[instance]->configuration.mnc[j] == S1AP_PAGING_IND(msg_p).plmn_identity[tai_size].mnc
           && RC.rrc[instance]->configuration.tac == S1AP_PAGING_IND(msg_p).tac[tai_size]) {
         for (uint8_t CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-          lte_frame_type_t frame_type = RC.eNB[instance][CC_id]->frame_parms.frame_type;
+          frame_type_t frame_type = RC.eNB[instance][CC_id]->frame_parms.frame_type;
           /* get nB from configuration */
           /* get default DRX cycle from configuration */
           Tc = (uint8_t)RC.rrc[instance]->configuration.radioresourceconfig[CC_id].pcch_defaultPagingCycle;
@@ -2067,16 +1982,6 @@ int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t *const ctxt_pP,
   if (e_rabs_done > 0) {
     LOG_I(RRC,"S1AP_PATH_SWITCH_REQ: sending the message: nb_of_erabstobeswitched %d, total e_rabs %d, index %d\n",
           S1AP_PATH_SWITCH_REQ (msg_p).nb_of_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_ENB,
-      MSC_S1AP_ENB,
-      (const char *)&S1AP_PATH_SWITCH_REQ (msg_p),
-      sizeof(s1ap_path_switch_req_t),
-      MSC_AS_TIME_FMT" PATH_SWITCH_REQ UE %X eNB_ue_s1ap_id %u e_rabs:%u succ",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_pP->ue_id_rnti,
-      S1AP_PATH_SWITCH_REQ (msg_p).eNB_ue_s1ap_id,
-      e_rabs_done);
     itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
   } else {
     itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
@@ -2355,16 +2260,6 @@ int rrc_eNB_send_E_RAB_Modification_Indication(const protocol_ctxt_t *const ctxt
   if (e_rab_modify_index > 0) {
     LOG_I(RRC,"S1AP_E_RAB_MODIFICATION_IND: sending the message: nb_of_erabstobemodified %d, total e_rabs %d, index %d\n",
     		S1AP_E_RAB_MODIFICATION_IND (msg_p).nb_of_e_rabs_tobemodified, ue_context_pP->ue_context.setup_e_rabs, e_rab);
-    MSC_LOG_TX_MESSAGE(
-      MSC_RRC_ENB,
-      MSC_S1AP_ENB,
-      (const char *)&S1AP_E_RAB_MODIFICATION_IND (msg_p),
-      sizeof(s1ap_e_rab_modification_ind_t),
-      MSC_AS_TIME_FMT" E RAB MODIFICATION IND UE %X eNB_ue_s1ap_id %u e_rabs:%u succ",
-      MSC_AS_TIME_ARGS(ctxt_pP),
-      ue_context_pP->ue_id_rnti,
-      S1AP_E_RAB_MODIFICATION_IND (msg_p).eNB_ue_s1ap_id,
-      e_rab_modify_index);
     itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
   } else {
     itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);

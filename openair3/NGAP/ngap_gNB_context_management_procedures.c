@@ -50,7 +50,6 @@
 #include "ngap_gNB_management_procedures.h"
 #include "ngap_gNB_context_management_procedures.h"
 #include "NGAP_PDUSessionResourceItemCxtRelReq.h"
-#include "msc.h"
 
 
 int ngap_ue_context_release_complete(instance_t instance,
@@ -115,16 +114,6 @@ int ngap_ue_context_release_complete(instance_t instance,
     NGAP_ERROR("Failed to encode UE context release complete\n");
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE(
-    MSC_NGAP_GNB,
-    MSC_NGAP_AMF,
-    buffer,
-    length,
-    MSC_AS_TIME_FMT" UEContextRelease successfulOutcome gNB_ue_ngap_id %u amf_ue_ngap_id %lu",
-    0,0, //MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_release_complete_p->gNB_ue_ngap_id,
-    ue_context_p->amf_ue_ngap_id);
 
   /* UE associated signalling -> use the allocated stream */
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,
@@ -266,16 +255,6 @@ int ngap_ue_context_release_req(instance_t instance,
     NGAP_ERROR("Failed to encode UE context release complete\n");
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE(
-    MSC_NGAP_GNB,
-    MSC_NGAP_AMF,
-    buffer,
-    length,
-    MSC_AS_TIME_FMT" UEContextReleaseRequest initiatingMessage gNB_ue_ngap_id %u amf_ue_ngap_id %lu",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_release_req_p->gNB_ue_ngap_id,
-    ue_context_p->amf_ue_ngap_id);
 
   /* UE associated signalling -> use the allocated stream */
   ngap_gNB_itti_send_sctp_data_req(ngap_gNB_instance_p->instance,

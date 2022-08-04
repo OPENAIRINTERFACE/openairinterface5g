@@ -23,7 +23,6 @@ This tuto for 5G gNB NAS design
 
 # source files
 
-executables/ocp-gnb.c: a main loop to create a debuggable gNB, see document SW_archi.md
 openair2/RRC/NR/nr_ngap_gNB.c: skeleton for interface with NGAP
 openair3/NAS/COMMON/milenage.h: a simple milenage implementation, depend only on crypto library
 openair3/NAS/COMMON/NR_NAS_defs.h: messages defined for NAS implemented in C: C struct, C enums and automatic conversion to labels for debug messages

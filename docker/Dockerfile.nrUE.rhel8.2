@@ -29,7 +29,8 @@ FROM ran-base:latest AS nr-ue-base
 
 FROM ran-build:latest AS nr-ue-build 
 
-RUN cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/nr_ue_parameters.yaml && \
+    cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-nr-ue
@@ -62,11 +63,13 @@ COPY --from=nr-ue-build \
     ./
 
 WORKDIR /opt/oai-nr-ue/etc
-COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf .
+COPY --from=nr-ue-build \
+    /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf \
+    /oai-ran/docker/etc/nr-ue.nfapi.conf \
+    ./
 
 COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
-    /oai-ran/cmake_targets/ran_build/build/libtcp_bridge_oai.so \
     /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
     /oai-ran/cmake_targets/ran_build/build/liboai_usrpdevif.so \
     /oai-ran/cmake_targets/ran_build/build/libcoding.so \
@@ -104,7 +107,7 @@ COPY --from=nr-ue-base \
 
 # Now we are copying from builder-image the UHD files.
 COPY --from=nr-ue-base /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=nr-ue-base /usr/local/lib/libprotobuf-c.so.1 /usr/local/lib
+COPY --from=nr-ue-base /usr/lib64/libprotobuf-c.so.1 /usr/local/lib
 COPY --from=nr-ue-base /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
 COPY --from=nr-ue-base /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-nr-ue/bin
 
@@ -119,5 +122,5 @@ WORKDIR /opt/oai-nr-ue/etc
 COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
 
 WORKDIR /opt/oai-nr-ue
-CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15", "-O", "/opt/oai-nr-ue/etc/nr-ue-sim.conf"]
+CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15", "-O", "/opt/oai-nr-ue/etc/nr-ue.conf"]
 ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]

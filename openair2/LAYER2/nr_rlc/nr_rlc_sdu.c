@@ -58,14 +58,19 @@ oom:
   exit(1);
 }
 
-void nr_rlc_free_sdu_segment(nr_rlc_sdu_segment_t *sdu)
+int nr_rlc_free_sdu_segment(nr_rlc_sdu_segment_t *sdu)
 {
-  sdu->sdu->ref_count--;
-  if (sdu->sdu->ref_count == 0) {
+  int ret = 0;
+
+  sdu->sdu->free_count++;
+  if (sdu->sdu->free_count == sdu->sdu->ref_count) {
     free(sdu->sdu->data);
     free(sdu->sdu);
+    ret = 1;
   }
   free(sdu);
+
+  return ret;
 }
 
 void nr_rlc_sdu_segment_list_append(nr_rlc_sdu_segment_t **list,

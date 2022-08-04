@@ -76,7 +76,8 @@ class Module_UE:
 			logging.debug('Starting ' + self.Process['Name'])
 			mySSH = sshconnection.SSHConnection()
 			mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S ' + self.Process['Cmd'] + ' ' +  self.Process['Apn'][CNType]  + ' > /dev/null 2>&1 &','\$',5)
+			mySSH.command('echo ' + self.HostPassword + ' | sudo -S rm -f /tmp/quectel-cm.log','\$',5)
+			mySSH.command('echo $USER; echo ' + self.HostPassword + ' | nohup sudo -S stdbuf -o0 ' + self.Process['Cmd'] + ' ' +  self.Process['Apn'][CNType]  + ' > /tmp/quectel-cm.log 2>&1 &','\$',5)
 			mySSH.close()
 			#checking the process
 			time.sleep(5)
@@ -106,14 +107,15 @@ class Module_UE:
 	def GetModuleIPAddress(self):
 		HOST=self.HostUsername+'@'+self.HostIPAddress
 		response= []
-		tentative = 3 
+		tentative = 8
 		while (len(response)==0) and (tentative>0):
 			COMMAND="ip a show dev " + self.UENetwork + " | grep --colour=never inet | grep " + self.UENetwork
-			logging.debug(COMMAND)
+			if tentative == 8:
+				logging.debug(COMMAND)
 			ssh = subprocess.Popen(["ssh", "%s" % HOST, COMMAND],shell=False,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 			response = ssh.stdout.readlines()
 			tentative-=1
-			time.sleep(10)
+			time.sleep(2)
 		if (tentative==0) and (len(response)==0):
 			logging.debug('\u001B[1;37;41m Module IP Address Not Found! Time expired \u001B[0m')
 			return -1

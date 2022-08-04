@@ -70,8 +70,7 @@ void x2ap_eNB_register_eNB(x2ap_eNB_instance_t *instance_p,
                            net_ip_address_t    *local_ip_addr,
                            uint16_t             in_streams,
                            uint16_t             out_streams,
-                           uint32_t             enb_port_for_X2C,
-                           int                  multi_sd);
+                           uint32_t             enb_port_for_X2C);
 
 static
 void x2ap_eNB_handle_handover_req(instance_t instance,
@@ -249,20 +248,17 @@ static void x2ap_eNB_register_eNB(x2ap_eNB_instance_t *instance_p,
                                   net_ip_address_t    *local_ip_addr,
                                   uint16_t             in_streams,
                                   uint16_t             out_streams,
-                                  uint32_t         enb_port_for_X2C,
-                                  int                  multi_sd) {
+                                  uint32_t         enb_port_for_X2C) {
   MessageDef                       *message                   = NULL;
-  sctp_new_association_req_multi_t *sctp_new_association_req  = NULL;
   x2ap_eNB_data_t                  *x2ap_enb_data             = NULL;
   DevAssert(instance_p != NULL);
   DevAssert(target_eNB_ip_address != NULL);
-  message = itti_alloc_new_message(TASK_X2AP, 0, SCTP_NEW_ASSOCIATION_REQ_MULTI);
-  sctp_new_association_req = &message->ittiMsg.sctp_new_association_req_multi;
+  message = itti_alloc_new_message(TASK_X2AP, 0, SCTP_NEW_ASSOCIATION_REQ);
+   sctp_new_association_req_t *sctp_new_association_req = &message->ittiMsg.sctp_new_association_req;
   sctp_new_association_req->port = enb_port_for_X2C;
   sctp_new_association_req->ppid = X2AP_SCTP_PPID;
   sctp_new_association_req->in_streams  = in_streams;
   sctp_new_association_req->out_streams = out_streams;
-  sctp_new_association_req->multi_sd = multi_sd;
   memcpy(&sctp_new_association_req->remote_address,
          target_eNB_ip_address,
          sizeof(*target_eNB_ip_address));
@@ -399,8 +395,7 @@ void x2ap_eNB_handle_sctp_init_msg_multi_cnf(
                           &instance->enb_x2_ip_address,
                           instance->sctp_in_streams,
                           instance->sctp_out_streams,
-                          instance->enb_port_for_X2C,
-                          instance->multi_sd);
+                          instance->enb_port_for_X2C);
   }
 }
 
@@ -621,7 +616,12 @@ void x2ap_eNB_handle_sgNB_release_request(instance_t instance,
   }
 
   target = x2ap_get_eNB(NULL, x2ap_release_req->assoc_id, 0);
-  DevAssert(target != NULL);
+  if (target == NULL) {
+    X2AP_ERROR("no X2AP target eNB on assoc_id %d, dropping sgNB release request\n", x2ap_release_req->assoc_id);
+    /* x2ap_gNB_handle_ENDC_sGNB_release_request_acknowledge() would handle the
+     * ack, but does not do anything */
+    return;
+  }
 
   /* id_source is not used by oai's gNB so it's not big deal. For
    * interoperability with other gNBs things may need to be refined.
@@ -640,7 +640,8 @@ void *x2ap_task(void *arg) {
 
   while (1) {
     itti_receive_msg(TASK_X2AP, &received_msg);
-
+    LOG_D(X2AP, "Received message %d:%s\n",
+	       ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
     switch (ITTI_MSG_ID(received_msg)) {
       case TERMINATE_MESSAGE:
         X2AP_WARN(" *** Exiting X2AP thread\n");
@@ -679,7 +680,6 @@ void *x2ap_task(void *arg) {
       case X2AP_ENDC_SGNB_ADDITION_REQ_ACK:
     	  x2ap_gNB_trigger_sgNB_add_req_ack(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
     			  &X2AP_ENDC_SGNB_ADDITION_REQ_ACK(received_msg));
-    	LOG_I(X2AP, "Received elements for X2AP_ENDC_SGNB_ADDITION_REQ_ACK \n");
     	break;
 
       case X2AP_ENDC_SGNB_RECONF_COMPLETE:

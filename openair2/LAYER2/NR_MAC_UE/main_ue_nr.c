@@ -70,10 +70,12 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
       // point to a list of structures (one for each UL slot) to store PUSCH scheduling parameters
       // received from UL DCI.
       if (nr_ue_mac_inst->scc) {
-        int num_slots_ul = nr_ue_mac_inst->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-        if (nr_ue_mac_inst->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols>0)
+        NR_TDD_UL_DL_ConfigCommon_t *tdd = nr_ue_mac_inst->scc->tdd_UL_DL_ConfigurationCommon;
+        int num_slots_ul = tdd ? tdd->pattern1.nrofUplinkSlots : nr_slots_per_frame[*nr_ue_mac_inst->scc->ssbSubcarrierSpacing];
+        if (tdd && nr_ue_mac_inst->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
           num_slots_ul++;
-        LOG_D(MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
+        }
+        LOG_D(NR_MAC, "In %s: Initializing ul_config_request. num_slots_ul = %d\n", __FUNCTION__, num_slots_ul);
         nr_ue_mac_inst->ul_config_request = (fapi_nr_ul_config_request_t *)calloc(num_slots_ul, sizeof(fapi_nr_ul_config_request_t));
         for (int i=0; i<num_slots_ul; i++)
           pthread_mutex_init(&(nr_ue_mac_inst->ul_config_request[i].mutex_ul_config), NULL);

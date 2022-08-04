@@ -15,7 +15,7 @@ services:
             TAC: 1
             ENABLE_X2: 'yes'
             ENB_X2_IP_ADDRESS: 192.168.68.130
-            MME_S1C_IP_ADDRESS: 192.168.18.210
+            MME_S1C_IP_ADDRESS: 172.21.16.136
             GNB_S1C_IF_NAME: eth0
             GNB_S1C_IP_ADDRESS: 192.168.68.194
             GNB_S1U_IF_NAME: eth0
@@ -24,9 +24,9 @@ services:
             RRC_INACTIVITY_THRESHOLD: 0
             FLEXRAN_ENABLED: 'no'
             FLEXRAN_INTERFACE_NAME: eth0
-            FLEXRAN_IPV4_ADDRESS: 192.168.18.210
+            FLEXRAN_IPV4_ADDRESS: 172.21.16.136
             THREAD_PARALLEL_CONFIG: PARALLEL_RU_L1_TRX_SPLIT
-            USE_ADDITIONAL_OPTIONS: -E -q --RUs.[0].sdr_addrs serial=30C51D4 --log_config.global_log_options level,nocolor,time,line_num,function
+            USE_ADDITIONAL_OPTIONS: -E -q --RUs.[0].sdr_addrs serial=30C51D4 --continuous-tx --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
             - /dev:/dev
         networks:

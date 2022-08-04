@@ -37,7 +37,6 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
-#include "msc.h"
 
 #include "PHY/types.h"
 
@@ -277,7 +276,6 @@ uint16_t node_number;
 static void get_options(void) {
   int CC_id=0;
   int tddflag=0;
-  char *loopfile=NULL;
   int dumpframe=0;
   int timingadv=0;
   uint8_t nfapi_mode = NFAPI_MONOLITHIC;
@@ -293,14 +291,6 @@ static void get_options(void) {
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   nfapi_setmode(nfapi_mode);
-
-
-  if (loopfile != NULL) {
-    printf("Input file for hardware emulation: %s",loopfile);
-    mode=loop_through_memory;
-    input_fd = fopen(loopfile,"r");
-    AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
-  }
 
   get_softmodem_params()->hw_timing_advance = timingadv;
 
@@ -520,7 +510,7 @@ int restart_L1L2(module_id_t enb_id) {
 static void init_pdcp(int ue_id) {
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1) ? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
-  if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
+  if (IS_SOFTMODEM_RFSIM || (nfapi_getmode()==NFAPI_UE_STUB_PNF)) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
 
@@ -596,12 +586,6 @@ int main( int argc, char **argv ) {
   printf("ITTI init\n");
   itti_init(TASK_MAX, tasks_info);
 
-  // initialize mscgen log after ITTI
-  if (get_softmodem_params()->start_msc) {
-    load_module_shlib("msc",NULL,0,&msc_interface);
-  }
-
-  MSC_INIT(MSC_E_UTRAN, ADDED_QUEUES_MAX+TASK_MAX);
   init_opt();
   ue_id_g = (node_number == 0) ? 0 : node_number-2; //ue_id_g = 0, 1, ...,
   if(node_number == 0)

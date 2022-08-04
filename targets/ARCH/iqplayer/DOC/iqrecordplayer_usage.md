@@ -1,7 +1,7 @@
 # I/Q record-playback
 ## using the iq recorder or iq player
 
-This feature provides I/Q record-playback as presented in the 4th OAI workshop. Tests have only been performed with a eNB, but the implementation should allow any softmodem executable to use the iq's record/player.
+This feature provides I/Q record-playback as presented in the 4th OAI workshop. The implementation allows any softmodem executable to use the iq's record/player.
 The I/Q record/playback feature is briefly described hereafter, it allows you to:
 * record subframes received by the USRP board in a file while the system is operating (for example you can record a full UE connection/traffic/ disconnection sequence). Today the oai USRP device is the only one supporting the recording feature. 
 * replay subframes from a file to operate the system (possibly in multiple loops if the recorded sequence is convenient from the logical point of view). 
@@ -75,7 +75,7 @@ U[HW]I ru thread Writing file header to /tmp/iqfile
 ```
 
 ### Playback/replay mode
-The option works only for 5MHz bandwidth because the information stored in the iq's file header regarding bandwidth is not yet properly processed. 
+When replaying iq's received by eNB or gNB The option works only for 5MHz bandwidth because the information stored in the iq's file header regarding bandwidth is not yet properly processed.  
  In this version,  mismatch between file content and run time parameters might lead to unpredictable results. In addition a file recorded on a AVX2-capable processor cannot be replayed on a non-AVX2-capable processor (this is to be further investigated).
 options for replay mode are:
 * `subframes-replay` Activate replay mode
@@ -83,6 +83,7 @@ options for replay mode are:
 * `subframes-loops` Number of iterations to replay the entire subframes file (default is 5)
 * `subframes-read-delay` Delay in microseconds to read a subframe in replay mode (default 200)
 * `subframes-write-delay` Delay in milliseconds to write a subframe in replay mode (default 15)
+* `use-mmap` Boolean, set to 1 (true) by default, iq file is map to memory if true, otherwise iq's are read from file. 
 
 >iq player session example:
 ```bash

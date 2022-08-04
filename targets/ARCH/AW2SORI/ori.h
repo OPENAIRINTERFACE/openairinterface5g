@@ -2,8 +2,8 @@
 * @file ori.h
 * @brief Open Radio Interface (ORI) C library header file.
 * @author AW2S (http://www.aw2s.com)
-* @version 1.6
-* @date July 29, 2019
+* @version 1.8
+* @date January 18, 2022
 *
 * This file is the AW2S REC ORI C library header, and contains all necessary
 * functions prototypes, enumerations, data structures and type definitions
@@ -14,7 +14,7 @@
 #define ORI_H_
 
 #define ORILIB_VERSION_MAJOR 1
-#define ORILIB_VERSION_MINOR 6
+#define ORILIB_VERSION_MINOR 8
 
 #include <stdint.h>
 
@@ -144,10 +144,14 @@ typedef enum
 	ORI_ObjectType_TxEUtraFDD,							/**< */
 	ORI_ObjectType_TxEUtraTDD,							/**< */
 	ORI_ObjectType_TxGSM,								/**< */
+	ORI_ObjectType_TxNRFDD,								/**< */
+	ORI_ObjectType_TxNRTDD,								/**< */
 	ORI_ObjectType_RxUtra,								/**< */
 	ORI_ObjectType_RxEUtraFDD,							/**< */
 	ORI_ObjectType_RxEUtraTDD,							/**< */
 	ORI_ObjectType_RxGSM,								/**< */
+	ORI_ObjectType_RxNRFDD,								/**< */
+	ORI_ObjectType_RxNRTDD,								/**< */
 	ORI_ObjectType_ORILink,								/**< */
 	ORI_ObjectType_ExternalEventPort,					/**< */
 	ORI_ObjectType_AISGPort,							/**< */
@@ -223,6 +227,7 @@ typedef enum
 	ORI_ObjectParam_SigPath_AWS_enableCompBitChange,	/**< */
 	ORI_ObjectParam_SigPath_AWS_measuredPwr,			/**< */
 	ORI_ObjectParam_SigPath_AWS_axcIncr,				/**< */
+	ORI_ObjectParam_SigPath_AWS_arfcn,					/**< */
 	ORI_ObjectParam_TxSigPath_t2a,						/**< */
 	ORI_ObjectParam_TxSigPath_maxTxPwr,					/**< */
 	ORI_ObjectParam_TxSigPath_dlCalRE,					/**< */
@@ -252,12 +257,12 @@ typedef enum
 	ORI_ObjectParam_ORILink_AWS_localMAC,				/**< */
 	ORI_ObjectParam_ORILink_AWS_remoteMAC,				/**< */
 	ORI_ObjectParam_ORILink_AWS_t14,					/**< */
+	ORI_ObjectParam_ORILink_AWS_sfpTxPow,				/**< */
+	ORI_ObjectParam_ORILink_AWS_sfpRxPow,				/**< */
 	ORI_ObjectParam_ORILink_AWS_remoteIP,				/**< */
 	ORI_ObjectParam_ORILink_AWS_localIP,				/**< */
 	ORI_ObjectParam_ORILink_AWS_remoteUdpPort,			/**< */
 	ORI_ObjectParam_ORILink_AWS_localUdpPort,			/**< */
-	ORI_ObjectParam_ORILink_AWS_sfpTxPow,				/**< */
-	ORI_ObjectParam_ORILink_AWS_sfpRxPow,				/**< */
 	ORI_ObjectParam_AISGPort_busPowerEnable,			/**< */
 	ORI_ObjectParam_AISGALD_deviceType,					/**< */
 	ORI_ObjectParam_AISGALD_UID,						/**< */
@@ -1147,6 +1152,50 @@ typedef struct
 } ORI_ObjectParams_TxSigPathGSM_s;
 
 /**
+ * @struct ORI_ObjectParams_TxSigPathNRFDD_s
+ * @brief Structure containing the parameters of a TxSigPath NRFDD object.
+ */
+typedef struct
+{
+	uint16_t 			chanBW;							/**< RW-Locked. Channel bandwith in MHz/10. */
+	uint16_t			dlCalREMax;						/**< RO. Max possible buffer in RE for DL timing calibration in Tc/16.*/
+	uint32_t			t2a;							/**< RO. RE time delay. */
+	uint16_t 			dlCalRE;						/**< RW-Locked. Time delay to enable DL timing calibration in Tc/16. */
+	int16_t 			maxTxPwr;						/**< RW. Max tx power for this path, unit is dBm/10 (e.g. 400 for 40 dBm). */
+	uint8_t 			axcW;							/**< RW-Locked. AxC W parameter. */
+	uint8_t 			axcB;							/**< RW-Locked. AxC B parameter. */
+	ORI_Object_s * 		oriLink;						/**< RW-Locked. ORI Link on which the AxC is mapped. */
+	ORI_Object_s *		antPort;						/**< RW-Locked. Reference Antenna port for this signal. */
+	ORI_Boolean_e		AWS_enableCompRateChange;		/**< RW-Locked. AW2S Vendor specific: Enable IQ data compression sample rate change. */
+	int16_t 			AWS_measuredPwr;				/**< RO. AW2S Vendor specific: Measured Tx power for this path, unit is dBm/10 (e.g. 400 for 40 dBm). */
+	uint16_t 			AWS_axcIncr;					/**< RW-Locked. AW2S Vendor specific: AxC increment for each sample, 0 means auto (= packed, no interleaving). */
+	ORI_Boolean_e 		AWS_enPeakCancel;				/**< RW-Locked. AW2S Vendor specific: Peak-Cancellation CFR enablement. */
+	uint32_t 			AWS_arfcn;						/**< RW-Locked. ARFCN of the NR carrier. */
+} ORI_ObjectParams_TxSigPathNRFDD_s;
+
+/**
+ * @struct ORI_ObjectParams_TxSigPathNRTDD_s
+ * @brief Structure containing the parameters of a TxSigPath NRTDD object.
+ */
+typedef struct
+{
+	uint16_t 			chanBW;							/**< RW-Locked. Channel bandwith in MHz/10. */
+	uint16_t			dlCalREMax;						/**< RO. Max possible buffer in RE for DL timing calibration in Tc/16.*/
+	uint32_t			t2a;							/**< RO. RE time delay. */
+	uint16_t 			dlCalRE;						/**< RW-Locked. Time delay to enable DL timing calibration in Tc/16. */
+	int16_t 			maxTxPwr;						/**< RW. Max tx power for this path, unit is dBm/10 (e.g. 400 for 40 dBm). */
+	uint8_t 			axcW;							/**< RW-Locked. AxC W parameter. */
+	uint8_t 			axcB;							/**< RW-Locked. AxC B parameter. */
+	ORI_Object_s * 		oriLink;						/**< RW-Locked. ORI Link on which the AxC is mapped. */
+	ORI_Object_s *		antPort;						/**< RW-Locked. Reference Antenna port for this signal. */
+	ORI_Boolean_e		AWS_enableCompRateChange;		/**< RW-Locked. AW2S Vendor specific: Enable IQ data compression sample rate change. */
+	int16_t 			AWS_measuredPwr;				/**< RO. AW2S Vendor specific: Measured Tx power for this path, unit is dBm/10 (e.g. 400 for 40 dBm). */
+	uint16_t 			AWS_axcIncr;					/**< RW-Locked. AW2S Vendor specific: AxC increment for each sample, 0 means auto (= packed, no interleaving). */
+	ORI_Boolean_e 		AWS_enPeakCancel;				/**< RW-Locked. AW2S Vendor specific: Peak-Cancellation CFR enablement. */
+	uint32_t 			AWS_arfcn;						/**< RW-Locked. ARFCN of the NR carrier. */
+} ORI_ObjectParams_TxSigPathNRTDD_s;
+
+/**
  * @struct ORI_ObjectParams_RxSigPathUtra_s
  * @brief Structure containing the parameters of a RxSigPath UTRAFDD object.
  */
@@ -1240,6 +1289,48 @@ typedef struct
 } ORI_ObjectParams_RxSigPathGSM_s;
 
 /**
+ * @struct ORI_ObjectParams_RxSigPathNRFDD_s
+ * @brief Structure containing the parameters of a RxSigPath NRFDD object.
+ *
+ */
+typedef struct
+{
+	uint16_t 			chanBW;							/**< RW-Locked. Channel bandwith in MHz/10. */
+	uint16_t			ulCalREMax;						/**< RO. Max possible buffer in RE for UL timing calibration in Tc/2.*/
+	uint32_t  			ta3;							/**< RO. RE time delay. */
+	uint16_t 			ulCalRE;						/**< RW-Locked. Time delay to enable UL timing calibration in Tc/2. */
+	uint8_t 			axcW;							/**< RW-Locked. AxC W parameter. */
+	uint8_t 			axcB;							/**< RW-Locked. AxC B parameter. */
+	ORI_Object_s * 		oriLink;						/**< RW-Locked. ORI Link on which the AxC is mapped. */
+	ORI_Object_s *		antPort;						/**< RW-Locked. Reference Antenna port for this signal. */
+	ORI_Boolean_e		AWS_enableCompRateChange;		/**< RW-Locked. AW2S Vendor specific: Enable IQ data compression sample rate change. */
+	int16_t 			AWS_measuredPwr;				/**< RO. AW2S Vendor specific: Measured Rx power for this path, unit is dBm/10 (e.g. -650 for -65 dBm). */
+	uint16_t 			AWS_axcIncr;					/**< RW-Locked. AW2S Vendor specific: AxC increment for each sample, 0 means auto (= packed, no interleaving). */
+	uint32_t 			AWS_arfcn;						/**< RW-Locked. ARFCN of the NR carrier. */
+} ORI_ObjectParams_RxSigPathNRFDD_s;
+
+/**
+ * @struct ORI_ObjectParams_RxSigPathNRTDD_s
+ * @brief Structure containing the parameters of a RxSigPath NRTDD object.
+ *
+ */
+typedef struct
+{
+	uint16_t 			chanBW;							/**< RW-Locked. Channel bandwith in MHz/10. */
+	uint16_t			ulCalREMax;						/**< RO. Max possible buffer in RE for UL timing calibration in Tc/2.*/
+	uint32_t  			ta3;							/**< RO. RE time delay. */
+	uint16_t 			ulCalRE;						/**< RW-Locked. Time delay to enable UL timing calibration in Tc/2. */
+	uint8_t 			axcW;							/**< RW-Locked. AxC W parameter. */
+	uint8_t 			axcB;							/**< RW-Locked. AxC B parameter. */
+	ORI_Object_s * 		oriLink;						/**< RW-Locked. ORI Link on which the AxC is mapped. */
+	ORI_Object_s *		antPort;						/**< RW-Locked. Reference Antenna port for this signal. */
+	ORI_Boolean_e		AWS_enableCompRateChange;		/**< RW-Locked. AW2S Vendor specific: Enable IQ data compression sample rate change. */
+	int16_t 			AWS_measuredPwr;				/**< RO. AW2S Vendor specific: Measured Rx power for this path, unit is dBm/10 (e.g. -650 for -65 dBm). */
+	uint16_t 			AWS_axcIncr;					/**< RW-Locked. AW2S Vendor specific: AxC increment for each sample, 0 means auto (= packed, no interleaving). */
+	uint32_t 			AWS_arfcn;						/**< RW-Locked. ARFCN of the NR carrier. */
+} ORI_ObjectParams_RxSigPathNRTDD_s;
+
+/**
  * @struct ORI_ObjectParams_ORILink_s
  * @brief Structure containing the parameters of an ORI Link object.
  */
@@ -1258,12 +1349,12 @@ typedef struct
 	uint8_t						AWS_localMAC[6];		/**< R0. AW2S Vendor specific: Local MAC address of the ORI link. */
 	uint8_t						AWS_remoteMAC[6];		/**< RW. AW2S Vendor specific: Remote MAC address of the ORI link. */
 	uint32_t 					AWS_t14;				/**< RO. AW2S Vendor specific: CPRI time delay component. */
-	uint8_t						AWS_remoteIP[4];		/**< RW. AW2S Vendor specific: REC IP for ECPRI Ethernet frame */
-	uint8_t						AWS_localIP[4];			/**< R0. AW2S Vendor specific: RE IP for ECPRI Ethernet frame */
-	uint16_t					AWS_remoteUdpPort;		/**< RW. AW2S Vendor specific: REC Udp Port for ECPRI Ethernet frame */
-	uint16_t					AWS_localUdpPort;		/**< R0. AW2S Vendor specific: RE Udp Port for ECPRI Ethernet frame */
 	uint32_t 					AWS_sfpTxPow;			/**< RO. AW2S Vendor specific: SFP Tx power. */
 	uint32_t 					AWS_sfpRxPow;			/**< RO. AW2S Vendor specific: SFP Rx power. */
+	uint8_t						AWS_remoteIP[4];		/**< RW. AW2S Vendor specific: IP of REC for ECPRI Ethernet frame */
+	uint8_t						AWS_localIP[4];			/**< RW. AW2S Vendor specific: IP of RE for ECPRI Ethernet frame */
+	uint16_t					AWS_remoteUdpPort;		/**< RW. AW2S Vendor specific: UDP port of REC for ECPRI Ethernet frame */
+	uint16_t					AWS_localUdpPort;		/**< RO. AW2S Vendor specific: UDP port of RE for ECPRI Ethernet frame */
 } ORI_ObjectParams_ORILink_s;
 
 /**
@@ -1393,10 +1484,14 @@ typedef union
 	ORI_ObjectParams_TxSigPathEUtraFDD_s		TxEUtraFDD;				/**< Parameters for ::ORI_ObjectType_TxEUtraFDD. */
 	ORI_ObjectParams_TxSigPathEUtraTDD_s		TxEUtraTDD;				/**< Parameters for ::ORI_ObjectType_TxEUtraTDD. */
 	ORI_ObjectParams_TxSigPathGSM_s				TxGSM;					/**< Parameters for ::ORI_ObjectType_TxGSM. */
+	ORI_ObjectParams_TxSigPathNRFDD_s			TxNRFDD;				/**< Parameters for ::ORI_ObjectType_TxNRFDD. */
+	ORI_ObjectParams_TxSigPathNRTDD_s			TxNRTDD;				/**< Parameters for ::ORI_ObjectType_TxNRTDD. */
 	ORI_ObjectParams_RxSigPathUtra_s	  		RxUtra;					/**< Parameters for ::ORI_ObjectType_RxUtra. */
 	ORI_ObjectParams_RxSigPathEUtraFDD_s		RxEUtraFDD;				/**< Parameters for ::ORI_ObjectType_RxEUtraFDD. */
 	ORI_ObjectParams_RxSigPathEUtraTDD_s		RxEUtraTDD;				/**< Parameters for ::ORI_ObjectType_RxEUtraTDD. */
 	ORI_ObjectParams_RxSigPathGSM_s				RxGSM;					/**< Parameters for ::ORI_ObjectType_RxGSM. */
+	ORI_ObjectParams_RxSigPathNRFDD_s			RxNRFDD;				/**< Parameters for ::ORI_ObjectType_RxNRFDD. */
+	ORI_ObjectParams_RxSigPathNRTDD_s			RxNRTDD;				/**< Parameters for ::ORI_ObjectType_RxNRTDD. */
 	ORI_ObjectParams_ORILink_s					ORILink;				/**< Parameters for ::ORI_ObjectType_ORILink. */
 	ORI_ObjectParams_ExternalEventPort_s		ExternalEventPort;		/**< Parameters for ::ORI_ObjectType_ExternalEventPort. */
 	ORI_ObjectParams_AISGPort_s					AISGPort;				/**< Parameters for ::ORI_ObjectType_AISGPort. */

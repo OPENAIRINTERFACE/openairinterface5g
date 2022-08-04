@@ -205,6 +205,7 @@ static int sync_to_gps(openair0_device *device) {
       uhd::time_spec_t gps_time = uhd::time_spec_t(time_t(s->usrp->get_mboard_sensor("gps_time", mboard).to_int()));
       s->usrp->set_time_next_pps(gps_time+1.0, mboard);
       //s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+      
       //Wait for it to apply
       //The wait is 2 seconds because N-Series has a known issue where
       //the time at the last PPS does not properly update at the PPS edge
@@ -273,18 +274,20 @@ static int sync_to_gps(openair0_device *device) {
 static int trx_usrp_start(openair0_device *device) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
 
-  // setup GPIO for TDD, GPIO(4) = ATR_RX
-  //set data direction register (DDR) to output
-  s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
-  //set lower 7 bits to be controlled automatically by ATR (the rest 5 bits are controlled manually)
-  s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0xfff);
-  //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
-  s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
-  // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
-  // (we use full duplex here, because our RX is on all the time - this might need to change later)
-  s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
-  // set the output pins to 1
-  s->usrp->set_gpio_attr("FP0", "OUT", 7<<7, 0xf80);
+  if (device->type != USRP_X400_DEV) {
+    // setup GPIO for TDD, GPIO(4) = ATR_RX
+    //set data direction register (DDR) to output
+    s->usrp->set_gpio_attr("FP0", "DDR", 0xfff, 0xfff);
+    //set lower 7 bits to be controlled automatically by ATR (the rest 5 bits are controlled manually)
+    s->usrp->set_gpio_attr("FP0", "CTRL", 0x7f,0xfff);
+    //set pins 4 (RX_TX_Switch) and 6 (Shutdown PA) to 1 when the radio is only receiving (ATR_RX)
+    s->usrp->set_gpio_attr("FP0", "ATR_RX", (1<<4)|(1<<6), 0x7f);
+    // set pin 5 (Shutdown LNA) to 1 when the radio is transmitting and receiveing (ATR_XX)
+    // (we use full duplex here, because our RX is on all the time - this might need to change later)
+    s->usrp->set_gpio_attr("FP0", "ATR_XX", (1<<5), 0x7f);
+    // set the output pins to 1
+    s->usrp->set_gpio_attr("FP0", "OUT", 7<<7, 0xf80);
+  }
 
   s->wait_for_first_pps = 1;
   s->rx_count = 0;
@@ -293,11 +296,18 @@ static int trx_usrp_start(openair0_device *device) {
   //s->first_rx = 1;
   s->rx_timestamp = 0;
 
-  uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps();
-  LOG_I(HW,"last pps at %f, starting streaming at %f\n",time_last_pps.get_real_secs(),time_last_pps.get_real_secs()+1.0);
+    //wait for next pps
+  uhd::time_spec_t last_pps = s->usrp->get_time_last_pps();
+  uhd::time_spec_t current_pps = s->usrp->get_time_last_pps();
+  while(current_pps == last_pps) {
+    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    current_pps = s->usrp->get_time_last_pps();
+  }
+
+  LOG_I(HW,"current pps at %f, starting streaming at %f\n",current_pps.get_real_secs(),current_pps.get_real_secs()+1.0);
 
   uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-  cmd.time_spec = uhd::time_spec_t(time_last_pps+1.0);
+  cmd.time_spec = uhd::time_spec_t(current_pps+1.0);
   cmd.stream_now = false; // start at constant delay
   s->rx_stream->issue_stream_cmd(cmd);
 
@@ -658,62 +668,62 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
        AssertFatal(1==0,"Shouldn't be here\n");
   }
 
-    samples_received=0;
-    while (samples_received != nsamps) {
+  samples_received=0;
+  while (samples_received != nsamps) {
 
-      if (cc>1) {
+    if (cc>1) {
       // receive multiple channels (e.g. RF A and RF B)
-        std::vector<void *> buff_ptrs;
+      std::vector<void *> buff_ptrs;
 
-        for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
-
-        samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
-      } else {
+      for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
+      samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+    } else {
       // receive a single channel (e.g. from connector RF A)
 
-        samples_received += s->rx_stream->recv((void*)((int32_t*)buff_tmp[0]+samples_received),
-                                               nsamps-samples_received, s->rx_md);
-      }
-      if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
-        break;
-
-      if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
-        printf("sleep...\n"); //usleep(100);
-      }
+      samples_received += s->rx_stream->recv((void*)((int32_t*)buff_tmp[0]+samples_received),
+                                             nsamps-samples_received, s->rx_md);
     }
-    if (samples_received == nsamps) s->wait_for_first_pps=0;
+    if  ((s->wait_for_first_pps == 0) && (s->rx_md.error_code!=uhd::rx_metadata_t::ERROR_CODE_NONE))
+      break;
+
+    if ((s->wait_for_first_pps == 1) && (samples_received != nsamps)) {
+      printf("sleep...\n"); //usleep(100);
+    }
+  }
+  if (samples_received == nsamps) s->wait_for_first_pps=0;
 
     // bring RX data into 12 LSBs for softmodem RX
-    for (int i=0; i<cc; i++) {
-      for (int j=0; j<nsamps2; j++) {
+  for (int i=0; i<cc; i++) {
+    for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-        // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
+      // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
-        if ((((uintptr_t) buff[i])&0x1F)==0) {
-          ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
-        } else if ((((uintptr_t) buff[i])&0x0F)==0) {
-          ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
-          ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
-        }  else {
-	  ((__m64 *)buff[i])[4*j]   = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j],rxshift);
-	  ((__m64 *)buff[i])[4*j+1] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+1],rxshift);
-	  ((__m64 *)buff[i])[4*j+2] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+2],rxshift);
-	  ((__m64 *)buff[i])[4*j+3] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+3],rxshift);
-	}
-
-#else
+      if ((((uintptr_t) buff[i])&0x1F)==0) {
+        ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
+      } else if ((((uintptr_t) buff[i])&0x0F)==0) {
+        ((__m128i *)buff[i])[2*j] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j],rxshift);
+        ((__m128i *)buff[i])[2*j+1] = _mm_srai_epi16(((__m128i *)buff_tmp[i])[2*j+1],rxshift);
+      }  else {
+	      ((__m64 *)buff[i])[4*j]   = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j],rxshift);
+	      ((__m64 *)buff[i])[4*j+1] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+1],rxshift);
+	      ((__m64 *)buff[i])[4*j+2] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+2],rxshift);
+	      ((__m64 *)buff[i])[4*j+3] = _mm_srai_pi16 (((__m64 *)buff_tmp[i])[4*j+3],rxshift);
+	    }
+    }
+#else    
+      for (int j=0; j<nsamps2; j++) 
         ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
 #endif
 #elif defined(__arm__)
+      for (int j=0; j<nsamps2; j++) 
         ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
-      }
-    }
+  }
 
-    if (samples_received < nsamps) {
-      LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
-    }
+  if (samples_received < nsamps) {
+    LOG_E(HW,"[recv] received %d samples out of %d\n",samples_received,nsamps);
+  }
 
   if ( s->rx_md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE)
     LOG_E(HW, "%s\n", s->rx_md.to_pp_string(true).c_str());
@@ -863,8 +873,18 @@ rx_gain_calib_table_t calib_table_x310[] = {
   {-1,0}
 };
 
-/*! \brief USRPB210 RX calibration table */
+/*! \brief USRPn3xf RX calibration table */
 rx_gain_calib_table_t calib_table_n310[] = {
+  {3500000000.0,0.0},
+  {2660000000.0,0.0},
+  {2300000000.0,0.0},
+  {1880000000.0,0.0},
+  {816000000.0, 0.0},
+  {-1,0}
+};
+
+/*! \brief Empty RX calibration table */
+rx_gain_calib_table_t calib_table_none[] = {
   {3500000000.0,0.0},
   {2660000000.0,0.0},
   {2300000000.0,0.0},
@@ -991,7 +1011,7 @@ extern "C" {
     sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
     LOG_I(HW,"UHD version %s (%d.%d.%d)\n",
           uhd::get_version_string().c_str(),vers,subvers,subsubvers);
-    std::string args;
+    std::string args,tx_subdev,rx_subdev;
 
     if (openair0_cfg[0].sdr_addrs == NULL) {
       args = "type=b200";
@@ -1027,7 +1047,9 @@ extern "C" {
       device->type=USRP_N300_DEV;
       usrp_master_clock = 122.88e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-      //args += ", send_buff_size=33554432";
+
+      if ( 0 != system("sysctl -w net.core.rmem_max=62500000 net.core.wmem_max=62500000") )
+        LOG_W(HW,"Can't set kernel parameters for N3x0\n");
     }
 
     if (device_adds[0].get("type") == "x300") {
@@ -1039,6 +1061,13 @@ extern "C" {
       // USRP recommended: https://files.ettus.com/manual/page_usrp_x3x0_config.html
       if ( 0 != system("sysctl -w net.core.rmem_max=33554432 net.core.wmem_max=33554432") )
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
+    }
+
+    if (device_adds[0].get("type") == "x4xx") {
+      printf("Found USRP x400\n");
+      device->type = USRP_X400_DEV;
+      usrp_master_clock = 245.76e6;
+      args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
     }
 
     s->usrp = uhd::usrp::multi_usrp::make(args);
@@ -1115,7 +1144,6 @@ extern "C" {
   if (device->type==USRP_X300_DEV) {
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
     std::cerr << "-- Using calibration table: calib_table_x310" << std::endl;
-    s->usrp->set_rx_dc_offset(true);
   }
 
   if (device->type==USRP_N300_DEV) {
@@ -1123,8 +1151,13 @@ extern "C" {
     std::cerr << "-- Using calibration table: calib_table_n310" << std::endl;
   }
 
+  if (device->type == USRP_X400_DEV) {
+    openair0_cfg[0].rx_gain_calib_table = calib_table_none;
+    std::cerr << "-- Using calibration table: calib_table_none" << std::endl;
+  }
 
-  if (device->type==USRP_N300_DEV || device->type==USRP_X300_DEV) {
+
+  if (device->type==USRP_N300_DEV || device->type==USRP_X300_DEV || device->type==USRP_X400_DEV) {
     LOG_I(HW,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
     switch ((int)openair0_cfg[0].sample_rate) {
@@ -1281,6 +1314,18 @@ extern "C" {
   openair0_cfg[0].iq_txshift = 4;//shift
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
 
+  if(openair0_cfg[0].tx_subdev!=NULL){
+    LOG_I(HW, "openair0_cfg[0].tx_subdev == %s\n", openair0_cfg[0].tx_subdev);
+    tx_subdev = openair0_cfg[0].tx_subdev;
+    s->usrp->set_tx_subdev_spec(tx_subdev);
+  }
+
+  if(openair0_cfg[0].rx_subdev!=NULL){
+    LOG_I(HW, "openair0_cfg[0].rx_subdev == %s\n", openair0_cfg[0].rx_subdev);
+    rx_subdev = openair0_cfg[0].rx_subdev;
+    s->usrp->set_rx_subdev_spec(rx_subdev);
+  }
+
   for(int i=0; i<((int) s->usrp->get_rx_num_channels()); i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i+choffset);
@@ -1376,6 +1421,7 @@ extern "C" {
     LOG_I(HW,"  Actual TX packet size: %lu\n",s->tx_stream->get_max_num_samps());
   }
 
+  std::cout << boost::format("Using Device: %s") % s->usrp->get_pp_string() << std::endl;
   LOG_I(HW,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());
   device->trx_write_func = trx_usrp_write;
   device->trx_read_func  = trx_usrp_read;

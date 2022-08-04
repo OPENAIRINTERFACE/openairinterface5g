@@ -369,7 +369,7 @@ typedef struct {
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t                *SSpace[MAX_NUM_BWP][FAPI_NR_MAX_SS];
 
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
 
   /*BWP*/
   // dedicated active DL BWP
@@ -432,7 +432,7 @@ typedef struct {
 
   // Defined for abstracted mode
   nr_downlink_indication_t dl_info;
-  NR_UE_HARQ_STATUS_t dl_harq_info[16];
+  NR_UE_HARQ_STATUS_t dl_harq_info[NR_MAX_HARQ_PROCESSES];
 
   nr_emulated_l1_t nr_ue_emul_l1;
 

@@ -48,6 +48,7 @@ void nr_ue_init_mac(module_id_t module_idP);
    \param module_id      module id
    \param cc_id          component carrier id
    \param gNB_index      gNB index
+   \param phy_data       PHY structure to be filled in by the callee in the FAPI call (L1 caller -> indication to L2 -> FAPI call to L1 callee)
    \param extra_bits     extra bits for frame calculation
    \param l_ssb_equal_64 check if ssb number of candicate is equal 64, 1=equal; 0=non equal. Reference 38.212 7.1.1
    \param pduP           pointer to pdu
@@ -56,7 +57,8 @@ void nr_ue_init_mac(module_id_t module_idP);
 int8_t nr_ue_decode_mib(
     module_id_t module_id, 
     int cc_id, 
-    uint8_t gNB_index, 
+    uint8_t gNB_index,
+    void *phy_data, 
     uint8_t extra_bits, 
     uint32_t ssb_length, 
     uint32_t ssb_index,
@@ -132,7 +134,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
    @param int cc_id                    CC ID
    @param frame_t frame                frame number
    @param int slot                     reference number
-   @param UE_nr_rxtx_proc_t *proc      pointer to process context */
+   @param void *phy_pata               pointer to a PHY specific structure to be filled in the scheduler response (can be null) */
 void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              fapi_nr_dl_config_request_t *dl_config,
                              fapi_nr_ul_config_request_t *ul_config,
@@ -141,7 +143,8 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              int cc_id,
                              frame_t frame,
                              int slot,
-                             int thread_id);
+                             int thread_id,
+                             void *phy_data);
 
 /*! \fn int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
    \brief Called by PHY to get sdu for PUSCH transmission.  It performs the following operations: Checks BSR for DCCH, DCCH1 and DTCH corresponding to previous values computed either in SR or BSR procedures.  It gets rlc status indications on DCCH,DCCH1 and DTCH and forms BSR elements and PHR in MAC header.  CRNTI element is not supported yet.  It computes transport block for up to 3 SDUs and generates header and forms the complete MAC SDU.
@@ -214,6 +217,7 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
 
 uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch,
+                           int csi_report_id,
                            NR_CSI_MeasConfig_t *csi_MeasConfig);
 
 uint8_t get_rsrp_index(int rsrp);
@@ -271,6 +275,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
                                                       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
                                                       nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      int *mappingtype,
                                                       uint8_t time_domain_ind,
                                                       int default_abc,
                                                       bool use_default);
@@ -283,9 +288,9 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
                       uint8_t *ulsch_buffer,
                       uint16_t buflen);
 
-int set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg, int mu,
-                         int nrofDownlinkSlots, int nrofDownlinkSymbols,
-                         int nrofUplinkSlots,   int nrofUplinkSymbols);
+void set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
+                          int mu,
+                          NR_TDD_UL_DL_ConfigCommon_t *tdd_config);
 
 void set_harq_status(NR_UE_MAC_INST_t *mac,
                      uint8_t pucch_id,
@@ -350,6 +355,8 @@ and fills the PRACH PDU per each FD occasion.
 */
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id);
 void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id);
+void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot);
+void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot);
 
 /* \brief This function schedules the Msg3 transmission
 @param
@@ -369,7 +376,8 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
                           uint8_t ssb_subcarrier_offset,
                           uint32_t ssb_index,
                           uint16_t ssb_start_subcarrier,
-                          frequency_range_t frequency_range);
+                          frequency_range_t frequency_range,
+                          void *phy_data);
 
 /* \brief Function called by PHY to process the received RAR and check that the preamble matches what was sent by the gNB. It provides the timing advance and t-CRNTI.
 @param Mod_id Index of UE instance

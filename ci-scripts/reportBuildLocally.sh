@@ -574,7 +574,6 @@ function report_build {
     summary_table_row "OAI ETHERNET transport - Release 15" ./archives/enb_eth/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
     summary_table_row "Parameters Lib Config - Release 15" ./archives/enb_eth/params_libconfig.Rel15.txt "Built target params_libconfig" ./enb_eth_row4.html
     summary_table_row "RF Simulator - Release 15" ./archives/enb_eth/rfsimulator.Rel15.txt "Built target rfsimulator" ./enb_eth_row5.html
-    summary_table_row "TCP OAI Bridge - Release 15" ./archives/enb_eth/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./enb_eth_row6.html
     summary_table_row "OAI USRP device if - Release 15" ./archives/enb_eth/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./enb_eth_row7.html
     summary_table_footer
 
@@ -584,26 +583,11 @@ function report_build {
     summary_table_row "OAI ETHERNET transport - Release 15" ./archives/ue_eth/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
     summary_table_row "Parameters Lib Config - Release 15" ./archives/ue_eth/params_libconfig.Rel15.txt "Built target params_libconfig" ./ue_eth_row4.html
     summary_table_row "RF Simulator - Release 15" ./archives/ue_eth/rfsimulator.Rel15.txt "Built target rfsimulator" ./ue_eth_row5.html
-    summary_table_row "TCP OAI Bridge - Release 15" ./archives/ue_eth/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./ue_eth_row6.html
     summary_table_row "Conf 2 UE Data - Release 15" ./archives/ue_eth/conf2uedata.Rel15.txt "Built target conf2uedata" ./ue_eth_row7.html
     summary_table_row "NVRAM - Release 15" ./archives/ue_eth/nvram.Rel15.txt "Built target nvram" ./ue_eth_row8.html
     summary_table_row "UE IP - Release 15" ./archives/ue_eth/ue_ip.Rel15.txt "Built target ue_ip" ./ue_eth_row9.html
     summary_table_row "USIM - Release 15" ./archives/ue_eth/usim.Rel15.txt "Built target usim" ./ue_eth_row9a.html
     summary_table_row "OAI USRP device if - Release 15" ./archives/ue_eth/oai_usrpdevif.Rel15.txt "Built target oai_usrpdevif" ./ue_eth_row9b.html
-    summary_table_footer
-
-    summary_table_header "OAI Build: 4G LTE basic simulator option" ./archives/basic_sim
-    summary_table_row "LTE SoftModem - Release 15" ./archives/basic_sim/lte-softmodem.Rel15.txt "Built target lte-softmodem" ./basic_sim_row1.html
-    summary_table_row "LTE UE SoftModem - Release 15" ./archives/basic_sim/lte-uesoftmodem.Rel15.txt "Built target lte-uesoftmodem" ./basic_sim_row2.htm
-    summary_table_row "Coding - Release 15" ./archives/basic_sim/coding.Rel15.txt "Built target coding" ./basic_sim_row3.html
-    summary_table_row "Conf 2 UE data - Release 15" ./archives/basic_sim/conf2uedata.Rel15.txt "Built target conf2uedata" ./basic_sim_row4.html
-    summary_table_row "OAI ETHERNET transport - Release 15" ./archives/basic_sim/oai_eth_transpro.Rel15.txt "Built target oai_eth_transpro" ./basic_sim_row5.html
-    summary_table_row "Parameters Lib Config - Release 15" ./archives/basic_sim/params_libconfig.Rel15.txt "Built target params_libconfig" ./basic_sim_row7.html
-    summary_table_row "RF Simulator - Release 15" ./archives/basic_sim/rfsimulator.Rel15.txt "Built target rfsimulator" ./basic_sim_row9.html
-    summary_table_row "TCP Bridge - Release 15" ./archives/basic_sim/tcp_bridge_oai.Rel15.txt "Built target tcp_bridge_oai" ./basic_sim_row10.html
-    summary_table_row "UE IP - Release 15" ./archives/basic_sim/ue_ip.Rel15.txt "Built target ue_ip" ./basic_sim_row11.html
-    summary_table_row "USIM - Release 15" ./archives/basic_sim/usim.Rel15.txt "Built target usim" ./basic_sim_row12.html
-    summary_table_row "NVRAM - Release 15" ./archives/basic_sim/nvram.Rel15.txt "Built target nvram" ./basic_sim_row13.html
     summary_table_footer
 
     if [ -f archives/gnb_usrp/nr-softmodem.Rel15.txt ]
@@ -654,13 +638,6 @@ function report_build {
     if [ -f ./ue_eth_row1.html ] || [ -f ./ue_eth_row2.html ] || [ -f ./ue_eth_row3.html ] || [ -f ./ue_eth_row4.html ] || [ -f ./ue_eth_row5.html ] || [ -f ./ue_eth_row6.html ] || [ -f ./ue_eth_row7.html ] || [ -f ./ue_eth_row8.html ] || [ -f ./ue_eth_row9.html ] || [ -f ./ue_eth_row9a.html ] || [ -f ./ue_eth_row9b.html ]
     then
         for DETAILS_TABLE in `ls ./ue_eth_row*.html`
-        do
-            cat $DETAILS_TABLE >> ./build_results.html
-        done
-    fi
-    if [ -f ./basic_sim_row1.html ] || [ -f ./basic_sim_row2.html ] || [ -f ./basic_sim_row3.html ] || [ -f ./basic_sim_row4.html ] || [ -f ./basic_sim_row5.html ]
-    then
-        for DETAILS_TABLE in `ls ./basic_sim_row*.html`
         do
             cat $DETAILS_TABLE >> ./build_results.html
         done

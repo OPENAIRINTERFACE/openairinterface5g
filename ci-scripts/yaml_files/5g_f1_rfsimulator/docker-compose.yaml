@@ -120,7 +120,7 @@ services:
             - SMF_INTERFACE_PORT_FOR_SBI=80
             - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
             - SMF_API_VERSION=v1
-            - DEFAULT_DNS_IPV4_ADDRESS=192.168.18.129
+            - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
             - DEFAULT_DNS_SEC_IPV4_ADDRESS=4.4.4.4
             - AMF_IPV4_ADDRESS=0.0.0.0
             - AMF_PORT=80
@@ -241,12 +241,12 @@ services:
             NSSAI_SD1: 112233
             AMF_IP_ADDRESS: 192.168.71.132
             GNB_NGA_IF_NAME: eth0
-            GNB_NGA_IP_ADDRESS: 192.168.71.136
+            GNB_NGA_IP_ADDRESS: 192.168.71.140
             GNB_NGU_IF_NAME: eth0
-            GNB_NGU_IP_ADDRESS: 192.168.71.136
+            GNB_NGU_IP_ADDRESS: 192.168.71.140
             F1_IF_NAME: eth0
-            F1_CU_IP_ADDRESS: 192.168.71.136
-            F1_DU_IP_ADDRESS: 192.168.71.138
+            F1_CU_IP_ADDRESS: 192.168.71.140
+            F1_DU_IP_ADDRESS: 192.168.71.142
             F1_CU_D_PORT: 2153
             F1_DU_D_PORT: 2153
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
@@ -254,7 +254,7 @@ services:
             - oai-ext-dn
         networks:
             public_net:
-                ipv4_address: 192.168.71.136
+                ipv4_address: 192.168.71.140
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
@@ -277,12 +277,12 @@ services:
             NSSAI_SD1: 112233
             AMF_IP_ADDRESS: 192.168.71.132
             GNB_NGA_IF_NAME: eth0
-            GNB_NGA_IP_ADDRESS: 192.168.71.138
+            GNB_NGA_IP_ADDRESS: 192.168.71.142
             GNB_NGU_IF_NAME: eth0
-            GNB_NGU_IP_ADDRESS: 192.168.71.138
+            GNB_NGU_IP_ADDRESS: 192.168.71.142
             F1_IF_NAME: eth0
-            F1_CU_IP_ADDRESS: 192.168.71.136
-            F1_DU_IP_ADDRESS: 192.168.71.138
+            F1_CU_IP_ADDRESS: 192.168.71.140
+            F1_DU_IP_ADDRESS: 192.168.71.142
             F1_CU_D_PORT: 2153
             F1_DU_D_PORT: 2153
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
@@ -290,7 +290,7 @@ services:
             - oai-cu
         networks:
             public_net:
-                ipv4_address: 192.168.71.138
+                ipv4_address: 192.168.71.142
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
@@ -301,7 +301,7 @@ services:
         privileged: true
         container_name: rfsim5g-oai-nr-ue
         environment: 
-            RFSIMULATOR: 192.168.71.138
+            RFSIMULATOR: 192.168.71.142
             FULL_IMSI: '208990100001100'
             FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
             OPC: 'C42449363BBAD02B66D16BC975D77CC1'
@@ -313,7 +313,7 @@ services:
             - oai-du
         networks:
             public_net:
-                ipv4_address: 192.168.71.137
+                ipv4_address: 192.168.71.150
         healthcheck:
             test: /bin/bash -c "pgrep nr-uesoftmodem"
             interval: 10s

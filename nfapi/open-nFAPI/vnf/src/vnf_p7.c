@@ -1473,7 +1473,7 @@ void vnf_handle_nr_slot_indication(void *pRecvMsg, int recvMsgLen, vnf_p7_t* vnf
 		}
 		else
 		{
-			NFAPI_TRACE(NFAPI_TRACE_INFO, "%s: Handling NR SLOT Indication\n", __FUNCTION__);
+			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "%s: Handling NR SLOT Indication\n", __FUNCTION__);
                         if(vnf_p7->_public.nr_slot_indication)
 			{
 				(vnf_p7->_public.nr_slot_indication)(&ind);
@@ -2574,32 +2574,28 @@ int vnf_p7_read_dispatch_message(vnf_p7_t* vnf_p7)
 			// resize the buffer if we have a large segment
 			if(header.message_length > vnf_p7->rx_message_buffer_size)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_NOTE, "reallocing rx buffer %d\n", header.message_length); 
+				NFAPI_TRACE(NFAPI_TRACE_NOTE, "reallocing rx buffer %d\n", header.message_length);
 				vnf_p7->rx_message_buffer = realloc(vnf_p7->rx_message_buffer, header.message_length);
 				vnf_p7->rx_message_buffer_size = header.message_length;
 			}
 
 			// read the segment
-			recvfrom_result = recvfrom(vnf_p7->socket, vnf_p7->rx_message_buffer, header.message_length, MSG_WAITALL, (struct sockaddr*)&remote_addr, &remote_addr_size);
+			recvfrom_result = recvfrom(vnf_p7->socket, vnf_p7->rx_message_buffer, header.message_length, MSG_WAITALL | MSG_TRUNC, (struct sockaddr*)&remote_addr, &remote_addr_size);
+			NFAPI_TRACE(NFAPI_TRACE_INFO, "recvfrom_result = %d from %s():%d\n", recvfrom_result, __FUNCTION__, __LINE__);
 
 			// todo : how to handle incomplete readfroms, need some sort of buffer/select
 
-			if(recvfrom_result == 0)
+			if (recvfrom_result > 0)
 			{
-				NFAPI_TRACE(NFAPI_TRACE_ERROR, "recvfrom returned 0\n");
-			}
-			else if(recvfrom_result != -1 && recvfrom_result != header.message_length)
-			{
-				NFAPI_TRACE(NFAPI_TRACE_ERROR, "Received unexpected number of bytes %d %d\n", recvfrom_result, header.message_length);
-				
-				recvfrom_result += recvfrom(vnf_p7->socket, &vnf_p7->rx_message_buffer[recvfrom_result], header.message_length - recvfrom_result, MSG_WAITALL, (struct sockaddr*)&remote_addr, &remote_addr_size);
-	
-			}
-			
-			
-			if(recvfrom_result > 0)
-			{
+				if (recvfrom_result != header.message_length)
+				{
+					NFAPI_TRACE(NFAPI_TRACE_ERROR, "(%d) Received unexpected number of bytes. %d != %d",
+						    __LINE__, recvfrom_result, header.message_length);
+					break;
+				}
+				NFAPI_TRACE(NFAPI_TRACE_INFO, "Calling vnf_nr_handle_p7_message from %d\n", __LINE__);
 				vnf_handle_p7_message(vnf_p7->rx_message_buffer, recvfrom_result, vnf_p7);
+				return 0;
 			}
 			else
 			{

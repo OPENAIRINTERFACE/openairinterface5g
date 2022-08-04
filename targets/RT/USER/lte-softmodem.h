@@ -23,14 +23,12 @@
 #include "../../ARCH/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
-#include "msc.h"
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
 #include "flexran_agent.h"
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#include "proto_agent.h"
 #include "executables/softmodem-common.h"
 
 
@@ -51,7 +49,6 @@
     {"debug-ue-prach",           CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
     {"no-L2-connect",            CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
     {"calib-prach-tx",           CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
-    {"loop-memory",              CONFIG_HLP_UELOOP,     0,                strptr:&loopfile,           defstrval:"iqs.in", TYPE_STRING,0},    \
     {"ue-dump-frame",            CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,            defintval:0,        TYPE_INT,   0},    \
   }
 #define CMDLINE_CALIBUERX_IDX                   0

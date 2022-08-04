@@ -68,7 +68,7 @@ void *mac_stats_thread(void *param) {
         else {
           total_bler = (double)UE_scheduling_control->pusch_rx_error_num[CC_id] / (double)(UE_scheduling_control->pusch_rx_error_num[CC_id] + UE_scheduling_control->pusch_rx_num[CC_id]) * 100;
         }
-        fprintf(fd,"MAC UE rnti %x : %s, PHR %d DLCQI %d PUSCH %d PUCCH %d RLC disc %d UL-stat rcv %lu err %lu bler %lf (%lf/%lf) total_bler %lf mcsoff %d pre_allocated nb_rb %d, mcs %d, bsr %u sched %u tbs %lu cnt %u , DL-stat tbs %lu cnt %u rb %u buf %u 1st %u ret %u ri %d\n",
+        fprintf(fd,"MAC UE rnti %x : %s, PHR %d DLCQI %d PUSCH %d PUCCH %d RLC disc %d UL-stat rcv %lu err %lu bler %lf (%lf/%lf) total_bler %lf mcsoff %d pre_allocated nb_rb %d, mcs %d, bsr %u sched %u tbs %lu cnt %u , DL-stat tbs %lu cnt %u rb %u buf %u 1st %u ret %u ri %d inactivity timer %d\n",
               rnti,
               UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
               UE_info->UE_template[CC_id][UE_id].phr_info,
@@ -97,7 +97,8 @@ void *mac_stats_thread(void *param) {
 #endif
               UE_scheduling_control->first_cnt[CC_id],
               UE_scheduling_control->ret_cnt[CC_id],
-              UE_scheduling_control->aperiodic_ri_received[CC_id]
+              UE_scheduling_control->aperiodic_ri_received[CC_id],
+              UE_scheduling_control->ul_inactivity_timer
         );
         fprintf(fd,"              ULSCH rounds %d/%d/%d/%d, DLSCH rounds %d/%d/%d/%d, ULSCH errors %d, DLSCH errors %d\n",
               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[0],
@@ -215,7 +216,6 @@ void mac_init_cell_params(int Mod_idP, int CC_idP)
     int j;
     UE_TEMPLATE *UE_template;
 
-    LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_eNB][MOD %02d][]\n", Mod_idP);
     //COMMON_channels_t *cc = &RC.mac[Mod_idP]->common_channels[CC_idP];
 
     memset(&RC.mac[Mod_idP]->eNB_stats, 0, sizeof(eNB_STATS));
