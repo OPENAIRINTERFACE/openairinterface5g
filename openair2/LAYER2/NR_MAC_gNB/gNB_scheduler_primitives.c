@@ -2181,6 +2181,8 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                       NR_RA_t *ra,
                       NR_UE_info_t *UE) {
 
+  AssertFatal((ra != NULL && UE == NULL) || (ra == NULL && UE != NULL), "RA and UE structures are mutually exlusive in BWP configuration\n");
+
   NR_CellGroupConfig_t *CellGroup;
   NR_UE_DL_BWP_t *DL_BWP;
   NR_UE_UL_BWP_t *UL_BWP;
