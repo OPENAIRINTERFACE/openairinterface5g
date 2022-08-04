@@ -1329,7 +1329,7 @@ class OaiCiTest():
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
 			SSH.command('adb devices', '\$', 15)
-			self.UEDevices = re.findall("\\\\r\\\\n([A-Za-z0-9]+)\\\\tdevice",SSH.getBefore())
+			self.UEDevices = re.findall('\r\n([A-Za-z0-9]+)\tdevice',SSH.getBefore())
 			#report number and id of devices found
 			msg = "UEDevices found by GetAllUEDevices : " + " ".join(self.UEDevices)
 			logging.debug(msg)
@@ -1379,8 +1379,7 @@ class OaiCiTest():
 		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		if self.ADBCentralized:
 			SSH.command('lsusb | egrep --colour=never "Future Technology Devices International, Ltd FT2232C" | sed -e "s#:.*##" -e "s# #_#g"', '\$', 15)
-			#self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",SSH.getBefore())
-			self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",SSH.getBefore())
+			self.CatMDevices = re.findall('\r\n([A-Za-z0-9_]+)',SSH.getBefore())
 		else:
 			if (os.path.isfile('./modules_list.txt')):
 				os.remove('./modules_list.txt')
@@ -2046,7 +2045,7 @@ class OaiCiTest():
 				req_bandwidth = '%.1f Gbits/sec' % req_bw
 				req_bw = req_bw * 1000000000
 
-		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) +(\((?P<packetloss>[0-9\.]+)%\))', SSH.getBefore())
+		result = re.search('Server Report:\r\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) +(\((?P<packetloss>[0-9\.]+)%\))', SSH.getBefore())
 		if result is not None:
 			bitrate = result.group('bitrate')
 			packetloss = result.group('packetloss')
@@ -2262,7 +2261,7 @@ class OaiCiTest():
 
 	def Iperf_analyzeV3Output(self, lock, UE_IPAddress, device_id, statusQueue,SSH):
 
-		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', SSH.getBefore())
+		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\r\n(?:|\[ *\d+\] Sent \d+ datagrams)\r\niperf Done\.', SSH.getBefore())
 		if result is None:
 			result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', SSH.getBefore())
 			lock.acquire()
@@ -3865,7 +3864,7 @@ class OaiCiTest():
 		SSH = sshconnection.SSHConnection()
 		SSH.open(IPAddress, UserName, Password)
 		SSH.command('lsb_release -a', '\$', 5)
-		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', SSH.getBefore())
+		result = re.search('Description:\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', SSH.getBefore())
 		if result is not None:
 			OsVersion = result.group('os_type')
 			logging.debug('OS is: ' + OsVersion)
@@ -3883,13 +3882,13 @@ class OaiCiTest():
 				logging.debug('OS is: ' + OsVersion)
 				HTML.OsVersion[idx]=OsVersion
 		SSH.command('uname -r', '\$', 5)
-		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', SSH.getBefore())
+		result = re.search('uname -r\r\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', SSH.getBefore())
 		if result is not None:
 			KernelVersion = result.group('kernel_version')
 			logging.debug('Kernel Version is: ' + KernelVersion)
 			HTML.KernelVersion[idx]=KernelVersion
-		SSH.command('dpkg --list | egrep --color=never libuhd003', '\$', 5)
-		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', SSH.getBefore())
+		SSH.command('dpkg --list | egrep --color=never libuhd', '\$', 5)
+		result = re.search('libuhd.*:amd64 *(?P<uhd_version>[0-9\.]+)', SSH.getBefore())
 		if result is not None:
 			UhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + UhdVersion)
@@ -3902,7 +3901,7 @@ class OaiCiTest():
 				logging.debug('UHD Version is: ' + UhdVersion)
 				HTML.UhdVersion[idx]=UhdVersion
 		SSH.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 180)
-		usrp_boards = re.findall('product: ([0-9A-Za-z]+)\\\\r\\\\n', SSH.getBefore())
+		usrp_boards = re.findall('product: ([0-9A-Za-z]+)', SSH.getBefore())
 		count = 0
 		for board in usrp_boards:
 			if count == 0:
@@ -3914,14 +3913,18 @@ class OaiCiTest():
 			logging.debug('USRP Board(s) : ' + UsrpBoard)
 			HTML.UsrpBoard[idx]=UsrpBoard
 		SSH.command('lscpu', '\$', 5)
-		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', SSH.getBefore())
+		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+)', SSH.getBefore())
 		if result is not None:
 			CpuNb = result.group('nb_cpus')
 			logging.debug('nb_cpus: ' + CpuNb)
 			HTML.CpuNb[idx]=CpuNb
+		result = re.search('Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+)', SSH.getBefore())
+		if result is not None:
 			CpuModel = result.group('model')
 			logging.debug('model: ' + CpuModel)
 			HTML.CpuModel[idx]=CpuModel
+		result = re.search('CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', SSH.getBefore())
+		if result is not None:
 			CpuMHz = result.group('cpu_mhz') + ' MHz'
 			logging.debug('cpu_mhz: ' + CpuMHz)
 			HTML.CpuMHz[idx]=CpuMHz
