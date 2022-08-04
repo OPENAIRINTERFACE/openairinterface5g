@@ -137,6 +137,7 @@ typedef struct nr_rlc_entity_t {
 
   nr_rlc_statistics_t stats;
   time_average_t *txsdu_avg_time_to_tx;
+  int             avg_time_is_on;
 } nr_rlc_entity_t;
 
 nr_rlc_entity_t *new_nr_rlc_entity_am(

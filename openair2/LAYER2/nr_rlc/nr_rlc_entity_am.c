@@ -1718,7 +1718,8 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
   entity->common.bstatus.tx_size += compute_pdu_header_size(entity, sdu)
                                     + sdu->size;
 
-  sdu->sdu->time_of_arrival = time_average_now();
+  if (entity->common.avg_time_is_on)
+    sdu->sdu->time_of_arrival = time_average_now();
 }
 
 /*************************************************************************/

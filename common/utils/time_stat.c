@@ -61,6 +61,14 @@ void time_average_free(time_average_t *t)
   free(t);
 }
 
+void time_average_reset(time_average_t *t)
+{
+  t->r.head = t->r.maxsize - 1;
+  t->r.tail = 0;
+  t->r.size = 0;
+  t->accumulated_value = 0;
+}
+
 static void remove_old(time_average_t *t, uint64_t time)
 {
   /* remove old events */
@@ -102,6 +110,9 @@ void time_average_add(time_average_t *t, uint64_t time, uint64_t value)
 double time_average_get_average(time_average_t *t, uint64_t time)
 {
   remove_old(t, time);
+
+  if (t->r.size == 0)
+    return 0;
 
   return (double)t->accumulated_value / t->r.size;
 }

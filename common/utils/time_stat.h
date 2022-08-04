@@ -46,6 +46,7 @@ typedef struct {
 /* 'duration' is in unit microsecond */
 time_average_t *time_average_new(int duration, int initial_size);
 void time_average_free(time_average_t *t);
+void time_average_reset(time_average_t *t);
 
 /* add a value tagged with time 'time' unit microsecond (it also modifies 't',
  * removing all data with time < 'time' - t->duration)
