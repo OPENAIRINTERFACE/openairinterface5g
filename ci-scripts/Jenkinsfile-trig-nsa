@@ -20,6 +20,9 @@
  *      contact@openairinterface.org
  */
 
+// necessary for reading JSON
+import groovy.json.JsonSlurper
+
 // Template Jenkins Declarative Pipeline script to run Test w/ RF HW
 
 // Location of the python executor node shall be in the same subnet as the others servers
@@ -37,12 +40,12 @@ pipeline {
     stages {
         stage ("Launcher") {
             steps {
-                script {     
-                    //retrieve MR that are opened nd with tag NSA             
-                    MR_LIST= sh returnStdout: true, script: 'curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100&labels=NSA" | jq ".[].iid" || true '
-                    echo "List of selected MR:\n${MR_LIST}" 
-                    def MR_ARRAY = MR_LIST.split('\n') 
-                    //for every selected MR, retrieve the branch name and the latest commit              
+                script {
+                    // retrieve MR that are opened nd with tag NSA
+                    MR_LIST = sh returnStdout: true, script: 'curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests?state=opened&per_page=100&labels=NSA" | jq -cj "[.[].iid]"'
+                    echo "List of selected MRs: ${MR_LIST.trim()}"
+                    def MR_ARRAY = new JsonSlurper().parseText(MR_LIST.trim())
+                    // for every selected MR, retrieve the branch name and the latest commit
                     for (MR in MR_ARRAY) {
                         SRC_BRANCH=sh returnStdout: true, script: """curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests/${MR}" | jq ".source_branch" || true """
                         SRC_BRANCH=SRC_BRANCH.trim()
@@ -100,6 +103,21 @@ pipeline {
 
                         //calling SA 
                         jobName = "RAN-SA-Module-CN5G"
+                        jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
+                            string(name: 'eNB_MR', value: String.valueOf(MR)),
+                            string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),
+                            string(name: 'eNB_CommitID', value: String.valueOf(COMMIT_ID)),
+                            string(name: 'eNB_TargetBranch', value: String.valueOf(TARGET_BRANCH)),
+                            booleanParam(name: 'eNB_mergeRequest', value: Boolean.valueOf(ALLOW_MERGE))
+                        ]
+                        jobResult = jobStatus.getResult()
+                        build_url = jobStatus.getAbsoluteUrl()
+                        build_id = jobStatus.getNumber().toString()
+                        GitPostArgs += jobName + ' ' + build_url + ' ' + build_id + ' ' + jobResult + ' '
+                        echo GitPostArgs
+
+                        //calling SA-AmariS
+                        jobName = "RAN-SA-AmariS-CN5G"
                         jobStatus =  build job: jobName, wait : true, propagate : false, parameters: [
                             string(name: 'eNB_MR', value: String.valueOf(MR)),
                             string(name: 'eNB_Branch', value: String.valueOf(SRC_BRANCH)),

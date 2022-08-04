@@ -31,13 +31,11 @@
 #include "list.h"
 #include "LAYER2/MAC/mac_extern.h"
 //-----------------------------------------------------------------------------
-void
-rlc_tm_send_sdu (
-  const protocol_ctxt_t* const  ctxt_pP,
-  rlc_tm_entity_t * const rlc_pP,
-  const boolean_t         error_indicationP,
-  uint8_t * const         srcP,
-  const sdu_size_t        length_in_bitsP)
+void rlc_tm_send_sdu(const protocol_ctxt_t* const ctxt_pP,
+                     rlc_tm_entity_t *      const rlc_pP,
+                     const bool                   error_indicationP,
+                     uint8_t *              const srcP,
+                     const sdu_size_t             length_in_bitsP)
 {
   int             length_in_bytes;
 #if DEBUG_RLC_TM_DISPLAY_ASCII_DATA

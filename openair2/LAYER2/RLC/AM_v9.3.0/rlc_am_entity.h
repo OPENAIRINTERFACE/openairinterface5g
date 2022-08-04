@@ -54,7 +54,7 @@ typedef struct rlc_am_entity_s {
 
   rb_id_t           rb_id;                              /*!< \brief Radio bearer identifier, for statistics and trace purpose. */
   logical_chan_id_t channel_id;                         /*!< \brief Transport channel identifier. */
-  boolean_t         is_data_plane;                      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
+  bool              is_data_plane;                      /*!< \brief To know if the RLC belongs to a data radio bearer or a signalling radio bearer, for statistics and trace purpose. */
 
   rlc_buffer_occupancy_t sdu_buffer_occupancy;               /*!< \brief Number of bytes of unsegmented SDUs. */
   rlc_buffer_occupancy_t status_buffer_occupancy;            /*!< \brief Number of bytes of control PDUs waiting for transmission. */
@@ -76,7 +76,7 @@ typedef struct rlc_am_entity_s {
   rlc_am_tx_data_pdu_management_t *tx_data_pdu_buffer;       /*!< \brief Transmission PDU data buffer. Used also for retransmissions */
   signed int      retrans_num_pdus;                          /*!< \brief Number of PDUs in the retransmission buffer. */
   signed int      retrans_num_bytes_to_retransmit;           /*!< \brief Number of bytes in the retransmission buffer to be retransmitted. Only payload is taken into account */
-  boolean_t       force_poll;                                /*!< \brief force poll due to t_poll_retransmit time-out. */
+  bool            force_poll;                                /*!< \brief force poll due to t_poll_retransmit time-out. */
 
   //---------------------------------------------------------------------
   // RX BUFFERS
@@ -186,8 +186,8 @@ typedef struct rlc_am_entity_s {
   // note occupancy of other buffers is deducted from nb elements in lists
   rlc_buffer_occupancy_t  buffer_occupancy_retransmission_buffer;   /*!< \brief Number of PDUs. */
 
-  boolean_t               initialized;                               /*!< \brief Boolean for rlc_am_entity_t struct initialization. */
-  boolean_t               configured;                               /*!< \brief Boolean for rlc_am_entity_t struct  configuration. */
+  bool                    initialized;                               /*!< \brief Boolean for rlc_am_entity_t struct initialization. */
+  bool                    configured;                               /*!< \brief Boolean for rlc_am_entity_t struct  configuration. */
 } rlc_am_entity_t;
 /** @} */
 #    endif

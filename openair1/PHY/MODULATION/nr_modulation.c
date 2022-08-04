@@ -226,10 +226,11 @@ void nr_modulation(uint32_t *in,
     i *= 24;
     bit_cnt = i * 8;
     while (bit_cnt < length) {
-      x = *((uint32_t*)(in_bytes+i));
-      x1 = x&4095;
+      uint32_t xx;
+      memcpy(&xx, in_bytes+i, sizeof(xx));
+      x1 = xx & 4095;
       out64[j++] = nr_64qam_mod_table[x1];
-      x1 = (x>>12)&4095;
+      x1 = (xx >> 12) & 4095;
       out64[j++] = nr_64qam_mod_table[x1];
       i += 3;
       bit_cnt += 24;
@@ -618,20 +619,20 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
 
     double f0 = f[ll];
     double Ncpm1 = Ncp0;
-    int16_t *symbol_rotation = fp->symbol_rotation[ll];
+    c16_t *symbol_rotation = fp->symbol_rotation[ll];
 
     double tl = 0;
     double poff = 2 * M_PI * ((Ncp0 * Tc)) * f0;
     double exp_re = cos(poff);
     double exp_im = sin(-poff);
-    symbol_rotation[0] = (int16_t)floor(exp_re * 32767);
-    symbol_rotation[1] = (int16_t)floor(exp_im * 32767);
+    symbol_rotation[0].r = (int16_t)floor(exp_re * 32767);
+    symbol_rotation[0].i = (int16_t)floor(exp_im * 32767);
     LOG_I(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
     LOG_I(PHY, "Symbol rotation %d/%d => (%d,%d)\n",
       0,
       nsymb,
-      symbol_rotation[0],
-      symbol_rotation[1]);
+      symbol_rotation[0].r,
+      symbol_rotation[0].i);
 
     for (int l = 1; l < nsymb; l++) {
 
@@ -646,15 +647,15 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
       poff = 2 * M_PI * (tl + (Ncp * Tc)) * f0;
       exp_re = cos(poff);
       exp_im = sin(-poff);
-      symbol_rotation[l<<1] = (int16_t)floor(exp_re * 32767);
-      symbol_rotation[1 + (l<<1)] = (int16_t)floor(exp_im * 32767);
+      symbol_rotation[l].r = (int16_t)floor(exp_re * 32767);
+      symbol_rotation[l].i = (int16_t)floor(exp_im * 32767);
 
       LOG_I(PHY, "Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",
         l,
         nsymb,
         tl,
-        symbol_rotation[l<<1],
-        symbol_rotation[1 + (l<<1)],
+        symbol_rotation[l].r,
+        symbol_rotation[l].i,
         (poff / 2 / M_PI) - floor(poff / 2 / M_PI));
 
       Ncpm1 = Ncp;
@@ -665,17 +666,18 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
 
 void init_timeshift_rotation(NR_DL_FRAME_PARMS *fp)
 {
+  const int sample_offset = fp->nb_prefix_samples / fp->ofdm_offset_divisor;
   for (int i = 0; i < fp->ofdm_symbol_size; i++) {
-    double poff = -i * 2.0 * M_PI * 144.0 / 2048.0 / fp->ofdm_offset_divisor;
+    double poff = -i * 2.0 * M_PI * sample_offset / fp->ofdm_symbol_size;
     double exp_re = cos(poff);
     double exp_im = sin(-poff);
-    fp->timeshift_symbol_rotation[i*2] = (int16_t)round(exp_re * 32767);
-    fp->timeshift_symbol_rotation[i*2+1] = (int16_t)round(exp_im * 32767);
+    fp->timeshift_symbol_rotation[i].r = (int16_t)round(exp_re * 32767);
+    fp->timeshift_symbol_rotation[i].i = (int16_t)round(exp_im * 32767);
 
     if (i < 10)
       LOG_I(PHY,"Timeshift symbol rotation %d => (%d,%d) %f\n",i,
-            fp->timeshift_symbol_rotation[i*2],
-            fp->timeshift_symbol_rotation[i*2+1],
+            fp->timeshift_symbol_rotation[i].r,
+            fp->timeshift_symbol_rotation[i].i,
             poff);
   }
 }

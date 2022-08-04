@@ -39,6 +39,8 @@
 
 #define GTPV1U_GNB_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.NRGtpv1uTunnelDataReq
 
+#define GTPV1U_DU_BUFFER_REPORT_REQ(mSGpTR)    (mSGpTR)->ittiMsg.NRGtpv1uBufferReportReq
+
 #define GTPV1U_ALL_TUNNELS_TEID (teid_t)0xFFFFFFFF
 
 typedef struct gtpv1u_enb_create_x2u_tunnel_req_s {
@@ -179,6 +181,7 @@ typedef struct gtpv1u_gnb_create_tunnel_req_s {
   int                    num_tunnels;
   //teid_t                 upf_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
   teid_t                 outgoing_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  int outgoing_qfi[NR_GTPV1U_MAX_BEARERS_PER_UE];
   pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
   ebi_t                  incoming_rb_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
   //ebi_t                  outgoing_rb_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
@@ -212,5 +215,11 @@ typedef struct gtpv1u_gnb_tunnel_data_req_s {
   rnti_t                 rnti;
   pdusessionid_t         pdusession_id;
 } gtpv1u_gnb_tunnel_data_req_t;
+
+typedef struct gtpv1u_DU_buffer_report_req_s {
+  uint32_t               buffer_availability;
+  rnti_t                 rnti;
+  pdusessionid_t         pdusession_id;
+} gtpv1u_DU_buffer_report_req_t;
 
 #endif /* GTPV1_U_MESSAGES_TYPES_H_ */

@@ -738,7 +738,7 @@ typedef struct {
   // The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0->DCI_PAYLOAD_BYTE_LEN*8
   uint16_t PayloadSizeBits;
   // DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB
-  uint8_t Payload[DCI_PAYLOAD_BYTE_LEN];
+  uint8_t Payload[DCI_PAYLOAD_BYTE_LEN] __attribute__((aligned(32)));
 
 } nfapi_nr_dl_dci_pdu_t;
 
@@ -775,6 +775,10 @@ typedef struct {
   ///DL DCI PDU
   nfapi_nr_dl_dci_pdu_t dci_pdu[MAX_DCI_CORESET];
 }  nfapi_nr_dl_tti_pdcch_pdu_rel15_t;
+
+typedef struct {
+  uint32_t tbSizeLbrmBytes;
+}nfapi_v3_pdsch_maintenance_parameters_t;
 
 typedef struct {
   uint16_t pduBitmap;
@@ -854,6 +858,7 @@ typedef struct {
   uint8_t nEpreRatioOfPDSCHToPTRS;
   // Beamforming
   nfapi_nr_tx_precoding_and_beamforming_t precodingAndBeamforming;
+  nfapi_v3_pdsch_maintenance_parameters_t maintenance_parms_v3;
 }nfapi_nr_dl_tti_pdsch_pdu_rel15_t;
 
 
@@ -920,32 +925,24 @@ typedef struct
 } nfapi_nr_dlsch_pdu_t;
 */
 
-//for csi-rs_pdu:
-
-//table 3-39
 typedef struct
 {
-  uint16_t bwp_size;//
-  uint16_t bwp_start;//
-  uint8_t  subcarrier_spacing;//
-  uint8_t  cyclic_prefix;//
-  uint16_t start_rb;
-  uint16_t nr_of_rbs;
-  uint8_t  csi_type;//Value: 0:TRS 1:CSI-RS NZP 2:CSI-RS ZP
-  uint8_t  row;//Row entry into the CSI Resource location table. [TS38.211, sec 7.4.1.5.3 and table 7.4.1.5.3-1] Value: 1-18
-  uint16_t freq_domain;//Value: Up to the 12 LSBs, actual size is determined by the Row parameter
-  uint8_t  symb_l0;//The time domain location l0 and firstOFDMSymbolInTimeDomain Value: 0->13
-  uint8_t  symb_l1;//
-  uint8_t  cdm_type;
-  uint8_t  freq_density;//The density field, p and comb offset (for dot5).0: dot5 (even RB), 1: dot5 (odd RB), 2: one, 3: three
-  uint16_t scramb_id;//ScramblingID of the CSI-RS [TS38.214, sec 5.2.2.3.1] Value: 0->1023
-  //tx power info
-  uint8_t  power_control_offset;//Ratio of PDSCH EPRE to NZP CSI-RSEPRE Value :0->23 representing -8 to 15 dB in 1dB steps
-  uint8_t  power_control_offset_ss;//Ratio of SSB/PBCH block EPRE to NZP CSI-RS EPRES 0: -3dB, 1: 0dB, 2: 3dB, 3: 6dB
-
+  uint8_t subcarrier_spacing;       // subcarrierSpacing [3GPP TS 38.211, sec 4.2], Value:0->4
+  uint8_t cyclic_prefix;            // Cyclic prefix type [3GPP TS 38.211, sec 4.2], 0: Normal; 1: Extended
+  uint16_t start_rb;                // PRB where this CSI resource starts related to common resource block #0 (CRB#0). Only multiples of 4 are allowed. [3GPP TS 38.331, sec 6.3.2 parameter CSIFrequencyOccupation], Value: 0 ->274
+  uint16_t nr_of_rbs;               // Number of PRBs across which this CSI resource spans. Only multiples of 4 are allowed. [3GPP TS 38.331, sec 6.3.2 parameter CSI-FrequencyOccupation], Value: 24 -> 276
+  uint8_t csi_type;                 // CSI Type [3GPP TS 38.211, sec 7.4.1.5], Value: 0:TRS; 1:CSI-RS NZP; 2:CSI-RS ZP
+  uint8_t row;                      // Row entry into the CSI Resource location table. [3GPP TS 38.211, sec 7.4.1.5.3 and table 7.4.1.5.3-1], Value: 1-18
+  uint16_t freq_domain;             // Bitmap defining the frequencyDomainAllocation [3GPP TS 38.211, sec 7.4.1.5.3] [3GPP TS 38.331 CSIResourceMapping], Value: Up to the 12 LSBs, actual size is determined by the Row parameter
+  uint8_t symb_l0;                  // The time domain location l0 and firstOFDMSymbolInTimeDomain [3GPP TS 38.211, sec 7.4.1.5.3], Value: 0->13
+  uint8_t symb_l1;                  // The time domain location l1 and firstOFDMSymbolInTimeDomain2 [3GPP TS 38.211, sec 7.4.1.5.3], Value: 2->12
+  uint8_t cdm_type;                 // The cdm-Type field [3GPP TS 38.211, sec 7.4.1.5.3 and table 7.4.1.5.3-1], Value: 0: noCDM; 1: fd-CDM2; 2: cdm4-FD2-TD2; 3: cdm8-FD2-TD4
+  uint8_t freq_density;             // The density field, p and comb offset (for dot5). [3GPP TS 38.211, sec 7.4.1.5.3 and table 7.4.1.5.3-1], Value: 0: dot5 (even RB); 1: dot5 (odd RB); 2: one; 3: three
+  uint16_t scramb_id;               // ScramblingID of the CSI-RS [3GPP TS 38.214, sec 5.2.2.3.1], Value: 0->1023
+  uint8_t power_control_offset;     // Ratio of PDSCH EPRE to NZP CSI-RSEPRE [3GPP TS 38.214, sec 5.2.2.3.1], Value: 0->23 representing -8 to 15 dB in 1dB steps; 255: L1 is configured with ProfileSSS
+  uint8_t power_control_offset_ss;  // Ratio of NZP CSI-RS EPRE to SSB/PBCH block EPRE [3GPP TS 38.214, sec 5.2.2.3.1], Values: 0: -3dB; 1: 0dB; 2: 3dB; 3: 6dB; 255: L1 is configured with ProfileSSS
 } nfapi_nr_dl_tti_csi_rs_pdu_rel15_t;
 
-//for ssb_pdu: 
 
 typedef struct
 {
@@ -1195,6 +1192,10 @@ typedef struct
 #define PUSCH_PDU_BITMAP_PUSCH_PTRS 0x4
 #define PUSCH_PDU_BITMAP_DFTS_OFDM  0x8
 
+typedef struct {
+  uint32_t tbSizeLbrmBytes;
+}nfapi_v3_pusch_maintenance_parameters_t;
+
 typedef struct
 {
   uint16_t pdu_bit_map;//Bitmap indicating presence of optional PDUs (see above)
@@ -1240,7 +1241,7 @@ typedef struct
   nfapi_nr_dfts_ofdm_t dfts_ofdm;
   //beamforming
   nfapi_nr_ul_beamforming_t beamforming;
-
+  nfapi_v3_pdsch_maintenance_parameters_t maintenance_parms_v3;
 } nfapi_nr_pusch_pdu_t;
 
 //for pucch_pdu:
@@ -1665,41 +1666,34 @@ typedef struct
 
 } nfapi_nr_uci_indication_t;
 
-//3.4.10 srs_indication
-//table 3-73
 
-typedef struct
-{
-  uint8_t  rb_snr;
-}nfapi_nr_srs_indication_reported_symbol_resource_block_t;
+/// 5G PHY FAPI Specification: SRS indication - Section 3.4.10, Table 3-73
 
-typedef struct
-{
-  uint16_t num_rbs;
+typedef struct {
+  uint8_t rb_snr;                 // SNR value in dB. Value: 0 -> 255 representing -64 dB to 63 dB with a step size 0.5 dB, 0xff will be set if this field is invalid.
+} nfapi_nr_srs_indication_reported_symbol_resource_block_t;
+
+typedef struct {
+  uint16_t num_rbs;               // Number of PRBs to be reported for this SRS PDU. Value: 0 -> 272.
   nfapi_nr_srs_indication_reported_symbol_resource_block_t* rb_list;
-}nfapi_nr_srs_indication_reported_symbol_t;
+} nfapi_nr_srs_indication_reported_symbol_t;
 
-#define NFAPI_NR_SRS_IND_MAX_PDU 100
-typedef struct
-{
-  uint32_t handle;
-  uint16_t rnti;
-  uint16_t timing_advance;
-  uint8_t  num_symbols;
-  uint8_t  wide_band_snr;
-  uint8_t  num_reported_symbols;
+typedef struct {
+  uint32_t handle;                // The handle passed to the PHY in the the UL_TTI.request SRS PDU.
+  uint16_t rnti;                  // The RNTI passed to the PHY in the UL_TTI.request SRS PDU. Value: 1 -> 65535.
+  uint16_t timing_advance;        // Timing advance TA measured for the UE [TS 38.213, Section 4.2]. NTA_new = NTA_old + (TA − 31) * 16 * 64 / (2^u). Value: 0 -> 63. 0xffff should be set if this field is invalid.
+  uint8_t num_symbols;            // Number of symbols for SRS. Value: 1 -> 4. If a PHY does not report for individual symbols then this parameter should be set to 1.
+  uint8_t wide_band_snr;          // SNR value in dB measured within configured SRS bandwidth on each symbol. Value: 0 -> 255 representing -64 dB to 63 dB with a step size 0.5 dB. 0xff will be set if this field is invalid.
+  uint8_t num_reported_symbols;   // Number of symbols reported in this message. This allows PHY to report individual symbols or aggregated symbols where this field will be set to 1. Value: 1 -> 4.
   nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list;
+} nfapi_nr_srs_indication_pdu_t;
 
-}nfapi_nr_srs_indication_pdu_t;
-
-typedef struct
-{
+typedef struct {
   nfapi_p7_message_header_t header;
-  uint16_t sfn;
-  uint16_t slot;
-  uint8_t number_of_pdus;
+  uint16_t sfn;                   // SFN. Value: 0 -> 1023
+  uint16_t slot;                  // Slot. Value: 0 -> 159
+  uint8_t number_of_pdus;         // Number of PDUs included in this message. Value: 0 -> 255
   nfapi_nr_srs_indication_pdu_t* pdu_list;
-
 } nfapi_nr_srs_indication_t;
 
 

@@ -55,6 +55,7 @@ BUILD_COVERITY_SCAN=0
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
+NOAVX512="False"
 BUILD_ECLIPSE=0
 NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
@@ -164,12 +165,18 @@ Options:
    Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
 --usrp-recplay
    Build for I/Q record-playback modes
+--noavx512
+   Build without AVX512 if it is present on CPU
 -k | --skip-shared-libraries
    Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
 --ninja
   Tell cmake to use the Ninja build system. Without, will generate make files
+--sanitize
+  Shortcut for usage of --sanitize-address --sanitize-undefined
 --sanitize-address | -fsanitize=address
-   Enable the address sanitizer on all targets
+  Enable the address sanitizer on all targets
+--sanitize-undefined | -fsanitize=undefined
+  Enable the undefined behavior sanitizer on all targets
 --ittiSIM
   Makes the itti simulator
 -h | --help
@@ -436,6 +443,10 @@ function main() {
               fi
             fi
             shift 2;;		
+        --noavx512)
+            NOAVX512="True"
+            echo_info "Disabling AVX512"
+            shift 1;;
         -k | --skip-shared-libraries)
             SKIP_SHARED_LIB_FLAG="True"
             echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
@@ -444,8 +455,15 @@ function main() {
             CMAKE_CMD="$CMAKE_CMD -GNinja"
             MAKE_CMD=ninja
             shift;;
+        --sanitize)
+            CMAKE_CMD="$CMAKE_CMD -DSANITIZE_ADDRESS=True -DSANITIZE_UNDEFINED=True"
+            shift;;
         --sanitize-address | -fsanitize=address)
+            grep -sq "Ubuntu 18.04" /etc/os-release && echo_error "Bug in OS with this option, see CMakeLists.txt"
             CMAKE_CMD="$CMAKE_CMD -DSANITIZE_ADDRESS=True"
+            shift;;
+        --sanitize-undefined | -fundefined=address)
+            CMAKE_CMD="$CMAKE_CMD -DSANITIZE_UNDEFINED=True"
             shift;;
         --ittiSIM)
             ittiSIM=1
@@ -624,6 +642,7 @@ function main() {
   cd  $DIR/$BUILD_DIR/build
   if [[ ${#CMAKE_C_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_C_FLAGS=\"${CMAKE_C_FLAGS[*]}\""; fi
   if [[ ${#CMAKE_CXX_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_CXX_FLAGS=\"${CMAKE_CXX_FLAGS[*]}\""; fi
+  CMAKE_CMD="$CMAKE_CMD -DNOAVX512=\"${NOAVX512[*]}\""
   echo_info "running $CMAKE_CMD"
   eval $CMAKE_CMD ../..
   
@@ -713,11 +732,11 @@ function main() {
 	# simlist="ldpctest"
     for f in $simlist ; do
       compilations \
-        ran_build $f \
+        $BUILD_DIR $f \
 	    $f $dbin/$f.$REL
     done
     compilations \
-      ran_build coding \
+      $BUILD_DIR coding \
       libcoding.so $dbin/libcoding.so
   fi
 
@@ -729,7 +748,7 @@ function main() {
     simlist="secu_knas_encrypt_eia1 secu_kenb aes128_ctr_encrypt aes128_ctr_decrypt secu_knas_encrypt_eea2 secu_knas secu_knas_encrypt_eea1 kdf aes128_cmac_encrypt secu_knas_encrypt_eia2"
     for f in $simlist ; do
       compilations \
-	    ran_build test_$f \
+	    $BUILD_DIR test_$f \
 	    test_$f $dbin/test_$f.$REL
     done
   fi

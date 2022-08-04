@@ -1997,7 +1997,7 @@ int get_narrowband_index(int N_RB_UL,int rb) {
 void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe) {
   uint8_t harq_pid;
   //uint8_t UE_id;
-  boolean_t new_ulsch = (find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST)==-1) ? TRUE : FALSE;
+  const bool new_ulsch = find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST) == -1;
   //AssertFatal((UE_id=find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
   //        "No existing/free UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
   LTE_eNB_ULSCH_t *ulsch=eNB->ulsch[UE_id];
@@ -2063,7 +2063,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
 
   if ((ulsch->harq_processes[harq_pid]->status == SCH_IDLE) ||
       (ulsch->harq_processes[harq_pid]->ndi    != ulsch_pdu->ulsch_pdu_rel8.new_data_indication) ||
-      (new_ulsch == TRUE)) {
+      (new_ulsch == true)) {
     ulsch->harq_processes[harq_pid]->status        = ACTIVE;
     ulsch->harq_processes[harq_pid]->TBS           = ulsch_pdu->ulsch_pdu_rel8.size<<3;
     ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;

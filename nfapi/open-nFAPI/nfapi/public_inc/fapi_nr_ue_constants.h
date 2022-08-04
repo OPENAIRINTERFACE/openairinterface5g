@@ -10,7 +10,8 @@
 #define FAPI_NR_MAX_RA_OCCASION_PER_CSIRS          64
 // Constants Defined in 38.213
 #define FAPI_NR_MAX_CORESET_PER_BWP                3
-#define FAPI_NR_MAX_SS                             10
+#define FAPI_NR_MAX_SS_PER_BWP                     10
+#define FAPI_NR_MAX_SS                             FAPI_NR_MAX_SS_PER_BWP*NR_MAX_NUM_BWP
 
 
 /// RX_IND
@@ -19,6 +20,7 @@
 #define FAPI_NR_RX_PDU_TYPE_DLSCH 0x03 
 #define FAPI_NR_DCI_IND 0x04
 #define FAPI_NR_RX_PDU_TYPE_RAR 0x05
+#define FAPI_NR_CSIRS_IND 0x06
 
 #define FAPI_NR_SIBS_MASK_SIB1 0x1
 

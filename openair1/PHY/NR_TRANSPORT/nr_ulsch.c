@@ -68,12 +68,20 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   ulsch->rnti = ulsch_pdu->rnti;
   //ulsch->rnti_type;
   ulsch->harq_mask |= 1<<harq_pid;
-  ulsch->harq_process_id[slot] = harq_pid;
 
-  ulsch->harq_processes[harq_pid]->frame=frame;
-  ulsch->harq_processes[harq_pid]->slot=slot;
-  ulsch->harq_processes[harq_pid]->handled= 0;
-  ulsch->harq_processes[harq_pid]->status= NR_ACTIVE;
+  NR_UL_gNB_HARQ_t *harq = ulsch->harq_processes[harq_pid];
+  harq->frame=frame;
+  harq->slot=slot;
+  harq->handled = 0;
+  harq->status= NR_ACTIVE;
+  harq->new_rx = harq->ndi != ulsch_pdu->pusch_data.new_data_indicator;
+  if (harq->new_rx) {
+    harq->ndi = ulsch_pdu->pusch_data.new_data_indicator;
+    harq->round = 0;
+  } else {
+    harq->round++;
+  }
+
   memcpy((void*)&ulsch->harq_processes[harq_pid]->ulsch_pdu, (void*)ulsch_pdu, sizeof(nfapi_nr_pusch_pdu_t));
 
   LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
@@ -83,6 +91,33 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
 void nr_ulsch_unscrambling(int16_t* llr, uint32_t size, uint32_t Nid, uint32_t n_RNTI)
 {
   nr_codeword_unscrambling(llr, size, 0, Nid, n_RNTI);
+}
+
+void nr_ulsch_layer_demapping(int16_t *llr_cw,
+				     uint8_t Nl,
+				     uint8_t mod_order,
+				     uint32_t length,
+				     int16_t **llr_layers) 
+{
+
+  switch (Nl) {
+    case 1:
+      memcpy((void*)llr_cw, (void*)llr_layers[0], (length)*sizeof(int16_t));
+      break;
+    case 2:
+    case 3:
+    case 4:
+      for (int i=0; i<(length/Nl/mod_order); i++) {
+        for (int l=0; l<Nl; l++) {
+          for (int m=0; m<mod_order; m++) {
+            llr_cw[i*Nl*mod_order+l*mod_order+m] = llr_layers[l][i*mod_order+m];
+          }
+        }
+      }
+      break;
+  default:
+  AssertFatal(0, "Not supported number of layers %d\n", Nl);
+  }
 }
 
 void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {

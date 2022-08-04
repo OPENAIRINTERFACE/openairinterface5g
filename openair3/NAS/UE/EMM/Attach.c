@@ -146,7 +146,7 @@ int emm_proc_attach(nas_user_t *user, emm_proc_attach_type_t type)
 
   /* Update the emergency bearer service indicator */
   if (type == EMM_ATTACH_TYPE_EMERGENCY) {
-    user->emm_data->is_emergency = TRUE;
+    user->emm_data->is_emergency = true;
   }
 
   /* Setup initial NAS information message to transfer */
@@ -211,7 +211,7 @@ int emm_proc_attach(nas_user_t *user, emm_proc_attach_type_t type)
   }
 
   /* Setup EPS NAS security data */
-  emm_as_set_security_data(&emm_as->sctx, user->emm_data->security, FALSE, FALSE);
+  emm_as_set_security_data(&emm_as->sctx, user->emm_data->security, false, false);
   emm_as->ksi = EMM_AS_NO_KEY_AVAILABLE;
 
   if (user->emm_data->security) {
@@ -230,8 +230,8 @@ int emm_proc_attach(nas_user_t *user, emm_proc_attach_type_t type)
    * is requested to setup a default EPS bearer
    */
   esm_sap.primitive = ESM_PDN_CONNECTIVITY_REQ;
-  esm_sap.is_standalone = FALSE;
-  esm_sap.data.pdn_connect.is_defined = TRUE;
+  esm_sap.is_standalone = false;
+  esm_sap.data.pdn_connect.is_defined = true;
   esm_sap.data.pdn_connect.cid = 1;
   /* TODO: PDN type should be set according to the IP capability of the UE */
   esm_sap.data.pdn_connect.pdn_type = NET_PDN_TYPE_IPV4;
@@ -387,7 +387,7 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
 
   if (n_eplmns > 0) {
     for (i = 0; (i < n_eplmns) && (i < EMM_DATA_EPLMN_MAX); i++) {
-      int is_forbidden = FALSE;
+      bool is_forbidden = false;
 
       if (!user->emm_data->is_emergency) {
         /* If the attach procedure is not for emergency bearer
@@ -395,7 +395,7 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
          * code that is already in the list of forbidden PLMNs */
         for (j = 0; j < user->emm_data->fplmn.n_plmns; j++) {
           if (PLMNS_ARE_EQUAL(eplmn[i], user->emm_data->fplmn.plmn[j])) {
-            is_forbidden = TRUE;
+            is_forbidden = true;
             break;
           }
         }
@@ -418,7 +418,7 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
    * Notify ESM that a default EPS bearer has to be activated
    */
   esm_sap.primitive = ESM_DEFAULT_EPS_BEARER_CONTEXT_ACTIVATE_REQ;
-  esm_sap.is_standalone = FALSE;
+  esm_sap.is_standalone = false;
   esm_sap.recv = esm_msg_pP;
   rc = esm_sap_send(user, &esm_sap);
 
@@ -445,7 +445,7 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
     emm_sap.u.emm_as.u.data.ueid = user->ueid;
     /* Setup EPS NAS security data */
     emm_as_set_security_data(&emm_sap.u.emm_as.u.data.sctx,
-                             user->emm_data->security, FALSE, TRUE);
+                             user->emm_data->security, false, true);
     /* Get the activate default EPS bearer context accept message
      * to be transfered within the ESM container of the attach
      * complete message */
@@ -546,7 +546,7 @@ int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *e
   case EMM_CAUSE_EPS_NOT_ALLOWED:
   case EMM_CAUSE_BOTH_NOT_ALLOWED:
     /* Consider the USIM as invalid for EPS services */
-    user->emm_data->usim_is_valid = FALSE;
+    user->emm_data->usim_is_valid = false;
     /* Delete the list of equivalent PLMNs */
     user->emm_data->nvdata.eplmn.n_plmns = 0;
     break;
@@ -682,7 +682,7 @@ int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *e
   if (esm_msg_pP != NULL) {
     esm_sap_t esm_sap;
     esm_sap.primitive = ESM_PDN_CONNECTIVITY_REJ;
-    esm_sap.is_standalone = FALSE;
+    esm_sap.is_standalone = false;
     esm_sap.recv = esm_msg_pP;
     rc = esm_sap_send(user, &esm_sap);
   }
@@ -731,7 +731,7 @@ int emm_proc_attach_complete(void *args)
 
   /* Set the EPS update status to EU1 UPDATED */
   user->emm_data->status = EU1_UPDATED;
-  user->emm_data->is_attached = TRUE;
+  user->emm_data->is_attached = true;
 
   /*
    * Notify EMM that network attach complete message has been delivered
@@ -747,7 +747,7 @@ int emm_proc_attach_complete(void *args)
      * Complete message
      */
     esm_sap.primitive = ESM_DEFAULT_EPS_BEARER_CONTEXT_ACTIVATE_CNF;
-    esm_sap.is_standalone = FALSE;
+    esm_sap.is_standalone = false;
     rc = esm_sap_send(user, &esm_sap);
   }
 
@@ -766,7 +766,7 @@ int emm_proc_attach_complete(void *args)
  **      The  UE  shall restart the attach  procedure when timer   **
  **      T3411 expires.                                            **
  **                                                                        **
- ** Inputs:  is_initial:    TRUE if the NAS message that failed to be  **
+ ** Inputs:  is_initial:    true if the NAS message that failed to be  **
  **             transfered is an initial NAS message (ESM  **
  **             message embedded within an Attach Request  **
  **             message)                                   **
@@ -778,7 +778,7 @@ int emm_proc_attach_complete(void *args)
  **      Others:    T3410, T3411                               **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_attach_failure(int is_initial, void *args)
+int emm_proc_attach_failure(bool is_initial, void *args)
 {
   LOG_FUNC_IN;
   int rc = RETURNok;
@@ -804,7 +804,7 @@ int emm_proc_attach_failure(int is_initial, void *args)
      * to be transmitted
      */
     esm_sap.primitive = ESM_PDN_CONNECTIVITY_REJ;
-    esm_sap.is_standalone = FALSE;
+    esm_sap.is_standalone = false;
     esm_sap.recv = NULL;
   } else {
     /*
@@ -813,7 +813,7 @@ int emm_proc_attach_failure(int is_initial, void *args)
      * has failed to be transmitted
      */
     esm_sap.primitive = ESM_DEFAULT_EPS_BEARER_CONTEXT_ACTIVATE_REJ;
-    esm_sap.is_standalone = FALSE;
+    esm_sap.is_standalone = false;
     esm_sap.recv = NULL;
   }
 
@@ -919,7 +919,7 @@ int emm_proc_attach_set_emergency(emm_data_t *emm_data)
   LOG_TRACE(WARNING, "EMM-PROC  - UE is now attached to the network for "
             "emergency bearer services only");
 
-  emm_data->is_emergency = TRUE;
+  emm_data->is_emergency = true;
 
   LOG_FUNC_RETURN(RETURNok);
 }
@@ -950,7 +950,7 @@ int emm_proc_attach_set_detach(void *nas_user)
             "EMM-PROC  - UE is now locally detached from the network");
 
   /* Reset the network attachment indicator */
-  user->emm_data->is_attached = FALSE;
+  user->emm_data->is_attached = false;
   /*
    * Notify that the UE is locally detached from the network
    */

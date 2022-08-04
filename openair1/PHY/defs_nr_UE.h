@@ -279,10 +279,6 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
-  /// \brief Downlink channel estimates extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_ptrs_estimates_ext;
   /// \brief Downlink beamforming channel estimates in frequency domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
@@ -613,6 +609,16 @@ typedef struct {
 
 typedef struct {
   bool active;
+  fapi_nr_dl_config_csiim_pdu_rel15_t csiim_config_pdu;
+} NR_UE_CSI_IM;
+
+typedef struct {
+  bool active;
+  fapi_nr_dl_config_csirs_pdu_rel15_t csirs_config_pdu;
+} NR_UE_CSI_RS;
+
+typedef struct {
+  bool active;
   fapi_nr_ul_config_srs_pdu srs_config_pdu;
 } NR_UE_SRS;
 
@@ -724,6 +730,8 @@ typedef struct {
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_CSI_IM    *csiim_vars[NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_CSI_RS    *csirs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_SRS       *srs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PUCCH     *pucch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_LAYERS>4 ? 2:1]; // two RxTx Threads
@@ -783,11 +791,10 @@ typedef struct {
   
   uint32_t X_u[64][839];
 
-
-  uint32_t perfect_ce;
   // flag to activate PRB based averaging of channel estimates
   // when off, defaults to frequency domain interpolation
-  int prb_interpolation;
+  int chest_freq;
+  int chest_time;
   int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
@@ -875,6 +882,8 @@ typedef struct {
   /// N0 (used for abstraction)
   double N0;
 
+  uint8_t max_ldpc_iterations;
+
   /// PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_gNB_MAX];
 
@@ -886,6 +895,9 @@ typedef struct {
 
   /// SRS variables
   nr_srs_info_t *nr_srs_info;
+
+  /// CSI variables
+  nr_csi_info_t *nr_csi_info;
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1
@@ -984,8 +996,8 @@ typedef struct {
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
-  
-  int dl_stats[5];
+  int dl_errors;
+  int dl_stats[8];
   void* scopeData;
 } PHY_VARS_NR_UE;
 

@@ -98,7 +98,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_srs_pdu_t *srs_pdu,
                       nr_srs_info_t *nr_srs_info,
-                      int32_t **srs_received_signal) {
+                      int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)]) {
 
   if(nr_srs_info->sc_list_length == 0) {
     LOG_E(NR_PHY, "(%d.%d) nr_srs_info was not generated yet!\n", frame, slot);
@@ -113,6 +113,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   uint64_t symbol_offset = (n_symbols+l0)*frame_parms->ofdm_symbol_size;
 
   int32_t *rx_signal;
+  bool no_srs_signal = true;
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
     memset(srs_received_signal[ant], 0, frame_parms->ofdm_symbol_size*sizeof(int32_t));
@@ -120,6 +121,10 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
 
     for(int sc_idx = 0; sc_idx < nr_srs_info->sc_list_length; sc_idx++) {
       srs_received_signal[ant][nr_srs_info->sc_list[sc_idx]] = rx_signal[nr_srs_info->sc_list[sc_idx]];
+
+      if (rx_signal[nr_srs_info->sc_list[sc_idx]] != 0) {
+        no_srs_signal = false;
+      }
 
 #ifdef SRS_DEBUG
       uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*12;
@@ -140,5 +145,11 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
 #endif
     }
   }
-  return 0;
+
+  if (no_srs_signal) {
+    LOG_W(NR_PHY, "No SRS signal\n");
+    return -1;
+  } else {
+    return 0;
+  }
 }

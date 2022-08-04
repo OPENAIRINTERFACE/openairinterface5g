@@ -40,44 +40,11 @@
 #include "openair2/PHY_INTERFACE/queue_t.h"
 #include "nfapi_nr_interface_scf.h"
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
+#include "NR_Packet_Drop.h"
 
-#define NR_NUM_MCS 29
-#define NUM_SINR 100
-#define NUM_BLER_COL 13
-#define NUM_NFAPI_SLOT 20
-#define NR_NUM_LAYER 1
+extern slot_rnti_mcs_s slot_rnti_mcs[NUM_NFAPI_SLOT];
 
 typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
-
-typedef struct nr_phy_channel_params_t
-{
-    uint16_t sfn_slot;
-    uint16_t message_id;
-    uint16_t nb_of_sinrs;
-    float sinr[NR_NUM_LAYER];
-    // Incomplete, need all channel parameters
-} nr_phy_channel_params_t;
-
-typedef struct
-{
-    uint8_t slot;
-    uint16_t rnti[256];
-    uint8_t mcs[256];
-    uint8_t rvIndex[256];
-    float sinr;
-    uint16_t num_pdus;
-    bool drop_flag[256];
-    bool latest;
-
-} slot_rnti_mcs_s;
-
-typedef struct
-{
-    uint16_t length;
-    float bler_table[NUM_SINR][NUM_BLER_COL];
-} nr_bler_struct;
-
-extern nr_bler_struct nr_bler_data[NR_NUM_MCS];
 
 typedef enum {
   ONLY_PUSCH,

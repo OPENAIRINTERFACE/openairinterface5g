@@ -115,7 +115,7 @@ int s1ap_eNB_handle_trace_start(uint32_t         assoc_id,
     container = &pdu->choice.initiatingMessage.value.choice.TraceStart;
 
     S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_TraceStartIEs_t, ie, container,
-                               S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, TRUE);
+                               S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, true);
     mme_ref_p = s1ap_eNB_get_MME(NULL, assoc_id, 0);
     DevAssert(mme_ref_p != NULL);
   if (ie != NULL) {

@@ -24,3 +24,4 @@
 */
 long nr_get_Pcmax(module_id_t mod_id);
 /** @}*/
+

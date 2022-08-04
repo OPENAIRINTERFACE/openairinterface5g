@@ -36,6 +36,7 @@
 #include "assertions.h"
 #include "defs.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
@@ -120,9 +121,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
-			   UE_nr_rxtx_proc_t *proc,
-			   void * typeSpecific){
-
+                           UE_nr_rxtx_proc_t *proc,
+                           void *typeSpecific){
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
@@ -134,7 +134,6 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
     trace_NRpdu(DIRECTION_DOWNLINK,
 		dlsch0->harq_processes[dlsch0->current_harq_pid]->b,
 		dlsch0->harq_processes[dlsch0->current_harq_pid]->TBS / 8,
-		pdu_type,
 		WS_C_RNTI,
 		dlsch0->rnti,
 		proc->frame_rx,
@@ -176,6 +175,11 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.rsrp_dBm = ue->measurements.rsrp_dBm[gNB_id];
     break;
+    case FAPI_NR_CSIRS_IND:
+      memcpy(&rx_ind->rx_indication_body[n_pdus - 1].csirs_measurements,
+             (fapi_nr_csirs_measurements_t*)typeSpecific,
+             sizeof(*(fapi_nr_csirs_measurements_t*)typeSpecific));
+      break;
     default:
     break;
   }
@@ -284,7 +288,8 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
-  memset(ue->common_vars.txdataF[0], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
+  for(int i=0; i< ue->frame_parms.nb_antennas_tx; ++i)
+    memset(ue->common_vars.txdataF[i], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
 
   LOG_D(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
@@ -611,6 +616,15 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int gNB_
       }
     }
 
+    if (ue->chest_time == 1) { // averaging time domain channel estimates
+      nr_chest_time_domain_avg(&ue->frame_parms,
+                               ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates,
+                               dlsch0_harq->nb_symbols,
+                               dlsch0_harq->start_symbol,
+                               dlsch0_harq->dlDmrsSymbPos,
+                               pdsch_nb_rb);
+    }
+
     uint16_t first_symbol_with_data = s0;
     uint32_t dmrs_data_re;
 
@@ -801,8 +815,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             nb_symb_sch,
                             nr_slot_rx,
                             harq_pid,
-                            pdsch==PDSCH?1:0,
-                            dlsch0->harq_processes[harq_pid]->TBS>256?1:0);
+                            pdsch==PDSCH);
 
     LOG_T(PHY,"dlsch decoding, ret = %d\n", ret);
 
@@ -878,8 +891,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                                nb_symb_sch,
                                nr_slot_rx,
                                harq_pid,
-                               pdsch==PDSCH?1:0,//proc->decoder_switch,
-                               dlsch1->harq_processes[harq_pid]->TBS>256?1:0);
+                               pdsch==PDSCH);//proc->decoder_switch
       LOG_T(PHY,"CW dlsch decoding, ret1 = %d\n", ret1);
 
       stop_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
@@ -918,21 +930,25 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       const double N_TA_max = Ta_max * bw_scaling * tc_factor;
 
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
+      NR_BWP_Id_t dl_bwp = mac->DL_BWP_Id;
+      NR_BWP_Id_t ul_bwp = mac->UL_BWP_Id;
 
       NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-      if (mac->ULbwp[0] &&
-          mac->ULbwp[0]->bwp_Dedicated &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup &&
-          mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
-        pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
-      }
-      else if (mac->ULbwp[0] &&
-               mac->ULbwp[0]->bwp_Common &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup &&
-               mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-        pusch_TimeDomainAllocationList = mac->ULbwp[0]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+      if(ul_bwp){
+        if (mac->ULbwp[ul_bwp-1] &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup &&
+            mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
+        }
+        else if (mac->ULbwp[ul_bwp-1] &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup &&
+                 mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
+          pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+        }
       }
       else if (mac->scc_SIB &&
                mac->scc_SIB->uplinkConfigCommon &&
@@ -943,12 +959,15 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
       long mapping_type_ul = pusch_TimeDomainAllocationList ? pusch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
 
-      NR_PDSCH_Config_t *pdsch_Config = (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup) ? mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+      NR_PDSCH_Config_t *pdsch_Config = NULL;
       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
-      if (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
-        pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
-      else if (mac->DLbwp[0] && mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
-        pdsch_TimeDomainAllocationList = mac->DLbwp[0]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+      if(dl_bwp){
+        pdsch_Config = (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup) ? mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
+        if (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
+          pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
+        else if (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
+          pdsch_TimeDomainAllocationList = mac->DLbwp[dl_bwp-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+      }
       else if (mac->scc_SIB && mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup)
         pdsch_TimeDomainAllocationList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
       long mapping_type_dl = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
@@ -1002,7 +1021,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         d_2_1 = 1;
 
       /* d_2_2 */
-      const double d_2_2 = 0.0; // set to 0 because there is only 1 BWP: TODO this should corresponds to the switching time as defined in TS 38.133
+      const double d_2_2 = pusch_d_2_2_timing_capability_1[numerology][1];
 
       /* N_t_1 time duration in msec of N_1 symbols corresponding to a PDSCH reception time
       // N_t_2 time duration in msec of N_2 symbols corresponding to a PUSCH preparation time */
@@ -1306,8 +1325,7 @@ int is_ssb_in_slot(fapi_nr_config_request_t *config, int frame, int slot, NR_DL_
   //uint8_t half_frame_index = fp->half_frame_bit;
   //uint8_t i_ssb = fp->ssb_index;
   uint8_t Lmax = fp->Lmax;
-
-  if (!(frame%(1<<(config->ssb_table.ssb_period-1)))){
+  if ((config->ssb_table.ssb_period > 0) && !(frame % (1 << (config->ssb_table.ssb_period - 1)))) {
 
     if(Lmax <= 8) {
       if(slot <=3 && (((config->ssb_table.ssb_mask_list[0].ssb_mask << 2*slot)&0x80000000) == 0x80000000 || ((config->ssb_table.ssb_mask_list[0].ssb_mask << (2*slot +1))&0x80000000) == 0x80000000))
@@ -1484,7 +1502,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
     LOG_I(NR_PHY,"============================================\n");
-    LOG_I(NR_PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
+    // fixed text + 8 HARQs rounds à 10 ("999999999/") + NULL
+    // if we use 999999999 HARQs, that should be sufficient for at least 138 hours
+    const size_t harq_output_len = 31 + 10 * 8 + 1;
+    char output[harq_output_len];
+    char *p = output;
+    const char *end = output + harq_output_len;
+    p += snprintf(p, end - p, "Harq round stats for Downlink: %d", ue->dl_stats[0]);
+    for (int round = 1; round < 16 && (round < 3 || ue->dl_stats[round] != 0); ++round)
+      p += snprintf(p, end - p,"/%d", ue->dl_stats[round]);
+    LOG_I(NR_PHY,"%s/0\n", output);
+
     LOG_I(NR_PHY,"============================================\n");
   }
 
@@ -1696,6 +1724,36 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
 
  }
+
+  // do procedures for CSI-IM
+  if ((ue->csiim_vars[gNB_id]) && (ue->csiim_vars[gNB_id]->active == 1)) {
+    int l_csiim[4] = {-1, -1, -1, -1};
+    for(int symb_idx = 0; symb_idx < 4; symb_idx++) {
+      bool nr_slot_fep_done = false;
+      for (int symb_idx2 = 0; symb_idx2 < symb_idx; symb_idx2++) {
+        if (l_csiim[symb_idx2] == ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx]) {
+          nr_slot_fep_done = true;
+        }
+      }
+      l_csiim[symb_idx] = ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx];
+      if(nr_slot_fep_done == false) {
+        nr_slot_fep(ue, proc, ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx], nr_slot_rx);
+      }
+    }
+    nr_ue_csi_im_procedures(ue, proc, gNB_id);
+    ue->csiim_vars[gNB_id]->active = 0;
+  }
+
+  // do procedures for CSI-RS
+  if ((ue->csirs_vars[gNB_id]) && (ue->csirs_vars[gNB_id]->active == 1)) {
+    for(int symb = 0; symb < NR_SYMBOLS_PER_SLOT; symb++) {
+      if(is_csi_rs_in_symbol(ue->csirs_vars[gNB_id]->csirs_config_pdu,symb)) {
+        nr_slot_fep(ue, proc, symb, nr_slot_rx);
+      }
+    }
+    nr_ue_csi_rs_procedures(ue, proc, gNB_id);
+    ue->csirs_vars[gNB_id]->active = 0;
+  }
 
   start_meas(&ue->generic_stat);
 

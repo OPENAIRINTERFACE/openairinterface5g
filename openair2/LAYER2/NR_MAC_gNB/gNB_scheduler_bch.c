@@ -54,52 +54,6 @@
 
 extern RAN_CONTEXT_t RC;
 
-
-uint16_t get_ssboffset_pointa(NR_ServingCellConfigCommon_t *scc,const long band) {
-
-  int ratio;
-  switch (*scc->ssbSubcarrierSpacing) {
-    case NR_SubcarrierSpacing_kHz15:
-      AssertFatal(band <= 95,
-                  "Band %ld is not possible for SSB with 15 kHz SCS\n",
-                  band);
-      // no band available above 3GHz using 15kHz
-      ratio = 3;  // NRARFCN step is 5 kHz
-      break;
-    case NR_SubcarrierSpacing_kHz30:
-      AssertFatal(band <= 96,
-                  "Band %ld is not possible for SSB with 30 kHz SCS\n",
-                  band);
-      if (band == 46 || band == 48 || band == 77 ||
-          band == 78 || band == 79 || band == 96)  // above 3GHz
-        ratio = 2;    // NRARFCN step is 15 kHz
-      else
-        ratio = 6;  // NRARFCN step is 5 kHz
-      break;
-    case NR_SubcarrierSpacing_kHz120:
-      AssertFatal(band >= 257,
-                  "Band %ld is not possible for SSB with 120 kHz SCS\n",
-                  band);
-      ratio = 2;  // NRARFCN step is 15 kHz
-      break;
-    case NR_SubcarrierSpacing_kHz240:
-      AssertFatal(band >= 257,
-                  "Band %ld is not possible for SSB with 240 kHz SCS\n",
-                  band);
-      ratio = 4;  // NRARFCN step is 15 kHz
-      break;
-    default:
-      AssertFatal(1 == 0, "SCS %ld not allowed for SSB \n",
-                  *scc->ssbSubcarrierSpacing);
-  }
-
-  const uint32_t ssb_offset0 = *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-
-  return (ssb_offset0/(ratio*12) - 10); // absoluteFrequencySSB is the center of SSB
-
-}
-
-
 void schedule_ssb(frame_t frame, sub_frame_t slot,
                   NR_ServingCellConfigCommon_t *scc,
                   nfapi_nr_dl_tti_request_body_t *dl_req,
@@ -190,7 +144,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
 
       NR_SubcarrierSpacing_t scs = *scc->ssbSubcarrierSpacing;
       const long band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-      uint16_t offset_pointa = get_ssboffset_pointa(scc,band);
+      const uint16_t offset_pointa = gNB->ssb_OffsetPointA;
       uint8_t ssbSubcarrierOffset = gNB->ssb_SubcarrierOffset;
 
       const BIT_STRING_t *shortBitmap = &scc->ssb_PositionsInBurst->choice.shortBitmap;
@@ -207,8 +161,9 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
               // if start symbol is in current slot, schedule current SSB, fill VRB map and call get_type0_PDCCH_CSS_config_parameters
               if ((ssb_start_symbol/14) == rel_slot){
+                const int prb_offset = offset_pointa >> scs;
                 schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
-                fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
+                fill_ssb_vrb_map(cc, prb_offset, ssbSubcarrierOffset, ssb_start_symbol, CC_id);
                 if (get_softmodem_params()->sa == 1) {
                   get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
                                                         frameP,
@@ -221,7 +176,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
-                                                        offset_pointa);
+                                                        prb_offset);
                   gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
               }
@@ -235,8 +190,9 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
               // if start symbol is in current slot, schedule current SSB, fill VRB map and call get_type0_PDCCH_CSS_config_parameters
               if ((ssb_start_symbol/14) == rel_slot){
+                const int prb_offset = offset_pointa >> scs;
                 schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
-                fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
+                fill_ssb_vrb_map(cc, prb_offset, ssbSubcarrierOffset, ssb_start_symbol, CC_id);
                 if (get_softmodem_params()->sa == 1) {
                   get_type0_PDCCH_CSS_config_parameters(&gNB->type0_PDCCH_CSS_config[i_ssb],
                                                         frameP,
@@ -249,7 +205,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
-                                                        offset_pointa);
+                                                        prb_offset);
                   gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
               }
@@ -264,8 +220,9 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
               ssb_start_symbol = get_ssb_start_symbol(band,scs,i_ssb);
               // if start symbol is in current slot, schedule current SSB, fill VRB map and call get_type0_PDCCH_CSS_config_parameters
               if ((ssb_start_symbol/14) == rel_slot){
+                const int prb_offset = offset_pointa >> (scs-2); // reference 60kHz
                 schedule_ssb(frameP, slotP, scc, dl_req, i_ssb, ssbSubcarrierOffset, offset_pointa, (*(uint32_t*)cc->MIB_pdu.payload) & ((1<<24)-1));
-                fill_ssb_vrb_map(cc, offset_pointa, ssb_start_symbol, CC_id);
+                fill_ssb_vrb_map(cc, prb_offset, ssbSubcarrierOffset, ssb_start_symbol, CC_id);
                 const NR_TDD_UL_DL_Pattern_t *tdd = &scc->tdd_UL_DL_ConfigurationCommon->pattern1;
                 const int n_slots_frame = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
                 // FR2 is only TDD, to be fixed for flexible TDD
@@ -286,7 +243,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) 
                                                         band,
                                                         i_ssb,
                                                         ssb_frame_periodicity,
-                                                        offset_pointa);
+                                                        prb_offset);
                   gNB->type0_PDCCH_CSS_config[i_ssb].active = true;
                 }
               }
@@ -306,7 +263,7 @@ void schedule_nr_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframe
 //----------------------------------------  
 }
 
-void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart,  uint16_t symStart, int CC_id) {
+void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int ssb_subcarrier_offset, uint16_t symStart, int CC_id) {
 
   AssertFatal(*cc->ServingCellConfigCommon->ssbSubcarrierSpacing !=
               NR_SubcarrierSpacing_kHz240,
@@ -314,7 +271,8 @@ void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart,  uint16_t symStart
 
   uint16_t *vrb_map = cc[CC_id].vrb_map;
 
-  for (int rb = 0; rb < 20; rb++)
+  const int extra_prb = ssb_subcarrier_offset > 0;
+  for (int rb = 0; rb < 20+extra_prb; rb++)
     vrb_map[rbStart + rb] = SL_to_bitmap(symStart, 4);
 
 }
@@ -327,7 +285,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                int nrOfSymbols,
                                uint16_t dlDmrsSymbPos,
                                uint8_t candidate_idx,
-                               int num_total_bytes) {
+                               uint16_t num_total_bytes) {
 
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = &gNB_mac->common_channels[CC_id];
@@ -479,7 +437,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->qamModOrder[0] = 2;
   pdsch_pdu_rel15->mcsIndex[0] = gNB_mac->sched_ctrlCommon->sched_pdsch.mcs;
   pdsch_pdu_rel15->mcsTable[0] = 0;
-  pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[0];
+  pdsch_pdu_rel15->rvIndex[0] = 0;
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;
   pdsch_pdu_rel15->transmissionScheme = 0;
@@ -503,6 +461,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   LOG_D(NR_MAC,"sib1:bwpStart %d, bwpSize %d\n",pdsch_pdu_rel15->BWPStart,pdsch_pdu_rel15->BWPSize);
   LOG_D(NR_MAC,"sib1:rbStart %d, rbSize %d\n",pdsch_pdu_rel15->rbStart,pdsch_pdu_rel15->rbSize);
   LOG_D(NR_MAC,"sib1:dlDmrsSymbPos = 0x%x\n", pdsch_pdu_rel15->dlDmrsSymbPos);
+
+  pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(0,
+                                                                             pdsch_pdu_rel15->BWPSize,
+                                                                             1);
 
   /* Fill PDCCH DL DCI PDU */
   nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
@@ -547,6 +509,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
                      dci_format,
                      rnti_type,
                      pdsch_pdu_rel15->BWPSize,
+                     0,
                      0,
                      gNB_mac->cset0_bwp_size);
 
@@ -607,7 +570,7 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
       // Get SIB1
       uint8_t sib1_payload[NR_MAX_SIB_LENGTH/8];
-      uint8_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, SI_RNTI, 1, sib1_payload);
+      uint16_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, SI_RNTI, 1, sib1_payload);
       LOG_D(NR_MAC,"sib1_sdu_length = %i\n", sib1_sdu_length);
       LOG_D(NR_MAC,"SIB1: \n");
       for (int k=0;k<sib1_sdu_length;k++)
@@ -635,7 +598,8 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
                                            startSymbolIndex,
                                            nrOfSymbols,
                                            dlDmrsSymbPos,
-                                           candidate_idx, sib1_sdu_length);
+                                           candidate_idx,
+                                           sib1_sdu_length);
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
       int pdu_index = gNB_mac->pdu_index[0]++;

@@ -332,6 +332,9 @@ The following features are valid for the gNB and the 5G-NR UE.
   - evalution of RSRP report
   - evaluation of CQI report
 - MAC scheduling of SR reception
+- Bandwidth part (BWP) operation
+  - Handle multiple dedicated BWPs
+  - BWP switching through RRCReconfiguration method
 
 **gNB RLC**
 - Send/Receive operations according to 38.322 Rel.16
@@ -437,6 +440,10 @@ The following features are valid for the gNB and the 5G-NR UE.
    - PTRS support
    - Support for 1, 2 and 4 RX antennas
    - Support for up to 2 layers (currently limited to DMRS configuration type 2)
+* Measurements based on NR-CSIRS
+    - RI, PMI and CQI computation
+    - Support for 1 and 2 RX antennas
+    - Support for up to 2 layers
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - PUSCH mapping type A and B
    - DMRS configuration type 1 and 2
@@ -485,14 +492,19 @@ The following features are valid for the gNB and the 5G-NR UE.
 * UCI processing
    - ACK/NACK processing
    - Triggering periodic SR
-   - CSI measurement reporting (SSB RSRP only)
-* DLSH scheduler
+   - CSI measurement reporting
+* DLSCH scheduler
    - Configuration of fapi PDU according to DCI
    - HARQ procedures
 * ULSCH scheduler
    - Configuration of fapi PDU according to DCI
+* NR-CSIRS scheduler
+  - Scheduling of NR-CSIRS reception
+  - Fill UCI for CSI measurement reporting
 * Scheduler procedures for SRS transmission
    - Periodic SRS transmission
+* Bandwidth part (BWP) operation
+   - Operation in configured dedicated BWP through RRCSetup or RRCReconfiguration
 
 
 **UE RLC**

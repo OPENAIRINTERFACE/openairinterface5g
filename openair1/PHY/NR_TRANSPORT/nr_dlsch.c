@@ -38,6 +38,7 @@
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/nr/nr_common.h"
+#include "executables/softmodem-common.h"
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
@@ -122,7 +123,6 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                           rel15->dlDmrsSymbPos);
       n_ptrs = (rel15->rbSize + rel15->PTRSFreqDensity - 1)/rel15->PTRSFreqDensity;
     }
-    int16_t mod_ptrs[n_ptrs<<1] __attribute__ ((aligned(16)));
 
     /// CRC, coding, interleaving and rate matching
     AssertFatal(harq->pdu!=NULL,"harq->pdu is null\n");
@@ -152,6 +152,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     }
     printf("\n");
 #endif
+
+    if (IS_SOFTMODEM_DLSIM)
+      memcpy(harq->f, output, encoded_length);
 
     for (int q=0; q<rel15->NrOfCodewords; q++) {
       /// scrambling
@@ -214,6 +217,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 #endif
 
     stop_meas(&gNB->dlsch_layer_mapping_stats); 
+
     /// Resource mapping
     
     // Non interleaved VRB to PRB mapping
@@ -235,6 +239,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     for (int nl=0; nl<rel15->nrOfLayers; nl++) {
 
       int dmrs_port = get_dmrs_port(nl,rel15->dmrsPorts);
+
       // DMRS params for this dmrs port
       get_Wt(Wt, dmrs_port, dmrs_Type);
       get_Wf(Wf, dmrs_port, dmrs_Type);
@@ -296,12 +301,14 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
         /* calculate if current symbol is PTRS symbols */
         ptrs_idx = 0;
-
+        int16_t *mod_ptrs = NULL;
         if(rel15->pduBitmap & 0x1) {
           ptrs_symbol = is_ptrs_symbol(l,dlPtrsSymPos);
           if(ptrs_symbol) {
             /* PTRS QPSK Modulation for each OFDM symbol in a slot */
             LOG_D(PHY,"Doing ptrs modulation for symbol %d, n_ptrs %d\n",l,n_ptrs);
+            int16_t mod_ptrsBuf[n_ptrs<<1] __attribute__ ((aligned(16)));
+            mod_ptrs =mod_ptrsBuf;
             nr_modulation(pdsch_dmrs[l][rel15->SCID], (n_ptrs<<1), DMRS_MOD_ORDER, mod_ptrs);
           }
         }
@@ -312,7 +319,8 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
           for (int i=0; i<rel15->rbSize*NR_NB_SC_PER_RB; i++) {
             /* check if cuurent RE is PTRS RE*/
             is_ptrs_re = 0;
-            if (ptrs_symbol)
+            /* check for PTRS symbol and set flag for PTRS RE */
+            if(ptrs_symbol){
               is_ptrs_re = is_ptrs_subcarrier(k,
                                               rel15->rnti,
                                               nl,
@@ -322,6 +330,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                                               rel15->PTRSReOffset,
                                               start_sc,
                                               frame_parms->ofdm_symbol_size);
+            }
             /* Map DMRS Symbol */
             if ( (dmrs_symbol_map & (1 << l)) &&
                  (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_Type))%(frame_parms->ofdm_symbol_size)))) {
@@ -337,6 +346,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
               k_prime&=1;
               n+=(k_prime)?0:1;
             }
+            /* Map PTRS Symbol */
             else if(is_ptrs_re){
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = (beta_ptrs*amp*mod_ptrs[ptrs_idx<<1]) >> 15;
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (beta_ptrs*amp*mod_ptrs[(ptrs_idx<<1) + 1])>> 15;

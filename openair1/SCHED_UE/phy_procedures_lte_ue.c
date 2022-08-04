@@ -460,7 +460,7 @@ void ue_compute_srs_occasion(PHY_VARS_UE *ue,
       is_pucch2_subframe = (is_ri_TXOp(ue,proc,eNB_id) && (ue->cqi_report_config[eNB_id].CQI_ReportPeriodic.ri_ConfigIndex>0)) || is_pucch2_subframe;
 
       // check ACK/SR transmission
-      if(frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission == FALSE) {
+      if(frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission == false) {
         if(is_SR_TXOp(ue,proc,eNB_id)) {
           uint32_t SR_payload = 0;
 

@@ -205,7 +205,7 @@ static void *_nas_user_mngr(void *args)
   LOG_FUNC_IN;
 
   pthread_setname_np( pthread_self(), "nas_user_mngr");
-  int exit_loop = FALSE;
+  bool exit_loop = false;
 
   int *fd = (int *) args;
 
@@ -251,7 +251,7 @@ static void *_nas_network_mngr(void *args)
   LOG_TRACE (INFO, "UE-MAIN   - Network connection manager started (%d)", *fd);
 
   /* Network receiving loop */
-  while (TRUE) {
+  while (true) {
     /* Read the network data message */
     bytes = network_api_read_data (*fd);
 

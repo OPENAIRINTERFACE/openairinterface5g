@@ -47,12 +47,13 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 
-
+THREAD_STRUCT thread_struct;
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
 openair0_config_t openair0_cfg[MAX_CARDS];
 int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
+uint64_t downlink_frequency[MAX_NUM_CCs][4];
 
 double cpuf;
 //uint8_t nfapi_mode = 0;
@@ -475,7 +476,6 @@ int main(int argc, char **argv)
   UE = calloc(1,sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_rx=1;
-  UE->perfect_ce = 0;
 
   if(eps!=0.0)
     UE->UE_fo_compensation = 1; // if a frequency offset is set then perform fo estimation and compensation
@@ -640,6 +640,7 @@ int main(int argc, char **argv)
         pucch_pdu.initial_cyclic_shift  = 0;
         pucch_pdu.start_symbol_index    = startingSymbolIndex;
         pucch_pdu.prb_start             = startingPRB;
+        pucch_pdu.prb_size              = 1;
         pucch_pdu.bwp_start             = 0;
         pucch_pdu.bwp_size              = N_RB_DL;
         if (nrofSymbols>1) {

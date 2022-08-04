@@ -133,10 +133,9 @@ rlc_tm_cleanup (
 }
 
 //-----------------------------------------------------------------------------
-void rlc_tm_configure(
-  const protocol_ctxt_t* const  ctxt_pP,
-  rlc_tm_entity_t * const rlcP,
-  const boolean_t is_uplink_downlinkP)
+void rlc_tm_configure(const protocol_ctxt_t* const  ctxt_pP,
+                      rlc_tm_entity_t * const rlcP,
+                      const bool is_uplink_downlinkP)
 {
   rlcP->is_uplink_downlink = is_uplink_downlinkP;
   rlc_tm_reset_state_variables (ctxt_pP, rlcP);

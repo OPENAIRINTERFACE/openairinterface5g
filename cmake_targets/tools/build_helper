@@ -109,6 +109,7 @@ check_supported_distribution() {
         "ubuntu18.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
         "fedora35")    return 0 ;;
+        "fedora36")    return 0 ;;
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
@@ -196,8 +197,8 @@ check_warnings() {
 #argument:
 #    $1: log file
 check_errors() {
-  #we look for 'warning:' in the compilation log file
-  error_count=`grep "error:" "$1" | wc -l`
+  #we look for 'error:' in the compilation log file
+  error_count=`grep -c "error:" "$1"`
   if [ $error_count -gt 0 ]; then
     echo_error "ERROR: $error_count error. See $1"
   fi
@@ -381,7 +382,7 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get remove libuhd3.14.1 -y || true
         $SUDO apt-get remove libuhd3.15.0 -y || true
         local distribution=$(get_distribution_release)
-        if [[ "$distribution" == "ubuntu18.04" ]]; then
+        if [[ "$distribution" == "ubuntu18.04" || "$distribution" == "ubuntu20.04" || "$distribution" == "ubuntu22.04" ]]; then
             $SUDO apt-get remove libuhd4.0.0 -y || true
             $SUDO apt-get remove libuhd4.1.0 -y || true
         fi
@@ -410,13 +411,15 @@ check_install_usrp_uhd_driver(){
             x=$((x + 1))
         done
         $SUDO apt-get update
-        $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        if [[ "$distribution" == "ubuntu16.04" ]]; then
+        $SUDO apt-get -y install python-tk libboost-all-dev libusb-1.0-0-dev
+        case "$(get_distribution_release)" in
+          "ubuntu16.04")
             $SUDO apt-get -y install libuhd-dev libuhd3.15.0 uhd-host
-        fi
-        if [[ "$distribution" == "ubuntu18.04" ]]; then
-            $SUDO apt-get -y install libuhd-dev libuhd4.1.0 uhd-host
-        fi
+            ;;
+          "ubuntu18.04" | "ubuntu20.04" | "ubuntu22.04")
+            $SUDO apt-get -y install libuhd-dev libuhd4.2.0 uhd-host
+            ;;
+        esac
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         if [ $IS_CONTAINER -eq 0 ]
         then
@@ -621,7 +624,6 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         sshpass \
-        nscd \
         bc \
         ntp"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
@@ -646,7 +648,6 @@ check_install_additional_tools (){
       wvdial \
       numpy \
       sshpass \
-      nscd \
       python2-paramiko \
       python-pyroute2 \
       python-netifaces \
@@ -674,7 +675,6 @@ check_install_additional_tools (){
       wvdial \
       python-numpy \
       sshpass \
-      nscd \
       python-paramiko \
       python-pyroute2 \
       python-netifaces \

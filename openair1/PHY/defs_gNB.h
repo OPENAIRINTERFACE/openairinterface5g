@@ -48,7 +48,6 @@
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 #define MAX_PUCCH0_NID 8
 
-
 typedef struct {
   int nb_id;
   int Nid[MAX_PUCCH0_NID];
@@ -97,6 +96,8 @@ typedef struct {
   uint32_t subframe;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
+  /// Interleaver outputs
+  uint8_t *f;
   /// LDPC lifting size
   uint32_t Z;
 } NR_DL_gNB_HARQ_t;
@@ -187,8 +188,6 @@ typedef struct {
   uint8_t codebook_index;
   /// Maximum number of HARQ processes
   uint8_t Mdlharq;
-  /// Maximum number of HARQ rounds
-  uint8_t Mlimit;
   /// MIMO transmission mode indicator for this sub-frame
   uint8_t Kmimo;
   /// Nsoft parameter related to UE Category
@@ -277,7 +276,7 @@ typedef struct {
   /// The payload + CRC (24 bits) in bits (38.212 V15.4.0 section 5.1)
   uint32_t B;
   /// Pointers to code blocks after code block segmentation and CRC attachment (38.212 V15.4.0 section 5.2.2)
-  uint8_t *c[MAX_NUM_NR_ULSCH_SEGMENTS];
+  uint8_t **c;
   /// Number of bits in each code block (38.212 V15.4.0 section 5.2.2)
   uint32_t K;
   /// Number of "Filler" bits added in the code block segmentation (38.212 V15.4.0 section 5.2.2)
@@ -285,11 +284,9 @@ typedef struct {
   /// Number of code blocks after code block segmentation (38.212 V15.4.0 section 5.2.2)
   uint32_t C;
   /// Pointers to code blocks after LDPC coding (38.212 V15.4.0 section 5.3.2)
-  int16_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
+  int16_t **d;
   /// LDPC lifting size (38.212 V15.4.0 table 5.3.2-1)
   uint32_t Z;
-  /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
-  int16_t e[MAX_NUM_NR_ULSCH_SEGMENTS][3*8448];
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
   uint32_t E;
   /// Number of segments processed so far
@@ -344,8 +341,6 @@ typedef struct {
   int16_t q_RI[MAX_RI_PAYLOAD];
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
-  /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t *w[MAX_NUM_NR_ULSCH_SEGMENTS];
   //////////////////////////////////////////////////////////////
 } NR_UL_gNB_HARQ_t;
 
@@ -353,8 +348,6 @@ typedef struct {
 typedef struct {
   /// Pointers to 16 HARQ processes for the ULSCH
   NR_UL_gNB_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
-  /// Current HARQ process id
-  int harq_process_id[NR_MAX_SLOTS_PER_FRAME];
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// ACK/NAK Bundling flag
@@ -381,8 +374,6 @@ typedef struct {
   uint8_t cyclicShift;
   /// for cooperative communication
   uint8_t cooperation_flag;
-  /// Maximum number of HARQ rounds
-  uint8_t Mlimit;
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last LDPC decoding
@@ -438,10 +429,6 @@ typedef struct {
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..2*ofdm_symbol_size[
   int32_t **rxdataF_ext;
-  /// \brief Holds the received data in the frequency domain for the allocated RBs in normal format.
-  /// - first index: rx antenna id [0..nb_antennas_rx[
-  /// - second index (definition from phy_init_lte_eNB()): ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **rxdataF_ext2;
   /// \brief Hold the channel estimates in time domain based on DRS.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..4*ofdm_symbol_size[
@@ -454,14 +441,6 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
   int32_t **ul_ch_estimates_ext;
-  /// \brief Hold the PTRS phase estimates in frequency domain.
-  /// - first index: rx antenna id [0..nb_antennas_rx[
-  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_ptrs_estimates;
-  /// \brief Uplink phase estimates extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
-  int32_t **ul_ch_ptrs_estimates_ext;
   /// \brief Holds the compensated signal.
   /// - first index: rx antenna id [0..nb_antennas_rx[
   /// - second index: ? [0..12*N_RB_UL*frame_parms->symbols_per_tti[
@@ -477,7 +456,7 @@ typedef struct {
   /// \brief Cross-correlation of two UE signals.
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..]
-  int32_t **rho;
+  int32_t ***rho;
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
   /// \brief Magnitude of Uplink Channel first layer (16QAM level/First 64QAM level).
@@ -507,6 +486,10 @@ typedef struct {
   /// \brief llr values.
   /// - first index: ? [0..1179743] (hard coded)
   int16_t *llr;
+  /// \brief llr values per layer.
+  /// - first index: ? [0..3] (hard coded)
+  /// - first index: ? [0..1179743] (hard coded)
+  int16_t **llr_layers;
   /// DMRS symbol index, to be updated every DMRS symbol within a slot.
   uint8_t dmrs_symbol;
   // PTRS symbol index, to be updated every PTRS symbol within a slot.
@@ -782,6 +765,9 @@ typedef struct PHY_VARS_gNB_s {
   /// SRS variables
   nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
 
+  /// CSI variables
+  nr_csi_info_t *nr_csi_info;
+
   uint8_t pbch_configured;
   char gNB_generate_rar;
 
@@ -813,12 +799,9 @@ typedef struct PHY_VARS_gNB_s {
   // Mask of occupied RBs, per symbol and PRB
   uint32_t rb_mask_ul[14][9];
 
-  /// CSI  RS sequence
-  uint32_t ***nr_gold_csi_rs;
-
   /// PRS sequence
   uint32_t ****nr_gold_prs;
-  
+
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_NR_SR_MAX];
 
@@ -848,14 +831,17 @@ typedef struct PHY_VARS_gNB_s {
   int              **dl_precoder_SgNB[3];
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
-  int  prb_interpolation;
+  int max_ldpc_iterations;
+  /// indicate the channel estimation technique in time domain
+  int chest_time;
+  /// indicate the channel estimation technique in freq domain
+  int chest_freq;
 
   /// if ==0 enables phy only test mode
   int mac_enabled;
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
-  int csi_gold_init;
   int pdcch_gold_init;
   int pdsch_gold_init[2];
   int pusch_gold_init[2];
@@ -945,8 +931,8 @@ typedef struct LDPCDecode_s {
   int segment_r;
   int r_offset;
   int offset;
-  int Tbslbrm;
   int decodeIterations;
+  uint32_t tbslbrm;
 } ldpcDecode_t;
 
 struct ldpcReqId {

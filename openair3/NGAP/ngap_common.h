@@ -102,13 +102,6 @@
 # error "You are compiling ngap with the wrong version of ASN1C"
 #endif
 
-#ifndef FALSE
-# define FALSE (0)
-#endif
-#ifndef TRUE
-# define TRUE  (!FALSE)
-#endif
-
 #define NGAP_UE_ID_FMT  "0x%06"PRIX32
 
 extern int asn_debug;

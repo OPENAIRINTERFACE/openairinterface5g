@@ -145,7 +145,7 @@ struct mac_tx_tb_management {
 struct mac_rx_tb_management {
   unsigned char             *data_ptr;
   tb_size_t                  tb_size;      // in bits
-  boolean_t                  valid_checksum;
+  bool                       valid_checksum;
   unsigned char              first_bit;    // 0 if data starts on byte boundary(b7), 1 if b6, 2 if b5, etc
 };
 

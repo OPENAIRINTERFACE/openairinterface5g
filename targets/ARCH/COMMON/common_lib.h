@@ -192,6 +192,7 @@ typedef struct {
   //! \brief Center frequency in Hz for TX.
   //! index: [0..rx_num_channels[ !!! see lte-ue.c:427 FIXME iterates over rx_num_channels
   double tx_freq[4];
+  double tune_offset;
   //! \brief memory
   //! \brief Pointer to Calibration table for RX gains
   rx_gain_calib_table_t *rx_gain_calib_table;
@@ -383,7 +384,7 @@ struct openair0_device_t {
       @param buff Buffer which holds the samples (2 dimensional)
       @param nsamps number of samples to be sent
       @param number of antennas 
-      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+      @param flags flags must be set to true if timestamp parameter needs to be applied
   */
   int (*trx_write_func)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id, int flags);
 
@@ -393,7 +394,7 @@ struct openair0_device_t {
       @param buff Buffer which holds the samples (1 dimensional)
       @param nsamps number of samples to be sent
       @param antenna_id index of the antenna if the device has multiple anteannas
-      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+      @param flags flags must be set to true if timestamp parameter needs to be applied
   */
   int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void *buff, int nsamps,int antenna_id, int flags);
 

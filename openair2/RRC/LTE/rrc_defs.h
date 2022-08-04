@@ -316,7 +316,7 @@ typedef enum SL_TRIGGER_e {
 #define MAX_MEAS_ID 7
 
 #define PAYLOAD_SIZE_MAX 1024
-#define RRC_BUF_SIZE 512
+#define RRC_BUF_SIZE 1024
 #define UNDEF_SECURITY_MODE 0xff
 #define NO_SECURITY_MODE 0x20
 
@@ -367,7 +367,7 @@ typedef struct UE_RRC_INFO_s {
 } __attribute__ ((__packed__)) UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_s {
-  boolean_t  presence;
+  bool       presence;
   mme_code_t mme_code;
   m_tmsi_t   m_tmsi;
 } __attribute__ ((__packed__)) UE_S_TMSI;
@@ -484,7 +484,7 @@ typedef struct MEASUREMENT_INFO_s {
 typedef struct {
   char Payload[RRC_BUFFER_SIZE_MAX];
   char Header[RRC_HEADER_SIZE_MAX];
-  char payload_size;
+  uint16_t payload_size;
 } RRC_BUFFER;
 #define RRC_BUFFER_SIZE sizeof(RRC_BUFFER)
 
@@ -931,7 +931,7 @@ typedef struct UE_RRC_INST_s {
 } UE_RRC_INST;
 
 typedef struct UE_PF_PO_s {
-  boolean_t enable_flag;  /* flag indicate whether current object is used */
+  bool      enable_flag;  /* flag indicate whether current object is used */
   uint16_t ue_index_value;  /* UE index value */
   uint8_t PF_min;  /* minimal value of Paging Frame (PF) */
   uint8_t PO;  /* Paging Occasion (PO) */

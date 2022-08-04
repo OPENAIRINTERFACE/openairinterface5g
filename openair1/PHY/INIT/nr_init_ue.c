@@ -34,19 +34,6 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/MODULATION/nr_modulation.h"
 
-#if 0
-void phy_config_harq_ue(module_id_t Mod_id,
-                        int CC_id,
-                        uint8_t gNB_id,
-                        uint16_t max_harq_tx) {
-  int num_of_threads,num_of_code_words;
-  PHY_VARS_NR_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
-
-  for (num_of_threads=0; num_of_threads<RX_NB_TH_MAX; num_of_threads++)
-    for (num_of_code_words=0; num_of_code_words<NR_MAX_NB_CODEWORDS; num_of_code_words++)
-      phy_vars_ue->ulsch[num_of_threads][gNB_id][num_of_code_words]->Mlimit = max_harq_tx;
-}
-#endif
 
 extern uint16_t beta_cqi[16];
 
@@ -76,7 +63,6 @@ void phy_init_nr_ue_PDSCH(NR_UE_PDSCH *const pdsch,
   pdsch->dl_ch_magr0            = (int32_t **)malloc16_clear( NR_MAX_NB_LAYERS*fp->nb_antennas_rx*sizeof(int32_t *) );
   pdsch->ptrs_phase_per_slot    = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
   pdsch->ptrs_re_per_slot       = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
-  pdsch->dl_ch_ptrs_estimates_ext = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
   // the allocated memory size is fixed:
   AssertFatal( fp->nb_antennas_rx <= 4, "nb_antennas_rx > 4" );//Extend the max number of UE Rx antennas to 4
 
@@ -86,7 +72,6 @@ void phy_init_nr_ue_PDSCH(NR_UE_PDSCH *const pdsch,
     pdsch->rxdataF_uespec_pilots[i]    = (int32_t *)malloc16_clear( sizeof(int32_t) * fp->N_RB_DL*12);
     pdsch->ptrs_phase_per_slot[i]      = (int32_t *)malloc16_clear( sizeof(int32_t) * 14 );
     pdsch->ptrs_re_per_slot[i]         = (int32_t *)malloc16_clear( sizeof(int32_t) * 14);
-    pdsch->dl_ch_ptrs_estimates_ext[i] = (int32_t *)malloc16_clear( sizeof(int32_t) * num);
     pdsch->rho[i]                      = (int32_t **)malloc16_clear( NR_MAX_NB_LAYERS*NR_MAX_NB_LAYERS*sizeof(int32_t *) );
 
     for (int j=0; j<NR_MAX_NB_LAYERS; j++) {
@@ -126,7 +111,6 @@ void phy_term_nr_ue__PDSCH(NR_UE_PDSCH* pdsch, const NR_DL_FRAME_PARMS *const fp
     free_and_zero(pdsch->rxdataF_uespec_pilots[i]);
     free_and_zero(pdsch->ptrs_phase_per_slot[i]);
     free_and_zero(pdsch->ptrs_re_per_slot[i]);
-    free_and_zero(pdsch->dl_ch_ptrs_estimates_ext[i]);
     free_and_zero(pdsch->rho[i]);
   }
   free_and_zero(pdsch->pmi_ext);
@@ -149,7 +133,6 @@ void phy_term_nr_ue__PDSCH(NR_UE_PDSCH* pdsch, const NR_DL_FRAME_PARMS *const fp
   free_and_zero(pdsch->dl_ch_magr0);
   free_and_zero(pdsch->ptrs_phase_per_slot);
   free_and_zero(pdsch->ptrs_re_per_slot);
-  free_and_zero(pdsch->dl_ch_ptrs_estimates_ext);
 }
 
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
@@ -160,8 +143,11 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
   NR_UE_PRS   **const prs_vars           = ue->prs_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
+  NR_UE_CSI_IM **const csiim_vars        = ue->csiim_vars;
+  NR_UE_CSI_RS **const csirs_vars        = ue->csirs_vars;
   NR_UE_SRS **const srs_vars             = ue->srs_vars;
-  int i,slot,symb, gNB_id, th_id;
+
+  int i, slot, symb, gNB_id, th_id;
 
   LOG_I(PHY, "Initializing UE vars for gNB TXant %u, UE RXant %u\n", fp->nb_antennas_tx, fp->nb_antennas_rx);
 
@@ -389,26 +375,33 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
     prach_vars[gNB_id] = (NR_UE_PRACH *)malloc16_clear(sizeof(NR_UE_PRACH));
     pbch_vars[gNB_id] = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
+    csiim_vars[gNB_id] = (NR_UE_CSI_IM *)malloc16_clear(sizeof(NR_UE_CSI_IM));
+    csirs_vars[gNB_id] = (NR_UE_CSI_RS *)malloc16_clear(sizeof(NR_UE_CSI_RS));
     srs_vars[gNB_id] = (NR_UE_SRS *)malloc16_clear(sizeof(NR_UE_SRS));
 
+    csiim_vars[gNB_id]->active = false;
+    csirs_vars[gNB_id]->active = false;
     srs_vars[gNB_id]->active = false;
-    ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-    ue->nr_srs_info->sc_list = (uint16_t *) malloc16_clear(6*fp->N_RB_UL*sizeof(uint16_t));
-    ue->nr_srs_info->srs_generated_signal = (int32_t *) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
-    ue->nr_srs_info->noise_power = (uint32_t*)malloc16_clear(sizeof(uint32_t));
-    ue->nr_srs_info->srs_received_signal = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    ue->nr_srs_info->srs_ls_estimated_channel = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    ue->nr_srs_info->srs_estimated_channel_freq = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    ue->nr_srs_info->srs_estimated_channel_time = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    ue->nr_srs_info->srs_estimated_channel_time_shifted = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-    for (i=0; i<fp->nb_antennas_rx; i++) {
-      ue->nr_srs_info->srs_received_signal[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      ue->nr_srs_info->srs_ls_estimated_channel[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      ue->nr_srs_info->srs_estimated_channel_freq[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      ue->nr_srs_info->srs_estimated_channel_time[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-      ue->nr_srs_info->srs_estimated_channel_time_shifted[i] = (int32_t *) malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+
+    // ceil((NB_RB*8(max allocation per RB)*2(QPSK))/32)
+    int csi_dmrs_init_length =  ((fp->N_RB_DL<<4)>>5)+1;
+    ue->nr_csi_info = (nr_csi_info_t *)malloc16_clear(sizeof(nr_csi_info_t));
+    ue->nr_csi_info->nr_gold_csi_rs = (uint32_t ***)malloc16(fp->slots_per_frame * sizeof(uint32_t **));
+    AssertFatal(ue->nr_csi_info->nr_gold_csi_rs != NULL, "NR init: csi reference signal malloc failed\n");
+    for (int slot=0; slot<fp->slots_per_frame; slot++) {
+      ue->nr_csi_info->nr_gold_csi_rs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot * sizeof(uint32_t *));
+      AssertFatal(ue->nr_csi_info->nr_gold_csi_rs[slot] != NULL, "NR init: csi reference signal for slot %d - malloc failed\n", slot);
+      for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+        ue->nr_csi_info->nr_gold_csi_rs[slot][symb] = (uint32_t *)malloc16(csi_dmrs_init_length * sizeof(uint32_t));
+        AssertFatal(ue->nr_csi_info->nr_gold_csi_rs[slot][symb] != NULL, "NR init: csi reference signal for slot %d symbol %d - malloc failed\n", slot, symb);
+      }
+    }
+    ue->nr_csi_info->csi_rs_generated_signal = (int32_t **)malloc16(NR_MAX_NB_PORTS * sizeof(int32_t *) );
+    for (i=0; i<NR_MAX_NB_PORTS; i++) {
+      ue->nr_csi_info->csi_rs_generated_signal[i] = (int32_t *) malloc16_clear(fp->samples_per_frame_wCP * sizeof(int32_t));
     }
 
+    ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
 
     // RACH
     prach_vars[gNB_id]->prachF             = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
@@ -502,31 +495,30 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       free_and_zero(ue->pdsch_vars[th_id][gNB_id]);
     }
   }
-  
+
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-
       free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
     }
 
-    for (int i = 0; i < fp->nb_antennas_rx; i++) {
-      free_and_zero(ue->nr_srs_info->srs_received_signal[i]);
-      free_and_zero(ue->nr_srs_info->srs_ls_estimated_channel[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_freq[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_time[i]);
-      free_and_zero(ue->nr_srs_info->srs_estimated_channel_time_shifted[i]);
+    for (int i=0; i<NR_MAX_NB_PORTS; i++) {
+      free_and_zero(ue->nr_csi_info->csi_rs_generated_signal[i]);
     }
-    free_and_zero(ue->nr_srs_info->sc_list);
-    free_and_zero(ue->nr_srs_info->srs_generated_signal);
-    free_and_zero(ue->nr_srs_info->noise_power);
-    free_and_zero(ue->nr_srs_info->srs_received_signal);
-    free_and_zero(ue->nr_srs_info->srs_ls_estimated_channel);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_freq);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_time);
-    free_and_zero(ue->nr_srs_info->srs_estimated_channel_time_shifted);
+    free_and_zero(ue->nr_csi_info->csi_rs_generated_signal);
+    for (int slot=0; slot<fp->slots_per_frame; slot++) {
+      for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+        free_and_zero(ue->nr_csi_info->nr_gold_csi_rs[slot][symb]);
+      }
+      free_and_zero(ue->nr_csi_info->nr_gold_csi_rs[slot]);
+    }
+    free_and_zero(ue->nr_csi_info->nr_gold_csi_rs);
+    free_and_zero(ue->nr_csi_info);
+
     free_and_zero(ue->nr_srs_info);
 
+    free_and_zero(ue->csiim_vars[gNB_id]);
+    free_and_zero(ue->csirs_vars[gNB_id]);
     free_and_zero(ue->srs_vars[gNB_id]);
 
     free_and_zero(ue->pbch_vars[gNB_id]);
@@ -547,7 +539,7 @@ void term_nr_ue_transport(PHY_VARS_NR_UE *ue)
       for (int k = 0; k < RX_NB_TH_MAX; k++) {
         free_nr_ue_dlsch(&ue->dlsch[k][i][j], N_RB_DL);
         if (j==0)
-          free_nr_ue_ulsch(&ue->ulsch[k][i], N_RB_DL);
+          free_nr_ue_ulsch(&ue->ulsch[k][i], N_RB_DL, &ue->frame_parms);
       }
     }
 
@@ -565,17 +557,17 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
   for (int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
     for (int j=0; j<num_codeword; j++) {
       for (int k=0; k<RX_NB_TH_MAX; k++) {
-        AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL))!=NULL,"Can't get ue dlsch structures\n");
+        AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL))!=NULL,"Can't get ue dlsch structures\n");
         LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
         if (j==0) {
-          AssertFatal((ue->ulsch[k][i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES))!=NULL,"Can't get ue ulsch structures\n");
+          AssertFatal((ue->ulsch[k][i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES,&ue->frame_parms))!=NULL,"Can't get ue ulsch structures\n");
           LOG_D(PHY,"ulsch[%d][%d] => %p\n",k,i,ue->ulsch[k][i]);
         }
       }
     }
 
-    ue->dlsch_SI[i]  = new_nr_ue_dlsch(1,1,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL);
-    ue->dlsch_ra[i]  = new_nr_ue_dlsch(1,1,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL);
+    ue->dlsch_SI[i]  = new_nr_ue_dlsch(1,1,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL);
+    ue->dlsch_ra[i]  = new_nr_ue_dlsch(1,1,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL);
     ue->transmission_mode[i] = ue->frame_parms.nb_antenna_ports_gNB==1 ? 1 : 2;
   }
 

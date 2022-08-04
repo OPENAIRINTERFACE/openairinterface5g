@@ -144,21 +144,22 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param nb_rb_pusch The number of RBs allocated (used for Resource Allocation Type 1 in NR)
     @param frame_parms, Pointer to frame descriptor structure
 */
-void nr_ulsch_extract_rbs_single(int32_t **rxdataF,
-                                 NR_gNB_PUSCH *pusch_vars,
-                                 int slot,
-                                 unsigned char symbol,
-                                 uint8_t is_dmrs_symbol,
-                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
-                                 NR_DL_FRAME_PARMS *frame_parms);
+void nr_ulsch_extract_rbs(int32_t **rxdataF,
+                          NR_gNB_PUSCH *pusch_vars,
+                          int slot,
+                          unsigned char symbol,
+                          uint8_t is_dmrs_symbol,
+                          nfapi_nr_pusch_pdu_t *pusch_pdu,
+                          NR_DL_FRAME_PARMS *frame_parms);
 
 void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
                             NR_gNB_ULSCH_t *ulsch_gNB,
-                            uint8_t symbol,
-                            uint8_t start_symbol,
-                            uint16_t nb_rb,
-                            pusch_dmrs_type_t pusch_dmrs_type);
+                            uint8_t symbol, 
+                            uint8_t is_dmrs_symbol,                           
+                            uint32_t len,
+                            uint8_t nrOfLayers,
+                            uint16_t nb_rb);
 
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
     @param ul_ch_estimates_ext Channel estimates in allocated RBs
@@ -192,9 +193,10 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
                                 int **ul_ch_mag,
                                 int **ul_ch_magb,
                                 int **rxdataF_comp,
-                                int **rho,
+                                int ***rho,
                                 NR_DL_FRAME_PARMS *frame_parms,
                                 unsigned char symbol,
+                                int length,
                                 uint8_t is_dmrs_symbol,
                                 unsigned char mod_order,
                                 uint8_t  nrOfLayers,
@@ -262,8 +264,8 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
     @param mod_order modulation order
 */
 void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
-                          int32_t **ul_ch_mag,
-                          int32_t **ul_ch_magb,
+                          int32_t *ul_ch_mag,
+                          int32_t *ul_ch_magb,
                           int16_t  *ulsch_llr,
                           uint32_t nb_rb,
                           uint32_t nb_re,
@@ -336,17 +338,27 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_srs_pdu_t *srs_pdu,
                       nr_srs_info_t *nr_srs_info,
-                      int32_t **srs_received_signal);
+                      int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)]);
 
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 uint8_t get_nr_prach_duration(uint8_t prach_format);
 
-void nr_generate_csi_rs(PHY_VARS_gNB *gNB,
-                        int16_t amp,
-                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t csi_params,
-                        int slot);
+void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
+                        int32_t **dataF,
+                        const int16_t amp,
+                        nr_csi_info_t *nr_csi_info,
+                        const nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
+                        const int slot,
+                        uint8_t *N_cdm_groups,
+                        uint8_t *CDM_group_size,
+                        uint8_t *k_prime,
+                        uint8_t *l_prime,
+                        uint8_t *N_ports,
+                        uint8_t *j_cdm,
+                        uint8_t *k_overline,
+                        uint8_t *l_overline);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 

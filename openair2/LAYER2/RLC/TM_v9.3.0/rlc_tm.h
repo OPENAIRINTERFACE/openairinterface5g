@@ -51,7 +51,7 @@
 /*! \fn void rlc_tm_send_sdu (
 *        const protocol_ctxt_t* const  ctxt_pP,
 *        rlc_tm_entity_t * const rlc_pP,
-*        const boolean_t         error_indicationP,
+*        const bool            error_indicationP,
 *        uint8_t * const         srcP,
 *        const sdu_size_t        length_in_bitsP)
 * \brief    Send SDU if any reassemblied to upper layer.
@@ -60,12 +60,11 @@
 * \param[in]  srcP                SDU data pointer.
 * \param[in]  length_in_bitsP     Length of SDU in bits.
 */
-void rlc_tm_send_sdu (
-                 const protocol_ctxt_t* const  ctxt_pP,
-                 rlc_tm_entity_t * const rlc_pP,
-                 const boolean_t         error_indicationP,
-                 uint8_t * const         srcP,
-                 const sdu_size_t        length_in_bitsP);
+void rlc_tm_send_sdu(const protocol_ctxt_t* const  ctxt_pP,
+                     rlc_tm_entity_t * const rlc_pP,
+                     const bool         error_indicationP,
+                     uint8_t * const         srcP,
+                     const sdu_size_t        length_in_bitsP);
 
 /*! \fn void rlc_tm_no_segment (const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP)
 * \brief    Schedule a SDU to be transmited by lower layers.

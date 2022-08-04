@@ -181,6 +181,6 @@ rrc_data_req_nr_ue(
       TASK_PDCP_UE,
       ctxt_pP->instance,
       message_p);
-    return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
+    return true; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 
 }
