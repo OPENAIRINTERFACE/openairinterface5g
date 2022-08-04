@@ -73,6 +73,7 @@
 
 #include <executables/softmodem-common.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include <executables/nr-uesoftmodem.h>
 
 const char *__asan_default_options()
 {
@@ -362,12 +363,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   AssertFatal(current_BWP->mcsTableIdx >= 0 && current_BWP->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", current_BWP->mcsTableIdx);
 }
 
-typedef struct {
-  uint64_t       optmask;   //mask to store boolean config options
-  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
-  tpool_t        Tpool;             // thread pool
-} nrUE_params_t;
-
 nrUE_params_t nrUE_params;
 
 nrUE_params_t *get_nrUE_params(void) {
@@ -475,7 +470,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:x:y:z:M:N:F:GR:dPI:L:Ea:b:d:e:m:w:T:U:q:X:Y")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:x:y:z:M:N:F:GR:d:PI:L:Ea:b:e:m:w:T:U:q:X:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -642,7 +637,7 @@ int main(int argc, char **argv)
       g_rbSize = atoi(optarg);
       break;
 
-    case 'D':
+    case 'd':
       dlsch_threads = atoi(optarg);
       break;
 
@@ -748,8 +743,6 @@ int main(int argc, char **argv)
 
   if (snr1set==0)
     snr1 = snr0+10;
-  init_dlsch_tpool(dlsch_threads);
-
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = (PHY_VARS_gNB*) malloc(sizeof(PHY_VARS_gNB ));
@@ -1001,7 +994,7 @@ int main(int argc, char **argv)
   unsigned char *test_input_bit;
   unsigned int errors_bit    = 0;
 
-  initTpool("N", &(nrUE_params.Tpool), false);
+  initFloatingCoresTpool(dlsch_threads, &nrUE_params.Tpool, false, "UE-tpool");
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
@@ -1042,7 +1035,7 @@ int main(int argc, char **argv)
   snrRun = 0;
   int n_errs = 0;
 
-  initTpool(gNBthreads, &gNB->threadPool, true);
+  initNamedTpool(gNBthreads, &gNB->threadPool, true, "gNB-tpool");
   initNotifiedFIFO(&gNB->L1_tx_free);
   initNotifiedFIFO(&gNB->L1_tx_filled);
   initNotifiedFIFO(&gNB->L1_tx_out);
@@ -1268,7 +1261,6 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               dlsch_threads,
                                &phy_pdcch_config,
                                NULL);
         
