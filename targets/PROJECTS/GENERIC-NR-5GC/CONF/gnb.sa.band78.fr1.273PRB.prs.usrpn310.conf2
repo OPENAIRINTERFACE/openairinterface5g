@@ -43,53 +43,54 @@ gNBs =
         searchSpaceZero = 0;
       }
       );
+ 
 
     servingCellConfigCommon = (
     {
  #spCellConfigCommon
 
-      physCellId                                                    = 0;
+      physCellId                                                    = 1;
 
 #  downlinkConfigCommon
     #frequencyInfoDL
-      # this is pointA + 23 PRBs@120kHz SCS (same as initial BWP)
-      absoluteFrequencySSB                                          = 2078315;
-      dl_frequencyBand                                                 = 257;
-      # this is 27.900 GHz
-      dl_absoluteFrequencyPointA                                       = 2077499;
+      # this is 3600 MHz + 43 PRBs@30kHz SCS (same as initial BWP)
+      absoluteFrequencySSB                                             = 650000;
+      dl_frequencyBand                                                 = 78;
+      # this is 3600 MHz
+      dl_absoluteFrequencyPointA                                       = 646736;
       #scs-SpecificCarrierList
         dl_offstToCarrier                                              = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-        dl_subcarrierSpacing                                           = 3;
-        dl_carrierBandwidth                                            = 128;
+        dl_subcarrierSpacing                                           = 1;
+        dl_carrierBandwidth                                            = 273;
      #initialDownlinkBWP
       #genericParameters
         # this is RBstart=27,L=48 (275*(L-1))+RBstart
-        initialDLBWPlocationAndBandwidth                               = 13475; # 6366 12925 12956 28875 12952
+        initialDLBWPlocationAndBandwidth                               = 28875; # 6366 12925 12956 28875 12952
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-        initialDLBWPsubcarrierSpacing                                   = 3;
+        initialDLBWPsubcarrierSpacing                                   = 1;
       #pdcch-ConfigCommon
         initialDLBWPcontrolResourceSetZero                              = 12;
         initialDLBWPsearchSpaceZero                                     = 0;
 
   #uplinkConfigCommon
      #frequencyInfoUL
-      ul_frequencyBand                                              = 257;
+      ul_frequencyBand                                              = 78;
       #scs-SpecificCarrierList
       ul_offstToCarrier                                             = 0;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-      ul_subcarrierSpacing                                          = 3;
-      ul_carrierBandwidth                                           = 128;
+      ul_subcarrierSpacing                                          = 1;
+      ul_carrierBandwidth                                           = 273;
       pMax                                                          = 20;
      #initialUplinkBWP
       #genericParameters
-        initialULBWPlocationAndBandwidth                            = 13475;
+        initialULBWPlocationAndBandwidth                            = 28875;
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-        initialULBWPsubcarrierSpacing                               = 3;
+        initialULBWPsubcarrierSpacing                               = 1;
       #rach-ConfigCommon
         #rach-ConfigGeneric
           prach_ConfigurationIndex                                  = 98;
@@ -111,7 +112,7 @@ gNBs =
 #1=oneeighth,2=onefourth,3=half,4=one,5=two,6=four,7=eight,8=sixteen
         ssb_perRACH_OccasionAndCB_PreamblesPerSSB_PR                = 4;
 #oneHalf (0..15) 4,8,12,16,...60,64
-        ssb_perRACH_OccasionAndCB_PreamblesPerSSB                   = 15;
+        ssb_perRACH_OccasionAndCB_PreamblesPerSSB                   = 14;
 #ra_ContentionResolutionTimer
 #(0..7) 8,16,24,32,40,48,56,64
         ra_ContentionResolutionTimer                                = 7;
@@ -122,7 +123,7 @@ gNBs =
         prach_RootSequenceIndex                                     = 1;
         # SCS for msg1, can only be 15 for 30 kHz < 6 GHz, takes precendence over the one derived from prach-ConfigIndex
         #
-        msg1_SubcarrierSpacing                                      = 3,
+        msg1_SubcarrierSpacing                                      = 1,
 # restrictedSetConfig
 # 0=unrestricted, 1=restricted type A, 2=restricted type B
         restrictedSetConfig                                         = 0,
@@ -138,8 +139,8 @@ gNBs =
         p0_nominal                                                  = -90;
 # ssb_PositionsInBurs_BitmapPR
 # 1=short, 2=medium, 3=long
-      ssb_PositionsInBurst_PR                                       = 3;
-      ssb_PositionsInBurst_Bitmap                                   = 0x0001000100010001L;
+      ssb_PositionsInBurst_PR                                       = 2;
+      ssb_PositionsInBurst_Bitmap                                   = 2;
 
 # ssb_periodicityServingCell
 # 0 = ms5, 1=ms10, 2=ms20, 3=ms40, 4=ms80, 5=ms160, 6=spare2, 7=spare1
@@ -151,17 +152,17 @@ gNBs =
 
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-      subcarrierSpacing                                             = 3;
+      subcarrierSpacing                                             = 1;
 
 
   #tdd-UL-DL-ConfigurationCommon
 # subcarrierSpacing
 # 0=kHz15, 1=kHz30, 2=kHz60, 3=kHz120
-      referenceSubcarrierSpacing                                    = 3;
+      referenceSubcarrierSpacing                                    = 1;
       # pattern1
       # dl_UL_TransmissionPeriodicity
       # 0=ms0p5, 1=ms0p625, 2=ms1, 3=ms1p25, 4=ms2, 5=ms2p5, 6=ms5, 7=ms10
-      dl_UL_TransmissionPeriodicity                                 = 3;
+      dl_UL_TransmissionPeriodicity                                 = 6;
       nrofDownlinkSlots                                             = 7;
       nrofDownlinkSymbols                                           = 6;
       nrofUplinkSlots                                               = 2;
@@ -220,14 +221,14 @@ prs_config = (
   PRSResourceSetPeriod = [40, 0];
   SymbolStart = [7];
   NumPRSSymbols = [7];
-  NumRB = 128;
+  NumRB = 240;
   RBOffset = 0;
   CombSize = 4;
-  REOffset = [0];
+  REOffset = [1];
   PRSResourceOffset = [0];
   PRSResourceRepetition = 1;
   PRSResourceTimeGap = 1;
-  NPRS_ID = [0];
+  NPRS_ID = [1];
   MutingPattern1 = [];
   MutingPattern2 = [];
   MutingBitRepetition = 1;
@@ -252,23 +253,22 @@ RUs = (
   nb_rx          = 1
   att_tx         = 0
   att_rx         = 0;
-  bands          = [257];
+  bands          = [78];
   max_pdschReferenceSignalPower = -27;
   max_rxgain                    = 114;
   sf_extension                  = 0;
   eNB_instances  = [0];
-  ##beamforming 1x2 matrix: 1 layer x 2 antennas
-  bf_weights = [0x00007fff, 0x0000];
+  #beamforming 1x4 matrix:
+  bf_weights = [0x00007fff, 0x0000, 0x0000, 0x0000];
   #clock_src = "internal";
-  sdr_addrs = "addr=192.168.50.2,second_addr=192.168.60.2,clock_source=internal,time_source=internal"
-  if_freq = 50000000L;
+  sdr_addrs = "addr=192.168.20.2,clock_source=gpsdo,time_source=gpsdo"
 }
 );
 
 THREAD_STRUCT = (
 {
   #three config for level of parallelism "PARALLEL_SINGLE_THREAD", "PARALLEL_RU_L1_SPLIT", or "PARALLEL_RU_L1_TRX_SPLIT"
-  parallel_config    = "PARALLEL_RU_L1_TRX_SPLIT";
+  parallel_config    = "PARALLEL_SINGLE_THREAD";
   #two option for worker "WORKER_DISABLE" or "WORKER_ENABLE"
   worker_config      = "WORKER_ENABLE";
 }
@@ -278,7 +278,7 @@ rfsimulator :
 {
   serveraddr = "server";
   serverport = "4043";
-  options = ("saviq"); #or/and "chanmod"
+  options = (); #("saviq"); or/and "chanmod"
   modelname = "AWGN";
   IQfile = "/tmp/rfsimulator.iqs";
 };

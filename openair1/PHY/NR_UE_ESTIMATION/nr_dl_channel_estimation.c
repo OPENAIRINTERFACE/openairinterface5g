@@ -50,16 +50,17 @@ static inline int abs32(int x)
 }
 
 int nr_prs_channel_estimation(uint8_t gNB_id,
+                              uint8_t rsc_id,
                               PHY_VARS_NR_UE *ue,
                               UE_nr_rxtx_proc_t *proc,
                               NR_DL_FRAME_PARMS *frame_params)
 {
   int32_t **rxdataF      = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
   uint32_t **nr_gold_prs = ue->nr_gold_prs[proc->nr_slot_rx];
-  prs_data_t *prs_cfg    = &ue->prs_vars[gNB_id]->prs_cfg;
-  prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_meas;
-  int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_ch_estimates;
-  int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_ch_estimates_time;
+  prs_data_t *prs_cfg    = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
+  prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
+  int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates;
+  int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates_time;
   
   uint8_t rxAnt = 0, idx = prs_cfg->NPRSID;
   int16_t *rxF, *pil, *fl, *fm, *fmm, *fml, *fmr, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
@@ -97,7 +98,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     }
    
 #ifdef DEBUG_PRS_PRINTS 
-    printf("[gNB %d] PRS config l %d k_prime %d:\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", gNB_id, l, k_prime, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
+    printf("[gNB %d][rsc %d] PRS config l %d k_prime %d:\nprs_cfg->SymbolStart %d\nprs_cfg->NumPRSSymbols %d\nprs_cfg->NumRB %d\nprs_cfg->CombSize %d\n", gNB_id, rsc_id, l, k_prime, prs_cfg->SymbolStart, prs_cfg->NumPRSSymbols, prs_cfg->NumRB, prs_cfg->CombSize);
 #endif
     // Pilots generation and modulation
     for (int m = 0; m < num_pilots; m++) 
@@ -244,7 +245,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 #endif
           // average out the SNR computed
           snr = snr/num_pilots;
-          prs_meas[rxAnt][l].snr = snr;
+          prs_meas[rxAnt]->snr = snr;
       }
       else if(prs_cfg->CombSize == 4)
       {
@@ -388,7 +389,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 #endif
           // average out the SNR computed
           snr = snr/num_pilots;
-          prs_meas[rxAnt][l].snr = snr;
+          prs_meas[rxAnt]->snr = snr;
       }
       else
       {
@@ -400,7 +401,6 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     } // for rxAnt
   } //for l
   
-  int16_t l = 0; //symbIdx
   for (rxAnt=0; rxAnt < frame_params->nb_antennas_rx; rxAnt++)
   {
     // scale by averaging factor 1/NumPrsSymbols
@@ -427,9 +427,9 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     first_half  = frame_params->ofdm_symbol_size - re_offset;
     second_half = (prs_cfg->NumRB*12) - first_half;
     if(first_half > 0)
-      memcpy((int16_t *)&prs_chestF[rxAnt][l*frame_params->ofdm_symbol_size+re_offset], &ch_tmp[0], first_half*sizeof(int32_t));
+      memcpy((int16_t *)&prs_chestF[rxAnt][re_offset], &ch_tmp[0], first_half*sizeof(int32_t));
     if(second_half > 0)
-      memcpy((int16_t *)&prs_chestF[rxAnt][l*frame_params->ofdm_symbol_size], &ch_tmp[(frame_params->ofdm_symbol_size - re_offset)<<1], second_half*sizeof(int32_t));
+      memcpy((int16_t *)&prs_chestF[rxAnt][0], &ch_tmp[(first_half<<1)], second_half*sizeof(int32_t));
 
     // Time domain IMPULSE response
     idft_size_idx_t idftsizeidx;
@@ -476,19 +476,18 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     }
 
     idft(idftsizeidx,
-         (int16_t *)&prs_chestF[rxAnt][l*frame_params->ofdm_symbol_size],
+         (int16_t *)&prs_chestF[rxAnt][0],
          (int16_t *)&ch_tmp[0],1);
 
     // rearrange impulse response
-    memcpy((int16_t *)&prs_chestT[rxAnt][l*frame_params->ofdm_symbol_size], &ch_tmp[frame_params->ofdm_symbol_size], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
-    memcpy((int16_t *)&prs_chestT[rxAnt][l*frame_params->ofdm_symbol_size + (frame_params->ofdm_symbol_size>>1)], &ch_tmp[0], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
+    memcpy((int16_t *)&prs_chestT[rxAnt][0], &ch_tmp[frame_params->ofdm_symbol_size], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
+    memcpy((int16_t *)&prs_chestT[rxAnt][(frame_params->ofdm_symbol_size>>1)], &ch_tmp[0], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
 
     // peak estimator
-    peak_estimator(&prs_chestT[rxAnt][l*frame_params->ofdm_symbol_size],
+    peak_estimator(&prs_chestT[rxAnt][0],
                    frame_params->ofdm_symbol_size,
-                   &prs_meas[rxAnt][l].dl_toa,
+                   &prs_meas[rxAnt]->dl_toa,
                    &ch_pwr);
-    LOG_I(PHY, "[gNB %d][Rx %d][sfn %d][slot %d] ToA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, l, prs_meas[rxAnt][l].dl_toa-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr));
 
     sprintf(payload, "[gNB %d][Rx %d][sfn %d][slot %d] ToA for PRS symbol %2d ==> %d / %d samples, peak channel power %.1f dB\n", gNB_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, l, prs_meas[rxAnt][l].dl_toa-(frame_params->ofdm_symbol_size>>1), frame_params->ofdm_symbol_size, 10*log10(ch_pwr));
     
@@ -504,25 +503,26 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     }
     
     //prs measurements
-    prs_meas[rxAnt][l].gNB_id     = gNB_id;
-    prs_meas[rxAnt][l].timestamp  = 0; //TODO
-    prs_meas[rxAnt][l].sfn        = proc->frame_rx;
-    prs_meas[rxAnt][l].slot       = proc->nr_slot_rx;
-    prs_meas[rxAnt][l].rxAnt_idx  = rxAnt;
-    prs_meas[rxAnt][l].dl_aoa     = 0;
+    prs_meas[rxAnt]->dl_toa    -= (frame_params->ofdm_symbol_size>>1);
+    prs_meas[rxAnt]->gNB_id     = gNB_id;
+    prs_meas[rxAnt]->sfn        = proc->frame_rx;
+    prs_meas[rxAnt]->slot       = proc->nr_slot_rx;
+    prs_meas[rxAnt]->rxAnt_idx  = rxAnt;
+    prs_meas[rxAnt]->dl_aoa     = 0;
+    LOG_I(PHY, "[gNB %d][rsc %d][Rx %d][sfn %d][slot %d] DL PRS ToA ==> %d / %d samples, peak channel power %.1f dB, SNR %+2d dB\n", gNB_id, rsc_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, prs_meas[rxAnt]->dl_toa, frame_params->ofdm_symbol_size, 10*log10(ch_pwr), prs_meas[rxAnt]->snr);
 
 #ifdef DEBUG_PRS_CHEST
     sprintf(filename, "%s%i%s", "PRSpilot_", rxAnt, ".m");
     LOG_M(filename, "prs_loc", &mod_prs[0], prs_cfg->NumRB*(12/prs_cfg->CombSize),1,1);
     sprintf(filename, "%s%i%s", "rxSigF_", rxAnt, ".m");
     sprintf(varname, "%s%i", "rxF_", rxAnt);
-    LOG_M(filename, varname, &rxdataF[rxAnt][prs_cfg->SymbolStart*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
+    LOG_M(filename, varname, &rxdataF[rxAnt][0], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
     sprintf(filename, "%s%i%s", "prsChestF_", rxAnt, ".m");
     sprintf(varname, "%s%i", "prsChF_", rxAnt);
-    LOG_M(filename, varname, &prs_chestF[rxAnt][l*frame_params->ofdm_symbol_size], frame_params->ofdm_symbol_size,1,1);
+    LOG_M(filename, varname, &prs_chestF[rxAnt][0], frame_params->ofdm_symbol_size,1,1);
     sprintf(filename, "%s%i%s", "prsChestT_", rxAnt, ".m");
     sprintf(varname, "%s%i", "prsChT_", rxAnt);
-    LOG_M(filename, varname, &prs_chestT[rxAnt][l*frame_params->ofdm_symbol_size], frame_params->ofdm_symbol_size,1,1);
+    LOG_M(filename, varname, &prs_chestT[rxAnt][0], frame_params->ofdm_symbol_size,1,1);
 #endif
 
     // T tracer dump
@@ -532,11 +532,11 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 
     T(T_UE_PHY_DL_CHANNEL_ESTIMATE_FREQ, T_INT(gNB_id),
       T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
-      T_INT(rxAnt), T_BUFFER(&prs_chestF[rxAnt][l*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
+      T_INT(rxAnt), T_BUFFER(&prs_chestF[rxAnt][0], frame_params->ofdm_symbol_size*sizeof(int32_t)));
 
     T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(gNB_id),
       T_INT(proc->frame_rx), T_INT(proc->nr_slot_rx),
-      T_INT(rxAnt), T_BUFFER(&prs_chestT[rxAnt][l*frame_params->ofdm_symbol_size], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size*sizeof(int32_t)));
+      T_INT(rxAnt), T_BUFFER(&prs_chestT[rxAnt][0], frame_params->ofdm_symbol_size*sizeof(int32_t)));
   }
 
   free(ch_tmp);

@@ -228,6 +228,11 @@ typedef struct {
 } NR_gNB_PRACH;
 
 typedef struct {
+  uint8_t NumPRSResources;
+  prs_data_t prs_cfg[NR_MAX_PRS_RESOURCES_PER_SET];
+} NR_gNB_PRS;
+
+typedef struct {
   /// Nfapi ULSCH PDU
   nfapi_nr_pusch_pdu_t ulsch_pdu;
   /// Frame where current HARQ round was sent
@@ -757,6 +762,7 @@ typedef struct PHY_VARS_gNB_s {
   nr_cce_t           cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
+  NR_gNB_PRS         prs_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
@@ -771,7 +777,6 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
   NR_gNB_UCI_STATS_t uci_stats[NUMBER_OF_NR_UCI_STATS_MAX];
   t_nrPolar_params    *uci_polarParams;
-  prs_data_t prs_cfg;
 
   uint8_t pbch_configured;
   char gNB_generate_rar;

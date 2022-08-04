@@ -69,7 +69,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t ***pdcch = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t ***)gNB->pdcch_pdu_idx[CC_idP];
   nfapi_nr_ul_tti_request_t    *future_ul_tti_req =
-    &gNB->UL_tti_req_ahead[CC_idP][(slotP+6)]; // + num_slots - 1) % num_slots];
+    &gNB->UL_tti_req_ahead[CC_idP][(slotP + num_slots - 1) % num_slots];
   nfapi_nr_ul_dci_request_t    *UL_dci_req = &gNB->UL_dci_req[0];
   nfapi_nr_tx_data_request_t   *TX_req = &gNB->TX_req[0];
 
@@ -87,7 +87,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
   UL_dci_req[CC_idP].numPdus                     = 0;
 
   /* advance last round's future UL_tti_req to be ahead of current frame/slot */
-  future_ul_tti_req->SFN = ((slotP+6<num_slots) ? frameP : frameP + 1) % 1024;
+  future_ul_tti_req->SFN = (slotP == 0 ? frameP : frameP + 1) % 1024;
   LOG_D(MAC,"Future_ul_tti SFN = %d for slot %d \n", future_ul_tti_req->SFN, (slotP + num_slots - 1) % num_slots);
   /* future_ul_tti_req->Slot is fixed! */
   future_ul_tti_req->n_pdus = 0;
