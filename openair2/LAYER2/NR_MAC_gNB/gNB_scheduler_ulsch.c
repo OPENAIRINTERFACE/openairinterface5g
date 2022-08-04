@@ -728,7 +728,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           // Store the first 48 bits belonging to the uplink CCCH SDU within Msg3 to fill in Msg4
           // First byte corresponds to R/LCID MAC sub-header
           memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
-
+          // harq_pid set a non valid value because it is not used in this call
+          // the function is only called to decode the contention resolution sub-header
           if (nr_process_mac_pdu(gnb_mod_idP, UE, CC_idP, frameP, slotP, sduP, sdu_lenP, -1) == 0) {
             ra->state = Msg4;
             ra->Msg4_frame = (frameP + 2) % 1024;
