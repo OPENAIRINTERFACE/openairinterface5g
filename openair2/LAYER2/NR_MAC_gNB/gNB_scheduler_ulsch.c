@@ -585,9 +585,9 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
     LOG_I(NR_MAC, "Printing received UL MAC payload at gNB side: %d \n");
     for (int i = 0; i < sdu_lenP ; i++) {
-	  //harq_process_ul_ue->a[i] = (unsigned char) rand();
-	  //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
-	  printf("%02x ",(unsigned char)sduP[i]);
+      //harq_process_ul_ue->a[i] = (unsigned char) rand();
+      //printf("a[%d]=0x%02x\n",i,harq_process_ul_ue->a[i]);
+      printf("%02x ",(unsigned char)sduP[i]);
     }
     printf("\n");
 
@@ -701,14 +701,14 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               current_rnti,
               ra->rnti);
 
-      NR_UE_sched_ctrl_t *UE_scheduling_control = &UE->UE_sched_ctrl;
+        NR_UE_sched_ctrl_t *UE_scheduling_control = &UE->UE_sched_ctrl;
 
-      UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
-      if (timing_advance != 0xffff)
-        UE_scheduling_control->ta_update = timing_advance;
-      UE_scheduling_control->raw_rssi = rssi;
-      UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
-      LOG_D(NR_MAC, "[UE %04x] PUSCH TPC %d and TA %d\n",UE->rnti,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
+        UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
+        if (timing_advance != 0xffff)
+          UE_scheduling_control->ta_update = timing_advance;
+        UE_scheduling_control->raw_rssi = rssi;
+        UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
+        LOG_D(NR_MAC, "[UE %04x] PUSCH TPC %d and TA %d\n",UE->rnti,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
         if(ra->cfra) {
 
           LOG_A(NR_MAC, "(rnti 0x%04x) CFRA procedure succeeded!\n", ra->rnti);
@@ -921,12 +921,12 @@ void update_ul_ue_R_Qm(int mcs, const NR_pusch_semi_static_t *ps, uint16_t *R, u
   }
 }
 
-void nr_ue_max_mcs_min_rb(int mu, int ph, NR_pusch_semi_static_t *ps, long* deltaMCS, uint16_t minRb, uint32_t tbs, uint16_t *Rb, uint8_t *mcs)
+void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_pusch_semi_static_t *ps, long* deltaMCS, uint16_t minRb, uint32_t tbs, uint16_t *Rb, uint8_t *mcs)
 {
   AssertFatal(*Rb >= minRb, "illegal Rb %d < minRb %d\n", *Rb, minRb);
   AssertFatal(*mcs >= 0 && *mcs <= 28, "illegal MCS %d\n", *mcs);
 
-  int tbs_bits = tbs << 3;
+  const int tbs_bits = tbs << 3;
   uint16_t R;
   uint8_t Qm;
   update_ul_ue_R_Qm(*mcs, ps, &R, &Qm);
@@ -939,7 +939,7 @@ void nr_ue_max_mcs_min_rb(int mu, int ph, NR_pusch_semi_static_t *ps, long* delt
                                   ps->N_PRB_DMRS*ps->num_dmrs_symb,
                                   deltaMCS);
 
-  while (ph < tx_power && *Rb >= minRb) {
+  while (ph_limit < tx_power && *Rb >= minRb) {
     (*Rb)--;
     tx_power = compute_bw_factor(mu, *Rb) +
                compute_delta_tf(tbs_bits,
@@ -950,7 +950,7 @@ void nr_ue_max_mcs_min_rb(int mu, int ph, NR_pusch_semi_static_t *ps, long* delt
                                 deltaMCS);
   }
 
-  while (ph < tx_power && *mcs > 6) {
+  while (ph_limit < tx_power && *mcs > 6) {
     (*mcs)--;
     update_ul_ue_R_Qm(*mcs, ps, &R, &Qm);
     tx_power = compute_bw_factor(mu, *Rb) +
@@ -962,8 +962,9 @@ void nr_ue_max_mcs_min_rb(int mu, int ph, NR_pusch_semi_static_t *ps, long* delt
                                 deltaMCS);
   }
 
-  if (ph < tx_power)
-    LOG_W(NR_MAC, "PH %d < tx_power %d (RBs %d, MCS %d)\n", ph, tx_power, *Rb, *mcs);
+  if (ph_limit < tx_power)
+    LOG_W(NR_MAC, "Normalized power %d based on current resources (RBs %d, MCS %d) exceed reported PHR %d (normalized value)\n",
+          tx_power, *Rb, *mcs, ph_limit);
 }
 
 static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
