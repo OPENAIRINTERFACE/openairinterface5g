@@ -631,7 +631,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
   nr_init_prs(gNB);
 
-
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
   }

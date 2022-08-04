@@ -587,6 +587,9 @@ void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t
   *peak_idx = max_idx;
 }
 
+#define CH_INTERP 0
+#define NO_INTERP 1
+
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,
                              uint8_t gNB_id,
