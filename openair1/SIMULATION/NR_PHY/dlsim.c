@@ -280,7 +280,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   NR_UE_info_t *UE_info = RC.nrmac[module_id]->UE_info.list[0];
   AssertFatal(RC.nrmac[module_id]->UE_info.list[1]==NULL, "can have only a single UE\n");
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
-  NR_UE_DL_BWP_t *BWP = &UE_info->current_DL_BWP;
+  NR_UE_DL_BWP_t *current_BWP = &UE_info->current_DL_BWP;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
   uint8_t nr_of_candidates = 0;
@@ -307,7 +307,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  nr_set_pdsch_semi_static(BWP,
+  nr_set_pdsch_semi_static(current_BWP,
                            scc,
                            /* tda = */ 0,
                            g_nrOfLayers,
@@ -320,10 +320,10 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_pdsch->mcs = g_mcsIndex;
   /* the following might override the table that is mandated by RRC
    * configuration */
-  BWP->mcsTableIdx = g_mcsTableIdx;
+  current_BWP->mcsTableIdx = g_mcsTableIdx;
 
-  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
-  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
+  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
+  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
@@ -351,7 +351,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   AssertFatal(sched_pdsch->rbStart >= 0, "invalid rbStart %d\n", sched_pdsch->rbStart);
   AssertFatal(sched_pdsch->rbSize > 0, "invalid rbSize %d\n", sched_pdsch->rbSize);
   AssertFatal(sched_pdsch->mcs >= 0, "invalid mcs %d\n", sched_pdsch->mcs);
-  AssertFatal(BWP->mcsTableIdx >= 0 && BWP->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", BWP->mcsTableIdx);
+  AssertFatal(current_BWP->mcsTableIdx >= 0 && current_BWP->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", current_BWP->mcsTableIdx);
 }
 
 typedef struct {

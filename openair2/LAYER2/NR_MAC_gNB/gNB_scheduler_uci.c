@@ -165,16 +165,16 @@ void nr_csi_meas_reporting(int Mod_idP,
 
   UE_iterator(RC.nrmac[Mod_idP]->UE_info.list, UE ) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    NR_UE_UL_BWP_t *UL_BWP = &UE->current_UL_BWP;
-    const int n_slots_frame = nr_slots_per_frame[UL_BWP->scs];
+    NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
+    const int n_slots_frame = nr_slots_per_frame[ul_bwp->scs];
     if ((sched_ctrl->rrc_processing_timer > 0) || (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0)) {
       continue;
     }
-    const NR_CSI_MeasConfig_t *csi_measconfig = UL_BWP->csi_MeasConfig;
+    const NR_CSI_MeasConfig_t *csi_measconfig = ul_bwp->csi_MeasConfig;
     if (!csi_measconfig) continue;
     AssertFatal(csi_measconfig->csi_ReportConfigToAddModList->list.count > 0,
                 "NO CSI report configuration available");
-    NR_PUCCH_Config_t *pucch_Config = UL_BWP->pucch_Config;
+    NR_PUCCH_Config_t *pucch_Config = ul_bwp->pucch_Config;
 
     for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
       NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
@@ -214,7 +214,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       curr_pucch->resource_indicator = res_index;
       curr_pucch->csi_bits += nr_get_csi_bitlen(UE->csi_report_template, csi_report_id);
 
-      int bwp_start = UL_BWP->BWPStart;
+      int bwp_start = ul_bwp->BWPStart;
 
       // going through the list of PUCCH resources to find the one indexed by resource_id
       uint16_t *vrb_map_UL = &RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
@@ -378,7 +378,7 @@ void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot) {
   int ssb_index[MAX_NUM_SSB] = {0};
   int ssb_rsrp[MAX_NUM_SSB] = {0};
   uint8_t idx = 0;
-  NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
+  NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
   uint8_t nr_ssbri_cri = 0;
@@ -388,8 +388,8 @@ void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot) {
   uint8_t i, j;
 
   //bwp indicator
-  int n_dl_bwp = BWP->n_dl_bwp;
-  const int bwp_id = BWP->bwp_id;
+  int n_dl_bwp = dl_bwp->n_dl_bwp;
+  const int bwp_id = dl_bwp->bwp_id;
   if (n_dl_bwp < 4)
     pdsch_bwp_id = bwp_id;
   else
@@ -655,7 +655,6 @@ void evaluate_cqi_report(uint8_t *payload,
                          long *cqi_Table){
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
 
   //TODO sub-band CQI report not yet implemented
   int cqi_bitlen = csi_report->csi_meas_bitlen.cqi_bitlen[ri];
@@ -679,7 +678,7 @@ void evaluate_cqi_report(uint8_t *payload,
 
   // TODO for wideband case and multiple TB
   const int cqi_idx = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb;
-  const int mcs_table = BWP->mcsTableIdx;
+  const int mcs_table = UE->current_DL_BWP.mcsTableIdx;
   const int cqi_table = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.cqi_table;
   sched_ctrl->dl_max_mcs = get_mcs_from_cqi(mcs_table, cqi_table, cqi_idx);
 }
@@ -758,8 +757,8 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
   uint16_t bitlen = uci_pdu->csi_part1.csi_part1_bit_len;
   NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type = NR_CSI_ReportConfig__reportQuantity_PR_NOTHING;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
-  const int n_slots_frame = nr_slots_per_frame[BWP->scs];
+  NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
+  const int n_slots_frame = nr_slots_per_frame[ul_bwp->scs];
   int cumul_bits = 0;
   int r_index = -1;
   for (int csi_report_id = 0; csi_report_id < csi_MeasConfig->csi_ReportConfigToAddModList->list.count; csi_report_id++ ) {
@@ -1043,8 +1042,8 @@ int nr_acknack_scheduling(int mod_id,
   const int CC_id = 0;
   const int minfbtime = RC.nrmac[mod_id]->minRXTXTIMEpdsch;
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[mod_id]->common_channels[CC_id].ServingCellConfigCommon;
-  const NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
-  const int n_slots_frame = nr_slots_per_frame[BWP->scs];
+  const NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
+  const int n_slots_frame = nr_slots_per_frame[ul_bwp->scs];
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   AssertFatal(tdd || RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD, "Dynamic TDD not handled yet\n");
   const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
@@ -1059,10 +1058,10 @@ int nr_acknack_scheduling(int mod_id,
    *   later)
    * * each UE has dedicated PUCCH Format 0 resources, and we use index 0! */
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_PUCCH_Config_t *pucch_Config = BWP->pucch_Config;
+  NR_PUCCH_Config_t *pucch_Config = ul_bwp->pucch_Config;
 
-  int bwp_start = BWP->BWPStart;
-  int bwp_size = BWP->BWPSize;
+  int bwp_start = ul_bwp->BWPStart;
+  int bwp_size = ul_bwp->BWPSize;
 
   NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[0];
   LOG_D(NR_MAC, "In %s: %4d.%2d Trying to allocate pucch, current DAI %d\n", __FUNCTION__, frame, slot, pucch->dai_c);
@@ -1308,10 +1307,10 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
 
   UE_iterator(nrmac->UE_info.list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
-    const int n_slots_frame = nr_slots_per_frame[BWP->scs];
+    NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
+    const int n_slots_frame = nr_slots_per_frame[ul_bwp->scs];
     if (sched_ctrl->ul_failure==1 || sched_ctrl->rrc_processing_timer>0) continue;
-    NR_PUCCH_Config_t *pucch_Config = BWP->pucch_Config;
+    NR_PUCCH_Config_t *pucch_Config = ul_bwp->pucch_Config;
 
     if (!pucch_Config || !pucch_Config->schedulingRequestResourceToAddModList)
       continue;

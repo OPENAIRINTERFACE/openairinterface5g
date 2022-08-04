@@ -388,8 +388,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
-  NR_UE_UL_BWP_t *UBWP = &UE->current_UL_BWP;
+  NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
+  NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
@@ -404,7 +404,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   }
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : BWP->BWPSize;
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : dl_bwp->BWPSize;
 
   int rbStart = 0; // start wrt BWPstart
   int rbSize = 0;
@@ -435,7 +435,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
     if (ps->time_domain_allocation != tda) {
-      nr_set_pdsch_semi_static(BWP,
+      nr_set_pdsch_semi_static(dl_bwp,
                                scc,
                                tda,
                                ps->nrOfLayers,
@@ -447,7 +447,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
      * that we have enough resources */
     NR_pdsch_semi_static_t temp_ps = *ps;
 
-    nr_set_pdsch_semi_static(BWP,
+    nr_set_pdsch_semi_static(dl_bwp,
                              scc,
                              tda,
                              ps->nrOfLayers,
@@ -519,7 +519,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
 
-  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, UBWP->pucch_Config, CCEIndex);
+  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, ul_bwp->pucch_Config, CCEIndex);
   const int alloc = nr_acknack_scheduling(module_id, UE, frame, slot, r_pucch, 0);
   if (alloc<0) {
     LOG_D(MAC,
@@ -579,7 +579,7 @@ void pf_dl(module_id_t module_id,
       continue;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
+    NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
 
     if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
 
@@ -619,15 +619,15 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       const NR_bler_options_t *bo = &mac->dl_bler;
-      const int max_mcs_table = BWP->mcsTableIdx == 1 ? 27 : 28;
+      const int max_mcs_table = current_BWP->mcsTableIdx == 1 ? 27 : 28;
       const int max_mcs = min(sched_ctrl->dl_max_mcs, max_mcs_table);
       if (bo->harq_round_max == 1)
         sched_pdsch->mcs = max_mcs;
       else
         sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
       UE->layers = set_dl_nrOfLayers(sched_ctrl);
-      const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
-      const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
+      const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
+      const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
                                     R,
                                     1, /* rbSize */
@@ -657,13 +657,13 @@ void pf_dl(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
     const uint16_t rnti = iterator->UE->rnti;
 
-    NR_UE_DL_BWP_t *BWP = &iterator->UE->current_DL_BWP;
-    NR_UE_UL_BWP_t *UBWP = &iterator->UE->current_UL_BWP;
+    NR_UE_DL_BWP_t *dl_bwp = &iterator->UE->current_DL_BWP;
+    NR_UE_UL_BWP_t *ul_bwp = &iterator->UE->current_UL_BWP;
 
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     const uint16_t bwpSize = coresetid == 0 ?
       RC.nrmac[module_id]->cset0_bwp_size :
-      BWP->BWPSize;
+      dl_bwp->BWPSize;
     int rbStart = 0; // start wrt BWPstart
 
     if (sched_ctrl->available_dl_harq.head < 0) {
@@ -703,7 +703,7 @@ void pf_dl(module_id_t module_id,
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
 
-    int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, UBWP->pucch_Config, CCEIndex);
+    int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, ul_bwp->pucch_Config, CCEIndex);
     const int alloc = nr_acknack_scheduling(module_id, iterator->UE, frame, slot, r_pucch, 0);
 
     if (alloc<0) {
@@ -730,7 +730,7 @@ void pf_dl(module_id_t module_id,
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
     if (ps->nrOfLayers != iterator->UE->layers || ps->time_domain_allocation != tda ) {
-      nr_set_pdsch_semi_static(BWP,
+      nr_set_pdsch_semi_static(dl_bwp,
                                scc,
                                tda,
                                iterator->UE->layers,
@@ -749,8 +749,8 @@ void pf_dl(module_id_t module_id,
     while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
-    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
-    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, BWP->mcsTableIdx);
+    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
+    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
@@ -796,18 +796,18 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   NR_UE_info_t *UE=UE_info->list[0];
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
+  NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   int startSymbolIndex, nrOfSymbols;
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = BWP->tdaList;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = current_BWP->tdaList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : BWP->BWPSize;
-  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : BWP->BWPStart;
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : current_BWP->BWPSize;
+  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : current_BWP->BWPStart;
 
   const uint16_t slbitmap = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;

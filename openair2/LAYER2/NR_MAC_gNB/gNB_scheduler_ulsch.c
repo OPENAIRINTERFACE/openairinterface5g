@@ -1052,11 +1052,11 @@ void pf_ul(module_id_t module_id,
 
     LOG_D(NR_MAC,"pf_ul: preparing UL scheduling for UE %04x\n",UE->rnti);
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
+    NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
     int rbStart = 0; // wrt BWP start
 
-    const uint16_t bwpSize = BWP->BWPSize;
+    const uint16_t bwpSize = current_BWP->BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
     const NR_mac_dir_stats_t *stats = &UE->mac_stats.ul;
@@ -1149,7 +1149,7 @@ void pf_ul(module_id_t module_id,
       const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
       if (ps->time_domain_allocation != tda
           || ps->nrOfLayers != nrOfLayers) {
-        nr_set_pusch_semi_static(BWP,
+        nr_set_pusch_semi_static(current_BWP,
                                  scc,
                                  tda,
                                  nrOfLayers,
@@ -1176,7 +1176,7 @@ void pf_ul(module_id_t module_id,
 
       NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
       sched_pusch->mcs = min(nrmac->min_grant_mcs, sched_pusch->mcs);
-      update_ul_ue_R_Qm(sched_pusch, BWP->pusch_Config, BWP->mcs_table);
+      update_ul_ue_R_Qm(sched_pusch, current_BWP->pusch_Config, current_BWP->mcs_table);
       sched_pusch->rbStart = rbStart;
       sched_pusch->rbSize = min_rb;
       sched_pusch->tb_size = nr_compute_tbs(sched_pusch->Qm,
@@ -1199,7 +1199,7 @@ void pf_ul(module_id_t module_id,
 
     /* Create UE_sched for UEs eligibale for new data transmission*/
     /* Calculate coefficient*/
-    const uint32_t tbs = ul_pf_tbs[BWP->mcs_table][sched_pusch->mcs];
+    const uint32_t tbs = ul_pf_tbs[current_BWP->mcs_table][sched_pusch->mcs];
     float coeff_ue = (float) tbs / UE->ul_thr_ue;
     LOG_D(NR_MAC,"rnti %04x b %d, ul_thr_ue %f, tbs %d, coeff_ue %f\n",
           UE->rnti, b, UE->ul_thr_ue, tbs, coeff_ue);
@@ -1242,9 +1242,9 @@ void pf_ul(module_id_t module_id,
     }
     else LOG_D(NR_MAC, "%4d.%2d free CCE for UL DCI UE %04x\n",frame,slot, iterator->UE->rnti);
 
-    NR_UE_UL_BWP_t *BWP = &iterator->UE->current_UL_BWP;
+    NR_UE_UL_BWP_t *current_BWP = &iterator->UE->current_UL_BWP;
 
-    const uint16_t bwpSize = BWP->BWPSize;
+    const uint16_t bwpSize = current_BWP->BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
     NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
 
@@ -1256,13 +1256,13 @@ void pf_ul(module_id_t module_id,
     const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
     if (ps->time_domain_allocation != tda
         || ps->nrOfLayers != nrOfLayers) {
-      nr_set_pusch_semi_static(BWP,
+      nr_set_pusch_semi_static(current_BWP,
                                scc,
                                tda,
                                nrOfLayers,
                                ps);
     }
-    update_ul_ue_R_Qm(sched_pusch, BWP->pusch_Config, BWP->mcs_table);
+    update_ul_ue_R_Qm(sched_pusch, current_BWP->pusch_Config, current_BWP->mcs_table);
 
     int rbStart = 0;
     const uint16_t slbitmap = SL_to_bitmap(ps->startSymbolIndex, ps->nrOfSymbols);
@@ -1341,16 +1341,16 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
    * TDAs yet). If the TDA is negative, it means that there is no UL slot to
    * schedule now (slot + k2 is not UL slot) */
   NR_UE_sched_ctrl_t *sched_ctrl = &nr_mac->UE_info.list[0]->UE_sched_ctrl;
-  NR_UE_UL_BWP_t *BWP = &nr_mac->UE_info.list[0]->current_UL_BWP;
-  int mu = BWP->scs;
+  NR_UE_UL_BWP_t *current_BWP = &nr_mac->UE_info.list[0]->current_UL_BWP;
+  int mu = current_BWP->scs;
   const int temp_tda = get_ul_tda(nr_mac, scc, slot);
-  int K2 = get_K2(BWP->tdaList, temp_tda, mu);
+  int K2 = get_K2(current_BWP->tdaList, temp_tda, mu);
   const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) & 1023;
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   const int tda = get_ul_tda(nr_mac, scc, sched_slot);
   if (tda < 0)
     return false;
-  DevAssert(K2 == get_K2(BWP->tdaList, tda, mu));
+  DevAssert(K2 == get_K2(current_BWP->tdaList, tda, mu));
 
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
     return false;
@@ -1364,7 +1364,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
                     is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot);
 
   // FIXME: Avoid mixed slots for initialUplinkBWP
-  if (BWP->bwp_id==0 && is_mixed_slot)
+  if (current_BWP->bwp_id==0 && is_mixed_slot)
     return false;
 
   // Avoid slots with the SRS
@@ -1379,9 +1379,9 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   sched_ctrl->sched_pusch.frame = sched_frame;
   UE_iterator(nr_mac->UE_info.list, UE2) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE2->UE_sched_ctrl;
-    AssertFatal(K2 == get_K2(BWP->tdaList, tda, mu),
+    AssertFatal(K2 == get_K2(current_BWP->tdaList, tda, mu),
                 "Different K2, %d(UE%d) != %ld(UE%04x)\n",
-		K2, 0, get_K2(BWP->tdaList, tda, mu), UE2->rnti);
+		K2, 0, get_K2(current_BWP->tdaList, tda, mu), UE2->rnti);
     sched_ctrl->sched_pusch.slot = sched_slot;
     sched_ctrl->sched_pusch.frame = sched_frame;
   }
@@ -1392,10 +1392,10 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
 
-  const uint16_t bwpSize = BWP->BWPSize;
-  const uint16_t bwpStart = BWP->BWPStart;
+  const uint16_t bwpSize = current_BWP->BWPSize;
+  const uint16_t bwpStart = current_BWP->BWPStart;
 
-  const int startSymbolAndLength = BWP->tdaList->list.array[tda]->startSymbolAndLength;
+  const int startSymbolAndLength = current_BWP->tdaList->list.array[tda]->startSymbolAndLength;
   int startSymbolIndex, nrOfSymbols;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
   const uint16_t symb = SL_to_bitmap(startSymbolIndex, nrOfSymbols);

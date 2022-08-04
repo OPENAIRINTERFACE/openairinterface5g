@@ -508,7 +508,7 @@ bool nr_find_nb_rb(uint16_t Qm,
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
 
-void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
+void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *dl_bwp,
                               const NR_ServingCellConfigCommon_t *scc,
                               int tda,
                               uint8_t layers,
@@ -517,11 +517,11 @@ void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
 {
   bool reset_dmrs = false;
 
-  NR_PDSCH_Config_t *pdsch_Config = BWP->pdsch_Config;
+  NR_PDSCH_Config_t *pdsch_Config = dl_bwp->pdsch_Config;
   LOG_D(NR_MAC,"tda %d, ps->time_domain_allocation %d,layers %d, ps->nrOfLayers %d, pdsch_config %p\n",tda,ps->time_domain_allocation,layers,ps->nrOfLayers,pdsch_Config);
   reset_dmrs = true;
   ps->time_domain_allocation = tda;
-  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = BWP->tdaList;
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = dl_bwp->tdaList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   ps->mapping_type = tdaList->list.array[tda]->mappingType;
   if (pdsch_Config) {
@@ -535,7 +535,7 @@ void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
 
-  if (BWP->dci_format == NR_DL_DCI_FORMAT_1_0) {
+  if (dl_bwp->dci_format == NR_DL_DCI_FORMAT_1_0) {
     if (ps->nrOfSymbols == 2)
       ps->numDmrsCdmGrpsNoData = 1;
     else
@@ -562,7 +562,7 @@ void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
   LOG_D(NR_MAC,"Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",ps->N_PRB_DMRS,ps->dl_dmrs_symb_pos,ps->N_DMRS_SLOT);
 }
 
-void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *BWP,
+void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *ul_bwp,
                               const NR_ServingCellConfigCommon_t *scc,
                               int tda,
                               uint8_t nrOfLayers,
@@ -570,24 +570,24 @@ void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *BWP,
 
   ps->time_domain_allocation = tda;
 
-  const int startSymbolAndLength = BWP->tdaList->list.array[tda]->startSymbolAndLength;
+  const int startSymbolAndLength = ul_bwp->tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength,
           &ps->startSymbolIndex,
           &ps->nrOfSymbols);
 
   ps->nrOfLayers = nrOfLayers;
   // TODO setting of cdm groups with no data to be redone for MIMO
-  if (BWP->transform_precoding || nrOfLayers<3)
-    ps->num_dmrs_cdm_grps_no_data = (BWP->dci_format == NR_UL_DCI_FORMAT_0_1) ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2);
+  if (ul_bwp->transform_precoding || nrOfLayers<3)
+    ps->num_dmrs_cdm_grps_no_data = (ul_bwp->dci_format == NR_UL_DCI_FORMAT_0_1) ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2);
   else
     ps->num_dmrs_cdm_grps_no_data = 2;
 
   /* DMRS calculations */
-  ps->mapping_type = BWP->tdaList->list.array[tda]->mappingType;
-  ps->NR_DMRS_UplinkConfig = BWP->pusch_Config ?
+  ps->mapping_type = ul_bwp->tdaList->list.array[tda]->mappingType;
+  ps->NR_DMRS_UplinkConfig = ul_bwp->pusch_Config ?
     (ps->mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA ?
-     BWP->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup :
-     BWP->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup) : NULL;
+     ul_bwp->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup :
+     ul_bwp->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup) : NULL;
   ps->dmrs_config_type = ps->NR_DMRS_UplinkConfig ? ((ps->NR_DMRS_UplinkConfig->dmrs_Type == NULL ? 0 : 1)) : 0;
   const pusch_dmrs_AdditionalPosition_t additional_pos =
 						     ps->NR_DMRS_UplinkConfig ? (ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL
@@ -882,13 +882,13 @@ void config_uldci(const NR_SIB1_t *sib1,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int time_domain_assignment,
                   uint8_t tpc,
-                  NR_UE_UL_BWP_t *UBWP) {
+                  NR_UE_UL_BWP_t *ul_bwp) {
 
-  int bwp_id = UBWP->bwp_id;
-  nr_dci_format_t dci_format = UBWP->dci_format;
+  int bwp_id = ul_bwp->bwp_id;
+  nr_dci_format_t dci_format = ul_bwp->dci_format;
 
   dci_pdu_rel15->frequency_domain_assignment.val =
-      PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, UBWP->BWPSize);
+      PRBalloc_to_locationandbandwidth0(pusch_pdu->rb_size, pusch_pdu->rb_start, ul_bwp->BWPSize);
   dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
   dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
   dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
@@ -896,7 +896,7 @@ void config_uldci(const NR_SIB1_t *sib1,
   dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
   dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
   dci_pdu_rel15->tpc = tpc;
-  NR_PUSCH_Config_t *pusch_Config = UBWP->pusch_Config;
+  NR_PUSCH_Config_t *pusch_Config = ul_bwp->pusch_Config;
 
   if (pusch_Config) AssertFatal(pusch_Config->resourceAllocation == NR_PUSCH_Config__resourceAllocation_resourceAllocationType1,
 			"Only frequency resource allocation type 1 is currently supported\n");
@@ -908,7 +908,7 @@ void config_uldci(const NR_SIB1_t *sib1,
       LOG_D(NR_MAC,"Configuring DCI Format 0_1\n");
       dci_pdu_rel15->dai[0].val = 0; //TODO
       // bwp indicator as per table 7.3.1.1.2-1 in 38.212
-      dci_pdu_rel15->bwp_indicator.val = UBWP->n_ul_bwp < 4 ? bwp_id : bwp_id - 1;
+      dci_pdu_rel15->bwp_indicator.val = ul_bwp->n_ul_bwp < 4 ? bwp_id : bwp_id - 1;
       // SRS resource indicator
       if (pusch_Config &&
           pusch_Config->txConfig != NULL) {
@@ -1027,7 +1027,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   NR_PUCCH_ResourceSet_t *pucchresset;
   NR_PUCCH_FormatConfig_t *pucchfmt;
   NR_PUCCH_ResourceId_t *resource_id = NULL;
-  NR_UE_UL_BWP_t *BWP = &UE->current_UL_BWP;
+  NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
   long *id0 = NULL;
   int n_list, n_set;
@@ -1039,7 +1039,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
   uint16_t O_uci = O_csi + O_ack;
 
-  NR_PUSCH_Config_t *pusch_Config = BWP->pusch_Config;
+  NR_PUSCH_Config_t *pusch_Config = current_BWP->pusch_Config;
 
   long *pusch_id = pusch_Config ? pusch_Config->dataScramblingIdentityPUSCH : NULL;
 
@@ -1049,7 +1049,7 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
     id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
   else id0 = scc->physCellId;
 
-  NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon = BWP->pucch_ConfigCommon;
+  NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon = current_BWP->pucch_ConfigCommon;
 
   // hop flags and hopping id are valid for any BWP
   switch (pucch_ConfigCommon->pucch_GroupHopping){
@@ -1077,12 +1077,12 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   else
     pucch_pdu->hopping_id = *scc->physCellId;
 
-  pucch_pdu->bwp_size  = BWP->BWPSize;
-  pucch_pdu->bwp_start = BWP->BWPStart;
-  pucch_pdu->subcarrier_spacing = BWP->scs;
-  pucch_pdu->cyclic_prefix = (BWP->cyclicprefix==NULL) ? 0 : *BWP->cyclicprefix;
+  pucch_pdu->bwp_size  = current_BWP->BWPSize;
+  pucch_pdu->bwp_start = current_BWP->BWPStart;
+  pucch_pdu->subcarrier_spacing = current_BWP->scs;
+  pucch_pdu->cyclic_prefix = (current_BWP->cyclicprefix==NULL) ? 0 : *current_BWP->cyclicprefix;
 
-  NR_PUCCH_Config_t *pucch_Config = BWP->pucch_Config;
+  NR_PUCCH_Config_t *pucch_Config = current_BWP->pucch_Config;
   if (r_pucch<0 || pucch_Config){
       LOG_D(NR_MAC,"pucch_acknak: Filling dedicated configuration for PUCCH\n");
 
@@ -1281,14 +1281,14 @@ void set_r_pucch_parms(int rsetindex,
 }
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
-                 const NR_UE_DL_BWP_t *BWP,
+                 const NR_UE_DL_BWP_t *current_BWP,
                  const NR_ControlResourceSet_t *coreset,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format) {
 
   AssertFatal(CellGroup!=NULL,"CellGroup shouldn't be null here\n");
 
-  const NR_PDSCH_Config_t *pdsch_Config = BWP ? BWP->pdsch_Config : NULL;
+  const NR_PDSCH_Config_t *pdsch_Config = current_BWP ? current_BWP->pdsch_Config : NULL;
 
   switch(format) {
     case NR_UL_DCI_FORMAT_0_1:
@@ -1350,8 +1350,8 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
       else
         dci_pdu_rel15->srs_request.val = 0;
     // CBGTI and CBGFI
-    if (BWP->pdsch_servingcellconfig &&
-        BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL)
+    if (current_BWP->pdsch_servingcellconfig &&
+        current_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL)
       AssertFatal(1==0,"CBG transmission currently not supported\n");
     break;
   default :
@@ -1362,7 +1362,7 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,
-                        const NR_UE_DL_BWP_t *BWP,
+                        const NR_UE_DL_BWP_t *current_BWP,
                         nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int dci_format,
@@ -1383,7 +1383,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
-    prepare_dci(CellGroup, BWP, coreset, dci_pdu_rel15, dci_format);
+    prepare_dci(CellGroup, current_BWP, coreset, dci_pdu_rel15, dci_format);
 
   /// Payload generation
   switch (dci_format) {
@@ -2251,7 +2251,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
         if(ul_bwp->bwp_Id == UL_BWP->bwp_id)
           break;
       }
-      AssertFatal(ul_bwp!=NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n",UL_BWP->bwp_id);
+      AssertFatal(ul_bwp!=NULL,"Couldn't find ULBWP corresponding to BWP ID %ld\n",UL_BWP->bwp_id);
     }
 
     // selection of dedicated BWPs
@@ -2447,23 +2447,15 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   memset(sched_ctrl, 0, sizeof(*sched_ctrl));
   sched_ctrl->dl_max_mcs = 28; /* do not limit MCS for individual UEs */
-  sched_ctrl->set_pmi = false;
-  sched_ctrl->ta_frame = 0;
   sched_ctrl->ta_update = 31;
-  sched_ctrl->ta_apply = false;
-  sched_ctrl->ul_rssi = 0;
-  sched_ctrl->pucch_consecutive_dtx_cnt = 0;
-  sched_ctrl->pusch_consecutive_dtx_cnt = 0;
-  sched_ctrl->ul_failure                = 0;
   sched_ctrl->sched_srs.frame = -1;
   sched_ctrl->sched_srs.slot = -1;
-  sched_ctrl->sched_srs.srs_scheduled = false;
 
   // initialize UE BWP information
-  NR_UE_DL_BWP_t *DL_BWP = &UE->current_DL_BWP;
-  memset(DL_BWP, 0, sizeof(*DL_BWP));
-  NR_UE_UL_BWP_t *UL_BWP = &UE->current_UL_BWP;
-  memset(UL_BWP, 0, sizeof(*UL_BWP));
+  NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
+  memset(dl_bwp, 0, sizeof(*dl_bwp));
+  NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
+  memset(ul_bwp, 0, sizeof(*ul_bwp));
   configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE);
 
   /* set illegal time domain allocation to force recomputation of all fields */
@@ -2473,13 +2465,13 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   /* Set default BWPs */
   sched_ctrl->next_dl_bwp_id = -1;
   sched_ctrl->next_ul_bwp_id = -1;
-  AssertFatal(UL_BWP->n_ul_bwp <= NR_MAX_NUM_BWP,
+  AssertFatal(ul_bwp->n_ul_bwp <= NR_MAX_NUM_BWP,
               "uplinkBWP_ToAddModList has %d BWP!\n",
-              UL_BWP->n_ul_bwp);
+              ul_bwp->n_ul_bwp);
 
   /* get Number of HARQ processes for this UE */
   // pdsch_servingcellconfig == NULL in SA -> will create default (8) number of HARQ processes
-  create_dl_harq_list(sched_ctrl, DL_BWP->pdsch_servingcellconfig);
+  create_dl_harq_list(sched_ctrl, dl_bwp->pdsch_servingcellconfig);
   // add all available UL HARQ processes for this UE
   // nb of ul harq processes not configurable
   create_nr_list(&sched_ctrl->available_ul_harq, 16);
@@ -2671,12 +2663,12 @@ void nr_csirs_scheduling(int Mod_idP,
       continue;
     }
 
-    NR_UE_DL_BWP_t *BWP = &UE->current_DL_BWP;
-    NR_UE_UL_BWP_t *UBWP = &UE->current_UL_BWP;
+    NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
+    NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
 
-    if (!UBWP->csi_MeasConfig) continue;
+    if (!ul_bwp->csi_MeasConfig) continue;
 
-    NR_CSI_MeasConfig_t *csi_measconfig = UBWP->csi_MeasConfig;
+    NR_CSI_MeasConfig_t *csi_measconfig = ul_bwp->csi_MeasConfig;
 
     if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList != NULL) {
 
@@ -2702,20 +2694,20 @@ void nr_csirs_scheduling(int Mod_idP,
 
           nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csirs_pdu_rel15 = &dl_tti_csirs_pdu->csi_rs_pdu.csi_rs_pdu_rel15;
 
-          csirs_pdu_rel15->subcarrier_spacing = BWP->scs;
-          if (BWP->cyclicprefix)
-            csirs_pdu_rel15->cyclic_prefix = *BWP->cyclicprefix;
+          csirs_pdu_rel15->subcarrier_spacing = dl_bwp->scs;
+          if (dl_bwp->cyclicprefix)
+            csirs_pdu_rel15->cyclic_prefix = *dl_bwp->cyclicprefix;
           else
             csirs_pdu_rel15->cyclic_prefix = 0;
 
           // According to last paragraph of TS 38.214 5.2.2.3.1
-          if (resourceMapping.freqBand.startingRB < BWP->BWPStart) {
-            csirs_pdu_rel15->start_rb = BWP->BWPStart;
+          if (resourceMapping.freqBand.startingRB < dl_bwp->BWPStart) {
+            csirs_pdu_rel15->start_rb = dl_bwp->BWPStart;
           } else {
             csirs_pdu_rel15->start_rb = resourceMapping.freqBand.startingRB;
           }
-          if (resourceMapping.freqBand.nrofRBs > (BWP->BWPStart + BWP->BWPSize - csirs_pdu_rel15->start_rb)) {
-            csirs_pdu_rel15->nr_of_rbs = BWP->BWPStart + BWP->BWPSize - csirs_pdu_rel15->start_rb;
+          if (resourceMapping.freqBand.nrofRBs > (dl_bwp->BWPStart + dl_bwp->BWPSize - csirs_pdu_rel15->start_rb)) {
+            csirs_pdu_rel15->nr_of_rbs = dl_bwp->BWPStart + dl_bwp->BWPSize - csirs_pdu_rel15->start_rb;
           } else {
             csirs_pdu_rel15->nr_of_rbs = resourceMapping.freqBand.nrofRBs;
           }
@@ -2942,23 +2934,23 @@ void schedule_nr_bwp_switch(module_id_t module_id,
 
   UE_iterator(UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    NR_UE_DL_BWP_t *DLBWP = &UE->current_DL_BWP;
-    NR_UE_UL_BWP_t *ULBWP = &UE->current_UL_BWP;
+    NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
+    NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
     if (sched_ctrl->rrc_processing_timer == 0 && UE->Msg4_ACKed && sched_ctrl->next_dl_bwp_id >= 0) {
 
       int schedule_bwp_switching = false;
-      if (DLBWP->bwp_id == 0) {
+      if (dl_bwp->bwp_id == 0) {
         // Switching from Initial BWP to Dedicated BWP
         if (sched_ctrl->next_dl_bwp_id > 0 && sched_ctrl->next_ul_bwp_id > 0) {
           schedule_bwp_switching = true;
           LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from Initial DL BWP to %ld and from Initial UL BWP to %ld\n",
                 frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
         }
-      } else if (DLBWP->bwp_id != sched_ctrl->next_dl_bwp_id && ULBWP->bwp_id != sched_ctrl->next_ul_bwp_id) {
+      } else if (dl_bwp->bwp_id != sched_ctrl->next_dl_bwp_id && ul_bwp->bwp_id != sched_ctrl->next_ul_bwp_id) {
         // Switching between Dedicated BWPs
         schedule_bwp_switching = true;
         LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from dl_bwp_id %ld to %ld and from ul_bwp_id %ld to %ld\n",
-              frame, slot, UE->rnti, DLBWP->bwp_id, sched_ctrl->next_dl_bwp_id, ULBWP->bwp_id, sched_ctrl->next_ul_bwp_id);
+              frame, slot, UE->rnti, dl_bwp->bwp_id, sched_ctrl->next_dl_bwp_id, ul_bwp->bwp_id, sched_ctrl->next_ul_bwp_id);
       }
 
       if (schedule_bwp_switching) {

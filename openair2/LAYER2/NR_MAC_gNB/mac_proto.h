@@ -192,7 +192,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   dci_pdu_rel15_t *dci_pdu_rel15,
                   int time_domain_assignment,
                   uint8_t tpc,
-                  NR_UE_UL_BWP_t *BWP);
+                  NR_UE_UL_BWP_t *ul_bwp);
 
 void nr_schedule_pucch(gNB_MAC_INST *nrmac,
                        frame_t frameP,
@@ -285,7 +285,7 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,
-                        const NR_UE_DL_BWP_t *BWP,
+                        const NR_UE_DL_BWP_t *dl_bwp,
                         nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int dci_formats,
@@ -296,7 +296,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         uint16_t cset0_bwp_size);
 
 void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
-                 const NR_UE_DL_BWP_t *BWP,
+                 const NR_UE_DL_BWP_t *dl_bwp,
                  const NR_ControlResourceSet_t *coreset,
                  dci_pdu_rel15_t *dci_pdu_rel15,
                  nr_dci_format_t format);
@@ -325,14 +325,14 @@ long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu);
 
-void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *BWP,
+void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *dl_bwp,
                               const NR_ServingCellConfigCommon_t *scc,
                               int tda,
                               uint8_t layers,
                               NR_UE_sched_ctrl_t *sched_ctrl,
                               NR_pdsch_semi_static_t *ps);
 
-void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *BWP,
+void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *ul_bwp,
                               const NR_ServingCellConfigCommon_t *scc,
                               int tda,
                               uint8_t nrOfLayers,
