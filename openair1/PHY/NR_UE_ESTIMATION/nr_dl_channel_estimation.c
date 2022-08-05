@@ -40,11 +40,6 @@
 //#define DEBUG_PRS_PRINTS
 #define IDFT_INTERPOL_FACTOR 1
 extern short nr_qpsk_mod_table[8];
-int k_prime_table[4][12] = {
-      {0,1,0,1,0,1,0,1,0,1,0,1},
-      {0,2,1,3,0,2,1,3,0,2,1,3},
-      {0,3,1,4,2,5,0,3,1,4,2,5},
-      {0,6,3,9,1,7,4,10,2,8,5,11}};
 
 static inline int abs32(int x)
 {
@@ -85,6 +80,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   int16_t num_pilots   = (12/prs_cfg->CombSize)*prs_cfg->NumRB;
   int16_t start_offset = (IDFT_INTERPOL_FACTOR-1)*frame_params->ofdm_symbol_size>>1;
 
+  int16_t k_prime_table[K_PRIME_TABLE_ROW_SIZE][K_PRIME_TABLE_COL_SIZE] = PRS_K_PRIME_TABLE;
   for(int l = prs_cfg->SymbolStart; l < prs_cfg->SymbolStart+prs_cfg->NumPRSSymbols; l++)
   {
     int symInd = l-prs_cfg->SymbolStart;

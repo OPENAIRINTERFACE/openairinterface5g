@@ -141,7 +141,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   NR_DL_FRAME_PARMS *const fp            = &ue->frame_parms;
   NR_UE_COMMON *const common_vars        = &ue->common_vars;
   NR_UE_PBCH  **const pbch_vars          = ue->pbch_vars;
-  NR_UE_PRS   **const prs_vars           = ue->prs_vars;
   NR_UE_PRACH **const prach_vars         = ue->prach_vars;
   NR_UE_CSI_IM **const csiim_vars        = ue->csiim_vars;
   NR_UE_CSI_RS **const csirs_vars        = ue->csirs_vars;
@@ -191,55 +190,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
 
-  // PRS vars
-  for(int idx = 0; idx < NR_MAX_PRS_COMB_SIZE; idx++)
-  {
-    prs_vars[idx]   = (NR_UE_PRS *)malloc16_clear(sizeof(NR_UE_PRS));
-    for(int k = 0; k < NR_MAX_PRS_RESOURCES_PER_SET; k++)
-    {
-      // PRS channel estimates
-      prs_vars[idx]->prs_resource[k].prs_ch_estimates      = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
-      prs_vars[idx]->prs_resource[k].prs_ch_estimates_time = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
-      AssertFatal(((prs_vars[idx]->prs_resource[k].prs_ch_estimates!=NULL) || (prs_vars[idx]->prs_resource[k].prs_ch_estimates_time!=NULL)), "NR UE init: PRS channel estimates malloc failed for gNB_id %d\n", idx);
-      prs_vars[idx]->prs_resource[k].prs_meas              = (prs_meas_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(prs_meas_t *) );
-      AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas!=NULL), "NR UE init: PRS measurements malloc failed for gNB_id %d\n", idx);
-
-      for (i=0; i<fp->nb_antennas_rx; i++) {
-        prs_vars[idx]->prs_resource[k].prs_ch_estimates[i]      = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-        prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[i] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-        AssertFatal(((prs_vars[idx]->prs_resource[k].prs_ch_estimates[i]!=NULL) || (prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[i]!=NULL)), "NR UE init: PRS channel estimates malloc failed for rx_ant %d\n", i);
-        prs_vars[idx]->prs_resource[k].prs_meas[i]              = (prs_meas_t *)malloc16_clear(sizeof(prs_meas_t) );
-        AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas[i]!=NULL), "NR UE init: PRS measurements malloc failed for rx_ant %d\n", i);
-      }
-    }
-  }
-  // load the config file params
-  RCconfig_nrUE_prs(ue);
-
-  //PRS sequence init
-  ue->nr_gold_prs = (uint32_t *****)malloc16(ue->prs_active_gNBs*sizeof(uint32_t ****));
-  uint32_t *****prs = ue->nr_gold_prs;
-  AssertFatal(prs!=NULL, "NR UE init: positioning reference signal malloc failed\n");
-  for (int gnb = 0; gnb < ue->prs_active_gNBs; gnb++) {
-    prs[gnb] = (uint32_t ****)malloc16(ue->prs_vars[gnb]->NumPRSResources*sizeof(uint32_t ***));
-    AssertFatal(prs[gnb]!=NULL, "NR UE init: positioning reference signal for gnb %d - malloc failed\n", gnb);
-    
-    for (int rsc = 0; rsc < ue->prs_vars[gnb]->NumPRSResources; rsc++) {
-      prs[gnb][rsc] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
-      AssertFatal(prs[gnb][rsc]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d- malloc failed\n", gnb, rsc);
-
-      for (int slot=0; slot<fp->slots_per_frame; slot++) {
-        prs[gnb][rsc][slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
-        AssertFatal(prs[gnb][rsc][slot]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d slot %d - malloc failed\n", gnb, rsc, slot);
-
-        for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-          prs[gnb][rsc][slot][symb] = (uint32_t *)malloc16(NR_MAX_PRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
-          AssertFatal(prs[gnb][rsc][slot][symb]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d slot %d symbol %d - malloc failed\n", gnb, rsc, slot, symb);
-        } // for symb
-      } // for slot
-    } // for rsc
-  } // for gnb
-  init_nr_gold_prs(ue);
 
   /////////////////////////PUSCH DMRS init/////////////////////////
   ///////////

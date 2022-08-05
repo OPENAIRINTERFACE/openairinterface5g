@@ -160,7 +160,6 @@ int main(int argc, char **argv)
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
-  double DS_TDL = .03;
   double ip =0.0;
   //unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
@@ -274,21 +273,6 @@ int main(int argc, char **argv)
       case 'G':
         channel_model=ETU;
         break;
-	
-      case 'H':
-        channel_model = TDL_C;
-	DS_TDL = .030; // 30 ns
-	break;
-  
-      case 'I':
-	channel_model = TDL_C;
-	DS_TDL = .3;  // 300ns
-        break;
-     
-      case 'J':
-	channel_model=TDL_D;
-	DS_TDL = .03;
-	break;
 
       default:
         printf("Unsupported channel model! Exiting.\n");
@@ -545,8 +529,10 @@ int main(int argc, char **argv)
                                 channel_model,
  				fs, 
 				bw, 
-				DS_TDL,
-                                0, 0, 0, 0);
+				300e-9,
+                                0,
+                                0,
+                                0, 0);
 
   if (gNB2UE==NULL) {
 	printf("Problem generating channel model. Exiting.\n");
@@ -689,16 +675,6 @@ int main(int argc, char **argv)
 		  	  	  	  	    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
   printf("txlev %d (%f)\n",txlev,10*log10(txlev));*/
 
-<<<<<<< HEAD
-
-  for (i=0; i<frame_length_complex_samples; i++) {
-    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-      s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-      s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
-    }
-  }
-=======
->>>>>>> origin/develop
   
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
@@ -707,19 +683,6 @@ int main(int argc, char **argv)
 
     for (trial=0; trial<n_trials; trial++) {
 
-<<<<<<< HEAD
-      if (channel_model != AWGN) {
-	// multipath channel
-	multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0,0);
-      }
-      else {
-	for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-	  memcpy(r_re[aa],s_re[aa],frame_length_complex_samples*sizeof(double));
-	  memcpy(r_im[aa],s_im[aa],frame_length_complex_samples*sizeof(double));
-	}
-      }
-       
-=======
       for (i=0; i<frame_length_complex_samples; i++) {
         for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
           r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
@@ -730,7 +693,6 @@ int main(int argc, char **argv)
       // multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
->>>>>>> origin/develop
       //AWGN
       sigma2_dB = 20*log10((double)AMP/4)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
@@ -786,44 +748,18 @@ int main(int argc, char **argv)
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
 	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms,ssb_index);
 
-  int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
-      
-  for(int j = 0; j < frame_parms->symbols_per_slot; j++)
-  {
+        int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
+	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
           nr_slot_fep(UE,
                       &proc,
-                      j%frame_parms->symbols_per_slot,
+                      i%frame_parms->symbols_per_slot,
                       ssb_slot);
-  }
 
-<<<<<<< HEAD
-	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
-          nr_pbch_channel_estimation(UE,&proc,0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
-  }
-
-      UE->prs_cfg.PRSResourceSetPeriod[0]=40; // PRS resource slot period
-      UE->prs_cfg.PRSResourceSetPeriod[1]=0;  // resource slot offset
-      UE->prs_cfg.SymbolStart=7;		
-      UE->prs_cfg.NumPRSSymbols=4;
-      UE->prs_cfg.NumRB=frame_parms->N_RB_DL;
-      UE->prs_cfg.RBOffset=0;
-      UE->prs_cfg.CombSize=2;
-      UE->prs_cfg.REOffset=0;
-      UE->prs_cfg.PRSResourceOffset=0;
-      UE->prs_cfg.PRSResourceRepetition=1;
-      UE->prs_cfg.PRSResourceTimeGap=1;
-      UE->prs_cfg.NPRSID=0;
-
-      //PRS channel estimation
-      nr_prs_channel_estimation(UE,&proc,frame_parms);
-
-=======
           nr_pbch_channel_estimation(UE,estimateSz, dl_ch_estimates, dl_ch_estimates_time, &proc, 
 				     0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
 
         }
 	fapiPbch_t result;
->>>>>>> origin/develop
         ret = nr_rx_pbch(UE,
                          &proc,
 			 estimateSz, dl_ch_estimates,
