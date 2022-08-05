@@ -50,12 +50,14 @@ typedef struct {
 } rt_ru_profiling_t;
 
 typedef struct {
-   int absslot_rx[RT_PROF_DEPTH];
+   int absslot_ux[RT_PROF_DEPTH];
+   struct timespec start_L1_RX[RT_PROF_DEPTH];
    struct timespec return_L1_RX[RT_PROF_DEPTH];
+   struct timespec start_L1_TX[RT_PROF_DEPTH];
    struct timespec return_L1_TX[RT_PROF_DEPTH];
    struct timespec return_L1_prachrx[RT_PROF_DEPTH];
-   struct timespec return_L1_pushL1[RT_PROF_DEPTH];
-} rt_l1_profiling_t;
+   struct timespec return_L1_puschL1[RT_PROF_DEPTH];
+} rt_L1_profiling_t;
 #ifdef __cplusplus
 }
 #endif
