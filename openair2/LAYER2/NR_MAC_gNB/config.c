@@ -514,12 +514,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     int nr_slots_period = n;
     int nr_dl_slots = n;
     int nr_ulstart_slot = 0;
-    int nr_mix_slots;
-    int nr_dlmix_slots;
 
     if (tdd) {
-      nr_mix_slots = tdd->nrofDownlinkSymbols != 0 || tdd->nrofUplinkSymbols != 0;
-      nr_dlmix_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
       nr_ulstart_slot = tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0);
 
       nr_dl_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
