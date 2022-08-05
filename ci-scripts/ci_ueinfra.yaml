@@ -50,7 +50,7 @@ amarisoft_ue_1:
   WakeupScript : none
   DetachScript : none
   #end 
-  Cmd : /root/NV17-12-21/ue/lteue 
+  Cmd : /root/NV18-06-2022/ue/lteue
   Config : /root/NV17-12-21/ue/config/oaicicd-ue-Ping-SATest.cfg 
   Duration : 60
   Ping : /tmp/test_ue1.log
@@ -71,7 +71,7 @@ amarisoft_ue_2:
   WakeupScript : none
   DetachScript : none
   #end 
-  Cmd : /root/NV17-12-21/ue/lteue 
+  Cmd : /root/NV18-06-2022/ue/lteue
   Config : /root/NV17-12-21/ue/config/xxxxxxx.cfg #to be updated for an other scenario 
   Duration : 60
   Ping :

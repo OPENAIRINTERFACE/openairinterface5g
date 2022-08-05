@@ -75,7 +75,6 @@
 #define MAX_NUM_BWP 5
 #define MAX_NUM_CORESET 12
 #define MAX_NUM_CCE 90
-#define MAX_HARQ_ROUNDS 4
 /*!\brief Maximum number of random access process */
 #define NR_NB_RA_PROC_MAX 4
 #define MAX_NUM_OF_SSB 64
@@ -509,38 +508,6 @@ struct CSI_Report {
 
 #define MAX_SR_BITLEN 8
 
-typedef struct {
-  uint8_t nb_ssbri_cri;
-  uint8_t cri_ssbri_bitlen;
-  uint8_t rsrp_bitlen;
-  uint8_t diff_rsrp_bitlen;
-}L1_RSRP_bitlen_t;
-
-typedef struct{
-  uint8_t ri_restriction;
-  uint8_t cri_bitlen;
-  uint8_t ri_bitlen;
-  uint8_t li_bitlen[8];
-  uint8_t pmi_x1_bitlen[8];
-  uint8_t pmi_x2_bitlen[8];
-  uint8_t cqi_bitlen[8];
-} CSI_Meas_bitlen_t;
-
-typedef struct nr_csi_report {
-  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
-  long periodicity;
-  uint16_t offset;
-  long ** SSB_Index_list;
-  long ** CSI_Index_list;
-//  uint8_t nb_of_nzp_csi_report;
-  uint8_t nb_of_csi_ssb_report;
-  L1_RSRP_bitlen_t CSI_report_bitlen;
-  CSI_Meas_bitlen_t csi_meas_bitlen;
-  int codebook_mode;
-  int N1;
-  int N2;
-} nr_csi_report_t;
-
 /*! As per the spec 38.212 and table:  6.3.1.1.2-12 in a single UCI sequence we can have multiple CSI_report 
   the number of CSI_report will depend on number of CSI resource sets that are configured in CSI-ResourceConfig RRC IE
   From spec 38.331 from the IE CSI-ResourceConfig for SSB RSRP reporting we can configure only one resource set 
@@ -700,10 +667,10 @@ typedef struct NR_bler_options {
   double upper;
   double lower;
   uint8_t max_mcs;
+  uint8_t harq_round_max;
 } NR_bler_options_t;
 
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
-#define MAX_CSI_REPORTCONFIG 48
 typedef struct {
   rnti_t rnti;
   /// scheduling control info
@@ -854,7 +821,6 @@ typedef struct gNB_MAC_INST_s {
   bool first_MIB;
   NR_bler_options_t dl_bler;
   NR_bler_options_t ul_bler;
-  uint8_t harq_round_max;
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
 } gNB_MAC_INST;

@@ -93,7 +93,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                int nrOfSymbols,
                                uint16_t dlDmrsSymbPos,
                                uint8_t candidate_idx,
-                               int num_total_bytes);
+                               uint16_t num_total_bytes);
 
 /* \brief default FR1 DL preprocessor init routine, returns preprocessor to call */
 nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id);
@@ -201,7 +201,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   int n_ubwp,
                   int bwp_id);
 
-void nr_schedule_pucch(gNB_MAC_INST* nrmac,
+void nr_schedule_pucch(gNB_MAC_INST *nrmac,
                        frame_t frameP,
                        sub_frame_t slotP);
 
@@ -216,12 +216,12 @@ void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
                            sub_frame_t slotP);
 
-int nr_acknack_scheduling( int Mod_idP,
-			   NR_UE_info_t * UE,
-                           frame_t frameP,
-                           sub_frame_t slotP,
-                           int r_pucch,
-                           int do_common);
+int nr_acknack_scheduling(int Mod_idP,
+                          NR_UE_info_t *UE,
+                          frame_t frameP,
+                          sub_frame_t slotP,
+                          int r_pucch,
+                          int do_common);
 
 void get_pdsch_to_harq_feedback(NR_UE_info_t *,
                                 int bwp_id,
@@ -409,8 +409,6 @@ void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti);
 void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti);
 
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
-
-void compute_csi_bitlen(NR_CSI_MeasConfig_t *csi_MeasConfig, NR_UE_info_t *UE);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 

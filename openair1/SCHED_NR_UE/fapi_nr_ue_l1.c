@@ -393,7 +393,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           case FAPI_NR_DL_CONFIG_TYPE_CSI_IM:
             csiim_config_pdu = &dl_config->dl_config_list[i].csiim_config_pdu.csiim_config_rel15;
             memcpy((void*)&(csiim_vars->csiim_config_pdu), (void*)csiim_config_pdu, sizeof(fapi_nr_dl_config_csiim_pdu_rel15_t));
-            csirs_vars->active = true;
+            csiim_vars->active = true;
             break;
           case FAPI_NR_DL_CONFIG_TYPE_CSI_RS:
             csirs_config_pdu = &dl_config->dl_config_list[i].csirs_config_pdu.csirs_config_rel15;

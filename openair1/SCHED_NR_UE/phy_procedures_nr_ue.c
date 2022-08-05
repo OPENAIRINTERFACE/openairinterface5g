@@ -121,9 +121,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch0,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
-			   UE_nr_rxtx_proc_t *proc,
-			   void * typeSpecific){
-
+                           UE_nr_rxtx_proc_t *proc,
+                           void *typeSpecific){
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
@@ -176,6 +175,11 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.rsrp_dBm = ue->measurements.rsrp_dBm[gNB_id];
     break;
+    case FAPI_NR_CSIRS_IND:
+      memcpy(&rx_ind->rx_indication_body[n_pdus - 1].csirs_measurements,
+             (fapi_nr_csirs_measurements_t*)typeSpecific,
+             sizeof(*(fapi_nr_csirs_measurements_t*)typeSpecific));
+      break;
     default:
     break;
   }
@@ -1476,7 +1480,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   if ((frame_rx%64 == 0) && (nr_slot_rx==0)) {
     LOG_I(NR_PHY,"============================================\n");
-    LOG_I(NR_PHY,"Harq round stats for Downlink: %d/%d/%d/%d DLSCH errors: %d\n",ue->dl_stats[0],ue->dl_stats[1],ue->dl_stats[2],ue->dl_stats[3],ue->dl_stats[4]);
+    // fixed text + 8 HARQs rounds à 10 ("999999999/") + NULL
+    // if we use 999999999 HARQs, that should be sufficient for at least 138 hours
+    const size_t harq_output_len = 31 + 10 * 8 + 1;
+    char output[harq_output_len];
+    char *p = output;
+    const char *end = output + harq_output_len;
+    p += snprintf(p, end - p, "Harq round stats for Downlink: %d", ue->dl_stats[0]);
+    for (int round = 1; round < 16 && (round < 3 || ue->dl_stats[round] != 0); ++round)
+      p += snprintf(p, end - p,"/%d", ue->dl_stats[round]);
+    LOG_I(NR_PHY,"%s/0\n", output);
+
     LOG_I(NR_PHY,"============================================\n");
   }
 
@@ -1691,6 +1705,19 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   // do procedures for CSI-IM
   if ((ue->csiim_vars[gNB_id]) && (ue->csiim_vars[gNB_id]->active == 1)) {
+    int l_csiim[4] = {-1, -1, -1, -1};
+    for(int symb_idx = 0; symb_idx < 4; symb_idx++) {
+      bool nr_slot_fep_done = false;
+      for (int symb_idx2 = 0; symb_idx2 < symb_idx; symb_idx2++) {
+        if (l_csiim[symb_idx2] == ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx]) {
+          nr_slot_fep_done = true;
+        }
+      }
+      l_csiim[symb_idx] = ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx];
+      if(nr_slot_fep_done == false) {
+        nr_slot_fep(ue, proc, ue->csiim_vars[gNB_id]->csiim_config_pdu.l_csiim[symb_idx], nr_slot_rx);
+      }
+    }
     nr_ue_csi_im_procedures(ue, proc, gNB_id);
     ue->csiim_vars[gNB_id]->active = 0;
   }

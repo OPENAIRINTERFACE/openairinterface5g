@@ -138,7 +138,8 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
                 const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                 const int uid,
                 const int do_srs);
-void set_dl_mcs_table(int scs, NR_UE_NR_Capability_t *cap,
+void set_dl_mcs_table(int scs,
+                      NR_UE_NR_Capability_t *cap,
                       NR_SpCellConfig_t *SpCellConfig,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                       NR_ServingCellConfigCommon_t *scc);

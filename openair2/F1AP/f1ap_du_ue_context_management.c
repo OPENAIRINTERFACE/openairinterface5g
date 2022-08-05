@@ -187,14 +187,16 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
         transport_layer_addr_t addr;
         memcpy(addr.buffer, &drb_p->up_ul_tnl[0].tl_address, sizeof(drb_p->up_ul_tnl[0].tl_address));
         addr.length=sizeof(drb_p->up_ul_tnl[0].tl_address)*8;
-        drb_p->up_dl_tnl[0].teid=newGtpuCreateTunnel(INSTANCE_DEFAULT,
-                                 f1ap_ue_context_setup_req->rnti,
-                                 drb_p->drb_id,
-                                 drb_p->drb_id,
-                                 drb_p->up_ul_tnl[0].teid,
-                                 addr,
-                                 drb_p->up_ul_tnl[0].port,
-                                 lteDURecvCb);
+        drb_p->up_dl_tnl[0].teid = newGtpuCreateTunnel(INSTANCE_DEFAULT,
+                                                       f1ap_ue_context_setup_req->rnti,
+                                                       drb_p->drb_id,
+                                                       drb_p->drb_id,
+                                                       drb_p->up_ul_tnl[0].teid,
+                                                       -1, // no qfi
+                                                       addr,
+                                                       drb_p->up_ul_tnl[0].port,
+                                                       lteDURecvCb,
+                                                       NULL);
         drb_p->up_dl_tnl_length++;
       }
     }
@@ -1171,14 +1173,16 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
         transport_layer_addr_t addr;
           memcpy(addr.buffer, &drb_p->up_ul_tnl[0].tl_address, sizeof(drb_p->up_ul_tnl[0].tl_address));
           addr.length=sizeof(drb_p->up_ul_tnl[0].tl_address)*8;
-          drb_p->up_dl_tnl[0].teid=newGtpuCreateTunnel(INSTANCE_DEFAULT,
-                               f1ap_ue_context_modification_req->rnti,
-                               drb_p->drb_id,
-                               drb_p->drb_id,
-                               drb_p->up_ul_tnl[0].teid,
-                               addr,
-                               drb_p->up_ul_tnl[0].port,
-                               lteDURecvCb);
+          drb_p->up_dl_tnl[0].teid = newGtpuCreateTunnel(INSTANCE_DEFAULT,
+                                                         f1ap_ue_context_modification_req->rnti,
+                                                         drb_p->drb_id,
+                                                         drb_p->drb_id,
+                                                         drb_p->up_ul_tnl[0].teid,
+                                                         -1, // no qfi
+                                                         addr,
+                                                         drb_p->up_ul_tnl[0].port,
+                                                         lteDURecvCb,
+                                                         NULL);
           drb_p->up_dl_tnl_length++;
       }
     }
