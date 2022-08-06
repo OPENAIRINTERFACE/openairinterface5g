@@ -40,7 +40,6 @@
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
-#include "PHY/LTE_TRANSPORT/if5_tools.h"
 
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
@@ -59,7 +58,6 @@
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
-#define USE_TPOOL 1 
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h and GNB_APP/gnb_paramdef.h */
 static int DEFBANDS[] = {7};
@@ -1575,10 +1573,6 @@ void init_RU_proc(RU_t *ru) {
   if (opp_enabled == 1) 
     threadCreate( &ru->ru_stats_thread, ru_stats_thread, (void *)ru,"ru_stats", -1, OAI_PRIORITY_RT );
   if (get_thread_worker_conf() == WORKER_ENABLE) {
-#ifndef USE_TPOOL
-    if (ru->feprx) nr_init_feprx_thread(ru);
-    if (ru->feptx_ofdm) nr_init_feptx_thread(ru);
-#endif
   }
 
 }
@@ -1589,33 +1583,6 @@ void kill_NR_RU_proc(int inst) {
   LOG_D(PHY, "Joining pthread_FH\n");
   pthread_join(proc->pthread_FH, NULL);
 
-  if (get_nprocs() >= 2) {
-#ifndef USE_TPOOL	    
-    if (ru->feprx) {
-      for (int aid=0;aid<ru->nb_rx;aid++) {
-	 pthread_mutex_lock(&proc->mutex_fep[aid]);
-         proc->instance_cnt_fep[aid] = 0;
-         pthread_mutex_unlock(&proc->mutex_fep[aid]);
-         pthread_cond_signal(&proc->cond_fep[aid]);
-         LOG_D(PHY, "Joining pthread_fep %d\n",aid);
-         pthread_join(proc->pthread_fep[aid], NULL);
-         pthread_mutex_destroy(&proc->mutex_fep[aid]);
-         pthread_cond_destroy(&proc->cond_fep[aid]);
-      }
-    }
-
-    if (ru->feptx_ofdm) {
-      pthread_mutex_lock(&proc->mutex_feptx);
-      proc->instance_cnt_feptx = 0;
-      pthread_mutex_unlock(&proc->mutex_feptx);
-      pthread_cond_signal(&proc->cond_feptx);
-      LOG_D(PHY, "Joining pthread_feptx\n");
-      pthread_join(proc->pthread_feptx, NULL);
-      pthread_mutex_destroy(&proc->mutex_feptx);
-      pthread_cond_destroy(&proc->cond_feptx);
-    }
-#endif
-  }
   if (opp_enabled) {
     LOG_D(PHY, "Joining ru_stats_thread\n");
     pthread_join(ru->ru_stats_thread, NULL);
@@ -1823,13 +1790,8 @@ void set_function_spec_param(RU_t *ru) {
         ru->fh_north_out          = fh_if4p5_north_out;       // send_IF4p5 on reception
         ru->fh_south_out          = tx_rf;                    // send output to RF
         ru->fh_north_asynch_in    = fh_if4p5_north_asynch_in; // TX packets come asynchronously
-#ifdef USE_TPOOL
-        ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_tp   : nr_fep_full;     // this is frequency-shift + DFTs
-        ru->feptx_ofdm            = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_tp : nr_feptx_ofdm; // this is fep with idft only (no precoding in RRU)
-#else
-        ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread   : nr_fep_full;     // this is frequency-shift + DFTs
-        ru->feptx_ofdm            = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm; // this is fep with idft only (no precoding in RRU)
-#endif
+        ru->feprx                 = nr_fep_tp;     // this is frequency-shift + DFTs
+        ru->feptx_ofdm            = nr_feptx_tp; // this is fep with idft only (no precoding in RRU)
         ru->feptx_prec            = NULL;
         ru->nr_start_if           = nr_start_if;              // need to start the if interface for if4p5
         ru->ifdevice.host_type    = RRU_HOST;
@@ -1849,14 +1811,9 @@ void set_function_spec_param(RU_t *ru) {
         malloc_IF4p5_buffer(ru);
       } else if (ru->function == gNodeB_3GPP) {
         ru->do_prach             = 0;                       // no prach processing in RU
-#ifdef USE_TPOOL
-        ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_tp   : nr_fep_full;     // this is frequency-shift + DFTs
-        ru->feptx_ofdm           = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_tp: nr_feptx_ofdm;              // this is fep with idft and precoding
-#else
-        ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread   : nr_fep_full;     // this is frequency-shift + DFTs
-        ru->feptx_ofdm           = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm;              // this is fep with idft and precoding
-#endif
-        ru->feptx_prec           = (get_thread_worker_conf() == WORKER_ENABLE) ? NULL                  : nr_feptx_prec;           // this is fep with idft and precoding
+        ru->feprx                = nr_fep_tp;     // this is frequency-shift + DFTs
+        ru->feptx_ofdm           = nr_feptx_tp;              // this is fep with idft and precoding
+        ru->feptx_prec           = nr_feptx_prec;           // this is fep with idft and precoding
         ru->fh_north_in          = NULL;                    // no incoming fronthaul from north
         ru->fh_north_out         = NULL;                    // no outgoing fronthaul to north
         ru->nr_start_if          = NULL;                    // no if interface
@@ -1886,15 +1843,9 @@ void set_function_spec_param(RU_t *ru) {
     case REMOTE_IF5: // the remote unit is IF5 RRU
       ru->do_prach               = 0;
       ru->txfh_in_fep            = 0;
-#ifdef USE_TPOOL
-      ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_tp   : nr_fep_full;     // this is frequency-shift + DFTs
-      ru->feptx_prec             = (get_thread_worker_conf() == WORKER_ENABLE) ? NULL                  : nr_feptx_prec;          // need to do transmit Precoding + IDFTs
-      ru->feptx_ofdm             = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_tp: nr_feptx_ofdm; // need to do transmit Precoding + IDFTs
-#else
-      ru->feprx                  = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_fep_full_2thread   : nr_fep_full;     // this is frequency-shift + DFTs
-      ru->feptx_prec             = (get_thread_worker_conf() == WORKER_ENABLE) ? NULL                  : nr_feptx_prec;          // need to do transmit Precoding + IDFTs
-      ru->feptx_ofdm             = (get_thread_worker_conf() == WORKER_ENABLE) ? nr_feptx_ofdm_2thread : nr_feptx_ofdm; // need to do transmit Precoding + IDFTs
-#endif
+      ru->feprx                  = nr_fep_tp;     // this is frequency-shift + DFTs
+      ru->feptx_prec             = nr_feptx_prec;          // need to do transmit Precoding + IDFTs
+      ru->feptx_ofdm             = nr_feptx_tp; // need to do transmit Precoding + IDFTs
       ru->fh_south_in            = fh_if5_south_in;     // synchronous IF5 reception
       ru->fh_south_out           = (ru->txfh_in_fep>0) ? NULL : fh_if5_south_out;    // synchronous IF5 transmission
       ru->fh_south_asynch_in     = NULL;                // no asynchronous UL
@@ -1997,7 +1948,6 @@ void init_NR_RU(char *rf_config_file) {
         ru->gNB_list[0] = RC.gNB[0];
         ru->num_gNB=1;
         //
-        // DJP - feptx_prec() / feptx_ofdm() parses the gNB_list (based on num_gNB) and copies the txdata_F to txdata in RU
         //
       } else {
         LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
@@ -2041,7 +1991,6 @@ void init_NR_RU(char *rf_config_file) {
     for (int icpu=1; icpu<threadCnt; icpu++) {
        s_offset+=sprintf(pool+s_offset,",%d",ru->tpcores[icpu]);
     }
-#ifdef USE_TPOOL    
     LOG_I(PHY,"RU thread-pool core string %s\n",pool);
     ru->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
     initTpool(pool, ru->threadPool, cpumeas(CPUMEAS_GETSTATE));
@@ -2051,7 +2000,6 @@ void init_NR_RU(char *rf_config_file) {
     // FEP TX result FIFO
     ru->respfeptx = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
     initNotifiedFIFO(ru->respfeptx);
-#endif
   } // for ru_id
 
   //  sleep(1);
