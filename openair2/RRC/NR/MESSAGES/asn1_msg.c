@@ -345,7 +345,6 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier, gNB_RrcConfigurationReq *co
     if(configuration->mnc_digit_length[i] == 3) {
       asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc0);
       *mnc0=(configuration->mnc[i]/100)%10;
-      mnc/=10;
     }
     asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc1);
     *mnc1=(mnc/10)%10;
