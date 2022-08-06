@@ -33,6 +33,7 @@
 #include "executables/softmodem-common.h"
 #include "executables/nr-softmodem-common.h"
 #include "PHY/defs_nr_UE.h"
+#include "PHY/INIT/phy_init.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "common/utils/LOG/log.h"
 #include "PHY/sse_intrin.h"
@@ -208,10 +209,15 @@ void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
                                  UE_nr_rxtx_proc_t *proc,
                                  uint8_t slot) {
 
-  int k_start = 55;
+  int k_start = 56;
   int k_end   = 183;
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
-  uint8_t l_sss = (ue->symbol_offset + 2) % ue->frame_parms.symbols_per_slot;
+  int symbol_offset = nr_get_ssb_start_symbol(&ue->frame_parms,ssb_index);
+
+  if (ue->frame_parms.half_frame_bit)
+    symbol_offset += (ue->frame_parms.slots_per_frame>>1)*ue->frame_parms.symbols_per_slot;
+
+  uint8_t l_sss = (symbol_offset + 2) % ue->frame_parms.symbols_per_slot;
 
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size)
     ssb_offset -= ue->frame_parms.ofdm_symbol_size;
