@@ -170,31 +170,11 @@ typedef struct RU_prec_t_s{
   int index;
 } RU_prec_t;
 
-typedef struct RU_feptx_t_s{
-  /// \internal This variable is protected by \ref mutex_feptx_prec
-  int instance_cnt_feptx;
-  /// pthread struct for RU TX FEP PREC worker thread
-  pthread_t pthread_feptx;
-  /// pthread attributes for worker feptx prec thread
-  pthread_attr_t attr_feptx;
-  /// condition varible for RU TX FEP PREC thread
-  pthread_cond_t cond_feptx;
-  /// mutex for fep PREC TX worker thread
-  pthread_mutex_t mutex_feptx;
-  struct RU_t_s *ru;
-  int aa;//physical MAX nb_tx
-  int half_slot;//first or second half of a slot
-  int slot;//current slot
-  int symbol;//current symbol
-  int nb_antenna_ports;//number of logical port
-  int index;
-}RU_feptx_t;
-
 typedef struct {
  int aid;
  struct RU_t_s *ru;
- int start_symbol;
- int end_symbol;
+ int startSymbol;
+ int endSymbol;
  int slot; 
 } feprx_cmd_t;
 
@@ -202,6 +182,8 @@ typedef struct {
  int aid;
  struct RU_t_s *ru;
  int slot; 
+ int startSymbol;
+ int numSymbols;
 } feptx_cmd_t;
 
 typedef struct {
@@ -411,10 +393,6 @@ typedef struct RU_proc_t_s {
 
   /// structure for precoding thread
   RU_prec_t prec[16];
-  /// structure for feptx thread
-  RU_feptx_t feptx[16];
-  /// mask for checking process finished
-  int feptx_mask;
 } RU_proc_t;
 
 typedef enum {
@@ -525,8 +503,10 @@ typedef struct RU_t_s {
   int sf_ahead;
   /// TX processing advance in slots (for NR)
   int sl_ahead;
-  /// flag to indicated TX FH is embedded in TX FEP
+  /// flag to indicate TX FH is embedded in TX FEP
   int txfh_in_fep;
+  /// flag to indicate half-slot parallelization
+  int half_slot_parallelization;
   /// FAPI confiuration
   nfapi_nr_config_request_scf_t  config;
   /// Frame parameters
