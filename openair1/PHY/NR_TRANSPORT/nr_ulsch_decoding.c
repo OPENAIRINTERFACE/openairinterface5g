@@ -412,7 +412,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint8_t n_layers        = pusch_pdu->nrOfLayers;
   // ------------------------------------------------------------------
 
-   if (!ulsch_llr) {
+  if (!ulsch_llr) {
     LOG_E(PHY,"ulsch_decoding.c: NULL ulsch_llr pointer\n");
     return 1;
   }
