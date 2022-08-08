@@ -874,7 +874,7 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
     c16_t *phase_per_symbol = (c16_t*)gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx];
     ptrs_re_symbol = &gNB->pusch_vars[ulsch_id]->ptrs_re_per_slot;
     *ptrs_re_symbol = 0;
-    phase_per_symbol[symbol].i = 0;
+    phase_per_symbol[symbol].i = 0; 
     /* set DMRS estimates to 0 angle with magnitude 1 */
     if(is_dmrs_symbol(symbol,*dmrsSymbPos)) {
       /* set DMRS real estimation to 32767 */
@@ -884,7 +884,7 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
 #endif
     }
     else {// real ptrs value is set to 0
-      phase_per_symbol[symbol].r = 0;
+      phase_per_symbol[symbol].r = 0; 
     }
 
     if(symbol == *startSymbIndex) {
@@ -1198,7 +1198,7 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
   const int32_t factor_dB = dB_fixed(1<<factor_bits);
 
   const uint8_t srs_symbols_per_rb = srs_pdu->comb_size == 0 ? 6 : 3;
-  const uint8_t n_noise_estimates = frame_parms->nb_antennas_rx*N_ap*srs_symbols_per_rb;
+  const uint8_t n_noise_est = frame_parms->nb_antennas_rx*N_ap*srs_symbols_per_rb;
   uint64_t sum_re = 0;
   uint64_t sum_re2 = 0;
   uint64_t sum_im = 0;
@@ -1223,8 +1223,8 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
       } // for (int p_index = 0; p_index < N_ap; p_index++)
     } // for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++)
 
-    noise_power_per_rb[rb] = sum_re2/n_noise_estimates - (sum_re/n_noise_estimates)*(sum_re/n_noise_estimates) +
-                             sum_im2/n_noise_estimates - (sum_im/n_noise_estimates)*(sum_im/n_noise_estimates);
+    noise_power_per_rb[rb] = max(sum_re2 / n_noise_est - (sum_re / n_noise_est) * (sum_re / n_noise_est) +
+                                 sum_im2 / n_noise_est - (sum_im / n_noise_est) * (sum_im / n_noise_est), 1);
     snr_per_rb[rb] = dB_fixed((int32_t)((*signal_power<<factor_bits)/noise_power_per_rb[rb])) - factor_dB;
 
 #ifdef SRS_DEBUG

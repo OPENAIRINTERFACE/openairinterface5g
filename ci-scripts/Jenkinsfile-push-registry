@@ -66,7 +66,7 @@ pipeline {
           withCredentials([
             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.DH_Credentials}", usernameVariable: 'DH_Username', passwordVariable: 'DH_Password']
           ]) {
-            def listOfImages = ["oai-enb", "oai-gnb", "oai-lte-ue", "oai-nr-ue"]
+            def listOfImages = ["oai-enb", "oai-gnb", "oai-lte-ue", "oai-nr-ue", "proxy"]
             sh "docker login -u ${DH_Username} -p ${DH_Password} > /dev/null 2>&1"
             listOfImages.eachWithIndex { item, iindex ->
               sh "docker image tag ${item}:develop ${DH_Account}/${item}:develop"

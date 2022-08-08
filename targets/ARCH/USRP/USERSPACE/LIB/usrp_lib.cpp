@@ -675,7 +675,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   }
   if (samples_received == nsamps) s->wait_for_first_pps=0;
 
-    // bring RX data into 12 LSBs for softmodem RX
+  // bring RX data into 12 LSBs for softmodem RX
   for (int i=0; i<cc; i++) {
 
 #if defined(__x86_64__) || defined(__i386__)

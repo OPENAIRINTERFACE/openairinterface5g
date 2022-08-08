@@ -244,11 +244,11 @@ crc16 (unsigned char * inptr, int bitlen)
 
   while (octetlen-- > 0) {
 
-    crc = (crc << 8) ^ (crc16Table[(*inptr++) ^ (crc >> 24)] << 16);
+    crc = (crc << 8) ^ (((uint32_t)crc16Table[(*inptr++) ^ (crc >> 24)]) << 16);
   }
 
   if (resbit > 0)
-    crc = (crc << resbit) ^ (crc16Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 16);
+    crc = (crc << resbit) ^ (((uint32_t)crc16Table[(*inptr) >> (8 - resbit) ^ (crc >> (32 - resbit))]) << 16);
 
   return crc;
 }

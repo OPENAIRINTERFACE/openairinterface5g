@@ -101,7 +101,6 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL)
   ulsch = (NR_gNB_ULSCH_t *)malloc16_clear(sizeof(NR_gNB_ULSCH_t));
 
   ulsch->max_ldpc_iterations = max_ldpc_iterations;
-  ulsch->Mlimit = 4;
 
   for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
 
@@ -136,10 +135,8 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
     ulsch->rnti_type = 0;
     ulsch->cyclicShift = 0;
     ulsch->cooperation_flag = 0;
-    ulsch->Mlimit = 0;
     ulsch->max_ldpc_iterations = 0;
     ulsch->last_iteration_cnt = 0;
-    for (i=0;i<NR_MAX_SLOTS_PER_FRAME;i++) ulsch->harq_process_id[i] = 0;
 
     for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
       if (ulsch->harq_processes[i]){
@@ -415,7 +412,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint8_t n_layers        = pusch_pdu->nrOfLayers;
   // ------------------------------------------------------------------
 
-   if (!ulsch_llr) {
+  if (!ulsch_llr) {
     LOG_E(PHY,"ulsch_decoding.c: NULL ulsch_llr pointer\n");
     return 1;
   }

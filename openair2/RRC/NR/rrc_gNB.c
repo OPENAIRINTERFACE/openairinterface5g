@@ -1767,15 +1767,16 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
       }
     }
 
-    gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
+    gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
     /* Save e RAB information for later */
-    memset(&create_tunnel_req, 0, sizeof(create_tunnel_req));
 
     for ( j = 0, i = 0; i < NB_RB_MAX; i++) {
       if (ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_context_pP->ue_context.pduSession[i].status == PDU_SESSION_STATUS_DONE) {
         create_tunnel_req.pdusession_id[j]   = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
         create_tunnel_req.incoming_rb_id[j]  = i+1;
         create_tunnel_req.outgoing_teid[j]  = ue_context_pP->ue_context.pduSession[i].param.gtp_teid;
+        // to be developped, use the first QFI only
+        create_tunnel_req.outgoing_qfi[j]  = ue_context_pP->ue_context.pduSession[i].param.qos[0].qfi;
         memcpy(create_tunnel_req.dst_addr[j].buffer,
                ue_context_pP->ue_context.pduSession[i].param.upf_addr.buffer,
                 sizeof(uint8_t)*20);
@@ -2805,8 +2806,6 @@ rrc_gNB_decode_dcch(
           SRBs[0].lcid = 2;
 
           /*Instruction towards the DU for DRB configuration and tunnel creation*/
-          gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req;
-          memset(&create_tunnel_req, 0, sizeof(gtpv1u_gnb_create_tunnel_req_t));
           req->drbs_to_be_setup = malloc(1*sizeof(f1ap_drb_to_be_setup_t));
           req->drbs_to_be_setup_length = 1;
           f1ap_drb_to_be_setup_t *DRBs=req->drbs_to_be_setup;
@@ -3433,14 +3432,16 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
       addr.length=sizeof(drb_p.up_ul_tnl[0].tl_address)*8;
       extern instance_t DUuniqInstance;
       if (!drb_id_to_setup_start) drb_id_to_setup_start = drb_p.drb_id;
-      incoming_teid=newGtpuCreateTunnel(DUuniqInstance,
-          req->rnti,
-          drb_p.drb_id,
-          drb_p.drb_id,
-          drb_p.up_ul_tnl[0].teid,
-          addr,
-          drb_p.up_ul_tnl[0].port,
-          DURecvCb);
+      incoming_teid = newGtpuCreateTunnel(DUuniqInstance,
+                                          req->rnti,
+                                          drb_p.drb_id,
+                                          drb_p.drb_id,
+                                          drb_p.up_ul_tnl[0].teid,
+                                          -1, // no qfi
+                                          addr,
+                                          drb_p.up_ul_tnl[0].port,
+                                          DURecvCb,
+                                          NULL);
     }
   }
 
@@ -3572,14 +3573,16 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
       memcpy(addr.buffer, &drb_p.up_ul_tnl[0].tl_address, sizeof(drb_p.up_ul_tnl[0].tl_address));
       addr.length=sizeof(drb_p.up_ul_tnl[0].tl_address)*8;
       extern instance_t DUuniqInstance;
-      incoming_teid=newGtpuCreateTunnel(DUuniqInstance,
-          req->rnti,
-          drb_p.drb_id,
-          drb_p.drb_id,
-          drb_p.up_ul_tnl[0].teid,
-          addr,
-          drb_p.up_ul_tnl[0].port,
-          DURecvCb);
+      incoming_teid = newGtpuCreateTunnel(DUuniqInstance,
+                                          req->rnti,
+                                          drb_p.drb_id,
+                                          drb_p.drb_id,
+                                          drb_p.up_ul_tnl[0].teid,
+                                          -1, // no qfi
+                                          addr,
+                                          drb_p.up_ul_tnl[0].port,
+                                          DURecvCb,
+                                          NULL);
     }
   }
 

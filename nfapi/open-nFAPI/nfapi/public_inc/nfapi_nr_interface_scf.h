@@ -738,7 +738,7 @@ typedef struct {
   // The total DCI length (in bits) including padding bits [TS38.212 sec 7.3.1] Range 0->DCI_PAYLOAD_BYTE_LEN*8
   uint16_t PayloadSizeBits;
   // DCI payload, where the actual size is defined by PayloadSizeBits. The bit order is as following bit0-bit7 are mapped to first byte of MSB - LSB
-  uint8_t Payload[DCI_PAYLOAD_BYTE_LEN];
+  uint8_t Payload[DCI_PAYLOAD_BYTE_LEN] __attribute__((aligned(32)));
 
 } nfapi_nr_dl_dci_pdu_t;
 

@@ -105,17 +105,21 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
                        end - output,
                        "UE %04x: CQI %d, RI %d, PMI (%d,%d)\n",
                        UE->rnti,
-                       UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,
-                       UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.ri+1,
-                       UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
-                       UE->UE_sched_ctrl.CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
+                       sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,
+                       sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri+1,
+                       sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
+                       sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
     output += snprintf(output,
                        end - output,
-                       "UE %04x: dlsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
-                       UE->rnti,
-                       stats->dl.rounds[0], stats->dl.rounds[1],
-                       stats->dl.rounds[2], stats->dl.rounds[3],
+                       "UE %04x: dlsch_rounds ", UE->rnti);
+    output += snprintf(output, end - output, "%"PRIu64, stats->dl.rounds[0]);
+    for (int i = 1; i < gNB->dl_bler.harq_round_max; i++)
+      output += snprintf(output, end - output, "/%"PRIu64, stats->dl.rounds[i]);
+
+    output += snprintf(output,
+                       end - output,
+                       ", dlsch_errors %"PRIu64", pucch0_DTX %d, BLER %.5f MCS %d\n",
                        stats->dl.errors,
                        stats->pucch0_DTX,
                        sched_ctrl->dl_bler_stats.bler,
@@ -127,23 +131,27 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
     output += snprintf(output,
                        end - output,
                        "UE %04x: dlsch_total_bytes %"PRIu64"\n",
-                       UE->rnti,
-                       stats->dl.total_bytes);
+                       UE->rnti, stats->dl.total_bytes);
     output += snprintf(output,
                        end - output,
-                       "UE %04x: ulsch_rounds %"PRIu64"/%"PRIu64"/%"PRIu64"/%"PRIu64", ulsch_DTX %d, ulsch_errors %"PRIu64", BLER %.5f MCS %d\n",
-                       UE->rnti,
-                       stats->ul.rounds[0], stats->ul.rounds[1],
-                       stats->ul.rounds[2], stats->ul.rounds[3],
+                       "UE %04x: ulsch_rounds ", UE->rnti);
+    output += snprintf(output, end - output, "%"PRIu64, stats->ul.rounds[0]);
+    for (int i = 1; i < gNB->ul_bler.harq_round_max; i++)
+      output += snprintf(output, end - output, "/%"PRIu64, stats->ul.rounds[i]);
+
+    output += snprintf(output,
+                       end - output,
+                       ", ulsch_DTX %d, ulsch_errors %"PRIu64", BLER %.5f MCS %d\n",
                        stats->ulsch_DTX,
                        stats->ul.errors,
                        sched_ctrl->ul_bler_stats.bler,
                        sched_ctrl->ul_bler_stats.mcs);
     output += snprintf(output,
                        end - output,
-                      "UE %04x: ulsch_total_bytes_scheduled %"PRIu64", ulsch_total_bytes_received %"PRIu64"\n",
-                      UE->rnti,
-                      stats->ulsch_total_bytes_scheduled, stats->ul.total_bytes);
+                       "UE %04x: ulsch_total_bytes_scheduled %"PRIu64", ulsch_total_bytes_received %"PRIu64"\n",
+                       UE->rnti,
+                       stats->ulsch_total_bytes_scheduled, stats->ul.total_bytes);
+
     for (int lc_id = 0; lc_id < 63; lc_id++) {
       if (stats->dl.lc_bytes[lc_id] > 0)
         output += snprintf(output,
