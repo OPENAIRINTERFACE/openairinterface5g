@@ -121,11 +121,11 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB, const NR_DL_FRAME_
     @param slot Slot number
     @param harq_pid HARQ process ID
 */
-int nr_rx_pusch(PHY_VARS_gNB *gNB,
-                uint8_t UE_id,
-                uint32_t frame,
-                uint8_t slot,
-                unsigned char harq_pid);
+void nr_rx_pusch(PHY_VARS_gNB *gNB,
+                 uint8_t UE_id,
+                 uint32_t frame,
+                 uint8_t slot,
+                 unsigned char harq_pid);
 
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
     @param rxdataF pointer to the received frequency domain signal
@@ -370,6 +370,7 @@ void nr_decode_pucch1(int32_t **rxdataF,
                       uint8_t nr_bit);
 
 void nr_decode_pucch2(PHY_VARS_gNB *gNB,
+                      int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
@@ -378,11 +379,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
-                      nfapi_nr_pucch_pdu_t* pucch_pdu);
-
-void nr_decode_pucch2(PHY_VARS_gNB *gNB,
-                      int slot,
-                      nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 
 

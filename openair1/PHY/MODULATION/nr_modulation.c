@@ -618,32 +618,23 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
   for (uint8_t ll = 0; ll < 2; ll++){
 
     double f0 = f[ll];
-    double Ncpm1 = Ncp0;
+    LOG_I(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
     c16_t *symbol_rotation = fp->symbol_rotation[ll];
 
-    double tl = 0;
-    double poff = 2 * M_PI * ((Ncp0 * Tc)) * f0;
-    double exp_re = cos(poff);
-    double exp_im = sin(-poff);
-    symbol_rotation[0].r = (int16_t)floor(exp_re * 32767);
-    symbol_rotation[0].i = (int16_t)floor(exp_im * 32767);
-    LOG_I(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
-    LOG_I(PHY, "Symbol rotation %d/%d => (%d,%d)\n",
-      0,
-      nsymb,
-      symbol_rotation[0].r,
-      symbol_rotation[0].i);
+    double tl = 0.0;
+    double poff = 0.0;
+    double exp_re = 0.0;
+    double exp_im = 0.0;
 
-    for (int l = 1; l < nsymb; l++) {
+    for (int l = 0; l < nsymb; l++) {
 
       double Ncp;
-      if (l == (7 * (1 << fp->numerology_index))) {
+      if (l == 0 || l == (7 * (1 << fp->numerology_index))) {
         Ncp = Ncp0;
       } else {
         Ncp = Ncp1;
       }
 
-      tl += (Nu + Ncpm1) * Tc;
       poff = 2 * M_PI * (tl + (Ncp * Tc)) * f0;
       exp_re = cos(poff);
       exp_im = sin(-poff);
@@ -658,7 +649,7 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
         symbol_rotation[l].i,
         (poff / 2 / M_PI) - floor(poff / 2 / M_PI));
 
-      Ncpm1 = Ncp;
+      tl += (Nu + Ncp) * Tc;
 
     }
   }
