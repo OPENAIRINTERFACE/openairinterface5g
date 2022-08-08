@@ -388,8 +388,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
+  NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
   NR_sched_pdsch_t *retInfo = &sched_ctrl->harq_processes[current_harq_pid].sched_pdsch;
-  NR_CellGroupConfig_t *cg = UE->CellGroup;
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
   //TODO remove this and handle retransmission with old nrOfLayers
@@ -402,26 +403,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     return false;
   }
 
-  NR_BWP_DownlinkDedicated_t *bwpd =
-      cg &&
-      cg->spCellConfig &&
-      cg->spCellConfig->spCellConfigDedicated ?
-      cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-
-  NR_BWP_UplinkDedicated_t *ubwpd =
-      cg &&
-      cg->spCellConfig &&
-      cg->spCellConfig->spCellConfigDedicated &&
-      cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-      cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
-
-  const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                             RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                             sib1);
-
-  const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+  const int coresetid = sched_ctrl->coreset->controlResourceSetId;
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : dl_bwp->BWPSize;
 
   int rbStart = 0; // start wrt BWPstart
   int rbSize = 0;
@@ -452,11 +435,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
     /* check whether we need to switch the TDA allocation since the last
      * (re-)transmission */
     if (ps->time_domain_allocation != tda) {
-      nr_set_pdsch_semi_static(sib1,
+      nr_set_pdsch_semi_static(dl_bwp,
                                scc,
-                               cg,
-                               sched_ctrl->active_bwp,
-                               bwpd,
                                tda,
                                ps->nrOfLayers,
                                sched_ctrl,
@@ -467,11 +447,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
      * that we have enough resources */
     NR_pdsch_semi_static_t temp_ps = *ps;
 
-    nr_set_pdsch_semi_static(sib1,
+    nr_set_pdsch_semi_static(dl_bwp,
                              scc,
-                             cg,
-                             sched_ctrl->active_bwp,
-                             bwpd,
                              tda,
                              ps->nrOfLayers,
                              sched_ctrl,
@@ -542,7 +519,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
    * allocation after CCE alloc fail would be more complex) */
 
-  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, ubwpd, CCEIndex);
+  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, ul_bwp->pucch_Config, CCEIndex);
   const int alloc = nr_acknack_scheduling(module_id, UE, frame, slot, r_pucch, 0);
   if (alloc<0) {
     LOG_D(MAC,
@@ -602,6 +579,7 @@ void pf_dl(module_id_t module_id,
       continue;
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
 
     if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
 
@@ -641,15 +619,15 @@ void pf_dl(module_id_t module_id,
 
       /* Calculate coeff */
       const NR_bler_options_t *bo = &mac->dl_bler;
-      const int max_mcs_table = ps->mcsTableIdx == 1 ? 27 : 28;
+      const int max_mcs_table = current_BWP->mcsTableIdx == 1 ? 27 : 28;
       const int max_mcs = min(sched_ctrl->dl_max_mcs, max_mcs_table);
       if (bo->harq_round_max == 1)
         sched_pdsch->mcs = max_mcs;
       else
         sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
       UE->layers = set_dl_nrOfLayers(sched_ctrl);
-      const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-      const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+      const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
+      const uint16_t R = nr_get_code_rate_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
       uint32_t tbs = nr_compute_tbs(Qm,
                                     R,
                                     1, /* rbSize */
@@ -676,37 +654,16 @@ void pf_dl(module_id_t module_id,
   /* Loop UE_sched to find max coeff and allocate transmission */
   while (remainUEs> 0 && n_rb_sched >= min_rbSize && iterator->UE != NULL) {
 
-    NR_CellGroupConfig_t *cg = iterator->UE->CellGroup;
-
-    NR_BWP_DownlinkDedicated_t *bwpd =
-        cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated ?
-        cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-
-    NR_BWP_UplinkDedicated_t *ubwpd =
-        cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated &&
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig ?
-        cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP : NULL;
-
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
     const uint16_t rnti = iterator->UE->rnti;
-    const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ?
-      RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 :
-      NULL;
 
-    NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                               RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                               sib1);
+    NR_UE_DL_BWP_t *dl_bwp = &iterator->UE->current_DL_BWP;
+    NR_UE_UL_BWP_t *ul_bwp = &iterator->UE->current_UL_BWP;
 
-    const int coresetid = (sched_ctrl->active_bwp||bwpd) ?
-      sched_ctrl->coreset->controlResourceSetId :
-      RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
+    const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     const uint16_t bwpSize = coresetid == 0 ?
       RC.nrmac[module_id]->cset0_bwp_size :
-      NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
+      dl_bwp->BWPSize;
     int rbStart = 0; // start wrt BWPstart
 
     if (sched_ctrl->available_dl_harq.head < 0) {
@@ -746,7 +703,7 @@ void pf_dl(module_id_t module_id,
     /* Find PUCCH occasion: if it fails, undo CCE allocation (undoing PUCCH
     * allocation after CCE alloc fail would be more complex) */
 
-    int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, ubwpd, CCEIndex);
+    int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, ul_bwp->pucch_Config, CCEIndex);
     const int alloc = nr_acknack_scheduling(module_id, iterator->UE, frame, slot, r_pucch, 0);
 
     if (alloc<0) {
@@ -773,11 +730,8 @@ void pf_dl(module_id_t module_id,
     NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
     if (ps->nrOfLayers != iterator->UE->layers || ps->time_domain_allocation != tda ) {
-      nr_set_pdsch_semi_static(sib1,
+      nr_set_pdsch_semi_static(dl_bwp,
                                scc,
-                               iterator->UE->CellGroup,
-                               sched_ctrl->active_bwp,
-                               bwpd,
                                tda,
                                iterator->UE->layers,
                                sched_ctrl,
@@ -795,8 +749,8 @@ void pf_dl(module_id_t module_id,
     while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
-    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+    sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
+    sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
     uint32_t TBS = 0;
     uint16_t rbSize;
@@ -842,30 +796,18 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* This is temporary and it assumes all UEs have the same BWP and TDA*/
   NR_UE_info_t *UE=UE_info->list[0];
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   int startSymbolIndex, nrOfSymbols;
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = sched_ctrl->active_bwp ?
-        sched_ctrl->active_bwp->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList :
-        scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = current_BWP->tdaList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-  NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(sched_ctrl->active_bwp,
-                                                             RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                             sib1);
+  const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
-  NR_BWP_DownlinkDedicated_t *bwpd =
-      UE->CellGroup &&
-      UE->CellGroup->spCellConfig &&
-      UE->CellGroup->spCellConfig->spCellConfigDedicated ?
-      UE->CellGroup->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
-
-  const int coresetid = (sched_ctrl->active_bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : RC.nrmac[module_id]->sched_ctrlCommon->coreset->controlResourceSetId;
-
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : NRRIV2BW(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
-  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : current_BWP->BWPSize;
+  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : current_BWP->BWPStart;
 
   const uint16_t slbitmap = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
@@ -925,6 +867,7 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id) {
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
                          sub_frame_t slot) {
+
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
 
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
@@ -939,18 +882,13 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
   UE_iterator(UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
 
     if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
 
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     UE->mac_stats.dl.current_bytes = 0;
     NR_CellGroupConfig_t *cg = UE->CellGroup;
-
-    NR_BWP_DownlinkDedicated_t *bwpd =
-        cg &&
-        cg->spCellConfig &&
-        cg->spCellConfig->spCellConfigDedicated ?
-        cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
 
     /* update TA and set ta_apply every 10 frames.
      * Possible improvement: take the periodicity from input file.
@@ -1025,17 +963,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
           pucch->ul_slot,
           sched_pdsch->pucch_allocation,
           sched_ctrl->tpc1);
-    NR_BWP_Downlink_t *bwp = sched_ctrl->active_bwp;
 
-    const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
-    NR_BWP_t *genericParameters = get_dl_bwp_genericParameters(bwp,
-                                                               RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon,
-                                                               sib1);
-
-    NR_SearchSpace_t *ss = (bwp||bwpd) ? sched_ctrl->search_space : gNB_mac->sched_ctrlCommon->search_space;
-
-    const int bwp_id = bwp ? bwp->bwp_Id : 0;
-    const int coresetid = (bwp||bwpd) ? sched_ctrl->coreset->controlResourceSetId : gNB_mac->sched_ctrlCommon->coreset->controlResourceSetId;
+    const int bwp_id = current_BWP->bwp_id;
+    const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
     /* look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it */
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu = gNB_mac->pdcch_pdu_idx[CC_id][coresetid];
@@ -1049,8 +979,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
       dl_req->nPDUs += 1;
       pdcch_pdu = &dl_tti_pdcch_pdu->pdcch_pdu.pdcch_pdu_rel15;
       LOG_D(NR_MAC,"Trying to configure DL pdcch for UE %04x, bwp %d, cs %d\n", UE->rnti, bwp_id, coresetid);
-      NR_ControlResourceSet_t *coreset = (bwp||bwpd)? sched_ctrl->coreset:gNB_mac->sched_ctrlCommon->coreset;
-      nr_configure_pdcch(pdcch_pdu, coreset, genericParameters, &sched_ctrl->sched_pdcch);
+      NR_ControlResourceSet_t *coreset = sched_ctrl->coreset;
+      nr_configure_pdcch(pdcch_pdu, coreset, false, &sched_ctrl->sched_pdcch);
       gNB_mac->pdcch_pdu_idx[CC_id][coresetid] = pdcch_pdu;
     }
 
@@ -1072,19 +1002,19 @@ void nr_schedule_ue_spec(module_id_t module_id,
       pdsch_pdu->BWPSize  = gNB_mac->cset0_bwp_size;
       pdsch_pdu->BWPStart = gNB_mac->cset0_bwp_start;
     } else {
-      pdsch_pdu->BWPSize  = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-      pdsch_pdu->BWPStart = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth,MAX_BWP_SIZE);
+      pdsch_pdu->BWPSize  = current_BWP->BWPSize;
+      pdsch_pdu->BWPStart = current_BWP->BWPStart;
     }
 
-    pdsch_pdu->SubcarrierSpacing = genericParameters->subcarrierSpacing;
-    pdsch_pdu->CyclicPrefix = genericParameters->cyclicPrefix ? *genericParameters->cyclicPrefix : 0;
+    pdsch_pdu->SubcarrierSpacing = current_BWP->scs;
+    pdsch_pdu->CyclicPrefix = current_BWP->cyclicprefix ? *current_BWP->cyclicprefix : 0;
     // Codeword information
     pdsch_pdu->NrOfCodewords = 1;
     //number of information bits per 1024 coded bits expressed in 0.1 bit units
     pdsch_pdu->targetCodeRate[0] = R;
     pdsch_pdu->qamModOrder[0] = Qm;
     pdsch_pdu->mcsIndex[0] = sched_pdsch->mcs;
-    pdsch_pdu->mcsTable[0] = ps->mcsTableIdx;
+    pdsch_pdu->mcsTable[0] = current_BWP->mcsTableIdx;
     AssertFatal(harq!=NULL,"harq is null\n");
     AssertFatal(harq->round<gNB_mac->dl_bler.harq_round_max,"%d",harq->round);
     pdsch_pdu->rvIndex[0] = nr_rv_round_map[harq->round%4];
@@ -1121,21 +1051,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                             csi_report->codebook_mode);
     }
     // TBS_LBRM according to section 5.4.2.1 of 38.212
-    long maxMIMO_Layers = cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated ? *cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
-    int nl_tbslbrm = maxMIMO_Layers < 4 ? maxMIMO_Layers : 4;
+    long *maxMIMO_Layers = current_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
+    AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
+    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
     // Maximum number of PRBs across all configured DL BWPs
-    int bw_tbslbrm = get_bw_tbslbrm(genericParameters, cg);
-    pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(ps->mcsTableIdx,
+    int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, cg);
+    pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcsTableIdx,
                                                                          bw_tbslbrm,
                                                                          nl_tbslbrm);
 
-    NR_PDSCH_Config_t *pdsch_Config=NULL;
-
-    if (bwp &&
-        bwp->bwp_Dedicated &&
-        bwp->bwp_Dedicated->pdsch_Config &&
-        bwp->bwp_Dedicated->pdsch_Config->choice.setup)
-      pdsch_Config =  bwp->bwp_Dedicated->pdsch_Config->choice.setup;
+    NR_PDSCH_Config_t *pdsch_Config = current_BWP->pdsch_Config;
 
     /* Check and validate PTRS values */
     struct NR_SetupRelease_PTRS_DownlinkConfig *phaseTrackingRS =
@@ -1182,14 +1108,11 @@ void nr_schedule_ue_spec(module_id_t module_id,
     dci_pdu_rel15_t dci_payload;
     memset(&dci_payload, 0, sizeof(dci_pdu_rel15_t));
     // bwp indicator
-    const int n_dl_bwp = bwp ? cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count : 0;
-    AssertFatal(n_dl_bwp <= NR_MAX_NUM_BWP, "downlinkBWP_ToAddModList has %d BWP!\n", n_dl_bwp);
-
     // as per table 7.3.1.1.2-1 in 38.212
-    dci_payload.bwp_indicator.val = bwp ? (n_dl_bwp < 4 ? bwp->bwp_Id : bwp->bwp_Id - 1) : 0;
+    dci_payload.bwp_indicator.val = current_BWP->n_dl_bwp < 4 ? bwp_id : bwp_id - 1;
 
-    if (bwp) AssertFatal(bwp->bwp_Dedicated->pdsch_Config->choice.setup->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
-                           "Only frequency resource allocation type 1 is currently supported\n");
+    AssertFatal(pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
+                "Only frequency resource allocation type 1 is currently supported\n");
 
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu->rbSize,
                                                                                     pdsch_pdu->rbStart,
@@ -1225,19 +1148,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
           dci_payload.tpc,
           pucch->timing_indicator);
 
-    int dci_format = ss && ss->searchSpaceType && ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific ?
-                     NR_DL_DCI_FORMAT_1_1 : NR_DL_DCI_FORMAT_1_0;
-
     const int rnti_type = NR_RNTI_C;
     fill_dci_pdu_rel15(scc,
                        cg,
+                       current_BWP,
                        dci_pdu,
                        &dci_payload,
-                       dci_format,
+                       current_BWP->dci_format,
                        rnti_type,
                        pdsch_pdu->BWPSize,
-                       bwp ? bwp->bwp_Id : 0,
-                       coresetid,
+                       bwp_id,
+                       sched_ctrl->coreset,
                        gNB_mac->cset0_bwp_size);
 
     LOG_D(NR_MAC,

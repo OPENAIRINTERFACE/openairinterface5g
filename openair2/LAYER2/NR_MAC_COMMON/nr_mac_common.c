@@ -4128,22 +4128,22 @@ uint16_t compute_pucch_prb_size(uint8_t format,
   }
 }
 
-int get_bw_tbslbrm(NR_BWP_t *genericParameters,
+int get_bw_tbslbrm(int scc_bwpsize,
                    NR_CellGroupConfig_t *cg) {
 
-  int bw = 0;
-  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated &&
-      cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
-    struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-    for (int i=0; i<BWP_list->list.count; i++) {
-      genericParameters = &BWP_list->list.array[i]->bwp_Common->genericParameters;
-      int curr_bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
-      if (curr_bw > bw)
-        bw = curr_bw;
+  int bw = scc_bwpsize;
+  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated) {
+    const NR_ServingCellConfig_t *servingCellConfig = cg->spCellConfig->spCellConfigDedicated;
+    if(servingCellConfig->downlinkBWP_ToAddModList) {
+      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = servingCellConfig->downlinkBWP_ToAddModList;
+      for (int i=0; i<BWP_list->list.count; i++) {
+        NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
+        int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        if (curr_bw > bw)
+          bw = curr_bw;
+      }
     }
   }
-  else
-    bw = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   return bw;
 }
 

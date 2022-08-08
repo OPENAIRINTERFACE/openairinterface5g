@@ -18,6 +18,10 @@ if [[ -v USE_SA_NFAPI_VNF ]]; then cp $PREFIX/etc/gnb.sa.nfapi.vnf.conf $PREFIX/
 # Sometimes, the templates are not enough. We mount a conf file on $PREFIX/etc. It can be a template itself.
 if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/gnb.conf; fi
 
+# Resolve AMF FQDN
+AMF_FQDN=${AMF_FQDN:-oai-amf-svc}
+if ($USE_FQDN); then AMF_IP_ADDRESS=(`getent hosts $AMF_FQDN | awk '{print $1}'`); fi
+
 # Only this template will be manipulated
 CONFIG_FILES=`ls $PREFIX/etc/gnb.conf || true`
 

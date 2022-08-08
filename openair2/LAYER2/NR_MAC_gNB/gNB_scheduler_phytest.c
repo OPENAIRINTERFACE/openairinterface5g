@@ -195,17 +195,18 @@ void nr_preprocessor_phytest(module_id_t module_id,
   NR_UE_info_t *UE = RC.nrmac[module_id]->UE_info.list[0];
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
   const int CC_id = 0;
 
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
   ps->nrOfLayers = target_dl_Nl;
   if (ps->time_domain_allocation != tda || ps->nrOfLayers != target_dl_Nl)
-    nr_set_pdsch_semi_static(NULL, scc, UE->CellGroup, sched_ctrl->active_bwp, NULL, tda, target_dl_Nl,sched_ctrl , ps);
+    nr_set_pdsch_semi_static(dl_bwp, scc, tda, target_dl_Nl,sched_ctrl , ps);
 
   /* find largest unallocated chunk */
-  const int bwpSize = NRRIV2BW(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  const int BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const int bwpSize = dl_bwp->BWPSize;
+  const int BWPStart = dl_bwp->BWPStart;
 
   int rbStart = 0;
   int rbSize = 0;
@@ -278,7 +279,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               __func__,
               UE->rnti);
 
-  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, sched_ctrl->active_ubwp, NULL, CCEIndex);
+  int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, UE->current_UL_BWP.pucch_Config, CCEIndex);
   const int alloc = nr_acknack_scheduling(module_id, UE, frame, slot, r_pucch, 0);
   if (alloc < 0) {
     LOG_D(MAC,
@@ -308,9 +309,9 @@ void nr_preprocessor_phytest(module_id_t module_id,
   sched_pdsch->rbSize = rbSize;
 
   sched_pdsch->mcs = target_dl_mcs;
+  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
+  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
   sched_ctrl->dl_bler_stats.mcs = target_dl_mcs; /* for logging output */
-  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
@@ -340,7 +341,6 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  const int mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
   NR_UE_info_t *UE = nr_mac->UE_info.list[0];
 
   AssertFatal(nr_mac->UE_info.list[1] == NULL,
@@ -351,9 +351,10 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   const int CC_id = 0;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
+  const int mu = ul_bwp->scs;
 
-  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList =
-    sched_ctrl->active_ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+  const struct NR_PUSCH_TimeDomainResourceAllocationList *tdaList = ul_bwp->tdaList;
   const int temp_tda = get_ul_tda(nr_mac, scc, slot);
   if (temp_tda < 0)
     return false;
@@ -361,7 +362,7 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
               "time domain assignment %d >= %d\n",
               temp_tda,
               tdaList->list.count);
-  int K2 = get_K2(scc,NULL,sched_ctrl->active_ubwp, temp_tda, mu);
+  int K2 = get_K2(ul_bwp->tdaList, temp_tda, mu);
   const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
   const int tda = get_ul_tda(nr_mac, scc, sched_slot);
@@ -377,33 +378,19 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   if (!is_xlsch_in_slot(ulsch_slot_bitmap, sched_slot))
     return false;
 
-  const long f = (sched_ctrl->active_bwp && sched_ctrl->search_space &&
-                  sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) ?
-                    sched_ctrl->search_space->searchSpaceType->choice.ue_Specific->dci_Formats : 0;
-  const int dci_format = f ? NR_UL_DCI_FORMAT_0_1 : NR_UL_DCI_FORMAT_0_0;
-  uint8_t num_dmrs_cdm_grps_no_data = 1;
-  if ((target_ul_Nl==4)||(target_ul_Nl==3))
-    num_dmrs_cdm_grps_no_data = 2;
-  
   /* we want to avoid a lengthy deduction of DMRS and other parameters in
-   * every TTI if we can save it, so check whether dci_format, TDA, or
+   * every TTI if we can save it, so check whether TDA, or
    * num_dmrs_cdm_grps_no_data has changed and only then recompute */
   NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
   if (ps->time_domain_allocation != tda
-      || ps->dci_format != dci_format
-      || ps->nrOfLayers != target_ul_Nl
-      || ps->num_dmrs_cdm_grps_no_data != num_dmrs_cdm_grps_no_data)
-    nr_set_pusch_semi_static(NULL, scc, sched_ctrl->active_ubwp, NULL,dci_format, tda, num_dmrs_cdm_grps_no_data,target_ul_Nl,ps);
+      || ps->nrOfLayers != target_ul_Nl)
+    nr_set_pusch_semi_static(ul_bwp, scc, tda, target_ul_Nl,ps);
 
   uint16_t rbStart = 0;
   uint16_t rbSize;
 
-  const int bw = NRRIV2BW(sched_ctrl->active_ubwp ?
-                          sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth :
-                          scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  const int BWPStart = NRRIV2PRBOFFSET(sched_ctrl->active_ubwp ?
-                                       sched_ctrl->active_ubwp->bwp_Common->genericParameters.locationAndBandwidth :
-                                       scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const int bw = ul_bwp->BWPSize;
+  const int BWPStart = ul_bwp->BWPStart;
 
   if (target_ul_bw>bw)
     rbSize = bw;
@@ -466,10 +453,10 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
 
   /* Calculate TBS from MCS */
   ps->nrOfLayers = target_ul_Nl;
-  sched_pusch->R = nr_get_code_rate_ul(mcs, ps->mcs_table);
-  sched_pusch->Qm = nr_get_Qm_ul(mcs, ps->mcs_table);
-  if (ps->pusch_Config->tp_pi2BPSK
-      && ((ps->mcs_table == 3 && mcs < 2) || (ps->mcs_table == 4 && mcs < 6))) {
+  sched_pusch->R = nr_get_code_rate_ul(mcs, ul_bwp->mcs_table);
+  sched_pusch->Qm = nr_get_Qm_ul(mcs, ul_bwp->mcs_table);
+  if (ul_bwp->pusch_Config->tp_pi2BPSK
+      && ((ul_bwp->mcs_table == 3 && mcs < 2) || (ul_bwp->mcs_table == 4 && mcs < 6))) {
     sched_pusch->R >>= 1;
     sched_pusch->Qm <<= 1;
   }
