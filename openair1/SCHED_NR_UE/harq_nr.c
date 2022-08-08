@@ -308,7 +308,7 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
   dl_harq->status = SCH_IDLE;
   dl_harq->first_rx = 1;
   dl_harq->DLround  = 0;
-  dl_harq->Ndi = 1;
+  dl_harq->Ndi = 2; // set to an invalid value
   dl_harq->ack = DL_ACKNACK_NO_SET;
 }
 
