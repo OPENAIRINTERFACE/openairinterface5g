@@ -199,6 +199,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   NR_pdsch_tda_info_t *tda_info = &sched_ctrl->sched_pdsch.tda_info;
   nr_get_pdsch_tda_info(dl_bwp, tda, tda_info);
+  sched_ctrl->sched_pdsch.time_domain_allocation = tda;
 
   /* find largest unallocated chunk */
   const int bwpSize = dl_bwp->BWPSize;
