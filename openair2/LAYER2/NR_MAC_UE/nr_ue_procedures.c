@@ -964,7 +964,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     if (mac->scc || mac->scc_SIB || mac->cg) {
       NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
                                               mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
-      bw_tbslbrm = get_bw_tbslbrm(&genericParameters, mac->cg);
+      int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      bw_tbslbrm = get_bw_tbslbrm(BWPSize, mac->cg);
     }
     else
       bw_tbslbrm = dlsch_config_pdu_1_0->BWPSize;
@@ -1404,7 +1405,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
     NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
                                             mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
-    int bw_tbslbrm = get_bw_tbslbrm(&genericParameters, mac->cg);
+    int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    int bw_tbslbrm = get_bw_tbslbrm(BWPSize, mac->cg);
     dlsch_config_pdu_1_1->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_1->mcs_table,
 			                               bw_tbslbrm,
 		                                       nl_tbslbrm);
@@ -1598,7 +1600,6 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
     // TODO verify if SR can be transmitted in this mode
     pucch_pdu->payload = (pucch->sr_payload << O_ACK) | pucch->ack_payload;
-
   }
   else if (pucch->pucch_resource != NULL) {
 
@@ -1799,8 +1800,6 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     default:
       AssertFatal(1==0,"Group hopping flag undefined (0,1,2) \n");
     }
-
-
 }
 
 
@@ -2195,7 +2194,8 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
           sched_frame = (sched_frame + 1) % 1024;
         }
         AssertFatal(sched_slot < slots_per_frame, "sched_slot was calculated incorrect %d\n", sched_slot);
-        LOG_D(PHY,"HARQ pid %d is active for %d.%d (dl_slot %d, feedback_to_ul %d, is_common %d\n",dl_harq_pid, sched_frame,sched_slot,current_harq->dl_slot,current_harq->feedback_to_ul,current_harq->is_common);
+        LOG_D(PHY,"HARQ pid %d is active for %d.%d (dl_slot %d, feedback_to_ul %d, is_common %d\n",
+              dl_harq_pid, sched_frame,sched_slot,current_harq->dl_slot,current_harq->feedback_to_ul,current_harq->is_common);
         /* check if current tx slot should transmit downlink acknowlegment */
         if (sched_frame == frame && sched_slot == slot) {
           if (get_softmodem_params()->emulate_l1) {
