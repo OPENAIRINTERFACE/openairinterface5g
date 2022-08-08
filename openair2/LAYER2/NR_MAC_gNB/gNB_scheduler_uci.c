@@ -181,6 +181,11 @@ void nr_csi_meas_reporting(int Mod_idP,
 
       AssertFatal(csirep->reportConfigType.choice.periodic,
                   "Only periodic CSI reporting is implemented currently\n");
+
+      const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+      if(pucchcsires->uplinkBandwidthPartId != ul_bwp->bwp_id)
+        continue;
+
       int period, offset;
       csi_period_offset(csirep, NULL, &period, &offset);
       const int sched_slot = (period + offset) % n_slots_frame;
@@ -188,9 +193,8 @@ void nr_csi_meas_reporting(int Mod_idP,
       // preparation is done in first slot of tdd period
       if (frame % (period / n_slots_frame) != offset / n_slots_frame)
         continue;
-      LOG_D(NR_MAC, "CSI reporting in frame %d slot %d\n", frame, sched_slot);
+      LOG_D(NR_MAC, "CSI reporting in frame %d slot %d CSI report ID %ld\n", frame, sched_slot, csirep->reportConfigId);
 
-      const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
       const NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
       const int n = pucchresset->resourceList.list.count;
       int res_index = 0;
@@ -769,6 +773,9 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
     uint8_t li_bitlen = 0;
     uint8_t pmi_bitlen = 0;
     NR_CSI_ReportConfig_t *csirep = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+    const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+    if(pucchcsires->uplinkBandwidthPartId != ul_bwp->bwp_id)
+      continue;
     int period, offset;
     csi_period_offset(csirep, NULL, &period, &offset);
     // verify if report with current id has been scheduled for this frame and slot

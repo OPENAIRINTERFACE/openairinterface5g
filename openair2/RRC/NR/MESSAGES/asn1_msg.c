@@ -452,7 +452,7 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ss1->monitoringSymbolsWithinSlot->buf = calloc(1,2);
   // should be '1000 0000 0000 00'B (LSB first!), first symbol in slot, adjust if needed
   ss1->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss1->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
+  ss1->monitoringSymbolsWithinSlot->buf[0] = 0x80;
   ss1->monitoringSymbolsWithinSlot->size = 2;
   ss1->monitoringSymbolsWithinSlot->bits_unused = 2;
   ss1->nrofCandidates = calloc(1,sizeof(*ss1->nrofCandidates));
@@ -480,7 +480,7 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ss5->monitoringSymbolsWithinSlot->buf = calloc(1,2);
   // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
   ss5->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss5->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
+  ss5->monitoringSymbolsWithinSlot->buf[0] = 0x80;
   ss5->monitoringSymbolsWithinSlot->size = 2;
   ss5->monitoringSymbolsWithinSlot->bits_unused = 2;
   ss5->nrofCandidates = calloc(1,sizeof(*ss5->nrofCandidates));
@@ -505,7 +505,7 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   ss7->monitoringSymbolsWithinSlot->buf = calloc(1,2);
   // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
   ss7->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss7->monitoringSymbolsWithinSlot->buf[0] = (1<<7);
+  ss7->monitoringSymbolsWithinSlot->buf[0] = 0x80;
   ss7->monitoringSymbolsWithinSlot->size = 2;
   ss7->monitoringSymbolsWithinSlot->bits_unused = 2;
   ss7->nrofCandidates = calloc(1,sizeof(*ss7->nrofCandidates));

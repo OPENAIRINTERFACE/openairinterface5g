@@ -875,7 +875,7 @@ void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
   ss->monitoringSymbolsWithinSlot->buf = calloc(1,2);
   // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
   ss->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss->monitoringSymbolsWithinSlot->buf[0] = 0xc0;
+  ss->monitoringSymbolsWithinSlot->buf[0] = 0x80;
   ss->monitoringSymbolsWithinSlot->size = 2;
   ss->monitoringSymbolsWithinSlot->bits_unused = 2;
   ss->nrofCandidates = calloc(1,sizeof(*ss->nrofCandidates));
@@ -933,7 +933,7 @@ void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
   ss2->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss2->monitoringSymbolsWithinSlot));
   ss2->monitoringSymbolsWithinSlot->buf = calloc(1,2);
   ss2->monitoringSymbolsWithinSlot->size = 2;
-  ss2->monitoringSymbolsWithinSlot->buf[0]=0xc0;
+  ss2->monitoringSymbolsWithinSlot->buf[0]=0x80;
   ss2->monitoringSymbolsWithinSlot->buf[1]=0x0;
   ss2->monitoringSymbolsWithinSlot->bits_unused = 2;
   ss2->nrofCandidates=calloc(1,sizeof(*ss2->nrofCandidates));
