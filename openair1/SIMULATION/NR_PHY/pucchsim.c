@@ -705,7 +705,7 @@ int main(int argc, char **argv)
           pucch_pdu.second_hop_prb      = N_RB_DL-1;
         }
         else pucch_pdu.freq_hop_flag = 0;
-        nr_decode_pucch2(gNB,nr_slot_tx,&uci_pdu,&pucch_pdu);
+        nr_decode_pucch2(gNB,nr_frame_tx,nr_slot_tx,&uci_pdu,&pucch_pdu);
         int csi_part1_bytes=pucch_pdu.bit_len_csi_part1>>3;
         if ((pucch_pdu.bit_len_csi_part1&7) > 0) csi_part1_bytes++;
         for (int i=0;i<csi_part1_bytes;i++) {

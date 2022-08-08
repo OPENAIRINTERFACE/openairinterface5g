@@ -230,7 +230,7 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   if (get_softmodem_params()->sa) {
     uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
     int scs_scaling = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000 ? 3 : 1;
-    ssb_subcarrier_offset = (absolute_diff*scs_scaling)%24;
+    ssb_subcarrier_offset = (absolute_diff/scs_scaling)%24;
     if(frequency_range == FR2)
       ssb_subcarrier_offset >>= 1; // this assumes 120kHz SCS for SSB and subCarrierSpacingCommon (only option supported by OAI for now)
   }
@@ -306,11 +306,10 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   return((enc_rval.encoded+7)/8);
 }
 
-uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier, 
-	               gNB_RrcConfigurationReq *configuration
-                  ) {
-  asn_enc_rval_t enc_rval;
+uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
+                    gNB_RrcConfigurationReq *configuration) {
 
+  asn_enc_rval_t enc_rval;
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
   carrier->siblock1 = sib1_message;
   sib1_message->message.present = NR_BCCH_DL_SCH_MessageType_PR_c1;
@@ -346,7 +345,6 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
     if(configuration->mnc_digit_length[i] == 3) {
       asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc0);
       *mnc0=(configuration->mnc[i]/100)%10;
-      mnc/=10;
     }
     asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc1);
     *mnc1=(mnc/10)%10;
@@ -661,12 +659,9 @@ uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
                                    (void *)sib1_message,
                                    carrier->SIB1,
                                    NR_MAX_SIB_LENGTH/8);
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
-
-  if (enc_rval.encoded==-1) {
-    return(-1);
-  }
+  AssertFatal(enc_rval.encoded <= NR_MAX_SIB_LENGTH, "ASN1 encoded length %zd bits. 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.\n", enc_rval.encoded);
 
   return((enc_rval.encoded+7)/8);
 }

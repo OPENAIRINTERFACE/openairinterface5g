@@ -1891,11 +1891,11 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
 //==============================================================================================
 
 /* Main Function */
-int nr_rx_pusch(PHY_VARS_gNB *gNB,
-                uint8_t ulsch_id,
-                uint32_t frame,
-                uint8_t slot,
-                unsigned char harq_pid)
+void nr_rx_pusch(PHY_VARS_gNB *gNB,
+                 uint8_t ulsch_id,
+                 uint32_t frame,
+                 uint8_t slot,
+                 unsigned char harq_pid)
 {
 
   uint8_t aarx, aatx;
@@ -2149,6 +2149,4 @@ int nr_rx_pusch(PHY_VARS_gNB *gNB,
       rxdataF_ext_offset += gNB->pusch_vars[ulsch_id]->ul_valid_re_per_slot[symbol];
     }
   } // symbol loop
-
-  return 0;
 }

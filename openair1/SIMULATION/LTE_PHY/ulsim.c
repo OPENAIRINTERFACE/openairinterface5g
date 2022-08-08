@@ -358,7 +358,7 @@ int main(int argc, char **argv) {
   unsigned short input_buffer_length;
   unsigned int ret;
   unsigned int coded_bits_per_codeword,nsymb;
-  unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[5]= {0,0,0,0,0},round_trials[4]= {0,0,0,0};
+  unsigned int tx_lev = 0, tx_lev_dB = 0, trials, errs[6] = {0}, round_trials[4] = {0};
   FILE *bler_fd=NULL;
   char bler_fname[512];
   FILE *time_meas_fd=NULL;
@@ -387,7 +387,6 @@ int main(int argc, char **argv) {
   double cpu_freq_GHz;
   int iter_trials;
   uint32_t UL_alloc_pdu;
-  int s,Kr,Kr_bytes;
   int dump_perf=0;
   static int dump_table =0;
   double effective_rate=0.0;
@@ -1233,20 +1232,21 @@ int main(int argc, char **argv) {
 
             if (n_frames==1) {
               printf("ULSCH errors found o_ACK[0]= %d\n",eNB->ulsch[0]->harq_processes[harq_pid]->o_ACK[0]);
-
+#ifdef DUMP_EACH_VALUE
+              int Kr_bytes;
               for (s=0; s<eNB->ulsch[0]->harq_processes[harq_pid]->C; s++) {
                 if (s<eNB->ulsch[0]->harq_processes[harq_pid]->Cminus)
-                  Kr = eNB->ulsch[0]->harq_processes[harq_pid]->Kminus;
+                  Kr_bytes = eNB->ulsch[0]->harq_processes[harq_pid]->Kminus;
                 else
-                  Kr = eNB->ulsch[0]->harq_processes[harq_pid]->Kplus;
-
-                Kr_bytes = Kr>>3;
+                  Kr_bytes = eNB->ulsch[0]->harq_processes[harq_pid]->Kplus;
+                Kr_bytes = Kr_bytes >> 3;
                 printf("Decoded_output (Segment %d):\n",s);
 
                 for (i=0; i<Kr_bytes; i++)
                   printf("%d : %x (%x)\n",i,eNB->ulsch[0]->harq_processes[harq_pid]->c[s][i],
                          eNB->ulsch[0]->harq_processes[harq_pid]->c[s][i]^UE->ulsch[0]->harq_processes[harq_pid]->c[s][i]);
               }
+#endif
 
               dump_ulsch(eNB,eNB->proc.frame_rx,subframe,0,round);
               round=5;

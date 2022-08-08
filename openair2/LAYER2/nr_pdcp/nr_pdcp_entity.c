@@ -27,6 +27,7 @@
 
 #include "nr_pdcp_security_nea2.h"
 #include "nr_pdcp_integrity_nia2.h"
+#include "nr_pdcp_integrity_nia1.h"
 #include "nr_pdcp_sdu.h"
 
 #include "LOG/log.h"
@@ -240,16 +241,21 @@ static void nr_pdcp_entity_set_security(nr_pdcp_entity_t *entity,
   }
 
   if (integrity_algorithm != 0 && integrity_algorithm != -1) {
-    if (integrity_algorithm != 2) {
-      LOG_E(PDCP, "FATAL: only nia2 supported for the moment\n");
-      exit(1);
-    }
     entity->has_integrity = 1;
     if (entity->free_integrity != NULL)
       entity->free_integrity(entity->integrity_context);
-    entity->integrity_context = nr_pdcp_integrity_nia2_init(entity->integrity_key);
-    entity->integrity = nr_pdcp_integrity_nia2_integrity;
-    entity->free_integrity = nr_pdcp_integrity_nia2_free_integrity;
+    if (integrity_algorithm == 2) {
+      entity->integrity_context = nr_pdcp_integrity_nia2_init(entity->integrity_key);
+      entity->integrity = nr_pdcp_integrity_nia2_integrity;
+      entity->free_integrity = nr_pdcp_integrity_nia2_free_integrity;
+    } else if (integrity_algorithm == 1) {
+      entity->integrity_context = nr_pdcp_integrity_nia1_init(entity->integrity_key);
+      entity->integrity = nr_pdcp_integrity_nia1_integrity;
+      entity->free_integrity = nr_pdcp_integrity_nia1_free_integrity;
+    } else {
+      LOG_E(PDCP, "FATAL: only nia1 and nia2 supported for the moment\n");
+      exit(1);
+    }
   }
 
   if (ciphering_algorithm == 0) {

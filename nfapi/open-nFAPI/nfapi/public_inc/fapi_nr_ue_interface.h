@@ -36,9 +36,6 @@
 */
 
 
-
-
-
 typedef struct {
   uint8_t uci_format;
   uint8_t uci_channel;
@@ -50,7 +47,14 @@ typedef struct {
   uint32_t sr;
 } fapi_nr_uci_pdu_rel15_t;
 
-    
+typedef struct {
+  uint32_t rsrp;
+  int rsrp_dBm;
+  uint8_t rank_indicator;
+  uint8_t i1;
+  uint8_t i2;
+  uint8_t cqi;
+} fapi_nr_csirs_measurements_t;
 
 typedef struct {
   /// frequency_domain_resource;
@@ -87,7 +91,7 @@ typedef struct {
   // N_CCE is L, or number of CCEs for DCI
   int N_CCE;
   uint8_t payloadSize;
-  uint8_t payloadBits[16];
+  uint8_t payloadBits[16] __attribute__((aligned(16))); // will be cast as uint64
   //fapi_nr_dci_pdu_rel15_t dci;
 } fapi_nr_dci_indication_pdu_t;
 
@@ -130,6 +134,7 @@ typedef struct {
     fapi_nr_pdsch_pdu_t pdsch_pdu;
     fapi_nr_ssb_pdu_t ssb_pdu;
     fapi_nr_sib_pdu_t sib_pdu;
+    fapi_nr_csirs_measurements_t csirs_measurements;
   };
 } fapi_nr_rx_indication_body_t;
 
