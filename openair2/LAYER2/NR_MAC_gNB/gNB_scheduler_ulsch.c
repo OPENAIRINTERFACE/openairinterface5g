@@ -1174,11 +1174,12 @@ void handle_nr_srs_measurements(const module_id_t module_id,
 
       // TODO: This should be improved
       NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+      NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
       NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
       ps->srs_feedback.sri = NR_SRS_SRI_0;
       ps->srs_feedback.ul_ri = 0; // TODO: Compute this
-      ps->srs_feedback.tpmi = nr_srs_tpmi_estimation(ps->pusch_Config,
-                                                     ps->transform_precoding,
+      ps->srs_feedback.tpmi = nr_srs_tpmi_estimation(current_BWP->pusch_Config,
+                                                     current_BWP->transform_precoding,
                                                      nr_srs_normalized_channel_iq_matrix.channel_matrix,
                                                      nr_srs_normalized_channel_iq_matrix.normalized_iq_representation,
                                                      nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements,
