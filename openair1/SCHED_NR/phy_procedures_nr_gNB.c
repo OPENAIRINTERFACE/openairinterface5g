@@ -882,7 +882,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
         uint8_t N_symb_SRS = 1<<srs_pdu->num_symbols;
         int32_t srs_received_signal[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
-        int32_t srs_ls_estimated_channel[frame_parms->nb_antennas_rx][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size*N_symb_SRS];
         int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size*N_symb_SRS] __attribute__ ((aligned(32)));
         int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size] __attribute__ ((aligned(32)));
         int32_t srs_estimated_channel_time_shifted[frame_parms->nb_antennas_rx][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size];
@@ -907,7 +906,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     gNB->nr_srs_info[i],
                                     (const int32_t **) gNB->nr_srs_info[i]->srs_generated_signal,
                                     srs_received_signal,
-                                    srs_ls_estimated_channel,
                                     srs_estimated_channel_freq,
                                     srs_estimated_channel_time,
                                     srs_estimated_channel_time_shifted,

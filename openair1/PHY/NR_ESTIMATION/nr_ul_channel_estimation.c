@@ -967,7 +967,6 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
                               const nr_srs_info_t *nr_srs_info,
                               const int32_t **srs_generated_signal,
                               int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
-                              int32_t srs_ls_estimated_channel[][1<<srs_pdu->num_ant_ports][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
                               int32_t srs_estimated_channel_freq[][1<<srs_pdu->num_ant_ports][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
                               int32_t srs_estimated_channel_time[][1<<srs_pdu->num_ant_ports][gNB->frame_parms.ofdm_symbol_size],
                               int32_t srs_estimated_channel_time_shifted[][1<<srs_pdu->num_ant_ports][gNB->frame_parms.ofdm_symbol_size],
@@ -993,18 +992,17 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
     fd_cdm = 2;
   }
 
+  c16_t srs_ls_estimated_channel[frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)];
   int16_t ch_real[frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS];
   int16_t ch_imag[frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS];
   int16_t noise_real[frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS];
   int16_t noise_imag[frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS];
-
   int16_t ls_estimated[2];
 
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
     for (int p_index = 0; p_index < N_ap; p_index++) {
 
-      memset(srs_ls_estimated_channel[ant][p_index], 0, frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)*sizeof(int32_t));
       memset(srs_estimated_channel_freq[ant][p_index], 0, frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)*sizeof(int32_t));
 
 #ifdef SRS_DEBUG
@@ -1047,7 +1045,8 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
           }
         }
 
-        srs_ls_estimated_channel[ant][p_index][subcarrier] = ls_estimated[0] + (((int32_t)ls_estimated[1] << 16) & 0xFFFF0000);
+        srs_ls_estimated_channel[subcarrier].r = ls_estimated[0];
+        srs_ls_estimated_channel[subcarrier].i = ls_estimated[1];
 
 #ifdef SRS_DEBUG
         int subcarrier_log = subcarrier-subcarrier_offset;
@@ -1060,8 +1059,8 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
         }
         LOG_I(NR_PHY,"(%4i) %6i\t%6i  |  %6i\t%6i  |  %6i\t%6i\n",
               subcarrier_log,
-              (int16_t)(srs_generated_signal[p_index][subcarrier] & 0xFFFF), (int16_t)((srs_generated_signal[p_index][subcarrier] >> 16) & 0xFFFF),
-              (int16_t)(srs_received_signal[ant][subcarrier] & 0xFFFF), (int16_t)((srs_received_signal[ant][subcarrier] >> 16) & 0xFFFF),
+              ((c16_t*)srs_generated_signal[p_index])[subcarrier].r, ((c16_t*)srs_generated_signal[p_index])[subcarrier].i,
+              ((c16_t*)srs_received_signal[ant])[subcarrier].r, ((c16_t*)srs_received_signal[ant])[subcarrier].i,
               ls_estimated[0], ls_estimated[1]);
 #endif
 
@@ -1120,8 +1119,8 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
       for (int k = 0; k < M_sc_b_SRS; k++) {
         ch_real[base_idx+k] = ((c16_t*)srs_estimated_channel_freq[ant][p_index])[subcarrier].r;
         ch_imag[base_idx+k] = ((c16_t*)srs_estimated_channel_freq[ant][p_index])[subcarrier].i;
-        noise_real[base_idx+k] = abs(((c16_t*)srs_ls_estimated_channel[ant][p_index])[subcarrier].r - ch_real[base_idx+k]);
-        noise_imag[base_idx+k] = abs(((c16_t*)srs_ls_estimated_channel[ant][p_index])[subcarrier].i - ch_imag[base_idx+k]);
+        noise_real[base_idx+k] = abs(srs_ls_estimated_channel[subcarrier].r - ch_real[base_idx+k]);
+        noise_imag[base_idx+k] = abs(srs_ls_estimated_channel[subcarrier].i - ch_imag[base_idx+k]);
         subcarrier += K_TC;
         if (subcarrier >= frame_parms->ofdm_symbol_size) {
           subcarrier=subcarrier-frame_parms->ofdm_symbol_size;
@@ -1148,10 +1147,10 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
 
         LOG_I(NR_PHY,"(%4i) %6i\t%6i  |  %6i\t%6i  |  %6i\t%6i\n",
               subcarrier_log,
-              (int16_t)(srs_ls_estimated_channel[ant][p_index][subcarrier]&0xFFFF),
-              (int16_t)((srs_ls_estimated_channel[ant][p_index][subcarrier]>>16)&0xFFFF),
-              (int16_t)(srs_estimated_channel_freq[ant][p_index][subcarrier]&0xFFFF),
-              (int16_t)((srs_estimated_channel_freq[ant][p_index][subcarrier]>>16)&0xFFFF),
+              srs_ls_estimated_channel[subcarrier].r,
+              srs_ls_estimated_channel[subcarrier].i,
+              ((c16_t*)srs_estimated_channel_freq[ant][p_index])[subcarrier].r,
+              ((c16_t*)srs_estimated_channel_freq[ant][p_index])[subcarrier].i,
               noise_real[base_idx+(k/K_TC)], noise_imag[base_idx+(k/K_TC)]);
 
         // Subcarrier increment
