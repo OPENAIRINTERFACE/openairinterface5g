@@ -33,6 +33,14 @@
 
 #include "nr_rrc_defs.h"
 
+#define asn1cCallocOne(VaR, VaLue) \
+  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue;
+#define asn1cCalloc(VaR, lOcPtr) \
+  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR));
+#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
+  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
+  ASN_SEQUENCE_ADD(&VaR,lOcPtr);
+
 typedef struct rlc_bearer_config_s{
   long        LogicalChannelIdentity[MAX_NUM_CCs];
   long        servedRadioBearer_present[MAX_NUM_CCs];
