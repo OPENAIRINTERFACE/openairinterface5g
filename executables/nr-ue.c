@@ -161,7 +161,14 @@ void RCconfig_nrUE_prs(void *cfg)
   paramlist_def_t gParamList = {CONFIG_STRING_PRS_LIST,NULL,0};
   paramdef_t gParams[] = PRS_GLOBAL_PARAMS_DESC;
   config_getlist( &gParamList,gParams,sizeof(gParams)/sizeof(paramdef_t), NULL);
-  ue->prs_active_gNBs = *(gParamList.paramarray[j][PRS_ACTIVE_GNBS_IDX].uptr);
+  if (gParamList.numelt > 0)
+  {
+    ue->prs_active_gNBs = *(gParamList.paramarray[j][PRS_ACTIVE_GNBS_IDX].uptr);
+  }
+  else
+  {
+    LOG_I(PHY,"%s configuration NOT found..!! Skipping configuring UE for the PRS reception\n", CONFIG_STRING_PRS_CONFIG);
+  }
 
   paramlist_def_t PRS_ParamList = {{0},NULL,0};
   for(int i = 0; i < ue->prs_active_gNBs; i++)
@@ -247,7 +254,7 @@ void RCconfig_nrUE_prs(void *cfg)
     }
     else
     {
-      LOG_I(NR_PHY,"No %s configuration found\n", PRS_ParamList.listname);
+      LOG_I(PHY,"No %s configuration found\n", PRS_ParamList.listname);
     }
   }
 }
