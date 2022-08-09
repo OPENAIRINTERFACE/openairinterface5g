@@ -35,6 +35,8 @@
  200000
  020001
  020002
+ 030011
+ 030012
  200001
  100001
         </TestCaseRequestedList>
@@ -92,6 +94,24 @@
                 <container_name>l2sim4g-trf-gen</container_name>
                 <options>-c 20 12.0.0.2</options>
                 <loss_threshold>0</loss_threshold>
+        </testCase>
+
+        <testCase id="030011">
+                <class>IperfFromContainer</class>
+                <desc>Iperf UDP Downlink</desc>
+                <server_container_name>l2sim4g-oai-lte-ue1</server_container_name>
+                <client_container_name>l2sim4g-trf-gen</client_container_name>
+                <server_options>-B 12.0.0.2 -u -i 1 -s</server_options>
+                <client_options>-c 12.0.0.2 -u -i 1 -t 30 -b 1M</client_options>
+        </testCase>
+
+        <testCase id="030012">
+                <class>IperfFromContainer</class>
+                <desc>Iperf UDP Uplink</desc>
+                <server_container_name>l2sim4g-trf-gen</server_container_name>
+                <client_container_name>l2sim4g-oai-lte-ue1</client_container_name>
+                <server_options>-u -i 1 -s</server_options>
+                <client_options>-B 12.0.0.2 -c 192.168.61.11 -u -i 1 -t 30 -b 3M</client_options>
         </testCase>
 
         <testCase id="100001">
