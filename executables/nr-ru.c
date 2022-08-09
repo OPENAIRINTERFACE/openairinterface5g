@@ -63,7 +63,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 static int DEFBFW[] = {0x00007fff};
-static int DEFRUTPCORES[] = {2,4,6,8};
+static int DEFRUTPCORES[] = {-1,-1,-1,-1};
 //static int DEFNRBANDS[] = {7};
 //static int DEFGNBS[] = {0};
 
