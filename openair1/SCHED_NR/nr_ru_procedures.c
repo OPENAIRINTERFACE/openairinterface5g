@@ -63,7 +63,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
 
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0) , 1 );
 
-  if (aa==0) start_meas(&ru->ofdm_mod_stats);
+  if (aa==0 && first_symbol == 0) start_meas(&ru->ofdm_mod_stats);
   slot_offset  = fp->get_samples_slot_timestamp(slot,fp,0);
   slot_offsetF = first_symbol*fp->ofdm_symbol_size;
 
@@ -136,7 +136,7 @@ void nr_feptx0(RU_t *ru,int tti_tx,int first_symbol, int num_symbols, int aa) {
     } //  numerology 0
   }
 
-  if (aa==0) stop_meas(&ru->ofdm_mod_stats);
+  if (aa==0 && first_symbol==0) stop_meas(&ru->ofdm_mod_stats);
         
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0), 0);
 }
