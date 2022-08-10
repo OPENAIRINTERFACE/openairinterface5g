@@ -199,6 +199,10 @@ void nr_schedule_pucch(gNB_MAC_INST *nrmac,
                        frame_t frameP,
                        sub_frame_t slotP);
 
+void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr_srs_normalized_channel_iq_matrix,
+                           const NR_UE_UL_BWP_t *current_BWP,
+                           uint8_t *ul_ri);
+
 void nr_schedule_srs(int module_id, frame_t frame);
 
 void nr_csirs_scheduling(int Mod_idP,

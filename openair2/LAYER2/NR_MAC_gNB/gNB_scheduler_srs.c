@@ -33,12 +33,109 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/nr/nr_common.h"
 
+//#define SRS_DEBUG
+
 extern RAN_CONTEXT_t RC;
 
 const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 48, 52, 56, 60, 64, 72, 72, 76, 80, 88,
                              96, 96, 104, 112, 120, 120, 120, 128, 128, 128, 132, 136, 144, 144, 144, 144, 152, 160,
                              160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
                              256, 264, 272, 272, 272 };
+
+uint32_t max4(uint32_t a, uint32_t b,uint32_t c,uint32_t d) {
+  int x = max(a, b);
+  x = max(x, c);
+  x = max(x, d);
+  return x;
+}
+
+void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr_srs_normalized_channel_iq_matrix,
+                           const NR_UE_UL_BWP_t *current_BWP,
+                           uint8_t *ul_ri)
+{
+  // If the gNB or UE has 1 antenna, the rank is always 1, i.e., *ul_ri = 0.
+  // For 2x2 scenario, we compute the rank of channel.
+  // The computation for 2x4, 4x2, 4x4, ... scenarios are not implemented yet. In these cases, the function sets *ul_ri = 0, which is always a valid value.
+  if (!(nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements == 2 &&
+        nr_srs_normalized_channel_iq_matrix->num_ue_srs_ports == 2 &&
+        current_BWP->pusch_Config && *current_BWP->pusch_Config->maxRank == 2)) {
+    *ul_ri = 0;
+    return;
+  }
+
+  const c16_t *ch = (c16_t *)nr_srs_normalized_channel_iq_matrix->channel_matrix;
+  const uint16_t num_gnb_antenna_elements = nr_srs_normalized_channel_iq_matrix->num_gnb_antenna_elements;
+  const uint16_t num_prgs = nr_srs_normalized_channel_iq_matrix->num_prgs;
+  const uint16_t base00_idx = 0 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 0, Tx port 0
+  const uint16_t base01_idx = 1 * num_gnb_antenna_elements * num_prgs + 0 * num_prgs; // Rx antenna 0, Tx port 1
+  const uint16_t base10_idx = 0 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 1, Tx port 0
+  const uint16_t base11_idx = 1 * num_gnb_antenna_elements * num_prgs + 1 * num_prgs; // Rx antenna 1, Tx port 1
+  const uint8_t bshift = 2;
+  const int16_t cond_dB_threshold = 5;
+  int count = 0;
+
+  for(int pI = 0; pI < num_prgs; pI++) {
+
+    /* Hh x H =
+    *           | conjch00 conjch10 | x | ch00 ch01 | = | conjch00*ch00+conjch10*ch10 conjch00*ch01+conjch10*ch11 |
+    *           | conjch01 conjch11 |   | ch10 ch11 |   | conjch01*ch00+conjch11*ch10 conjch01*ch01+conjch11*ch11 |
+    */
+
+    const c32_t ch00 = {ch[base00_idx + pI].r, ch[base00_idx + pI].i};
+    const c32_t ch01 = {ch[base01_idx + pI].r, ch[base01_idx + pI].i};
+    const c32_t ch10 = {ch[base10_idx + pI].r, ch[base10_idx + pI].i};
+    const c32_t ch11 = {ch[base11_idx + pI].r, ch[base11_idx + pI].i};
+
+    c16_t HhxH00 = {(int16_t)((ch00.r * ch00.r + ch00.i * ch00.i + ch10.r * ch10.r + ch10.i * ch10.i) >> bshift),
+                    (int16_t)((ch00.r * ch00.i - ch00.i * ch00.r + ch10.r * ch10.i - ch10.i * ch10.r) >> bshift)};
+
+    c16_t HhxH01 = {(int16_t)((ch00.r * ch01.r + ch00.i * ch01.i + ch10.r * ch11.r + ch10.i * ch11.i) >> bshift),
+                    (int16_t)((ch00.r * ch01.i - ch00.i * ch01.r + ch10.r * ch11.i - ch10.i * ch11.r) >> bshift)};
+
+    c16_t HhxH10 = {(int16_t)((ch01.r * ch00.r + ch01.i * ch00.i + ch11.r * ch10.r + ch11.i * ch10.i) >> bshift),
+                    (int16_t)((ch01.r * ch00.i - ch01.i * ch00.r + ch11.r * ch10.i - ch11.i * ch10.r) >> bshift)};
+
+    c16_t HhxH11 = {(int16_t)((ch01.r * ch01.r + ch01.i * ch01.i + ch11.r * ch11.r + ch11.i * ch11.i) >> bshift),
+                    (int16_t)((ch01.r * ch01.i - ch01.i * ch01.r + ch11.r * ch11.i - ch11.i * ch11.r) >> bshift)};
+
+    int8_t det_HhxH_dB = dB_fixed(HhxH00.r * HhxH11.r - HhxH00.i * HhxH11.i - HhxH01.r * HhxH10.r + HhxH01.i * HhxH10.i);
+
+    int8_t norm_HhxH_2_dB = dB_fixed(max4(HhxH00.r*HhxH00.r + HhxH00.i*HhxH00.i,
+                                          HhxH01.r*HhxH01.r + HhxH01.i*HhxH01.i,
+                                          HhxH10.r*HhxH10.r + HhxH10.i*HhxH10.i,
+                                          HhxH11.r*HhxH11.r + HhxH11.i*HhxH11.i));
+
+    int8_t cond_db = norm_HhxH_2_dB - det_HhxH_dB;
+
+    if (cond_db < cond_dB_threshold) {
+      count++;
+    } else {
+      count--;
+    }
+
+#ifdef SRS_DEBUG
+    LOG_I(NR_MAC, "H00[%i] = %i + j(%i)\n", pI, ch[base00_idx+pI].r, ch[base00_idx+pI].i);
+    LOG_I(NR_MAC, "H01[%i] = %i + j(%i)\n", pI, ch[base01_idx+pI].r, ch[base01_idx+pI].i);
+    LOG_I(NR_MAC, "H10[%i] = %i + j(%i)\n", pI, ch[base10_idx+pI].r, ch[base10_idx+pI].i);
+    LOG_I(NR_MAC, "H11[%i] = %i + j(%i)\n", pI, ch[base11_idx+pI].r, ch[base11_idx+pI].i);
+    LOG_I(NR_MAC, "HhxH00[%i] = %i + j(%i)\n", pI, HhxH00.r, HhxH00.i);
+    LOG_I(NR_MAC, "HhxH01[%i] = %i + j(%i)\n", pI, HhxH01.r, HhxH01.i);
+    LOG_I(NR_MAC, "HhxH10[%i] = %i + j(%i)\n", pI, HhxH10.r, HhxH10.i);
+    LOG_I(NR_MAC, "HhxH11[%i] = %i + j(%i)\n", pI, HhxH11.r, HhxH11.i);
+    LOG_I(NR_MAC, "det_HhxH[%i] = %i\n", pI, det_HhxH_dB);
+    LOG_I(NR_MAC, "norm_HhxH_2_dB[%i] = %i\n", pI, norm_HhxH_2_dB);
+#endif
+  }
+
+  if (count > 0) {
+    *ul_ri = 1;
+  }
+
+#ifdef SRS_DEBUG
+  LOG_I(NR_MAC, "ul_ri = %i (count = %i)\n", (*ul_ri)+1, count);
+#endif
+
+}
 
 void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_UE_info_t*  UE, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource) {
 

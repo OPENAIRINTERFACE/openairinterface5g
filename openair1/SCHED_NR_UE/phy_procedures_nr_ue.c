@@ -295,9 +295,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
     }
   }
 
-  if (ue->UE_mode[gNB_id] == PUSCH) {
-    ue_srs_procedures_nr(ue, proc, gNB_id);
-  }
+  ue_srs_procedures_nr(ue, proc, gNB_id);
 
   if (ue->UE_mode[gNB_id] <= PUSCH) {
     pucch_procedures_ue_nr(ue,
