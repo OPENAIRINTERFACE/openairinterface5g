@@ -643,7 +643,7 @@ int fill_srs_channel_matrix(uint8_t *channel_matrix,
                             const uint16_t prg_size,
                             const uint16_t num_prgs,
                             const NR_DL_FRAME_PARMS *frame_parms,
-                            const int32_t srs_estimated_channel_freq[][MAX_NUM_NR_SRS_AP][frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)]) {
+                            const int32_t srs_estimated_channel_freq[][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols)]) {
 
   const uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*NR_NB_SC_PER_RB;
   const uint16_t step = prg_size*NR_NB_SC_PER_RB;
