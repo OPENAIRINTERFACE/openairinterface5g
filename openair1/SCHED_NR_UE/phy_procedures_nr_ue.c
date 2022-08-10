@@ -1342,6 +1342,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   if (cfg->ssb_table.ssb_period == 0 ||
       !(frame_rx%(1<<(cfg->ssb_table.ssb_period-1)))){
 
+    const int estimateSz = fp->symbols_per_slot * fp->ofdm_symbol_size;
     // loop over SSB blocks
     for(int ssb_index=0; ssb_index<fp->Lmax; ssb_index++) {
       uint32_t curr_mask = cfg->ssb_table.ssb_mask_list[ssb_index/32].ssb_mask;
@@ -1357,7 +1358,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PBCH, VCD_FUNCTION_IN);
           LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
 
-          const int estimateSz = fp->symbols_per_slot * fp->ofdm_symbol_size;
           __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates[fp->nb_antennas_rx][estimateSz];
           __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[fp->nb_antennas_rx][fp->ofdm_symbol_size];
 
