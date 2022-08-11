@@ -148,7 +148,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
 
   if (do_csirs) {
 
-    csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
+    if(!csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList)
+      csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList  = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList));
     NR_NZP_CSI_RS_ResourceSet_t *nzpcsirs0 = calloc(1,sizeof(*nzpcsirs0));
     nzpcsirs0->nzp_CSI_ResourceSetId = id;
     NR_NZP_CSI_RS_ResourceId_t *nzpid0 = calloc(1,sizeof(*nzpid0));
@@ -168,7 +169,8 @@ void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
     if (tdd)
       nb_slots_per_period = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
 
-    csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
+    if(!csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList)
+      csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
     NR_NZP_CSI_RS_Resource_t *nzpcsi0 = calloc(1,sizeof(*nzpcsi0));
     nzpcsi0->nzp_CSI_RS_ResourceId = id;
     NR_CSI_RS_ResourceMapping_t resourceMapping;
