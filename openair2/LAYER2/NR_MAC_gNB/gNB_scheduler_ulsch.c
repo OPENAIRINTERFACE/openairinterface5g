@@ -1422,7 +1422,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
 
   int rbStart = 0; // wrt BWP start
   const uint16_t bwpSize = UE->current_UL_BWP.BWPSize;
-  const uint8_t nrOfLayers = 1;
+  const uint8_t nrOfLayers = retInfo->nrOfLayers;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
   LOG_D(NR_MAC,"tbs %d\n",retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation &&
@@ -1456,7 +1456,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
-                                 1, // layers
+                                 nrOfLayers,
                                  tda_info.nrOfSymbols,
                                  dmrs_info.N_PRB_DMRS * dmrs_info.num_dmrs_symb,
                                  retInfo->tb_size,
@@ -1637,7 +1637,7 @@ void pf_ul(module_id_t module_id,
         continue;
       }
 
-      sched_pusch->nrOfLayers = 1;
+      sched_pusch->nrOfLayers = sched_ctrl->srs_feedback.ul_ri + 1;
       sched_pusch->time_domain_allocation = get_ul_tda(nrmac, scc, sched_pusch->slot);
       sched_pusch->tda_info = nr_get_pusch_tda_info(current_BWP, sched_pusch->time_domain_allocation);
       sched_pusch->dmrs_info = get_ul_dmrs_params(scc,
@@ -1675,8 +1675,7 @@ void pf_ul(module_id_t module_id,
                                             sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
                                             0, // nb_rb_oh
                                             0,
-                                            sched_pusch->nrOfLayers)
-                             >> 3;
+                                            sched_pusch->nrOfLayers) >> 3;
 
       /* Mark the corresponding RBs as used */
       n_rb_sched -= sched_pusch->rbSize;
@@ -1724,7 +1723,7 @@ void pf_ul(module_id_t module_id,
 
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
 
-    sched_pusch->nrOfLayers = 1;
+    sched_pusch->nrOfLayers = sched_ctrl->srs_feedback.ul_ri + 1;
     sched_pusch->time_domain_allocation = get_ul_tda(nrmac, scc, sched_pusch->slot);
     sched_pusch->tda_info = nr_get_pusch_tda_info(current_BWP, sched_pusch->time_domain_allocation);
     sched_pusch->dmrs_info = get_ul_dmrs_params(scc,
@@ -1765,7 +1764,7 @@ void pf_ul(module_id_t module_id,
     uint32_t TBS = 0;
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
-                  1, // layers
+                  sched_pusch->nrOfLayers,
                   sched_pusch->tda_info.nrOfSymbols,
                   sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
                   B,
@@ -2011,9 +2010,10 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       /* Save information on MCS, TBS etc for the current initial transmission
        * so we have access to it when retransmitting */
       cur_harq->sched_pusch = *sched_pusch;
-      /* save which time allocation has been used, to be used on
+      /* save which time allocation and nrOfLayers have been used, to be used on
        * retransmissions */
       cur_harq->sched_pusch.time_domain_allocation = sched_pusch->time_domain_allocation;
+      cur_harq->sched_pusch.nrOfLayers = sched_pusch->nrOfLayers;
       sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
       UE->mac_stats.ul.total_rbs += sched_pusch->rbSize;
 
