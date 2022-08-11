@@ -93,7 +93,9 @@
 
 #define NR_UE_MODULE_INVALID ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!!
 #define NR_UE_INDEX_INVALID  ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!! used to be -1
-
+#define MAX_DRBS_PER_PDUSESSION (4)             /* Maximum number of DRBs per PDU Session,
+                                                   this value is not standardized, so we can
+                                                   find another way to assign it more dynamically. */
 typedef enum {
   NR_RRC_OK=0,
   NR_RRC_ConnSetup_failed,

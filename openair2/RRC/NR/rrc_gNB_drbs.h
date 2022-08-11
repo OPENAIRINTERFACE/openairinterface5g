@@ -26,10 +26,32 @@
 #include "NR_SDAP-Config.h"
 #include "NR_DRB-ToAddMod.h"
 
-NR_DRB_ToAddMod_t *generateDRB(const pdu_session_param_t *pduSession,
-                               long drb_id,
+#define MAX_DRBS_PER_UE         (32)  /* Maximum number of Data Radio Bearers per UE */
+#define MAX_PDUS_PER_UE         (8)   /* Maximum number of PDU Sessions per UE */
+#define NULL_DRB                (0)   /* Non existing DRB */
+typedef struct nr_pdus_s {
+  uint8_t pdu_drbs[MAX_DRBS_PER_PDUSESSION];  /* Data Radio Bearers of PDU Session */
+  uint8_t pdusession_id;
+  uint8_t drbs_established;                   /* Max value -> MAX_DRBS_PER_PDUSESSION*/
+} nr_pdus_t;
+
+typedef struct nr_ue_s {
+  nr_pdus_t pdus[MAX_PDUS_PER_UE];      /* PDU Sessions */
+  uint8_t   used_drbs[MAX_DRBS_PER_UE]; /* Data Radio Bearers of UE, the value is not the drb_id but the pdusession_id */
+  rnti_t    ue_id;
+
+  struct nr_ue_s *next_ue;
+} nr_ue_t;
+
+NR_DRB_ToAddMod_t *generateDRB(rnti_t rnti,
+                               const pdu_session_param_t *pduSession,
                                bool enable_sdap,
                                int do_drb_integrity,
                                int do_drb_ciphering);
+
+nr_ue_t *nr_ue_get(rnti_t rnti);
+nr_ue_t *nr_ue_new(rnti_t rnti);
+void nr_ue_delete(rnti_t rnti);
+uint8_t next_available_drb(rnti_t rnti, uint8_t pdusession_id);
 
 #endif

@@ -21,11 +21,18 @@
 
 #include "rrc_gNB_drbs.h"
 
-NR_DRB_ToAddMod_t *generateDRB(const pdu_session_param_t *pduSession,
-                               long drb_id,
+typedef struct {
+  nr_ue_t *list; /* UE Linked List, every element is a UE*/
+} nr_ue_list_t;
+
+static nr_ue_list_t ues;
+
+NR_DRB_ToAddMod_t *generateDRB(rnti_t rnti,
+                               const pdu_session_param_t *pduSession,
                                bool enable_sdap,
                                int do_drb_integrity,
                                int do_drb_ciphering) {
+  uint8_t drb_id = next_available_drb(rnti, pduSession->param.pdusession_id);
   NR_DRB_ToAddMod_t *DRB_config  = NULL;
   NR_SDAP_Config_t  *SDAP_config = NULL;
 
@@ -98,4 +105,75 @@ NR_DRB_ToAddMod_t *generateDRB(const pdu_session_param_t *pduSession,
     *DRB_config->pdcp_Config->ext1->cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
   }
   return DRB_config;
+}
+
+uint8_t next_available_drb(rnti_t rnti, uint8_t pdusession_id) {
+  nr_ue_t *ue;
+  if(nr_ue_get(rnti))
+    ue = nr_ue_get(rnti);
+  else
+    ue = nr_ue_new(rnti);
+
+  uint8_t drb_id;
+  for (drb_id = 0; drb_id < MAX_DRBS_PER_UE; drb_id++) {
+    if(ue->used_drbs[drb_id] == NULL_DRB && ue->pdus->drbs_established < MAX_DRBS_PER_PDUSESSION) {
+      ue->pdus->pdu_drbs[ue->pdus->drbs_established] = drb_id;  /* Store drb_id to pdusession */
+      ue->used_drbs[drb_id] = pdusession_id;                    /* Store the pdusession id that is using that drb */
+      ue->pdus->drbs_established++;                             /* Increment the index for drbs */
+      return ++drb_id;
+    }
+  }
+  return NULL_DRB;
+}
+
+nr_ue_t *nr_ue_new(rnti_t rnti) {
+  if(nr_ue_get(rnti)) {
+    LOG_D(RRC, "UE already exists with rnti: %u\n", rnti);
+    return nr_ue_get(rnti);
+  }
+
+  nr_ue_t *ue;
+  ue = calloc(1, sizeof(nr_ue_t));
+  ue->ue_id = rnti;
+  ue->next_ue = ues.list;
+  ues.list = ue;
+  return ues.list;
+}
+
+nr_ue_t *nr_ue_get(rnti_t rnti) {
+  nr_ue_t *ue;
+  ue = ues.list;
+
+  if(ue == NULL)
+    return NULL;
+
+  while(ue->ue_id != rnti && ue->next_ue != NULL)
+    ue = ue->next_ue;
+
+  if(ue->ue_id == rnti)
+    return ue;
+
+  return NULL;
+}
+
+void nr_ue_delete(rnti_t rnti) {
+  nr_ue_t *ue;
+  ue = ues.list;
+
+  if(ue->ue_id == rnti) {
+    ues.list = ues.list->next_ue;
+    free(ue);
+  } else {
+    nr_ue_t *uePrev = NULL;
+
+    while(ue->ue_id != rnti && ue->next_ue != NULL) {
+      uePrev = ue;
+      ue = ue->next_ue;
+    }
+
+    if(ue->ue_id != rnti) {
+      uePrev->next_ue = ue->next_ue;
+      free(ue);
+    }
+  }
 }
