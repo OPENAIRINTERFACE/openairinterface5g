@@ -13,7 +13,7 @@ if [[ -v USE_SA_TDD_MONO ]]; then cp $PREFIX/etc/gnb.sa.tdd.conf $PREFIX/etc/gnb
 if [[ -v USE_SA_TDD_MONO_B2XX ]]; then cp $PREFIX/etc/gnb.sa.tdd.b2xx.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_FDD_MONO ]]; then cp $PREFIX/etc/gnb.sa.fdd.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_CU ]]; then cp $PREFIX/etc/gnb.sa.cu.conf $PREFIX/etc/gnb.conf; fi
-if [[ -v USE_SA_TDD_CU ]]; then cp $PREFIX/etc/gnb.sa.du.tdd.conf $PREFIX/etc/gnb.conf; fi
+if [[ -v USE_SA_TDD_DU ]]; then cp $PREFIX/etc/gnb.sa.du.tdd.conf $PREFIX/etc/gnb.conf; fi
 if [[ -v USE_SA_NFAPI_VNF ]]; then cp $PREFIX/etc/gnb.sa.nfapi.vnf.conf $PREFIX/etc/gnb.conf; fi
 # Sometimes, the templates are not enough. We mount a conf file on $PREFIX/etc. It can be a template itself.
 if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/gnb.conf; fi
