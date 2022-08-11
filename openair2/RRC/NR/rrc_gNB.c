@@ -859,8 +859,8 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   int                            pdu_sessions_done = 0;
   int i;
   uint8_t drb_id_to_setup_start = 1;
-  uint8_t nb_drb_to_setup = 1;
-  long drb_priority[1] = {13}; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
+  uint8_t nb_drb_to_setup = rrc->configuration.drbs;
+  long drb_priority[4] = {13,12,11,10};
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
