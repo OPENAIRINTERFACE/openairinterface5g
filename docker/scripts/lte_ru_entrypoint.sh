@@ -31,9 +31,15 @@ for c in ${CONFIG_FILES}; do
 
     # render template and inline replace config file
     sed -i "${EXPRESSIONS}" ${c}
+
+    echo "=================================="
+    echo "== Configuration file: ${c}"
+    cat ${c}
 done
 
 # Load the USRP binaries
+echo "=================================="
+echo "== Load USRP binaries"
 if [[ -v USE_B2XX ]]; then
     $PREFIX/bin/uhd_images_downloader.py -t b2xx
 elif [[ -v USE_X3XX ]]; then
