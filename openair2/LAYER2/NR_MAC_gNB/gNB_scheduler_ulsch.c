@@ -1033,19 +1033,27 @@ void get_precoder_matrix_coef(char *w,
                               const uint16_t num_ue_srs_ports,
                               const uint8_t transform_precoding,
                               const uint8_t tpmi,
-                              const uint8_t uI) {
+                              const uint8_t uI,
+                              int layer_idx)
+{
   if (ul_ri == 0) {
     if (num_ue_srs_ports == 2) {
-      *w = *table_38211_6_3_1_5_1[tpmi][uI];
+      *w = table_38211_6_3_1_5_1[tpmi][uI][layer_idx];
     } else {
       if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
-        *w = *table_38211_6_3_1_5_2[tpmi][uI];
+        *w = table_38211_6_3_1_5_2[tpmi][uI][layer_idx];
       } else {
-        *w = *table_38211_6_3_1_5_3[tpmi][uI];
+        *w = table_38211_6_3_1_5_3[tpmi][uI][layer_idx];
       }
     }
+  } else if (ul_ri == 1) {
+    if (num_ue_srs_ports == 2) {
+      *w = table_38211_6_3_1_5_4[tpmi][uI][layer_idx];
+    } else {
+      *w = table_38211_6_3_1_5_5[tpmi][uI][layer_idx];
+    }
   } else {
-    AssertFatal(1==0,"Function get_precoder_matrix_coef() does not support %i layers yet!\n", ul_ri+1);
+    AssertFatal(1 == 0, "Function get_precoder_matrix_coef() does not support %i layers yet!\n", ul_ri + 1);
   }
 }
 
@@ -1058,20 +1066,21 @@ int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
                            const uint16_t prg_size,
                            const uint16_t num_prgs,
                            const uint8_t ul_ri) {
+  if (ul_ri > 1) {
+    LOG_D(NR_MAC, "TPMI computation for ul_ri %i is not implemented yet!\n", ul_ri);
+    return 0;
+  }
 
   uint8_t tpmi_sel = 0;
-  int16_t precoded_channel_matrix_re[num_prgs*num_gnb_antenna_elements];
-  int16_t precoded_channel_matrix_im[num_prgs*num_gnb_antenna_elements];
-  c16_t *channel_matrix16 = (c16_t*)channel_matrix;
+  const uint8_t nrOfLayers = ul_ri + 1;
+  int16_t precoded_channel_matrix_re[num_prgs * num_gnb_antenna_elements];
+  int16_t precoded_channel_matrix_im[num_prgs * num_gnb_antenna_elements];
+  c16_t *channel_matrix16 = (c16_t *)channel_matrix;
   uint32_t max_precoded_signal_power = 0;
   int additional_max_tpmi = -1;
   char w;
 
-  uint8_t max_tpmi = get_max_tpmi(pusch_Config,
-                                  num_ue_srs_ports,
-                                  &ul_ri,
-                                  &additional_max_tpmi);
-
+  uint8_t max_tpmi = get_max_tpmi(pusch_Config, num_ue_srs_ports, &nrOfLayers, &additional_max_tpmi);
   uint8_t end_tpmi_loop = additional_max_tpmi > max_tpmi ? additional_max_tpmi : max_tpmi;
 
   //                      channel_matrix                          x   precoder_matrix
@@ -1080,44 +1089,43 @@ int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
   // [ (gI=2,uI=0) (gI=2,uI=1) ... (gI=2,uI=num_ue_srs_ports-1) ]     [uI=2]
   //                           ...                                     ...
 
-  for(uint8_t tpmi = 0; tpmi<=end_tpmi_loop; tpmi++) {
-
+  for (uint8_t tpmi = 0; tpmi <= end_tpmi_loop && end_tpmi_loop > 0; tpmi++) {
     if (tpmi > max_tpmi) {
       tpmi = end_tpmi_loop;
     }
 
-    for(int pI = 0; pI <num_prgs; pI++) {
-      for(int gI = 0; gI < num_gnb_antenna_elements; gI++) {
-
-        uint16_t index_gI_pI = gI*num_prgs + pI;
+    for (int pI = 0; pI < num_prgs; pI++) {
+      for (int gI = 0; gI < num_gnb_antenna_elements; gI++) {
+        uint16_t index_gI_pI = gI * num_prgs + pI;
         precoded_channel_matrix_re[index_gI_pI] = 0;
         precoded_channel_matrix_im[index_gI_pI] = 0;
 
-        for(int uI = 0; uI < num_ue_srs_ports; uI++) {
+        for (int uI = 0; uI < num_ue_srs_ports; uI++) {
+          for (int layer_idx = 0; layer_idx < nrOfLayers; layer_idx++) {
+            uint16_t index = uI * num_gnb_antenna_elements * num_prgs + index_gI_pI;
+            get_precoder_matrix_coef(&w, ul_ri, num_ue_srs_ports, transform_precoding, tpmi, uI, layer_idx);
+            c16_t h_times_w = nr_h_times_w(channel_matrix16[index], w);
 
-          uint16_t index = uI*num_gnb_antenna_elements*num_prgs + index_gI_pI;
-          get_precoder_matrix_coef(&w, ul_ri, num_ue_srs_ports, transform_precoding, tpmi, uI);
-          c16_t h_times_w = nr_h_times_w(channel_matrix16[index], w);
-
-          precoded_channel_matrix_re[index_gI_pI] += h_times_w.r;
-          precoded_channel_matrix_im[index_gI_pI] += h_times_w.i;
+            precoded_channel_matrix_re[index_gI_pI] += h_times_w.r;
+            precoded_channel_matrix_im[index_gI_pI] += h_times_w.i;
 
 #ifdef SRS_IND_DEBUG
-          LOG_I(NR_MAC, "(uI %i, gI %i, pI %i) channel_matrix --> real %i, imag %i\n",
-                uI, gI, pI, channel_matrix16[index].r, channel_matrix16[index].i);
+            LOG_I(NR_MAC, "(pI %i, gI %i,  uI %i, layer_idx %i) w = %c, channel_matrix --> real %i, imag %i\n",
+                  pI, gI, uI, layer_idx, w, channel_matrix16[index].r, channel_matrix16[index].i);
 #endif
+          }
         }
 
 #ifdef SRS_IND_DEBUG
-        LOG_I(NR_MAC, "(gI %i, pI %i) precoded_channel_coef --> real %i, imag %i\n",
-              gI, pI, precoded_channel_matrix_re[index_gI_pI], precoded_channel_matrix_im[index_gI_pI]);
+        LOG_I(NR_MAC, "(pI %i, gI %i) precoded_channel_coef --> real %i, imag %i\n",
+              pI, gI, precoded_channel_matrix_re[index_gI_pI], precoded_channel_matrix_im[index_gI_pI]);
 #endif
       }
     }
 
     uint32_t precoded_signal_power = calc_power_complex(precoded_channel_matrix_re,
                                                         precoded_channel_matrix_im,
-                                                        num_prgs*num_gnb_antenna_elements);
+                                                        num_prgs * num_gnb_antenna_elements);
 
 #ifdef SRS_IND_DEBUG
     LOG_I(NR_MAC, "(tpmi %i) precoded_signal_power = %i\n", tpmi, precoded_signal_power);
@@ -1198,7 +1206,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       const int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
       uint16_t *ulprbbl = nr_mac->ulprbbl;
 
-      uint8_t num_rbs = nr_srs_beamforming_report.prg_size * nr_srs_beamforming_report.prgs[0].num_prgs;
+      uint16_t num_rbs = nr_srs_beamforming_report.prg_size * nr_srs_beamforming_report.prgs[0].num_prgs;
       memset(ulprbbl, 0, num_rbs * sizeof(uint16_t));
       for (int rb = 0; rb < num_rbs; rb++) {
         int snr = (nr_srs_beamforming_report.prgs[0].prg_list[rb / nr_srs_beamforming_report.prg_size].rb_snr >> 1) - 64;
@@ -1242,11 +1250,12 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       }
 #endif
 
-      // TODO: This should be improved
       NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
       NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
       sched_ctrl->srs_feedback.sri = NR_SRS_SRI_0;
-      sched_ctrl->srs_feedback.ul_ri = 0; // TODO: Compute this
+
+      nr_srs_ri_computation(&nr_srs_normalized_channel_iq_matrix, current_BWP, &sched_ctrl->srs_feedback.ul_ri);
+
       sched_ctrl->srs_feedback.tpmi = nr_srs_tpmi_estimation(current_BWP->pusch_Config,
                                                              current_BWP->transform_precoding,
                                                              nr_srs_normalized_channel_iq_matrix.channel_matrix,
@@ -1256,7 +1265,9 @@ void handle_nr_srs_measurements(const module_id_t module_id,
                                                              nr_srs_normalized_channel_iq_matrix.prg_size,
                                                              nr_srs_normalized_channel_iq_matrix.num_prgs,
                                                              sched_ctrl->srs_feedback.ul_ri);
+
       sprintf(stats->srs_stats, "UL-RI %d, TPMI %d", sched_ctrl->srs_feedback.ul_ri + 1, sched_ctrl->srs_feedback.tpmi);
+
       break;
     }
 
@@ -1525,7 +1536,6 @@ static int comparator(const void *p, const void *q) {
   return ((UEsched_t*)p)->coef < ((UEsched_t*)q)->coef;
 }
 
-
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -1690,7 +1700,7 @@ void pf_ul(module_id_t module_id,
 
   qsort(UE_sched, sizeof(*UE_sched), sizeofArray(UE_sched), comparator);
   UEsched_t *iterator=UE_sched;
-  
+
   /* Loop UE_sched to find max coeff and allocate transmission */
   while (remainUEs> 0 && n_rb_sched >= min_rb && iterator->UE != NULL) {
 
