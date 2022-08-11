@@ -19,6 +19,17 @@
  *      contact@openairinterface.org
  */
 
+#ifndef _RRC_GNB_DRBS_H_
+#define _RRC_GNB_DRBS_H_
+
 #include "nr_rrc_defs.h"
 #include "NR_SDAP-Config.h"
 #include "NR_DRB-ToAddMod.h"
+
+NR_DRB_ToAddMod_t *generateDRB(const pdu_session_param_t *pduSession,
+                               long drb_id,
+                               bool enable_sdap,
+                               int do_drb_integrity,
+                               int do_drb_ciphering);
+
+#endif
