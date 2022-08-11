@@ -22,7 +22,7 @@
 -->
 <testCaseList>
   <htmlTabRef>TEST-SA-FR1-B200</htmlTabRef>
-  <htmlTabName>SA SanityCheck with QUECTEL</htmlTabName>
+  <htmlTabName>40 MHz TDD SA</htmlTabName>
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
