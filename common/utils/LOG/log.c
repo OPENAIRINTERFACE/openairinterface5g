@@ -325,6 +325,7 @@ void  log_getconfig(log_t *g_log)
     logparams_logfile[i].numelt      = 0;
     logparams_level[i].numelt        = 0;
     logparams_level[i].type          = TYPE_STRING;
+    logparams_level[i].defstrval= "error";
     logparams_logfile[i].type        = TYPE_UINT;
     logparams_logfile[i].paramflags  = logparams_logfile[i].paramflags|PARAMFLAG_BOOL;
   }

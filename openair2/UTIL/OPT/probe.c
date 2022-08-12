@@ -540,9 +540,6 @@ void trace_pdu_implementation(int nr, int direction, uint8_t *pdu_buffer, unsign
 
 /*---------------------------------------------------*/
 int init_opt(void) { 
-  in_type=malloc(200);
-  in_ip=malloc(200);
-  in_path=malloc(200);
   paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
   checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
   config_set_checkfunctions(opt_params, opt_checkParams,
