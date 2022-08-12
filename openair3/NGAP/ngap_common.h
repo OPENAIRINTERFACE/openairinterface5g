@@ -33,23 +33,11 @@
  */
 
  
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
-
 #ifndef NGAP_COMMON_H_
 #define NGAP_COMMON_H_
 
 
 #include "common/utils/LOG/log.h"
-/* replace ASN_DEBUG defined in asn_internal.h by oai tracing system
-   Would be cleaner to modify asn_internal.h but it seems to come
-   from non oai source, with BSD license, so prefer to do that here..
-*/
-#ifdef ASN_DEBUG
-# undef ASN_DEBUG
-#endif
-#define ASN_DEBUG( x... )  LOG_I(ASN, x)
 
 #include "NGAP_ProtocolIE-Field.h"
 #include "NGAP_NGAP-PDU.h"

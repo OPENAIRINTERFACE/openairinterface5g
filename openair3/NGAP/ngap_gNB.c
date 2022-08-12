@@ -494,7 +494,7 @@ static int ngap_gNB_generate_ng_setup_request(
           ssi = (NGAP_SliceSupportItem_t *)calloc(1, sizeof(NGAP_SliceSupportItem_t));
           INT8_TO_OCTET_STRING(instance_p->s_nssai[i][si].sST, &ssi->s_NSSAI.sST);
 
-          if(instance_p->s_nssai[i]->sD_flag) {
+          if (instance_p->s_nssai[i][si].sD_flag) {
             ssi->s_NSSAI.sD = calloc(1, sizeof(NGAP_SD_t));
             ssi->s_NSSAI.sD->buf = calloc(3, sizeof(uint8_t));
             ssi->s_NSSAI.sD->size = 3;

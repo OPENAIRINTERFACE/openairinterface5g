@@ -16,21 +16,29 @@
  * limitations under the License.
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
+ *      conmnc_digit_lengtht@openairinterface.org
  */
 
-/*! \file itti_sim_messages_def.h
- * \brief itti message for itti simulator
- * \author Yoshio INOUE, Masayuki HARADA
- * \email yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
- * \date 2020
- * \version 0.1
- */
+#include "mac_rrc_dl.h"
+#include "nr_rrc_defs.h"
 
+static void dl_rrc_message_transfer_f1ap(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
+{
+  /* TODO call F1AP function directly? no real-time constraint here */
 
+  MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
+  f1ap_dl_rrc_message_t *msg = &F1AP_DL_RRC_MESSAGE(message_p);
+  *msg = *dl_rrc;
+  if (dl_rrc->rrc_container) {
+    msg->rrc_container = malloc(dl_rrc->rrc_container_length);
+    AssertFatal(msg->rrc_container != NULL, "out of memory\n");
+    msg->rrc_container_length = dl_rrc->rrc_container_length;
+    memcpy(msg->rrc_container, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
+  }
+  itti_send_msg_to_task (TASK_CU_F1, module_id, message_p);
+}
 
-MESSAGE_DEF(GNB_RRC_BCCH_DATA_IND,          MESSAGE_PRIORITY_MED, itti_sim_rrc_ch_t,   GNBBCCHind)
-MESSAGE_DEF(GNB_RRC_CCCH_DATA_IND,          MESSAGE_PRIORITY_MED, itti_sim_rrc_ch_t,   GNBCCCHind)
-MESSAGE_DEF(GNB_RRC_DCCH_DATA_IND,          MESSAGE_PRIORITY_MED, itti_sim_rrc_ch_t,   GNBDCCHind)
-MESSAGE_DEF(UE_RRC_CCCH_DATA_IND,           MESSAGE_PRIORITY_MED, itti_sim_rrc_ch_t,   UECCCHind)
-MESSAGE_DEF(UE_RRC_DCCH_DATA_IND,           MESSAGE_PRIORITY_MED, itti_sim_rrc_ch_t,   UEDCCHind)
+void mac_rrc_dl_f1ap_init(nr_mac_rrc_dl_if_t *mac_rrc)
+{
+  mac_rrc->dl_rrc_message_transfer = dl_rrc_message_transfer_f1ap;
+}

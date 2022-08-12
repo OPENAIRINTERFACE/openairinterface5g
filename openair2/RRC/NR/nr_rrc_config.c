@@ -71,7 +71,7 @@ void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
   coreset->pdcch_DMRS_ScramblingID = NULL;
 }
 
-uint64_t get_ssb_bitmap(NR_ServingCellConfigCommon_t *scc) {
+uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc) {
   uint64_t bitmap=0;
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
@@ -138,7 +138,7 @@ void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_sl
   }
 }
 
-void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   NR_CSI_MeasConfig_t *csi_MeasConfig,
                   int uid,
                   int num_dl_antenna_ports,
@@ -495,7 +495,6 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
   phy_Parameters->phy_ParametersFRX_Diff->pucch_F0_2WithoutFH = NULL;
 }
 
-
 void nr_rrc_config_dl_tda(struct NR_PDSCH_TimeDomainResourceAllocationList *pdsch_TimeDomainAllocationList,
                           frame_type_t frame_type,
                           NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,
@@ -717,9 +716,9 @@ void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs) {
   ASN_SEQUENCE_ADD(&pucch_Config->spatialRelationInfoToAddModList->list,pucchspatial);
 }
 
-void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig,
-                            NR_ServingCellConfigCommon_t *scc) {
-
+static void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig,
+                            const NR_ServingCellConfigCommon_t *scc)
+{
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   int sr_slot = 1; // in FDD SR in slot 1
   if(tdd)
@@ -761,7 +760,7 @@ void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedulingRequ
   schedulingRequestResourceConfig->periodicityAndOffset->choice.sl640 = sr_slot;
 }
 
-void scheduling_request_config(NR_ServingCellConfigCommon_t *scc,
+void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc,
                                NR_PUCCH_Config_t *pucch_Config) {
 
   // format with <=2 bits in pucch resource set 0
@@ -784,7 +783,7 @@ void scheduling_request_config(NR_ServingCellConfigCommon_t *scc,
 void set_dl_mcs_table(int scs,
                       NR_UE_NR_Capability_t *cap,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
-                      NR_ServingCellConfigCommon_t *scc) {
+                      const NR_ServingCellConfigCommon_t *scc) {
 
   if (cap == NULL){
     bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
@@ -827,8 +826,8 @@ void set_dl_mcs_table(int scs,
 }
 
 void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
-                        NR_ServingCellConfigCommon_t *scc,
-                        NR_ServingCellConfig_t *servingcellconfigdedicated,
+                        const NR_ServingCellConfigCommon_t *scc,
+                        const NR_ServingCellConfig_t *servingcellconfigdedicated,
                         NR_UE_NR_Capability_t *uecap,
                         int dl_antenna_ports,
                         bool force_256qam_off,
@@ -1005,9 +1004,8 @@ void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
 void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
                       long bwp_loop, bool is_SA, int uid,
                       const gNB_RrcConfigurationReq *configuration,
-                      NR_ServingCellConfig_t *servingcellconfigdedicated,
-                      NR_ServingCellConfigCommon_t *scc,
-                      NR_CellGroupConfig_t *cellGroupConfig,
+                      const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                      const NR_ServingCellConfigCommon_t *scc,
                       NR_UE_NR_Capability_t *uecap) {
 
   ubwp->bwp_Common = calloc(1,sizeof(*ubwp->bwp_Common));

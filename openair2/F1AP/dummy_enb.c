@@ -47,3 +47,7 @@ bool sdap_data_req(protocol_ctxt_t *ctxt_p,
                    const int pdusession_id) {
 abort();
 }
+
+int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc) {
+  abort();
+}

@@ -44,6 +44,7 @@
 #include <openair3/NAS/COMMON/NR_NAS_defs.h>
 #include <openair1/PHY/phy_extern_nr_ue.h>
 #include <openair1/SIMULATION/ETH_TRANSPORT/proto.h>
+#include "openair2/SDAP/nr_sdap/nr_sdap.h"
 
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
@@ -915,7 +916,7 @@ void *nas_nrue_task(void *args_p)
               payload_container = pdu_buffer + offset;
             }
             offset = 0;
-
+            uint8_t pdu_id = *(pdu_buffer+14);
             while(offset < payload_container_length) {
 	      // Fixme: this is not good 'type' 0x29 searching in TLV like structure
 	      // AND fix dirsty code copy hereafter of the same!!!
@@ -929,8 +930,12 @@ void *nas_nrue_task(void *args_p)
                     *(payload_container+offset+3), *(payload_container+offset+4),
                     *(payload_container+offset+5), *(payload_container+offset+6));
                   nas_config(1,third_octet,fourth_octet,"oaitun_ue");
-                  break;
                 }
+              }
+              if (*(payload_container + offset) == 0x79) {
+                uint8_t qfi = *(payload_container+offset+3);
+                set_qfi_pduid(qfi, pdu_id);
+                break;
               }
               offset++;
             }

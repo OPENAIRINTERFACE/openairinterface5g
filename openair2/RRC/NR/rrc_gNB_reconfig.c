@@ -528,7 +528,6 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                        configuration,
                        servingcellconfigdedicated,
                        servingcellconfigcommon,
-                       secondaryCellGroup,
                        uecap);
       ASN_SEQUENCE_ADD(&secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
     }

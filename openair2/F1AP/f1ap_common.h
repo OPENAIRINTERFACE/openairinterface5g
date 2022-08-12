@@ -29,11 +29,6 @@
  * \note
  * \warning
  */
-
-#if HAVE_CONFIG_H_
-  #include "config.h"
-#endif
-
 #ifndef F1AP_COMMON_H_
 #define F1AP_COMMON_H_
 
@@ -42,10 +37,6 @@
 
 #define F1AP_UE_IDENTIFIER_NUMBER 3
 #define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
-
-#if defined(EMIT_ASN_DEBUG_EXTERN)
-  inline void ASN_DEBUG(const char *fmt, ...);
-#endif
 
 #include "F1AP_RAT-FrequencyPriorityInformation.h"
 #include "F1AP_DLUPTNLInformation-ToBeSetup-Item.h"
