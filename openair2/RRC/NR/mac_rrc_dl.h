@@ -16,36 +16,19 @@
  * limitations under the License.
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
+ *      conmnc_digit_lengtht@openairinterface.org
  */
 
-/*! \file itti_sim_messages_types.h
- * \brief itti message for itti simulator
- * \author Yoshio INOUE, Masayuki HARADA
- * \email yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
- * \date 2020
- * \version 0.1
- */
+#ifndef MAC_RRC_DL_H
+#define MAC_RRC_DL_H
 
-#ifndef ITTI_SIM_MESSAGES_TYPES_H_
-#define ITTI_SIM_MESSAGES_TYPES_H_
+#include "platform_types.h"
+#include "f1ap_messages_types.h"
 
-#include "LTE_asn_constant.h"
+typedef void (*dl_rrc_message_transfer_func_t)(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc);
 
+struct nr_mac_rrc_dl_if_s;
+void mac_rrc_dl_direct_init(struct nr_mac_rrc_dl_if_s *mac_rrc);
+void mac_rrc_dl_f1ap_init(struct nr_mac_rrc_dl_if_s *mac_rrc);
 
-
-#define GNB_RRC_BCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.GNBBCCHind
-#define GNB_RRC_CCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.GNBCCCHind
-#define GNB_RRC_DCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.GNBDCCHind
-#define UE_RRC_CCCH_DATA_IND(mSGpTR)            (mSGpTR)->ittiMsg.UECCCHind
-#define UE_RRC_DCCH_DATA_IND(mSGpTR)            (mSGpTR)->ittiMsg.UEDCCHind
-
-
-
-typedef struct itti_sim_rrc_ch_s {
-    rb_id_t                      rbid;
-    uint8_t                     *sdu;
-    int                          size;
-} itti_sim_rrc_ch_t;
-
-#endif /* ITTI_SIM_MESSAGES_TYPES_H_ */
+#endif /* MAC_RRC_DL_H */

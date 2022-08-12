@@ -36,11 +36,11 @@
 #include <string.h>
 
 #include "collection/tree.h"
+#include "collection/linear_alloc.h"
 #include "common/ngran_types.h"
 #include "rrc_types.h"
 //#include "PHY/phy_defs.h"
 #include "LAYER2/RLC/rlc.h"
-#include "RRC/NR/nr_rrc_types.h"
 #include "NR_UE-MRDC-Capability.h"
 #include "NR_UE-NR-Capability.h"
 
@@ -217,17 +217,6 @@ void *send_UE_status_notification(void *);
 
 
 #include "commonDef.h"
-
-
-//--------
-typedef unsigned int uid_t;
-#define UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((MAX_MOBILES_PER_ENB/8)/sizeof(unsigned int)) + 1)
-typedef struct uid_linear_allocator_s {
-  unsigned int   bitmap[UID_LINEAR_ALLOCATOR_BITMAP_SIZE];
-} uid_allocator_t;
-
-//--------
-
 
 
 #define PROTOCOL_RRC_CTXT_UE_FMT           PROTOCOL_CTXT_FMT
@@ -668,8 +657,6 @@ typedef struct eNB_RRC_UE_s {
   int                                nr_capabilities_requested;
 } eNB_RRC_UE_t;
 
-typedef uid_t ue_uid_t;
-
 typedef struct rrc_eNB_ue_context_s {
   /* Tree related data */
   RB_ENTRY(rrc_eNB_ue_context_s) entries;
@@ -680,7 +667,7 @@ typedef struct rrc_eNB_ue_context_s {
   rnti_t         ue_id_rnti;
 
   // another key for protocol layers but should not be used as a key for RB tree
-  ue_uid_t       local_uid;
+  uid_t          local_uid;
 
   /* UE id for initial connection to S1AP */
   struct eNB_RRC_UE_s   ue_context;
@@ -762,7 +749,7 @@ typedef struct eNB_RRC_INST_s {
   char                            *node_name;
   uint32_t                        node_id;
   rrc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
-  uid_allocator_t                    uid_allocator; // for rrc_ue_head
+  uid_allocator_t                 uid_allocator;
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   uint8_t                           HO_flag;
   uint8_t                            Nb_ue;
