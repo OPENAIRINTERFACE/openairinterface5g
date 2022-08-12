@@ -1675,7 +1675,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->NrOfCodewords = 1;
     int R = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
     pdsch_pdu_rel15->targetCodeRate[0] = R;
-    pdsch_pdu_rel15->qamModOrder[0] = 2;
+    int Qm = nr_get_Qm_dl(mcsIndex, mcsTableIdx);
+    pdsch_pdu_rel15->qamModOrder[0] = Qm;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
     pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[harq->round%4];
