@@ -354,6 +354,7 @@ long rrc_get_max_nr_csrs(const uint8_t max_rbs, const long b_SRS) {
 void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
                 const int curr_bwp,
                 const int uid,
+                const int res_id,
                 const int do_srs) {
 
   setup_release_srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
@@ -383,10 +384,10 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
 
   srs_Config->srs_ResourceSetToAddModList = calloc(1,sizeof(*srs_Config->srs_ResourceSetToAddModList));
   NR_SRS_ResourceSet_t *srs_resset0 = calloc(1,sizeof(*srs_resset0));
-  srs_resset0->srs_ResourceSetId = 0;
+  srs_resset0->srs_ResourceSetId = res_id;
   srs_resset0->srs_ResourceIdList = calloc(1,sizeof(*srs_resset0->srs_ResourceIdList));
   NR_SRS_ResourceId_t *srs_resset0_id = calloc(1,sizeof(*srs_resset0_id));
-  *srs_resset0_id = 0;
+  *srs_resset0_id = res_id;
   ASN_SEQUENCE_ADD(&srs_resset0->srs_ResourceIdList->list, srs_resset0_id);
   srs_Config->srs_ResourceToReleaseList=NULL;
   if (do_srs) {
@@ -415,7 +416,7 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
 
   srs_Config->srs_ResourceToAddModList = calloc(1,sizeof(*srs_Config->srs_ResourceToAddModList));
   NR_SRS_Resource_t *srs_res0=calloc(1,sizeof(*srs_res0));
-  srs_res0->srs_ResourceId = 0;
+  srs_res0->srs_ResourceId = res_id;
   srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
   srs_res0->ptrs_PortIndex = NULL;
   srs_res0->transmissionComb.present = NR_SRS_Resource__transmissionComb_PR_n2;
@@ -1114,11 +1115,11 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   pusch_Config->tp_pi2BPSK=NULL;
 
   ubwp->bwp_Dedicated->srs_Config = calloc(1,sizeof(*ubwp->bwp_Dedicated->srs_Config));
-  ubwp->bwp_Dedicated->srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
   config_srs(ubwp->bwp_Dedicated->srs_Config,
              curr_bwp,
              uid,
-             0);
+             bwp_loop+1,
+             configuration->do_SRS);
 
   ubwp->bwp_Dedicated->configuredGrantConfig = NULL;
   ubwp->bwp_Dedicated->beamFailureRecoveryConfig = NULL;

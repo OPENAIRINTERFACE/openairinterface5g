@@ -1092,7 +1092,7 @@ void fill_initial_SpCellConfig(int uid,
 
   // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(initialUplinkBWP->srs_Config, curr_bwp, uid, 0);
+  config_srs(initialUplinkBWP->srs_Config, curr_bwp, uid, 0, 0);
 
   scheduling_request_config(scc, pucch_Config);
 
@@ -1598,6 +1598,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
       config_srs(SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
                  curr_bwp,
                  uid,
+                 0,
                  configuration->do_SRS);
     }
 
@@ -1606,11 +1607,23 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
     set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
                      configuration->force_256qam_off ? NULL : uecap, bwp_Dedicated, scc);
     struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
+    struct NR_UplinkConfig__uplinkBWP_ToAddModList *UL_BWP_list = SpCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList;
     if (DL_BWP_list) {
       for (int i=0; i<DL_BWP_list->list.count; i++){
         NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
         int scs = bwp->bwp_Common->genericParameters.subcarrierSpacing;
         set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, scc);
+      }
+    }
+    if (UL_BWP_list) {
+      for (int i=0; i<UL_BWP_list->list.count; i++) {
+        NR_BWP_Uplink_t *ul_bwp = UL_BWP_list->list.array[i];
+        int bwp_size = NRRIV2BW(ul_bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+        config_srs(ul_bwp->bwp_Dedicated->srs_Config,
+                   bwp_size,
+                   uid,
+                   i+1,
+                   configuration->do_SRS);
       }
     }
     update_cqitables(bwp_Dedicated->pdsch_Config, SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup);
