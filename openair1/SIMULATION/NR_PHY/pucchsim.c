@@ -27,6 +27,7 @@
 #include <sys/mman.h>
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
+#include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h" 
 #include "PHY/types.h"
@@ -390,45 +391,18 @@ int main(int argc, char **argv)
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
 
-  double fs,bw,scs,eps;
+  double fs,txbw,rxbw;
+  uint32_t samples;
 
-  if (mu == 1 && N_RB_DL == 217) { 
-    fs = 122.88e6;
-    bw = 80e6;
-    scs = 30000;
-  }					       
-  else if (mu == 1 && N_RB_DL == 245) {
-    fs = 122.88e6;
-    bw = 90e6;
-    scs = 30000;
-  }
-  else if (mu == 1 && N_RB_DL == 273) {
-    fs = 122.88e6;
-    bw = 100e6;
-    scs = 30000;
-  }
-  else if (mu == 1 && N_RB_DL == 106) { 
-    fs = 61.44e6;
-    bw = 40e6;
-    scs = 30000;
-  }
-  else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
+  get_samplerate_and_bw(mu,
+                        N_RB_DL,
+                        frame_parms->threequarter_fs,
+                        &fs,
+                        &samples,
+                        &txbw,
+                        &rxbw);
 
-  // cfo with respect to sub-carrier spacing
-  eps = cfo/scs;
-
-  // computation of integer and fractional FO to compare with estimation results
-  int IFO;
-  if(eps!=0.0){
-	printf("Introducing a CFO of %lf relative to SCS of %d kHz\n",eps,(int)(scs/1000));
-	if (eps>0)	
-  	  IFO=(int)(eps+0.5);
-	else
-	  IFO=(int)(eps-0.5);
-	printf("FFO = %lf; IFO = %d\n",eps-IFO,IFO);
-  }
-
-  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, bw, DS_TDL,0, 0, 0, 0);
+  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, txbw, DS_TDL,0, 0, 0, 0);
 
   if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");
@@ -476,9 +450,6 @@ int main(int argc, char **argv)
   UE = calloc(1,sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_rx=1;
-
-  if(eps!=0.0)
-    UE->UE_fo_compensation = 1; // if a frequency offset is set then perform fo estimation and compensation
 
   if (init_nr_ue_signal(UE, 1) != 0)
   {
@@ -568,7 +539,7 @@ int main(int argc, char **argv)
       }
 
       random_channel(UE2gNB,0);
-      freq_channel(UE2gNB,N_RB_DL,2*N_RB_DL+1,scs/1000);
+      freq_channel(UE2gNB,N_RB_DL,2*N_RB_DL+1,15<<mu);
       for (int symb=0; symb<nrofSymbols; symb++) {
         int i0 = (startingSymbolIndex + symb)*gNB->frame_parms.ofdm_symbol_size;
         for (int re=0;re<N_RB_DL*12;re++) {

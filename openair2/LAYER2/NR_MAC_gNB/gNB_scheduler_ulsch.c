@@ -317,9 +317,6 @@ int nr_process_mac_pdu(instance_t module_idP,
           AssertFatal(1==0,"[UE %04x] Frame/Slot %d.%d : Received LCID %d which is not configured, dropping packet\n",UE->rnti,frameP,slot,rx_lcid);
         }
         break;
-      case UL_SCH_LCID_SRB3:
-        // todo
-        break;
 
       case UL_SCH_LCID_CCCH:
       case UL_SCH_LCID_CCCH1:
@@ -347,16 +344,12 @@ int nr_process_mac_pdu(instance_t module_idP,
           mac_len = 6;
         }
 
-        nr_mac_rrc_data_ind(module_idP,
-                            CC_id,
-                            frameP,
-                            0,
-                            0,
-                            UE->rnti,
-                            CCCH,
-                            pduP + mac_subheader_len,
-                            mac_len,
-                            0);
+        send_initial_ul_rrc_message(module_idP,
+                                    CC_id,
+                                    UE,
+                                    CCCH,
+                                    pduP + mac_subheader_len,
+                                    mac_len);
         break;
 
       case UL_SCH_LCID_DTCH ... (UL_SCH_LCID_DTCH + 28):

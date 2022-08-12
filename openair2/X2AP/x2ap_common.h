@@ -18,10 +18,8 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
+#ifndef X2AP_COMMON_H_
+#define X2AP_COMMON_H_
 
 #include "X2AP_ProtocolIE-Field.h"
 #include "X2AP_X2AP-PDU.h"
@@ -34,9 +32,6 @@
 #include "X2AP_ProtocolExtensionContainer.h"
 #include "X2AP_asn_constant.h"
 #include "intertask_interface.h"
-
-#ifndef X2AP_COMMON_H_
-#define X2AP_COMMON_H_
 
 /** @defgroup _x2ap_impl_ X2AP Layer Reference Implementation
  * @ingroup _ref_implementation_

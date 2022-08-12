@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-5gnr-fdd-down</htmlTabRef>
-        <htmlTabName>CleanUp 5G RF - Monolithic FDD gNB</htmlTabName>
+        <htmlTabName>CleanUp Monolithic FDD gNB with SDAP</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100012

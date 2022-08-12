@@ -374,7 +374,7 @@ class RANManagement():
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			eth_interface = 'any'
 			fltr = 'sctp'
-			logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
+			logging.debug('\u001B[1m Launching tshark on xNB on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
 			pcapfile = pcapfile_prefix + self.testCase_id + '_log.pcap'
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
 			mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + pcapfile + ' > /dev/null 2>&1 &','\$', 5)
@@ -390,7 +390,7 @@ class RANManagement():
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			eth_interface = 'any'
 			fltr = 'sctp'
-			logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
+			logging.debug('\u001B[1m Launching tshark on EPC on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
 			self.epcPcapFile = 'enb_' + self.testCase_id + '_s1log.pcap'
 			mySSH.command('echo ' + localEpcPassword + ' | sudo -S rm -f /tmp/' + self.epcPcapFile , '\$', 5)
 			mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
@@ -517,7 +517,7 @@ class RANManagement():
 				localEpcUserName = EPC.UserName
 				localEpcPassword = EPC.Password
 				mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
-				logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+				logging.debug('\u001B[1m Stopping tshark on EPC \u001B[0m')
 				mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 				if self.epcPcapFile  != '':
 					mySSH.command('echo ' + localEpcPassword + ' | sudo -S chmod 666 /tmp/' + self.epcPcapFile, '\$', 5)
@@ -644,18 +644,16 @@ class RANManagement():
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		#stopping tshark (valid if eNB and enabled in xml, will not harm otherwise)
-		logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+		logging.debug('\u001B[1m Stopping tshark on xNB \u001B[0m')
 		mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 		time.sleep(1)
 		mySSH.close()
-		# If tracer options is on, stopping tshark on EPC side
-		result = re.search('T_stdout', str(self.Initialize_eNB_args))
-		if (result is not None):
+		if EPC.IPAddress != "none" and EPC.IPAddress != '':
 			localEpcIpAddr = EPC.IPAddress
 			localEpcUserName = EPC.UserName
 			localEpcPassword = EPC.Password
+			logging.debug('\u001B[1m Stopping tshark on EPC (' + localEpcIpAddr + ') \u001B[0m')
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
-			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 			mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 			time.sleep(1)
 			if self.epcPcapFile != '':

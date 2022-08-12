@@ -28,6 +28,7 @@
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/nr/nr_common.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -668,45 +669,23 @@ int main(int argc, char **argv)
 
   if (snr1set == 0)
     snr1 = snr0 + 10;
-  double sampling_frequency;
-  double bandwidth;
 
-  if (mu == 0 && N_RB_UL == 25 ) {
-    sampling_frequency = 7.68;
-    bandwidth = 5;
-  }
-  else if (mu == 1 && N_RB_UL == 273) {
-    sampling_frequency = 122.88;
-    bandwidth = 100;
-  }
-  else if (mu == 1 && N_RB_UL == 217) {
-    sampling_frequency = 122.88;
-    bandwidth = 80;
-  }
-  else if (mu == 1 && N_RB_UL == 106) {
-    sampling_frequency = 61.44;
-    bandwidth = 40;
-  }
-  else if (mu == 1 && N_RB_UL == 24) {
-    sampling_frequency = 15.36;
-    bandwidth = 10;
-  }
-  else if (mu == 3 && N_RB_UL == 32) {
-    sampling_frequency = 61.44;
-    bandwidth = 50;
-  }
-  else {
-    printf("Add N_RB_UL %d\n",N_RB_UL);
-    exit(-1);
-  }
+  double sampling_frequency, tx_bandwidth, rx_bandwidth;
+  uint32_t samples;
+  get_samplerate_and_bw(mu,
+                        N_RB_DL,
+                        openair0_cfg[0].threequarter_fs,
+                        &sampling_frequency,
+                        &samples,
+                        &tx_bandwidth,
+                        &rx_bandwidth);
 
   LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
 
-  if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
 
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
-                                sampling_frequency,
-                                bandwidth,
+                                sampling_frequency/1e6,
+                                tx_bandwidth,
 				DS_TDL,
                                 0, 0, 0, 0);
 
@@ -770,7 +749,7 @@ int main(int argc, char **argv)
   RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
     RC.nb_nr_mac_CC[i] = 1;
-  mac_top_init_gNB();
+  mac_top_init_gNB(ngran_gNB);
   //gNB_MAC_INST* gNB_mac = RC.nrmac[0];
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));

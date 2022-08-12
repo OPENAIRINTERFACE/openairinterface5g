@@ -18,10 +18,8 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
+#ifndef M2AP_COMMON_H_
+#define M2AP_COMMON_H_
 
 #include "M2AP_ProtocolIE-Field.h"
 #include "M2AP_M2AP-PDU.h"
@@ -37,9 +35,6 @@
 #include "intertask_interface.h"
 
 #include "common/ran_context.h"
-
-#ifndef M2AP_COMMON_H_
-#define M2AP_COMMON_H_
 
 /** @defgroup _m2ap_impl_ M2AP Layer Reference Implementation
  * @ingroup _ref_implementation_

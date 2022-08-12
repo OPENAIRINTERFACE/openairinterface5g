@@ -111,12 +111,12 @@ typedef struct physicalcellgroup_s{
   long        RNTI_Value[MAX_NUM_CCs];
 }physicalcellgroup_t;
 
-uint64_t get_ssb_bitmap(NR_ServingCellConfigCommon_t *scc);
+uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc);
 void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
                         int bwp_id,
                         int curr_bwp,
                         uint64_t ssb_bitmap);
-void nr_rrc_config_dl_tda(NR_ServingCellConfigCommon_t *scc,
+void nr_rrc_config_dl_tda(const NR_ServingCellConfigCommon_t *scc,
                           NR_PDSCH_TimeDomainResourceAllocationList_t	*pdsch_TimeDomainAllocationList,
                           int curr_bwp);
 void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay);
@@ -124,9 +124,9 @@ void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp
 void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, NR_UE_NR_Capability_t *uecap);
 void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time);
 void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs);
-void scheduling_request_config(NR_ServingCellConfigCommon_t *scc,
+void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc,
                                NR_PUCCH_Config_t *pucch_Config);
-void config_csirs(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   NR_CSI_MeasConfig_t *csi_MeasConfig,
                   int uid,
                   int num_dl_antenna_ports,
@@ -142,7 +142,7 @@ void set_dl_mcs_table(int scs,
                       NR_UE_NR_Capability_t *cap,
                       NR_SpCellConfig_t *SpCellConfig,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
-                      NR_ServingCellConfigCommon_t *scc);
+                      const NR_ServingCellConfigCommon_t *scc);
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        NR_ServingCellConfigCommon_t *scc,
                        int numerology,

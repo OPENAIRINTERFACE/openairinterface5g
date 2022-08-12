@@ -23,24 +23,10 @@
  * @ingroup _ref_implementation_
  * @{
  */
-
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
-
 #ifndef S1AP_COMMON_H_
 #define S1AP_COMMON_H_
 
-
 #include "common/utils/LOG/log.h"
-/* replace ASN_DEBUG defined in asn_internal.h by oai tracing system
-   Would be cleaner to modify asn_internal.h but it seems to come
-   from non oai source, with BSD license, so prefer to do that here..
-*/
-#ifdef ASN_DEBUG
-# undef ASN_DEBUG
-#endif
-#define ASN_DEBUG( x... )  LOG_I(ASN, x)
 
 #include "S1AP_ProtocolIE-Field.h"
 #include "S1AP_S1AP-PDU.h"
@@ -63,7 +49,6 @@
 
 #define S1AP_UE_ID_FMT  "0x%06"PRIX32
 
-extern int asn_debug;
 extern int asn1_xer_print;
 
 #if defined(ENB_MODE)

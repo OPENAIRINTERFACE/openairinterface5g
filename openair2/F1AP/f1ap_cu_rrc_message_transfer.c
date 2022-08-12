@@ -79,56 +79,60 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_C_RNTI, true);
   rnti = ie->value.choice.C_RNTI;
-  /* RRC Container */
-  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+  F1AP_InitialULRRCMessageTransferIEs_t *rrccont;
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, rrccont, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
-  AssertFatal(ie!=NULL,"RRCContainer is missing\n");
+  AssertFatal(rrccont!=NULL,"RRCContainer is missing\n");
 
-  // create an ITTI message and copy SDU
-  if (f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB) {
-    message_p = itti_alloc_new_message (TASK_CU_F1, 0, NR_RRC_MAC_CCCH_DATA_IND);
-    memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-    ccch_sdu_len = ie->value.choice.RRCContainer.size;
-    memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
-           ccch_sdu_len);
-  } else {
-    message_p = itti_alloc_new_message (TASK_CU_F1, 0, RRC_MAC_CCCH_DATA_IND);
-    memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-    ccch_sdu_len = ie->value.choice.RRCContainer.size;
-    memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
-           ccch_sdu_len);
-  }
-
-  LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__, ie->value.choice.RRCContainer.size);
-  /* DUtoCURRCContainer */
-  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+  F1AP_InitialULRRCMessageTransferIEs_t *du2cu;
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, du2cu, container,
                              F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, false);
-
-  if (ie) {
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container = malloc(sizeof(OCTET_STRING_t));
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->size = ie->value.choice.DUtoCURRCContainer.size;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf = malloc(ie->value.choice.DUtoCURRCContainer.size);
-    memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf,
-           ie->value.choice.DUtoCURRCContainer.buf,
-           ie->value.choice.DUtoCURRCContainer.size);
-  }
 
   int f1ap_uid = f1ap_add_ue(CUtype, instance, rnti);
 
   if (f1ap_uid  < 0 ) {
     LOG_E(F1AP, "Failed to add UE \n");
-    itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
     return -1;
   }
 
+  // create an ITTI message and copy SDU
+  if (f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB) {
+    message_p = itti_alloc_new_message (TASK_CU_F1, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
+    f1ap_initial_ul_rrc_message_t *ul_rrc = &F1AP_INITIAL_UL_RRC_MESSAGE(message_p);
+    ul_rrc->nr_cellid = nr_cellid; // CU instance
+    ul_rrc->crnti      = rnti;
+    ul_rrc->rrc_container_length = rrccont->value.choice.RRCContainer.size;
+    ul_rrc->rrc_container = malloc(ul_rrc->rrc_container_length);
+    memcpy(ul_rrc->rrc_container, rrccont->value.choice.RRCContainer.buf, ul_rrc->rrc_container_length);
+    AssertFatal(du2cu != NULL, "no masterCellGroup in initial UL RRC message\n");
+    ul_rrc->du2cu_rrc_container_length = du2cu->value.choice.DUtoCURRCContainer.size;
+    ul_rrc->du2cu_rrc_container = malloc(ul_rrc->du2cu_rrc_container_length);
+    memcpy(ul_rrc->du2cu_rrc_container, du2cu->value.choice.DUtoCURRCContainer.buf, ul_rrc->du2cu_rrc_container_length);
+    itti_send_msg_to_task(TASK_RRC_GNB, instance, message_p);
+  } else {
+    message_p = itti_alloc_new_message (TASK_CU_F1, 0, RRC_MAC_CCCH_DATA_IND);
+    memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
+    ccch_sdu_len = rrccont->value.choice.RRCContainer.size;
+    memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, rrccont->value.choice.RRCContainer.buf,
+           ccch_sdu_len);
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).nr_cellid = nr_cellid; // CU instance
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
+    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id;
+    if (du2cu) {
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container = malloc(sizeof(OCTET_STRING_t));
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->size = du2cu->value.choice.DUtoCURRCContainer.size;
+      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf = malloc(du2cu->value.choice.DUtoCURRCContainer.size);
+      memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf,
+             du2cu->value.choice.DUtoCURRCContainer.buf,
+             du2cu->value.choice.DUtoCURRCContainer.size);
+    }
+    itti_send_msg_to_task (TASK_RRC_ENB, instance, message_p);
+  }
+
   //getCxt(true,ITTI_MSG_DESTINATION_ID(message_p))->f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
-  NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0;
-  NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
-  NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
-  NR_RRC_MAC_CCCH_DATA_IND (message_p).nr_cellid = nr_cellid; // CU instance
-  NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
-  NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id     = CC_id;
-  itti_send_msg_to_task (f1ap_req(true,ITTI_MSG_DESTINATION_ID(message_p))->cell_type==CELL_MACRO_GNB?TASK_RRC_GNB:TASK_RRC_ENB, instance, message_p);
   return 0;
 }
 
