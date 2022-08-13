@@ -212,6 +212,7 @@ uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx)
   return 9;
 }
 
+
 void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
 
   //TODO first basic implementation of dmrs port selection
@@ -246,15 +247,6 @@ void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
     default:
       AssertFatal(1==0,"Number of layers %d\n not supported or not valid\n",ps->nrOfLayers);
   }
-}
-
-uint8_t get_BG(uint32_t A, uint16_t R) {
-
-  float code_rate = (float) R / 10240.0f;
-  if ((A <=292) || ((A<=3824) && (code_rate <= 0.6667)) || code_rate <= 0.25)
-    return 2;
-  else
-    return 1;
 }
 
 NR_ControlResourceSet_t *get_coreset(gNB_MAC_INST *nrmac,

@@ -318,6 +318,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_pdsch->rbStart = g_rbStart;
   sched_pdsch->rbSize = g_rbSize;
   sched_pdsch->mcs = g_mcsIndex;
+  sched_pdsch->nrOfLayers = g_nrOfLayers;
   /* the following might override the table that is mandated by RRC
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
