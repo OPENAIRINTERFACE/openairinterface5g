@@ -196,7 +196,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   }
 
 #endif
-  const uint8_t b_shift = pusch_pdu->nrOfLayers == 1;
 
   for (int aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
     c16_t *rxdataF = (c16_t *)&gNB->common_vars.rxdataF[aarx][symbol_offset];
@@ -228,7 +227,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
           ch=c32x16maddShift(*pil,
                              rxdataF[soffset + re_offset],
                              ch,
-                             15+b_shift);
+                             16);
           pil++;
         }
 
@@ -668,7 +667,7 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
       /*------------------------------------------------------------------------------------------------------- */
       /* 3) Compensated DMRS based estimated signal with PTRS estimation                                        */
       /*--------------------------------------------------------------------------------------------------------*/
-      for(uint8_t i = *startSymbIndex; i< symbInSlot ; i++) {
+      for(uint8_t i = *startSymbIndex; i < symbInSlot; i++) {
         /* DMRS Symbol has 0 phase so no need to rotate the respective symbol */
         /* Skip rotation if the slot processing is wrong */
         if((!is_dmrs_symbol(i,*dmrsSymbPos)) && (ret == 0)) {

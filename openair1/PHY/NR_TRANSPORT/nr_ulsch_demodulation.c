@@ -1843,7 +1843,13 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
                                determ_fin_128[0]);
 
     rxdataF_comp128_0[0] = mmtmpD0;
-    rxdataF_comp128_1[0] = mmtmpD1;
+    if (mod_order > 2) {
+      // We need to check why it is a shift of 3
+      rxdataF_comp128_1[0] = _mm_srai_epi16(mmtmpD1, 3);
+    } else {
+      rxdataF_comp128_1[0] = mmtmpD1;
+    }
+
 #ifdef DEBUG_DLSCH_DEMOD
     printf("\n Rx signal after ZF l%d rb%d\n",symbol,rb);
     print_shorts(" Rx layer 1:",(int16_t*)&rxdataF_comp128_0[0]);
@@ -1954,7 +1960,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
   int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
   uint32_t rxdataF_ext_offset = 0;
-  uint8_t ad_shift = 1 + log2_approx(frame_parms->nb_antennas_rx >> 2);
+  uint8_t ad_shift = 1 + log2_approx(frame_parms->nb_antennas_rx >> 2) + (rel15_ul->nrOfLayers == 2);
 
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
@@ -2057,18 +2063,21 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                              symbol,
                              rel15_ul->rb_size,
                              nb_re_pusch);
-                 
-      if (rel15_ul->nrOfLayers == 2)//Apply zero forcing for 2 Tx layers
+
+      //Apply zero forcing for 2 Tx layers
+      if (rel15_ul->nrOfLayers == 2) {
         nr_ulsch_zero_forcing_rx_2layers(gNB->pusch_vars[ulsch_id]->rxdataF_comp,
-                                   gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
-                                   gNB->pusch_vars[ulsch_id]->ul_ch_magb0,                                   
-                                   gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
-                                   rel15_ul->rb_size,
-                                   frame_parms->nb_antennas_rx,
-                                   rel15_ul->qam_mod_order,
-                                   gNB->pusch_vars[ulsch_id]->log2_maxh,
-                                   symbol,
-                                   nb_re_pusch);
+                                         gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
+                                         gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
+                                         gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
+                                         rel15_ul->rb_size,
+                                         frame_parms->nb_antennas_rx,
+                                         rel15_ul->qam_mod_order,
+                                         gNB->pusch_vars[ulsch_id]->log2_maxh,
+                                         symbol,
+                                         nb_re_pusch);
+      }
+
       stop_meas(&gNB->ulsch_mrc_stats);
 
       if (rel15_ul->transform_precoding == transformPrecoder_enabled) {
