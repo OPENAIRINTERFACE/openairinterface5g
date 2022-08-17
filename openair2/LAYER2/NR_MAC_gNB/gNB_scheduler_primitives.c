@@ -1247,8 +1247,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
     pucch_pdu->format_type = default_pucch_fmt[rsetindex];
     pucch_pdu->initial_cyclic_shift = r_pucch%default_pucch_csset[rsetindex];
     if (rsetindex==3||rsetindex==7||rsetindex==11) pucch_pdu->initial_cyclic_shift*=6;
-    else if (rsetindex==1||rsetindex==2) pucch_pdu->initial_cyclic_shift*=3;
-    else pucch_pdu->initial_cyclic_shift*=4;
+    else if (rsetindex==1||rsetindex==2) pucch_pdu->initial_cyclic_shift*=4;
+    else pucch_pdu->initial_cyclic_shift*=3;
     pucch_pdu->nr_of_symbols = nr_of_symb;
     pucch_pdu->start_symbol_index = start_symb;
     if (pucch_pdu->format_type == 1) pucch_pdu->time_domain_occ_idx = 0; // check this!!
