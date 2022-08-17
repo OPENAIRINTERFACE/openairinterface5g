@@ -20,6 +20,7 @@ AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: true
 BinPackArguments: false
 BinPackParameters: false
+BitFieldColonSpacing: After
 BraceWrapping:
   AfterClass:      false
   AfterControlStatement: false
