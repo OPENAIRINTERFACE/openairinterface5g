@@ -28,7 +28,7 @@ services:
             private_net:
                 ipv4_address: 192.168.68.4
         volumes:
-            - ./oai_db.cql:/home/oai_db.cql
+            - ../4g_rfsimulator_fdd_05MHz/oai_db.cql:/home/oai_db.cql
         entrypoint: /bin/bash -c "cqlsh --file /home/oai_db.cql 192.168.68.2 && echo 'OK'"
 
     oai_hss:
@@ -66,7 +66,7 @@ services:
             public_net:
                 ipv4_address: 192.168.61.6
         volumes:
-            - ./redis_extern.conf:/usr/local/etc/redis/redis.conf
+            - ../4g_rfsimulator_fdd_05MHz/redis_extern.conf:/usr/local/etc/redis/redis.conf
         entrypoint: /bin/bash -c "redis-server /usr/local/etc/redis/redis.conf"
         healthcheck:
             test: /bin/bash -c "redis-cli -h 192.168.61.6 -p 6380 ping"
@@ -93,9 +93,9 @@ services:
             MME_FQDN: mme.openairinterface.org
             FEATURES: mme_oai
         volumes:
-            - ./mme_fd.sprint.conf:/magma-mme/etc/mme_fd.conf.tmplt
-            - ./mme.conf:/magma-mme/etc/mme.conf
-            - ./entrypoint.sh:/magma-mme/bin/entrypoint.sh
+            - ../4g_rfsimulator_fdd_05MHz/mme_fd.sprint.conf:/magma-mme/etc/mme_fd.conf.tmplt
+            - ../4g_rfsimulator_fdd_05MHz/mme.conf:/magma-mme/etc/mme.conf
+            - ../4g_rfsimulator_fdd_05MHz/entrypoint.sh:/magma-mme/bin/entrypoint.sh
         entrypoint: /bin/bash -c "/magma-mme/bin/entrypoint.sh"
         healthcheck:
             test: /bin/bash -c "pgrep oai_mme"
