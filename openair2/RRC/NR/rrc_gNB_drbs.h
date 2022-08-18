@@ -43,7 +43,8 @@ typedef struct nr_ue_s {
   struct nr_ue_s *next_ue;
 } nr_ue_t;
 
-NR_DRB_ToAddMod_t *generateDRB(rnti_t rnti,
+NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
+                               rnti_t rnti,
                                const pdu_session_param_t *pduSession,
                                bool enable_sdap,
                                int do_drb_integrity,
