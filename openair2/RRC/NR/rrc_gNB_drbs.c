@@ -120,19 +120,3 @@ uint8_t next_available_drb(gNB_RRC_UE_t *rrc_ue, uint8_t pdusession_id) {
   LOG_E(RRC, "Error - All the DRBs are used - Handle this\n");
   return DRB_INACTIVE;
 }
-
-nr_ue_t *nr_ue_get(rnti_t rnti) {
-  nr_ue_t *ue;
-  ue = ues.list;
-
-  if(ue == NULL)
-    return NULL;
-
-  while(ue->ue_id != rnti && ue->next_ue != NULL)
-    ue = ue->next_ue;
-
-  if(ue->ue_id == rnti)
-    return ue;
-
-  return NULL;
-}
