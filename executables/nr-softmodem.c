@@ -787,42 +787,13 @@ int main( int argc, char **argv ) {
     pthread_mutex_unlock(&sync_mutex);
   }
 
-  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
-
-  // We have to set PARAMFLAG_NOFREE on right paramters before re-enabling end_configmodule()
-
-  //end_configmodule();
-  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   // wait for end of program
-  printf("TYPE <CTRL-C> TO TERMINATE\n");
-  //getchar();
   printf("Entering ITTI signals handler\n");
+  printf("TYPE <CTRL-C> TO TERMINATE\n");
   itti_wait_tasks_end();
   printf("Returned from ITTI signal handler\n");
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);
-  // stop threads
-  /*#ifdef XFORMS
-
-      printf("waiting for XFORMS thread\n");
-
-      if (do_forms==1) {
-        pthread_join(forms_thread,&status);
-        fl_hide_form(form_stats->stats_form);
-        fl_free_form(form_stats->stats_form);
-
-          fl_hide_form(form_stats_l2->stats_form);
-          fl_free_form(form_stats_l2->stats_form);
-
-          for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
-      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        fl_hide_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
-        fl_free_form(form_enb[CC_id][UE_id]->phy_scope_gNB);
-      }
-          }
-      }
-
-  #endif*/
 
   // cleanup
   if (RC.nb_nr_L1_inst > 0)
