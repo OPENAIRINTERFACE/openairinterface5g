@@ -33,7 +33,7 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
                                bool enable_sdap,
                                int do_drb_integrity,
                                int do_drb_ciphering) {
-  uint8_t drb_id = next_available_drb(ue, rnti, pduSession->param.pdusession_id);
+  uint8_t drb_id = next_available_drb(ue, pduSession->param.pdusession_id);
   NR_DRB_ToAddMod_t *DRB_config  = NULL;
   NR_SDAP_Config_t  *SDAP_config = NULL;
 
@@ -108,7 +108,7 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
   return DRB_config;
 }
 
-uint8_t next_available_drb(gNB_RRC_UE_t *rrc_ue, rnti_t rnti, uint8_t pdusession_id) {
+uint8_t next_available_drb(gNB_RRC_UE_t *rrc_ue, uint8_t pdusession_id) {
   uint8_t drb_id;
   for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++) {
     if(rrc_ue->DRB_active[drb_id] == DRB_INACTIVE) {
