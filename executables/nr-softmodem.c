@@ -716,9 +716,6 @@ int main( int argc, char **argv ) {
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (NFAPI_MODE==NFAPI_MODE_VNF)
-    wait_nfapi_init("main?");
-
   printf("START MAIN THREADS\n");
   // start the main threads
   number_of_cards = 1;
