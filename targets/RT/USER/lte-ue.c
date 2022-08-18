@@ -1986,13 +1986,13 @@ void *UE_thread(void *arg) {
           for(int sf=0; sf<10; sf++) {
             for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
               rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.samples_per_tti*sf];
+            write_dummy(UE, timestamp);
 
             AssertFatal(UE->frame_parms.samples_per_tti == UE->rfdevice.trx_read_func(&UE->rfdevice,
                         &timestamp,
                         rxp,
                         UE->frame_parms.samples_per_tti,
                         UE->frame_parms.nb_antennas_rx), "");
-            write_dummy(UE, timestamp);
           }
         } else {
           for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
