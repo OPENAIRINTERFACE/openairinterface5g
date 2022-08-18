@@ -21,12 +21,6 @@
 
 #include "rrc_gNB_drbs.h"
 
-typedef struct {
-  nr_ue_t *list; /* UE Linked List, every element is a UE*/
-} nr_ue_list_t;
-
-static nr_ue_list_t ues;
-
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
                                const pdu_session_param_t *pduSession,
                                bool enable_sdap,

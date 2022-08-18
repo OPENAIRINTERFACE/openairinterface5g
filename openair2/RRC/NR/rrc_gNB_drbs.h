@@ -31,20 +31,6 @@
 #define DRB_ACTIVE              (1)
 #define DRB_INACTIVE            (0)
 
-typedef struct nr_pdus_s {
-  uint8_t pdu_drbs[MAX_DRBS_PER_PDUSESSION];  /* Data Radio Bearers of PDU Session */
-  uint8_t pdusession_id;
-  uint8_t drbs_established;                   /* Max value -> MAX_DRBS_PER_PDUSESSION*/
-} nr_pdus_t;
-
-typedef struct nr_ue_s {
-  nr_pdus_t pdus[MAX_PDUS_PER_UE];      /* PDU Sessions */
-  uint8_t   used_drbs[MAX_DRBS_PER_UE]; /* Data Radio Bearers of UE, the value is not the drb_id but the pdusession_id */
-  rnti_t    ue_id;
-
-  struct nr_ue_s *next_ue;
-} nr_ue_t;
-
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue,
                                const pdu_session_param_t *pduSession,
                                bool enable_sdap,
