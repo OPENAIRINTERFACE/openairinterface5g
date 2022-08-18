@@ -281,6 +281,8 @@ typedef struct pdusession_s {
   ngap_transport_layer_addr_t      upf_addr;
   /* S-GW Tunnel endpoint identifier */
   uint32_t                         gtp_teid;
+  /* Stores the DRB ID of the DRBs used by this PDU Session */
+  uint8_t                          used_drbs[NGAP_MAX_DRBS_PER_UE];
 } pdusession_t;
 
 
