@@ -109,21 +109,16 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
 }
 
 uint8_t next_available_drb(gNB_RRC_UE_t *rrc_ue, rnti_t rnti, uint8_t pdusession_id) {
-  nr_ue_t *ue;
-  if(nr_ue_get(rnti))
-    ue = nr_ue_get(rnti);
-  else
-    ue = nr_ue_new(rnti);
-
   uint8_t drb_id;
   for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++) {
-    if(ue->used_drbs[drb_id] == DRB_INACTIVE && ue->pdus->drbs_established < MAX_DRBS_PER_PDUSESSION) {
-      ue->pdus->pdu_drbs[ue->pdus->drbs_established] = drb_id;  /* Store drb_id to pdusession */
-      ue->used_drbs[drb_id] = pdusession_id;                    /* Store the pdusession id that is using that drb */
-      ue->pdus->drbs_established++;                             /* Increment the index for drbs */
-      return ++drb_id;
+    if(rrc_ue->DRB_active[drb_id] == DRB_INACTIVE) {
+      rrc_ue->pduSession[pdusession_id].param.used_drbs[drb_id] = DRB_ACTIVE;
+      rrc_ue->DRB_active[drb_id]                                = DRB_ACTIVE;
+      return drb_id+1;
     }
   }
+  /* From this point, we handle the case that all DRBs are already used by the UE. */
+  LOG_E(RRC, "Error - All the DRBs are used - Handle this\n");
   return DRB_INACTIVE;
 }
 
