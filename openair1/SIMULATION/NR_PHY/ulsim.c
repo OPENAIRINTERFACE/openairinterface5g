@@ -28,6 +28,7 @@
 #include "common/ran_context.h"
 #include "common/config/config_userapi.h"
 #include "common/utils/LOG/log.h"
+#include "common/utils/nr/nr_common.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
@@ -95,9 +96,17 @@ nfapi_ue_release_request_body_t release_rntis;
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
-teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_bearer_id, teid_t outgoing_teid,
-                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack) {
-return 0;
+teid_t newGtpuCreateTunnel(instance_t instance,
+                           rnti_t rnti,
+                           int incoming_bearer_id,
+                           int outgoing_bearer_id,
+                           teid_t outgoing_teid,
+                           int qfi,
+                           transport_layer_addr_t remoteAddr,
+                           int port,
+                           gtpCallback callBack,
+                           gtpCallbackSDAP callBackSDAP) {
+  return 0;
 }
 
 int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
@@ -671,45 +680,23 @@ int main(int argc, char **argv)
 
   if (snr1set == 0)
     snr1 = snr0 + 10;
-  double sampling_frequency;
-  double bandwidth;
 
-  if (mu == 0 && N_RB_UL == 25 ) {
-    sampling_frequency = 7.68;
-    bandwidth = 5;
-  }
-  else if (mu == 1 && N_RB_UL == 273) {
-    sampling_frequency = 122.88;
-    bandwidth = 100;
-  }
-  else if (mu == 1 && N_RB_UL == 217) {
-    sampling_frequency = 122.88;
-    bandwidth = 80;
-  }
-  else if (mu == 1 && N_RB_UL == 106) {
-    sampling_frequency = 61.44;
-    bandwidth = 40;
-  }
-  else if (mu == 1 && N_RB_UL == 24) {
-    sampling_frequency = 15.36;
-    bandwidth = 10;
-  }
-  else if (mu == 3 && N_RB_UL == 32) {
-    sampling_frequency = 61.44;
-    bandwidth = 50;
-  }
-  else {
-    printf("Add N_RB_UL %d\n",N_RB_UL);
-    exit(-1);
-  }
+  double sampling_frequency, tx_bandwidth, rx_bandwidth;
+  uint32_t samples;
+  get_samplerate_and_bw(mu,
+                        N_RB_DL,
+                        openair0_cfg[0].threequarter_fs,
+                        &sampling_frequency,
+                        &samples,
+                        &tx_bandwidth,
+                        &rx_bandwidth);
 
   LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
 
-  if (openair0_cfg[0].threequarter_fs == 1) sampling_frequency*=.75;
 
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
-                                sampling_frequency,
-                                bandwidth,
+                                sampling_frequency/1e6,
+                                tx_bandwidth,
 				DS_TDL,
                                 0, 0, 0, 0);
 
@@ -773,7 +760,7 @@ int main(int argc, char **argv)
   RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
     RC.nb_nr_mac_CC[i] = 1;
-  mac_top_init_gNB();
+  mac_top_init_gNB(ngran_gNB);
   //gNB_MAC_INST* gNB_mac = RC.nrmac[0];
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
@@ -811,9 +798,9 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 0, 0, NULL);
+  rrc_mac_config_req_gNB(0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 0, 0, NULL);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0,0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 1,
+  rrc_mac_config_req_gNB(0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 1,
                          secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
   frame_parms->nb_antennas_tx = 1;
   frame_parms->nb_antennas_rx = n_rx;

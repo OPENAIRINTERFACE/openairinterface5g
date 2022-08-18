@@ -121,11 +121,11 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB, const NR_DL_FRAME_
     @param slot Slot number
     @param harq_pid HARQ process ID
 */
-int nr_rx_pusch(PHY_VARS_gNB *gNB,
-                uint8_t UE_id,
-                uint32_t frame,
-                uint8_t slot,
-                unsigned char harq_pid);
+void nr_rx_pusch(PHY_VARS_gNB *gNB,
+                 uint8_t UE_id,
+                 uint32_t frame,
+                 uint8_t slot,
+                 unsigned char harq_pid);
 
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
     @param rxdataF pointer to the received frequency domain signal
@@ -330,19 +330,27 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
                       int slot,
                       nfapi_nr_srs_pdu_t *srs_pdu,
                       nr_srs_info_t *nr_srs_info,
-                      int32_t **srs_received_signal);
+                      int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)]);
 
 void init_prach_list(PHY_VARS_gNB *gNB);
 void init_prach_ru_list(RU_t *ru);
 void free_nr_ru_prach_entry(RU_t *ru, int prach_id);
 uint8_t get_nr_prach_duration(uint8_t prach_format);
 
-void nr_generate_csi_rs(NR_DL_FRAME_PARMS frame_parms,
+void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
                         int32_t **dataF,
-                        int16_t amp,
-                        nr_csi_rs_info_t *nr_csi_rs_info,
-                        nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
-                        int slot);
+                        const int16_t amp,
+                        nr_csi_info_t *nr_csi_info,
+                        const nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params,
+                        const int slot,
+                        uint8_t *N_cdm_groups,
+                        uint8_t *CDM_group_size,
+                        uint8_t *k_prime,
+                        uint8_t *l_prime,
+                        uint8_t *N_ports,
+                        uint8_t *j_cdm,
+                        uint8_t *k_overline,
+                        uint8_t *l_overline);
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 
@@ -362,6 +370,7 @@ void nr_decode_pucch1(int32_t **rxdataF,
                       uint8_t nr_bit);
 
 void nr_decode_pucch2(PHY_VARS_gNB *gNB,
+                      int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
@@ -370,11 +379,6 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
-                      nfapi_nr_pucch_pdu_t* pucch_pdu);
-
-void nr_decode_pucch2(PHY_VARS_gNB *gNB,
-                      int slot,
-                      nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu);
 
 

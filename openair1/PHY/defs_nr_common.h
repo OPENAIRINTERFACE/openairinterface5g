@@ -43,6 +43,7 @@
 #define nr_slot_t lte_subframe_t
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
+#define NR_MAX_OFDM_SYMBOL_SIZE 4096
 
 #define NR_NB_SC_PER_RB 12
 #define NR_NB_REG_PER_CCE 6
@@ -241,35 +242,19 @@ typedef struct {
 
 typedef struct {
   uint16_t sc_list_length;
-  uint16_t *sc_list;
+  uint16_t sc_list[6*273];
   uint8_t srs_generated_signal_bits;
-  int32_t *srs_generated_signal;
-  int32_t **srs_received_signal;
-  int32_t **srs_ls_estimated_channel;
-  int32_t **srs_estimated_channel_freq;
-  int32_t **srs_estimated_channel_time;
-  int32_t **srs_estimated_channel_time_shifted;
-  uint32_t *noise_power;
+  int32_t srs_generated_signal[OFDM_SYMBOL_SIZE_SAMPLES_MAX * MAX_NUM_NR_SRS_SYMBOLS];
 } nr_srs_info_t;
 
 typedef struct {
-  uint8_t N_cdm_groups;
-  uint8_t CDM_group_size;
-  uint8_t kprime;
-  uint8_t lprime;
-  uint8_t N_ports;
-  uint8_t j[16];
-  uint8_t koverline[16];
-  uint8_t loverline[16];
   uint16_t csi_gold_init;
   uint32_t ***nr_gold_csi_rs;
   uint8_t csi_rs_generated_signal_bits;
   int32_t **csi_rs_generated_signal;
-  int32_t **csi_rs_received_signal;
-  int32_t ***csi_rs_ls_estimated_channel;
-  int32_t ***csi_rs_estimated_channel_freq;
-  uint32_t *noise_power;
-} nr_csi_rs_info_t;
+  bool csi_im_meas_computed;
+  uint32_t interference_plus_noise_power;
+} nr_csi_info_t;
 
 typedef struct NR_DL_FRAME_PARMS NR_DL_FRAME_PARMS;
 
@@ -359,10 +344,10 @@ struct NR_DL_FRAME_PARMS {
   lte_prefix_type_t Ncp;
   /// sequence which is computed based on carrier frequency and numerology to rotate/derotate each OFDM symbol according to Section 5.3 in 38.211
   /// First dimension is for the direction of the link (0 DL, 1 UL)
-  int16_t symbol_rotation[2][224*2];
+  c16_t symbol_rotation[2][224];
   /// sequence used to compensate the phase rotation due to timeshifted OFDM symbols
   /// First dimenstion is for different CP lengths
-  int16_t timeshift_symbol_rotation[4096*2] __attribute__ ((aligned (16)));
+  c16_t timeshift_symbol_rotation[4096*2] __attribute__ ((aligned (16)));
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC

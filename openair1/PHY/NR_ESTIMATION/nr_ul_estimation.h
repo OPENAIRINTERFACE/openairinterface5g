@@ -55,6 +55,9 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* phy_vars_gNB, int UE_id);
 
+int nr_est_timing_advance_srs(const NR_DL_FRAME_PARMS *frame_parms,
+                              const int32_t srs_estimated_channel_time[][frame_parms->ofdm_symbol_size]);
+
 void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               NR_DL_FRAME_PARMS *frame_parms,
                               nfapi_nr_pusch_pdu_t *rel15_ul,
@@ -63,15 +66,20 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               unsigned char symbol,
                               uint32_t nb_re_pusch);
 
-int nr_srs_channel_estimation(PHY_VARS_gNB *gNB,
-                              int frame,
-                              int slot,
-                              nfapi_nr_srs_pdu_t *srs_pdu,
-                              nr_srs_info_t *nr_srs_info,
-                              int32_t *srs_generated_signal,
-                              int32_t **srs_received_signal,
-                              int32_t **srs_estimated_channel_freq,
-                              int32_t **srs_estimated_channel_time,
-                              int32_t **srs_estimated_channel_time_shifted,
-                              uint32_t *noise_power);
+int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
+                              const int frame,
+                              const int slot,
+                              const nfapi_nr_srs_pdu_t *srs_pdu,
+                              const nr_srs_info_t *nr_srs_info,
+                              const int32_t *srs_generated_signal,
+                              int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
+                              int32_t srs_ls_estimated_channel[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
+                              int32_t srs_estimated_channel_freq[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)],
+                              int32_t srs_estimated_channel_time[][gNB->frame_parms.ofdm_symbol_size],
+                              int32_t srs_estimated_channel_time_shifted[][gNB->frame_parms.ofdm_symbol_size],
+                              uint32_t *signal_power,
+                              uint32_t *noise_power_per_rb,
+                              uint32_t *noise_power,
+                              int8_t *snr_per_rb,
+                              int8_t *snr);
 #endif

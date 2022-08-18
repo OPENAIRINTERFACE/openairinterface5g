@@ -2075,7 +2075,7 @@ schedule_PCH(module_id_t module_idP,
     for (uint16_t i = 0; i < MAX_MOBILES_PER_ENB; i++) {
       ue_pf_po = &UE_PF_PO[CC_id][i];
 
-      if (ue_pf_po->enable_flag != TRUE) {
+      if (ue_pf_po->enable_flag != true) {
         continue;
       }
 

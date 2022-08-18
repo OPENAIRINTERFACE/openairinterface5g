@@ -56,6 +56,7 @@
 #include "intertask_interface.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
+#include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
 int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
     uint32_t         assoc_id,
@@ -509,7 +510,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   LOG_I(F1AP, "Received DL RRC Transfer on srb_id %ld\n", srb_id);
   rlc_op_status_t    rlc_status;
-  boolean_t          ret             = TRUE;
+  bool               ret             = true;
   mem_block_t       *pdcp_pdu_p      = NULL;
   pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
 
@@ -539,27 +540,27 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     switch (rlc_status) {
       case RLC_OP_STATUS_OK:
         //LOG_I(F1AP, "Data sending request over RLC succeeded!\n");
-        ret=TRUE;
+        ret=true;
         break;
 
       case RLC_OP_STATUS_BAD_PARAMETER:
         LOG_W(F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-        ret= FALSE;
+        ret= false;
         break;
 
       case RLC_OP_STATUS_INTERNAL_ERROR:
         LOG_W(F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-        ret= FALSE;
+        ret= false;
         break;
 
       case RLC_OP_STATUS_OUT_OF_RESSOURCES:
         LOG_W(F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-        ret= FALSE;
+        ret= false;
         break;
 
       default:
         LOG_W(F1AP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-        ret= FALSE;
+        ret= false;
         break;
     } // switch case
 
@@ -667,9 +668,9 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
           UE_sched_ctrl_t *UE_scheduling_control = &(RC.mac[instance]->UE_info.UE_sched_ctrl[UE_id_mac]);
 
-          if (UE_scheduling_control->cdrx_waiting_ack == TRUE) {
-            UE_scheduling_control->cdrx_waiting_ack = FALSE;
-            UE_scheduling_control->cdrx_configured = TRUE; // Set to TRUE when RRC Connection Reconfiguration Complete is received
+          if (UE_scheduling_control->cdrx_waiting_ack == true) {
+            UE_scheduling_control->cdrx_waiting_ack = false;
+            UE_scheduling_control->cdrx_configured = true; // Set to TRUE when RRC Connection Reconfiguration Complete is received
             LOG_I(F1AP, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
           }
 
@@ -748,7 +749,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     rnti_t          rntiP,
     const uint8_t   *sduP,
     sdu_size_t      sdu_lenP,
-    const char      *sdu2P,
+    const uint8_t   *sdu2P,
     sdu_size_t      sdu2_lenP) {
   F1AP_F1AP_PDU_t                       pdu= {0};
   F1AP_InitialULRRCMessageTransfer_t    *out;
@@ -807,9 +808,16 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     ie5->criticality                    = F1AP_Criticality_reject;
     ie5->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_DUtoCURRCContainer;
     OCTET_STRING_fromBuf(&ie5->value.choice.DUtoCURRCContainer,
-                         sdu2P,
+                         (const char *)sdu2P,
                          sdu2_lenP);
   }
+  /* mandatory */
+  /* c6. Transaction ID (integer value) */
+  asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie6);
+  ie6->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
+  ie6->criticality               = F1AP_Criticality_ignore;
+  ie6->value.present             = F1AP_F1SetupRequestIEs__value_PR_TransactionID;
+  ie6->value.choice.TransactionID = F1AP_get_next_transaction_identifier(f1ap_req(false, instanceP)->gNB_DU_id, f1ap_req(false, instanceP)->gNB_DU_id);
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
@@ -978,6 +986,16 @@ int DU_handle_DL_NR_RRC_MESSAGE_TRANSFER(instance_t       instance,
         break;
     }
   }
+
+  f1ap_dl_rrc_message_t dl_rrc = {
+    .rrc_container_length = ie->value.choice.RRCContainer.size,
+    .rrc_container = ie->value.choice.RRCContainer.buf,
+    .rnti = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id),
+    .srb_id = srb_id
+  };
+  int rc = dl_rrc_message(instance, &dl_rrc);
+  if (rc == 0)
+    return 0; /* has been handled, otherwise continue below */
 
   // decode RRC Container and act on the message type
   AssertFatal(srb_id<3,"illegal srb_id\n");

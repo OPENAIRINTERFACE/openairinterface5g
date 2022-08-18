@@ -36,12 +36,13 @@
 #include <string.h>
 
 #include "collection/tree.h"
+#include "collection/linear_alloc.h"
 #include "nr_rrc_types.h"
 
+#include "common/ngran_types.h"
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
-#include "RRC/LTE/rrc_defs.h"
-//#include "LAYER2/RLC/rlc.h"
+#include "mac_rrc_dl.h"
 
 //#include "COMMON/mac_rrc_primitives.h"
 
@@ -78,17 +79,6 @@
   #include "as_message.h"
 
   #include "commonDef.h"
-
-
-/*I will change the name of the structure for compile purposes--> hope not to undo this process*/
-
-typedef unsigned int uid_nr_t;
-#define NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE (((MAX_MOBILES_PER_GNB/8)/sizeof(unsigned int)) + 1)
-
-typedef struct nr_uid_linear_allocator_s {
-  unsigned int   bitmap[NR_UID_LINEAR_ALLOCATOR_BITMAP_SIZE];
-} nr_uid_allocator_t;
-    
 
 #define PROTOCOL_NR_RRC_CTXT_UE_FMT                PROTOCOL_CTXT_FMT
 #define PROTOCOL_NR_RRC_CTXT_UE_ARGS(CTXT_Pp)      PROTOCOL_NR_CTXT_ARGS(CTXT_Pp)
@@ -173,7 +163,7 @@ typedef struct UE_RRC_INFO_NR_s {
 } __attribute__ ((__packed__)) NR_UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_NR_s {
-  boolean_t                                           presence;
+  bool                                                presence;
   uint16_t                                            amf_set_id;
   uint8_t                                             amf_pointer;
   uint32_t                                            fiveg_tmsi;
@@ -282,12 +272,11 @@ typedef struct pdu_session_param_s {
 
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
-  LTE_SCellToAddMod_r10_t            sCell_config[2];
   NR_SRB_ToAddModList_t             *SRB_configList;
-  NR_SRB_ToAddModList_t             *SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_SRB_ToAddModList_t             *SRB_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
   NR_DRB_ToAddModList_t             *DRB_configList;
-  NR_DRB_ToAddModList_t             *DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  NR_DRB_ToReleaseList_t            *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_DRB_ToAddModList_t             *DRB_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  NR_DRB_ToReleaseList_t            *DRB_Release_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
 
   NR_SRB_INFO                       SI;
@@ -295,7 +284,7 @@ typedef struct gNB_RRC_UE_s {
   NR_SRB_INFO_TABLE_ENTRY           Srb1;
   NR_SRB_INFO_TABLE_ENTRY           Srb2;
   NR_MeasConfig_t                   *measConfig;
-  HANDOVER_INFO                     *handover_info;
+  NR_HANDOVER_INFO                  *handover_info;
   NR_MeasResults_t                  *measResults;
 
 
@@ -352,7 +341,7 @@ typedef struct gNB_RRC_UE_s {
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
-  e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  nr_e_rab_param_t                   modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* Total number of pdu session already setup in the list */
   uint8_t                            setup_pdu_sessions;
   /* Number of pdu session to be setup in the list */
@@ -363,7 +352,7 @@ typedef struct gNB_RRC_UE_s {
   pdu_session_param_t                modify_pdusession[NR_NB_RB_MAX];
   /* list of e_rab to be setup by RRC layers */
   /* list of pdu session to be setup by RRC layers */
-  e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  nr_e_rab_param_t                   e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   pdu_session_param_t                pduSession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
@@ -410,8 +399,6 @@ typedef struct gNB_RRC_UE_s {
 
 } gNB_RRC_UE_t;
 
-typedef uid_t ue_uid_t;
-
 typedef struct rrc_gNB_ue_context_s {
   /* Tree related data */
   RB_ENTRY(rrc_gNB_ue_context_s) entries;
@@ -422,7 +409,7 @@ typedef struct rrc_gNB_ue_context_s {
   rnti_t         ue_id_rnti;
 
   // another key for protocol layers but should not be used as a key for RB tree
-  ue_uid_t       local_uid;
+  uid_t          local_uid;
 
   /* UE id for initial connection to S1AP */
   struct gNB_RRC_UE_s   ue_context;
@@ -435,7 +422,7 @@ typedef struct {
   uint8_t                                   sizeof_MIB;
 
   uint8_t                                   *SIB1;
-  uint8_t                                   sizeof_SIB1;
+  uint16_t                                  sizeof_SIB1;
 
   uint8_t                                   *SIB23;
   uint8_t                                   sizeof_SIB23;
@@ -447,7 +434,8 @@ typedef struct {
 
   NR_BCCH_BCH_Message_t                     mib;
   NR_BCCH_BCH_Message_t                    *mib_DU;
-  NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
+  NR_SIB1_t                                *siblock1_DU;
+  //NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
   NR_SIB1_t                                *sib1;
   NR_SIB2_t                                *sib2;
   NR_SIB3_t                                *sib3;
@@ -479,6 +467,11 @@ typedef struct {
   int do_drb_integrity;
 } nr_security_configuration_t;
 
+typedef struct nr_mac_rrc_dl_if_s {
+  /* TODO add other message types as necessary */
+  dl_rrc_message_transfer_func_t dl_rrc_message_transfer;
+} nr_mac_rrc_dl_if_t;
+
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
@@ -488,7 +481,7 @@ typedef struct gNB_RRC_INST_s {
   int                                                 module_id;
   eth_params_t                                        eth_params_s;
   rrc_gNB_carrier_data_t                              carrier;
-  nr_uid_allocator_t                                     uid_allocator; // for rrc_ue_head
+  uid_allocator_t                                     uid_allocator;
   RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   int                                                 Nb_ue;
   hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
@@ -528,6 +521,8 @@ typedef struct gNB_RRC_INST_s {
 
   // security configuration (preferred algorithms)
   nr_security_configuration_t security;
+
+  nr_mac_rrc_dl_if_t mac_rrc;
 } gNB_RRC_INST;
 
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error

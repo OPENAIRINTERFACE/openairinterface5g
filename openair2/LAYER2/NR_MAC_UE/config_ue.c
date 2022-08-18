@@ -190,7 +190,7 @@ void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
   cfg->ssb_table.ssb_subcarrier_offset = mac->ssb_subcarrier_offset;
 
   if (mac->frequency_range == FR1){
-    cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst.inOneGroup.buf[0]<<24;
+    cfg->ssb_table.ssb_mask_list[0].ssb_mask = ((uint32_t) scc->ssb_PositionsInBurst.inOneGroup.buf[0]) << 24;
     cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
   }
   else{
@@ -343,7 +343,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
     cfg->ssb_table.ssb_offset_point_a = absolute_diff/(12*scs_scaling) - 10;
     cfg->ssb_table.ssb_period = *scc->ssb_periodicityServingCell;
-    cfg->ssb_table.ssb_subcarrier_offset = mac->ssb_subcarrier_offset;
+
+    // NSA -> take ssb offset from SCS
+    cfg->ssb_table.ssb_subcarrier_offset = absolute_diff%(12*scs_scaling);
     
     switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
@@ -351,7 +353,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
       cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
       break;
     case 2 :
-      cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0]<<24;
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask = ((uint32_t) scc->ssb_PositionsInBurst->choice.mediumBitmap.buf[0]) << 24;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
       break;
     case 3 :
@@ -578,7 +580,7 @@ int nr_rrc_mac_config_req_ue_logicalChannelBearer(
     int                             cc_idP,
     uint8_t                         gNB_index,
     long                            logicalChannelIdentity,
-    boolean_t                       status){
+    bool                            status){
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
     mac->logicalChannelBearer_exist[logicalChannelIdentity] = status;
     return 0;

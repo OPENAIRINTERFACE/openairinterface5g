@@ -278,16 +278,30 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uint8_t maxpos=0;
   uint8_t index=0;
 
+  int nb_re_pucch = 12*pucch_pdu->prb_size;  // prb size is 1
+  int32_t rp[frame_parms->nb_antennas_rx][pucch_pdu->nr_of_symbols][nb_re_pucch],*tmp_rp;
+
   for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
     l2 = l+pucch_pdu->start_symbol_index;
+
     re_offset[l] = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
     if (re_offset[l]>= frame_parms->ofdm_symbol_size)
       re_offset[l]-=frame_parms->ofdm_symbol_size;
-  
-    AssertFatal(re_offset[l]+12 < frame_parms->ofdm_symbol_size,"pucch straddles DC carrier, handle this!\n");
+
     for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      c16_t *r=(c16_t*)&rxdataF[aa][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[l]];
-      for (n=0;n<12;n++) {
+      tmp_rp = &rxdataF[aa][soffset + l2*frame_parms->ofdm_symbol_size];
+      if(re_offset[l] + nb_re_pucch > frame_parms->ofdm_symbol_size) {
+        int neg_length = frame_parms->ofdm_symbol_size-re_offset[l];
+        int pos_length = nb_re_pucch-neg_length;
+        memcpy1((void*)rp[aa][l],(void*)&tmp_rp[re_offset[l]],neg_length*sizeof(int32_t));
+        memcpy1((void*)&rp[aa][l][neg_length],(void*)tmp_rp,pos_length*sizeof(int32_t));
+      }
+      else
+        memcpy1((void*)rp[aa][l],(void*)&tmp_rp[re_offset[l]],nb_re_pucch*sizeof(int32_t));
+
+      c16_t *r = (c16_t*)&rp[aa][l];
+
+      for (n=0;n<nb_re_pucch;n++) {
         xr[aa][l][n].r = (int32_t)x_re[l][n] * r[n].r + (int32_t)x_im[l][n] * r[n].i;
         xr[aa][l][n].i = (int32_t)x_re[l][n] * r[n].i - (int32_t)x_im[l][n] * r[n].r;
 #ifdef DEBUG_NR_PUCCH_RX
@@ -317,8 +331,8 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
           corr[aa][l].r += xr[aa][l][n].r * idft12_re[seq_index][n] + xr[aa][l][n].i * idft12_im[seq_index][n];
           corr[aa][l].i += xr[aa][l][n].r * idft12_im[seq_index][n] - xr[aa][l][n].i * idft12_re[seq_index][n];
         }
-	corr[aa][l].r >>= 31;
-	corr[aa][l].i >>= 31;
+        corr[aa][l].r >>= 31;
+        corr[aa][l].i >>= 31;
       }
     }
     LOG_D(PHY,"PUCCH IDFT[%d/%d] = (%ld,%ld)=>%f\n",
@@ -385,9 +399,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 		   gNB->measurements.n0_subband_power_tot_dB[prb_offset[1]]);
   int SNRtimes10,sigenergy=0;
   for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
-    sigenergy += signal_energy_nodc(&rxdataF[aa][soffset+
-                                                 (pucch_pdu->start_symbol_index*frame_parms->ofdm_symbol_size)+
-                                                 re_offset[0]],12);
+    sigenergy += signal_energy_nodc(rp[aa][0],12);
   SNRtimes10 = xrtmag_dBtimes10-(10*max_n0);
   int cqi;
   if (SNRtimes10 < -640) cqi=0;
@@ -1124,6 +1136,7 @@ void init_pucch2_luts() {
 
 
 void nr_decode_pucch2(PHY_VARS_gNB *gNB,
+                      int frame,
                       int slot,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
@@ -1708,13 +1721,19 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     uci_pdu->pduBitmap|=2;
     uci_pdu->harq.harq_payload = (uint8_t*)malloc(harq_bytes);
     uci_pdu->harq.harq_crc = decoderState;
+    LOG_D(PHY,"[DLSCH/PDSCH/PUCCH2] %d.%d HARQ bytes (%d) Decoder state %d\n",
+          frame,slot,harq_bytes,decoderState);
     int i=0;
     for (;i<harq_bytes-1;i++) {
       uci_pdu->harq.harq_payload[i] = decodedPayload[0] & 255;
+      LOG_D(PHY,"[DLSCH/PDSCH/PUCCH2] %d.%d HARQ paylod (%d) = %d\n",
+            frame,slot,i,uci_pdu->harq.harq_payload[i]);
       decodedPayload[0]>>=8;
     }
     bit_left = pucch_pdu->bit_len_harq-((harq_bytes-1)<<3);
     uci_pdu->harq.harq_payload[i] = decodedPayload[0] & ((1<<bit_left)-1);
+    LOG_D(PHY,"[DLSCH/PDSCH/PUCCH2] %d.%d HARQ paylod (%d) = %d\n",
+          frame,slot,i,uci_pdu->harq.harq_payload[i]);
     decodedPayload[0] >>= pucch_pdu->bit_len_harq;
   }
   

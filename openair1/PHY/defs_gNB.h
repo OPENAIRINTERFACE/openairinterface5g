@@ -188,8 +188,6 @@ typedef struct {
   uint8_t codebook_index;
   /// Maximum number of HARQ processes
   uint8_t Mdlharq;
-  /// Maximum number of HARQ rounds
-  uint8_t Mlimit;
   /// MIMO transmission mode indicator for this sub-frame
   uint8_t Kmimo;
   /// Nsoft parameter related to UE Category
@@ -345,8 +343,6 @@ typedef struct {
 typedef struct {
   /// Pointers to 16 HARQ processes for the ULSCH
   NR_UL_gNB_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
-  /// Current HARQ process id
-  int harq_process_id[NR_MAX_SLOTS_PER_FRAME];
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// ACK/NAK Bundling flag
@@ -373,8 +369,6 @@ typedef struct {
   uint8_t cyclicShift;
   /// for cooperative communication
   uint8_t cooperation_flag;
-  /// Maximum number of HARQ rounds
-  uint8_t Mlimit;
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last LDPC decoding
@@ -765,8 +759,8 @@ typedef struct PHY_VARS_gNB_s {
   /// SRS variables
   nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
 
-  /// CSI-RS variables
-  nr_csi_rs_info_t *nr_csi_rs_info;
+  /// CSI variables
+  nr_csi_info_t *nr_csi_info;
 
   uint8_t pbch_configured;
   char gNB_generate_rar;

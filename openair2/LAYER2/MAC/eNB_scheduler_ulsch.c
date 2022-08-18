@@ -242,7 +242,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       }
 
       /* CDRX UL HARQ timers */
-      if (UE_scheduling_control->cdrx_configured == TRUE) {
+      if (UE_scheduling_control->cdrx_configured == true) {
         /* Synchronous UL HARQ */
         UE_scheduling_control->ul_synchronous_harq_timer[CC_idP][harq_pid] = 5;
         /*
@@ -329,17 +329,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (ra->msg3_round >= mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
 
         // Release RNTI of LTE PHY when RA does not succeed
-        UE_free_list_t *free_list = NULL;
-        pthread_mutex_lock(&lock_ue_freelist);
-        free_list = &mac->UE_free_list;
-        free_list->UE_free_ctrl[free_list->tail_freelist].rnti = current_rnti;
-        free_list->UE_free_ctrl[free_list->tail_freelist].removeContextFlg = 1;
-        free_list->UE_free_ctrl[free_list->tail_freelist].raFlag = 1;
-        free_list->num_UEs++;
-        mac->UE_release_req.ue_release_request_body.ue_release_request_TLVs_list[mac->UE_release_req.ue_release_request_body.number_of_TLVs].rnti = current_rnti;
-        mac->UE_release_req.ue_release_request_body.number_of_TLVs++;
-        free_list->tail_freelist = (free_list->tail_freelist + 1) % (NUMBER_OF_UE_MAX+1);
-        pthread_mutex_unlock(&lock_ue_freelist);
+	put_UE_in_freelist(enb_mod_idP, current_rnti, true);
 
         cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
         nfapi_hi_dci0_request_t *hi_dci0_req = NULL;
@@ -1003,7 +993,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
   /* CDRX UL HARQ timers */
   if (UE_id != -1) {
-    if (UE_scheduling_control->cdrx_configured == TRUE) {
+    if (UE_scheduling_control->cdrx_configured == true) {
       /* Synchronous UL HARQ */
       UE_scheduling_control->ul_synchronous_harq_timer[CC_idP][harq_pid] = 5;
       /*
@@ -1447,7 +1437,7 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       continue;
 
     // don't schedule if Msg5 is not received yet
-    if (UE_info->UE_template[CC_id][UE_id].configured == FALSE) {
+    if (UE_info->UE_template[CC_id][UE_id].configured == false) {
       LOG_D(MAC,
             "[eNB %d] frame %d, subframe %d, UE %d: not configured, skipping "
             "UE scheduling \n",
@@ -2033,7 +2023,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
     }
 
     /* Don't schedule if Msg4 is not received yet */
-    if (UE_template->configured == FALSE) {
+    if (UE_template->configured == false) {
       LOG_D(MAC,"[eNB %d] frame %d subframe %d, UE %d: not configured, skipping UE scheduling \n",
             module_idP,
             frameP,

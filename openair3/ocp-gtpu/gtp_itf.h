@@ -8,32 +8,30 @@
 extern "C" {
 #endif
 
-typedef boolean_t (*gtpCallback)(
-  protocol_ctxt_t  *ctxt_pP,
-  const srb_flag_t     srb_flagP,
-  const rb_id_t        rb_idP,
-  const mui_t          muiP,
-  const confirm_t      confirmP,
-  const sdu_size_t     sdu_buffer_sizeP,
-  unsigned char *const sdu_buffer_pP,
-  const pdcp_transmission_mode_t modeP,
-  const uint32_t *sourceL2Id,
-  const uint32_t *destinationL2Id);
+typedef bool (*gtpCallback)(protocol_ctxt_t  *ctxt_pP,
+                            const srb_flag_t     srb_flagP,
+                            const rb_id_t        rb_idP,
+                            const mui_t          muiP,
+                            const confirm_t      confirmP,
+                            const sdu_size_t     sdu_buffer_sizeP,
+                            unsigned char *const sdu_buffer_pP,
+                            const pdcp_transmission_mode_t modeP,
+                            const uint32_t *sourceL2Id,
+                            const uint32_t *destinationL2Id);
 
-typedef boolean_t (*gtpCallbackSDAP)(
-  protocol_ctxt_t  *ctxt_pP,
-  const srb_flag_t     srb_flagP,
-  const rb_id_t        rb_idP,
-  const mui_t          muiP,
-  const confirm_t      confirmP,
-  const sdu_size_t     sdu_buffer_sizeP,
-  unsigned char *const sdu_buffer_pP,
-  const pdcp_transmission_mode_t modeP,
-  const uint32_t *sourceL2Id,
-  const uint32_t *destinationL2Id,
-  const uint8_t   qfi,
-  const boolean_t rqi,
-  const int       pdusession_id);
+typedef bool (*gtpCallbackSDAP)(protocol_ctxt_t  *ctxt_pP,
+                                const srb_flag_t     srb_flagP,
+                                const rb_id_t        rb_idP,
+                                const mui_t          muiP,
+                                const confirm_t      confirmP,
+                                const sdu_size_t     sdu_buffer_sizeP,
+                                unsigned char *const sdu_buffer_pP,
+                                const pdcp_transmission_mode_t modeP,
+                                const uint32_t *sourceL2Id,
+                                const uint32_t *destinationL2Id,
+                                const uint8_t   qfi,
+                                const bool      rqi,
+                                const int       pdusession_id);
 
 typedef struct openAddr_s {
   char originHost[HOST_NAME_MAX];
@@ -42,6 +40,11 @@ typedef struct openAddr_s {
   char destinationService[HOST_NAME_MAX];
   instance_t originInstance;
 } openAddr_t;
+
+typedef struct extensionHeader_s{
+  uint8_t buffer[500];
+  uint8_t length;
+}extensionHeader_t;
 
 // the init function create a gtp instance and return the gtp instance id
 // the parameter originInstance will be sent back in each message from gtp to the creator
@@ -63,8 +66,16 @@ int gtpv1u_create_x2u_tunnel(
 
 
 // New API
-teid_t newGtpuCreateTunnel(instance_t instance, rnti_t rnti, int incoming_bearer_id, int outgoing_rb_id, teid_t teid,
-                           transport_layer_addr_t remoteAddr, int port, gtpCallback callBack);
+teid_t newGtpuCreateTunnel(instance_t instance,
+                           rnti_t rnti,
+                           int incoming_bearer_id,
+                           int outgoing_rb_id,
+                           teid_t teid,
+                           int outgoing_qfi,
+                           transport_layer_addr_t remoteAddr,
+                           int port,
+                           gtpCallback callBack,
+                           gtpCallbackSDAP callBackSDAP);
 void GtpuUpdateTunnelOutgoingTeid(instance_t instance, rnti_t rnti, ebi_t bearer_id, teid_t newOutgoingTeid);
 int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti);
 int newGtpuDeleteTunnels(instance_t instance, rnti_t rnti, int nbTunnels, pdusessionid_t *pdusession_id);

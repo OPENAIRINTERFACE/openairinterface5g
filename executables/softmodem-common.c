@@ -85,6 +85,7 @@ char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr) {
 }
 
 void get_common_options(uint32_t execmask) {
+  int32_t stats_disabled = 0;
   uint32_t online_log_messages=0;
   uint32_t glog_level=0 ;
   uint32_t start_telnetsrv = 0, start_telnetclt = 0;
@@ -149,6 +150,8 @@ void get_common_options(uint32_t execmask) {
 
   if(worker_config != NULL)   set_worker_conf(worker_config);
   nfapi_setmode(nfapi_mode);
+  if (stats_disabled)
+    set_softmodem_optmask(SOFTMODEM_NOSTATS_BIT);
 }
 void softmodem_printresources(int sig, telnet_printfunc_t pf) {
   struct rusage usage;

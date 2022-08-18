@@ -878,8 +878,8 @@ typedef struct {
   /// SRS variables
   nr_srs_info_t *nr_srs_info;
 
-  /// CSI-RS variables
-  nr_csi_rs_info_t *nr_csi_rs_info;
+  /// CSI variables
+  nr_csi_info_t *nr_csi_info;
 
   //#if defined(UPGRADE_RAT_NR)
 #if 1
@@ -978,8 +978,8 @@ typedef struct {
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
-  
-  int dl_stats[5];
+  int dl_errors;
+  int dl_stats[8];
   void* scopeData;
 } PHY_VARS_NR_UE;
 

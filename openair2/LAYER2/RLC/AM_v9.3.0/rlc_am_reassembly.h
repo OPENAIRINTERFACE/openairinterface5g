@@ -57,14 +57,14 @@ void rlc_am_reassembly   (const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * 
 */
 void rlc_am_send_sdu     (const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP);
 
-/*! \fn void rlc_am_reassemble_pdu(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, const  mem_block_t* const tb_pP,boolean_t free_rlc_pdu)
+/*! \fn void rlc_am_reassemble_pdu(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, const  mem_block_t* const tb_pP, bool free_rlc_pdu)
 * \brief    Reassembly a RLC AM PDU, depending of the content of this PDU, data will be reassemblied to the current output SDU, the current will be sent to higher layers or not, after or before the reassembly, or no send of SDU will be triggered, depending on FI field in PDU header.
 * \param[in]  ctxtP                       Running context.
 * \param[in]  rlc_pP                      RLC AM protocol instance pointer.
 * \param[in]  tb_pP                       RLC AM PDU embedded in a mem_block_t.
 * \param[in]  free_rlc_pdu                Flag for freeing RLC AM PDU after reassembly.
 */
-void rlc_am_reassemble_pdu(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, mem_block_t* const tb_pP,boolean_t free_rlc_pdu);
+void rlc_am_reassemble_pdu(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, mem_block_t* const tb_pP, bool free_rlc_pdu);
 /** @} */
 #endif
 

@@ -308,7 +308,7 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
   dl_harq->status = SCH_IDLE;
   dl_harq->first_rx = 1;
   dl_harq->DLround  = 0;
-  dl_harq->DCINdi = 1;
+  dl_harq->Ndi = 2; // set to an invalid value
   dl_harq->ack = DL_ACKNACK_NO_SET;
 }
 
@@ -329,7 +329,7 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq)
 *
 *********************************************************************/
 
-void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int rv, uint8_t rnti_type) {
+void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int dci_ndi, int rv, uint8_t rnti_type) {
 
   if (rnti_type == _SI_RNTI_ ||
       rnti_type == _P_RNTI_ ||
@@ -339,10 +339,9 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int 
     dl_harq->first_rx = 1;
   }  else {
     LOG_D(PHY,"receive harq process: %p harqPid=%d, rv=%d, ndi=%d, rntiType=%d new transmission= %s\n",
-	  dl_harq, harq_pid, rv, ndi, rnti_type, dl_harq->DCINdi != ndi ? "yes":"no");
+	  dl_harq, harq_pid, rv, dci_ndi, rnti_type, dl_harq->Ndi != dci_ndi ? "yes":"no");
     AssertFatal(rv<4 && rv>=0, "invalid redondancy version %d\n", rv);
-    
-    if (ndi!=dl_harq->DCINdi) {
+    if (dci_ndi!=dl_harq->Ndi) {
       if (dl_harq->ack == DL_NACK)
         LOG_D(PHY,"New transmission on a harq pid (%d) never acknowledged\n", harq_pid);
       else
@@ -354,7 +353,7 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int 
         LOG_D(PHY,"Starting retransmission on a harq pid (%d), rv (%d)\n", harq_pid, rv);
     }
 
-    if (ndi!=dl_harq->DCINdi) {
+    if (dci_ndi!=dl_harq->Ndi) {
       dl_harq->first_rx = true;
       dl_harq->DLround = 0;
     } else {
@@ -364,7 +363,7 @@ void downlink_harq_process(NR_DL_UE_HARQ_t *dl_harq, int harq_pid, int ndi, int 
     
     dl_harq->status = ACTIVE;
 
-    dl_harq->DCINdi = ndi;
+    dl_harq->Ndi = dci_ndi;
     //dl_harq->status = SCH_IDLE;
    }
 }

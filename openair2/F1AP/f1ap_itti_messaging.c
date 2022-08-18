@@ -32,7 +32,7 @@ void f1ap_itti_send_sctp_data_req(bool isCu, instance_t instance, uint8_t *buffe
   sctp_data_req->buffer        = buffer;
   sctp_data_req->buffer_length = buffer_length;
   sctp_data_req->stream        = stream;
-  LOG_I(F1AP, "Sending ITTI message to SCTP Task\n");
+  LOG_D(F1AP, "Sending ITTI message to SCTP Task\n");
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 

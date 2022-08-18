@@ -37,9 +37,6 @@
 
 #include "COMMON/s1ap_messages_types.h"
 #include "COMMON/rrc_messages_types.h"
-#if ITTI_SIM
-#include "COMMON/itti_sim_messages_types.h"
-#endif
 
 #include "collection/tree.h"
 #include "rrc_types_NB_IoT.h"
@@ -156,7 +153,7 @@ typedef struct UE_RRC_INFO_NB_IoT_s {
 #define RRC_TRANSACTION_IDENTIFIER_NUMBER  3
 
 typedef struct UE_S_TMSI_NB_IoT_s {
-  boolean_t  presence;
+  bool       presence;
   mme_code_t mme_code;
   m_tmsi_t   m_tmsi;
 } __attribute__ ((__packed__)) UE_S_TMSI_NB_IoT;

@@ -75,15 +75,15 @@ typedef int (*esm_indication_callback_t) (user_api_id_t *user_api_id, int, netwo
 
 void esm_ebr_register_callback(esm_indication_callback_t cb);
 
-int esm_ebr_is_reserved(esm_ebr_data_t *esm_ebr_data, int ebi);
+bool esm_ebr_is_reserved(esm_ebr_data_t *esm_ebr_data, int ebi);
 
 esm_ebr_data_t *esm_ebr_initialize(void);
-int esm_ebr_assign(esm_ebr_data_t *esm_ebr_data, int ebi, int cid, int default_ebr);
+int esm_ebr_assign(esm_ebr_data_t *esm_ebr_data, int ebi, int cid, bool default_ebr);
 int esm_ebr_release(esm_ebr_data_t *esm_ebr_data, int ebi);
 
-int esm_ebr_set_status(user_api_id_t *user_api_id, esm_ebr_data_t *esm_ebr_data, int ebi, esm_ebr_state status, int ue_requested);
+int esm_ebr_set_status(user_api_id_t *user_api_id, esm_ebr_data_t *esm_ebr_data, int ebi, esm_ebr_state status, bool ue_requested);
 esm_ebr_state esm_ebr_get_status(esm_ebr_data_t *esm_ebr_data, int ebi);
 
-int esm_ebr_is_not_in_use(esm_ebr_data_t *esm_ebr_data, int ebi);
+bool esm_ebr_is_not_in_use(esm_ebr_data_t *esm_ebr_data, int ebi);
 
 #endif /* __ESM_EBR_H__*/

@@ -64,6 +64,12 @@ extern uint16_t beta_cqi[16];
 extern uint16_t beta_ri[16];
 extern uint16_t beta_ack[16];
 
+static int errorRB(int rb, char * table, int line) {
+  LOG_E(PHY,"Received %d rb, impossble in table %s, at line %d\n", rb, table, line);
+  return 0;
+}
+
+#define rbAllocCheck(RBalL, TabLe) (RBalL) > sizeof(TabLe)/sizeof(*TabLe) ? errorRB(RBalL, #TabLe, __LINE__) : TabLe[RBalL]
 void extract_dci1A_info(uint8_t N_RB_DL, frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
     uint8_t harq_pid=0;
@@ -974,28 +980,28 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     {
         switch (N_RB_DL) {
         case 6:
-            NPRB     = RIV2nb_rb_LUT6[rballoc];//NPRB;
+            NPRB     = rbAllocCheck(rballoc, RIV2nb_rb_LUT6);
             if(rah)
               RIV_max  = RIV_max6;
             else
               RIV_max  = 0x3F;
             break;
         case 25:
-            NPRB     = RIV2nb_rb_LUT25[rballoc];//NPRB;
+            NPRB     =  rbAllocCheck(rballoc,RIV2nb_rb_LUT25);
             if(rah)
               RIV_max  = RIV_max25;
             else
               RIV_max  = 0x1FFF;
             break;
         case 50:
-            NPRB     = RIV2nb_rb_LUT50[rballoc];//NPRB;
+            NPRB     =  rbAllocCheck(rballoc,RIV2nb_rb_LUT50);
             if(rah)
               RIV_max  = RIV_max50;
             else
               RIV_max  = 0x1FFFF;
             break;
         case 100:
-            NPRB     = RIV2nb_rb_LUT100[rballoc];//NPRB;
+            NPRB     =  rbAllocCheck(rballoc,RIV2nb_rb_LUT100);
             if(rah)
               RIV_max  = RIV_max100;
             else
@@ -1034,9 +1040,14 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
             // this is an eNB issue
             // retransmisison but old and new TBS are different !!!
             // work around, consider it as a new transmission
-            LOG_E(PHY,"Format1A Retransmission but TBS are different: consider it as new transmission !!! \n");
+            LOG_E(PHY,
+                  "Format1A Retransmission but TBS are different: consider it as new transmission !!!, round %d, mcs 1 %d, NPRB %d \n",
+                  pdlsch0_harq->round,
+                  mcs1,
+                  NPRB);
             pdlsch0_harq->round = 0;
             //return(0); // ?? to cross check
+	  return(0); // ?? to cross check
         }
     }
 

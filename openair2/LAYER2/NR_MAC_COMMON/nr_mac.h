@@ -39,6 +39,7 @@
 #include <stdbool.h>
 
 #include "NR_SubcarrierSpacing.h"
+#include "NR_CSI-ReportConfig.h"
 #include "openair1/SCHED_NR_UE/harq_nr.h"
 
 #define NR_SHORT_BSR_TABLE_SIZE 32
@@ -63,6 +64,7 @@
 #define CCCH_PAYLOAD_SIZE_MAX 512 
 #define RAR_PAYLOAD_SIZE_MAX  128
 #define MAX_BWP_SIZE          275
+#define MAX_CSI_REPORTCONFIG  48
 
 typedef enum frequency_range_e {
   FR1 = 0,
@@ -511,6 +513,38 @@ typedef struct Type0_PDCCH_CSS_config_s {
   NR_SubcarrierSpacing_t scs_pdcch;
   bool active;
 } NR_Type0_PDCCH_CSS_config_t;
+
+typedef struct {
+  uint8_t nb_ssbri_cri;
+  uint8_t cri_ssbri_bitlen;
+  uint8_t rsrp_bitlen;
+  uint8_t diff_rsrp_bitlen;
+} L1_RSRP_bitlen_t;
+
+typedef struct{
+  uint8_t ri_restriction;
+  uint8_t cri_bitlen;
+  uint8_t ri_bitlen;
+  uint8_t li_bitlen[8];
+  uint8_t pmi_x1_bitlen[8];
+  uint8_t pmi_x2_bitlen[8];
+  uint8_t cqi_bitlen[8];
+} CSI_Meas_bitlen_t;
+
+typedef struct nr_csi_report {
+  NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type;
+  long periodicity;
+  uint16_t offset;
+  long ** SSB_Index_list;
+  long ** CSI_Index_list;
+//  uint8_t nb_of_nzp_csi_report;
+  uint8_t nb_of_csi_ssb_report;
+  L1_RSRP_bitlen_t CSI_report_bitlen;
+  CSI_Meas_bitlen_t csi_meas_bitlen;
+  int codebook_mode;
+  int N1;
+  int N2;
+} nr_csi_report_t;
 
 #endif /*__LAYER2_MAC_H__ */
 

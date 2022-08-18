@@ -35,7 +35,7 @@
 #    ifndef __RLC_AM_RETRANSMIT_H__
 #        define __RLC_AM_RETRANSMIT_H__
 //-----------------------------------------------------------------------------
-/*! \fn boolean_t  rlc_am_nack_pdu (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, int16_t snP, int16_t prev_nack_snP,sdu_size_t so_startP, sdu_size_t so_endP)
+/*! \fn bool  rlc_am_nack_pdu (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, int16_t snP, int16_t prev_nack_snP,sdu_size_t so_startP, sdu_size_t so_endP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked NACKed with segment offset fields.
 * \param[in]  ctxtP        Running context.
 * \param[in]  rlcP         RLC AM protocol instance pointer.
@@ -46,13 +46,12 @@
 * \return                  OK/KO
 * \note It may appear a new hole in the retransmission buffer depending on the segment offset informations. Depending on the state of the retransmission buffer, negative confirmation can be sent to higher layers about the drop by the RLC AM instance of a particular SDU.
 */
-boolean_t         rlc_am_nack_pdu (
-                              const protocol_ctxt_t* const  ctxt_pP,
-                              rlc_am_entity_t *const rlcP,
-                              const rlc_sn_t snP,
-							  const rlc_sn_t prev_nack_snP,
-                              sdu_size_t so_startP,
-                              sdu_size_t so_endP);
+bool rlc_am_nack_pdu(const protocol_ctxt_t* const  ctxt_pP,
+                     rlc_am_entity_t *const rlcP,
+                     const rlc_sn_t snP,
+                     const rlc_sn_t prev_nack_snP,
+                     sdu_size_t so_startP,
+                     sdu_size_t so_endP);
 
 /*! \fn void rlc_am_ack_pdu (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t *rlcP, rlc_sn_t snP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
@@ -62,11 +61,10 @@ boolean_t         rlc_am_nack_pdu (
 * \param[in]  free_pdu     Boolean indicating that the PDU can be freed because smaller than new vtA.
 * \note                    Depending on the state of the retransmission buffer, positive confirmation can be sent to higher layers about the receiving by the peer RLC AM instance of a particular SDU.
 */
-void         rlc_am_ack_pdu (
-                              const protocol_ctxt_t* const  ctxt_pP,
-                              rlc_am_entity_t *const rlcP,
-                              const rlc_sn_t snP,
-							  boolean_t free_pdu);
+void rlc_am_ack_pdu(const protocol_ctxt_t* const  ctxt_pP,
+                    rlc_am_entity_t *const rlcP,
+                    const rlc_sn_t snP,
+							      bool free_pdu);
 
 /*! \fn mem_block_t* rlc_am_retransmit_get_copy (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, rlc_sn_t snP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.

@@ -2325,8 +2325,8 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   uint8_t bsr_len = 0, bsr_ce_len = 0, bsr_header_len = 0;
   uint8_t phr_header_len = 0, phr_ce_len = 0, phr_len = 0;
   uint8_t lcid = 0, lcid_rlc_pdu_count = 0;
-  boolean_t is_lcid_processed = FALSE;
-  boolean_t is_all_lcid_processed = FALSE;
+  bool is_lcid_processed = false;
+  bool is_all_lcid_processed = false;
   uint16_t sdu_lengths[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
   uint8_t sdu_lcids[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
   uint8_t payload_offset = 0, num_sdus = 0;
@@ -2444,11 +2444,11 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
   for (lcid = DCCH;
-       (lcid < MAX_NUM_LCID) && (is_all_lcid_processed == FALSE); lcid++) {
+       (lcid < MAX_NUM_LCID) && (is_all_lcid_processed == false); lcid++) {
     if (UE_mac_inst[module_idP].scheduling_info.LCID_status[lcid] ==
         LCID_NOT_EMPTY) {
       lcid_rlc_pdu_count = 0;
-      is_lcid_processed = FALSE;
+      is_lcid_processed = false;
       lcid_buffer_occupancy_old =
         mac_rlc_get_buffer_occupancy_ind(module_idP,
                                          UE_mac_inst[module_idP].
@@ -2536,8 +2536,8 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
             //No more remaining TBS after this PDU
             //exit the function
             rlc_pdu_header_len_last = 1;
-            is_lcid_processed = TRUE;
-            is_all_lcid_processed = TRUE;
+            is_lcid_processed = true;
+            is_all_lcid_processed = true;
           } else {
             rlc_pdu_header_len_last =
               (sdu_lengths[num_sdus] > 128) ? 3 : 2;
@@ -2547,8 +2547,8 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
                 (bsr_len + phr_len + total_rlc_pdu_header_len +
                  rlc_pdu_header_len_last + sdu_length_total)) {
               rlc_pdu_header_len_last = 1;
-              is_lcid_processed = TRUE;
-              is_all_lcid_processed = TRUE;
+              is_lcid_processed = true;
+              is_all_lcid_processed = true;
             }
           }
 
@@ -2559,7 +2559,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
           lcid_rlc_pdu_count++;
         } else {
           /* avoid infinite loop ... */
-          is_lcid_processed = TRUE;
+          is_lcid_processed = true;
         }
 
         /* Get updated BO after multiplexing this PDU */
@@ -3164,7 +3164,7 @@ ue_scheduler(const module_id_t module_idP,
   }
 
   //Check whether Regular BSR is triggered
-  if (update_bsr(module_idP, txFrameP, txSubframeP, eNB_indexP) == TRUE) {
+  if (update_bsr(module_idP, txFrameP, txSubframeP, eNB_indexP) == true) {
     // call SR procedure to generate pending SR and BSR for next PUCCH/PUSCH TxOp.  This should implement the procedures
     // outlined in Sections 5.4.4 an 5.4.5 of 36.321
     UE_mac_inst[module_idP].scheduling_info.SR_pending = 1;
@@ -3251,11 +3251,11 @@ ue_scheduler(const module_id_t module_idP,
 // to be improved
 
 
-boolean_t
+bool
 update_bsr(module_id_t module_idP, frame_t frameP,
            sub_frame_t subframeP, eNB_index_t eNB_index) {
   mac_rlc_status_resp_t rlc_status;
-  boolean_t bsr_regular_triggered = FALSE;
+  bool bsr_regular_triggered = false;
   uint8_t lcid;
   uint8_t lcgid;
   uint8_t num_lcid_with_data = 0; // for LCID with data only if LCGID is defined
@@ -3352,7 +3352,7 @@ update_bsr(module_id_t module_idP, frame_t frameP,
           (lcgid_buffer_remain
            [UE_mac_inst[module_idP].scheduling_info.LCGID[lcid]] ==
            0)) {
-        bsr_regular_triggered = TRUE;
+        bsr_regular_triggered = true;
         LOG_D(MAC,
               "[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%d data become available at frame %d subframe %d\n",
               module_idP, lcid,
@@ -3364,7 +3364,7 @@ update_bsr(module_id_t module_idP, frame_t frameP,
 
     // Trigger Regular BSR if ReTxBSR Timer has expired and UE has data for transmission
     if (UE_mac_inst[module_idP].scheduling_info.retxBSR_SF == 0) {
-      bsr_regular_triggered = TRUE;
+      bsr_regular_triggered = true;
 
       if ((UE_mac_inst[module_idP].BSR_reporting_active &
            BSR_TRIGGER_REGULAR) == 0) {

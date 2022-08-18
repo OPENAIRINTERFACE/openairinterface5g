@@ -89,7 +89,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,int br_flag);
 
 void stop_RU(RU_t **rup,int nb_ru);
 
-void do_ru_synch(RU_t *ru);
+static void do_ru_synch(RU_t *ru);
 
 void configure_ru(int idx,
                   void *arg);
@@ -1059,7 +1059,7 @@ int wakeup_synch(RU_t *ru) {
 }
 
 
-void do_ru_synch(RU_t *ru) {
+static void do_ru_synch(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp  = ru->frame_parms;
   RU_proc_t *proc         = &ru->proc;
   int rxs, ic, ret, i;
@@ -1834,7 +1834,7 @@ static void *ru_thread( void *param ) {
         new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
         dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
         memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
-        memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+        memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_info.active, sizeof(bool)*NUMBER_OF_UE_MAX);
         AssertFatal((ret=pthread_mutex_lock(&ru->proc.mutex_pre_scd))==0,"[eNB] error locking proc mutex for eNB pre scd\n");
         ru->proc.instance_pre_scd++;
 
@@ -1924,7 +1924,7 @@ static void *ru_thread( void *param ) {
 
 
 // This thread run the initial synchronization like a UE
-void *ru_thread_synch(void *arg) {
+static void *ru_thread_synch(void *arg) {
   RU_t *ru = (RU_t *)arg;
   __attribute__((unused))
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;

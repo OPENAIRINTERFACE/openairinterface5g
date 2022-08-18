@@ -23,6 +23,7 @@
 #define F1AP_MESSAGES_TYPES_H_
 
 #include "rlc.h"
+#include "s1ap_messages_types.h"
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
@@ -39,15 +40,15 @@
 #define F1AP_INITIAL_UL_RRC_MESSAGE(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_initial_ul_rrc_message
 #define F1AP_UL_RRC_MESSAGE(mSGpTR)                (mSGpTR)->ittiMsg.f1ap_ul_rrc_message
 #define F1AP_UE_CONTEXT_SETUP_REQ(mSGpTR)          (mSGpTR)->ittiMsg.f1ap_ue_context_setup_req
-#define F1AP_UE_CONTEXT_SETUP_RESP(mSGpTR)          (mSGpTR)->ittiMsg.f1ap_ue_context_setup_resp
+#define F1AP_UE_CONTEXT_SETUP_RESP(mSGpTR)         (mSGpTR)->ittiMsg.f1ap_ue_context_setup_resp
 #define F1AP_UE_CONTEXT_RELEASE_RESP(mSGpTR)       (mSGpTR)->ittiMsg.f1ap_ue_context_release_resp
+#define F1AP_UE_CONTEXT_MODIFICATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_ue_context_modification_req
 #define F1AP_UE_CONTEXT_MODIFICATION_RESP(mSGpTR)  (mSGpTR)->ittiMsg.f1ap_ue_context_modification_resp
 #define F1AP_UE_CONTEXT_MODIFICATION_FAIL(mSGpTR)  (mSGpTR)->ittiMsg.f1ap_ue_context_modification_fail
 
 #define F1AP_DL_RRC_MESSAGE(mSGpTR)                (mSGpTR)->ittiMsg.f1ap_dl_rrc_message
 #define F1AP_UE_CONTEXT_RELEASE_REQ(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_ue_context_release_req
 #define F1AP_UE_CONTEXT_RELEASE_CMD(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_ue_context_release_req
-#define F1AP_UE_CONTEXT_MODIFICATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_ue_context_modification_req
 
 /* Length of the transport layer address string
  * 160 bits / 8 bits by char.
@@ -61,7 +62,6 @@
 
 #define F1AP_MAX_NO_OF_TNL_ASSOCIATIONS 32
 #define F1AP_MAX_NO_UE_ID 1024
-#define F1AP_MAX_DU2CU_RRC_LENGTH 1024
 
 typedef struct f1ap_net_ip_address_s {
   unsigned ipv4:1;
@@ -309,7 +309,7 @@ typedef struct f1ap_initial_ul_rrc_message_s {
   uint16_t crnti;
   uint8_t *rrc_container;
   int      rrc_container_length;
-  char     du2cu_rrc_container[F1AP_MAX_DU2CU_RRC_LENGTH];
+  uint8_t *du2cu_rrc_container;
   int      du2cu_rrc_container_length;
 } f1ap_initial_ul_rrc_message_t;
 
@@ -345,6 +345,35 @@ typedef struct f1ap_rb_failed_to_be_setup_s {
   long           rb_id;
 } f1ap_rb_failed_to_be_setup_t;
 
+typedef struct cu_to_du_rrc_information_s {
+  uint8_t * cG_ConfigInfo;
+  uint32_t   cG_ConfigInfo_length;
+  uint8_t * uE_CapabilityRAT_ContainerList;
+  uint32_t   uE_CapabilityRAT_ContainerList_length;
+  uint8_t * measConfig;
+  uint32_t   measConfig_length;
+}cu_to_du_rrc_information_t;
+
+typedef struct du_to_du_rrc_information_s {
+  uint8_t * cellGroupConfig;
+  uint8_t   cellGroupConfig_length;
+  uint8_t * measGapConfig;
+  uint8_t   measGapConfig_length;
+  uint8_t * requestedP_MaxFR1;
+  uint8_t   requestedP_MaxFR1_length;
+}du_to_cu_rrc_information_t;
+
+typedef enum QoS_information_e {
+  NG_RAN_QoS    = 0,
+  EUTRAN_QoS    = 1,
+} QoS_information_t;
+
+typedef enum ReconfigurationCompl_e {
+  RRCreconf_info_not_present = 0,
+  RRCreconf_failure          = 1,
+  RRCreconf_success          = 2,
+} ReconfigurationCompl_t;
+
 typedef struct f1ap_ue_context_setup_s {
   uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
   uint32_t gNB_DU_ue_id;
@@ -357,39 +386,26 @@ typedef struct f1ap_ue_context_setup_s {
   uint8_t servCellIndex;
   uint8_t *cellULConfigured;
   uint32_t servCellId;
-  uint8_t *cu_to_du_rrc_information;
+  cu_to_du_rrc_information_t *cu_to_du_rrc_information;
   uint8_t  cu_to_du_rrc_information_length;
-  uint8_t *du_to_cu_rrc_information;
-  uint8_t  du_to_cu_rrc_information_length;
-  f1ap_drb_to_be_setup_t *drbs_to_be_setup; // BK: need to replace by s1ap_initial_context_setup_req
-  uint8_t  drbs_to_be_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
+  //uint8_t *du_to_cu_rrc_information;
+  du_to_cu_rrc_information_t *du_to_cu_rrc_information;
+  uint32_t  du_to_cu_rrc_information_length;
+  f1ap_drb_to_be_setup_t *drbs_to_be_setup;
+  uint8_t  drbs_to_be_setup_length;
+  f1ap_drb_to_be_setup_t *drbs_to_be_modified;
+    uint8_t  drbs_to_be_modified_length;
+  QoS_information_t QoS_information_type;
   uint8_t  drbs_failed_to_be_setup_length;
   f1ap_rb_failed_to_be_setup_t *drbs_failed_to_be_setup;
   f1ap_srb_to_be_setup_t *srbs_to_be_setup;
   uint8_t  srbs_to_be_setup_length;
   uint8_t  srbs_failed_to_be_setup_length;
   f1ap_rb_failed_to_be_setup_t *srbs_failed_to_be_setup;
-  s1ap_initial_context_setup_req_t *s1ap_initial_context_setup_req;
-   // coniatner for the rrc_eNB_generate_SecurityModeCommand message
+  ReconfigurationCompl_t ReconfigComplOutcome;
   uint8_t *rrc_container;
   int      rrc_container_length;
 } f1ap_ue_context_setup_t;
-
-typedef struct f1ap_ue_context_setup_resp_s {
-  uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
-  uint32_t gNB_DU_ue_id;
-  uint16_t rnti;
-  uint8_t  du_to_cu_rrc_information[1024 /*Arbitrarily big enough*/];
-  uint32_t  du_to_cu_rrc_information_length;
-  f1ap_drb_to_be_setup_t *drbs_setup; // BK: need to replace by s1ap_initial_context_setup_req
-  uint8_t  drbs_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
-  f1ap_srb_to_be_setup_t *srbs_setup;
-  uint8_t  srbs_setup_length;
-  uint8_t  srbs_failed_to_be_setup_length;
-  f1ap_rb_failed_to_be_setup_t *srbs_failed_to_be_setup;
-  uint8_t  drbs_failed_to_be_setup_length;
-  f1ap_rb_failed_to_be_setup_t *drbs_failed_to_be_setup;
-} f1ap_ue_context_setup_resp_t;
 
 typedef enum F1ap_Cause_e {
   F1AP_CAUSE_NOTHING,  /* No components present */

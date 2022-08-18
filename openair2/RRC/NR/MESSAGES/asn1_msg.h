@@ -73,9 +73,7 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,
 @param carrier pointer to Carrier information
 @param configuration Pointer Configuration Request structure  
 @return size of encoded bit stream in bytes*/
-uint8_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
-  gNB_RrcConfigurationReq *configuration
-                  );
+uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier, gNB_RrcConfigurationReq *configuration);
 
 uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier,
                     gNB_RrcConfigurationReq *configuration);
@@ -103,17 +101,18 @@ uint8_t do_RRCReject(uint8_t Mod_id,
 
 void fill_initial_SpCellConfig(int uid,
                                NR_SpCellConfig_t *SpCellConfig,
-                               NR_ServingCellConfigCommon_t *scc,
-                               NR_ServingCellConfig_t *servingcellconfigdedicated,
+                               const NR_ServingCellConfigCommon_t *scc,
+                               const NR_ServingCellConfig_t *servingcellconfigdedicated,
                                const gNB_RrcConfigurationReq *configuration);
 
 void fill_initial_cellGroupConfig(int uid,
                                   NR_CellGroupConfig_t *cellGroupConfig,
-                                  NR_ServingCellConfigCommon_t *scc,
-                                  NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                  const NR_ServingCellConfigCommon_t *scc,
+                                  const NR_ServingCellConfig_t *servingcellconfigdedicated,
                                   const gNB_RrcConfigurationReq *configuration);
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
+                            const int uid,
                             NR_UE_NR_Capability_t *uecap,
                             const gNB_RrcConfigurationReq *configuration);
 
@@ -125,13 +124,14 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                                 uint8_t nb_bearers_to_setup,
                                 long *priority);
 
-int16_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
-                    uint8_t                      *const buffer,
-                    const uint8_t                transaction_id,
-                    OCTET_STRING_t               *masterCellGroup_from_DU,
-                    NR_ServingCellConfigCommon_t *scc,
-                    NR_ServingCellConfig_t       *servingcellconfigdedicated,
-                    const gNB_RrcConfigurationReq *configuration);
+int do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
+                uint8_t                      *const buffer,
+                const uint8_t                transaction_id,
+                const uint8_t                *masterCellGroup,
+                int                          masterCellGroup_len,
+                const NR_ServingCellConfigCommon_t *scc,
+                const NR_ServingCellConfig_t       *servingcellconfigdedicated,
+                const gNB_RrcConfigurationReq *configuration);
 
 uint8_t do_NR_SecurityModeCommand(
                     const protocol_ctxt_t *const ctxt_pP,
