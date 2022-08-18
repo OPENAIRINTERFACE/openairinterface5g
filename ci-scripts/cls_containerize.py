@@ -532,6 +532,25 @@ class Containerize():
 			# don't delete such that we might recover the zips
 			#mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
 
+		# we do not analyze the logs (we assume the proxy builds fine at this stage),
+		# but need to have the following information to correctly display the HTML
+		files = {}
+		errorandwarnings = {}
+		errorandwarnings['errors'] = 0
+		errorandwarnings['warnings'] = 0
+		errorandwarnings['status'] = True
+		files['Target Image Creation'] = errorandwarnings
+		self.collectInfo['proxy'] = files
+		mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
+		result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
+		if result is not None:
+			imageSize = float(result.group('size')) / 1000000
+			logging.debug('\u001B[1m   proxy size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
+			self.allImagesSize['proxy'] = str(round(imageSize,1)) + ' Mbytes'
+		else:
+			logging.debug('proxy size is unknown')
+			self.allImagesSize['proxy'] = 'unknown'
+
 		# Cleaning any created tmp volume
 		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
 		mySSH.close()

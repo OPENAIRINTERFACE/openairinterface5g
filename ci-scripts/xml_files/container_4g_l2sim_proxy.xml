@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>l2sim-5gnr-proxy-build</htmlTabRef>
+        <htmlTabRef>l2sim-4glte-proxy-build</htmlTabRef>
         <htmlTabName>Build L2sim proxy image</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <repeatCount>1</repeatCount>
