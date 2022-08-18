@@ -51,11 +51,11 @@ typedef struct {
 }loader_shlibdesc_t;
 
 typedef struct {
-   char               *mainexec_buildversion;
-   char               *shlibpath;
-   uint32_t           maxshlibs;
-   uint32_t           numshlibs;
-   loader_shlibdesc_t *shlibs;
+  char               *mainexec_buildversion;
+  char               *shlibpath;
+  uint32_t           maxshlibs;
+  uint32_t           numshlibs;
+  loader_shlibdesc_t *shlibs;
 }loader_data_t;
 
 /* function type of functions which may be implemented by a module */

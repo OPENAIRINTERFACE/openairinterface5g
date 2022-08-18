@@ -339,16 +339,23 @@ void end_configmodule(void) {
     pthread_mutex_lock(&cfgptr->memBlocks_mutex);
     printf ("[CONFIG] free %u config value pointers\n",cfgptr->numptrs);
 
-    int n=0;
     for(int i=0; i<cfgptr->numptrs ; i++) {
       if (cfgptr->oneBlock[i].ptrs != NULL && cfgptr->oneBlock[i].ptrsAllocated== true && cfgptr->oneBlock[i].toFree) {
         free(cfgptr->oneBlock[i].ptrs);
         memset(&cfgptr->oneBlock[i], 0, sizeof(cfgptr->oneBlock[i]));
       }
     }
-
+    
     cfgptr->numptrs=0;
     pthread_mutex_unlock(&cfgptr->memBlocks_mutex);
+    if ( cfgptr->cfgmode )
+      free(cfgptr->cfgmode);
+
+    if (  cfgptr->argv_info )
+      free( cfgptr->argv_info );
+
+    free(cfgptr);
+    cfgptr=NULL;
   }
 }
 

@@ -57,7 +57,9 @@ int read_strlist(paramdef_t *cfgoptions,config_setting_t *setting, char *cfgpath
   numelt=config_setting_length(setting);
   config_check_valptr(cfgoptions, sizeof(char *), numelt);
   st=0;
-  AssertFatal(MAX_LIST_SIZE > numelt, "");
+  AssertFatal(MAX_LIST_SIZE > numelt, 
+              "This piece of code use fixed size arry of constant #define MAX_LIST_SIZE %d\n", 
+              MAX_LIST_SIZE );
   for (int i=0; i< numelt ; i++) {
     str=config_setting_get_string_elem(setting,i);
 

@@ -54,7 +54,9 @@ int parse_stringlist(paramdef_t *cfgoptions, char *val) {
 
   free(tmpval);
 
-  AssertFatal(MAX_LIST_SIZE > numelt, "");
+  AssertFatal(MAX_LIST_SIZE > numelt, 
+              "This piece of code use fixed size arry of constant #define MAX_LIST_SIZE %d\n", 
+              MAX_LIST_SIZE );
   config_check_valptr(cfgoptions, sizeof(char*), numelt);
   
   cfgoptions->numelt=numelt;

@@ -54,7 +54,9 @@ configmodule_interface_t *config_get_if(void) {
 
 static int managed_ptr_sz(void* ptr) {
   configmodule_interface_t * cfg=config_get_if();
-  AssertFatal(cfg->numptrs < CONFIG_MAX_ALLOCATEDPTRS,"");
+  AssertFatal(cfg->numptrs < CONFIG_MAX_ALLOCATEDPTRS,
+              "This code use fixed size array as #define CONFIG_MAX_ALLOCATEDPTRS %d\n",
+              CONFIG_MAX_ALLOCATEDPTRS);
   int i;
   pthread_mutex_lock(&cfg->memBlocks_mutex);
   int numptrs=cfg->numptrs;
@@ -70,19 +72,17 @@ static int managed_ptr_sz(void* ptr) {
 
 void *config_allocate_new(int sz, bool autoFree) {
   void *ptr = calloc(sz,1);  
-  if (ptr != NULL) {
-    configmodule_interface_t * cfg=config_get_if();
-    // add the memory piece in the managed memory pieces list
-    pthread_mutex_lock(&cfg->memBlocks_mutex);
-    int newBlockIdx=cfg->numptrs++;
-    oneBlock_t* tmp=&cfg->oneBlock[newBlockIdx];
-    tmp->ptrs = (char *)ptr;
-    tmp->ptrsAllocated = true;
-    tmp->sz=sz;
-    tmp->toFree=autoFree;
-    pthread_mutex_unlock(&cfg->memBlocks_mutex);    
-  } else 
-    AssertFatal(false, "calloc fails\n");
+  AssertFatal(ptr, "calloc fails\n");
+  configmodule_interface_t * cfg=config_get_if();
+  // add the memory piece in the managed memory pieces list
+  pthread_mutex_lock(&cfg->memBlocks_mutex);
+  int newBlockIdx=cfg->numptrs++;
+  oneBlock_t* tmp=&cfg->oneBlock[newBlockIdx];
+  tmp->ptrs = (char *)ptr;
+  tmp->ptrsAllocated = true;
+  tmp->sz=sz;
+  tmp->toFree=autoFree;
+  pthread_mutex_unlock(&cfg->memBlocks_mutex);    
   return ptr;
 }
 
@@ -124,7 +124,9 @@ void config_check_valptr(paramdef_t *cfgoptions, int elt_sz, int nb_elt) {
       // difficult datamodel
       cfgoptions->strptr = config_allocate_new(sizeof(*cfgoptions->strptr), toFree);
     } else if ( cfgoptions->type == TYPE_STRINGLIST) {
-      AssertFatal(nb_elt<MAX_LIST_SIZE, "");
+      AssertFatal(nb_elt<MAX_LIST_SIZE, 
+                  "This piece of code use fixed size arry of constant #define MAX_LIST_SIZE %d\n",
+                  MAX_LIST_SIZE );
       cfgoptions->strlistptr= config_allocate_new(sizeof(char*)*MAX_LIST_SIZE, toFree);
       for (int  i=0; i<MAX_LIST_SIZE; i++)
         cfgoptions->strlistptr[i]= config_allocate_new(DEFAULT_EXTRA_SZ, toFree);

@@ -381,8 +381,8 @@ void  log_getconfig(log_t *g_log)
 }
 
 int register_log_component(char *name,
-		                   char *fext,
-						   int compidx)
+                           char *fext,
+                           int compidx)
 {
   int computed_compidx=compidx;
 
