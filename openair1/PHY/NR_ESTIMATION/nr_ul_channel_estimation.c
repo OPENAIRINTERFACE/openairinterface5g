@@ -1017,6 +1017,8 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
       ls_estimated[1] = (int16_t)(((int32_t)generated_real*received_imag - (int32_t)generated_imag*received_real)>>nr_srs_info->srs_generated_signal_bits);
       srs_ls_estimated_channel[ant][nr_srs_info->sc_list[sc_idx]] = ls_estimated[0] + (((int32_t)ls_estimated[1] << 16) & 0xFFFF0000);
 
+      const uint16_t sc_idx_offset = nr_srs_info->sc_list[sc_idx] + mem_offset;
+
       // Channel interpolation
       if(srs_pdu->comb_size == 0) {
         if(sc_idx == 0) { // First subcarrier case
@@ -1038,14 +1040,14 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
         } else if(sc_idx%2 == 0) { // 2nd middle case
           // filt8_middle4 is {0,0,4096,8192,8192,8192,4096,0}
           multadd_real_vector_complex_scalar(filt8_middle4, ls_estimated, srs_estimated_channel16, 8);
-          srs_estimated_channel16 = (int16_t *)&srs_est[nr_srs_info->sc_list[sc_idx] + mem_offset];
+          srs_estimated_channel16 = (int16_t *)&srs_est[sc_idx_offset];
         }
       } else {
         if(sc_idx == 0) { // First subcarrier case
           // filt16_start is {12288,8192,8192,8192,4096,0,0,0,0,0,0,0,0,0,0,0}
           multadd_real_vector_complex_scalar(filt16_start, ls_estimated, srs_estimated_channel16, 16);
         } else if(nr_srs_info->sc_list[sc_idx] < nr_srs_info->sc_list[sc_idx - 1]) { // Start of OFDM symbol case
-          srs_estimated_channel16 = (int16_t *)&srs_est[nr_srs_info->sc_list[sc_idx] + mem_offset];
+          srs_estimated_channel16 = (int16_t *)&srs_est[sc_idx_offset];
           // filt16_start is {12288,8192,8192,8192,4096,0,0,0,0,0,0,0,0,0,0,0}
           multadd_real_vector_complex_scalar(filt16_start, ls_estimated, srs_estimated_channel16, 16);
         } else if((sc_idx < (nr_srs_info->sc_list_length - 1) && nr_srs_info->sc_list[sc_idx + 1] < nr_srs_info->sc_list[sc_idx])
@@ -1055,7 +1057,7 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
         } else { // Middle case
           // filt16_middle4 is {4096,8192,8192,8192,8192,8192,8192,8192,4096,0,0,0,0,0,0,0}
           multadd_real_vector_complex_scalar(filt16_middle4, ls_estimated, srs_estimated_channel16, 16);
-          srs_estimated_channel16 = (int16_t *)&srs_est[nr_srs_info->sc_list[sc_idx] + mem_offset];
+          srs_estimated_channel16 = (int16_t *)&srs_est[sc_idx_offset];
         }
       }
 
@@ -1189,9 +1191,8 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
         LOG_I(NR_PHY,"\t  __lsRe__________lsIm__|____intRe_______intIm__|____noiRe_______noiIm_\n");
       }
       for(int r = 0; r<R; r++) {
-        if (nr_srs_info->sc_list[sc_idx]+r>=frame_parms->ofdm_symbol_size) {
+        if (nr_srs_info->sc_list[sc_idx] + r >= frame_parms->ofdm_symbol_size)
           continue;
-        }
         LOG_I(NR_PHY,"(%4i) %6i\t%6i  |  %6i\t%6i  |  %6i\t%6i\n",
               subcarrier_log+r,
               (int16_t)(srs_ls_estimated_channel[ant][nr_srs_info->sc_list[sc_idx]+r]&0xFFFF),
