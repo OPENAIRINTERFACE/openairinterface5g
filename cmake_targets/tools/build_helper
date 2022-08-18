@@ -237,8 +237,9 @@ compilations() {
      echo_error "$2 compilation failed"
      exit 1
   fi
-  if [ -s $3 ] ; then
-     cp $3 $4
+  if [ -s "$3" ] ; then
+     rm -f "$4"
+     ln -s "$PWD/$3" "$4"
      echo_success "$2 compiled"
      check_warnings "$dlog/$2.$REL.txt"
   else
