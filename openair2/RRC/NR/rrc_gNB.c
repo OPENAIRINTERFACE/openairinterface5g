@@ -766,6 +766,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 //-----------------------------------------------------------------------------
 {
   gNB_RRC_INST                  *rrc = RC.nrrrc[ctxt_pP->module_id];
+  gNB_RRC_UE_t                  *ue_p = &ue_context_pP->ue_context;
   NR_SRB_ToAddMod_t             *SRB2_config          = NULL;
   NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
   NR_DRB_ToAddModList_t        **DRB_configList2 = NULL;
