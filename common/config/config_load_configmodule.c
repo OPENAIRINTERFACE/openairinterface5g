@@ -352,34 +352,6 @@ void end_configmodule(void) {
   }
 }
 
-/* free all memory used by config module */
-/* should be called only at program exit */
-void free_configmodule(void) {
-  if (cfgptr != NULL) {
-    end_configmodule();
-
-    if( cfgptr->cfgmode != NULL) free(cfgptr->cfgmode);
-    int n=0;
-    for(int i=0; i<cfgptr->numptrs ; i++) {
-      if (cfgptr->ptrs[i] != NULL) {
-        free(cfgptr->ptrs[i]);
-        cfgptr->ptrs[i]=NULL;
-	    cfgptr->ptrsAllocated[i] = false;
-	    n++;
-      }
-    }
-    printf ("[CONFIG] %u/%u persistent config value pointers have been released\n",n,cfgptr->numptrs); 
-    cfgptr->numptrs=0;
-    printf ("[CONFIG] free %i config module parameter pointers\n",cfgptr->num_cfgP);
-
-    for (int i=0; i<cfgptr->num_cfgP; i++) {
-      if ( cfgptr->cfgP[i] != NULL) free(cfgptr->cfgP[i]);
-    }
-    free(cfgptr->argv_info);
-    free(cfgptr);
-    cfgptr=NULL;
-  }
-}
 
 
 

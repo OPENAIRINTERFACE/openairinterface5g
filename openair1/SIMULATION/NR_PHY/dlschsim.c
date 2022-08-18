@@ -665,7 +665,6 @@ int main(int argc, char **argv)
     logInit();
     loader_reset();
     logTerm();
-    free_configmodule();
 
     return (n_errors);
 }

@@ -17,11 +17,6 @@ void end_configmodule(void)
 * Possibly calls the `config_<config source>_end` function
 This call should be used when all configurations have been read. The program will still be able to use parameter values allocated by the config module WHEN THE `PARAMFLAG_NOFREE` flag has been specified in the parameter definition. The config module can be reloaded later in the program (not fully tested as not used today)
 
-```c
-void free_configmodule(void)
-```
-This call should be used to definitely free all resources allocated by the config module. All parameters values allocated by the config module become unavailable and no further reload of the config module are allowed.
-
 ## Retrieving parameter's values
 
 ```c
