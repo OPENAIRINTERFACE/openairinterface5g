@@ -279,7 +279,7 @@ typedef struct gNB_RRC_UE_s {
   NR_DRB_ToAddModList_t             *DRB_configList;
   NR_DRB_ToAddModList_t             *DRB_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  uint8_t                            DRB_active[8];
+  uint8_t                            DRB_active[NGAP_MAX_DRBS_PER_UE];
 
   NR_SRB_INFO                       SI;
   NR_SRB_INFO                       Srb0;
@@ -355,7 +355,7 @@ typedef struct gNB_RRC_UE_s {
   /* list of e_rab to be setup by RRC layers */
   /* list of pdu session to be setup by RRC layers */
   nr_e_rab_param_t                   e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
-  pdu_session_param_t                pduSession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
+  pdu_session_param_t                pduSession[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
