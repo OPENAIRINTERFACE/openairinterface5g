@@ -1445,8 +1445,8 @@ nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager() {
   return nr_pdcp_ue_manager;
 }
 
-/* returns 0 in case of error, 1 if everything ok */
-int const nr_pdcp_get_statistics(
+/* returns false in case of error, true if everything ok */
+const bool nr_pdcp_get_statistics(
   int rnti,
   int srb_flag,
   int rb_id,
@@ -1454,7 +1454,7 @@ int const nr_pdcp_get_statistics(
 {
   nr_pdcp_ue_t     *ue;
   nr_pdcp_entity_t *rb;
-  int              ret;
+  bool             ret;
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
@@ -1473,9 +1473,9 @@ int const nr_pdcp_get_statistics(
 
   if (rb != NULL) {
     rb->get_stats(rb, out);
-    ret = 1;
+    ret = true;
   } else {
-    ret = 0;
+    ret = false;
   }
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
