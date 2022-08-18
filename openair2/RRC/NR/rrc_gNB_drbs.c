@@ -121,20 +121,6 @@ uint8_t next_available_drb(gNB_RRC_UE_t *rrc_ue, uint8_t pdusession_id) {
   return DRB_INACTIVE;
 }
 
-nr_ue_t *nr_ue_new(rnti_t rnti) {
-  if(nr_ue_get(rnti)) {
-    LOG_D(RRC, "UE already exists with rnti: %u\n", rnti);
-    return nr_ue_get(rnti);
-  }
-
-  nr_ue_t *ue;
-  ue = calloc(1, sizeof(nr_ue_t));
-  ue->ue_id = rnti;
-  ue->next_ue = ues.list;
-  ues.list = ue;
-  return ues.list;
-}
-
 nr_ue_t *nr_ue_get(rnti_t rnti) {
   nr_ue_t *ue;
   ue = ues.list;

@@ -52,7 +52,6 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue,
                                int do_drb_ciphering);
 
 nr_ue_t *nr_ue_get(rnti_t rnti);
-nr_ue_t *nr_ue_new(rnti_t rnti);
 uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id);
 
 #endif
