@@ -155,25 +155,3 @@ nr_ue_t *nr_ue_get(rnti_t rnti) {
 
   return NULL;
 }
-
-void nr_ue_delete(rnti_t rnti) {
-  nr_ue_t *ue;
-  ue = ues.list;
-
-  if(ue->ue_id == rnti) {
-    ues.list = ues.list->next_ue;
-    free(ue);
-  } else {
-    nr_ue_t *uePrev = NULL;
-
-    while(ue->ue_id != rnti && ue->next_ue != NULL) {
-      uePrev = ue;
-      ue = ue->next_ue;
-    }
-
-    if(ue->ue_id != rnti) {
-      uePrev->next_ue = ue->next_ue;
-      free(ue);
-    }
-  }
-}

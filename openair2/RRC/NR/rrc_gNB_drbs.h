@@ -51,7 +51,6 @@ NR_DRB_ToAddMod_t *generateDRB(rnti_t rnti,
 
 nr_ue_t *nr_ue_get(rnti_t rnti);
 nr_ue_t *nr_ue_new(rnti_t rnti);
-void nr_ue_delete(rnti_t rnti);
 uint8_t next_available_drb(rnti_t rnti, uint8_t pdusession_id);
 
 #endif
