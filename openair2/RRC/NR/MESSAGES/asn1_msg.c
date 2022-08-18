@@ -1070,68 +1070,13 @@ void fill_initial_SpCellConfig(int uid,
         csirep1->ext1 = NULL;
         ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep1);
       }
-
-      LOG_D(NR_RRC,"Filling CSI Report Config for CRI_RSRP\n");
-      NR_CSI_ReportConfig_t *csirep2 = calloc(1,sizeof(*csirep2));
-      csirep2->reportConfigId=bwp_id+10;
-      csirep2->carrier=NULL;
-      csirep2->resourcesForChannelMeasurement=bwp_id;
-      csirep2->csi_IM_ResourcesForInterference=NULL;
-      csirep2->nzp_CSI_RS_ResourcesForInterference=NULL;
-      csirep2->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
-      csirep2->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep2->reportConfigType.choice.periodic));
-      csirep2->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-      csirep2->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = (37 + (20 * uid)) % 320;
-      ASN_SEQUENCE_ADD(&csirep2->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
-      csirep2->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP;
-      csirep2->reportQuantity.choice.cri_RSRP=(NULL_t)0;
-      csirep2->reportFreqConfiguration = calloc(1,sizeof(*csirep2->reportFreqConfiguration));
-      csirep2->reportFreqConfiguration->cqi_FormatIndicator = NULL;
-      csirep2->reportFreqConfiguration->pmi_FormatIndicator=NULL;
-      csirep2->reportFreqConfiguration->csi_ReportingBand=NULL;
-      csirep2->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
-      csirep2->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
-      csirep2->codebookConfig=NULL;
-      csirep2->dummy = NULL;
-      csirep2->groupBasedBeamReporting.present = NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled;
-      csirep2->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep2->groupBasedBeamReporting.choice.disabled));
-      csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS=calloc(1,sizeof(*csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
-      *csirep2->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
-      csirep2->cqi_Table = NULL;
-      csirep2->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
-      csirep2->non_PMI_PortIndication = NULL;
-      csirep2->ext1 = NULL;
-      ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep2);
     }
-    else{
-      NR_CSI_ReportConfig_t *csirep3 = calloc(1,sizeof(*csirep3));
-      csirep3->reportConfigId=bwp_id+10;
-      csirep3->carrier=NULL;
-      csirep3->resourcesForChannelMeasurement=bwp_id+20;
-      csirep3->csi_IM_ResourcesForInterference=NULL;
-      csirep3->nzp_CSI_RS_ResourcesForInterference=NULL;
-      csirep3->reportConfigType.present = NR_CSI_ReportConfig__reportConfigType_PR_periodic;
-      csirep3->reportConfigType.choice.periodic = calloc(1,sizeof(*csirep3->reportConfigType.choice.periodic));
-      csirep3->reportConfigType.choice.periodic->reportSlotConfig.present=NR_CSI_ReportPeriodicityAndOffset_PR_slots320;
-      csirep3->reportConfigType.choice.periodic->reportSlotConfig.choice.slots320 = 37 + (20 * uid) % 320;
-      ASN_SEQUENCE_ADD(&csirep3->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list,pucchcsires1);
-      csirep3->reportQuantity.present = NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP;
-      csirep3->reportQuantity.choice.ssb_Index_RSRP=(NULL_t)0;
-      csirep3->reportFreqConfiguration = NULL;
-      csirep3->timeRestrictionForChannelMeasurements= NR_CSI_ReportConfig__timeRestrictionForChannelMeasurements_configured;
-      csirep3->timeRestrictionForInterferenceMeasurements=NR_CSI_ReportConfig__timeRestrictionForInterferenceMeasurements_configured;
-      csirep3->codebookConfig= NULL;
-      csirep3->dummy = NULL;
-      csirep3->groupBasedBeamReporting.present = NR_CSI_ReportConfig__groupBasedBeamReporting_PR_disabled;
-      csirep3->groupBasedBeamReporting.choice.disabled=calloc(1,sizeof(*csirep3->groupBasedBeamReporting.choice.disabled));
-      csirep3->groupBasedBeamReporting.choice.disabled->nrofReportedRS = calloc(1,sizeof(*csirep3->groupBasedBeamReporting.choice.disabled->nrofReportedRS));
-      *csirep3->groupBasedBeamReporting.choice.disabled->nrofReportedRS=NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
-      csirep3->cqi_Table = NULL;
-      csirep3->subbandSize = NR_CSI_ReportConfig__subbandSize_value1;
-      csirep3->non_PMI_PortIndication = NULL;
-      csirep3->ext1 = NULL;
-      ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep3);
-    }
+    conig_rsrp_meas_report(csi_MeasConfig,
+                           scc,
+                           pucchcsires1,
+                           configuration->do_CSIRS,
+                           bwp_id+10,
+                           uid);
   }
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
   pdsch_servingcellconfig->xOverhead = NULL;
