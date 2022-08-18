@@ -56,7 +56,7 @@ void nr_modulation(uint32_t *in,
 
 void nr_layer_mapping(int16_t **mod_symbs,
                          uint8_t n_layers,
-                         uint16_t n_symbs,
+                         uint32_t n_symbs,
                          int16_t **tx_layers);
 
 /*! \brief Perform NR layer mapping. TS 38.211 V15.4.0 subclause 7.3.1.3
@@ -68,7 +68,7 @@ void nr_layer_mapping(int16_t **mod_symbs,
 
 void nr_ue_layer_mapping(int16_t *mod_symbs,
                          uint8_t n_layers,
-                         uint16_t n_symbs,
+                         uint32_t n_symbs,
                          int16_t **tx_layers);
 
 
