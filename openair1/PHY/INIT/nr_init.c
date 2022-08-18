@@ -554,7 +554,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   AssertFatal(pdcch_dmrs!=NULL, "NR init: pdcch_dmrs malloc failed\n");
 
   gNB->bad_pucch = 0;
-
+  if (gNB->TX_AMP == 0)
+    gNB->TX_AMP = AMP;
   // ceil(((NB_RB<<1)*3)/32) // 3 RE *2(QPSK)
   int pdcch_dmrs_init_length =  (((fp->N_RB_DL<<1)*3)>>5)+1;
 

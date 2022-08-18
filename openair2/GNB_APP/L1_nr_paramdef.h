@@ -56,6 +56,7 @@
 #define CONFIG_STRING_L1_RX_THREAD_CORE                    "L1_rx_thread_core"
 #define CONFIG_STRING_L1_TX_THREAD_CORE                    "L1_tx_thread_core"
 #define HLP_TP_SIZ "thread_pool_size paramter removed, please use --thread-pool"
+#define CONFIG_STRING_L1_TX_AMP_BACKOFF_dB                 "tx_amp_backoff_dB"
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            L1 configuration parameters                                                                             */
 /*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
@@ -80,6 +81,7 @@
   {CONFIG_STRING_L1_MAX_LDPC_ITERATIONS,               NULL,       0,         .uptr=NULL,           .defintval=5,               TYPE_UINT,     0},         \
   {CONFIG_STRING_L1_RX_THREAD_CORE,                    NULL,       0,         .uptr=NULL,           .defintval=-1,              TYPE_UINT,     0},          \
   {CONFIG_STRING_L1_TX_THREAD_CORE,                    NULL,       0,         .uptr=NULL,           .defintval=-1,              TYPE_UINT,     0},          \
+  {CONFIG_STRING_L1_TX_AMP_BACKOFF_dB,                 NULL,       0,         .uptr=NULL,           .defintval=36,              TYPE_UINT,     0},         \
 }
 // clang-format on
 #define L1_CC_IDX                                          0
@@ -100,6 +102,7 @@
 #define L1_MAX_LDPC_ITERATIONS                             15
 #define L1_RX_THREAD_CORE                                  16
 #define L1_TX_THREAD_CORE                                  17
+#define L1_TX_AMP_BACKOFF_dB                               18
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif
