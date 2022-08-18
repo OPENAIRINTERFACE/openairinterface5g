@@ -117,14 +117,14 @@ uint8_t next_available_drb(gNB_RRC_UE_t *rrc_ue, rnti_t rnti, uint8_t pdusession
 
   uint8_t drb_id;
   for (drb_id = 0; drb_id < MAX_DRBS_PER_UE; drb_id++) {
-    if(ue->used_drbs[drb_id] == NULL_DRB && ue->pdus->drbs_established < MAX_DRBS_PER_PDUSESSION) {
+    if(ue->used_drbs[drb_id] == DRB_INACTIVE && ue->pdus->drbs_established < MAX_DRBS_PER_PDUSESSION) {
       ue->pdus->pdu_drbs[ue->pdus->drbs_established] = drb_id;  /* Store drb_id to pdusession */
       ue->used_drbs[drb_id] = pdusession_id;                    /* Store the pdusession id that is using that drb */
       ue->pdus->drbs_established++;                             /* Increment the index for drbs */
       return ++drb_id;
     }
   }
-  return NULL_DRB;
+  return DRB_INACTIVE;
 }
 
 nr_ue_t *nr_ue_new(rnti_t rnti) {

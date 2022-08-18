@@ -28,7 +28,9 @@
 
 #define MAX_DRBS_PER_UE         (32)  /* Maximum number of Data Radio Bearers per UE */
 #define MAX_PDUS_PER_UE         (8)   /* Maximum number of PDU Sessions per UE */
-#define NULL_DRB                (0)   /* Non existing DRB */
+#define DRB_ACTIVE              (1)
+#define DRB_INACTIVE            (0)
+
 typedef struct nr_pdus_s {
   uint8_t pdu_drbs[MAX_DRBS_PER_PDUSESSION];  /* Data Radio Bearers of PDU Session */
   uint8_t pdusession_id;
