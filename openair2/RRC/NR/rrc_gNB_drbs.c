@@ -101,12 +101,12 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
   return DRB_config;
 }
 
-uint8_t next_available_drb(gNB_RRC_UE_t *rrc_ue, uint8_t pdusession_id) {
+uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id) {
   uint8_t drb_id;
   for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++) {
-    if(rrc_ue->DRB_active[drb_id] == DRB_INACTIVE) {
-      rrc_ue->pduSession[pdusession_id].param.used_drbs[drb_id] = DRB_ACTIVE;
-      rrc_ue->DRB_active[drb_id]                                = DRB_ACTIVE;
+    if(ue->DRB_active[drb_id] == DRB_INACTIVE) {
+      ue->pduSession[pdusession_id].param.used_drbs[drb_id] = DRB_ACTIVE;
+      ue->DRB_active[drb_id]                                = DRB_ACTIVE;
       return drb_id+1;
     }
   }
