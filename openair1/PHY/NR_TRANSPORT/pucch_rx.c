@@ -1557,10 +1557,8 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     } // cw loop
     corr_dB = dB_fixed64((uint64_t)corr);
 #ifdef DEBUG_NR_PUCCH_RX
-    printf("cw_ML %d, metric %d dB\n",cw_ML,corr_dB);
+    LOG_I(PHY,"slot %d PUCCH2 cw_ML %d, metric %d dB\n",slot,cw_ML,corr_dB);
 #endif
-    LOG_D(PHY,"slot %d PUCCH2 cw_ML %d, metric %d dB\n", slot, cw_ML, corr_dB);
-
     decodedPayload[0]=(uint64_t)cw_ML;
   }
   else { // polar coded case
