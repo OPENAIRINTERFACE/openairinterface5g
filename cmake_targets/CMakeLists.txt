@@ -186,9 +186,6 @@ else (CUDA_FOUND)
    message ("No CUDA tool installed")
 endif ()
 
-#INCLUDE(FindPackageHandleStandardArgs)
-#FIND_PACKAGE_HANDLE_STANDARD_ARGS(dpdk DEFAULT_MSG)
-
 ####################################################
 # compilation flags
 #############################################
