@@ -68,6 +68,9 @@ elif [[ -v USE_N3XX ]]; then
     $PREFIX/bin/uhd_images_downloader.py -t n3xx
 fi
 
+# enable printing of stack traces on assert
+export gdbStacks=1
+
 echo "=================================="
 echo "== Starting eNB soft modem"
 if [[ -v USE_ADDITIONAL_OPTIONS ]]; then

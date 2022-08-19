@@ -64,6 +64,9 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+# enable printing of stack traces on assert
+export gdbStacks=1
+
 echo "=================================="
 echo "== Starting NR UE soft modem"
 if [[ -v USE_ADDITIONAL_OPTIONS ]]; then

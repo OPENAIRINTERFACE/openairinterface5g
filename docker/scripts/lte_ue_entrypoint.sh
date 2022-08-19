@@ -63,6 +63,9 @@ if [[ -v USE_NFAPI ]]; then
   new_args+=("$PREFIX/etc/ue.conf")
 fi
 
+# enable printing of stack traces on assert
+export gdbStacks=1
+
 echo "=================================="
 echo "== Starting LTE UE soft modem"
 if [[ -v USE_ADDITIONAL_OPTIONS ]]; then
