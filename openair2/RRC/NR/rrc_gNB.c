@@ -826,7 +826,9 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     for(long drb_id_add = 1; drb_id_add <= nb_drb_to_setup; drb_id_add++){
       if(drb_id_add > MAX_DRBS_PER_PDUSESSION)
         break;
+      uint8_t drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id);
       NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_p,
+                                                  drb_id,
                                                   &ue_context_pP->ue_context.pduSession[i],
                                                   rrc->configuration.enable_sdap,
                                                   rrc->security.do_drb_integrity,

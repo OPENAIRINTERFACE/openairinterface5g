@@ -22,11 +22,11 @@
 #include "rrc_gNB_drbs.h"
 
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
+                               uint8_t drb_id,
                                const pdu_session_param_t *pduSession,
                                bool enable_sdap,
                                int do_drb_integrity,
                                int do_drb_ciphering) {
-  uint8_t drb_id = next_available_drb(ue, pduSession->param.pdusession_id);
   NR_DRB_ToAddMod_t *DRB_config  = NULL;
   NR_SDAP_Config_t  *SDAP_config = NULL;
 
