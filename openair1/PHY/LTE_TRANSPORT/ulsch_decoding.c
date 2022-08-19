@@ -44,7 +44,7 @@
 #include <executables/split_headers.h>
 
 extern WORKER_CONF_t get_thread_worker_conf(void);
-extern volatile int oai_exit;
+extern int oai_exit;
 
 
 

@@ -283,7 +283,7 @@ extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 extern int usrp_tx_thread;
 extern uint16_t sl_ahead;
 extern uint16_t sf_ahead;
-extern volatile int  oai_exit;
+extern int oai_exit;
 
 void tx_func(void *param);
 void rx_func(void *param);

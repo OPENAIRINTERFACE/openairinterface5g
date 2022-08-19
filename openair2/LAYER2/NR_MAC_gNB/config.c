@@ -489,23 +489,21 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 		  scc);
     LOG_D(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
   
-    // if in nFAPI mode 
-    if ( (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) && (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) ){
-      while(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req == NULL) {
-        // DJP AssertFatal(RC.nrmac[Mod_idP]->if_inst->PHY_config_req != NULL,"if_inst->phy_config_request is null\n");
-        usleep(100 * 1000);
-        printf("Waiting for PHY_config_req\n");
-      }
+    if (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
+      // fake that the gNB is configured in nFAPI mode, which would normally be
+      // done in a NR_PHY_config_req, but in this mode, there is no PHY
+      RC.gNB[Mod_idP]->configured = 1;
+    } else {
+      NR_PHY_Config_t phycfg = {
+        .Mod_id = Mod_idP,
+        .CC_id  = 0,
+        .cfg    = &RC.nrmac[Mod_idP]->config[0]
+      };
+      DevAssert(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
+      RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg);
     }
+
     RC.nrmac[Mod_idP]->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
-
-    NR_PHY_Config_t phycfg;
-    phycfg.Mod_id = Mod_idP;
-    phycfg.CC_id  = 0;
-    phycfg.cfg    = &RC.nrmac[Mod_idP]->config[0];
-
-    if (RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req) RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg);
-
     find_SSB_and_RO_available(Mod_idP);
 
     const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;

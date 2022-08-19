@@ -801,15 +801,13 @@ void logClean (void)
   int i;
 
   if(isLogInitDone()) {
-    LOG_UI(PHY,"\n");
-
     for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
       close_component_filelog(i);
     }
   }
 }
 
-extern volatile int oai_exit;//extern int oai_exit;
+extern int oai_exit;
 void flush_mem_to_file(void)
 {
   int fp;

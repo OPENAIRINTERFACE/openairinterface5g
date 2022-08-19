@@ -700,9 +700,6 @@ int main(int argc, char **argv)
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   gNB->ofdm_offset_divisor = UINT_MAX;
-  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->respDecode);
   char tp_param[80];
   if (threadCnt>0)
    sprintf(tp_param,"-1");
@@ -714,15 +711,12 @@ int main(int argc, char **argv)
     s_offset += 3;
   }
 
-  initTpool(tp_param, gNB->threadPool, false);
-  initNotifiedFIFO(gNB->respDecode);
-  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->L1_tx_free);
-  initNotifiedFIFO(gNB->L1_tx_filled);
-  initNotifiedFIFO(gNB->L1_tx_out);
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,NULL);
+  initTpool(tp_param, &gNB->threadPool, false);
+  initNotifiedFIFO(&gNB->respDecode);
+  initNotifiedFIFO(&gNB->L1_tx_free);
+  initNotifiedFIFO(&gNB->L1_tx_filled);
+  initNotifiedFIFO(&gNB->L1_tx_out);
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t), 0, &gNB->L1_tx_free, NULL);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   msgDataTx->slot = -1;
   //gNB_config = &gNB->gNB_config;
@@ -800,8 +794,17 @@ int main(int argc, char **argv)
   gNB->chest_freq = chest_type[0];
   gNB->chest_time = chest_type[1];
   phy_init_nr_gNB(gNB,0,1);
+  /* RU handles rxdataF, and gNB just has a pointer. Here, we don't have an RU,
+   * so we need to allocate that memory as well. */
+  for (i = 0; i < n_rx; i++)
+    gNB->common_vars.rxdataF[i] = malloc16_clear(gNB->frame_parms.samples_per_frame_wCP*sizeof(int32_t));
   N_RB_DL = gNB->frame_parms.N_RB_DL;
 
+  /* no RU: need to have rxdata */
+  c16_t **rxdata;
+  rxdata = malloc(n_rx * sizeof(*rxdata));
+  for (int i = 0; i < n_rx; ++i)
+    rxdata[i] = malloc(gNB->frame_parms.samples_per_frame * sizeof(**rxdata));
 
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
 
@@ -1031,18 +1034,16 @@ int main(int argc, char **argv)
     fseek(input_fd,file_offset*sizeof(int16_t)*2,SEEK_SET);
     for (int irx=0; irx<frame_parms->nb_antennas_rx; irx++) {
       fseek(input_fd,irx*(slot_length+15)*sizeof(int16_t)*2,SEEK_SET); // matlab adds samlples to the end to emulate channel delay
-      read_errors+=fread((void*)&gNB->common_vars.rxdata[irx][slot_offset-delay],
-      sizeof(int16_t),
-      slot_length<<1,
-      input_fd);
+      read_errors += fread((void *)&rxdata[irx][slot_offset-delay], sizeof(int16_t), slot_length<<1, input_fd);
       if (read_errors==0) {
         printf("error reading file\n");
         exit(1);
       }
-      for (int i=0;i<16;i+=2) printf("slot_offset %d : %d,%d\n",
-             slot_offset,
-             ((int16_t*)&gNB->common_vars.rxdata[irx][slot_offset])[i],
-             ((int16_t*)&gNB->common_vars.rxdata[irx][slot_offset])[1+i]);
+      for (int i=0;i<16;i+=2)
+        printf("slot_offset %d : %d,%d\n",
+               slot_offset,
+               rxdata[irx][slot_offset].r,
+               rxdata[irx][slot_offset].i);
     }
 
     mod_order = nr_get_Qm_ul(Imcs, mcs_table);
@@ -1168,7 +1169,7 @@ int main(int argc, char **argv)
       }
 
       // prepare ULSCH/PUSCH reception
-      pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
+      pushNotifiedFIFO(&gNB->L1_tx_free, msgL1Tx); // to unblock the process in the beginning
       nr_schedule_response(Sched_INFO);
 
       // --------- setting parameters for UE --------
@@ -1331,12 +1332,11 @@ int main(int argc, char **argv)
 
         for (i=0; i<slot_length; i++) {
           for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)   + (delay*2)] = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-            ((int16_t*) &gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1 + (delay*2)] = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
+            rxdata[ap][slot_offset+i+delay].r = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
+            rxdata[ap][slot_offset+i+delay].i = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
             /* Add phase noise if enabled */
             if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
-              phase_noise(ts, &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)],
-                          &((int16_t*)&gNB->common_vars.rxdata[ap][slot_offset])[(2*i)+1]);
+              phase_noise(ts, &rxdata[ap][slot_offset].r, &rxdata[ap][slot_offset].i);
             }
           }
         }
@@ -1362,19 +1362,36 @@ int main(int argc, char **argv)
 	gNB->UL_INFO.rx_ind.number_of_pdus = 0;
 	gNB->UL_INFO.crc_ind.number_crcs = 0;
 
-    phy_procedures_gNB_common_RX(gNB, frame, slot);
+        for(uint8_t symbol = 0; symbol < (gNB->frame_parms.Ncp == EXTENDED ? 12 : 14); symbol++) {
+          for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++)
+            nr_slot_fep_ul(&gNB->frame_parms,
+                           (int32_t*) rxdata[aa],
+                           gNB->common_vars.rxdataF[aa],
+                           symbol,
+                           slot,
+                           0);
+        }
+
+        for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++)  {
+          apply_nr_rotation_ul(&gNB->frame_parms,
+                               gNB->common_vars.rxdataF[aa],
+                               slot,
+                               0,
+                               gNB->frame_parms.Ncp == EXTENDED ? 12 : 14,
+                               gNB->frame_parms.ofdm_symbol_size);
+        }
 
     ul_proc_error = phy_procedures_gNB_uespec_RX(gNB, frame, slot);
 
     if (n_trials==1 && round==0) {
-      LOG_M("rxsig0.m","rx0",&gNB->common_vars.rxdata[0][slot_offset],slot_length,1,1);
+      LOG_M("rxsig0.m","rx0",&rxdata[0][slot_offset],slot_length,1,1);
       LOG_M("rxsigF0.m","rxsF0",gNB->common_vars.rxdataF[0],14*frame_parms->ofdm_symbol_size,1,1);
       if (precod_nbr_layers > 1) {
-        LOG_M("rxsig1.m","rx1",&gNB->common_vars.rxdata[1][slot_offset],slot_length,1,1);
+        LOG_M("rxsig1.m","rx1",&rxdata[1][slot_offset],slot_length,1,1);
         LOG_M("rxsigF1.m","rxsF1",gNB->common_vars.rxdataF[1],14*frame_parms->ofdm_symbol_size,1,1);
         if (precod_nbr_layers==4) {
-          LOG_M("rxsig2.m","rx2",&gNB->common_vars.rxdata[2][slot_offset],slot_length,1,1);
-          LOG_M("rxsig3.m","rx3",&gNB->common_vars.rxdata[3][slot_offset],slot_length,1,1);
+          LOG_M("rxsig2.m","rx2",&rxdata[2][slot_offset],slot_length,1,1);
+          LOG_M("rxsig3.m","rx3",&rxdata[3][slot_offset],slot_length,1,1);
           LOG_M("rxsigF2.m","rxsF2",gNB->common_vars.rxdataF[2],14*frame_parms->ofdm_symbol_size,1,1);
           LOG_M("rxsigF3.m","rxsF3",gNB->common_vars.rxdataF[3],14*frame_parms->ofdm_symbol_size,1,1);
         }

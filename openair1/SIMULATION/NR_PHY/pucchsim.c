@@ -390,6 +390,10 @@ int main(int argc, char **argv)
   cfg->carrier_config.num_rx_ant.value = n_rx;
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
+  /* RU handles rxdataF, and gNB just has a pointer. Here, we don't have an RU,
+   * so we need to allocate that memory as well. */
+  for (i = 0; i < n_rx; i++)
+    gNB->common_vars.rxdataF[i] = malloc16_clear(gNB->frame_parms.samples_per_frame_wCP*sizeof(int32_t));
 
   double fs,txbw,rxbw;
   uint32_t samples;
@@ -702,6 +706,8 @@ int main(int argc, char **argv)
   free_channel_desc_scm(UE2gNB);
   term_freq_channel();
 
+  for (i = 0; i < n_rx; i++)
+    free(gNB->common_vars.rxdataF[i]);
   phy_free_nr_gNB(gNB);
   free(RC.gNB[0]);
   free(RC.gNB);
