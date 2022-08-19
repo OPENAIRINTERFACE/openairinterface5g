@@ -68,6 +68,58 @@ def CopyLogsToExecutor(sshSession, sourcePath, log_name, scpIp, scpUser, scpPw):
 	sshSession.command(f'rm -f {log_name}.zip','\$', 5)
 	ZipFile(f'{log_name}.zip').extractall('.')
 
+def AnalyzeBuildLogs(buildRoot, images, globalStatus):
+	collectInfo = {}
+	for image in images:
+		files = {}
+		file_list = [f for f in os.listdir(f'{buildRoot}/{image}') if os.path.isfile(os.path.join(f'{buildRoot}/{image}', f)) and f.endswith('.txt')]
+		# Analyze the "sub-logs" of every target image
+		for fil in file_list:
+			errorandwarnings = {}
+			warningsNo = 0
+			errorsNo = 0
+			with open(f'{buildRoot}/{image}/{fil}', mode='r') as inputfile:
+				for line in inputfile:
+					result = re.search(' ERROR ', str(line))
+					if result is not None:
+						errorsNo += 1
+					result = re.search(' error:', str(line))
+					if result is not None:
+						errorsNo += 1
+					result = re.search(' WARNING ', str(line))
+					if result is not None:
+						warningsNo += 1
+					result = re.search(' warning:', str(line))
+					if result is not None:
+						warningsNo += 1
+				errorandwarnings['errors'] = errorsNo
+				errorandwarnings['warnings'] = warningsNo
+				errorandwarnings['status'] = globalStatus
+			files[fil] = errorandwarnings
+		# Analyze the target image
+		if os.path.isfile(f'{buildRoot}/{image}.log'):
+			errorandwarnings = {}
+			committed = False
+			tagged = False
+			with open(f'{buildRoot}/{image}.log', mode='r') as inputfile:
+				startOfTargetImageCreation = False # check for tagged/committed only after image created
+				for line in inputfile:
+					result = re.search(f'FROM .* [aA][sS] {image}$', str(line))
+					if result is not None:
+						startOfTargetImageCreation = True
+					if startOfTargetImageCreation:
+						lineHasTag = re.search(f'Successfully tagged {image}:', str(line)) is not None
+						tagged = tagged or lineHasTag
+						# the OpenShift Cluster builder prepends image registry URL
+						lineHasCommit = re.search(f'COMMIT [a-zA-Z0-9\.:/\-]*{image}', str(line)) is not None
+						committed = committed or lineHasCommit
+			errorandwarnings['errors'] = 0 if committed or tagged else 1
+			errorandwarnings['warnings'] = 0
+			errorandwarnings['status'] = committed or tagged
+			files['Target Image Creation'] = errorandwarnings
+		collectInfo[image] = files
+	return collectInfo
+
 #-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
@@ -112,7 +164,6 @@ class Containerize():
 		self.dockerfileprefix = ''
 		self.host = ''
 		self.allImagesSize = {}
-		self.collectInfo = {}
 
 		self.deployedContainers = []
 		self.tsharkStarted = False
@@ -364,71 +415,18 @@ class Containerize():
 		CopyLogsToExecutor(mySSH, lSourcePath, build_log_name, lIpAddr, lUserName, lPassWord)
 		mySSH.close()
 
-		# Analyzing the logs
-		# Trying to identify the errors and warnings for each built images
-		imageNames1 = imageNames
-		base = ('ran-base','ran')
-		imageNames1.insert(0, base) 
-		for image,pattern in imageNames1:
-			files = {}
-			file_list = [f for f in os.listdir('build_log_' + self.testCase_id + '/' + image) if os.path.isfile(os.path.join('build_log_' + self.testCase_id + '/' + image, f)) and f.endswith('.txt')]
-			for fil in file_list:
-				errorandwarnings = {}
-				warningsNo = 0
-				errorsNo = 0
-				with open('build_log_{}/{}/{}'.format(self.testCase_id,image,fil), mode='r') as inputfile:
-					for line in inputfile:
-						result = re.search(' ERROR ', str(line))
-						if result is not None:
-							errorsNo += 1
-						result = re.search(' error:', str(line))
-						if result is not None:
-							errorsNo += 1
-						result = re.search(' WARNING ', str(line))
-						if result is not None:
-							warningsNo += 1
-						result = re.search(' warning:', str(line))
-						if result is not None:
-							warningsNo += 1
-					errorandwarnings['errors'] = errorsNo
-					errorandwarnings['warnings'] = warningsNo
-					errorandwarnings['status'] = status
-				files[fil] = errorandwarnings
-			# Let analyze the target image creation part
-			if os.path.isfile('build_log_{}/{}.log'.format(self.testCase_id,image)):
-				errorandwarnings = {}
-				with open('build_log_{}/{}.log'.format(self.testCase_id,image), mode='r') as inputfile:
-					startOfTargetImageCreation = False
-					buildStatus = False
-					for line in inputfile:
-						result = re.search('FROM .* [aA][sS] ' + image + '$', str(line))
-						if result is not None:
-							startOfTargetImageCreation = True
-						if startOfTargetImageCreation:
-							result = re.search('Successfully tagged ' + image + ':', str(line))
-							if result is not None:
-								buildStatus = True
-							result = re.search('COMMIT ' + image + ':', str(line))
-							if result is not None:
-								buildStatus = True
-					inputfile.close()
-					if buildStatus:
-						errorandwarnings['errors'] = 0
-					else:
-						errorandwarnings['errors'] = 1
-					errorandwarnings['warnings'] = 0
-					errorandwarnings['status'] = buildStatus
-					files['Target Image Creation'] = errorandwarnings
-			self.collectInfo[image] = files
+		# Analyze the logs
+		images = ['ran-base'] + [tpl[0] for tpl in imageNames]
+		collectInfo = AnalyzeBuildLogs(build_log_name, images, status)
 		
 		if status:
 			logging.info('\u001B[1m Building OAI Image(s) Pass\u001B[0m')
 			HTML.CreateHtmlTestRow(self.imageKind, 'OK', CONST.ALL_PROCESSES_OK)
-			HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
+			HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, self.allImagesSize)
 		else:
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
 			HTML.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
-			HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
+			HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, self.allImagesSize)
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
@@ -550,7 +548,8 @@ class Containerize():
 		errorandwarnings['warnings'] = 0
 		errorandwarnings['status'] = True
 		files['Target Image Creation'] = errorandwarnings
-		self.collectInfo['proxy'] = files
+		collectInfo = {}
+		collectInfo['proxy'] = files
 		mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
 		result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
 		if result is not None:
@@ -567,7 +566,7 @@ class Containerize():
 
 		logging.info('\u001B[1m Building L2sim Proxy Image Pass\u001B[0m')
 		HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
-		HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
+		HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, self.allImagesSize)
 
 	def Copy_Image_to_Test_Server(self, HTML):
 		imageTag = 'develop'
