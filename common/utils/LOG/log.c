@@ -542,11 +542,11 @@ static inline int log_header(log_component_t *c,
 
   char l[32];
   if (flag & FLAG_FILE_LINE && flag & FLAG_FUNCT )
-    snprintf(l, sizeof l, "(%s:%d) ", func, line);
+    snprintf(l, sizeof l, "(%.23s:%d) ", func, line);
   else if (flag & FLAG_FILE_LINE)
     snprintf(l, sizeof l, "(%d) ", line);
   else if (flag & FLAG_FUNCT)
-    snprintf(l, sizeof l, "(%s) ", func);
+    snprintf(l, sizeof l, "(%.28s) ", func);
   else
     l[0] = 0;
 
