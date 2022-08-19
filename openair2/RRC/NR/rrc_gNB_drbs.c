@@ -114,3 +114,9 @@ uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id) {
   LOG_E(RRC, "Error - All the DRBs are used - Handle this\n");
   return DRB_INACTIVE;
 }
+
+bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id) {
+  if(ue->DRB_active[drb_id-1] == DRB_ACTIVE)
+    return true;
+  return false;
+}
