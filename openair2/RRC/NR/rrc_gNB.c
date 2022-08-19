@@ -827,12 +827,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
       if(drb_id_add > MAX_DRBS_PER_PDUSESSION)
         break;
       uint8_t drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id);
-      NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_p,
-                                                  drb_id,
-                                                  &ue_context_pP->ue_context.pduSession[i],
-                                                  rrc->configuration.enable_sdap,
-                                                  rrc->security.do_drb_integrity,
-                                                  rrc->security.do_drb_ciphering);
 
       // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
       for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
@@ -861,13 +855,18 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
             ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_FAILED;
             ue_context_pP->ue_context.pduSession[i].xid = xid;
             pdu_sessions_done++;
-            free(DRB_config);
             continue;
         }
-      }
 
-      ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
-      ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
+        NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_p,
+                                                  drb_id,
+                                                  &ue_context_pP->ue_context.pduSession[i],
+                                                  rrc->configuration.enable_sdap,
+                                                  rrc->security.do_drb_integrity,
+                                                  rrc->security.do_drb_ciphering);
+        ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
+        ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
+      }
     }
 
     ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_DONE;
