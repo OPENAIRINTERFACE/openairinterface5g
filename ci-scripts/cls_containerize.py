@@ -49,6 +49,26 @@ import helpreadme as HELP
 import constants as CONST
 
 #-----------------------------------------------------------
+# Helper functions used here and in other classes
+# (e.g., cls_cluster.py)
+#-----------------------------------------------------------
+def CopyLogsToExecutor(sshSession, sourcePath, log_name, scpIp, scpUser, scpPw):
+	sshSession.command(f'cd {sourcePath}/cmake_targets', '\$', 5)
+	sshSession.command(f'rm -f {log_name}.zip', '\$', 5)
+	sshSession.command(f'mkdir -p {log_name}', '\$', 5)
+	sshSession.command(f'mv log/* {log_name}', '\$', 5)
+	sshSession.command(f'zip -r -qq {log_name}.zip {log_name}', '\$', 5)
+
+	# copy zip to executor for analysis
+	if (os.path.isfile(f'./{log_name}.zip')):
+		os.remove(f'./{log_name}.zip')
+	if (os.path.isdir(f'./{log_name}')):
+		shutil.rmtree(f'./{log_name}')
+	sshSession.copyin(scpIp, scpUser, scpPw, f'{sourcePath}/cmake_targets/{log_name}.zip', '.')
+	sshSession.command(f'rm -f {log_name}.zip','\$', 5)
+	ZipFile(f'{log_name}.zip').extractall('.')
+
+#-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
 class Containerize():
@@ -333,30 +353,19 @@ class Containerize():
 			# Now pruning dangling images in between target builds
 			mySSH.command(self.cli + ' image prune --force', '\$', 30)
 
-		# Analyzing the logs
-		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-
-		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip || true', '\$', 5)
-		if (os.path.isfile('./build_log_' + self.testCase_id + '.zip')):
-			os.remove('./build_log_' + self.testCase_id + '.zip')
-		if (os.path.isdir('./build_log_' + self.testCase_id)):
-			shutil.rmtree('./build_log_' + self.testCase_id)
-		mySSH.command('zip -r -qq build_log_' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
-		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '.zip', '.')
-		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
-		# Remove all intermediate build images
+		# Remove all intermediate build images and clean up
 		if self.ranAllowMerge and forceBaseImageBuild:
-			mySSH.command(self.cli + ' image rm ' + baseImage + ':' + baseTag + ' || true', '\$', 30)
-		mySSH.command(self.cli + ' image rm ran-build:' + imageTag + ' || true','\$', 30)
-		# Cleaning any created tmp volume
-		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
-		mySSH.close()
-		ZipFile('build_log_' + self.testCase_id + '.zip').extractall('.')
+			mySSH.command(f'{self.cli} image rm {baseImage}:{baseTag} || true', '\$', 30)
+		mySSH.command(f'{self.cli} image rm ran-build:{imageTag}','\$', 30)
+		mySSH.command(f'{self.cli} volume prune --force','\$', 15)
 
-		#Trying to identify the errors and warnings for each built images
+		# create a zip with all logs
+		build_log_name = f'build_log_{self.testCase_id}'
+		CopyLogsToExecutor(mySSH, lSourcePath, build_log_name, lIpAddr, lUserName, lPassWord)
+		mySSH.close()
+
+		# Analyzing the logs
+		# Trying to identify the errors and warnings for each built images
 		imageNames1 = imageNames
 		base = ('ran-base','ran')
 		imageNames1.insert(0, base) 
