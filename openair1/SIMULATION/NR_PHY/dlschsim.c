@@ -658,10 +658,10 @@ int main(int argc, char **argv)
 
 	if (ouput_vcd)
         vcd_signal_dumper_close();
+    end_configmodule();
+    loader_reset();
+    logTerm();
 
-  loader_reset();
-  logTerm();
-
-	return (n_errors);
+    return (n_errors);
 }
 
