@@ -702,6 +702,9 @@ class Containerize():
 		logging.debug(' -- ' + str(unhealthyNb) + ' unhealthy container(s)')
 		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
 
+		self.testCase_id = HTML.testCase_id
+		self.eNB_logFile[self.eNB_instance] = 'enb_' + self.testCase_id + '.log'
+
 		status = False
 		if healthyNb == 1:
 			cnt = 0
@@ -716,10 +719,11 @@ class Containerize():
 					status = True
 					logging.info('\u001B[1m Deploying OAI object Pass\u001B[0m')
 					time.sleep(10)
+		else:
+			# containers are unhealthy, so we won't start. However, logs are stored at the end
+			# in UndeployObject so we here store the logs of the unhealthy container to report it
+			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
 		mySSH.close()
-
-		self.testCase_id = HTML.testCase_id
-		self.eNB_logFile[self.eNB_instance] = 'enb_' + self.testCase_id + '.log'
 
 		if status:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
