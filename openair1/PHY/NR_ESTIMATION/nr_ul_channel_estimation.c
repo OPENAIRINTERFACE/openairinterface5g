@@ -984,10 +984,10 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
   const NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   const uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*NR_NB_SC_PER_RB;
 
-  uint8_t N_ap = 1<<srs_pdu->num_ant_ports;
-  uint8_t K_TC = 2<<srs_pdu->comb_size;
-  uint16_t m_SRS_b = srs_bandwidth_config[srs_pdu->config_index][srs_pdu->bandwidth_index][0];
-  uint16_t M_sc_b_SRS = m_SRS_b * NR_NB_SC_PER_RB/K_TC;
+  const uint8_t N_ap = 1<<srs_pdu->num_ant_ports;
+  const uint8_t K_TC = 2<<srs_pdu->comb_size;
+  const uint16_t m_SRS_b = srs_bandwidth_config[srs_pdu->config_index][srs_pdu->bandwidth_index][0];
+  const uint16_t M_sc_b_SRS = m_SRS_b * NR_NB_SC_PER_RB/K_TC;
   uint8_t fd_cdm = N_ap;
   if (N_ap == 4 && ((K_TC == 2 && srs_pdu->cyclic_shift >= 4) || (K_TC == 4 && srs_pdu->cyclic_shift >= 6))) {
     fd_cdm = 2;

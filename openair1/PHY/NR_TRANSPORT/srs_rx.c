@@ -56,9 +56,9 @@ void free_gNB_srs(NR_gNB_SRS_t *srs)
   free_and_zero(srs);
 }
 
-int nr_find_srs(uint16_t rnti,
-                int frame,
-                int slot,
+int nr_find_srs(rnti_t rnti,
+                frame_t frame,
+                slot_t slot,
                 PHY_VARS_gNB *gNB) {
 
   AssertFatal(gNB!=NULL,"gNB is null\n");
@@ -80,8 +80,8 @@ int nr_find_srs(uint16_t rnti,
 }
 
 void nr_fill_srs(PHY_VARS_gNB *gNB,
-                 int frame,
-                 int slot,
+                 frame_t frame,
+                 slot_t slot,
                  nfapi_nr_srs_pdu_t *srs_pdu) {
 
   int id = nr_find_srs(srs_pdu->rnti,frame,slot,gNB);
@@ -96,8 +96,8 @@ void nr_fill_srs(PHY_VARS_gNB *gNB,
 }
 
 int nr_get_srs_signal(PHY_VARS_gNB *gNB,
-                      int frame,
-                      int slot,
+                      frame_t frame,
+                      slot_t slot,
                       nfapi_nr_srs_pdu_t *srs_pdu,
                       nr_srs_info_t *nr_srs_info,
                       int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)]) {
@@ -107,17 +107,17 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
 #endif
 
   int32_t **rxdataF = gNB->common_vars.rxdataF;
-  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
+  const NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
 
-  uint16_t n_symbols = (slot&3)*frame_parms->symbols_per_slot;                    // number of symbols until this slot
-  uint8_t l0 = frame_parms->symbols_per_slot - 1 - srs_pdu->time_start_position;  // starting symbol in this slot
-  uint64_t symbol_offset = (n_symbols+l0)*frame_parms->ofdm_symbol_size;
-  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*NR_NB_SC_PER_RB;
+  const uint16_t n_symbols = (slot&3)*frame_parms->symbols_per_slot;                    // number of symbols until this slot
+  const uint8_t l0 = frame_parms->symbols_per_slot - 1 - srs_pdu->time_start_position;  // starting symbol in this slot
+  const uint64_t symbol_offset = (n_symbols+l0)*frame_parms->ofdm_symbol_size;
+  const uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_pdu->bwp_start*NR_NB_SC_PER_RB;
 
-  uint8_t N_ap = 1<<srs_pdu->num_ant_ports;
-  uint8_t N_symb_SRS = 1<<srs_pdu->num_symbols;
-  uint8_t K_TC = 2<<srs_pdu->comb_size;
-  uint16_t M_sc_b_SRS = srs_bandwidth_config[srs_pdu->config_index][srs_pdu->bandwidth_index][0] * NR_NB_SC_PER_RB/K_TC;
+  const uint8_t N_ap = 1<<srs_pdu->num_ant_ports;
+  const uint8_t N_symb_SRS = 1<<srs_pdu->num_symbols;
+  const uint8_t K_TC = 2<<srs_pdu->comb_size;
+  const uint16_t M_sc_b_SRS = srs_bandwidth_config[srs_pdu->config_index][srs_pdu->bandwidth_index][0] * NR_NB_SC_PER_RB/K_TC;
 
   int32_t *rx_signal;
   bool no_srs_signal = true;
