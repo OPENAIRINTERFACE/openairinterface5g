@@ -580,8 +580,16 @@ class Containerize():
 			lPassWord = self.eNB2Password
 		lSsh.open(lIpAddr, lUserName, lPassWord)
 		lSsh.command('docker save ' + self.imageToCopy + ':' + imageTag + ' | gzip --fast > ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
-		lSsh.copyin(lIpAddr, lUserName, lPassWord, '~/' + self.imageToCopy + '-' + imageTag + '.tar.gz', '.')
+		ret = lSsh.copyin(lIpAddr, lUserName, lPassWord, '~/' + self.imageToCopy + '-' + imageTag + '.tar.gz', '.')
+		if ret != 0:
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
+			self.exitStatus = 1
+			return False
 		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		if lSsh.getBefore().count('cannot remove'):
+			HTML.CreateHtmlTestRow('file not created by docker save', 'KO', CONST.ALL_PROCESSES_OK)
+			self.exitStatus = 1
+			return False
 		lSsh.close()
 
 		# Going to the Test Server
@@ -599,15 +607,26 @@ class Containerize():
 			lPassWord = self.eNB2Password
 		lSsh.open(lIpAddr, lUserName, lPassWord)
 		lSsh.copyout(lIpAddr, lUserName, lPassWord, './' + self.imageToCopy + '-' + imageTag + '.tar.gz', '~')
+		# copyout has no return code and will quit if something fails
 		lSsh.command('docker rmi ' + self.imageToCopy + ':' + imageTag, '\$', 10)
 		lSsh.command('docker load < ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		if lSsh.getBefore().count('o such file') or lSsh.getBefore().count('invalid tar header'):
+			logging.debug(lSsh.getBefore())
+			HTML.CreateHtmlTestRow('problem during docker load', 'KO', CONST.ALL_PROCESSES_OK)
+			self.exitStatus = 1
+			return False
 		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		if lSsh.getBefore().count('cannot remove'):
+			HTML.CreateHtmlTestRow('file not copied during scp?', 'KO', CONST.ALL_PROCESSES_OK)
+			self.exitStatus = 1
+			return False
 		lSsh.close()
 
 		if os.path.isfile('./' + self.imageToCopy + '-' + imageTag + '.tar.gz'):
 			os.remove('./' + self.imageToCopy + '-' + imageTag + '.tar.gz')
 
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		return True
 
 	def DeployObject(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':
