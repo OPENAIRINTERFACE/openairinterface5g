@@ -487,7 +487,8 @@ void init_gNB_Tpool(int inst) {
      threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
 
   LOG_I(PHY,"Creating thread for TX reordering and dispatching to RU\n");
-  threadCreate(&proc->pthread_tx_reorder, tx_reorder_thread, (void *)gNB, "thread_tx_reorder", gNB->RU_list[0]->tpcores[1], OAI_PRIORITY_RT_MAX);
+  threadCreate(&proc->pthread_tx_reorder, tx_reorder_thread, (void *)gNB, "thread_tx_reorder", 
+		  gNB->RU_list[0] ? gNB->RU_list[0]->tpcores[1] : -1, OAI_PRIORITY_RT_MAX);
 
 }
 
