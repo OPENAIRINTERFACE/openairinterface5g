@@ -76,6 +76,13 @@ uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols);
 int get_nb_periods_per_frame(uint8_t tdd_period);
 int get_supported_band_index(int scs, int band, int n_rbs);
 long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS);
+void get_samplerate_and_bw(int mu,
+                           int n_rb,
+                           int8_t threequarter_fs,
+                           double *sample_rate,
+                           unsigned int *samples_per_frame,
+                           double *tx_bw,
+                           double *rx_bw);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))

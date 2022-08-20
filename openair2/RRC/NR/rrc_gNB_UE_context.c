@@ -38,61 +38,6 @@
 
 
 //------------------------------------------------------------------------------
-void nr_uid_linear_allocator_init(
-  nr_uid_allocator_t *const uid_pP
-)
-//------------------------------------------------------------------------------
-{
-  memset(uid_pP, 0, sizeof(nr_uid_allocator_t));
-}
-
-//------------------------------------------------------------------------------
-uid_nr_t nr_uid_linear_allocator_new(gNB_RRC_INST *const rrc_instance_pP)
-//------------------------------------------------------------------------------
-{
-  unsigned int i;
-  unsigned int bit_index = 1;
-  uid_nr_t        uid = 0;
-  nr_uid_allocator_t *uia_p = &rrc_instance_pP->uid_allocator;
-
-  for (i=0; i < UID_LINEAR_ALLOCATOR_BITMAP_SIZE; i++) {
-    if (uia_p->bitmap[i] != UINT_MAX) {
-      bit_index = 1;
-      uid       = 0;
-
-      while ((uia_p->bitmap[i] & bit_index) == bit_index) {
-        bit_index = bit_index << 1;
-        uid       += 1;
-      }
-
-      uia_p->bitmap[i] |= bit_index;
-      return uid + (i*sizeof(unsigned int)*8);
-    } 
-  }
-
-  return UINT_MAX;
-}
-
-
-//------------------------------------------------------------------------------
-void
-nr_uid_linear_allocator_free(
-			     gNB_RRC_INST *rrc_instance_pP,
-			     uid_nr_t uidP
-)
-//------------------------------------------------------------------------------
-{
-  unsigned int i = uidP/sizeof(unsigned int)/8;
-  unsigned int bit = uidP % (sizeof(unsigned int) * 8);
-  unsigned int value = ~(0x00000001 << bit);
-
-  if (i < UID_LINEAR_ALLOCATOR_BITMAP_SIZE) {
-    rrc_instance_pP->uid_allocator.bitmap[i] &=  value;
-  }
-}
-
-
-//------------------------------------------------------------------------------
 int rrc_gNB_compare_ue_rnti_id(
   struct rrc_gNB_ue_context_s *c1_pP, struct rrc_gNB_ue_context_s *c2_pP)
 //------------------------------------------------------------------------------
@@ -130,7 +75,7 @@ rrc_gNB_allocate_new_UE_context(
   }
 
   memset(new_p, 0, sizeof(struct rrc_gNB_ue_context_s));
-  new_p->local_uid = nr_uid_linear_allocator_new(rrc_instance_pP);
+  new_p->local_uid = uid_linear_allocator_new(&rrc_instance_pP->uid_allocator);
 
   for(int i = 0; i < NB_RB_MAX; i++) {
     new_p->ue_context.e_rab[i].xid = -1;
@@ -177,12 +122,12 @@ void rrc_gNB_free_mem_UE_context(
 {
 
   LOG_T(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" Clearing UE context 0x%p (free internal structs)\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" Clearing UE context 0x%p (free internal structs)\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         ue_context_pP);
 
-  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_LTE_SCellToAddMod_r10, &ue_context_pP->ue_context.sCell_config[0]);
-  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_LTE_SCellToAddMod_r10, &ue_context_pP->ue_context.sCell_config[1]);
+  //ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_LTE_SCellToAddMod_r10, &ue_context_pP->ue_context.sCell_config[0]);
+  //ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_LTE_SCellToAddMod_r10, &ue_context_pP->ue_context.sCell_config[1]);
 
   // empty the internal fields of the UE context here
 }
@@ -195,25 +140,25 @@ void rrc_gNB_remove_ue_context(
 //------------------------------------------------------------------------------
 {
   if (rrc_instance_pP == NULL) {
-    LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Bad RRC instance\n",
-          PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+    LOG_E(RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Bad RRC instance\n",
+          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
     return;
   }
 
   if (ue_context_pP == NULL) {
-    LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Trying to free a NULL UE context\n",
-          PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+    LOG_E(RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Trying to free a NULL UE context\n",
+          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
     return;
   }
 
   RB_REMOVE(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_pP);
   rrc_gNB_free_mem_UE_context(ctxt_pP, ue_context_pP);
-  nr_uid_linear_allocator_free(rrc_instance_pP, ue_context_pP->local_uid);
+  uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->local_uid);
   free(ue_context_pP);
   rrc_instance_pP->Nb_ue --;
   LOG_I(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" Removed UE context\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+        PROTOCOL_NR_RRC_CTXT_UE_FMT" Removed UE context\n",
+        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
 }
 
 //-----------------------------------------------------------------------------

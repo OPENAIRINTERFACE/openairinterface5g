@@ -21,6 +21,9 @@
 
 #include "nr_sdap.h"
 
+uint8_t nas_qfi;
+uint8_t nas_pduid;
+
 bool sdap_data_req(protocol_ctxt_t *ctxt_p,
                    const srb_flag_t srb_flag,
                    const rb_id_t rb_id,
@@ -83,4 +86,10 @@ void sdap_data_ind(rb_id_t pdcp_entity,
                          rnti,
                          buf,
                          size);
+}
+
+void set_qfi_pduid(uint8_t qfi, uint8_t pduid){
+  nas_qfi = qfi;
+  nas_pduid = pduid;
+  return;
 }

@@ -34,6 +34,7 @@
 #include "rrc_proto.h"
 #include "assertions.h"
 #include "rrc_vars.h"
+#include "MAC/mac.h"
 
 typedef uint32_t channel_t;
 

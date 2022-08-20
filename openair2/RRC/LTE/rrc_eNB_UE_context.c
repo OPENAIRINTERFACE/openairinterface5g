@@ -37,64 +37,6 @@
 #include "rrc_eNB_UE_context.h"
 
 
-//------------------------------------------------------------------------------
-void
-uid_linear_allocator_init(
-  uid_allocator_t *const uid_pP
-)
-//------------------------------------------------------------------------------
-{
-  memset(uid_pP, 0, sizeof(uid_allocator_t));
-}
-
-//------------------------------------------------------------------------------
-uid_t
-uid_linear_allocator_new(
-  eNB_RRC_INST *const rrc_instance_pP
-)
-//------------------------------------------------------------------------------
-{
-  unsigned int i;
-  unsigned int bit_index = 1;
-  uid_t        uid = 0;
-  uid_allocator_t *uia_p = &rrc_instance_pP->uid_allocator;
-
-  for (i=0; i < UID_LINEAR_ALLOCATOR_BITMAP_SIZE; i++) {
-    if (uia_p->bitmap[i] != UINT_MAX) {
-      bit_index = 1;
-      uid       = 0;
-
-      while ((uia_p->bitmap[i] & bit_index) == bit_index) {
-        bit_index = bit_index << 1;
-        uid       += 1;
-      }
-
-      uia_p->bitmap[i] |= bit_index;
-      return uid + (i*sizeof(unsigned int)*8);
-    }
-  }
-
-  return UINT_MAX;
-}
-
-
-//------------------------------------------------------------------------------
-void
-uid_linear_allocator_free(
-  eNB_RRC_INST *rrc_instance_pP,
-  uid_t uidP
-)
-//------------------------------------------------------------------------------
-{
-  unsigned int i = uidP/sizeof(unsigned int)/8;
-  unsigned int bit = uidP % (sizeof(unsigned int) * 8);
-  unsigned int value = ~(0x00000001 << bit);
-
-  if (i < UID_LINEAR_ALLOCATOR_BITMAP_SIZE) {
-    rrc_instance_pP->uid_allocator.bitmap[i] &=  value;
-  }
-}
-
 
 //------------------------------------------------------------------------------
 int rrc_eNB_compare_ue_rnti_id(
@@ -134,7 +76,7 @@ rrc_eNB_allocate_new_UE_context(
   }
 
   memset(new_p, 0, sizeof(struct rrc_eNB_ue_context_s));
-  new_p->local_uid = uid_linear_allocator_new(rrc_instance_pP);
+  new_p->local_uid = uid_linear_allocator_new(&rrc_instance_pP->uid_allocator);
 
   for(int i = 0; i < NB_RB_MAX; i++) {
     new_p->ue_context.e_rab[i].xid = -1;
@@ -210,7 +152,7 @@ void rrc_eNB_remove_ue_context(
 
   RB_REMOVE(rrc_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_pP);
   rrc_eNB_free_mem_UE_context(ctxt_pP, ue_context_pP);
-  uid_linear_allocator_free(rrc_instance_pP, ue_context_pP->local_uid);
+  uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->local_uid);
   free(ue_context_pP);
   rrc_instance_pP->Nb_ue --;
   LOG_I(RRC,

@@ -262,10 +262,6 @@ void *rrc_enb_process_itti_msg(void *);
 #include <openair3/SCTP/sctp_eNB_task.h>
 #include <openair3/NGAP/ngap_gNB.h>
 
-#ifdef ITTI_SIM
-  #include <openair2/COMMON/itti_sim_messages_types.h>
-#endif
-
 /*
   static const char *const messages_definition_xml = {
   #include <messages_xml.h>
@@ -308,9 +304,11 @@ void *rrc_enb_process_msg(void *);
   TASK_DEF(TASK_BM,       TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_PHY_ENB,  TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_MAC_ENB,  TASK_PRIORITY_MED, 200, NULL, NULL)   \
+  TASK_DEF(TASK_MAC_GNB,  TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_RLC_ENB,  TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_RRC_ENB_NB_IoT,  TASK_PRIORITY_MED, 200, NULL, NULL) \
   TASK_DEF(TASK_PDCP_ENB, TASK_PRIORITY_MED, 200, NULL, NULL)   \
+  TASK_DEF(TASK_PDCP_GNB, TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_DATA_FORWARDING, TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_END_MARKER, TASK_PRIORITY_MED, 200, NULL, NULL)   \
   TASK_DEF(TASK_RRC_ENB,  TASK_PRIORITY_MED,  200, NULL,NULL)\

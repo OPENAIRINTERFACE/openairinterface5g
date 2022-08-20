@@ -19,48 +19,12 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_eNB_UE_context.h
- * \brief rrc procedures for UE context
- * \author Lionel GAUTHIER
- * \date 2015
- * \version 1.0
- * \company Eurecom
- * \email: lionel.gauthier@eurecom.fr
- */
-#ifndef __RRC_ENB_UE_CONTEXT_H__
-#define __RRC_ENB_UE_CONTEXT_H__
+#ifndef MAC_RRC_DL_HANDLER_H
+#define MAC_RRC_DL_HANDLER_H
 
-#include "collection/tree.h"
-#include "COMMON/platform_types.h"
-#include "rrc_defs.h"
+#include "platform_types.h"
+#include "f1ap_messages_types.h"
 
-int rrc_eNB_compare_ue_rnti_id(
-  struct rrc_eNB_ue_context_s* c1_pP,
-  struct rrc_eNB_ue_context_s* c2_pP
-);
+int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc);
 
-RB_PROTOTYPE(rrc_ue_tree_s, rrc_eNB_ue_context_s, entries, rrc_eNB_compare_ue_rnti_id);
-
-struct rrc_eNB_ue_context_s*
-rrc_eNB_allocate_new_UE_context(
-  eNB_RRC_INST* rrc_instance_pP
-);
-
-struct rrc_eNB_ue_context_s*
-rrc_eNB_get_ue_context(
-  eNB_RRC_INST* rrc_instance_pP,
-  rnti_t rntiP
-);
-
-struct rrc_eNB_ue_context_s *
-rrc_eNB_find_ue_context_from_gnb_rnti(
-  eNB_RRC_INST *rrc_instance_pP,
-  int gnb_rnti);
-
-void rrc_eNB_remove_ue_context(
-  const protocol_ctxt_t* const ctxt_pP,
-  eNB_RRC_INST*                rrc_instance_pP,
-  struct rrc_eNB_ue_context_s* ue_context_pP
-);
-
-#endif
+#endif /* MAC_RRC_DL_HANDLER_H */

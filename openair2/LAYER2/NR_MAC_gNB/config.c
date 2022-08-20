@@ -51,7 +51,6 @@
 
 extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
-extern void mac_top_init_gNB(void);
 extern uint8_t nfapi_mode;
 
 void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list,
