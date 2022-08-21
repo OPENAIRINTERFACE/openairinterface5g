@@ -302,7 +302,6 @@ int main(int argc, char **argv)
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
-  //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 0;
   uint16_t nb_rb = 50;
@@ -337,6 +336,7 @@ int main(int argc, char **argv)
   uint8_t transform_precoding = transformPrecoder_disabled; // 0 - ENABLE, 1 - DISABLE
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   uint8_t mcs_table = 0;
+  int ilbrm = 0;
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
@@ -375,6 +375,7 @@ int main(int argc, char **argv)
       nb_symb_sch = atoi(optarg);
       AssertFatal(nb_symb_sch > 0 && nb_symb_sch < 15,"start_symbol %d is not in 1..14\n",nb_symb_sch);
       break;
+
     case 'c':
       n_rnti = atoi(optarg);
       AssertFatal(n_rnti > 0 && n_rnti<=65535,"Illegal n_rnti %x\n",n_rnti);
@@ -476,7 +477,7 @@ int main(int argc, char **argv)
     case 'n':
       n_trials = atoi(optarg);
       break;
-      
+
     case 'p':
       extended_prefix_flag = 1;
       break;
@@ -561,7 +562,7 @@ int main(int argc, char **argv)
       break;
 
     case 'M':
-     // SSB_positions = atoi(optarg);
+      ilbrm = atoi(optarg);
       break;
       
     case 'N':
@@ -628,7 +629,6 @@ int main(int argc, char **argv)
       printf("-n Number of trials to simulate\n");
       printf("-p Use extended prefix mode\n");
       printf("-q MCS table\n");
-      printf("-t Delay spread for multipath channel\n");
       printf("-u Set the numerology\n");
       printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
@@ -640,7 +640,7 @@ int main(int argc, char **argv)
       printf("-G Offset of samples to read from file (0 default)\n");
       printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");
       printf("-I Maximum LDPC decoder iterations\n");
-      printf("-M Multiple SSB positions in burst\n");
+      printf("-M Use limited buffer rate-matching\n");
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
       printf("-R N_RB_DL\n");
@@ -922,6 +922,12 @@ int main(int argc, char **argv)
   printf("num dmrs sym %d\n",number_dmrs_symbols);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
 
+  uint32_t tbslbrm = 0;
+  if (ilbrm)
+    tbslbrm = nr_compute_tbslbrm(mcs_table,
+                                 N_RB_UL,
+                                 precod_nbr_layers);
+
   if ((UE->frame_parms.nb_antennas_tx==4)&&(precod_nbr_layers==4))
     num_dmrs_cdm_grps_no_data = 2;
 
@@ -1150,6 +1156,7 @@ int main(int argc, char **argv)
       pusch_pdu->uplink_frequency_shift_7p5khz = 0;
       pusch_pdu->start_symbol_index = start_symbol;
       pusch_pdu->nr_of_symbols = nb_symb_sch;
+      pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = tbslbrm;
       pusch_pdu->pusch_data.rv_index = rv_index;
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = trial & 0x1;
@@ -1210,6 +1217,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.dmrs_ports = ((1<<precod_nbr_layers)-1);
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.target_code_rate = code_rate;
+      ul_config.ul_config_list[0].pusch_config_pdu.tbslbrm = tbslbrm;
 
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS/8;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = trial & 0x1;

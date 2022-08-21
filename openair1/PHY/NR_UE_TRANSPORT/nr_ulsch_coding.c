@@ -381,7 +381,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
     start_meas(&ue->ulsch_rate_matching_stats);
-    if (nr_rate_matching_ldpc(0,
+    if (nr_rate_matching_ldpc(harq_process->pusch_pdu.tbslbrm,
                               harq_process->BG,
                               *pz,
                               harq_process->d[r],

@@ -497,10 +497,10 @@ int nr_rate_matching_ldpc_rx(uint32_t Tbslbrm,
   N = (BG==1)?(66*Z):(50*Z);
 
   if (Tbslbrm == 0)
-      Ncb = N;
+    Ncb = N;
   else {
-      Nref = (3*Tbslbrm/(2*C)); //R_LBRM = 2/3
-      Ncb = min(N, Nref);
+    Nref = (3*Tbslbrm/(2*C)); //R_LBRM = 2/3
+    Ncb = min(N, Nref);
   }
 
   ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
@@ -563,7 +563,6 @@ int nr_rate_matching_ldpc_rx(uint32_t Tbslbrm,
 #endif
     }
   }
-
 
   return 0;
 }

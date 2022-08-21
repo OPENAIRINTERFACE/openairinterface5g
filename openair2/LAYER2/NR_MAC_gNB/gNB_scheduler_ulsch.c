@@ -1683,7 +1683,21 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
-    pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = 0;
+    if(current_BWP->pusch_servingcellconfig &&
+       current_BWP->pusch_servingcellconfig->rateMatching) {
+      // TBS_LBRM according to section 5.4.2.1 of 38.212
+      long *maxMIMO_Layers = current_BWP->pusch_servingcellconfig->ext1->maxMIMO_Layers;
+      if (!maxMIMO_Layers)
+        maxMIMO_Layers = current_BWP->pusch_Config->maxRank;
+      AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
+      const int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, false, cg);
+      pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcs_table,
+                                                                           bw_tbslbrm,
+                                                                           *maxMIMO_Layers);
+    }
+    else
+     pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = 0;
 
     LOG_D(NR_MAC,"PUSCH PDU : data_scrambling_identity %x, dmrs_scrambling_id %x\n",pusch_pdu->data_scrambling_id,pusch_pdu->ul_dmrs_scrambling_id);
     /* TRANSFORM PRECODING --------------------------------------------------------*/

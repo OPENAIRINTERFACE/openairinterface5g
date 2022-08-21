@@ -113,6 +113,7 @@ typedef struct NR_UE_UL_BWP {
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
+  NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig;
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList;
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;

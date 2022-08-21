@@ -333,6 +333,7 @@ typedef struct
   //Resource Allocation in time domain
   uint8_t  start_symbol_index;
   uint8_t  nr_of_symbols;
+  uint32_t tbslbrm;
   //Optional Data only included if indicated in pduBitmap
   nfapi_nr_ue_pusch_data_t pusch_data;
   nfapi_nr_ue_pusch_uci_t  pusch_uci;
