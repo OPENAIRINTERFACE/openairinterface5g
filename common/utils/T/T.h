@@ -15,8 +15,8 @@
 #include "T_IDs.h"
 
 #define T_ACTIVE_STDOUT  2
-/* known type - this is where you add new types */
 
+/* known type - this is where you add new types */
 #define T_INT(x) int, (x)
 #define T_FLOAT(x) float, (x)
 #define T_BUFFER(x, len) buffer, ((T_buffer){addr:(x), length:(len)})
@@ -111,6 +111,7 @@ typedef struct {
 extern volatile int *T_freelist_head;
 extern T_cache_t *T_cache;
 extern int *T_active;
+
 #define T_GET_SLOT \
   T_LOCAL_busy = __sync_fetch_and_or(&T_cache[T_LOCAL_slot].busy, 0x01);
 
@@ -559,14 +560,12 @@ extern int *T_active;
     } \
   } while (0)
 
-
 #define CONFIG_HLP_TPORT         "tracer port\n"
 #define CONFIG_HLP_NOTWAIT       "don't wait for tracer, start immediately\n"
-#define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_STDOUT        "print log messges on console\n"
 
-
 #define TTRACER_CONFIG_PREFIX   "TTracer"
+
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            configuration parameters for TTRACE utility                                                          */
 /*   optname                     helpstr                paramflags           XXXptr           defXXXval                         type       numelt  */
@@ -575,15 +574,12 @@ extern int *T_active;
 #define CMDLINE_TTRACEPARAMS_DESC {  \
     {"T_port",                     CONFIG_HLP_TPORT,      0,                iptr:&T_port,        defintval:TTRACER_DEFAULT_PORTNUM, TYPE_INT,   0},\
     {"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,   iptr:&T_nowait,      defintval:0,                       TYPE_INT,   0},\
-    {"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,   iptr:&T_dont_fork,   defintval:0,                       TYPE_INT,   0},\
     {"T_stdout",                   CONFIG_HLP_STDOUT,     0,                iptr:&T_stdout,      defintval:1,                       TYPE_INT,   0},\
   }
 
-
-
-/* log on stdout */
-void T_init(int remote_port, int wait_for_tracer, int dont_fork);
+void T_init(int remote_port, int wait_for_tracer);
 void T_Config_Init(void);
+
 #else /* T_TRACER */
 
 /* if T_TRACER is not defined or is 0, the T is deactivated */

@@ -37,6 +37,8 @@
 #include "assertions.h"
 #include "PHY/defs_common.h"
 
+#define MAX_BWP_SIZE          275
+
 typedef struct nr_bandentry_s {
   int16_t band;
   uint64_t ul_min;
@@ -47,6 +49,11 @@ typedef struct nr_bandentry_s {
   uint64_t N_OFFs_DL;
   uint8_t deltaf_raster;
 } nr_bandentry_t;
+
+typedef enum frequency_range_e {
+  FR1 = 0,
+  FR2
+} frequency_range_t;
 
 extern const nr_bandentry_t nr_bandtable[];
 static inline int get_num_dmrs(uint16_t dmrs_mask ) {

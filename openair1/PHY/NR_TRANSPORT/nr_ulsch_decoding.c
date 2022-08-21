@@ -553,7 +553,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
 
     union ldpcReqUnion id = {.s={ulsch->rnti,frame,nr_tti_rx,0,0}};
-    notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(ldpcDecode_t), id.p, phy_vars_gNB->respDecode, nr_processULSegment_ptr);
+    notifiedFIFO_elt_t *req = newNotifiedFIFO_elt(sizeof(ldpcDecode_t), id.p, &phy_vars_gNB->respDecode, nr_processULSegment_ptr);
     ldpcDecode_t * rdata=(ldpcDecode_t *) NotifiedFifoData(req);
 
     rdata->gNB = phy_vars_gNB;
@@ -574,7 +574,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     rdata->ulsch = ulsch;
     rdata->ulsch_id = ULSCH_id;
     rdata->tbslbrm = pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes;
-    pushTpool(phy_vars_gNB->threadPool,req);
+    pushTpool(&phy_vars_gNB->threadPool, req);
     phy_vars_gNB->nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",phy_vars_gNB->nbDecode);
     r_offset += E;

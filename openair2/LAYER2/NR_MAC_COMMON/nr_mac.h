@@ -63,13 +63,7 @@
 #define NR_BCCH_BCH 5    // MIB
 #define CCCH_PAYLOAD_SIZE_MAX 512 
 #define RAR_PAYLOAD_SIZE_MAX  128
-#define MAX_BWP_SIZE          275
 #define MAX_CSI_REPORTCONFIG  48
-
-typedef enum frequency_range_e {
-  FR1 = 0,
-  FR2
-} frequency_range_t;
 
 #define NR_BSR_TRIGGER_NONE      (0) /* No BSR Trigger */
 #define NR_BSR_TRIGGER_REGULAR   (1) /* For Regular and ReTxBSR Expiry Triggers */

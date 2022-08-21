@@ -51,11 +51,11 @@ typedef struct {
 }loader_shlibdesc_t;
 
 typedef struct {
-   char               *mainexec_buildversion;
-   char               *shlibpath;
-   uint32_t           maxshlibs;
-   uint32_t           numshlibs;
-   loader_shlibdesc_t *shlibs;
+  char               *mainexec_buildversion;
+  char               *shlibpath;
+  uint32_t           maxshlibs;
+  uint32_t           numshlibs;
+  loader_shlibdesc_t *shlibs;
 }loader_data_t;
 
 /* function type of functions which may be implemented by a module */
@@ -79,8 +79,8 @@ loader_data_t loader_data;
 /*   optname               helpstr   paramflags           XXXptr	                           defXXXval	              type       numelt   check func*/
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOADER_PARAMS_DESC { \
-{"shlibpath",                NULL,    PARAMFLAG_NOFREE, strptr:(char **)&(loader_data.shlibpath), defstrval:DEFAULT_PATH,      TYPE_STRING, 0,    NULL},\
-{"maxshlibs",                NULL,    0,                uptr:&(loader_data.maxshlibs),            defintval:DEFAULT_MAXSHLIBS, TYPE_UINT32, 0,   NULL}\
+{"shlibpath",                NULL,    PARAMFLAG_NOFREE, strptr:&loader_data.shlibpath, defstrval:DEFAULT_PATH,      TYPE_STRING, 0,    NULL},\
+{"maxshlibs",                NULL,    0,                uptr:&(loader_data.maxshlibs),defintval:DEFAULT_MAXSHLIBS, TYPE_UINT32, 0,   NULL}\
 }
 
 /*-------------------------------------------------------------------------------------------------------------*/

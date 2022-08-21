@@ -29,6 +29,7 @@
  * \warning
  */
 #define _GNU_SOURCE
+#include <pthread.h>
 #include <libconfig.h>
 
 #include <string.h>
@@ -41,6 +42,7 @@
 #include "config_libconfig_private.h"
 #include "../config_userapi.h"
 #include "errno.h"
+#include "assertions.h"
 
 #if ( LIBCONFIG_VER_MAJOR == 1 && LIBCONFIG_VER_MINOR < 5)
   #define config_setting_lookup config_lookup_from
@@ -53,17 +55,18 @@ int read_strlist(paramdef_t *cfgoptions,config_setting_t *setting, char *cfgpath
   int st;
   int numelt;
   numelt=config_setting_length(setting);
-  config_check_valptr(cfgoptions,(char **)&(cfgoptions->strlistptr), sizeof(char *) * numelt);
+  config_check_valptr(cfgoptions, sizeof(char *), numelt);
   st=0;
-
+  AssertFatal(MAX_LIST_SIZE > numelt, 
+              "This piece of code use fixed size arry of constant #define MAX_LIST_SIZE %d\n", 
+              MAX_LIST_SIZE );
   for (int i=0; i< numelt ; i++) {
     str=config_setting_get_string_elem(setting,i);
 
     if (str==NULL) {
       printf("[LIBCONFIG] %s%i  not found in config file\n", cfgoptions->optname,i);
     } else {
-      config_check_valptr(cfgoptions,&(cfgoptions->strlistptr[i]),strlen(str)+1);
-      sprintf(cfgoptions->strlistptr[i],"%s",str);
+      snprintf(cfgoptions->strlistptr[i], DEFAULT_EXTRA_SZ, "%s",str);
       st++;
       printf_params("[LIBCONFIG] %s%i: %s\n", cfgpath,i,cfgoptions->strlistptr[i]);
     }
@@ -77,7 +80,8 @@ int read_intarray(paramdef_t *cfgoptions,config_setting_t *setting, char *cfgpat
   cfgoptions->numelt=config_setting_length(setting);
 
   if (cfgoptions->numelt > 0) {
-    cfgoptions->iptr=malloc(sizeof(int) * (cfgoptions->numelt));
+    cfgoptions->iptr=config_allocate_new(cfgoptions->numelt*sizeof(*cfgoptions->iptr),
+                                         !(cfgoptions->paramflags & PARAMFLAG_NOFREE) );
 
     for (int i=0; i< cfgoptions->numelt && cfgoptions->iptr != NULL; i++) {
       cfgoptions->iptr[i]=config_setting_get_int_elem(setting,i);
@@ -123,23 +127,14 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
     switch(cfgoptions[i].type) {
       case TYPE_STRING:
         if ( config_lookup_string(&(libconfig_privdata.cfg), cfgpath, (const char**)&str)) {
-          if ( cfgoptions[i].numelt > 0  && str != NULL && strlen(str) >= cfgoptions[i].numelt ) {
+          config_check_valptr(&(cfgoptions[i]), 1, strlen(str)+1);
+          if ( strlen(str)+1 > cfgoptions[i].numelt )
             fprintf(stderr,"[LIBCONFIG] %s:  %s exceeds maximum length of %i bytes, value truncated\n",
                     cfgpath,str,cfgoptions[i].numelt);
-            str[strlen(str)-1] = 0;
-          }
-
-          if (cfgoptions[i].numelt == 0 ) {
-            //          config_check_valptr(&(cfgoptions[i]), (char **)(&(cfgoptions[i].strptr)), sizeof(char *));
-            config_check_valptr(&(cfgoptions[i]), cfgoptions[i].strptr, strlen(str)+1);
-            sprintf( *(cfgoptions[i].strptr) , "%s", str);
-            printf_params("[LIBCONFIG] %s: \"%s\"\n", cfgpath,*(cfgoptions[i].strptr) );
-          } else {
-            sprintf( (char *)(cfgoptions[i].strptr) , "%s", str);
-            printf_params("[LIBCONFIG] %s: \"%s\"\n", cfgpath,(char *)cfgoptions[i].strptr );
-          }
+          snprintf( *cfgoptions[i].strptr , cfgoptions[i].numelt, "%s", str);
+          printf_params("[LIBCONFIG] %s: \"%s\"\n", cfgpath, *cfgoptions[i].strptr);
         } else {
-          defval=config_setdefault_string(&(cfgoptions[i]),prefix);
+          defval=config_setdefault_string(&cfgoptions[i],prefix);
         }
 
         break;
@@ -163,7 +158,7 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
       case TYPE_INT32:
       case TYPE_MASK:
         if ( config_lookup_int(&(libconfig_privdata.cfg),cfgpath, &u)) {
-          config_check_valptr(&(cfgoptions[i]), (char **)(&(cfgoptions[i].iptr)),sizeof(int32_t));
+          config_check_valptr(&(cfgoptions[i]), sizeof(*cfgoptions[i].iptr), 1);
           config_assign_int(&(cfgoptions[i]),cfgpath,u);
         } else {
           defval=config_setdefault_int(&(cfgoptions[i]),prefix);
@@ -174,14 +169,14 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
       case TYPE_UINT64:
       case TYPE_INT64:
         if ( config_lookup_int64(&(libconfig_privdata.cfg),cfgpath, &llu)) {
-          config_check_valptr(&(cfgoptions[i]), (char **)&(cfgoptions[i].i64ptr),sizeof(long long));
+          config_check_valptr(&cfgoptions[i], sizeof(*cfgoptions[i].i64ptr), 1);
 
           if(cfgoptions[i].type==TYPE_UINT64) {
             *(cfgoptions[i].u64ptr) = (uint64_t)llu;
-            printf_params("[LIBCONFIG] %s: %llu\n", cfgpath,(long long unsigned)(*(cfgoptions[i].u64ptr)) );
+            printf_params("[LIBCONFIG] %s: %lu\n", cfgpath,*cfgoptions[i].u64ptr);
           } else {
             *(cfgoptions[i].i64ptr) = llu;
-            printf_params("[LIBCONFIG] %s: %lld\n", cfgpath,(long long)(*(cfgoptions[i].i64ptr)) );
+            printf_params("[LIBCONFIG] %s: %ld\n", cfgpath,*cfgoptions[i].i64ptr);
           }
         } else {
           defval=config_setdefault_int64(&(cfgoptions[i]),prefix);
@@ -203,8 +198,8 @@ int config_libconfig_get(paramdef_t *cfgoptions,int numoptions, char *prefix ) {
 
       case TYPE_DOUBLE:
         if ( config_lookup_float(&(libconfig_privdata.cfg),cfgpath, &dbl)) {
-          config_check_valptr(&(cfgoptions[i]), (char **)&(cfgoptions[i].dblptr),sizeof(double));
-          *(cfgoptions[i].dblptr) = dbl;
+          config_check_valptr(&cfgoptions[i],sizeof(*cfgoptions[i].dblptr), 1);
+          *cfgoptions[i].dblptr = dbl;
           printf_params("[LIBCONFIG] %s: %lf\n", cfgpath,*(cfgoptions[i].dblptr) );
         } else {
           defval=config_setdefault_double(&(cfgoptions[i]),prefix);
@@ -304,27 +299,10 @@ int config_libconfig_getlist(paramlist_def_t *ParamList,
   }
 
   if (ParamList->numelt > 0 && params != NULL) {
-    ParamList->paramarray = malloc(ParamList->numelt * sizeof(paramdef_t *));
-
-    if ( ParamList->paramarray != NULL) {
-      config_get_if()->ptrs[config_get_if()->numptrs] = (char *)(ParamList->paramarray);
-      config_get_if()->numptrs++;
-    } else {
-      fprintf (stderr,"[LIBCONFIG] %s %d malloc error\n",__FILE__, __LINE__);
-      exit(-1);
-    }
+    ParamList->paramarray = config_allocate_new(ParamList->numelt * sizeof(paramdef_t *), true);
 
     for (i=0 ; i < ParamList->numelt ; i++) {
-      ParamList->paramarray[i] = malloc(numparams * sizeof(paramdef_t));
-
-      if ( ParamList->paramarray[i] != NULL) {
-        config_get_if()->ptrs[config_get_if()->numptrs] = (char *)(ParamList->paramarray[i]);
-        config_get_if()->numptrs++;
-      } else {
-        fprintf (stderr,"[LIBCONFIG] %s %d malloc error\n",__FILE__, __LINE__);
-        exit(-1);
-      }
-
+      ParamList->paramarray[i] = config_allocate_new(numparams * sizeof(paramdef_t), true);
       memcpy(ParamList->paramarray[i], params, sizeof(paramdef_t)*numparams);
 
       for (j=0; j<numparams; j++) {
@@ -346,8 +324,8 @@ int config_libconfig_init(char *cfgP[], int numP) {
   config_init(&(libconfig_privdata.cfg));
   libconfig_privdata.configfile = strdup((char *)cfgP[0]);
   config_get_if()->numptrs=0;
-  memset(config_get_if()->ptrs,0,sizeof(void *) * CONFIG_MAX_ALLOCATEDPTRS);
-  memset(config_get_if()->ptrsAllocated, 0, sizeof(config_get_if()->ptrsAllocated));
+  pthread_mutex_init(&config_get_if()->memBlocks_mutex, NULL);
+  memset(config_get_if()->oneBlock,0,sizeof(config_get_if()->oneBlock));
   /* search for include path parameter and set config file include path accordingly */
   for (int i=0; i<numP; i++) {
   	  if (strncmp(cfgP[i],"incp",4) == 0) {

@@ -283,6 +283,14 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   NR_UE_DL_BWP_t *current_BWP = &UE_info->current_DL_BWP;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
+  //TODO better implementation needed
+  //for now artificially set candidates for the required aggregation levels
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+
   uint8_t nr_of_candidates = 0;
   if (g_mcsIndex < 4) {
     find_aggregation_candidates(&sched_ctrl->aggregation_level,
@@ -1034,16 +1042,12 @@ int main(int argc, char **argv)
   snrRun = 0;
   int n_errs = 0;
 
-  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-  initTpool(gNBthreads, gNB->threadPool, true);
-  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->L1_tx_free);
-  initNotifiedFIFO(gNB->L1_tx_filled);
-  initNotifiedFIFO(gNB->L1_tx_out);
+  initTpool(gNBthreads, &gNB->threadPool, true);
+  initNotifiedFIFO(&gNB->L1_tx_free);
+  initNotifiedFIFO(&gNB->L1_tx_filled);
+  initNotifiedFIFO(&gNB->L1_tx_out);
   // we create 2 threads for L1 tx processing
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,processSlotTX);
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,&gNB->L1_tx_free,processSlotTX);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   init_DLSCH_struct(gNB, msgDataTx);
   msgDataTx->slot = slot;
@@ -1119,7 +1123,7 @@ int main(int argc, char **argv)
         Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[0];
         Sched_INFO.UL_dci_req  = NULL;
         Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
-        pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx);
+        pushNotifiedFIFO(&gNB->L1_tx_free,msgL1Tx);
         nr_schedule_response(&Sched_INFO);
 
         /* PTRS values for DLSIM calculations   */

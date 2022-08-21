@@ -95,7 +95,7 @@ typedef struct {
 /*   optname                     helpstr                paramflags                      XXXptr                           defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define DEVICE_RECPLAY_PARAMS_DESC {  \
-    {CONFIG_OPT_SF_FILE,      CONFIG_HLP_SF_FILE,   0,                strptr:(char **)((*recplay_conf)->u_sf_filename),   defstrval:DEF_SF_FILE,           TYPE_STRING,   1024}, \
+    {CONFIG_OPT_SF_FILE,      CONFIG_HLP_SF_FILE,   0,                strptr:&((*recplay_conf)->u_sf_filename),   defstrval:DEF_SF_FILE,           TYPE_STRING,   0}, \
     {CONFIG_OPT_SF_REC,       CONFIG_HLP_SF_REC,    PARAMFLAG_BOOL,   uptr:&(u_sf_record),                                defuintval:0,                    TYPE_UINT,   0}, \
     {CONFIG_OPT_SF_REP,       CONFIG_HLP_SF_REP,    PARAMFLAG_BOOL,   uptr:&(u_sf_replay),                                defuintval:0,                    TYPE_UINT,   0}, \
     {CONFIG_OPT_SF_MAX,       CONFIG_HLP_SF_MAX,    0,                uptr:&((*recplay_conf)->u_sf_max),                  defintval:DEF_NB_SF,             TYPE_UINT,   0}, \
@@ -105,7 +105,7 @@ typedef struct {
     {CONFIG_OPT_USE_MMAP,     CONFIG_HLP_USE_MMAP,  PARAMFLAG_BOOL,   uptr:&((*recplay_conf)->use_mmap),                  defuintval:1,                    TYPE_UINT,   0}, \
   }/*! \brief Record Player Configuration and state */
 typedef struct {
-  char            u_sf_filename[1024];              // subframes file path
+  char            *u_sf_filename;              // subframes file path
   unsigned int    u_sf_max ;                  // max number of recorded subframes
   unsigned int    u_sf_loops ;           // number of loops in replay mode
   unsigned int    u_sf_read_delay;   // read delay in replay mode

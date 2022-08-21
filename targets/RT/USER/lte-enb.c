@@ -106,7 +106,7 @@ struct timing_info_t {
 // Fix per CC openair rf/if device update
 // extern openair0_device openair0;
 
-extern volatile int oai_exit;
+extern int oai_exit;
 
 extern int transmission_mode;
 
