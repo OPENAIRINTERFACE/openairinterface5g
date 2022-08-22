@@ -86,7 +86,8 @@
 
 extern uint16_t sf_ahead;
 int macrlc_has_f1 = 0;
-extern ngran_node_t node_type;
+
+static ngran_node_t get_node_type(void);
 
 extern int config_check_band_frequencies(int ind, int16_t band, uint64_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
@@ -308,7 +309,9 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   int ssbmaplen = (int)scc->ssb_PositionsInBurst->present;
   uint8_t curr_bit;
 
-  AssertFatal(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap || ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap, "illegal ssbmaplen %d\n",ssbmaplen);
+  AssertFatal(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap ||
+              ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap ||
+              ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap, "illegal ssbmaplen %d\n",ssbmaplen);
 
   // changing endianicity of ssbmap and filling the ssb_PositionsInBurst buffers
   if(ssbmaplen==NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap){
@@ -352,12 +355,13 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   if (*scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder!=0)
     scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder = NULL;
 
-  // Prepare PDSCH-TimeDomainResourceAllocation list
-  nr_rrc_config_dl_tda(scc,
-                       scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList,
+  frame_type_t frame_type = get_frame_type((int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
+
+  // prepare DL Allocation lists
+  nr_rrc_config_dl_tda(scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList,
+                       frame_type, scc->tdd_UL_DL_ConfigurationCommon,
                        scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth);
 
-  frame_type_t frame_type = get_frame_type((int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
   if (frame_type == FDD) {
     ASN_STRUCT_FREE(asn_DEF_NR_TDD_UL_DL_ConfigCommon, scc->tdd_UL_DL_ConfigurationCommon);
     scc->tdd_UL_DL_ConfigurationCommon = NULL;
@@ -858,8 +862,6 @@ void RCconfig_NR_L1(void) {
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_CC[0]=%d for init_gNB_afterRU()\n", __FUNCTION__, RC.nb_nr_CC[0]);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_nr_macrlc_inst:%d because used by mac_top_init_gNB()\n", __FUNCTION__, RC.nb_nr_macrlc_inst);
 
-        mac_top_init_gNB();
-
         configure_nr_nfapi_pnf(RC.gNB[j]->eth_params_n.remote_addr,
                                RC.gNB[j]->eth_params_n.remote_portc,
                                RC.gNB[j]->eth_params_n.my_addr,
@@ -895,6 +897,7 @@ void RCconfig_nr_macrlc() {
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
 
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+  ngran_node_t node_type = get_node_type();
 
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
   int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
@@ -925,7 +928,7 @@ void RCconfig_nr_macrlc() {
   if ( MacRLC_ParamList.numelt > 0) {
 
     RC.nb_nr_macrlc_inst=MacRLC_ParamList.numelt; 
-    mac_top_init_gNB();   
+    mac_top_init_gNB(node_type);
     RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
 
     for (j=0;j<RC.nb_nr_macrlc_inst;j++) {
@@ -2359,8 +2362,8 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
   return(ret);
 }
 
-void set_node_type(void) {
-  int               j;
+static ngran_node_t get_node_type(void)
+{
   paramdef_t        MacRLC_Params[] = MACRLCPARAMS_DESC;
   paramlist_def_t   MacRLC_ParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
   paramdef_t        GNBParams[]  = GNBPARAMS_DESC;
@@ -2371,24 +2374,19 @@ void set_node_type(void) {
 
   if ( MacRLC_ParamList.numelt > 0) {
     RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt; 
-    for (j=0;j<RC.nb_nr_macrlc_inst;j++) {
+    for (int j = 0; j < RC.nb_nr_macrlc_inst; j++) {
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "f1") == 0) {
         macrlc_has_f1 = 1;
       }
     }
   }
 
-  if (strcmp(*(GNBParamList.paramarray[0][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
-      node_type = ngran_gNB_CU;
-    } else {
-      if (macrlc_has_f1 == 0) {
-        node_type = ngran_gNB;
-        LOG_I(NR_RRC,"Setting node_type to ngran_gNB\n");
-      } else {
-        node_type = ngran_gNB_DU;
-        LOG_I(NR_RRC,"Setting node_type to ngran_gNB_DU\n");
-      }
-    }
+  if (strcmp(*(GNBParamList.paramarray[0][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0)
+    return ngran_gNB_CU;
+  else if (macrlc_has_f1 == 0)
+    return ngran_gNB;
+  else
+    return ngran_gNB_DU;
 }
 
 void nr_read_config_and_init(void) {
@@ -2398,7 +2396,6 @@ void nr_read_config_and_init(void) {
 
   RCconfig_NR_L1();
   RCconfig_nr_prs();
-  set_node_type();
   RCconfig_nr_macrlc();
 
   LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);

@@ -18,6 +18,7 @@ if [[ -v USE_FDD_IF4P5_RCC ]]; then cp $PREFIX/etc/rcc.if4p5.fdd.conf $PREFIX/et
 if [[ -v USE_TDD_IF4P5_RCC ]]; then cp $PREFIX/etc/rcc.if4p5.tdd.conf $PREFIX/etc/enb.conf; fi
 if [[ -v USE_FDD_RRU ]]; then cp $PREFIX/etc/rru.fdd.conf $PREFIX/etc/enb.conf; fi
 if [[ -v USE_TDD_RRU ]]; then cp $PREFIX/etc/rru.tdd.conf $PREFIX/etc/enb.conf; fi
+if [[ -v USE_NFAPI_VNF ]]; then cp $PREFIX/etc/enb.nfapi.vnf.conf $PREFIX/etc/enb.conf; fi
 # Sometimes, the templates are not enough. We mount a conf file on $PREFIX/etc. It can be a template itself.
 if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/enb.conf; fi
 

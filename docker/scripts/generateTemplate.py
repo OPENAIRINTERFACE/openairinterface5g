@@ -65,6 +65,7 @@ def main():
                              "gNB_SA_CU.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "gNB_SA_DU.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "proxy_gnb.band78.sa.fr1.106PRB.usrpn310.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
+                             "proxy_rcc.band7.tm1.nfapi.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "proxy_nr-ue.nfapi.conf": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue.nfapi": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}',
                              "ue_sim_ci": f'{data[0]["paths"]["dest_dir"]}/{outputfilename}'

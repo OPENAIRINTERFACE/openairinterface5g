@@ -973,9 +973,6 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
       LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
     }
 
-#ifdef ITTI_SIM
-    return 0;
-#endif
   } else {
     struct rrc_eNB_ue_context_s *ue_context_p =
       rrc_eNB_get_ue_context(RC.rrc[instance], rnti);

@@ -532,6 +532,25 @@ class Containerize():
 			# don't delete such that we might recover the zips
 			#mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
 
+		# we do not analyze the logs (we assume the proxy builds fine at this stage),
+		# but need to have the following information to correctly display the HTML
+		files = {}
+		errorandwarnings = {}
+		errorandwarnings['errors'] = 0
+		errorandwarnings['warnings'] = 0
+		errorandwarnings['status'] = True
+		files['Target Image Creation'] = errorandwarnings
+		self.collectInfo['proxy'] = files
+		mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
+		result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
+		if result is not None:
+			imageSize = float(result.group('size')) / 1000000
+			logging.debug('\u001B[1m   proxy size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
+			self.allImagesSize['proxy'] = str(round(imageSize,1)) + ' Mbytes'
+		else:
+			logging.debug('proxy size is unknown')
+			self.allImagesSize['proxy'] = 'unknown'
+
 		# Cleaning any created tmp volume
 		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
 		mySSH.close()
@@ -914,12 +933,26 @@ class Containerize():
 		logging.debug(cmd)
 		subprocess.run(cmd, shell=True)
 
-		# if the containers are running, recover the logs!
+		# check which containers are running for log recovery later
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
 		logging.debug(cmd)
-		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+		deployStatusLogs = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
+
+		# Stop the containers to shut down objects
+		logging.debug('\u001B[1m Stopping containers \u001B[0m')
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml stop'
+		logging.debug(cmd)
+		try:
+			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
+		except Exception as e:
+			self.exitStatus = 1
+			logging.error('Could not stop containers')
+			HTML.CreateHtmlTestRow('Could not stop', 'KO', CONST.ALL_PROCESSES_OK)
+			logging.error('\u001B[1m Undeploying OAI Object(s) FAILED\u001B[0m')
+			return
+
 		anyLogs = False
-		for state in deployStatus.split('\n'):
+		for state in deployStatusLogs.split('\n'):
 			res = re.search('Name|----------', state)
 			if res is not None:
 				continue

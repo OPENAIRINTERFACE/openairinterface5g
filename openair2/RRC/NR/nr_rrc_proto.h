@@ -108,9 +108,9 @@ void
 rrc_gNB_generate_RRCSetup(
     const protocol_ctxt_t        *const ctxt_pP,
     rrc_gNB_ue_context_t         *const ue_context_pP,
-    OCTET_STRING_t               *masterCellGroup_from_DU,
-    NR_ServingCellConfigCommon_t *scc,
-    const int                    CC_id);
+    const uint8_t                *masterCellGroup,
+    int                           masterCellGroup_len,
+    NR_ServingCellConfigCommon_t *scc);
 
 int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2ap_ENDC_sgnb_addition_req_t *m);
 
@@ -174,17 +174,6 @@ int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
                                  const int             dl_bwp_id,
                                  const int             ul_bwp_id);
 
-int8_t nr_mac_rrc_data_ind(const module_id_t     module_idP,
-                           const int             CC_id,
-                           const frame_t         frameP,
-                           const sub_frame_t     sub_frameP,
-                           const int             UE_id,
-                           const rnti_t          rntiP,
-                           const rb_id_t         srb_idP,
-                           const uint8_t        *sduP,
-                           const sdu_size_t      sdu_lenP,
-                           const bool            brOption);
-
 int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP,
                                protocol_ctxt_t              *const ctxt_pP,
                                const int                    dl_bwp_id,
@@ -193,8 +182,8 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
 int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
                            const uint8_t      *buffer,
                            int                buffer_length,
-                           OCTET_STRING_t     *du_to_cu_rrc_container,
-                           const int          CC_id);
+                           const uint8_t      *du_to_cu_rrc_container,
+                           int                du_to_cu_rrc_container_length);
 
 void
 rrc_gNB_generate_dedicatedRRCReconfiguration_release(

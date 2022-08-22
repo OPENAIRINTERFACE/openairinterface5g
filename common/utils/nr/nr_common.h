@@ -37,6 +37,8 @@
 #include "assertions.h"
 #include "PHY/defs_common.h"
 
+#define MAX_BWP_SIZE          275
+
 typedef struct nr_bandentry_s {
   int16_t band;
   uint64_t ul_min;
@@ -47,6 +49,11 @@ typedef struct nr_bandentry_s {
   uint64_t N_OFFs_DL;
   uint8_t deltaf_raster;
 } nr_bandentry_t;
+
+typedef enum frequency_range_e {
+  FR1 = 0,
+  FR2
+} frequency_range_t;
 
 extern const nr_bandentry_t nr_bandtable[];
 static inline int get_num_dmrs(uint16_t dmrs_mask ) {
@@ -76,6 +83,13 @@ uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols);
 int get_nb_periods_per_frame(uint8_t tdd_period);
 int get_supported_band_index(int scs, int band, int n_rbs);
 long rrc_get_max_nr_csrs(uint8_t max_rbs, long b_SRS);
+void get_samplerate_and_bw(int mu,
+                           int n_rb,
+                           int8_t threequarter_fs,
+                           double *sample_rate,
+                           unsigned int *samples_per_frame,
+                           double *tx_bw,
+                           double *rx_bw);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))

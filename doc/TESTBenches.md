@@ -83,6 +83,9 @@ Webhook
   - caracal + N310
   - pure performance test through phy-test scheduler, see command line for more
     details
+- [RAN-L2-Sim-Test-5G](https://jenkins-oai.eurecom.fr/job/RAN-L2-Sim-Test-4G/)
+  - obelix (eNB, 1x UE, OAI EPC)
+  - L2simulator: skips physical layer and uses proxy between eNB and UE
 - [RAN-L2-Sim-Test-5G](https://jenkins-oai.eurecom.fr/job/RAN-L2-Sim-Test-5G/)
   - obelix (gNB, 1x UE, OAI 5GC)
   - L2simulator: skips physical layer and uses proxy between gNB and UE,

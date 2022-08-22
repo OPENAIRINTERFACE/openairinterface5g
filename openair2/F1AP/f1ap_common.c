@@ -35,27 +35,6 @@
 static f1ap_cudu_inst_t *f1_du_inst[NUMBER_OF_eNB_MAX]= {0};
 static f1ap_cudu_inst_t *f1_cu_inst[NUMBER_OF_eNB_MAX]= {0};
 
-#if defined(EMIT_ASN_DEBUG_EXTERN)
-int asn_debug = 0;
-int asn1_xer_print = 0;
-
-inline void ASN_DEBUG(const char *fmt, ...) {
-  if (asn_debug) {
-    int adi = asn_debug_indent;
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "[ASN1]");
-
-    while(adi--)
-      fprintf(stderr, " ");
-
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-    va_end(ap);
-  }
-}
-#endif
-
 uint8_t F1AP_get_next_transaction_identifier(instance_t enb_mod_idP, instance_t cu_mod_idP) {
   static uint8_t transaction_identifier[NUMBER_OF_eNB_MAX];
   transaction_identifier[enb_mod_idP+cu_mod_idP] =

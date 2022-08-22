@@ -142,6 +142,12 @@ class gtpEndPoints {
   pthread_mutex_t gtp_lock=PTHREAD_MUTEX_INITIALIZER;
   // the instance id will be the Linux socket handler, as this is uniq
   map<int, gtpEndPoint> instances;
+
+  ~gtpEndPoints() {
+    // automatically close all sockets on quit
+    for (const auto p : instances)
+      close(p.first);
+  }
 };
 
 gtpEndPoints globGtp;
@@ -184,7 +190,7 @@ static int gtpv1uCreateAndSendMsg(int h,
   // N should be 0 for us (it was used only in 2G and 3G)
   msgHdr->PN=npduNumFlag;
   msgHdr->S=seqNumFlag;
-  msgHdr->E = extHdrType;
+  msgHdr->E = extHdrType != NO_MORE_EXT_HDRS;
   msgHdr->spare=0;
   //PT=0 is for GTP' TS 32.295 (charging)
   msgHdr->PT=1;

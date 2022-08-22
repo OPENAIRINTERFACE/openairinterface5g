@@ -156,6 +156,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   AssertFatal( nb_connected_gNB <= NUMBER_OF_CONNECTED_gNB_MAX, "n_connected_gNB is too large" );
   // init phy_vars_ue
 
+  for (i=0; i<fp->Lmax; i++)
+    ue->measurements.ssb_rsrp_dBm[i] = INT_MIN;
+
   for (i=0; i<4; i++) {
     ue->rx_gain_max[i] = 135;
     ue->rx_gain_med[i] = 128;

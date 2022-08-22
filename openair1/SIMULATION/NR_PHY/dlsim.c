@@ -280,10 +280,17 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   NR_UE_info_t *UE_info = RC.nrmac[module_id]->UE_info.list[0];
   AssertFatal(RC.nrmac[module_id]->UE_info.list[1]==NULL, "can have only a single UE\n");
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
+  NR_UE_DL_BWP_t *current_BWP = &UE_info->current_DL_BWP;
   NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
-  const int target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  sched_ctrl->search_space = get_searchspace(NULL, scc, sched_ctrl->active_bwp ? sched_ctrl->active_bwp->bwp_Dedicated : NULL, target_ss);
+  //TODO better implementation needed
+  //for now artificially set candidates for the required aggregation levels
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n1;
+  sched_ctrl->search_space->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
+
   uint8_t nr_of_candidates = 0;
   if (g_mcsIndex < 4) {
     find_aggregation_candidates(&sched_ctrl->aggregation_level,
@@ -295,7 +302,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
                                 &nr_of_candidates,
                                 sched_ctrl->search_space,4);
   }
-  sched_ctrl->coreset = get_coreset(RC.nrmac[module_id], scc, sched_ctrl->active_bwp->bwp_Dedicated, sched_ctrl->search_space, target_ss);
   uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE_info->rnti);
   int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
                                       /* CC_id = */ 0,
@@ -309,11 +315,8 @@ void nr_dlsim_preprocessor(module_id_t module_id,
 
   NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
 
-  nr_set_pdsch_semi_static(NULL,
+  nr_set_pdsch_semi_static(current_BWP,
                            scc,
-                           UE_info->CellGroup,
-                           sched_ctrl->active_bwp,
-                           NULL,
                            /* tda = */ 0,
                            g_nrOfLayers,
                            sched_ctrl,
@@ -325,10 +328,10 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_pdsch->mcs = g_mcsIndex;
   /* the following might override the table that is mandated by RRC
    * configuration */
-  ps->mcsTableIdx = g_mcsTableIdx;
+  current_BWP->mcsTableIdx = g_mcsTableIdx;
 
-  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, ps->mcsTableIdx);
-  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, ps->mcsTableIdx);
+  sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
+  sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
@@ -356,7 +359,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   AssertFatal(sched_pdsch->rbStart >= 0, "invalid rbStart %d\n", sched_pdsch->rbStart);
   AssertFatal(sched_pdsch->rbSize > 0, "invalid rbSize %d\n", sched_pdsch->rbSize);
   AssertFatal(sched_pdsch->mcs >= 0, "invalid mcs %d\n", sched_pdsch->mcs);
-  AssertFatal(ps->mcsTableIdx >= 0 && ps->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", ps->mcsTableIdx);
+  AssertFatal(current_BWP->mcsTableIdx >= 0 && current_BWP->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", current_BWP->mcsTableIdx);
 }
 
 typedef struct {
@@ -764,7 +767,7 @@ int main(int argc, char **argv)
   RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
     RC.nb_nr_mac_CC[i] = 1;
-  mac_top_init_gNB();
+  mac_top_init_gNB(ngran_gNB);
   gNB_mac = RC.nrmac[0];
   gNB_RRC_INST rrc;
   memset((void*)&rrc,0,sizeof(rrc));
@@ -876,6 +879,8 @@ int main(int argc, char **argv)
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = RC.nrmac[0]->UE_info.list[0];
 
+  configure_UE_BWP(RC.nrmac[0], scc, &UE_info->UE_sched_ctrl, NULL, UE_info);
+
   // stub to configure frame_parms
   //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   // call MAC to configure common parameters
@@ -887,55 +892,22 @@ int main(int argc, char **argv)
   if (g_rbStart < 0) g_rbStart=0;
   if (g_rbSize < 0) g_rbSize = N_RB_DL - g_rbStart;
 
-  double fs,bw;
+  double fs,txbw,rxbw;
+  uint32_t samples;
 
-  if (mu == 0 && N_RB_DL == 25) {
-    fs = 7.68e6;
-    bw = 5e6;
-  }
-  else if (mu == 1 && N_RB_DL == 217) {
-    fs = 122.88e6;
-    bw = 80e6;
-  }
-  else if (mu == 1 && N_RB_DL == 245) {
-    fs = 122.88e6;
-    bw = 90e6;
-  }
-  else if (mu == 1 && N_RB_DL == 273) {
-    fs = 122.88e6;
-    bw = 100e6;
-  }
-  else if (mu == 1 && N_RB_DL == 106) { 
-    fs = 61.44e6;
-    bw = 40e6;
-  }
-  else if (mu == 1 && N_RB_DL == 133) {
-    fs = 61.44e6;
-    bw = 50e6;
-  }
-  else if (mu == 1 && N_RB_DL == 162) {
-    fs = 61.44e6;
-    bw = 60e6;
-  }
-  else if (mu == 1 && N_RB_DL == 24) {
-    fs = 15.36e6;
-    bw = 10e6;
-  }
-  else if (mu == 3 && N_RB_DL == 66) {
-    fs = 122.88e6;
-    bw = 100e6;
-  }
-  else if (mu == 3 && N_RB_DL == 32) {
-    fs = 61.44e6;
-    bw = 50e6;
-  }
-  else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
+  get_samplerate_and_bw(mu,
+                        N_RB_DL,
+                        frame_parms->threequarter_fs,
+                        &fs,
+                        &samples,
+                        &txbw,
+                        &rxbw);
 
   gNB2UE = new_channel_desc_scm(n_tx,
                                 n_rx,
                                 channel_model,
                                 fs/1e6,//sampling frequency in MHz
-				bw,
+				txbw,
 				30e-9,
                                 0,
                                 0,
@@ -1070,16 +1042,12 @@ int main(int argc, char **argv)
   snrRun = 0;
   int n_errs = 0;
 
-  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
-  initTpool(gNBthreads, gNB->threadPool, true);
-  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->L1_tx_free);
-  initNotifiedFIFO(gNB->L1_tx_filled);
-  initNotifiedFIFO(gNB->L1_tx_out);
+  initTpool(gNBthreads, &gNB->threadPool, true);
+  initNotifiedFIFO(&gNB->L1_tx_free);
+  initNotifiedFIFO(&gNB->L1_tx_filled);
+  initNotifiedFIFO(&gNB->L1_tx_out);
   // we create 2 threads for L1 tx processing
-  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_free,processSlotTX);
+  notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,&gNB->L1_tx_free,processSlotTX);
   processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
   init_DLSCH_struct(gNB, msgDataTx);
   msgDataTx->slot = slot;
@@ -1155,7 +1123,7 @@ int main(int argc, char **argv)
         Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[0];
         Sched_INFO.UL_dci_req  = NULL;
         Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
-        pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx);
+        pushNotifiedFIFO(&gNB->L1_tx_free,msgL1Tx);
         nr_schedule_response(&Sched_INFO);
 
         /* PTRS values for DLSIM calculations   */

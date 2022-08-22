@@ -922,6 +922,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                                          dlsch_config_pdu_1_0->start_symbol,
                                                          mappingtype,
                                                          1);
+
     dlsch_config_pdu_1_0->dmrsConfigType = (dl_dmrs_config != NULL) ?
                                            (dl_dmrs_config->dmrs_Type == NULL ? 0 : 1) : 0;
 
@@ -964,7 +965,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     if (mac->scc || mac->scc_SIB || mac->cg) {
       NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
                                               mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
-      bw_tbslbrm = get_bw_tbslbrm(&genericParameters, mac->cg);
+      int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      bw_tbslbrm = get_bw_tbslbrm(BWPSize, mac->cg);
     }
     else
       bw_tbslbrm = dlsch_config_pdu_1_0->BWPSize;
@@ -1404,7 +1406,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
     NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
                                             mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
-    int bw_tbslbrm = get_bw_tbslbrm(&genericParameters, mac->cg);
+    int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    int bw_tbslbrm = get_bw_tbslbrm(BWPSize, mac->cg);
     dlsch_config_pdu_1_1->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_1->mcs_table,
 			                               bw_tbslbrm,
 		                                       nl_tbslbrm);
@@ -1598,7 +1601,6 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
     // TODO verify if SR can be transmitted in this mode
     pucch_pdu->payload = (pucch->sr_payload << O_ACK) | pucch->ack_payload;
-
   }
   else if (pucch->pucch_resource != NULL) {
 
@@ -1799,8 +1801,6 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     default:
       AssertFatal(1==0,"Group hopping flag undefined (0,1,2) \n");
     }
-
-
 }
 
 
@@ -2195,7 +2195,8 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
           sched_frame = (sched_frame + 1) % 1024;
         }
         AssertFatal(sched_slot < slots_per_frame, "sched_slot was calculated incorrect %d\n", sched_slot);
-        LOG_D(PHY,"HARQ pid %d is active for %d.%d (dl_slot %d, feedback_to_ul %d, is_common %d\n",dl_harq_pid, sched_frame,sched_slot,current_harq->dl_slot,current_harq->feedback_to_ul,current_harq->is_common);
+        LOG_D(PHY,"HARQ pid %d is active for %d.%d (dl_slot %d, feedback_to_ul %d, is_common %d\n",
+              dl_harq_pid, sched_frame,sched_slot,current_harq->dl_slot,current_harq->feedback_to_ul,current_harq->is_common);
         /* check if current tx slot should transmit downlink acknowlegment */
         if (sched_frame == frame && sched_slot == slot) {
           if (get_softmodem_params()->emulate_l1) {
@@ -2616,27 +2617,31 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
       } else
         nb_meas = 2;
 
+      struct NR_CSI_SSB_ResourceSet__csi_SSB_ResourceList SSB_resource;
       for (int csi_ssb_idx = 0; csi_ssb_idx < csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.count; csi_ssb_idx++) {
         if (csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceSetId ==
             *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list.array[0])){
-
+          SSB_resource = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList;
           ///only one SSB resource set from spec 38.331 IE CSI-ResourceConfig
-          nb_ssb = csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list.array[csi_ssb_idx]->csi_SSB_ResourceList.list.count;
+          nb_ssb = SSB_resource.list.count;
           break;
         }
       }
 
       AssertFatal(nb_ssb>0,"No SSB found in the resource set\n");
+      AssertFatal(nb_meas==1,"PHY currently reports only the strongest SSB to MAC. Can't report more than 1 RSRP\n");
       int ssbri_bits = ceil(log2(nb_ssb));
-
-      //TODO measurement of multiple SSBs at PHY and indication to MAC
-      if(nb_ssb>1)
-        LOG_E(MAC, "In current implementation only the SSB of synchronization is measured at PHY. This works only for a single SSB scenario\n");
 
       int ssb_rsrp[2][nb_meas]; // the array contains index and RSRP of each SSB to be reported (nb_meas highest RSRPs)
 
       //TODO replace the following 2 lines with a function to order the nb_meas highest SSB RSRPs
-      ssb_rsrp[0][0] = mac->mib_ssb;
+      for (int i=0; i<nb_ssb; i++) {
+        if(*SSB_resource.list.array[i] == mac->mib_ssb) {
+          ssb_rsrp[0][0] = i;
+          break;
+        }
+      }
+      AssertFatal(*SSB_resource.list.array[ssb_rsrp[0][0]] == mac->mib_ssb, "Couldn't find corresponding SSB in csi_SSB_ResourceList\n");
       ssb_rsrp[1][0] = mac->ssb_rsrp_dBm;
 
       uint8_t ssbi;

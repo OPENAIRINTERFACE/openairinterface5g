@@ -134,7 +134,7 @@ notifiedFIFO_t         pdcp_sdu_list;
 pdcp_enb_t pdcp_enb[MAX_NUM_CCs];
 
 
-extern volatile int oai_exit;
+extern int oai_exit;
 
 pthread_t pdcp_stats_thread_desc;
 

@@ -374,7 +374,7 @@ class RANManagement():
 			mySSH.open(lIpAddr, lUserName, lPassWord)
 			eth_interface = 'any'
 			fltr = 'sctp'
-			logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
+			logging.debug('\u001B[1m Launching tshark on xNB on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
 			pcapfile = pcapfile_prefix + self.testCase_id + '_log.pcap'
 			mySSH.command('echo ' + lPassWord + ' | sudo -S rm -f /tmp/' + pcapfile , '\$', 5)
 			mySSH.command('echo $USER; nohup sudo -E tshark  -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + pcapfile + ' > /dev/null 2>&1 &','\$', 5)
@@ -390,7 +390,7 @@ class RANManagement():
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
 			eth_interface = 'any'
 			fltr = 'sctp'
-			logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
+			logging.debug('\u001B[1m Launching tshark on EPC on interface ' + eth_interface + ' with filter "' + fltr + '"\u001B[0m')
 			self.epcPcapFile = 'enb_' + self.testCase_id + '_s1log.pcap'
 			mySSH.command('echo ' + localEpcPassword + ' | sudo -S rm -f /tmp/' + self.epcPcapFile , '\$', 5)
 			mySSH.command('echo $USER; nohup sudo tshark -f "host ' + lIpAddr +'" -i ' + eth_interface + ' -f "' + fltr + '" -w /tmp/' + self.epcPcapFile + ' > /tmp/tshark.log 2>&1 &', localEpcUserName, 5)
@@ -517,7 +517,7 @@ class RANManagement():
 				localEpcUserName = EPC.UserName
 				localEpcPassword = EPC.Password
 				mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
-				logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+				logging.debug('\u001B[1m Stopping tshark on EPC \u001B[0m')
 				mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 				if self.epcPcapFile  != '':
 					mySSH.command('echo ' + localEpcPassword + ' | sudo -S chmod 666 /tmp/' + self.epcPcapFile, '\$', 5)
@@ -644,18 +644,16 @@ class RANManagement():
 				time.sleep(5)
 		mySSH.command('rm -f my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		#stopping tshark (valid if eNB and enabled in xml, will not harm otherwise)
-		logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+		logging.debug('\u001B[1m Stopping tshark on xNB \u001B[0m')
 		mySSH.command('echo ' + lPassWord + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 		time.sleep(1)
 		mySSH.close()
-		# If tracer options is on, stopping tshark on EPC side
-		result = re.search('T_stdout', str(self.Initialize_eNB_args))
-		if (result is not None):
+		if EPC.IPAddress != "none" and EPC.IPAddress != '':
 			localEpcIpAddr = EPC.IPAddress
 			localEpcUserName = EPC.UserName
 			localEpcPassword = EPC.Password
+			logging.debug('\u001B[1m Stopping tshark on EPC (' + localEpcIpAddr + ') \u001B[0m')
 			mySSH.open(localEpcIpAddr, localEpcUserName, localEpcPassword)
-			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
 			mySSH.command('echo ' + localEpcPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
 			time.sleep(1)
 			if self.epcPcapFile != '':
@@ -814,6 +812,7 @@ class RANManagement():
 		ULRetxIssue = False
 		nrRrcRcfgComplete = 0
 		harqFeedbackPast = 0
+		showedByeMsg = False # last line is Bye. -> stopped properly
 	
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
@@ -1026,6 +1025,12 @@ class RANManagement():
 				if result is not None:
 					gnb_markers[k].append(line_cnt)
 
+			# check whether e/gNB log finishes with "Bye." message
+			# Note that it is "=" not "|=" so not only is the regex
+			# asking for EOF (\Z) but we also only retain the last
+			# line's result
+			showedByeMsg = re.search(r'^Bye.\n\Z', str(line), re.MULTILINE) is not None
+
 		enb_log_file.close()
 
 
@@ -1209,6 +1214,13 @@ class RANManagement():
 				statMsg = 'No real time stats found in the log file\n'
 				logging.debug('No real time stats found in the log file')
 				htmleNBFailureMsg += statMsg
+
+			if not showedByeMsg:
+				logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB did not show "Bye." message at end, it likely did not stop properly! \u001B[0m')
+				htmleNBFailureMsg += 'No Bye. message found, did not stop properly\n'
+				global_status = CONST.ENB_SHUTDOWN_NO_BYE
+			else:
+				logging.debug('"Bye." message found at end.')
 
 		else:
 			#Removing UE log

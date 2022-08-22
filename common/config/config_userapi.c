@@ -52,59 +52,97 @@ configmodule_interface_t *config_get_if(void) {
   return cfgptr;
 }
 
-char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
-  if (ptr == NULL ) {
-    ptr = malloc(sizeof(char *));
+static int managed_ptr_sz(void* ptr) {
+  configmodule_interface_t * cfg=config_get_if();
+  AssertFatal(cfg->numptrs < CONFIG_MAX_ALLOCATEDPTRS,
+              "This code use fixed size array as #define CONFIG_MAX_ALLOCATEDPTRS %d\n",
+              CONFIG_MAX_ALLOCATEDPTRS);
+  int i;
+  pthread_mutex_lock(&cfg->memBlocks_mutex);
+  int numptrs=cfg->numptrs;
+  for (i=0; i<numptrs; i++ )
+    if (cfg->oneBlock[i].ptrs == ptr)
+      break;
+  pthread_mutex_unlock(&cfg->memBlocks_mutex);  
+  if ( i == numptrs )
+    return -1;
+  else
+    return cfg->oneBlock[i].sz;
+}
 
-    if (ptr != NULL) {
-      *ptr=NULL;
-      cfgoptions->strptr=ptr;
+void *config_allocate_new(int sz, bool autoFree) {
+  void *ptr = calloc(sz,1);  
+  AssertFatal(ptr, "calloc fails\n");
+  configmodule_interface_t * cfg=config_get_if();
+  // add the memory piece in the managed memory pieces list
+  pthread_mutex_lock(&cfg->memBlocks_mutex);
+  int newBlockIdx=cfg->numptrs++;
+  oneBlock_t* tmp=&cfg->oneBlock[newBlockIdx];
+  tmp->ptrs = (char *)ptr;
+  tmp->ptrsAllocated = true;
+  tmp->sz=sz;
+  tmp->toFree=autoFree;
+  pthread_mutex_unlock(&cfg->memBlocks_mutex);    
+  return ptr;
+}
 
-      if ( (cfgoptions->paramflags & PARAMFLAG_NOFREE) == 0) {
-        config_get_if()->ptrs[config_get_if()->numptrs] = (char *)ptr;
-	config_get_if()->ptrsAllocated[config_get_if()->numptrs] = true;
-        config_get_if()->numptrs++;
-      }
-    } else {
-      CONFIG_PRINTF_ERROR("[CONFIG] %s %d option %s, cannot allocate pointer: %s \n",
-                          __FILE__, __LINE__, cfgoptions->optname, strerror(errno));
+void config_check_valptr(paramdef_t *cfgoptions, int elt_sz, int nb_elt) {
+
+  const bool toFree=!(cfgoptions->paramflags & PARAMFLAG_NOFREE);
+
+  // let's see if the value has been read
+  // the datamodel is more difficult than it should be
+  // and it is not thread safe
+  if (cfgoptions->voidptr) {
+    int sz;
+    if ( cfgoptions-> type == TYPE_STRING)
+      sz=managed_ptr_sz(*cfgoptions->strptr);
+    else
+      sz=managed_ptr_sz(cfgoptions->voidptr);
+    if ( sz != -1 ) // the same variable pointer has been used!
+      cfgoptions->numelt=sz;
+  }
+        
+  if (cfgoptions->voidptr != NULL
+      && (cfgoptions->type == TYPE_INTARRAY
+          || cfgoptions->type == TYPE_UINTARRAY
+          ||  cfgoptions->type == TYPE_STRINGLIST )) {
+    int sz;
+    if ( cfgoptions->type == TYPE_STRING ||
+          cfgoptions->type == TYPE_STRINGLIST ) 
+      sz=managed_ptr_sz(*cfgoptions->strptr);
+    else
+      sz=managed_ptr_sz(cfgoptions->voidptr);
+    if ( sz != -1) {
+      CONFIG_PRINTF_ERROR("[CONFIG] %s NOT SUPPORTED not NULL pointer with array types", cfgoptions->optname);
+      return ;
     }
   }
 
-  printf_ptrs("[CONFIG] %s ptr: 0x%08lx requested size: %i\n",cfgoptions->optname,(uintptr_t)(ptr),length);
-
-  if(cfgoptions->numelt > 0 && PARAM_ISSCALAR(cfgoptions)  ) { /* already allocated */
-    if (*ptr != NULL) {
-      return *ptr;
+  if (cfgoptions->voidptr == NULL ) {
+    if (cfgoptions->type == TYPE_STRING) {
+      // difficult datamodel
+      cfgoptions->strptr = config_allocate_new(sizeof(*cfgoptions->strptr), toFree);
+    } else if ( cfgoptions->type == TYPE_STRINGLIST) {
+      AssertFatal(nb_elt<MAX_LIST_SIZE, 
+                  "This piece of code use fixed size arry of constant #define MAX_LIST_SIZE %d\n",
+                  MAX_LIST_SIZE );
+      cfgoptions->strlistptr= config_allocate_new(sizeof(char*)*MAX_LIST_SIZE, toFree);
+      for (int  i=0; i<MAX_LIST_SIZE; i++)
+        cfgoptions->strlistptr[i]= config_allocate_new(DEFAULT_EXTRA_SZ, toFree);
     } else {
-      CONFIG_PRINTF_ERROR("[CONFIG] %s %d option %s, definition error: value pointer is NULL, declared as %i bytes allocated\n",
-                          __FILE__, __LINE__,cfgoptions->optname, cfgoptions->numelt);
+      if ( cfgoptions->type == TYPE_INTARRAY || cfgoptions->type == TYPE_UINTARRAY )
+        nb_elt=max(nb_elt, MAX_LIST_SIZE); // make room if the list is larger than the default one
+      cfgoptions->voidptr = config_allocate_new(elt_sz*nb_elt, toFree);
     }
   }
 
-  if (*ptr == NULL) {
-    // LTS: dummy fix, waiting Francois full fix in 4G branch
-    // the issue is we don't know at this point the size we will get
-    // for parmeters on the command line, 
-    // The length sould probably managed, in a later version
-    // 100 is a very large value for a string parameter of today OAI
-    if (length<100)
-       length=100;
-    *ptr = malloc(length);
-
-    if ( *ptr != NULL) {
-      memset(*ptr,0,length);
-
-      if ( (cfgoptions->paramflags & PARAMFLAG_NOFREE) == 0) {
-        config_get_if()->ptrs[config_get_if()->numptrs] = *ptr;
-        config_get_if()->numptrs++;
-      }
-    } else {
-      CONFIG_PRINTF_ERROR("[CONFIG] %s %d malloc error\n",__FILE__, __LINE__);
-    }
+  if (cfgoptions->type == TYPE_STRING && *cfgoptions->strptr == NULL) {
+    *cfgoptions->strptr = config_allocate_new(nb_elt+DEFAULT_EXTRA_SZ, toFree);
+    cfgoptions->numelt=nb_elt+DEFAULT_EXTRA_SZ;
   }
 
-  return *ptr;
+  printf_ptrs("[CONFIG] %s ptr: %p requested size: elt_sz: %d, nb_elt: %d\n",cfgoptions->optname, cfgoptions->voidptr, elt_sz, nb_elt);
 }
 
 void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val) {
@@ -156,7 +194,7 @@ void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val) {
   }
 }
 void config_assign_processedint(paramdef_t *cfgoption, int val) {
-  cfgoption->processedvalue = malloc(sizeof(int));
+  cfgoption->processedvalue = config_allocate_new(sizeof(int),!(cfgoption->paramflags & PARAMFLAG_NOFREE));
 
   if (  cfgoption->processedvalue != NULL) {
     *(cfgoption->processedvalue) = val;
@@ -172,7 +210,7 @@ int config_get_processedint(paramdef_t *cfgoption) {
     ret=*(cfgoption->processedvalue);
     free( cfgoption->processedvalue);
     cfgoption->processedvalue=NULL;
-    printf_params("[CONFIG] %s:  set from %s to %i\n",cfgoption->optname, *(cfgoption->strptr), ret);
+    printf_params("[CONFIG] %s:  set from %s to %i\n",cfgoption->optname, *cfgoption->strptr, ret);
   } else {
     fprintf (stderr,"[CONFIG] %s %d %s has no processed integer availablle\n",__FILE__, __LINE__, cfgoption->optname);
     ret=0;
@@ -344,7 +382,7 @@ int config_check_intrange(paramdef_t *param) {
 
 void print_strvalueerror(paramdef_t *param, char *fname, char **okval, int numokval) {
   fprintf(stderr,"[CONFIG] %s: %s: %s invalid value, authorized values:\n       ",
-          fname,param->optname, *(param->strptr));
+          fname,param->optname, *param->strptr);
 
   for ( int i=0; i<numokval ; i++) {
     fprintf(stderr, " %s",okval[i]);
@@ -360,7 +398,7 @@ int config_check_strval(paramdef_t *param) {
   }
 
   for ( int i=0; i<param->chkPptr->s3.num_okstrval ; i++) {
-    if( strcasecmp(*(param->strptr),param->chkPptr->s3.okstrval[i] ) == 0) {
+    if( strcasecmp(*param->strptr,param->chkPptr->s3.okstrval[i] ) == 0) {
       return 0;
     }
   }
@@ -371,7 +409,7 @@ int config_check_strval(paramdef_t *param) {
 
 int config_checkstr_assign_integer(paramdef_t *param) {
   for (int i=0; i < param->chkPptr->s3a.num_okstrval ; i++) {
-    if (strcasecmp(*(param->strptr),param->chkPptr->s3a.okstrval[i]  ) == 0) {
+    if (strcasecmp(*param->strptr,param->chkPptr->s3a.okstrval[i]  ) == 0) {
       config_assign_processedint(param, param->chkPptr->s3a.setintval[i]);
       return 0;
     }
@@ -393,14 +431,14 @@ int config_setdefault_string(paramdef_t *cfgoptions, char *prefix) {
   if( cfgoptions->defstrval != NULL) {
     status=1;
 
-    if (cfgoptions->numelt == 0 ) {
-      config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(cfgoptions->defstrval)+1);
-      sprintf(*(cfgoptions->strptr), "%s",cfgoptions->defstrval);
-      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, *(cfgoptions->strptr));
-    } else {
-      sprintf((char *)(cfgoptions->strptr), "%s",cfgoptions->defstrval);
-      printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, (char *)(cfgoptions->strptr));
+    if (cfgoptions->numelt == 0 ) 
+      config_check_valptr(cfgoptions, 1, strlen(cfgoptions->defstrval)+1);
+    if ( cfgoptions->numelt < strlen(cfgoptions->defstrval)+1 ) {
+      CONFIG_PRINTF_ERROR("[CONFIG] %s size too small\n", cfgoptions->optname);
     }
+    snprintf(*cfgoptions->strptr, cfgoptions->numelt, "%s",cfgoptions->defstrval);
+    printf_params("[CONFIG] %s.%s set to default value \"%s\"\n", ((prefix == NULL) ? "" : prefix), cfgoptions->optname, *cfgoptions->strptr);
+    
   }
 
   return status;
@@ -422,7 +460,7 @@ int config_setdefault_stringlist(paramdef_t *cfgoptions, char *prefix) {
 
 int config_setdefault_int(paramdef_t *cfgoptions, char *prefix) {
   int status = 0;
-  config_check_valptr(cfgoptions, (char **)(&(cfgoptions->iptr)),sizeof(int32_t));
+  config_check_valptr(cfgoptions, sizeof(*cfgoptions->iptr), 1);
 
   if( ((cfgoptions->paramflags & PARAMFLAG_MANDATORY) == 0)) {
     config_assign_int(cfgoptions,cfgoptions->optname,cfgoptions->defintval);
@@ -435,7 +473,7 @@ int config_setdefault_int(paramdef_t *cfgoptions, char *prefix) {
 
 int config_setdefault_int64(paramdef_t *cfgoptions, char *prefix) {
   int status = 0;
-  config_check_valptr(cfgoptions, (char **)&(cfgoptions->i64ptr),sizeof(long long));
+  config_check_valptr(cfgoptions, sizeof(*cfgoptions->i64ptr), 1);
 
   if( ((cfgoptions->paramflags & PARAMFLAG_MANDATORY) == 0)) {
     *(cfgoptions->u64ptr)=cfgoptions->defuintval;
@@ -450,7 +488,7 @@ int config_setdefault_intlist(paramdef_t *cfgoptions, char *prefix) {
   int status = 0;
 
   if( cfgoptions->defintarrayval != NULL) {
-    config_check_valptr(cfgoptions,(char **)&(cfgoptions->iptr), sizeof(int32_t *));
+    config_check_valptr(cfgoptions, sizeof(cfgoptions->iptr), cfgoptions->numelt);
     cfgoptions->iptr=cfgoptions->defintarrayval;
     status=1;
 
@@ -464,7 +502,7 @@ int config_setdefault_intlist(paramdef_t *cfgoptions, char *prefix) {
 
 int config_setdefault_double(paramdef_t *cfgoptions, char *prefix) {
   int status = 0;
-  config_check_valptr(cfgoptions, (char **)&(cfgoptions->dblptr),sizeof(double));
+  config_check_valptr(cfgoptions, sizeof(*cfgoptions->dblptr), 1);
 
   if( ((cfgoptions->paramflags & PARAMFLAG_MANDATORY) == 0)) {
     *(cfgoptions->dblptr)=cfgoptions->defdblval;
@@ -476,7 +514,7 @@ int config_setdefault_double(paramdef_t *cfgoptions, char *prefix) {
 }
 
 int config_assign_ipv4addr(paramdef_t *cfgoptions, char *ipv4addr) {
-  config_check_valptr(cfgoptions,(char **)&(cfgoptions->uptr), sizeof(int));
+  config_check_valptr(cfgoptions, sizeof(*cfgoptions->uptr), 1);
   int rst=inet_pton(AF_INET, ipv4addr,cfgoptions->uptr );
 
   if (rst == 1 && *(cfgoptions->uptr) > 0) {

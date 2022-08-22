@@ -824,17 +824,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
         case ngran_gNB:
         {
           // rrc_mac_config_req_gNB
-#ifdef ITTI_SIM
-        uint8_t *message_buffer;
-        message_buffer = itti_malloc (TASK_RRC_GNB, TASK_RRC_UE_SIM, length);
-        memcpy (message_buffer, buffer, length);
-        MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, GNB_RRC_DCCH_DATA_IND);
-        GNB_RRC_DCCH_DATA_IND (message_p).rbid = DCCH;
-        GNB_RRC_DCCH_DATA_IND (message_p).sdu = message_buffer;
-        GNB_RRC_DCCH_DATA_IND (message_p).size  = length;
-        itti_send_msg_to_task (TASK_RRC_UE_SIM, instance, message_p);
-        LOG_I(NR_RRC, "Send DL NAS message \n");
-#else
           /* Transfer data to PDCP */
           nr_rrc_data_req (
               &ctxt,
@@ -844,7 +833,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
               length,
               buffer,
               PDCP_TRANSMISSION_MODE_CONTROL);
-#endif
         }
           break;
 
