@@ -1000,7 +1000,7 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
 
   int16_t ls_estimated[2];
 
-  uint8_t mem_offset = ((long)&srs_estimated_channel_freq[0][0][subcarrier_offset + nr_srs_info->k_0_p[0][0]]) & 0xF;
+  uint8_t mem_offset = ((16 - ((long)&srs_estimated_channel_freq[0][0][subcarrier_offset + nr_srs_info->k_0_p[0][0]])) & 0xF) >> 2; // >> 2 <=> /sizeof(int32_t)
   int32_t srs_est[frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols) + mem_offset] __attribute__ ((aligned(32)));
 
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
