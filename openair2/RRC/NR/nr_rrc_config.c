@@ -352,8 +352,8 @@ long rrc_get_max_nr_csrs(const uint8_t max_rbs, const long b_SRS) {
 }
 
 void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
-                const int curr_bwp,
                 const NR_UE_NR_Capability_t *uecap,
+                const int curr_bwp,
                 const int uid,
                 const int res_id,
                 const int do_srs) {
@@ -1137,6 +1137,7 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
 
   ubwp->bwp_Dedicated->srs_Config = calloc(1,sizeof(*ubwp->bwp_Dedicated->srs_Config));
   config_srs(ubwp->bwp_Dedicated->srs_Config,
+             NULL,
              curr_bwp,
              uid,
              bwp_loop+1,
