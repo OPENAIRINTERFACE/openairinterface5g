@@ -983,13 +983,14 @@ typedef uint8_t(encoder_if_t)(uint8_t *input,
                               uint8_t *output,
                               uint8_t F);
 
+extern int oai_exit;
 
 static inline void wait_sync(char *thread_name) {
   int rc;
   printf( "waiting for sync (%s,%d/%p,%p,%p)\n",thread_name,sync_var,&sync_var,&sync_cond,&sync_mutex);
   AssertFatal((rc = pthread_mutex_lock( &sync_mutex ))==0,"sync mutex lock error");
 
-  while (sync_var<0)
+  while (sync_var<0 && !oai_exit)
     pthread_cond_wait( &sync_cond, &sync_mutex );
 
   AssertFatal((rc = pthread_mutex_unlock( &sync_mutex ))==0,"sync mutex unlock error");
@@ -1012,7 +1013,7 @@ static inline int wakeup_thread(pthread_mutex_t *mutex,
   int sleep_cnt=0;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"wakeup_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  while (*instance_cnt == 0) {
+  while (*instance_cnt == 0 && !oai_exit) {
     AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
     sleep_cnt++;
 
@@ -1047,7 +1048,7 @@ static inline int timedwait_on_condition(pthread_mutex_t *mutex,
   struct timespec now, abstime;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] timedwait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  while (*instance_cnt < 0) {
+  while (*instance_cnt < 0 && !oai_exit) {
     clock_gettime(CLOCK_REALTIME, &now);
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
@@ -1074,7 +1075,7 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,
   int rc;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  while (*instance_cnt < 0) {
+  while (*instance_cnt < 0 && !oai_exit) {
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
     pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
@@ -1092,7 +1093,7 @@ static inline int wait_on_busy_condition(pthread_mutex_t *mutex,
   int rc;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_busy_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  while (*instance_cnt == 0) {
+  while (*instance_cnt == 0 && !oai_exit) {
     // most of the time the thread will skip this
     // waits only if proc->instance_cnt_rxtx is 0
     pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again

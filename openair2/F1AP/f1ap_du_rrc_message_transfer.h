@@ -50,7 +50,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
     rnti_t          rntiP,
     const uint8_t   *sduP,
     sdu_size_t      sdu_lenP,
-    const char   *sdu2P,
+    const uint8_t   *sdu2P,
     sdu_size_t      sdu2_lenP);
 
 #endif /* F1AP_DU_RRC_MESSAGE_TRANSFER_H_ */

@@ -41,7 +41,7 @@
 #include "common/config/config_paramdesc.h"
 #include "common/utils/T/T.h"
 #define CONFIG_MAX_OOPT_PARAMS    10     // maximum number of parameters in the -O option (-O <cfgmode>:P1:P2...
-#define CONFIG_MAX_ALLOCATEDPTRS  1024   // maximum number of parameters that can be dynamicaly allocated in the config module
+#define CONFIG_MAX_ALLOCATEDPTRS  2048   // maximum number of parameters that can be dynamicaly allocated in the config module
 
 /* default values for configuration module parameters */
 #define CONFIG_LIBCONFIGFILE        "libconfig"  // use libconfig file
@@ -62,6 +62,14 @@ typedef int(*configmodule_initfunc_t)(char *cfgP[],int numP);
 typedef int(*configmodule_getfunc_t)(paramdef_t *,int numparams, char *prefix);
 typedef int(*configmodule_getlistfunc_t)(paramlist_def_t *, paramdef_t *,int numparams, char *prefix);
 typedef void(*configmodule_endfunc_t)(void);
+
+typedef struct oneBlock_s{
+    void *ptrs;
+    int sz;
+    bool toFree;
+    bool ptrsAllocated;
+} oneBlock_t;
+
 typedef struct configmodule_interface {
   int      argc;
   char     **argv;
@@ -73,10 +81,10 @@ typedef struct configmodule_interface {
   configmodule_getfunc_t          get;
   configmodule_getlistfunc_t      getlist;
   configmodule_endfunc_t          end;
+  pthread_mutex_t  memBlocks_mutex;
   uint32_t numptrs;
   uint32_t rtflags;
-  char     *ptrs[CONFIG_MAX_ALLOCATEDPTRS];
-  bool ptrsAllocated[CONFIG_MAX_ALLOCATEDPTRS];
+  oneBlock_t oneBlock[CONFIG_MAX_ALLOCATEDPTRS];
 } configmodule_interface_t;
 
 #ifdef CONFIG_LOADCONFIG_MAIN
@@ -112,7 +120,15 @@ extern configmodule_interface_t *cfgptr;
 
 #define CONFIG_ENABLECMDLINEONLY  (1<<1)
 extern configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags);
+/* free ressources used to read parameters, keep memory 
+ * allocated for parameters values which has been defined with the PARAMFLAG_NOFREE flag
+ * should be used as soon as there is no need to read parameters but doesn't prevent
+ * a new config module init
+*/
 extern void end_configmodule(void);
+/* free all config module memory, to be used at end of program as
+ * it will free parameters values even those specified with the PARAMFLAG_NOFREE flag */
+extern void free_configmodule(void);
 #define CONFIG_PRINTF_ERROR(f, x... ) if (isLogInitDone ()) { LOG_E(ENB_APP,f,x);} else {printf(f,x);}; if ( !CONFIG_ISFLAGSET(CONFIG_NOABORTONCHKF) ) exit_fun("exit because configuration failed\n");
 
 

@@ -177,8 +177,6 @@ Options:
   Enable the address sanitizer on all targets
 --sanitize-undefined | -fsanitize=undefined
   Enable the undefined behavior sanitizer on all targets
---ittiSIM
-  Makes the itti simulator
 -h | --help
    Print this help
 
@@ -465,11 +463,6 @@ function main() {
         --sanitize-undefined | -fundefined=address)
             CMAKE_CMD="$CMAKE_CMD -DSANITIZE_UNDEFINED=True"
             shift;;
-        --ittiSIM)
-            ittiSIM=1
-            CMAKE_CMD="$CMAKE_CMD -DITTI_SIM=True"
-            echo_info "Will compile itti simulator"
-            shift;;
         -h | --help)
             print_help
             exit 1;;
@@ -622,9 +615,6 @@ function main() {
   fi
   if [ "$nrUE" = 1 ] ; then
       execlist="$execlist nr-uesoftmodem"
-  fi
-  if [ "$ittiSIM" = "1" ] ; then
-      execlist="$execlist nr-ittisim"
   fi
 
   if [[ "$execlist" == "" && "$SIMUS_PHY" != "1" ]]; then

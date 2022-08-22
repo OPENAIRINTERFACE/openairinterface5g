@@ -137,9 +137,9 @@ extern "C"
 
 extern int usrp_tx_thread;
 #define CMDLINE_PARAMS_DESC {  \
-    {"rf-config-file",       CONFIG_HLP_RFCFGF,       0,              strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,        TYPE_STRING, sizeof(RF_CONFIG_FILE)},\
-    {"split73",              CONFIG_HLP_SPLIT73,      0,              strptr:(char **)&SPLIT73,           defstrval:NULL,        TYPE_STRING, sizeof(SPLIT73)},       \
-    {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:(char **)&TP_CONFIG,         defstrval:"n",         TYPE_STRING, sizeof(TP_CONFIG)},     \
+    {"rf-config-file",       CONFIG_HLP_RFCFGF,       0,              strptr:&RF_CONFIG_FILE,    defstrval:NULL,        TYPE_STRING, 0},\
+    {"split73",              CONFIG_HLP_SPLIT73,      0,              strptr:&SPLIT73,           defstrval:NULL,        TYPE_STRING, 0},       \
+    {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:&TP_CONFIG,         defstrval:"n",         TYPE_STRING, 0},     \
     {"phy-test",             CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&PHY_TEST,                     defintval:0,           TYPE_INT,    0},                     \
     {"do-ra",                CONFIG_HLP_DORA,         PARAMFLAG_BOOL, iptr:&DO_RA,                        defintval:0,           TYPE_INT,    0},                     \
     {"sa",                   CONFIG_HLP_SA,           PARAMFLAG_BOOL, iptr:&SA,                           defintval:0,           TYPE_INT,    0},                     \
@@ -157,8 +157,8 @@ extern int usrp_tx_thread;
     {"numerology" ,          CONFIG_HLP_NUMEROLOGY,   PARAMFLAG_BOOL, iptr:&NUMEROLOGY,                   defintval:1,           TYPE_INT,    0},                     \
     {"band" ,                CONFIG_HLP_BAND,         PARAMFLAG_BOOL, iptr:&BAND,                         defintval:78,          TYPE_INT,    0},                     \
     {"emulate-rf" ,          CONFIG_HLP_EMULATE_RF,   PARAMFLAG_BOOL, iptr:&EMULATE_RF,                   defintval:0,           TYPE_INT,    0},                     \
-    {"parallel-config",      CONFIG_HLP_PARALLEL_CMD, 0,              strptr:(char **)&parallel_config,   defstrval:NULL,        TYPE_STRING, 0},                     \
-    {"worker-config",        CONFIG_HLP_WORKER_CMD,   0,              strptr:(char **)&worker_config,     defstrval:NULL,        TYPE_STRING, 0},                     \
+    {"parallel-config",      CONFIG_HLP_PARALLEL_CMD, 0,              strptr:&parallel_config,   defstrval:NULL,        TYPE_STRING, 0},                     \
+    {"worker-config",        CONFIG_HLP_WORKER_CMD,   0,              strptr:&worker_config,     defstrval:NULL,        TYPE_STRING, 0},                     \
     {"noS1",                 CONFIG_HLP_NOS1,         PARAMFLAG_BOOL, uptr:&noS1,                         defintval:0,           TYPE_INT,    0},                     \
     {"rfsim",                CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&rfsim,                        defintval:0,           TYPE_INT,    0},                     \
     {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_INT,    0},                     \
@@ -189,7 +189,7 @@ extern int usrp_tx_thread;
     {CONFIG_FLOG_OPT ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,           defintval:1,         TYPE_INT,      0},     \
     {CONFIG_LOGL_OPT ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,                    defintval:0,         TYPE_UINT,     0},     \
 	{"telnetsrv",                CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,               defintval:0,         TYPE_UINT,     0},     \
-	{"log-mem",                  NULL,            0,                strptr:(char **)&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
+	{"log-mem",                  NULL,            0,                strptr:&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
 	{"telnetclt",                NULL,            0,                uptr:&start_telnetclt,               defstrval:NULL,      TYPE_UINT,     0},     \
   }
 
@@ -242,9 +242,9 @@ extern int usrp_tx_thread;
 typedef struct {
   uint64_t       optmask;
   //THREAD_STRUCT  thread_struct;
-  char           rf_config_file[1024];
-  char           split73[1024];
-  char           threadPoolConfig[1024];
+  char           *rf_config_file;
+  char           *split73;
+  char           *threadPoolConfig;
   int            phy_test;
   int            do_ra;
   int            sa;
@@ -283,7 +283,7 @@ extern int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 extern int usrp_tx_thread;
 extern uint16_t sl_ahead;
 extern uint16_t sf_ahead;
-extern volatile int  oai_exit;
+extern int oai_exit;
 
 void tx_func(void *param);
 void rx_func(void *param);

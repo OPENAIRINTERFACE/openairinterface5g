@@ -312,16 +312,12 @@ int nr_process_mac_pdu( instance_t module_idP,
             mac_len = 6;
           }
 
-          nr_mac_rrc_data_ind(module_idP,
-                              CC_id,
-                              frameP,
-                              0,
-                              0,
-                              UE->rnti,
-                              CCCH,
-                              pduP + mac_subheader_len,
-                              mac_len,
-                              0);
+          send_initial_ul_rrc_message(module_idP,
+                                      CC_id,
+                                      UE,
+                                      CCCH,
+                                      pduP + mac_subheader_len,
+                                      mac_len);
           break;
 
         case UL_SCH_LCID_DTCH ... (UL_SCH_LCID_DTCH + 28):
@@ -1485,6 +1481,15 @@ void pf_ul(module_id_t module_id,
 
       continue;
     } 
+
+    /* skip this UE if there are no free HARQ processes. This can happen e.g.
+     * if the UE disconnected in L2sim, in which case the gNB is not notified
+     * (this can be considered a design flaw) */
+    if (sched_ctrl->available_ul_harq.head < 0) {
+      LOG_D(NR_MAC, "RNTI %04x has no free UL HARQ process, skipping\n", UE->rnti);
+      continue;
+    }
+
     const int B = max(0, sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes);
     /* preprocessor computed sched_frame/sched_slot */
     const bool do_sched = nr_UE_is_to_be_scheduled(scc, 0, UE, sched_pusch->frame, sched_pusch->slot, nrmac->ulsch_max_frame_inactivity);

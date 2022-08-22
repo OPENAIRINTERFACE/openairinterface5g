@@ -1369,15 +1369,6 @@ int ngap_gNB_pdusession_release_resp(instance_t instance,
                 item->pDUSessionResourceReleaseResponseTransfer.size = 0;
                 item->pDUSessionResourceReleaseResponseTransfer.buf = NULL;
                 NGAP_DEBUG("pdusession_release_resp: transfer_buffer is NULL!\n");
-#ifdef ITTI_SIM
-                //For testing only
-                item->pDUSessionResourceReleaseResponseTransfer.buf = malloc(sizeof(uint8_t) * 1);
-                item->pDUSessionResourceReleaseResponseTransfer.size = 1;
-                uint8_t temp = 0;
-                memcpy(item->pDUSessionResourceReleaseResponseTransfer.buf,
-                       &temp,
-                       item->pDUSessionResourceReleaseResponseTransfer.size);    
-#endif
             }
             NGAP_DEBUG("pdusession_release_resp: pdusession ID %ld\n", item->pDUSessionID);
             ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceReleasedListRelRes.list, item);

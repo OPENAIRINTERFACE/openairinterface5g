@@ -34,27 +34,6 @@
 #include "COMMON/platform_types.h"
 #include "nr_rrc_defs.h"
 
-
-void
-nr_uid_linear_allocator_init(
-  nr_uid_allocator_t* const uid_pP
-);
-
-uid_t
-nr_uid_linear_allocator_new(
-  gNB_RRC_INST* rrc_instance_pP
-);
-
-
-void
-nr_uid_linear_allocator_free(
-  gNB_RRC_INST* rrc_instance_pP,
-  uid_t uidP
-);
-
-
-
-
 int rrc_gNB_compare_ue_rnti_id(
   struct rrc_gNB_ue_context_s* c1_pP,
   struct rrc_gNB_ue_context_s* c2_pP

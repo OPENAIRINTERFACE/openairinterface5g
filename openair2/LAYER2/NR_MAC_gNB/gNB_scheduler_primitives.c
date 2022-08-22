@@ -44,9 +44,12 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
+/* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/NR/nr_rrc_extern.h"
+#include "RRC/NR/rrc_gNB_UE_context.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+#include "RRC/NR/MESSAGES/asn1_msg.h"
 
 #include "intertask_interface.h"
 
@@ -2179,7 +2182,7 @@ int rnti_to_remove[10];
 volatile int rnti_to_remove_count;
 pthread_mutex_t rnti_to_remove_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr)
+void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_allocator_t *uia)
 {
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   destroy_nr_list(&sched_ctrl->available_dl_harq);
@@ -2188,6 +2191,7 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr)
   destroy_nr_list(&sched_ctrl->available_ul_harq);
   destroy_nr_list(&sched_ctrl->feedback_ul_harq);
   destroy_nr_list(&sched_ctrl->retrans_ul_harq);
+  uid_linear_allocator_free(uia, UE->uid);
   LOG_I(NR_MAC, "Remove NR rnti 0x%04x\n", UE->rnti);
   const rnti_t rnti = UE->rnti;
   free(UE);
@@ -2488,6 +2492,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   }
 
   UE->rnti = rntiP;
+  UE->uid = uid_linear_allocator_new(&UE_info->uid_allocator);
   UE->CellGroup = CellGroup;
 
   if (CellGroup)
@@ -2543,7 +2548,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   }
   if (i == MAX_MOBILES_PER_GNB) {
     LOG_E(NR_MAC,"Try to add UE %04x but the list is full\n", rntiP);
-    delete_nr_ue_data(UE, nr_mac->common_channels);
+    delete_nr_ue_data(UE, nr_mac->common_channels, &UE_info->uid_allocator);
     pthread_mutex_unlock(&UE_info->mutex);
     return NULL;
   }
@@ -2647,7 +2652,7 @@ void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
  memcpy(UE_info->list, newUEs, sizeof(UE_info->list));
  pthread_mutex_unlock(&UE_info->mutex);
 
- delete_nr_ue_data(UE, nr_mac->common_channels);
+ delete_nr_ue_data(UE, nr_mac->common_channels, &UE_info->uid_allocator);
 }
 
 void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
@@ -2723,7 +2728,19 @@ void nr_csirs_scheduling(int Mod_idP,
 
     NR_CSI_MeasConfig_t *csi_measconfig = ul_bwp->csi_MeasConfig;
 
-    if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList != NULL) {
+    // looking for the correct CSI-RS resource in current BWP
+    NR_NZP_CSI_RS_ResourceSetId_t *nzp = NULL;
+    for (int csi_list=0; csi_list<csi_measconfig->csi_ResourceConfigToAddModList->list.count; csi_list++) {
+      NR_CSI_ResourceConfig_t *csires = csi_measconfig->csi_ResourceConfigToAddModList->list.array[csi_list];
+      if(csires->bwp_Id == dl_bwp->bwp_id &&
+         csires->csi_RS_ResourceSetList.present == NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB &&
+         csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList) {
+        nzp = csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0];
+      }
+    }
+
+    if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList != NULL &&
+        nzp != NULL) {
 
       NR_NZP_CSI_RS_Resource_t *nzpcsi;
       int period, offset;
@@ -2732,12 +2749,16 @@ void nr_csirs_scheduling(int Mod_idP,
 
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
+        // transmitting CSI-RS only for current BWP
+        if (nzpcsi->nzp_CSI_RS_ResourceId != *nzp)
+          continue;
+
         NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
         csi_period_offset(NULL,nzpcsi->periodicityAndOffset,&period,&offset);
 
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
-          LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
+          LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d Resource ID %ld\n",frame,slot,nzpcsi->nzp_CSI_RS_ResourceId);
           UE_info->sched_csirs = true;
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
@@ -3031,4 +3052,53 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
     req->SFN = i < (gNB->if_inst->sl_ahead-1);
     req->Slot = i;
   }
+}
+
+void send_initial_ul_rrc_message(module_id_t        module_id,
+                                 int                CC_id,
+                                 const NR_UE_info_t *UE,
+                                 rb_id_t            srb_id,
+                                 const uint8_t      *sdu,
+                                 sdu_size_t         sdu_len) {
+  const gNB_MAC_INST *mac = RC.nrmac[module_id];
+  const rnti_t rnti = UE->rnti;
+  LOG_W(MAC,
+        "[RAPROC] Received SDU for CCCH on SRB %ld length %d for UE %04x\n",
+        srb_id, sdu_len, rnti);
+
+  /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
+  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type)) {
+    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_id]);
+    ue_context_p->ue_id_rnti                    = rnti;
+    ue_context_p->ue_context.rnti               = rnti;
+    ue_context_p->ue_context.random_ue_identity = rnti;
+    ue_context_p->ue_context.Srb0.Active        = 1;
+    RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[module_id]->rrc_ue_head, ue_context_p);
+  }
+
+  const NR_ServingCellConfigCommon_t *scc = RC.nrrrc[module_id]->carrier.servingcellconfigcommon;
+  const NR_ServingCellConfig_t *sccd = RC.nrrrc[module_id]->configuration.scd;
+  NR_CellGroupConfig_t cellGroupConfig = {0};
+  fill_initial_cellGroupConfig(UE->uid, &cellGroupConfig, scc, sccd, &RC.nrrrc[module_id]->configuration);
+
+  uint8_t du2cu_rrc_container[1024];
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+                                                  NULL,
+                                                  &cellGroupConfig,
+                                                  du2cu_rrc_container,
+                                                  sizeof(du2cu_rrc_container));
+  AssertFatal(enc_rval.encoded > 0,
+              "Could not encode cellGroupConfig for UE %04x, failed element %s\n",
+              rnti,
+              enc_rval.failed_type->name);
+
+  const f1ap_initial_ul_rrc_message_t ul_rrc_msg = {
+    /* TODO: add mcc, mnc, cell_id, ..., is not available at MAC yet */
+    .crnti = rnti,
+    .rrc_container = (uint8_t *) sdu,
+    .rrc_container_length = sdu_len,
+    .du2cu_rrc_container = (uint8_t *) du2cu_rrc_container,
+    .du2cu_rrc_container_length = (enc_rval.encoded + 7) / 8
+  };
+  mac->mac_rrc.initial_ul_rrc_message_transfer(module_id, &ul_rrc_msg);
 }

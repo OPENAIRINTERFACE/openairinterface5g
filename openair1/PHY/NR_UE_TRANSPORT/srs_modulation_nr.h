@@ -156,8 +156,8 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
                     uint16_t symbol_offset,
                     nr_srs_info_t *nr_srs_info,
                     int16_t amp,
-                    int frame_number,
-                    int slot_number);
+                    frame_t frame_number,
+                    slot_t slot_number);
 
 /** \brief This function checks for periodic srs if srs should be transmitted in this slot
  *  @param p_SRS_Resource pointer to active resource

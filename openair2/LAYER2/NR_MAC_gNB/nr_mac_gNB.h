@@ -46,6 +46,7 @@
 #include "targets/ARCH/COMMON/common_lib.h"
 #include "COMMON/platform_constants.h"
 #include "common/ran_context.h"
+#include "collection/linear_alloc.h"
 
 /* RRC */
 #include "NR_BCCH-BCH-Message.h"
@@ -60,6 +61,7 @@
 /* Interface */
 #include "nfapi_nr_interface_scf.h"
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
+#include "mac_rrc_ul.h"
 
 /* MAC */
 #include "LAYER2/MAC/mac.h"
@@ -474,7 +476,7 @@ typedef struct NR_UE_harq {
 
   /* Transport block to be sent using this HARQ process, its size is in
    * sched_pdsch */
-  uint32_t transportBlock[16384];
+  uint32_t transportBlock[38016]; // valid up to 4 layers
   uint32_t tb_size;
 
   /// sched_pdsch keeps information on MCS etc used for the initial transmission
@@ -686,9 +688,15 @@ typedef struct NR_bler_options {
   uint8_t harq_round_max;
 } NR_bler_options_t;
 
+typedef struct nr_mac_rrc_ul_if_s {
+  /* TODO add other message types as necessary */
+  initial_ul_rrc_message_transfer_func_t initial_ul_rrc_message_transfer;
+} nr_mac_rrc_ul_if_t;
+
 /*! \brief UE list used by gNB to order UEs/CC for scheduling*/
 typedef struct {
   rnti_t rnti;
+  uid_t uid; // unique ID of this UE
   /// scheduling control info
   nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
   NR_UE_sched_ctrl_t UE_sched_ctrl;
@@ -715,6 +723,7 @@ typedef struct {
   pthread_mutex_t mutex;
   NR_UE_info_t *list[MAX_MOBILES_PER_GNB+1];
   bool sched_csirs;
+  uid_allocator_t uid_allocator;
 } NR_UEs_t;
 
 #define UE_iterator(BaSe, VaR) NR_UE_info_t ** VaR##pptr=BaSe, *VaR; while ((VaR=*(VaR##pptr++)))
@@ -839,6 +848,8 @@ typedef struct gNB_MAC_INST_s {
   NR_bler_options_t ul_bler;
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
+
+  nr_mac_rrc_ul_if_t mac_rrc;
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

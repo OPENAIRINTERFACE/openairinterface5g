@@ -281,5 +281,9 @@ void loader_reset()
     shlib->numfunc = 0;
     shlib->len_funcarray = 0;
   }
+  if(loader_data.shlibpath){
+    free(loader_data.shlibpath);
+    loader_data.shlibpath=NULL;
+  }
   free(loader_data.shlibs);
 }

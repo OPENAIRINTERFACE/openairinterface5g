@@ -91,8 +91,8 @@ uint16_t sequence_number_hopping(int slot_number,
   return v;
 }
 
-uint16_t compute_F_b(int frame_number,
-                     int slot_number,
+uint16_t compute_F_b(frame_t frame_number,
+                     slot_t slot_number,
                      uint16_t slots_per_frame,
                      uint8_t N_symb_SRS,
                      uint8_t B_SRS,
@@ -101,7 +101,7 @@ uint16_t compute_F_b(int frame_number,
                      uint8_t R,
                      uint16_t T_offset,
                      uint16_t T_SRS,
-                     uint8_t resource_type,
+                     resourceType_t resource_type,
                      uint8_t l_line,
                      uint8_t b) {
 
@@ -133,8 +133,8 @@ uint16_t compute_F_b(int frame_number,
   return F_b;
 }
 
-uint16_t compute_n_b(int frame_number,
-                     int slot_number,
+uint16_t compute_n_b(frame_t frame_number,
+                     slot_t slot_number,
                      uint16_t slots_per_frame,
                      uint8_t N_symb_SRS,
                      uint8_t B_SRS,
@@ -144,7 +144,7 @@ uint16_t compute_n_b(int frame_number,
                      uint8_t R,
                      uint16_t T_offset,
                      uint16_t T_SRS,
-                     uint8_t resource_type,
+                     resourceType_t resource_type,
                      uint8_t l_line,
                      uint8_t b) {
 
@@ -189,8 +189,8 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
                     uint16_t symbol_offset,
                     nr_srs_info_t *nr_srs_info,
                     int16_t amp,
-                    int frame_number,
-                    int slot_number) {
+                    frame_t frame_number,
+                    slot_t slot_number) {
 
 #ifdef SRS_DEBUG
   LOG_I(NR_PHY,"Calling %s function\n", __FUNCTION__);

@@ -78,7 +78,7 @@ static int DEFBFW[] = {0x00007fff};
 
 #define MBMS_EXPERIMENTAL
 
-extern volatile int oai_exit;
+extern int oai_exit;
 extern clock_source_t clock_source;
 #include "executables/thread-common.h"
 //extern PARALLEL_CONF_t get_thread_parallel_conf(void);
