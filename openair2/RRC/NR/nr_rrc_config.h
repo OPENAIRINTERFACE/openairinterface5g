@@ -33,6 +33,14 @@
 
 #include "nr_rrc_defs.h"
 
+#define asn1cCallocOne(VaR, VaLue) \
+  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue;
+#define asn1cCalloc(VaR, lOcPtr) \
+  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR));
+#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
+  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
+  ASN_SEQUENCE_ADD(&VaR,lOcPtr);
+
 typedef struct rlc_bearer_config_s{
   long        LogicalChannelIdentity[MAX_NUM_CCs];
   long        servedRadioBearer_present[MAX_NUM_CCs];
@@ -116,8 +124,9 @@ void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
                         int bwp_id,
                         int curr_bwp,
                         uint64_t ssb_bitmap);
-void nr_rrc_config_dl_tda(const NR_ServingCellConfigCommon_t *scc,
-                          NR_PDSCH_TimeDomainResourceAllocationList_t	*pdsch_TimeDomainAllocationList,
+void nr_rrc_config_dl_tda(struct NR_PDSCH_TimeDomainResourceAllocationList *pdsch_TimeDomainAllocationList,
+                          frame_type_t frame_type,
+                          NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,
                           int curr_bwp);
 void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay);
 void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp, NR_UE_NR_Capability_t *uecap);
@@ -131,16 +140,17 @@ void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                   int uid,
                   int num_dl_antenna_ports,
                   int curr_bwp,
-                  int do_csirs);
+                  int do_csirs,
+                  int id);
 void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
-                  NR_CSI_MeasConfig_t *csi_MeasConfig);
+                  NR_CSI_MeasConfig_t *csi_MeasConfig, int id);
 void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
-                const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                const int curr_bwp,
                 const int uid,
+                const int res_id,
                 const int do_srs);
 void set_dl_mcs_table(int scs,
                       NR_UE_NR_Capability_t *cap,
-                      NR_SpCellConfig_t *SpCellConfig,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                       const NR_ServingCellConfigCommon_t *scc);
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
@@ -148,5 +158,18 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        int numerology,
                        int rbsize,
                        int mcs_table);
+void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
+                        const NR_ServingCellConfigCommon_t *scc,
+                        const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                        NR_UE_NR_Capability_t *uecap,
+                        int dl_antenna_ports,
+                        bool force_256qam_off,
+                        int bwp_loop, bool is_SA);
+void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
+                      long bwp_loop, bool is_SA, int uid,
+                      const gNB_RrcConfigurationReq *configuration,
+                      const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                      const NR_ServingCellConfigCommon_t *scc,
+                      NR_UE_NR_Capability_t *uecap);
 
 #endif

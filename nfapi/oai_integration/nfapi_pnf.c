@@ -1103,7 +1103,7 @@ notifiedFIFO_elt_t *l1tx_message_extract(PHY_VARS_gNB *gNB, int frame, int slot)
   notifiedFIFO_elt_t *res;
 
   //TODO: This needs to be reworked for nfapi to work
-  res = pullTpool(gNB->L1_tx_free, gNB->threadPool);
+  res = pullTpool(&gNB->L1_tx_free, &gNB->threadPool);
   return res;
 }
 
@@ -1130,7 +1130,7 @@ int pnf_phy_ul_dci_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     }
   }
 
-  pushNotifiedFIFO(gNB->L1_tx_filled,res);
+  pushNotifiedFIFO(&gNB->L1_tx_filled, res);
 
   return 0;
 }
@@ -1237,7 +1237,7 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
     else {
       NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s() UNKNOWN:%d\n", __FUNCTION__, dl_tti_pdu_list[i].PDUType);
     }
-    pushNotifiedFIFO(gNB->L1_tx_filled,res);
+    pushNotifiedFIFO(&gNB->L1_tx_filled, res);
   }
 
   if(req->vendor_extension)

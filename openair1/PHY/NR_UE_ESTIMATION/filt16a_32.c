@@ -265,6 +265,9 @@ short filt8_avlip6[8] = {
 short filt8_start[8] = {
     12288,8192,4096,0,0,0,0,0};
 
+short filt8_start_shift2[8] = {
+    0, 0, 12288,8192,4096,0,0,0};
+
 short filt8_middle2[8] = {
     4096,8192,8192,8192,4096,0,0,0};
 
@@ -273,6 +276,9 @@ short filt8_middle4[8] = {
 
 short filt8_end[8] = {
     4096,8192,12288,16384,0,0,0,0};
+
+short filt8_end_shift2[8] = {
+    0, 0, 4096,8192,12288,16384,0,0};
 
 // Comb size 4
 short filt16_start[16] = {

@@ -310,6 +310,8 @@ typedef struct {
   pthread_cond_t cond_write;
   /// mutex for trx write thread
   pthread_mutex_t mutex_write;
+  /// to inform the thread to exit
+  bool write_thread_exit;
 } openair0_thread_t;
 
 /*!\brief structure holds the parameters to configure USRP devices */

@@ -475,7 +475,7 @@ typedef struct NR_UE_harq {
 
   /* Transport block to be sent using this HARQ process, its size is in
    * sched_pdsch */
-  uint32_t transportBlock[16384];
+  uint32_t transportBlock[38016]; // valid up to 4 layers
   uint32_t tb_size;
 
   /// sched_pdsch keeps information on MCS etc used for the initial transmission

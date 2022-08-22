@@ -62,7 +62,7 @@ static double snr_dB=25;
 static double sinr_dB=0;
 static unsigned int max_chan;
 static channel_desc_t **defined_channels;
-static char modellist_name[MAX_OPTNAME_SIZE]= {0};
+static char *modellist_name;
 
 
 void fill_channel_desc(channel_desc_t *chan_desc,

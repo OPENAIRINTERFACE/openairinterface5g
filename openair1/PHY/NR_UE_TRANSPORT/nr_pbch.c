@@ -393,6 +393,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 MIMO_mode_t mimo_mode,
                 NR_UE_PDCCH_CONFIG *phy_pdcch_config,
                 fapiPbch_t *result) {
+
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
   int max_h=0;
   int symbol;
@@ -416,7 +417,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int symbol_offset=1;
 
   if (ue->is_synchronized > 0)
-    symbol_offset=(ue->symbol_offset)%(frame_parms->symbols_per_slot);
+    symbol_offset=nr_get_ssb_start_symbol(frame_parms, i_ssb)%(frame_parms->symbols_per_slot);
   else
     symbol_offset=0;
 

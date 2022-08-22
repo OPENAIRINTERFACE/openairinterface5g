@@ -80,7 +80,7 @@ static int DEFBFW[] = {0x00007fff};
 #include "nfapi_interface.h"
 #include <nfapi/oai_integration/vendor_ext.h>
 
-extern volatile int oai_exit;
+extern int oai_exit;
 
 extern struct timespec timespec_sub(struct timespec lhs, struct timespec rhs);
 extern struct timespec timespec_add(struct timespec lhs, struct timespec rhs);
@@ -1251,7 +1251,9 @@ void *ru_thread( void *param ) {
     }
 
     // At this point, all information for subframe has been received on FH interface
-    res = pullTpool(gNB->resp_L1, gNB->threadPool);
+    res = pullTpool(&gNB->resp_L1, &gNB->threadPool);
+    if (res == NULL)
+      break; // Tpool has been stopped
     syncMsg = (processingData_L1_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
     syncMsg->frame_rx = proc->frame_rx;
@@ -1260,7 +1262,7 @@ void *ru_thread( void *param ) {
     syncMsg->slot_tx = proc->tti_tx;
     syncMsg->timestamp_tx = proc->timestamp_tx;
     res->key = proc->tti_rx;
-    pushTpool(gNB->threadPool, res);
+    pushTpool(&gNB->threadPool, res);
   }
 
   printf( "Exiting ru_thread \n");
@@ -1270,13 +1272,6 @@ void *ru_thread( void *param ) {
       LOG_E(HW,"Could not stop the RF device\n");
     else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
   }
-
-  res = pullNotifiedFIFO(gNB->resp_L1);
-  delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(gNB->L1_tx_free);
-  delNotifiedFIFO_elt(res);
-  res = pullNotifiedFIFO(gNB->L1_tx_free);
-  delNotifiedFIFO_elt(res);
 
   ru_thread_status = 0;
   return &ru_thread_status;
@@ -1336,40 +1331,26 @@ void init_RU_proc(RU_t *ru) {
 
 }
 
+
 void kill_NR_RU_proc(int inst) {
   RU_t *ru = RC.ru[inst];
   RU_proc_t *proc = &ru->proc;
-  LOG_D(PHY, "Joining pthread_FH\n");
+
+  /* Note: it seems pthread_FH and and FEP thread below both use
+   * mutex_fep/cond_fep. Thus, we unlocked above for pthread_FH above and do
+   * the same for FEP thread below again (using broadcast() to ensure both
+   * threads get the signal). This one will also destroy the mutex and cond. */
+  pthread_mutex_lock(&proc->mutex_fep);
+  proc->instance_cnt_fep = 0;
+  pthread_cond_broadcast(&proc->cond_fep);
+  pthread_mutex_unlock( &proc->mutex_fep );
   pthread_join(proc->pthread_FH, NULL);
 
-  if (get_nprocs() >= 2) {
-    if (ru->feprx) {
-      pthread_mutex_lock(&proc->mutex_fep);
-      proc->instance_cnt_fep = 0;
-      pthread_mutex_unlock(&proc->mutex_fep);
-      pthread_cond_signal(&proc->cond_fep);
-      LOG_D(PHY, "Joining pthread_fep\n");
-      pthread_join(proc->pthread_fep, NULL);
-      pthread_mutex_destroy(&proc->mutex_fep);
-      pthread_cond_destroy(&proc->cond_fep);
-    }
+  if (ru->feprx)
+    nr_kill_feprx_thread(ru);
 
-    if (ru->feptx_ofdm) {
-      pthread_mutex_lock(&proc->mutex_feptx);
-      proc->instance_cnt_feptx = 0;
-      pthread_mutex_unlock(&proc->mutex_feptx);
-      pthread_cond_signal(&proc->cond_feptx);
-      LOG_D(PHY, "Joining pthread_feptx\n");
-      pthread_join(proc->pthread_feptx, NULL);
-      pthread_mutex_destroy(&proc->mutex_feptx);
-      pthread_cond_destroy(&proc->cond_feptx);
-    }
-  }
-
-  if (opp_enabled) {
-    LOG_D(PHY, "Joining ru_stats_thread\n");
-    pthread_join(ru->ru_stats_thread, NULL);
-  }
+  if (ru->feptx_ofdm)
+    nr_kill_feptx_thread(ru);
 }
 
 int check_capabilities(RU_t *ru,RRU_capabilities_t *cap) {

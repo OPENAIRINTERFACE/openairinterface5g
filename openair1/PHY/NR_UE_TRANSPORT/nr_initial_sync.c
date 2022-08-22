@@ -445,13 +445,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
     }
 
-    LOG_I(PHY, "[UE %d] RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
-	  10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
-	  10*log10(ue->measurements.rssi),
-	  ue->rx_total_gain_dB,
-	  ue->measurements.n0_power_tot_dBm,
-	  10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
-	  (10*log10(ue->measurements.rsrq[0])));
 
 /*    LOG_I(PHY, "[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
 	  ue->Mod_id,

@@ -354,3 +354,45 @@
     - key: parallel_config
       env: "@THREAD_PARALLEL_CONFIG@"
 
+  - filePrefix: "proxy_rcc.band7.tm1.nfapi.conf"
+    outputfilename: "enb.nfapi.vnf.conf"
+    config:
+    - key: Active_eNBs
+      env: "@ENB_NAME@"
+    - key: eNB_name
+      env: "@ENB_NAME@"
+    - key: plmn_list
+      env:
+        mcc: "@MCC@"
+        mnc: "@MNC@"
+        mnc_length: "@MNC_LENGTH@"
+    - key: tracking_area_code
+      env: "@TAC@"
+    - key: eutra_band
+      env: "@UTRA_BAND_ID@"
+    - key: downlink_frequency
+      env: "@DL_FREQUENCY_IN_MHZ@000000"
+    - key: uplink_frequency_offset
+      env: "@UL_FREQUENCY_OFFSET_IN_MHZ@000000"
+    - key: Nid_cell
+      env: "@NID_CELL@"
+    - key: N_RB_DL
+      env: "@NB_PRB@"
+    - key: ipv4
+      env: "@MME_S1C_IP_ADDRESS@"
+    - key: ENB_INTERFACE_NAME_FOR_S1_MME
+      env: "@ENB_INTERFACE_NAME_FOR_S1_MME@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1_MME
+      env: "@ENB_IPV4_ADDRESS_FOR_S1_MME@"
+    - key: ENB_INTERFACE_NAME_FOR_S1U
+      env: "@ENB_INTERFACE_NAME_FOR_S1U@"
+    - key: ENB_IPV4_ADDRESS_FOR_S1U
+      env: "@ENB_IPV4_ADDRESS_FOR_S1U@"
+    - key: ENB_IPV4_ADDRESS_FOR_X2C
+      env: "@ENB_IPV4_ADDRESS_FOR_X2C@"
+    - key: LOCAL_S_IF_NAME
+      env: "@LOCAL_S_IF_NAME@"
+    - key: REMOTE_S_ADDRESS
+      env: "@REMOTE_S_ADDRESS@"
+    - key: LOCAL_S_ADDRESS
+      env: "@LOCAL_S_ADDRESS@"

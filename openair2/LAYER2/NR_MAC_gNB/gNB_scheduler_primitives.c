@@ -2677,7 +2677,19 @@ void nr_csirs_scheduling(int Mod_idP,
 
     NR_CSI_MeasConfig_t *csi_measconfig = ul_bwp->csi_MeasConfig;
 
-    if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList != NULL) {
+    // looking for the correct CSI-RS resource in current BWP
+    NR_NZP_CSI_RS_ResourceSetId_t *nzp = NULL;
+    for (int csi_list=0; csi_list<csi_measconfig->csi_ResourceConfigToAddModList->list.count; csi_list++) {
+      NR_CSI_ResourceConfig_t *csires = csi_measconfig->csi_ResourceConfigToAddModList->list.array[csi_list];
+      if(csires->bwp_Id == dl_bwp->bwp_id &&
+         csires->csi_RS_ResourceSetList.present == NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB &&
+         csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList) {
+        nzp = csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0];
+      }
+    }
+
+    if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList != NULL &&
+        nzp != NULL) {
 
       NR_NZP_CSI_RS_Resource_t *nzpcsi;
       int period, offset;
@@ -2686,12 +2698,16 @@ void nr_csirs_scheduling(int Mod_idP,
 
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
+        // transmitting CSI-RS only for current BWP
+        if (nzpcsi->nzp_CSI_RS_ResourceId != *nzp)
+          continue;
+
         NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
         csi_period_offset(NULL,nzpcsi->periodicityAndOffset,&period,&offset);
 
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
-          LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d\n",frame,slot);
+          LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d Resource ID %ld\n",frame,slot,nzpcsi->nzp_CSI_RS_ResourceId);
           UE_info->sched_csirs = true;
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];

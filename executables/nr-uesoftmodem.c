@@ -105,7 +105,7 @@ instance_t CUuniqInstance=0;
 instance_t DUuniqInstance=0;
 
 RAN_CONTEXT_t RC;
-volatile int             oai_exit = 0;
+int oai_exit = 0;
 
 
 extern int16_t  nr_dlsch_demod_shift;

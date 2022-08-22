@@ -77,11 +77,11 @@
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define simOpt PARAMFLAG_NOFREE|PARAMFLAG_CMDLINE_NOPREFIXENABLED
 #define RFSIMULATOR_PARAMS_DESC {					\
-    {"serveraddr",             "<ip address to connect to>\n",        simOpt,  strptr:&(rfsimulator->ip),              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
+    {"serveraddr",             "<ip address to connect to>\n",        simOpt,  strptr:&rfsimulator->ip,              defstrval:"127.0.0.1",           TYPE_STRING,    0 },\
     {"serverport",             "<port to connect to>\n",              simOpt,  u16ptr:&(rfsimulator->port),            defuintval:PORT,                 TYPE_UINT16,    0 },\
     {RFSIMU_OPTIONS_PARAMNAME, RFSIM_CONFIG_HELP_OPTIONS,             0,       strlistptr:NULL,                        defstrlistval:NULL,              TYPE_STRINGLIST,0 },\
-    {"IQfile",                 "<file path to use when saving IQs>\n",simOpt,  strptr:&(saveF),                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
-    {"modelname",              "<channel model name>\n",              simOpt,  strptr:&(modelname),                    defstrval:"AWGN",                TYPE_STRING,    0 },\
+    {"IQfile",                 "<file path to use when saving IQs>\n",simOpt,  strptr:&saveF,                        defstrval:"/tmp/rfsimulator.iqs",TYPE_STRING,    0 },\
+    {"modelname",              "<channel model name>\n",              simOpt,  strptr:&modelname,                    defstrval:"AWGN",                TYPE_STRING,    0 },\
     {"ploss",                  "<channel path loss in dB>\n",         simOpt,  dblptr:&(rfsimulator->chan_pathloss),   defdblval:0,                     TYPE_DOUBLE,    0 },\
     {"forgetfact",             "<channel forget factor ((0 to 1)>\n", simOpt,  dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 },\
     {"offset",                 "<channel offset in samps>\n",         simOpt,  iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
@@ -225,15 +225,16 @@ enum  blocking_t {
 };
 
 static void setblocking(int sock, enum blocking_t active) {
-  int opts;
-  AssertFatal( (opts = fcntl(sock, F_GETFL)) >= 0,"");
+  int opts = fcntl(sock, F_GETFL);
+  AssertFatal(opts >= 0, "fcntl(): errno %d, %s\n", errno, strerror(errno));
 
   if (active==blocking)
     opts = opts & ~O_NONBLOCK;
   else
     opts = opts | O_NONBLOCK;
 
-  AssertFatal(fcntl(sock, F_SETFL, opts) >= 0, "");
+  opts = fcntl(sock, F_SETFL, opts);
+  AssertFatal(opts >= 0, "fcntl(): errno %d, %s\n", errno, strerror(errno));
 }
 
 static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps);
@@ -248,7 +249,6 @@ static void fullwrite(int fd, void *_buf, ssize_t count, rfsimulator_state_t *t)
               "Bug: %d/%p/%zd/%p", fd, _buf, count, t);
   char *buf = _buf;
   ssize_t l;
-  setblocking(fd, notBlocking);
 
   while (count) {
     l = write(fd, buf, count);
@@ -740,7 +740,15 @@ static int rfsimulator_get_stats(openair0_device *device) {
 static int rfsimulator_reset_stats(openair0_device *device) {
   return 0;
 }
-static void rfsimulator_end(openair0_device *device) {}
+static void rfsimulator_end(openair0_device *device) {
+  rfsimulator_state_t* s = device->priv;
+  for (int i = 0; i < FD_SETSIZE; i++) {
+    buffer_t *b = &s->buf[i];
+    if (b->conn_sock >= 0 )
+      close(b->conn_sock);
+  }
+  close(s->epollfd);
+}
 static int rfsimulator_stop(openair0_device *device) {
   return 0;
 }

@@ -812,6 +812,7 @@ class RANManagement():
 		ULRetxIssue = False
 		nrRrcRcfgComplete = 0
 		harqFeedbackPast = 0
+		showedByeMsg = False # last line is Bye. -> stopped properly
 	
 		line_cnt=0 #log file line counter
 		for line in enb_log_file.readlines():
@@ -1024,6 +1025,12 @@ class RANManagement():
 				if result is not None:
 					gnb_markers[k].append(line_cnt)
 
+			# check whether e/gNB log finishes with "Bye." message
+			# Note that it is "=" not "|=" so not only is the regex
+			# asking for EOF (\Z) but we also only retain the last
+			# line's result
+			showedByeMsg = re.search(r'^Bye.\n\Z', str(line), re.MULTILINE) is not None
+
 		enb_log_file.close()
 
 
@@ -1207,6 +1214,13 @@ class RANManagement():
 				statMsg = 'No real time stats found in the log file\n'
 				logging.debug('No real time stats found in the log file')
 				htmleNBFailureMsg += statMsg
+
+			if not showedByeMsg:
+				logging.debug('\u001B[1;37;41m ' + nodeB_prefix + 'NB did not show "Bye." message at end, it likely did not stop properly! \u001B[0m')
+				htmleNBFailureMsg += 'No Bye. message found, did not stop properly\n'
+				global_status = CONST.ENB_SHUTDOWN_NO_BYE
+			else:
+				logging.debug('"Bye." message found at end.')
 
 		else:
 			#Removing UE log
