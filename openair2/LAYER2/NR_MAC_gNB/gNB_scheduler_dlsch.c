@@ -1059,9 +1059,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                             csi_report->codebook_mode);
     }
     // TBS_LBRM according to section 5.4.2.1 of 38.212
-    long *maxMIMO_Layers = current_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
-    AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+    long maxMIMO_Layers = current_BWP->pdsch_servingcellconfig ? *current_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers : 1;
+    const int nl_tbslbrm = min(maxMIMO_Layers, 4);
     // Maximum number of PRBs across all configured DL BWPs
     int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, cg);
@@ -1119,7 +1118,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     // as per table 7.3.1.1.2-1 in 38.212
     dci_payload.bwp_indicator.val = current_BWP->n_dl_bwp < 4 ? bwp_id : bwp_id - 1;
 
-    AssertFatal(pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
+    AssertFatal(pdsch_Config == NULL || pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
 
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu->rbSize,
