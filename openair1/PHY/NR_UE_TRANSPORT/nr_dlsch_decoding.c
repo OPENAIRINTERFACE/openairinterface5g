@@ -591,13 +591,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     //////////////////////////////////////////////////////////////////////////////////////////
   }
   for (r=0; r<nbDecode; r++) {
-<<<<<<< HEAD
-    notifiedFIFO_elt_t *req=pullTpool(&nf, &(pool_dl));
+    notifiedFIFO_elt_t *req=pullTpool(&nf,  &get_nrUE_params()->Tpool);
     if (req == NULL)
       break; // Tpool has been stopped
-=======
-    notifiedFIFO_elt_t *req=pullTpool(&nf, &get_nrUE_params()->Tpool);
->>>>>>> e9caae6f99 (simplify thread pool configuration)
     bool last = false;
     if (r == nbDecode - 1)
       last = true;
