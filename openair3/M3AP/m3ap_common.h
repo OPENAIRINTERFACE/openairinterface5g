@@ -18,10 +18,8 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
+#ifndef M3AP_COMMON_H_
+#define M3AP_COMMON_H_
 
 #include "M3AP_ProtocolIE-Field.h"
 #include "M3AP_M3AP-PDU.h"
@@ -35,8 +33,6 @@
 #include "M3AP_asn_constant.h"
 #include "intertask_interface.h"
 
-#ifndef M3AP_COMMON_H_
-#define M3AP_COMMON_H_
 
 /** @defgroup _m3ap_impl_ M3AP Layer Reference Implementation
  * @ingroup _ref_implementation_

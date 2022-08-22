@@ -96,11 +96,13 @@ typedef union checkedparam {
 
 /* paramdef is used to describe a parameter, array of paramdef_t strustures is used as the main parameter in */
 /* config apis used to retrieve parameters values  */
+#define MAX_LIST_SIZE 32
+#define DEFAULT_EXTRA_SZ 256
 typedef struct paramdef {
   char         optname[MAX_OPTNAME_SIZE]; /* parameter name, can be used as long command line option */
   char         *helpstr;                  /* help string */
   unsigned int paramflags;                /* value is a "ored" combination of above PARAMFLAG_XXXX values */
-  union {                                 /* pointer to the parameter value, completed by the config module */
+  union { /* pointer to the parameter value, completed by the config module */
     char      **strptr;
     char      **strlistptr;
     uint8_t   *u8ptr;

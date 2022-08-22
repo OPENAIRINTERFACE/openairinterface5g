@@ -101,7 +101,6 @@ raw incoming data is in buffer called "rxdata"
 ## nr_fep_full()
 "front end processing" of uplink signal  
 performs DFT on the signal  
-same function (duplicates): phy_procedures_gNB_common_RX()  
 it computes the buffer rxdataF (for frequency) from rxdata (samples over time)  
 rxdataF is the rxdata in frequency domain, phase aligned
 {: .func3}

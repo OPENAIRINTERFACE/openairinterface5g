@@ -33,7 +33,7 @@
 #ifndef __NR_UNITARY_DEFS__H__
 #define __NR_UNITARY_DEFS__H__
 
-volatile int oai_exit=0;
+int oai_exit=0;
 
 void exit_function(const char* file, const char* function, const int line, const char *s) {
   const char * msg= s==NULL ? "no comment": s;

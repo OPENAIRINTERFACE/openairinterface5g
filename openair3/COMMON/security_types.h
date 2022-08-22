@@ -18,10 +18,8 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
-#if HAVE_CONFIG_H
-# include "config.h"
-#endif
+#ifndef SECURITY_TYPES_H_
+#define SECURITY_TYPES_H_
 
 #if !defined(HAVE_UINT128_T)
 # include <gmp.h>
@@ -31,8 +29,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-#ifndef SECURITY_TYPES_H_
-#define SECURITY_TYPES_H_
 
 #define RAND_LENGTH_BITS       (128)
 #define RAND_LENGTH_OCTETS     (RAND_LENGTH_BITS/8)

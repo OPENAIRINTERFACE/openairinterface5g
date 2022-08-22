@@ -323,7 +323,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
   srb1_params_t srb1_params;
   memset((void *)&srb1_params,0,sizeof(srb1_params_t));
   paramdef_t SRB1Params[] = SRB1PARAMS_DESC(srb1_params);
-  paramdef_t SLParams[]              = CCPARAMS_SIDELINK_DESC(SLconfig);
+  paramdef_t SLParams[]   = CCPARAMS_SIDELINK_DESC(SLconfig);
 
   /* map parameter checking array instances to parameter definition array instances */
   for (int I=0; I< ( sizeof(CCsParams)/ sizeof(paramdef_t)  ) ; I++) {
@@ -2860,9 +2860,9 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
             X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[ENB_PORT_FOR_X2C_IDX].uptr);
 
             if ((NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
-              LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
-              exit(1);
-            }
+             LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
+             exit(1);
+           }
 
             cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
             address = strtok(cidr, "/");

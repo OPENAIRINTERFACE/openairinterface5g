@@ -56,15 +56,6 @@
  */
 int xer_sprint_NR(char *string, size_t string_size, struct asn_TYPE_descriptor_s *td, void *sptr);
 
-
-#define asn1cCallocOne(VaR, VaLue) \
-  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue;
-#define asn1cCalloc(VaR, lOcPtr) \
-  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR));
-#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
-  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
-  ASN_SEQUENCE_ADD(&VaR,lOcPtr);
-
 uint8_t do_MIB_NR(gNB_RRC_INST *rrc,
                   uint32_t frame);
 
@@ -100,15 +91,15 @@ uint8_t do_RRCReject(uint8_t Mod_id,
                      uint8_t *const buffer);
 
 void fill_initial_SpCellConfig(int uid,
-                               NR_CellGroupConfig_t *cellGroupConfig,
-                               NR_ServingCellConfigCommon_t *scc,
-                               NR_ServingCellConfig_t *servingcellconfigdedicated,
+                               NR_SpCellConfig_t *SpCellConfig,
+                               const NR_ServingCellConfigCommon_t *scc,
+                               const NR_ServingCellConfig_t *servingcellconfigdedicated,
                                const gNB_RrcConfigurationReq *configuration);
 
 void fill_initial_cellGroupConfig(int uid,
                                   NR_CellGroupConfig_t *cellGroupConfig,
-                                  NR_ServingCellConfigCommon_t *scc,
-                                  NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                  const NR_ServingCellConfigCommon_t *scc,
+                                  const NR_ServingCellConfig_t *servingcellconfigdedicated,
                                   const gNB_RrcConfigurationReq *configuration);
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
@@ -124,13 +115,14 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                                 uint8_t nb_bearers_to_setup,
                                 long *priority);
 
-int16_t do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
-                    uint8_t                      *const buffer,
-                    const uint8_t                transaction_id,
-                    OCTET_STRING_t               *masterCellGroup_from_DU,
-                    NR_ServingCellConfigCommon_t *scc,
-                    NR_ServingCellConfig_t       *servingcellconfigdedicated,
-                    const gNB_RrcConfigurationReq *configuration);
+int do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
+                uint8_t                      *const buffer,
+                const uint8_t                transaction_id,
+                const uint8_t                *masterCellGroup,
+                int                          masterCellGroup_len,
+                const NR_ServingCellConfigCommon_t *scc,
+                const NR_ServingCellConfig_t       *servingcellconfigdedicated,
+                const gNB_RrcConfigurationReq *configuration);
 
 uint8_t do_NR_SecurityModeCommand(
                     const protocol_ctxt_t *const ctxt_pP,

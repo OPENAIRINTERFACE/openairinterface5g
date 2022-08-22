@@ -740,6 +740,8 @@ void pusch_procedures_fromsplit(uint8_t *bufferZone, int bufSize, PHY_VARS_eNB *
 
   while (proc->nbDecode > 0) {
     notifiedFIFO_elt_t *req=pullTpool(proc->respDecode, proc->threadPool);
+    if (req == NULL)
+      break; // Tpool has been stopped
     postDecode(proc, req);
     delNotifiedFIFO_elt(req);
   }

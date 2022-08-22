@@ -238,6 +238,26 @@ pipeline {
             }
           }
         }
+        stage ("4G L2 Simulators") {
+          when { expression {doMandatoryTests} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-L2-Sim-Test-4G', 'Test-L2-Sim-Container-4G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-L2-Sim-Test-4G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
         stage ("5G L2 Simulators") {
           when { expression {doMandatoryTests} }
           steps {

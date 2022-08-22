@@ -206,8 +206,8 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
 
   } else {
     if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb=abortTpool(gNB->threadPool, req->key);
-      nb+=abortNotifiedFIFO(gNB->respDecode, req->key);
+      int nb = abortTpoolJob(&gNB->threadPool, req->key);
+      nb += abortNotifiedFIFOJob(&gNB->respDecode, req->key);
       gNB->nbDecode-=nb;
       LOG_D(PHY,"uplink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
       LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
@@ -363,7 +363,9 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                     G);
 
   while (gNB->nbDecode > 0) {
-    notifiedFIFO_elt_t *req=pullTpool(gNB->respDecode, gNB->threadPool);
+    notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
+    if (req == NULL)
+      break; // Tpool has been stopped
     nr_postDecode(gNB, req);
     delNotifiedFIFO_elt(req);
   }
@@ -576,33 +578,6 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         }
       }
     }
-  }
-
-}
-
-void phy_procedures_gNB_common_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
-
-  uint8_t symbol;
-  unsigned char aa;
-
-  for(symbol = 0; symbol < (gNB->frame_parms.Ncp==EXTENDED?12:14); symbol++) {
-    for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
-      nr_slot_fep_ul(&gNB->frame_parms,
-                     gNB->common_vars.rxdata[aa],
-                     gNB->common_vars.rxdataF[aa],
-                     symbol,
-                     slot_rx,
-                     0);
-    }
-  }
-
-  for (aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
-    apply_nr_rotation_ul(&gNB->frame_parms,
-			 gNB->common_vars.rxdataF[aa],
-			 slot_rx,
-			 0,
-			 gNB->frame_parms.Ncp==EXTENDED?12:14,
-			 gNB->frame_parms.ofdm_symbol_size);
   }
 
 }
