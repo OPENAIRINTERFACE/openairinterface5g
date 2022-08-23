@@ -457,7 +457,7 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.testSvrId = string_field
 
-	elif action == 'Run_LDPCTest':
+	elif action == 'Run_LDPCTest' or action == 'Run_NRulsimTest':
 		ldpc.runargs = test.findtext('physim_run_args')
 
 	else:
@@ -921,6 +921,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						RAN.prematureExit = True
 				elif action == 'Run_LDPCTest':
 					HTML=ldpc.Run_LDPCTest(HTML,CONST,id)
+					if ldpc.exitStatus==1:
+						RAN.prematureExit = True
+				elif action == 'Run_NRulsimTest':
+					HTML=ldpc.Run_NRulsimTest(HTML,CONST,id)
 					if ldpc.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'Build_Image':
