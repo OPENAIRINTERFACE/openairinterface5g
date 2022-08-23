@@ -100,21 +100,16 @@ class PhySim:
 		mySSH.command('rm ' + self.__workSpacePath+self.__runLogFile, '\$', 5)
 		mySSH.close()
 		#check build result from local compile log file
-		buildStatus=False
 		with open(self.__buildLogFile) as f:
-		#nr_prachsim is the last compile step
-			if 'nr_prachsim compiled' in f.read():
-				buildStatus=True
-		#update HTML based on build status
-		if buildStatus:
-			HTML.CreateHtmlTestRow(self.buildargs, 'OK', CONST.ALL_PROCESSES_OK, 'LDPC')
-			self.exitStatus=0
-		else:
-			logging.error('\u001B[1m Building Physical Simulators Failed\u001B[0m')
-			HTML.CreateHtmlTestRow(self.buildargs, 'KO', CONST.ALL_PROCESSES_OK, 'LDPC')
-			HTML.CreateHtmlTabFooter(False)
-			#exitStatus=1 will do a sys.exit in main
-			self.exitStatus=1
+			if 'BUILD SHOULD BE SUCCESSFUL' in f.read():
+				HTML.CreateHtmlTestRow(self.buildargs, 'OK', CONST.ALL_PROCESSES_OK, 'PhySim')
+				self.exitStatus=0
+				return HTML
+		logging.error('\u001B[1m Building Physical Simulators Failed\u001B[0m')
+		HTML.CreateHtmlTestRow(self.buildargs, 'KO', CONST.ALL_PROCESSES_OK, 'LDPC')
+		HTML.CreateHtmlTabFooter(False)
+		#exitStatus=1 will do a sys.exit in main
+		self.exitStatus = 1
 		return HTML
 
 
@@ -163,8 +158,7 @@ class PhySim:
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p log', '\$', 5)
-		mySSH.command('chmod 777 log', '\$', 5)
-		mySSH.command('stdbuf -o0 ./build_oai ' + self.buildargs + ' 2>&1 | stdbuf -o0 tee ' + self.__buildLogFile, 'Bypassing the Tests|build have failed', 1500)
+		mySSH.command(f'./build_oai {self.buildargs} 2>&1 | tee {self.__buildLogFile}', '\$', 1500)
 
 		mySSH.close()
 		#check build status and update HTML object
