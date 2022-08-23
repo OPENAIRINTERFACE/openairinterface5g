@@ -26,15 +26,8 @@
 	<htmlTabName>Test-ldpc-GPU</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
-	<TestCaseRequestedList>000001 000002 000003 000004 000005 000006 000007 000008 000009 000010 000011 000012 000013 000014 000015 000016 000017 000018 000019 000020 000021</TestCaseRequestedList>
+	<TestCaseRequestedList>000002 000003 000004 000005 000006 000007 000008 000009 000010 000011 000012 000013 000014 000015 000016 000017 000018 000019 000020 000021</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
-
-	<testCase id="000001">
-		<class>Build_PhySim</class>
-		<desc>Build for physical simulator</desc>
-		<physim_build_args>--phy_simulators --ninja --noavx512</physim_build_args>
-		<forced_workspace_cleanup>FALSE</forced_workspace_cleanup>
-	</testCase>
 
 	<testCase id="000002">
 		<class>Run_PhySim</class>
