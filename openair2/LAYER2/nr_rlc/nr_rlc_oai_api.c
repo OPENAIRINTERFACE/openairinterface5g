@@ -1138,8 +1138,8 @@ void nr_rlc_activate_avg_time_to_tx(
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
 
-/* returns 0 in case of error, 1 if everything ok */
-int const nr_rlc_get_statistics(
+/* returns false in case of error, true if everything ok */
+const bool nr_rlc_get_statistics(
   int rnti,
   int srb_flag,
   int rb_id,
@@ -1147,7 +1147,7 @@ int const nr_rlc_get_statistics(
 {
   nr_rlc_ue_t     *ue;
   nr_rlc_entity_t *rb;
-  int             ret;
+  bool             ret;
 
   nr_rlc_manager_lock(nr_rlc_ue_manager);
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
@@ -1164,9 +1164,9 @@ int const nr_rlc_get_statistics(
 
   if (rb != NULL) {
     rb->get_stats(rb, out);
-    ret = 1;
+    ret = true;
   } else {
-    ret = 0;
+    ret = false;
   }
 
   nr_rlc_manager_unlock(nr_rlc_ue_manager);

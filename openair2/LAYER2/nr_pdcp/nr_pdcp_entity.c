@@ -118,7 +118,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     if (memcmp(integrity, buffer + size - integrity_size, 4) != 0) {
       LOG_E(PDCP, "discard NR PDU, integrity failed\n");
 //      return;
-     entity->stats.rxpdu_dd_pkts++;
+      entity->stats.rxpdu_dd_pkts++;
       entity->stats.rxpdu_dd_bytes += size;
 
 
@@ -128,7 +128,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
   if (rcvd_count < entity->rx_deliv
       || nr_pdcp_sdu_in_list(entity->rx_list, rcvd_count)) {
     LOG_W(PDCP, "discard NR PDU rcvd_count=%d, entity->rx_deliv %d,sdu_in_list %d\n", rcvd_count,entity->rx_deliv,nr_pdcp_sdu_in_list(entity->rx_list,rcvd_count));
-   entity->stats.rxpdu_dd_pkts++;
+    entity->stats.rxpdu_dd_pkts++;
     entity->stats.rxpdu_dd_bytes += size;
 
 
