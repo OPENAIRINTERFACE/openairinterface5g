@@ -457,8 +457,13 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.testSvrId = string_field
 
-	else: # ie action == 'Run_PhySim':
+	elif action == 'Run_LDPCTest':
 		ldpc.runargs = test.findtext('physim_run_args')
+
+	else:
+		logging.error(f"unknown action {action}, abort")
+		exit(1)
+
 		
 
 #check if given test is in list
@@ -914,8 +919,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					HTML=ldpc.Build_PhySim(HTML,CONST)
 					if ldpc.exitStatus==1:
 						RAN.prematureExit = True
-				elif action == 'Run_PhySim':
-					HTML=ldpc.Run_PhySim(HTML,CONST,id)
+				elif action == 'Run_LDPCTest':
+					HTML=ldpc.Run_LDPCTest(HTML,CONST,id)
+					if ldpc.exitStatus==1:
+						RAN.prematureExit = True
 				elif action == 'Build_Image':
 					CONTAINERS.BuildImage(HTML)
 				elif action == 'Build_Proxy':

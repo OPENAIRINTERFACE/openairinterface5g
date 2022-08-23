@@ -64,7 +64,7 @@ class PhySim:
 #PRIVATE Methods
 #-----------------
 
-	def __CheckResults_PhySim(self,HTML,CONST,testcase_id):
+	def __CheckResults_LDPCTest(self,HTML,CONST,testcase_id):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
 		#retrieve run log file and store it locally$
@@ -173,7 +173,7 @@ class PhySim:
 		return lHTML
 
 
-	def Run_PhySim(self,htmlObj,constObj,testcase_id):
+	def Run_LDPCTest(self,htmlObj,constObj,testcase_id):
 		#create run logs folder locally
 		os.system('mkdir -p ./'+self.__runLogPath)
 		#log file is tc_<testcase_id>.log remotely
@@ -187,5 +187,5 @@ class PhySim:
 		mySSH.close()
 		#return updated HTML to main
 		lHTML = cls_oai_html.HTMLManagement()
-		lHTML=self.__CheckResults_PhySim(htmlObj,constObj,testcase_id)
+		lHTML=self.__CheckResults_LDPCTest(htmlObj,constObj,testcase_id)
 		return lHTML
