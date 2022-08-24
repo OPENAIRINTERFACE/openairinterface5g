@@ -7013,7 +7013,7 @@ void idft49152(int16_t *input, int16_t *output,uint8_t scale) {
   _m_empty();
 }
 
-int16_t tw65536[3*2*4096] __attribute__((aligned(32)));
+int16_t tw65536[3*2*16384] __attribute__((aligned(32)));
 
 #ifndef __AVX2__
 void idft65536(int16_t *x,int16_t *y,unsigned char scale)
@@ -9343,8 +9343,8 @@ void dft768p(int16_t *x,int16_t *y,unsigned char scale_flag) { // 192x 4;
 
 }
 
-static int16_t twa384i[95*2*4];
-static int16_t twb384i[95*2*4];
+static int16_t twa384i[256];
+static int16_t twb384i[256];
 // 128 x 3
 void idft384(int16_t *input, int16_t *output, unsigned char scale)
 {
@@ -10826,6 +10826,7 @@ int dfts_autoinit(void)
   init_rad2(32768,tw32768);
   init_rad4(65536,tw65536);
 
+  init_rad3(384,twa384i,twb384i);
   init_rad3(768,twa768,twb768);
   init_rad3(1536,twa1536,twb1536);
   init_rad3(3072,twa3072,twb3072);
@@ -10856,7 +10857,6 @@ int dfts_autoinit(void)
   init_rad3_rep(324,twa324,twb324);
   init_rad3_rep(360,twa360,twb360);
   init_rad4_rep(384,twa384,twb384,twc384);
-  init_rad3_rep(384,twa384i,twb384i);
   init_rad4_rep(432,twa432,twb432,twc432);
   init_rad4_rep(480,twa480,twb480,twc480);
   init_rad3_rep(540,twa540,twb540);
