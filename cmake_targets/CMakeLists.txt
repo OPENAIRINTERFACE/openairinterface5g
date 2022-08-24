@@ -831,14 +831,8 @@ TARGET_LINK_LIBRARIES(benetel_5g pthread dl rt m numa)
 # LDPC offload library
 ##########################################################
 
-include_directories ("/usr/local/include")
-
-set(HWLIB_LDPC_OFFLOAD_SOURCE
-   ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c
-  )
-
 if(EXISTS  "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd.so")
-add_library(ldpc_offload MODULE ${HWLIB_LDPC_OFFLOAD_SOURCE} )
+add_library(ldpc_offload MODULE ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c)
 
 set_target_properties(ldpc_offload PROPERTIES COMPILE_FLAGS "-include rte_config.h  -march=native -I/usr/local/include -DALLOW_EXPERIMENTAL_API")
 

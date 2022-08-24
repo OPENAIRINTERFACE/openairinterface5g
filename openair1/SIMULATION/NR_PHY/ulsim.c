@@ -361,7 +361,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:o:p:q:r:s:t:u:v:w:y:z:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:op:q:r:s:t:u:v:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -481,7 +481,7 @@ int main(int argc, char **argv)
       break;
 
     case 'o':
-      ldpc_offload_flag = atoi(optarg);
+      ldpc_offload_flag = 1;
       break;
       
     case 'p':
@@ -646,6 +646,7 @@ int main(int argc, char **argv)
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used at UE\n");
       printf("-z Number of RX antennas used at gNB\n");
+      printf("-v Set the max rounds\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
@@ -1070,14 +1071,13 @@ int main(int argc, char **argv)
   double blerStats[4][100];
   double berStats[4][100];
   double snrStats[100];
-  double ldpcDecStats[100];
+  double ldpcDecStats[100] = {0};
   memset(errors_scrambling, 0, sizeof(uint32_t)*4*100);
   memset(n_errors, 0, sizeof(int)*4*100);
   memset(round_trials, 0, sizeof(int)*4*100);
   memset(blerStats, 0, sizeof(double)*4*100);
   memset(berStats, 0, sizeof(double)*4*100);
   memset(snrStats, 0, sizeof(double)*100);
-  memset(ldpcDecStats, 0, sizeof(double)*100);
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
     int error_flag = 0;
