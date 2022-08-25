@@ -1222,7 +1222,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot, int mod
         if (curr_pucch->active &&
             curr_pucch->frame == SFN &&
             curr_pucch->ul_slot == slot &&
-            curr_pucch->resource_indicator == found) {
+            curr_pucch->resource_indicator == idx) {
           curr_pucch->sr_flag = true;
           found = true;
           break;
@@ -1230,7 +1230,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot, int mod
         else if (!curr_pucch->active)
           free_pucch = i; // found an available pucch structure
       }
-      AssertFatal(found || free_pucch>0, "Coulnd't find an available PUCCH resource to schedule SR\n");
+      AssertFatal(found || free_pucch>-1, "Coulnd't find an available PUCCH resource to schedule SR\n");
       if (!found) {
         uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[slot * MAX_BWP_SIZE];
         int bwp_start = ul_bwp->BWPStart;
