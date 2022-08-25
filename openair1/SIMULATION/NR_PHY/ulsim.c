@@ -399,54 +399,63 @@ int main(int argc, char **argv)
       
     case 'g':
       switch ((char) *optarg) {
-      case 'A':
-	channel_model = SCM_A;
-	break;
-	
-      case 'B':
-	channel_model = SCM_B;
-	break;
-	
-      case 'C':
-	channel_model = SCM_C;
-	break;
-	
-      case 'D':
-	channel_model = SCM_D;
-	break;
-	
-      case 'E':
-	channel_model = EPA;
-	break;
-	
-      case 'F':
-	channel_model = EVA;
-	break;
-	
-      case 'G':
-	channel_model = ETU;
-	break;
+        case 'A':
+          channel_model = SCM_A;
+          printf("Channel model: SCM-A\n");
+          break;
 
-      case 'H':
-        channel_model = TDL_C;
-	DS_TDL = .030; // 30 ns
-	break;
-  
-      case 'I':
-	channel_model = TDL_C;
-	DS_TDL = .3;  // 300ns
-        break;
-     
-      case 'J':
-	channel_model=TDL_D;
-	DS_TDL = .03;
-	break;
+        case 'B':
+          channel_model = SCM_B;
+          printf("Channel model: SCM-B\n");
+          break;
 
-      default:
-	printf("Unsupported channel model!\n");
-	exit(-1);
+        case 'C':
+          channel_model = SCM_C;
+          printf("Channel model: SCM-C\n");
+          break;
+
+        case 'D':
+          channel_model = SCM_D;
+          printf("Channel model: SCM-D\n");
+          break;
+
+        case 'E':
+          channel_model = EPA;
+          printf("Channel model: EPA\n");
+          break;
+
+        case 'F':
+          channel_model = EVA;
+          printf("Channel model: EVA\n");
+          break;
+
+        case 'G':
+          channel_model = ETU;
+          printf("Channel model: ETU\n");
+          break;
+
+        case 'H':
+          channel_model = TDL_A;
+          DS_TDL = .030;  // 30 ns
+          printf("Channel model: TDLA30\n");
+          break;
+
+        case 'I':
+          channel_model = TDL_B;
+          DS_TDL = .100;  // 100ns
+          printf("Channel model: TDLB100\n");
+          break;
+
+        case 'J':
+          channel_model = TDL_C;
+          DS_TDL = 0.300; // 300 ns
+          printf("Channel model: TDLC300\n");
+          break;
+
+        default:
+          printf("Unsupported channel model!\n");
+          exit(-1);
       }
-      
       break;
       
     case 'i':
@@ -626,7 +635,7 @@ int main(int argc, char **argv)
       //printf("-d Use TDD\n");
       printf("-d Introduce delay in terms of number of samples\n");
       printf("-f Number of frames to simulate\n");
-      printf("-g [A,B,C,D,E,F,G] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models (ignores delay spread and Ricean factor)\n");
+      printf("-g and the channel model [A] SCM-A, [B] SCM-B, [C] SCM-C, [D] SCM-D, [E] EPA, [F] EVA, [G] ETU, [H] TDLA30, [I] TDLB100, [J] TDLC300\n");
       printf("-h This message\n");
       printf("-i Change channel estimation technique. Arguments list: Number of arguments=2, Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}. e.g. -i 2 1 0\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
