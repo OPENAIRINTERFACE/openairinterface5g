@@ -674,10 +674,11 @@ void RCconfig_nr_flexran()
 void RCconfig_nr_prs(void)
 {
   uint16_t  j = 0, k = 0;
+  prs_config_t *prs_config = NULL;
+  char str[7][100] = {'\0'}; int16_t n[7] = {0};
 
   paramdef_t PRS_Params[] = PRS_PARAMS_DESC;
   paramlist_def_t PRS_ParamList = {CONFIG_STRING_PRS_CONFIG,NULL,0};
-
   if (RC.gNB == NULL) {
     RC.gNB                       = (PHY_VARS_gNB **)malloc((1+NUMBER_OF_gNB_MAX)*sizeof(PHY_VARS_gNB*));
     LOG_I(NR_PHY,"RC.gNB = %p\n",RC.gNB);
@@ -696,77 +697,72 @@ void RCconfig_nr_prs(void)
 	      RC.gNB[j]->Mod_id  = j;
       }
 
+      memset(n,0,sizeof(n));
       RC.gNB[j]->prs_vars.NumPRSResources = *(PRS_ParamList.paramarray[j][NUM_PRS_RESOURCES].uptr);
       for (k = 0; k < RC.gNB[j]->prs_vars.NumPRSResources; k++)
       {
-        RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceSetPeriod[0]  = PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD_LIST].uptr[0];
-        RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceSetPeriod[1]  = PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD_LIST].uptr[1];
+        prs_config = &RC.gNB[j]->prs_vars.prs_cfg[k];
+        prs_config->PRSResourceSetPeriod[0]  = PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD_LIST].uptr[0];
+        prs_config->PRSResourceSetPeriod[1]  = PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD_LIST].uptr[1];
         // per PRS resources parameters
-        RC.gNB[j]->prs_vars.prs_cfg[k].SymbolStart              = PRS_ParamList.paramarray[j][PRS_SYMBOL_START_LIST].uptr[k];
-        RC.gNB[j]->prs_vars.prs_cfg[k].NumPRSSymbols            = PRS_ParamList.paramarray[j][PRS_NUM_SYMBOLS_LIST].uptr[k];
-        RC.gNB[j]->prs_vars.prs_cfg[k].REOffset                 = PRS_ParamList.paramarray[j][PRS_RE_OFFSET_LIST].uptr[k];
-        RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceOffset        = PRS_ParamList.paramarray[j][PRS_RESOURCE_OFFSET_LIST].uptr[k];
-        RC.gNB[j]->prs_vars.prs_cfg[k].NPRSID                   = PRS_ParamList.paramarray[j][PRS_ID_LIST].uptr[k];
+        prs_config->SymbolStart              = PRS_ParamList.paramarray[j][PRS_SYMBOL_START_LIST].uptr[k];
+        prs_config->NumPRSSymbols            = PRS_ParamList.paramarray[j][PRS_NUM_SYMBOLS_LIST].uptr[k];
+        prs_config->REOffset                 = PRS_ParamList.paramarray[j][PRS_RE_OFFSET_LIST].uptr[k];
+        prs_config->PRSResourceOffset        = PRS_ParamList.paramarray[j][PRS_RESOURCE_OFFSET_LIST].uptr[k];
+        prs_config->NPRSID                   = PRS_ParamList.paramarray[j][PRS_ID_LIST].uptr[k];
         // Common parameters to all PRS resources
-        RC.gNB[j]->prs_vars.prs_cfg[k].NumRB                    = *(PRS_ParamList.paramarray[j][PRS_NUM_RB].uptr);
-        RC.gNB[j]->prs_vars.prs_cfg[k].RBOffset                 = *(PRS_ParamList.paramarray[j][PRS_RB_OFFSET].uptr);
-        RC.gNB[j]->prs_vars.prs_cfg[k].CombSize                 = *(PRS_ParamList.paramarray[j][PRS_COMB_SIZE].uptr);
-        RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceRepetition    = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_REPETITION].uptr);
-        RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceTimeGap       = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_TIME_GAP].uptr);
-        RC.gNB[j]->prs_vars.prs_cfg[k].MutingBitRepetition      = *(PRS_ParamList.paramarray[j][PRS_MUTING_BIT_REPETITION].uptr);
+        prs_config->NumRB                    = *(PRS_ParamList.paramarray[j][PRS_NUM_RB].uptr);
+        prs_config->RBOffset                 = *(PRS_ParamList.paramarray[j][PRS_RB_OFFSET].uptr);
+        prs_config->CombSize                 = *(PRS_ParamList.paramarray[j][PRS_COMB_SIZE].uptr);
+        prs_config->PRSResourceRepetition    = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_REPETITION].uptr);
+        prs_config->PRSResourceTimeGap       = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_TIME_GAP].uptr);
+        prs_config->MutingBitRepetition      = *(PRS_ParamList.paramarray[j][PRS_MUTING_BIT_REPETITION].uptr);
         for (int l = 0; l < PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN1_LIST].numelt; l++)
-          RC.gNB[j]->prs_vars.prs_cfg[k].MutingPattern1[l]      = PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN1_LIST].uptr[l];
+        {
+          prs_config->MutingPattern1[l]      = PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN1_LIST].uptr[l];
+          if (k == 0) // print only for 0th resource
+            n[5] += snprintf(str[5]+n[5],sizeof(str[5]),"%d, ",prs_config->MutingPattern1[l]);
+        }
         for (int l = 0; l < PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN2_LIST].numelt; l++)
-          RC.gNB[j]->prs_vars.prs_cfg[k].MutingPattern2[l]      = PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN2_LIST].uptr[l];
+        {
+          prs_config->MutingPattern2[l]      = PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN2_LIST].uptr[l];
+          if (k == 0) // print only for 0th resource
+            n[6] += snprintf(str[6]+n[6],sizeof(str[6]),"%d, ",prs_config->MutingPattern2[l]);
+        }
 
+        // print to buffer
+        n[0] += snprintf(str[0]+n[0],sizeof(str[0]),"%d, ",prs_config->SymbolStart);
+        n[1] += snprintf(str[1]+n[1],sizeof(str[1]),"%d, ",prs_config->NumPRSSymbols);
+        n[2] += snprintf(str[2]+n[2],sizeof(str[2]),"%d, ",prs_config->REOffset);
+        n[3] += snprintf(str[3]+n[3],sizeof(str[3]),"%d, ",prs_config->PRSResourceOffset);
+        n[4] += snprintf(str[4]+n[4],sizeof(str[4]),"%d, ",prs_config->NPRSID);
       } // for k
 
-      k = 0;
+      prs_config = &RC.gNB[j]->prs_vars.prs_cfg[0];
       LOG_I(PHY, "-----------------------------------------\n");
-      LOG_I(PHY, "PRS Config for gNB_id %d @ %p\n", j, &RC.gNB[j]->prs_vars.prs_cfg[k]);
+      LOG_I(PHY, "PRS Config for gNB_id %d @ %p\n", j, prs_config);
       LOG_I(PHY, "-----------------------------------------\n");
       LOG_I(PHY, "NumPRSResources \t%d\n", RC.gNB[j]->prs_vars.NumPRSResources);
-      LOG_I(PHY, "PRSResourceSetPeriod \t[%d, %d]\n", RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceSetPeriod[0], RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceSetPeriod[1]);
-      LOG_I(PHY, "NumRB \t\t\t%d\n", RC.gNB[j]->prs_vars.prs_cfg[k].NumRB);
-      LOG_I(PHY, "RBOffset \t\t%d\n", RC.gNB[j]->prs_vars.prs_cfg[k].RBOffset);
-      LOG_I(PHY, "CombSize \t\t%d\n", RC.gNB[j]->prs_vars.prs_cfg[k].CombSize);
-      LOG_I(PHY, "PRSResourceRepetition \t%d\n", RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceRepetition);
-      LOG_I(PHY, "PRSResourceTimeGap \t%d\n", RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceTimeGap);
-      LOG_I(PHY, "MutingBitRepetition \t%d\n", RC.gNB[j]->prs_vars.prs_cfg[k].MutingBitRepetition);
-      LOG_I(PHY, "SymbolStart \t\t[");
-      for (k = 0; k < RC.gNB[j]->prs_vars.NumPRSResources; k++)
-        printf("%d, ", RC.gNB[j]->prs_vars.prs_cfg[k].SymbolStart);
-      printf("\b\b]\n");
-      LOG_I(PHY, "NumPRSSymbols \t\t[");
-      for (k = 0; k < RC.gNB[j]->prs_vars.NumPRSResources; k++)
-        printf("%d, ", RC.gNB[j]->prs_vars.prs_cfg[k].NumPRSSymbols);
-      printf("\b\b]\n");
-      LOG_I(PHY, "REOffset \t\t[");
-      for (k = 0; k < RC.gNB[j]->prs_vars.NumPRSResources; k++)
-        printf("%d, ", RC.gNB[j]->prs_vars.prs_cfg[k].REOffset);
-      printf("\b\b]\n");
-      LOG_I(PHY, "PRSResourceOffset \t[");
-      for (k = 0; k < RC.gNB[j]->prs_vars.NumPRSResources; k++)
-        printf("%d, ", RC.gNB[j]->prs_vars.prs_cfg[k].PRSResourceOffset);
-      printf("\b\b]\n");
-      LOG_I(PHY, "NPRS_ID \t\t[");
-      for (k = 0; k < RC.gNB[j]->prs_vars.NumPRSResources; k++)
-        printf("%d, ", RC.gNB[j]->prs_vars.prs_cfg[k].NPRSID);
-      printf("\b\b]\n");
-      LOG_I(PHY, "MutingPattern1 \t\t[");
-      for (int l = 0, k = 0; l < PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN1_LIST].numelt; l++)
-        printf("%d, ", RC.gNB[j]->prs_vars.prs_cfg[k].MutingPattern1[l]);
-      printf("\b\b]\n");
-      LOG_I(PHY, "MutingPattern2 \t\t[");
-      for (int l = 0, k = 0; l < PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN2_LIST].numelt; l++)
-        printf("%d, ", RC.gNB[j]->prs_vars.prs_cfg[k].MutingPattern2[l]);
-      printf("\b\b]\n");
+      LOG_I(PHY, "PRSResourceSetPeriod \t[%d, %d]\n", prs_config->PRSResourceSetPeriod[0], prs_config->PRSResourceSetPeriod[1]);
+      LOG_I(PHY, "NumRB \t\t\t%d\n", prs_config->NumRB);
+      LOG_I(PHY, "RBOffset \t\t%d\n", prs_config->RBOffset);
+      LOG_I(PHY, "CombSize \t\t%d\n", prs_config->CombSize);
+      LOG_I(PHY, "PRSResourceRepetition \t%d\n", prs_config->PRSResourceRepetition);
+      LOG_I(PHY, "PRSResourceTimeGap \t%d\n", prs_config->PRSResourceTimeGap);
+      LOG_I(PHY, "MutingBitRepetition \t%d\n", prs_config->MutingBitRepetition);
+      LOG_I(PHY, "SymbolStart \t\t[%s\b\b]\n", str[0]);
+      LOG_I(PHY, "NumPRSSymbols \t\t[%s\b\b]\n", str[1]);
+      LOG_I(PHY, "REOffset \t\t[%s\b\b]\n", str[2]);
+      LOG_I(PHY, "PRSResourceOffset \t[%s\b\b]\n", str[3]);
+      LOG_I(PHY, "NPRS_ID \t\t[%s\b\b]\n", str[4]);
+      LOG_I(PHY, "MutingPattern1 \t\t[%s\b\b]\n", str[5]);
+      LOG_I(PHY, "MutingPattern2 \t\t[%s\b\b]\n", str[6]);
       LOG_I(PHY, "-----------------------------------------\n");
     } // for j
   }
   else
   {
-    LOG_I(NR_PHY,"No " CONFIG_STRING_PRS_CONFIG " configuration found\n");
+    LOG_E(PHY,"No " CONFIG_STRING_PRS_CONFIG " configuration found..!!\n");
   }
 }
 

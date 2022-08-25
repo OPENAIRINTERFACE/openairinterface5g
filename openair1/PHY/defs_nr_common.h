@@ -389,23 +389,23 @@ struct NR_DL_FRAME_PARMS {
   uint32_t ofdm_offset_divisor;
 };
 
-// PRS structures prototype
+// PRS config structures
 typedef struct {
-    uint16_t PRSResourceSetPeriod[2];   // [slot period, slot offset]
-    uint16_t PRSResourceOffset;         // array if more than one resource sets.slot offset (0...511) (default 0)
-    uint8_t  PRSResourceRepetition;     // slot offset (1 (default), 2, 4, 6, 8, 16, 32)
-    uint8_t  PRSResourceTimeGap;        // slot offset (1 (default), 2, 4, 6, 8, 16, 32)
-    uint16_t NumRB;                     // number of RBs in freq domain a scalar =< 275 RB
-    uint8_t  NumPRSSymbols;             // number of PRS symbols in time domain
-    uint8_t  SymbolStart;               // starting OFDM symbol of PRS resource in time domain
+    uint16_t PRSResourceSetPeriod[2];   // [slot period, slot offset] of a PRS resource set
+    uint16_t PRSResourceOffset;         // Slot offset of each PRS resource defined relative to the slot offset of the PRS resource set (0...511)
+    uint8_t  PRSResourceRepetition;     // Repetition factor for all PRS resources in resource set (1 /*default*/, 2, 4, 6, 8, 16, 32)
+    uint8_t  PRSResourceTimeGap;        // Slot offset between two consecutive repetition indices of all PRS resources in a PRS resource set (1 /*default*/, 2, 4, 6, 8, 16, 32)
+    uint16_t NumRB;                     // Number of PRBs allocated to all PRS resources in a PRS resource set (<= 272 and multiples of 4)
+    uint8_t  NumPRSSymbols;             // Number of OFDM symbols in a slot allocated to each PRS resource in a PRS resource set
+    uint8_t  SymbolStart;               // Starting OFDM symbol of each PRS resource in a PRS resource set
     uint16_t RBOffset;                  // Starting PRB index of all PRS resources in a PRS resource set
-    uint8_t  CombSize;                  // RE density of all PRS resources in a PRS resource set. i∈{2,4,6,12}
+    uint8_t  CombSize;                  // RE density of all PRS resources in a PRS resource set (2, 4, 6, 12)
     uint8_t  REOffset;                  // Starting RE offset in the first OFDM symbol of each PRS resource in a PRS resource set
     uint32_t MutingPattern1[32];        // Muting bit pattern option-1, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32
     uint32_t MutingPattern2[32];        // Muting bit pattern option-2, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32
     uint8_t  MutingBitRepetition;       // Muting bit repetition factor, specified as 1, 2, 4, or 8
-    uint16_t NPRSID;                    // Sequence identity of each PRS resource specified as a scalar or a vector of integers in the range [0, 4095]
-} prs_data_t;
+    uint16_t NPRSID;                    // Sequence identity of each PRS resource in a PRS resource set, specified in the range [0, 4095]
+} prs_config_t;
 
 typedef struct {
     int8_t  gNB_id;

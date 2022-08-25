@@ -136,7 +136,7 @@ void nr_init_prs(PHY_VARS_gNB* gNB)
 
   for (rsc_id = 0; rsc_id < gNB->prs_vars.NumPRSResources; rsc_id++) {
     Nid = gNB->prs_vars.prs_cfg[rsc_id].NPRSID; // seed value
-    LOG_I(PHY, "Initiaized NR-PRS sequence with PRS_ID %d\n", Nid);
+    LOG_I(PHY, "Initiaized NR-PRS sequence with PRS_ID %3d for resource %d\n", Nid, rsc_id);
     for (slotNum = 0; slotNum < fp->slots_per_frame; slotNum++) {
       for (symNum = 0; symNum < fp->symbols_per_slot ; symNum++) {
         reset = 1;

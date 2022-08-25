@@ -226,7 +226,7 @@ typedef struct {
 
 typedef struct {
   uint8_t NumPRSResources;
-  prs_data_t prs_cfg[NR_MAX_PRS_RESOURCES_PER_SET];
+  prs_config_t prs_cfg[NR_MAX_PRS_RESOURCES_PER_SET];
 } NR_gNB_PRS;
 
 typedef struct {

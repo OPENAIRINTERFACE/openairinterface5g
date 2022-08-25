@@ -53,7 +53,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                               NR_DL_FRAME_PARMS *frame_params)
 {
   int32_t **rxdataF      = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
-  prs_data_t *prs_cfg    = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
+  prs_config_t *prs_cfg  = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
   prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
   int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates;
   int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates_time;

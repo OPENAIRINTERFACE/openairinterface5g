@@ -42,7 +42,7 @@
 int nr_generate_prs(uint32_t **nr_gold_prs,
                     int32_t *txdataF,
                     int16_t amp,
-                    prs_data_t *prs_data,
+                    prs_config_t *prs_cfg,
                     nfapi_nr_config_request_scf_t *config,
                     NR_DL_FRAME_PARMS *frame_parms);
 
