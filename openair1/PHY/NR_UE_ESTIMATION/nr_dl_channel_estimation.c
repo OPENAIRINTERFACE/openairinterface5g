@@ -38,7 +38,6 @@
 //#define DEBUG_CH
 //#define DEBUG_PRS_CHEST
 //#define DEBUG_PRS_PRINTS
-#define IDFT_INTERPOL_FACTOR 1
 extern short nr_qpsk_mod_table[8];
 
 static inline int abs32(int x)
@@ -58,6 +57,9 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
   int32_t **prs_chestF   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates;
   int32_t **prs_chestT   = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_ch_estimates_time;
+  int16_t *ch_tmp        = ue->prs_vars[gNB_id]->ch_tmp;
+  int16_t *chF_interpol  = ue->prs_vars[gNB_id]->chF_interpol;
+  int16_t *chT_interpol  = ue->prs_vars[gNB_id]->chT_interpol;
   int slot_prs           = (proc->nr_slot_rx - rep_num*prs_cfg->PRSResourceTimeGap + frame_params->slots_per_frame)%frame_params->slots_per_frame;
   uint32_t **nr_gold_prs = ue->nr_gold_prs[gNB_id][rsc_id][slot_prs];
   
@@ -65,12 +67,6 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   int16_t *rxF, *pil, *fl, *fm, *fmm, *fml, *fmr, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
   int16_t ch[2] = {0}, noiseFig[2] = {0};
   int16_t k_prime = 0, k = 0, re_offset = 0, first_half = 0, second_half = 0;
-  int16_t *ch_tmp  = (int16_t *)malloc16_clear(frame_params->ofdm_symbol_size*sizeof(int32_t));
-  AssertFatal((ch_tmp != NULL), "[%s] channel estimate buffer initialization failed!!", __FUNCTION__);
-  int16_t *chF_interpol  = (int16_t *)malloc16_clear(IDFT_INTERPOL_FACTOR*frame_params->ofdm_symbol_size*sizeof(int32_t));
-  AssertFatal((chF_interpol != NULL), "[%s] channel estimate buffer initialization failed!!", __FUNCTION__);
-  int16_t *chT_interpol  = (int16_t *)malloc16_clear(IDFT_INTERPOL_FACTOR*frame_params->ofdm_symbol_size*sizeof(int32_t));
-  AssertFatal((chT_interpol != NULL), "[%s] channel estimate buffer initialization failed!!", __FUNCTION__);
   int32_t ch_pwr = 0, snr = 0;
 #ifdef DEBUG_PRS_CHEST
   char filename[64] = {0}, varname[64] = {0};
@@ -78,7 +74,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   int16_t *ch_init     = ch_tmp;
   int16_t scale_factor = (1.0f/(float)(prs_cfg->NumPRSSymbols))*(1<<15);
   int16_t num_pilots   = (12/prs_cfg->CombSize)*prs_cfg->NumRB;
-  int16_t start_offset = (IDFT_INTERPOL_FACTOR-1)*frame_params->ofdm_symbol_size>>1;
+  int16_t start_offset = (NR_PRS_IDFT_OVERSAMP_FACTOR-1)*frame_params->ofdm_symbol_size>>1;
 
   int16_t k_prime_table[K_PRIME_TABLE_ROW_SIZE][K_PRIME_TABLE_COL_SIZE] = PRS_K_PRIME_TABLE;
   for(int l = prs_cfg->SymbolStart; l < prs_cfg->SymbolStart+prs_cfg->NumPRSSymbols; l++)
@@ -436,7 +432,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 
     // Time domain IMPULSE response
     idft_size_idx_t idftsizeidx;
-    switch (IDFT_INTERPOL_FACTOR*frame_params->ofdm_symbol_size) {
+    switch (NR_PRS_IDFT_OVERSAMP_FACTOR*frame_params->ofdm_symbol_size) {
     case 128:
       idftsizeidx = IDFT_128;
       break;
@@ -472,7 +468,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
     case 4096:
       idftsizeidx = IDFT_4096;
       break;
-
+    // 16x IDFT oversampling
     case 8192:
       idftsizeidx = IDFT_8192;
       break;
@@ -511,7 +507,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
          (int16_t *)&chT_interpol[0],1);
 
     // rearrange impulse response
-    memcpy((int16_t *)&prs_chestT[rxAnt][0], &chT_interpol[IDFT_INTERPOL_FACTOR*frame_params->ofdm_symbol_size], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
+    memcpy((int16_t *)&prs_chestT[rxAnt][0], &chT_interpol[NR_PRS_IDFT_OVERSAMP_FACTOR*frame_params->ofdm_symbol_size], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
     memcpy((int16_t *)&prs_chestT[rxAnt][(frame_params->ofdm_symbol_size>>1)], &chT_interpol[start_offset], (frame_params->ofdm_symbol_size>>1)*sizeof(int32_t));
 
     // peak estimator
@@ -521,7 +517,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                    &ch_pwr);
 
     //prs measurements
-    prs_meas[rxAnt]->dl_toa    -= (frame_params->ofdm_symbol_size>>1);
+    prs_meas[rxAnt]->dl_toa    -= (frame_params->ofdm_symbol_size>>1); // adjusting ToA wrt center
     prs_meas[rxAnt]->gNB_id     = gNB_id;
     prs_meas[rxAnt]->sfn        = proc->frame_rx;
     prs_meas[rxAnt]->slot       = proc->nr_slot_rx;
@@ -531,7 +527,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 
 #ifdef DEBUG_PRS_CHEST
     sprintf(filename, "%s%i%s", "PRSpilot_", rxAnt, ".m");
-    LOG_M(filename, "prs_loc", &mod_prs[0], prs_cfg->NumRB*(12/prs_cfg->CombSize),1,1);
+    LOG_M(filename, "prs_loc", &mod_prs[0], num_pilots,1,1);
     sprintf(filename, "%s%i%s", "rxSigF_", rxAnt, ".m");
     sprintf(varname, "%s%i", "rxF_", rxAnt);
     LOG_M(filename, varname, &rxdataF[rxAnt][0], prs_cfg->NumPRSSymbols*frame_params->ofdm_symbol_size,1,1);
@@ -557,9 +553,6 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
       T_INT(rxAnt), T_BUFFER(&prs_chestT[rxAnt][0], frame_params->ofdm_symbol_size*sizeof(int32_t)));
   }
 
-  free(ch_tmp);
-  free(chF_interpol);
-  free(chT_interpol);
   return(0);
 }
 

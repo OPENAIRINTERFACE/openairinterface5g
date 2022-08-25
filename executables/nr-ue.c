@@ -268,6 +268,9 @@ void init_nr_prs_ue_vars(PHY_VARS_NR_UE *ue)
   for(int idx = 0; idx < NR_MAX_PRS_COMB_SIZE; idx++)
   {
     prs_vars[idx]   = (NR_UE_PRS *)malloc16_clear(sizeof(NR_UE_PRS));
+    prs_vars[idx]->ch_tmp       = (int16_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+    prs_vars[idx]->chF_interpol = (int16_t *)malloc16_clear(NR_PRS_IDFT_OVERSAMP_FACTOR*fp->ofdm_symbol_size*sizeof(int32_t));
+    prs_vars[idx]->chT_interpol = (int16_t *)malloc16_clear(NR_PRS_IDFT_OVERSAMP_FACTOR*fp->ofdm_symbol_size*sizeof(int32_t));
     for(int k = 0; k < NR_MAX_PRS_RESOURCES_PER_SET; k++)
     {
       // PRS channel estimates
@@ -277,12 +280,12 @@ void init_nr_prs_ue_vars(PHY_VARS_NR_UE *ue)
       prs_vars[idx]->prs_resource[k].prs_meas              = (prs_meas_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(prs_meas_t *) );
       AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas!=NULL), "NR UE init: PRS measurements malloc failed for gNB_id %d\n", idx);
 
-      for (int i=0; i<fp->nb_antennas_rx; i++) {
-        prs_vars[idx]->prs_resource[k].prs_ch_estimates[i]      = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-        prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[i] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-        AssertFatal(((prs_vars[idx]->prs_resource[k].prs_ch_estimates[i]!=NULL) || (prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[i]!=NULL)), "NR UE init: PRS channel estimates malloc failed for rx_ant %d\n", i);
-        prs_vars[idx]->prs_resource[k].prs_meas[i]              = (prs_meas_t *)malloc16_clear(sizeof(prs_meas_t) );
-        AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas[i]!=NULL), "NR UE init: PRS measurements malloc failed for rx_ant %d\n", i);
+      for (int j=0; j<fp->nb_antennas_rx; j++) {
+        prs_vars[idx]->prs_resource[k].prs_ch_estimates[j]      = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+        prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
+        AssertFatal(((prs_vars[idx]->prs_resource[k].prs_ch_estimates[j]!=NULL) || (prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[j]!=NULL)), "NR UE init: PRS channel estimates malloc failed for rx_ant %d\n", j);
+        prs_vars[idx]->prs_resource[k].prs_meas[j]              = (prs_meas_t *)malloc16_clear(sizeof(prs_meas_t) );
+        AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas[j]!=NULL), "NR UE init: PRS measurements malloc failed for rx_ant %d\n", j);
       }
     }
   }

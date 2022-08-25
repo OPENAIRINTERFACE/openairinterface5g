@@ -801,6 +801,17 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(common_vars->beam_id[i]);
   }
 
+  for (int rsc=0; rsc < gNB->prs_vars.NumPRSResources; rsc++) {
+    for (int slot=0; slot<fp->slots_per_frame; slot++) {
+      for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+        free_and_zero(gNB->nr_gold_prs[rsc][slot][symb]);
+      }
+      free_and_zero(gNB->nr_gold_prs[rsc][slot]);
+    }
+    free_and_zero(gNB->nr_gold_prs[rsc]);
+  }
+  free_and_zero(gNB->nr_gold_prs);
+
   /* Do NOT free per-antenna txdataF/rxdataF: the gNB gets a pointer to the
    * RU's txdataF/rxdataF, and the RU will free that */
   free_and_zero(common_vars->txdataF);
