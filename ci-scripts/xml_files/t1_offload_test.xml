@@ -30,25 +30,25 @@
 	<testCase id="000001">
 		<class>Run_NRulsimTest</class>
 		<desc>Run T1 Offload nr_ulsim</desc>
-		<physim_run_args>-n2 -s30 -m9 -r50 -R106 -o1</physim_run_args>
+		<physim_run_args>-n2 -s30 -m9 -r50 -R106 -o</physim_run_args>
 	</testCase>
 
 	<testCase id="000002">
 		<class>Run_NRulsimTest</class>
 		<desc>Run T1 Offload nr_ulsim</desc>
-		<physim_run_args>-n2 -s30 -m9 -r106 -R106 -o1</physim_run_args>
+		<physim_run_args>-n2 -s30 -m9 -r106 -R106 -o</physim_run_args>
 	</testCase>
 
 	<testCase id="000003">
 		<class>Run_NRulsimTest</class>
 		<desc>Run T1 Offload nr_ulsim</desc>
-		<physim_run_args>-n2 -s30 -m16 -r106 -R106 -o1</physim_run_args>
+		<physim_run_args>-n2 -s30 -m16 -r106 -R106 -o</physim_run_args>
 	</testCase>
 
 	<testCase id="000004">
 		<class>Run_NRulsimTest</class>
 		<desc>Run T1 Offload nr_ulsim</desc>
-		<physim_run_args>-n2 -s30 -m9 -r273 -R273 -o1</physim_run_args>
+		<physim_run_args>-n2 -s30 -m9 -r273 -R273 -o</physim_run_args>
 	</testCase>
 
 </testCaseList>
