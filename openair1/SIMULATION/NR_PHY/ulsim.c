@@ -436,13 +436,13 @@ int main(int argc, char **argv)
 
         case 'H':
           channel_model = TDL_A;
-          DS_TDL = .030;  // 30 ns
+          DS_TDL = 0.030; // 30 ns
           printf("Channel model: TDLA30\n");
           break;
 
         case 'I':
           channel_model = TDL_B;
-          DS_TDL = .100;  // 100ns
+          DS_TDL = 0.100; // 100ns
           printf("Channel model: TDLB100\n");
           break;
 
@@ -703,7 +703,7 @@ int main(int argc, char **argv)
   UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
                                 sampling_frequency/1e6,
                                 tx_bandwidth,
-				DS_TDL,
+                                DS_TDL,
                                 0, 0, 0, 0);
 
   if (UE2gNB == NULL) {
