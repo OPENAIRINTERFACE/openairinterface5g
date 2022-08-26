@@ -1174,8 +1174,8 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
     }
   }
 
-  *noise_power = calc_power(noise_real,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length)
-                  + calc_power(noise_imag,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length);
+  *noise_power = max(calc_power(noise_real,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length)
+                     + calc_power(noise_imag,frame_parms->nb_antennas_rx*nr_srs_info->sc_list_length), 1);
 
   *snr = dB_fixed((int32_t)((*signal_power<<factor_bits)/(*noise_power))) - factor_dB;
 
