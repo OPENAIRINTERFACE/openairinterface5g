@@ -181,6 +181,11 @@ void nr_csi_meas_reporting(int Mod_idP,
 
       AssertFatal(csirep->reportConfigType.choice.periodic,
                   "Only periodic CSI reporting is implemented currently\n");
+
+      const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+      if(pucchcsires->uplinkBandwidthPartId != ul_bwp->bwp_id)
+        continue;
+
       int period, offset;
       csi_period_offset(csirep, NULL, &period, &offset);
       const int sched_slot = (period + offset) % n_slots_frame;
@@ -188,9 +193,8 @@ void nr_csi_meas_reporting(int Mod_idP,
       // preparation is done in first slot of tdd period
       if (frame % (period / n_slots_frame) != offset / n_slots_frame)
         continue;
-      LOG_D(NR_MAC, "CSI reporting in frame %d slot %d\n", frame, sched_slot);
+      LOG_D(NR_MAC, "CSI reporting in frame %d slot %d CSI report ID %ld\n", frame, sched_slot, csirep->reportConfigId);
 
-      const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
       const NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
       const int n = pucchresset->resourceList.list.count;
       int res_index = 0;
@@ -769,6 +773,9 @@ void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
     uint8_t li_bitlen = 0;
     uint8_t pmi_bitlen = 0;
     NR_CSI_ReportConfig_t *csirep = csi_MeasConfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
+    const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+    if(pucchcsires->uplinkBandwidthPartId != ul_bwp->bwp_id)
+      continue;
     int period, offset;
     csi_period_offset(csirep, NULL, &period, &offset);
     // verify if report with current id has been scheduled for this frame and slot
@@ -909,21 +916,26 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       handle_dl_harq(UE, pid, harq_value == 0 && harq_confidence == 0, RC.nrmac[mod_id]->dl_bler.harq_round_max);
       if (harq_confidence == 1)  UE->mac_stats.pucch0_DTX++;
     }
+
+    // tpc (power control) only if we received AckNack
+    if (uci_01->harq->harq_confidence_level==0)
+      sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10, uci_01->ul_cqi, 30);
+    else
+      sched_ctrl->tpc1 = 3;
+    sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
+
+    free(uci_01->harq->harq_list);
+    free(uci_01->harq);
   }
 
   // check scheduling request result, confidence_level == 0 is good
-  if (uci_01->pduBitmap & 0x1 && uci_01->sr->sr_indication && uci_01->sr->sr_confidence_level == 0 && uci_01->ul_cqi >= 148) {
-    // SR detected with SNR >= 10dB
-    sched_ctrl->SR |= true;
-    LOG_D(NR_MAC, "SR UE %04x ul_cqi %d\n", uci_01->rnti, uci_01->ul_cqi);
-  }
-
-  // tpc (power control) only if we received AckNack or positive SR. For a
-  // negative SR, the UE won't have sent anything, and the SNR is not valid
-  if (((uci_01->pduBitmap >> 1) & 0x1) ) {
-    if ((uci_01->harq) && (uci_01->harq->harq_confidence_level==0)) sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10, uci_01->ul_cqi, 30);
-    else                                        sched_ctrl->tpc1 = 3;
-    sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
+  if (uci_01->pduBitmap & 0x1) {
+    if (uci_01->sr->sr_indication && uci_01->sr->sr_confidence_level == 0 && uci_01->ul_cqi >= 148) {
+      // SR detected with SNR >= 10dB
+      sched_ctrl->SR |= true;
+      LOG_D(NR_MAC, "SR UE %04x ul_cqi %d\n", uci_01->rnti, uci_01->ul_cqi);
+    }
+    free(uci_01->sr);
   }
 }
 
@@ -950,6 +962,11 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   //                              30);
   //sched_ctrl->pucch_snrx10 = uci_234->ul_cqi * 5 - 640;
 
+  // TODO: handle SR
+  if (uci_234->pduBitmap & 0x1) {
+    free(uci_234->sr.sr_payload);
+  }
+
   if ((uci_234->pduBitmap >> 1) & 0x01) {
     // iterate over received harq bits
     for (int harq_bit = 0; harq_bit < uci_234->harq.harq_bit_len; harq_bit++) {
@@ -962,15 +979,18 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       handle_dl_harq(UE, pid, uci_234->harq.harq_crc != 1 && acknack, RC.nrmac[mod_id]->dl_bler.harq_round_max);
     }
+    free(uci_234->harq.harq_payload);
   }
   if ((uci_234->pduBitmap >> 2) & 0x01) {
     //API to parse the csi report and store it into sched_ctrl
     extract_pucch_csi_report(csi_MeasConfig, uci_234, frame, slot, UE, RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon);
     //TCI handling function
     tci_handling(UE,frame, slot);
+    free(uci_234->csi_part1.csi_part1_payload);
   }
   if ((uci_234->pduBitmap >> 3) & 0x01) {
     //@TODO:Handle CSI Report 2
+    // nothing to free (yet)
   }
 }
 

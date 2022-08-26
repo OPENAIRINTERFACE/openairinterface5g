@@ -171,7 +171,6 @@ void nr_feptx_ofdm(RU_t *ru,int frame_tx,int tti_tx) {
 
 }
 
-// FEP TX precoding function, single-thread
 void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
 
   int l,aa;
@@ -230,7 +229,7 @@ void nr_feptx_prec(RU_t *ru,int frame_tx,int tti_tx) {
   stop_meas(&ru->precoding_stats);
 }
 
-// single thread RU FEP RX
+
 void nr_fep_full(RU_t *ru, int slot) {
 
   RU_proc_t *proc = &ru->proc;

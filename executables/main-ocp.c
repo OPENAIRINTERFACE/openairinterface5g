@@ -71,7 +71,7 @@ pthread_cond_t sync_cond;
 pthread_mutex_t sync_mutex;
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
-volatile int oai_exit = 0;
+int oai_exit = 0;
 double cpuf;
 THREAD_STRUCT thread_struct;
 

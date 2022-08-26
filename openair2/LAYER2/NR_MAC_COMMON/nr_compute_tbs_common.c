@@ -46,18 +46,18 @@ uint32_t nr_compute_tbs(uint16_t Qm,
                         uint8_t Nl)
 {
 
-  uint16_t nbp_re, nb_re;
-  uint32_t nr_tbs=0;
-  uint32_t Ninfo, Np_info, C;
-  uint8_t n;
-
   LOG_D(NR_MAC, "In %s: nb_symb_sch %d, nb_dmrs_prb %d, nb_rb %d, nb_rb_oh %d, tb_scaling %d Nl %d\n", __FUNCTION__, nb_symb_sch, nb_dmrs_prb, nb_rb, nb_rb_oh, tb_scaling, Nl);
 
-  nbp_re = NR_NB_SC_PER_RB * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
-  nb_re = min(156, nbp_re) * nb_rb;
+  const uint32_t nbp_re = NR_NB_SC_PER_RB * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
+  const uint32_t nb_re = min(156, nbp_re) * nb_rb;
   // Intermediate number of information bits
-  // R is tabulated as 10 times the actual code rate
-  Ninfo = ((nb_re * R * Qm * Nl / 10)>>10)>>tb_scaling;
+  // Rx1024 is tabulated as 10 times the actual code rate
+  const uint32_t R_5 = R/5; // R can be fractional so we can't divide by 10
+  // So we ned to right shift by 11 (10 for x1024 and 1 additional as above)
+  const uint32_t Ninfo = ((nb_re * R_5 * Qm * Nl)>>11)>>tb_scaling;
+
+  uint32_t nr_tbs=0;
+  uint32_t Np_info, C, n;
 
   if (Ninfo <=3824) {
     n = max(3, floor(log2(Ninfo)) - 6);
@@ -85,7 +85,7 @@ uint32_t nr_compute_tbs(uint16_t Qm,
     }
   }
 
-  LOG_D(NR_MAC, "In %s: Ninfo %d nbp_re %d nb_re %d Qm %d, R %d, tbs %d bits\n", __FUNCTION__, Ninfo, nbp_re, nb_re, Qm, R, nr_tbs);
+  LOG_D(NR_MAC, "In %s: Ninfo %u nbp_re %d nb_re %d Qm %d, R %d, tbs %d bits\n", __FUNCTION__, Ninfo, nbp_re, nb_re, Qm, R, nr_tbs);
 
   return nr_tbs;
 

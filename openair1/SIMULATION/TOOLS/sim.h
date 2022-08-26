@@ -253,7 +253,7 @@ typedef enum {
     {"s"      ,     CONFIG_HLP_SNR,                                     PARAMFLAG_CMDLINE_NOPREFIXENABLED,   dblptr:&snr_dB,                        defdblval:25,                    TYPE_DOUBLE, 0},\
     {"sinr_dB",     NULL,                                               0,                                   dblptr:&sinr_dB,                       defdblval:0 ,                    TYPE_DOUBLE, 0},\
     {"max_chan",    "Max number of runtime models",                     0,                                   uptr:&max_chan,                        defintval:10,                    TYPE_UINT,   0},\
-    {CHANNELMOD_MODELLIST_PARANAME, CHANNELMOD_HELP_MODELLIST,          0,                                   strptr:(char **)&modellist_name,       defstrval:"DefaultChannelList",  TYPE_STRING, 60 },\
+    {CHANNELMOD_MODELLIST_PARANAME, CHANNELMOD_HELP_MODELLIST,          0,                                   strptr:&modellist_name,       defstrval:"DefaultChannelList",  TYPE_STRING, 0},\
   }
 
 /* parameters for one model */ 

@@ -426,11 +426,13 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     encoder_implemparams_t* perJobImpp=(encoder_implemparams_t*)NotifiedFifoData(req);
     *perJobImpp=impp;
     perJobImpp->macro_num=j;
-    pushTpool(gNB->threadPool,req);
+    pushTpool(&gNB->threadPool, req);
     nbJobs++;
   }
   while(nbJobs) {
-    notifiedFIFO_elt_t *req=pullTpool(&nf, gNB->threadPool);
+    notifiedFIFO_elt_t *req=pullTpool(&nf, &gNB->threadPool);
+    if (req == NULL)
+      break; // Tpool has been stopped
     delNotifiedFIFO_elt(req);
     nbJobs--;
 

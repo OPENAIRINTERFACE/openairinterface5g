@@ -36,6 +36,7 @@
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
 #include "openair1/PHY/impl_defs_nr.h"
+#include "common/utils/nr/nr_common.h"
 
 uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti);
 

@@ -197,18 +197,20 @@ static void nr_sdap_rx_entity(nr_sdap_entity_t *entity,
     }
 
     // Pushing SDAP SDU to GTP-U Layer
-    MessageDef *message_p;
-    uint8_t *gtpu_buffer_p;
-    gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U, size + GTPU_HEADER_OVERHEAD_MAX - offset);
-    AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
-    memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], buf+offset, size-offset);
-    message_p = itti_alloc_new_message(TASK_PDCP_ENB, 0 , GTPV1U_GNB_TUNNEL_DATA_REQ);
+    MessageDef *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB,
+                                                         0,
+                                                         GTPV1U_GNB_TUNNEL_DATA_REQ,
+                                                         sizeof(gtpv1u_gnb_tunnel_data_req_t)
+                                                           + size + GTPU_HEADER_OVERHEAD_MAX - offset);
     AssertFatal(message_p != NULL, "OUT OF MEMORY");
-    GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).buffer = gtpu_buffer_p;
-    GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).length              = size-offset;
-    GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).offset              = GTPU_HEADER_OVERHEAD_MAX;
-    GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).rnti                = rnti;
-    GTPV1U_GNB_TUNNEL_DATA_REQ(message_p).pdusession_id       = pdusession_id;
+    gtpv1u_gnb_tunnel_data_req_t *req = &GTPV1U_GNB_TUNNEL_DATA_REQ(message_p);
+    uint8_t *gtpu_buffer_p = (uint8_t *) (req + 1);
+    memcpy(gtpu_buffer_p + GTPU_HEADER_OVERHEAD_MAX, buf + offset, size - offset);
+    req->buffer        = gtpu_buffer_p;
+    req->length        = size - offset;
+    req->offset        = GTPU_HEADER_OVERHEAD_MAX;
+    req->rnti          = rnti;
+    req->pdusession_id = pdusession_id;
     LOG_D(SDAP, "%s()  sending message to gtp size %d\n", __func__,  size-offset);
     itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
   } else { //nrUE
