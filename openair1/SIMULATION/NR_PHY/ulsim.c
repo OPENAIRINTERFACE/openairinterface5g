@@ -1322,30 +1322,10 @@ int main(int argc, char **argv)
           }
         }
 
-        // The multipath_channel() function calculates a channel matrix with only 1's. So the channel rank is 1, and we
-        // cannot use multi-layer. To solve this issue, for now we use the H_awgn_mimo matrix for multi-layer.
-        if (precod_nbr_layers == 1) {
-          if (UE2gNB->max_Doppler == 0) {
-            multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials==1)?1:0);
-          } else {
-            multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
-          }
+        if (UE2gNB->max_Doppler == 0) {
+          multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials==1)?1:0);
         } else {
-          double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05},   //rx 0
-                                     {0.2, 1.0, 0.2, 0.1},    //rx 1
-                                     {0.1, 0.2, 1.0, 0.2},    //rx 2
-                                     {0.05, 0.1, 0.2, 1.0}};  //rx 3
-          for (i=0; i<slot_length; i++) {
-            for (ap = 0; ap < frame_parms->nb_antennas_rx; ap++) {
-              // sum up signals from different Tx antennas
-              r_re[ap][i] = 0;
-              r_im[ap][i] = 0;
-              for (int aa=0; aa<n_tx; aa++) {
-                r_re[ap][i] += s_re[aa][i]*H_awgn_mimo[ap][aa];
-                r_im[ap][i] += s_im[aa][i]*H_awgn_mimo[ap][aa];
-              }
-            }
-          }
+          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
         }
 
         for (i=0; i<slot_length; i++) {
