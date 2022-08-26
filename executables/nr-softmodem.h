@@ -45,7 +45,7 @@ extern uint32_t target_ul_bw;
 extern uint64_t dlsch_slot_bitmap;
 extern uint64_t ulsch_slot_bitmap;
 extern char *uecap_file;
-extern uint32_t ldpc_offload_flag;
+extern int ldpc_offload_flag;
 
 // In nr-gnb.c
 extern void init_gNB(int single_thread_flag,int wait_for_sync);
