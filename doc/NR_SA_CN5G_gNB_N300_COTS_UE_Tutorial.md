@@ -7,7 +7,7 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">OAI 5G SA tutorial</font></b>
+      <b><font size = "5">OAI 5G SA tutorial for USRP N300 or X300</font></b>
     </td>
   </tr>
 </table>
@@ -46,7 +46,7 @@ Minimum hardware requirements:
     - CPU: 4 cores x86_64
     - RAM: 8 GB
     - Windows driver for Quectel MUST be equal or higher than version **2.2.4**
-- [USRP N300](https://www.ettus.com/all-products/USRP-N300/): Please identify the network interface(s) on which the N300 is connected.
+- [USRP N300](https://www.ettus.com/all-products/USRP-N300/) or [USRP X300](https://www.ettus.com/all-products/x300-kit/): Please identify the network interface(s) on which the USRP is connected.
 - Quectel RM500Q
     - Module, M.2 to USB adapter, antennas and SIM card
     - Firmware version of Quectel MUST be equal or higher than **RM500QGLABR11A06M4G**
@@ -192,10 +192,17 @@ python3 core-network.py --type start-basic --scenario 1
 ## 4.2 Run OAI gNB
 
 ```bash
+# USRP N300
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf --sa --usrp-tx-thread-config 1
+
+# USRP X300
+cd ~/openairinterface5g
+source oaienv
+cd cmake_targets/ran_build/build
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf --sa --usrp-tx-thread-config 1 -E --continuous-tx
 ```
 
 

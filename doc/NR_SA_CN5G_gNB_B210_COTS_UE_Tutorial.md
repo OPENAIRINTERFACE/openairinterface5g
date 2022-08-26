@@ -7,7 +7,7 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">OAI 5G SA tutorial</font></b>
+      <b><font size = "5">OAI 5G SA tutorial for USRP B210</font></b>
     </td>
   </tr>
 </table>
