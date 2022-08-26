@@ -831,7 +831,16 @@ TARGET_LINK_LIBRARIES(benetel_5g pthread dl rt m numa)
 # LDPC offload library
 ##########################################################
 
-if(EXISTS  "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd.so")
+# there is no generic way to test for T1 Offload, it simply comes with the
+# shared object
+if (EXISTS "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd.so")
+  set(T1_OFFLOAD_FOUND TRUE)
+else()
+  set(T1_OFFLOAD_FOUND FALSE)
+endif()
+
+if(T1_OFFLOAD_FOUND)
+  message(STATUS "T1 Offload support detected")
 add_library(ldpc_offload MODULE ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c)
 
 set_target_properties(ldpc_offload PROPERTIES COMPILE_FLAGS "-include rte_config.h  -march=native -I/usr/local/include -DALLOW_EXPERIMENTAL_API")
@@ -840,6 +849,8 @@ SET(T1_DPDK_LIBS "-Wl,-rpath /usr/local/lib64 -L/usr/local/lib64 -lrte_node -lrt
 
 target_link_libraries(ldpc_offload ${T1_DPDK_LIBS})
 target_link_libraries(ldpc_offload pthread dl rt m numa)
+else()
+  message(STATUS "No T1 Offload support detected")
 endif ()
 
 ##########################################################
@@ -2790,7 +2801,7 @@ target_link_libraries (nr-softmodem ${T_LIB})
 
 add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
 
-if(EXISTS  "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd.so")
+if(T1_OFFLOAD_FOUND)
 add_dependencies( nr-softmodem ldpc_offload)
 endif ()
 
@@ -3003,7 +3014,7 @@ add_executable(nr_ulsim
   ${SHLIB_LOADER_SOURCES}
   )
 
-if(EXISTS  "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd.so")
+if(T1_OFFLOAD_FOUND)
 add_dependencies( nr_ulsim ldpc_offload)
 endif ()
 
