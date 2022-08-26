@@ -375,6 +375,7 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   chan_desc->ch             = (struct complexd **) malloc(nb_tx*nb_rx*sizeof(struct complexd *));
   chan_desc->chF            = (struct complexd **) malloc(nb_tx*nb_rx*sizeof(struct complexd *));
   chan_desc->a              = (struct complexd **) malloc(chan_desc->nb_taps*sizeof(struct complexd *));
+  chan_desc->ricean_factor  = 1.0;
 
   for (int i = 0; i<nb_tx*nb_rx; i++)
     chan_desc->ch[i] = (struct complexd *) malloc(chan_desc->channel_length * sizeof(struct complexd));
@@ -385,27 +386,69 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   for (int i = 0; i<chan_desc->nb_taps; i++)
     chan_desc->a[i]         = (struct complexd *) malloc(nb_tx*nb_rx * sizeof(struct complexd));
 
-  chan_desc->R_sqrt  = (struct complexd **) malloc(tdl_pathsby3*sizeof(struct complexd **));
+  // FIXME: Remove this hardcoded value
+  chan_desc->corr_level = CORR_LEVEL_LOW;
 
-  if (nb_tx==2 && nb_rx==2) {
-    for (int i = 0; i<(tdl_pathsby3); i++)
-      chan_desc->R_sqrt[i] = (struct complexd *) &R22_sqrt[i][0];
-  } else if (nb_tx==2 && nb_rx==1) {
-    for (int i = 0; i<(tdl_pathsby3); i++)
-      chan_desc->R_sqrt[i] = (struct complexd *) &R21_sqrt[i][0];
-  } else if (nb_tx==1 && nb_rx==2) {
-    for (int i = 0; i<(tdl_pathsby3); i++)
-      chan_desc->R_sqrt[i] = (struct complexd *) &R12_sqrt[i][0];
-  } else {
-    for (int i = 0; i<(tdl_pathsby3); i++) {
-      chan_desc->R_sqrt[i]    = (struct complexd *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complexd));
-
-      for (int j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-        chan_desc->R_sqrt[i][j].r = 1.0;
-        chan_desc->R_sqrt[i][j].i = 0.0;
+  int matrix_size = nb_tx*nb_rx;
+  double *correlation_matrix[matrix_size];
+  if (chan_desc->corr_level!=CORR_LEVEL_LOW) {
+    if (nb_rx==1 && nb_tx==2) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R12_medium_high[row];
       }
+    } else if (nb_rx==1 && nb_tx==4) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R14_medium_high[row];
+      }
+    } else if (nb_rx==1 && nb_tx==8) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R18_medium_high[row];
+      }
+    } else if (nb_rx==2 && nb_tx==2 && chan_desc->corr_level==CORR_LEVEL_MEDIUM) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R22_medium[row];
+      }
+    } else if (nb_rx==2 && nb_tx==4 && chan_desc->corr_level==CORR_LEVEL_MEDIUM) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R24_medium[row];
+      }
+    } else if (nb_rx==4 && nb_tx==4 && chan_desc->corr_level==CORR_LEVEL_MEDIUM) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R44_medium[row];
+      }
+    } else if (nb_rx==2 && nb_tx==2 && chan_desc->corr_level==CORR_LEVEL_HIGH) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R22_high[row];
+      }
+    } else if (nb_rx==2 && nb_tx==4 && chan_desc->corr_level==CORR_LEVEL_HIGH) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R24_high[row];
+      }
+    } else if (nb_rx==4 && nb_tx==4 && chan_desc->corr_level==CORR_LEVEL_HIGH) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R44_high[row];
+      }
+    } else {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = NULL;
+      }
+    }
+  } else {
+    for (int row = 0; row < matrix_size; row++) {
+      correlation_matrix[row] = NULL;
+    }
+  }
 
-      LOG_W(OCM,"correlation matrix not implemented for nb_tx==%d and nb_rx==%d, using identity\n", nb_tx, nb_rx);
+  chan_desc->R_sqrt = (struct complexd **) malloc(matrix_size*sizeof(struct complexd **));
+  for (int row = 0; row < matrix_size; row++) {
+    chan_desc->R_sqrt[row] = (struct complexd *) calloc(1, matrix_size*sizeof(struct complexd));
+    if (correlation_matrix[row] == NULL) {
+      // TS 38.104 - Table G.2.3.1.2-4: MIMO correlation matrices for low correlation
+      chan_desc->R_sqrt[row][row].r = 1.0;
+    } else {
+      for (int col = 0; col < matrix_size; col++) {
+        chan_desc->R_sqrt[row][col].r = correlation_matrix[row][col];
+      }
     }
   }
 }
@@ -1574,6 +1617,8 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   struct complexd phase, alpha, beta;
   start_meas(&desc->random_channel);
 
+  bzero(acorr,desc->nb_tx*desc->nb_rx*sizeof(struct complexd));
+
   for (i=0; i<(int)desc->nb_taps; i++) {
     for (aarx=0; aarx<desc->nb_rx; aarx++) {
       for (aatx=0; aatx<desc->nb_tx; aatx++) {
@@ -1612,8 +1657,21 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     */
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
-    bzero(acorr,desc->nb_tx*desc->nb_rx*sizeof(struct complexd));
-    cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void *) desc->R_sqrt[i/3], (void *) anew, 1, (void *) acorr, 1);
+    if (desc->modelid >= TDL_A && desc->modelid <= TDL_E) {
+      for (aatx = 0; aatx < desc->nb_tx; aatx++) {
+        for (aarx=0; aarx<desc->nb_rx; aarx++) {
+          cblas_zaxpy(desc->nb_tx*desc->nb_rx,
+                      (void *) &anew[aarx+(aatx*desc->nb_rx)],
+                      (void *) desc->R_sqrt[aarx+(aatx*desc->nb_rx)],
+                      1,
+                      (void *) acorr,
+                      1);
+        }
+      }
+    } else {
+      bzero(acorr,desc->nb_tx*desc->nb_rx*sizeof(struct complexd));
+      cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void *) desc->R_sqrt[i/3], (void *) anew, 1, (void *) acorr, 1);
+    }
 
     /*
     FIXME: Function cblas_zgemv has an undefined output (for the same input) after a second call in RHEL8 (acorr = nan)

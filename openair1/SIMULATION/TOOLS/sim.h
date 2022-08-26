@@ -50,6 +50,13 @@ typedef enum {
 #define CHANMODEL_FREE_RSQRT_6     1<<1
 #define CHANMODEL_FREE_RSQRT_NTAPS 1<<2
 #define CHANMODEL_FREE_AMPS        1<<3
+
+typedef enum {
+  CORR_LEVEL_LOW,
+  CORR_LEVEL_MEDIUM,
+  CORR_LEVEL_HIGH
+} corr_level_t;
+
 typedef struct {
   ///Number of tx antennas
   uint8_t nb_tx;
@@ -75,8 +82,10 @@ typedef struct {
   double channel_bandwidth;
   ///System sampling rate in Msps.
   double sampling_rate;
-  ///Ricean factor of first tap wrt other taps (0..1, where 0 means AWGN and 1 means Rayleigh channel).
+  ///Ricean factor, sqrt(1/(K+1)), of first tap wrt other taps (0..1, where 0 means AWGN and 1 means Rayleigh channel).
   double ricean_factor;
+  ///Correlation level of correlation channel matrix
+  corr_level_t corr_level;
   ///Angle of arrival of wavefront (in radians). For Ricean channel only. This assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so that we can safely assume plane wave propagation.
   double aoa;
   ///If set to 1, aoa is randomized according to a uniform random distribution

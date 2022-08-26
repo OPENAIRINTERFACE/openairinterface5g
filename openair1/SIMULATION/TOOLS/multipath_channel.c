@@ -31,7 +31,6 @@
 
 uint8_t multipath_channel_nosigconv(channel_desc_t *desc)
 {
-
   random_channel(desc,0);
   return(1);
 }
@@ -163,7 +162,8 @@ void multipath_channel(channel_desc_t *desc,
   dd = abs(desc->channel_offset);
 
 #ifdef DEBUG_CH
-  printf("[CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d \n",keep_channel,path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length);
+  printf("[CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d \n",
+         keep_channel, path_loss, desc->path_loss_dB, desc->nb_rx, desc->nb_tx, dd, desc->channel_length);
 #endif
 
   if (keep_channel) {
@@ -173,12 +173,9 @@ void multipath_channel(channel_desc_t *desc,
   }
 
 #ifdef DEBUG_CH
-
   for (l = 0; l<(int)desc->channel_length; l++) {
-    printf("%p (%f,%f) ",desc->ch[0],desc->ch[0][l].x,desc->ch[0][l].y);
+    printf("ch[%i] = (%f, %f)\n", l, desc->ch[0][l].r, desc->ch[0][l].i);
   }
-
-  printf("\n");
 #endif
 
   for (i=0; i<((int)length-dd); i++) {
@@ -200,7 +197,8 @@ void multipath_channel(channel_desc_t *desc,
           rx_tmp.i += (tx.i * desc->ch[ii+(j*desc->nb_rx)][l].r) + (tx.r * desc->ch[ii+(j*desc->nb_rx)][l].i);
 
           if (i==0 && log_channel == 1) {
-	           printf("channel[%d][%d][%d] = %f dB (%e,%e)\n",ii,j,l,10*log10(pow(desc->ch[ii+(j*desc->nb_rx)][l].r,2.0)+pow(desc->ch[ii+(j*desc->nb_rx)][l].i,2.0)),
+	           printf("channel[%d][%d][%d] = %f dB \t(%e, %e)\n",
+                    ii, j, l, 10*log10(pow(desc->ch[ii+(j*desc->nb_rx)][l].r,2.0)+pow(desc->ch[ii+(j*desc->nb_rx)][l].i,2.0)),
 		         desc->ch[ii+(j*desc->nb_rx)][l].r,
 		         desc->ch[ii+(j*desc->nb_rx)][l].i);
 	        }
@@ -209,9 +207,10 @@ void multipath_channel(channel_desc_t *desc,
 
       rx_sig_re[ii][i+dd] = rx_tmp.r*path_loss;
       rx_sig_im[ii][i+dd] = rx_tmp.i*path_loss;
-#ifdef DEBUG_CHANNEL      
+#ifdef DEBUG_CH
       if ((i%32)==0) {
-	       printf("rx aa %d: %p %p %f,%f => %e,%e\n",ii,rx_sig_re[ii],rx_sig_im[ii],rx_tmp.x,rx_tmp.y,rx_sig_re[ii][i-dd],rx_sig_im[ii][i-dd]);
+	       printf("rx aa %d: %f, %f  =>  %e, %e\n",
+                ii,  rx_tmp.r, rx_tmp.i, rx_sig_re[ii][i-dd], rx_sig_im[ii][i-dd]);
       }	
 #endif      
       //rx_sig_re[ii][i] = sqrt(.5)*(tx_sig_re[0][i] + tx_sig_re[1][i]);
