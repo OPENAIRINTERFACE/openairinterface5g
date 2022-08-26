@@ -994,7 +994,11 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
   while(((long)&srs_estimated_channel_freq[0][nr_srs_info->sc_list[0] + mem_offset] & 0xF) != 0) {
     mem_offset++;
   }
-  int32_t srs_est[frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols) + mem_offset] __attribute__ ((aligned(32)));
+  // filt16_end is {4096,8192,8192,8192,12288,16384,16384,16384,0,0,0,0,0,0,0,0}
+  // The End of OFDM symbol corresponds to the position of last 16384 in the filter
+  // The multadd_real_vector_complex_scalar applies the remaining 8 zeros of filter, therefore, to avoid a buffer overflow,
+  // we added 8 in the array size
+  int32_t srs_est[frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols) + mem_offset + 8] __attribute__ ((aligned(32)));
 
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
