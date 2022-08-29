@@ -131,14 +131,6 @@ void lte_sync_time_free(void) {
 }
 
 
-static inline int abs32(int x) {
-  return (((int)((short*)&x)[0])*((int)((short*)&x)[0]) + ((int)((short*)&x)[1])*((int)((short*)&x)[1]));
-}
-
-static inline double absF(struct complexd x) {
-  return x.r*x.r+x.i*x.i;
-}
-
 #define complexNull(c) bzero((void*) &(c), sizeof(c))
 
 #define SHIFT 17
@@ -365,12 +357,6 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
     LOG_I(PHY,"[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %"PRIu64"\n",peak_pos,peak_val,mean_val);
     return(peak_pos);
   }
-}
-
-
-static inline int64_t abs64(int64_t x) {
-  return (((int64_t)((int32_t *)&x)[0])*((int64_t)((int32_t *)&x)[0]) + ((int64_t)
-          ((int32_t *)&x)[1])*((int64_t)((int32_t *)&x)[1]));
 }
 
 

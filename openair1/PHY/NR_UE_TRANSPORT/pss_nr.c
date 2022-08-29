@@ -600,24 +600,6 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
 }
 
 
-static inline int abs32(int x)
-{
-  return (((int)((short*)&x)[0])*((int)((short*)&x)[0]) + ((int)((short*)&x)[1])*((int)((short*)&x)[1]));
-}
-
-static inline int64_t abs64(int64_t x)
-{
-  return (((int64_t)((int32_t*)&x)[0])*((int64_t)((int32_t*)&x)[0]) + ((int64_t)((int32_t*)&x)[1])*((int64_t)((int32_t*)&x)[1]));
-}
-
-static inline double angle64(int64_t x)
-{
-
-  double re=((int32_t*)&x)[0];
-  double im=((int32_t*)&x)[1];
-  return (atan2(im,re));
-}
-
 
 /*******************************************************************
 *
