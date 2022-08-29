@@ -463,11 +463,12 @@ def GetParametersFromXML(action):
 	elif action == 'LicenceAndFormattingCheck':
 		pass
 
-	else:
-		logging.error(f"unknown action {action}, abort")
-		exit(1)
+	elif action == 'Cppcheck_Analysis':
+		pass
 
-		
+	else:
+		logging.error(f"unknown action {action}")
+
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
