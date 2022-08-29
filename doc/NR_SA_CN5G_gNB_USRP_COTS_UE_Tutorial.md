@@ -7,7 +7,7 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">OAI 5G SA tutorial for USRP N300 or X300</font></b>
+      <b><font size = "5">OAI 5G SA tutorial</font></b>
     </td>
   </tr>
 </table>
@@ -24,9 +24,12 @@
     1. [OAI gNB pre-requisites](#31-oai-gnb-pre-requisites)
     2. [Build OAI gNB](#32-build-oai-gnb)
     3. [N300 Ethernet Tuning](#33-n300-ethernet-tuning)
-4. [Run OAI CN5G and OAI gNB with USRP N300](#4-run-oai-cn5g-and-oai-gnb-with-usrp-n300)
+4. [Run OAI CN5G and OAI gNB](#4-run-oai-cn5g-and-oai-gnb)
     1. [Run OAI CN5G](#41-run-oai-cn5g)
     2. [Run OAI gNB](#42-run-oai-gnb)
+       1. [USRP B210](#usrp-b210)
+       2. [USRP N300](#usrp-n300)
+       3. [USRP X300](#usrp-x300)
 5. [Testing with QUECTEL RM500Q](#5-testing-with-quectel-rm500q)
     1. [Setup QUECTEL](#51-setup-quectel)
     2. [Ping test](#52-ping-test)
@@ -46,7 +49,8 @@ Minimum hardware requirements:
     - CPU: 4 cores x86_64
     - RAM: 8 GB
     - Windows driver for Quectel MUST be equal or higher than version **2.2.4**
-- [USRP N300](https://www.ettus.com/all-products/USRP-N300/) or [USRP X300](https://www.ettus.com/all-products/x300-kit/): Please identify the network interface(s) on which the USRP is connected.
+- [USRP B210](https://www.ettus.com/all-products/ub210-kit/), [USRP N300](https://www.ettus.com/all-products/USRP-N300/) or [USRP X300](https://www.ettus.com/all-products/x300-kit/)
+    - Please identify the network interface(s) on which the USRP is connected and update the gNB configuration file
 - Quectel RM500Q
     - Module, M.2 to USB adapter, antennas and SIM card
     - Firmware version of Quectel MUST be equal or higher than **RM500QGLABR11A06M4G**
@@ -162,25 +166,29 @@ cd cmake_targets
 ./build_oai -w USRP --ninja --nrUE --gNB --build-lib all -c
 ```
 
-## 3.3 N300 Ethernet Tuning
+## 3.3 USRP N300 and X300 Ethernet Tuning
 
 Please also refer to the official [USRP Host Performance Tuning Tips and Tricks](https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks) tuning guide.
 
 The following steps are recommended. Please change the network interface(s) as required. Also, you should have 10Gbps interface(s): if you use two cables, you should have the XG interface. Refer to the [N300 Getting Started Guide](https://kb.ettus.com/USRP_N300/N310/N320/N321_Getting_Started_Guide) for more information.
 
 * Use an MTU of 9000: how to change this depends on the network management tool. In the case of Network Manager, this can be done from the GUI.
-* Increase the kernel socket buffer (also done by the USRP driver in OAI):
-  ```
-  sysctl -w net.core.rmem_max=8388608
-  sysctl -w net.core.wmem_max=8388608
-  sysctl -w net.core.rmem_default=65536
-  sysctl -w net.core.wmem_default=65536
-  ```
+* Increase the kernel socket buffer (also done by the USRP driver in OAI)
 * Increase Ethernet Ring Buffers: `sudo ethtool -G <ifname> rx 4096 tx 4096`
-* Disable hyper-threading in the BIOS
-* Disable KPTI Protections for Spectre/Meltdown for more performance. **This is a security risk.** Add `mitigations=off nosmt` in your grub config and update grub.
+* Disable hyper-threading in the BIOS (This step is optional)
+* Optional: Disable KPTI Protections for Spectre/Meltdown for more performance. **This is a security risk.** Add `mitigations=off nosmt` in your grub config and update grub. (This step is optional)
 
-# 4. Run OAI CN5G and OAI gNB with USRP N300
+Example code to run:
+```
+for ((i=0;i<$(nproc);i++)); do sudo cpufreq-set -c $i -r -g performance; done
+sudo sysctl -w net.core.wmem_max=62500000
+sudo sysctl -w net.core.rmem_max=62500000
+sudo sysctl -w net.core.wmem_default=62500000
+sudo sysctl -w net.core.rmem_default=62500000
+sudo ethtool -G enp1s0f0 tx 4096 rx 4096
+```
+
+# 4. Run OAI CN5G and OAI gNB
 
 ## 4.1 Run OAI CN5G
 
@@ -191,20 +199,28 @@ python3 core-network.py --type start-basic --scenario 1
 
 ## 4.2 Run OAI gNB
 
+### USRP B210
 ```bash
-# USRP N300
+cd ~/openairinterface5g
+source oaienv
+cd cmake_targets/ran_build/build
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --sa -E --continuous-tx
+```
+### USRP N300
+```bash
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf --sa --usrp-tx-thread-config 1
+```
 
-# USRP X300
+### USRP X300
+```bash
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf --sa --usrp-tx-thread-config 1 -E --continuous-tx
 ```
-
 
 # 5. Testing with Quectel RM500Q
 
@@ -246,5 +262,5 @@ iperf -s -u -i 1 -B 12.1.1.2
 
 - CN5G host
 ```bash
-docker exec -it oai-ext-dn iperf -u -t 86400 -i 1 -fk -B 192.168.70.135 -b 640M -c 12.1.1.2
+docker exec -it oai-ext-dn iperf -u -t 86400 -i 1 -fk -B 192.168.70.135 -b 100M -c 12.1.1.2
 ```
