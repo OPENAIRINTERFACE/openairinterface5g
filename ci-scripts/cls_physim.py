@@ -199,6 +199,7 @@ class PhySim:
 
 
 	def Run_LDPCTest(self,htmlObj,constObj,testcase_id):
+		self.__workSpacePath = self.eNBSourceCodePath+'/cmake_targets/'
 		#create run logs folder locally
 		os.system('mkdir -p ./'+self.__runLogPath)
 		#log file is tc_<testcase_id>.log remotely
