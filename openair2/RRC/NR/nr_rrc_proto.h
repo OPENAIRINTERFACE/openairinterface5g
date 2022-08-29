@@ -41,6 +41,8 @@
 #include "NR_CG-ConfigInfo.h"
 #include "NR_SecurityConfig.h"
 
+#define NR_MAX_SUPPORTED_DL_LAYERS 2
+
 int rrc_init_nr_global_param(void);
 
 void rrc_config_nr_buffer(NR_SRB_INFO* Srb_info,
