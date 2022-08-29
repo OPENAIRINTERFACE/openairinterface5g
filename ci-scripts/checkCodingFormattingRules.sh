@@ -202,4 +202,9 @@ do
 done
 rm -f header-files-w-incorrect-define-tmp.txt
 
+# in this script we previously produced a list of files that were not properly
+# formatted. At the time of this MR, the Jenkinsfile expects this file, so
+# we simply produce an empty file
+touch ./oai_rules_result.txt
+
 exit 0
