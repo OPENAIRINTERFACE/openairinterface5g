@@ -460,6 +460,9 @@ def GetParametersFromXML(action):
 	elif action == 'Run_LDPCTest' or action == 'Run_NRulsimTest':
 		ldpc.runargs = test.findtext('physim_run_args')
 
+	elif action == 'LicenceAndFormattingCheck':
+		pass
+
 	else:
 		logging.error(f"unknown action {action}, abort")
 		exit(1)
