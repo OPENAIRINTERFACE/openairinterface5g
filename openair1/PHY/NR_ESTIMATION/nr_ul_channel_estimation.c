@@ -1001,7 +1001,12 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
   int16_t ls_estimated[2];
 
   uint8_t mem_offset = ((16 - ((long)&srs_estimated_channel_freq[0][0][subcarrier_offset + nr_srs_info->k_0_p[0][0]])) & 0xF) >> 2; // >> 2 <=> /sizeof(int32_t)
-  int32_t srs_est[frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols) + mem_offset] __attribute__ ((aligned(32)));
+
+  // filt16_end is {4096,8192,8192,8192,12288,16384,16384,16384,0,0,0,0,0,0,0,0}
+  // The End of OFDM symbol corresponds to the position of last 16384 in the filter
+  // The multadd_real_vector_complex_scalar applies the remaining 8 zeros of filter, therefore, to avoid a buffer overflow,
+  // we added 8 in the array size
+  int32_t srs_est[frame_parms->ofdm_symbol_size*(1<<srs_pdu->num_symbols) + mem_offset + 8] __attribute__ ((aligned(32)));
 
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
@@ -1244,8 +1249,8 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
 
   } // for (int rb = 0; rb < m_SRS_b; rb++)
 
-  *noise_power = calc_power(noise_real,frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS)
-                  + calc_power(noise_imag,frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS);
+  *noise_power = max(calc_power(noise_real,frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS)
+                     + calc_power(noise_imag,frame_parms->nb_antennas_rx*N_ap*M_sc_b_SRS), 1);
 
   *snr = dB_fixed((int32_t)((*signal_power<<factor_bits)/(*noise_power))) - factor_dB;
 
