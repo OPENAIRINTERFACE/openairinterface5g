@@ -30,6 +30,10 @@ for c in ${CONFIG_FILES}; do
 
     # render template and inline replace config file
     sed -i "${EXPRESSIONS}" ${c}
+
+    echo "=================================="
+    echo "== Configuration file: ${c}"
+    cat ${c}
 done
 
 #now generate USIM files
@@ -38,6 +42,8 @@ cd $PREFIX
 $PREFIX/bin/conf2uedata -c $PREFIX/etc/ue_usim.conf -o $PREFIX
 
 # Load the USRP binaries
+echo "=================================="
+echo "== Load USRP binaries"
 if [[ -v USE_B2XX ]]; then
     $PREFIX/bin/uhd_images_downloader.py -t b2xx
 elif [[ -v USE_X3XX ]]; then
@@ -56,6 +62,9 @@ if [[ -v USE_NFAPI ]]; then
   new_args+=("-O")
   new_args+=("$PREFIX/etc/ue.conf")
 fi
+
+# enable printing of stack traces on assert
+export gdbStacks=1
 
 echo "=================================="
 echo "== Starting LTE UE soft modem"

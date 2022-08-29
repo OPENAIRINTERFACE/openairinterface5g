@@ -579,9 +579,17 @@ class Containerize():
 			lUserName = self.eNB2UserName
 			lPassWord = self.eNB2Password
 		lSsh.open(lIpAddr, lUserName, lPassWord)
-		lSsh.command('docker save ' + self.imageToCopy + ':' + imageTag + ' | gzip > ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
-		lSsh.copyin(lIpAddr, lUserName, lPassWord, '~/' + self.imageToCopy + '-' + imageTag + '.tar.gz', '.')
+		lSsh.command('docker save ' + self.imageToCopy + ':' + imageTag + ' | gzip --fast > ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		ret = lSsh.copyin(lIpAddr, lUserName, lPassWord, '~/' + self.imageToCopy + '-' + imageTag + '.tar.gz', '.')
+		if ret != 0:
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
+			self.exitStatus = 1
+			return False
 		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		if lSsh.getBefore().count('cannot remove'):
+			HTML.CreateHtmlTestRow('file not created by docker save', 'KO', CONST.ALL_PROCESSES_OK)
+			self.exitStatus = 1
+			return False
 		lSsh.close()
 
 		# Going to the Test Server
@@ -599,15 +607,26 @@ class Containerize():
 			lPassWord = self.eNB2Password
 		lSsh.open(lIpAddr, lUserName, lPassWord)
 		lSsh.copyout(lIpAddr, lUserName, lPassWord, './' + self.imageToCopy + '-' + imageTag + '.tar.gz', '~')
+		# copyout has no return code and will quit if something fails
 		lSsh.command('docker rmi ' + self.imageToCopy + ':' + imageTag, '\$', 10)
 		lSsh.command('docker load < ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		if lSsh.getBefore().count('o such file') or lSsh.getBefore().count('invalid tar header'):
+			logging.debug(lSsh.getBefore())
+			HTML.CreateHtmlTestRow('problem during docker load', 'KO', CONST.ALL_PROCESSES_OK)
+			self.exitStatus = 1
+			return False
 		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
+		if lSsh.getBefore().count('cannot remove'):
+			HTML.CreateHtmlTestRow('file not copied during scp?', 'KO', CONST.ALL_PROCESSES_OK)
+			self.exitStatus = 1
+			return False
 		lSsh.close()
 
 		if os.path.isfile('./' + self.imageToCopy + '-' + imageTag + '.tar.gz'):
 			os.remove('./' + self.imageToCopy + '-' + imageTag + '.tar.gz')
 
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		return True
 
 	def DeployObject(self, HTML, EPC):
 		if self.eNB_serverId[self.eNB_instance] == '0':
@@ -683,6 +702,9 @@ class Containerize():
 		logging.debug(' -- ' + str(unhealthyNb) + ' unhealthy container(s)')
 		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
 
+		self.testCase_id = HTML.testCase_id
+		self.eNB_logFile[self.eNB_instance] = 'enb_' + self.testCase_id + '.log'
+
 		status = False
 		if healthyNb == 1:
 			cnt = 0
@@ -697,10 +719,11 @@ class Containerize():
 					status = True
 					logging.info('\u001B[1m Deploying OAI object Pass\u001B[0m')
 					time.sleep(10)
+		else:
+			# containers are unhealthy, so we won't start. However, logs are stored at the end
+			# in UndeployObject so we here store the logs of the unhealthy container to report it
+			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
 		mySSH.close()
-
-		self.testCase_id = HTML.testCase_id
-		self.eNB_logFile[self.eNB_instance] = 'enb_' + self.testCase_id + '.log'
 
 		if status:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
