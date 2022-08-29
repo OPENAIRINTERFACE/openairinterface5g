@@ -1332,7 +1332,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
-
+  prs_config_t *prs_config = NULL;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
@@ -1411,16 +1411,17 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     }
   }
 
-  // Check for PRS slot
+  // Check for PRS slot - section 7.4.1.7.4 in 3GPP rel16 38.211
   for(int gNB_id = 0; gNB_id < ue->prs_active_gNBs; gNB_id++)
   {
     for(int rsc_id = 0; rsc_id < ue->prs_vars[gNB_id]->NumPRSResources; rsc_id++)
     {
-      for (int i = 0; i < ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceRepetition; i++)
+      prs_config = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
+      for (int i = 0; i < prs_config->PRSResourceRepetition; i++)
       {
-        if( (((frame_rx*fp->slots_per_frame + nr_slot_rx) - (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[1] + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceOffset) + ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0])%ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceSetPeriod[0]) == i*ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.PRSResourceTimeGap)
+        if( (((frame_rx*fp->slots_per_frame + nr_slot_rx) - (prs_config->PRSResourceSetPeriod[1] + prs_config->PRSResourceOffset) + prs_config->PRSResourceSetPeriod[0])%prs_config->PRSResourceSetPeriod[0]) == i*prs_config->PRSResourceTimeGap)
         {
-          for(int j = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.SymbolStart; j < (ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.SymbolStart+ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg.NumPRSSymbols); j++)
+          for(int j = prs_config->SymbolStart; j < (prs_config->SymbolStart+prs_config->NumPRSSymbols); j++)
           {
             nr_slot_fep(ue,
                         proc,

@@ -123,6 +123,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   int offset = gNB->CC_id, slot_prs;
   int txdataF_offset = slot*fp->samples_per_slot_wCP;
+  prs_config_t *prs_config = NULL;
 
   if ((cfg->cell_config.frame_duplex_type.value == TDD) &&
       (nr_slot_select(cfg,frame,slot) == NR_UPLINK_SLOT)) return;
@@ -135,16 +136,17 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     memset(&gNB->common_vars.beam_id[aa][slot*fp->symbols_per_slot],255,fp->symbols_per_slot*sizeof(uint8_t));
   }
 
-  // Check for PRS slot
+  // Check for PRS slot - section 7.4.1.7.4 in 3GPP rel16 38.211
   for(int rsc_id = 0; rsc_id < gNB->prs_vars.NumPRSResources; rsc_id++)
   {
-    for (int i = 0; i < gNB->prs_vars.prs_cfg[rsc_id].PRSResourceRepetition; i++)
+    prs_config = &gNB->prs_vars.prs_cfg[rsc_id];
+    for (int i = 0; i < prs_config->PRSResourceRepetition; i++)
     {
-      if( (((frame*fp->slots_per_frame + slot) - (gNB->prs_vars.prs_cfg[rsc_id].PRSResourceSetPeriod[1] + gNB->prs_vars.prs_cfg[rsc_id].PRSResourceOffset)+gNB->prs_vars.prs_cfg[rsc_id].PRSResourceSetPeriod[0])%gNB->prs_vars.prs_cfg[rsc_id].PRSResourceSetPeriod[0]) == i*gNB->prs_vars.prs_cfg[rsc_id].PRSResourceTimeGap )
+      if( (((frame*fp->slots_per_frame + slot) - (prs_config->PRSResourceSetPeriod[1] + prs_config->PRSResourceOffset)+prs_config->PRSResourceSetPeriod[0])%prs_config->PRSResourceSetPeriod[0]) == i*prs_config->PRSResourceTimeGap )
       {
-        slot_prs = (slot - i*gNB->prs_vars.prs_cfg[rsc_id].PRSResourceTimeGap + fp->slots_per_frame)%fp->slots_per_frame;
+        slot_prs = (slot - i*prs_config->PRSResourceTimeGap + fp->slots_per_frame)%fp->slots_per_frame;
         LOG_D(PHY,"gNB_TX: frame %d, slot %d, slot_prs %d, PRS Resource ID %d\n",frame, slot, slot_prs, rsc_id);
-        nr_generate_prs(gNB->nr_gold_prs[rsc_id][slot_prs],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, &gNB->prs_vars.prs_cfg[rsc_id], cfg, fp);
+        nr_generate_prs(gNB->nr_gold_prs[rsc_id][slot_prs],&gNB->common_vars.txdataF[0][txdataF_offset], AMP, prs_config, cfg, fp);
       }
     }
   }
