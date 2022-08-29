@@ -85,38 +85,30 @@ void multadd_real_vector_complex_scalar(int16_t *x,
   uint32_t i;
 
   // do 8 multiplications at a time
-  simd_q15_t alpha_r_128,alpha_i_128,yr,yi,*x_128=(simd_q15_t*)x,*y_128=(simd_q15_t*)y;
-  int j;
+  simd_q15_t alpha_r_128, alpha_i_128, yr, yi, *x_128 = (simd_q15_t *)x, *y_128 = (simd_q15_t *)y;
 
   //  printf("alpha = %d,%d\n",alpha[0],alpha[1]);
   alpha_r_128 = set1_int16(alpha[0]);
   alpha_i_128 = set1_int16(alpha[1]);
-
-  j=0;
-
   for (i=0; i<N>>3; i++) {
 
     yr     = mulhi_s1_int16(alpha_r_128,x_128[i]);
     yi     = mulhi_s1_int16(alpha_i_128,x_128[i]);
 #if defined(__x86_64__) || defined(__i386__)
-    y_128[j]   = _mm_adds_epi16(y_128[j],_mm_unpacklo_epi16(yr,yi));
-    j++;
-    y_128[j]   = _mm_adds_epi16(y_128[j],_mm_unpackhi_epi16(yr,yi));
-    j++;
+    const simd_q15_t tmp = _mm_loadu_si128(y_128);
+    _mm_storeu_si128(y_128++, _mm_adds_epi16(tmp, _mm_unpacklo_epi16(yr, yi)));
+    const simd_q15_t tmp2 = _mm_loadu_si128(y_128);
+    _mm_storeu_si128(y_128++, _mm_adds_epi16(tmp2, _mm_unpackhi_epi16(yr, yi)));
 #elif defined(__arm__)
     int16x8x2_t yint;
     yint = vzipq_s16(yr,yi);
-    y_128[j]   = adds_int16(y_128[j],yint.val[0]);
+    *y_128 = adds_int16(*y_128, yint.val[0]);
     j++;
-    y_128[j]   = adds_int16(y_128[j],yint.val[1]);
- 
+    *y_128 = adds_int16(*y_128, yint.val[1]);
+
     j++;
 #endif
   }
-
-  _mm_empty();
-  _m_empty();
-
 }
 
 void multadd_real_four_symbols_vector_complex_scalar(int16_t *x,
