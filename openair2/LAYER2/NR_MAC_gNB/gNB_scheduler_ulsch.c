@@ -255,7 +255,7 @@ int nr_process_mac_pdu(instance_t module_idP,
                                           deltaMCS);
         /* 38.133 Table10.1.18.1-1 */
         sched_ctrl->pcmax = PCMAX - 29;
-        LOG_D(NR_MAC, "SINGLE ENTRY PHR R1 %d PH %d (%d dB) R2 %d PCMAX %d (%d dBm)\n",
+        LOG_I(NR_MAC, "SINGLE ENTRY PHR R1 %d PH %d (%d dB) R2 %d PCMAX %d (%d dBm)\n",
               phr->R1, PH, sched_ctrl->ph, phr->R2, PCMAX, sched_ctrl->pcmax);
         break;
 
@@ -1357,7 +1357,9 @@ void pf_ul(module_id_t module_id,
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
     /* adjust rbSize and MCS according to PHR and BPRE */
     sched_pusch->mu  = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
-    nr_ue_max_mcs_min_rb(sched_pusch->mu, sched_ctrl->ph, ps, current_BWP, min_rbSize, B, &max_rbSize, &sched_pusch->mcs);
+    if(sched_ctrl->pcmax!=0 ||
+       sched_ctrl->ph!=0) // verify if the PHR related parameter have been initialized
+      nr_ue_max_mcs_min_rb(sched_pusch->mu, sched_ctrl->ph, ps, current_BWP, min_rbSize, B, &max_rbSize, &sched_pusch->mcs);
 
     if (sched_pusch->mcs < sched_ctrl->ul_bler_stats.mcs)
       sched_ctrl->ul_bler_stats.mcs = sched_pusch->mcs; /* force estimated MCS down */
