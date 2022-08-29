@@ -40,7 +40,7 @@ typedef struct {
   uint16_t length;
   union { 
     uint32_t *ptr;
-    uint32_t direct[16384];
+    uint32_t direct[38016];
   } value;
 } nfapi_nr_tx_data_request_tlv_t;
 

@@ -103,7 +103,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     uint32_t ***pdsch_dmrs = gNB->nr_gold_pdsch_dmrs[slot];
     uint16_t dmrs_symbol_map = rel15->dlDmrsSymbPos;//single DMRS: 010000100 Double DMRS 110001100
     uint8_t dmrs_len = get_num_dmrs(rel15->dlDmrsSymbPos);
-    uint16_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
+    uint32_t nb_re = ((12*rel15->NrOfSymbols)-nb_re_dmrs*dmrs_len-xOverhead)*rel15->rbSize*rel15->nrOfLayers;
     uint8_t Qm = rel15->qamModOrder[0];
     uint32_t encoded_length = nb_re*Qm;
     int16_t mod_dmrs[n_dmrs<<1] __attribute__ ((aligned(16)));
@@ -254,7 +254,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 	     1+dmrs_Type,nl, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime, l0, dmrs_symbol);
 #endif
 
-      uint16_t m=0, dmrs_idx=0;
+      uint32_t m=0, dmrs_idx=0;
 
       // Loop Over OFDM symbols:
       for (int l=rel15->StartSymbolIndex; l<rel15->StartSymbolIndex+rel15->NrOfSymbols; l++) {

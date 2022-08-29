@@ -176,8 +176,11 @@ void nr_phy_free_RU(RU_t *ru)
   LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
-    for (i = 0; i < ru->nb_tx; i++)
-      free_and_zero(ru->common.txdata[i]);
+    // Hack: undo what is done at allocation
+    for (i = 0; i < ru->nb_tx; i++) {
+      int32_t *p = &ru->common.txdata[i][-ru->sf_extension];
+      free_and_zero(p);
+    }
     free_and_zero(ru->common.txdata);
 
     for (i = 0; i < ru->nb_rx; i++)
@@ -199,7 +202,7 @@ void nr_phy_free_RU(RU_t *ru)
 
     // free FFT output buffers (RX)
     for (i = 0; i < ru->nb_rx; i++) free_and_zero(ru->common.rxdataF[i]);
-    free_and_zero(ru->common.rxdataF);
+      free_and_zero(ru->common.rxdataF);
 
     for (j=0;j<NUMBER_OF_NR_RU_PRACH_OCCASIONS_MAX;j++) {
       for (i = 0; i < ru->nb_rx; i++)

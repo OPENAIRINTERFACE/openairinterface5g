@@ -142,6 +142,12 @@ class gtpEndPoints {
   pthread_mutex_t gtp_lock=PTHREAD_MUTEX_INITIALIZER;
   // the instance id will be the Linux socket handler, as this is uniq
   map<int, gtpEndPoint> instances;
+
+  ~gtpEndPoints() {
+    // automatically close all sockets on quit
+    for (const auto p : instances)
+      close(p.first);
+  }
 };
 
 gtpEndPoints globGtp;

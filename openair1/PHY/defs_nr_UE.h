@@ -132,12 +132,9 @@ typedef struct {
   // RRC measurements
   uint32_t rssi;
   int n_adj_cells;
-  unsigned int adj_cell_id[6];
-  uint32_t rsrq[7];
   uint32_t rsrp[7];
-  float rsrp_filtered[7]; // after layer 3 filtering
-  float rsrq_filtered[7];
   short rsrp_dBm[7];
+  int ssb_rsrp_dBm[64];
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[NB_ANTENNAS_RX];

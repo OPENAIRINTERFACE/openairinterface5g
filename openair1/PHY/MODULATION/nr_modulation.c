@@ -251,7 +251,7 @@ void nr_modulation(uint32_t *in,
 
 void nr_layer_mapping(int16_t **mod_symbs,
                       uint8_t n_layers,
-                      uint16_t n_symbs,
+                      uint32_t n_symbs,
                       int16_t **tx_layers)
 {
   LOG_D(PHY,"Doing layer mapping for %d layers, %d symbols\n",n_layers,n_symbs);
@@ -323,7 +323,7 @@ void nr_layer_mapping(int16_t **mod_symbs,
 
 void nr_ue_layer_mapping(int16_t *mod_symbs,
                          uint8_t n_layers,
-                         uint16_t n_symbs,
+                         uint32_t n_symbs,
                          int16_t **tx_layers) {
 
   for (int i=0; i<n_symbs/n_layers; i++) {

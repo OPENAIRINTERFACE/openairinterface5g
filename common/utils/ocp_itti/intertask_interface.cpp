@@ -438,23 +438,24 @@ extern "C" {
   void itti_send_terminate_message(task_id_t task_id) {
   }
 
-  static volatile bool shutting_down;
+  pthread_mutex_t signal_mutex;
 
   static void catch_sigterm(int) {
     static const char msg[] = "\n** Caught SIGTERM, shutting down\n";
     __attribute__((unused))
     int unused = write(STDOUT_FILENO, msg, sizeof(msg) - 1);
-    shutting_down = true;
+    pthread_mutex_unlock(&signal_mutex);
   }
 
   void itti_wait_tasks_end(void) {
-    shutting_down = false;
+
+    pthread_mutex_init(&signal_mutex, NULL);
+    pthread_mutex_lock(&signal_mutex);
+
     signal(SIGTERM, catch_sigterm);
-    //signal(SIGINT, catch_sigterm);
-    while (! shutting_down)
-    {
-      sleep(24 * 3600);
-    }
+    signal(SIGINT, catch_sigterm);
+
+    pthread_mutex_lock(&signal_mutex);
   }
 
   void itti_update_lte_time(uint32_t frame, uint8_t slot) {}

@@ -247,21 +247,25 @@ void rx_func(void *param) {
     processingData_L1tx_t *syncMsg;
     // Its a FIFO so it maitains the order in which the MAC fills the messages
     // so no need for checking for right slot
-    res = pullTpool(gNB->L1_tx_filled, gNB->threadPool);
+    res = pullTpool(&gNB->L1_tx_filled, &gNB->threadPool);
+    if (res == NULL)
+      return; // Tpool has been stopped
     syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
     syncMsg->timestamp_tx = info->timestamp_tx;
     res->key = slot_tx;
-    pushTpool(gNB->threadPool, res);
+    pushTpool(&gNB->threadPool, res);
   } else if (get_softmodem_params()->continuous_tx) {
-    notifiedFIFO_elt_t *res = pullTpool(gNB->L1_tx_free, gNB->threadPool);
+    notifiedFIFO_elt_t *res = pullTpool(&gNB->L1_tx_free, &gNB->threadPool);
+    if (res == NULL)
+      return; // Tpool has been stopped
     processingData_L1tx_t *syncMsg = (processingData_L1tx_t *)NotifiedFifoData(res);
     syncMsg->gNB = gNB;
     syncMsg->timestamp_tx = info->timestamp_tx;
     syncMsg->frame = frame_tx;
     syncMsg->slot = slot_tx;
     res->key = slot_tx;
-    pushNotifiedFIFO(gNB->L1_tx_out, res);
+    pushNotifiedFIFO(&gNB->L1_tx_out, res);
   }
 
 #if 0
@@ -376,7 +380,8 @@ void *tx_reorder_thread(void* param) {
     notifiedFIFO_elt_t *resL1Reserve = NULL;
   
 
-  resL1Reserve=pullTpool(gNB->L1_tx_out, gNB->threadPool);
+  resL1Reserve = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
+  AssertFatal(resL1Reserve != NULL, "pullTpool() did not return start message in %s\n", __func__);
   int next_tx_slot=((processingData_L1tx_t *)NotifiedFifoData(resL1Reserve))->slot;
   
   while (!oai_exit) {
@@ -385,20 +390,22 @@ void *tx_reorder_thread(void* param) {
        resL1=resL1Reserve;
        if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
          LOG_E(PHY,"order mistake\n");
-	 resL1Reserve=NULL;
-	 resL1 = pullTpool(gNB->L1_tx_out, gNB->threadPool);
+         resL1Reserve = NULL;
+         resL1 = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
        }
      } else { 
-       resL1 = pullTpool(gNB->L1_tx_out, gNB->threadPool);
-       if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
+       resL1 = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
+       if (resL1 != NULL && ((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot) {
           if (resL1Reserve)
               LOG_E(PHY,"error, have a stored packet, then a second one\n");
-	  resL1Reserve=resL1;
-          resL1 = pullTpool(gNB->L1_tx_out, gNB->threadPool);
+          resL1Reserve = resL1;
+          resL1 = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
           if (((processingData_L1tx_t *)NotifiedFifoData(resL1))->slot != next_tx_slot)
-	    LOG_E(PHY,"error, pull two msg, none is good\n");
+            LOG_E(PHY,"error, pull two msg, none is good\n");
        }
     }
+    if (resL1 == NULL)
+      break; // Tpool has been stopped
     processingData_L1tx_t *syncMsgL1= (processingData_L1tx_t *)NotifiedFifoData(resL1);
     processingData_RU_t syncMsgRU;
     syncMsgRU.frame_tx = syncMsgL1->frame;
@@ -410,7 +417,7 @@ void *tx_reorder_thread(void* param) {
       next_tx_slot = (syncMsgRU.slot_tx + 1) % slots_per_frame;
     } else
       next_tx_slot = get_next_downlink_slot(gNB, &gNB->gNB_config, syncMsgRU.frame_tx, syncMsgRU.slot_tx);
-    pushNotifiedFIFO(gNB->L1_tx_free, resL1);
+    pushNotifiedFIFO(&gNB->L1_tx_free, resL1);
     if (resL1==resL1Reserve)
        resL1Reserve=NULL;
     ru_tx_func((void*)&syncMsgRU);
@@ -423,8 +430,6 @@ void init_gNB_Tpool(int inst) {
   gNB = RC.gNB[inst];
   gNB_L1_proc_t *proc = &gNB->proc;
 
-  // ULSCH decoding threadpool
-  gNB->threadPool = (tpool_t*)malloc(sizeof(tpool_t));
   int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
   LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->thread_pool_size,numCPU);
   int threadCnt = min(numCPU, gNB->thread_pool_size);
@@ -437,33 +442,28 @@ void init_gNB_Tpool(int inst) {
     s_offset += 3;
   }
   if (getenv("noThreads")) strcpy(pool, "n");
-  initTpool(pool, gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
+  initTpool(pool, &gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
   // ULSCH decoder result FIFO
-  gNB->respDecode = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->respDecode);
+  initNotifiedFIFO(&gNB->respDecode);
 
   // L1 RX result FIFO 
-  gNB->resp_L1 = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->resp_L1);
-  notifiedFIFO_elt_t *msg = newNotifiedFIFO_elt(sizeof(processingData_L1_t),0,gNB->resp_L1,rx_func);
-  pushNotifiedFIFO(gNB->resp_L1,msg); // to unblock the process in the beginning
+  initNotifiedFIFO(&gNB->resp_L1);
+  notifiedFIFO_elt_t *msg = newNotifiedFIFO_elt(sizeof(processingData_L1_t), 0, &gNB->resp_L1, rx_func);
+  pushNotifiedFIFO(&gNB->resp_L1, msg); // to unblock the process in the beginning
 
   // L1 TX result FIFO 
-  gNB->L1_tx_free = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  gNB->L1_tx_filled = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  gNB->L1_tx_out = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->L1_tx_free);
-  initNotifiedFIFO(gNB->L1_tx_filled);
-  initNotifiedFIFO(gNB->L1_tx_out);
+  initNotifiedFIFO(&gNB->L1_tx_free);
+  initNotifiedFIFO(&gNB->L1_tx_filled);
+  initNotifiedFIFO(&gNB->L1_tx_out);
   
   // we create 2 threads for L1 tx processing
   for (int i=0; i < 2; i++) {
-    notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0,gNB->L1_tx_out,tx_func);
+    notifiedFIFO_elt_t *msgL1Tx = newNotifiedFIFO_elt(sizeof(processingData_L1tx_t), 0, &gNB->L1_tx_out, tx_func);
     processingData_L1tx_t *msgDataTx = (processingData_L1tx_t *)NotifiedFifoData(msgL1Tx);
-    memset(msgDataTx,0, sizeof(processingData_L1tx_t));
+    memset(msgDataTx, 0, sizeof(processingData_L1tx_t));
     init_DLSCH_struct(gNB, msgDataTx);
     memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
-    pushNotifiedFIFO(gNB->L1_tx_free,msgL1Tx); // to unblock the process in the beginning
+    pushNotifiedFIFO(&gNB->L1_tx_free, msgL1Tx); // to unblock the process in the beginning
   }
 
   if ((!get_softmodem_params()->emulate_l1) && (!IS_SOFTMODEM_NOSTATS_BIT))
@@ -473,6 +473,21 @@ void init_gNB_Tpool(int inst) {
 
 }
 
+
+void term_gNB_Tpool(int inst) {
+  PHY_VARS_gNB *gNB = RC.gNB[inst];
+  abortTpool(&gNB->threadPool);
+  abortNotifiedFIFO(&gNB->respDecode);
+  abortNotifiedFIFO(&gNB->resp_L1);
+  abortNotifiedFIFO(&gNB->L1_tx_free);
+  abortNotifiedFIFO(&gNB->L1_tx_filled);
+  abortNotifiedFIFO(&gNB->L1_tx_out);
+
+  gNB_L1_proc_t *proc = &gNB->proc;
+  if (!get_softmodem_params()->emulate_l1)
+    pthread_join(proc->L1_stats_thread, NULL);
+  pthread_join(proc->pthread_tx_reorder, NULL);
+}
 
 /*!
  * \brief Terminate gNB TX and RX threads.
@@ -540,15 +555,9 @@ void init_eNB_afterRU(void) {
 		  gNB->RU_list[ru_id]->idx);
       
       for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
-	LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
-	gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[0][i];
-#if 0
-printf("before %p\n", gNB->common_vars.rxdataF[aa]);
-#endif
-	gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
-#if 0
-printf("after %p\n", gNB->common_vars.rxdataF[aa]);
-#endif
+        LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
+        gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[0][i];
+        gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
       }
     }
 
@@ -616,6 +625,7 @@ void init_gNB(int single_thread_flag,int wait_for_sync) {
 void stop_gNB(int nb_inst) {
   for (int inst=0; inst<nb_inst; inst++) {
     LOG_I(PHY,"Killing gNB %d processing threads\n",inst);
+    term_gNB_Tpool(inst);
     kill_gNB_proc(inst);
   }
 }

@@ -613,6 +613,14 @@ void pf_dl(module_id_t module_id,
         return;
 
     } else {
+      /* skip this UE if there are no free HARQ processes. This can happen e.g.
+       * if the UE disconnected in L2sim, in which case the gNB is not notified
+       * (this can be considered a design flaw) */
+      if (sched_ctrl->available_dl_harq.head < 0) {
+        LOG_D(NR_MAC, "RNTI %04x has no free DL HARQ process, skipping\n", UE->rnti);
+        continue;
+      }
+
       /* Check DL buffer and skip this UE if no bytes and no TA necessary */
       if (sched_ctrl->num_total_bytes == 0 && frame != (sched_ctrl->ta_frame + 10) % 1024)
         continue;
