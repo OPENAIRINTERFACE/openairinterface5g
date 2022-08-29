@@ -106,16 +106,11 @@ def GetParametersFromXML(action):
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		CONTAINERS.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
-		if (forced_workspace_cleanup is None):
-			RAN.Build_eNB_forced_workspace_cleanup=False
-			CONTAINERS.forcedWorkspaceCleanup=False
-		else:
-			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
-				RAN.Build_eNB_forced_workspace_cleanup=True
-				CONTAINERS.forcedWorkspaceCleanup=True
-			else:
-				RAN.Build_eNB_forced_workspace_cleanup=True
-				CONTAINERS.forcedWorkspaceCleanup=False
+		RAN.Build_eNB_forced_workspace_cleanup=False
+		CONTAINERS.forcedWorkspaceCleanup=False
+		if forced_workspace_cleanup is not None and re.match('true', forced_workspace_cleanup, re.IGNORECASE):
+			RAN.Build_eNB_forced_workspace_cleanup = True
+			CONTAINERS.forcedWorkspaceCleanup = True
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
