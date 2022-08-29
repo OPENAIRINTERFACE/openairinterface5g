@@ -878,10 +878,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       if (mac->scc || mac->scc_SIB || mac->cg) {
         NR_BWP_t genericParameters = initialUplinkBWP->genericParameters;
         int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        bw_tbslbrm = get_bw_tbslbrm(BWPSize, false, mac->cg);
+        bw_tbslbrm = get_ulbw_tbslbrm(BWPSize, mac->cg);
       }
-      else
+      else {
         bw_tbslbrm = pusch_config_pdu->bwp_size;
+      }
       pusch_config_pdu->tbslbrm = nr_compute_tbslbrm(pusch_config_pdu->mcs_table,
                                                      bw_tbslbrm,
                                                      *maxMIMO_Layers);

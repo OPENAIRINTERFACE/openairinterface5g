@@ -2218,9 +2218,8 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
     DL_BWP->pdsch_servingcellconfig = servingCellConfig->pdsch_ServingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
-    UL_BWP->pusch_servingcellconfig = servingCellConfig->uplinkConfig ?
-                                      (servingCellConfig->uplinkConfig->pusch_ServingCellConfig ? servingCellConfig->uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL ) :
-                                      NULL;
+    UL_BWP->pusch_servingcellconfig = servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->pusch_ServingCellConfig ?
+                                      servingCellConfig->uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL;
     target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
 
     if(UE && UE->Msg3_dcch_dtch) {
