@@ -343,15 +343,15 @@ static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt,
         if (b->conn_sock >= 0 && (strcmp(b->channel_model->model_name,modelname)==0)) {
 
           channel_desc_t *newmodel=new_channel_desc_scm(t->tx_num_channels,t->rx_num_channels,
-                                   channelmod,
-                                   t->sample_rate,
-                                   t->tx_bw,
-                                   30e-9,  // TDL delay-spread parameter
-                                   t->chan_forgetfact, // forgetting_factor
-                                   t->chan_offset, // maybe used for TA
-							       t->chan_pathloss,
-							       t->noise_power_dB
-							       ); // path_loss in dB
+                                                        channelmod,
+                                                        t->sample_rate,
+                                                        t->tx_bw,
+                                                        30e-9,  // TDL delay-spread parameter
+                                                        CORR_LEVEL_LOW,
+                                                        t->chan_forgetfact, // forgetting_factor
+                                                        t->chan_offset, // maybe used for TA
+                                                        t->chan_pathloss,
+                                                        t->noise_power_dB); // path_loss in dB
           set_channeldesc_owner(newmodel, RFSIMU_MODULEID);
           set_channeldesc_name(newmodel,modelname);
           random_channel(newmodel,false);

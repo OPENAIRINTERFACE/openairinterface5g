@@ -312,13 +312,14 @@ typedef struct {
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
-				                     double sampling_rate,
+                                     double sampling_rate,
                                      double channel_bandwidth,
-				                     double TDL_DS,
+                                     double DS_TDL,
+                                     const corr_level_t corr_level,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB,
-				                     float noise_power_dB);
+                                     float noise_power_dB);
 
 channel_desc_t *find_channel_desc_fromname( char *modelname );
 

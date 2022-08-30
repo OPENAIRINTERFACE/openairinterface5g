@@ -699,12 +699,17 @@ int main(int argc, char **argv)
 
   LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
 
-
-  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model,
+  corr_level_t corr_level = CORR_LEVEL_MEDIUM; // FIXME: Remove this hardcoded value
+  UE2gNB = new_channel_desc_scm(n_tx,
+                                n_rx, channel_model,
                                 sampling_frequency/1e6,
                                 tx_bandwidth,
                                 DS_TDL,
-                                0, 0, 0, 0);
+                                corr_level,
+                                0,
+                                0,
+                                0,
+                                0);
 
   if (UE2gNB == NULL) {
     printf("Problem generating channel model. Exiting.\n");

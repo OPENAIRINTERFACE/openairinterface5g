@@ -386,9 +386,6 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   for (int i = 0; i<chan_desc->nb_taps; i++)
     chan_desc->a[i]         = (struct complexd *) malloc(nb_tx*nb_rx * sizeof(struct complexd));
 
-  // FIXME: Remove this hardcoded value
-  chan_desc->corr_level = CORR_LEVEL_LOW;
-
   int matrix_size = nb_tx*nb_rx;
   double *correlation_matrix[matrix_size];
   if (chan_desc->corr_level!=CORR_LEVEL_LOW) {
@@ -459,10 +456,11 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      double sampling_rate,
                                      double channel_bandwidth,
                                      double DS_TDL,
+                                     const corr_level_t corr_level,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB,
-                                     float  noise_power_dB) {
+                                     float noise_power_dB) {
   channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
 
   for(int i=0; i<max_chan; i++) {
@@ -481,16 +479,17 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   double aoa,ricean_factor,Td,maxDoppler;
   int channel_length,nb_taps;
   struct complexd *R_sqrt_ptr2;
-  chan_desc->modelid                   = channel_model;
+  chan_desc->modelid                    = channel_model;
   chan_desc->nb_tx                      = nb_tx;
   chan_desc->nb_rx                      = nb_rx;
   chan_desc->sampling_rate              = sampling_rate;
   chan_desc->channel_bandwidth          = channel_bandwidth;
+  chan_desc->corr_level                 = corr_level;
   chan_desc->forgetting_factor          = forgetting_factor;
   chan_desc->channel_offset             = channel_offset;
   chan_desc->path_loss_dB               = path_loss_dB;
   chan_desc->first_run                  = 1;
-  chan_desc->ip                                 = 0.0;
+  chan_desc->ip                         = 0.0;
   chan_desc->noise_power_dB             = noise_power_dB;
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
   int tdl_paths=0;
@@ -2009,10 +2008,17 @@ int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double 
       AssertFatal(0, "\n  Choose a valid model type\n");
     }
 
-    channel_desc_t *channeldesc_p = new_channel_desc_scm(nb_tx,nb_rx,modid,sampling_rate,channel_bandwidth,
-                                    *(channel_list.paramarray[i][pindex_DT].dblptr), *(channel_list.paramarray[i][pindex_FF].dblptr),
-                                    *(channel_list.paramarray[i][pindex_CO].iptr), *(channel_list.paramarray[i][pindex_PL].dblptr),
-                                    *(channel_list.paramarray[i][pindex_NP].dblptr) );
+    channel_desc_t *channeldesc_p = new_channel_desc_scm(nb_tx,
+                                                         nb_rx,
+                                                         modid,
+                                                         sampling_rate,
+                                                         channel_bandwidth,
+                                                         *(channel_list.paramarray[i][pindex_DT].dblptr),
+                                                         CORR_LEVEL_LOW,
+                                                         *(channel_list.paramarray[i][pindex_FF].dblptr),
+                                                         *(channel_list.paramarray[i][pindex_CO].iptr),
+                                                         *(channel_list.paramarray[i][pindex_PL].dblptr),
+                                                         *(channel_list.paramarray[i][pindex_NP].dblptr));
     AssertFatal( (channeldesc_p!= NULL), "Could not allocate channel %s type %s \n",*(channel_list.paramarray[i][pindex_NAME].strptr), *(channel_list.paramarray[i][pindex_TYPE].strptr));
     channeldesc_p->model_name = strdup(*(channel_list.paramarray[i][pindex_NAME].strptr));
     LOG_I(OCM,"Model %s type %s allocated from config file, list %s\n",*(channel_list.paramarray[i][pindex_NAME].strptr),
