@@ -921,7 +921,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Build_Proxy':
 					CONTAINERS.BuildProxy(HTML)
 				elif action == 'Copy_Image_to_Test':
-					CONTAINERS.Copy_Image_to_Test_Server(HTML)
+					success = CONTAINERS.Copy_Image_to_Test_Server(HTML)
+					if not success:
+						RAN.prematureExit = True
 				elif action == 'Deploy_Object':
 					CONTAINERS.DeployObject(HTML, EPC)
 					if CONTAINERS.exitStatus==1:

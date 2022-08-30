@@ -65,6 +65,8 @@
 
 #include "common/ran_context.h"
 
+//#define DEBUG_DCI
+
 extern RAN_CONTEXT_t RC;
 
   // Note the 2 scs values in the table names represent resp. scs_common and pdcch_scs
@@ -1247,8 +1249,8 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
     pucch_pdu->format_type = default_pucch_fmt[rsetindex];
     pucch_pdu->initial_cyclic_shift = r_pucch%default_pucch_csset[rsetindex];
     if (rsetindex==3||rsetindex==7||rsetindex==11) pucch_pdu->initial_cyclic_shift*=6;
-    else if (rsetindex==1||rsetindex==2) pucch_pdu->initial_cyclic_shift*=3;
-    else pucch_pdu->initial_cyclic_shift*=4;
+    else if (rsetindex==1||rsetindex==2) pucch_pdu->initial_cyclic_shift*=4;
+    else pucch_pdu->initial_cyclic_shift*=3;
     pucch_pdu->nr_of_symbols = nr_of_symb;
     pucch_pdu->start_symbol_index = start_symb;
     if (pucch_pdu->format_type == 1) pucch_pdu->time_domain_occ_idx = 0; // check this!!
@@ -1827,7 +1829,37 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       // UL-SCH indicator
       pos += 1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->ulsch_indicator & 0x1) << (dci_size - pos);
-      break;
+
+#ifdef DEBUG_DCI
+        LOG_I(NR_MAC,"============= NR_UL_DCI_FORMAT_0_1 =============\n");
+        LOG_I(NR_MAC,"dci_size = %i\n", dci_size);
+        LOG_I(NR_MAC,"dci_pdu_rel15->format_indicator = %i\n", dci_pdu_rel15->format_indicator);
+        LOG_I(NR_MAC,"dci_pdu_rel15->carrier_indicator.val = %i\n", dci_pdu_rel15->carrier_indicator.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->ul_sul_indicator.val = %i\n", dci_pdu_rel15->ul_sul_indicator.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->bwp_indicator.val = %i\n", dci_pdu_rel15->bwp_indicator.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->frequency_domain_assignment.val = %i\n", dci_pdu_rel15->frequency_domain_assignment.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->time_domain_assignment.val = %i\n", dci_pdu_rel15->time_domain_assignment.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->frequency_hopping_flag.val = %i\n", dci_pdu_rel15->frequency_hopping_flag.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->mcs = %i\n", dci_pdu_rel15->mcs);
+        LOG_I(NR_MAC,"dci_pdu_rel15->ndi = %i\n", dci_pdu_rel15->ndi);
+        LOG_I(NR_MAC,"dci_pdu_rel15->rv= %i\n", dci_pdu_rel15->rv);
+        LOG_I(NR_MAC,"dci_pdu_rel15->harq_pid = %i\n", dci_pdu_rel15->harq_pid);
+        LOG_I(NR_MAC,"dci_pdu_rel15->dai[0].val = %i\n", dci_pdu_rel15->dai[0].val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->dai[1].val = %i\n", dci_pdu_rel15->dai[1].val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->tpc = %i\n", dci_pdu_rel15->tpc);
+        LOG_I(NR_MAC,"dci_pdu_rel15->srs_resource_indicator.val = %i\n", dci_pdu_rel15->srs_resource_indicator.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->precoding_information.val = %i\n", dci_pdu_rel15->precoding_information.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->antenna_ports.val = %i\n", dci_pdu_rel15->antenna_ports.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->srs_request.val = %i\n", dci_pdu_rel15->srs_request.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->csi_request.val = %i\n", dci_pdu_rel15->csi_request.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->cbgti.val = %i\n", dci_pdu_rel15->cbgti.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->ptrs_dmrs_association.val = %i\n", dci_pdu_rel15->ptrs_dmrs_association.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->beta_offset_indicator.val = %i\n", dci_pdu_rel15->beta_offset_indicator.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->dmrs_sequence_initialization.val = %i\n", dci_pdu_rel15->dmrs_sequence_initialization.val);
+        LOG_I(NR_MAC,"dci_pdu_rel15->ulsch_indicator = %i\n", dci_pdu_rel15->ulsch_indicator);
+#endif
+
+        break;
     }
     break;
 

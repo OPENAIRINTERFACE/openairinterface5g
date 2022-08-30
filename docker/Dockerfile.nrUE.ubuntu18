@@ -50,6 +50,7 @@ RUN apt-get update && \
         libconfig9 \
         openssl \
         net-tools \
+        gdb \
         python \
         python3 \
         python3-six \

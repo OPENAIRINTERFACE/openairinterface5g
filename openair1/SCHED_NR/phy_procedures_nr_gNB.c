@@ -807,10 +807,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
         uint8_t N_symb_SRS = 1<<srs_pdu->num_symbols;
         int32_t srs_received_signal[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
-        int32_t srs_ls_estimated_channel[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS];
-        int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size*N_symb_SRS] __attribute__ ((aligned(32)));
-        int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size] __attribute__ ((aligned(32)));
-        int32_t srs_estimated_channel_time_shifted[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
+        int32_t srs_ls_estimated_channel[frame_parms->nb_antennas_rx][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size*N_symb_SRS];
+        int32_t srs_estimated_channel_freq[frame_parms->nb_antennas_rx][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size*N_symb_SRS] __attribute__ ((aligned(32)));
+        int32_t srs_estimated_channel_time[frame_parms->nb_antennas_rx][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size] __attribute__ ((aligned(32)));
+        int32_t srs_estimated_channel_time_shifted[frame_parms->nb_antennas_rx][1<<srs_pdu->num_ant_ports][frame_parms->ofdm_symbol_size];
         uint32_t noise_power_per_rb[srs_pdu->bwp_size];
         int8_t snr_per_rb[srs_pdu->bwp_size];
         uint32_t signal_power;
@@ -818,8 +818,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         int8_t snr;
 
         // At least currently, the configuration is constant, so it is enough to generate the sequence just once.
-        if(gNB->nr_srs_info[i]->sc_list_length == 0) {
-          generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
+        if(gNB->nr_srs_info[i]->srs_generated_signal_bits == 0) {
+          generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
         }
 
         const int srs_est = nr_get_srs_signal(gNB,frame_rx,slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
@@ -830,7 +830,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     slot_rx,
                                     srs_pdu,
                                     gNB->nr_srs_info[i],
-                                    gNB->nr_srs_info[i]->srs_generated_signal,
+                                    (const int32_t **) gNB->nr_srs_info[i]->srs_generated_signal,
                                     srs_received_signal,
                                     srs_ls_estimated_channel,
                                     srs_estimated_channel_freq,
@@ -844,10 +844,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         }
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(srs_estimated_channel_freq[0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
+          T_BUFFER(srs_estimated_channel_freq[0][0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
 
         T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(srs_estimated_channel_time_shifted[0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
+          T_BUFFER(srs_estimated_channel_time_shifted[0][0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
 
         const uint16_t num_srs = gNB->UL_INFO.srs_ind.number_of_pdus;
         gNB->UL_INFO.srs_ind.pdu_list = &gNB->srs_pdu_list[0];
@@ -856,7 +856,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
         gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
         gNB->srs_pdu_list[num_srs].timing_advance = srs_est >= 0 ? nr_est_timing_advance_srs(frame_parms,
-                                                                                             srs_estimated_channel_time) : 0xFFFF;
+                                                                                             srs_estimated_channel_time[0]) : 0xFFFF;
         gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
         gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
         gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;

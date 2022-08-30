@@ -48,9 +48,129 @@
 
 //#define SRS_DEBUG
 
-/*******************************************************************
+
+uint16_t group_number_hopping(int slot_number,
+                              uint8_t n_ID_SRS,
+                              uint8_t l0,
+                              uint8_t l_line) {
+
+  // Pseudo-random sequence c(i) defined by TS 38.211 - Section 5.2.1
+  uint32_t cinit = n_ID_SRS;
+  uint8_t c_last_index = 8 * (slot_number * N_SYMB_SLOT + l0 + l_line) + 7;
+  uint32_t *c_sequence =  calloc(c_last_index+1, sizeof(uint32_t));
+  pseudo_random_sequence(c_last_index+1, c_sequence, cinit);
+
+  // TS 38.211 - 6.4.1.4.2 Sequence generation
+  uint32_t f_gh = 0;
+  for (int m = 0; m <= 7; m++) {
+    f_gh += c_sequence[8 * (slot_number * N_SYMB_SLOT + l0 + l_line) + m] << m;
+  }
+  f_gh = f_gh%30;
+  uint8_t u = (f_gh + n_ID_SRS)%U_GROUP_NUMBER;
+
+  free(c_sequence);
+  return u;
+}
+
+uint16_t sequence_number_hopping(int slot_number,
+                                 uint8_t n_ID_SRS,
+                                 uint16_t M_sc_b_SRS,
+                                 uint8_t l0,
+                                 uint8_t l_line) {
+  uint16_t v = 0;
+  if (M_sc_b_SRS > 6 * NR_NB_SC_PER_RB) {
+    // Pseudo-random sequence c(i) defined by TS 38.211 - Section 5.2.1
+    uint32_t cinit = n_ID_SRS;
+    uint8_t c_last_index = (slot_number * N_SYMB_SLOT + l0 + l_line);
+    uint32_t *c_sequence =  calloc(c_last_index+1, sizeof(uint32_t));
+    pseudo_random_sequence(c_last_index+1,  c_sequence, cinit);
+    // TS 38.211 - 6.4.1.4.2 Sequence generation
+    v = c_sequence[c_last_index];
+    free(c_sequence);
+  }
+  return v;
+}
+
+uint16_t compute_F_b(frame_t frame_number,
+                     slot_t slot_number,
+                     uint16_t slots_per_frame,
+                     uint8_t N_symb_SRS,
+                     uint8_t B_SRS,
+                     uint8_t C_SRS,
+                     uint8_t b_hop,
+                     uint8_t R,
+                     uint16_t T_offset,
+                     uint16_t T_SRS,
+                     resourceType_t resource_type,
+                     uint8_t l_line,
+                     uint8_t b) {
+
+  // Compute the number of SRS transmissions
+  uint16_t n_SRS = 0;
+  if (resource_type == aperiodic) {
+    n_SRS = l_line / R;
+  } else {
+    n_SRS = ((slots_per_frame*frame_number + slot_number - T_offset)/T_SRS)*(N_symb_SRS/R)+(l_line / R);
+  }
+
+  uint16_t product_N_b = 1;
+  for (unsigned int b_prime = b_hop; b_prime < B_SRS; b_prime++) {
+    if (b_prime != b_hop) {
+      product_N_b *= srs_bandwidth_config[C_SRS][b_prime][1];
+    }
+  }
+
+  uint16_t F_b = 0;
+  uint8_t N_b = srs_bandwidth_config[C_SRS][b][1];
+  if (N_b & 1) { // Nb odd
+    F_b = (N_b/2)*(n_SRS/product_N_b);
+  } else { // Nb even
+    uint16_t product_N_b_B_SRS = product_N_b;
+    product_N_b_B_SRS *= srs_bandwidth_config[C_SRS][B_SRS][1]; /* product for b_hop to b */
+    F_b = (N_b/2)*((n_SRS%product_N_b_B_SRS)/product_N_b) + ((n_SRS%product_N_b_B_SRS)/2*product_N_b);
+  }
+
+  return F_b;
+}
+
+uint16_t compute_n_b(frame_t frame_number,
+                     slot_t slot_number,
+                     uint16_t slots_per_frame,
+                     uint8_t N_symb_SRS,
+                     uint8_t B_SRS,
+                     uint8_t C_SRS,
+                     uint8_t b_hop,
+                     uint8_t n_RRC,
+                     uint8_t R,
+                     uint16_t T_offset,
+                     uint16_t T_SRS,
+                     resourceType_t resource_type,
+                     uint8_t l_line,
+                     uint8_t b) {
+
+  uint8_t N_b = srs_bandwidth_config[C_SRS][b][1];
+  uint16_t m_SRS_b = srs_bandwidth_config[C_SRS][B_SRS][0];
+
+  uint16_t n_b = 0;
+  if (b_hop >= B_SRS) {
+    n_b = (4 * n_RRC/m_SRS_b)%N_b;
+  } else {
+    if (b <= b_hop) {
+      n_b = (4 * n_RRC/m_SRS_b)%N_b;
+    } else {
+      // Compute the hopping offset Fb
+      uint16_t F_b = compute_F_b(frame_number, slot_number, slots_per_frame, N_symb_SRS, B_SRS, C_SRS, b_hop, R,
+                                 T_offset, T_SRS, resource_type, l_line, b);
+      n_b = (F_b + (4 * n_RRC/m_SRS_b))%N_b;
+    }
+  }
+
+  return n_b;
+}
+
+/*************************************************************************
 *
-* NAME :         generate_srs
+* NAME :         generate_srs_nr
 *
 * PARAMETERS :   pointer to srs config pdu
 *                pointer to transmit buffer
@@ -60,68 +180,43 @@
 *                -1 if sequence can not be properly generated
 *
 * DESCRIPTION :  generate/map srs symbol into transmit buffer
-*                see TS 38211 6.4.1.4 Sounding reference signal
+*                See TS 38.211 - Section 6.4.1.4 Sounding reference signal
 *
-*                FFS_TODO_NR
-*                Current supported configuration:
-*                - single resource per resource set
-*                - single port antenna
-*                - 1 symbol for SRS
-*                - no symbol offset
-*                - periodic mode
-*                - no hopping
-*                - no carrier switching
-*                - no antenna switching*
-*
-*********************************************************************/
+***************************************************************************/
 int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
                     NR_DL_FRAME_PARMS *frame_parms,
-                    int32_t *txptr,
+                    int32_t **txdataF,
+                    uint16_t symbol_offset,
                     nr_srs_info_t *nr_srs_info,
                     int16_t amp,
-                    int frame_number,
-                    int slot_number)
-{
-  uint8_t n_SRS_cs_max;
-  uint8_t u;
-  uint8_t v_nu;
-  uint32_t f_gh = 0;
-  uint16_t n_SRS;
-  uint16_t n_SRS_cs_i;
-  double alpha_i;
-  uint8_t K_TC_p;
-  uint16_t n_b[B_SRS_NUMBER];
-  uint16_t F_b;
-  uint16_t subcarrier;
-  uint8_t N_b;
-  uint8_t k_0_overbar_p;
+                    frame_t frame_number,
+                    slot_t slot_number) {
 
-  // get parameters from srs_config_pdu
-  uint8_t B_SRS  = srs_config_pdu->bandwidth_index;
-  uint8_t C_SRS  = srs_config_pdu->config_index;
+#ifdef SRS_DEBUG
+  LOG_I(NR_PHY,"Calling %s function\n", __FUNCTION__);
+#endif
+
+  // SRS config parameters
+  uint8_t B_SRS = srs_config_pdu->bandwidth_index;
+  uint8_t C_SRS = srs_config_pdu->config_index;
   uint8_t b_hop = srs_config_pdu->frequency_hopping;
   uint8_t K_TC = 2<<srs_config_pdu->comb_size;
-  uint8_t K_TC_overbar = srs_config_pdu->comb_offset;         // FFS_TODO_NR is this parameter for K_TC_overbar ??
+  uint8_t K_TC_overbar = srs_config_pdu->comb_offset;
   uint8_t n_SRS_cs = srs_config_pdu->cyclic_shift;
   uint8_t n_ID_SRS = srs_config_pdu->sequence_id;
-  uint8_t n_shift = srs_config_pdu->frequency_position;       // it adjusts the SRS allocation to align with the common resource block grid in multiples of four
+  uint8_t n_shift = srs_config_pdu->frequency_position;       // It adjusts the SRS allocation to align with the common resource block grid in multiples of four
   uint8_t n_RRC = srs_config_pdu->frequency_shift;
   uint8_t groupOrSequenceHopping = srs_config_pdu->group_or_sequence_hopping;
   uint8_t l_offset = srs_config_pdu->time_start_position;
   uint16_t T_SRS = srs_config_pdu->t_srs;
-  uint16_t T_offset = srs_config_pdu->t_offset;               // FFS_TODO_NR to check interface with RRC
+  uint16_t T_offset = srs_config_pdu->t_offset;
   uint8_t R = 1<<srs_config_pdu->num_repetitions;
-  uint8_t N_ap = 1<<srs_config_pdu->num_ant_ports;            // antenna port for transmission
-  uint8_t N_symb_SRS = 1<<srs_config_pdu->num_symbols;        // consecutive OFDM symbols
-  uint8_t l0 = frame_parms->symbols_per_slot - 1 - l_offset;  // starting position in the time domain
-  uint8_t k_0_p;                                              // frequency domain starting position
-
-  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_config_pdu->bwp_start*N_SC_RB;
-
-  if(nr_srs_info) {
-    nr_srs_info->sc_list_length = 0;
-    nr_srs_info->srs_generated_signal_bits = log2_approx(amp);
-  }
+  uint8_t N_ap = 1<<srs_config_pdu->num_ant_ports;            // Number of antenna port for transmission
+  uint8_t N_symb_SRS = 1<<srs_config_pdu->num_symbols;        // Number of consecutive OFDM symbols
+  uint8_t l0 = frame_parms->symbols_per_slot - 1 - l_offset;  // Starting symbol position in the time domain
+  uint8_t n_SRS_cs_max = srs_max_number_cs[srs_config_pdu->comb_size];
+  uint16_t m_SRS_b = srs_bandwidth_config[C_SRS][B_SRS][0];   // Number of resource blocks
+  uint16_t M_sc_b_SRS = m_SRS_b * NR_NB_SC_PER_RB/K_TC;       // Length of the SRS sequence
 
 #ifdef SRS_DEBUG
   LOG_I(NR_PHY,"Frame = %i, slot = %i\n", frame_number, slot_number);
@@ -142,265 +237,185 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
   LOG_I(NR_PHY,"N_ap = %i\n", N_ap);
   LOG_I(NR_PHY,"N_symb_SRS = %i\n", N_symb_SRS);
   LOG_I(NR_PHY,"l0 = %i\n", l0);
+  LOG_I(NR_PHY,"n_SRS_cs_max = %i\n", n_SRS_cs_max);
+  LOG_I(NR_PHY,"m_SRS_b = %i\n", m_SRS_b);
+  LOG_I(NR_PHY,"M_sc_b_SRS = %i\n", M_sc_b_SRS);
 #endif
 
-  if (N_ap != port1) {
-    LOG_E(NR_PHY, "generate_srs: this number of antenna ports %d is not yet supported!\n", N_ap);
-    return (-1);
-  }
-  if (N_symb_SRS != 1) {
-    LOG_E(NR_PHY, "generate_srs: this number of srs symbol  %d is not yet supported!\n", N_symb_SRS);
-  	return (-1);
-  }
-  if (groupOrSequenceHopping != neitherHopping) {
-    LOG_E(NR_PHY, "generate_srs: sequence hopping is not yet supported!\n");
-    return (-1);
-  }
+  // Validation of SRS config parameters
+
   if (R == 0) {
     LOG_E(NR_PHY, "generate_srs: this parameter repetition factor %d is not consistent !\n", R);
-    return (-1);
-  }
-  else if (R > N_symb_SRS) {
+    return -1;
+  } else if (R > N_symb_SRS) {
     LOG_E(NR_PHY, "generate_srs: R %d can not be greater than N_symb_SRS %d !\n", R, N_symb_SRS);
-    return (-1);
+    return -1;
   }
-  /* see 38211 6.4.1.4.2 Sequence generation */
-  if (K_TC == 4) {
-    n_SRS_cs_max = 12;
-    // delta = 2;     /* delta = log2(K_TC) */
-  }
-  else if (K_TC == 2) {
-    n_SRS_cs_max = 8;
-    // delta = 1;     /* delta = log2(K_TC) */
-  }
-  else {
-	LOG_E(NR_PHY, "generate_srs: SRS unknown value for K_TC %d !\n", K_TC);
-    return (-1);
-  }
+
   if (n_SRS_cs >= n_SRS_cs_max) {
     LOG_E(NR_PHY, "generate_srs: inconsistent parameter n_SRS_cs %d >=  n_SRS_cs_max %d !\n", n_SRS_cs, n_SRS_cs_max);
-    return (-1);
+    return -1;
   }
+
   if (T_SRS == 0) {
     LOG_E(NR_PHY, "generate_srs: inconsistent parameter T_SRS %d can not be equal to zero !\n", T_SRS);
-    return (-1);
-  }
-  else
-  {
+    return -1;
+  } else {
     int index = 0;
     while (srs_periodicity[index] != T_SRS) {
       index++;
       if (index == SRS_PERIODICITY) {
         LOG_E(NR_PHY, "generate_srs: inconsistent parameter T_SRS %d not specified !\n", T_SRS);
-        return (-1);
+        return -1;
       }
     }
   }
 
-  uint16_t m_SRS_b = srs_bandwidth_config[C_SRS][B_SRS][0];     /* m_SRS_b is given by TS 38211 clause 6.4.1.4.3 */
-  uint16_t M_sc_b_SRS = m_SRS_b * N_SC_RB/K_TC;                 /* length of the sounding reference signal sequence */
+  // Variable initialization
+  if(nr_srs_info) {
+    nr_srs_info->srs_generated_signal_bits = log2_approx(amp);
+  }
+  uint64_t subcarrier_offset = frame_parms->first_carrier_offset + srs_config_pdu->bwp_start*NR_NB_SC_PER_RB;
+  double sqrt_N_ap = sqrt(N_ap);
+  uint16_t n_b[B_SRS_NUMBER];
 
-  /* for each antenna ports for transmission */
+  // Find index of table which is for this SRS length
+  uint16_t M_sc_b_SRS_index = 0;
+  while((ul_allocated_re[M_sc_b_SRS_index] != M_sc_b_SRS) && (M_sc_b_SRS_index < SRS_SB_CONF)){
+    M_sc_b_SRS_index++;
+  }
+
+  // SRS sequence generation and mapping, TS 38.211 - Section 6.4.1.4
   for (int p_index = 0; p_index < N_ap; p_index++) {
 
-  /* see TS 38.211 6.4.1.4.2 Sequence generation */
-
-    n_SRS_cs_i = (n_SRS_cs +  (n_SRS_cs_max * (SRS_antenna_port[p_index] - 1000)/N_ap))%n_SRS_cs_max;
-    alpha_i = 2 * M_PI * ((double)n_SRS_cs_i / (double)n_SRS_cs_max);
-
-    /* for each SRS symbol which should be managed by SRS configuration */
-    /* from TS 38.214 6.2.1.1 UE SRS frequency hopping procedure */
-    /* A UE may be configured to transmit an SRS resource on  adjacent symbols within the last six symbols of a slot, */
-    /* where all antenna ports of the SRS resource are mapped to each symbol of the resource */
-
-    uint8_t l = p_index;
-    if (l >= N_symb_SRS) {
-      LOG_E(NR_PHY, "generate_srs: number of antenna ports %d and number of srs symbols %d are different !\n", N_ap, N_symb_SRS);
-    }
-
-    switch(groupOrSequenceHopping) {
-      case neitherHopping:
-      {
-        f_gh = 0;
-        v_nu = 0;
-        break;
-      }
-      case groupHopping:
-      {
-        uint8_t c_last_index = 8 * (slot_number * N_SYMB_SLOT + l0 + l) + 7; /* compute maximum value of the random sequence */
-        uint32_t *c_sequence =  calloc(c_last_index+1, sizeof(uint32_t));
-        uint32_t cinit = n_ID_SRS/30;
-        pseudo_random_sequence(c_last_index+1,  c_sequence, cinit);
-        for (int m = 0; m < 8; m++) {
-          f_gh += c_sequence[8 * (slot_number * N_SYMB_SLOT + l0 + l) + m]<<m;
-        }
-        free(c_sequence);
-        f_gh = f_gh%30;
-        v_nu = 0;
-        break;
-      }
-      case sequenceHopping:
-      {
-        f_gh = 0;
-        if (M_sc_b_SRS > 6 * N_SC_RB) {
-          uint8_t c_last_index = (slot_number * N_SYMB_SLOT + l0 + l); /* compute maximum value of the random sequence */
-          uint32_t *c_sequence =  calloc(c_last_index+1, sizeof(uint32_t));
-          uint32_t cinit = n_ID_SRS;
-          pseudo_random_sequence(c_last_index+1,  c_sequence, cinit);
-          v_nu = c_sequence[c_last_index];
-          free(c_sequence);
-        }
-        else {
-          v_nu = 0;
-        }
-        break;
-      }
-      default:
-      {
-        LOG_E(NR_PHY, "generate_srs: unknown hopping setting %d !\n", groupOrSequenceHopping);
-        return (-1);
-      }
-    }
-
-    /* u is the sequence-group number defined in section 6.4.1.4.1 */
-    u = (f_gh + n_ID_SRS)%U_GROUP_NUMBER; /* 30 */
-
-    /* TS 38.211 6.4.1.4.3  Mapping to physical resources */
-
-    if((n_SRS_cs >= n_SRS_cs_max/2)&&(n_SRS_cs < n_SRS_cs_max)&&(N_ap == 4) && ((SRS_antenna_port[p_index] == 1001) || (SRS_antenna_port[p_index] == 1003))) {
-      K_TC_p = (K_TC_overbar + K_TC/2)%K_TC;
-    }
-    else {
-      K_TC_p = K_TC_overbar;
-    }
-
-    for (int b = 0; b <= B_SRS; b++) {
-      N_b = srs_bandwidth_config[C_SRS][b][1];
-      if (b_hop >= B_SRS) {
-        n_b[b] = (4 * n_RRC/m_SRS_b)%N_b; /* frequency hopping is disabled and the frequency position index n_b remains constant */
-      }
-      else {
-        if (b == b_hop) {
-          N_b = 1;
-        }
-        /* periodicity and offset */
-        if (srs_config_pdu->resource_type == aperiodic) {
-          n_SRS = l/R;
-        }
-        else {
-          int8_t N_slot_frame = frame_parms->slots_per_frame;
-          n_SRS = ((N_slot_frame*frame_number + slot_number - T_offset)/T_SRS)*(N_symb_SRS/R)+(l/R);
-        }
-
-        uint16_t product_N_b = 1;  /* for b_hop to b-1 */
-        for (unsigned int b_prime = b_hop; b_prime < B_SRS; b_prime++) {  /* product for b_hop to b-1 */
-          if (b_prime != b_hop) {
-            product_N_b *= srs_bandwidth_config[C_SRS][b_prime][1];
-          }
-        }
-
-        if (N_b & 1) {      /* Nb odd */
-          F_b = (N_b/2)*(n_SRS/product_N_b);
-        }
-        else {              /* Nb even */
-          uint16_t product_N_b_B_SRS = product_N_b;
-          product_N_b_B_SRS *= srs_bandwidth_config[C_SRS][B_SRS][1]; /* product for b_hop to b */
-          F_b = (N_b/2)*((n_SRS%product_N_b_B_SRS)/product_N_b) + ((n_SRS%product_N_b_B_SRS)/2*product_N_b);
-        }
-
-        if (b <= b_hop) {
-          n_b[b] = (4 * n_RRC/m_SRS_b)%N_b;
-        }
-        else {
-          n_b[b] = (F_b + (4 * n_RRC/m_SRS_b))%N_b;
-        }
-      }
-    }
-
-    k_0_overbar_p = n_shift * N_SC_RB + K_TC_p;
-
-    k_0_p = k_0_overbar_p; /* it is the frequency-domain starting position */
-
-    for (int b = 0; b <= B_SRS; b++) {
-      k_0_p += K_TC * M_sc_b_SRS * n_b[b];
-    }
-
-    subcarrier = subcarrier_offset + k_0_p;
-    if (subcarrier>frame_parms->ofdm_symbol_size) {
-      subcarrier -= frame_parms->ofdm_symbol_size;
-    }
-
-    /* find index of table which is for this srs length */
-    unsigned int M_sc_b_SRS_index = 0;
-    while((ul_allocated_re[M_sc_b_SRS_index] != M_sc_b_SRS) && (M_sc_b_SRS_index < SRS_SB_CONF)){
-      M_sc_b_SRS_index++;
-    }
-
-    if (ul_allocated_re[M_sc_b_SRS_index] != M_sc_b_SRS) {
-      LOG_E(NR_PHY, "generate_srs: srs uplink allocation %d can not be found! \n", M_sc_b_SRS);
-      return (-1);
-    }
-
-#if 0
-
-    char output_file[255];
-    char sequence_name[255];
-    sprintf(output_file, "rv_seq_%d_%d_%d.m", u, v_nu, ul_allocated_re[M_sc_b_SRS_index]);
-    sprintf(sequence_name, "rv_seq_%d_%d_%d", u, v_nu, ul_allocated_re[M_sc_b_SRS_index]);
-    write_output(output_file, sequence_name,  rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index], ul_allocated_re[M_sc_b_SRS_index], 1, 1);
-
+#ifdef SRS_DEBUG
+    LOG_I(NR_PHY,"============ port %d ============\n", p_index);
 #endif
 
-    for (int k=0; k < M_sc_b_SRS; k++) {
+    uint16_t n_SRS_cs_i = (n_SRS_cs +  (n_SRS_cs_max * (SRS_antenna_port[p_index] - 1000)/N_ap))%n_SRS_cs_max;
+    double alpha_i = 2 * M_PI * ((double)n_SRS_cs_i / (double)n_SRS_cs_max);
 
-      double real_shift = cos(alpha_i*k);
-      double imag_shift = sin(alpha_i*k);
-
-      /* cos(x + y) = cos(x)cos(y) - sin(x)sin(y) */
-      double real = ((real_shift*rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index][2*k]) - (imag_shift*rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index][2*k+1]))/sqrt(N_ap);
-      /* sin(x + y) = sin(x)cos(y) + cos(x)sin(y) */
-      double imag = ((imag_shift*rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index][2*k]) + (real_shift*rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index][2*k+1]))/sqrt(N_ap);
-
-      int32_t real_amp = ((int32_t)round((double) amp * real)) >> 15;
-      int32_t imag_amp = ((int32_t)round((double) amp * imag)) >> 15;
-
-#if 0
-      printf("subcarrier %5d srs[%3d] r: %4d i: %4d reference[%d][%d][%d] r: %6d i: %6d\n", subcarrier, k, real_amp, imag_amp,
-                                                                                            u, v_nu, M_sc_b_SRS_index,
-                                                                                            rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index][2*k],
-                                                                                            rv_ul_ref_sig[u][v_nu][M_sc_b_SRS_index][2*k+1]);
+#ifdef SRS_DEBUG
+    LOG_I(NR_PHY,"n_SRS_cs_i = %i\n", n_SRS_cs_i);
+    LOG_I(NR_PHY,"alpha_i = %f\n", alpha_i);
 #endif
 
-      txptr[subcarrier] = (real_amp & 0xFFFF) + ((imag_amp<<16)&0xFFFF0000);
+    for (int l_line = 0; l_line < N_symb_SRS; l_line++) {
 
-      if(nr_srs_info) {
-        nr_srs_info->sc_list[nr_srs_info->sc_list_length] = subcarrier;
-        nr_srs_info->sc_list_length++;
+#ifdef SRS_DEBUG
+      LOG_I(NR_PHY,":::::::: OFDM symbol %d ::::::::\n", l0+l_line);
+#endif
+
+      // Set group and sequence numbers (u,v) per OFDM symbol
+      uint16_t u = 0;
+      uint16_t v = 0;
+      switch(groupOrSequenceHopping) {
+        case neitherHopping:
+          u = n_ID_SRS%U_GROUP_NUMBER;
+          v = 0;
+          break;
+        case groupHopping:
+          u = group_number_hopping(slot_number, n_ID_SRS, l0, l_line);
+          v = 0;
+          break;
+        case sequenceHopping:
+          u = n_ID_SRS%U_GROUP_NUMBER;
+          v = sequence_number_hopping(slot_number, n_ID_SRS, M_sc_b_SRS, l0, l_line);
+          break;
+        default:
+          LOG_E(NR_PHY, "generate_srs: unknown hopping setting %d !\n", groupOrSequenceHopping);
+          return -1;
       }
 
 #ifdef SRS_DEBUG
-      int subcarrier_log = subcarrier-subcarrier_offset;
-      if(subcarrier_log < 0) {
-        subcarrier_log = subcarrier_log + frame_parms->ofdm_symbol_size;
-      }
-      if( subcarrier_log%12 == 0 ) {
-        LOG_I(NR_PHY,"------------ %d ------------\n", subcarrier_log/12);
-      }
-      LOG_I(NR_PHY,"(%d)  \t%i\t%i\n", subcarrier_log, (int16_t)(real_amp&0xFFFF), (int16_t)(imag_amp&0xFFFF));
+      LOG_I(NR_PHY,"u = %i\n", u);
+      LOG_I(NR_PHY,"v = %i\n", v);
 #endif
 
-      subcarrier += (K_TC); /* subcarrier increment */
+      // Compute the frequency position index n_b
+      uint16_t sum_n_b = 0;
+      for (int b = 0; b <= B_SRS; b++) {
+        n_b[b] = compute_n_b(frame_number, slot_number, frame_parms->slots_per_frame, N_symb_SRS, B_SRS,
+                             C_SRS, b_hop, n_RRC, R, T_offset, T_SRS, srs_config_pdu->resource_type, l_line, b);
 
-      if (subcarrier >= frame_parms->ofdm_symbol_size) {
-        subcarrier=subcarrier-frame_parms->ofdm_symbol_size;
+        sum_n_b += n_b[b];
+
+#ifdef SRS_DEBUG
+        LOG_I(NR_PHY,"n_b[%i] = %i\n", b, n_b[b]);
+#endif
+
       }
 
-    }
-    /* process next symbol */
-    //txptr = txptr + frame_parms->ofdm_symbol_size;
-  }
+#ifdef SRS_DEBUG
+      LOG_I(NR_PHY,"sum_n_b = %i\n", sum_n_b);
+#endif
 
-  return (0);
+      // Compute the frequency-domain starting position
+      uint8_t K_TC_p = 0;
+      if((n_SRS_cs >= n_SRS_cs_max/2)&&(n_SRS_cs < n_SRS_cs_max)&&(N_ap == 4) && ((SRS_antenna_port[p_index] == 1001) || (SRS_antenna_port[p_index] == 1003))) {
+        K_TC_p = (K_TC_overbar + K_TC/2)%K_TC;
+      } else {
+        K_TC_p = K_TC_overbar;
+      }
+      uint8_t k_l_offset = 0; // If the SRS is configured by the IE SRS-PosResource-r16, the quantity k_l_offset is
+                              // given by TS 38.211 - Table 6.4.1.4.3-2, otherwise k_l_offset = 0.
+      uint8_t k_0_overbar_p = (n_shift*NR_NB_SC_PER_RB + (K_TC_p+k_l_offset))%K_TC;
+      uint8_t k_0_p = k_0_overbar_p + K_TC*M_sc_b_SRS*sum_n_b;
+      nr_srs_info->k_0_p[p_index][l_line] = k_0_p;
+
+#ifdef SRS_DEBUG
+      LOG_I(NR_PHY,"K_TC_p = %i\n", K_TC_p);
+      LOG_I(NR_PHY,"k_0_overbar_p = %i\n", k_0_overbar_p);
+      LOG_I(NR_PHY,"k_0_p = %i\n", k_0_p);
+#endif
+
+      uint16_t subcarrier = subcarrier_offset + k_0_p;
+      if (subcarrier>frame_parms->ofdm_symbol_size) {
+        subcarrier -= frame_parms->ofdm_symbol_size;
+      }
+      uint16_t l_line_offset = l_line*frame_parms->ofdm_symbol_size;
+
+      // For each port, and for each OFDM symbol, here it is computed and mapped an SRS sequence with M_sc_b_SRS symbols
+      for (int k = 0; k < M_sc_b_SRS; k++) {
+
+        double shift_real = cos(alpha_i * k);
+        double shift_imag = sin(alpha_i * k);
+        int16_t r_overbar_real = rv_ul_ref_sig[u][v][M_sc_b_SRS_index][k<<1];
+        int16_t r_overbar_imag = rv_ul_ref_sig[u][v][M_sc_b_SRS_index][(k<<1)+1];
+
+        // cos(x+y) = cos(x)cos(y) - sin(x)sin(y)
+        double r_real = (shift_real*r_overbar_real - shift_imag*r_overbar_imag) / sqrt_N_ap;
+
+        // sin(x+y) = sin(x)cos(y) + cos(x)sin(y)
+        double r_imag = (shift_imag*r_overbar_real + shift_real*r_overbar_imag) / sqrt_N_ap;
+
+        int32_t r_real_amp = ((int32_t) round((double) amp * r_real)) >> 15;
+        int32_t r_imag_amp = ((int32_t) round((double) amp * r_imag)) >> 15;
+
+#ifdef SRS_DEBUG
+        int subcarrier_log = subcarrier-subcarrier_offset;
+        if(subcarrier_log < 0) {
+          subcarrier_log = subcarrier_log + frame_parms->ofdm_symbol_size;
+        }
+        if(subcarrier_log%12 == 0) {
+          LOG_I(NR_PHY,"------------ %d ------------\n", subcarrier_log/12);
+        }
+        LOG_I(NR_PHY,"(%d)  \t%i\t%i\n", subcarrier_log, (int16_t)(r_real_amp&0xFFFF), (int16_t)(r_imag_amp&0xFFFF));
+#endif
+
+        txdataF[p_index][symbol_offset+l_line_offset+subcarrier] = (r_real_amp & 0xFFFF) + ((r_imag_amp<<16)&0xFFFF0000);
+
+        // Subcarrier increment
+        subcarrier += K_TC;
+        if (subcarrier >= frame_parms->ofdm_symbol_size) {
+          subcarrier=subcarrier-frame_parms->ofdm_symbol_size;
+        }
+
+      } // for (int k = 0; k < M_sc_b_SRS; k++)
+    } // for (int l_line = 0; l_line < N_symb_SRS; l_line++)
+  } // for (int p_index = 0; p_index < N_ap; p_index++)
+
+  return 0;
 }
 
 /*******************************************************************
@@ -457,7 +472,7 @@ int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gN
   NR_DL_FRAME_PARMS *frame_parms = &(ue->frame_parms);
   uint16_t symbol_offset = (frame_parms->symbols_per_slot - 1 - srs_config_pdu->time_start_position)*frame_parms->ofdm_symbol_size;
 
-  if (generate_srs_nr(srs_config_pdu, frame_parms, &ue->common_vars.txdataF[gNB_id][symbol_offset], ue->nr_srs_info,
+  if (generate_srs_nr(srs_config_pdu, frame_parms, ue->common_vars.txdataF, symbol_offset, ue->nr_srs_info,
                       AMP, proc->frame_tx, proc->nr_slot_tx) == 0) {
     return 0;
   } else {

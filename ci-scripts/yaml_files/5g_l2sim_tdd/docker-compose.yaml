@@ -2,7 +2,7 @@ version: '3.8'
 services:
     oai-nrf:
         container_name: "l2sim-oai-nrf"
-        image: oai-nrf:latest
+        image: oai-nrf:august-dev
         environment:
             - NRF_INTERFACE_NAME_FOR_SBI=eth0
             - NRF_INTERFACE_PORT_FOR_SBI=80
@@ -42,7 +42,7 @@ services:
                 ipv4_address: 192.168.71.131
     oai-amf:
         container_name: "l2sim-oai-amf"
-        image: oai-amf:latest
+        image: oai-amf:august-dev
         environment:
             - TZ=Europe/paris
             - INSTANCE=0
@@ -110,7 +110,7 @@ services:
                 ipv4_address: 192.168.71.132
     oai-smf:
         container_name: "l2sim-oai-smf"
-        image: oai-smf:latest
+        image: oai-smf:august-dev
         environment:
             - TZ=Europe/Paris
             - INSTANCE=0
@@ -156,7 +156,7 @@ services:
                 ipv4_address: 192.168.71.133
     oai-spgwu:
         container_name: "l2sim-oai-spgwu"
-        image: oai-spgwu-tiny:latest
+        image: oai-spgwu-tiny:august-dev
         environment:
             - TZ=Europe/Paris
             - PID_DIRECTORY=/var/run
