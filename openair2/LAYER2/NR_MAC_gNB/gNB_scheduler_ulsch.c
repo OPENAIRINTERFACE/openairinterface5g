@@ -1360,18 +1360,6 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
     return false;
 
-  bool is_mixed_slot = false;
-  const NR_TDD_UL_DL_Pattern_t *tdd =
-      scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
-
-  if (tdd)
-    is_mixed_slot = is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[sched_slot / 64], sched_slot) &&
-                    is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot);
-
-  // FIXME: Avoid mixed slots for initialUplinkBWP
-  if (current_BWP->bwp_id==0 && is_mixed_slot)
-    return false;
-
   // Avoid slots with the SRS
   UE_iterator(nr_mac->UE_info.list, UE) {
     NR_sched_srs_t sched_srs = UE->UE_sched_ctrl.sched_srs;
