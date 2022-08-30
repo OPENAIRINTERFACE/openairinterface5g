@@ -34,7 +34,6 @@
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
-#include "openair2/COMMON/prs_nr_paramdef.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
 /*
@@ -152,170 +151,6 @@ static void *nrL1_UE_stats_thread(void *param)
   return NULL;
 }
 
-void RCconfig_nrUE_prs(void *cfg)
-{
-  int j = 0, k = 0, gNB_id = 0;
-  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
-  char str[7][100] = {'\0'}; int16_t n[7] = {0};
-  PHY_VARS_NR_UE *ue  = (PHY_VARS_NR_UE *)cfg;
-  prs_config_t *prs_config = NULL;
-
-  paramlist_def_t gParamList = {CONFIG_STRING_PRS_LIST,NULL,0};
-  paramdef_t gParams[] = PRS_GLOBAL_PARAMS_DESC;
-  config_getlist( &gParamList,gParams,sizeof(gParams)/sizeof(paramdef_t), NULL);
-  if (gParamList.numelt > 0)
-  {
-    ue->prs_active_gNBs = *(gParamList.paramarray[j][PRS_ACTIVE_GNBS_IDX].uptr);
-  }
-  else
-  {
-    LOG_E(PHY,"%s configuration NOT found..!! Skipped configuring UE for the PRS reception\n", CONFIG_STRING_PRS_CONFIG);
-  }
-
-  paramlist_def_t PRS_ParamList = {{0},NULL,0};
-  for(int i = 0; i < ue->prs_active_gNBs; i++)
-  {
-    paramdef_t PRS_Params[] = PRS_PARAMS_DESC;
-    sprintf(PRS_ParamList.listname, "%s%i", CONFIG_STRING_PRS_CONFIG, i);
-
-    sprintf(aprefix, "%s.[%i]", CONFIG_STRING_PRS_LIST, 0);
-    config_getlist( &PRS_ParamList,PRS_Params,sizeof(PRS_Params)/sizeof(paramdef_t), aprefix);
-
-    if (PRS_ParamList.numelt > 0) {
-      for (j = 0; j < PRS_ParamList.numelt; j++) {
-        gNB_id = *(PRS_ParamList.paramarray[j][PRS_GNB_ID].uptr);
-        if(gNB_id != i)  gNB_id = i; // force gNB_id to avoid mismatch
-
-        memset(n,0,sizeof(n));
-        ue->prs_vars[gNB_id]->NumPRSResources = *(PRS_ParamList.paramarray[j][NUM_PRS_RESOURCES].uptr);
-        for (k = 0; k < ue->prs_vars[gNB_id]->NumPRSResources; k++)
-        {
-          prs_config = &ue->prs_vars[gNB_id]->prs_resource[k].prs_cfg;
-          prs_config->PRSResourceSetPeriod[0]  = PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD_LIST].uptr[0];
-          prs_config->PRSResourceSetPeriod[1]  = PRS_ParamList.paramarray[j][PRS_RESOURCE_SET_PERIOD_LIST].uptr[1];
-          // per PRS resources parameters
-          prs_config->SymbolStart              = PRS_ParamList.paramarray[j][PRS_SYMBOL_START_LIST].uptr[k];
-          prs_config->NumPRSSymbols            = PRS_ParamList.paramarray[j][PRS_NUM_SYMBOLS_LIST].uptr[k];
-          prs_config->REOffset                 = PRS_ParamList.paramarray[j][PRS_RE_OFFSET_LIST].uptr[k];
-          prs_config->NPRSID                   = PRS_ParamList.paramarray[j][PRS_ID_LIST].uptr[k];
-          prs_config->PRSResourceOffset        = PRS_ParamList.paramarray[j][PRS_RESOURCE_OFFSET_LIST].uptr[k];
-          // Common parameters to all PRS resources
-          prs_config->NumRB                    = *(PRS_ParamList.paramarray[j][PRS_NUM_RB].uptr);
-          prs_config->RBOffset                 = *(PRS_ParamList.paramarray[j][PRS_RB_OFFSET].uptr);
-          prs_config->CombSize                 = *(PRS_ParamList.paramarray[j][PRS_COMB_SIZE].uptr);
-          prs_config->PRSResourceRepetition    = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_REPETITION].uptr);
-          prs_config->PRSResourceTimeGap       = *(PRS_ParamList.paramarray[j][PRS_RESOURCE_TIME_GAP].uptr);
-
-          prs_config->MutingBitRepetition      = *(PRS_ParamList.paramarray[j][PRS_MUTING_BIT_REPETITION].uptr);
-          for (int l = 0; l < PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN1_LIST].numelt; l++)
-          {
-            prs_config->MutingPattern1[l]      = PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN1_LIST].uptr[l];
-            if (k == 0) // print only for 0th resource
-              n[5] += snprintf(str[5]+n[5],sizeof(str[5]),"%d, ",prs_config->MutingPattern1[l]);
-          }
-          for (int l = 0; l < PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN2_LIST].numelt; l++)
-          {
-            prs_config->MutingPattern2[l]      = PRS_ParamList.paramarray[j][PRS_MUTING_PATTERN2_LIST].uptr[l];
-            if (k == 0) // print only for 0th resource
-              n[6] += snprintf(str[6]+n[6],sizeof(str[6]),"%d, ",prs_config->MutingPattern2[l]);
-          }
-
-          // print to buffer
-          n[0] += snprintf(str[0]+n[0],sizeof(str[0]),"%d, ",prs_config->SymbolStart);
-          n[1] += snprintf(str[1]+n[1],sizeof(str[1]),"%d, ",prs_config->NumPRSSymbols);
-          n[2] += snprintf(str[2]+n[2],sizeof(str[2]),"%d, ",prs_config->REOffset);
-          n[3] += snprintf(str[3]+n[3],sizeof(str[3]),"%d, ",prs_config->PRSResourceOffset);
-          n[4] += snprintf(str[4]+n[4],sizeof(str[4]),"%d, ",prs_config->NPRSID);
-        } // for k
-
-        prs_config = &ue->prs_vars[gNB_id]->prs_resource[0].prs_cfg;
-        LOG_I(PHY, "-----------------------------------------\n");
-        LOG_I(PHY, "PRS Config for gNB_id %d @ %p\n", gNB_id, prs_config);
-        LOG_I(PHY, "-----------------------------------------\n");
-        LOG_I(PHY, "NumPRSResources \t%d\n", ue->prs_vars[gNB_id]->NumPRSResources);
-        LOG_I(PHY, "PRSResourceSetPeriod \t[%d, %d]\n", prs_config->PRSResourceSetPeriod[0], prs_config->PRSResourceSetPeriod[1]);
-        LOG_I(PHY, "NumRB \t\t\t%d\n", prs_config->NumRB);
-        LOG_I(PHY, "RBOffset \t\t%d\n", prs_config->RBOffset);
-        LOG_I(PHY, "CombSize \t\t%d\n", prs_config->CombSize);
-        LOG_I(PHY, "PRSResourceRepetition \t%d\n", prs_config->PRSResourceRepetition);
-        LOG_I(PHY, "PRSResourceTimeGap \t%d\n", prs_config->PRSResourceTimeGap);
-        LOG_I(PHY, "MutingBitRepetition \t%d\n", prs_config->MutingBitRepetition);
-        LOG_I(PHY, "SymbolStart \t\t[%s\b\b]\n", str[0]);
-        LOG_I(PHY, "NumPRSSymbols \t\t[%s\b\b]\n", str[1]);
-        LOG_I(PHY, "REOffset \t\t[%s\b\b]\n", str[2]);
-        LOG_I(PHY, "PRSResourceOffset \t[%s\b\b]\n", str[3]);
-        LOG_I(PHY, "NPRS_ID \t\t[%s\b\b]\n", str[4]);
-        LOG_I(PHY, "MutingPattern1 \t\t[%s\b\b]\n", str[5]);
-        LOG_I(PHY, "MutingPattern2 \t\t[%s\b\b]\n", str[6]);
-        LOG_I(PHY, "-----------------------------------------\n");
-      }
-    }
-    else
-    {
-      LOG_E(PHY,"No %s configuration found..!!\n", PRS_ParamList.listname);
-    }
-  }
-}
-
-void init_nr_prs_ue_vars(PHY_VARS_NR_UE *ue)
-{
-  NR_UE_PRS   **const prs_vars = ue->prs_vars;
-  NR_DL_FRAME_PARMS *const fp  = &ue->frame_parms;
-
-  // PRS vars init
-  for(int idx = 0; idx < NR_MAX_PRS_COMB_SIZE; idx++)
-  {
-    prs_vars[idx]   = (NR_UE_PRS *)malloc16_clear(sizeof(NR_UE_PRS));
-    prs_vars[idx]->ch_tmp       = (int16_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-    prs_vars[idx]->chF_interpol = (int16_t *)malloc16_clear(NR_PRS_IDFT_OVERSAMP_FACTOR*fp->ofdm_symbol_size*sizeof(int32_t));
-    prs_vars[idx]->chT_interpol = (int16_t *)malloc16_clear(NR_PRS_IDFT_OVERSAMP_FACTOR*fp->ofdm_symbol_size*sizeof(int32_t));
-    for(int k = 0; k < NR_MAX_PRS_RESOURCES_PER_SET; k++)
-    {
-      // PRS channel estimates
-      prs_vars[idx]->prs_resource[k].prs_ch_estimates      = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
-      prs_vars[idx]->prs_resource[k].prs_ch_estimates_time = (int32_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t *) );
-      AssertFatal(((prs_vars[idx]->prs_resource[k].prs_ch_estimates!=NULL) || (prs_vars[idx]->prs_resource[k].prs_ch_estimates_time!=NULL)), "NR UE init: PRS channel estimates malloc failed for gNB_id %d\n", idx);
-      prs_vars[idx]->prs_resource[k].prs_meas              = (prs_meas_t **)malloc16_clear( fp->nb_antennas_rx*sizeof(prs_meas_t *) );
-      AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas!=NULL), "NR UE init: PRS measurements malloc failed for gNB_id %d\n", idx);
-
-      for (int j=0; j<fp->nb_antennas_rx; j++) {
-        prs_vars[idx]->prs_resource[k].prs_ch_estimates[j]      = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-        prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-        AssertFatal(((prs_vars[idx]->prs_resource[k].prs_ch_estimates[j]!=NULL) || (prs_vars[idx]->prs_resource[k].prs_ch_estimates_time[j]!=NULL)), "NR UE init: PRS channel estimates malloc failed for rx_ant %d\n", j);
-        prs_vars[idx]->prs_resource[k].prs_meas[j]              = (prs_meas_t *)malloc16_clear(sizeof(prs_meas_t) );
-        AssertFatal((prs_vars[idx]->prs_resource[k].prs_meas[j]!=NULL), "NR UE init: PRS measurements malloc failed for rx_ant %d\n", j);
-      }
-    }
-  }
-  // load the config file params
-  RCconfig_nrUE_prs(ue);
-
-  //PRS sequence init
-  ue->nr_gold_prs = (uint32_t *****)malloc16(ue->prs_active_gNBs*sizeof(uint32_t ****));
-  uint32_t *****prs = ue->nr_gold_prs;
-  AssertFatal(prs!=NULL, "NR UE init: positioning reference signal malloc failed\n");
-  for (int gnb = 0; gnb < ue->prs_active_gNBs; gnb++) {
-    prs[gnb] = (uint32_t ****)malloc16(ue->prs_vars[gnb]->NumPRSResources*sizeof(uint32_t ***));
-    AssertFatal(prs[gnb]!=NULL, "NR UE init: positioning reference signal for gnb %d - malloc failed\n", gnb);
-
-    for (int rsc = 0; rsc < ue->prs_vars[gnb]->NumPRSResources; rsc++) {
-      prs[gnb][rsc] = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t **));
-      AssertFatal(prs[gnb][rsc]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d- malloc failed\n", gnb, rsc);
-
-      for (int slot=0; slot<fp->slots_per_frame; slot++) {
-        prs[gnb][rsc][slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t *));
-        AssertFatal(prs[gnb][rsc][slot]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d slot %d - malloc failed\n", gnb, rsc, slot);
-
-        for (int symb=0; symb<fp->symbols_per_slot; symb++) {
-          prs[gnb][rsc][slot][symb] = (uint32_t *)malloc16(NR_MAX_PRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
-          AssertFatal(prs[gnb][rsc][slot][symb]!=NULL, "NR UE init: positioning reference signal for gnb %d rsc %d slot %d symbol %d - malloc failed\n", gnb, rsc, slot, symb);
-        } // for symb
-      } // for slot
-    } // for rsc
-  } // for gnb
-  init_nr_gold_prs(ue);
-}
-
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t UE_id,
                      uint8_t abstraction_flag)
@@ -333,9 +168,6 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
     ue->UE_mode[gNB_id] = NOT_SYNCHED;
     ue->prach_resources[gNB_id] = (NR_PRACH_RESOURCES_t *)malloc16_clear(sizeof(NR_PRACH_RESOURCES_t));
   }
-
-  // initialize nr prs vars
-  init_nr_prs_ue_vars(ue);
 
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB);

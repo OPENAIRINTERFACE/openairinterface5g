@@ -100,6 +100,4 @@ extern void start_oai_nrue_threads(void);
 void *UE_thread(void *arg);
 void init_nr_ue_vars(PHY_VARS_NR_UE *ue, uint8_t UE_id, uint8_t abstraction_flag);
 void init_nrUE_standalone_thread(int ue_idx);
-void RCconfig_nrUE_prs(void *cfg);
-void init_nr_prs_ue_vars(PHY_VARS_NR_UE *ue);
 #endif
