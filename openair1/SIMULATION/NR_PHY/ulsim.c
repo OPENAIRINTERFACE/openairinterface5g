@@ -305,7 +305,6 @@ int main(int argc, char **argv)
   int Imcs = 9;
   uint8_t precod_nbr_layers = 1;
   int gNB_id = 0;
-  int ap;
   int tx_offset;
   int32_t txlev_sum = 0, atxlev[4];
   int start_rb = 0;
@@ -1319,17 +1318,7 @@ int main(int argc, char **argv)
         } else {
           multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
         }
-
-        for (i=0; i<slot_length; i++) {
-          for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
-            rxdata[ap][slot_offset+i+delay].r = (int16_t)((r_re[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0))); // convert to fixed point
-            rxdata[ap][slot_offset+i+delay].i = (int16_t)((r_im[ap][i]) + (sqrt(sigma/2)*gaussdouble(0.0,1.0)));
-            /* Add phase noise if enabled */
-            if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
-              phase_noise(ts, &rxdata[ap][slot_offset].r, &rxdata[ap][slot_offset].i);
-            }
-          }
-        }
+        add_noise(rxdata, (const double **) r_re, (const double **) r_im, sigma, slot_length, slot_offset, ts, delay, pdu_bit_map, frame_parms->nb_antennas_rx);
 
       } /*End input_fd */
 

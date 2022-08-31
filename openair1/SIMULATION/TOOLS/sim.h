@@ -348,6 +348,30 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname);
 */
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 
+/**
+\brief Add AWGN noise and phase noise if enabled
+\param rxdata output data with noise
+\param r_re real part of input data without noise
+\param r_im imaginary part of input data without noise
+\param sigma noise power
+\param length number of samples to apply the noise
+\param slot_offset slot offset to start applying the noise
+\param ts sampling time
+\param delay introduce delay in terms of number of samples
+\param pdu_bit_map bitmap indicating presence of optional PDUs
+\param nb_antennas_rx number of receive antennas
+*/
+void add_noise(c16_t **rxdata,
+               const double **r_re,
+               const double **r_im,
+               const double sigma,
+               const int length,
+               const int slot_offset,
+               const double ts,
+               const int delay,
+               const uint16_t pdu_bit_map,
+               const uint8_t nb_antennas_rx);
+
 /**\fn void multipath_channel(channel_desc_t *desc,
            double tx_sig_re[NB_ANTENNAS_TX],
            double tx_sig_im[NB_ANTENANS_TX],

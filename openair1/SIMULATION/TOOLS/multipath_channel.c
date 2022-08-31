@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include "nfapi_nr_interface_scf.h"
 #include "PHY/TOOLS/tools_defs.h"
 #include "SIMULATION/RF/rf.h"
 #include "sim.h"
@@ -144,6 +145,31 @@ void multipath_channel(channel_desc_t *desc,
 }
 
 #else
+
+void add_noise(c16_t **rxdata,
+               const double **r_re,
+               const double **r_im,
+               const double sigma,
+               const int length,
+               const int slot_offset,
+               const double ts,
+               const int delay,
+               const uint16_t pdu_bit_map,
+               const uint8_t nb_antennas_rx)
+{
+  for (int i = 0; i < length; i++) {
+    for (int ap = 0; ap < nb_antennas_rx; ap++) {
+      c16_t *rxd = &rxdata[ap][slot_offset + i + delay];
+      rxd->r = r_re[ap][i] + sqrt(sigma / 2) * gaussdouble(0.0, 1.0); // convert to fixed point
+      rxd->i = r_im[ap][i] + sqrt(sigma / 2) * gaussdouble(0.0, 1.0);
+      /* Add phase noise if enabled */
+      if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+        phase_noise(ts, &rxdata[ap][slot_offset + i + delay].r, &rxdata[ap][slot_offset + i + delay].i);
+      }
+    }
+  }
+}
+
 void multipath_channel(channel_desc_t *desc,
                        double *tx_sig_re[NB_ANTENNAS_TX],
                        double *tx_sig_im[NB_ANTENNAS_TX],
