@@ -291,6 +291,7 @@ int main(int argc, char **argv)
   //int8_t interf1 = -21, interf2 = -21;
   FILE *input_fd = NULL;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
+  corr_level_t corr_level = CORR_LEVEL_LOW;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
 
   NB_UE_INST = 1;
@@ -398,70 +399,52 @@ int main(int argc, char **argv)
       break;
       
     case 'g':
+
       switch ((char) *optarg) {
         case 'A':
-          channel_model = SCM_A;
-          printf("Channel model: SCM-A\n");
-          break;
-
-        case 'B':
-          channel_model = SCM_B;
-          printf("Channel model: SCM-B\n");
-          break;
-
-        case 'C':
-          channel_model = SCM_C;
-          printf("Channel model: SCM-C\n");
-          break;
-
-        case 'D':
-          channel_model = SCM_D;
-          printf("Channel model: SCM-D\n");
-          break;
-
-        case 'E':
-          channel_model = EPA;
-          printf("Channel model: EPA\n");
-          break;
-
-        case 'F':
-          channel_model = EVA;
-          printf("Channel model: EVA\n");
-          break;
-
-        case 'G':
-          channel_model = ETU;
-          printf("Channel model: ETU\n");
-          break;
-
-        case 'H':
           channel_model = TDL_A;
           DS_TDL = 0.030; // 30 ns
           printf("Channel model: TDLA30\n");
           break;
-
-        case 'I':
+        case 'B':
           channel_model = TDL_B;
           DS_TDL = 0.100; // 100ns
           printf("Channel model: TDLB100\n");
           break;
-
-        case 'J':
+        case 'C':
           channel_model = TDL_C;
           DS_TDL = 0.300; // 300 ns
           printf("Channel model: TDLC300\n");
           break;
-
         default:
           printf("Unsupported channel model!\n");
           exit(-1);
       }
+
+      if (optarg[1] == ',') {
+        switch (optarg[2]) {
+          case 'l':
+            corr_level = CORR_LEVEL_LOW;
+            break;
+          case 'm':
+            corr_level = CORR_LEVEL_MEDIUM;
+            break;
+          case 'h':
+            corr_level = CORR_LEVEL_HIGH;
+            break;
+          default:
+            printf("Invalid correlation level!\n");
+        }
+      }
+
       break;
       
     case 'i':
-      for(i=0; i < atoi(optarg); i++){
-        chest_type[i] = atoi(argv[optind++]);
-      }
+      i=0;
+      do {
+        chest_type[i>>1] = atoi(&optarg[i]);
+        i+=2;
+      } while (optarg[i-1] == ',');
       break;
 	
     case 'k':
@@ -523,7 +506,7 @@ int main(int argc, char **argv)
       break;
 
     case 't':
-      eff_tp_check = (float)atoi(optarg);
+      eff_tp_check = atof(optarg);
       break;
 
       /*
@@ -606,16 +589,20 @@ int main(int argc, char **argv)
 
    case 'T':
       enable_ptrs=1;
-      for(i=0; i < atoi(optarg); i++){
-        ptrs_arg[i] = atoi(argv[optind++]);
-      }
+      i=0;
+      do {
+        ptrs_arg[i>>1] = atoi(&optarg[i]);
+        i+=2;
+      } while (optarg[i-1] == ',');
       break;
 
     case 'U':
       modify_dmrs = 1;
-      for(i=0; i < atoi(optarg); i++){
-        dmrs_arg[i] = atoi(argv[optind++]);
-      }
+      i=0;
+      do {
+        dmrs_arg[i>>1] = atoi(&optarg[i]);
+        i+=2;
+      } while (optarg[i-1] == ',');
       break;
 
     case 'Q':
@@ -635,11 +622,12 @@ int main(int argc, char **argv)
       //printf("-d Use TDD\n");
       printf("-d Introduce delay in terms of number of samples\n");
       printf("-f Number of frames to simulate\n");
-      printf("-g and the channel model [A] SCM-A, [B] SCM-B, [C] SCM-C, [D] SCM-D, [E] EPA, [F] EVA, [G] ETU, [H] TDLA30, [I] TDLB100, [J] TDLC300\n");
+      printf("-g Channel model configuration. Arguments list: Number of arguments = 2, {Channel model: [A] TDLA30, [B] TDLB100, [C] TDLC300}, {Correlation: [l] Low, [m] Medium, [h] High}, e.g. -g A,l\n");
       printf("-h This message\n");
-      printf("-i Change channel estimation technique. Arguments list: Number of arguments=2, Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}. e.g. -i 2 1 0\n");
+      printf("-i Change channel estimation technique. Arguments list: Number of arguments=2, Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}. e.g. -i 1,0\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
+      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
       printf("-o ldpc offload flag\n");
@@ -663,10 +651,9 @@ int main(int argc, char **argv)
       printf("-O oversampling factor (1,2,4,8,16)\n");
       printf("-R Maximum number of available resorce blocks (N_RB_DL)\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
-      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-P Print ULSCH performances\n");
-      printf("-T Enable PTRS, arguments list: Number of arguments=2 L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
-      printf("-U Change DMRS Config, arguments list: Number of arguments=4, DMRS Mapping Type{0=A,1=B}, DMRS AddPos{0:3}, DMRS Config Type{1,2}, Number of CDM groups without data{1,2,3} e.g. -U 4 0 2 0 1 \n");
+      printf("-T Enable PTRS, arguments list: Number of arguments=2 L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 0,2 \n");
+      printf("-U Change DMRS Config, arguments list: Number of arguments=4, DMRS Mapping Type{0=A,1=B}, DMRS AddPos{0:3}, DMRS Config Type{1,2}, Number of CDM groups without data{1,2,3} e.g. -U 0,2,0,1 \n");
       printf("-Q If -F used, read parameters from file\n");
       printf("-Z If -Z is used, SC-FDMA or transform precoding is enabled in Uplink \n");
       printf("-W Num of layer for PUSCH\n");
@@ -699,7 +686,6 @@ int main(int argc, char **argv)
 
   LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
 
-  corr_level_t corr_level = CORR_LEVEL_MEDIUM; // FIXME: Remove this hardcoded value
   UE2gNB = new_channel_desc_scm(n_tx,
                                 n_rx, channel_model,
                                 sampling_frequency/1e6,
@@ -1020,7 +1006,6 @@ int main(int argc, char **argv)
 
   //for (int i=0;i<16;i++) printf("%f\n",gaussdouble(0.0,1.0));
   snrRun = 0;
-  int n_errs = 0;
   int read_errors=0;
 
   int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
@@ -1071,7 +1056,8 @@ int main(int argc, char **argv)
     mod_order = nr_get_Qm_ul(Imcs, mcs_table);
     code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
   }
-  
+
+  int ret = 1;
   uint32_t errors_scrambling[4][100];
   int n_errors[4][100];
   int round_trials[4][100];
@@ -1083,8 +1069,9 @@ int main(int argc, char **argv)
   memset(round_trials, 0, sizeof(int)*4*100);
   memset(blerStats, 0, sizeof(double)*4*100);
   memset(berStats, 0, sizeof(double)*4*100);
-  memset(snrStats, 0, sizeof(double)*100);
-  for (SNR = snr0; SNR < snr1; SNR += snr_step) {
+  memset(snrStats, 0, sizeof(double) * 100);
+
+  for (SNR = snr0; SNR <= snr1; SNR += snr_step) {
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
     int error_flag = 0;
     n_false_positive = 0;
@@ -1627,12 +1614,12 @@ int main(int argc, char **argv)
       printf("*************\n");
       printf("PUSCH test OK\n");
       printf("*************\n");
+      ret = 0;
       break;
     }
 
     snrStats[snrRun] = SNR;
     snrRun++;
-    n_errs = n_errors[0][snrRun];
   } // SNR loop
   printf("\n");
 
@@ -1681,5 +1668,5 @@ int main(int argc, char **argv)
   if (scg_fd)
     fclose(scg_fd);
 
-  return (n_errs);
+  return ret;
 }
