@@ -1072,7 +1072,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     return;
   }
 
-  uint16_t mask = SL_to_bitmap(ra->msg3_startsymb, ra->msg3_nrsymb);
+  const uint16_t mask = SL_to_bitmap(ra->msg3_startsymb, ra->msg3_nrsymb);
   uint16_t *vrb_map_UL = &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
   for (int i = 0; i < ra->msg3_nb_rb; ++i) {
     AssertFatal(!(vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start] & mask),
