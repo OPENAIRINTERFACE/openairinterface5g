@@ -1059,6 +1059,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                             csi_report->codebook_mode);
     }
     // TBS_LBRM according to section 5.4.2.1 of 38.212
+    // TODO: verify the case where pdsch_servingcellconfig is NULL, in which case
+    //       in principle maxMIMO_layers should be given by the maximum number of layers
+    //       for PDSCH supported by the UE for the serving cell (5.4.2.1 of 38.212)
     long maxMIMO_Layers = current_BWP->pdsch_servingcellconfig ? *current_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers : 1;
     const int nl_tbslbrm = min(maxMIMO_Layers, 4);
     // Maximum number of PRBs across all configured DL BWPs
