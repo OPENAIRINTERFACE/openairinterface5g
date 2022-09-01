@@ -2508,7 +2508,9 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
               "uplinkBWP_ToAddModList has %d BWP!\n",
               ul_bwp->n_ul_bwp);
 
-  UE->ra_timer = 12000 << UE->current_DL_BWP.scs; // 12000 ms is arbitrary and found to be a good timeout from experiments
+  if (get_softmodem_params()->phy_test == 0) {
+    UE->ra_timer = 12000 << UE->current_DL_BWP.scs; // 12000 ms is arbitrary and found to be a good timeout from experiments
+  }
 
   /* get Number of HARQ processes for this UE */
   // pdsch_servingcellconfig == NULL in SA -> will create default (8) number of HARQ processes
