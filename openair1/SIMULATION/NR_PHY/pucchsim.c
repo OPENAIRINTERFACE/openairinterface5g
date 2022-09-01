@@ -354,7 +354,7 @@ int main(int argc, char **argv)
       printf("-b number of HARQ bits (1-2)\n");
       printf("-B payload to be transmitted on PUCCH\n");
       printf("-m initial cyclic shift m0\n");
-      printf("-T to check nacktoack miss for format 1");
+      printf("-T to check nacktoack miss for format 1\n");
       exit (-1);
       break;
     }
