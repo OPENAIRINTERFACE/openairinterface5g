@@ -181,10 +181,10 @@ extern "C" {
     t->nb_fd_epoll--;
   }
 
-  static inline int itti_get_events_locked(task_id_t task_id, struct epoll_event *events, int nb_events) {
+  static inline int itti_get_events_locked(task_id_t task_id, struct epoll_event *events, int max_events) {
     task_list_t *t=tasks[task_id];
     uint64_t current_time=0;
-
+    int nb_events;
     do {
       if ( t->next_timer != UINT64_MAX ) {
         struct timespec tp;
@@ -230,7 +230,7 @@ extern "C" {
 
       pthread_mutex_unlock(&t->queue_cond_lock);
       LOG_D(ITTI,"enter blocking wait for %s, timeout: %d ms\n", itti_get_task_name(task_id),  epoll_timeout);
-      nb_events = epoll_wait(t->epoll_fd, events,t->nb_fd_epoll, epoll_timeout);
+      nb_events = epoll_wait(t->epoll_fd, events, max_events, epoll_timeout);
 
       if ( nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) )
         pthread_mutex_lock(&t->queue_cond_lock);
@@ -238,7 +238,9 @@ extern "C" {
 
     AssertFatal (nb_events >=0,
                  "epoll_wait failed for task %s, nb fds %d, timeout %lu: %s!\n",
-                 itti_get_task_name(task_id), t->nb_fd_epoll, t->next_timer != UINT64_MAX ? t->next_timer-current_time : -1, strerror(errno));
+                 itti_get_task_name(task_id), t->nb_fd_epoll, 
+                 t->next_timer != UINT64_MAX ? t->next_timer-current_time : -1, 
+                 strerror(errno));
     LOG_D(ITTI,"receive on %d descriptors for %s\n", nb_events, itti_get_task_name(task_id));
 
     if (nb_events == 0)
