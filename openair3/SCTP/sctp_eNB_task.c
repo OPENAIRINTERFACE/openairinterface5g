@@ -1061,7 +1061,6 @@ void
 static sctp_eNB_flush_sockets(
     struct epoll_event *events, int nb_events)
 {
-  printf("entre  sctp_eNB_flush_sockets %p\n",events);
     int i;
     struct sctp_cnx_list_elm_s *sctp_cnx = NULL;
 
