@@ -171,6 +171,8 @@ extern "C" {
     AssertFatal(epoll_ctl(t->epoll_fd, EPOLL_CTL_ADD, fd, &event) == 0,
                 "epoll_ctl (EPOLL_CTL_ADD) failed for task %s, fd %d: %s!\n",
                 itti_get_task_name(task_id), fd, strerror(errno));
+    eventfd_t sem_counter = 1;
+    AssertFatal ( sizeof(sem_counter) == write(t->sem_fd, &sem_counter, sizeof(sem_counter)), "");
   }
 
   void itti_unsubscribe_event_fd(task_id_t task_id, int fd) {
