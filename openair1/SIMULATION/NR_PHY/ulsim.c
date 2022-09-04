@@ -67,6 +67,7 @@
 #include <executables/softmodem-common.h>
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include "executables/nr-uesoftmodem.h"
 //#define DEBUG_ULSIM
 
 const char *__asan_default_options()
@@ -253,12 +254,6 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
 {
   return 0;
 }
-
-typedef struct {
-  uint64_t       optmask;   //mask to store boolean config options
-  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
-  tpool_t        Tpool;             // thread pool 
-} nrUE_params_t;
 
 void processSlotTX(void *arg) {}
 
@@ -712,18 +707,9 @@ int main(int argc, char **argv)
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   gNB->ofdm_offset_divisor = UINT_MAX;
-  char tp_param[80];
-  if (threadCnt>0)
-   sprintf(tp_param,"-1");
-  else
-   tp_param[0]='n';
-  int s_offset = 0;
-  for (int icpu=1; icpu<threadCnt; icpu++) {
-    sprintf(tp_param+2+s_offset,",-1");
-    s_offset += 3;
-  }
+  initNotifiedFIFO(&gNB->respDecode);
 
-  initTpool(tp_param, &gNB->threadPool, false);
+  initFloatingCoresTpool(threadCnt, &gNB->threadPool, false, "gNB-tpool");
   initNotifiedFIFO(&gNB->respDecode);
   initNotifiedFIFO(&gNB->L1_tx_free);
   initNotifiedFIFO(&gNB->L1_tx_filled);

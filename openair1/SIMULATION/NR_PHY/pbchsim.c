@@ -50,6 +50,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
 #include <executables/softmodem-common.h>
+#include <executables/nr-uesoftmodem.h>
 //#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
@@ -70,6 +71,12 @@ uint64_t get_softmodem_optmask(void) {return 0;}
 static softmodem_params_t softmodem_params;
 softmodem_params_t *get_softmodem_params(void) {
   return &softmodem_params;
+}
+
+nrUE_params_t nrUE_params={0};
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
 }
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}

@@ -47,6 +47,7 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
+#include "executables/nr-uesoftmodem.h"
 
 THREAD_STRUCT thread_struct;
 PHY_VARS_gNB *gNB;
@@ -66,6 +67,13 @@ const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+
+nrUE_params_t nrUE_params={0};
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
 
 int main(int argc, char **argv)
 {

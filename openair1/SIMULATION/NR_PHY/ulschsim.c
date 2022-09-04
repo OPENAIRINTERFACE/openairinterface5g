@@ -48,6 +48,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "common/utils/threadPool/thread-pool.h"
 #include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "executables/nr-uesoftmodem.h"
 
 //#define DEBUG_NR_ULSCHSIM
 
@@ -110,6 +111,13 @@ int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
     ulsch->last_iteration_cnt = rdata->decodeIterations;
   return 0;
 }
+
+nrUE_params_t nrUE_params;
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
 int main(int argc, char **argv)
 {
   char c;
@@ -388,8 +396,7 @@ int main(int argc, char **argv)
   gNB = RC.gNB[0];
   //gNB_config = &gNB->gNB_config;
 
-  char tp_param[] = "n";
-  initTpool(tp_param, &gNB->threadPool, true);
+  initTpool("n", &gNB->threadPool, true);
   initNotifiedFIFO(&gNB->respDecode);
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->N_RB_DL = N_RB_DL;

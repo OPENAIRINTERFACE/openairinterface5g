@@ -216,7 +216,7 @@ sctp_eNB_accept_associations_multi(
 }
 
 //------------------------------------------------------------------------------
-void
+static void
 sctp_handle_new_association_req_multi(
     const instance_t instance,
     const task_id_t requestor,
@@ -355,7 +355,7 @@ sctp_handle_new_association_req_multi(
 }
 
 //------------------------------------------------------------------------------
-void
+static void
 sctp_handle_new_association_req(
     const instance_t instance,
     const task_id_t requestor,
@@ -617,7 +617,7 @@ sctp_handle_new_association_req(
 }
 
 //------------------------------------------------------------------------------
-void sctp_send_data(
+static void sctp_send_data(
     instance_t       instance,
     task_id_t        task_id,
     sctp_data_req_t *sctp_data_req_p)
@@ -1058,15 +1058,11 @@ sctp_eNB_read_from_socket(
 
 //------------------------------------------------------------------------------
 void
-sctp_eNB_flush_sockets(
+static sctp_eNB_flush_sockets(
     struct epoll_event *events, int nb_events)
 {
     int i;
     struct sctp_cnx_list_elm_s *sctp_cnx = NULL;
-
-    if (events == NULL) {
-        return;
-    }
 
     for (i = 0; i < nb_events; i++) {
         sctp_cnx = sctp_get_cnx(-1, events[i].data.fd);
@@ -1090,7 +1086,7 @@ sctp_eNB_flush_sockets(
 }
 
 //------------------------------------------------------------------------------
-void sctp_eNB_init(void)
+static void sctp_eNB_init(void)
 {
     SCTP_DEBUG("Starting SCTP layer\n");
 
@@ -1100,10 +1096,9 @@ void sctp_eNB_init(void)
 }
 
 //------------------------------------------------------------------------------
-void *sctp_eNB_process_itti_msg(void *notUsed)
+static void sctp_eNB_process_itti_msg()
 {
     int                 nb_events;
-    struct epoll_event *events;
     MessageDef         *received_msg = NULL;
     int                 result;
 
@@ -1184,12 +1179,12 @@ void *sctp_eNB_process_itti_msg(void *notUsed)
         AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         received_msg = NULL;
     }
-
-    nb_events = itti_get_events(TASK_SCTP, &events);
+    struct epoll_event events[20];
+    nb_events = itti_get_events(TASK_SCTP, events, 20);
     /* Now handle notifications for other sockets */
     sctp_eNB_flush_sockets(events, nb_events);
 
-    return NULL;
+    return;
 }
 
 //------------------------------------------------------------------------------
@@ -1198,7 +1193,7 @@ void *sctp_eNB_task(void *arg)
     sctp_eNB_init();
 
     while (1) {
-        (void) sctp_eNB_process_itti_msg(NULL);
+        sctp_eNB_process_itti_msg();
     }
 
     return NULL;
