@@ -710,6 +710,7 @@ typedef struct {
   uint8_t UE_beam_index;
   bool Msg3_dcch_dtch;
   bool Msg4_ACKed;
+  uint32_t ra_timer;
   /// Sched CSI-RS: scheduling decisions
   NR_gNB_UCI_STATS_t uci_statS;
   float ul_thr_ue;

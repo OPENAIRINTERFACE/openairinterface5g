@@ -1829,6 +1829,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
       UE->Msg3_dcch_dtch = true;
       UE->Msg4_ACKed = true;
+      UE->ra_timer = 0;
 
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       harq->feedback_slot = -1;
@@ -1867,6 +1868,7 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
       if (stats->dl.errors == 0) {
         LOG_A(NR_MAC, "(UE RNTI 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", ra->rnti);
         UE->Msg4_ACKed = true;
+        UE->ra_timer = 0;
 
         // Pause scheduling according to:
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
