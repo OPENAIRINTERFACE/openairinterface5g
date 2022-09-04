@@ -2575,7 +2575,6 @@ const static int16_t tw64c[96] __attribute__((aligned(32))) = {
 #define simd_q15_t __m128i
 #define simdshort_q15_t __m64
 #define shiftright_int16(a,shift) _mm_srai_epi16(a,shift)
-#define set1_int16(a) _mm_set1_epi16(a);
 #define mulhi_int16(a,b) _mm_mulhrs_epi16 (a,b)
 #ifdef __AVX2__
 #define simd256_q15_t __m256i

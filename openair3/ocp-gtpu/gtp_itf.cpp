@@ -145,7 +145,7 @@ class gtpEndPoints {
 
   ~gtpEndPoints() {
     // automatically close all sockets on quit
-    for (const auto p : instances)
+    for (const auto &p : instances)
       close(p.first);
   }
 };

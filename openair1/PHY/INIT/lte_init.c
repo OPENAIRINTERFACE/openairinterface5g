@@ -475,9 +475,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       srs_vars[srs_id].srs = (int32_t *) malloc16_clear (2 * fp->ofdm_symbol_size * sizeof (int32_t));
     }
 
-    LOG_I(PHY,"PRACH allocation\n");
     // PRACH
-    prach_vars->prachF = (int16_t *) malloc16_clear (1024 * 2 * sizeof (int16_t));
     // assume maximum of 64 RX antennas for PRACH receiver
     prach_vars->prach_ifft[0] = (int32_t **) malloc16_clear (64 * sizeof (int32_t *));
 
@@ -485,8 +483,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       prach_vars->prach_ifft[0][i] = (int32_t *) malloc16_clear (1024 * 2 * sizeof (int32_t));
 
     prach_vars->rxsigF[0] = (int16_t **) malloc16_clear (64 * sizeof (int16_t *));
-    // PRACH BR
-    prach_vars_br->prachF = (int16_t *)malloc16_clear( 1024*2*sizeof(int32_t) );
 
     // assume maximum of 64 RX antennas for PRACH receiver
     for (int ce_level = 0; ce_level < 4; ce_level++) {
@@ -576,8 +572,6 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
 
   for (UE_id=0; UE_id<NUMBER_OF_SRS_MAX; UE_id++) free_and_zero(srs_vars[UE_id].srs);
 
-  free_and_zero(prach_vars->prachF);
-
   for (i = 0; i < 64; i++) free_and_zero(prach_vars->prach_ifft[0][i]);
 
   free_and_zero(prach_vars->prach_ifft[0]);
@@ -589,7 +583,6 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB) {
     free_and_zero(prach_vars->rxsigF[ce_level]);
   }
 
-  free_and_zero(prach_vars_br->prachF);
   free_and_zero(prach_vars->rxsigF[0]);
 
   for (int ULSCH_id=0; ULSCH_id<NUMBER_OF_ULSCH_MAX; ULSCH_id++) {

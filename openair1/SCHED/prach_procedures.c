@@ -49,7 +49,7 @@ extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 
 void prach_procedures(PHY_VARS_eNB *eNB,
                       int br_flag ) {
-  uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4],avg_preamble_energy[4];
+  uint16_t max_preamble[4]={0},max_preamble_energy[4]={0},max_preamble_delay[4]={0},avg_preamble_energy[4]={0}; 
   uint16_t i;
   int frame,subframe;
 

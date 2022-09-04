@@ -48,6 +48,10 @@
 
 // main log variables
 
+// Fixme: a better place to be shure it is called 
+void read_cpu_hardware (void) __attribute__ ((constructor));
+void read_cpu_hardware (void) {__builtin_cpu_init(); }
+
 log_mem_cnt_t log_mem_d[2];
 int log_mem_flag=0;
 int log_mem_multi=1;
