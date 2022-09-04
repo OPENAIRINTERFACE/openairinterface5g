@@ -828,6 +828,31 @@ TARGET_LINK_LIBRARIES(benetel_5g pthread dl rt m numa)
 
 ##########################################################
 
+# LDPC offload library
+##########################################################
+
+# there is no generic way to test for T1 Offload, it simply comes with the
+# shared object
+if (EXISTS "/usr/local/lib64/librte_pmd_hpac_sdfec_pmd.so")
+  set(T1_OFFLOAD_FOUND TRUE)
+else()
+  set(T1_OFFLOAD_FOUND FALSE)
+endif()
+
+if(T1_OFFLOAD_FOUND)
+  message(STATUS "T1 Offload support detected")
+  set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/lib64/pkgconfig/")
+  pkg_search_module(LIBDPDK REQUIRED libdpdk=20.05.0)
+  add_library(ldpc_offload MODULE ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c)
+  set_target_properties(ldpc_offload PROPERTIES COMPILE_FLAGS "-DALLOW_EXPERIMENTAL_API")
+  target_compile_options(ldpc_offload PRIVATE ${LIBDPDK_CFLAGS})
+  target_link_libraries(ldpc_offload ${LIBDPDK_LDFLAGS} rte_pmd_hpac_sdfec_pmd "-Wl,-rpath /usr/local/lib64")
+else()
+  message(STATUS "No T1 Offload support detected")
+endif ()
+
+##########################################################
+
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
 Message("DEADLINE_SCHEDULER flag  is ${DEADLINE_SCHEDULER}")
@@ -2772,7 +2797,11 @@ target_link_libraries (nr-softmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRA
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
 
-add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
+add_dependencies( nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
+
+if(T1_OFFLOAD_FOUND)
+add_dependencies( nr-softmodem ldpc_offload)
+endif ()
 
 # nr-uesoftmodem is  UE implementation
 #######################################
@@ -2818,6 +2847,7 @@ if (CUDA_FOUND)
    add_dependencies( nr-uesoftmodem ldpc_cuda)
    add_dependencies( nr-softmodem ldpc_cuda)
 endif (CUDA_FOUND)
+
 ###################################"
 # Addexecutables for tests
 ####################################
@@ -2981,6 +3011,11 @@ add_executable(nr_ulsim
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
+
+if(T1_OFFLOAD_FOUND)
+add_dependencies( nr_ulsim ldpc_offload)
+endif ()
+
 target_link_libraries(nr_ulsim
   -Wl,--start-group UTIL SIMU_COMMON SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE X2AP_ENB X2AP_LIB SECU_CN NGAP_GNB NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl
