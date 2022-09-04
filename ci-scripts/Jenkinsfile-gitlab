@@ -111,17 +111,7 @@ pipeline {
                         sh "./ci-scripts/doGitLabMerge.sh --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
                         sh "zip -r -qq localZip.zip ."
 
-                        // Running astyle options on the list of modified files by the merge request
-                        // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
-                        sh "./ci-scripts/checkCodingFormattingRules.sh --src-branch ${env.gitlabSourceBranch} --target-branch ${env.gitlabTargetBranch}"
-                        def res=readFile('./oai_rules_result.txt').trim();
-                        if ("0".equals(res)) {
-                            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): All Changed files in Merge Request follow OAI Formatting Rules"
-                            addGitLabMRComment comment: message
-                        } else {
-                            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Some Changed files in Merge Request DO NOT follow OAI Formatting Rules"
-                            addGitLabMRComment comment: message
-                        }
+                        // here was an astyle formatting check, with corresponding messages. The same could be done with clang-format
                     } else {
                         echo "Git Branch      is ${GIT_BRANCH}"
                         echo "Git Commit      is ${GIT_COMMIT}"
@@ -132,9 +122,6 @@ pipeline {
                         sh "git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG"
 
                         sh "zip -r -qq localZip.zip ."
-                        // Running astyle options on all C/H files in the repository
-                        // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
-                        sh "./ci-scripts/checkCodingFormattingRules.sh"
                     }
                 }
             }
