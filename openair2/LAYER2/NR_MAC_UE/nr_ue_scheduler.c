@@ -681,6 +681,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->pusch_data.harq_process_id = 0;
     pusch_config_pdu->pusch_data.new_data_indicator = 1; // new data
     pusch_config_pdu->pusch_data.num_cb = 0;
+    pusch_config_pdu->tbslbrm = 0;
 
   } else if (dci) {
     NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
@@ -863,6 +864,32 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       N_PRB_oh = *mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->xOverhead;
 
     else N_PRB_oh = 0;
+
+    if (mac->cg &&
+        mac->cg->spCellConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated &&
+        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig &&
+        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->rateMatching) {
+      long *maxMIMO_Layers = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
+      if (!maxMIMO_Layers)
+        maxMIMO_Layers = pusch_Config ? pusch_Config->maxRank : NULL;
+      AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
+      int bw_tbslbrm;
+      if (mac->scc || mac->scc_SIB || mac->cg) {
+        NR_BWP_t genericParameters = initialUplinkBWP->genericParameters;
+        int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        bw_tbslbrm = get_ulbw_tbslbrm(BWPSize, mac->cg);
+      }
+      else {
+        bw_tbslbrm = pusch_config_pdu->bwp_size;
+      }
+      pusch_config_pdu->tbslbrm = nr_compute_tbslbrm(pusch_config_pdu->mcs_table,
+                                                     bw_tbslbrm,
+                                                     *maxMIMO_Layers);
+    }
+    else
+      pusch_config_pdu->tbslbrm = 0;
 
     /* PTRS */
     if (ul_bwp_id > 0 &&

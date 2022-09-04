@@ -1318,7 +1318,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, ra->CellGroup);
+    int bw_tbslbrm = get_dlbw_tbslbrm(scc_bwpsize, ra->CellGroup);
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
                                                                                bw_tbslbrm,
                                                                                1);
@@ -1699,7 +1699,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
 
     int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, ra->CellGroup);
+    int bw_tbslbrm = get_dlbw_tbslbrm(scc_bwpsize, ra->CellGroup);
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
                                                                                bw_tbslbrm,
                                                                                1);
