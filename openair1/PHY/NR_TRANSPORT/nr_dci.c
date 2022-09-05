@@ -77,13 +77,12 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
   uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
 
-  // find coreset descriptor
-    
+  // fill reg list per symbol
+  int reg_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL * NR_NB_REG_PER_CCE];
+  nr_fill_reg_list(reg_list, pdcch_pdu_rel15);
+  // compute rb_offset and n_prb based on frequency allocation
   int rb_offset;
   int n_rb;
-  // compute rb_offset and n_prb based on frequency allocation
-  nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL];
-  nr_fill_cce_list(cce_list, pdcch_pdu_rel15);
   get_coreset_rballoc(pdcch_pdu_rel15->FreqDomainResource,&n_rb,&rb_offset);
   cset_start_sc = frame_parms->first_carrier_offset + (pdcch_pdu_rel15->BWPStart + rb_offset) * NR_NB_SC_PER_RB;
 
@@ -177,80 +176,65 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
     if (cset_start_sc >= frame_parms->ofdm_symbol_size)
       cset_start_sc -= frame_parms->ofdm_symbol_size;
 
-    // Get cce_list indices by reg_idx in ascending order
-    int reg_list_index = 0;
-    int N_regs = n_rb*pdcch_pdu_rel15->DurationSymbols; // nb of REGs per coreset
-    int N_cces = N_regs / NR_NB_REG_PER_CCE; // nb of cces in coreset
-    int reg_list_order[NR_MAX_PDCCH_AGG_LEVEL] = {};
-    for (int p = 0; p < N_cces; p++) {
-      for(int p2 = 0; p2 < dci_pdu->AggregationLevel; p2++) {
-        if(cce_list[d][p2].reg_list[0].reg_idx == p * NR_NB_REG_PER_CCE) {
-          reg_list_order[reg_list_index] = p2;
-          reg_list_index++;
-          break;
-        }
-      }
-    }
-
+    int num_regs = dci_pdu->AggregationLevel * NR_NB_REG_PER_CCE / pdcch_pdu_rel15->DurationSymbols;
     /*Mapping the encoded DCI along with the DMRS */
     for(int symbol_idx = 0; symbol_idx < pdcch_pdu_rel15->DurationSymbols; symbol_idx++) {
-      for (int cce_count = 0; cce_count < dci_pdu->AggregationLevel; cce_count++) {
+      // allocating rbs per symbol
+      for (int reg_count = 0; reg_count < num_regs; reg_count++) {
+        k = cset_start_sc + reg_list[d][reg_count] * NR_NB_SC_PER_RB;
+        LOG_D(PHY, "REG %d k %d\n", reg_list[d][reg_count], k);
+        if (k >= frame_parms->ofdm_symbol_size)
+          k -= frame_parms->ofdm_symbol_size;
 
-        int8_t cce_idx = reg_list_order[cce_count];
+        l = cset_start_symb + symbol_idx;
 
-        for (int reg_in_cce_idx = symbol_idx; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx+=pdcch_pdu_rel15->DurationSymbols) {
+        // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
+        if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
+          dmrs_idx = (reg_list[d][reg_count] + pdcch_pdu_rel15->BWPStart) * 3;
+        else
+          dmrs_idx = (reg_list[d][reg_count] + rb_offset) * 3;
 
-          k = cset_start_sc + cce_list[d][cce_idx].reg_list[reg_in_cce_idx].start_sc_idx;
-          LOG_D(PHY,"CCE %d REG %d k %d\n",cce_idx,reg_in_cce_idx,k);
-          if (k >= frame_parms->ofdm_symbol_size)
-            k -= frame_parms->ofdm_symbol_size;
+        k_prime = 0;
 
-          l = cset_start_symb + symbol_idx;
-
-          // dmrs index depends on reference point for k according to 38.211 7.4.1.3.2
-          int eff_reg_idx = cce_list[d][cce_idx].reg_list[reg_in_cce_idx].reg_idx/pdcch_pdu_rel15->DurationSymbols;
-          if (pdcch_pdu_rel15->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
-            dmrs_idx = (eff_reg_idx + pdcch_pdu_rel15->BWPStart) * 3;
-          else
-            dmrs_idx = (eff_reg_idx + rb_offset) * 3;
-
-          k_prime = 0;
-
-          for (int m = 0; m < NR_NB_SC_PER_RB; m++) {
-            if (m == (k_prime << 2) + 1) { // DMRS if not already mapped
-              ((int16_t *) txdataF)[(l * frame_parms->ofdm_symbol_size + k) << 1] =
-                  (amp * mod_dmrs[l][dmrs_idx << 1]) >> 15;
-              ((int16_t *) txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] =
-                  (amp * mod_dmrs[l][(dmrs_idx << 1) + 1]) >> 15;
+        for (int m = 0; m < NR_NB_SC_PER_RB; m++) {
+          if (m == (k_prime << 2) + 1) { // DMRS if not already mapped
+            ((int16_t *)txdataF)[(l * frame_parms->ofdm_symbol_size + k) << 1] = (amp * mod_dmrs[l][dmrs_idx << 1]) >> 15;
+            ((int16_t *)txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] = (amp * mod_dmrs[l][(dmrs_idx << 1) + 1]) >> 15;
 
 #ifdef DEBUG_PDCCH_DMRS
-              LOG_D(PHY,"PDCCH DMRS %d: l %d position %d => (%d,%d)\n",dmrs_idx,l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
-               ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+            LOG_I(PHY,
+                  "PDCCH DMRS %d: l %d position %d => (%d,%d)\n",
+                  dmrs_idx,
+                  l,
+                  k,
+                  ((int16_t *)txdataF)[(l * frame_parms->ofdm_symbol_size + k) << 1],
+                  ((int16_t *)txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1]);
 #endif
 
-              dmrs_idx++;
-              k_prime++;
+            dmrs_idx++;
+            k_prime++;
 
-            } else { // DCI payload
-              ((int16_t *) txdataF)[(l * frame_parms->ofdm_symbol_size + k) << 1] = (amp * mod_dci[dci_idx << 1]) >> 15;
-              ((int16_t *) txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] =
-                  (amp * mod_dci[(dci_idx << 1) + 1]) >> 15;
+          } else { // DCI payload
+            ((int16_t *)txdataF)[(l * frame_parms->ofdm_symbol_size + k) << 1] = (amp * mod_dci[dci_idx << 1]) >> 15;
+            ((int16_t *)txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1] = (amp * mod_dci[(dci_idx << 1) + 1]) >> 15;
 #ifdef DEBUG_DCI
-              LOG_D(PHY,"PDCCH: l %d position %d => (%d,%d)\n",l,k,((int16_t *)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
-               ((int16_t *)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+            LOG_I(PHY,
+                  "PDCCH: l %d position %d => (%d,%d)\n",
+                  l,
+                  k,
+                  ((int16_t *)txdataF)[(l * frame_parms->ofdm_symbol_size + k) << 1],
+                  ((int16_t *)txdataF)[((l * frame_parms->ofdm_symbol_size + k) << 1) + 1]);
 #endif
 
-              dci_idx++;
-            }
+            dci_idx++;
+          }
 
-            k++;
+          k++;
 
-            if (k >= frame_parms->ofdm_symbol_size)
-              k -= frame_parms->ofdm_symbol_size;
-
-          } // m
-        } // reg_in_cce_idx
-      } // cce_count
+          if (k >= frame_parms->ofdm_symbol_size)
+            k -= frame_parms->ofdm_symbol_size;
+        } // m
+      } // reg_count
     } // symbol_idx
 
     LOG_D(PHY,

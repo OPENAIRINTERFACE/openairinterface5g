@@ -148,7 +148,8 @@ static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
 
   // for each bundle
   for (int nb = 0; nb < max_bundles; nb++) {
-    if (coreset_interleaved == 0) f_bundle_j = nb;
+    if (coreset_interleaved == 0)
+      f_bundle_j = nb;
     else {
       if (r == coreset_interleaver_size_R) {
         r = 0;
