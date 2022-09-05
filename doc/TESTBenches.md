@@ -105,8 +105,9 @@ Webhook
 - [RAN-RF-Sim-Test-5G](https://jenkins-oai.eurecom.fr/job/RAN-RF-Sim-Test-5G/)
   - obelix (gNB, 2x UE, OAI 5GC)
   - uses RFsimulator, TDD 40MHz, FDD 40MHz, F1 split
-- [RAN-RHEL8-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Image-Builder/)
-  - asterix: RHEL 8 image build using podman
+- [RAN-RHEL8-Cluster-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Cluster-Image-Builder/)
+  - asterix (`Asterix-OC-oaicicd-session` resource): RHEL 8 image build using
+    the OpenShift in Eurecom
 - [RAN-Ubuntu18-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu18-Image-Builder/)
   - obelix: Ubuntu 18 image build using docker
 
