@@ -24,7 +24,7 @@
 	<htmlTabRef>nr-ue-build-tab</htmlTabRef>
 	<htmlTabName>Build-NR-UE</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
-	<repeatCount>2</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
 010102
 	</TestCaseRequestedList>
