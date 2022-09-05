@@ -39,7 +39,6 @@ int nr_pbch_dmrs_rx(int dmrss,
 @param PHY_VARS_NR_UE* ue structure provides configuration, frame parameters and the pointers to the 32 bits sequence storage tables
  */
 int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
-                     uint8_t eNB_offset,
                      unsigned int Ns,
                      unsigned int *nr_gold_pdcch,
                      int32_t *output,
