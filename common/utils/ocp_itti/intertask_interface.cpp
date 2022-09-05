@@ -274,16 +274,12 @@ extern "C" {
 
     struct epoll_event events[t->nb_fd_epoll];
     // Weird condition to deal with crap legacy itti interface
-    if ( t->nb_fd_epoll == 1 ) {
-      while (t->message_queue.empty()) {
+    if (t->message_queue.empty()) {
+      do {
         itti_get_events_locked(task_id, events, t->nb_fd_epoll);
         pthread_mutex_lock(&t->queue_cond_lock);
       }
-    } else {
-      if (t->message_queue.empty()) {
-        itti_get_events_locked(task_id, events, t->nb_fd_epoll);
-        pthread_mutex_lock(&t->queue_cond_lock);
-      }
+      while (t->message_queue.empty() && t->nb_fd_epoll == 1);
     }
 
     // Legacy design: we return even if we have no message
