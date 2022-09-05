@@ -57,29 +57,6 @@ notifiedFIFO_t freeBlocks_dl;
 notifiedFIFO_elt_t *msgToPush_dl;
 int nbDlProcessing =0;
 
-
-static  tpool_t pool_dl;
-//extern double cpuf;
-
-void init_dlsch_tpool(uint8_t num_dlsch_threads) {
-  char *params = NULL;
-
-  if( num_dlsch_threads==0) {
-    params = calloc(1,2);
-    memcpy(params,"N",1);
-  }
-  else {
-    params = calloc(1,(num_dlsch_threads*3)+1);
-    for (int i=0; i<num_dlsch_threads; i++) {
-      memcpy(params+(i*3),"-1,",3);
-    }
-  }
-
-  initNamedTpool(params, &pool_dl, false,"dlsch");
-  free(params);
-}
-
-
 void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlschptr, uint16_t N_RB_DL) {
 
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;
@@ -207,7 +184,7 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
 
   } else {
     if ( !last ) {
-      int nb=abortTpoolJob(&(pool_dl), req->key);
+      int nb=abortTpoolJob(&get_nrUE_params()->Tpool, req->key);
       nb+=abortNotifiedFIFOJob(nf_p, req->key);
       LOG_D(PHY,"downlink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
       LOG_D(PHY, "DLSCH %d in error\n",rdata->dlsch_id);
@@ -606,7 +583,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     reset_meas(&rdata->ts_deinterleave);
     reset_meas(&rdata->ts_rate_unmatch);
     reset_meas(&rdata->ts_ldpc_decode);
-    pushTpool(&(pool_dl),req);
+    pushTpool(&get_nrUE_params()->Tpool,req);
     nbDecode++;
     LOG_D(PHY,"Added a block to decode, in pipe: %d\n",nbDecode);
     r_offset += E;
@@ -614,7 +591,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     //////////////////////////////////////////////////////////////////////////////////////////
   }
   for (r=0; r<nbDecode; r++) {
-    notifiedFIFO_elt_t *req=pullTpool(&nf, &(pool_dl));
+    notifiedFIFO_elt_t *req=pullTpool(&nf,  &get_nrUE_params()->Tpool);
     if (req == NULL)
       break; // Tpool has been stopped
     bool last = false;

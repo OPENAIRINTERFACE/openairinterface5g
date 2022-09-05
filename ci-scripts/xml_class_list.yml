@@ -1,6 +1,7 @@
   - Build_Proxy
   - Build_PhySim
-  - Run_PhySim
+  - Run_LDPCTest
+  - Run_NRulsimTest
   - Build_eNB
   - WaitEndBuild_eNB
   - Initialize_eNB

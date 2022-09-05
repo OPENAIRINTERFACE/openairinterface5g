@@ -256,9 +256,8 @@ typedef struct thread_pool {
   bool activated;
   bool measurePerf;
   int traceFd;
-  int dummyTraceFd;
+  int dummyKeepReadingTraceFd;
   uint64_t cpuCyclesMicroSec;
-  uint64_t startProcessingUE;
   int nbThreads;
   notifiedFIFO_t incomingFifo;
   struct one_thread *allthreads;
@@ -389,5 +388,6 @@ static inline int abortTpool(tpool_t *t) {
   return nbRemoved;
 }
 void initNamedTpool(char *params,tpool_t *pool, bool performanceMeas, char *name);
+void initFloatingCoresTpool(int nbThreads,tpool_t *pool, bool performanceMeas, char *name);
 #define  initTpool(PARAMPTR,TPOOLPTR, MEASURFLAG) initNamedTpool(PARAMPTR,TPOOLPTR, MEASURFLAG, NULL)
 #endif

@@ -131,11 +131,19 @@ EXTERN const uint16_t srs_periodicity[SRS_PERIODICITY]
 #endif
 ;
 
+// TS 38.211 - Table 6.4.1.4.2-1
+EXTERN const uint16_t srs_max_number_cs[3]
+#ifdef INIT_VARIABLES_SRS_MODULATION_NR_H
+    = {8, 12, 6}
+#endif
+;
+
 /*************** FUNCTIONS *****************************************/
 
 /** \brief This function generates the sounding reference symbol (SRS) for the uplink according to 38.211 6.4.1.4 Sounding reference signal
     @param frame_parms NR DL Frame parameters
     @param txdataF pointer to the frequency domain TX signal
+    @param symbol_offset symbol offset added in txdataF
     @param nr_srs_info pointer to the srs info structure
     @param amp amplitude of generated signal
     @param frame_number frame number
@@ -144,11 +152,12 @@ EXTERN const uint16_t srs_periodicity[SRS_PERIODICITY]
 
 int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
                     NR_DL_FRAME_PARMS *frame_parms,
-                    int32_t *txptr,
+                    int32_t **txdataF,
+                    uint16_t symbol_offset,
                     nr_srs_info_t *nr_srs_info,
                     int16_t amp,
-                    int frame_number,
-                    int slot_number);
+                    frame_t frame_number,
+                    slot_t slot_number);
 
 /** \brief This function checks for periodic srs if srs should be transmitted in this slot
  *  @param p_SRS_Resource pointer to active resource

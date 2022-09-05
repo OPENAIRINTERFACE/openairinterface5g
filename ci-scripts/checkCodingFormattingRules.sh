@@ -24,8 +24,6 @@ function usage {
     echo "OAI Coding / Formatting Guideline Check script"
     echo "   Original Author: Raphael Defosseux"
     echo ""
-    echo "   Requirement: astyle shall be installed"
-    echo ""
     echo "   By default (no options) the complete repository will be checked"
     echo "   In case of merge request, provided source and target branch,"
     echo "   the script will check only the modified files"
@@ -57,11 +55,10 @@ fi
 
 if [ $# -eq 0 ]
 then
-    echo " ---- Checking the whole repository ----"
-    echo ""
-    NB_FILES_TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt --recursive --exclude=ci-scripts --exclude=cmake_targets *.c *.h | grep -c Formatted || true`
-    echo "Nb Files that do NOT follow OAI rules: $NB_FILES_TO_FORMAT"
-    echo $NB_FILES_TO_FORMAT > ./oai_rules_result.txt
+    # in this file we previously had a list of files that were not properly
+    # formatted. At the time of this MR, the Jenkinsfile expects this file, so
+    # we simply produce an empty one
+    touch ./oai_rules_result.txt
 
     # Testing Circular Dependencies protection
     awk '/#[ \t]*ifndef/ { gsub("^.*ifndef *",""); if (names[$1]!="") print "files with same {define ", FILENAME, names[$1]; names[$1]=FILENAME } /#[ \t]*define/ { gsub("^.*define *",""); if(names[$1]!=FILENAME) print "error in declaration", FILENAME, $1, names[$1]; nextfile }' `find openair* common targets executables -name *.h |grep -v LFDS` > header-files-w-incorrect-define.txt
@@ -77,7 +74,7 @@ then
        IS_NFAPI=`echo $FILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext" || true`
        IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FILE || true`
        IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence|License-Identifier: BSD-2-Clause" $FILE || true`
-       IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_|openair2/UTIL/OPT/packet-rohc.h|openair3/NAS/COMMON/milenage.h|openair1/PHY/CODING/crc|openair1/PHY/CODING/types.h" || true`
+       IS_EXCEPTION=`echo $FILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|openair2/UTIL/OPT/packet-rohc.h|openair3/NAS/COMMON/milenage.h|openair1/PHY/CODING/types.h|openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c|openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_offload.h" || true`
        if [ $IS_OAI_LICENCE_PRESENT -eq 0 ] && [ $IS_BSD_LICENCE_PRESENT -eq 0 ]
        then
            if [ $IS_NFAPI -eq 0 ] && [ $IS_EXCEPTION -eq 0 ]
@@ -151,10 +148,6 @@ echo ""
 # Retrieve the list of modified files since the latest develop commit
 MODIFIED_FILES=`git log $TARGET_INIT_COMMIT..$MERGE_COMMMIT --oneline --name-status | egrep "^M|^A" | sed -e "s@^M\t*@@" -e "s@^A\t*@@" | sort | uniq`
 NB_TO_FORMAT=0
-if [ -f oai_rules_result_list.txt ]
-then
-    rm -f oai_rules_result_list.txt
-fi
 if [ -f header-files-w-incorrect-define.txt ]
 then
     rm -f header-files-w-incorrect-define.txt
@@ -178,13 +171,6 @@ do
     EXT="${filename##*.}"
     if [ $EXT = "c" ] || [ $EXT = "h" ] || [ $EXT = "cpp" ] || [ $EXT = "hpp" ]
     then
-        TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt $FULLFILE | grep -c Formatted || true`
-        NB_TO_FORMAT=$((NB_TO_FORMAT + TO_FORMAT))
-        if [ $TO_FORMAT -ne 0 ]
-        then
-            echo $FULLFILE
-            echo $FULLFILE >> ./oai_rules_result_list.txt
-        fi
         # Testing if explicit GNU GPL license banner
         GNU_EXCEPTION=`echo $FULLFILE | egrep -c "openair3/NAS/COMMON/milenage.h" || true`
         if [ $GNU_EXCEPTION -eq 0 ]
@@ -198,7 +184,7 @@ do
             IS_NFAPI=`echo $FULLFILE | egrep -c "nfapi/open-nFAPI|nfapi/oai_integration/vendor_ext" || true`
             IS_OAI_LICENCE_PRESENT=`egrep -c "OAI Public License" $FULLFILE || true`
             IS_BSD_LICENCE_PRESENT=`egrep -c "the terms of the BSD Licence|License-Identifier: BSD-2-Clause" $FULLFILE || true`
-            IS_EXCEPTION=`echo $FULLFILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|common/utils/itti_analyzer/common/queue.h|openair3/UTILS/tree.h|openair3/UTILS/queue.h|openair3/GTPV1-U/nw-gtpv1u|openair2/UTIL/OPT/ws_|openair2/UTIL/OPT/packet-rohc.h|openair3/NAS/COMMON/milenage.h|openair1/PHY/CODING/crc|openair1/PHY/CODING/types.h" || true`
+            IS_EXCEPTION=`echo $FULLFILE | egrep -c "common/utils/collection/tree.h|common/utils/collection/queue.h|openair2/UTIL/OPT/packet-rohc.h|openair3/NAS/COMMON/milenage.h|openair1/PHY/CODING/types.h|openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c|openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_offload.h" || true`
             if [ $IS_OAI_LICENCE_PRESENT -eq 0 ] && [ $IS_BSD_LICENCE_PRESENT -eq 0 ]
             then
                 if [ $IS_NFAPI -eq 0 ] && [ $IS_EXCEPTION -eq 0 ]
@@ -215,9 +201,10 @@ do
     fi
 done
 rm -f header-files-w-incorrect-define-tmp.txt
-echo ""
-echo " ----------------------------------------------------------"
-echo "Nb Files that do NOT follow OAI rules: $NB_TO_FORMAT"
-echo $NB_TO_FORMAT > ./oai_rules_result.txt
+
+# in this script we previously produced a list of files that were not properly
+# formatted. At the time of this MR, the Jenkinsfile expects this file, so
+# we simply produce an empty file
+touch ./oai_rules_result.txt
 
 exit 0

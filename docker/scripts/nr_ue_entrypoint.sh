@@ -40,9 +40,15 @@ for c in ${CONFIG_FILES}; do
 
     # render template and inline replace config file
     sed -i "${EXPRESSIONS}" ${c}
+
+    echo "=================================="
+    echo "== Configuration file: ${c}"
+    cat ${c}
 done
 
 # Load the USRP binaries
+echo "=================================="
+echo "== Load USRP binaries"
 if [[ -v USE_B2XX ]]; then
     $PREFIX/bin/uhd_images_downloader.py -t b2xx
 elif [[ -v USE_X3XX ]]; then
@@ -57,6 +63,9 @@ while [[ $# -gt 0 ]]; do
   new_args+=("$1")
   shift
 done
+
+# enable printing of stack traces on assert
+export gdbStacks=1
 
 echo "=================================="
 echo "== Starting NR UE soft modem"

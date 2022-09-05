@@ -48,6 +48,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "executables/nr-uesoftmodem.h"
 
 
 //#define DEBUG_NR_DLSCHSIM
@@ -65,13 +66,21 @@ double cpuf;
 uint16_t NB_UE_INST = 1;
 
 uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
-
+const short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+
+
+nrUE_params_t nrUE_params={0};
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
 
 int main(int argc, char **argv)
 {
@@ -344,7 +353,6 @@ int main(int argc, char **argv)
 
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
-	init_dlsch_tpool(dlsch_threads);
 
 	if (ouput_vcd)
         vcd_signal_dumper_init("/tmp/openair_dump_nr_dlschsim.vcd");
@@ -363,7 +371,8 @@ int main(int argc, char **argv)
 	RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
 	RC.gNB[0] = calloc(1, sizeof(PHY_VARS_gNB));
 	gNB = RC.gNB[0];
-	initTpool(gNBthreads, &gNB->threadPool, true);
+	initNamedTpool(gNBthreads, &gNB->threadPool, true, "gNB-tpool");
+        initFloatingCoresTpool(dlsch_threads, &nrUE_params.Tpool, false, "UE-tpool");
 	//gNB_config = &gNB->gNB_config;
 	frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 	frame_parms->nb_antennas_tx = n_tx;

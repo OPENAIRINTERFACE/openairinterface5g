@@ -689,8 +689,9 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
         int idx = (j<<1) + i;
 
         for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-          common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates[eNB_id][idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
-          common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates_time[eNB_id][idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
+          common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates[eNB_id][idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*
+                  max(fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH),6144) );
+          common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates_time[eNB_id][idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*max(fp->ofdm_symbol_size*2,6144) );
         }
       }
   }

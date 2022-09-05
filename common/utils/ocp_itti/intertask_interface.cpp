@@ -45,9 +45,7 @@ extern "C" {
     std::vector<MessageDef *> message_queue;
     std::map<long,timer_elm_t> timer_map;
     uint64_t next_timer=UINT64_MAX;
-    struct epoll_event *events =NULL;
     int nb_fd_epoll=0;
-    int nb_events=0;
     int epoll_fd=-1;
     int sem_fd=-1;
   } task_list_t;
@@ -167,8 +165,6 @@ extern "C" {
     struct epoll_event event;
     task_list_t *t=tasks[task_id];
     t->nb_fd_epoll++;
-    t->events = (struct epoll_event *)realloc((void *)t->events,
-                t->nb_fd_epoll * sizeof(struct epoll_event));
     event.events  = EPOLLIN | EPOLLERR;
     event.data.u64 = 0;
     event.data.fd  = fd;
@@ -185,10 +181,10 @@ extern "C" {
     t->nb_fd_epoll--;
   }
 
-  static inline int itti_get_events_locked(task_id_t task_id, struct epoll_event **events) {
+  static inline int itti_get_events_locked(task_id_t task_id, struct epoll_event *events, int max_events) {
     task_list_t *t=tasks[task_id];
     uint64_t current_time=0;
-
+    int nb_events;
     do {
       if ( t->next_timer != UINT64_MAX ) {
         struct timespec tp;
@@ -234,40 +230,41 @@ extern "C" {
 
       pthread_mutex_unlock(&t->queue_cond_lock);
       LOG_D(ITTI,"enter blocking wait for %s, timeout: %d ms\n", itti_get_task_name(task_id),  epoll_timeout);
-      t->nb_events = epoll_wait(t->epoll_fd,t->events,t->nb_fd_epoll, epoll_timeout);
+      nb_events = epoll_wait(t->epoll_fd, events, max_events, epoll_timeout);
 
-      if ( t->nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) )
+      if ( nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) )
         pthread_mutex_lock(&t->queue_cond_lock);
-    } while (t->nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) );
+    } while (nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) );
 
-    AssertFatal (t->nb_events >=0,
+    AssertFatal (nb_events >=0,
                  "epoll_wait failed for task %s, nb fds %d, timeout %lu: %s!\n",
-                 itti_get_task_name(task_id), t->nb_fd_epoll, t->next_timer != UINT64_MAX ? t->next_timer-current_time : -1, strerror(errno));
-    LOG_D(ITTI,"receive on %d descriptors for %s\n", t->nb_events, itti_get_task_name(task_id));
+                 itti_get_task_name(task_id), t->nb_fd_epoll, 
+                 t->next_timer != UINT64_MAX ? t->next_timer-current_time : -1, 
+                 strerror(errno));
+    LOG_D(ITTI,"receive on %d descriptors for %s\n", nb_events, itti_get_task_name(task_id));
 
-    if (t->nb_events == 0)
+    if (nb_events == 0)
       /* No data to read -> return */
       return 0;
 
-    for (int i = 0; i < t->nb_events; i++) {
+    for (int i = 0; i < nb_events; i++) {
       /* Check if there is an event for ITTI for the event fd */
-      if ((t->events[i].events & EPOLLIN) &&
-          (t->events[i].data.fd == t->sem_fd)) {
+      if ((events[i].events & EPOLLIN) &&
+          (events[i].data.fd == t->sem_fd)) {
         eventfd_t   sem_counter;
         /* Read will always return 1 */
         AssertFatal( sizeof(sem_counter) == read (t->sem_fd, &sem_counter, sizeof(sem_counter)), "");
         /* Mark that the event has been processed */
-        t->events[i].events &= ~EPOLLIN;
+        events[i].events &= ~EPOLLIN;
       }
     }
 
-    *events = t->events;
-    return t->nb_events;
+    return nb_events;
   }
 
-  int itti_get_events(task_id_t task_id, struct epoll_event **events) {
+  int itti_get_events(task_id_t task_id, struct epoll_event *events, int nb_evts) {
     pthread_mutex_lock(&tasks[task_id]->queue_cond_lock);
-    return itti_get_events_locked(task_id, events);
+    return itti_get_events_locked(task_id, events, nb_evts);
   }
 
   void itti_receive_msg(task_id_t task_id, MessageDef **received_msg) {
@@ -275,15 +272,16 @@ extern "C" {
     task_list_t *t=tasks[task_id];
     pthread_mutex_lock(&t->queue_cond_lock);
 
+    struct epoll_event events[t->nb_fd_epoll];
     // Weird condition to deal with crap legacy itti interface
     if ( t->nb_fd_epoll == 1 ) {
       while (t->message_queue.empty()) {
-        itti_get_events_locked(task_id, &t->events);
+        itti_get_events_locked(task_id, events, t->nb_fd_epoll);
         pthread_mutex_lock(&t->queue_cond_lock);
       }
     } else {
       if (t->message_queue.empty()) {
-        itti_get_events_locked(task_id, &t->events);
+        itti_get_events_locked(task_id, events, t->nb_fd_epoll);
         pthread_mutex_lock(&t->queue_cond_lock);
       }
     }

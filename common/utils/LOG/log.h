@@ -366,6 +366,7 @@ typedef struct {
 #define MATLAB_CSHORT_BRACKET3 15
   
 int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, unsigned int format, int multiVec);
+#define write_output(a, b, c, d, e, f) write_file_matlab(a, b, c, d, e, f, 0)
 
 /*----------------macro definitions for reading log configuration from the config module */
 #define CONFIG_STRING_LOG_PREFIX                           "log_config"

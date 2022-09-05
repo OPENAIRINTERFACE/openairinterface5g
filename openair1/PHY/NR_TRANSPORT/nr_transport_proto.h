@@ -315,19 +315,19 @@ int nr_find_pucch(uint16_t rnti,
 NR_gNB_SRS_t *new_gNB_srs(void);
 void free_gNB_srs(NR_gNB_SRS_t *srs);
 
-int nr_find_srs(uint16_t rnti,
-                int frame,
-                int slot,
+int nr_find_srs(rnti_t rnti,
+                frame_t frame,
+                slot_t slot,
                 PHY_VARS_gNB *gNB);
 
 void nr_fill_srs(PHY_VARS_gNB *gNB,
-                 int frame,
-                 int slot,
+                 frame_t frame,
+                 slot_t slot,
                  nfapi_nr_srs_pdu_t *srs_pdu);
 
 int nr_get_srs_signal(PHY_VARS_gNB *gNB,
-                      int frame,
-                      int slot,
+                      frame_t frame,
+                      slot_t slot,
                       nfapi_nr_srs_pdu_t *srs_pdu,
                       nr_srs_info_t *nr_srs_info,
                       int32_t srs_received_signal[][gNB->frame_parms.ofdm_symbol_size*(1<<srs_pdu->num_symbols)]);

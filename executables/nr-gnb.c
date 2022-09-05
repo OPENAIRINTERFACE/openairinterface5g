@@ -221,8 +221,7 @@ void rx_func(void *param) {
                            gNB->common_vars.rxdataF[aa],
                            slot_rx,
                            0,
-                           gNB->frame_parms.Ncp==EXTENDED?12:14,
-                           gNB->frame_parms.ofdm_symbol_size);
+                           gNB->frame_parms.Ncp==EXTENDED?12:14);
     }
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);
   }
@@ -430,19 +429,8 @@ void init_gNB_Tpool(int inst) {
   gNB = RC.gNB[inst];
   gNB_L1_proc_t *proc = &gNB->proc;
 
-  int numCPU = sysconf(_SC_NPROCESSORS_ONLN);
-  LOG_I(PHY,"Number of threads requested in config file: %d, Number of threads available on this machine: %d\n",gNB->thread_pool_size,numCPU);
-  int threadCnt = min(numCPU, gNB->thread_pool_size);
-  if (threadCnt < 2) LOG_E(PHY,"Number of threads for gNB should be more than 1. Allocated only %d\n",threadCnt);
-  char pool[80];
-  sprintf(pool,"-1");
-  int s_offset = 0;
-  for (int icpu=1; icpu<threadCnt; icpu++) {
-    sprintf(pool+2+s_offset,",-1");
-    s_offset += 3;
-  }
-  if (getenv("noThreads")) strcpy(pool, "n");
-  initTpool(pool, &gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
+  // ULSCH decoding threadpool
+  initTpool(get_softmodem_params()->threadPoolConfig, &gNB->threadPool, cpumeas(CPUMEAS_GETSTATE));
   // ULSCH decoder result FIFO
   initNotifiedFIFO(&gNB->respDecode);
 
@@ -536,7 +524,9 @@ void init_eNB_afterRU(void) {
     RC.nb_nr_inst = 1;
   for (inst=0; inst<RC.nb_nr_inst; inst++) {
     LOG_I(PHY,"RC.nb_nr_CC[inst:%d]:%p\n", inst, RC.gNB[inst]);
+
     gNB = RC.gNB[inst];
+    gNB->ldpc_offload_flag = ldpc_offload_flag;
 
     phy_init_nr_gNB(gNB,0,0);
 

@@ -338,6 +338,27 @@ pipeline {
             }
           }
         }
+        //avra is offline, re-enable once it is available
+        //stage ("Test T1 Offload") {
+        //  when { expression {doMandatoryTests} }
+        //  steps {
+        //    script {
+        //      triggerSlaveJob ('RAN-T1-Offload-Test', 'Test-T1-Offload')
+        //    }
+        //  }
+        //  post {
+        //    always {
+        //      script {
+        //        finalizeSlaveJob('RAN-T1-Offload-Test')
+        //      }
+        //    }
+        //    failure {
+        //      script {
+        //        currentBuild.result = 'FAILURE'
+        //      }
+        //    }
+        //  }
+        //}
       }
     }
     stage ("Images Push to Registries") {

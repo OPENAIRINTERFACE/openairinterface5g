@@ -508,7 +508,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   crcTableInit();
   init_scrambling_luts();
   init_pucch2_luts();
+
   load_nrLDPClib(NULL);
+
+  if (gNB->ldpc_offload_flag)
+    load_nrLDPClib_offload(); 
 
   init_codebook_gNB(gNB);
 
@@ -613,6 +617,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
+    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t**)malloc16_clear(MAX_NUM_NR_SRS_AP*sizeof(int32_t*));
+    for(int ap=0; ap<MAX_NUM_NR_SRS_AP; ap++) {
+      gNB->nr_srs_info[id]->srs_generated_signal[ap] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+    }
   }
 
   generate_ul_reference_signal_sequences(SHRT_MAX);
@@ -767,6 +775,10 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(gNB->nr_csi_info);
 
   for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
+    for(int i=0; i<MAX_NUM_NR_SRS_AP; i++) {
+      free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal[i]);
+    }
+    free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal);
     free_and_zero(gNB->nr_srs_info[id]);
   }
 
