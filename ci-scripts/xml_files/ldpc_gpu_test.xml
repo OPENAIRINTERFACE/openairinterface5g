@@ -26,132 +26,125 @@
 	<htmlTabName>Test-ldpc-GPU</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
-	<TestCaseRequestedList>000001 000002 000003 000004 000005 000006 000007 000008 000009 000010 000011 000012 000013 000014 000015 000016 000017 000018 000019 000020 000021</TestCaseRequestedList>
+	<TestCaseRequestedList>000002 000003 000004 000005 000006 000007 000008 000009 000010 000011 000012 000013 000014 000015 000016 000017 000018 000019 000020 000021</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="000001">
-		<class>Build_PhySim</class>
-		<desc>Build for physical simulator</desc>
-		<physim_build_args>--phy_simulators --ninja --noavx512</physim_build_args>
-		<forced_workspace_cleanup>FALSE</forced_workspace_cleanup>
-	</testCase>
-
 	<testCase id="000002">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 3872 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000003">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 3872 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000004">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 4224 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000005">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 4224 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000006">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 4576 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000007">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 4576 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000008">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 4928 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000009">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 4928 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000010">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 5280 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000011">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 5280 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000012">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 5632 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000013">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 5632 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000014">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 6336 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000015">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 6336 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000016">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 7040 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000017">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 7040 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000018">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 7744 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000019">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 7744 -s10 -n100 -G 1</physim_run_args>
 	</testCase>
 
 	<testCase id="000020">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with CPU</desc>
 		<physim_run_args>-l 8448 -s10 -n100</physim_run_args>
 	</testCase>
 
 	<testCase id="000021">
-		<class>Run_PhySim</class>
+		<class>Run_LDPCTest</class>
 		<desc>Run LDPC Test with GPU</desc>
 		<physim_run_args>-l 8448 -s10 -n100 -G 1</physim_run_args>
 	</testCase>

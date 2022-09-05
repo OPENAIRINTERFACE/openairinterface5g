@@ -508,7 +508,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   crcTableInit();
   init_scrambling_luts();
   init_pucch2_luts();
+
   load_nrLDPClib(NULL);
+
+  if (gNB->ldpc_offload_flag)
+    load_nrLDPClib_offload(); 
 
   init_codebook_gNB(gNB);
 

@@ -479,7 +479,7 @@ void itti_unsubscribe_event_fd(task_id_t task_id, int fd);
     \param events events list
     @returns number of events to handle
  **/
-int itti_get_events(task_id_t task_id, struct epoll_event **events);
+  int itti_get_events(task_id_t task_id, struct epoll_event *events, int nb_max_evts);
 
 /** \brief Retrieves a message in the queue associated to task_id.
    If the queue is empty, the thread is blocked till a new message arrives.

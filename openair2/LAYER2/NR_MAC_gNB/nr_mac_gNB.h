@@ -113,6 +113,7 @@ typedef struct NR_UE_UL_BWP {
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
+  NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig;
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList;
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;
@@ -709,6 +710,7 @@ typedef struct {
   uint8_t UE_beam_index;
   bool Msg3_dcch_dtch;
   bool Msg4_ACKed;
+  uint32_t ra_timer;
   /// Sched CSI-RS: scheduling decisions
   NR_gNB_UCI_STATS_t uci_statS;
   float ul_thr_ue;

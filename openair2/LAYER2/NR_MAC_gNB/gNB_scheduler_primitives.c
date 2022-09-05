@@ -2249,7 +2249,9 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
       CellGroup->spCellConfig->spCellConfigDedicated) {
 
     const NR_ServingCellConfig_t *servingCellConfig = CellGroup->spCellConfig->spCellConfigDedicated;
-    DL_BWP->pdsch_servingcellconfig = servingCellConfig->pdsch_ServingCellConfig? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
+    DL_BWP->pdsch_servingcellconfig = servingCellConfig->pdsch_ServingCellConfig ? servingCellConfig->pdsch_ServingCellConfig->choice.setup : NULL;
+    UL_BWP->pusch_servingcellconfig = servingCellConfig->uplinkConfig && servingCellConfig->uplinkConfig->pusch_ServingCellConfig ?
+                                      servingCellConfig->uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL;
     target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
 
     if(UE && UE->Msg3_dcch_dtch) {
@@ -2507,6 +2509,10 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   AssertFatal(ul_bwp->n_ul_bwp <= NR_MAX_NUM_BWP,
               "uplinkBWP_ToAddModList has %d BWP!\n",
               ul_bwp->n_ul_bwp);
+
+  if (get_softmodem_params()->phy_test == 0) {
+    UE->ra_timer = 12000 << UE->current_DL_BWP.scs; // 12000 ms is arbitrary and found to be a good timeout from experiments
+  }
 
   /* get Number of HARQ processes for this UE */
   // pdsch_servingcellconfig == NULL in SA -> will create default (8) number of HARQ processes
@@ -2972,6 +2978,15 @@ void nr_mac_update_timers(module_id_t module_id,
                                  utda,
                                  nrOfLayers,
                                  ups);
+      }
+    }
+
+    // RA timer
+    if (UE->ra_timer > 0) {
+      UE->ra_timer--;
+      if (UE->ra_timer == 0) {
+        LOG_W(NR_MAC, "Removing UE %04x because RA timer expired\n", UE->rnti);
+        mac_remove_nr_ue(RC.nrmac[module_id], UE->rnti);
       }
     }
   }

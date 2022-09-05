@@ -42,6 +42,7 @@
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED_NR/sched_nr.h"
+#include "SCHED_NR/fapi_nr_l1.h"
 #include "defs.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
@@ -381,6 +382,23 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint32_t offset;
   int kc;
   int E;
+  int8_t llrProcBuf[22*384];
+  int ret = 0;
+  int i,j;
+  int8_t enable_ldpc_offload = phy_vars_gNB->ldpc_offload_flag;
+  int16_t  z_ol [68*384];
+  int8_t   l_ol [68*384];
+  __m128i *pv_ol128 = (__m128i*)&z_ol;
+  __m128i *pl_ol128 = (__m128i*)&l_ol;
+  int no_iteration_ldpc = 2;
+  int length_dec;
+  uint8_t crc_type;
+  int K_bits_F;
+  int16_t  z [68*384 + 16] __attribute__ ((aligned(16)));
+  int8_t   l [68*384 + 16] __attribute__ ((aligned(16)));
+
+  __m128i *pv = (__m128i*)&z;
+  __m128i *pl = (__m128i*)&l;
 
 #ifdef PRINT_CRC_CHECK
   prnt_crc_cnt++;
@@ -395,7 +413,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     LOG_E(PHY,"ulsch_decoding.c: NULL harq_process pointer\n");
     return 1;
   }
-
+  uint8_t dtx_det = 0;
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams    = &decParams;
 
@@ -422,6 +440,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   harq_process->round = nr_rv_to_round(pusch_pdu->pusch_data.rv_index);
 
   harq_process->new_rx = false; // flag to indicate if this is a new reception for this harq (initialized to false)
+  dtx_det = 0;
   if (harq_process->round == 0) {
     harq_process->new_rx = true;
     harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
@@ -431,6 +450,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   if (harq_process->ndi != pusch_pdu->pusch_data.new_data_indicator) {
     harq_process->new_rx = true;
     harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
+
     LOG_D(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
   }
 
@@ -546,12 +566,179 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   Kr = harq_process->K;
   Kr_bytes = Kr>>3;
   offset = 0;
+
+  //if ((enable_ldpc_offload)&& (dtx_det==0)) 
+  if (enable_ldpc_offload){ 
+    //  if (dtx_det==0) {
+    
+  if (harq_process->C == 1) {
+    if (A > 3824)
+      crc_type = CRC24_A;
+    else
+      crc_type = CRC16;
+
+    length_dec = harq_process->B;
+  }
+  else {
+    crc_type = CRC24_B;
+    length_dec = (harq_process->B+24*harq_process->C)/harq_process->C;
+  }
+
+  for (r=0; r<harq_process->C; r++) {
+  E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
+  memset(harq_process->c[r],0,Kr_bytes);
+
+  if ((dtx_det==0)&&(pusch_pdu->pusch_data.rv_index==0)){
+  //if (dtx_det==0){
+  if (mcs >9){
+  memcpy((&z_ol[0]),ulsch_llr+r_offset,E*sizeof(short));
+  
+  for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
+  {
+    pl_ol128[j] = _mm_packs_epi16(pv_ol128[i],pv_ol128[i+1]);  
+  }
+	
+  ret = nrLDPC_decoder_offload(p_decParams, harq_pid,
+			ULSCH_id,r,  
+			pusch_pdu->pusch_data.rv_index,
+			harq_process->F,
+			E,
+			Qm,
+ 			(int8_t*)&pl_ol128[0],
+			llrProcBuf, 1);
+  if (ret<0) {
+    LOG_E(PHY,"ulsch_decoding.c: Problem in LDPC decoder offload\n");
+    no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+    return 1;
+  }
+  }
+  else{
+    K_bits_F = Kr-harq_process->F;
+
+    t_nrLDPC_time_stats procTime = {0};
+    t_nrLDPC_time_stats* p_procTime     = &procTime ;
+    /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
+    int16_t harq_e[3*8448];
+
+    nr_deinterleaving_ldpc(E,
+			   Qm,
+			   harq_e,
+			   ulsch_llr+r_offset);
+
+    if (nr_rate_matching_ldpc_rx(pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes,
+				 p_decParams->BG,
+				 p_decParams->Z,
+				 harq_process->d[r],
+				 harq_e,
+				 harq_process->C,
+				 pusch_pdu->pusch_data.rv_index,
+				 harq_process->new_rx,
+				 E,
+				 harq_process->F,
+				 Kr-harq_process->F-2*(p_decParams->Z))==-1) {
+
+      LOG_E(PHY,"ulsch_decoding.c: Problem in rate_matching\n");
+      no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+      return 1;
+    } 
+
+    //set first 2*Z_c bits to zeros
+    memset(&z[0],0,2*harq_process->Z*sizeof(int16_t));
+    //set Filler bits
+    memset((&z[0]+K_bits_F),127,harq_process->F*sizeof(int16_t));
+    //Move coded bits before filler bits
+    memcpy((&z[0]+2*harq_process->Z),harq_process->d[r],(K_bits_F-2*harq_process->Z)*sizeof(int16_t));
+    //skip filler bits
+    memcpy((&z[0]+Kr),harq_process->d[r]+(Kr-2*harq_process->Z),(kc*harq_process->Z-Kr)*sizeof(int16_t));
+    //Saturate coded bits before decoding into 8 bits values
+    for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++)
+      {
+	pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
+      }
+    
+    no_iteration_ldpc = nrLDPC_decoder(p_decParams,
+				       (int8_t*)&pl[0],
+				       llrProcBuf,
+				       p_procTime);
+
+  }
+    
+    for (int m=0; m < Kr>>3; m ++) {
+      harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
+    }
+    
+    if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
+#ifdef PRINT_CRC_CHECK
+      LOG_I(PHY, "Segment %d CRC OK\n",r);
+#endif
+      no_iteration_ldpc = 2;
+    } else {
+#ifdef PRINT_CRC_CHECK
+      LOG_I(PHY, "segment %d CRC NOK\n",r);
+#endif
+      no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+    }
+    //}
+
+  r_offset += E;
+
+      	/*for (int k=0;k<8;k++)
+        {
+        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
+        printf("llrprocbuf [%d] =  %x adr %p\n", k, llrProcBuf[k], llrProcBuf+k);
+        }
+  	*/ 
+  }
+  else{
+    dtx_det = 0;
+    no_iteration_ldpc = ulsch->max_ldpc_iterations+1;
+  }
+	bool decodeSuccess = (no_iteration_ldpc <= ulsch->max_ldpc_iterations);
+        if (decodeSuccess) { 
+		memcpy(harq_process->b+offset,
+               		harq_process->c[r],
+               		Kr_bytes - (harq_process->F>>3) -((harq_process->C>1)?3:0));
+        	offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
+		harq_process->processedSegments++;	
+	}
+  	else {
+	  LOG_D(PHY,"uplink segment error %d/%d\n",r,harq_process->C);
+	  LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
+	  break; //don't even attempt to decode other segments
+	}  	
+  }
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,0);
+
+  if ((harq_process->processedSegments==(harq_process->C))) {
+    LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
+	  phy_vars_gNB->Mod_id,harq_process->slot,harq_process->TBS);
+    harq_process->status = SCH_IDLE;
+    harq_process->round  = 0;
+    ulsch->harq_mask &= ~(1 << harq_pid);
+    
+    LOG_D(PHY, "ULSCH received ok \n");
+    nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0,0);
+    
+  } else {
+    LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d) r %d\n",
+	  phy_vars_gNB->Mod_id, harq_process->frame, harq_process->slot,
+	  harq_pid,harq_process->status, harq_process->round,harq_process->TBS,r);
+    harq_process->handled  = 1;
+    no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
+    LOG_D(PHY, "ULSCH %d in error\n",ULSCH_id);
+    nr_fill_indication(phy_vars_gNB,harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1,0);
+  } 
+  ulsch->last_iteration_cnt = no_iteration_ldpc;	
+  }
+
+  else {
+  dtx_det = 0;
   void (*nr_processULSegment_ptr)(void*) = &nr_processULSegment;
 
   for (r=0; r<harq_process->C; r++) {
 
     E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
-
     union ldpcReqUnion id = {.s={ulsch->rnti,frame,nr_tti_rx,0,0}};
     notifiedFIFO_elt_t *req = newNotifiedFIFO_elt(sizeof(ldpcDecode_t), id.p, &phy_vars_gNB->respDecode, nr_processULSegment_ptr);
     ldpcDecode_t * rdata=(ldpcDecode_t *) NotifiedFifoData(req);
@@ -581,5 +768,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
     //////////////////////////////////////////////////////////////////////////////////////////
   }
+  } 
   return 1;
 }

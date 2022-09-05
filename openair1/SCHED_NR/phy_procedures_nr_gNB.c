@@ -181,7 +181,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
 
   //apply the OFDM symbol rotation here
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
-    apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[aa][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14,fp->ofdm_symbol_size);
+    apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[aa][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14);
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
@@ -296,7 +296,7 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   uint8_t l, number_dmrs_symbols = 0;
   uint32_t G;
   uint16_t start_symbol, number_symbols, nb_re_dmrs;
-
+  uint8_t enable_ldpc_offload = gNB->ldpc_offload_flag;
   start_symbol = pusch_pdu->start_symbol_index;
   number_symbols = pusch_pdu->nr_of_symbols;
 
@@ -361,14 +361,15 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
                     slot_rx,
                     harq_pid,
                     G);
-
-  while (gNB->nbDecode > 0) {
-    notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
-    if (req == NULL)
-      break; // Tpool has been stopped
-    nr_postDecode(gNB, req);
-    delNotifiedFIFO_elt(req);
-  }
+  if (enable_ldpc_offload ==0) {
+    while (gNB->nbDecode > 0) {
+      notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
+      if (req == NULL)
+	break; // Tpool has been stopped
+      nr_postDecode(gNB, req);
+      delNotifiedFIFO_elt(req);
+    }
+  } 
   stop_meas(&gNB->ulsch_decoding_stats);
 }
 
@@ -493,6 +494,7 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
   gNB->UL_INFO.rx_ind.number_of_pdus++;
 
   pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+
 }
 
 // Function to fill UL RB mask to be used for N0 measurements
@@ -778,8 +780,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             LOG_D(PHY, "PUSCH detected in %d.%d (%d,%d,%d)\n",frame_rx,slot_rx,
                   dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_power_tot),
                   dB_fixed_x10(gNB->pusch_vars[ULSCH_id]->ulsch_noise_power_tot),gNB->pusch_thres);
-
-
 
             gNB->pusch_vars[ULSCH_id]->DTX=0;
           }

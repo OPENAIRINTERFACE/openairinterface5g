@@ -67,6 +67,7 @@
 #include <executables/softmodem-common.h>
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include "executables/nr-uesoftmodem.h"
 //#define DEBUG_ULSIM
 
 const char *__asan_default_options()
@@ -254,12 +255,6 @@ int nr_derive_key(int alg_type, uint8_t alg_id,
   return 0;
 }
 
-typedef struct {
-  uint64_t       optmask;   //mask to store boolean config options
-  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
-  tpool_t        Tpool;             // thread pool 
-} nrUE_params_t;
-
 void processSlotTX(void *arg) {}
 
 nrUE_params_t nrUE_params;
@@ -275,6 +270,7 @@ channel_desc_t *UE2gNB[NUMBER_OF_UE_MAX][NUMBER_OF_gNB_MAX];
 
 int main(int argc, char **argv)
 {
+
   char c;
   int i;
   double SNR, snr0 = -2.0, snr1 = 2.0;
@@ -302,7 +298,6 @@ int main(int argc, char **argv)
   //unsigned char frame_type = 0;
   NR_DL_FRAME_PARMS *frame_parms;
   int loglvl = OAILOG_WARNING;
-  //uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   int start_symbol = 0;
   uint16_t nb_rb = 50;
@@ -323,6 +318,8 @@ int main(int argc, char **argv)
   double effTP[100]; 
   float eff_tp_check = 100;
   uint8_t snrRun;
+  int ldpc_offload_flag = 0;
+  uint8_t max_rounds = 4;
   int chest_type[2] = {0};
 
   int enable_ptrs = 0;
@@ -337,6 +334,7 @@ int main(int argc, char **argv)
   uint8_t transform_precoding = transformPrecoder_disabled; // 0 - ENABLE, 1 - DISABLE
   uint8_t num_dmrs_cdm_grps_no_data = 1;
   uint8_t mcs_table = 0;
+  int ilbrm = 0;
 
   UE_nr_rxtx_proc_t UE_proc;
   FILE *scg_fd=NULL;
@@ -358,7 +356,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:p:q:r:s:t:u:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:op:q:r:s:t:u:v:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -375,6 +373,7 @@ int main(int argc, char **argv)
       nb_symb_sch = atoi(optarg);
       AssertFatal(nb_symb_sch > 0 && nb_symb_sch < 15,"start_symbol %d is not in 1..14\n",nb_symb_sch);
       break;
+
     case 'c':
       n_rnti = atoi(optarg);
       AssertFatal(n_rnti > 0 && n_rnti<=65535,"Illegal n_rnti %x\n",n_rnti);
@@ -476,6 +475,10 @@ int main(int argc, char **argv)
     case 'n':
       n_trials = atoi(optarg);
       break;
+
+    case 'o':
+      ldpc_offload_flag = 1;
+      break;
       
     case 'p':
       extended_prefix_flag = 1;
@@ -500,6 +503,10 @@ int main(int argc, char **argv)
 
     case 'u':
       mu = atoi(optarg);
+      break;
+
+    case 'v':
+      max_rounds = atoi(optarg);
       break;
 
     case 'w':
@@ -561,7 +568,7 @@ int main(int argc, char **argv)
       break;
 
     case 'M':
-     // SSB_positions = atoi(optarg);
+      ilbrm = atoi(optarg);
       break;
       
     case 'N':
@@ -626,21 +633,22 @@ int main(int argc, char **argv)
       printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
+      printf("-o ldpc offload flag\n");
       printf("-p Use extended prefix mode\n");
       printf("-q MCS table\n");
-      printf("-t Delay spread for multipath channel\n");
       printf("-u Set the numerology\n");
       printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used at UE\n");
       printf("-z Number of RX antennas used at gNB\n");
+      printf("-v Set the max rounds\n");
       printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
       //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
       printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");
       printf("-I Maximum LDPC decoder iterations\n");
-      printf("-M Multiple SSB positions in burst\n");
+      printf("-M Use limited buffer rate-matching\n");
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
       printf("-R N_RB_DL\n");
@@ -665,7 +673,6 @@ int main(int argc, char **argv)
   get_softmodem_params()->phy_test = 1;
   get_softmodem_params()->do_ra = 0;
   get_softmodem_params()->usim_test = 1;
-
 
   if (snr1set == 0)
     snr1 = snr0 + 10;
@@ -700,18 +707,9 @@ int main(int argc, char **argv)
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   gNB->ofdm_offset_divisor = UINT_MAX;
-  char tp_param[80];
-  if (threadCnt>0)
-   sprintf(tp_param,"-1");
-  else
-   tp_param[0]='n';
-  int s_offset = 0;
-  for (int icpu=1; icpu<threadCnt; icpu++) {
-    sprintf(tp_param+2+s_offset,",-1");
-    s_offset += 3;
-  }
+  initNotifiedFIFO(&gNB->respDecode);
 
-  initTpool(tp_param, &gNB->threadPool, false);
+  initFloatingCoresTpool(threadCnt, &gNB->threadPool, false, "gNB-tpool");
   initNotifiedFIFO(&gNB->respDecode);
   initNotifiedFIFO(&gNB->L1_tx_free);
   initNotifiedFIFO(&gNB->L1_tx_filled);
@@ -790,9 +788,12 @@ int main(int argc, char **argv)
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   cfg->carrier_config.num_tx_ant.value = 1;
   cfg->carrier_config.num_rx_ant.value = n_rx;
+
 //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,0,0x01);
+  gNB->ldpc_offload_flag = ldpc_offload_flag;
   gNB->chest_freq = chest_type[0];
   gNB->chest_time = chest_type[1];
+
   phy_init_nr_gNB(gNB,0,1);
   /* RU handles rxdataF, and gNB just has a pointer. Here, we don't have an RU,
    * so we need to allocate that memory as well. */
@@ -858,6 +859,7 @@ int main(int argc, char **argv)
   unsigned char harq_pid = 0;
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id];
+
   //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
   NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
@@ -891,7 +893,6 @@ int main(int argc, char **argv)
   uint16_t n_rb1 = 75;
   
   uint16_t pdu_bit_map = PUSCH_PDU_BITMAP_PUSCH_DATA; // | PUSCH_PDU_BITMAP_PUSCH_PTRS;
-  uint8_t max_rounds = 4;
   uint8_t crc_status = 0;
 
   unsigned char mod_order = nr_get_Qm_ul(Imcs, mcs_table);
@@ -924,6 +925,12 @@ int main(int argc, char **argv)
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
   printf("num dmrs sym %d\n",number_dmrs_symbols);
   uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
+
+  uint32_t tbslbrm = 0;
+  if (ilbrm)
+    tbslbrm = nr_compute_tbslbrm(mcs_table,
+                                 N_RB_UL,
+                                 precod_nbr_layers);
 
   if ((UE->frame_parms.nb_antennas_tx==4)&&(precod_nbr_layers==4))
     num_dmrs_cdm_grps_no_data = 2;
@@ -1056,6 +1063,7 @@ int main(int argc, char **argv)
   double blerStats[4][100];
   double berStats[4][100];
   double snrStats[100];
+  double ldpcDecStats[100] = {0};
   memset(errors_scrambling, 0, sizeof(uint32_t)*4*100);
   memset(n_errors, 0, sizeof(int)*4*100);
   memset(round_trials, 0, sizeof(int)*4*100);
@@ -1151,6 +1159,7 @@ int main(int argc, char **argv)
       pusch_pdu->uplink_frequency_shift_7p5khz = 0;
       pusch_pdu->start_symbol_index = start_symbol;
       pusch_pdu->nr_of_symbols = nb_symb_sch;
+      pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = tbslbrm;
       pusch_pdu->pusch_data.rv_index = rv_index;
       pusch_pdu->pusch_data.harq_process_id = 0;
       pusch_pdu->pusch_data.new_data_indicator = trial & 0x1;
@@ -1211,6 +1220,7 @@ int main(int argc, char **argv)
       ul_config.ul_config_list[0].pusch_config_pdu.dmrs_ports = ((1<<precod_nbr_layers)-1);
       ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
       ul_config.ul_config_list[0].pusch_config_pdu.target_code_rate = code_rate;
+      ul_config.ul_config_list[0].pusch_config_pdu.tbslbrm = tbslbrm;
 
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS/8;
       ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = trial & 0x1;
@@ -1377,8 +1387,7 @@ int main(int argc, char **argv)
                                gNB->common_vars.rxdataF[aa],
                                slot,
                                0,
-                               gNB->frame_parms.Ncp == EXTENDED ? 12 : 14,
-                               gNB->frame_parms.ofdm_symbol_size);
+                               gNB->frame_parms.Ncp == EXTENDED ? 12 : 14);
         }
 
     ul_proc_error = phy_procedures_gNB_uespec_RX(gNB, frame, slot);
@@ -1623,6 +1632,8 @@ int main(int argc, char **argv)
       printf("\n");
     }
 
+    ldpcDecStats[snrRun] = gNB->ulsch_decoding_stats.trials?inMicroS(gNB->ulsch_decoding_stats.diff/gNB->ulsch_decoding_stats.trials):0;
+
     if(n_trials==1)
       break;
 
@@ -1669,8 +1680,11 @@ int main(int argc, char **argv)
   LOG_MM(opStatsFile,"BER_round3",berStats[3],snrRun,1,7);
   LOG_MM(opStatsFile,"EffRate",effRate,snrRun,1,7);
   LOG_MM(opStatsFile,"EffTP",effTP,snrRun,1,7);
+
   free(test_input_bit);
   free(estimated_output_bit);
+  if (gNB->ldpc_offload_flag)
+    free_nrLDPClib_offload();
 
   if (output_fd)
     fclose(output_fd);

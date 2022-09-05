@@ -31,7 +31,7 @@
 #define CMDLINE_NRUEPARAMS_DESC {  \
     {"usrp-args",                CONFIG_HLP_USRP_ARGS,   0,               strptr:&usrp_args,         defstrval:"type=b200", TYPE_STRING,   0},    \
     {"single-thread-disable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,  iptr:&single_thread_flag,           defintval:1,           TYPE_INT,    0}, \
-    {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,  0,               u8ptr:&nrUE_params.nr_dlsch_parallel,       defintval:0,           TYPE_UINT8,  0}, \
+    {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,  0,               u8ptr:NULL,       defintval:0,           TYPE_UINT8,  0}, \
     {"offset-divisor",           CONFIG_HLP_OFFSET_DIV,  0,               uptr:&nrUE_params.ofdm_offset_divisor,    defuintval:8,           TYPE_UINT32,  0}, \
     {"max-ldpc-iterations",      CONFIG_HLP_MAX_LDPC_ITERATIONS, 0,       u8ptr:&nrUE_params.max_ldpc_iterations,    defuintval:5,       TYPE_UINT8, 0}, \
     {"nr-dlsch-demod-shift",     CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&nr_dlsch_demod_shift,    defintval:0,     TYPE_INT,    0}, \
@@ -78,7 +78,6 @@
 typedef struct {
   uint64_t       optmask;   //mask to store boolean config options
   uint32_t       ofdm_offset_divisor; // Divisor for sample offset computation for each OFDM symbol
-  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
   uint8_t        max_ldpc_iterations; // number of maximum LDPC iterations
   tpool_t        Tpool;             // thread pool 
 } nrUE_params_t;

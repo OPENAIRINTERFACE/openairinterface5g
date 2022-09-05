@@ -112,8 +112,7 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
 		       int16_t* txdata,
 		       int slot,
 		       int first_symbol,
-		       int nsymb,
-		       int length);
+		       int nsymb);
 
 void init_symbol_rotation(NR_DL_FRAME_PARMS *fp);
 
@@ -123,8 +122,7 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 			  int32_t *rxdataF,
 			  int slot,
 			  int first_symbol,
-			  int nsymb,
-			  int length);
+			  int nsymb);
 
 /*! \brief Perform NR precoding. TS 38.211 V15.4.0 subclause 6.3.1.5
   @param[in] datatx_F_precoding, Pointer to n_layers*re data array

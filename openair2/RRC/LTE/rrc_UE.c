@@ -4768,13 +4768,11 @@ void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_index, f
 
   // Configure commonSF_Alloc
   for(i=0; i< UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->commonSF_Alloc_r9.list.count; i++) {
-    LOG_W(RRC,"[UE %d] Frame %d, commonSF_Alloc_r9: radioframeAllocationPeriod(%ldn),radioframeAllocationOffset(%ld), subframeAllocation(%x,%x,%x)\n",
+    LOG_W(RRC,"[UE %d] Frame %d, commonSF_Alloc_r9: radioframeAllocationPeriod(%ldn),radioframeAllocationOffset(%ld), subframeAllocation(%x)\n",
           ue_mod_idP, frameP,
           UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->commonSF_Alloc_r9.list.array[i]->radioframeAllocationPeriod<<1,
           UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->commonSF_Alloc_r9.list.array[i]->radioframeAllocationOffset,
-          UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->commonSF_Alloc_r9.list.array[i]->subframeAllocation.choice.oneFrame.buf[0],
-          UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->commonSF_Alloc_r9.list.array[i]->subframeAllocation.choice.oneFrame.buf[1],
-          UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->commonSF_Alloc_r9.list.array[i]->subframeAllocation.choice.oneFrame.buf[2]);
+          UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->commonSF_Alloc_r9.list.array[i]->subframeAllocation.choice.oneFrame.buf[0]);
     UE_mac_inst[ue_mod_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i] = UE_rrc_inst[ue_mod_idP].mcch_message[eNB_index]->commonSF_Alloc_r9.list.array[i];
   }
 
