@@ -270,7 +270,7 @@ uint32_t calc_power_csirs(const uint16_t *x, const fapi_nr_dl_config_csirs_pdu_r
       continue;
     }
     sum_x = sum_x + x[rb-csirs_config_pdu->start_rb];
-    sum_x2 = sum_x2 + x[rb]*x[rb-csirs_config_pdu->start_rb];
+    sum_x2 = sum_x2 + x[rb-csirs_config_pdu->start_rb]*x[rb-csirs_config_pdu->start_rb];
     size++;
   }
   return sum_x2/size - (sum_x/size)*(sum_x/size);
