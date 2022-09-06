@@ -858,6 +858,18 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
             continue;
         }
 
+        switch(ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].allocation_retention_priority.priority_level) {
+          case NGAP_PRIORITY_LEVEL_HIGHEST:
+            break;
+          case NGAP_PRIORITY_LEVEL_LOWEST:
+            break;
+          case NGAP_PRIORITY_LEVEL_NO_PRIORITY:
+            break;
+
+          default:
+            break;
+        }
+
         NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_p,
                                                   drb_id,
                                                   &ue_context_pP->ue_context.pduSession[i],
