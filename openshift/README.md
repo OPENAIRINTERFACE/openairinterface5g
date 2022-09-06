@@ -66,8 +66,8 @@ oc start-build ran-base --from-file=<oai-repo-directory> --follow
 ```
 
 The `--from-file=<oai-repo-directory>` uploads the repository (from which the
-build is done) as a binary blob. It is therefore possible to make
-merges or other modifications and build an image.
+build is done) as a binary blob. It is therefore possible to make merges or
+other (local) modifications and build an image.
 
 # 3. Build of `build` shared image
 
