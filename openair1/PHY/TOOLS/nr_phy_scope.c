@@ -323,7 +323,7 @@ static void timeSignal (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy
 */
 
 static void timeResponse (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
-  const int len=2*p->gNB->frame_parms.ofdm_symbol_size;
+  const int len=p->gNB->frame_parms.ofdm_symbol_size;
   float *values, *time;
   oai_xygraph_getbuff(graph, &time, &values, len, 0);
   const int ant=0; // display antenna 0 for each UE
