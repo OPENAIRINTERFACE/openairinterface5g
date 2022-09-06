@@ -782,7 +782,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   int i;
   uint8_t drb_id_to_setup_start = 1;
   uint8_t nb_drb_to_setup = rrc->configuration.drbs;
-  long drb_priority[4] = {13,12,11,10};
+  long drb_priority[32];
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
