@@ -826,14 +826,16 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     for(long drb_id_add = 1; drb_id_add <= nb_drb_to_setup; drb_id_add++){
       if(drb_id_add > MAX_DRBS_PER_PDUSESSION)
         break;
-      uint8_t drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, NONGBR_FLOW);
+      uint8_t drb_id;
 
       // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
       for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
         switch (ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].fiveQI) {
           case 1 ... 4:  /* GBR */
+            drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, GBR_FLOW);
             break;
           case 5 ... 9:  /* Non-GBR */
+            drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, NONGBR_FLOW);
             break;
 
           default:
