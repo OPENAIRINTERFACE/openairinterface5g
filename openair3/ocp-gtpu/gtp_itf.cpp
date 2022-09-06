@@ -1096,44 +1096,21 @@ static int Gtpv1uHandleGpdu(int h,
   const rb_id_t        rb_id=tunnel->second.incoming_rb_id;
   const mui_t          mui=RLC_MUI_UNDEFINED;
   const confirm_t      confirm=RLC_SDU_CONFIRM_NO;
-  const sdu_size_t     sdu_buffer_size=msgBufLen-offset;
-  if (sdu_buffer_size < 1) {
-    LOG_E(GTPU, "gtp-u received header is malformed, ignore gtp packet\n");
-    return GTPNOK;
-  }
+  const sdu_size_t sdu_buffer_size = msgBufLen - offset;
   unsigned char *const sdu_buffer=msgBuf+offset;
   const pdcp_transmission_mode_t mode=PDCP_TRANSMISSION_MODE_DATA;
   const uint32_t sourceL2Id=0;
   const uint32_t destinationL2Id=0;
   pthread_mutex_unlock(&globGtp.gtp_lock);
 
-  if (qfi != -1 && tunnel->second.callBackSDAP) {
-    if ( !tunnel->second.callBackSDAP(&ctxt,
-                                      srb_flag,
-                                      rb_id,
-                                      mui,
-                                      confirm,
-                                      sdu_buffer_size,
-                                      sdu_buffer,
-                                      mode,
-                                      &sourceL2Id,
-                                      &destinationL2Id,
-                                      qfi,
-                                      rqi,
-                                      tunnel->second.pdusession_id) )
-      LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
-  } else {
-    if ( !tunnel->second.callBack(&ctxt,
-                                  srb_flag,
-                                  rb_id,
-                                  mui,
-                                  confirm,
-                                  sdu_buffer_size,
-                                  sdu_buffer,
-                                  mode,
-                                  &sourceL2Id,
-                                  &destinationL2Id) )
-      LOG_E(GTPU,"[%d] down layer refused incoming packet\n", h);
+  if (sdu_buffer_size > 0) {
+    if (qfi != -1 && tunnel->second.callBackSDAP) {
+      if (!tunnel->second.callBackSDAP(&ctxt, srb_flag, rb_id, mui, confirm, sdu_buffer_size, sdu_buffer, mode, &sourceL2Id, &destinationL2Id, qfi, rqi, tunnel->second.pdusession_id))
+        LOG_E(GTPU, "[%d] down layer refused incoming packet\n", h);
+    } else {
+      if (!tunnel->second.callBack(&ctxt, srb_flag, rb_id, mui, confirm, sdu_buffer_size, sdu_buffer, mode, &sourceL2Id, &destinationL2Id))
+        LOG_E(GTPU, "[%d] down layer refused incoming packet\n", h);
+    }
   }
 
   if(NR_PDCP_PDU_SN > 0 && NR_PDCP_PDU_SN %5 ==0){
