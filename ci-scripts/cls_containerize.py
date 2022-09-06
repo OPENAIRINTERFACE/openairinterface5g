@@ -52,6 +52,35 @@ import constants as CONST
 # Helper functions used here and in other classes
 # (e.g., cls_cluster.py)
 #-----------------------------------------------------------
+def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTargetBranch, ranAllowMerge):
+	# on RedHat/CentOS .git extension is mandatory
+	result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', ranRepository)
+	if result is not None:
+		full_ran_repo_name = ranRepository.replace('git/', 'git')
+	else:
+		full_ran_repo_name = ranRepository + '.git'
+	sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
+	sshSession.command('cd ' + sourcePath, '\$', 5)
+	sshSession.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+	if sshSession.getBefore().count('done.') == 0:
+		logging.warning('did not find \'done.\' in git output while cloning/fetching, was not successful?')
+	sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
+	sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
+
+	sshSession.command('sudo git clean -x -d -ff', '\$', 30)
+	sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
+	# if the commit ID is provided use it to point to it
+	if ranCommitID != '':
+		sshSession.command('git checkout -f ' + ranCommitID, '\$', 30)
+	# if the branch is not develop, then it is a merge request and we need to do
+	# the potential merge. Note that merge conflicts should already been checked earlier
+	if ranAllowMerge:
+		if ranTargetBranch == '':
+			sshSession.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+		else:
+			logging.debug('Merging with the target branch: ' + ranTargetBranch)
+			sshSession.command('git merge --ff origin/' + ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+
 def CopyLogsToExecutor(sshSession, sourcePath, log_name, scpIp, scpUser, scpPw):
 	sshSession.command(f'cd {sourcePath}/cmake_targets', '\$', 5)
 	sshSession.command(f'rm -f {log_name}.zip', '\$', 5)
@@ -185,35 +214,6 @@ class Containerize():
 # Container management functions
 #-----------------------------------------------------------
 
-	def _createWorkspace(self, sshSession, password, sourcePath):
-		# on RedHat/CentOS .git extension is mandatory
-		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
-		if result is not None:
-			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
-		else:
-			full_ran_repo_name = self.ranRepository + '.git'
-		sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
-		sshSession.command('cd ' + sourcePath, '\$', 5)
-		sshSession.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		# Raphael: here add a check if git clone or git fetch went smoothly
-		sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
-
-		sshSession.command('echo ' + password + ' | sudo -S git clean -x -d -ff', '\$', 30)
-		sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
-		# if the commit ID is provided use it to point to it
-		if self.ranCommitID != '':
-			sshSession.command('git checkout -f ' + self.ranCommitID, '\$', 30)
-		# if the branch is not develop, then it is a merge request and we need to do
-		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.ranAllowMerge):
-			if self.ranTargetBranch == '':
-				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					sshSession.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
-			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				sshSession.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
-
 	def BuildImage(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			HELP.GenericHelp(CONST.Version)
@@ -281,7 +281,7 @@ class Containerize():
 	
 		self.testCase_id = HTML.testCase_id
 	
-		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
  		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
@@ -460,7 +460,7 @@ class Containerize():
 		self.ranCommitID = self.proxyCommit
 		self.ranRepository = 'https://github.com/EpiSci/oai-lte-5g-multi-ue-proxy.git'
 		self.ranAllowMerge = False
-		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 		# to prevent accidentally overwriting data that might be used later
 		self.ranCommitID = oldRanCommidID
 		self.ranRepository = oldRanRepository
@@ -641,7 +641,7 @@ class Containerize():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		
-		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)

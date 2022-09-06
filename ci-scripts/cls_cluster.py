@@ -59,35 +59,6 @@ class Cluster:
 		self.ranAllowMerge = False
 		self.ranTargetBranch = ""
 
-	def _createWorkspace(self, sshSession, password, sourcePath):
-		# on RedHat/CentOS .git extension is mandatory
-		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
-		if result is not None:
-			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
-		else:
-			full_ran_repo_name = self.ranRepository + '.git'
-		sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
-		sshSession.command('cd ' + sourcePath, '\$', 5)
-		sshSession.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		# Raphael: here add a check if git clone or git fetch went smoothly
-		sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
-
-		sshSession.command('echo ' + password + ' | sudo -S git clean -x -d -ff', '\$', 30)
-		sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
-		# if the commit ID is provided use it to point to it
-		if self.ranCommitID != '':
-			sshSession.command('git checkout -f ' + self.ranCommitID, '\$', 30)
-		# if the branch is not develop, then it is a merge request and we need to do
-		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.ranAllowMerge):
-			if self.ranTargetBranch == '':
-				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					sshSession.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
-			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				sshSession.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
-
 	def _recreate_entitlements(self, sshSession):
 		# recreating entitlements, don't care if deletion fails
 		sshSession.command('oc delete secret etc-pki-entitlement', '\$', 5)
@@ -246,7 +217,7 @@ class Cluster:
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
 			mySSH.command(f'sudo rm -Rf {lSourcePath}', '\$', 15)
-		self._createWorkspace(mySSH, CONST.CI_NO_PASSWORD, lSourcePath)
+		cls_containerize.CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
 		# we don't necessarily need a forced workspace cleanup, but in
 		# order to reduce the amount of data send to OpenShift, we
