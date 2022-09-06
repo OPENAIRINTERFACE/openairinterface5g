@@ -302,7 +302,7 @@ class Cluster:
 			pod = self._deploy_pod(mySSH, 'openshift/ran-base-log-retrieval.yaml')
 			if pod is not None:
 				mySSH.command(f'mkdir -p cmake_targets/log/ran-base', '\$', 5)
-				mySSH.command(f'oc rsync {pod}:/oai-ran/cmake_targets/log cmake_targets/log/ran-base', '\$', 5)
+				mySSH.command(f'oc rsync {pod}:/oai-ran/cmake_targets/log/ cmake_targets/log/ran-base', '\$', 5)
 				self._undeploy_pod(mySSH, 'openshift/ran-base-log-retrieval.yaml')
 			else:
 				status = False
