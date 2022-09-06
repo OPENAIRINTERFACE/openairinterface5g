@@ -831,23 +831,9 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
       // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
       for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
         switch (ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].fiveQI) {
-          case 1: //100ms
+          case 1 ... 4:  /* GBR */
             break;
-          case 2: //150ms
-            break;
-          case 3: //50ms
-            break;
-          case 4: //300ms
-            break;
-          case 5: //100ms
-            break;
-          case 6: //300ms
-            break;
-          case 7: //100ms
-            break;
-          case 8: //300ms
-            break;
-          case 9: //300ms Video (Buffered Streaming)TCP-based (e.g., www, e-mail, chat, ftp, p2p file sharing, progressive video, etc.)
+          case 5 ... 9:  /* Non-GBR */
             break;
 
           default:
