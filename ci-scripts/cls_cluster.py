@@ -246,7 +246,7 @@ class Cluster:
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
 			mySSH.command(f'sudo rm -Rf {lSourcePath}', '\$', 15)
-		self._createWorkspace(mySSH, "SHOULD NOT BE NECESSARY", lSourcePath)
+		self._createWorkspace(mySSH, CONST.CI_NO_PASSWORD, lSourcePath)
 
 		# we don't necessarily need a forced workspace cleanup, but in
 		# order to reduce the amount of data send to OpenShift, we
@@ -378,7 +378,7 @@ class Cluster:
 			logging.info(f'\u001B[1m{image} size is {imageSize[image]}\u001B[0m')
 
 		build_log_name = f'build_log_{self.testCase_id}'
-		cls_containerize.CopyLogsToExecutor(mySSH, lSourcePath, build_log_name, lIpAddr, 'oaicicd', 'SHOULD NOT MATTER')
+		cls_containerize.CopyLogsToExecutor(mySSH, lSourcePath, build_log_name, lIpAddr, 'oaicicd', CONST.CI_NO_PASSWORD)
 
 		mySSH.command('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc delete pod ${pod}; done', '\$', 60)
 
