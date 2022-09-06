@@ -98,6 +98,9 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
     DRB_config->pdcp_Config->ext1->cipheringDisabled = calloc(1, sizeof(*DRB_config->pdcp_Config->ext1->cipheringDisabled));
     *DRB_config->pdcp_Config->ext1->cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
   }
+
+  ue->DRB_active[drb_id-1] = DRB_ACTIVE;
+
   return DRB_config;
 }
 
