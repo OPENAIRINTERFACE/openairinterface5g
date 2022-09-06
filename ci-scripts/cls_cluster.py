@@ -259,9 +259,7 @@ class Cluster:
 		if self.ranAllowMerge: # merging MR branch into develop -> temporary image
 			imageTag = 'ci-temp'
 			if self.ranTargetBranch == 'develop':
-				# TODO IMPORTANT: delete next line, uncomment following
-				mySSH.command(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper | grep --colour=never -i INDEX', '\$', 5)
-				#mySSH.command(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base.rhel8.2 | grep --colour=never -i INDEX', '\$', 5)
+				mySSH.command(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base.rhel8.2 | grep --colour=never -i INDEX', '\$', 5)
 				result = re.search('index', mySSH.getBefore())
 				if result is not None:
 					forceBaseImageBuild = True
