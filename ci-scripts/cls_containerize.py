@@ -675,7 +675,7 @@ class Containerize():
 		result = re.search('service=(?P<svc_name>[a-zA-Z0-9\_]+)', mySSH.getBefore())
 		if result is not None:
 			svcName = result.group('svc_name')
-			mySSH.command('docker-compose --file ci-docker-compose.yml up -d ' + svcName, '\$', 10)
+			mySSH.command('docker-compose --file ci-docker-compose.yml up -d ' + svcName, '\$', 15)
 
 		# Checking Status
 		mySSH.command('docker-compose --file ci-docker-compose.yml config', '\$', 5)

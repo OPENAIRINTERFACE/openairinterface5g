@@ -145,7 +145,7 @@ class gtpEndPoints {
 
   ~gtpEndPoints() {
     // automatically close all sockets on quit
-    for (const auto p : instances)
+    for (const auto &p : instances)
       close(p.first);
   }
 };
@@ -1278,9 +1278,8 @@ void *gtpv1uTask(void *args)  {
       AssertFatal(EXIT_SUCCESS==itti_free(TASK_GTPV1_U, message_p), "Failed to free memory!\n");
     }
 
-    struct epoll_event *events;
-
-    int nb_events = itti_get_events(TASK_GTPV1_U, &events);
+    struct epoll_event events[20];
+    int nb_events = itti_get_events(TASK_GTPV1_U, events, 20);
 
     for (int i = 0; i < nb_events; i++)
       if ((events[i].events&EPOLLIN))

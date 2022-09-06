@@ -597,17 +597,28 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
   for(ap = 0; ap < n_antenna_ports; ap++) {
     for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
-      c16_t rot=((c16_t*)frame_parms->symbol_rotation[1])[s + symb_offset];
+      c16_t *this_symbol = (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s];
+      c16_t rot=frame_parms->symbol_rotation[1][s + symb_offset];
       LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
 	    s,
 	    s + symb_offset,
 	    rot.r, rot.i);
 
-      rotate_cpx_vector((c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
-                        &rot,
-                        (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s],
-                        frame_parms->ofdm_symbol_size,
-                        15);
+      if (frame_parms->N_RB_UL & 1) {
+        rotate_cpx_vector(this_symbol, &rot, this_symbol,
+                          (frame_parms->N_RB_UL + 1) * 6, 15);
+        rotate_cpx_vector(this_symbol + frame_parms->first_carrier_offset - 6,
+                          &rot,
+                          this_symbol + frame_parms->first_carrier_offset - 6,
+                          (frame_parms->N_RB_UL + 1) * 6, 15);
+      } else {
+        rotate_cpx_vector(this_symbol, &rot, this_symbol,
+                          frame_parms->N_RB_UL * 6, 15);
+        rotate_cpx_vector(this_symbol + frame_parms->first_carrier_offset,
+                          &rot,
+                          this_symbol + frame_parms->first_carrier_offset,
+                          frame_parms->N_RB_UL * 6, 15);
+      }
     }
   }
 

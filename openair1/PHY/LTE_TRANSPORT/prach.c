@@ -62,9 +62,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   uint8_t            Ncs_config;
   uint8_t            restricted_set;
   uint8_t            n_ra_prb;
-  int16_t            *prachF=NULL;
   int16_t            **rxsigF=NULL;
-  int16_t *prach2;
   uint8_t preamble_index;
   uint16_t NCS,NCS2;
   uint16_t preamble_offset=0,preamble_offset_old;
@@ -77,12 +75,10 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   uint8_t not_found;
   int k=0;
   uint16_t u;
-  int16_t *Xu=0;
-  uint16_t offset;
+  c16_t *Xu=0;
   int16_t Ncp;
   uint16_t first_nonzero_root_idx=0;
   uint8_t new_dft=0;
-  uint8_t aa;
   int32_t lev;
   int16_t levdB;
   int fft_size=0,log2_ifft_size;
@@ -130,14 +126,11 @@ void rx_prach0(PHY_VARS_eNB *eNB,
                           tdd_mapindex,Nf);
   }
 
-  int16_t *prach[nb_rx];
   uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
   uint16_t N_ZC = (prach_fmt <4)?839:139;
-
   if (eNB) {
     if (br_flag == 1) {
       prach_ifftp         = eNB->prach_vars_br.prach_ifft[ce_level];
-      prachF              = eNB->prach_vars_br.prachF;
       rxsigF              = eNB->prach_vars_br.rxsigF[ce_level];
 
       if (LOG_DEBUGFLAG(PRACH)) {
@@ -151,7 +144,6 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       }
     } else {
       prach_ifftp       = eNB->prach_vars.prach_ifft[0];
-      prachF            = eNB->prach_vars.prachF;
       rxsigF            = eNB->prach_vars.rxsigF[0];
 
       //if (LOG_DEBUGFLAG(PRACH)) {
@@ -179,7 +171,8 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
   AssertFatal(ru!=NULL,"ru is null\n");
   int8_t dBEn0=0;
-  for (aa=0; aa<nb_rx; aa++) {
+  int16_t *prach[nb_rx];
+  for (int aa=0; aa<nb_rx; aa++) {
     if (ru->if_south == LOCAL_RF || ru->function == NGFI_RAU_IF5) { // set the time-domain signal if we have to use it in this node
       // DJP - indexing below in subframe zero takes us off the beginning of the array???
       prach[aa] = (int16_t *)&ru->common.rxdata[aa][(subframe*fp->samples_per_tti)-ru->N_TA_offset];
@@ -291,9 +284,9 @@ void rx_prach0(PHY_VARS_eNB *eNB,
       LOG_D(PHY,"rx_prach: Doing FFT for N_RB_UL %d nb_rx:%d Ncp:%d\n",fp->N_RB_UL, nb_rx, Ncp);
     }
 
-    for (aa=0; aa<nb_rx; aa++) {
+    for (int aa=0; aa<nb_rx; aa++) {
       AssertFatal(prach[aa]!=NULL,"prach[%d] is null\n",aa);
-      prach2 = prach[aa] + (Ncp<<1);
+      int16_t *prach2 = prach[aa] + (Ncp<<1); // <<1 because type int16 but input is c16
 
       // do DFT
       switch (fp->N_RB_UL) {
@@ -562,37 +555,38 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
     if (new_dft == 1) {
       new_dft = 0;
-
+      
       if (br_flag == 1) {
-        Xu=(int16_t *)eNB->X_u_br[ce_level][preamble_offset-first_nonzero_root_idx];
+        Xu=(c16_t *)eNB->X_u_br[ce_level][preamble_offset-first_nonzero_root_idx];
         prach_ifft = prach_ifftp[prach_ifft_cnt++];
-
+        
         if (eNB->prach_vars_br.repetition_number[ce_level]==1) memset(prach_ifft,0,((N_ZC==839)?2048:256)*sizeof(int32_t));
       } else {
-        Xu=(int16_t *)eNB->X_u[preamble_offset-first_nonzero_root_idx];
+        Xu=(c16_t *)eNB->X_u[preamble_offset-first_nonzero_root_idx];
         prach_ifft = prach_ifftp[0];
         memset(prach_ifft,0,((N_ZC==839) ? 2048 : 256)*sizeof(int32_t));
       }
-
-      memset(prachF, 0, sizeof(int16_t)*2*1024 );
-
-    if (LOG_DUMPFLAG(PRACH)) {
-        if (prach[0]!= NULL) LOG_M("prach_rx0.m","prach_rx0",prach[0],6144+792,1,1);
-
-        LOG_M("prach_rx1.m","prach_rx1",prach[1],6144+792,1,1);
-        LOG_M("prach_rxF0.m","prach_rxF0",rxsigF[0],12288,1,1);
-        LOG_M("prach_rxF1.m","prach_rxF1",rxsigF[1],12288,1,1);
-    }
-
-      for (aa=0; aa<nb_rx; aa++) {
+      c16_t prachF[1024] __attribute__((aligned(32)))={0};
+      
+      if (LOG_DUMPFLAG(PRACH)) 
+        for (int z=0; z<nb_rx; z++) 
+          if( prach[z] ) {
+            char tmp[128];
+            sprintf(tmp,"prach_rx%d.m", z);
+            LOG_M(tmp,tmp,prach[z],6144+792,1,1);
+            sprintf(tmp,"prach_rxF%d.m", z);
+            LOG_M(tmp,tmp,rxsigF[z],12288,1,1);
+          }
+      
+      for (int aa=0; aa<nb_rx; aa++) {
         // Do componentwise product with Xu* on each antenna
         k=0;
-
-        for (offset=0; offset<(N_ZC<<1); offset+=2) {
-          prachF[offset]   = (int16_t)(((int32_t)Xu[offset]*rxsigF[aa][k]   + (int32_t)Xu[offset+1]*rxsigF[aa][k+1])>>15);
-          prachF[offset+1] = (int16_t)(((int32_t)Xu[offset]*rxsigF[aa][k+1] - (int32_t)Xu[offset+1]*rxsigF[aa][k])>>15);
+        
+        for (int offset=0; offset<N_ZC; offset++) {
+          prachF[offset].r = (int16_t)(((int32_t)Xu[offset].r*rxsigF[aa][k]   + (int32_t)Xu[offset].i*rxsigF[aa][k+1])>>15);
+          prachF[offset].i = (int16_t)(((int32_t)Xu[offset].r*rxsigF[aa][k+1] - (int32_t)Xu[offset].i*rxsigF[aa][k])>>15);
           k+=2;
-
+          
           if (k==(12*2*fp->ofdm_symbol_size))
             k=0;
         }
@@ -600,13 +594,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
         // Now do IFFT of size 1024 (N_ZC=839) or 256 (N_ZC=139)
         if (N_ZC == 839) {
           log2_ifft_size = 10;
-          idft(IDFT_1024,prachF,prach_ifft_tmp,1);
+          idft(IDFT_1024,(int16_t*)prachF,prach_ifft_tmp,1);
 
           // compute energy and accumulate over receive antennas and repetitions for BR
           for (i=0; i<2048; i++)
             prach_ifft[i] += (prach_ifft_tmp[i<<1]*prach_ifft_tmp[i<<1] + prach_ifft_tmp[1+(i<<1)]*prach_ifft_tmp[1+(i<<1)])>>9;
         } else {
-          idft(IDFT_256,prachF,prach_ifft_tmp,1);
+          idft(IDFT_256,(int16_t*)prachF,prach_ifft_tmp,1);
           log2_ifft_size = 8;
 
           // compute energy and accumulate over receive antennas and repetitions for BR
@@ -674,14 +668,12 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
       if (br_flag == 0) {
         LOG_M("rxsigF.m","prach_rxF",&rxsigF[0][0],12288,1,1);
-        LOG_M("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
         LOG_M("Xu.m","xu",Xu,N_ZC,1,1);
         LOG_M("prach_ifft0.m","prach_t0",prach_ifft,1024,1,1);
         LOG_M("SF2_3.m","sf2_3",&ru->common.rxdata[0][2*fp->samples_per_tti],2*fp->samples_per_tti,1,1);
       } else {
         LOG_E(PHY,"Dumping prach (br_flag %d), k = %d (n_ra_prb %d)\n",br_flag,k,n_ra_prb);
         LOG_M("rxsigF_br.m","prach_rxF_br",&rxsigF[0][0],12288,1,1);
-        LOG_M("prach_rxF_comp0_br.m","prach_rxF_comp0_br",prachF,1024,1,1);
         LOG_M("Xu_br.m","xu_br",Xu,N_ZC,1,1);
         LOG_M("prach_ifft0_br.m","prach_t0_br",prach_ifft,1024,1,1);
       }

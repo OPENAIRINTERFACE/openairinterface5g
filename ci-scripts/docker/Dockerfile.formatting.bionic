@@ -8,7 +8,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
-       astyle \
        gawk \
        git
 
@@ -17,9 +16,6 @@ COPY . .
 
 RUN /bin/bash -c "if [[ -v MERGE_REQUEST ]]; then echo 'Source Branch = $SRC_BRANCH'; echo 'Target Branch = $TARGET_BRANCH'; else echo 'Push to develop'; fi"
 RUN /bin/bash -c "if [[ -v MERGE_REQUEST ]]; then ./ci-scripts/checkCodingFormattingRules.sh --src-branch $SRC_BRANCH --target-branch $TARGET_BRANCH; else ./ci-scripts/checkCodingFormattingRules.sh; fi"
-
-RUN echo "=== Files not properly formatted ===" && \
-    /bin/bash -c "if [[ -f oai_rules_result_list.txt ]]; then cat oai_rules_result_list.txt; fi"
 
 RUN echo "=== Files with incorrect define protection ===" && \
    /bin/bash -c "if [[ -f header-files-w-incorrect-define.txt ]]; then cat header-files-w-incorrect-define.txt; fi"

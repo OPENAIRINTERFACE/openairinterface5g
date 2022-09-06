@@ -86,7 +86,6 @@ void nas_user_api_id_initialize(nas_user_t *user) {
 void *nas_ue_task(void *args_p)
 {
   int                   nb_events;
-  struct epoll_event   *events;
   MessageDef           *msg_p;
   instance_t            instance;
   unsigned int          Mod_id;
@@ -306,8 +305,8 @@ void *nas_ue_task(void *args_p)
       AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
       msg_p = NULL;
     }
-
-    nb_events = itti_get_events(TASK_NAS_UE, &events);
+    struct epoll_event events[20];
+    nb_events = itti_get_events(TASK_NAS_UE, events, 20);
 
     if ((nb_events > 0) && (events != NULL)) {
       if (nas_ue_process_events(users, events, nb_events) == true) {

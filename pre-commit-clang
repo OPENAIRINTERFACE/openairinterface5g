@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+#
+# Runs clang-format on changed regions before commit.
+#
+# To install this, copy it to .git/hooks/pre-commit in your repo.
+# Remaining installation checks/instructions will be printed when you commit.
+#
+
+read -d '' help <<- EOF
+This repository requires you to install the clang-format command. This hook has
+been tested with clang-format-10, so remove all previous versions and reinstall:
+$ sudo apt-get remove clang-format-*
+$ sudo apt-get install clang-format-10
+You should now have clang-format-10 installed. Then, update the configuration
+as follows:
+$ git config --global clangFormat.binary clang-format-10
+$ git config --global clangFormat.style file
+$ git config --global alias.clang-format clang-format-10
+EOF
+
+check_clang_format() {
+  if hash git clang-format 2>/dev/null; then
+    return
+  else
+    echo "SETUP ERROR: no git clang-format executable found, or it is not executable"
+    echo "$help"
+    exit 1
+  fi
+}
+
+check_git_config() {
+  if [[ "$(git config --get clangFormat.binary)" != "clang-format-10" ]]; then
+    echo "SETUP ERROR: git config clangFormat.binary should be \"clang-format-10\"."
+    echo "$help"
+    exit 1
+  fi
+  if [[ "$(git config --get clangFormat.style)" != "file" ]]; then
+    echo "SETUP ERROR: git config clangFormat.style should be \"file\"."
+    echo "$help"
+    exit 1
+  fi
+}
+
+check_clang_format
+check_git_config
+
+readonly out=$(git clang-format -v --diff)
+
+if [[ "$out" == *"no modified files to format"* ]]; then exit 0; fi
+if [[ "$out" == *"clang-format did not modify any files"* ]]; then exit 0; fi
+
+echo "ERROR: the code to be committed is not formatted properly"
+echo "you need to run \"git clang-format\" on your commit"
+exit 1
