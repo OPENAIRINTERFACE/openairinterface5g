@@ -100,6 +100,7 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
   }
 
   ue->DRB_active[drb_id-1] = DRB_ACTIVE;
+  ue->pduSession[pduSession->param.pdusession_id].param.used_drbs[drb_id] = DRB_ACTIVE;
 
   return DRB_config;
 }
