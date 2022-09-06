@@ -860,13 +860,17 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
         switch(ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].allocation_retention_priority.priority_level) {
           case NGAP_PRIORITY_LEVEL_HIGHEST:
+            drb_priority[drb_id-1] = 1;
             break;
           case NGAP_PRIORITY_LEVEL_LOWEST:
+            drb_priority[drb_id-1] = 14;
             break;
           case NGAP_PRIORITY_LEVEL_NO_PRIORITY:
+            drb_priority[drb_id-1] = 15;
             break;
 
           default:
+            LOG_E(NR_RRC,"Not supported priority level\n");
             break;
         }
 
