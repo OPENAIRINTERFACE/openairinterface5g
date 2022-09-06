@@ -88,7 +88,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                int time_domain_allocation,
                                NR_pdsch_dmrs_t *dmrs_parms,
-                               NR_pdsch_tda_info_t *tda_info,
+                               NR_tda_info_t *tda_info,
                                uint8_t candidate_idx,
                                uint16_t num_total_bytes);
 
@@ -324,19 +324,16 @@ long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu);
 
-void nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
-                           int tda,
-                           NR_pdsch_tda_info_t *tda_info);
+NR_tda_info_t nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
+                                    const int tda);
 
-void nr_get_pusch_tda_info(const NR_UE_UL_BWP_t *ul_bwp,
-                           int tda,
-                           NR_pusch_tda_info_t *tda_info);
+NR_tda_info_t nr_get_pusch_tda_info(const NR_UE_UL_BWP_t *ul_bwp,
+                                    const int tda);
 
-void set_ul_dmrs_params(NR_pusch_dmrs_t *dmrs,
-                        const NR_ServingCellConfigCommon_t *scc,
-                        NR_UE_UL_BWP_t *ul_bwp,
-                        NR_pusch_tda_info_t *tda_info,
-                        int Layers);
+NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
+                                   const NR_UE_UL_BWP_t *ul_bwp,
+                                   const NR_tda_info_t *tda_info,
+                                   const int Layers);
 
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr);
 
@@ -460,20 +457,18 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 void find_SSB_and_RO_available(module_id_t module_idP);
 
-void set_dl_dmrs_params(NR_pdsch_dmrs_t *dmrs,
-                        const NR_ServingCellConfigCommon_t *scc,
-                        NR_UE_DL_BWP_t *BWP,
-                        NR_pdsch_tda_info_t *tda_info,
-                        int Layers);
+NR_pdsch_dmrs_t get_dl_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
+                                   const NR_UE_DL_BWP_t *BWP,
+                                   const NR_tda_info_t *tda_info,
+                                   const int Layers);
 
-uint16_t set_pm_index(NR_UE_info_t *UE,
-                      NR_UE_sched_ctrl_t *sched_ctrl,
+uint16_t get_pm_index(const NR_UE_info_t *UE,
                       int layers,
                       int xp_pdsch_antenna_ports);
 
 uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx);
 
-uint8_t get_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl, nr_dci_format_t dci_format);
+uint8_t get_dl_nrOfLayers(const NR_UE_sched_ctrl_t *sched_ctrl, const nr_dci_format_t dci_format);
 
 const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);

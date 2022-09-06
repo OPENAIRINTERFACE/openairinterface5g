@@ -410,7 +410,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   if (tda == retInfo->time_domain_allocation &&
       layers == retInfo->nrOfLayers) {
 
-    NR_pdsch_tda_info_t *tda_info = &retInfo->tda_info;
+    NR_tda_info_t *tda_info = &retInfo->tda_info;
     /* Check that there are enough resources for retransmission */
     while (rbSize < retInfo->rbSize) {
       rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
@@ -433,14 +433,11 @@ bool allocate_dl_retransmission(module_id_t module_id,
   } else {
     /* the retransmission will use a different time domain allocation, check
      * that we have enough resources */
-    NR_pdsch_tda_info_t temp_tda;
-    nr_get_pdsch_tda_info(dl_bwp, tda, &temp_tda);
-    NR_pdsch_dmrs_t temp_dmrs;
-    set_dl_dmrs_params(&temp_dmrs,
-                       scc,
-                       dl_bwp,
-                       &temp_tda,
-                       layers);
+    NR_tda_info_t temp_tda = nr_get_pdsch_tda_info(dl_bwp, tda);
+    NR_pdsch_dmrs_t temp_dmrs = get_dl_dmrs_params(scc,
+                                                   dl_bwp,
+                                                   &temp_tda,
+                                                   layers);
 
     const uint16_t slbitmap = SL_to_bitmap(temp_tda.startSymbolIndex, temp_tda.nrOfSymbols);
     while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
@@ -623,8 +620,7 @@ void pf_dl(module_id_t module_id,
       else
         sched_pdsch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->dl_bler_stats, max_mcs, frame);
       sched_pdsch->nrOfLayers = get_dl_nrOfLayers(sched_ctrl, current_BWP->dci_format);
-      sched_pdsch->pm_index = set_pm_index(UE,
-                                           sched_ctrl,
+      sched_pdsch->pm_index = get_pm_index(UE,
                                            sched_pdsch->nrOfLayers,
                                            mac->xp_pdsch_antenna_ports);
       const uint8_t Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
@@ -728,9 +724,9 @@ void pf_dl(module_id_t module_id,
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
     AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
-    NR_pdsch_tda_info_t *tda_info = &sched_pdsch->tda_info;
 
-    nr_get_pdsch_tda_info(dl_bwp, sched_pdsch->time_domain_allocation, tda_info);
+    sched_pdsch->tda_info = nr_get_pdsch_tda_info(dl_bwp, sched_pdsch->time_domain_allocation);
+    NR_tda_info_t *tda_info = &sched_pdsch->tda_info;
 
     const uint16_t slbitmap = SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols);
 
@@ -743,11 +739,10 @@ void pf_dl(module_id_t module_id,
     while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
-    set_dl_dmrs_params(&sched_pdsch->dmrs_parms,
-                       scc,
-                       dl_bwp,
-                       tda_info,
-                       sched_pdsch->nrOfLayers);
+    sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
+                                                 dl_bwp,
+                                                 tda_info,
+                                                 sched_pdsch->nrOfLayers);
     sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
     sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, dl_bwp->mcsTableIdx);
     sched_pdsch->pucch_allocation = alloc;
@@ -929,7 +924,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         remove_nr_list(&sched_ctrl->retrans_dl_harq, current_harq_pid);
     }
 
-    NR_pdsch_tda_info_t *tda_info = &sched_pdsch->tda_info;
+    NR_tda_info_t *tda_info = &sched_pdsch->tda_info;
     NR_pdsch_dmrs_t *dmrs_parms = &sched_pdsch->dmrs_parms;
     NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
     DevAssert(!harq->is_waiting);

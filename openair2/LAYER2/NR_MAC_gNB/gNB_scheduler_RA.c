@@ -1159,10 +1159,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // Calculate number of symbols
     int time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
-    NR_pdsch_tda_info_t tda_info;
-    nr_get_pdsch_tda_info(dl_bwp,
-                          time_domain_assignment,
-                          &tda_info);
+    NR_tda_info_t tda_info = nr_get_pdsch_tda_info(dl_bwp,
+                                                   time_domain_assignment);
 
     NR_ControlResourceSet_t *coreset = ra->coreset;
 
@@ -1242,12 +1240,10 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     const int pduindex = nr_mac->pdu_index[CC_id]++;
     uint8_t mcsTableIdx = dl_bwp->mcsTableIdx;
 
-   NR_pdsch_dmrs_t dmrs_parms;
-   set_dl_dmrs_params(&dmrs_parms,
-                      scc,
-                      dl_bwp,
-                      &tda_info,
-                      1);
+   NR_pdsch_dmrs_t dmrs_parms = get_dl_dmrs_params(scc,
+                                                   dl_bwp,
+                                                   &tda_info,
+                                                   1);
 
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = ra->RA_rnti;
@@ -1531,15 +1527,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       }
     }
 
-    NR_pdsch_tda_info_t msg4_tda;
-    nr_get_pdsch_tda_info(dl_bwp, time_domain_assignment, &msg4_tda);
+    NR_tda_info_t msg4_tda = nr_get_pdsch_tda_info(dl_bwp, time_domain_assignment);
 
-    NR_pdsch_dmrs_t dmrs_info;
-    set_dl_dmrs_params(&dmrs_info,
-                       scc,
-                       dl_bwp,
-                       &msg4_tda,
-                       1);
+    NR_pdsch_dmrs_t dmrs_info = get_dl_dmrs_params(scc,
+                                                   dl_bwp,
+                                                   &msg4_tda,
+                                                   1);
 
     uint8_t mcsTableIdx = dl_bwp->mcsTableIdx;
 

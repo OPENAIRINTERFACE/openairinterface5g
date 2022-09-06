@@ -373,11 +373,11 @@ typedef struct NR_sched_pucch {
   int start_symb;
 } NR_sched_pucch_t;
 
-typedef struct NR_pusch_tda_info {
-  int mapping_type;
+typedef struct NR_tda_info {
+  mappingType_t mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;
-} NR_pusch_tda_info_t;
+} NR_tda_info_t;
 
 typedef struct NR_pusch_dmrs {
   uint8_t N_PRB_DMRS;
@@ -409,9 +409,10 @@ typedef struct NR_sched_pusch {
   int8_t ul_harq_pid;
 
   uint8_t nrOfLayers;
+  // time_domain_allocation is the index of a list of tda
   int time_domain_allocation;
+  NR_tda_info_t tda_info;
   NR_pusch_dmrs_t dmrs_info;
-  NR_pusch_tda_info_t tda_info;
 } NR_sched_pusch_t;
 
 typedef struct NR_sched_srs {
@@ -419,12 +420,6 @@ typedef struct NR_sched_srs {
   int slot;
   bool srs_scheduled;
 } NR_sched_srs_t;
-
-typedef struct NR_pdsch_tda_info {
-  int mapping_type;
-  int startSymbolIndex;
-  int nrOfSymbols;
-} NR_pdsch_tda_info_t;
 
 typedef struct NR_pdsch_dmrs {
   uint8_t dmrs_ports_id;
@@ -454,12 +449,13 @@ typedef struct NR_sched_pdsch {
   // pucch format allocation
   uint8_t pucch_allocation;
 
-  int time_domain_allocation;
-
   uint16_t pm_index;
   uint8_t nrOfLayers;
+
   NR_pdsch_dmrs_t dmrs_parms;
-  NR_pdsch_tda_info_t tda_info;
+  // time_domain_allocation is the index of a list of tda
+  int time_domain_allocation;
+  NR_tda_info_t tda_info;
 } NR_sched_pdsch_t;
 
 typedef struct NR_UE_harq {

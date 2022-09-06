@@ -282,7 +282,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
                                int time_domain_allocation,
                                NR_pdsch_dmrs_t *dmrs_parms,
-                               NR_pdsch_tda_info_t *tda_info,
+                               NR_tda_info_t *tda_info,
                                uint8_t candidate_idx,
                                uint16_t num_total_bytes) {
 
@@ -580,17 +580,16 @@ void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 
       AssertFatal((startSymbolIndex+nrOfSymbols)<14,"SIB1 TDA %d would cause overlap with CSI-RS. Please select a different SIB1 TDA.\n",time_domain_allocation);
 
-      NR_pdsch_tda_info_t tda_info;
-      tda_info.mapping_type = is_typeA? typeA: typeB;
-      tda_info.startSymbolIndex = startSymbolIndex;
-      tda_info.nrOfSymbols = nrOfSymbols;
+      NR_tda_info_t tda_info = {
+        .mapping_type = is_typeA ? typeA : typeB,
+        .startSymbolIndex = startSymbolIndex,
+        .nrOfSymbols = nrOfSymbols
+      };
 
-      NR_pdsch_dmrs_t dmrs_parms;
-      set_dl_dmrs_params(&dmrs_parms,
-                         scc,
-                         NULL,
-                         &tda_info,
-                         1);
+      NR_pdsch_dmrs_t dmrs_parms = get_dl_dmrs_params(scc,
+                                                      NULL,
+                                                      &tda_info,
+                                                      1);
 
       // Configure sched_ctrlCommon for SIB1
       uint32_t TBS = schedule_control_sib1(module_idP, CC_id,

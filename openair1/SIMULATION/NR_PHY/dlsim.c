@@ -324,21 +324,20 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   current_BWP->mcsTableIdx = g_mcsTableIdx;
   sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
   AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
-  NR_pdsch_tda_info_t *tda_info = &sched_pdsch->tda_info;
-  nr_get_pdsch_tda_info(current_BWP, sched_pdsch->time_domain_allocation, tda_info);
 
-  set_dl_dmrs_params(&sched_pdsch->dmrs_parms,
-                     scc,
-                     current_BWP,
-                     tda_info,
-                     sched_pdsch->nrOfLayers);
+  sched_pdsch->tda_info = nr_get_pdsch_tda_info(current_BWP, sched_pdsch->time_domain_allocation);
+
+  sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
+                                               current_BWP,
+                                               &sched_pdsch->tda_info,
+                                               sched_pdsch->nrOfLayers);
 
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
-                                        tda_info->nrOfSymbols,
+                                        sched_pdsch->tda_info.nrOfSymbols,
                                         sched_pdsch->dmrs_parms.N_PRB_DMRS * sched_pdsch->dmrs_parms.N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
