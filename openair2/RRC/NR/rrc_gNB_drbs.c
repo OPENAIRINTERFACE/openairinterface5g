@@ -105,7 +105,7 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
   return DRB_config;
 }
 
-uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id) {
+uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id, bool is_gbr) {
   uint8_t drb_id;
   for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++) {
     if(ue->DRB_active[drb_id] == DRB_INACTIVE)

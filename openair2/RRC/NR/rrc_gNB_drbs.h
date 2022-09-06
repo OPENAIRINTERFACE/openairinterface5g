@@ -30,6 +30,8 @@
 #define MAX_PDUS_PER_UE         (8)   /* Maximum number of PDU Sessions per UE */
 #define DRB_ACTIVE              (1)
 #define DRB_INACTIVE            (0)
+#define GBR_FLOW                (1)
+#define NONGBR_FLOW             (0)
 
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue,
                                uint8_t drb_id,
@@ -38,7 +40,7 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue,
                                int do_drb_integrity,
                                int do_drb_ciphering);
 
-uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id);
+uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id, bool is_gbr);
 bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id);
 
 #endif
