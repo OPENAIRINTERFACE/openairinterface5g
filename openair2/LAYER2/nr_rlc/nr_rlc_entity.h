@@ -28,8 +28,14 @@
 
 #define NR_SDU_MAX 16000   /* max NR PDCP SDU size is 9000, let's take more */
 
+typedef enum {
+  NR_RLC_AM,
+  NR_RLC_UM,
+  NR_RLC_TM,
+} nr_rlc_mode_t;
+
 typedef struct {
-  uint32_t  mode;               /* 0: RLC AM, 1: RLC UM, 2: RLC TM */
+  nr_rlc_mode_t mode;          /* AM, UM, or TM */
 
   /* PDU stats */
   /* TX */

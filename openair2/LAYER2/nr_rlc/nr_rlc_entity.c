@@ -110,7 +110,7 @@ nr_rlc_entity_t *new_nr_rlc_entity_am(
   ret->common.max_retx_reached             = max_retx_reached;
   ret->common.max_retx_reached_data        = max_retx_reached_data;
 
-  ret->common.stats.mode = 0;  /* 0 for AM */
+  ret->common.stats.mode = NR_RLC_AM;
 
   /* let's take average over the last 100 milliseconds
    * initial_size of 1024 is arbitrary
@@ -165,7 +165,7 @@ nr_rlc_entity_t *new_nr_rlc_entity_um(
   ret->common.deliver_sdu                  = deliver_sdu;
   ret->common.deliver_sdu_data             = deliver_sdu_data;
 
-  ret->common.stats.mode = 1;  /* 1 for UM */
+  ret->common.stats.mode = NR_RLC_UM;
 
   /* let's take average over the last 100 milliseconds
    * initial_size of 1024 is arbitrary
@@ -205,7 +205,7 @@ nr_rlc_entity_t *new_nr_rlc_entity_tm(
   ret->common.deliver_sdu                  = deliver_sdu;
   ret->common.deliver_sdu_data             = deliver_sdu_data;
 
-  ret->common.stats.mode = 2;  /* 2 for TM */
+  ret->common.stats.mode = NR_RLC_TM;
 
   /* let's take average over the last 100 milliseconds
    * initial_size of 1024 is arbitrary
