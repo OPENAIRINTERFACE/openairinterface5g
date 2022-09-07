@@ -833,7 +833,10 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
             drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, GBR_FLOW);
             break;
           case 5 ... 9:  /* Non-GBR */
-            drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, NONGBR_FLOW);
+            if(rrc->configuration.drbs > 1) /* Force the creation from gNB Conf file - Should be used only in noS1 mode and rfsim for testing purposes. */
+              drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, GBR_FLOW);
+            else
+              drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, NONGBR_FLOW);
             break;
 
           default:
