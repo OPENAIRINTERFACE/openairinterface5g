@@ -265,7 +265,7 @@ static void do_pdcp_data_ind(
     else
       rb = ue->srb[rb_id - 1];
   } else {
-    if (rb_id < 1 || rb_id > 5)
+    if (rb_id < 1 || rb_id > MAX_DRBS_PER_UE)
       rb = NULL;
     else
       rb = ue->drb[rb_id - 1];
@@ -631,7 +631,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
                   size);
   }
   else{
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < MAX_DRBS_PER_UE; i++) {
         if (entity == ue->drb[i]) {
           rb_id = i+1;
           goto rb_found;
@@ -666,7 +666,7 @@ static void deliver_pdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int i;
   mem_block_t *memblock;
 
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < MAX_DRBS_PER_UE; i++) {
     if (entity == ue->drb[i]) {
       rb_id = i+1;
       goto rb_found;
@@ -1347,7 +1347,7 @@ static bool pdcp_data_req_drb(protocol_ctxt_t  *ctxt_pP,
 
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
 
-  if (rb_id < 1 || rb_id > 5)
+  if (rb_id < 1 || rb_id > MAX_DRBS_PER_UE)
     rb = NULL;
   else
     rb = ue->drb[rb_id - 1];
