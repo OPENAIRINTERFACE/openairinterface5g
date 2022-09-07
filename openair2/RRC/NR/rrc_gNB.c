@@ -824,8 +824,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     }
 
     for(long drb_id_add = 1; drb_id_add <= nb_drb_to_setup; drb_id_add++){
-      if(drb_id_add > MAX_DRBS_PER_PDUSESSION)
-        break;
       uint8_t drb_id;
 
       // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
