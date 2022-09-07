@@ -822,7 +822,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
         }
 
-        const int srs_est = nr_get_srs_signal(gNB,frame_rx,slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
+        int srs_est = nr_get_srs_signal(gNB, frame_rx, slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
 
         if (srs_est >= 0) {
           nr_srs_channel_estimation(gNB,
@@ -841,6 +841,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     &noise_power,
                                     snr_per_rb,
                                     &snr);
+        }
+
+        if ((snr * 10) < gNB->srs_thres) {
+          srs_est = -1;
         }
 
         T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
