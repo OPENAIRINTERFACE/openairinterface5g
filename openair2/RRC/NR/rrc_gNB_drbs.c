@@ -112,20 +112,15 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
 uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id, bool is_gbr) {
   uint8_t drb_id;
 
-  if(is_gbr) { /* GBR Flow */
-    for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++)
-      if(ue->DRB_active[drb_id] == DRB_INACTIVE)
-        return drb_id+1;
-  } else { /* Non-GBR Flow */
-    /* Find if Non-GBR DRB exists in the same PDU Session */
+  if(!is_gbr) { /* Find if Non-GBR DRB exists in the same PDU Session */
     for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++)
       if(ue->pduSession[pdusession_id].param.used_drbs[drb_id] == DRB_ACTIVE_NONGBR)
         return drb_id+1;
-    /* If a Non-GBR DRB does not exist in the same PDU Session, find an available DRB  */
-    for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++)
-      if(ue->DRB_active[drb_id] == DRB_INACTIVE)
-        return drb_id+1;
   }
+  /* GBR Flow  or a Non-GBR DRB does not exist in the same PDU Session, find an available DRB */
+  for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++)
+    if(ue->DRB_active[drb_id] == DRB_INACTIVE)
+      return drb_id+1;
   /* From this point, we need to handle the case that all DRBs are already used by the UE. */
   LOG_E(RRC, "Error - All the DRBs are used - Handle this\n");
   return DRB_INACTIVE;
