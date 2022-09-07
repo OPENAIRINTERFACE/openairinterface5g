@@ -21,7 +21,6 @@ The Regents of the University of California: BSD 3-Clause Licence.
 
 Niels Provos <provos@citi.umich.edu>: BSD 2-Clause Licence.
 
-## Credits for source code openair3/GTPV1-U/nw-gtpv1u: ##
+## Credits for source code openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder_offload.c and nrLDPC_offload.h: ##
 
-Amit Chawre <http://www.amitchawre.net/contact.html>: BSD 2-Clause Licence.
-
+Intel Corporation SPDX-License-Identifier: BSD-3-Clause Licence

@@ -1325,7 +1325,6 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           uint8_t dlsch_parallel,
                            NR_UE_PDCCH_CONFIG *phy_pdcch_config,
                            notifiedFIFO_t *txFifo) {
 

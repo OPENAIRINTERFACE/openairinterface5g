@@ -145,6 +145,7 @@ void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
 void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
                   NR_CSI_MeasConfig_t *csi_MeasConfig, int id);
 void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
+                const NR_UE_NR_Capability_t *uecap,
                 const int curr_bwp,
                 const int uid,
                 const int res_id,

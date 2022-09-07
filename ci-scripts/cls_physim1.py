@@ -141,7 +141,7 @@ class PhySim:
 				logging.debug('oai-physim size is unknown')
 
 		# logging to OC Cluster and then switch to corresponding project
-		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword}', '\$', 30)
+		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword} --server https://api.oai.cs.eurecom.fr:6443', '\$', 30)
 		if mySSH.getBefore().count('Login successful.') == 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			mySSH.close()

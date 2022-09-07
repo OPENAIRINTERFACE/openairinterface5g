@@ -106,9 +106,9 @@ int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_CH
 
   if (Ns==0)
-    LOG_M("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
+    LOG_M("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,0);
   else
-    LOG_M("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
+    LOG_M("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,0);
 
 #endif
 
@@ -311,7 +311,7 @@ int32_t lte_ul_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
           //      alpha = (int16_t) (((int32_t) SCALE * (int32_t) (pilot_pos2-k))/(pilot_pos2-pilot_pos1));
           //      beta  = (int16_t) (((int32_t) SCALE * (int32_t) (k-pilot_pos1))/(pilot_pos2-pilot_pos1));
 #ifdef DEBUG_CH
-          LOG_D(PHY,"lte_ul_channel_estimation: k=%d, alpha = %d, beta = %d\n",k,alpha,beta);
+          LOG_D(PHY,"lte_ul_channel_estimation: k=%d\n",k);
 #endif
           //symbol_offset_subframe = frame_parms->N_RB_UL*12*k;
 
@@ -436,9 +436,9 @@ int32_t lte_ul_channel_estimation_RRU(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_CH
 
   if (l==pilot_pos1)
-    write_output("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],Msc_RS,1,1);
+    write_output("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],Msc_RS,1,0);
   else
-    write_output("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],Msc_RS,1,1);
+    write_output("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],Msc_RS,1,0);
 
 #endif
   symbol_offset = frame_parms->N_RB_UL*12*l;

@@ -321,20 +321,6 @@ class StaticCodeAnalysis():
 					if ret is not None:
 						analyzed = True
 					if analyzed:
-						ret = re.search('Nb Files that do NOT follow OAI rules: (?P<nb_errors>[0-9\.]+)', str(line))
-						if ret is not None:
-							nbFilesNotFormatted = int(ret.group('nb_errors'))
-
-						if re.search('=== Files not properly formatted ===', str(line)) is not None:
-							listFiles = True
-						if listFiles:
-							if re.search('Removing intermediate container', str(line)) is not None:
-								listFiles = False
-							elif re.search('Running in|Files not properly formatted', str(line)) is not None:
-								pass
-							else:
-								listFilesNotFormatted.append(str(line).strip())
-
 						if re.search('=== Files with incorrect define protection ===', str(line)) is not None:
 							circularHeaderDependency = True
 						if circularHeaderDependency:

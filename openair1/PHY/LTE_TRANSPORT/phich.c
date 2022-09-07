@@ -74,7 +74,8 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
   uint32_t subframe_offset=((frame_parms->Ncp==0)?14:12)*frame_parms->ofdm_symbol_size*subframe;
 
   memset(d,0,24*sizeof(int16_t));
-
+  const int nushift=frame_parms->nushift;
+  
   if (frame_parms->nb_antenna_ports_eNB==1)
     gain_lin_QPSK = (int16_t)(((int32_t)amp*ONE_OVER_SQRT2_Q15)>>15);
   else
@@ -245,7 +246,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y1_16[7] = -y0_16[5];
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m];
           y1[j]   += y1_16[m++];
           y0[j+1] += y0_16[m];
@@ -287,7 +288,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y1_16[7] = -y0_16[5];
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m];
           y1[j]   += y1_16[m++];
           y0[j+1] += y0_16[m];
@@ -329,7 +330,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y1_16[7] = -y0_16[5];
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m];
           y1[j]   += y1_16[m++];
           y0[j+1] += y0_16[m];
@@ -360,7 +361,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y0_16[7]   = d[7]*gain_lin_QPSK;
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m++];
           y0[j+1] += y0_16[m++];
         }
@@ -385,7 +386,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y0_16[7]   = d[15]*gain_lin_QPSK;
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m++];
           y0[j+1] += y0_16[m++];
         }
@@ -410,7 +411,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y0_16[7]   = d[23]*gain_lin_QPSK;
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m++];
           y0[j+1] += y0_16[m++];
         }
@@ -533,7 +534,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y1_16[7] = -y0_16[5];
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j] += y0_16[m];
           y1[j] += y1_16[m++];
           y0[j+1] += y0_16[m];
@@ -644,7 +645,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y0_16[7]   = d[7]*gain_lin_QPSK;
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j] += y0_16[m++];
           y0[j+1] += y0_16[m++];
         }

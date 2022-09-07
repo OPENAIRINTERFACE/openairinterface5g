@@ -50,6 +50,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
 #include <executables/softmodem-common.h>
+#include <executables/nr-uesoftmodem.h>
 //#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
@@ -70,6 +71,12 @@ uint64_t get_softmodem_optmask(void) {return 0;}
 static softmodem_params_t softmodem_params;
 softmodem_params_t *get_softmodem_params(void) {
   return &softmodem_params;
+}
+
+nrUE_params_t nrUE_params={0};
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
 }
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
@@ -606,6 +613,12 @@ int main(int argc, char **argv)
 
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
           if (cyclic_prefix_type == 1) {
+            apply_nr_rotation(frame_parms,
+                              (int16_t*)gNB->common_vars.txdataF[aa],
+                              slot,
+                              0,
+                              12);
+
             PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
             &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
             frame_parms->ofdm_symbol_size,
@@ -613,10 +626,17 @@ int main(int argc, char **argv)
             frame_parms->nb_prefix_samples,
             CYCLIC_PREFIX);
           } else {
+            apply_nr_rotation(frame_parms,
+                              (int16_t*)gNB->common_vars.txdataF[aa],
+                              slot,
+                              0,
+                              14);
+
             /*nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
               &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
               14,
               frame_parms);*/
+
             PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
                          (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
                          frame_parms->ofdm_symbol_size,
@@ -624,26 +644,12 @@ int main(int argc, char **argv)
                          frame_parms->nb_prefix_samples0,
                          CYCLIC_PREFIX);
 
-            apply_nr_rotation(frame_parms,
-                              (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
-                              slot,
-                              0,
-                              1,
-                              frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);
-
             PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
                          (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
                          frame_parms->ofdm_symbol_size,
                          13,
                          frame_parms->nb_prefix_samples,
                          CYCLIC_PREFIX);
-
-            apply_nr_rotation(frame_parms,
-                              (int16_t*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
-                              slot,
-                              1,
-                              13,
-                              frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
           }
         }
       }

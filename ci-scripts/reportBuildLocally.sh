@@ -463,106 +463,75 @@ function report_build {
     echo "   </table>" >> ./build_results.html
     echo "   <h2>Build Summary</h2>" >> ./build_results.html
 
-    if [ -f ./oai_rules_result.txt ]
+    echo "   <h3>OAI Coding / Formatting Guidelines Check</h3>" >> ./build_results.html
+    if [ -f ./header-files-w-incorrect-define.txt ]
     then
-        echo "   <h3>OAI Coding / Formatting Guidelines Check</h3>" >> ./build_results.html
-        NB_FILES=`cat ./oai_rules_result.txt`
-        if [ $NB_FILES = "0" ]
-        then 
+        NB_FILES_IN_ERROR=`wc -l ./header-files-w-incorrect-define.txt | sed -e "s@ .*@@"`
+        if [ $NB_FILES_IN_ERROR -eq 0 ]
+        then
             echo "   <div class=\"alert alert-success\">" >> ./build_results.html
-            if [ $PU_TRIG -eq 1 ]; then echo "      <strong>All files in repository follow OAI rules. <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html; fi
-            if [ $MR_TRIG -eq 1 ]; then echo "      <strong>All modified files in Merge-Request follow OAI rules. <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html; fi
+            if [ $MR_TRIG -eq 1 ]; then echo "   <strong>No Issue for CIRCULAR DEPENDENCY PROTECTION in modified files</strong>" >> ./build_results.html; fi
+            if [ $PU_TRIG -eq 1 ]; then echo "   <strong>No Issue for CIRCULAR DEPENDENCY PROTECTION in the whole repository</strong>" >> ./build_results.html; fi
             echo "   </div>" >> ./build_results.html
         else
             echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
-            if [ $PU_TRIG -eq 1 ]; then echo "      <strong>$NB_FILES files in repository DO NOT follow OAI rules. <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html; fi
-            if [ $MR_TRIG -eq 1 ]; then echo "      <strong>$NB_FILES modified files in Merge-Request DO NOT follow OAI rules. <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html; fi
+            if [ $MR_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} modified files MAY NOT HAVE CIRCULAR DEPENDENCY PROTECTION</strong>" >> ./build_results.html; fi
+            if [ $PU_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} files in repository MAY NOT HAVE CIRCULAR DEPENDENCY PROTECTION in the whole repository</strong>" >> ./build_results.html; fi
             echo "   </div>" >> ./build_results.html
-        fi
-        if [ -f ./oai_rules_result_list.txt ]
-        then
-            echo "   <button data-toggle=\"collapse\" data-target=\"#oai-formatting-details\">More details on formatting check</button>" >> ./build_results.html
-            echo "   <div id=\"oai-formatting-details\" class=\"collapse\">" >> ./build_results.html
-            echo "   <p>Please apply the following command to this(ese) file(s): </p>" >> ./build_results.html
-            echo "   <p style=\"margin-left: 30px\"><strong><code>astyle --options=ci-scripts/astyle-options.txt filename(s)</code></strong></p>" >> ./build_results.html
+            echo "   <button data-toggle=\"collapse\" data-target=\"#oai-circular-details\">More details on circular dependency protection check</button>" >> ./build_results.html
+            echo "   <div id=\"oai-circular-details\" class=\"collapse\">" >> ./build_results.html
             echo "   <table border = 1>" >> ./build_results.html
             echo "      <tr>" >> ./build_results.html
-            echo "        <th bgcolor = \"lightcyan\" >Filename</th>" >> ./build_results.html
+            echo "        <th bgcolor = \"lightcyan\" >Potential Issue</th>" >> ./build_results.html
+            echo "        <th bgcolor = \"lightcyan\" >Impacted File</th>" >> ./build_results.html
+            echo "        <th bgcolor = \"lightcyan\" >Incorrect Macro</th>" >> ./build_results.html
             echo "      </tr>" >> ./build_results.html
-            awk '{print "      <tr><td>"$1"</td></tr>"}' ./oai_rules_result_list.txt >> ./build_results.html
+            awk '{if($0 ~/error in/){print "      <tr><td>error in declaration</td><td>"$4"</td><td>"$5"</td></tr>"};if($0 ~/files with same/){print "      <tr><td>files with same #define</td><td>"$5"</td><td>"$6"</td></tr>"}}' ./header-files-w-incorrect-define.txt >> ./build_results.html
             echo "   </table>" >> ./build_results.html
             echo "   </div>" >> ./build_results.html
             echo "   <br>" >> ./build_results.html
         fi
-        if [ -f ./header-files-w-incorrect-define.txt ]
+    fi
+    if [ -f ./files-w-gnu-gpl-license-banner.txt ]
+    then
+        NB_FILES_IN_ERROR=`wc -l ./files-w-gnu-gpl-license-banner.txt | sed -e "s@ .*@@"`
+        if [ $NB_FILES_IN_ERROR -ne 0 ]
         then
-            NB_FILES_IN_ERROR=`wc -l ./header-files-w-incorrect-define.txt | sed -e "s@ .*@@"`
-            if [ $NB_FILES_IN_ERROR -eq 0 ]
-            then
-                echo "   <div class=\"alert alert-success\">" >> ./build_results.html
-                if [ $MR_TRIG -eq 1 ]; then echo "   <strong>No Issue for CIRCULAR DEPENDENCY PROTECTION in modified files</strong>" >> ./build_results.html; fi
-                if [ $PU_TRIG -eq 1 ]; then echo "   <strong>No Issue for CIRCULAR DEPENDENCY PROTECTION in the whole repository</strong>" >> ./build_results.html; fi
-                echo "   </div>" >> ./build_results.html
-            else
-                echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
-                if [ $MR_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} modified files MAY NOT HAVE CIRCULAR DEPENDENCY PROTECTION</strong>" >> ./build_results.html; fi
-                if [ $PU_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} files in repository MAY NOT HAVE CIRCULAR DEPENDENCY PROTECTION in the whole repository</strong>" >> ./build_results.html; fi
-                echo "   </div>" >> ./build_results.html
-                echo "   <button data-toggle=\"collapse\" data-target=\"#oai-circular-details\">More details on circular dependency protection check</button>" >> ./build_results.html
-                echo "   <div id=\"oai-circular-details\" class=\"collapse\">" >> ./build_results.html
-                echo "   <table border = 1>" >> ./build_results.html
-                echo "      <tr>" >> ./build_results.html
-                echo "        <th bgcolor = \"lightcyan\" >Potential Issue</th>" >> ./build_results.html
-                echo "        <th bgcolor = \"lightcyan\" >Impacted File</th>" >> ./build_results.html
-                echo "        <th bgcolor = \"lightcyan\" >Incorrect Macro</th>" >> ./build_results.html
-                echo "      </tr>" >> ./build_results.html
-                awk '{if($0 ~/error in/){print "      <tr><td>error in declaration</td><td>"$4"</td><td>"$5"</td></tr>"};if($0 ~/files with same/){print "      <tr><td>files with same #define</td><td>"$5"</td><td>"$6"</td></tr>"}}' ./header-files-w-incorrect-define.txt >> ./build_results.html
-                echo "   </table>" >> ./build_results.html
-                echo "   </div>" >> ./build_results.html
-                echo "   <br>" >> ./build_results.html
-            fi
+            echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            if [ $MR_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} modified files HAVE a GNU GPL license banner</strong>" >> ./build_results.html; fi
+            if [ $PU_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} files in repository HAVE a GNU GPL license banner</strong>" >> ./build_results.html; fi
+            echo "   </div>" >> ./build_results.html
+            echo "   <button data-toggle=\"collapse\" data-target=\"#oai-license-gpl\">More details on GNU GPL license banner issue</button>" >> ./build_results.html
+            echo "   <div id=\"oai-license-gpl\" class=\"collapse\">" >> ./build_results.html
+            echo "   <table border = 1>" >> ./build_results.html
+            echo "      <tr>" >> ./build_results.html
+            echo "        <th bgcolor = \"lightcyan\" >Filename</th>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+            awk '{print "      <tr><td>"$1"</td></tr>"}' ./files-w-gnu-gpl-license-banner.txt >> ./build_results.html
+            echo "   </table>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+            echo "   <br>" >> ./build_results.html
         fi
-        if [ -f ./files-w-gnu-gpl-license-banner.txt ]
+    fi
+    if [ -f ./files-w-suspect-banner.txt ]
+    then
+        NB_FILES_IN_ERROR=`wc -l ./files-w-suspect-banner.txt | sed -e "s@ .*@@"`
+        if [ $NB_FILES_IN_ERROR -ne 0 ]
         then
-            NB_FILES_IN_ERROR=`wc -l ./files-w-gnu-gpl-license-banner.txt | sed -e "s@ .*@@"`
-            if [ $NB_FILES_IN_ERROR -ne 0 ]
-            then
-                echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
-                if [ $MR_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} modified files HAVE a GNU GPL license banner</strong>" >> ./build_results.html; fi
-                if [ $PU_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} files in repository HAVE a GNU GPL license banner</strong>" >> ./build_results.html; fi
-                echo "   </div>" >> ./build_results.html
-                echo "   <button data-toggle=\"collapse\" data-target=\"#oai-license-gpl\">More details on GNU GPL license banner issue</button>" >> ./build_results.html
-                echo "   <div id=\"oai-license-gpl\" class=\"collapse\">" >> ./build_results.html
-                echo "   <table border = 1>" >> ./build_results.html
-                echo "      <tr>" >> ./build_results.html
-                echo "        <th bgcolor = \"lightcyan\" >Filename</th>" >> ./build_results.html
-                echo "      </tr>" >> ./build_results.html
-                awk '{print "      <tr><td>"$1"</td></tr>"}' ./files-w-gnu-gpl-license-banner.txt >> ./build_results.html
-                echo "   </table>" >> ./build_results.html
-                echo "   </div>" >> ./build_results.html
-                echo "   <br>" >> ./build_results.html
-            fi
-        fi
-        if [ -f ./files-w-suspect-banner.txt ]
-        then
-            NB_FILES_IN_ERROR=`wc -l ./files-w-suspect-banner.txt | sed -e "s@ .*@@"`
-            if [ $NB_FILES_IN_ERROR -ne 0 ]
-            then
-                echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
-                if [ $MR_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} modified files HAVE a suspect license banner</strong>" >> ./build_results.html; fi
-                if [ $PU_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} files in repository HAVE a suspect license banner</strong>" >> ./build_results.html; fi
-                echo "   </div>" >> ./build_results.html
-                echo "   <button data-toggle=\"collapse\" data-target=\"#oai-license-suspect\">More details on suspect banner files</button>" >> ./build_results.html
-                echo "   <div id=\"oai-license-suspect\" class=\"collapse\">" >> ./build_results.html
-                echo "   <table border = 1>" >> ./build_results.html
-                echo "      <tr>" >> ./build_results.html
-                echo "        <th bgcolor = \"lightcyan\" >Filename</th>" >> ./build_results.html
-                echo "      </tr>" >> ./build_results.html
-                awk '{print "      <tr><td>"$1"</td></tr>"}' ././files-w-suspect-banner.txt >> ./build_results.html
-                echo "   </table>" >> ./build_results.html
-                echo "   </div>" >> ./build_results.html
-                echo "   <br>" >> ./build_results.html
-            fi
+            echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
+            if [ $MR_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} modified files HAVE a suspect license banner</strong>" >> ./build_results.html; fi
+            if [ $PU_TRIG -eq 1 ]; then echo "   <strong>${NB_FILES_IN_ERROR} files in repository HAVE a suspect license banner</strong>" >> ./build_results.html; fi
+            echo "   </div>" >> ./build_results.html
+            echo "   <button data-toggle=\"collapse\" data-target=\"#oai-license-suspect\">More details on suspect banner files</button>" >> ./build_results.html
+            echo "   <div id=\"oai-license-suspect\" class=\"collapse\">" >> ./build_results.html
+            echo "   <table border = 1>" >> ./build_results.html
+            echo "      <tr>" >> ./build_results.html
+            echo "        <th bgcolor = \"lightcyan\" >Filename</th>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+            awk '{print "      <tr><td>"$1"</td></tr>"}' ././files-w-suspect-banner.txt >> ./build_results.html
+            echo "   </table>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+            echo "   <br>" >> ./build_results.html
         fi
     fi
 
