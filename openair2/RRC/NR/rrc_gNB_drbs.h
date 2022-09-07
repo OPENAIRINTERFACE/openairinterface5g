@@ -28,6 +28,7 @@
 
 #define MAX_DRBS_PER_UE         (32)  /* Maximum number of Data Radio Bearers per UE */
 #define MAX_PDUS_PER_UE         (8)   /* Maximum number of PDU Sessions per UE */
+#define DRB_ACTIVE_NONGBR       (2)   /* DRB is used for Non-GBR Flows */
 #define DRB_ACTIVE              (1)
 #define DRB_INACTIVE            (0)
 #define GBR_FLOW                (1)

@@ -862,14 +862,18 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
             break;
         }
 
-        NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_p,
-                                                  drb_id,
-                                                  &ue_context_pP->ue_context.pduSession[i],
-                                                  rrc->configuration.enable_sdap,
-                                                  rrc->security.do_drb_integrity,
-                                                  rrc->security.do_drb_ciphering);
-        ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
-        ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
+        if(drb_is_active(ue_p, drb_id)){ /* Non-GBR flow using the same DRB or a GBR flow with no available DRBs*/
+          nb_drb_to_setup--;
+        } else {
+          NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_p,
+                                                    drb_id,
+                                                    &ue_context_pP->ue_context.pduSession[i],
+                                                    rrc->configuration.enable_sdap,
+                                                    rrc->security.do_drb_integrity,
+                                                    rrc->security.do_drb_ciphering);
+          ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
+          ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
+        }
       }
     }
 
