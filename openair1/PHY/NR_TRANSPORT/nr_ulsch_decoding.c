@@ -234,6 +234,12 @@ void nr_processULSegment(void* arg) {
   short* ulsch_llr = rdata->ulsch_llr;
   int max_ldpc_iterations = p_decoderParms->numMaxIter;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
+  p_decoderParms->R = nr_get_R_ldpc_decoder(rv_index,
+                                            E,
+                                            p_decoderParms->BG,
+                                            p_decoderParms->Z,
+                                            &ulsch_harq->llrLen,
+                                            ulsch_harq->round);
 
   int16_t  z [68*384 + 16] __attribute__ ((aligned(16)));
   int8_t   l [68*384 + 16] __attribute__ ((aligned(16)));

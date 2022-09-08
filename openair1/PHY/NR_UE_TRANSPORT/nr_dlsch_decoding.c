@@ -251,6 +251,12 @@ void nr_processDLSegment(void* arg) {
   short* dlsch_llr = rdata->dlsch_llr;
   rdata->decodeIterations = dlsch->max_ldpc_iterations + 1;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
+  p_decoderParms->R = nr_get_R_ldpc_decoder(rdata->rv_index,
+                                            E,
+                                            p_decoderParms->BG,
+                                            p_decoderParms->Z,
+                                            &harq_process->llrLen,
+                                            harq_process->DLround);
 
   int16_t  z [68*384 + 16] __attribute__ ((aligned(16)));
   int8_t   l [68*384 + 16] __attribute__ ((aligned(16)));

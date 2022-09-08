@@ -337,6 +337,9 @@ typedef struct {
   int16_t q_RI[MAX_RI_PAYLOAD];
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
+  /// Last index of LLR buffer that contains information.
+  /// Used for computing LDPC decoder R
+  int llrLen;
   //////////////////////////////////////////////////////////////
 } NR_UL_gNB_HARQ_t;
 

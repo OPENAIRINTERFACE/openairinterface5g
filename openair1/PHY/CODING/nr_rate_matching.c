@@ -386,6 +386,39 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
 
 }
 
+int nr_get_R_ldpc_decoder(int rvidx,
+                          int E,
+                          int BG,
+                          int Z,
+                          int *llrLen,
+                          int round) {
+  AssertFatal(BG == 1 || BG == 2, "Unknown BG %d\n", BG);
+
+  int Ncb = (BG==1)?(66*Z):(50*Z);
+  int infoBits = (index_k0[BG-1][rvidx] * Z + E);
+
+  if (round == 0) *llrLen = infoBits;
+  if (infoBits > Ncb) infoBits = Ncb;
+  if (infoBits > *llrLen) *llrLen = infoBits;
+
+  int sysBits = (BG==1)?(22*Z):(10*Z);
+  float decoderR = (float)sysBits/(infoBits + 2*Z);
+
+  if (BG == 2)
+    if (decoderR < 0.3333)
+      return 15;
+    else if (decoderR < 0.6667)
+      return 13;
+    else
+      return 23;
+  else
+    if (decoderR < 0.6667)
+      return 13;
+    else if (decoderR < 0.8889)
+      return 23;
+    else
+      return 89;
+}
 
 int nr_rate_matching_ldpc(uint32_t Tbslbrm,
                           uint8_t BG,
