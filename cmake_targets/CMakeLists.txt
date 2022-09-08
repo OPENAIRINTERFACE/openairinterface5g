@@ -1241,6 +1241,7 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/system.c
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/time_meas.c
+  ${OPENAIR_DIR}/common/utils/time_stat.c
 )
 
 set(SECU_OSA_SRC
