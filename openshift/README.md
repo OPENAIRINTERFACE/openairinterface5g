@@ -12,21 +12,30 @@
   </tr>
 </table>
 
------
+# 1. Introduction
 
-**CAUTION: this is experimental. Still a lot to be done.**
+## General
 
------
+What follows is a tutorial on how to build images on an OpenShift cluster in a three-step process
+(base image, build artifact image, target image). Note that all image
+streams/build configs assume the OC project/namespace `oaicicd-ran`.
 
-# 1. Build pre-requisites #
+If you want to regenerate images from modified sources, you have to rebuild
+the ran-build image. If you reinstalled dependencies, you have to restart from
+ran-base.
 
-To build our RAN images, we SHALL use the `codeready-builder-for-rhel-8-x86_64-rpms` repository with all the proper development libraries.
+You first need to login. Do:
+```bash
+oc login -u <username> -p <password> --server <url>
+```
 
+## RHEL8 Entitlements
+
+To build the RAN images, we use the `codeready-builder-for-rhel-8-x86_64-rpms` repository with all the proper development libraries.
 This repository is not directly accessible from the UBI RHEL8 image (`registry.access.redhat.com/ubi8/ubi:latest`).
+Therefore, we need to copy certificates and subscription manager configuration files from a registered RHEL8 machine.
 
-So we need to copy from a register RHEL8 machine certificates and subsccription manager configuration files.
-
-SO on a `RHEL8` physical machine (or a virtual machine) connected to the OpenShift Cluster, recover the entitlement and the RH subscription manager configs:
+on a `RHEL8` physical machine (or a virtual machine) connected to the OpenShift Cluster, recover the entitlement and the RH subscription manager configs:
 
 ```bash
 oc create configmap rhsm-conf --from-file /etc/rhsm/rhsm.conf
@@ -35,9 +44,10 @@ oc create configmap rhsm-ca --from-file /etc/rhsm/ca/redhat-uep.pem
 oc create secret generic etc-pki-entitlement --from-file /etc/pki/entitlement/{NUMBER_ON_YOUR_COMPUTER}.pem --from-file /etc/pki/entitlement/{NUMBER_ON_YOUR_COMPUTER}-key.pem
 ```
 
-These configmaps and secret will be shared by all the build configs in your OC project. No need to do it each time.
-
-**CAUTION: these files expire every month or so. If you have done a build on your OC project and try again a few weeks later, you may need to re-copy them**.
+These configmaps and secret will be shared by all the build configs in your OC
+project. No need to do it each time.  However, these files expire every month
+or so. If you have done a build on your OC project and try again a few weeks
+later, you may need to re-copy them. (The CI recopies them every time.)
 
 ```bash
 oc delete secret etc-pki-entitlement
@@ -45,55 +55,69 @@ oc delete cm rhsm-conf
 oc delete cm rhsm-ca
 ```
 
-**LAST POINT: your OC project SHALL be `oai`.**
+# 2. Build of `base` shared image
 
-# 2. Build the Builder shared image #
-
-In our Eurecom/OSA environment we need to pass a GIT proxy.
-
-2 things are impacted by this situation:
-
-*  In `openshift/oai-ran-rh8-build-config.yml` file
-   * `httpProxy: http://proxy.eurecom.fr:8080` 
-   * `httpsProxy: https://proxy.eurecom.fr:8080`
-*  Add a environment variable to the build config
+Create an image stream and build config that specify image properties and build parameters, then start the build:
 
 ```bash
-oc apply -f openshift/oai-ran-rh8-image-stream.yml
-oc apply -f openshift/oai-ran-rh8-build-config.yml
-oc set env bc/oai-ran-rhel8-build-config NEEDED_GIT_PROXY=http://proxy.eurecom.fr:8080
-oc start-build oai-ran-rhel8-build-config --follow
+oc create -f openshift/ran-base-is.yaml
+oc create -f openshift/ran-base-bc.yaml
+oc start-build ran-base --from-file=<oai-repo-directory> --follow
 ```
 
-In case you do NOT require a GIT proxy: **you SHALL remove the 2 lines in `openshift/oai-ran-rh8-build-config.yml` file.**
+The `--from-file=<oai-repo-directory>` uploads the repository (from which the
+build is done) as a binary blob. It is therefore possible to make merges or
+other (local) modifications and build an image.
 
-And no need to add a `NEEDED_GIT_PROXY` variable to the build config.
+# 3. Build of `build` shared image
+
+The same as for the `base` image.
 
 ```bash
-oc apply -f openshift/oai-ran-rh8-image-stream.yml
-oc apply -f openshift/modified-oai-ran-rh8-build-config.yml
-oc start-build oai-ran-rhel8-build-config --follow
+oc create -f openshift/ran-build-is.yaml
+oc create -f openshift/ran-build-bc.yaml
+oc start-build ran-build --from-file=<oai-repo-directory> --follow
 ```
 
-After a while it should be successful.
+# 4. Build of a target image
 
-# 3. Build an OAI target image #
-
-For the example the eNB:
+The same as for the `base` image:
 
 ```bash
-oc apply -f openshift/oai-enb-rh8-image-stream.yml
-oc apply -f openshift/oai-enb-rh8-build-config.yml
-oc start-build oai-enb-rh8-build-config --follow
+oc create -f openshift/oai-gnb-is.yaml
+oc create -f openshift/oai-gnb-bc.yaml
+oc start-build oai-gnb --from-file=<oai-repo-directory> --follow
 ```
 
-**CAUTION: if you are pushing modifications to the branch you are using, it won't be taken into account besides the Dockerfile.**
+# 5. Retrieval of Build Container Images and Build Artifacts
 
-**Because the source files are copied during the shared image creation.**
+Build artifacts, such as build logs, can be retrieved by checking the logs of
+the individual build steps. For example, for the `ran-build` step, you can do:
+```bash
+oc logs ran-build-1-build
+```
+where `ran-build-1-build` is the name of the `ran-build` build (type `oc get
+pods` to get a list of all pods).
 
-**Only way to regenerate images w/ modified source code is to re-start from step #2.**
+It is also possible to retrieve the build logs from a running pod. Currently,
+this is only used for the `ran-base` step (the others using a python script to
+scrape it from stdout):
+```bash
+oc create -f openshift/ran-base-log-retrieval.yaml
+oc rsync ran-base-log-retrieval:/oai-ran/cmake_targets/log cmake_targets/log/ran-base
+oc delete -f openshift/ran-base-log-retrieval.yaml
+```
 
-# 4. Deployment using HELM charts #
+The images are uploaded into the OpenShift image registry. To download, login
+using podman, then pull an image:
+```bash
+oc whoami -t | sudo podman login -u <username> --password-stdin <url> --tls-verify=false
+sudo podman pull <url>/oaicicd-ran/<image>:<tag> --tls-verify=false
+sudo podman logout <url>
+```
+The `<image>` could be `oai-gnb`, and the `<tag>` `ci-temp`.
+
+# 6. Deployment using HELM Charts
 
 **CAUTION: even more experimental.**
 

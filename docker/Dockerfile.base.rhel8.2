@@ -32,8 +32,12 @@ ENV TZ=Europe/Paris
 ENV BUILD_UHD_FROM_SOURCE=True
 ENV UHD_VERSION=3.15.0.0
 
-COPY tmp/ca/redhat-uep.pem /etc/rhsm/ca
-COPY tmp/entitlement/*.pem /etc/pki/entitlement
+# Copy the entitlements
+COPY ./etc-pki-entitlement /etc/pki/entitlement
+
+# Copy the subscription manager configurations
+COPY ./rhsm-conf /etc/rhsm
+COPY ./rhsm-ca /etc/rhsm/ca
 
 #install developers pkg/repo
 RUN rm -f /etc/rhsm-host && \

@@ -49,6 +49,107 @@ import helpreadme as HELP
 import constants as CONST
 
 #-----------------------------------------------------------
+# Helper functions used here and in other classes
+# (e.g., cls_cluster.py)
+#-----------------------------------------------------------
+def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTargetBranch, ranAllowMerge):
+	# on RedHat/CentOS .git extension is mandatory
+	result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', ranRepository)
+	if result is not None:
+		full_ran_repo_name = ranRepository.replace('git/', 'git')
+	else:
+		full_ran_repo_name = ranRepository + '.git'
+	sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
+	sshSession.command('cd ' + sourcePath, '\$', 5)
+	sshSession.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+	if sshSession.getBefore().count('done.') == 0:
+		logging.warning('did not find \'done.\' in git output while cloning/fetching, was not successful?')
+	sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
+	sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
+
+	sshSession.command('sudo git clean -x -d -ff', '\$', 30)
+	sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
+	# if the commit ID is provided use it to point to it
+	if ranCommitID != '':
+		sshSession.command('git checkout -f ' + ranCommitID, '\$', 30)
+	# if the branch is not develop, then it is a merge request and we need to do
+	# the potential merge. Note that merge conflicts should already been checked earlier
+	if ranAllowMerge:
+		if ranTargetBranch == '':
+			sshSession.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+		else:
+			logging.debug('Merging with the target branch: ' + ranTargetBranch)
+			sshSession.command('git merge --ff origin/' + ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+
+def CopyLogsToExecutor(sshSession, sourcePath, log_name, scpIp, scpUser, scpPw):
+	sshSession.command(f'cd {sourcePath}/cmake_targets', '\$', 5)
+	sshSession.command(f'rm -f {log_name}.zip', '\$', 5)
+	sshSession.command(f'mkdir -p {log_name}', '\$', 5)
+	sshSession.command(f'mv log/* {log_name}', '\$', 5)
+	sshSession.command(f'zip -r -qq {log_name}.zip {log_name}', '\$', 5)
+
+	# copy zip to executor for analysis
+	if (os.path.isfile(f'./{log_name}.zip')):
+		os.remove(f'./{log_name}.zip')
+	if (os.path.isdir(f'./{log_name}')):
+		shutil.rmtree(f'./{log_name}')
+	sshSession.copyin(scpIp, scpUser, scpPw, f'{sourcePath}/cmake_targets/{log_name}.zip', '.')
+	sshSession.command(f'rm -f {log_name}.zip','\$', 5)
+	ZipFile(f'{log_name}.zip').extractall('.')
+
+def AnalyzeBuildLogs(buildRoot, images, globalStatus):
+	collectInfo = {}
+	for image in images:
+		files = {}
+		file_list = [f for f in os.listdir(f'{buildRoot}/{image}') if os.path.isfile(os.path.join(f'{buildRoot}/{image}', f)) and f.endswith('.txt')]
+		# Analyze the "sub-logs" of every target image
+		for fil in file_list:
+			errorandwarnings = {}
+			warningsNo = 0
+			errorsNo = 0
+			with open(f'{buildRoot}/{image}/{fil}', mode='r') as inputfile:
+				for line in inputfile:
+					result = re.search(' ERROR ', str(line))
+					if result is not None:
+						errorsNo += 1
+					result = re.search(' error:', str(line))
+					if result is not None:
+						errorsNo += 1
+					result = re.search(' WARNING ', str(line))
+					if result is not None:
+						warningsNo += 1
+					result = re.search(' warning:', str(line))
+					if result is not None:
+						warningsNo += 1
+				errorandwarnings['errors'] = errorsNo
+				errorandwarnings['warnings'] = warningsNo
+				errorandwarnings['status'] = globalStatus
+			files[fil] = errorandwarnings
+		# Analyze the target image
+		if os.path.isfile(f'{buildRoot}/{image}.log'):
+			errorandwarnings = {}
+			committed = False
+			tagged = False
+			with open(f'{buildRoot}/{image}.log', mode='r') as inputfile:
+				startOfTargetImageCreation = False # check for tagged/committed only after image created
+				for line in inputfile:
+					result = re.search(f'FROM .* [aA][sS] {image}$', str(line))
+					if result is not None:
+						startOfTargetImageCreation = True
+					if startOfTargetImageCreation:
+						lineHasTag = re.search(f'Successfully tagged {image}:', str(line)) is not None
+						tagged = tagged or lineHasTag
+						# the OpenShift Cluster builder prepends image registry URL
+						lineHasCommit = re.search(f'COMMIT [a-zA-Z0-9\.:/\-]*{image}', str(line)) is not None
+						committed = committed or lineHasCommit
+			errorandwarnings['errors'] = 0 if committed or tagged else 1
+			errorandwarnings['warnings'] = 0
+			errorandwarnings['status'] = committed or tagged
+			files['Target Image Creation'] = errorandwarnings
+		collectInfo[image] = files
+	return collectInfo
+
+#-----------------------------------------------------------
 # Class Declaration
 #-----------------------------------------------------------
 class Containerize():
@@ -91,8 +192,6 @@ class Containerize():
 		self.cliBuildOptions = ''
 		self.dockerfileprefix = ''
 		self.host = ''
-		self.allImagesSize = {}
-		self.collectInfo = {}
 
 		self.deployedContainers = []
 		self.tsharkStarted = False
@@ -114,35 +213,6 @@ class Containerize():
 #-----------------------------------------------------------
 # Container management functions
 #-----------------------------------------------------------
-
-	def _createWorkspace(self, sshSession, password, sourcePath):
-		# on RedHat/CentOS .git extension is mandatory
-		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
-		if result is not None:
-			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
-		else:
-			full_ran_repo_name = self.ranRepository + '.git'
-		sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
-		sshSession.command('cd ' + sourcePath, '\$', 5)
-		sshSession.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		# Raphael: here add a check if git clone or git fetch went smoothly
-		sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
-
-		sshSession.command('echo ' + password + ' | sudo -S git clean -x -d -ff', '\$', 30)
-		sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
-		# if the commit ID is provided use it to point to it
-		if self.ranCommitID != '':
-			sshSession.command('git checkout -f ' + self.ranCommitID, '\$', 30)
-		# if the branch is not develop, then it is a merge request and we need to do
-		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.ranAllowMerge):
-			if self.ranTargetBranch == '':
-				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					sshSession.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
-			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				sshSession.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 
 	def BuildImage(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
@@ -211,13 +281,14 @@ class Containerize():
 	
 		self.testCase_id = HTML.testCase_id
 	
-		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
  		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
-			mySSH.command('mkdir -p tmp/ca/ tmp/entitlement/', '\$', 5)
-			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem tmp/ca/', '\$', 5)
-			mySSH.command('sudo cp /etc/pki/entitlement/*.pem tmp/entitlement/', '\$', 5)
+			mySSH.command('mkdir -p ./etc-pki-entitlement ./rhsm-conf ./rhsm-ca', '\$', 5)
+			mySSH.command('sudo cp /etc/rhsm/rhsm.conf ./rhsm-conf/', '\$', 5)
+			mySSH.command('sudo cp /etc/rhsm/ca/redhat-uep.pem ./rhsm-ca/', '\$', 5)
+			mySSH.command('sudo cp /etc/pki/entitlement/*.pem ./etc-pki-entitlement/', '\$', 5)
 
 		baseImage = 'ran-base'
 		baseTag = 'develop'
@@ -246,32 +317,10 @@ class Containerize():
 		if forceBaseImageBuild:
 			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + baseImage + ' --tag ' + baseImage + ':' + baseTag + ' --file docker/Dockerfile.base' + self.dockerfileprefix + ' . > cmake_targets/log/ran-base.log 2>&1', '\$', 1600)
 		# First verify if the base image was properly created.
-		status = True
 		mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' ' + baseImage + ':' + baseTag, '\$', 5)
+		allImagesSize = {}
 		if mySSH.getBefore().count('o such image') != 0:
 			logging.error('\u001B[1m Could not build properly ran-base\u001B[0m')
-			status = False
-		else:
-			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
-			if result is not None:
-				imageSize = float(result.group('size'))
-				imageSize = imageSize / 1000
-				if imageSize < 1000:
-					logging.debug('\u001B[1m   ran-base size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
-					self.allImagesSize['ran-base'] = str(round(imageSize,1)) + ' kbytes'
-				else:
-					imageSize = imageSize / 1000
-					if imageSize < 1000:
-						logging.debug('\u001B[1m   ran-base size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-						self.allImagesSize['ran-base'] = str(round(imageSize,1)) + ' Mbytes'
-					else:
-						imageSize = imageSize / 1000
-						logging.debug('\u001B[1m   ran-base size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
-						self.allImagesSize['ran-base'] = str(round(imageSize,1)) + ' Gbytes'
-			else:
-				logging.debug('ran-base size is unknown')
-		# If the base image failed, no need to continue
-		if not status:
 			# Recover the name of the failed container?
 			mySSH.command(self.cli + ' ps --quiet --filter "status=exited" -n1 | xargs ' + self.cli + ' rm -f', '\$', 5)
 			mySSH.command(self.cli + ' image prune --force', '\$', 30)
@@ -281,20 +330,32 @@ class Containerize():
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 		else:
-			# Recover build logs, for the moment only possible when build is successful
-			mySSH.command(self.cli + ' create --name test ' + baseImage + ':' + baseTag, '\$', 5)
-			mySSH.command('mkdir -p cmake_targets/log/ran-base', '\$', 5)
-			mySSH.command(self.cli + ' cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/ran-base', '\$', 5)
-			mySSH.command(self.cli + ' rm -f test', '\$', 5)
+			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
+			if result is not None:
+				size = float(result.group("size")) / 1000000
+				imageSizeStr = f'{size:.1f}'
+				logging.debug(f'\u001B[1m   ran-base size is {imageSizeStr} Mbytes\u001B[0m')
+				allImagesSize['ran-base'] = f'{imageSizeStr} Mbytes'
+			else:
+				logging.debug('ran-base size is unknown')
+
+		# Recover build logs, for the moment only possible when build is successful
+		mySSH.command(self.cli + ' create --name test ' + baseImage + ':' + baseTag, '\$', 5)
+		mySSH.command('mkdir -p cmake_targets/log/ran-base', '\$', 5)
+		mySSH.command(self.cli + ' cp test:/oai-ran/cmake_targets/log/. cmake_targets/log/ran-base', '\$', 5)
+		mySSH.command(self.cli + ' rm -f test', '\$', 5)
 
 		# Build the target image(s)
+		status = True
+		attemptedImages = ['ran-base']
 		for image,pattern in imageNames:
+			attemptedImages += [image]
 			# the archived Dockerfiles have "ran-base:latest" as base image
 			# we need to update them with proper tag
-			mySSH.command('sed -i -e "s#' + baseImage + ':latest#' + baseImage + ':' + baseTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
+			mySSH.command(f'sed -i -e "s#{baseImage}:latest#{baseImage}:{baseTag}#" docker/Dockerfile.{pattern}{self.dockerfileprefix}', '\$', 5)
 			if image != 'ran-build':
-				mySSH.command('sed -i -e "s#' + "ran-build" + ':latest#' + "ran-build" + ':' + imageTag + '#" docker/Dockerfile.' + pattern + self.dockerfileprefix, '\$', 5)
-			mySSH.command(self.cli + ' build ' + self.cliBuildOptions + ' --target ' + image + ' --tag ' + image + ':' + imageTag + ' --file docker/Dockerfile.' + pattern + self.dockerfileprefix + ' . > cmake_targets/log/' + image + '.log 2>&1', '\$', 1200)
+				mySSH.command(f'sed -i -e "s#ran-build:latest#ran-build:{imageTag}#" docker/Dockerfile.{pattern}{self.dockerfileprefix}', '\$', 5)
+			mySSH.command(f'{self.cli} build {self.cliBuildOptions} --target {image} --tag {image}:{imageTag} --file docker/Dockerfile.{pattern}{self.dockerfileprefix} . > cmake_targets/log/{image}.log 2>&1', '\$', 1200)
 			# Flatten Image
 			if image != 'ran-build':
 				mySSH.command('python3 ./ci-scripts/flatten_image.py --tag ' + image + ':' + imageTag, '\$', 300)
@@ -308,117 +369,43 @@ class Containerize():
 				status = False
 				# Here we should check if the last container corresponds to a failed command and destroy it
 				mySSH.command(self.cli + ' ps --quiet --filter "status=exited" -n1 | xargs ' + self.cli + ' rm -f', '\$', 5)
-				self.allImagesSize[image] = 'N/A -- Build Failed'
+				allImagesSize[image] = 'N/A -- Build Failed'
+				break
 			else:
 				result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
 				if result is not None:
-					imageSize = float(result.group('size'))
-					imageSize = imageSize / 1000
-					if imageSize < 1000:
-						logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
-						self.allImagesSize[image] = str(round(imageSize,1)) + ' kbytes'
-					else:
-						imageSize = imageSize / 1000
-						if imageSize < 1000:
-							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-							self.allImagesSize[image] = str(round(imageSize,1)) + ' Mbytes'
-						else:
-							imageSize = imageSize / 1000
-							logging.debug('\u001B[1m   ' + image + ' size is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
-							self.allImagesSize[image] = str(round(imageSize,1)) + ' Gbytes'
+					size = float(result.group("size")) / 1000000
+					imageSizeStr = f'{size:.1f}'
+					logging.debug(f'\u001B[1m   {image} size is {imageSizeStr} Mbytes\u001B[0m')
+					allImagesSize[image] = f'{imageSizeStr} Mbytes'
 				else:
-					logging.debug('ran-base size is unknown')
-					self.allImagesSize[image] = 'unknown'
+					logging.debug(f'{image} size is unknown')
+					allImagesSize[image] = 'unknown'
 			# Now pruning dangling images in between target builds
 			mySSH.command(self.cli + ' image prune --force', '\$', 30)
 
-		# Analyzing the logs
-		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-
-		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip || true', '\$', 5)
-		if (os.path.isfile('./build_log_' + self.testCase_id + '.zip')):
-			os.remove('./build_log_' + self.testCase_id + '.zip')
-		if (os.path.isdir('./build_log_' + self.testCase_id)):
-			shutil.rmtree('./build_log_' + self.testCase_id)
-		mySSH.command('zip -r -qq build_log_' + self.testCase_id + '.zip build_log_' + self.testCase_id, '\$', 5)
-		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '.zip', '.')
-		mySSH.command('rm -f build_log_' + self.testCase_id + '.zip','\$', 5)
-		# Remove all intermediate build images
+		# Remove all intermediate build images and clean up
 		if self.ranAllowMerge and forceBaseImageBuild:
-			mySSH.command(self.cli + ' image rm ' + baseImage + ':' + baseTag + ' || true', '\$', 30)
-		mySSH.command(self.cli + ' image rm ran-build:' + imageTag + ' || true','\$', 30)
-		# Cleaning any created tmp volume
-		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
-		mySSH.close()
-		ZipFile('build_log_' + self.testCase_id + '.zip').extractall('.')
+			mySSH.command(f'{self.cli} image rm {baseImage}:{baseTag} || true', '\$', 30)
+		mySSH.command(f'{self.cli} image rm ran-build:{imageTag}','\$', 30)
+		mySSH.command(f'{self.cli} volume prune --force','\$', 15)
 
-		#Trying to identify the errors and warnings for each built images
-		imageNames1 = imageNames
-		base = ('ran-base','ran')
-		imageNames1.insert(0, base) 
-		for image,pattern in imageNames1:
-			files = {}
-			file_list = [f for f in os.listdir('build_log_' + self.testCase_id + '/' + image) if os.path.isfile(os.path.join('build_log_' + self.testCase_id + '/' + image, f)) and f.endswith('.txt')]
-			for fil in file_list:
-				errorandwarnings = {}
-				warningsNo = 0
-				errorsNo = 0
-				with open('build_log_{}/{}/{}'.format(self.testCase_id,image,fil), mode='r') as inputfile:
-					for line in inputfile:
-						result = re.search(' ERROR ', str(line))
-						if result is not None:
-							errorsNo += 1
-						result = re.search(' error:', str(line))
-						if result is not None:
-							errorsNo += 1
-						result = re.search(' WARNING ', str(line))
-						if result is not None:
-							warningsNo += 1
-						result = re.search(' warning:', str(line))
-						if result is not None:
-							warningsNo += 1
-					errorandwarnings['errors'] = errorsNo
-					errorandwarnings['warnings'] = warningsNo
-					errorandwarnings['status'] = status
-				files[fil] = errorandwarnings
-			# Let analyze the target image creation part
-			if os.path.isfile('build_log_{}/{}.log'.format(self.testCase_id,image)):
-				errorandwarnings = {}
-				with open('build_log_{}/{}.log'.format(self.testCase_id,image), mode='r') as inputfile:
-					startOfTargetImageCreation = False
-					buildStatus = False
-					for line in inputfile:
-						result = re.search('FROM .* [aA][sS] ' + image + '$', str(line))
-						if result is not None:
-							startOfTargetImageCreation = True
-						if startOfTargetImageCreation:
-							result = re.search('Successfully tagged ' + image + ':', str(line))
-							if result is not None:
-								buildStatus = True
-							result = re.search('COMMIT ' + image + ':', str(line))
-							if result is not None:
-								buildStatus = True
-					inputfile.close()
-					if buildStatus:
-						errorandwarnings['errors'] = 0
-					else:
-						errorandwarnings['errors'] = 1
-					errorandwarnings['warnings'] = 0
-					errorandwarnings['status'] = buildStatus
-					files['Target Image Creation'] = errorandwarnings
-			self.collectInfo[image] = files
+		# create a zip with all logs
+		build_log_name = f'build_log_{self.testCase_id}'
+		CopyLogsToExecutor(mySSH, lSourcePath, build_log_name, lIpAddr, lUserName, lPassWord)
+		mySSH.close()
+
+		# Analyze the logs
+		collectInfo = AnalyzeBuildLogs(build_log_name, attemptedImages, status)
 		
 		if status:
 			logging.info('\u001B[1m Building OAI Image(s) Pass\u001B[0m')
 			HTML.CreateHtmlTestRow(self.imageKind, 'OK', CONST.ALL_PROCESSES_OK)
-			HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
+			HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
 		else:
 			logging.error('\u001B[1m Building OAI Images Failed\u001B[0m')
 			HTML.CreateHtmlTestRow(self.imageKind, 'KO', CONST.ALL_PROCESSES_OK)
-			HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
+			HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
 			HTML.CreateHtmlTabFooter(False)
 			sys.exit(1)
 
@@ -473,7 +460,7 @@ class Containerize():
 		self.ranCommitID = self.proxyCommit
 		self.ranRepository = 'https://github.com/EpiSci/oai-lte-5g-multi-ue-proxy.git'
 		self.ranAllowMerge = False
-		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 		# to prevent accidentally overwriting data that might be used later
 		self.ranCommitID = oldRanCommidID
 		self.ranRepository = oldRanRepository
@@ -540,16 +527,18 @@ class Containerize():
 		errorandwarnings['warnings'] = 0
 		errorandwarnings['status'] = True
 		files['Target Image Creation'] = errorandwarnings
-		self.collectInfo['proxy'] = files
+		collectInfo = {}
+		collectInfo['proxy'] = files
 		mySSH.command('docker image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
 		result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
+		allImagesSize = {}
 		if result is not None:
 			imageSize = float(result.group('size')) / 1000000
 			logging.debug('\u001B[1m   proxy size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-			self.allImagesSize['proxy'] = str(round(imageSize,1)) + ' Mbytes'
+			allImagesSize['proxy'] = str(round(imageSize,1)) + ' Mbytes'
 		else:
 			logging.debug('proxy size is unknown')
-			self.allImagesSize['proxy'] = 'unknown'
+			allImagesSize['proxy'] = 'unknown'
 
 		# Cleaning any created tmp volume
 		mySSH.command(self.cli + ' volume prune --force || true','\$', 15)
@@ -557,7 +546,7 @@ class Containerize():
 
 		logging.info('\u001B[1m Building L2sim Proxy Image Pass\u001B[0m')
 		HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
-		HTML.CreateHtmlNextTabHeaderTestRow(self.collectInfo, self.allImagesSize)
+		HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
 
 	def Copy_Image_to_Test_Server(self, HTML):
 		imageTag = 'develop'
@@ -652,7 +641,7 @@ class Containerize():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 		
-		self._createWorkspace(mySSH, lPassWord, lSourcePath)
+		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)

@@ -19,12 +19,14 @@
 # *      contact@openairinterface.org
 # */
 #---------------------------------------------------------------------
-#
-apiVersion: v1
+
+apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
-    name: oai-gnb
-    namespace: oai
+    name: oai-lte-ue
+    namespace: oaicicd-ran
+spec:
+    lookupPolicy:
+        local: true
 status:
-    tag: rhel8-latest
-
+    tag: latest

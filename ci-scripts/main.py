@@ -45,6 +45,7 @@ import cls_containerize         #class Containerize for all container-based oper
 import cls_static_code_analysis #class for static code analysis
 import cls_ci_ueinfra			#class defining the multi Ue infrastrucure
 import cls_physim1          #class PhySim for physical simulators deploy and run
+import cls_cluster              # class for building/deploying on cluster
 
 import sshconnection 
 import epc
@@ -102,20 +103,17 @@ def AssignParams(params_dict):
 
 
 def GetParametersFromXML(action):
-	if action == 'Build_eNB' or action == 'Build_Image' or action == 'Build_Proxy':
+	if action == 'Build_eNB' or action == 'Build_Image' or action == 'Build_Proxy' or action == "Build_Cluster_Image":
 		RAN.Build_eNB_args=test.findtext('Build_eNB_args')
 		CONTAINERS.imageKind=test.findtext('kind')
 		forced_workspace_cleanup = test.findtext('forced_workspace_cleanup')
-		if (forced_workspace_cleanup is None):
-			RAN.Build_eNB_forced_workspace_cleanup=False
-			CONTAINERS.forcedWorkspaceCleanup=False
-		else:
-			if re.match('true', forced_workspace_cleanup, re.IGNORECASE):
-				RAN.Build_eNB_forced_workspace_cleanup=True
-				CONTAINERS.forcedWorkspaceCleanup=True
-			else:
-				RAN.Build_eNB_forced_workspace_cleanup=True
-				CONTAINERS.forcedWorkspaceCleanup=False
+		RAN.Build_eNB_forced_workspace_cleanup=False
+		CONTAINERS.forcedWorkspaceCleanup=False
+		CLUSTER.forcedWorkspaceCleanup = False
+		if forced_workspace_cleanup is not None and re.match('true', forced_workspace_cleanup, re.IGNORECASE):
+			RAN.Build_eNB_forced_workspace_cleanup = True
+			CONTAINERS.forcedWorkspaceCleanup = True
+			CLUSTER.forcedWorkspaceCleanup = True
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
 			RAN.eNB_instance=0
@@ -534,6 +532,7 @@ HTML = cls_oai_html.HTMLManagement()
 CONTAINERS = cls_containerize.Containerize()
 SCA = cls_static_code_analysis.StaticCodeAnalysis()
 PHYSIM = cls_physim1.PhySim()
+CLUSTER = cls_cluster.Cluster()
 
 ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU build
 
@@ -543,7 +542,7 @@ ldpc=cls_physim.PhySim()    #create an instance for LDPC test using GPU or CPU b
 #-----------------------------------------------------------
 
 import args_parse
-py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA,PHYSIM)
+py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA,PHYSIM,CLUSTER)
 
 
 
@@ -930,6 +929,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Run_NRulsimTest':
 					HTML=ldpc.Run_NRulsimTest(HTML,CONST,id)
 					if ldpc.exitStatus==1:
+						RAN.prematureExit = True
+				elif action == 'Build_Cluster_Image':
+					if not CLUSTER.BuildClusterImage(HTML):
 						RAN.prematureExit = True
 				elif action == 'Build_Image':
 					CONTAINERS.BuildImage(HTML)

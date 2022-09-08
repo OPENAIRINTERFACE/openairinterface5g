@@ -115,30 +115,6 @@ class PhySim:
 				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		else:
 			imageTag = "develop"
-		# Check if image is exist on the Red Hat server, before pushing it to OC cluster
-		mySSH.command('sudo podman image inspect --format="Size = {{.Size}} bytes" oai-physim:' + imageTag, '\$', 60)
-		if mySSH.getBefore().count('no such image') != 0:
-			logging.error('\u001B[1m No such image oai-physim\u001B[0m')
-			mySSH.close()
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.PHYSIM_IMAGE_ABSENT)
-			RAN.prematureExit = True
-			return
-		else:
-			result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', mySSH.getBefore())
-			if result is not None:
-				imageSize = float(result.group('size'))
-				imageSize = imageSize / 1000
-				if imageSize < 1000:
-					logging.debug('\u001B[1m   oai-physim size is ' + ('%.0f' % imageSize) + ' kbytes\u001B[0m')
-				else:
-					imageSize = imageSize / 1000
-					if imageSize < 1000:
-						logging.debug('\u001B[1m   oai-physim size is ' + ('%.0f' % imageSize) + ' Mbytes\u001B[0m')
-					else:
-						imageSize = imageSize / 1000
-						logging.debug('\u001B[1m   oai-physim is ' + ('%.3f' % imageSize) + ' Gbytes\u001B[0m')
-			else:
-				logging.debug('oai-physim size is unknown')
 
 		# logging to OC Cluster and then switch to corresponding project
 		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword} --server https://api.oai.cs.eurecom.fr:6443', '\$', 30)
@@ -161,46 +137,7 @@ class PhySim:
 		else:
 			logging.debug(f'\u001B[1m   Now using project {ocProjectName}\u001B[0m')
 
-		# Tag the image and push to the OC cluster
-		mySSH.command('oc whoami -t | sudo podman login -u ' + ocUserName + ' --password-stdin https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/ --tls-verify=false', '\$', 30)
-		if mySSH.getBefore().count('Login Succeeded!') == 0:
-			logging.error('\u001B[1m Podman Login to OC Cluster Registry Failed\u001B[0m')
-			mySSH.command('oc logout', '\$', 30)
-			mySSH.close()
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
-			RAN.prematureExit = True
-			return
-		else:
-			logging.debug('\u001B[1m Podman Login to OC Cluster Registry Successfully\u001B[0m')
-		time.sleep(2)
-		mySSH.command('oc create -f openshift/oai-physim-image-stream.yml || true', '\$', 30)
-		if mySSH.getBefore().count('(AlreadyExists):') == 0 and mySSH.getBefore().count('created') == 0:
-			logging.error(f'\u001B[1m Image Stream "oai-physim" Creation Failed on OC Cluster {ocProjectName}\u001B[0m')
-			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
-			mySSH.command('oc logout', '\$', 30)
-			mySSH.close()
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_IS_FAIL)
-			RAN.prematureExit = True
-			return
-		else:
-			logging.debug(f'\u001B[1m   Image Stream "oai-physim" created on OC project {ocProjectName}\u001B[0m')
-		time.sleep(2)
-		mySSH.command(f'sudo podman tag oai-physim:{imageTag} default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 30)
-		time.sleep(2)
-		mySSH.command(f'sudo podman push default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag} --tls-verify=false', '\$', 180)
-		if mySSH.getBefore().count('Storing signatures') == 0:
-			logging.error('\u001B[1m Image "oai-physim" push to OC Cluster Registry Failed\u001B[0m')
-			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
-			mySSH.command('oc logout', '\$', 30)
-			mySSH.close()
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_IS_FAIL)
-			RAN.prematureExit = True
-			return
-		else:
-			logging.debug('\u001B[1m Image "oai-physim" push to OC Cluster Registry Successfully\u001B[0m')
-
 		# Using helm charts deployment
-		time.sleep(5)
 		mySSH.command(f'grep -rl OAICICD_PROJECT ./charts/ | xargs sed -i -e "s#OAICICD_PROJECT#{ocProjectName}#"', '\$', 30)
 		mySSH.command(f'sed -i -e "s#TAG#{imageTag}#g" ./charts/physims/values.yaml', '\$', 6)
 		mySSH.command('helm install physim ./charts/physims/ 2>&1 | tee -a cmake_targets/log/physim_helm_summary.txt', '\$', 30)
@@ -213,9 +150,6 @@ class PhySim:
 				mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
 				if re.search('No resources found', mySSH.getBefore()):
 					isFinished1 = True
-			mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 30)
-			mySSH.command('oc delete is oai-physim', '\$', 30)
-			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
 			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
 			self.AnalyzeLogFile_phySim(HTML)
@@ -244,9 +178,6 @@ class PhySim:
 				mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
 				if re.search('No resources found', mySSH.getBefore()):
 					isFinished1 = True
-			mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
-			mySSH.command('oc delete is oai-physim', '\$', 6)
-			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
 			mySSH.command('oc logout', '\$', 30)
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PHYSIM_DEPLOY_FAIL)
 			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
@@ -304,10 +235,6 @@ class PhySim:
 				isFinished1 = True
 		if isFinished1 == True:
 			logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
-		mySSH.command(f'sudo podman rmi default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/{self.OCProjectName}/oai-physim:{imageTag}', '\$', 6)
-		mySSH.command('oc delete is oai-physim', '\$', 6)
-		logging.debug('\u001B[1m Deleted the Image and ImageStream\u001B[0m')
-		mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
 		self.AnalyzeLogFile_phySim(HTML)
