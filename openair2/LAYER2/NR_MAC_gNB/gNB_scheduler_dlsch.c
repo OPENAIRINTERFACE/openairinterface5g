@@ -1071,6 +1071,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcsTableIdx,
                                                                          bw_tbslbrm,
                                                                          nl_tbslbrm);
+    pdsch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
 
     NR_PDSCH_Config_t *pdsch_Config = current_BWP->pdsch_Config;
 

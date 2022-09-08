@@ -394,6 +394,7 @@ typedef struct NR_pusch_semi_static_t {
 typedef struct NR_sched_pusch {
   int frame;
   int slot;
+  int mu;
 
   /// RB allocation within active uBWP
   uint16_t rbSize;

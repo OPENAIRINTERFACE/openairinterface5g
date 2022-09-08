@@ -3498,6 +3498,15 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
   }
 }
 
+uint8_t get_BG(uint32_t A, uint16_t R) {
+
+  float code_rate = (float) R / 10240.0f;
+  if ((A <=292) || ((A<=3824) && (code_rate <= 0.6667)) || code_rate <= 0.25)
+    return 2;
+  else
+    return 1;
+}
+
 uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti) {
 
   if(ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common)

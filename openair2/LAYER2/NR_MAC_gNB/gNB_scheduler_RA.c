@@ -1057,6 +1057,8 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
 
     pusch_pdu->mcs_index = mcsindex;
     pusch_pdu->pusch_data.tb_size = TBS;
+    pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
+
   }
 }
 
@@ -1322,6 +1324,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
                                                                                bw_tbslbrm,
                                                                                1);
+    pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
 
     // Fill PDCCH DL DCI PDU
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
@@ -1703,6 +1706,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
                                                                                bw_tbslbrm,
                                                                                1);
+    pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(harq->tb_size<<3,R);
 
     pdsch_pdu_rel15->precodingAndBeamforming.num_prgs=1;
     pdsch_pdu_rel15->precodingAndBeamforming.prg_size=275;

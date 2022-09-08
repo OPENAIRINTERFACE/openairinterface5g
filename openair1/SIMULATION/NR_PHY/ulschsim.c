@@ -472,6 +472,7 @@ int main(int argc, char **argv)
   rel15_ul->nrOfLayers          = Nl;
   rel15_ul->target_code_rate    = code_rate;
   rel15_ul->pusch_data.tb_size  = TBS>>3;
+  rel15_ul->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS, code_rate);
   ///////////////////////////////////////////////////
 
   double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc

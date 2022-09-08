@@ -119,6 +119,7 @@ typedef struct physicalcellgroup_s{
   long        RNTI_Value[MAX_NUM_CCs];
 }physicalcellgroup_t;
 
+void set_phr_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig);
 uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc);
 void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
                         int bwp_id,
