@@ -140,6 +140,12 @@ services:
             - DISCOVER_UPF=yes
             - USE_FQDN_DNS=yes
             - DNN_NI0=oai
+            - TYPE0=IPv4
+            - DNN_RANGE0=12.1.1.2 - 12.1.1.127
+            - NSSAI_SST0=1
+            - NSSAI_SD0=0xFFFFFF
+            - SESSION_AMBR_UL0=200Mbps
+            - SESSION_AMBR_DL0=400Mbps
             - DNN_NI2=oai.ipv4
         depends_on:
             - oai-nrf
