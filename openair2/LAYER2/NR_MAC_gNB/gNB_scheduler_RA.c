@@ -636,7 +636,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
-    ra->beam_id = beam_index;
+    ra->beam_id = cc->ssb_index[beam_index];
 
     LOG_I(NR_MAC,
           "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB, new rnti %04x "
@@ -647,7 +647,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           ra->Msg2_frame,
           ra->Msg2_slot,
           ra->RA_rnti,
-    ra->rnti,
+          ra->rnti,
           cc->ssb_index[beam_index],
           i);
 
