@@ -477,19 +477,18 @@ process_wait_list_head:
        * if fully acked
        */
       if (sn_compare_tx(entity, cur_wait_list->sdu->sn, ack_sn) < 0) {
-        nr_rlc_sdu_segment_t *cur = cur_wait_list;
-        int upper_layer_id = cur->sdu->upper_layer_id;
-        int sdu_size = cur->sdu->size;
-        cur_wait_list = cur_wait_list->next;
-        prev_wait_list->next = cur_wait_list;
+        int upper_layer_id = cur_wait_list->sdu->upper_layer_id;
+        int sdu_size = cur_wait_list->sdu->size;
+        prev_wait_list->next = cur_wait_list->next;
         if (cur_wait_list == entity->wait_end)
           end_wait_list = prev_wait_list;
-        if (nr_rlc_free_sdu_segment(cur)) {
+        if (nr_rlc_free_sdu_segment(cur_wait_list)) {
           entity->tx_size -= sdu_size;
           entity->common.sdu_successful_delivery(
               entity->common.sdu_successful_delivery_data,
               (nr_rlc_entity_t *)entity, upper_layer_id);
         }
+        cur_wait_list = prev_wait_list->next;
         goto process_next_pdu;
       }
 
@@ -598,19 +597,18 @@ nacks_done:
     /* current segment is acked, free it, indicate successful delivery
      * if fully acked
      */
-    nr_rlc_sdu_segment_t *cur = cur_wait_list;
-    int upper_layer_id = cur->sdu->upper_layer_id;
-    int sdu_size = cur->sdu->size;
+    int upper_layer_id = cur_wait_list->sdu->upper_layer_id;
+    int sdu_size = cur_wait_list->sdu->size;
     prev_wait_list->next = cur_wait_list->next;
     if (cur_wait_list == entity->wait_end)
       end_wait_list = prev_wait_list;
-    cur_wait_list = cur_wait_list->next;
-    if (nr_rlc_free_sdu_segment(cur)) {
+    if (nr_rlc_free_sdu_segment(cur_wait_list)) {
       entity->tx_size -= sdu_size;
       entity->common.sdu_successful_delivery(
           entity->common.sdu_successful_delivery_data,
           (nr_rlc_entity_t *)entity, upper_layer_id);
     }
+    cur_wait_list = prev_wait_list->next;
   }
   /* deal with retransmit list */
   while (cur_retransmit_list != NULL
