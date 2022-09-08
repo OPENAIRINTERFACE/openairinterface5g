@@ -782,15 +782,15 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                                                    dlsch0->harq_processes[harq_pid]->Qm,
                                                    dlsch0->harq_processes[harq_pid]->Nl);
 
-      start_meas(&ue->dlsch_unscrambling_stats);
-      nr_dlsch_unscrambling(pdsch_vars->llr[0],
-                            dlsch0->harq_processes[harq_pid]->G,
-                            0,
-                            ue->frame_parms.Nid_cell,
-                            dlsch0->rnti);
+    start_meas(&ue->dlsch_unscrambling_stats);
+    nr_dlsch_unscrambling(pdsch_vars->llr[0],
+                          dlsch0->harq_processes[harq_pid]->G,
+                          0,
+                          ue->frame_parms.Nid_cell,
+                          dlsch0->rnti);
       
 
-      stop_meas(&ue->dlsch_unscrambling_stats);
+    stop_meas(&ue->dlsch_unscrambling_stats);
 
 
 #if 0
@@ -805,7 +805,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #endif
 
 
-   start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
+    start_meas(&ue->dlsch_decoding_stats[proc->thread_id]);
 
     ret = nr_dlsch_decoding(ue,
                             proc,

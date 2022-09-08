@@ -403,7 +403,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
 
   if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",
+          frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
   //----------------------------------------------------------
   //--------------------- channel compensation ---------------
@@ -428,7 +429,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 measurements); // log2_maxh+I0_shift
     stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
     if (cpumeas(CPUMEAS_GETSTATE))
-      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n", frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",
+            frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
     start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
 
@@ -464,7 +466,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   dl_ch_mag_ptr = pdsch_vars[gNB_id_i]->dl_ch_mag0;
   
   if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine and zero forcing %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine and zero forcing %5.2f \n",
+          frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
   start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
   /* Store the valid DL RE's */
@@ -544,7 +547,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   
   stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
   if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",
+          frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
   
   // Please keep it: useful for debugging
 #ifdef DEBUG_PDSCH_RX
@@ -635,21 +639,21 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 //==============================================================================================
 
 void nr_dlsch_channel_compensation(int **rxdataF_ext,
-                                int **dl_ch_estimates_ext,
-                                int **dl_ch_mag,
-                                int **dl_ch_magb,
-                                int **dl_ch_magr,
-                                int **rxdataF_comp,
-                                int ***rho,
-                                NR_DL_FRAME_PARMS *frame_parms,
-                                uint8_t nb_aatx,
-                                unsigned char symbol,
-                                int length,
-                                uint8_t first_symbol_flag,
-                                unsigned char mod_order,
-                                unsigned short nb_rb,
-                                unsigned char output_shift,
-                                PHY_NR_MEASUREMENTS *measurements)
+                                   int **dl_ch_estimates_ext,
+                                   int **dl_ch_mag,
+                                   int **dl_ch_magb,
+                                   int **dl_ch_magr,
+                                   int **rxdataF_comp,
+                                   int ***rho,
+                                   NR_DL_FRAME_PARMS *frame_parms,
+                                   uint8_t nb_aatx,
+                                   unsigned char symbol,
+                                   int length,
+                                   uint8_t first_symbol_flag,
+                                   unsigned char mod_order,
+                                   unsigned short nb_rb,
+                                   unsigned char output_shift,
+                                   PHY_NR_MEASUREMENTS *measurements)
 {
 
 #if defined(__i386) || defined(__x86_64)
@@ -1647,7 +1651,6 @@ void nr_dlsch_extract_rbs(int **rxdataF,
           } else {
             int neg_length = frame_parms->ofdm_symbol_size - start_re;
             int pos_length = nb_rb_pdsch * NR_NB_SC_PER_RB - neg_length;
-
             memcpy(rxF_ext, &rxF[start_re], neg_length * sizeof(int32_t));
             memcpy(&rxF_ext[neg_length], rxF, pos_length * sizeof(int32_t));
           }
