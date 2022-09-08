@@ -458,18 +458,18 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // slot and frame limit to transmit msg2 according to response window
   uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
-  uint16_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
+  uint16_t frame_limit = rach_frame + (rach_slot + slot_window)/nr_slots_per_frame[mu];
 
   // computing start of next period
-
-  int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
-
   uint8_t start_next_period = rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot;
   int eff_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
+
   // we can't schedule msg2 before sl_ahead since prach
   while ((eff_slot-rach_slot)<=sl_ahead) {
     eff_slot += tdd_period_slot;
   }
+
+  int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
   if (FR==nr_FR2) {
     int num_tdd_period = (eff_slot%nr_slots_per_frame[mu])/tdd_period_slot;
     while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
@@ -480,8 +480,9 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
       tdd_beam_association[num_tdd_period] = beam_index;
   }
 
-  *msg2_frame=(rach_frame + eff_slot/nr_slots_per_frame[mu])%1024;
-  *msg2_slot=eff_slot%nr_slots_per_frame[mu];
+  *msg2_frame = rach_frame + eff_slot / nr_slots_per_frame[mu];
+  *msg2_slot = eff_slot % nr_slots_per_frame[mu];
+
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
   while (*msg2_frame > frame_limit
@@ -490,10 +491,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
     if((frame_type == FDD) || ((*msg2_slot%tdd_period_slot) > 0)) {
       if (*msg2_slot==0) {
-        if(*msg2_frame != 0)
-          (*msg2_frame)--;
-        else
-          *msg2_frame = 1023;
+        (*msg2_frame)--;
         *msg2_slot = nr_slots_per_frame[mu] - 1;
       }
       else
@@ -502,6 +500,9 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
     else
       AssertFatal(1==0,"No available DL slot to schedule msg2 has been found");
   }
+
+  // calculate frame number considering wrap-around
+  *msg2_frame = *msg2_frame % 1024;
 }
 
 
@@ -1677,7 +1678,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->NrOfCodewords = 1;
     int R = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
     pdsch_pdu_rel15->targetCodeRate[0] = R;
-    pdsch_pdu_rel15->qamModOrder[0] = 2;
+    int Qm = nr_get_Qm_dl(mcsIndex, mcsTableIdx);
+    pdsch_pdu_rel15->qamModOrder[0] = Qm;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
     pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[harq->round%4];

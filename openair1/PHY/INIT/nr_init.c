@@ -917,7 +917,11 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
 
   nr_init_frame_parms(gNB_config, fp);
+
   fp->ofdm_offset_divisor = UINT_MAX;
+  init_symbol_rotation(fp);
+  init_timeshift_rotation(fp);
+
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
 }
