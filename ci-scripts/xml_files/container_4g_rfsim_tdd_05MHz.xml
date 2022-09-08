@@ -24,7 +24,7 @@
         <htmlTabRef>rfsim-4glte-tdd05mhz</htmlTabRef>
         <htmlTabName>Monolithic eNB - TDD 05MHz</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
-		<repeatCount>2</repeatCount>
+		<repeatCount>1</repeatCount>
         <TestCaseRequestedList>
  100011
  000011

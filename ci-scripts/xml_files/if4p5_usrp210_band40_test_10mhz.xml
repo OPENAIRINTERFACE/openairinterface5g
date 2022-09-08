@@ -24,7 +24,7 @@
 	<htmlTabRef>test-10</htmlTabRef>
 	<htmlTabName>Test-10MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>2</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestUnstable>True</TestUnstable>
 	<TestMinId>040612</TestMinId>
 	<TestCaseRequestedList>

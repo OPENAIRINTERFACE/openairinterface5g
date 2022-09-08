@@ -25,7 +25,7 @@
 	<htmlTabRef>test-x2-ho-05-tm1</htmlTabRef>
 	<htmlTabName>Test-X2-HO-FDD-05MHz-TM1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>2</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestUnstable>True</TestUnstable>
 	<TestCaseRequestedList>
  030201 030202
