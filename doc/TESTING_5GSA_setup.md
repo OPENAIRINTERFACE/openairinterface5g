@@ -68,21 +68,7 @@ In the following, we highlight the fields of the file that have to be configured
 ```bash
     // Tracking area code, 0x0000 and 0xfffe are reserved values
     tracking_area_code  =  1;
-    plmn_list = ({
-			 mcc = 208;
-			 mnc = 99;
-			 mnc_length = 2;
-			 snssaiList = (
-			 {
-				sst = 1;
-				sd  = 0x1; // 0 false, else true
-			 },
-			 {
-				 sst = 1;
-				 sd  = 0x112233; // 0 false, else true
-			 }
-			);
-		});
+    plmn_list = ({ mcc = 208; mnc = 99; mnc_length = 2; snssaiList = ({ sst = 1 }) });
 ```
 Then, the source and destination IP interfaces for the communication with
 the Core Network also need to be set as shown below.
