@@ -827,7 +827,6 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     const NR_SIB1_t *sib1 = cc->sib1 ? cc->sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
     config_uldci(sib1,
                  scc,
-                 NULL,
                  pusch_pdu,
                  &uldci_payload,
                  NULL,

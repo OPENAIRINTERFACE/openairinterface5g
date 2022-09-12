@@ -2171,7 +2171,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
 
     config_uldci(sib1,
                  scc,
-                 cg,
                  pusch_pdu,
                  &uldci_payload,
                  &ps->srs_feedback,
