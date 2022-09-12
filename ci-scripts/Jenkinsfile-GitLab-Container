@@ -136,16 +136,16 @@ pipeline {
             }
           }
         }
-        stage ("RHEL8 Build") {
+        stage ("RHEL8-Cluster-Image-Builder") {
           steps {
             script {
-              triggerSlaveJob ('RAN-RHEL8-Image-Builder', 'RHEL8-Images-Build')
+              triggerSlaveJob ('RAN-RHEL8-Cluster-Image-Builder', 'RHEL8-Cluster-Image-Builder')
             }
           }
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-RHEL8-Image-Builder')
+                finalizeSlaveJob('RAN-RHEL8-Cluster-Image-Builder')
               }
             }
             failure {

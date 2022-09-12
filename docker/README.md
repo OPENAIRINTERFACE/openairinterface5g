@@ -78,9 +78,7 @@ The currently-supported OS are:
 
 The currently-supported cluster version is:
 
-- `rhel8.2.oc4-4`
-
-We have also `rhel7.oc4-4` support but it will be discontinued soon.
+- `rhel8.2.oc4-9`
 
 For more details in build within a Openshift Cluster, see [OpenShift README](../openshift/README.md) for more details.
 

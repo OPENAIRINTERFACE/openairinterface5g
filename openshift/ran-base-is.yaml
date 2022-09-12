@@ -18,31 +18,14 @@
 # * For more information about the OpenAirInterface (OAI) Software Alliance:
 # *      contact@openairinterface.org
 # */
-#---------------------------------------------------------------------
-#
-kind: BuildConfig
-apiVersion: build.openshift.io/v1
+
+apiVersion: image.openshift.io/v1
+kind: ImageStream
 metadata:
-  name: "oai-nr-ue-rh8-build-config"
+    name: ran-base
+    namespace: oaicicd-ran
 spec:
-    runPolicy: "Serial"
-    source:
-        #still needed for the target image
-        git:
-            uri: "https://gitlab.eurecom.fr/oai/openairinterface5g.git"
-            ref: "develop"
-            httpProxy: http://proxy.eurecom.fr:8080
-            httpsProxy: https://proxy.eurecom.fr:8080
-    strategy:
-        #using both builder image and target image docker
-        dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.nrUE.rhel8.2.oc4-4"
-    nodeSelector:
-        kubernetes.io/hostname: dedale.5glab.nsa.eurecom.fr
-    resources:
-        requests:
-            ephemeral-storage: "8Gi"
-    output:
-        to:
-            kind: "ImageStreamTag"
-            name: "oai-nr-ue:rhel8-latest"
+  lookupPolicy:
+    local: true
+status:
+    tag: latest

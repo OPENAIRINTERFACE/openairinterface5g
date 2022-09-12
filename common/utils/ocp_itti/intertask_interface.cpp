@@ -171,6 +171,8 @@ extern "C" {
     AssertFatal(epoll_ctl(t->epoll_fd, EPOLL_CTL_ADD, fd, &event) == 0,
                 "epoll_ctl (EPOLL_CTL_ADD) failed for task %s, fd %d: %s!\n",
                 itti_get_task_name(task_id), fd, strerror(errno));
+    eventfd_t sem_counter = 1;
+    AssertFatal ( sizeof(sem_counter) == write(t->sem_fd, &sem_counter, sizeof(sem_counter)), "");
   }
 
   void itti_unsubscribe_event_fd(task_id_t task_id, int fd) {
@@ -274,16 +276,12 @@ extern "C" {
 
     struct epoll_event events[t->nb_fd_epoll];
     // Weird condition to deal with crap legacy itti interface
-    if ( t->nb_fd_epoll == 1 ) {
-      while (t->message_queue.empty()) {
+    if (t->message_queue.empty()) {
+      do {
         itti_get_events_locked(task_id, events, t->nb_fd_epoll);
         pthread_mutex_lock(&t->queue_cond_lock);
       }
-    } else {
-      if (t->message_queue.empty()) {
-        itti_get_events_locked(task_id, events, t->nb_fd_epoll);
-        pthread_mutex_lock(&t->queue_cond_lock);
-      }
+      while (t->message_queue.empty() && t->nb_fd_epoll == 1);
     }
 
     // Legacy design: we return even if we have no message

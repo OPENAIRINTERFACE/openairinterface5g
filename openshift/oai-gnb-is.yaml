@@ -20,11 +20,14 @@
 # */
 #---------------------------------------------------------------------
 #
-apiVersion: v1
+apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
-    name: oai-enb
-    namespace: oai
+    name: oai-gnb
+    namespace: oaicicd-ran
+spec:
+  lookupPolicy:
+    local: true
 status:
-    tag: rhel8-latest
+    tag: latest
 

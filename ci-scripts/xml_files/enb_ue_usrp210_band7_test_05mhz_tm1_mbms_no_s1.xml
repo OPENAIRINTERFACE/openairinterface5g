@@ -24,7 +24,7 @@
 	<htmlTabRef>test-05-tm1-mbms-nos1-tunnel</htmlTabRef>
 	<htmlTabName>Test-05MHz-MBMS-TM1-noS1-tunnel</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>2</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  030201 090109
  030103 000001 090103 000002 040605 000001 090109 030201

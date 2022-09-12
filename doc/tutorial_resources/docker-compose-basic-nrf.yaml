@@ -314,7 +314,7 @@ services:
             - NRF_API_VERSION=v1
             - NRF_FQDN=oai-nrf
             - NSSAI_SST_0=1
-            - NSSAI_SD_0=0x1
+            - NSSAI_SD_0=0xffffff
             - DNN_0=oai
         depends_on:
             - oai-nrf

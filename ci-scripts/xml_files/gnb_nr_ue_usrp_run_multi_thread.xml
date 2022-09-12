@@ -24,7 +24,7 @@
         <htmlTabRef>run-oai-gnb-nr-ue-tx-write-thread</htmlTabRef>
         <htmlTabName>Run-gNB-and-NR-UE-TX-Write-Thread</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
-	<repeatCount>2</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
 090103 000001 090104 000002 090108 090109
 	</TestCaseRequestedList>

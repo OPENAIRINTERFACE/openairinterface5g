@@ -376,6 +376,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   init_nr_prach_tables(839);
   init_symbol_rotation(fp);
+  init_timeshift_rotation(fp);
+
   return 0;
 }
 
