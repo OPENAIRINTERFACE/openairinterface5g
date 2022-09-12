@@ -49,9 +49,17 @@ prs_config = (
 }
 );
 ```
-Find the help string for PRS parameters in `openair2/COMMON/prs_nr_paramdef.h`<br><br>
+To TURN OFF PRS, set `NumPRSResources=0` in gNB `prs_config` section. nrUE config has `Active_gNBs` to specify number of active gNBs transmitting PRS signal simultaneously. Find the help string for PRS parameters in `openair2/COMMON/prs_nr_paramdef.h` <br><br>
 
 # gNB in `phy-test` mode
+Note that `numactl` is only needed if you run on a NUMA architecture with more than 1 CPU. In this case it should be installed on Linux using command `sudo apt-get install -y numactl`
+
+Also check the numa nodes USRP’s are connected to, using the following command:
+
+```cat /sys/class/net/eth_if/device/numa_node```
+
+Where `eth_if` has to be replaced with the name of the network interface the USRP is connected to. 
+In our case the output is 0 and hence we use `numactl --cpunodebind=0 --membind=0`
 
 ## FR1 test
 Open a terminal on the host machine, and execute below command to launch gNB with **X310 USRPs**
@@ -92,6 +100,8 @@ While running gNB and nrUE on the same host machine, `reconfig.raw` and `rbconfi
 
 After this, nrUE can be launched using one of the below commands depending on the test scenario. If UE is NOT able to connect to the gNB, then check the USRP connections or try increasing `--ue-rxgain` in steps of 10dB.  
 
+Also check the instructions on `numactl` in gNB test section as it applies for nrUE execution as well.
+
 ## FR1 test
 Once gNB is up and running, open another terminal and execute below command to launch nrUE with **X310 USRPs**. Make sure to specify `IP_ADDR1` and `IP_ADDR2`(optional) correctly as per USRPs IP address
 
@@ -128,21 +138,32 @@ After successful connection, UE starts estimating channel based on the downlink 
 [PHY]   [gNB 0][rsc 3][Rx 0][sfn 314][slot 32] DL PRS ToA ==> 1 / 1024 samples, peak channel power 15.6 dBm, SNR +4 dB
 ```
 
-At UE side, T tracer is used to dump PRS channel estimates, both in time and frequncy domain. These dumps can be enabled using options `--T_stdout 0` without console prints or `--T_stdout 2` with console prints; in above nrUE launch command.<br><br>
+At UE side, T tracer is used to dump PRS channel estimates, both in time and frequency domain using `UE_PHY_DL_CHANNEL_ESTIMATE` and `UE_PHY_DL_CHANNEL_ESTIMATE_FREQ` respectively. These dumps can be enabled using options `--T_stdout 0` without console prints or `--T_stdout 2` with console prints; in above nrUE launch command.<br><br>
 
 # Recording T tracer dumps
-Once nrUE is launched with `--T_stdout 0 or 2` option, on another terminal following command can be executed to start recording the T tracer dumps for PRS channel estimates
+Once nrUE is launched with `--T_stdout 0 or 2` option, open another terminal. Navigate to T tracer directory ```common/utils/T/tracer/``` and build the T tracer binary using ```make```
 
-```./record -d ../T_messages.txt -on LEGACY_PHY_INFO -on UE_PHY_DL_CHANNEL_ESTIMATE -on UE_PHY_DL_CHANNEL_ESTIMATE_FREQ -o prs_dumps.raw```
+Once the build is successful, execute following command to start recording the PRS channel estimates dumps
+
+```./record -d ../T_messages.txt -on LEGACY_PHY_INFO -on UE_PHY_DL_CHANNEL_ESTIMATE -on UE_PHY_DL_CHANNEL_ESTIMATE_FREQ -o prs_dumps.raw```  
 
 Exit using `Ctrl+C` to stop recording, else it will keep running and take lot of disk space. Generally running it for 1-2 minutes should collect sufficient dumps.<br><br>
 
+
+To check the contents of recorded .raw file, replay it by executing:
+
+```./replay -i prs_dumps.raw```
+
+and textlog it on another terminal with following command:
+
+```./textlog -d ../T_messages.txt -ON -no-gui```<br><br>
+
 # Extracting PRS channel estimates
-Once T tracer dumps are recorded, PRS channel estimates can be extracted from .raw file using bash script `extract_prs_dumps.sh`. In the end, the script will zip all the extracted dumps to `prs_dumps.tgz`
+Once T tracer dumps are recorded, PRS channel estimates can be extracted from .raw file using bash script `extract_prs_dumps.sh` in T tracer directory ```common/utils/T/tracer/```
 
 ```./extract_prs_dumps.sh -g <num_gnb> -n <num_resources> -f <recorded .raw file> -c <count>```
 
-Make sure to check help in running script using -h option: 
+In the end, the script will zip all the extracted dumps to `prs_dumps.tgz`. Make sure to check help in running script using -h option: 
 ```./extract_prs_dumps.sh -h```<br><br>
 
 # Using Matlab/Octave script to visualize PRS channel estimates
