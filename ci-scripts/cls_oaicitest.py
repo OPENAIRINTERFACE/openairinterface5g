@@ -3894,7 +3894,7 @@ class OaiCiTest():
 			logging.debug('UHD Version is: ' + UhdVersion)
 			HTML.UhdVersion[idx]=UhdVersion
 		else:
-			SSH.command('uhd_config_info ----abi-version', '\$', 5)
+			SSH.command('uhd_config_info --abi-version', '\$', 5)
 			result = re.search('ABI version string: (?P<uhd_version>[a-zA-Z0-9\.\-]+)', SSH.getBefore())
 			if result is not None:
 				UhdVersion = result.group('uhd_version')
