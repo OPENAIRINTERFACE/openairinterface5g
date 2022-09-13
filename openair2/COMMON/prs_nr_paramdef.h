@@ -42,7 +42,7 @@
 
 /* Global parameters */
 #define CONFIG_STRING_ACTIVE_GNBs                           "Active_gNBs"
-#define HELP_STRING_ACTIVE_GNBs                             "Number of active gNBs simultaneously transmitting PRS signal to a UE"
+#define HELP_STRING_ACTIVE_GNBs                             "Number of active gNBs simultaneously transmitting PRS signal to a UE\n"
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            PRS configuration          parameters                                                                   */
 /*   optname                                         helpstr            paramflags    XXXptr              defXXXval                type        numelt */
@@ -73,22 +73,22 @@
 #define CONFIG_STRING_PRS_MUTING_BIT_REPETITION             "MutingBitRepetition"
 
 /* Help string for PRS parameters */
-#define HELP_STRING_GNB_ID                                  "gNB index for UE (<= CombSize)"
-#define HELP_STRING_NUM_PRS_RESOURCES                       "Number of PRS resources in a PRS resource set"
-#define HELP_STRING_PRS_RESOURCE_SET_PERIOD_LIST            "[slot period, slot offset] of a PRS resource set"
-#define HELP_STRING_PRS_SYMBOL_START_LIST                   "Starting OFDM symbol of each PRS resource in a PRS resource set"
-#define HELP_STRING_PRS_NUM_SYMBOLS_LIST                    "Number of OFDM symbols in a slot for each PRS resource in a PRS resource set"
-#define HELP_STRING_PRS_NUM_RB                              "Number of PRBs allocated to all PRS resources in a PRS resource set (<= 272 and multiples of 4)"
-#define HELP_STRING_PRS_RB_OFFSET                           "Starting PRB index of all PRS resources in a PRS resource set"
-#define HELP_STRING_PRS_COMB_SIZE                           "RE density of all PRS resources in a PRS resource set (2, 4, 6, 12)"
-#define HELP_STRING_PRS_RE_OFFSET_LIST                      "Starting RE offset in the first OFDM symbol of each PRS resource in a PRS resource set"
-#define HELP_STRING_PRS_RESOURCE_OFFSET_LIST                "Slot offset of each PRS resource defined relative to the slot offset of the PRS resource set (0...511)"
-#define HELP_STRING_PRS_RESOURCE_REPETITION                 "Repetition factor for all PRS resources in resource set (1 /*default*/, 2, 4, 6, 8, 16, 32)"
-#define HELP_STRING_PRS_RESOURCE_TIME_GAP                   "Slot offset between two consecutive repetition indices of all PRS resources in a PRS resource set (1 /*default*/, 2, 4, 6, 8, 16, 32)"
-#define HELP_STRING_PRS_ID_LIST                             "Sequence identity of each PRS resource in a PRS resource set, specified in the range [0, 4095]"
-#define HELP_STRING_PRS_MUTING_PATTERN1_LIST                "Muting bit pattern option-1, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32"
-#define HELP_STRING_PRS_MUTING_PATTERN2_LIST                "Muting bit pattern option-2, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32"
-#define HELP_STRING_PRS_MUTING_BIT_REPETITION               "Muting bit repetition factor, specified as 1, 2, 4, or 8"
+#define HELP_STRING_GNB_ID                                  "gNB index for UE (<= CombSize)\n"
+#define HELP_STRING_NUM_PRS_RESOURCES                       "Number of PRS resources in a PRS resource set\n"
+#define HELP_STRING_PRS_RESOURCE_SET_PERIOD_LIST            "[slot period, slot offset] of a PRS resource set\n"
+#define HELP_STRING_PRS_SYMBOL_START_LIST                   "Starting OFDM symbol of each PRS resource in a PRS resource set\n"
+#define HELP_STRING_PRS_NUM_SYMBOLS_LIST                    "Number of OFDM symbols in a slot for each PRS resource in a PRS resource set\n"
+#define HELP_STRING_PRS_NUM_RB                              "Number of PRBs allocated to all PRS resources in a PRS resource set (<= 272 and multiples of 4)\n"
+#define HELP_STRING_PRS_RB_OFFSET                           "Starting PRB index of all PRS resources in a PRS resource set\n"
+#define HELP_STRING_PRS_COMB_SIZE                           "RE density of all PRS resources in a PRS resource set (2, 4, 6, 12)\n"
+#define HELP_STRING_PRS_RE_OFFSET_LIST                      "Starting RE offset in the first OFDM symbol of each PRS resource in a PRS resource set\n"
+#define HELP_STRING_PRS_RESOURCE_OFFSET_LIST                "Slot offset of each PRS resource defined relative to the slot offset of the PRS resource set (0...511)\n"
+#define HELP_STRING_PRS_RESOURCE_REPETITION                 "Repetition factor for all PRS resources in resource set (1 /*default*/, 2, 4, 6, 8, 16, 32)\n"
+#define HELP_STRING_PRS_RESOURCE_TIME_GAP                   "Slot offset between two consecutive repetition indices of all PRS resources in a PRS resource set (1 /*default*/, 2, 4, 6, 8, 16, 32)\n"
+#define HELP_STRING_PRS_ID_LIST                             "Sequence identity of each PRS resource in a PRS resource set, specified in the range [0, 4095]\n"
+#define HELP_STRING_PRS_MUTING_PATTERN1_LIST                "Muting bit pattern option-1, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32\n"
+#define HELP_STRING_PRS_MUTING_PATTERN2_LIST                "Muting bit pattern option-2, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32\n"
+#define HELP_STRING_PRS_MUTING_BIT_REPETITION               "Muting bit repetition factor, specified as 1, 2, 4, or 8\n"
 
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------*/

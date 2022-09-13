@@ -99,6 +99,8 @@
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 #define CONFIG_HLP_LDPC_OFFLOAD  "enable LDPC offload\n"
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
+#define CONFIG_HLP_TX_SUBDEV     "set the arguments to select tx_subdev (same syntax as in UHD)\n"
+#define CONFIG_HLP_RX_SUBDEV     "set the arguments to select rx_subdev (same syntax as in UHD)\n"
 
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
