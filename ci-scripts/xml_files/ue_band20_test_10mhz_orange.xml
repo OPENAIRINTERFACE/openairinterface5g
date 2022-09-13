@@ -24,7 +24,7 @@
 	<htmlTabRef>test-10mhz-orange</htmlTabRef>
 	<htmlTabName>Test-10Mhz-Orange</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>	
-	<repeatCount>4</repeatCount>	
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  090109
  090110 000001 090109

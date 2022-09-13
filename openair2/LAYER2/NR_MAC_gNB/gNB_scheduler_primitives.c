@@ -214,6 +214,7 @@ uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx)
   return 9;
 }
 
+
 void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
 
   //TODO first basic implementation of dmrs port selection

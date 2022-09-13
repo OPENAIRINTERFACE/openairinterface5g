@@ -17,8 +17,6 @@
 #ifndef __COMMON_UTILS_T_TRACER_PACKET_MAC_LTE__H__
 #define __COMMON_UTILS_T_TRACER_PACKET_MAC_LTE__H__
 
-//#include "ws_symbol_export.h"
-
 /* radioType */
 #define FDD_RADIO 1
 #define TDD_RADIO 2

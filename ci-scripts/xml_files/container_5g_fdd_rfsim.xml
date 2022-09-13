@@ -24,7 +24,7 @@
         <htmlTabRef>rfsim-5gnr-fdd</htmlTabRef>
         <htmlTabName>Monolithic FDD gNB with SDAP</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
-        <repeatCount>4</repeatCount>
+        <repeatCount>1</repeatCount>
         <TestCaseRequestedList>
  100011
  000010

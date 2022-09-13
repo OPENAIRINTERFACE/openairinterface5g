@@ -24,7 +24,7 @@
 	<htmlTabRef>gnb-build-tab</htmlTabRef>
 	<htmlTabName>Build-gNB</htmlTabName>
 	<htmlTabIcon>wrench</htmlTabIcon>
-	<repeatCount>4</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
 010101
 	</TestCaseRequestedList>

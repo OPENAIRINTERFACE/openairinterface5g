@@ -51,3 +51,8 @@ void nr_rlc_bearer_init_ul_spec(struct NR_LogicalChannelConfig *mac_LogicalChann
 int nr_rlc_get_available_tx_space(
   const rnti_t            rntiP,
   const logical_chan_id_t channel_idP);
+
+void nr_rlc_activate_avg_time_to_tx(
+  const rnti_t            rnti,
+  const logical_chan_id_t channel_id,
+  const bool              is_on);

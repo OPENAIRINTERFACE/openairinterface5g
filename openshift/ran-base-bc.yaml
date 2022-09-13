@@ -20,11 +20,29 @@
 # */
 #---------------------------------------------------------------------
 #
-apiVersion: v1
-kind: ImageStream
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
 metadata:
-    name: oai-enb
-    namespace: oai
-status:
-    tag: latest
-
+  name: "ran-base"
+spec:
+    runPolicy: "Serial"
+    source:
+        type: "Binary"
+        secrets:
+          - secret:
+              name: etc-pki-entitlement
+            destinationDir: etc-pki-entitlement
+        configMaps:
+          - configMap:
+              name: rhsm-conf
+            destinationDir: rhsm-conf
+          - configMap:
+              name: rhsm-ca
+            destinationDir: rhsm-ca
+    strategy:
+        dockerStrategy:
+            dockerfilePath: "docker/Dockerfile.base.rhel8.2"
+    output:
+        to:
+            kind: "ImageStreamTag"
+            name: "ran-base:latest"

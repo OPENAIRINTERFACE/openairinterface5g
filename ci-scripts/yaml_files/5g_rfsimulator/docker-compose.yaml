@@ -63,9 +63,9 @@ services:
             - PLMN_SUPPORT_MNC=99
             - PLMN_SUPPORT_TAC=0x0001
             - SST_0=1
-            - SD_0=1
+            - SD_0=0xffffff
             - SST_1=1
-            - SD_1=12
+            - SD_1=1
             - AMF_INTERFACE_NAME_FOR_NGAP=eth0
             - AMF_INTERFACE_NAME_FOR_N11=eth0
             - SMF_INSTANCE_ID_0=1
@@ -140,6 +140,12 @@ services:
             - DISCOVER_UPF=yes
             - USE_FQDN_DNS=yes
             - DNN_NI0=oai
+            - TYPE0=IPv4
+            - DNN_RANGE0=12.1.1.2 - 12.1.1.127
+            - NSSAI_SST0=1
+            - NSSAI_SD0=0xFFFFFF
+            - SESSION_AMBR_UL0=200Mbps
+            - SESSION_AMBR_DL0=400Mbps
             - DNN_NI2=oai.ipv4
         depends_on:
             - oai-nrf
@@ -183,7 +189,7 @@ services:
             - NRF_API_VERSION=v1
             - NRF_FQDN=oai-nrf
             - NSSAI_SST_0=1
-            - NSSAI_SD_0=1
+            - NSSAI_SD_0=0xffffff
             - DNN_0=oai
         depends_on:
             - oai-nrf
@@ -237,8 +243,6 @@ services:
             MNC: '99'
             MNC_LENGTH: 2
             NSSAI_SST: 1
-            NSSAI_SD0: 1
-            NSSAI_SD1: 112233
             AMF_IP_ADDRESS: 192.168.71.132
             GNB_NGA_IF_NAME: eth0
             GNB_NGA_IP_ADDRESS: 192.168.71.140
@@ -266,7 +270,6 @@ services:
             OPC: 'C42449363BBAD02B66D16BC975D77CC1'
             DNN: oai
             NSSAI_SST: 1
-            NSSAI_SD: 1
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --nokrnmod --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-gnb
@@ -290,7 +293,6 @@ services:
             OPC: 'C42449363BBAD02B66D16BC975D77CC1'
             DNN: oai
             NSSAI_SST: 1
-            NSSAI_SD: 1
             USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --nokrnmod --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-gnb

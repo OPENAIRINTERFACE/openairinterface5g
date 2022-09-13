@@ -380,7 +380,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint32_t r;
   uint32_t r_offset;
   uint32_t offset;
-  int kc;
   int E;
   int8_t llrProcBuf[22*384];
   int ret = 0;
@@ -462,8 +461,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, Coderate %f RV %d round %d\n",
         harq_pid, A, G, mcs, n_layers, nb_rb, Qm, Coderate, pusch_pdu->pusch_data.rv_index, harq_process->round);
 
-  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
-    p_decParams->BG = 2;
+  p_decParams->BG = pusch_pdu->maintenance_parms_v3.ldpcBaseGraph;
+  int kc;
+  if (p_decParams->BG == 2){
     kc = 52;
     if (Coderate < 0.3333) {
       p_decParams->R = 15;
@@ -475,7 +475,6 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       p_decParams->R = 23;
     }
   } else {
-    p_decParams->BG = 1;
     kc = 68;
     if (Coderate < 0.6667) {
       p_decParams->R = 13;

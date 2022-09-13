@@ -733,16 +733,20 @@ static void generatePduSessionEstablishRequest(int Mod_id, uicc_t * uicc, as_nas
   mm_msg->uplink_nas_transport.pdusessionid = 10;
   mm_msg->uplink_nas_transport.requesttype = 1;
   size += 3;
-  mm_msg->uplink_nas_transport.snssai.length = 4;
+  const bool has_nssai_sd = uicc->nssai_sd != 0xffffff; // 0xffffff means "no SD", TS 23.003
+  const size_t nssai_len = has_nssai_sd ? 4 : 1;
+  mm_msg->uplink_nas_transport.snssai.length = nssai_len;
   //Fixme: it seems there are a lot of memory errors in this: this value was on the stack, 
   // but pushed  in a itti message to another thread
   // this kind of error seems in many places in 5G NAS
-  mm_msg->uplink_nas_transport.snssai.value=calloc(1,4);
+  mm_msg->uplink_nas_transport.snssai.value = calloc(1, nssai_len);
   mm_msg->uplink_nas_transport.snssai.value[0] = uicc->nssai_sst;
-  mm_msg->uplink_nas_transport.snssai.value[1] = (uicc->nssai_sd>>16)&0xFF;
-  mm_msg->uplink_nas_transport.snssai.value[2] = (uicc->nssai_sd>>8)&0xFF; 
-  mm_msg->uplink_nas_transport.snssai.value[3] = (uicc->nssai_sd)&0xFF;
-  size += (1+1+4);
+  if (has_nssai_sd) {
+    mm_msg->uplink_nas_transport.snssai.value[1] = (uicc->nssai_sd >> 16) & 0xFF;
+    mm_msg->uplink_nas_transport.snssai.value[2] = (uicc->nssai_sd >> 8)  & 0xFF;
+    mm_msg->uplink_nas_transport.snssai.value[3] = (uicc->nssai_sd)       & 0xFF;
+  }
+  size += 1 + 1 + nssai_len;
   int dnnSize=strlen(uicc->dnnStr);
   mm_msg->uplink_nas_transport.dnn.value=calloc(1,dnnSize+1);
   mm_msg->uplink_nas_transport.dnn.length = dnnSize + 1;

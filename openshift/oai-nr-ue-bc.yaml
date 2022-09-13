@@ -23,26 +23,15 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: "oai-gnb-rh8-build-config"
+    name: "oai-nr-ue"
 spec:
     runPolicy: "Serial"
     source:
-        #still needed for the target image
-        git:
-            uri: "https://gitlab.eurecom.fr/oai/openairinterface5g.git"
-            ref: "develop"
-            httpProxy: http://proxy.eurecom.fr:8080
-            httpsProxy: https://proxy.eurecom.fr:8080
+        type: "Binary"
     strategy:
-        #using both builder image and target image docker
         dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.gNB.rhel8.2.oc4-4"
-    nodeSelector:
-        kubernetes.io/hostname: dedale.5glab.nsa.eurecom.fr
-    resources:
-        requests:
-            ephemeral-storage: "15Gi"
+            dockerfilePath: "docker/Dockerfile.nrUE.rhel8.2"
     output:
         to:
             kind: "ImageStreamTag"
-            name: "oai-gnb:rhel8-latest"
+            name: "oai-nr-ue:latest"

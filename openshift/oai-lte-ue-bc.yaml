@@ -20,10 +20,18 @@
 # */
 #---------------------------------------------------------------------
 #
-apiVersion: image.openshift.io/v1
-kind: ImageStream
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
 metadata:
-  name: oai-physim
+    name: "oai-lte-ue"
 spec:
-  lookupPolicy:
-    local: true
+    runPolicy: "Serial"
+    source:
+        type: "Binary"
+    strategy:
+        dockerStrategy:
+            dockerfilePath: "docker/Dockerfile.lteUE.rhel8.2"
+    output:
+        to:
+            kind: "ImageStreamTag"
+            name: "oai-lte-ue:latest"

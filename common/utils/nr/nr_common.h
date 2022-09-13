@@ -56,10 +56,9 @@ typedef enum frequency_range_e {
 } frequency_range_t;
 
 extern const nr_bandentry_t nr_bandtable[];
+
 static inline int get_num_dmrs(uint16_t dmrs_mask ) {
-
   int num_dmrs=0;
-
   for (int i=0;i<16;i++) num_dmrs+=((dmrs_mask>>i)&1);
   return(num_dmrs);
 }

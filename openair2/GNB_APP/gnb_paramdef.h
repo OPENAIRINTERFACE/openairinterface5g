@@ -245,23 +245,24 @@ typedef enum {
 
 #define GNB_CONFIG_STRING_SNSSAI_LIST                   "snssaiList"
 
-#define GNB_CONFIG_STRING_SLICE_SERIVE_TYPE             "sst"
+#define GNB_CONFIG_STRING_SLICE_SERVICE_TYPE            "sst"
 #define GNB_CONFIG_STRING_SLICE_DIFFERENTIATOR          "sd"
 
-#define GNB_SLICE_SERIVE_TYPE_IDX        0
+#define GNB_SLICE_SERVICE_TYPE_IDX       0
 #define GNB_SLICE_DIFFERENTIATOR_IDX     1
 
 #define GNBSNSSAIPARAMS_DESC {                                                                  \
-/*   optname                               helpstr                 paramflags XXXptr     def val          type    numelt */ \
-  {GNB_CONFIG_STRING_SLICE_SERIVE_TYPE,    "slice serive type",            0, uptr:NULL, defuintval:1,    TYPE_UINT, 0},    \
-  {GNB_CONFIG_STRING_SLICE_DIFFERENTIATOR, "slice differentiator",         0, uptr:NULL, defuintval:0,    TYPE_UINT, 0},    \
+/*   optname                               helpstr                 paramflags XXXptr     def val              type    numelt */ \
+  {GNB_CONFIG_STRING_SLICE_SERVICE_TYPE,   "slice service type",           0, uptr:NULL, defuintval:1,        TYPE_UINT, 0},    \
+  {GNB_CONFIG_STRING_SLICE_DIFFERENTIATOR, "slice differentiator",         0, uptr:NULL, defuintval:0xffffff, TYPE_UINT, 0},   \
 }
 
-#define SLICE_SERIVE_TYPE_OKRANGES           {1,2,3,4}
+#define SLICE_SERVICE_TYPE_OKRANGE        {0, 255}
+#define SLICE_DIFFERENTIATOR_TYPE_OKRANGE {0, 0xffffff}
 
 #define SNSSAIPARAMS_CHECK {                                           \
-  { .s1 = { config_check_intval, SLICE_SERIVE_TYPE_OKRANGES, 4 } },             \
-  { .s5 = { NULL } },             \
+  { .s2 = { config_check_intrange, SLICE_SERVICE_TYPE_OKRANGE } },        \
+  { .s2 = { config_check_intrange, SLICE_DIFFERENTIATOR_TYPE_OKRANGE } }, \
 }
 
 /* AMF configuration parameters section name */

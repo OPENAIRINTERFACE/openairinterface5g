@@ -505,8 +505,6 @@ int main( int argc, char **argv ) {
             *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
       }
 
-      init_symbol_rotation(&UE[CC_id]->frame_parms);
-      init_timeshift_rotation(&UE[CC_id]->frame_parms);
       init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);
     }
 

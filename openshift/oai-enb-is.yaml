@@ -19,39 +19,14 @@
 # *      contact@openairinterface.org
 # */
 #---------------------------------------------------------------------
-#
-kind: BuildConfig
-apiVersion: build.openshift.io/v1
+
+apiVersion: image.openshift.io/v1
+kind: ImageStream
 metadata:
-  name: "oai-ran-rhel8-build-config"
+    name: oai-enb
+    namespace: oaicicd-ran
 spec:
-    runPolicy: "Serial"
-    source:
-        git:
-            uri: "https://gitlab.eurecom.fr/oai/openairinterface5g.git"
-            ref: "develop"
-            httpProxy: http://proxy.eurecom.fr:8080
-            httpsProxy: https://proxy.eurecom.fr:8080
-        secrets:
-          - secret:
-              name: etc-pki-entitlement
-            destinationDir: etc-pki-entitlement
-        configMaps:
-          - configMap:
-              name: rhsm-conf
-            destinationDir: rhsm-conf
-          - configMap:
-              name: rhsm-ca
-            destinationDir: rhsm-ca
-    strategy:
-        dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.ran.rhel8.2.oc4-4"
-    nodeSelector:
-        kubernetes.io/hostname: dedale.5glab.nsa.eurecom.fr
-    resources:
-        requests:
-            ephemeral-storage: "5Gi"
-    output:
-        to:
-            kind: "ImageStreamTag"
-            name: "oai-ran:rhel8-latest"
+    lookupPolicy:
+        local: true
+status:
+    tag: latest
