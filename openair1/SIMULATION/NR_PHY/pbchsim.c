@@ -108,14 +108,6 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   return false;
 }
 
-int pack_nr_srs_beamforming_report(void *pMessageBuf, void *pPackedBuf, uint32_t packedBufLen) {
-  return 0;
-}
-
-int pack_nr_srs_normalized_channel_iq_matrix(void *pMessageBuf, void *pPackedBuf, uint32_t packedBufLen) {
-  return 0;
-}
-
 void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
                                int N_RB_DL,
                                int N_RB_UL,
