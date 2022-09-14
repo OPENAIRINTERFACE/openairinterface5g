@@ -41,7 +41,6 @@
 # include "intertask_interface.h"
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
-#   include "gtpv1u_eNB_task.h"
 
 #   include "x2ap_eNB.h"
 #   include "x2ap_messages_types.h"

@@ -911,11 +911,11 @@ static void add_srb(int is_gnb, int rnti, struct NR_SRB_ToAddMod *s,
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
-                       int ciphering_algorithm,
-                       int integrity_algorithm,
-                       unsigned char *ciphering_key,
-                       unsigned char *integrity_key)
+void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
+                int ciphering_algorithm,
+                int integrity_algorithm,
+                unsigned char *ciphering_key,
+                unsigned char *integrity_key)
 {
   nr_pdcp_entity_t *pdcp_drb;
   nr_pdcp_ue_t *ue;
@@ -1038,72 +1038,45 @@ static void add_drb(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
   LOG_I(PDCP, "%s:%s:%d: added DRB for UE RNTI %x\n", __FILE__, __FUNCTION__, __LINE__, rnti);
 }
 
-bool nr_rrc_pdcp_config_asn1_req(const protocol_ctxt_t *const  ctxt_pP,
-                                 NR_SRB_ToAddModList_t  *const srb2add_list,
-                                 NR_DRB_ToAddModList_t  *const drb2add_list,
-                                 NR_DRB_ToReleaseList_t *const drb2release_list,
-                                 const uint8_t                   security_modeP,
-                                 uint8_t                  *const kRRCenc,
-                                 uint8_t                  *const kRRCint,
-                                 uint8_t                  *const kUPenc,
-                                 uint8_t                  *const kUPint,
-                                 LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9,
-                                 rb_id_t                 *const defaultDRB,
-                                 struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
-{
-  int rnti = ctxt_pP->rnti;
-  int i;
-
-  if (//ctxt_pP->enb_flag != 1 ||
-      ctxt_pP->module_id != 0 ||
-      ctxt_pP->instance != 0 ||
-      ctxt_pP->eNB_index != 0 ||
-      //ctxt_pP->configured != 2 ||
-      //srb2add_list == NULL ||
-      //drb2add_list != NULL ||
-      //drb2release_list != NULL ||
-      //security_modeP != 255 ||
-      //kRRCenc != NULL ||
-      //kRRCint != NULL ||
-      //kUPenc != NULL ||
-      pmch_InfoList_r9 != NULL /*||
-      defaultDRB != NULL */) {
-    LOG_I(PDCP,"Releasing DRBs, oops\n");
-    TODO;
-  }
-
+void nr_pdcp_add_srbs(eNB_flag_t enb_flag, rnti_t rnti,
+                   NR_SRB_ToAddModList_t  *const srb2add_list,
+                   const uint8_t security_modeP,
+                   uint8_t  *const kRRCenc,
+                   uint8_t *const  kRRCint) {
   if (srb2add_list != NULL) {
-    for (i = 0; i < srb2add_list->list.count; i++) {
-      add_srb(ctxt_pP->enb_flag,rnti, srb2add_list->list.array[i],
+    for (int i = 0; i < srb2add_list->list.count; i++) {
+      add_srb(enb_flag,rnti, srb2add_list->list.array[i],
               security_modeP & 0x0f, (security_modeP >> 4) & 0x0f,
               kRRCenc, kRRCint);
     }
-  }
+  } else
+    LOG_W(PDCP, "nr_pdcp_add_srbs() with void list\n");
+  if (kRRCenc)
+    free(kRRCenc);
+  if (kRRCint)
+    free(kRRCint);
+}
+
+void nr_pdcp_add_drbs(eNB_flag_t enb_flag, rnti_t rnti,
+                      NR_DRB_ToAddModList_t  *const drb2add_list,
+                      const uint8_t  security_modeP,
+                      uint8_t        *const kUPenc,
+                      uint8_t        *const kUPint,
+                      struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list) {
 
   if (drb2add_list != NULL) {
-    for (i = 0; i < drb2add_list->list.count; i++) {
-      add_drb(ctxt_pP->enb_flag, rnti, drb2add_list->list.array[i],
+    for (int i = 0; i < drb2add_list->list.count; i++) {
+      add_drb(enb_flag, rnti, drb2add_list->list.array[i],
               rlc_bearer2add_list->list.array[i]->rlc_Config,
               security_modeP & 0x0f, (security_modeP >> 4) & 0x0f,
               kUPenc, kUPint);
     }
-  }
-
-  /* update security */
-  if (kRRCint != NULL) {
-    /* todo */
-  }
-  
-  if (drb2release_list != NULL) {
-    // TODO
-  }
-
-  free(kRRCenc);
-  free(kRRCint);
-  free(kUPenc);
-  free(kUPint);
-
-  return 0;
+  } else
+    LOG_W(PDCP, "nr_pdcp_add_drbs() with void list\n");
+  if (kUPenc)
+    free(kUPenc);
+  if (kUPint)
+    free(kUPint);
 }
 
 /* Dummy function due to dependency from LTE libraries */
@@ -1190,21 +1163,14 @@ void nr_DRB_preconfiguration(uint16_t crnti)
   else{
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_NO, crnti, 0, 0,0);
   }
-
-  nr_rrc_pdcp_config_asn1_req(
-    &ctxt,
-    (NR_SRB_ToAddModList_t *) NULL,
-    rbconfig->drb_ToAddModList ,
-    rbconfig->drb_ToReleaseList,
-    0,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    Rlc_Bearer_ToAdd_list);
-
+  
+  nr_pdcp_add_drbs(ctxt.enb_flag, ctxt.rnti,
+                   rbconfig->drb_ToAddModList ,
+                   0,
+                   NULL,
+                   NULL,
+                   Rlc_Bearer_ToAdd_list);
+  
   nr_rrc_rlc_config_asn1_req (&ctxt,
       (NR_SRB_ToAddModList_t *) NULL,
       rbconfig->drb_ToAddModList,

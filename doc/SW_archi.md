@@ -344,7 +344,8 @@ pdcp_config_set_security(): not yet developped
 
 nr_DRB_preconfiguration(): the mac layer calls this for ???
 
-nr_rrc_pdcp_config_asn1_req() adds a UE in pdcp, pdcp_remove_UE() removes it
+nr_pdcp_add_srbs() adds UE SRBs in pdcp, pdcp_remove_UE() removes it
+nr_pdcp_add_drbs() adds UE DRBs in pdcp, pdcp_remove_UE() removes it
 
 # GTP
 Gtp + UDP are two twin threads performing the data plane interface to the core network
