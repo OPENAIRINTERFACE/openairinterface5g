@@ -97,7 +97,7 @@ nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
     LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" RX CREATE_TUNNEL_RESP num tunnels %u \n",
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           create_tunnel_resp_pP->num_tunnels);
-    rnti = create_tunnel_resp_pP->rnti;
+    rnti = create_tunnel_resp_pP->ue_id;
     ue_context_p = rrc_gNB_get_ue_context(
                      RC.nrrrc[ctxt_pP->module_id],
                      ctxt_pP->rnti);

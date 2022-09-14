@@ -85,7 +85,7 @@
 #include "rrc_eNB_M2AP.h"
 
 #include "pdcp.h"
-#include "gtpv1u_eNB_task.h"
+#include "openair3/ocp-gtpu/gtp_itf.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "intertask_interface.h"

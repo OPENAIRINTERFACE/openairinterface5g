@@ -39,8 +39,7 @@
 #include "pdcp.h"
 #include "pdcp_primitives.h"
 
-#include "gtpv1u_eNB_task.h"
-#include "gtpv1u_gNB_task.h"
+#include "openair3/ocp-gtpu/gtp_itf.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "RRC/NR/rrc_gNB_GTPV1U.h"
@@ -530,7 +529,7 @@ rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(
         }
 
         ue_context_p->ue_context.nb_of_pdusessions = NGAP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_pdusessions;
-        create_tunnel_req.rnti                     = ue_context_p->ue_context.rnti;
+        create_tunnel_req.ue_id                     = ue_context_p->ue_context.rnti;
         create_tunnel_req.num_tunnels              = pdu_sessions_done;
 
         ret = gtpv1u_create_ngu_tunnel(
@@ -1012,7 +1011,7 @@ rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     ue_context_p->ue_context.nb_of_pdusessions = NGAP_PDUSESSION_SETUP_REQ(msg_p).nb_pdusessions_tosetup;
     ue_context_p->ue_context.gNB_ue_ngap_id    = NGAP_PDUSESSION_SETUP_REQ(msg_p).gNB_ue_ngap_id;
     ue_context_p->ue_context.amf_ue_ngap_id    = NGAP_PDUSESSION_SETUP_REQ(msg_p).amf_ue_ngap_id;
-    create_tunnel_req.rnti                     = ue_context_p->ue_context.rnti;
+    create_tunnel_req.ue_id                    = ue_context_p->ue_context.rnti;
     create_tunnel_req.num_tunnels              = pdu_sessions_done;
 
     ret = gtpv1u_create_ngu_tunnel(
@@ -1682,7 +1681,7 @@ rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(
       //gtp tunnel delete
       LOG_I(NR_RRC, "gtp tunnel delete \n");
       gtpv1u_gnb_delete_tunnel_req_t req={0};
-      req.rnti = ue_context_p->ue_context.rnti;
+      req.ue_id = ue_context_p->ue_context.rnti;
 
       for(i = 0; i < NB_RB_MAX; i++) {
         if(xid == ue_context_p->ue_context.pduSession[i].xid) {

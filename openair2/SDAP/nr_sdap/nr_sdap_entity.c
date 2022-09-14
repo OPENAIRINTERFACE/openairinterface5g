@@ -175,7 +175,7 @@ static void nr_sdap_rx_entity(nr_sdap_entity_t *entity,
                               int has_sdap,
                               int has_sdapHeader,
                               int pdusession_id,
-                              int rnti,
+                              ue_id_t ue_id,
                               char *buf,
                               int size) {
   /* The offset of the SDAP header, it might be 0 if the has_sdap is not true in the pdcp entity. */
@@ -203,18 +203,18 @@ static void nr_sdap_rx_entity(nr_sdap_entity_t *entity,
     // Pushing SDAP SDU to GTP-U Layer
     MessageDef *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB,
                                                          0,
-                                                         GTPV1U_GNB_TUNNEL_DATA_REQ,
-                                                         sizeof(gtpv1u_gnb_tunnel_data_req_t)
+                                                         GTPV1U_TUNNEL_DATA_REQ,
+                                                         sizeof(gtpv1u_tunnel_data_req_t)
                                                            + size + GTPU_HEADER_OVERHEAD_MAX - offset);
     AssertFatal(message_p != NULL, "OUT OF MEMORY");
-    gtpv1u_gnb_tunnel_data_req_t *req = &GTPV1U_GNB_TUNNEL_DATA_REQ(message_p);
+    gtpv1u_tunnel_data_req_t *req = &GTPV1U_TUNNEL_DATA_REQ(message_p);
     uint8_t *gtpu_buffer_p = (uint8_t *) (req + 1);
     memcpy(gtpu_buffer_p + GTPU_HEADER_OVERHEAD_MAX, buf + offset, size - offset);
     req->buffer        = gtpu_buffer_p;
     req->length        = size - offset;
     req->offset        = GTPU_HEADER_OVERHEAD_MAX;
-    req->rnti          = rnti;
-    req->pdusession_id = pdusession_id;
+    req->ue_id         = ue_id;
+    req->bearer_id     = pdusession_id;
     LOG_D(SDAP, "%s()  sending message to gtp size %d\n", __func__,  size-offset);
     itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
   } else { //nrUE
@@ -250,7 +250,7 @@ static void nr_sdap_rx_entity(nr_sdap_entity_t *entity,
         if(!entity->qfi2drb_table[sdap_hdr->QFI].drb_id && entity->default_drb){
           nr_sdap_ul_hdr_t sdap_ctrl_pdu = entity->sdap_construct_ctrl_pdu(sdap_hdr->QFI);
           rb_id_t sdap_ctrl_pdu_drb = entity->sdap_map_ctrl_pdu(entity, pdcp_entity, SDAP_CTRL_PDU_MAP_DEF_DRB, sdap_hdr->QFI);
-          entity->sdap_submit_ctrl_pdu(rnti, sdap_ctrl_pdu_drb, sdap_ctrl_pdu);
+          entity->sdap_submit_ctrl_pdu(ue_id, sdap_ctrl_pdu_drb, sdap_ctrl_pdu);
         }
 
         /*
@@ -266,7 +266,7 @@ static void nr_sdap_rx_entity(nr_sdap_entity_t *entity,
              has_sdapHeader ){
           nr_sdap_ul_hdr_t sdap_ctrl_pdu = entity->sdap_construct_ctrl_pdu(sdap_hdr->QFI);
           rb_id_t sdap_ctrl_pdu_drb = entity->sdap_map_ctrl_pdu(entity, pdcp_entity, SDAP_CTRL_PDU_MAP_RULE_DRB, sdap_hdr->QFI);
-          entity->sdap_submit_ctrl_pdu(rnti, sdap_ctrl_pdu_drb, sdap_ctrl_pdu);
+          entity->sdap_submit_ctrl_pdu(ue_id, sdap_ctrl_pdu_drb, sdap_ctrl_pdu);
         }
 
         /*

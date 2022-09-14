@@ -28,7 +28,7 @@
     #include "sctp_eNB_task.h"
     #include "x2ap_eNB.h"
     #include "s1ap_eNB.h"
-    #include "gtpv1u_eNB_task.h"
+    #include "openair3/ocp-gtpu/gtp_itf.h"
     #include "m2ap_eNB.h"
     #include "m2ap_MCE.h"
     #include "m3ap_MME.h"

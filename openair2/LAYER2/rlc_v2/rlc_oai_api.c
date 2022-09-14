@@ -431,14 +431,14 @@ rb_found:
       }  else {
 	// Fixme: very dirty workaround of incomplete F1-U implementation
 	instance_t DUuniqInstance=0;
-	MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, 0, GTPV1U_ENB_TUNNEL_DATA_REQ);
-	gtpv1u_enb_tunnel_data_req_t *req=&GTPV1U_ENB_TUNNEL_DATA_REQ(msg);
-	req->buffer=malloc(size);
+	MessageDef *msg = itti_alloc_new_message_sized(TASK_RLC_ENB, 0, GTPV1U_TUNNEL_DATA_REQ, sizeof(gtpv1u_tunnel_data_req_t) + size);
+	gtpv1u_tunnel_data_req_t *req=&GTPV1U_TUNNEL_DATA_REQ(msg);
+	req->buffer=(uint8_t*)(req+1);
 	memcpy(req->buffer,buf,size);
 	req->length=size;
 	req->offset=0;
-	req->rnti=ue->rnti;
-	req->rab_id=rb_id+4;
+	req->ue_id=ue->rnti;
+	req->bearer_id=rb_id+4;
 	LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
 	itti_send_msg_to_task(TASK_GTPV1_U, DUuniqInstance, msg);      
 	return;

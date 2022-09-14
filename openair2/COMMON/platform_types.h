@@ -49,7 +49,7 @@ typedef uint32_t              slot_t;
 typedef uint16_t              module_id_t;
 typedef uint8_t               slice_id_t;
 typedef uint8_t               eNB_index_t;
-typedef uint16_t              ue_id_t;
+typedef uint64_t              ue_id_t;
 typedef int16_t               smodule_id_t;
 typedef long              rb_id_t;
 typedef long              srb_id_t;

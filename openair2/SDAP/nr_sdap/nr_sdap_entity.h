@@ -105,7 +105,7 @@ typedef struct nr_sdap_entity_s {
                     int has_sdap,
                     int has_sdapULheader,
                     int pdusession_id,
-                    int rnti,
+                    ue_id_t ue_id,
                     char *buf,
                     int size);
 

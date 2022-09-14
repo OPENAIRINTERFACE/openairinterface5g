@@ -83,7 +83,7 @@ extern struct msghdr nas_msg_rx;
 
 
 
-#  include "gtpv1u_eNB_task.h"
+#  include "openair3/ocp-gtpu/gtp_itf.h"
 
 extern int gtpv1u_new_data_req( uint8_t  enb_module_idP, rnti_t   ue_rntiP, uint8_t  rab_idP, uint8_t *buffer_pP, uint32_t buf_lenP, uint32_t buf_offsetP);
 uint16_t ue_id_g; // Global variable to identify the ID for each UE. It is updated in main() of lte-uesoftmodem.c

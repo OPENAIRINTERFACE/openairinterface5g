@@ -50,7 +50,7 @@
 
 #include "LTE_UERadioAccessCapabilityInformation.h"
 
-#include "gtpv1u_eNB_task.h"
+#include "openair3/ocp-gtpu/gtp_itf.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 

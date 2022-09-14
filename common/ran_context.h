@@ -43,7 +43,7 @@
 #include "RRC/LTE/defs_NB_IoT.h"
 #include "RRC/LTE/rrc_defs.h"
 #include "RRC/NR/nr_rrc_defs.h"
-#include <openair3/ocp-gtpu/gtpv1u_eNB_task.h>
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 
 typedef struct {

@@ -406,8 +406,9 @@ static void *enb_tun_read_thread(void *_)
   extern int nas_sock_fd[];
   char rx_buf[NL_MAX_PAYLOAD];
   int len;
-  int rnti;
   protocol_ctxt_t ctxt;
+  ue_id_t ue_id;
+  int has_ue;
 
   int rb_id = 1;
   pthread_setname_np( pthread_self(),"enb_tun_read");
@@ -422,10 +423,10 @@ static void *enb_tun_read_thread(void *_)
     LOG_D(PDCP, "%s(): nas_sock_fd read returns len %d\n", __func__, len);
 
     nr_pdcp_manager_lock(nr_pdcp_ue_manager);
-    rnti = nr_pdcp_get_first_rnti(nr_pdcp_ue_manager);
+    has_ue = nr_pdcp_get_first_ue_id(nr_pdcp_ue_manager, &ue_id);
     nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 
-    if (rnti == -1) continue;
+    if (!has_ue) continue;
 
     ctxt.module_id = 0;
     ctxt.enb_flag = 1;
@@ -434,14 +435,13 @@ static void *enb_tun_read_thread(void *_)
     ctxt.subframe = 0;
     ctxt.eNB_index = 0;
     ctxt.brOption = 0;
-
-    ctxt.rnti = rnti;
+    ctxt.rnti = (rnti_t) ue_id;
 
     uint8_t qfi = 7;
     bool rqi = 0;
     int pdusession_id = 10;
 
-    sdap_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
+    sdap_data_req(&ctxt, ue_id, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
                   RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
                   PDCP_TRANSMISSION_MODE_DATA, NULL, NULL, qfi, rqi, pdusession_id);
   }
@@ -454,8 +454,9 @@ static void *ue_tun_read_thread(void *_)
   extern int nas_sock_fd[];
   char rx_buf[NL_MAX_PAYLOAD];
   int len;
-  int rnti;
   protocol_ctxt_t ctxt;
+  ue_id_t ue_id;
+  int has_ue;
 
   int rb_id = 1;
   pthread_setname_np( pthread_self(),"ue_tun_read"); 
@@ -469,10 +470,10 @@ static void *ue_tun_read_thread(void *_)
     LOG_D(PDCP, "%s(): nas_sock_fd read returns len %d\n", __func__, len);
 
     nr_pdcp_manager_lock(nr_pdcp_ue_manager);
-    rnti = nr_pdcp_get_first_rnti(nr_pdcp_ue_manager);
+    has_ue = nr_pdcp_get_first_ue_id(nr_pdcp_ue_manager, &ue_id);
     nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 
-    if (rnti == -1) continue;
+    if (!has_ue) continue;
 
     ctxt.module_id = 0;
     ctxt.enb_flag = 0;
@@ -481,14 +482,13 @@ static void *ue_tun_read_thread(void *_)
     ctxt.subframe = 0;
     ctxt.eNB_index = 0;
     ctxt.brOption = 0;
-
-    ctxt.rnti = rnti;
+    ctxt.rnti = ue_id;
 
     bool dc = SDAP_HDR_UL_DATA_PDU;
     extern uint8_t nas_qfi;
     extern uint8_t nas_pduid;
 
-    sdap_data_req(&ctxt, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
+    sdap_data_req(&ctxt, ue_id, SRB_FLAG_NO, rb_id, RLC_MUI_UNDEFINED,
                   RLC_SDU_CONFIRM_NO, len, (unsigned char *)rx_buf,
                   PDCP_TRANSMISSION_MODE_DATA, NULL, NULL, nas_qfi, dc, nas_pduid);
   }
@@ -621,13 +621,13 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int i;
 
   if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
-    LOG_D(PDCP, "IP packet received with size %d, to be sent to SDAP interface, UE rnti: %d\n", size, ue->rnti);
+    LOG_D(PDCP, "IP packet received with size %d, to be sent to SDAP interface, UE rnti: %d\n", size, (int)ue->ue_id);
     sdap_data_ind(entity->rb_id,
                   entity->is_gnb,
                   entity->has_sdap,
                   entity->has_sdapULheader,
                   entity->pdusession_id,
-                  ue->rnti,
+                  ue->ue_id,
                   buf,
                   size);
   }
@@ -640,7 +640,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
       }
 
       LOG_E(PDCP, "%s:%d:%s: fatal, no RB found for ue %d\n",
-            __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+            __FILE__, __LINE__, __FUNCTION__, (int)ue->ue_id);
       exit(1);
 
     rb_found:
@@ -651,7 +651,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
                     ue->drb[rb_id-1]->has_sdap,
                     ue->drb[rb_id-1]->has_sdapULheader,
                     ue->drb[rb_id-1]->pdusession_id,
-                    ue->rnti,
+                    ue->ue_id,
                     buf,
                     size);
     }
@@ -675,7 +675,7 @@ static void deliver_pdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   }
 
   LOG_E(PDCP, "%s:%d:%s: fatal, no RB found for ue %d\n",
-        __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+        __FILE__, __LINE__, __FUNCTION__, (int)ue->ue_id);
   exit(1);
 
 rb_found:
@@ -687,23 +687,23 @@ rb_found:
   ctxt.eNB_index = 0;
   ctxt.brOption = 0;
 
-  ctxt.rnti = ue->rnti;
+  ctxt.rnti = ue->ue_id;
   if (RC.nrrrc != NULL && NODE_IS_CU(RC.nrrrc[0]->node_type)) {
     MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
-							  GTPV1U_GNB_TUNNEL_DATA_REQ,
-							  sizeof(gtpv1u_gnb_tunnel_data_req_t)
+							  GTPV1U_TUNNEL_DATA_REQ,
+							  sizeof(gtpv1u_tunnel_data_req_t)
 							  + size
 							  + GTPU_HEADER_OVERHEAD_MAX);
     AssertFatal(message_p != NULL, "OUT OF MEMORY");
-    gtpv1u_gnb_tunnel_data_req_t *req=&GTPV1U_GNB_TUNNEL_DATA_REQ(message_p);
+    gtpv1u_tunnel_data_req_t *req=&GTPV1U_TUNNEL_DATA_REQ(message_p);
     uint8_t *gtpu_buffer_p = (uint8_t*)(req+1);
     memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX, 
 	   buf, size);
     req->buffer        = gtpu_buffer_p;
     req->length        = size;
     req->offset        = GTPU_HEADER_OVERHEAD_MAX;
-    req->rnti          = ue->rnti;
-    req->pdusession_id = rb_id;
+    req->ue_id         = ue->ue_id;
+    req->bearer_id = rb_id;
     LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
 	  __func__, rb_id, size);
     extern instance_t CUuniqInstance;
@@ -734,7 +734,7 @@ static void deliver_sdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   }
 
   LOG_E(PDCP, "%s:%d:%s: fatal, no SRB found for ue %d\n",
-	__FILE__, __LINE__, __FUNCTION__, ue->rnti);
+	__FILE__, __LINE__, __FUNCTION__, (int)ue->ue_id);
   exit(1);
 
 srb_found:
@@ -742,7 +742,7 @@ srb_found:
     MessageDef *message_p = itti_alloc_new_message(TASK_PDCP_GNB, 0, F1AP_UL_RRC_MESSAGE);
     AssertFatal(message_p != NULL, "OUT OF MEMORY\n");
     f1ap_ul_rrc_message_t *ul_rrc = &F1AP_UL_RRC_MESSAGE(message_p);
-    ul_rrc->rnti = ue->rnti;
+    ul_rrc->rnti = ue->ue_id;
     ul_rrc->srb_id = srb_id;
     ul_rrc->rrc_container = malloc(size);
     AssertFatal(ul_rrc->rrc_container != NULL, "OUT OF MEMORY\n");
@@ -758,7 +758,7 @@ srb_found:
     NR_RRC_DCCH_DATA_IND(message_p).dcch_index = srb_id;
     NR_RRC_DCCH_DATA_IND(message_p).sdu_p = rrc_buffer_p;
     NR_RRC_DCCH_DATA_IND(message_p).sdu_size = size;
-    NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->rnti;
+    NR_RRC_DCCH_DATA_IND(message_p).rnti = ue->ue_id;
     itti_send_msg_to_task(TASK_RRC_NRUE, 0, message_p);
   }
 }
@@ -780,7 +780,7 @@ static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
   }
 
   LOG_E(PDCP, "%s:%d:%s: fatal, no SRB found for ue %d\n",
-        __FILE__, __LINE__, __FUNCTION__, ue->rnti);
+        __FILE__, __LINE__, __FUNCTION__, (int)ue->ue_id);
   exit(1);
 
 srb_found:
@@ -798,7 +798,7 @@ srb_found:
     ctxt.eNB_index = 0;
     ctxt.brOption = 0;
 
-    ctxt.rnti = ue->rnti;
+    ctxt.rnti = ue->ue_id;
 
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
@@ -813,7 +813,7 @@ srb_found:
     F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
     F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
     F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-    F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue->rnti;
+    F1AP_DL_RRC_MESSAGE (message_p).rnti                 = ue->ue_id;
     F1AP_DL_RRC_MESSAGE (message_p).srb_id               = srb_id;
     F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
     F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;

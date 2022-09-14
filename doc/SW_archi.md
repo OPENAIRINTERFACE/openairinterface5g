@@ -338,7 +338,7 @@ Also, incoming downlink sdu can comme from internal RRC: in this case, pdcp_run(
 
 At Rx side, pdcp_data_ind() is the entry point that receives the data from RLC.
 - Inside pdcp_data_ind(), the pdcp manager mutex protects the access to the PDU receiving function of PDCP (recv_pdu() callback corresponding to nr_pdcp_entity_drb_am_recv_pdu() for DRBs)
-- Then deliver_sdu_drb() function sends the received data to GTP thread through an ITTI message (GTPV1U_ENB_TUNNEL_DATA_REQ).
+- Then deliver_sdu_drb() function sends the received data to GTP thread through an ITTI message (GTPV1U_TUNNEL_DATA_REQ).
 
 pdcp_config_set_security(): not yet developped
 
