@@ -141,18 +141,6 @@ class Cluster:
 	def _retag_image_statement(self, sshSession, oldImage, newImage, newTag, filename):
 		sshSession.command(f'sed -i -e "s#{oldImage}:latest#{newImage}:{newTag}#" {filename}', '\$', 5)
 
-	def _pull_image(self, sshSession, image, tag):
-		sshSession.command(f'oc whoami -t | sudo podman login -u oaicicd --password-stdin https://{self.OCRegistry} --tls-verify=false', '\$', 5, silent=True)
-		if sshSession.getBefore().count('Login Succeeded!') == 0:
-			return None
-		imageName = f'{self.OCRegistry}{self.OCProjectName}/{image}:{tag}'
-		sshSession.command(f'sudo podman pull {imageName} --tls-verify=false', '\$', 300)
-		pullResult = sshSession.getBefore()
-		sshSession.command(f'sudo podman logout https://{self.OCRegistry}', '\$', 10, silent=True)
-		if pullResult.count('Storing signatures') == 0:
-			return None
-		return imageName
-
 	def _get_image_size(self, sshSession, image, tag):
 		# get the SHA of the image we built using the image name and its tag
 		sshSession.command(f'oc describe is {image} | grep -A4 {tag}', '\$', 5)
@@ -216,7 +204,7 @@ class Cluster:
 
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
-			mySSH.command(f'sudo rm -Rf {lSourcePath}', '\$', 15)
+			mySSH.command(f'rm -Rf {lSourcePath}', '\$', 15)
 		cls_containerize.CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
 		# we don't necessarily need a forced workspace cleanup, but in
