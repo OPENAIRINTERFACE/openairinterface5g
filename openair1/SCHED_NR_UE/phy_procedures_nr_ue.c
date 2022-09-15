@@ -545,7 +545,6 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
       dci_ind->dci_list[i].rnti,
       dci_ind->dci_list[i].dci_format);
   }
-  ue->pdcch_vars[proc->thread_id][gNB_id]->dci_received += dci_cnt;
 
   dci_ind->number_of_dcis = dci_cnt;
 

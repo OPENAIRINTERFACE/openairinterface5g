@@ -321,10 +321,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   }
 
   for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
-    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-      ue->pdcch_vars[th_id][gNB_id] = (NR_UE_PDCCH *)malloc16_clear(sizeof(NR_UE_PDCCH));
-    }
-
     prach_vars[gNB_id] = (NR_UE_PRACH *)malloc16_clear(sizeof(NR_UE_PRACH));
     pbch_vars[gNB_id] = (NR_UE_PBCH *)malloc16_clear(sizeof(NR_UE_PBCH));
     csiim_vars[gNB_id] = (NR_UE_CSI_IM *)malloc16_clear(sizeof(NR_UE_CSI_IM));
@@ -451,10 +447,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   }
 
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
-
-    for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-      free_and_zero(ue->pdcch_vars[th_id][gNB_id]);
-    }
 
     for (int i=0; i<NR_MAX_NB_PORTS; i++) {
       free_and_zero(ue->nr_csi_info->csi_rs_generated_signal[i]);
