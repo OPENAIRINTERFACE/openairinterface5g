@@ -482,25 +482,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   if ((A <=292) || ((A <= NR_MAX_PDSCH_TBS) && (Coderate <= 0.6667)) || Coderate <= 0.25) {
     p_decParams->BG = 2;
     kc = 52;
-
-    if (Coderate < 0.3333) {
-      p_decParams->R = 15;
-    } else if (Coderate <0.6667) {
-      p_decParams->R = 13;
-    } else {
-      p_decParams->R = 23;
-    }
   } else {
     p_decParams->BG = 1;
     kc = 68;
-
-    if (Coderate < 0.6667) {
-      p_decParams->R = 13;
-    } else if (Coderate <0.8889) {
-      p_decParams->R = 23;
-    } else {
-      p_decParams->R = 89;
-    }
   }
 
   if (harq_process->first_rx == 1) {
