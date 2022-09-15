@@ -90,14 +90,23 @@ class Cluster:
 		logging.error('error while creating buildconfig: ' + sshSession.getBefore())
 		return False
 
-	def _recreate_is(self, sshSession, name, newTag, filename):
-		sshSession.command(f'sed -i -e "s#tag: *latest#tag: {newTag}#" {filename}', '\$', 5)
-		sshSession.command(f'oc delete -f {filename}', '\$', 5)
-		sshSession.command(f'oc create -f {filename}', '\$', 5)
+	def _recreate_is_tag(self, sshSession, name, newTag, filename):
+		sshSession.command(f'oc describe is {name}', '\$', 5)
+		if sshSession.getBefore().count('NotFound') > 0:
+			sshSession.command(f'oc create -f {filename}', '\$', 5)
+			before = sshSession.getBefore()
+			if re.search(f'imagestream.image.openshift.io/{name} created', before) is None:
+				logging.error('error while creating imagestream: ' + sshSession.getBefore())
+				return False
+		else:
+			logging.debug(f'-> imagestream {name} found')
+		image = f'{name}:{newTag}'
+		sshSession.command(f'oc delete istag {image}', '\$', 5) # we don't care if this fails, e.g., if it is missing
+		sshSession.command(f'oc create istag {image}', '\$', 5)
 		before = sshSession.getBefore()
-		if re.search('imagestream.image.openshift.io/[a-zA-Z\-0-9]+ created', before) is not None:
+		if re.search(f'imagestreamtag.image.openshift.io/{image} created', before) is not None:
 			return True
-		logging.error('error while creating imagestream: ' + sshSession.getBefore())
+		logging.error('error while creating imagestreamtag: ' + sshSession.getBefore())
 		return False
 
 	def _start_build(self, sshSession, name):
@@ -247,7 +256,7 @@ class Cluster:
 		status = True # flag to abandon compiling if any image fails
 		attemptedImages = []
 		if forceBaseImageBuild:
-			self._recreate_is(mySSH, 'ran-base', baseTag, 'openshift/ran-base-is.yaml')
+			self._recreate_is_tag(mySSH, 'ran-base', baseTag, 'openshift/ran-base-is.yaml')
 			self._recreate_bc(mySSH, 'ran-base', baseTag, 'openshift/ran-base-bc.yaml')
 			ranbase_job = self._start_build(mySSH, 'ran-base')
 			attemptedImages += ['ran-base']
@@ -265,13 +274,13 @@ class Cluster:
 				status = False
 
 		if status:
-			self._recreate_is(mySSH, 'oai-physim', imageTag, 'openshift/oai-physim-is.yaml')
+			self._recreate_is_tag(mySSH, 'oai-physim', imageTag, 'openshift/oai-physim-is.yaml')
 			self._recreate_bc(mySSH, 'oai-physim', imageTag, 'openshift/oai-physim-bc.yaml')
 			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.phySim.rhel8.2')
 			physim_job = self._start_build(mySSH, 'oai-physim')
 			attemptedImages += ['oai-physim']
 
-			self._recreate_is(mySSH, 'ran-build', imageTag, 'openshift/ran-build-is.yaml')
+			self._recreate_is_tag(mySSH, 'ran-build', imageTag, 'openshift/ran-build-is.yaml')
 			self._recreate_bc(mySSH, 'ran-build', imageTag, 'openshift/ran-build-bc.yaml')
 			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.build.rhel8.2')
 			ranbuild_job = self._start_build(mySSH, 'ran-build')
@@ -284,28 +293,28 @@ class Cluster:
 			mySSH.command(f'oc logs {physim_job} > cmake_targets/log/oai-physim.log', '\$', 10)
 
 		if status:
-			self._recreate_is(mySSH, 'oai-enb', imageTag, 'openshift/oai-enb-is.yaml')
+			self._recreate_is_tag(mySSH, 'oai-enb', imageTag, 'openshift/oai-enb-is.yaml')
 			self._recreate_bc(mySSH, 'oai-enb', imageTag, 'openshift/oai-enb-bc.yaml')
 			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.eNB.rhel8.2')
 			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.eNB.rhel8.2')
 			enb_job = self._start_build(mySSH, 'oai-enb')
 			attemptedImages += ['oai-enb']
 
-			self._recreate_is(mySSH, 'oai-gnb', imageTag, 'openshift/oai-gnb-is.yaml')
+			self._recreate_is_tag(mySSH, 'oai-gnb', imageTag, 'openshift/oai-gnb-is.yaml')
 			self._recreate_bc(mySSH, 'oai-gnb', imageTag, 'openshift/oai-gnb-bc.yaml')
 			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.rhel8.2')
 			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.gNB.rhel8.2')
 			gnb_job = self._start_build(mySSH, 'oai-gnb')
 			attemptedImages += ['oai-gnb']
 
-			self._recreate_is(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-is.yaml')
+			self._recreate_is_tag(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-is.yaml')
 			self._recreate_bc(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-bc.yaml')
 			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.lteUE.rhel8.2')
 			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.lteUE.rhel8.2')
 			lteue_job = self._start_build(mySSH, 'oai-lte-ue')
 			attemptedImages += ['oai-lte-ue']
 
-			self._recreate_is(mySSH, 'oai-nr-ue', imageTag, 'openshift/oai-nr-ue-is.yaml')
+			self._recreate_is_tag(mySSH, 'oai-nr-ue', imageTag, 'openshift/oai-nr-ue-is.yaml')
 			self._recreate_bc(mySSH, 'oai-nr-ue', imageTag, 'openshift/oai-nr-ue-bc.yaml')
 			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.nrUE.rhel8.2')
 			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.nrUE.rhel8.2')
