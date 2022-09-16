@@ -134,7 +134,7 @@ class Cluster:
 		while timeout_sec > 0:
 			# check status
 			for j in jobs:
-				sshSession.command(f'oc get pods | grep {j}', '\$', 5, silent = True)
+				sshSession.command(f'oc get pods | grep {j}', '\$', 10, silent = True)
 				if sshSession.getBefore().count('Completed') > 0: jobs.remove(j)
 				if sshSession.getBefore().count('Error') > 0:
 					logging.error(f'error for job {j}: ' + sshSession.getBefore())
