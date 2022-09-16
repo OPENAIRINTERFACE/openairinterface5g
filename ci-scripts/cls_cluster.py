@@ -345,6 +345,9 @@ class Cluster:
 				imageSize[image] = f'{sizeMb:.1f} Mbytes (uncompressed: ~{sizeMb*2.5:.1f} Mbytes)'
 			logging.info(f'\u001B[1m{image} size is {imageSize[image]}\u001B[0m')
 
+		grep_exp = "\|".join(attemptedImages)
+		mySSH.command(f'oc get images | grep -e \'{grep_exp}\' > cmake_targets/log/image_registry.log', '\$', 10);
+
 		build_log_name = f'build_log_{self.testCase_id}'
 		cls_containerize.CopyLogsToExecutor(mySSH, lSourcePath, build_log_name, lIpAddr, 'oaicicd', CONST.CI_NO_PASSWORD)
 
