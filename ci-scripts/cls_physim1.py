@@ -173,7 +173,7 @@ class PhySim:
 		else:
 			logging.debug('\u001B[1m Podman Login to OC Cluster Registry Successfully\u001B[0m')
 		time.sleep(2)
-		mySSH.command('oc create -f openshift/oai-physim-is.yml || true', '\$', 30)
+		mySSH.command('oc create -f openshift/oai-physim-is.yaml || true', '\$', 30)
 		if mySSH.getBefore().count('(AlreadyExists):') == 0 and mySSH.getBefore().count('created') == 0:
 			logging.error(f'\u001B[1m Image Stream "oai-physim" Creation Failed on OC Cluster {ocProjectName}\u001B[0m')
 			mySSH.command('sudo podman logout https://default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/', '\$', 6)
