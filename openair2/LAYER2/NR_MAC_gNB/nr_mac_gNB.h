@@ -380,7 +380,6 @@ typedef struct NR_sched_pucch {
 typedef struct NR_pusch_semi_static_t {
   int time_domain_allocation;
   uint8_t nrOfLayers;
-  nr_srs_feedback_t srs_feedback;
   uint8_t num_dmrs_cdm_grps_no_data;
   int startSymbolIndex;
   int nrOfSymbols;
@@ -650,7 +649,7 @@ typedef struct {
   NR_list_t feedback_ul_harq;
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
-  NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
+  NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl; // MAC CE related information
   /// number of active DL LCs
   uint8_t dl_lc_num;
   /// order in which DLSCH scheduler should allocate LCs
@@ -658,6 +657,9 @@ typedef struct {
 
   /// Timer for RRC processing procedures
   uint32_t rrc_processing_timer;
+
+  /// sri, ul_ri and tpmi based on SRS
+  nr_srs_feedback_t srs_feedback;
 } NR_UE_sched_ctrl_t;
 
 typedef struct {

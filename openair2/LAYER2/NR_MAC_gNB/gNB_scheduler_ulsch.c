@@ -1188,14 +1188,17 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix.num_ue_srs_ports = %i\n", nr_srs_normalized_channel_iq_matrix.num_ue_srs_ports);
       LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix.prg_size = %i\n", nr_srs_normalized_channel_iq_matrix.prg_size);
       LOG_I(NR_MAC, "nr_srs_normalized_channel_iq_matrix.num_prgs = %i\n", nr_srs_normalized_channel_iq_matrix.num_prgs);
-      c16_t *channel_matrix16 = (c16_t*)nr_srs_normalized_channel_iq_matrix.channel_matrix;
-      c8_t *channel_matrix8 = (c8_t*)nr_srs_normalized_channel_iq_matrix.channel_matrix;
-      for(int uI = 0; uI < nr_srs_normalized_channel_iq_matrix.num_ue_srs_ports; uI++) {
-        for(int gI = 0; gI < nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements; gI++) {
-          for(int pI = 0; pI < nr_srs_normalized_channel_iq_matrix.num_prgs; pI++) {
-            uint16_t index = uI*nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements*nr_srs_normalized_channel_iq_matrix.num_prgs + gI*nr_srs_normalized_channel_iq_matrix.num_prgs + pI;
-            LOG_I(NR_MAC, "(uI %i, gI %i, pI %i) channel_matrix --> real %i, imag %i\n",
-                  uI, gI, pI,
+      c16_t *channel_matrix16 = (c16_t *)nr_srs_normalized_channel_iq_matrix.channel_matrix;
+      c8_t *channel_matrix8 = (c8_t *)nr_srs_normalized_channel_iq_matrix.channel_matrix;
+      for (int uI = 0; uI < nr_srs_normalized_channel_iq_matrix.num_ue_srs_ports; uI++) {
+        for (int gI = 0; gI < nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements; gI++) {
+          for (int pI = 0; pI < nr_srs_normalized_channel_iq_matrix.num_prgs; pI++) {
+            uint16_t index = uI * nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements * nr_srs_normalized_channel_iq_matrix.num_prgs + gI * nr_srs_normalized_channel_iq_matrix.num_prgs + pI;
+            LOG_I(NR_MAC,
+                  "(uI %i, gI %i, pI %i) channel_matrix --> real %i, imag %i\n",
+                  uI,
+                  gI,
+                  pI,
                   nr_srs_normalized_channel_iq_matrix.normalized_iq_representation == 0 ? channel_matrix8[index].r : channel_matrix16[index].r,
                   nr_srs_normalized_channel_iq_matrix.normalized_iq_representation == 0 ? channel_matrix8[index].i : channel_matrix16[index].i);
           }
@@ -1206,19 +1209,18 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       // TODO: This should be improved
       NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
       NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
-      NR_pusch_semi_static_t *ps = &sched_ctrl->pusch_semi_static;
-      ps->srs_feedback.sri = NR_SRS_SRI_0;
-      ps->srs_feedback.ul_ri = 0; // TODO: Compute this
-      ps->srs_feedback.tpmi = nr_srs_tpmi_estimation(current_BWP->pusch_Config,
-                                                     current_BWP->transform_precoding,
-                                                     nr_srs_normalized_channel_iq_matrix.channel_matrix,
-                                                     nr_srs_normalized_channel_iq_matrix.normalized_iq_representation,
-                                                     nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements,
-                                                     nr_srs_normalized_channel_iq_matrix.num_ue_srs_ports,
-                                                     nr_srs_normalized_channel_iq_matrix.prg_size,
-                                                     nr_srs_normalized_channel_iq_matrix.num_prgs,
-                                                     ps->srs_feedback.ul_ri);
-      sprintf(stats->srs_stats,"UL-RI %d, TPMI %d", ps->srs_feedback.ul_ri+1, ps->srs_feedback.tpmi);
+      sched_ctrl->srs_feedback.sri = NR_SRS_SRI_0;
+      sched_ctrl->srs_feedback.ul_ri = 0; // TODO: Compute this
+      sched_ctrl->srs_feedback.tpmi = nr_srs_tpmi_estimation(current_BWP->pusch_Config,
+                                                             current_BWP->transform_precoding,
+                                                             nr_srs_normalized_channel_iq_matrix.channel_matrix,
+                                                             nr_srs_normalized_channel_iq_matrix.normalized_iq_representation,
+                                                             nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements,
+                                                             nr_srs_normalized_channel_iq_matrix.num_ue_srs_ports,
+                                                             nr_srs_normalized_channel_iq_matrix.prg_size,
+                                                             nr_srs_normalized_channel_iq_matrix.num_prgs,
+                                                             sched_ctrl->srs_feedback.ul_ri);
+      sprintf(stats->srs_stats, "UL-RI %d, TPMI %d", sched_ctrl->srs_feedback.ul_ri + 1, sched_ctrl->srs_feedback.tpmi);
       break;
     }
 
@@ -2266,14 +2268,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
 
-    config_uldci(sib1,
-                 scc,
-                 pusch_pdu,
-                 &uldci_payload,
-                 &ps->srs_feedback,
-                 ps->time_domain_allocation,
-                 UE->UE_sched_ctrl.tpc0,
-                 current_BWP);
+    config_uldci(sib1, scc, pusch_pdu, &uldci_payload, &sched_ctrl->srs_feedback, ps->time_domain_allocation, UE->UE_sched_ctrl.tpc0, current_BWP);
 
     fill_dci_pdu_rel15(scc,
                        cg,
