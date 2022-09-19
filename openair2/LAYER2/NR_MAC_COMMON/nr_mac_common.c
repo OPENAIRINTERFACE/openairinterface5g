@@ -2717,10 +2717,14 @@ uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
     if(srs_config != NULL) {
       for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
         NR_SRS_ResourceSet_t *srs_resource_set = srs_config->srs_ResourceSetToAddModList->list.array[rs];
-        if(srs_resource_set->usage == NR_SRS_ResourceSet__usage_codebook) {
+        // When multiple SRS resources are configured by SRS-ResourceSet with usage set to 'codebook',
+        // the UE shall expect that higher layer parameters nrofSRS-Ports in SRS-Resource in SRS-ResourceSet
+        // shall be configured with the same value for all these SRS resources.
+        if (srs_resource_set->usage == NR_SRS_ResourceSet__usage_codebook) {
           NR_SRS_Resource_t *srs_resource = srs_config->srs_ResourceToAddModList->list.array[sri];
-          AssertFatal(srs_resource != NULL,"SRS resource indicated by DCI does not exist\n");
-          n_antenna_port = 1<<srs_resource->nrofSRS_Ports;
+          AssertFatal(srs_resource != NULL, "SRS resource indicated by DCI does not exist\n");
+          n_antenna_port = 1 << srs_resource->nrofSRS_Ports;
+          break;
         }
       }
     }
