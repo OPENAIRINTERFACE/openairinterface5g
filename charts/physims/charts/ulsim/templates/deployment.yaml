@@ -37,7 +37,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
         - >  
-          cmake_targets/autotests/run_exec_autotests.bash -g "015101" -q -np -b -d bin/ &&
+          cmake_targets/autotests/run_exec_autotests.bash -g "ulsim" -d bin/ &&
           echo "FINISHED" && sleep infinity
       dnsPolicy: ClusterFirst
       restartPolicy: Always
