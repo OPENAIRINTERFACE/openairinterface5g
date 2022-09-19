@@ -394,17 +394,19 @@ function test_compile_and_run() {
 
 dbin=$OPENAIR_DIR/cmake_targets/autotests/bin
 dlog=$OPENAIR_DIR/cmake_targets/autotests/log
-
+exec_dir=$OPENAIR_DIR/cmake_targets/ran_build/build
 
 function print_help() {
  echo_info '
 This program runs automated test case system for OpenAirInterface
 You should have ubuntu 14.xx, updated, and the Linux kernel >= 3.14
 Options
--h | --help
-   This help
+-d | --exec-dir
+   Set directory of executables (default: $exec_dir)
 -g | --run-group
    Run test cases in a group. For example, ./run_exec_autotests "0101* 010102"
+-h | --help
+   This help
 -p
    Use password for logging
 -np | --no-password
@@ -451,6 +453,10 @@ until [ -z "$1" ]
             BYPASS_COMPILE=1
             echo "bypass option ON"
             shift ;;
+        -d|--exec-dir)
+            exec_dir=$2
+            echo "setting execdir to $exec_dir"
+            shift 2;;
         -h | --help)
             print_help
             exit 1;;
@@ -535,7 +541,7 @@ for search_expr in "${test_case_array[@]}"
     compile_prog_args=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/compile_prog_args" $xml_conf`
     pre_exec=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/pre_exec" $xml_conf`
     pre_exec_args=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/pre_exec_args" $xml_conf`
-    main_exec=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/main_exec" $xml_conf`
+    main_exec=$exec_dir/`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/main_exec" $xml_conf`
     main_exec_args=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/main_exec_args" $xml_conf`
     search_expr_true=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/search_expr_true" $xml_conf`
     search_expr_false=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/search_expr_false" $xml_conf`

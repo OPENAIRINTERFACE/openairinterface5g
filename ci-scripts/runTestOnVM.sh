@@ -712,11 +712,11 @@ function add_ue_l2_sim_ue {
     echo "sudo rm -f *.u*" >> $1
     if [ $LOC_NB_UES -eq 1 ]
     then
-        echo "echo \"sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o .\"" >> $1
-        echo "sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
+        echo "echo \"sudo conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o .\"" >> $1
+        echo "sudo conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
     else
-        echo "echo \"sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o .\"" >> $1
-        echo "sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
+        echo "echo \"sudo conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o .\"" >> $1
+        echo "sudo conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
     fi
 
     ssh -T -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1

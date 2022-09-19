@@ -22,7 +22,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/dlsim.Rel15</main_exec>
+      <main_exec>dlsim</main_exec>
       <main_exec_args> -m=5 -g=F -s=-1 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
                        -m=4 -g=F -s=0 -w=1.0 -f=.2 -n=500 -B=6 -c=4 -z=2 -O=60
                        -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
@@ -56,7 +56,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/ulsim.Rel15</main_exec>
+      <main_exec>ulsim</main_exec>
       <main_exec_args> -BnbRBs=25 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
                        -BnbRBs=25 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
                        -BnbRBs=50 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70  
@@ -86,7 +86,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/ldpctest.Rel15</main_exec>
+      <main_exec>ldpctest</main_exec>
       <main_exec_args>-l3872 -s10 -n100
                       -l4224 -s10 -n100
 		              -l4576 -s10 -n100
@@ -114,7 +114,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/polartest.Rel15</main_exec>
+      <main_exec>polartest</main_exec>
       <main_exec_args>-q -s-10 -f0
                       -q -s-10 -f0 -m1
                       -q -s-2 -f2 -m2 -k12
@@ -139,7 +139,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
+      <main_exec>nr_pbchsim</main_exec>
       <main_exec_args>-s-11 -S-8 -n10 -R106
                       -s-11 -S-8 -n10 -o8000 -I -R106
                       -s-11 -S-8 -n10 -R217
@@ -184,7 +184,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
+      <main_exec>nr_dlsim</main_exec>
       <main_exec_args>-n100 -R106 -b106 -s5
 		  -n100 -R217 -b217 -s5
 		  -n100 -R273 -b273 -s5
@@ -225,7 +225,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/nr_dlschsim.Rel15</main_exec>
+      <main_exec>nr_dlschsim</main_exec>
       <main_exec_args>-R 106 -m9 -s13 -n100
                       -R 217 -m15 -s15 -n100
                       -R 273 -m19 -s20 -n100</main_exec_args>
@@ -246,7 +246,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/smallblocktest.Rel15</main_exec>
+      <main_exec>smallblocktest</main_exec>
       <main_exec_args>-l 3 -s -4 -d 1 -i 10000
                       -l 6 -s -4 -d 1 -i 10000
                       -l 7 -s -4 -d 1 -i 10000
@@ -269,7 +269,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/nr_ulschsim.Rel15</main_exec>
+      <main_exec>nr_ulschsim</main_exec>
       <main_exec_args>-R 106 -m9 -s13 -n100
                       -R 217 -m15 -s15 -n100
                       -R 273 -m19 -s20 -n100
@@ -304,7 +304,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/nr_pucchsim.Rel15</main_exec>
+      <main_exec>nr_pucchsim</main_exec>
       <main_exec_args>-R 106 -i 1 -P 0 -b 1 -s-2 -n1000
                       -R 106 -i 1 -P 0 -b 2 -s-2 -n1000
 		      -R 106 -i 1 -P 0 -b 2 -s-2 -c -n1000
@@ -395,7 +395,7 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/nr_ulsim.Rel15</main_exec>
+      <main_exec>nr_ulsim</main_exec>
       <main_exec_args>-n100 -m9 -r106 -s5
                       -n100 -m16 -s10
                       -n100 -m28 -s20
@@ -439,7 +439,7 @@
       <compile_prog_args> --phy_simulators -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/nr_prachsim.Rel15</main_exec>
+      <main_exec>nr_prachsim</main_exec>
       <main_exec_args>-a -s -30 -n 100 -p 63 -R 106
                       -a -s -30 -n 100 -p 63 -R 217
                       -a -s -30 -n 100 -p 63 -R 273

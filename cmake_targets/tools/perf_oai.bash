@@ -290,7 +290,7 @@ oaisim_otg_stats(){
     $SUDO rmmod nasmesh > /dev/null 2>&1
     
     echo_success "Bringup UE interface..."
-    $SUDO insmod  $OPENAIR_DIR/targets/bin/nasmesh.ko
+    $SUDO insmod  $OPENAIR_DIR/cmake_targets/ran_build/build/nasmesh.ko
     sync
 
     if [ ! -f $OAISIM_EXEC ]; then 
