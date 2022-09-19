@@ -283,7 +283,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         pil = pilot + idxDC / 2 - 1;
         ul_ch += idxDC - 2 ;
         ul_ch = memset(ul_ch, 0, sizeof(*ul_ch)*5);
-        re_offset = (re_offset+idxDC-1) % symbolSize;
+        re_offset = (re_offset + idxDC - 2) % symbolSize;
         const c16_t ch=c16mulShift(*pil,
                                    rxdataF[soffset+nushift+re_offset],
                                    15);

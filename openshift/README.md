@@ -12,6 +12,8 @@
   </tr>
 </table>
 
+[[_TOC_]]
+
 # 1. Introduction
 
 ## General
@@ -119,13 +121,14 @@ The `<image>` could be `oai-gnb`, and the `<tag>` `ci-temp`.
 
 # 6. Deployment using HELM Charts
 
-**CAUTION: even more experimental.**
-
-Helm charts are located in another repository:
+Helm charts are located under `charts`. Assuming that the image is in the image
+registry, the physims could be deployed as shown in the following steps:
 
 ```bash
-git clone https://github.com/OPENAIRINTERFACE/openair-k8s.git
-cd openair-k8s
-git checkout helm-deployment-S6a-S1C-S1U-in-network-18-with-enb
-helm install mme /path-to-your-cloned/openair-k8s/charts/oai-mme/
+grep -rl OAICICD_PROJECT ./charts/ | xargs sed -i -e "s#OAICICD_PROJECT#oaicicd-ran#" # select the correct project
+sed -i -e "s#TAG#ci-temp#g" ./charts/physims/values.yaml                              # select the correct tag
+helm install physim ./charts/physims/                                                 # deploy
+oc get pods                                                                           # get the list of deployed containers
+oc logs <pod>                                                                         # inspect the logs of a pod
+helm uninstall physim                                                                 # undeploy
 ```
