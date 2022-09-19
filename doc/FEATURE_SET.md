@@ -429,11 +429,13 @@ The following features are valid for the gNB and the 5G-NR UE.
 ##  NR UE PHY Layer ##
 
 *  Initial synchronization
+   - the UE needs to know the position in frequency of the SSBs (via command line parameter in SA)
 *  Time tracking based on PBCH DMRS
-*  Frequency offset estimation
-*  30KHz SCS for FR1 and 120 KHz SCS for FR2
+*  Frequency offset estimation based on PSS and SSS
+*  15kHz and 30kHz SCS for FR1 and 120 kHz SCS for FR2
 *  Reception of NR-PSS/NR-SSS
 *  NR-PBCH supports multiple SSBs and flexible periodicity
+   - RSRP measurement for the strongest SSB
 *  Reception of NR-PDCCH (including reception of DCI, polar decoding, de-scrambling, de-modulation, RB de-mapping, etc)
    - common search space configured by MIB
    - user-specific search space configured by RRC
@@ -446,9 +448,10 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Support for 1, 2 and 4 RX antennas
    - Support for up to 2 layers (currently limited to DMRS configuration type 2)
 * Measurements based on NR-CSIRS
-    - RI, PMI and CQI computation
-    - Support for 1 and 2 RX antennas
-    - Support for up to 2 layers
+   - RSRP measurements
+   - RI, PMI and CQI computation
+   - Support for 1 and 2 RX antennas
+   - Support for up to 2 layers
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - PUSCH mapping type A and B
    - DMRS configuration type 1 and 2
@@ -458,20 +461,18 @@ The following features are valid for the gNB and the 5G-NR UE.
    - Support for 1 layer
 *  NR-PUCCH 
    - Format 0 (2 bits for ACK/NACK and SR)
-   - Format 2 (up to 64 bits, mainly for CSI feedback)
-   - Format 1, 3 and 4 present but old code never dested (need restructuring before verification)
+   - Format 2 (up to 11 bits, mainly for CSI feedback)
+   - Format 1, 3 and 4 present but old code never tested (need restructuring before verification)
 * NR-SRS
-    - Generation of sequence at PHY
-    - SRS signal transmission
+   - Generation of sequence at PHY
+   - SRS signal transmission
 * NR-PRS
-    - PRS based Channel estimation with T tracer dumps
-    - Time of arrival(ToA) estimation based on channel impulse response(CIR)
-    - Finer ToA estimation by 16x oversampled IDFT for CIR
-    - Support for multiple gNB reception with gNBs synced via GPSDO
+   - PRS based Channel estimation with T tracer dumps
+   - Time of arrival(ToA) estimation based on channel impulse response(CIR)
+   - Finer ToA estimation by 16x oversampled IDFT for CIR
+   - Support for multiple gNB reception with gNBs synced via GPSDO
 * NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
-* SS-RSRP
-   - RSRP measured on synchronization SSB (ok only for single SSB)
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
 *  Highly efficient 3GPP compliant polar encoder and decoder
 *  Encoder and decoder for short block
@@ -546,6 +547,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    - RRC Uplink/Downlink Information transfer carrying NAS messages transparently
    - RRC Reconfiguration/Reconfiguration complete
    - Support for master cell group configuration
+   - Reception of UECapabilityEnquiry, encoding and transmission of UECapability
 * Interface with PDCP: configuration, DCCH and CCCH message handling
 * Interface with RLC and MAC for configuration
 
