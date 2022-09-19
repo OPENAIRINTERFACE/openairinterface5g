@@ -47,9 +47,8 @@ extern slot_rnti_mcs_s slot_rnti_mcs[NUM_NFAPI_SLOT];
 typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
 
 typedef enum {
-  ONLY_PUSCH,
-  NOT_PUSCH,
-  SCHED_ALL,
+  SCHED_PUSCH,
+  SCHED_PUCCH,
 } NR_UE_SCHED_MODE_t;
 
 typedef struct {
@@ -118,6 +117,7 @@ typedef struct {
     fapi_nr_dci_indication_t *dci_ind;
 
     NR_UE_SCHED_MODE_t ue_sched_mode;
+    void *phy_data;
 
 } nr_uplink_indication_t;
 

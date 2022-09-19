@@ -307,11 +307,10 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   if (ue->UE_mode[gNB_id] == PUSCH) {
     ue_srs_procedures_nr(ue, proc, gNB_id);
   }
+  LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", proc->frame_tx, proc->nr_slot_tx);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
   stop_meas(&ue->phy_proc_tx);
-
-
 }
 
 void nr_ue_measurement_procedures(uint16_t l,
@@ -758,16 +757,6 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     }
     if (frame_rx < *dlsch_errors)
       *dlsch_errors=0;
-
-    if (pdsch == RA_PDSCH) {
-      if (ue->prach_resources[gNB_id]!=NULL)
-        dlsch0->rnti = ue->prach_resources[gNB_id]->ra_RNTI;
-      else {
-        LOG_E(PHY,"[UE %d] Frame %d, nr_slot_rx %d: FATAL, prach_resources is NULL\n", ue->Mod_id, frame_rx, nr_slot_rx);
-        //mac_xface->macphy_exit("prach_resources is NULL");
-        return false;
-      }
-    }
 
     // exit dlsch procedures as there are no active dlsch
     if (is_cw0_active != ACTIVE && is_cw1_active != ACTIVE)
@@ -1519,7 +1508,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
   curMsg->proc = *proc;
   curMsg->UE = ue;
-  curMsg->ue_sched_mode = ONLY_PUSCH;
+  curMsg->ue_sched_mode = SCHED_PUSCH;
   pushTpool(&(get_nrUE_params()->Tpool), newElt);
   start_meas(&ue->generic_stat);
   // do procedures for C-RNTI

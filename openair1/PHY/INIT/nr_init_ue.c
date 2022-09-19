@@ -180,16 +180,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   // init NR modulation lookup tables
   nr_generate_modulation_table();
 
-  /////////////////////////PUCCH init/////////////////////////
-  ///////////
-  for (th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-    for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
-      ue->pucch_vars[th_id][gNB_id] = (NR_UE_PUCCH *)malloc16(sizeof(NR_UE_PUCCH));
-      for (i=0; i<2; i++)
-        ue->pucch_vars[th_id][gNB_id]->active[i] = false;
-    }
-  }
-
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -351,10 +341,6 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
     ue->nr_srs_info = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
 
-    // RACH
-    prach_vars[gNB_id]->prachF             = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
-    prach_vars[gNB_id]->prach              = (int16_t *)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
-
   }
 
   ue->sinr_CQI_dB = (double *) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
@@ -381,12 +367,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 {
   const NR_DL_FRAME_PARMS* fp = &ue->frame_parms;
   phy_term_nr_top();
-
-  for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-    for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
-      free_and_zero(ue->pucch_vars[th_id][gNB_id]);
-    }
-  }
 
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
     for (int symb = 0; symb < fp->symbols_per_slot; symb++) {
@@ -468,9 +448,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     free_and_zero(ue->srs_vars[gNB_id]);
 
     free_and_zero(ue->pbch_vars[gNB_id]);
-
-    free_and_zero(ue->prach_vars[gNB_id]->prachF);
-    free_and_zero(ue->prach_vars[gNB_id]->prach);
     free_and_zero(ue->prach_vars[gNB_id]);
   }
 

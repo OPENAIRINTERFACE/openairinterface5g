@@ -61,7 +61,8 @@
 
 void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, 
                             uint8_t gNB_id,
-                            UE_nr_rxtx_proc_t *proc);
+                            UE_nr_rxtx_proc_t *proc,
+                            nr_phy_data_t *phy_data);
 
 
 void set_csi_nr(int csi_status, uint32_t csi_payload);
