@@ -2,7 +2,6 @@
  <TestCaseExclusionList></TestCaseExclusionList>
 
     <testCase id="015100">
-      <class>execution</class>
       <desc>dlsim Test cases. (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB),
       (Test 5: 1.4 MHz, R4.FDD (MCS 4), EVA5, 0dB (70%)),
       (Test 6: 10 MHz, R3.FDD (MCS 15), EVA5, 6.7dB (70%)),
@@ -17,11 +16,6 @@
       (Test 15c: 20 MHz, R.9-1 FDD (MCS 26, 83 PRB), EVA5, 16.6dB (70%)),
       (TM2 Test 1: 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
       (TM2 Test 1b: 5 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%))</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>dlsim</main_exec>
       <main_exec_args> -m=5 -g=F -s=-1 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
                        -m=4 -g=F -s=0 -w=1.0 -f=.2 -n=500 -B=6 -c=4 -z=2 -O=60
@@ -44,18 +38,12 @@
     </testCase>
 
     <testCase id="015101">
-      <class>execution</class>
       <desc>ulsim Test cases. (Test 1: 5 MHz, FDD (MCS 5), AWGN, 6dB),
              (Test 2: 5 MHz, FDD (MCS 16), AWGN , 12dB (70%)),
              (Test 3: 10 MHz, R3.FDD (MCS 5), AWGN, 6dB (70%)),
              (Test 4: 10 MHz, R3-1.FDD (MCS 16), AWGN, 12dB (70%)),
              (Test 5: 20 MHz, FDD (MCS 5), AWGN, 6dB (70%)),
              (Test 6: 20 MHz, FDD (MCS 16), AWGN, 12 dB (70%))</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>ulsim</main_exec>
       <main_exec_args> -BnbRBs=25 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
                        -BnbRBs=25 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
@@ -70,7 +58,6 @@
     </testCase>
 
     <testCase id="015102">
-      <class>execution</class>
       <desc>ldpc Test cases. (Test1: block length = 3872),
              (Test2: block length = 4224),
              (Test3: block length = 4576),
@@ -81,11 +68,6 @@
              (Test8: block length = 7040),
              (Test9: block length = 7744),
              (Test10: block length = 8448)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>ldpctest</main_exec>
       <main_exec_args>-l3872 -s10 -n100
                       -l4224 -s10 -n100
@@ -104,16 +86,10 @@
     </testCase>
 
     <testCase id="015103">
-      <class>execution</class>
       <desc>polartest Test cases. (Test1: PBCH polar test),
                                   (Test2: DCI polar test),
                                   (Test3: UCI polar test,6-bit CRC),
                                   (Test4: UCI polar test,11-bit CRC)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>polartest</main_exec>
       <main_exec_args>-q -s-10 -f0
                       -q -s-10 -f0 -m1
@@ -126,7 +102,6 @@
     </testCase>
 
      <testCase id="015104">
-      <class>execution</class>
       <desc>nr_pbchsim Test cases. (Test1: PBCH-only, 106 PRB),
                                    (Test2: PBCH and synchronization, 106PBR),
                                    (Test3: PBCH-only, 217 PRB),
@@ -134,11 +109,6 @@
                                    (Test5: PBCH-only, 273 PRB),
                                    (Test6: PBCH and synchronization, 273 PRB),
                                    (Test7: PBCH and synchronization, 106PBR, SSB SC OFFSET 6)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>nr_pbchsim</main_exec>
       <main_exec_args>-s-11 -S-8 -n10 -R106
                       -s-11 -S-8 -n10 -o8000 -I -R106
@@ -154,7 +124,6 @@
     </testCase> 
 
      <testCase id="015105">
-      <class>execution</class>
       <desc>nr_dlsim Test cases. (Test1: 106 PRB),
                                  (Test2: 217 PRB),
                                  (Test3: 273 PRB),
@@ -179,11 +148,6 @@
                                  (Test22: 4x4 MIMO, 2 Layers),
                                  (Test23: 25 PRBs, 15 kHz SCS)
                                  (Test24: MCS 0, low SNR performance)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>nr_dlsim</main_exec>
       <main_exec_args>-n100 -R106 -b106 -s5
 		  -n100 -R217 -b217 -s5
@@ -216,15 +180,9 @@
     </testCase> 
  
      <testCase id="015106">
-      <class>execution</class>
       <desc>nr_dlschsim Test cases. (Test1: 106 PRB),
                                     (Test2: 217 PRB),
                                     (Test3: 273 PRB)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>nr_dlschsim</main_exec>
       <main_exec_args>-R 106 -m9 -s13 -n100
                       -R 217 -m15 -s15 -n100
@@ -236,16 +194,10 @@
     </testCase> 
 
     <testCase id="015107">
-      <class>execution</class>
       <desc>shortblocktest Test cases. (Test1: 3 bits),
       (Test2: 6 bits),
       (Test3: 7 bits),
       (Test4: 11 bits)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>smallblocktest</main_exec>
       <main_exec_args>-l 3 -s -4 -d 1 -i 10000
                       -l 6 -s -4 -d 1 -i 10000
@@ -259,16 +211,10 @@
 
     
     <testCase id="015108">
-      <class>execution</class>
       <desc>nr_ulschsim Test cases. (Test1: 106 PRBs),
                                     (Test2: 217 PRBs),
                                     (Test3: 273 PRBs)
                                     (Test4: 106 PRBs 4-layer MIMO)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>nr_ulschsim</main_exec>
       <main_exec_args>-R 106 -m9 -s13 -n100
                       -R 217 -m15 -s15 -n100
@@ -281,7 +227,6 @@
     </testCase>
 
     <testCase id="015109">
-      <class>execution</class>
       <desc>nr_pucchsim Test cases. (Test1: Format 0 1-bit ACK miss 106 PRB),
                                     (Test2: Format 0 2-bit ACK miss 106 PRB),
                                     (Test3: Format 0 2-bit ACK miss, 1-bit SR 106 PRB),
@@ -299,11 +244,6 @@
                                     (Test15: Format 2 32-bit 8/106 PRB),
                                     (Test16: Format 2 32-bit 16/106 PRB),
                                     (Test17: Format 2 64-bit 16/106 PRB)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>nr_pucchsim</main_exec>
       <main_exec_args>-R 106 -i 1 -P 0 -b 1 -s-2 -n1000
                       -R 106 -i 1 -P 0 -b 2 -s-2 -n1000
@@ -330,7 +270,6 @@
 
 
     <testCase id="015110">
-      <class>execution</class>
       <desc>dlsim_tm4 test cases (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB), 
       (Test 5: 1.4 MHz, R4.FDD (MCS 4), EVA5, 0dB (70%)),
       (Test 6, 10 MHz, R3.FDD (MCS 15), EVA5, 6.7dB (70%)),
@@ -343,11 +282,6 @@
       (TM2 Test 1 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
       (TM2 Test 1b 20 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
        </desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim_tm4</main_exec>
       <main_exec_args>-m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
                       -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
@@ -367,7 +301,6 @@
     </testCase>
 
     <testCase id="015111">
-      <class>execution</class>
       <desc>nr_ulsim Test cases. (Test1: MCS 9 106 PRBs),
                                  (Test2: MCS 16 50 PRBs),
                                  (Test3: MCS 28 50 PRBs),
@@ -390,11 +323,6 @@
                                  (Test20: 3GPP G-FR1-A4-13 4 RX Antennas Requirements Test),
                                  (Test21: 3GPP G-FR1-A4-13 8 RX Antennas Requirements Test),
                                  (Test22: MCS 0, low SNR performance)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>nr_ulsim</main_exec>
       <main_exec_args>-n100 -m9 -r106 -s5
                       -n100 -m16 -s10
@@ -425,7 +353,6 @@
     </testCase>
 
     <testCase id="015112">
-      <class>execution</class>
       <desc>nr_prachsim Test cases. (Test1: 30kHz SCS, 106 PRBs, Prach format A2),
                                     (Test2: 30kHz SCS, 217 PRBs, Prach format A2),
                                     (Test3: 30kHz SCS, 273 PRBs, Prach format A2),
@@ -434,11 +361,6 @@
                                     (Test6: 120kHz SCS, 66 PRBs, Prach format A2),
                                     (Test7: 120kHz SCS, 66 PRBs, High Speed Enabled),
                                     (Test8: 15kHz SCS, 25 PRBs)</desc>
-      <pre_compile_prog></pre_compile_prog>
-      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-      <compile_prog_args> --phy_simulators -c </compile_prog_args>
-      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
-      <pre_exec_args></pre_exec_args>
       <main_exec>nr_prachsim</main_exec>
       <main_exec_args>-a -s -30 -n 100 -p 63 -R 106
                       -a -s -30 -n 100 -p 63 -R 217
