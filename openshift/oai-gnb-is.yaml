@@ -28,6 +28,3 @@ metadata:
 spec:
   lookupPolicy:
     local: true
-status:
-    tag: latest
-

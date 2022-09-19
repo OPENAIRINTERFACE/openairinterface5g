@@ -67,7 +67,7 @@ def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTarge
 	sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 	sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
 
-	sshSession.command('sudo git clean -x -d -ff', '\$', 30)
+	sshSession.command('git clean -x -d -ff', '\$', 30)
 	sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
 	# if the commit ID is provided use it to point to it
 	if ranCommitID != '':
