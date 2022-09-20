@@ -28,6 +28,8 @@
   - filePrefix: gnb.band78.tm1.fr1.106PRB.usrpb210.conf
     outputfilename: "gnb.nsa.tdd.conf"
     config:
+    - key: GNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -72,6 +74,8 @@
   - filePrefix: gnb.band78.sa.fr1.106PRB.usrpn310.conf
     outputfilename: "gnb.sa.tdd.conf"
     config:
+    - key: GNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -104,6 +108,8 @@
   - filePrefix: gnb.sa.band78.fr1.106PRB.usrpb210.conf
     outputfilename: "gnb.sa.tdd.b2xx.conf"
     config:
+    - key: GNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -134,6 +140,8 @@
   - filePrefix: gnb.sa.band66.fr1.106PRB.usrpn300.conf
     outputfilename: "gnb.sa.fdd.conf"
     config:
+    - key: GNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -166,6 +174,8 @@
   - filePrefix: gNB_SA_CU.conf
     outputfilename: "gnb.sa.cu.conf"
     config:
+    - key: GNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -206,6 +216,8 @@
   - filePrefix: gNB_SA_DU.conf
     outputfilename: "gnb.sa.du.tdd.conf"
     config:
+    - key: GNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -248,6 +260,8 @@
   - filePrefix: proxy_gnb.band78.sa.fr1.106PRB.usrpn310.conf
     outputfilename: "gnb.sa.nfapi.vnf.conf"
     config:
+    - key: GNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
