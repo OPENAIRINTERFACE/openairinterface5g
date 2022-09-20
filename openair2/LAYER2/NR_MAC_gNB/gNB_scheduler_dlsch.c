@@ -896,6 +896,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     UE->mac_stats.dl.current_bytes = 0;
+    UE->mac_stats.dl.current_rbs = 0;
     NR_CellGroupConfig_t *cg = UE->CellGroup;
 
     /* update TA and set ta_apply every 10 frames.
@@ -1059,15 +1060,18 @@ void nr_schedule_ue_spec(module_id_t module_id,
                                                                             csi_report->codebook_mode);
     }
     // TBS_LBRM according to section 5.4.2.1 of 38.212
-    long *maxMIMO_Layers = current_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
-    AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-    int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
+    // TODO: verify the case where pdsch_servingcellconfig is NULL, in which case
+    //       in principle maxMIMO_layers should be given by the maximum number of layers
+    //       for PDSCH supported by the UE for the serving cell (5.4.2.1 of 38.212)
+    long maxMIMO_Layers = current_BWP->pdsch_servingcellconfig ? *current_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers : 1;
+    const int nl_tbslbrm = min(maxMIMO_Layers, 4);
     // Maximum number of PRBs across all configured DL BWPs
     int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, cg);
+    int bw_tbslbrm = get_dlbw_tbslbrm(scc_bwpsize, cg);
     pdsch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcsTableIdx,
                                                                          bw_tbslbrm,
                                                                          nl_tbslbrm);
+    pdsch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
 
     NR_PDSCH_Config_t *pdsch_Config = current_BWP->pdsch_Config;
 
@@ -1119,7 +1123,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
     // as per table 7.3.1.1.2-1 in 38.212
     dci_payload.bwp_indicator.val = current_BWP->n_dl_bwp < 4 ? bwp_id : bwp_id - 1;
 
-    AssertFatal(pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
+    AssertFatal(pdsch_Config == NULL || pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
 
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu->rbSize,
@@ -1193,6 +1197,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
                   current_harq_pid);
       T(T_GNB_MAC_RETRANSMISSION_DL_PDU_WITH_DATA, T_INT(module_id), T_INT(CC_id), T_INT(rnti),
         T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_INT(harq->round), T_BUFFER(harq->transportBlock, TBS));
+      UE->mac_stats.dl.total_rbs_retx += sched_pdsch->rbSize;
     } else { /* initial transmission */
       LOG_D(NR_MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
       uint8_t *buf = (uint8_t *) harq->transportBlock;
@@ -1208,6 +1213,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       int dlsch_total_bytes = 0;
       /* next, get RLC data */
       start_meas(&gNB_mac->rlc_data_req);
+      int sdus = 0;
 
       if (sched_ctrl->num_total_bytes > 0) {
         /* loop over all activated logical channels */
@@ -1259,6 +1265,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
             buf += len+sizeof(NR_MAC_SUBHEADER_LONG);
             dlsch_total_bytes += len;
             lcid_bytes += len;
+            sdus += 1;
           }
 
           UE->mac_stats.dl.lc_bytes[lcid] += lcid_bytes;
@@ -1286,6 +1293,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
           }
           for (; buf < bufEnd; buf++)
             *buf = lrand48() & 0xff;
+          sdus +=1;
         }
       }
 
@@ -1303,6 +1311,10 @@ void nr_schedule_ue_spec(module_id_t module_id,
 
       UE->mac_stats.dl.total_bytes += TBS;
       UE->mac_stats.dl.current_bytes = TBS;
+      UE->mac_stats.dl.total_rbs += sched_pdsch->rbSize;
+      UE->mac_stats.dl.num_mac_sdu += sdus;
+      UE->mac_stats.dl.current_rbs = sched_pdsch->rbSize;
+
       /* save retransmission information */
       harq->sched_pdsch = *sched_pdsch;
       /* save which time allocation has been used, to be used on

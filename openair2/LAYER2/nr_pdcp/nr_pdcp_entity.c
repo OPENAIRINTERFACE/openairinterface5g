@@ -59,6 +59,9 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
        We need to investigate why this hack is neccessary. */
     buffer[0] |= 128;
   }
+  entity->stats.rxpdu_pkts++;
+  entity->stats.rxpdu_bytes += size;
+
 
   if (entity->sn_size == 12) {
     rcvd_sn = ((buffer[0] & 0xf) <<  8) |
@@ -70,6 +73,7 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
                 buffer[2];
     header_size = 3;
   }
+  entity->stats.rxpdu_sn = rcvd_sn;
 
   /* SRBs always have MAC-I, even if integrity is not active */
   if (entity->has_integrity || entity->type == NR_PDCP_SRB) {
@@ -80,6 +84,11 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
 
   if (size < header_size + integrity_size + 1) {
     LOG_E(PDCP, "bad PDU received (size = %d)\n", size);
+
+    entity->stats.rxpdu_dd_pkts++;
+    entity->stats.rxpdu_dd_bytes += size;
+
+
     return;
   }
 
@@ -109,12 +118,20 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
     if (memcmp(integrity, buffer + size - integrity_size, 4) != 0) {
       LOG_E(PDCP, "discard NR PDU, integrity failed\n");
 //      return;
+      entity->stats.rxpdu_dd_pkts++;
+      entity->stats.rxpdu_dd_bytes += size;
+
+
     }
   }
 
   if (rcvd_count < entity->rx_deliv
       || nr_pdcp_sdu_in_list(entity->rx_list, rcvd_count)) {
     LOG_W(PDCP, "discard NR PDU rcvd_count=%d, entity->rx_deliv %d,sdu_in_list %d\n", rcvd_count,entity->rx_deliv,nr_pdcp_sdu_in_list(entity->rx_list,rcvd_count));
+    entity->stats.rxpdu_dd_pkts++;
+    entity->stats.rxpdu_dd_bytes += size;
+
+
     return;
   }
 
@@ -139,6 +156,10 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
                           cur->buffer, cur->size);
       entity->rx_list = cur->next;
       entity->rx_size -= cur->size;
+      entity->stats.txsdu_pkts++;
+      entity->stats.txsdu_bytes += cur->size;
+
+
       nr_pdcp_free_sdu(cur);
       count++;
     }
@@ -165,6 +186,9 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
   int      integrity_size;
   char     buf[size + 3 + 4];
   int      dc_bit;
+  entity->stats.rxsdu_pkts++;
+  entity->stats.rxsdu_bytes += size;
+
 
   count = entity->tx_next;
   sn = entity->tx_next & entity->sn_max;
@@ -215,6 +239,11 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
 
   entity->deliver_pdu(entity->deliver_pdu_data, entity, buf,
                       header_size + size + integrity_size, sdu_id);
+  entity->stats.txpdu_pkts++;
+  entity->stats.txpdu_bytes += header_size + size + integrity_size;
+  entity->stats.txpdu_sn = sn;
+
+
 }
 
 /* may be called several times, take care to clean previous settings */
@@ -346,6 +375,13 @@ void nr_pdcp_entity_delete(nr_pdcp_entity_t *entity)
   free(entity);
 }
 
+static void nr_pdcp_entity_get_stats(nr_pdcp_entity_t *entity,
+                                     nr_pdcp_statistics_t *out)
+{
+  *out = entity->stats;
+}
+
+
 nr_pdcp_entity_t *new_nr_pdcp_entity(
     nr_pdcp_entity_type_t type,
     int is_gnb, int rb_id, int pdusession_id,int has_sdap,
@@ -381,6 +417,7 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
 
   ret->delete_entity = nr_pdcp_entity_delete;
   
+  ret->get_stats = nr_pdcp_entity_get_stats;
   ret->deliver_sdu = deliver_sdu;
   ret->deliver_sdu_data = deliver_sdu_data;
 

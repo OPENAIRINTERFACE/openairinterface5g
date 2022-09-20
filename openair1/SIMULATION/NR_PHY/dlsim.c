@@ -73,6 +73,7 @@
 
 #include <executables/softmodem-common.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include <executables/nr-uesoftmodem.h>
 
 const char *__asan_default_options()
 {
@@ -326,6 +327,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_pdsch->rbStart = g_rbStart;
   sched_pdsch->rbSize = g_rbSize;
   sched_pdsch->mcs = g_mcsIndex;
+  sched_pdsch->nrOfLayers = g_nrOfLayers;
   /* the following might override the table that is mandated by RRC
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
@@ -361,12 +363,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   AssertFatal(sched_pdsch->mcs >= 0, "invalid mcs %d\n", sched_pdsch->mcs);
   AssertFatal(current_BWP->mcsTableIdx >= 0 && current_BWP->mcsTableIdx <= 2, "invalid mcsTableIdx %d\n", current_BWP->mcsTableIdx);
 }
-
-typedef struct {
-  uint64_t       optmask;   //mask to store boolean config options
-  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
-  tpool_t        Tpool;             // thread pool
-} nrUE_params_t;
 
 nrUE_params_t nrUE_params;
 
@@ -475,7 +471,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:x:y:z:M:N:F:GR:dPI:L:Ea:b:d:e:m:w:T:U:q:X:Y")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:x:y:z:M:N:F:GR:d:PI:L:Ea:b:e:m:w:T:U:q:X:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -642,7 +638,7 @@ int main(int argc, char **argv)
       g_rbSize = atoi(optarg);
       break;
 
-    case 'D':
+    case 'd':
       dlsch_threads = atoi(optarg);
       break;
 
@@ -748,8 +744,6 @@ int main(int argc, char **argv)
 
   if (snr1set==0)
     snr1 = snr0+10;
-  init_dlsch_tpool(dlsch_threads);
-
 
   RC.gNB = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = (PHY_VARS_gNB*) malloc(sizeof(PHY_VARS_gNB ));
@@ -1001,7 +995,7 @@ int main(int argc, char **argv)
   unsigned char *test_input_bit;
   unsigned int errors_bit    = 0;
 
-  initTpool("N", &(nrUE_params.Tpool), false);
+  initFloatingCoresTpool(dlsch_threads, &nrUE_params.Tpool, false, "UE-tpool");
 
   test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
   estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
@@ -1042,7 +1036,7 @@ int main(int argc, char **argv)
   snrRun = 0;
   int n_errs = 0;
 
-  initTpool(gNBthreads, &gNB->threadPool, true);
+  initNamedTpool(gNBthreads, &gNB->threadPool, true, "gNB-tpool");
   initNotifiedFIFO(&gNB->L1_tx_free);
   initNotifiedFIFO(&gNB->L1_tx_filled);
   initNotifiedFIFO(&gNB->L1_tx_out);
@@ -1268,7 +1262,6 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               dlsch_threads,
                                &phy_pdcch_config,
                                NULL);
         
@@ -1437,6 +1430,7 @@ int main(int argc, char **argv)
       if (UE->frame_parms.nb_antennas_rx>1)
 	LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
       LOG_M("rxF0.m","rxF0", UE->common_vars.common_vars_rx_data_per_thread[UE_proc.thread_id].rxdataF[0], frame_parms->samples_per_slot_wCP, 1, 1);
+      LOG_M("rxF_ext.m","rxFe",&UE->pdsch_vars[0][0]->rxdataF_ext[0][0],g_rbSize*12*14,1,1);
       LOG_M("chestF0.m","chF0",&UE->pdsch_vars[0][0]->dl_ch_estimates_ext[0][0],g_rbSize*12*14,1,1);
       write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
       LOG_M("rxF_llr.m","rxFllr",UE->pdsch_vars[UE_proc.thread_id][0]->llr[0],available_bits,1,0);

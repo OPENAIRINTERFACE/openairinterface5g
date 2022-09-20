@@ -56,7 +56,6 @@ class PhySim:
 		self.__workSpacePath=''
 		self.__buildLogFile='compile_phy_sim.log'
 		self.__runLogFile=''
-		self.__runResults=[]
 		self.__runLogPath='phy_sim_logs'
 
 
@@ -64,20 +63,20 @@ class PhySim:
 #PRIVATE Methods
 #-----------------
 
-	def __CheckResults_PhySim(self,HTML,CONST,testcase_id):
+	def __CheckResults_LDPCTest(self,HTML,CONST,testcase_id):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
 		#retrieve run log file and store it locally$
 		mySSH.copyin(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord, self.__workSpacePath+self.__runLogFile, '.')
 		mySSH.close()
 		#parse results looking for Encoding and Decoding mean values
-		self.__runResults=[]
+		runResults=[]
 		with open(self.__runLogFile) as f:
 			for line in f:
 				if 'mean' in line:
-					self.__runResults.append(line)
+					runResults.append(line)
 		#the values are appended for each mean value (2), so we take these 2 values from the list
-		info=self.__runResults[0]+self.__runResults[1]
+		info = runResults[0] + runResults[1]
 
 		#once parsed move the local logfile to its folder for tidiness
 		os.system('mv '+self.__runLogFile+' '+ self.__runLogPath+'/.')
@@ -89,6 +88,38 @@ class PhySim:
 		HTML.CreateHtmlTestRowQueue(self.runargs, 'OK', 1, html_queue)
 		return HTML
 
+	def __CheckResults_NRulsimTest(self, HTML, CONST, testcase_id):
+		html_queue = SimpleQueue()
+		#retrieve run log file and store it locally
+		mySSH = sshconnection.SSHConnection()
+		filename = self.__workSpacePath + self.__runLogFile
+		ret = mySSH.copyin(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord, filename, '.')
+		if ret != 0:
+			error_msg = f'could not recover test result file {filename}'
+			logging.error(error_msg)
+			html_queue.put(f'<pre style="background-color:white">{error_msg}</pre>')
+			HTML.CreateHtmlTestRowQueue("could not recover results", 'KO', 1, html_queue)
+			self.exitStatus = 1
+			return HTML
+
+		PUSCH_OK = False
+		with open(self.__runLogFile) as f:
+			PUSCH_OK = 'PUSCH test OK' in f.read()
+
+		# once parsed move the local logfile to its folder for tidiness
+		os.system(f'mv {self.__runLogFile} {self.__runLogPath}/.')
+
+		#updating the HTML with results
+		if PUSCH_OK:
+			html_queue.put('<pre style="background-color:white">succeeded</pre>')
+			HTML.CreateHtmlTestRowQueue(self.runargs, 'OK', 1, html_queue)
+		else:
+			error_msg = 'error: no "PUSCH test OK"'
+			logging.error(error_msg)
+			html_queue.put(f'<pre style="background-color:white">{error_msg}</pre>')
+			HTML.CreateHtmlTestRowQueue(self.runargs, 'KO', 1, html_queue)
+			self.exitStatus = 1
+		return HTML
 
 	def __CheckBuild_PhySim(self, HTML, CONST):
 		self.__workSpacePath=self.eNBSourceCodePath+'/cmake_targets/'
@@ -100,21 +131,16 @@ class PhySim:
 		mySSH.command('rm ' + self.__workSpacePath+self.__runLogFile, '\$', 5)
 		mySSH.close()
 		#check build result from local compile log file
-		buildStatus=False
 		with open(self.__buildLogFile) as f:
-		#nr_prachsim is the last compile step
-			if 'nr_prachsim compiled' in f.read():
-				buildStatus=True
-		#update HTML based on build status
-		if buildStatus:
-			HTML.CreateHtmlTestRow(self.buildargs, 'OK', CONST.ALL_PROCESSES_OK, 'LDPC')
-			self.exitStatus=0
-		else:
-			logging.error('\u001B[1m Building Physical Simulators Failed\u001B[0m')
-			HTML.CreateHtmlTestRow(self.buildargs, 'KO', CONST.ALL_PROCESSES_OK, 'LDPC')
-			HTML.CreateHtmlTabFooter(False)
-			#exitStatus=1 will do a sys.exit in main
-			self.exitStatus=1
+			if 'BUILD SHOULD BE SUCCESSFUL' in f.read():
+				HTML.CreateHtmlTestRow(self.buildargs, 'OK', CONST.ALL_PROCESSES_OK, 'PhySim')
+				self.exitStatus=0
+				return HTML
+		logging.error('\u001B[1m Building Physical Simulators Failed\u001B[0m')
+		HTML.CreateHtmlTestRow(self.buildargs, 'KO', CONST.ALL_PROCESSES_OK, 'LDPC')
+		HTML.CreateHtmlTabFooter(False)
+		#exitStatus=1 will do a sys.exit in main
+		self.exitStatus = 1
 		return HTML
 
 
@@ -163,8 +189,7 @@ class PhySim:
 		mySSH.command('source oaienv', '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p log', '\$', 5)
-		mySSH.command('chmod 777 log', '\$', 5)
-		mySSH.command('stdbuf -o0 ./build_oai ' + self.buildargs + ' 2>&1 | stdbuf -o0 tee ' + self.__buildLogFile, 'Bypassing the Tests|build have failed', 1500)
+		mySSH.command(f'./build_oai {self.buildargs} 2>&1 | tee {self.__buildLogFile}', '\$', 1500)
 
 		mySSH.close()
 		#check build status and update HTML object
@@ -173,7 +198,8 @@ class PhySim:
 		return lHTML
 
 
-	def Run_PhySim(self,htmlObj,constObj,testcase_id):
+	def Run_LDPCTest(self,htmlObj,constObj,testcase_id):
+		self.__workSpacePath = self.eNBSourceCodePath+'/cmake_targets/'
 		#create run logs folder locally
 		os.system('mkdir -p ./'+self.__runLogPath)
 		#log file is tc_<testcase_id>.log remotely
@@ -187,5 +213,18 @@ class PhySim:
 		mySSH.close()
 		#return updated HTML to main
 		lHTML = cls_oai_html.HTMLManagement()
-		lHTML=self.__CheckResults_PhySim(htmlObj,constObj,testcase_id)
+		lHTML=self.__CheckResults_LDPCTest(htmlObj,constObj,testcase_id)
+		return lHTML
+
+	def Run_NRulsimTest(self, htmlObj, constObj, testcase_id):
+		self.__workSpacePath=self.eNBSourceCodePath+'/cmake_targets/'
+		os.system(f'mkdir -p ./{self.__runLogPath}')
+		self.__runLogFile = f'physim_{testcase_id}.log'
+		mySSH = sshconnection.SSHConnection()
+		mySSH.open(self.eNBIpAddr, self.eNBUserName, self.eNBPassWord)
+		mySSH.command(f'cd {self.__workSpacePath}', '\$', 5)
+		mySSH.command(f'sudo {self.__workSpacePath}ran_build/build/nr_ulsim {self.runargs} > {self.__runLogFile} 2>&1', '\$', 30)
+		mySSH.close()
+		#return updated HTML to main
+		lHTML = self.__CheckResults_NRulsimTest(htmlObj, constObj, testcase_id)
 		return lHTML

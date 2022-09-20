@@ -261,19 +261,20 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-uint32_t calc_power_csirs(const uint16_t *x, const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu) {
+uint32_t calc_power_csirs(const uint16_t *x, const fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu)
+{
   uint64_t sum_x = 0;
   uint64_t sum_x2 = 0;
   uint16_t size = 0;
-  for (int rb = csirs_config_pdu->start_rb; rb < (csirs_config_pdu->start_rb+csirs_config_pdu->nr_of_rbs); rb++) {
-    if (csirs_config_pdu->freq_density <= 1 && csirs_config_pdu->freq_density != (rb % 2)) {
+  for (int rb = 0; rb < csirs_config_pdu->nr_of_rbs; rb++) {
+    if (csirs_config_pdu->freq_density <= 1 && csirs_config_pdu->freq_density != ((rb + csirs_config_pdu->start_rb) % 2)) {
       continue;
     }
-    sum_x = sum_x + x[rb-csirs_config_pdu->start_rb];
-    sum_x2 = sum_x2 + x[rb]*x[rb-csirs_config_pdu->start_rb];
+    sum_x = sum_x + x[rb];
+    sum_x2 = sum_x2 + x[rb] * x[rb];
     size++;
   }
-  return sum_x2/size - (sum_x/size)*(sum_x/size);
+  return sum_x2 / size - (sum_x / size) * (sum_x / size);
 }
 
 int nr_csi_rs_channel_estimation(const PHY_VARS_NR_UE *ue,

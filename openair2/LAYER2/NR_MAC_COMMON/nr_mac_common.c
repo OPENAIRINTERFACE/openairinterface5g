@@ -3498,6 +3498,15 @@ void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
   }
 }
 
+uint8_t get_BG(uint32_t A, uint16_t R) {
+
+  float code_rate = (float) R / 10240.0f;
+  if ((A <=292) || ((A<=3824) && (code_rate <= 0.6667)) || code_rate <= 0.25)
+    return 2;
+  else
+    return 1;
+}
+
 uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti) {
 
   if(ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common)
@@ -3571,7 +3580,7 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
   //  type0-pdcch coreset
   switch( ((int)scs_ssb << 3) | (int)scs_pdcch ){
-    case (NR_SubcarrierSpacing_kHz15 << 5) | NR_SubcarrierSpacing_kHz15:
+    case (NR_SubcarrierSpacing_kHz15 << 3) | NR_SubcarrierSpacing_kHz15:
       AssertFatal(index_4msb < 15, "38.213 Table 13-1 4 MSB out of range\n");
       type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_1_c2[index_4msb];
@@ -4128,14 +4137,34 @@ uint16_t compute_pucch_prb_size(uint8_t format,
   }
 }
 
-int get_bw_tbslbrm(int scc_bwpsize,
-                   NR_CellGroupConfig_t *cg) {
+int get_dlbw_tbslbrm(int scc_bwpsize,
+                     NR_CellGroupConfig_t *cg) {
 
   int bw = scc_bwpsize;
   if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated) {
     const NR_ServingCellConfig_t *servingCellConfig = cg->spCellConfig->spCellConfigDedicated;
     if(servingCellConfig->downlinkBWP_ToAddModList) {
-      struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = servingCellConfig->downlinkBWP_ToAddModList;
+      const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *BWP_list = servingCellConfig->downlinkBWP_ToAddModList;
+      for (int i=0; i<BWP_list->list.count; i++) {
+        NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
+        int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+        if (curr_bw > bw)
+          bw = curr_bw;
+      }
+    }
+  }
+  return bw;
+}
+
+int get_ulbw_tbslbrm(int scc_bwpsize,
+                     NR_CellGroupConfig_t *cg) {
+
+  int bw = scc_bwpsize;
+  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated) {
+    const NR_ServingCellConfig_t *servingCellConfig = cg->spCellConfig->spCellConfigDedicated;
+    if (servingCellConfig->uplinkConfig &&
+        servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList) {
+      const struct NR_UplinkConfig__uplinkBWP_ToAddModList *BWP_list = servingCellConfig->uplinkConfig->uplinkBWP_ToAddModList;
       for (int i=0; i<BWP_list->list.count; i++) {
         NR_BWP_t genericParameters = BWP_list->list.array[i]->bwp_Common->genericParameters;
         int curr_bw = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);

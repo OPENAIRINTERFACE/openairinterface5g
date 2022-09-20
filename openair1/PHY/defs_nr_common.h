@@ -97,6 +97,7 @@
 #define MAX_NUM_NR_RE (4*14*273*12)
 
 #define MAX_NUM_NR_SRS_SYMBOLS 4
+#define MAX_NUM_NR_SRS_AP 4
 
 #define NR_RX_NB_TH 1
 #define NR_NB_TH_SLOT 2
@@ -241,10 +242,9 @@ typedef struct {
 } NR_PRACH_RESOURCES_t;
 
 typedef struct {
-  uint16_t sc_list_length;
-  uint16_t sc_list[6*273];
+  uint8_t k_0_p[MAX_NUM_NR_SRS_AP][MAX_NUM_NR_SRS_SYMBOLS];
   uint8_t srs_generated_signal_bits;
-  int32_t srs_generated_signal[OFDM_SYMBOL_SIZE_SAMPLES_MAX * MAX_NUM_NR_SRS_SYMBOLS];
+  int32_t **srs_generated_signal;
 } nr_srs_info_t;
 
 typedef struct {

@@ -113,6 +113,7 @@ typedef struct NR_UE_UL_BWP {
   long *cyclicprefix;
   uint16_t BWPSize;
   uint16_t BWPStart;
+  NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig;
   NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList;
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;
@@ -393,6 +394,7 @@ typedef struct NR_pusch_semi_static_t {
 typedef struct NR_sched_pusch {
   int frame;
   int slot;
+  int mu;
 
   /// RB allocation within active uBWP
   uint16_t rbSize;
@@ -667,6 +669,10 @@ typedef struct NR_mac_dir_stats {
   uint64_t errors;
   uint64_t total_bytes;
   uint32_t current_bytes;
+  uint32_t total_rbs;
+  uint32_t total_rbs_retx;
+  uint32_t num_mac_sdu;
+  uint32_t current_rbs;
 } NR_mac_dir_stats_t;
 
 typedef struct NR_mac_stats {
@@ -709,6 +715,7 @@ typedef struct {
   uint8_t UE_beam_index;
   bool Msg3_dcch_dtch;
   bool Msg4_ACKed;
+  uint32_t ra_timer;
   /// Sched CSI-RS: scheduling decisions
   NR_gNB_UCI_STATS_t uci_statS;
   float ul_thr_ue;
@@ -849,6 +856,10 @@ typedef struct gNB_MAC_INST_s {
   uint8_t min_grant_mcs;
 
   nr_mac_rrc_ul_if_t mac_rrc;
+
+  int16_t frame;
+  int16_t slot;
+
 } gNB_MAC_INST;
 
 #endif /*__LAYER2_NR_MAC_GNB_H__ */

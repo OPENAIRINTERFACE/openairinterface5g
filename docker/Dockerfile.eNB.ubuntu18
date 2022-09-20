@@ -53,6 +53,7 @@ RUN apt-get update && \
         iputils-ping \
         iproute2 \
         iperf \
+        gdb \
         python \
         python3 \
         python3-six \

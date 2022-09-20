@@ -352,6 +352,7 @@ long rrc_get_max_nr_csrs(const uint8_t max_rbs, const long b_SRS) {
 }
 
 void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
+                const NR_UE_NR_Capability_t *uecap,
                 const int curr_bwp,
                 const int uid,
                 const int res_id,
@@ -418,6 +419,26 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
   NR_SRS_Resource_t *srs_res0=calloc(1,sizeof(*srs_res0));
   srs_res0->srs_ResourceId = res_id;
   srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
+  //  if (uecap &&
+  //      uecap->featureSets &&
+  //      uecap->featureSets->featureSetsUplink &&
+  //      uecap->featureSets->featureSetsUplink->list.count > 0) {
+  //    NR_FeatureSetUplink_t *ul_feature_setup = uecap->featureSets->featureSetsUplink->list.array[0];
+  //    switch (ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource) {
+  //      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n1:
+  //        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
+  //        break;
+  //      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n2:
+  //        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports2;
+  //        break;
+  //      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n4:
+  //        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports4;
+  //        break;
+  //      default:
+  //        LOG_E(NR_RRC, "Max Number of SRS Ports Per Resource %ld is invalid!\n",
+  //              ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
+  //    }
+  //  }
   srs_res0->ptrs_PortIndex = NULL;
   srs_res0->transmissionComb.present = NR_SRS_Resource__transmissionComb_PR_n2;
   srs_res0->transmissionComb.choice.n2 = calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));
@@ -1116,6 +1137,7 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
 
   ubwp->bwp_Dedicated->srs_Config = calloc(1,sizeof(*ubwp->bwp_Dedicated->srs_Config));
   config_srs(ubwp->bwp_Dedicated->srs_Config,
+             NULL,
              curr_bwp,
              uid,
              bwp_loop+1,
@@ -1125,4 +1147,13 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   ubwp->bwp_Dedicated->beamFailureRecoveryConfig = NULL;
 }
 
+void set_phr_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig)
+{
+  mac_CellGroupConfig->phr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config));
+  mac_CellGroupConfig->phr_Config->present                                = NR_SetupRelease_PHR_Config_PR_setup;
+  mac_CellGroupConfig->phr_Config->choice.setup                           = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config->choice.setup));
+  mac_CellGroupConfig->phr_Config->choice.setup->phr_PeriodicTimer        = NR_PHR_Config__phr_PeriodicTimer_sf10;
+  mac_CellGroupConfig->phr_Config->choice.setup->phr_ProhibitTimer        = NR_PHR_Config__phr_ProhibitTimer_sf10;
+  mac_CellGroupConfig->phr_Config->choice.setup->phr_Tx_PowerFactorChange = NR_PHR_Config__phr_Tx_PowerFactorChange_dB1;
+}
 

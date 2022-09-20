@@ -24,7 +24,7 @@
         <htmlTabRef>l2sim-4glte-tdd</htmlTabRef>
         <htmlTabName>Testing 4G LTE L2 sim - FDD eNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
-        <repeatCount>2</repeatCount>
+        <repeatCount>1</repeatCount>
         <TestCaseRequestedList>
  100001
  000000

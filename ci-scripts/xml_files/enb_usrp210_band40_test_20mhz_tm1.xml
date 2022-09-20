@@ -24,7 +24,7 @@
 	<htmlTabRef>test-20-tm1</htmlTabRef>
 	<htmlTabName>Test-20MHz-TM1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>4</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestUnstable>True</TestUnstable>
 	<TestMinId>040623</TestMinId>
 	<TestCaseRequestedList>

@@ -458,18 +458,18 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
   // slot and frame limit to transmit msg2 according to response window
   uint8_t slot_limit = (rach_slot + slot_window)%nr_slots_per_frame[mu];
-  uint16_t frame_limit = (slot_limit>(rach_slot))? rach_frame : (rach_frame +1);
+  uint16_t frame_limit = rach_frame + (rach_slot + slot_window)/nr_slots_per_frame[mu];
 
   // computing start of next period
-
-  int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
-
   uint8_t start_next_period = rach_slot-(rach_slot%tdd_period_slot)+tdd_period_slot;
   int eff_slot = start_next_period + last_dl_slot_period; // initializing scheduling of slot to next mixed (or last dl) slot
+
   // we can't schedule msg2 before sl_ahead since prach
   while ((eff_slot-rach_slot)<=sl_ahead) {
     eff_slot += tdd_period_slot;
   }
+
+  int FR = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257 ? nr_FR2 : nr_FR1;
   if (FR==nr_FR2) {
     int num_tdd_period = (eff_slot%nr_slots_per_frame[mu])/tdd_period_slot;
     while((tdd_beam_association[num_tdd_period]!=-1)&&(tdd_beam_association[num_tdd_period]!=beam_index)) {
@@ -480,8 +480,9 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
       tdd_beam_association[num_tdd_period] = beam_index;
   }
 
-  *msg2_frame=(rach_frame + eff_slot/nr_slots_per_frame[mu])%1024;
-  *msg2_slot=eff_slot%nr_slots_per_frame[mu];
+  *msg2_frame = rach_frame + eff_slot / nr_slots_per_frame[mu];
+  *msg2_slot = eff_slot % nr_slots_per_frame[mu];
+
   // go to previous slot if the current scheduled slot is beyond the response window
   // and if the slot is not among the PDCCH monitored ones (38.213 10.1)
   while (*msg2_frame > frame_limit
@@ -490,10 +491,7 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
 
     if((frame_type == FDD) || ((*msg2_slot%tdd_period_slot) > 0)) {
       if (*msg2_slot==0) {
-        if(*msg2_frame != 0)
-          (*msg2_frame)--;
-        else
-          *msg2_frame = 1023;
+        (*msg2_frame)--;
         *msg2_slot = nr_slots_per_frame[mu] - 1;
       }
       else
@@ -502,6 +500,9 @@ void nr_schedule_msg2(uint16_t rach_frame, uint16_t rach_slot,
     else
       AssertFatal(1==0,"No available DL slot to schedule msg2 has been found");
   }
+
+  // calculate frame number considering wrap-around
+  *msg2_frame = *msg2_frame % 1024;
 }
 
 
@@ -1057,6 +1058,8 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
 
     pusch_pdu->mcs_index = mcsindex;
     pusch_pdu->pusch_data.tb_size = TBS;
+    pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
+
   }
 }
 
@@ -1072,15 +1075,15 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
     return;
   }
 
-  uint16_t *vrb_map_UL =
-      &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
+  const uint16_t mask = SL_to_bitmap(ra->msg3_startsymb, ra->msg3_nrsymb);
+  uint16_t *vrb_map_UL = &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
   for (int i = 0; i < ra->msg3_nb_rb; ++i) {
-    AssertFatal(!vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start],
+    AssertFatal(!(vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start] & mask),
                 "RB %d in %4d.%2d is already taken, cannot allocate Msg3!\n",
                 i + ra->msg3_first_rb,
                 ra->Msg3_frame,
                 ra->Msg3_slot);
-    vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start] |= SL_to_bitmap(ra->msg3_startsymb, ra->msg3_nrsymb);
+    vrb_map_UL[i + ra->msg3_first_rb + ra->msg3_bwp_start] |= mask;
   }
 
   LOG_D(NR_MAC, "[gNB %d][RAPROC] Frame %d, Slot %d : CC_id %d RA is active, Msg3 in (%d,%d)\n", module_idP, frameP, slotP, CC_id, ra->Msg3_frame, ra->Msg3_slot);
@@ -1318,10 +1321,11 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, ra->CellGroup);
+    int bw_tbslbrm = get_dlbw_tbslbrm(scc_bwpsize, ra->CellGroup);
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
                                                                                bw_tbslbrm,
                                                                                1);
+    pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
 
     // Fill PDCCH DL DCI PDU
     nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];
@@ -1674,7 +1678,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->NrOfCodewords = 1;
     int R = nr_get_code_rate_dl(mcsIndex,mcsTableIdx);
     pdsch_pdu_rel15->targetCodeRate[0] = R;
-    pdsch_pdu_rel15->qamModOrder[0] = 2;
+    int Qm = nr_get_Qm_dl(mcsIndex, mcsTableIdx);
+    pdsch_pdu_rel15->qamModOrder[0] = Qm;
     pdsch_pdu_rel15->mcsIndex[0] = mcsIndex;
     pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
     pdsch_pdu_rel15->rvIndex[0] = nr_rv_round_map[harq->round%4];
@@ -1699,10 +1704,11 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
 
     int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bw_tbslbrm = get_bw_tbslbrm(scc_bwpsize, ra->CellGroup);
+    int bw_tbslbrm = get_dlbw_tbslbrm(scc_bwpsize, ra->CellGroup);
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
                                                                                bw_tbslbrm,
                                                                                1);
+    pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(harq->tb_size<<3,R);
 
     pdsch_pdu_rel15->precodingAndBeamforming.num_prgs=1;
     pdsch_pdu_rel15->precodingAndBeamforming.prg_size=275;
@@ -1829,6 +1835,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       nr_clear_ra_proc(module_idP, CC_id, frameP, ra);
       UE->Msg3_dcch_dtch = true;
       UE->Msg4_ACKed = true;
+      UE->ra_timer = 0;
 
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       harq->feedback_slot = -1;
@@ -1867,6 +1874,7 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
       if (stats->dl.errors == 0) {
         LOG_A(NR_MAC, "(UE RNTI 0x%04x) Received Ack of RA-Msg4. CBRA procedure succeeded!\n", ra->rnti);
         UE->Msg4_ACKed = true;
+        UE->ra_timer = 0;
 
         // Pause scheduling according to:
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs

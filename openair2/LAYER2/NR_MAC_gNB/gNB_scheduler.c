@@ -133,6 +133,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
       gNB->tdd_beam_association[i] = -1;
   }
 
+  gNB->frame = frame;
+  gNB->slot = slot;
+
   start_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 

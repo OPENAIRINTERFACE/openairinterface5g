@@ -40,6 +40,8 @@
 
 uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti);
 
+uint8_t get_BG(uint32_t A, uint16_t R);
+
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
@@ -143,8 +145,11 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx);
 
 uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset);
 
-int get_bw_tbslbrm(int scc_bwpsize,
-                   NR_CellGroupConfig_t *cg);
+int get_dlbw_tbslbrm(int scc_bwpsize,
+                     NR_CellGroupConfig_t *cg);
+
+int get_ulbw_tbslbrm(int scc_bwpsize,
+                     NR_CellGroupConfig_t *cg);
 
 uint32_t nr_compute_tbslbrm(uint16_t table,
 			    uint16_t nb_rb,

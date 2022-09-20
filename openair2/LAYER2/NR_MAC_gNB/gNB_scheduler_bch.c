@@ -433,10 +433,10 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->CyclicPrefix = 0;
 
   pdsch_pdu_rel15->NrOfCodewords = 1;
-  pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, 0);
-  pdsch_pdu_rel15->qamModOrder[0] = 2;
+  pdsch_pdu_rel15->targetCodeRate[0] = nr_get_code_rate_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, mcsTableIdx);
+  pdsch_pdu_rel15->qamModOrder[0] = nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs, mcsTableIdx);
   pdsch_pdu_rel15->mcsIndex[0] = gNB_mac->sched_ctrlCommon->sched_pdsch.mcs;
-  pdsch_pdu_rel15->mcsTable[0] = 0;
+  pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
   pdsch_pdu_rel15->rvIndex[0] = 0;
   pdsch_pdu_rel15->dataScramblingId = *scc->physCellId;
   pdsch_pdu_rel15->nrOfLayers = 1;
@@ -451,10 +451,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->rbStart = gNB_mac->sched_ctrlCommon->sched_pdsch.rbStart;
   pdsch_pdu_rel15->rbSize = gNB_mac->sched_ctrlCommon->sched_pdsch.rbSize;
   pdsch_pdu_rel15->VRBtoPRBMapping = 0;
-  pdsch_pdu_rel15->qamModOrder[0] = nr_get_Qm_dl(gNB_mac->sched_ctrlCommon->sched_pdsch.mcs,
-                                                 mcsTableIdx);
   pdsch_pdu_rel15->TBSize[0] = TBS;
-  pdsch_pdu_rel15->mcsTable[0] = mcsTableIdx;
   pdsch_pdu_rel15->StartSymbolIndex = StartSymbolIndex;
   pdsch_pdu_rel15->NrOfSymbols = NrOfSymbols;
   pdsch_pdu_rel15->dlDmrsSymbPos = dlDmrsSymbPos;
@@ -465,6 +462,7 @@ void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(0,
                                                                              pdsch_pdu_rel15->BWPSize,
                                                                              1);
+  pdsch_pdu_rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,pdsch_pdu_rel15->targetCodeRate[0]);
 
   /* Fill PDCCH DL DCI PDU */
   nfapi_nr_dl_dci_pdu_t *dci_pdu = &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci];

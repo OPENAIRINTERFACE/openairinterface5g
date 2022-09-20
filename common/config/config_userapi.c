@@ -113,7 +113,7 @@ void config_check_valptr(paramdef_t *cfgoptions, int elt_sz, int nb_elt) {
       sz=managed_ptr_sz(*cfgoptions->strptr);
     else
       sz=managed_ptr_sz(cfgoptions->voidptr);
-    if ( sz != -1) {
+    if ( sz == -1) {
       CONFIG_PRINTF_ERROR("[CONFIG] %s NOT SUPPORTED not NULL pointer with array types", cfgoptions->optname);
       return ;
     }

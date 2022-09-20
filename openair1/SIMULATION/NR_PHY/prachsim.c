@@ -54,6 +54,7 @@
 #include <openair2/RRC/NR_UE/rrc_defs.h>
 //#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include "executables/nr-uesoftmodem.h"
 
 #define NR_PRACH_DEBUG 1
 #define PRACH_WRITE_OUTPUT_DEBUG 1
@@ -222,12 +223,6 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             sdu_size_t      sdu2_lenP) {
   return 0;
 }
-
-typedef struct {
-  uint64_t       optmask;   //mask to store boolean config options
-  uint8_t        nr_dlsch_parallel; // number of threads for dlsch decoding, 0 means no parallelization
-  tpool_t        Tpool;             // thread pool
-} nrUE_params_t;
 
 nrUE_params_t nrUE_params;
 

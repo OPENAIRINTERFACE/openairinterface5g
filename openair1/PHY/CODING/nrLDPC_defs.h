@@ -24,6 +24,7 @@
 #define __NRLDPC_DEFS__H__
 #include <openair1/PHY/defs_nr_common.h>
 #include "openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
+
 /**
    \brief LDPC encoder
    \param 1 input
@@ -71,5 +72,9 @@ typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,sho
    \param p_llrOut Output vector
    \param p_profiler LDPC profiler statistics
 */
+
 typedef int32_t(*nrLDPC_decoderfunc_t)(t_nrLDPC_dec_params* , int8_t*, int8_t* , t_nrLDPC_time_stats* );
+typedef int32_t(*nrLDPC_decoffloadfunc_t)(t_nrLDPC_dec_params* , uint8_t, uint8_t, uint8_t , uint8_t, uint16_t, uint32_t, uint8_t, int8_t*, int8_t* ,uint8_t);
+typedef int32_t(*nrLDPC_dectopfunc_t)(void);
+
 #endif

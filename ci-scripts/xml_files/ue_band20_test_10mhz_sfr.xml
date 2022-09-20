@@ -24,7 +24,7 @@
 	<htmlTabRef>test-10mHz-sfr</htmlTabRef>
 	<htmlTabName>Test-10MHz-SFR</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>4</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  090109
  090111 000001 090109

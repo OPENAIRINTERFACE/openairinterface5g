@@ -80,15 +80,15 @@ void nr_fill_cce_list(nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL]
       LOG_D(PHY, "cce_idx %d\n", cce->cce_idx);
 
       uint8_t j = cce->cce_idx;
-      for (int k=6*j/bsize; k<(6*j/bsize+6/bsize); k++) { // loop over REG bundles
-
+      for (uint8_t bundle_idx=0; bundle_idx<NR_NB_REG_PER_CCE/bsize; bundle_idx++) {
+        uint8_t k = 6*j/bsize + bundle_idx;
         int f = cce_to_reg_interleaving(R, k, n_shift, C, bsize, N_regs);
 
 	for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
-	  reg = &cce->reg_list[reg_idx];
+	  reg = &cce->reg_list[bundle_idx*bsize+reg_idx];
 	  reg->reg_idx = bsize*f + reg_idx;
 	  reg->start_sc_idx = (reg->reg_idx/dur) * NR_NB_SC_PER_RB;
-	  reg->symb_idx = reg_idx%dur;
+	  reg->symb_idx = reg->reg_idx%dur;
 	  LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
 	}
       }

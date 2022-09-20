@@ -966,13 +966,13 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
                                               mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
       int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      bw_tbslbrm = get_bw_tbslbrm(BWPSize, mac->cg);
+      bw_tbslbrm = get_dlbw_tbslbrm(BWPSize, mac->cg);
     }
     else
       bw_tbslbrm = dlsch_config_pdu_1_0->BWPSize;
     dlsch_config_pdu_1_0->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_0->mcs_table,
-			                               bw_tbslbrm,
-		                                       1);
+                                                       bw_tbslbrm,
+                                                       1);
 
     /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
     dlsch_config_pdu_1_0->ndi = dci->ndi;
@@ -1407,7 +1407,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
                                             mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
     int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bw_tbslbrm = get_bw_tbslbrm(BWPSize, mac->cg);
+    int bw_tbslbrm = get_dlbw_tbslbrm(BWPSize, mac->cg);
     dlsch_config_pdu_1_1->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_1->mcs_table,
 			                               bw_tbslbrm,
 		                                       nl_tbslbrm);

@@ -24,7 +24,7 @@
         <htmlTabRef>rfsim-5gnr-tdd</htmlTabRef>
         <htmlTabName>Monolithic TDD gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
-        <repeatCount>4</repeatCount>
+        <repeatCount>1</repeatCount>
         <TestCaseRequestedList>
  100001
  000000

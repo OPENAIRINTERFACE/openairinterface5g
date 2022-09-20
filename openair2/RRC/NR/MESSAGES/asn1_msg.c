@@ -1092,7 +1092,7 @@ void fill_initial_SpCellConfig(int uid,
 
   // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(initialUplinkBWP->srs_Config, curr_bwp, uid, 0, 0);
+  config_srs(initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, 0);
 
   scheduling_request_config(scc, pucch_Config);
 
@@ -1596,6 +1596,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
             calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config));
       }
       config_srs(SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
+                 uecap,
                  curr_bwp,
                  uid,
                  0,
@@ -1620,6 +1621,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
         NR_BWP_Uplink_t *ul_bwp = UL_BWP_list->list.array[i];
         int bwp_size = NRRIV2BW(ul_bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
         config_srs(ul_bwp->bwp_Dedicated->srs_Config,
+                   uecap,
                    bwp_size,
                    uid,
                    i+1,
@@ -1662,12 +1664,7 @@ void fill_initial_cellGroupConfig(int uid,
   tag->tag_Id             = 0;
   tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
   ASN_SEQUENCE_ADD(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
-  mac_CellGroupConfig->phr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config));
-  mac_CellGroupConfig->phr_Config->present                                = NR_SetupRelease_PHR_Config_PR_setup;
-  mac_CellGroupConfig->phr_Config->choice.setup                           = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config->choice.setup));
-  mac_CellGroupConfig->phr_Config->choice.setup->phr_PeriodicTimer        = NR_PHR_Config__phr_PeriodicTimer_sf10;
-  mac_CellGroupConfig->phr_Config->choice.setup->phr_ProhibitTimer        = NR_PHR_Config__phr_ProhibitTimer_sf10;
-  mac_CellGroupConfig->phr_Config->choice.setup->phr_Tx_PowerFactorChange = NR_PHR_Config__phr_Tx_PowerFactorChange_dB1;
+  set_phr_config(mac_CellGroupConfig);
 
   mac_CellGroupConfig->schedulingRequestConfig = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
   mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));

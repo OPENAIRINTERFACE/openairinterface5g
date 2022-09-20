@@ -465,7 +465,7 @@ static int rfsimulator_write_internal(rfsimulator_state_t *t, openair0_timestamp
     pthread_mutex_unlock(&Sockmutex);
 
   LOG_D(HW,"sent %d samples at time: %ld->%ld, energy in first antenna: %d\n",
-        nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
+      nsamps, timestamp, timestamp+nsamps, signal_energy(samplesVoid[0], nsamps) );
   return nsamps;
 }
 

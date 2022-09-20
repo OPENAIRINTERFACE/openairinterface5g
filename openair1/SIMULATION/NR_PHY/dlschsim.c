@@ -48,6 +48,7 @@
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "executables/nr-uesoftmodem.h"
 
 
 //#define DEBUG_NR_DLSCHSIM
@@ -65,7 +66,8 @@ double cpuf;
 uint16_t NB_UE_INST = 1;
 
 uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
-
+const short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 // needed for some functions
 PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
@@ -73,47 +75,54 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
+
+nrUE_params_t nrUE_params={0};
+
+nrUE_params_t *get_nrUE_params(void) {
+  return &nrUE_params;
+}
+
 int main(int argc, char **argv)
 {
-	char c;
-	int i; //,j,l,aa;
-	double SNR, SNR_lin, snr0 = -2.0, snr1 = 2.0;
-	double snr_step = 0.1;
-	uint8_t snr1set = 0;
-	int **txdata;
-	double **s_re, **s_im, **r_re, **r_im;
-	//  int sync_pos, sync_pos_slot;
-	//  FILE *rx_frame_file;
-	FILE *output_fd = NULL;
-	//uint8_t write_output_file = 0;
-	//  int subframe_offset;
-	//  char fname[40], vname[40];
-	int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
-	uint8_t n_tx = 1, n_rx = 1;
-	//uint8_t transmission_mode = 1;
-	uint16_t Nid_cell = 0;
-	channel_desc_t *gNB2UE;
-	uint8_t extended_prefix_flag = 0;
-	//int8_t interf1 = -21, interf2 = -21;
-	FILE *input_fd = NULL, *pbch_file_fd = NULL;
-	//char input_val_str[50],input_val_str2[50];
-	//uint16_t NB_RB=25;
-	SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-	uint16_t N_RB_DL = 106, mu = 1; 
-	//unsigned char frame_type = 0;
-	unsigned char pbch_phase = 0;
-	int frame = 0, slot = 0;
-	int frame_length_complex_samples;
-	//int frame_length_complex_samples_no_prefix;
-	NR_DL_FRAME_PARMS *frame_parms;
-	uint8_t Kmimo = 0;
-	uint32_t Nsoft = 0;
-	double sigma;
-	unsigned char qbits = 8;
-	int ret;
-	//int run_initial_sync=0;
-	int loglvl = OAILOG_WARNING;
-	uint8_t dlsch_threads = 0;
+  char c;
+  int i; //,j,l,aa;
+  double SNR, SNR_lin, snr0 = -2.0, snr1 = 2.0;
+  double snr_step = 0.1;
+  uint8_t snr1set = 0;
+  int **txdata;
+  double **s_re, **s_im, **r_re, **r_im;
+  //  int sync_pos, sync_pos_slot;
+  //  FILE *rx_frame_file;
+  FILE *output_fd = NULL;
+  //uint8_t write_output_file = 0;
+  //  int subframe_offset;
+  //  char fname[40], vname[40];
+  int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
+  uint8_t n_tx = 1, n_rx = 1;
+  //uint8_t transmission_mode = 1;
+  uint16_t Nid_cell = 0;
+  channel_desc_t *gNB2UE;
+  uint8_t extended_prefix_flag = 0;
+  //int8_t interf1 = -21, interf2 = -21;
+  FILE *input_fd = NULL, *pbch_file_fd = NULL;
+  //char input_val_str[50],input_val_str2[50];
+  //uint16_t NB_RB=25;
+  SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
+  uint16_t N_RB_DL = 106, mu = 1;
+  //unsigned char frame_type = 0;
+  unsigned char pbch_phase = 0;
+  int frame = 0, slot = 0;
+  int frame_length_complex_samples;
+  //int frame_length_complex_samples_no_prefix;
+  NR_DL_FRAME_PARMS *frame_parms;
+  uint8_t Kmimo = 0;
+  uint32_t Nsoft = 0;
+  double sigma;
+  unsigned char qbits = 8;
+  int ret;
+  //int run_initial_sync=0;
+  int loglvl = OAILOG_WARNING;
+  uint8_t dlsch_threads = 0;
   float target_error_rate = 0.01;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
@@ -344,7 +353,6 @@ int main(int argc, char **argv)
 
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
-	init_dlsch_tpool(dlsch_threads);
 
 	if (ouput_vcd)
         vcd_signal_dumper_init("/tmp/openair_dump_nr_dlschsim.vcd");
@@ -363,7 +371,8 @@ int main(int argc, char **argv)
 	RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
 	RC.gNB[0] = calloc(1, sizeof(PHY_VARS_gNB));
 	gNB = RC.gNB[0];
-	initTpool(gNBthreads, &gNB->threadPool, true);
+	initNamedTpool(gNBthreads, &gNB->threadPool, true, "gNB-tpool");
+        initFloatingCoresTpool(dlsch_threads, &nrUE_params.Tpool, false, "UE-tpool");
 	//gNB_config = &gNB->gNB_config;
 	frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
 	frame_parms->nb_antennas_tx = n_tx;
@@ -459,6 +468,7 @@ int main(int argc, char **argv)
 	rel15->mcsIndex[0] = Imcs;
         rel15->numDmrsCdmGrpsNoData = 1;
         rel15->maintenance_parms_v3.tbSizeLbrmBytes = Tbslbrm;
+        rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS, rate);
 	double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
 	short channel_output_fixed[16 * 68 * 384];
 	//unsigned char *estimated_output;
