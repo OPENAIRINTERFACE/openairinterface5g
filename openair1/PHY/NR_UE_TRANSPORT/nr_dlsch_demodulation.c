@@ -1643,16 +1643,16 @@ void nr_dlsch_extract_rbs(int **rxdataF,
       if (pilots == 0) { //data symbol only
         if (aatx == 0) {
           if (start_re + nb_rb_pdsch * NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) {
-            memcpy((void*)rxF_ext, (void*)&rxF[start_re], nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
+            memcpy(rxF_ext, &rxF[start_re], nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
           } else {
             int neg_length = frame_parms->ofdm_symbol_size - start_re;
             int pos_length = nb_rb_pdsch * NR_NB_SC_PER_RB - neg_length;
 
-            memcpy((void*)rxF_ext, (void*)&rxF[start_re], neg_length * sizeof(int32_t));
-            memcpy((void*)&rxF_ext[neg_length], (void*)rxF, pos_length * sizeof(int32_t));
+            memcpy(rxF_ext, &rxF[start_re], neg_length * sizeof(int32_t));
+            memcpy(&rxF_ext[neg_length], rxF, pos_length * sizeof(int32_t));
           }
         }
-        memcpy((void*)dl_ch0_ext, (void*)dl_ch0, nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
+        memcpy(dl_ch0_ext, dl_ch0, nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
       }
       else if (config_type == NFAPI_NR_DMRS_TYPE1){
         if (n_dmrs_cdm_groups == 1) { //data is multiplexed
@@ -2353,9 +2353,9 @@ static void nr_dlsch_layer_demapping(int16_t **llr_cw,
   switch (Nl) {
     case 1:
       if (codeword_TB1 == -1)
-        memcpy((void*)llr_cw[0], (void*)llr_layers[0], (length)*sizeof(int16_t));
+        memcpy(llr_cw[0], llr_layers[0], (length)*sizeof(int16_t));
       else if (codeword_TB0 == -1)
-        memcpy((void*)llr_cw[1], (void*)llr_layers[0], (length)*sizeof(int16_t));
+        memcpy(llr_cw[1], llr_layers[0], (length)*sizeof(int16_t));
 
     break;
 
