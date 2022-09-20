@@ -1898,7 +1898,7 @@ unsigned char phy_threegpplte_turbo_decoder(short *y,
   __m128i *yp128;
   unsigned int i,j,iind;//,pi;
   unsigned char iteration_cnt=0;
-  unsigned int crc,oldcrc,crc_len;
+  uint32_t crc, oldcrc, crc_len;
   uint8_t temp;
   __m128i tmp128[(n+8)>>3];
   __m128i tmp, zeros=_mm_setzero_si128();

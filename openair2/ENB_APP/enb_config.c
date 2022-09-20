@@ -3076,43 +3076,25 @@ void configure_du_mac(int inst) {
   eNB_RRC_INST *rrc = RC.rrc[inst];
   rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
   LOG_I(ENB_APP,"Configuring MAC/L1 %d, carrier->sib2 %p\n",inst,&carrier->sib2->radioResourceConfigCommon);
-  rrc_mac_config_req_eNB(inst, 0,
-                         carrier->physCellId,
-                         carrier->p_eNB,
-                         carrier->Ncp,
-                         carrier->sib1->freqBandIndicator,
-                         carrier->dl_CarrierFreq,
-                         carrier->pbch_repetition,
-                         0, // rnti
-                         (LTE_BCCH_BCH_Message_t *) &carrier->mib,
-                         (LTE_RadioResourceConfigCommonSIB_t *) &carrier->sib2->radioResourceConfigCommon,
-                         (LTE_RadioResourceConfigCommonSIB_t *) &carrier->sib2_BR->radioResourceConfigCommon,
-                         (struct LTE_PhysicalConfigDedicated *)NULL,
-                         (LTE_SCellToAddMod_r10_t *)NULL,
-                         //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
-                         (LTE_MeasObjectToAddMod_t **) NULL,
-                         (LTE_MAC_MainConfig_t *) NULL, 0,
-                         (struct LTE_LogicalChannelConfig *)NULL,
-                         (LTE_MeasGapConfig_t *) NULL,
-                         carrier->sib1->tdd_Config,
-                         NULL,
-                         &carrier->sib1->schedulingInfoList,
-                         carrier->ul_CarrierFreq,
-                         carrier->sib2->freqInfo.ul_Bandwidth,
-                         &carrier->sib2->freqInfo.additionalSpectrumEmission,
-                         (LTE_MBSFN_SubframeConfigList_t *) carrier->sib2->mbsfn_SubframeConfigList,
-                         carrier->MBMS_flag,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) & carrier->sib13->mbsfn_AreaInfoList_r9,
-                         (LTE_PMCH_InfoList_r9_t *) NULL,
-                         NULL,
-                         0,
-                         (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                         (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                         (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                         (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                         (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-			 (LTE_MBSFNAreaConfiguration_r9_t*) NULL
-                        );
+  rrc_mac_config_req_eNB_t tmp = {0};
+  tmp.physCellId = carrier->physCellId;
+  tmp.p_eNB = carrier->p_eNB;
+  tmp.Ncp = carrier->Ncp;
+  tmp.eutra_band = carrier->sib1->freqBandIndicator;
+  tmp.dl_CarrierFreq = carrier->dl_CarrierFreq;
+  tmp.pbch_repetition = carrier->pbch_repetition;
+  tmp.mib = &carrier->mib;
+  tmp.radioResourceConfigCommon = &carrier->sib2->radioResourceConfigCommon;
+  tmp.LTE_radioResourceConfigCommon_BR = &carrier->sib2_BR->radioResourceConfigCommon;
+  tmp.tdd_Config = carrier->sib1->tdd_Config;
+  tmp.schedulingInfoList = &carrier->sib1->schedulingInfoList;
+  tmp.ul_CarrierFreq = carrier->ul_CarrierFreq;
+  tmp.ul_Bandwidth = carrier->sib2->freqInfo.ul_Bandwidth;
+  tmp.additionalSpectrumEmission = &carrier->sib2->freqInfo.additionalSpectrumEmission;
+  tmp.mbsfn_SubframeConfigList = carrier->sib2->mbsfn_SubframeConfigList;
+  tmp.MBMS_Flag = carrier->MBMS_flag;
+  tmp.mbsfn_AreaInfoList = &carrier->sib13->mbsfn_AreaInfoList_r9;
+  rrc_mac_config_req_eNB(inst, &tmp);
 }
 
 void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {

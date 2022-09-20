@@ -123,7 +123,6 @@ extern uint32_t Pdcp_stats_rx_outoforder[MAX_eNB][MAX_MOBILES_PER_ENB][NB_RB_MAX
 
 void pdcp_update_perioidical_stats(const protocol_ctxt_t *const  ctxt_pP);
 
-
 /*Packet Probing for agent PDCP*/
 //uint64_t *pdcp_packet_counter;
 //uint64_t *pdcp_size_packet;

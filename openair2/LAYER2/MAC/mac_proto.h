@@ -915,43 +915,46 @@ int generate_dlsch_header(unsigned char *mac_header,
 @param mbms_AreaConfiguration pointer to eMBMS MBSFN Area Configuration
 */
 
-int rrc_mac_config_req_eNB(module_id_t module_idP,
-                           int CC_id,
-                           int physCellId,
-                           int p_eNB,
-                           int Ncp,
-                           int eutra_band, uint32_t dl_CarrierFreq,
-                           int pbch_repetition,
-                           rnti_t rntiP,
-                           LTE_BCCH_BCH_Message_t *mib,
-                           LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-                           LTE_RadioResourceConfigCommonSIB_t *LTE_radioResourceConfigCommon_BR,
-                           struct LTE_PhysicalConfigDedicated  *physicalConfigDedicated,
-                           LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
-                           LTE_MeasObjectToAddMod_t **measObj,
-                           LTE_MAC_MainConfig_t *mac_MainConfig,
-                           long logicalChannelIdentity,
-                           LTE_LogicalChannelConfig_t *logicalChannelConfig,
-                           LTE_MeasGapConfig_t *measGapConfig,
-                           LTE_TDD_Config_t *tdd_Config,
-                           LTE_MobilityControlInfo_t *mobilityControlInfo,
-                           LTE_SchedulingInfoList_t *schedulingInfoList,
-                           uint32_t ul_CarrierFreq,
-                           long *ul_Bandwidth,
-                           LTE_AdditionalSpectrumEmission_t *additionalSpectrumEmission,
-                           struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
-                           uint8_t MBMS_Flag,
-                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
-                           LTE_PMCH_InfoList_r9_t *pmch_InfoList,
-                           LTE_SystemInformationBlockType1_v1310_IEs_t *sib1_ext_r13,
-                           uint8_t FeMBMS_Flag,
-                           LTE_BCCH_DL_SCH_Message_MBMS_t *mib_fembms,
-                           LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo_fembms,
-                           struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig,
-                           LTE_SystemInformationBlockType1_MBMS_r14_t   *sib1_mbms_r14_fembms,
-                           LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms,
-			   LTE_MBSFNAreaConfiguration_r9_t * mbms_AreaConfiguration
-                          );
+typedef struct {
+  int CC_id;
+  int physCellId;
+  int p_eNB;
+  int Ncp;
+  int eutra_band;
+  uint32_t dl_CarrierFreq;
+  int pbch_repetition;
+  rnti_t rnti;
+  LTE_BCCH_BCH_Message_t *mib;
+  LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
+  LTE_RadioResourceConfigCommonSIB_t *LTE_radioResourceConfigCommon_BR;
+  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated;
+  LTE_SCellToAddMod_r10_t *sCellToAddMod_r10;
+  LTE_MeasObjectToAddMod_t **measObj;
+  LTE_MAC_MainConfig_t *mac_MainConfig;
+  long logicalChannelIdentity;
+  LTE_LogicalChannelConfig_t *logicalChannelConfig;
+  LTE_MeasGapConfig_t *measGapConfig;
+  LTE_TDD_Config_t *tdd_Config;
+  LTE_MobilityControlInfo_t *mobilityControlInfo;
+  LTE_SchedulingInfoList_t *schedulingInfoList;
+  uint32_t ul_CarrierFreq;
+  long *ul_Bandwidth;
+  LTE_AdditionalSpectrumEmission_t *additionalSpectrumEmission;
+  struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList;
+  uint8_t MBMS_Flag;
+  LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList;
+  LTE_PMCH_InfoList_r9_t *pmch_InfoList;
+  LTE_SystemInformationBlockType1_v1310_IEs_t *sib1_ext_r13;
+  uint8_t FeMBMS_Flag;
+  LTE_BCCH_DL_SCH_Message_MBMS_t *mib_fembms;
+  LTE_SchedulingInfo_MBMS_r14_t *schedulingInfo_fembms;
+  struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig;
+  LTE_SystemInformationBlockType13_r9_t *sib1_mbms_r14_fembms;
+  LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList_fembms;
+  LTE_MBSFNAreaConfiguration_r9_t *mbms_AreaConfiguration;
+} rrc_mac_config_req_eNB_t;
+
+int rrc_mac_config_req_eNB(module_id_t module_idP, rrc_mac_config_req_eNB_t *);
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of ue
