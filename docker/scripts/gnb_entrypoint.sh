@@ -20,9 +20,14 @@ if [[ -v USE_SA_NFAPI_VNF ]]; then cp $PREFIX/etc/gnb.sa.nfapi.vnf.conf $PREFIX/
 if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/gnb.conf; fi
 
 # Defualt Parameters
-GNB_ID=${GNB_ID:-0xe00}
+GNB_ID=${GNB_ID:-e00}
 USE_FQDN=${USE_FQDN:-false}
 AMF_FQDN=${AMF_FQDN:-oai-amf-svc}
+# if you explicitly want to use an SD, it should be added in the docker-compose or the helm chart
+# if you want to support more than 1 NSSAI, then you need to mount a more-complex conf file
+if [[ -v NSSAI_SST ]] && [[ -v NSSAI_SD ]] then
+  NSSAI_SST=$NSSAI_SST" , sd = "$NSSAI_SD
+fi
 
 # Resolve AMF FQDN
 if ($USE_FQDN); then AMF_IP_ADDRESS=(`getent hosts $AMF_FQDN | awk '{print $1}'`); fi
