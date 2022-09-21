@@ -721,8 +721,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           // the function is only called to decode the contention resolution sub-header
           if (nr_process_mac_pdu(gnb_mod_idP, UE, CC_idP, frameP, slotP, sduP, sdu_lenP, -1) == 0) {
             ra->state = Msg4;
-            ra->Msg4_frame = (frameP + 2) % 1024;
-            ra->Msg4_slot = 1;
             
             if (ra->msg3_dcch_dtch) {
               // Check if the UE identified by C-RNTI still exists at the gNB
@@ -743,8 +741,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 reset_ul_harq_list(&UE_C->UE_sched_ctrl);
               }
             }
-            LOG_I(NR_MAC, "Scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d, frame %d, slot %d)\n",
-                  (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state, ra->Msg4_frame, ra->Msg4_slot);
+            LOG_I(NR_MAC, "Activating scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d)\n",
+                  (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state);
           }
           else {
              nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);

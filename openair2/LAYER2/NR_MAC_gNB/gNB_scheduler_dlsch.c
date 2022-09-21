@@ -67,7 +67,7 @@ const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon
     if ((slot%nr_slots_period) == tdd->nrofDownlinkSlots)
       return 2;
   }
-  return 0; // if FDD or not mixed slot in TDD, for now use default TDA (TODO handle CSI-RS slots)
+  return 0; // if FDD or not mixed slot in TDD, for now use default TDA
 }
 
 // Compute and write all MAC CEs and subheaders, and return number of written

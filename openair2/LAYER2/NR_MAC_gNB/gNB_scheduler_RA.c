@@ -1403,10 +1403,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_UE_DL_BWP_t *dl_bwp = &ra->DL_BWP;
 
-  if (ra->Msg4_frame == frameP && ra->Msg4_slot == slotP ) {
-
-    uint8_t time_domain_assignment = 0;
-    uint8_t mcsIndex = 0;
+  // if it is a DL slot, if the RA is in MSG4 state
+  if (is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[slotP / 64], slotP) &&
+      ra->state == Msg4) {
 
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
     NR_SearchSpace_t *ss = ra->ra_ss;
@@ -1422,11 +1421,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     NR_UE_info_t * UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
     if (!UE) {
-        LOG_E(NR_MAC,"want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
-        return;
+      LOG_E(NR_MAC,"want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
+      return;
     }
 
-    LOG_I(NR_MAC,"Generate msg4, rnti: %04x\n", ra->rnti);
+    if(UE->enc_rval.encoded <= 0) return; // need to wait until RRCSetup is encoded
+
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
     long BWPStart = 0;
@@ -1439,26 +1439,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       type0_PDCCH_CSS_config = &nr_mac->type0_PDCCH_CSS_config[ra->beam_id];
       BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
       BWPSize = type0_PDCCH_CSS_config->num_rbs;
-    }
-
-    /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
-    int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
-    // HARQ management
-    if (current_harq_pid < 0) {
-      AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
-                  "UE context not initialized: no HARQ processes found\n");
-      current_harq_pid = sched_ctrl->available_dl_harq.head;
-      remove_front_nr_list(&sched_ctrl->available_dl_harq);
-    }
-    NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
-    DevAssert(!harq->is_waiting);
-    add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
-    harq->is_waiting = true;
-    ra->harq_pid = current_harq_pid;
-
-    // Remove UE associated to TC-RNTI
-    if(harq->round==0 && ra->msg3_dcch_dtch) {
-      mac_remove_nr_ue(nr_mac, tc_rnti);
     }
 
     // get CCEindex, needed also for PUCCH and then later for PDCCH
@@ -1490,7 +1470,33 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, nb_of_candidates %d, delta_PRI %d)\n", r_pucch, CCEIndex, nr_of_candidates, delta_PRI);
 
     int alloc = nr_acknack_scheduling(module_idP, UE, frameP, slotP, r_pucch, 1);
-    AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
+    if (alloc<0) {
+      LOG_D(NR_MAC,"Couldn't find a pucch allocation for ack nack (msg4) in frame %d slot %d\n",frameP,slotP);
+      return;
+    }
+
+    LOG_I(NR_MAC,"Generate msg4, rnti: %04x\n", ra->rnti);
+
+    /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
+    int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
+    // HARQ management
+    if (current_harq_pid < 0) {
+      AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
+                  "UE context not initialized: no HARQ processes found\n");
+      current_harq_pid = sched_ctrl->available_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    }
+    NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    DevAssert(!harq->is_waiting);
+    add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
+    harq->is_waiting = true;
+    ra->harq_pid = current_harq_pid;
+
+    // Remove UE associated to TC-RNTI
+    if(harq->round==0 && ra->msg3_dcch_dtch) {
+      mac_remove_nr_ue(nr_mac, tc_rnti);
+    }
+
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
     harq->feedback_slot = pucch->ul_slot;
     harq->feedback_frame = pucch->frame;
@@ -1527,15 +1533,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       }
     }
 
+    uint8_t time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
     NR_tda_info_t msg4_tda = nr_get_pdsch_tda_info(dl_bwp, time_domain_assignment);
-
     NR_pdsch_dmrs_t dmrs_info = get_dl_dmrs_params(scc,
                                                    dl_bwp,
                                                    &msg4_tda,
                                                    1);
 
     uint8_t mcsTableIdx = dl_bwp->mcsTableIdx;
-
+    uint8_t mcsIndex = 0;
     int rbStart = 0;
     int rbSize = 0;
     uint8_t tb_scaling = 0;
@@ -1831,8 +1837,6 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
       }
     } else {
       LOG_I(NR_MAC, "(UE %04x) Received Nack of RA-Msg4. Preparing retransmission!\n", ra->rnti);
-      ra->Msg4_frame = (frame + 1) % 1024;
-      ra->Msg4_slot = 1;
       ra->state = Msg4;
     }
   }

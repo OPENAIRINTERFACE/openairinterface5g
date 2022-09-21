@@ -171,10 +171,6 @@ typedef struct {
   frame_t Msg3_frame;
   /// Msg3 time domain allocation index
   uint8_t Msg3_tda_id;
-  /// Subframe where Msg4 is to be sent
-  sub_frame_t Msg4_slot;
-  /// Frame where Msg4 is to be sent
-  frame_t Msg4_frame;
   /// harq_pid used for Msg4 transmission
   uint8_t harq_pid;
   /// UE RNTI allocated during RAR
