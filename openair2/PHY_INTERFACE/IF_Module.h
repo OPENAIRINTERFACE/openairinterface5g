@@ -1,5 +1,4 @@
-/*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ /* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
@@ -135,7 +134,7 @@ typedef struct {
     int CC_id;
     nfapi_config_request_t *cfg;
 } PHY_Config_t;
-#include <targets/ARCH/COMMON/common_lib.h>
+#include <sdr/COMMON/common_lib.h>
 
 typedef struct IF_Module_s{
 //define the function pointer

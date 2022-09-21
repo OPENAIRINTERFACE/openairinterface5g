@@ -108,7 +108,7 @@
 
 #include "PHY/NR_UE_TRANSPORT/dci_nr.h"
 #include <pthread.h>
-#include "targets/ARCH/COMMON/common_lib.h"
+#include "sdr/COMMON/common_lib.h"
 
 /// Context data structure for gNB subframe processing
 typedef struct {

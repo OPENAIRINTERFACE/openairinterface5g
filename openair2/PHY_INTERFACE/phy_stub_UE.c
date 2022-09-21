@@ -27,7 +27,7 @@
 #include "openair2/PHY_INTERFACE/phy_stub_UE.h"
 #include "openair2/ENB_APP/L1_paramdef.h"
 #include "openair2/ENB_APP/enb_paramdef.h"
-#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
+#include "sdr/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "common/config/config_load_configmodule.h"
 #include "common/config/config_userapi.h"
 #include <arpa/inet.h>

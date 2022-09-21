@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h
+/*! \file sdr/ETHERNET/USERSPACE/LIB/if_defs.h
 * \brief 
 * \author S. Sandeep Kumar, Raymond Knopp
 * \date 2016

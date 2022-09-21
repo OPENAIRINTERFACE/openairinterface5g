@@ -792,11 +792,11 @@ INPUT                  = $(OPENAIR1_DIR)/PHY/defs.h \
                          $(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0/rlc_um.h \
                          $(OPENAIR2_DIR)/LAYER2/RLC/UM_v9.3.0/rlc_um_entity.h \
                          $(OPENAIR2_DIR)/NETWORK_DRIVER/MESH/proto_extern.h \
-                         $(OPENAIR_TARGETS)/ARCH/COMMON/common_lib.h \
-                         $(OPENAIR_TARGETS)/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp \
-                         $(OPENAIR_TARGETS)/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.c \
-                         $(OPENAIR_TARGETS)/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.h \
-                         $(OPENAIR_TARGETS)/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp
+                         $(OPENAIR_DIR)/sdr/COMMON/common_lib.h \
+                         $(OPENAIR_DIR)/sdr/USRP/USERSPACE/LIB/usrp_lib.cpp \
+                         $(OPENAIR_DIR)/sdr/BLADERF/USERSPACE/LIB/bladerf_lib.c \
+                         $(OPENAIR_DIR)/sdr/BLADERF/USERSPACE/LIB/bladerf_lib.h \
+                         $(OPENAIR_DIR)/sdr/LMSSDR/USERSPACE/LIB/lms_lib.cpp
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

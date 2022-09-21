@@ -34,7 +34,7 @@
 #include <common/utils/LOG/log.h>
 #include <common/config/config_userapi.h>
 #include <openair1/SIMULATION/TOOLS/sim.h>
-#include <targets/ARCH/rfsimulator/rfsimulator.h>
+#include <sdr/rfsimulator/rfsimulator.h>
 
 // Ziggurat 
 static double wn[128],fn[128];
