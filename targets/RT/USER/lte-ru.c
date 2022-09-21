@@ -503,8 +503,6 @@ void fh_if4p5_north_asynch_in(RU_t *ru,
 
 
 void fh_if5_north_out(RU_t *ru) {
-  RU_proc_t *proc=&ru->proc;
-  uint8_t seqno=0;
   /// **** send_IF5 of rxdata to BBU **** ///
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );
 //  send_IF5(ru, proc->timestamp_rx, proc->tti_rx, &seqno, IF5_RRH_GW_UL);

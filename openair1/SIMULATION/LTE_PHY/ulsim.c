@@ -1533,7 +1533,7 @@ int main(int argc, char **argv) {
   }//ch realization
 
   oai_exit=1;
-  pthread_cond_signal(&ru->proc.cond_fep);
+  pthread_cond_signal(&ru->proc.cond_fep[0]);
 
   if (abstx) { // ABSTRACTION
     fprintf(csv_fdUL,"];");

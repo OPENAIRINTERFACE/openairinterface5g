@@ -30,6 +30,9 @@
  * \warning 
  */
 
+// _GNU_SOURCE needed to have sched_getcpu() from sched.h
+#define _GNU_SOURCE
+
 #include <arpa/inet.h>
 #include <linux/if_packet.h>
 #include <stdio.h>
@@ -478,7 +481,7 @@ void *udp_read_thread(void *arg) {
       memcpy((void*)(device->openair0_cfg->rxbase[aid]+offset),
              (void*)&buffer[APP_HEADER_SIZE_BYTES],
              count-APP_HEADER_SIZE_BYTES);
-      LOG_D(PHY,"UDP read thread_id %d (%d), aid %d, TS %llu, TS0 %llu, offset %d\n",(int)u->thread_id,(int)sched_getcpu(),aid,(unsigned long long)TS,(unsigned long long)fhstate->TS0,offset);
+      LOG_D(PHY,"UDP read thread_id %d (%d), aid %d, TS %llu, TS0 %llu, offset %ld\n",(int)u->thread_id,(int)sched_getcpu(),aid,(unsigned long long)TS,(unsigned long long)fhstate->TS0,offset);
     }
     sleep(1);
   }
