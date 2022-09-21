@@ -90,13 +90,17 @@ After completing the build, the binaries are available in the `cmake_targets/ran
 
 ## Installing UHD from source
 
-When installing the pre-requisites, especially the `UHD` driver, you can now specify if you want to install from source or not.
+Previously for Ubuntu distributions, when installing the pre-requisites, most of the packages are installed from PPA.
+
+Especially the `UHD` driver, but you could not easily manage the version of `libuhd` that will be installed.
+
+Now, when installing the pre-requisites, especially the `UHD` driver, you can now specify if you want to install from source or not.
 
 - For `fedora`-based OS, it was already the case all the time. But now you can specify which version to install.
-- For `ubuntu` OS, the Ettus PPA currently installs the following versions:
-  * `Ubuntu16.04`: --> version `3.15.0.0`
-  * `Ubuntu18.04`: --> version `4.1.0.0`
-  * `Ubuntu20.04`: --> version `4.2.0.1`
+- For `ubuntu` OS, you can still install from the Ettus PPA or select a version to install from source.
+  * In case of PPA installation, you do nothing special, the script will install the latest version available on the PPA.
+    - `./build_oai -I -w USRP`
+  * In case of a installation from source, you do as followed:
 
 ```bash
 export BUILD_UHD_FROM_SOURCE=True
