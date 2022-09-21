@@ -151,6 +151,11 @@ int nr_process_mac_pdu(instance_t module_idP,
         //38.321 section 6.1.3.1
         //fixed length
         mac_len =1;
+        if (pdu_len < sizeof(NR_BSR_SHORT)) {
+              LOG_E(NR_MAC, "pdu_len %d is invalid (prior to cast of size %ld)\n",
+                    pdu_len, sizeof(NR_BSR_SHORT));
+              return 0;
+        }
         /* Extract short BSR value */
         ce_ptr = &pduP[mac_subheader_len];
         NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
@@ -328,6 +333,11 @@ int nr_process_mac_pdu(instance_t module_idP,
           mac_len = 8;
 
           // Check if it is a valid CCCH1 message, we get all 00's messages very often
+          if (pdu_len < mac_subheader_len + mac_len) {
+              LOG_E(NR_MAC, "pdu_len %d is invalid (prior to cast of size %d)\n",
+                    pdu_len, mac_subheader_len + mac_len);
+              return 0;
+        }
           int i = 0;
           for(i=0; i<(mac_subheader_len+mac_len); i++) {
             if(pduP[i] != 0) {
