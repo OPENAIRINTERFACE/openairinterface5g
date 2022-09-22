@@ -894,7 +894,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
   const int n_slots_frame = nr_slots_per_frame[mu];
   uint8_t k2 = 0;
   if (frame_type == TDD) {
-    int nb_periods_per_frame = get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+    const int first_ul_slot_period = tdd->nrofDownlinkSlots;
+    int nb_periods_per_frame = get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
     int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
     for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
       startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
@@ -903,19 +904,15 @@ void nr_get_Msg3alloc(module_id_t module_id,
       int start_symbol_index,nr_of_symbols;
       SLIV2SL(pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
       LOG_D(NR_MAC,"Checking Msg3 TDA %d : k2 %d, sliv %d,S %d L %d\n",i,(int)k2,(int)pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength,start_symbol_index,nr_of_symbols);
-      // we want to transmit in the uplink symbols of mixed slot AND assuming Msg2 was in the mixed slot
-      if ((k2 + DELTA[mu])%nb_slots_per_period == 0) {
-        temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-        ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
-
-        if (is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[ra->Msg3_slot / 64], ra->Msg3_slot) &&
-            nr_of_symbols<=scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols&&
-            start_symbol_index>=(14-scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols)) {
-          ra->Msg3_tda_id = i;
-          ra->msg3_startsymb = StartSymbolIndex;
-          ra->msg3_nrsymb = NrOfSymbols;
-          break;
-        }
+      // we want to transmit in the uplink symbols of mixed slot or the first uplink slot
+      temp_slot = (current_slot + k2 + DELTA[mu]) % nr_slots_per_frame[mu]; // msg3 slot according to 8.3 in 38.213
+      if ((temp_slot % nb_slots_per_period) == first_ul_slot_period &&
+          is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[temp_slot / 64], temp_slot)) {
+        ra->Msg3_tda_id = i;
+        ra->msg3_startsymb = StartSymbolIndex;
+        ra->msg3_nrsymb = NrOfSymbols;
+        ra->Msg3_slot = temp_slot;
+        break;
       }
     }
     AssertFatal(ra->Msg3_tda_id < 16, "Couldn't find an appropriate TD allocation for Msg3\n");

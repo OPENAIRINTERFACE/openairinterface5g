@@ -514,7 +514,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     if (tdd) {
       nr_ulstart_slot = tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0);
       nr_dl_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
-      nr_ulstart_slot = tdd->nrofDownlinkSlots + (tdd->nrofUplinkSymbols == 0);
+      nr_ulstart_slot = tdd->nrofDownlinkSlots;
       nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
     }
     else
