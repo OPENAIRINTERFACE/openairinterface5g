@@ -1113,26 +1113,4 @@ static inline int release_thread(pthread_mutex_t *mutex,
   return(0);
 }
 
-static inline int32_t abs32(int32_t x)
-{
-  return (((int32_t)((int16_t*)&x)[0])*((int32_t)((int16_t*)&x)[0]) + ((int32_t)((int16_t*)&x)[1])*((int32_t)((int16_t*)&x)[1]));
-}
-
-static inline int64_t abs64(int64_t x)
-{
-  return (((int64_t)((int32_t*)&x)[0])*((int64_t)((int32_t*)&x)[0]) + ((int64_t)((int32_t*)&x)[1])*((int64_t)((int32_t*)&x)[1]));
-}
-
-static inline double absF(struct complexd x) {
-  return x.r*x.r+x.i*x.i;
-}
-
-static inline double angle64(int64_t x)
-{
-
-  double re=((int32_t*)&x)[0];
-  double im=((int32_t*)&x)[1];
-  return (atan2(im,re));
-}
-
 #endif //  __PHY_DEFS_COMMON_H__

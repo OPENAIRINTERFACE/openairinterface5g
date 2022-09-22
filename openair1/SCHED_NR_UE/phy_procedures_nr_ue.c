@@ -1331,7 +1331,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   fapi_nr_config_request_t *cfg = &ue->nrUE_config;
-  prs_config_t *prs_config = NULL;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
@@ -1415,7 +1414,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   {
     for(int rsc_id = 0; rsc_id < ue->prs_vars[gNB_id]->NumPRSResources; rsc_id++)
     {
-      prs_config = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
+      prs_config_t *prs_config = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
       for (int i = 0; i < prs_config->PRSResourceRepetition; i++)
       {
         if( (((frame_rx*fp->slots_per_frame + nr_slot_rx) - (prs_config->PRSResourceSetPeriod[1] + prs_config->PRSResourceOffset) + prs_config->PRSResourceSetPeriod[0])%prs_config->PRSResourceSetPeriod[0]) == i*prs_config->PRSResourceTimeGap)

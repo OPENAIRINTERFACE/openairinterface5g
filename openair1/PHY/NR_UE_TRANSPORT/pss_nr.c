@@ -708,7 +708,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
                                 (short*)&(rxdata[ar][n+is*frame_parms->samples_per_frame]),
                                 frame_parms->ofdm_symbol_size,
                                 shift);
-        pss_corr_ue += abs64(result);
+        pss_corr_ue += squaredMod(*(c32_t*)&result);
         //((short*)pss_corr_ue[pss_index])[2*n] += ((short*) &result)[0];   /* real part */
         //((short*)pss_corr_ue[pss_index])[2*n+1] += ((short*) &result)[1]; /* imaginary part */
         //((short*)&synchro_out)[0] += ((int*) &result)[0];               /* real part */

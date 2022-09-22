@@ -356,9 +356,6 @@ typedef struct {
 typedef struct {
   uint8_t NumPRSResources;
   NR_PRS_RESOURCE_t prs_resource[NR_MAX_PRS_RESOURCES_PER_SET];
-  int16_t *ch_tmp;
-  int32_t **chF_interpol;
-  int32_t **chT_interpol;
 } NR_UE_PRS;
 
 #define NR_PDCCH_DEFS_NR_UE

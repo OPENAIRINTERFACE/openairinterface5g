@@ -251,16 +251,6 @@ void init_nr_prs_ue_vars(PHY_VARS_NR_UE *ue)
   {
     prs_vars[idx]   = (NR_UE_PRS *)malloc16_clear(sizeof(NR_UE_PRS));
     // PRS channel estimates
-    prs_vars[idx]->ch_tmp       = (int16_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
-    AssertFatal((prs_vars[idx]->ch_tmp!=NULL), "%s: PRS ch_tmp buffer malloc failed for gNB_id %d\n", __FUNCTION__,idx);
-    prs_vars[idx]->chF_interpol = (int32_t **)malloc16_clear(fp->nb_antennas_rx*sizeof(int32_t *));
-    prs_vars[idx]->chT_interpol = (int32_t **)malloc16_clear(fp->nb_antennas_rx*sizeof(int32_t *));
-    AssertFatal((prs_vars[idx]->chF_interpol!=NULL || prs_vars[idx]->chT_interpol!=NULL), "%s: PRS chF_interpol or chT_interpol buffer malloc failed for gNB_id %d\n", __FUNCTION__,idx);
-    for (int j=0; j<fp->nb_antennas_rx; j++) {
-      prs_vars[idx]->chF_interpol[j] = (int32_t *)malloc16_clear(NR_PRS_IDFT_OVERSAMP_FACTOR*fp->ofdm_symbol_size*sizeof(int32_t));
-      prs_vars[idx]->chT_interpol[j] = (int32_t *)malloc16_clear(NR_PRS_IDFT_OVERSAMP_FACTOR*fp->ofdm_symbol_size*sizeof(int32_t));
-      AssertFatal((prs_vars[idx]->chF_interpol[j]!=NULL || prs_vars[idx]->chT_interpol[j]!=NULL), "%s: PRS chF_interpol or chT_interpol buffer malloc failed for gNB_id %d, rx_ant %d\n", __FUNCTION__, idx, j);
-    }
 
     for(int k = 0; k < NR_MAX_PRS_RESOURCES_PER_SET; k++)
     {
@@ -688,14 +678,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
       free_and_zero(ue->prs_vars[idx]->prs_resource[k].prs_meas);
     }
 
-    for (int j=0; j<fp->nb_antennas_rx; j++)
-    {
-      free_and_zero(ue->prs_vars[idx]->chF_interpol[j]);
-      free_and_zero(ue->prs_vars[idx]->chT_interpol[j]);
-    }
-    free_and_zero(ue->prs_vars[idx]->chF_interpol);
-    free_and_zero(ue->prs_vars[idx]->chT_interpol);
-    free_and_zero(ue->prs_vars[idx]->ch_tmp);
     free_and_zero(ue->prs_vars[idx]);
   }
   free_and_zero(ue->sinr_CQI_dB);
