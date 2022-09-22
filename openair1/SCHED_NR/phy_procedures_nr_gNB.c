@@ -822,7 +822,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
         }
 
-        const int srs_est = nr_get_srs_signal(gNB,frame_rx,slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
+        int srs_est = nr_get_srs_signal(gNB, frame_rx, slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
 
         if (srs_est >= 0) {
           nr_srs_channel_estimation(gNB,
@@ -843,31 +843,41 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     &snr);
         }
 
-        T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(srs_estimated_channel_freq[0][0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
+        if ((snr * 10) < gNB->srs_thres) {
+          srs_est = -1;
+        }
 
-        T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE, T_INT(0), T_INT(srs_pdu->rnti), T_INT(frame_rx), T_INT(0), T_INT(0),
-          T_BUFFER(srs_estimated_channel_time_shifted[0][0], frame_parms->ofdm_symbol_size*sizeof(int32_t)));
+        T(T_GNB_PHY_UL_FREQ_CHANNEL_ESTIMATE,
+          T_INT(0),
+          T_INT(srs_pdu->rnti),
+          T_INT(frame_rx),
+          T_INT(0),
+          T_INT(0),
+          T_BUFFER(srs_estimated_channel_freq[0][0], frame_parms->ofdm_symbol_size * sizeof(int32_t)));
 
-        const uint16_t num_srs = gNB->UL_INFO.srs_ind.number_of_pdus;
+        T(T_GNB_PHY_UL_TIME_CHANNEL_ESTIMATE,
+          T_INT(0),
+          T_INT(srs_pdu->rnti),
+          T_INT(frame_rx),
+          T_INT(0),
+          T_INT(0),
+          T_BUFFER(srs_estimated_channel_time_shifted[0][0], frame_parms->ofdm_symbol_size * sizeof(int32_t)));
+
         gNB->UL_INFO.srs_ind.pdu_list = &gNB->srs_pdu_list[0];
         gNB->UL_INFO.srs_ind.sfn = frame_rx;
         gNB->UL_INFO.srs_ind.slot = slot_rx;
-        gNB->srs_pdu_list[num_srs].handle = srs_pdu->handle;
-        gNB->srs_pdu_list[num_srs].rnti = srs_pdu->rnti;
-        gNB->srs_pdu_list[num_srs].timing_advance = srs_est >= 0 ? nr_est_timing_advance_srs(frame_parms,
-                                                                                             srs_estimated_channel_time[0]) : 0xFFFF;
-        gNB->srs_pdu_list[num_srs].num_symbols = 1<<srs_pdu->num_symbols;
-        gNB->srs_pdu_list[num_srs].wide_band_snr = srs_est >= 0 ? (snr + 64)<<1 : 0xFF; // 0xFF will be set if this field is invalid
-        gNB->srs_pdu_list[num_srs].num_reported_symbols = 1<<srs_pdu->num_symbols;
-        if(!gNB->srs_pdu_list[num_srs].reported_symbol_list) {
-          gNB->srs_pdu_list[num_srs].reported_symbol_list = (nfapi_nr_srs_indication_reported_symbol_t*) calloc(1, gNB->srs_pdu_list[num_srs].num_reported_symbols*sizeof(nfapi_nr_srs_indication_reported_symbol_t));
+
+        nfapi_nr_srs_indication_pdu_t *srs_indication = &gNB->srs_pdu_list[gNB->UL_INFO.srs_ind.number_of_pdus];
+        srs_indication->handle = srs_pdu->handle;
+        srs_indication->rnti = srs_pdu->rnti;
+        srs_indication->timing_advance = srs_est >= 0 ? nr_est_timing_advance_srs(frame_parms, srs_estimated_channel_time[0]) : 0xFFFF;
+        srs_indication->num_symbols = 1 << srs_pdu->num_symbols;
+        srs_indication->wide_band_snr = srs_est >= 0 ? (snr + 64) << 1 : 0xFF; // 0xFF will be set if this field is invalid
+        srs_indication->num_reported_symbols = 1 << srs_pdu->num_symbols;
+        if (!srs_indication->reported_symbol_list) {
+          srs_indication->reported_symbol_list = (nfapi_nr_srs_indication_reported_symbol_t *)calloc(1, srs_indication->num_reported_symbols * sizeof(nfapi_nr_srs_indication_reported_symbol_t));
         }
-        fill_srs_reported_symbol_list(&gNB->srs_pdu_list[num_srs].reported_symbol_list[0],
-                                      srs_pdu,
-                                      frame_parms->N_RB_UL,
-                                      snr_per_rb,
-                                      srs_est);
+        fill_srs_reported_symbol_list(&srs_indication->reported_symbol_list[0], srs_pdu, frame_parms->N_RB_UL, snr_per_rb, srs_est);
 
         gNB->UL_INFO.srs_ind.number_of_pdus += 1;
 
@@ -880,9 +890,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].wide_band_snr = %i\n", num_srs, gNB->srs_pdu_list[num_srs].wide_band_snr);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].num_reported_symbols = %i\n", num_srs, gNB->srs_pdu_list[num_srs].num_reported_symbols);
         LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].reported_symbol_list[0].num_rbs = %i\n", num_srs, gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs);
-        for(int rb = 0; rb < gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs; rb++) {
-          LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].reported_symbol_list[0].rb_list[%3i].rb_snr = %i\n",
-                num_srs, rb, gNB->srs_pdu_list[num_srs].reported_symbol_list[0].rb_list[rb].rb_snr);
+        for (int rb = 0; rb < gNB->srs_pdu_list[num_srs].reported_symbol_list[0].num_rbs; rb++) {
+          LOG_I(NR_PHY, "gNB->srs_pdu_list[%i].reported_symbol_list[0].rb_list[%3i].rb_snr = %i\n", num_srs, rb, gNB->srs_pdu_list[num_srs].reported_symbol_list[0].rb_list[rb].rb_snr);
         }
 #endif
 
