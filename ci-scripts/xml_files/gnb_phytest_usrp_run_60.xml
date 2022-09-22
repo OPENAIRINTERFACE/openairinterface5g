@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-  <htmlTabRef>gNB-PHY-Test</htmlTabRef>
+  <htmlTabRef>gNB-PHY-Test-60</htmlTabRef>
   <htmlTabName>Timing phytest 60 MHz</htmlTabName>
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
