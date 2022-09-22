@@ -1217,7 +1217,7 @@ function start_rf_sim_nr_ue {
         then
             echo "echo \"./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --log_config.global_log_options level,nocolor,time\" > ./my-nr-softmodem-run.sh " >> $1
         else # -eq 3 SA test 24PRB 
-           echo "echo \"./nr-uesoftmodem -r 24 -s 24 --numerology 1 --band 78 -C 3604320000 --rfsim --sa --log_config.global_log_options level,nocolor,time\" > ./my-nr-softmodem-run.sh " >> $1
+           echo "echo \"./nr-uesoftmodem -r 24 --ssb 24 --numerology 1 --band 78 -C 3604320000 --rfsim --sa --log_config.global_log_options level,nocolor,time\" > ./my-nr-softmodem-run.sh " >> $1
         fi
     fi
     echo "chmod 775 ./my-nr-softmodem-run.sh" >> $1

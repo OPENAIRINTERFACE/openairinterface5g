@@ -169,15 +169,15 @@ gNB on machine 1:
 
 UE on machine 2:
 
-`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 -s 516 --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ssb 516 --sa`
 
 With the RF simulator (on the same machine):
 
 `sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa`
 
-`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 -s 516 --rfsim --sa`
+`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ssb 516 --rfsim --sa`
 
-where `-r` sets the transmission bandwidth configuration in terms of RBs, `-C` sets the downlink carrier frequency and `-s` sets the SSB start subcarrier.
+where `-r` sets the transmission bandwidth configuration in terms of RBs, `-C` sets the downlink carrier frequency and `--ssb` sets the SSB start subcarrier.
 
 Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabilities input file (path location + filename), e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
 
