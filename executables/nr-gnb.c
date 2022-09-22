@@ -38,6 +38,7 @@
 #include "assertions.h"
 #include <common/utils/LOG/log.h>
 #include <common/utils/system.h>
+#include "rt_profiling.h"
 
 #include "PHY/types.h"
 
@@ -59,7 +60,6 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
-#include "PHY/LTE_TRANSPORT/if5_tools.h"
 
 #include "PHY/phy_extern.h"
 
@@ -115,10 +115,17 @@ void tx_func(void *param) {
   int frame_tx = info->frame;
   int slot_tx = info->slot;
 
+  int absslot_tx = info->timestamp_tx/info->gNB->frame_parms.get_samples_per_slot(slot_tx,&info->gNB->frame_parms);
+  int absslot_rx = absslot_tx-info->gNB->RU_list[0]->sl_ahead;
+  int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
+
+  clock_gettime(CLOCK_MONOTONIC,&info->gNB->rt_L1_profiling.start_L1_TX[rt_prof_idx]);
   phy_procedures_gNB_TX(info,
                         frame_tx,
                         slot_tx,
                         1);
+  clock_gettime(CLOCK_MONOTONIC,&info->gNB->rt_L1_profiling.return_L1_TX[rt_prof_idx]);
+
 }
 
 void rx_func(void *param) {
@@ -130,6 +137,11 @@ void rx_func(void *param) {
   int slot_tx = info->slot_tx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
 
+  int absslot_tx = info->timestamp_tx/gNB->frame_parms.get_samples_per_slot(slot_rx,&gNB->frame_parms);
+  int absslot_rx = absslot_tx - gNB->RU_list[0]->sl_ahead;
+  int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
+
+  clock_gettime(CLOCK_MONOTONIC,&info->gNB->rt_L1_profiling.start_L1_RX[rt_prof_idx]);
   start_meas(&softmodem_stats_rxtx_sf);
 
   // *******************************************************************
@@ -228,6 +240,7 @@ void rx_func(void *param) {
 
   stop_meas( &softmodem_stats_rxtx_sf );
   LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, frame_rx, slot_rx, frame_tx, slot_tx);
+  clock_gettime(CLOCK_MONOTONIC,&info->gNB->rt_L1_profiling.return_L1_RX[rt_prof_idx]);
 
   // Call the scheduler
   start_meas(&gNB->ul_indication_stats);
@@ -383,6 +396,8 @@ void *tx_reorder_thread(void* param) {
   AssertFatal(resL1Reserve != NULL, "pullTpool() did not return start message in %s\n", __func__);
   int next_tx_slot=((processingData_L1tx_t *)NotifiedFifoData(resL1Reserve))->slot;
   
+  LOG_I(PHY,"tx_reorder_thread started\n");
+  
   while (!oai_exit) {
     notifiedFIFO_elt_t *resL1;
     if (resL1Reserve) {
@@ -419,6 +434,7 @@ void *tx_reorder_thread(void* param) {
     pushNotifiedFIFO(&gNB->L1_tx_free, resL1);
     if (resL1==resL1Reserve)
        resL1Reserve=NULL;
+    LOG_D(PHY,"gNB: %d.%d : calling RU TX function\n",syncMsgL1->frame,syncMsgL1->slot);
     ru_tx_func((void*)&syncMsgRU);
   }
   return(NULL);
@@ -457,7 +473,9 @@ void init_gNB_Tpool(int inst) {
   if ((!get_softmodem_params()->emulate_l1) && (!IS_SOFTMODEM_NOSTATS_BIT))
      threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
 
-  threadCreate(&proc->pthread_tx_reorder, tx_reorder_thread, (void *)gNB, "thread_tx_reorder", -1, OAI_PRIORITY_RT_MAX);
+  LOG_I(PHY,"Creating thread for TX reordering and dispatching to RU\n");
+  threadCreate(&proc->pthread_tx_reorder, tx_reorder_thread, (void *)gNB, "thread_tx_reorder", 
+		  gNB->RU_list[0] ? gNB->RU_list[0]->tpcores[1] : -1, OAI_PRIORITY_RT_MAX);
 
 }
 

@@ -16,16 +16,18 @@
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/uio.h>
 #include <net/if.h>
 #include <netinet/ether.h>
 #include <unistd.h>
 #include <errno.h>
 #include <linux/sysctl.h>
 #include <sys/sysctl.h>
+#include <pthread.h>
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-
+#include "common/utils/system.h"
 #include "ori.h"
 
 #include "targets/ARCH/COMMON/common_lib.h"
@@ -250,7 +252,6 @@ int aw2s_startstreaming(openair0_device *device) {
 
   }
   ORI_Object_s *link= ORI_FindObject(ori, ORI_ObjectType_ORILink, 0, NULL);
-
   if (tx0 == NULL || 
       (tx1 == NULL && openair0_cfg->tx_num_channels > 1) || 
       (tx2 == NULL && openair0_cfg->tx_num_channels > 2) ||
@@ -335,7 +336,7 @@ int aw2s_startstreaming(openair0_device *device) {
     printf("\n\n\n========================================================\n");
 
     /* Put Tx3 into service */
-   result = ORI_ObjectStateModification(ori, tx1, ORI_AST_Unlocked, &RE_result);
+   result = ORI_ObjectStateModification(ori, tx3, ORI_AST_Unlocked, &RE_result);
     if(result != ORI_Result_SUCCESS)
       {
         printf("ORI_ObjectStateModify failed with error: %s\n", ORI_Result_Print(result));
@@ -402,7 +403,7 @@ int aw2s_startstreaming(openair0_device *device) {
   if (rx3) {
     printf("\n\n\n========================================================\n");
 
-    /* Put Rx1 into service */
+    /* Put Rx3 into service */
     result = ORI_ObjectStateModification(ori, rx3, ORI_AST_Unlocked, &RE_result);
     if(result != ORI_Result_SUCCESS)
       {
@@ -412,37 +413,8 @@ int aw2s_startstreaming(openair0_device *device) {
       }
     printf("ORI_ObjectStateModify: %s\n", ORI_Result_Print(RE_result));
   }
-  /*
-  while (rx0->fst != ORI_FST_Operational || 
-         (openair0_cfg->rx_num_channels > 1 && rx1->fst != ORI_FST_Operational) || 
-         tx0->fst != ORI_FST_Operational || 
-         (openair0_cfg->tx_num_channels > 1 && tx1->fst != ORI_FST_Operational))
-  {}*/  	
-  // test RX interface 
-  uint64_t TS;
-  char temp_rx[2048] __attribute__((aligned(32)));
-  int aid,r0=0,r1=(openair0_cfg->rx_num_channels > 1) ? 0 : 1;
-  int r2=(openair0_cfg->rx_num_channels > 2) ? 0 : 1;
-  int r3=(openair0_cfg->rx_num_channels > 3) ? 0 : 1;
 
-  int i;
-  int Npackets=1024000;
-  for (i=0;i<Npackets;i++) {
-    device->trx_read_func2(device,
-                           (openair0_timestamp*)&TS,
-                           (void*)temp_rx,
-                           256,
-                           &aid);
-    if (aid == 0) r0=1;
-    if (aid == 1) r1=1;
-    if (aid == 2) r2=1;
-    if (aid == 3) r3=1;
-  }
-  if (r0==1 && r1==1 && r2==1 && r3==1) printf("Streaming started, returning to OAI\n");
-  else {
-    printf("Didn't get anything from one antenna port after %d packets %d,%d,%d,%d\n",Npackets,r0,r1,r2,r3);
-    return(-1);
-  }
+  device->fhstate.active=1; 
   return(0);
 
 }
@@ -924,7 +896,7 @@ int aw2s_oriinit(openair0_device *device) {
 
 int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params ) {
 
-  
+  printf("Initializing AW2S (%p,%p,%p)\n",aw2s_oriinit,aw2s_oricleanup,aw2s_startstreaming); 
   device->thirdparty_init           = aw2s_oriinit;
   device->thirdparty_cleanup        = aw2s_oricleanup;
   device->thirdparty_startstreaming = aw2s_startstreaming;
