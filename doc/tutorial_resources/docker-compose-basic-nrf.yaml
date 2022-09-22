@@ -143,7 +143,7 @@ services:
             - PLMN_SUPPORT_MNC=99
             - PLMN_SUPPORT_TAC=0x0001
             - SST_0=1
-            - SD_0=0xFFFFFF
+            - SD_0=0x1
             - AMF_INTERFACE_NAME_FOR_NGAP=eth0
             - AMF_INTERFACE_NAME_FOR_N11=eth0
             - SMF_INSTANCE_ID_0=1
@@ -229,7 +229,7 @@ services:
             - TYPE0=IPv4
             - DNN_RANGE0=12.1.1.2 - 12.1.1.253
             - NSSAI_SST0=1
-            - NSSAI_SD0=0xFFFFFF
+            - NSSAI_SD0=0x1
             - SESSION_AMBR_UL0=1000Mbps
             - SESSION_AMBR_DL0=1000Mbps
             - DEFAULT_CSCF_IPV4_ADDRESS=127.0.0.1  # only needed when ims is being used
@@ -274,7 +274,7 @@ services:
             - NRF_API_VERSION=v1
             - NRF_FQDN=oai-nrf
             - NSSAI_SST_0=1
-            - NSSAI_SD_0=0xFFFFFF
+            - NSSAI_SD_0=0x1
             - DNN_0=oai
         depends_on:
             - oai-nrf
