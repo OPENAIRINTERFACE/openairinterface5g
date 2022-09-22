@@ -92,7 +92,7 @@ class PhySim:
 			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
-		mySSH.command('echo ' + lPassWord + ' | sudo rm -Rf ' + lSourcePath, '\$', 30)
+		mySSH.command('rm -Rf ' + lSourcePath, '\$', 30)
 		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
 		mySSH.command('cd ' + lSourcePath, '\$', 5)
 		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
@@ -100,7 +100,7 @@ class PhySim:
 		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
 
-		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		mySSH.command('git clean -x -d -ff', '\$', 30)
 		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
