@@ -449,7 +449,7 @@ static int trx_usrp_write(openair0_device *device,
         }
         else 
         {
-          __m256i tmp=_mm256_loadu_si256(((__m256i *)buff[i])[j]);
+          __m256i tmp=_mm256_loadu_si256(((__m256i *)buff[i])+j);
           buff_tx[i][j] = _mm256_slli_epi16(tmp,4);
         }
 #else
@@ -596,7 +596,7 @@ void *trx_usrp_write_thread(void * arg){
             }
             else
             {
-              __m256i tmp=_mm256_loadu_si256(((__m256i *)buff[i])[j]);
+              __m256i tmp=_mm256_loadu_si256(((__m256i *)buff[i])+j);
               buff_tx[i][j] = _mm256_slli_epi16(tmp,4);
             }
           #else
@@ -754,7 +754,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
         ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
       } else {
         __m256i tmp=_mm256_srai_epi16(buff_tmp[i][j],rxshift);
-        _mm256_storeu_si256(((__m256i *)buff[i])[j], tmp);
+        _mm256_storeu_si256(((__m256i *)buff[i])+j, tmp);
       }
     }
 #else    
