@@ -1,0 +1,254 @@
+#!/bin/groovy
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+// Location of the executor node
+def pythonExecutor = params.pythonExecutor
+
+// Location of the test XML file to be run
+def testXMLFile = params.pythonTestXmlFile
+def mainPythonAllXmlFiles = ""
+def buildStageStatus = true
+
+// Name of the test stage
+def testStageName = params.pipelineTestStageName
+
+// Name of the resource
+def lockResources = []
+if (params.LockResources != null && params.LockResources.trim().length() > 0)
+  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
+
+// Global Parameters. Normally they should be populated when the master job
+// triggers the slave job with parameters
+def eNB_Repository
+def eNB_Branch
+def eNB_CommitID
+def eNB_AllowMergeRequestProcess = false
+def eNB_TargetBranch
+
+def directoryExistsGlob(fileNameWithGlob) {
+  /* if multiple directories match, will join their names and call fileExists() on that */
+  def dir = sh returnStdout: true, script: 'find . -name \'' + fileNameWithGlob + '\' -type d'
+  dir = dir.replaceAll("\n", "").trim()
+  echo "matching '" + fileNameWithGlob + "' found: '"  + dir + "'"
+  if (dir == "")
+    return false
+  return fileExists(dir)
+}
+
+//-------------------------------------------------------------------------------
+// Pipeline start
+pipeline {
+  agent {
+    label pythonExecutor
+  }
+  options {
+    disableConcurrentBuilds()
+    timestamps()
+    ansiColor('xterm')
+    lock(extra: lockResources)
+  }
+
+  stages {
+    stage ('Verify Parameters') {
+      steps {
+        script {
+          echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+
+          JOB_TIMESTAMP = sh returnStdout: true, script: 'date --utc --rfc-3339=seconds | sed -e "s#+00:00##"'
+          JOB_TIMESTAMP = JOB_TIMESTAMP.trim()
+
+          def allParametersPresent = true
+
+          // It is already to late to check it
+          if (params.pythonExecutor != null) {
+            echo "eNB CI executor node  :   ${pythonExecutor}"
+          }
+          // If not present picking a default Stage Name
+          if (params.pipelineTestStageName == null) {
+            // picking default
+            testStageName = 'Template Test Stage'
+          }
+
+          if (params.LockResources == null) {
+            echo "no LockResources given"
+            allParametersPresent = false
+          }
+          if (params.eNB_IPAddress == null) {
+            echo "no eNB_IPAddress given"
+            allParametersPresent = false
+          }
+          if (params.eNB_SourceCodePath == null) {
+            echo "no eNB_SourceCodePath given"
+            allParametersPresent = false
+          }
+          if (params.eNB_Credentials == null) {
+            echo "no eNB_Credentials given"
+            allParametersPresent = false
+          }
+          // the following 4 parameters should be pushed by the master trigger
+          // if not present, take the job GIT variables (used for developing)
+          if (params.eNB_Repository == null) {
+            eNB_Repository = env.GIT_URL
+          } else {
+            eNB_Repository = params.eNB_Repository
+          }
+          echo "eNB_Repository        :   ${eNB_Repository}"
+          if (params.eNB_Branch == null) {
+            eNB_Branch = env.GIT_BRANCH
+          } else {
+            eNB_Branch = params.eNB_Branch
+          }
+          echo "eNB_Branch            :   ${eNB_Branch}"
+          if (params.eNB_CommitID == null) {
+            eNB_CommitID = env.GIT_COMMIT
+          } else {
+            eNB_CommitID = params.eNB_CommitID
+          }
+          echo "eNB_CommitID          :   ${eNB_CommitID}"
+          if (params.eNB_mergeRequest != null) {
+            eNB_AllowMergeRequestProcess = params.eNB_mergeRequest
+            if (eNB_AllowMergeRequestProcess) {
+              if (params.eNB_TargetBranch != null) {
+                eNB_TargetBranch = params.eNB_TargetBranch
+              } else {
+                eNB_TargetBranch = 'develop'
+              }
+              echo "eNB_TargetBranch      :   ${eNB_TargetBranch}"
+            }
+          } else {
+            echo "no eNB_mergeRequest given - not merging develop"
+          }
+
+          if (params.EPC_IPAddress == null) {
+            echo "no EPC_IPAddress given"
+            allParametersPresent = false
+          }
+          if (params.EPC_Type == null) {
+            echo "no EPC_Type given"
+            allParametersPresent = false
+          }
+          if (params.EPC_SourceCodePath == null) {
+            echo "no EPC_SourceCodePath given"
+            allParametersPresent = false
+          }
+          if (params.EPC_Credentials == null) {
+            echo "no EPC_Credentials given"
+            allParametersPresent = false
+          }
+
+          if (params.ADB_IPAddress == null) {
+            echo "no ADB_IPAddress given"
+            allParametersPresent = false
+          }
+          if (params.ADB_Credentials == null) {
+            echo "no ADB_IPAddress given"
+            allParametersPresent = false
+          }
+          if (params.OC_Credentials == null) {
+            echo "no OC_Credentials given"
+            allParametersPresent = false
+          }
+          if (params.OC_ProjectName == null) {
+            echo "no OC_ProjectName given"
+            allParametersPresent = false
+          }
+          if (params.pythonTestXmlFile == null) {
+            echo "no pythonTestXmlFile given"
+            allParametersPresent = false
+          }
+          if (allParametersPresent) {
+            echo "All parameters are present"
+            if (eNB_AllowMergeRequestProcess) {
+              sh "git fetch"
+              sh "./ci-scripts/doGitLabMerge.sh --src-branch ${eNB_Branch} --src-commit ${eNB_CommitID} --target-branch ${eNB_TargetBranch} --target-commit latest"
+            } else {
+              sh "git fetch"
+              sh "git checkout -f ${eNB_CommitID}"
+            }
+          } else {
+            echo "Some parameters are missing"
+            sh "./ci-scripts/fail.sh"
+          }
+        }
+      }
+    }
+
+    stage ("Deploy and Test") {
+      steps {
+        script {
+          dir ('ci-scripts') {
+            echo "\u2705 \u001B[32m${testStageName}\u001B[0m"
+            String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+            for (xmlFile in myXmlTestSuite) {
+              if (fileExists(xmlFile)) {
+                mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
+                echo "Test XML file         :   ${xmlFile}"
+              }
+            }
+            withCredentials([
+              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
+              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
+              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password'],
+              [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.OC_Credentials}", usernameVariable: 'OC_Username', passwordVariable: 'OC_Password']
+            ]) {
+              sh "python3 main.py --mode=InitiateHtml --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
+              for (xmlFile in myXmlTestSuite) {
+                if (fileExists(xmlFile)) {
+                  try {
+                    sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile} --OCUserName=${OC_Username} --OCPassword=${OC_Password} --OCProjectName=${OC_ProjectName}"
+                  } catch (Exception e) {
+                    currentBuild.result = 'FAILURE'
+                    buildStageStatus = false
+                  }
+                }
+              }
+              sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
+            }
+          }
+        }
+      }
+    }
+    stage ("Log Collection") {
+      steps {
+        script {
+          dir ('ci-scripts') {
+            if (directoryExistsGlob("build_log_*")) {
+              sh "zip -r -qq build_log_${env.BUILD_ID}.zip build_log_*/*"
+              sh "rm -rf build_log_*/"
+              archiveArtifacts artifacts: "build_log_${env.BUILD_ID}.zip"
+            }
+            if (directoryExistsGlob("test_log_*")) {
+              sh "zip -r -qq test_log_${env.BUILD_ID}.zip test_log_*/*"
+              sh "rm -rf test_log_*/"
+              archiveArtifacts artifacts: "test_log_${env.BUILD_ID}.zip"
+            }
+            if (fileExists("test_results.html")) {
+              sh "mv test_results.html test_results-${env.JOB_NAME}.html"
+              sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_STAGE_NAME#${testStageName}#' test_results-${JOB_NAME}.html"
+              archiveArtifacts artifacts: "test_results-${env.JOB_NAME}.html"
+            }
+          }
+        }
+      }
+    }
+  }
+}

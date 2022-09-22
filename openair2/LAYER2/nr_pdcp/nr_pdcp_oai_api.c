@@ -1441,6 +1441,44 @@ void nr_pdcp_tick(int frame, int subframe)
 /*
  * For the SDAP API
  */
-nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager(){
-    return nr_pdcp_ue_manager;
+nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager() {
+  return nr_pdcp_ue_manager;
+}
+
+/* returns false in case of error, true if everything ok */
+const bool nr_pdcp_get_statistics(
+  int rnti,
+  int srb_flag,
+  int rb_id,
+  nr_pdcp_statistics_t *out)
+{
+  nr_pdcp_ue_t     *ue;
+  nr_pdcp_entity_t *rb;
+  bool             ret;
+
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
+
+  if (srb_flag == 1) {
+    if (rb_id < 1 || rb_id > 2)
+      rb = NULL;
+    else
+      rb = ue->srb[rb_id - 1];
+  } else {
+    if (rb_id < 1 || rb_id > 5)
+      rb = NULL;
+    else
+      rb = ue->drb[rb_id - 1];
+  }
+
+  if (rb != NULL) {
+    rb->get_stats(rb, out);
+    ret = true;
+  } else {
+    ret = false;
+  }
+
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
+  return ret;
 }

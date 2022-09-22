@@ -19,37 +19,19 @@
 # *      contact@openairinterface.org
 # */
 #---------------------------------------------------------------------
-#
+
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: "oai-gnb-build-config"
+  name: "oai-physim"
 spec:
     runPolicy: "Serial"
     source:
-        #still needed for the target image
-        git:
-            uri: "https://gitlab.eurecom.fr/oai/openairinterface5g.git"
-            ref: "develop"
-            httpProxy: http://proxy.eurecom.fr:8080
-            httpsProxy: https://proxy.eurecom.fr:8080
-        secrets:
-          - secret:
-              name: etc-pki-entitlement
-            destinationDir: etc-pki-entitlement
-        configMaps:
-          - configMap:
-              name: rhsm-conf
-            destinationDir: rhsm-conf
-          - configMap:
-              name: rhsm-ca
-            destinationDir: rhsm-ca
-
+        type: "Binary"
     strategy:
-        #using both builder image and target image docker
         dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.gNB.rhel7.oc4-4"
+            dockerfilePath: "docker/Dockerfile.phySim.rhel8.2"
     output:
         to:
             kind: "ImageStreamTag"
-            name: "oai-gnb:latest"
+            name: "oai-physim:latest"

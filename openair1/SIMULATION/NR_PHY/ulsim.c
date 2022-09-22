@@ -1135,7 +1135,7 @@ int main(int argc, char **argv)
 	pusch_pdu->bwp_size = abwp_size;
       }
 
-      pusch_pdu->pusch_data.tb_size = TBS/8;
+      pusch_pdu->pusch_data.tb_size = TBS>>3;
       pusch_pdu->pdu_bit_map = pdu_bit_map;
       pusch_pdu->rnti = n_rnti;
       pusch_pdu->mcs_index = Imcs;
@@ -1168,6 +1168,7 @@ int main(int argc, char **argv)
       pusch_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
       pusch_pdu->pusch_ptrs.ptrs_ports_list   = (nfapi_nr_ptrs_ports_t *) malloc(2*sizeof(nfapi_nr_ptrs_ports_t));
       pusch_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+      pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS, code_rate);
 
       // if transform precoding is enabled
       if (transform_precoding == transformPrecoder_enabled) {

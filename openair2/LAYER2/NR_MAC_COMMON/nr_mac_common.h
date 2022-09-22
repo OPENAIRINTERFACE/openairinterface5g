@@ -40,6 +40,8 @@
 
 uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti);
 
+uint8_t get_BG(uint32_t A, uint16_t R);
+
 uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);

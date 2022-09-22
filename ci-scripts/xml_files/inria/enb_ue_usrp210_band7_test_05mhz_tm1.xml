@@ -24,7 +24,7 @@
 	<htmlTabRef>test-05-tm1-oai-ue</htmlTabRef>
 	<htmlTabName>Test-05MHz-TM1-OAI-UE</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>4</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  030201 090109
  030102 000001 090102 000002 040503 000002 040603 040604 040643 040644 000002 090109 000001 030201

@@ -24,7 +24,7 @@
         <htmlTabRef>run-oai-gnb-nr-ue</htmlTabRef>
         <htmlTabName>Run-gNB-and-NR-UE</htmlTabName>
         <htmlTabIcon>tasks</htmlTabIcon>	
-	<repeatCount>2</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
 090101 000001 090102 000002 090108 090109
 	</TestCaseRequestedList>

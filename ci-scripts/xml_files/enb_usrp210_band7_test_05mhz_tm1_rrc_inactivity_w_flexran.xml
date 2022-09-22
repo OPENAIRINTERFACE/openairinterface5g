@@ -24,7 +24,7 @@
 	<htmlTabRef>test-05-tm1-rrc-w-flex</htmlTabRef>
 	<htmlTabName>Test-05MHz-TM1-RRC-Inactivity-FlexRan</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>2</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  030201
  040101

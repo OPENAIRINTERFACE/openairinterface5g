@@ -23,16 +23,11 @@
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
-  name: "oai-enb-build-config"
+  name: "ran-base"
 spec:
     runPolicy: "Serial"
     source:
-        #still needed for the target image
-        git:
-            uri: "https://gitlab.eurecom.fr/oai/openairinterface5g.git"
-            ref: "develop"
-            httpProxy: http://proxy.eurecom.fr:8080
-            httpsProxy: https://proxy.eurecom.fr:8080
+        type: "Binary"
         secrets:
           - secret:
               name: etc-pki-entitlement
@@ -44,12 +39,10 @@ spec:
           - configMap:
               name: rhsm-ca
             destinationDir: rhsm-ca
-
     strategy:
-        #using both builder image and target image docker
         dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.eNB.rhel7.oc4-4"
+            dockerfilePath: "docker/Dockerfile.base.rhel8.2"
     output:
         to:
             kind: "ImageStreamTag"
-            name: "oai-enb:latest"
+            name: "ran-base:latest"

@@ -32,11 +32,12 @@
       env: "@ENB_NAME@"
     - key: eNB_name
       env: "@ENB_NAME@"
-    - key: plmn_list
-      env:
-        mcc: "@MCC@"
-        mnc: "@MNC@"
-        mnc_length: "@MNC_LENGTH@"
+    - key: mcc
+      env: "@MCC@"
+    - key: mnc
+      env: "@MNC@"
+    - key: mnc_length
+      env: "@MNC_LENGTH@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: local_s_if_name
@@ -75,11 +76,12 @@
       env: "@ENB_NAME@"
     - key: eNB_name
       env: "@ENB_NAME@"
-    - key: plmn_list
-      env:
-        mcc: "@MCC@"
-        mnc: "@MNC@"
-        mnc_length: "@MNC_LENGTH@"
+    - key: mcc
+      env: "@MCC@"
+    - key: mnc
+      env: "@MNC@"
+    - key: mnc_length
+      env: "@MNC_LENGTH@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: local_n_if_name
@@ -136,11 +138,12 @@
       env: "@ENB_NAME@"
     - key: eNB_name
       env: "@ENB_NAME@"
-    - key: plmn_list
-      env:
-        mcc: "@MCC@"
-        mnc: "@MNC@"
-        mnc_length: "@MNC_LENGTH@"
+    - key: mcc
+      env: "@MCC@"
+    - key: mnc
+      env: "@MNC@"
+    - key: mnc_length
+      env: "@MNC_LENGTH@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: eutra_band
@@ -187,11 +190,12 @@
       env: "@ENB_NAME@"
     - key: eNB_name
       env: "@ENB_NAME@"
-    - key: plmn_list
-      env:
-        mcc: "@MCC@"
-        mnc: "@MNC@"
-        mnc_length: "@MNC_LENGTH@"
+    - key: mcc
+      env: "@MCC@"
+    - key: mnc
+      env: "@MNC@"
+    - key: mnc_length
+      env: "@MNC_LENGTH@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: eutra_band
@@ -226,11 +230,12 @@
       env: "@ENB_NAME@"
     - key: eNB_name
       env: "@ENB_NAME@"
-    - key: plmn_list
-      env:
-        mcc: "@MCC@"
-        mnc: "@MNC@"
-        mnc_length: "@MNC_LENGTH@"
+    - key: mcc
+      env: "@MCC@"
+    - key: mnc
+      env: "@MNC@"
+    - key: mnc_length
+      env: "@MNC_LENGTH@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: local_s_if_name
@@ -271,11 +276,12 @@
       env: "@ENB_NAME@"
     - key: eNB_name
       env: "@ENB_NAME@"
-    - key: plmn_list
-      env:
-        mcc: "@MCC@"
-        mnc: "@MNC@"
-        mnc_length: "@MNC_LENGTH@"
+    - key: mcc
+      env: "@MCC@"
+    - key: mnc
+      env: "@MNC@"
+    - key: mnc_length
+      env: "@MNC_LENGTH@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: eutra_band
@@ -316,11 +322,12 @@
       env: "@ENB_NAME@"
     - key: eNB_name
       env: "@ENB_NAME@"
-    - key: plmn_list
-      env:
-        mcc: "@MCC@"
-        mnc: "@MNC@"
-        mnc_length: "@MNC_LENGTH@"
+    - key: mcc
+      env: "@MCC@"
+    - key: mnc
+      env: "@MNC@"
+    - key: mnc_length
+      env: "@MNC_LENGTH@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: eutra_band
@@ -361,11 +368,12 @@
       env: "@ENB_NAME@"
     - key: eNB_name
       env: "@ENB_NAME@"
-    - key: plmn_list
-      env:
-        mcc: "@MCC@"
-        mnc: "@MNC@"
-        mnc_length: "@MNC_LENGTH@"
+    - key: mcc
+      env: "@MCC@"
+    - key: mnc
+      env: "@MNC@"
+    - key: mnc_length
+      env: "@MNC_LENGTH@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: eutra_band

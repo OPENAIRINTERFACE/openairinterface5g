@@ -24,7 +24,7 @@
 	<htmlTabRef>test-x2-ho-05-tm1</htmlTabRef>
 	<htmlTabName>Test-X2-Handover-05MHz-TM1</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<repeatCount>2</repeatCount>
+	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  040101 030201 030202
  050102

@@ -24,7 +24,7 @@
         <htmlTabRef>l2sim-5gnr-tdd</htmlTabRef>
         <htmlTabName>Testing 5G NR L2 sim - TDD gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
-        <repeatCount>2</repeatCount>
+        <repeatCount>1</repeatCount>
         <TestCaseRequestedList>
  100001
  000000

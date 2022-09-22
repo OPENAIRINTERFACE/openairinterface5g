@@ -1110,3 +1110,66 @@ void rlc_tick(int a, int b)
         __FILE__, __LINE__, __FUNCTION__);
   exit(1);
 }
+
+void nr_rlc_activate_avg_time_to_tx(
+  const rnti_t            rnti,
+  const logical_chan_id_t channel_id,
+  const bool              is_on)
+{
+  nr_rlc_ue_t *ue;
+  nr_rlc_entity_t *rb;
+
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+
+  switch (channel_id) {
+  case 1 ... 3: rb = ue->srb[channel_id - 1]; break;
+  case 4 ... 8: rb = ue->drb[channel_id - 4]; break;
+  default:      rb = NULL;                    break;
+  }
+
+  if (rb != NULL) {
+    rb->avg_time_is_on = is_on;
+    time_average_reset(rb->txsdu_avg_time_to_tx);
+  } else {
+    LOG_E(RLC, "[%s] Radio Bearer (channel ID %d) is NULL for UE with rnti %x\n", __FUNCTION__, channel_id, rnti);
+  }
+
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+}
+
+/* returns false in case of error, true if everything ok */
+const bool nr_rlc_get_statistics(
+  int rnti,
+  int srb_flag,
+  int rb_id,
+  nr_rlc_statistics_t *out)
+{
+  nr_rlc_ue_t     *ue;
+  nr_rlc_entity_t *rb;
+  bool             ret;
+
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+
+  rb = NULL;
+
+  if (srb_flag) {
+    if (rb_id >= 1 && rb_id <= 2)
+      rb = ue->srb[rb_id - 1];
+  } else {
+    if (rb_id >= 1 && rb_id <= 5)
+      rb = ue->drb[rb_id - 1];
+  }
+
+  if (rb != NULL) {
+    rb->get_stats(rb, out);
+    ret = true;
+  } else {
+    ret = false;
+  }
+
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+
+  return ret;
+}

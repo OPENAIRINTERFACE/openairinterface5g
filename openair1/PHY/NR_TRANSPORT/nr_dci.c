@@ -198,10 +198,10 @@ void nr_generate_dci(PHY_VARS_gNB *gNB,
 
         int8_t cce_idx = reg_list_order[cce_count];
 
-        for (int reg_in_cce_idx = 0; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx+=pdcch_pdu_rel15->DurationSymbols) {
+        for (int reg_in_cce_idx = symbol_idx; reg_in_cce_idx < NR_NB_REG_PER_CCE; reg_in_cce_idx+=pdcch_pdu_rel15->DurationSymbols) {
 
           k = cset_start_sc + cce_list[d][cce_idx].reg_list[reg_in_cce_idx].start_sc_idx;
-          LOG_D(PHY,"CCE %d REG %d k %d\n",cce_idx,reg_in_cce_idx+symbol_idx,k);
+          LOG_D(PHY,"CCE %d REG %d k %d\n",cce_idx,reg_in_cce_idx,k);
           if (k >= frame_parms->ofdm_symbol_size)
             k -= frame_parms->ofdm_symbol_size;
 

@@ -1,0 +1,13 @@
+# Creating a pod to retrieve ran-base logs
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ran-base-log-retrieval
+  namespace: oaicicd-ran
+spec:
+  containers:
+    - name: logcontainer
+      image: ran-base:latest
+      command: ["/bin/sh", "-c"]
+      args:
+        ["sleep inf"]
