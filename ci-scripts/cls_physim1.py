@@ -161,7 +161,7 @@ class PhySim:
 		while(count < 2 and isRunning == False):
 			time.sleep(60)
 			mySSH.command('oc get pods -o wide -l app.kubernetes.io/instance=physim | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 30, resync=True)
-			if mySSH.getBefore().count('Running') == 12:
+			if mySSH.getBefore().count('Running') == 21:
 				logging.debug('\u001B[1m Running the physim test Scenarios\u001B[0m')
 				isRunning = True
 				podNames = re.findall('oai-[\S\d\w]+', mySSH.getBefore())
@@ -187,7 +187,7 @@ class PhySim:
 		isFinished = False
 		# doing a deep copy!
 		tmpPodNames = podNames.copy()
-		while(count < 50 and isFinished == False):
+		while(count < 15 and isFinished == False):
 			time.sleep(60)
 			for podName in tmpPodNames:
 				mySSH.command2(f'oc logs --tail=1 {podName} 2>&1', 6, silent=True)
@@ -205,7 +205,6 @@ class PhySim:
 		# Getting the logs of each executables running in individual pods
 		for podName in podNames:
 			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 15, resync=True)
-		time.sleep(30)
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/log/physim_test.txt', '.')
 		try:
 			listLogFiles =  subprocess.check_output('egrep --colour=never "Execution Log file|Linux oai-" physim_test.txt', shell=True, universal_newlines=True)
