@@ -328,6 +328,7 @@ The following features are valid for the gNB and the 5G-NR UE.
   - HARQ procedures for uplink
 - Scheduler procedures for SRS reception
   - Periodic SRS reception
+  - TPMI computation based on SRS up 4 antenna ports and 1 layer
 - MAC procedures to handle CSI measurement report
   - evalution of RSRP report
   - evaluation of CQI report
