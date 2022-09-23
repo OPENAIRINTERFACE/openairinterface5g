@@ -57,7 +57,6 @@ class PhySim:
 		self.ranAllowMerge= False
 		self.ranTargetBranch= ""
 		self.testResult = {}
-		self.testCount = [0,0,0]
 		self.testSummary = {}
 		self.testStatus = False
 
@@ -152,7 +151,7 @@ class PhySim:
 					isFinished1 = True
 			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
-			self.AnalyzeLogFile_phySim(HTML)
+			self.AnalyzeLogFile_phySim()
 			RAN.prematureExit = True
 			return
 		else:
@@ -171,7 +170,7 @@ class PhySim:
 			logging.error('\u001B[1m Some PODS Running FAILED \u001B[0m')
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim 2>&1 | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 6)
 			mySSH.command('helm uninstall physim 2>&1 >> cmake_targets/log/physim_helm_summary.txt', '\$', 6)
-			self.AnalyzeLogFile_phySim(HTML)
+			self.AnalyzeLogFile_phySim()
 			isFinished1 = False
 			while(isFinished1 == False):
 				time.sleep(20)
@@ -237,7 +236,7 @@ class PhySim:
 			logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
-		self.AnalyzeLogFile_phySim(HTML)
+		self.AnalyzeLogFile_phySim()
 		if self.testStatus and isFinished:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
@@ -251,7 +250,7 @@ class PhySim:
 			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
 			logging.error('\u001B[1m Physical Simulator Fail\u001B[0m')
 
-	def AnalyzeLogFile_phySim(self, HTML):
+	def AnalyzeLogFile_phySim(self):
 		lIpAddr = self.eNBIPAddress
 		lUserName = self.eNBUserName
 		lPassWord = self.eNBPassword
@@ -270,31 +269,28 @@ class PhySim:
 		mySSH.close()
 		# physim test log analysis
 		nextt = 0
+		nbTests = 0
+		nbFailed = 0
 		if (os.path.isfile(f'./physim_test_logs_{self.testCase_id}/physim_test.txt')):
 			with open(f'./physim_test_logs_{self.testCase_id}/physim_test.txt', 'r') as logfile:
 				for line in logfile:
-					if re.search('execution 015', str(line)) or re.search('Bypassing compilation', str(line)):
-						nextt = 1
-					elif nextt == 1:
-						if not re.search('Test Results', str(line)):
-							nextt = 0
-							ret2 = re.search('T[^\n]*', str(line))
-							if ret2 is not None:
-								ret3 = ret2.group()
-								ret3 = ret3.replace("[00m", "")
-					if re.search('execution 015', str(line)):
-						self.testCount[0] += 1
-						testName = line.split()
-						ret1 = re.search('Result = PASS', str(line))
-						if ret1 is not None:
-							self.testResult[testName[1]] = [ret3, 'PASS']
-							self.testCount[1] += 1
-						else:
-							self.testResult[testName[1]] = [ret3, 'FAIL']
-							self.testCount[2] += 1
-		self.testSummary['Nbtests'] = self.testCount[0]
-		self.testSummary['Nbpass'] =  self.testCount[1]
-		self.testSummary['Nbfail'] =  self.testCount[2]
+					# the following regex would match the following line:
+					# execution nr_pbchsim.106rb.test1 {Test1: PBCH-only, 106 PRB} Run_Result = " Run_1 =PASS Run_2 =PASS Run_3 =PASS"  Result = PASS
+					#           ^testname               ^testdescription                                 ^test1      ^test2      ^test3          ^status
+					ret = re.search('execution +(?P<name>[a-zA-Z0-9\._\-\+]+) +{(?P<desc>[A-Za-z0-9\.\_\-\+:,;\/\%\=\(\) ]+)} *Run_Result *= *\" *Run_1 *= *(?P<run1>[A-Za-z]+) *Run_2 *= *(?P<run2>[A-Za-z]+) *Run_3 *= *(?P<run3>[A-Za-z]+) *\" + Result *= *(?P<status>[A-Za-z]+)', line)
+					if ret is None:
+						continue
+					nbTests += 1
+					r = [ret.group('run1'), ret.group('run2'), ret.group('run3')]
+					nbPass = sum([x == 'PASS' for x in r])
+					resultstr = 'PASS'
+					if nbPass < 3 or ret.group('status') != 'PASS':
+						resultstr = f'FAIL ({3-nbPass}/3)'
+						nbFailed += 1
+					self.testResult[ret.group('name')] = [ret.group('desc'), resultstr]
+		self.testSummary['Nbtests'] = nbTests
+		self.testSummary['Nbpass'] =  nbTests - nbFailed
+		self.testSummary['Nbfail'] =  nbFailed
 		if self.testSummary['Nbfail'] == 0:
 			self.testStatus = True
 		return 0
