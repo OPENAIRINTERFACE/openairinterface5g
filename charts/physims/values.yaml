@@ -4,10 +4,13 @@
 
 global:
   serviceAccountName: oai-physim-sa
-  namespace: "OAICICD_PROJECT"
+  namespace: "oaicicd-ran"
   image:
-    repository: image-registry.openshift-image-registry.svc:5000/OAICICD_PROJECT/oai-physim
-    version: TAG
+    registry: local
+    repository: image-registry.openshift-image-registry.svc:5000/oaicicd-ran/oai-physim
+    version: ci-physim-cleanup
+    # pullPolicy: IfNotPresent or Never or Always
+    pullPolicy: Always
 
 ## Declaring values specific to coressponding physim to overwrite
 

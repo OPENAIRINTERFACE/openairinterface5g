@@ -30,7 +30,6 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
         ports:
         - containerPort: 80
-          name: oai-smallblock
         env:
         - name: OPENAIR_DIR
           value: /opt/oai-physim

@@ -4,12 +4,7 @@
 
 replicaCount: 1
 
-namespace: "OAICICD_PROJECT"
-
 image:
-  registry: local
-  repository: image-registry.openshift-image-registry.svc:5000/OAICICD_PROJECT/oai-physim
-  version: temp
   # pullPolicy: IfNotPresent or Never or Always
   pullPolicy: Always
 
