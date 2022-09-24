@@ -50,11 +50,6 @@
   {"dlsch_turbo_encod_prep",             &(phyvars->dlsch_turbo_encoding_preperation_stats),0,1},\
   {"dlsch_turbo_encod_segm",             &(phyvars->dlsch_turbo_encoding_segmentation_stats),0,1},\
   {"dlsch_turbo_encod", 	         &(phyvars->dlsch_turbo_encoding_stats),0,1},\
-  {"dlsch_turbo_encod_waiting",          &(phyvars->dlsch_turbo_encoding_waiting_stats),0,1},\
-  {"dlsch_turbo_encod_signal",           &(phyvars->dlsch_turbo_encoding_signal_stats),0,1},\
-  {"dlsch_turbo_encod_main",	         &(phyvars->dlsch_turbo_encoding_main_stats),0,1},\
-  {"dlsch_turbo_encod_wakeup0",          &(phyvars->dlsch_turbo_encoding_wakeup_stats0),0,1},\
-  {"dlsch_turbo_encod_wakeup1",          &(phyvars->dlsch_turbo_encoding_wakeup_stats1),0,1},\
   {"dlsch_interleaving",                 &(phyvars->dlsch_interleaving_stats),0,1},\
   {"rx_dft",                             &(phyvars->rx_dft_stats),0,1},\
   {"ulsch_channel_estimation",           &(phyvars->ulsch_channel_estimation_stats),0,1},\

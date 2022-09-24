@@ -346,11 +346,34 @@ install_usrp_uhd_driver_from_source(){
     rm -rf /tmp/uhd
     git clone https://github.com/EttusResearch/uhd.git
     cd uhd
+    # For our legacy TDD eNB running with a B2xx RF board
+    # the following patch has to be applied
     if [[ -v UHD_VERSION ]]; then
         git checkout tags/v${UHD_VERSION}
+        # We recommend to use not older than 3.15.0.0
+        if [[ "$UHD_VERSION" == "3.15.0.0" ]]; then
+            # Tested that patch for the following versions:
+            # - 3.15.0.0
+            git apply $OPENAIR_DIR/cmake_targets/tools/uhd-3.15-tdd-patch.diff
+            ret=$?;[[ $ret -ne 0 ]] && echo_fatal "Could not apply the TDD patch"
+        else
+            # Tested that patch for the following versions:
+            # - 4.0.0.0
+            # - 4.1.0.0
+            # - 4.1.0.5
+            # - 4.2.0.0
+            # - 4.2.0.1
+            # - 4.3.0.0-rc1
+            git apply $OPENAIR_DIR/cmake_targets/tools/uhd-4.x-tdd-patch.diff
+            ret=$?;[[ $ret -ne 0 ]] && echo_fatal "Could not apply the TDD patch"
+        fi
     else
         git checkout tags/v4.0.0.0
+        git apply $OPENAIR_DIR/cmake_targets/tools/uhd-4.x-tdd-patch.diff
+        ret=$?;[[ $ret -ne 0 ]] && echo_fatal "Could not apply the TDD patch"
     fi
+    # Printing out the results of the patch to make sure it was properly applied
+    git diff
     mkdir -p host/build
     cd host/build || true
     $CMAKE ../ -GNinja

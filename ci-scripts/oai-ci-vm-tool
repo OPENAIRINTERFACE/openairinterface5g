@@ -379,7 +379,7 @@ VM_TEMPLATE=ci-
 
 # look for ASN1 release in cmake directives
 # It will be the release used when building
-ASN1VEROPT=( `grep "set (RRC_ASN1_VERSION" cmake_targets/CMakeLists.txt` )
+ASN1VEROPT=( `grep "set (RRC_ASN1_VERSION" CMakeLists.txt` )
 ASN1VER=${ASN1VEROPT[2]//\"}
 ASN1VER=${ASN1VER//)}
 unset ASN1VEROPT

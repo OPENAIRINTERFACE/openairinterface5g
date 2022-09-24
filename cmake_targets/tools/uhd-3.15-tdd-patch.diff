@@ -1,0 +1,34 @@
+diff --git a/host/lib/usrp/b200/b200_impl.cpp b/host/lib/usrp/b200/b200_impl.cpp
+index 1be8c263b..f64546914 100644
+--- a/host/lib/usrp/b200/b200_impl.cpp
++++ b/host/lib/usrp/b200/b200_impl.cpp
+@@ -1269,10 +1269,10 @@ void b200_impl::update_atrs(void)
+         if (enb_rx and not enb_tx) fd = rxonly;
+         if (not enb_rx and enb_tx) fd = txonly;
+         gpio_atr_3000::sptr atr = perif.atr;
+-        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+-        atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
+-        atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
+-        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);
++        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF | (1<<7));
++        atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly | (1<<7));
++        atr->set_atr_reg(ATR_REG_TX_ONLY, txonly | (1<<7));
++        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd | (1<<7));
+     }
+     if (_radio_perifs.size() > _fe2 and _radio_perifs[_fe2].atr)
+     {
+@@ -1287,10 +1287,10 @@ void b200_impl::update_atrs(void)
+         if (enb_rx and not enb_tx) fd = rxonly;
+         if (not enb_rx and enb_tx) fd = txonly;
+         gpio_atr_3000::sptr atr = perif.atr;
+-        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF);
+-        atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly);
+-        atr->set_atr_reg(ATR_REG_TX_ONLY, txonly);
+-        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd);
++        atr->set_atr_reg(ATR_REG_IDLE, STATE_OFF | (1<<7));
++        atr->set_atr_reg(ATR_REG_RX_ONLY, rxonly | (1<<7));
++        atr->set_atr_reg(ATR_REG_TX_ONLY, txonly | (1<<7));
++        atr->set_atr_reg(ATR_REG_FULL_DUPLEX, fd | (1<<7));
+     }
+ }
+

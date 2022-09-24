@@ -39,6 +39,8 @@
 #include "time_meas.h"
 #include "defs_common.h"
 #include "nfapi_nr_interface_scf.h"
+#include <common/utils/threadPool/thread-pool.h>
+#include <executables/rt_profiling.h>
 
 #define MAX_BANDS_PER_RRU 4
 #define MAX_RRU_CONFIG_SIZE 1024
@@ -168,25 +170,21 @@ typedef struct RU_prec_t_s{
   int index;
 } RU_prec_t;
 
-typedef struct RU_feptx_t_s{
-  /// \internal This variable is protected by \ref mutex_feptx_prec
-  int instance_cnt_feptx;
-  /// pthread struct for RU TX FEP PREC worker thread
-  pthread_t pthread_feptx;
-  /// pthread attributes for worker feptx prec thread
-  pthread_attr_t attr_feptx;
-  /// condition varible for RU TX FEP PREC thread
-  pthread_cond_t cond_feptx;
-  /// mutex for fep PREC TX worker thread
-  pthread_mutex_t mutex_feptx;
-  struct RU_t_s *ru;
-  int aa;//physical MAX nb_tx
-  int half_slot;//first or second half of a slot
-  int slot;//current slot
-  int symbol;//current symbol
-  int nb_antenna_ports;//number of logical port
-  int index;
-}RU_feptx_t;
+typedef struct {
+ int aid;
+ struct RU_t_s *ru;
+ int startSymbol;
+ int endSymbol;
+ int slot; 
+} feprx_cmd_t;
+
+typedef struct {
+ int aid;
+ struct RU_t_s *ru;
+ int slot; 
+ int startSymbol;
+ int numSymbols;
+} feptx_cmd_t;
 
 typedef struct {
   int frame;
@@ -246,7 +244,7 @@ typedef struct RU_proc_t_s {
   /// \internal This variable is protected by \ref mutex_asynch_rxtx.
   int instance_cnt_asynch_rxtx;
   /// \internal This variable is protected by \ref mutex_fep
-  int instance_cnt_fep;
+  int instance_cnt_fep[8];
   /// \internal This variable is protected by \ref mutex_feptx
   int instance_cnt_feptx;
   /// \internal This variable is protected by \ref mutex_ru_thread
@@ -265,7 +263,7 @@ typedef struct RU_proc_t_s {
   /// pthread struct for RU synch thread
   pthread_t pthread_synch;
   /// pthread struct for RU RX FEP worker thread
-  pthread_t pthread_fep;
+  pthread_t pthread_fep[8];
   /// pthread struct for RU TX FEP worker thread
   pthread_t pthread_feptx;
   /// pthread struct for emulated RF
@@ -318,7 +316,7 @@ typedef struct RU_proc_t_s {
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
   /// condition varible for RU RX FEP thread
-  pthread_cond_t cond_fep;
+  pthread_cond_t cond_fep[8];
   /// condition varible for RU TX FEP thread
   pthread_cond_t cond_feptx;
   /// condition varible for emulated RF
@@ -345,7 +343,7 @@ typedef struct RU_proc_t_s {
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for fep RX worker thread
-  pthread_mutex_t mutex_fep;
+  pthread_mutex_t mutex_fep[8];
   /// mutex for fep TX worker thread
   pthread_mutex_t mutex_feptx;
   /// mutex for ru_thread
@@ -395,10 +393,6 @@ typedef struct RU_proc_t_s {
 
   /// structure for precoding thread
   RU_prec_t prec[16];
-  /// structure for feptx thread
-  RU_feptx_t feptx[16];
-  /// mask for checking process finished
-  int feptx_mask;
 } RU_proc_t;
 
 typedef enum {
@@ -433,6 +427,8 @@ typedef enum {
 
 
 typedef struct RU_t_s {
+  /// ThreadPool for RU	
+  tpool_t *threadPool;
   /// index of this ru
   uint32_t idx;
   /// pointer to first RU
@@ -507,6 +503,10 @@ typedef struct RU_t_s {
   int sf_ahead;
   /// TX processing advance in slots (for NR)
   int sl_ahead;
+  /// flag to indicate TX FH is embedded in TX FEP
+  int txfh_in_fep;
+  /// flag to indicate half-slot parallelization
+  int half_slot_parallelization;
   /// FAPI confiuration
   nfapi_nr_config_request_scf_t  config;
   /// Frame parameters
@@ -645,6 +645,22 @@ typedef struct RU_t_s {
   uint64_t if_frequency;
   /// UL IF frequency offset to DL IF frequency in Hz
   int if_freq_offset;
+  /// to signal end of feprx
+  notifiedFIFO_t *respfeprx;
+  /// to signal end of feptx
+  notifiedFIFO_t *respfeptx;
+  /// core id for RX fhaul (IF5 ECPRI)
+  int rxfh_core_id;
+  /// core id for RX fhaul (IF5 ECPRI)
+  int txfh_core_id;
+  /// number of RU interfaces
+  int num_fd;
+  /// list of cores for RU ThreadPool
+  int tpcores[16];
+  /// number of cores for RU ThreadPool
+  int num_tpcores;
+  /// structure for analyzing high-level RT measurements
+  rt_ru_profiling_t rt_ru_profiling; 
 } RU_t;
 
 

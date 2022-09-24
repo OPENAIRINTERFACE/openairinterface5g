@@ -117,6 +117,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
     a_segments = a_segments/273 +1;
   }
 
+  LOG_I(PHY,"Allocating %d segments (MAX %d, N_PRB %d)\n",a_segments,MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER,N_RB);
   uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
   NR_gNB_DLSCH_t *dlsch = malloc16(sizeof(NR_gNB_DLSCH_t));
   AssertFatal(dlsch, "cannot allocate dlsch\n");

@@ -2404,7 +2404,7 @@ class OaiCiTest():
 			if launchFromTrfContainer:
 				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
 			else:
-				SSH.command('killall --signal SIGKILL iperf', EPC.UserName, 5)
+				SSH.command('killall --signal SIGKILL iperf', '\$', 5)
 			SSH.close()
 		else:
 			cmd = 'killall --signal SIGKILL iperf'
@@ -3894,8 +3894,8 @@ class OaiCiTest():
 			logging.debug('UHD Version is: ' + UhdVersion)
 			HTML.UhdVersion[idx]=UhdVersion
 		else:
-			SSH.command('uhd_config_info --version', '\$', 5)
-			result = re.search('UHD (?P<uhd_version>[a-zA-Z0-9\.\-]+)', SSH.getBefore())
+			SSH.command('uhd_config_info --abi-version', '\$', 5)
+			result = re.search('ABI version string: (?P<uhd_version>[a-zA-Z0-9\.\-]+)', SSH.getBefore())
 			if result is not None:
 				UhdVersion = result.group('uhd_version')
 				logging.debug('UHD Version is: ' + UhdVersion)

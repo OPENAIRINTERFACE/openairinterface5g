@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <openair1/PHY/TOOLS/tools_defs.h>
 #include "record_player.h"
+#include <common/utils/threadPool/thread-pool.h>
 
 /* default name of shared library implementing the radio front end */
 #define OAI_RF_LIBNAME        "oai_device"
@@ -153,6 +154,14 @@ typedef enum {
   gpsdo=2
 } clock_source_t;
 
+/*! \brief Structure used for initializing UDP read threads */
+typedef struct {
+  openair0_device *device;
+  int thread_id;
+  pthread_t pthread;
+  notifiedFIFO_t *resp;
+} udp_ctx_t;
+
 
 /*! \brief RF frontend parameters set by application */
 typedef struct {
@@ -178,9 +187,11 @@ typedef struct {
   int rx_num_channels;
   //! number of TX channels (=TX antennas)
   int tx_num_channels;
-  //! \brief RX base addresses for mmapped_dma
+  //! \brief RX base addresses for mmapped_dma or direct access
   int32_t *rxbase[4];
-  //! \brief TX base addresses for mmapped_dma
+  //! \brief RX buffer size for direct access
+  int rxsize;
+  //! \brief TX base addresses for mmapped_dma or direct access
   int32_t *txbase[4];
   //! \brief Center frequency in Hz for RX.
   //! index: [0..rx_num_channels[
@@ -246,6 +257,10 @@ typedef struct {
   int nr_band;
   //! NR scs for raster
   int nr_scs_for_raster;
+  //! Core IDs for RX FH
+  int rxfh_cores[4];
+  //! Core IDs for TX FH
+  int txfh_cores[4];
 } openair0_config_t;
 
 /*! \brief RF mapping */
@@ -314,6 +329,19 @@ typedef struct {
   bool write_thread_exit;
 } openair0_thread_t;
 
+typedef struct fhstate_s {
+  openair0_timestamp TS[8]; 
+  openair0_timestamp TS0;
+  openair0_timestamp olddeltaTS[8];
+  openair0_timestamp oldTS[8];
+  openair0_timestamp TS_read;
+  int first_read;
+  uint32_t *buff[8];
+  uint32_t buff_size;
+  int r[8];
+  int active;
+} fhstate_t;
+
 /*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
   /*!tx write thread*/
@@ -347,6 +375,24 @@ struct openair0_device_t {
 
   /*!brief Can be used by driver to hold internal structure*/
   void *priv;
+
+  /*!brief pointer to FH state, used in ECPRI split 8*/
+  fhstate_t fhstate;
+
+  /*!brief message response for notification fifo*/
+  notifiedFIFO_t *respudpTX;
+
+  /*!brief UDP TX thread context*/
+  udp_ctx_t **utx;
+
+  /*!brief Used in ECPRI split 8 to indicate numerator of sampling rate ratio*/
+  int sampling_rate_ratio_n;
+
+  /*!brief Used in ECPRI split 8 to indicate denominator of sampling rate ratio*/
+  int sampling_rate_ratio_d;
+
+  /*!brief Used in ECPRI split 8 to indicate the TX/RX timing offset*/
+  int txrx_offset;
 
   /* Functions API, which are called by the application*/
 
@@ -394,7 +440,7 @@ struct openair0_device_t {
       @param antenna_id index of the antenna if the device has multiple anteannas
       @param flags flags must be set to true if timestamp parameter needs to be applied
   */
-  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void *buff, int nsamps,int antenna_id, int flags);
+  int (*trx_write_func2)(openair0_device *device, openair0_timestamp timestamp, void **buff, int fd_ind,int nsamps, int flags,int nant);
 
   /*! \brief Receive samples from hardware.
    * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
@@ -416,12 +462,13 @@ struct openair0_device_t {
    * was received.
    * \param device the hardware to use
    * \param[out] ptimestamp the time at which the first sample was received.
-   * \param[out] buff A pointers to a buffer for received samples. The buffer must be large enough to hold the number of samples \ref nsamps.
+   * \param[out] buff A pointer to a buffer[ant_id][] for received samples. The buffer[ant_id] must be large enough to hold the number of samples \ref nsamps * the number of packets.
    * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
+   * \param packet_idx offset into
    * \param antenna_id Index of antenna from which samples were received
    * \returns the number of sample read
    */
-  int (*trx_read_func2)(openair0_device *device, openair0_timestamp *ptimestamp, void *buff, int nsamps,int *antenna_id);
+  int (*trx_read_func2)(openair0_device *device, openair0_timestamp *ptimestamp, uint32_t **buff, int nsamps);
 
   /*! \brief print the device statistics
    * \param device the hardware to use
@@ -470,6 +517,7 @@ struct openair0_device_t {
 /*! \brief Pointer to generic RRU private information
    */
 
+
   void *thirdparty_priv;
 
   /*! \brief Callback for Third-party RRU Initialization routine
@@ -496,6 +544,9 @@ struct openair0_device_t {
    * \return a pointer to the parameter
    */
   void *(*get_internal_parameter)(char *id);
+  /* \brief timing statistics for TX fronthaul (ethernet)
+   */
+  time_stats_t tx_fhaul;
 };
 
 /* type of device init function, implemented in shared lib */

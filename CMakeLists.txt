@@ -21,10 +21,10 @@
 
 # Author: laurent THOMAS, Lionel GAUTHIER
 
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.5)
 project (OpenAirInterface LANGUAGES C CXX)
 
-include("macros.cmake")
+include("cmake_targets/macros.cmake")
 
 # System packages that are required
 # We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
@@ -1541,7 +1541,6 @@ set(PHY_SRC
 
 set(PHY_SRC_RU
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if5_tools.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/drs_modulation.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/ulsch_demodulation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ul_channel_estimation.c
@@ -3194,3 +3193,5 @@ ADD_CUSTOM_TARGET(oarf
 
 include (${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
 include(${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/CMakeLists.txt)
+
+add_subdirectory(openair2)

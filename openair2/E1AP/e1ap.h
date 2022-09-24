@@ -9,6 +9,8 @@
  *
  *      http://www.openairinterface.org/?page_id=698
  *
+ * Author and copyright: Laurent Thomas, open-cells.com
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,52 +21,14 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/if5_tools.h
-* \brief 
-* \author S. Sandeep Kumar, Raymond Knopp
-* \date 2016
-* \version 0.1
-* \company Eurecom
-* \email: ee13b1025@iith.ac.in, knopp@eurecom.fr 
-* \note
-* \warning
-*/
+#ifndef __E1AP_H_
+#define __E1AP_H_
 
-#ifndef __IF5_TOOLS_H__
-#define __IF5_TOOLS_H__
+#include <common/utils/LOG/log.h>
+#include "openairinterface5g_limits.h"
+#include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
 
-#include <stdint.h>
-#include "PHY/defs_eNB.h"
-
-#define IF5_RRH_GW_DL 0x0022
-#define IF5_RRH_GW_UL 0x0023
-#define IF5_MOBIPASS 0xbffe
-
-struct IF5_mobipass_header {  
-  /// 
-  uint16_t flags; 
-  /// 
-  uint16_t fifo_status;
-  /// 
-  uint8_t seqno;
-  ///
-  uint8_t ack;
-  ///
-  uint32_t word0;
-  /// 
-  uint32_t time_stamp;
-  
-} __attribute__ ((__packed__));
-
-typedef struct IF5_mobipass_header IF5_mobipass_header_t;
-#define sizeof_IF5_mobipass_header_t 14
-
-void send_IF5(RU_t *, openair0_timestamp, int, uint8_t*, uint16_t);
-
-void recv_IF5(RU_t *ru, openair0_timestamp *proc_timestamp, int subframe, uint16_t packet_type);
-
-
-void malloc_IF5_buffer(RU_t *ru);
-
+#include <E1AP_Cause.h>
+#include <E1AP_InitiatingMessage.h>
+#include <E1AP_E1AP-PDU.h>
 #endif
-
