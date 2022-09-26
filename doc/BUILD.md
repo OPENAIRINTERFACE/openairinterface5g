@@ -39,7 +39,7 @@ Running the  [build_oai](../cmake_targets/build_oai) script also generates some 
 - `rb_tool`: radio bearer utility 
 - `genids` T Tracer utility, used at build time to generate T_IDs.h include file. This binary is located in the [T Tracer source file directory](../common/utils/T) .
 
-The build system for OAI uses [cmake](https://cmake.org/) which is a  tool to generate makefiles. The `build_oai` script is a wrapper using cmake, make and standard linux shell commands to ease the oai build and use . The file describing how to build the executables from source files is the [CMakeLists.txt](../cmake_targets/CMakeLists.txt), it is used as input by cmake to generate the makefiles.
+The build system for OAI uses [cmake](https://cmake.org/) which is a  tool to generate makefiles. The `build_oai` script is a wrapper using cmake, make and standard linux shell commands to ease the oai build and use . The file describing how to build the executables from source files is the [CMakeLists.txt](../CMakeLists.txt), it is used as input by cmake to generate the makefiles.
 
 The oai softmodem supports many use cases, and new ones are regularly added. Most of them are accessible using the configuration file or the command line options and continuous effort is done to avoid introducing build options as it makes tests and usage more complicated than run-time options. The following functionalities, originally requiring a specific build are now accessible by configuration or command line options:
 
@@ -88,12 +88,19 @@ You can build any oai softmodem executable separately, you may not need all of t
 
 After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel15.
 
-When installing the pre-requisites, especially the `UHD` driver, you can now specify if you want to install from source or not.
+## Installing UHD from source
+
+Previously for Ubuntu distributions, when installing the pre-requisites, most of the packages are installed from PPA.
+
+Especially the `UHD` driver, but you could not easily manage the version of `libuhd` that will be installed.
+
+Now, when installing the pre-requisites, especially the `UHD` driver, you can now specify if you want to install from source or not.
 
 - For `fedora`-based OS, it was already the case all the time. But now you can specify which version to install.
-- For `ubuntu` OS, the Ettus PPA currently installs the following versions:
-  * `Ubuntu16.04`: --> version `3.15.0.0`
-  * `Ubuntu18.04`: --> version `4.1.0.0`
+- For `ubuntu` OS, you can still install from the Ettus PPA or select a version to install from source.
+  * In case of PPA installation, you do nothing special, the script will install the latest version available on the PPA.
+    - `./build_oai -I -w USRP`
+  * In case of a installation from source, you do as followed:
 
 ```bash
 export BUILD_UHD_FROM_SOURCE=True
@@ -103,49 +110,15 @@ export UHD_VERSION=3.15.0.0
 
 The `UHD_VERSION` env variable `SHALL` be a valid tag (minus `v`) from the `https://github.com/EttusResearch/uhd.git` repository.
 
-## Issue when building `nasmeh` module ##
+**CAUTION: Note that if you are using the OAI eNB in TDD mode with B2xx boards, a patch is mandatory.**
 
-A lot of users and contributors have faced the issue: `nasmesh` module does not build.
+Starting this commit, the patch is applied automatically in our automated builds.
 
-The reason is that the linux headers are not properly installed. For example:
+See:
 
-```bash
-$ uname -r
-4.4.0-145-lowlatency
-$ dpkg --list | grep 4.4.0-145-lowlatency | grep headers
-ii  linux-headers-4.4.0-145-lowlatency         4.4.0-145.171
-```
-
-In my example it is properly installed.
-
-Check on your environment:
-
-```bash
-$ uname -r
-your-version
-$ dpkg --list | grep your-version | grep headers
-$
-```
-
-Install it:
-
-```bash
-$ sudo apt-get install --yes linux-headers-your-version
-```
-
-On CentOS or RedHat Entreprise Linux:
-
-```bash
-$ uname -r
-3.10.0-1062.9.1.rt56.1033.el7.x86_64
-$ yum list installed | grep kernel | grep devel
-kernel-devel.x86_64              3.10.0-1062.9.1.el7         @rhel-7-server-rpms
-kernel-rt-devel.x86_64           3.10.0-1062.9.1.rt56.1033.el7
-```
-
-If your kernel is generic, install `kernel-devel` package: `sudo yum install kernel-devel`
-
-In most case, your kernel is real-time. Install `kernel-rt-devel` package: `sudo yum install kernel-rt-devel`
+* `cmake_targets/tools/uhd-3.15-tdd-patch.diff`
+* `cmake_targets/tools/uhd-4.x-tdd-patch.diff`
+* `cmake_targets/tools/build_helper` --> function `install_usrp_uhd_driver_from_source`
 
 # Building Optional Binaries
 

@@ -43,7 +43,7 @@ set(DEBUG_DLSCH True)
 set(T_TRACER False)
 
 # standard cmake file for nr ue build
-include(../../../../../cmake_targets/CMakeLists.txt)
+include(../../../../../CMakeLists.txt)
 
 
 set(SRC_UNIT_TESTS 

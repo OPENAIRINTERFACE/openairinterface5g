@@ -645,18 +645,14 @@ int main ( int argc, char **argv )
       for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
         L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
         L1_rxtx_proc_t *L1proctx= &RC.eNB[x][CC_id]->proc.L1_proc_tx;
-	L1proc->threadPool=(tpool_t*)malloc(sizeof(tpool_t));
-        L1proc->respEncode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+        L1proc->threadPool = (tpool_t *)malloc(sizeof(tpool_t));
         L1proc->respDecode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
         if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
          initTpool(get_softmodem_params()->threadPoolConfig, L1proc->threadPool, true);
         else
-         initTpool("n", L1proc->threadPool, true);
-        initNotifiedFIFO(L1proc->respEncode);
+          initTpool("n", L1proc->threadPool, true);
         initNotifiedFIFO(L1proc->respDecode);
-        L1proctx->threadPool=L1proc->threadPool;
-        L1proctx->respEncode=L1proc->respEncode;
-        L1proctx->nbEncode=L1proc->nbEncode;
+        L1proctx->threadPool = L1proc->threadPool;
     }
 
 

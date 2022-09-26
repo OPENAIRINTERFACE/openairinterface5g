@@ -1109,8 +1109,8 @@ int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
 void handle_nr_srs_measurements(const module_id_t module_id,
                                 const frame_t frame,
                                 const sub_frame_t slot,
-                                const nfapi_nr_srs_indication_pdu_t *srs_ind) {
-
+                                const nfapi_nr_srs_indication_pdu_t *srs_ind)
+{
   LOG_D(NR_MAC, "(%d.%d) Received SRS indication for UE %04x\n", frame, slot, srs_ind->rnti);
 
 #ifdef SRS_IND_DEBUG
@@ -1125,7 +1125,12 @@ void handle_nr_srs_measurements(const module_id_t module_id,
 
   NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, srs_ind->rnti);
   if (!UE) {
-    LOG_W(NR_MAC, "Could not find UE %04x\n", srs_ind->rnti);
+    LOG_W(NR_MAC, "Could not find UE for RNTI %04x\n", srs_ind->rnti);
+    return;
+  }
+
+  if (srs_ind->timing_advance_offset == 0xFFFF) {
+    LOG_W(NR_MAC, "Invalid timing advance offset for RNTI %04x\n", srs_ind->rnti);
     return;
   }
 
@@ -1133,39 +1138,45 @@ void handle_nr_srs_measurements(const module_id_t module_id,
   NR_mac_stats_t *stats = &UE->mac_stats;
 
   switch (srs_ind->srs_usage) {
-
     case NR_SRS_ResourceSet__usage_beamManagement: {
-
       nfapi_nr_srs_beamforming_report_t nr_srs_beamforming_report;
       unpack_nr_srs_beamforming_report(srs_ind->report_tlv->value,
                                        srs_ind->report_tlv->length,
                                        &nr_srs_beamforming_report,
                                        sizeof(nfapi_nr_srs_beamforming_report_t));
 
+      if (nr_srs_beamforming_report.wide_band_snr == 0xFF) {
+        LOG_W(NR_MAC, "Invalid wide_band_snr for RNTI %04x\n", srs_ind->rnti);
+        return;
+      }
+
+      int wide_band_snr_dB = (nr_srs_beamforming_report.wide_band_snr >> 1) - 64;
+
 #ifdef SRS_IND_DEBUG
       LOG_I(NR_MAC, "nr_srs_beamforming_report.prg_size = %i\n", nr_srs_beamforming_report.prg_size);
       LOG_I(NR_MAC, "nr_srs_beamforming_report.num_symbols = %i\n", nr_srs_beamforming_report.num_symbols);
-      LOG_I(NR_MAC, "nr_srs_beamforming_report.wide_band_snr = %i (%i dB)\n", nr_srs_beamforming_report.wide_band_snr, (nr_srs_beamforming_report.wide_band_snr>>1)-64);
+      LOG_I(NR_MAC, "nr_srs_beamforming_report.wide_band_snr = %i (%i dB)\n", nr_srs_beamforming_report.wide_band_snr, wide_band_snr_dB);
       LOG_I(NR_MAC, "nr_srs_beamforming_report.num_reported_symbols = %i\n", nr_srs_beamforming_report.num_reported_symbols);
       LOG_I(NR_MAC, "nr_srs_beamforming_report.prgs[0].num_prgs = %i\n", nr_srs_beamforming_report.prgs[0].num_prgs);
-      for(int prg_idx = 0; prg_idx < nr_srs_beamforming_report.prgs[0].num_prgs; prg_idx++) {
-        LOG_I(NR_MAC, "nr_srs_beamforming_report.prgs[0].prg_list[%3i].rb_snr = %i (%i dB)\n",
+      for (int prg_idx = 0; prg_idx < nr_srs_beamforming_report.prgs[0].num_prgs; prg_idx++) {
+        LOG_I(NR_MAC,
+              "nr_srs_beamforming_report.prgs[0].prg_list[%3i].rb_snr = %i (%i dB)\n",
               prg_idx,
               nr_srs_beamforming_report.prgs[0].prg_list[prg_idx].rb_snr,
-              (nr_srs_beamforming_report.prgs[0].prg_list[prg_idx].rb_snr>>1)-64);
+              (nr_srs_beamforming_report.prgs[0].prg_list[prg_idx].rb_snr >> 1) - 64);
       }
 #endif
 
-      sprintf(stats->srs_stats,"UL-SNR %i dB", (nr_srs_beamforming_report.wide_band_snr>>1)-64);
+      sprintf(stats->srs_stats, "UL-SNR %i dB", wide_band_snr_dB);
 
       const int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
       uint16_t *ulprbbl = nr_mac->ulprbbl;
 
       uint8_t num_rbs = nr_srs_beamforming_report.prg_size * nr_srs_beamforming_report.prgs[0].num_prgs;
-      memset(ulprbbl, 0, num_rbs*sizeof(uint16_t));
+      memset(ulprbbl, 0, num_rbs * sizeof(uint16_t));
       for (int rb = 0; rb < num_rbs; rb++) {
-        int snr = (nr_srs_beamforming_report.prgs[0].prg_list[rb/nr_srs_beamforming_report.prg_size].rb_snr>>1)-64;
-        if (snr < ul_prbblack_SNR_threshold) {
+        int snr = (nr_srs_beamforming_report.prgs[0].prg_list[rb / nr_srs_beamforming_report.prg_size].rb_snr >> 1) - 64;
+        if (snr < wide_band_snr_dB - ul_prbblack_SNR_threshold) {
           ulprbbl[rb] = 0x3FFF; // all symbols taken
         }
         LOG_D(NR_MAC, "ulprbbl[%3i] = 0x%x\n", rb, ulprbbl[rb]);
@@ -1175,7 +1186,6 @@ void handle_nr_srs_measurements(const module_id_t module_id,
     }
 
     case NR_SRS_ResourceSet__usage_codebook: {
-
       nfapi_nr_srs_normalized_channel_iq_matrix_t nr_srs_normalized_channel_iq_matrix;
       unpack_nr_srs_normalized_channel_iq_matrix(srs_ind->report_tlv->value,
                                                  srs_ind->report_tlv->length,
@@ -1230,9 +1240,8 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       break;
 
     default:
-      AssertFatal(1==0,"Invalid SRS usage\n");
+      AssertFatal(1 == 0, "Invalid SRS usage\n");
   }
-
 }
 
 long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
@@ -2268,7 +2277,14 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     dci_pdu_rel15_t uldci_payload;
     memset(&uldci_payload, 0, sizeof(uldci_payload));
 
-    config_uldci(sib1, scc, pusch_pdu, &uldci_payload, &sched_ctrl->srs_feedback, ps->time_domain_allocation, UE->UE_sched_ctrl.tpc0, current_BWP);
+    config_uldci(sib1,
+                 scc,
+                 pusch_pdu,
+                 &uldci_payload,
+                 &sched_ctrl->srs_feedback,
+                 ps->time_domain_allocation,
+                 UE->UE_sched_ctrl.tpc0,
+                 current_BWP);
 
     fill_dci_pdu_rel15(scc,
                        cg,

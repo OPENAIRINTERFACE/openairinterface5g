@@ -1102,7 +1102,7 @@ void nr_rlc_tick(int frame, int subframe)
 }
 
 /* This is a hack, to compile the gNB.
- * TODO: remove it. The solution is to cleanup cmake_targets/CMakeLists.txt
+ * TODO: remove it. The solution is to cleanup CMakeLists.txt
  */
 void rlc_tick(int a, int b)
 {

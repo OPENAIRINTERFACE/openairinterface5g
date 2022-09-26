@@ -80,10 +80,11 @@ int eth_socket_init_raw(openair0_device *device) {
     perror("ETHERNET: Error opening RAW socket (control)");
     exit(0);
   }
-  if ((eth->sockfdd = socket(sock_dom, sock_type, sock_proto)) == -1) {
-    perror("ETHERNET: Error opening RAW socket (user)");
-    exit(0);
-  }
+  for (int i=0;i<eth->num_fd;i++)
+    if ((eth->sockfdd[i] = socket(sock_dom, sock_type, sock_proto)) == -1) {
+       perror("ETHERNET: Error opening RAW socket (user)");
+       exit(0);
+    }
   
   /* initialize destination address */
   bzero((void *)&(eth->local_addrc_ll), sizeof(struct sockaddr_ll));
@@ -94,8 +95,9 @@ int eth_socket_init_raw(openair0_device *device) {
   strcpy(eth->if_index.ifr_name,eth->if_name);
   if (ioctl(eth->sockfdc, SIOCGIFINDEX, &(eth->if_index)) < 0)
     perror("SIOCGIFINDEX");
-  if (ioctl(eth->sockfdd, SIOCGIFINDEX, &(eth->if_index)) < 0)
-    perror("SIOCGIFINDEX");
+  for (int i=0;i<eth->num_fd;i++)
+    if (ioctl(eth->sockfdd[i], SIOCGIFINDEX, &(eth->if_index)) < 0)
+      perror("SIOCGIFINDEX");
    
   eth->local_addrc_ll.sll_family   = AF_PACKET;
   eth->local_addrc_ll.sll_ifindex  = eth->if_index.ifr_ifindex;
@@ -111,10 +113,11 @@ int eth_socket_init_raw(openair0_device *device) {
   eth->local_addrd_ll.sll_pkttype  = PACKET_OTHERHOST;
   eth->addr_len = sizeof(struct sockaddr_ll);
   
-  if (bind(eth->sockfdd,(struct sockaddr *)&eth->local_addrd_ll,eth->addr_len)<0) {
-    perror("ETHERNET: Cannot bind to socket (user)");
-    exit(0);
-  }
+  for (int i=0;i<eth->num_fd;i++)
+    if (bind(eth->sockfdd[i],(struct sockaddr *)&eth->local_addrd_ll,eth->addr_len)<0) {
+      perror("ETHERNET: Cannot bind to socket (user)");
+      exit(0);
+    }
  
  /* Construct the Ethernet header */ 
  ether_aton_r(local_mac, (struct ether_addr *)(&(eth->ehd.ether_shost)));
@@ -165,7 +168,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
 
       /* Send packet */
 
-      bytes_sent += send(eth->sockfdd,
+      bytes_sent += send(eth->sockfdd[cc % eth->num_fd],
 			 buff2, 
 			 pktsize,
 			 sendto_flag);
@@ -214,7 +217,7 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
   memcpy(buff[0], (void*)&eth->ehd, MAC_HEADER_SIZE_BYTES);	
 
 
-  bytes_sent = send(eth->sockfdd,
+  bytes_sent = send(eth->sockfdd[cc % eth->num_fd],
                     buff[0], 
                     packet_size,
                     0);
@@ -266,7 +269,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
       
       while(bytes_received < receive_bytes) {
       again:
-	ret = recv(eth->sockfdd,
+	ret = recv(eth->sockfdd[cc % eth->num_fd],
 			      buff2,
 			      receive_bytes,
 			      rcvfrom_flag);
@@ -345,7 +348,7 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
 
   while (bytes_received < packet_size) {
   again:
-    ret = recv(eth->sockfdd,
+    ret = recv(eth->sockfdd[cc % eth->num_fd],
 	       buff[0],
 	       packet_size,
 	       MSG_PEEK);                        
@@ -397,7 +400,7 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   }  
   
   while(bytes_received < packet_size) {
-    ret = recv(eth->sockfdd,
+    ret = recv(eth->sockfdd[cc % eth->num_fd],
 	       buff[0],
 	       packet_size,
 	       0);
