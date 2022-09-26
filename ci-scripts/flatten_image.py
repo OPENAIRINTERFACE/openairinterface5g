@@ -77,25 +77,25 @@ def perform_flattening(tag):
         cmd += ' --change "EXPOSE 2152/udp" '
         cmd += ' --change "EXPOSE 36412/udp" '
         cmd += ' --change "EXPOSE 36422/udp" '
-        cmd += ' --change "CMD [\\"/opt/oai-enb/bin/lte-softmodem.Rel15\\", \\"-O\\", \\"/opt/oai-enb/etc/enb.conf\\"]" '
+        cmd += ' --change "CMD [\\"/opt/oai-enb/bin/lte-softmodem\\", \\"-O\\", \\"/opt/oai-enb/etc/enb.conf\\"]" '
         cmd += ' --change "ENTRYPOINT [\\"/opt/oai-enb/bin/entrypoint.sh\\"]" '
     if re.search('oai-gnb', tag):
         cmd += ' --change "WORKDIR /opt/oai-gnb" '
         cmd += ' --change "EXPOSE 2152/udp" '
         cmd += ' --change "EXPOSE 36422/udp" '
-        cmd += ' --change "CMD [\\"/opt/oai-gnb/bin/nr-softmodem.Rel15\\", \\"-O\\", \\"/opt/oai-gnb/etc/gnb.conf\\"]" '
+        cmd += ' --change "CMD [\\"/opt/oai-gnb/bin/nr-softmodem\\", \\"-O\\", \\"/opt/oai-gnb/etc/gnb.conf\\"]" '
         cmd += ' --change "ENTRYPOINT [\\"/opt/oai-gnb/bin/entrypoint.sh\\"]" '
     if re.search('oai-lte-ue', tag):
         cmd += ' --change "WORKDIR /opt/oai-lte-ue" '
-        cmd += ' --change "CMD [\\"/opt/oai-lte-ue/bin/lte-uesoftmodem.Rel15\\"]" '
+        cmd += ' --change "CMD [\\"/opt/oai-lte-ue/bin/lte-uesoftmodem\\"]" '
         cmd += ' --change "ENTRYPOINT [\\"/opt/oai-lte-ue/bin/entrypoint.sh\\"]" '
     if re.search('oai-nr-ue', tag):
         cmd += ' --change "WORKDIR /opt/oai-nr-ue" '
-        cmd += ' --change "CMD [\\"/opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15\\", \\"-O\\", \\"/opt/oai-nr-ue/etc/nr-ue.conf\\"]" '
+        cmd += ' --change "CMD [\\"/opt/oai-nr-ue/bin/nr-uesoftmodem\\", \\"-O\\", \\"/opt/oai-nr-ue/etc/nr-ue.conf\\"]" '
         cmd += ' --change "ENTRYPOINT [\\"/opt/oai-nr-ue/bin/entrypoint.sh\\"]" '
     if re.search('oai-lte-ru', tag):
         cmd += ' --change "WORKDIR /opt/oai-lte-ru" '
-        cmd += ' --change "CMD [\\"/opt/oai-lte-ru/bin/oairu.Rel15\\", \\"-O\\", \\"/opt/oai-lte-ru/etc/rru.conf\\"]" '
+        cmd += ' --change "CMD [\\"/opt/oai-lte-ru/bin/oairu\\", \\"-O\\", \\"/opt/oai-lte-ru/etc/rru.conf\\"]" '
         cmd += ' --change "ENTRYPOINT [\\"/opt/oai-lte-ru/bin/entrypoint.sh\\"]" '
     if re.search('oai-physim', tag):
         cmd += ' --change "WORKDIR /opt/oai-physim" '

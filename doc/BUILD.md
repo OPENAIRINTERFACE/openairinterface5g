@@ -60,9 +60,7 @@ cd cmake_targets/
 ./build_oai -I --phy_simulators
 ```
 
-After completing the build, the binaries are available in the cmake_targets/ran_build/build directory.  
-A copy is also available in the target/bin directory, with all binaries suffixed by the 3GPP release number, today **.Rel15**.  
-
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
 
 Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
 
@@ -86,7 +84,7 @@ cd cmake_targets/
 
 You can build any oai softmodem executable separately, you may not need all of them depending on your oai usage.
 
-After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel15.
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
 
 ## Installing UHD from source
 

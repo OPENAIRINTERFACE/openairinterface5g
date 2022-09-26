@@ -151,7 +151,7 @@ function check_on_vm_build {
         if [[ $FULLFILE == *"$LOG_PATTERN"* ]]
         then
             filename=$(basename -- "$FULLFILE")
-            if [ "$LOG_PATTERN" == ".Rel15.txt" ]
+            if [ "$LOG_PATTERN" == ".txt" ]
             then
                 PASS_PATTERN=`echo $filename | sed -e "s#$LOG_PATTERN##"`
             fi
