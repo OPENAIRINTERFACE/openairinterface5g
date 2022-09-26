@@ -298,7 +298,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                               proc,
                               i,
                               0,
-                              is*fp->samples_per_frame+ue->ssb_offset);
+                              is*fp->samples_per_frame+ue->ssb_offset,
+                              false);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"Calling sss detection (normal CP)\n");
@@ -339,6 +340,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
       }
 
       if (ret == 0) {
+
         // sync at symbol ue->symbol_offset
         // computing the offset wrt the beginning of the frame
         int mu = fp->numerology_index;
@@ -543,7 +545,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                               proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space
                               phy_pdcch_config.slot,
-                              is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset);
+                              is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset,
+                              true);
 
         nr_pdcch_channel_estimation(ue,
                                     proc,
@@ -571,7 +574,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                   proc,
                                   m,
                                   phy_pdcch_config.slot,  // same slot and offset as pdcch
-                                  is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset);
+                                  is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset,
+                                  true);
           }
 
           int ret = nr_ue_pdsch_procedures(ue,
