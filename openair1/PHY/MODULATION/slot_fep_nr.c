@@ -75,7 +75,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   //#endif
 
   for (unsigned char aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-    memset(&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int32_t));
+    memset(&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int32_t));
 
     int16_t *rxdata_ptr = (int16_t *)&common_vars->rxdata[aa][rx_offset];
 
@@ -92,7 +92,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
     dft(dftsize,
         rxdata_ptr,
-        (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+        (int16_t *)&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
         1);
 
     stop_meas(&ue->rx_dft_stats);
@@ -108,7 +108,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #endif
 
     c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
-    c16_t *this_symbol = (c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
+    c16_t *this_symbol = (c16_t *)&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
 
     if (frame_parms->N_RB_DL & 1) {
       rotate_cpx_vector(this_symbol, &rot2, this_symbol,
@@ -188,7 +188,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 #endif
 
   for (unsigned char aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-    memset(&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int32_t));
+    memset(&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int32_t));
 
     int16_t *rxdata_ptr;
     rx_offset%=frame_length_samples*2;
@@ -224,7 +224,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 
     dft(dftsize,
         rxdata_ptr,
-        (int16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
+        (int16_t *)&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],
         1);
 
     stop_meas(&ue->rx_dft_stats);
@@ -239,7 +239,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 	   symbol+symb_offset,rot2.r,rot2.i);
 #endif
 
-    c16_t *this_symbol = (c16_t *)&common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
+    c16_t *this_symbol = (c16_t *)&common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
     rotate_cpx_vector(this_symbol, &rot2, this_symbol, frame_parms->ofdm_symbol_size, 15);
   }
 

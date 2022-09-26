@@ -112,12 +112,10 @@ static size_t dump_L1_UE_meas_stats(PHY_VARS_NR_UE *ue, char *output, size_t max
   const char *end = output + max_len;
   output += print_meas_log(&ue->phy_proc_tx, "L1 TX processing", NULL, NULL, output, end - output);
   output += print_meas_log(&ue->ulsch_encoding_stats, "ULSCH encoding", NULL, NULL, output, end - output);
-  output += print_meas_log(&ue->phy_proc_rx[0], "L1 RX processing t0", NULL, NULL, output, end - output);
-  output += print_meas_log(&ue->phy_proc_rx[1], "L1 RX processing t1", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->phy_proc_rx, "L1 RX processing", NULL, NULL, output, end - output);
   output += print_meas_log(&ue->ue_ul_indication_stats, "UL Indication", NULL, NULL, output, end - output);
   output += print_meas_log(&ue->rx_pdsch_stats, "PDSCH receiver", NULL, NULL, output, end - output);
-  output += print_meas_log(&ue->dlsch_decoding_stats[0], "PDSCH decoding t0", NULL, NULL, output, end - output);
-  output += print_meas_log(&ue->dlsch_decoding_stats[1], "PDSCH decoding t1", NULL, NULL, output, end - output);
+  output += print_meas_log(&ue->dlsch_decoding_stats, "PDSCH decoding", NULL, NULL, output, end - output);
   output += print_meas_log(&ue->dlsch_deinterleaving_stats, " -> Deinterleive", NULL, NULL, output, end - output);
   output += print_meas_log(&ue->dlsch_rate_unmatching_stats, " -> Rate Unmatch", NULL, NULL, output, end - output);
   output += print_meas_log(&ue->dlsch_ldpc_decoding_stats, " ->  LDPC Decode", NULL, NULL, output, end - output);
@@ -436,7 +434,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     mac->dl_info.module_id = mod_id;
     mac->dl_info.frame = frame;
     mac->dl_info.slot = slot;
-    mac->dl_info.thread_id = 0;
     mac->dl_info.dci_ind = NULL;
     mac->dl_info.rx_ind = NULL;
 
@@ -457,8 +454,8 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() and nr_ue_pucch_scheduler() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_scheduler(NULL, &ul_info);
-      nr_ue_prach_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
-      nr_ue_pucch_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id, NULL);
+      nr_ue_prach_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx);
+      nr_ue_pucch_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx, NULL);
       check_nr_prach(mac, &ul_info, &prach_resources);
     }
     if (!IS_SOFTMODEM_NOS1 && get_softmodem_params()->sa) {
@@ -628,7 +625,6 @@ void processSlotTX(void *arg) {
       ul_indication.slot_rx   = proc->nr_slot_rx;
       ul_indication.frame_tx  = proc->frame_tx;
       ul_indication.slot_tx   = proc->nr_slot_tx;
-      ul_indication.thread_id = proc->thread_id;
       ul_indication.ue_sched_mode = rxtxD->ue_sched_mode;
 
       UE->if_inst->ul_indication(&ul_indication);
@@ -639,9 +635,8 @@ void processSlotTX(void *arg) {
   }
 }
 
-void UE_processing(void *arg) {
+void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
 
-  nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   uint8_t gNB_id = 0;
@@ -841,8 +836,6 @@ void *UE_thread(void *arg) {
   notifiedFIFO_t freeBlocks;
   initNotifiedFIFO_nothreadSafe(&freeBlocks);
 
-  int nbSlotProcessing=0;
-  int thread_idx=0;
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   int timing_advance = UE->timing_advance;
 
@@ -850,21 +843,8 @@ void *UE_thread(void *arg) {
   const int nb_slot_frame = UE->frame_parms.slots_per_frame;
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
 
-  for (int i=0; i<NR_RX_NB_TH+1; i++) {// NR_RX_NB_TH working + 1 we are making to be pushed
-    notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,UE_processing);
-    nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
-    initNotifiedFIFO(&curMsg->txFifo);
-    pushNotifiedFIFO_nothreadSafe(&freeBlocks, newElt);
-  }
-
   while (!oai_exit) {
     if (UE->lost_sync) {
-      int nb = abortTpoolJob(&(get_nrUE_params()->Tpool),RX_JOB_ID);
-      nb += abortNotifiedFIFOJob(&nf, RX_JOB_ID);
-      LOG_I(PHY,"Number of aborted slots %d\n",nb);
-      for (int i=0; i<nb; i++)
-        pushNotifiedFIFO_nothreadSafe(&freeBlocks, newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), RX_JOB_ID,&nf,UE_processing));
-      nbSlotProcessing = 0;
       UE->is_synchronized = 0;
       UE->lost_sync = 0;
     }
@@ -926,27 +906,19 @@ void *UE_thread(void *arg) {
 
     absolute_slot++;
 
-    // whatever means thread_idx
-    // Fix me: will be wrong when slot 1 is slow, as slot 2 finishes
-    // Slot 3 will overlap if NR_RX_NB_TH is 2
-    // this is general failure in UE !!!
-    thread_idx = absolute_slot % NR_RX_NB_TH;
     int slot_nr = absolute_slot % nb_slot_frame;
-    notifiedFIFO_elt_t *msgToPush;
-    AssertFatal((msgToPush=pullNotifiedFIFO_nothreadSafe(&freeBlocks)) != NULL,"chained list failure");
-    nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(msgToPush);
-    curMsg->UE=UE;
+    nr_rxtx_thread_data_t curMsg = {0};
+    curMsg.UE=UE;
     // update thread index for received subframe
-    curMsg->proc.thread_id   = thread_idx;
-    curMsg->proc.CC_id       = UE->CC_id;
-    curMsg->proc.nr_slot_rx  = slot_nr;
-    curMsg->proc.nr_slot_tx  = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
-    curMsg->proc.frame_rx    = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
-    curMsg->proc.frame_tx    = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
-    curMsg->proc.rx_slot_type = nr_ue_slot_select(cfg, curMsg->proc.frame_rx, curMsg->proc.nr_slot_rx);
-    curMsg->proc.tx_slot_type = nr_ue_slot_select(cfg, curMsg->proc.frame_tx, curMsg->proc.nr_slot_tx);
-    curMsg->proc.decoded_frame_rx=-1;
-    //LOG_I(PHY,"Process slot %d thread Idx %d total gain %d\n", slot_nr, thread_idx, UE->rx_total_gain_dB);
+    curMsg.proc.CC_id       = UE->CC_id;
+    curMsg.proc.nr_slot_rx  = slot_nr;
+    curMsg.proc.nr_slot_tx  = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
+    curMsg.proc.frame_rx    = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;
+    curMsg.proc.frame_tx    = ((absolute_slot+DURATION_RX_TO_TX)/nb_slot_frame) % MAX_FRAME_NUMBER;
+    curMsg.proc.rx_slot_type = nr_ue_slot_select(cfg, curMsg.proc.frame_rx, curMsg.proc.nr_slot_rx);
+    curMsg.proc.tx_slot_type = nr_ue_slot_select(cfg, curMsg.proc.frame_tx, curMsg.proc.nr_slot_tx);
+    curMsg.proc.decoded_frame_rx=-1;
+    //LOG_I(PHY,"Process slot %d total gain %d\n", slot_nr, UE->rx_total_gain_dB);
 
 #ifdef OAI_ADRV9371_ZC706
     /*uint32_t total_gain_dB_prev = 0;
@@ -1001,30 +973,20 @@ void *UE_thread(void *arg) {
         LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
     }
 
-    curMsg->proc.timestamp_tx = timestamp+
+    curMsg.proc.timestamp_tx = timestamp+
       UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX) 
       - firstSymSamp;
 
-    notifiedFIFO_elt_t *res;
+    UE_processing(&curMsg);
 
-    while (nbSlotProcessing >= NR_RX_NB_TH) {
-      res=pullTpool(&nf, &(get_nrUE_params()->Tpool));
-      if (res == NULL)
-        break; // Tpool has been stopped
-      nbSlotProcessing--;
-      nr_rxtx_thread_data_t *tmp=(nr_rxtx_thread_data_t *)res->msgData;
+    if (curMsg.proc.decoded_frame_rx != -1)
+      decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | curMsg.proc.decoded_frame_rx);
+    else
+       decoded_frame_rx=-1;
 
-      if (tmp->proc.decoded_frame_rx != -1)
-        decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
-      else
-         decoded_frame_rx=-1;
-
-      pushNotifiedFIFO_nothreadSafe(&freeBlocks,res);
-    }
-
-    if (decoded_frame_rx>0 && decoded_frame_rx != curMsg->proc.frame_rx)
+    if (decoded_frame_rx>0 && decoded_frame_rx != curMsg.proc.frame_rx)
       LOG_E(PHY,"Decoded frame index (%d) is not compatible with current context (%d), UE should go back to synch mode\n",
-            decoded_frame_rx, curMsg->proc.frame_rx);
+            decoded_frame_rx, curMsg.proc.frame_rx);
 
     // use previous timing_advance value to compute writeTimestamp
     writeTimestamp = timestamp+
@@ -1078,10 +1040,6 @@ void *UE_thread(void *arg) {
     
     for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
       memset(txp[i], 0, writeBlockSize);
-
-    nbSlotProcessing++;
-    LOG_D(PHY,"Number of slots being processed at the moment: %d\n",nbSlotProcessing);
-    pushTpool(&(get_nrUE_params()->Tpool), msgToPush);
 
   } // while !oai_exit
 

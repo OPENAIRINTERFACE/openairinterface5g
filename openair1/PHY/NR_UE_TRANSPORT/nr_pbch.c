@@ -422,9 +422,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     symbol_offset=0;
 
 #ifdef DEBUG_PBCH
-  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF);
+  //printf("address dataf %p",nr_ue_common_vars->rxdataF);
   write_output("rxdataF0_pbch.m","rxF0pbch",
-               &nr_ue_common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
+               &nr_ue_common_vars->rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
   double log2_maxh;
@@ -434,7 +434,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     __attribute__ ((aligned(32))) struct complex16 rxdataF_ext[frame_parms->nb_antennas_rx][PBCH_MAX_RE_PER_SYMBOL];
     __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_ext[frame_parms->nb_antennas_rx][PBCH_MAX_RE_PER_SYMBOL];
     memset(dl_ch_estimates_ext,0, sizeof  dl_ch_estimates_ext);
-    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
+    nr_pbch_extract(nr_ue_common_vars->rxdataF,
                     estimateSz,
                     dl_ch_estimates,
                     rxdataF_ext,

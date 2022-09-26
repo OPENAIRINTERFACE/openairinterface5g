@@ -772,7 +772,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                           mac->frame_type) && mac->ra.ra_state != RA_SUCCEEDED)
         {
             nr_ue_scheduler(NULL, &ul_info);
-            nr_ue_prach_scheduler(ul_info.module_id, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
+            nr_ue_prach_scheduler(ul_info.module_id, ul_info.frame_tx, ul_info.slot_tx);
         }
     }
 }
@@ -1135,14 +1135,14 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
     case SCHED_PUSCH:
       ret = nr_ue_scheduler(NULL, ul_info);
       if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
-        nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
+        nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
       LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
             __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
       break;
 
     case SCHED_PUCCH:
       if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
-        nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id, ul_info->phy_data);
+        nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->phy_data);
       LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
             __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
       break;
@@ -1204,7 +1204,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         if (ret >= 0) {
           AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
           AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
-          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id, dl_info->phy_data);
+          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->phy_data);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
         memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));

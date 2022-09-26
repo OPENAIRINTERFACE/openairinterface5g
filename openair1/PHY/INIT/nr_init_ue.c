@@ -146,7 +146,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   NR_UE_CSI_RS **const csirs_vars        = ue->csirs_vars;
   NR_UE_SRS **const srs_vars             = ue->srs_vars;
 
-  int i, slot, symb, gNB_id, th_id;
+  int i, slot, symb, gNB_id;
 
   LOG_I(PHY, "Initializing UE vars for gNB TXant %u, UE RXant %u\n", fp->nb_antennas_tx, fp->nb_antennas_rx);
 
@@ -238,17 +238,11 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   // init RX buffers
   common_vars->rxdata   = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-
-  for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-    common_vars->common_vars_rx_data_per_thread[th_id].rxdataF  = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
-  }
+  common_vars->rxdataF  = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
 
   for (i=0; i<fp->nb_antennas_rx; i++) {
     common_vars->rxdata[i] = (int32_t *) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
-
-    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-      common_vars->common_vars_rx_data_per_thread[th_id].rxdataF[i] = (int32_t *)malloc16_clear( sizeof(int32_t)*(fp->samples_per_slot_wCP) );
-    }
+    common_vars->rxdataF[i] = (int32_t *)malloc16_clear( sizeof(int32_t)*(fp->samples_per_slot_wCP) );
   }
 
   // ceil(((NB_RB<<1)*3)/32) // 3 RE *2(QPSK)
@@ -292,21 +286,15 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   // DLSCH
   for (gNB_id = 0; gNB_id < ue->n_connected_gNB+1; gNB_id++) {
-    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-      ue->pdsch_vars[th_id][gNB_id] = (NR_UE_PDSCH *)malloc16_clear(sizeof(NR_UE_PDSCH));
-    }
-    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-      phy_init_nr_ue_PDSCH( ue->pdsch_vars[th_id][gNB_id], fp );
-    }
+    ue->pdsch_vars[gNB_id] = (NR_UE_PDSCH *)malloc16_clear(sizeof(NR_UE_PDSCH));
+    phy_init_nr_ue_PDSCH( ue->pdsch_vars[gNB_id], fp );
 
     int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
-    for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-      for (i=0; i<nb_codewords; i++) {
-        ue->pdsch_vars[th_id][gNB_id]->llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
-      }
-      for (i=0; i<NR_MAX_NB_LAYERS; i++) {
-        ue->pdsch_vars[th_id][gNB_id]->layer_llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
-      }
+    for (i=0; i<nb_codewords; i++) {
+      ue->pdsch_vars[gNB_id]->llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
+    }
+    for (i=0; i<NR_MAX_NB_LAYERS; i++) {
+      ue->pdsch_vars[gNB_id]->layer_llr[i] = (int16_t *)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );//Q_m = 8 bits/Sym, Code_Rate=3, Number of Segments =8, Circular Buffer K_cb = 8448
     }
   }
 
@@ -390,12 +378,9 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   for (int i = 0; i < fp->nb_antennas_rx; i++) {
     free_and_zero(common_vars->rxdata[i]);
-    for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++)
-      free_and_zero(common_vars->common_vars_rx_data_per_thread[th_id].rxdataF[i]);
+    free_and_zero(common_vars->rxdataF[i]);
   }
-  for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-    free_and_zero(common_vars->common_vars_rx_data_per_thread[th_id].rxdataF);
-  }
+  free_and_zero(common_vars->rxdataF);
   free_and_zero(common_vars->rxdata);
 
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
@@ -418,12 +403,10 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB+1; gNB_id++) {
 
     // PDSCH
-    for (int th_id = 0; th_id < RX_NB_TH_MAX; th_id++) {
-      free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr_shifts);
-      free_and_zero(ue->pdsch_vars[th_id][gNB_id]->llr128_2ndstream);
-      phy_term_nr_ue__PDSCH(ue->pdsch_vars[th_id][gNB_id], fp);
-      free_and_zero(ue->pdsch_vars[th_id][gNB_id]);
-    }
+    free_and_zero(ue->pdsch_vars[gNB_id]->llr_shifts);
+    free_and_zero(ue->pdsch_vars[gNB_id]->llr128_2ndstream);
+    phy_term_nr_ue__PDSCH(ue->pdsch_vars[gNB_id], fp);
+    free_and_zero(ue->pdsch_vars[gNB_id]);
   }
 
   for (int gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
@@ -459,11 +442,9 @@ void term_nr_ue_transport(PHY_VARS_NR_UE *ue)
   const int N_RB_DL = ue->frame_parms.N_RB_DL;
   for (int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
     for (int j = 0; j < 2; j++) {
-      for (int k = 0; k < RX_NB_TH_MAX; k++) {
-        free_nr_ue_dlsch(&ue->dlsch[k][i][j], N_RB_DL);
-        if (j==0)
-          free_nr_ue_ulsch(&ue->ulsch[k][i], N_RB_DL, &ue->frame_parms);
-      }
+      free_nr_ue_dlsch(&ue->dlsch[i][j], N_RB_DL);
+      if (j==0)
+        free_nr_ue_ulsch(&ue->ulsch[i], N_RB_DL, &ue->frame_parms);
     }
 
     free_nr_ue_dlsch(&ue->dlsch_SI[i], N_RB_DL);
@@ -479,13 +460,11 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
 
   for (int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
     for (int j=0; j<num_codeword; j++) {
-      for (int k=0; k<RX_NB_TH_MAX; k++) {
-        AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL))!=NULL,"Can't get ue dlsch structures\n");
-        LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
-        if (j==0) {
-          AssertFatal((ue->ulsch[k][i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES,&ue->frame_parms))!=NULL,"Can't get ue ulsch structures\n");
-          LOG_D(PHY,"ulsch[%d][%d] => %p\n",k,i,ue->ulsch[k][i]);
-        }
+      AssertFatal((ue->dlsch[i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL))!=NULL,"Can't get ue dlsch structures\n");
+      LOG_D(PHY,"dlsch[%d][%d] => %p\n",i,j,ue->dlsch[i][j]);
+      if (j==0) {
+        AssertFatal((ue->ulsch[i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES,&ue->frame_parms))!=NULL,"Can't get ue ulsch structures\n");
+        LOG_D(PHY,"ulsch[%d] => %p\n",i,ue->ulsch[i]);
       }
     }
 
