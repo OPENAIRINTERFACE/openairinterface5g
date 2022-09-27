@@ -152,7 +152,7 @@ static int nr_rrc_set_state (module_id_t ue_mod_idP, Rrc_State_NR_t state) {
 }
 
 static int nr_rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_NR_t subState ) {
-  if (AMF_MODE_ENABLED) {
+  if (get_softmodem_params()->sa) {
     switch (NR_UE_rrc_inst[ue_mod_idP].nrRrcState) {
       case RRC_STATE_INACTIVE_NR:
         AssertFatal ((RRC_SUB_STATE_INACTIVE_FIRST_NR <= subState) && (subState <= RRC_SUB_STATE_INACTIVE_LAST_NR),
@@ -835,7 +835,7 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
 
           // After SI is received, prepare RRCConnectionRequest
           if (NR_UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) // see -Q option
-            if (AMF_MODE_ENABLED) {
+            if (get_softmodem_params()->sa) {
               nr_rrc_ue_generate_RRCSetupRequest( ctxt_pP->module_id, gNB_index );
             }
 
@@ -1341,20 +1341,16 @@ static void rrc_ue_generate_RRCSetupComplete(
   const char *nas_msg;
   int   nas_msg_length;
 
- if (AMF_MODE_ENABLED) {
-    if (get_softmodem_params()->sa) {
-      as_nas_info_t initialNasMsg;
-      generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
-      nas_msg = (char*)initialNasMsg.data;
-      nas_msg_length = initialNasMsg.length;
-    } else {
-      nas_msg         = (char *) NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
-      nas_msg_length  = NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
-    }
+  if (get_softmodem_params()->sa) {
+    as_nas_info_t initialNasMsg;
+    generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
+    nas_msg = (char*)initialNasMsg.data;
+    nas_msg_length = initialNasMsg.length;
   } else {
     nas_msg         = nr_nas_attach_req_imsi;
     nas_msg_length  = sizeof(nr_nas_attach_req_imsi);
   }
+
   size = do_RRCSetupComplete(ctxt_pP->module_id, buffer, sizeof(buffer),
                              Transaction_id, sel_plmn_id, nas_msg_length, nas_msg);
   LOG_I(NR_RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCSetupComplete (bytes%d, gNB %d)\n",
@@ -1708,9 +1704,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
  void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index) {
    uint8_t i=0,rv[6];
 
-   if(get_softmodem_params()->sa) {
-     AMF_MODE_ENABLED = 1;
-   }
    if(NR_UE_rrc_inst[module_id].Srb0[gNB_index].Tx_buffer.payload_size ==0) {
      // Get RRCConnectionRequest, fill random for now
      // Generate random byte stream for contention resolution
@@ -1802,7 +1795,7 @@ nr_rrc_ue_establish_srb2(
    LOG_I(NR_RRC,"[UE %d] Frame %d: processing RRCReconfiguration: reconfiguring DRB %ld\n",
 	 ue_mod_idP, frameP, DRB_config->drb_Identity);
 
-  if(!AMF_MODE_ENABLED) {
+  if(!get_softmodem_params()->sa) {
     ip_addr_offset3 = 0;
     ip_addr_offset4 = 1;
     LOG_I(OIP, "[UE %d] trying to bring up the OAI interface %d, IP X.Y.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
