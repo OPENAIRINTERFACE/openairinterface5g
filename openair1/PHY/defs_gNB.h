@@ -42,6 +42,7 @@
 #include "PHY/defs_common.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
+#include "executables/rt_profiling.h"
 
 #include "nfapi_nr_interface_scf.h"
 
@@ -840,6 +841,7 @@ typedef struct PHY_VARS_gNB_s {
   int pucch0_thres;
   int pusch_thres;
   int prach_thres;
+  int srs_thres;
   uint64_t bad_pucch;
   int num_ulprbbl;
   int ulprbbl[275];
@@ -897,6 +899,8 @@ typedef struct PHY_VARS_gNB_s {
   int number_of_nr_dlsch_max;
   int number_of_nr_ulsch_max;
   void * scopeData;
+  /// structure for analyzing high-level RT measurements
+  rt_L1_profiling_t rt_L1_profiling; 
 } PHY_VARS_gNB;
 
 typedef struct LDPCDecode_s {

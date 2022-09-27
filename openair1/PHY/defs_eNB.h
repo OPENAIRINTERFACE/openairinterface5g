@@ -253,11 +253,9 @@ typedef struct {
   /// mutex for RXn-TXnp4 processing thread
   pthread_mutex_t mutex_RUs;
   tpool_t *threadPool;
-  int nbEncode;
   int nbDecode;
-  notifiedFIFO_t *respEncode;
   notifiedFIFO_t *respDecode;
-    pthread_mutex_t mutex_emulateRF;
+  pthread_mutex_t mutex_emulateRF;
   int instance_cnt_emulateRF;
   pthread_t pthread_emulateRF;
   pthread_attr_t attr_emulateRF;
@@ -731,11 +729,6 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t dlsch_turbo_encoding_preperation_stats;
   time_stats_t dlsch_turbo_encoding_segmentation_stats;
   time_stats_t dlsch_turbo_encoding_stats;
-  time_stats_t dlsch_turbo_encoding_waiting_stats;
-  time_stats_t dlsch_turbo_encoding_signal_stats;
-  time_stats_t dlsch_turbo_encoding_main_stats;
-  time_stats_t dlsch_turbo_encoding_wakeup_stats0;
-  time_stats_t dlsch_turbo_encoding_wakeup_stats1;
   time_stats_t dlsch_interleaving_stats;
 
   time_stats_t rx_dft_stats;

@@ -680,39 +680,7 @@ void dlsch_detection_mrc_TM34(NR_DL_FRAME_PARMS *frame_parms,
                               unsigned short nb_rb,
                               unsigned char dual_stream_UE);
 
-/** \fn dlsch_extract_rbs_single(int32_t **rxdataF,
-    int32_t **dl_ch_estimates,
-    int32_t **rxdataF_ext,
-    int32_t **dl_ch_estimates_ext,
-    uint32_t *rb_alloc,
-    uint8_t symbol,
-    NR_DL_FRAME_PARMS *frame_parms)
-    \brief This function extracts the received resource blocks, both channel estimates and data symbols,
-    for the current allocation and for single antenna eNB transmission.
-    @param rxdataF Raw FFT output of received signal
-    @param dl_ch_estimates Channel estimates of current slot
-    @param rxdataF_ext FFT output for RBs in this allocation
-    @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
-    @param rb_alloc RB allocation vector
-    @param symbol Symbol to extract
-    @param n_dmrs_cdm_groups
-    @param frame_parms Pointer to frame descriptor
-*/
-unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
-                                        int **dl_ch_estimates,
-                                        int **rxdataF_ext,
-                                        int **dl_ch_estimates_ext,
-                                        unsigned char symbol,
-                                        uint8_t pilots,
-                                        uint8_t config_type,
-                                        unsigned short start_rb,
-                                        unsigned short nb_rb_pdsch,
-                                        uint8_t n_dmrs_cdm_groups,
-                                        NR_DL_FRAME_PARMS *frame_parms,
-                                        uint16_t dlDmrsSymbPos,
-                                        int chest_time_type);
-
-/** \fn dlsch_extract_rbs_multiple(int32_t **rxdataF,
+/** \fn dlsch_extract_rbs(int32_t **rxdataF,
     int32_t **dl_ch_estimates,
     int32_t **rxdataF_ext,
     int32_t **dl_ch_estimates_ext,
@@ -737,19 +705,19 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     @param frame_parms Pointer to frame descriptor
 */
 void nr_dlsch_extract_rbs(int **rxdataF,
-                                        int **dl_ch_estimates,
-                                        int **rxdataF_ext,
-                                        int **dl_ch_estimates_ext,
-                                        unsigned char symbol,
-                                        uint8_t pilots,
-                                        uint8_t config_type,
-                                        unsigned short start_rb,
-                                        unsigned short nb_rb_pdsch,
-                                        uint8_t n_dmrs_cdm_groups,
-                                        uint8_t Nl,
-                                        NR_DL_FRAME_PARMS *frame_parms,
-                                        uint16_t dlDmrsSymbPos,
-                                        int chest_time_type);
+                          int **dl_ch_estimates,
+                          int **rxdataF_ext,
+                          int **dl_ch_estimates_ext,
+                          unsigned char symbol,
+                          uint8_t pilots,
+                          uint8_t config_type,
+                          unsigned short start_rb,
+                          unsigned short nb_rb_pdsch,
+                          uint8_t n_dmrs_cdm_groups,
+                          uint8_t Nl,
+                          NR_DL_FRAME_PARMS *frame_parms,
+                          uint16_t dlDmrsSymbPos,
+                          int chest_time_type);
 
 /** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
     int32_t **dl_bf_ch_estimates,

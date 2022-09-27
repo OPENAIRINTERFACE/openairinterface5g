@@ -708,12 +708,12 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     uint16_t msi_control_element[29], *msi_ptr;
     // MSI buffer pointer
     char *buffer_pointer=NULL;
-    if (msi_flag == 1) {
-	// Create MSI here
-	msi_ptr = &msi_control_element[0];
+    if (msi_flag == 1 && cc->mbms_SessionList) {
+      // Create MSI here
+      msi_ptr = &msi_control_element[0];
 
-	//Header for MTCHs
-	num_mtch = cc->mbms_SessionList[mbms_mch_i]->list.count;
+      // Header for MTCHs
+      num_mtch = cc->mbms_SessionList[mbms_mch_i]->list.count;
 
     	TBS =
 	get_TBS_DL(cc->MCH_pdu.mcs, to_prb(cc->mib->message.dl_Bandwidth));
@@ -867,52 +867,63 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     //if ((i == 0) && ((RC.mac[module_idP]->MBMS_flag != multicast_relay) || (RC.mac[module_idP]->mcch_active==0))) {
 
     // there is MTCHs, loop if there are more than 1
-    if (mtch_flag == 1 ) {
-	// Calculate TBS
-	// get MTCH data from RLC (like for DTCH)
-	LOG_D(MAC,"[eNB %d] CC_id %d Frame %d subframeP %d: Schedule MTCH (area %d, sfAlloc %d)\n",
-	      module_idP, CC_id, frameP, subframeP, i, j);
+    // BAd race condition: all this struct is filled by another thread, no mutex or any code to make it coherent
+    if (mtch_flag == 1 && cc->mbms_SessionList && cc->mbms_SessionList[0] && cc->mbms_SessionList[0]->list.array[0]) {
+      // Calculate TBS
+      // get MTCH data from RLC (like for DTCH)
+      LOG_D(MAC, "[eNB %d] CC_id %d Frame %d subframeP %d: Schedule MTCH (area %d, sfAlloc %d)\n", module_idP, CC_id, frameP, subframeP, i, j);
 
-	header_len_mtch = 3;
-	LOG_D(MAC,"[eNB %d], CC_id %d, Frame %d, MTCH->MCH, Checking RLC status (rab %d, tbs %d, len %d)\n",
-	      module_idP, CC_id, frameP, MTCH, TBS,
-	      TBS - header_len_mcch - header_len_msi - sdu_length_total -
-	      header_len_mtch);
+      header_len_mtch = 3;
+      LOG_D(MAC,
+            "[eNB %d], CC_id %d, Frame %d, MTCH->MCH, Checking RLC status (rab %d, tbs %d, len %d)\n",
+            module_idP,
+            CC_id,
+            frameP,
+            MTCH,
+            TBS,
+            TBS - header_len_mcch - header_len_msi - sdu_length_total - header_len_mtch);
 
-	//TODO
-	mbms_rab_id = cc->mbms_SessionList[0/*mbms_mch_i*/]->list.array[0]->logicalChannelIdentity_r9;
+      // TODO
+      mbms_rab_id = cc->mbms_SessionList[0 /*mbms_mch_i*/]->list.array[0]->logicalChannelIdentity_r9;
 
-	rlc_status =
-	    mac_rlc_status_ind(module_idP, 0xfffd, frameP, subframeP,
-			       module_idP, ENB_FLAG_YES, MBMS_FLAG_YES,
-				cc->mbms_SessionList[mbms_mch_i]->list.array[0]->logicalChannelIdentity_r9,
-			       //MTCH,
-                                     0, 0
-                                    );
+      rlc_status = mac_rlc_status_ind(module_idP,
+                                      0xfffd,
+                                      frameP,
+                                      subframeP,
+                                      module_idP,
+                                      ENB_FLAG_YES,
+                                      MBMS_FLAG_YES,
+                                      cc->mbms_SessionList[mbms_mch_i]->list.array[0]->logicalChannelIdentity_r9,
+                                      // MTCH,
+                                      0,
+                                      0);
 
-	bytes_in_buffer = rlc_status.bytes_in_buffer;
+      bytes_in_buffer = rlc_status.bytes_in_buffer;
 
-	//TOCHECK is this really neede?
-	if( !(mcch_flag==1 || msi_flag==1) )
-		msi_sfs = rlc_status.bytes_in_buffer/(TBS- header_len_mcch - header_len_msi -sdu_length_total - header_len_mtch)+(rlc_status.bytes_in_buffer%(TBS- header_len_mcch - header_len_msi -sdu_length_total - header_len_mtch)?1:0);
+      // TOCHECK is this really neede?
+      if (!(mcch_flag == 1 || msi_flag == 1))
+        msi_sfs = rlc_status.bytes_in_buffer / (TBS - header_len_mcch - header_len_msi - sdu_length_total - header_len_mtch)
+                  + (rlc_status.bytes_in_buffer % (TBS - header_len_mcch - header_len_msi - sdu_length_total - header_len_mtch) ? 1 : 0);
 
-        uint16_t TBS_MTCH =
-	get_TBS_DL(cc->pmch_Config[mbms_mch_i]->dataMCS_r9, to_prb(cc->mib->message.dl_Bandwidth));
+      uint16_t TBS_MTCH = get_TBS_DL(cc->pmch_Config[mbms_mch_i]->dataMCS_r9, to_prb(cc->mib->message.dl_Bandwidth));
 
-	if(msi_flag==1 && buffer_pointer!=NULL){
-	//	msi_ptr = &msi_control_element[0];
+      if (msi_flag == 1 && buffer_pointer != NULL) {
+        //	msi_ptr = &msi_control_element[0];
 
-	    msi_pmch_stop = (rlc_status.bytes_in_buffer - header_len_mcch - header_len_msi -sdu_length_total - header_len_mtch)/(TBS_MTCH/*- header_len_mcch - header_len_msi -sdu_length_total*/ - header_len_mtch)+((rlc_status.bytes_in_buffer-TBS-header_len_mcch - header_len_msi -sdu_length_total)%(TBS_MTCH/*- header_len_mcch - header_len_msi -sdu_length_total*/ - header_len_mtch)?0:0);
+        msi_pmch_stop =
+            (rlc_status.bytes_in_buffer - header_len_mcch - header_len_msi - sdu_length_total - header_len_mtch) / (TBS_MTCH /*- header_len_mcch - header_len_msi -sdu_length_total*/ - header_len_mtch)
+            + ((rlc_status.bytes_in_buffer - TBS - header_len_mcch - header_len_msi - sdu_length_total) % (TBS_MTCH /*- header_len_mcch - header_len_msi -sdu_length_total*/ - header_len_mtch) ? 0
+                                                                                                                                                                                                : 0);
 
-	    for (k = 0; k < num_mtch; k++) {	// loop for all session in this MCH (MCH[0]) at this moment
-	      msi_ptr = &msi_control_element[k];
+        for (k = 0; k < num_mtch; k++) { // loop for all session in this MCH (MCH[0]) at this moment
+          msi_ptr = &msi_control_element[k];
 
-	      ((MSI_ELEMENT *) msi_ptr)->lcid = cc->mbms_SessionList[mbms_mch_i]->list.array[k]->logicalChannelIdentity_r9;	//mtch_lcid;
+          ((MSI_ELEMENT *)msi_ptr)->lcid = cc->mbms_SessionList[mbms_mch_i]->list.array[k]->logicalChannelIdentity_r9; // mtch_lcid;
 
-	      if( msi_pmch_stop > cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9)
-	             LOG_E(MAC,"e-MBMS Buffer Overflow\n"); 
+          if (msi_pmch_stop > cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9)
+            LOG_E(MAC, "e-MBMS Buffer Overflow\n");
 
-	      if(msi_pmch_stop>=num_sf_alloc /*&& msi_pmch_stop <=cc->pmch_Config[0]->sf_AllocEnd_r9*/)  {
+          if (msi_pmch_stop >= num_sf_alloc /*&& msi_pmch_stop <=cc->pmch_Config[0]->sf_AllocEnd_r9*/) {
 	          ((MSI_ELEMENT *) msi_ptr)->stop_sf_MSB = (((msi_pmch_stop <=cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9 ? msi_pmch_stop: cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9) >> 8) & 0x7f);
 	      	((MSI_ELEMENT *) msi_ptr)->stop_sf_LSB = ((msi_pmch_stop <=cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9 ? msi_pmch_stop: cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9) & 0xff);
 	          msi_pmch_stop = (msi_pmch_stop <=cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9 ? msi_pmch_stop: cc->pmch_Config[mbms_mch_i]->sf_AllocEnd_r9);

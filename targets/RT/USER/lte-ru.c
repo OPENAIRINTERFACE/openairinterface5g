@@ -54,7 +54,6 @@
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
-#include "PHY/LTE_TRANSPORT/if5_tools.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "SCHED/sched_common.h"
 #include "common/utils/LOG/log.h"
@@ -66,6 +65,8 @@
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 static int DEFBFW[] = {0x00007fff};
+static int DEFRUTPCORES[] = {2,4,6,8};
+
 
 #include "ENB_APP/enb_paramdef.h"
 #include "common/config/config_userapi.h"
@@ -134,8 +135,18 @@ static inline void fh_if5_south_out(RU_t *ru,int frame, int subframe, uint64_t t
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
 
   ru->south_out_cnt++;
+  int offset = subframe*ru->frame_parms->samples_per_tti;
+  void *buffs[ru->nb_tx]; 
+  for (int aid=0;aid<ru->nb_tx;aid++) buffs[aid] = (void*)&ru->common.txdata[aid][offset]; 
 
-  send_IF5(ru, timestamp, subframe, &ru->seqno, IF5_RRH_GW_DL);
+  ru->ifdevice.trx_write_func2(&ru->ifdevice,
+  		               timestamp,
+                               buffs,
+			       0,
+			       ru->frame_parms->samples_per_tti,
+			       0,
+			       ru->nb_tx); 
+
 }
 
 
@@ -172,7 +183,7 @@ void fh_if5_south_in(RU_t *ru,
                      int *subframe) {
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_proc_t *proc = &ru->proc;
-  recv_IF5(ru, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL);
+  ru->ifdevice.trx_read_func2(&ru->ifdevice,&proc->timestamp_rx,NULL,fp->samples_per_tti);
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->tti_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
   
@@ -398,8 +409,8 @@ void fh_if5_north_asynch_in(RU_t *ru,
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_proc_t *proc        = &ru->proc;
   int tti_tx,frame_tx;
-  openair0_timestamp timestamp_tx;
-  recv_IF5(ru, &timestamp_tx, *subframe, IF5_RRH_GW_DL);
+  openair0_timestamp timestamp_tx=0;
+  //recv_IF5(ru, &timestamp_tx, *subframe, IF5_RRH_GW_DL);
   //      LOG_I(PHY,"Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
   tti_tx = (timestamp_tx/fp->samples_per_tti)%10;
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
@@ -492,11 +503,9 @@ void fh_if4p5_north_asynch_in(RU_t *ru,
 
 
 void fh_if5_north_out(RU_t *ru) {
-  RU_proc_t *proc=&ru->proc;
-  uint8_t seqno=0;
   /// **** send_IF5 of rxdata to BBU **** ///
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );
-  send_IF5(ru, proc->timestamp_rx, proc->tti_rx, &seqno, IF5_RRH_GW_UL);
+//  send_IF5(ru, proc->timestamp_rx, proc->tti_rx, &seqno, IF5_RRH_GW_UL);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );
 }
 

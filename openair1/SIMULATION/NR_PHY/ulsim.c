@@ -1063,7 +1063,6 @@ int main(int argc, char **argv)
   double blerStats[4][100];
   double berStats[4][100];
   double snrStats[100];
-  double ldpcDecStats[100] = {0};
   memset(errors_scrambling, 0, sizeof(uint32_t)*4*100);
   memset(n_errors, 0, sizeof(int)*4*100);
   memset(round_trials, 0, sizeof(int)*4*100);
@@ -1632,8 +1631,6 @@ int main(int argc, char **argv)
       //printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
       printf("\n");
     }
-
-    ldpcDecStats[snrRun] = gNB->ulsch_decoding_stats.trials?inMicroS(gNB->ulsch_decoding_stats.diff/gNB->ulsch_decoding_stats.trials):0;
 
     if(n_trials==1)
       break;

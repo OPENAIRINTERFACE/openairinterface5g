@@ -814,11 +814,9 @@ int main(int argc, char **argv) {
   proc_rxtx_ue->frame_rx = (subframe<4)?(proc_rxtx->frame_tx-1):(proc_rxtx->frame_tx);
   proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
   proc_rxtx_ue->subframe_rx = (proc_rxtx->subframe_tx+6)%10;
-  proc_rxtx->threadPool=(tpool_t*)malloc(sizeof(tpool_t));
-  proc_rxtx->respEncode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+  proc_rxtx->threadPool = (tpool_t *)malloc(sizeof(tpool_t));
   proc_rxtx->respDecode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initTpool("n",proc_rxtx->threadPool, true);
-  initNotifiedFIFO(proc_rxtx->respEncode);
+  initTpool("n", proc_rxtx->threadPool, true);
   initNotifiedFIFO(proc_rxtx->respDecode);
 
   printf("Init UL hopping UE\n");
@@ -1533,7 +1531,7 @@ int main(int argc, char **argv) {
   }//ch realization
 
   oai_exit=1;
-  pthread_cond_signal(&ru->proc.cond_fep);
+  pthread_cond_signal(&ru->proc.cond_fep[0]);
 
   if (abstx) { // ABSTRACTION
     fprintf(csv_fdUL,"];");
