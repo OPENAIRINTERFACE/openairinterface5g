@@ -1445,31 +1445,22 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
   int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
   __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
 
-  int coreset_nb_rb=0;
-  int coreset_start_rb=0;
-
-  if (phy_pdcch_config->nb_search_space > 0)
-    get_coreset_rballoc(phy_pdcch_config->pdcch_config[0].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
-
   uint8_t dci_cnt = 0;
   for(int n_ss = 0; n_ss<phy_pdcch_config->nb_search_space; n_ss++) {
     for (uint16_t l=0; l<nb_symb_pdcch; l++) {
 
       // note: this only works if RBs for PDCCH are contigous!
-      LOG_D(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d, coreset_nb_rb %d\n",
-            fp->first_carrier_offset, phy_pdcch_config->pdcch_config[n_ss].BWPStart, coreset_start_rb, coreset_nb_rb);
 
-      if (coreset_nb_rb > 0)
-        nr_pdcch_channel_estimation(ue,
-                                    proc,
-                                    gNB_id,
-                                    nr_slot_rx,
-                                    l,
-                                    phy_pdcch_config->pdcch_config[n_ss].coreset.pdcch_dmrs_scrambling_id,
-                                    fp->first_carrier_offset+(phy_pdcch_config->pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
-                                    coreset_nb_rb,
-                                    pdcch_est_size,
-                                    pdcch_dl_ch_estimates);
+      nr_pdcch_channel_estimation(ue,
+                                  proc,
+                                  gNB_id,
+                                  nr_slot_rx,
+                                  l,
+                                  &phy_pdcch_config->pdcch_config[n_ss].coreset,
+                                  fp->first_carrier_offset,
+                                  phy_pdcch_config->pdcch_config[n_ss].BWPStart,
+                                  pdcch_est_size,
+                                  pdcch_dl_ch_estimates);
 
       stop_meas(&ue->ofdm_demod_stats);
 

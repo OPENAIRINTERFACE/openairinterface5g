@@ -529,8 +529,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   if (sa==1 && ret==0) {
     bool dec = false;
     int gnb_id = 0; //FIXME
-    int coreset_nb_rb=0;
-    int coreset_start_rb=0;
 
     // Hold the channel estimates in frequency domain.
     int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
@@ -540,7 +538,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     for(int n_ss = 0; n_ss<phy_pdcch_config.nb_search_space; n_ss++) {
       uint8_t nb_symb_pdcch = phy_pdcch_config.pdcch_config[n_ss].coreset.duration;
       int start_symb = phy_pdcch_config.pdcch_config[n_ss].coreset.StartSymbolIndex;
-      get_coreset_rballoc(phy_pdcch_config.pdcch_config[n_ss].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
       for (uint16_t l=start_symb; l<start_symb+nb_symb_pdcch; l++) {
         nr_slot_fep_init_sync(ue,
                               proc,
@@ -548,17 +545,16 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                               phy_pdcch_config.slot,
                               is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset);
 
-        if (coreset_nb_rb > 0)
-          nr_pdcch_channel_estimation(ue,
-                                      proc,
-                                      0,
-                                      phy_pdcch_config.slot,
-                                      l,
-                                      fp->Nid_cell,
-                                      fp->first_carrier_offset+(phy_pdcch_config.pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
-                                      coreset_nb_rb,
-                                      pdcch_est_size,
-                                      pdcch_dl_ch_estimates);
+        nr_pdcch_channel_estimation(ue,
+                                    proc,
+                                    0,
+                                    phy_pdcch_config.slot,
+                                    l,
+                                    &phy_pdcch_config.pdcch_config[n_ss].coreset,
+                                    fp->first_carrier_offset,
+                                    phy_pdcch_config.pdcch_config[n_ss].BWPStart,
+                                    pdcch_est_size,
+                                    pdcch_dl_ch_estimates);
 
       }
       int  dci_cnt = nr_ue_pdcch_procedures(gnb_id, ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, &phy_pdcch_config, n_ss);
