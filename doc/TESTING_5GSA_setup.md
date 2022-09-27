@@ -214,4 +214,21 @@ sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3
     --rfsim --sa --nokrnmod -O <PATH_TO_UE_CONF_FILE>
 ```
 
+If you get the following error:
+
+```bash
+Assertion (k2 >= ((5))) failed!
+In get_k2() /home/mir/workspace/openairinterface5g/openair2/LAYER2/NR_MAC_UE/nr_ue_scheduler.c:147
+Slot offset K2 (2) cannot be less than DURATION_RX_TO_TX (5). K2 set according to min_rxtxtime in config file.
+```
+
+Add the following parameter (i.e., min_rxtxtime) in the gNB configuration file, just after nr_cellid.
+
+```bash
+nr_cellid = 12345678L;
+min_rxtxtime=6;
+```
+or --gNBs.[0].min_rxtxtime 6 to the gNB command line
+
+
 The IP address at the execution command of the OAI UE corresponds to the target IP of the gNB host that the RFSIMULATOR at the UE will connect to. In the above example, we assume that the gNB and UE are running on the same host so the specified address (127.0.0.1) is the one of the loopback interface.  
