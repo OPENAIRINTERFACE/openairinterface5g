@@ -1223,6 +1223,10 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
         ch[0] = ch_sum[0] / 3;
         ch[1] = ch_sum[1] / 3;
         multadd_real_vector_complex_scalar(filt16a_1, ch, dl_ch, 16);
+#ifdef DEBUG_PDCCH
+        for (int m =0; m<12; m++)
+          printf("data :  dl_ch -> (%d,%d)\n",dl_ch[0+2*m],dl_ch[1+2*m]);
+#endif
         dl_ch += 24;
         ch_sum[0] = 0;
         ch_sum[1] = 0;

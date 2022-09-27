@@ -27,7 +27,7 @@
 #include "executables/softmodem-common.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 // Adjust location synchronization point to account for drift
 // The adjustment is performed once per frame based on the
@@ -118,7 +118,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_PHY
-  LOG_D(PHY,"AbsSubframe %d: diff = %i, rx_offset (final) = %i : clear = %d, max_pos = %d, max_pos_fil = %d, max_val = %d, sync_pos %d\n",
+  LOG_I(PHY,"AbsSubframe %d: diff = %i, rx_offset (final) = %i : clear = %d, max_pos = %d, max_pos_fil = %d, max_val = %d, sync_pos %d\n",
         subframe,
         diff,
         ue->rx_offset,
