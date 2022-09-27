@@ -51,7 +51,7 @@ extern openair0_config_t openair0_cfg[];
 int cnt=0;
 
 #define DEBUG_INITIAL_SYNCH
-
+#define DUMP_PBCH_CH_ESTIMATES 0
 
 // create a new node of SSB structure
 NR_UE_SSB* create_ssb_node(uint8_t  i, uint8_t  h) {
@@ -168,6 +168,11 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
                      phy_pdcch_config,
                      &result);
 
+    if (DUMP_PBCH_CH_ESTIMATES && (ret == 0)) {
+      write_output("pbch_ch_estimates.m", "pbch_ch_estimates", dl_ch_estimates, frame_parms->nb_antennas_rx*estimateSz, 1, 1);
+      write_output("pbch_ch_estimates_time.m", "pbch_ch_estimates_time", dl_ch_estimates_time, frame_parms->nb_antennas_rx*frame_parms->ofdm_symbol_size, 1, 1);
+    }
+
     temp_ptr=temp_ptr->next_ssb;
   }
 
@@ -250,7 +255,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     if (sync_pos >= fp->nb_prefix_samples)
       ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
     else
-      ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;
+      ue->ssb_offset = sync_pos + fp->samples_per_frame - fp->nb_prefix_samples;
 
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
@@ -269,7 +274,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
       int start = sa ? is*fp->samples_per_frame : is*fp->samples_per_frame + ue->ssb_offset;
 
       // loop over samples
-      int end = sa ? n_frames*fp->samples_per_frame-1 : start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+      int end = sa ? n_frames*fp->samples_per_frame : start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
 
       for(int n=start; n<end; n++){
         for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
@@ -282,7 +287,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     }
 
     /* check that SSS/PBCH block is continuous inside the received buffer */
-    if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
+    if (is*fp->samples_per_frame + ue->ssb_offset + NR_N_SYMBOLS_SSB * (fp->ofdm_symbol_size + fp->nb_prefix_samples) < n_frames*fp->samples_per_frame) {
 
     /* slop_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
     /* for NR this is not the case but slot_fep is still used for computing FFT of samples */
