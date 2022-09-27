@@ -682,18 +682,22 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   int32_t avgs;
   int32_t avgP[4];
   int n_rb,rb_offset;
+  get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
 
   // Pointers to extracted PDCCH symbols in frequency-domain.
-  int32_t rx_size = 4*273*12;
-  __attribute__ ((aligned(32))) int32_t rxdataF_ext[4*frame_parms->nb_antennas_rx][rx_size];
-  __attribute__ ((aligned(32))) int32_t rxdataF_comp[4*frame_parms->nb_antennas_rx][rx_size];
-  __attribute__ ((aligned(32))) int32_t pdcch_dl_ch_estimates_ext[4*frame_parms->nb_antennas_rx][rx_size];
+  int32_t rx_size = 4*n_rb*12;
+  __attribute__ ((aligned(32))) int32_t rxdataF_ext[frame_parms->nb_antennas_rx][rx_size];
+  __attribute__ ((aligned(32))) int32_t rxdataF_comp[frame_parms->nb_antennas_rx][rx_size];
+  __attribute__ ((aligned(32))) int32_t pdcch_dl_ch_estimates_ext[frame_parms->nb_antennas_rx][rx_size];
+
+  memset(rxdataF_comp, 0, sizeof(rxdataF_comp));
 
   // Pointer to llrs, 4-bit resolution.
-  int32_t llr_size = 2*4*100*12;
+  int32_t llr_size = 2*4*n_rb*9;
   int16_t llr[llr_size];
 
-  get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
+  memset(llr, 0, sizeof(llr));
+
   LOG_D(PHY,"pdcch coreset: freq %x, n_rb %d, rb_offset %d\n",
         rel15->coreset.frequency_domain_resource[0],n_rb,rb_offset);
   for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
