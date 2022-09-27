@@ -894,9 +894,11 @@ void nr_get_Msg3alloc(module_id_t module_id,
   const int n_slots_frame = nr_slots_per_frame[mu];
   uint8_t k2 = 0;
   if (frame_type == TDD) {
-    const int first_ul_slot_period = tdd->nrofDownlinkSlots;
-    int nb_periods_per_frame = get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
-    int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
+    int msg3_slot = tdd->nrofDownlinkSlots; // first uplink slot
+    if (tdd->nrofUplinkSymbols > 0 && tdd->nrofUplinkSymbols < 3)
+      msg3_slot++; // we can't trasmit msg3 in mixed slot if there are less than 3 symbols
+    const int nb_periods_per_frame = get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+    const int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
     for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
       startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
@@ -906,7 +908,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
       LOG_D(NR_MAC,"Checking Msg3 TDA %d : k2 %d, sliv %d,S %d L %d\n",i,(int)k2,(int)pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength,start_symbol_index,nr_of_symbols);
       // we want to transmit in the uplink symbols of mixed slot or the first uplink slot
       temp_slot = (current_slot + k2 + DELTA[mu]) % nr_slots_per_frame[mu]; // msg3 slot according to 8.3 in 38.213
-      if ((temp_slot % nb_slots_per_period) == first_ul_slot_period &&
+      if ((temp_slot % nb_slots_per_period) == msg3_slot &&
           is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[temp_slot / 64], temp_slot)) {
         ra->Msg3_tda_id = i;
         ra->msg3_startsymb = StartSymbolIndex;
@@ -1037,10 +1039,10 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   int num_dmrs_symb = 0;
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
     num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
-
   int TBS = 0;
   while(TBS<7) {  // TBS for msg3 is 7 bytes (except for RRCResumeRequest1 currently not implemented)
     mcsindex++;
+    AssertFatal(mcsindex<28,"Exceeding MCS limit for Msg3\n");
     int R = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
     pusch_pdu->target_code_rate = R;
     pusch_pdu->qam_mod_order = nr_get_Qm_ul(mcsindex,pusch_pdu->mcs_table);
@@ -1056,7 +1058,6 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
     pusch_pdu->mcs_index = mcsindex;
     pusch_pdu->pusch_data.tb_size = TBS;
     pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
-
   }
 }
 

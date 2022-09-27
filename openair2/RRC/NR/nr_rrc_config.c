@@ -590,7 +590,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
       int nb_slots_per_period = ((1<<mu) * 10)/nb_periods_per_frame;
       struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation_msg3 = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
       pusch_timedomainresourceallocation_msg3->k2  = CALLOC(1,sizeof(long));
-      int no_mix_slot = ul_symb == 0 ? 1 : 0;
+      int no_mix_slot = ul_symb < 3 ? 1 : 0; // we need at least 2 symbols for scheduling Msg3
       *pusch_timedomainresourceallocation_msg3->k2 = nb_slots_per_period - DELTA[mu] + no_mix_slot;
       if(*pusch_timedomainresourceallocation_msg3->k2 < min_fb_delay)
         *pusch_timedomainresourceallocation_msg3->k2 += nb_slots_per_period;
