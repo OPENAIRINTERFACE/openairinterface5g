@@ -1234,7 +1234,7 @@ void fill_initial_SpCellConfig(int uid,
       ASN_SEQUENCE_ADD(&uplinkConfig->uplinkBWP_ToAddModList->list, ubwp);
     }
     uplinkConfig->firstActiveUplinkBWP_Id = calloc(1,sizeof(*uplinkConfig->firstActiveUplinkBWP_Id));
-    *uplinkConfig->firstActiveUplinkBWP_Id = uplinkConfig->firstActiveUplinkBWP_Id ? *uplinkConfig->firstActiveUplinkBWP_Id : 1;
+    *uplinkConfig->firstActiveUplinkBWP_Id = servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id : 1;
   }
 
   SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
