@@ -261,7 +261,8 @@ class PhySim:
 		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
 		mySSH.command('mkdir -p physim_test_log_' + self.testCase_id, '\$', 5)
 		mySSH.command('cp log/physim_* ' + 'physim_test_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('tar cvf physim_test_log_' + self.testCase_id + '/physim_log.tar log/015*', '\$', 180)
+		mySSH.command('tar cvf physim_test_log_' + self.testCase_id + '/physim_log.tar log/*', '\$', 180)
+		mySSH.command('rm -rf log/*', '\$', 5)
 		if not os.path.exists(f'./physim_test_logs_{self.testCase_id}'):
 			os.mkdir(f'./physim_test_logs_{self.testCase_id}')
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/physim_test_log_' + self.testCase_id + '/*', './physim_test_logs_' + self.testCase_id)
