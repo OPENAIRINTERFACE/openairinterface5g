@@ -43,7 +43,7 @@
 #include <string.h>
 
 /* Commmon */
-#include "targets/ARCH/COMMON/common_lib.h"
+#include "sdr/COMMON/common_lib.h"
 #include "COMMON/platform_constants.h"
 #include "common/ran_context.h"
 #include "collection/linear_alloc.h"

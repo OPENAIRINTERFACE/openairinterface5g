@@ -63,7 +63,7 @@ softmodem_enb>
 
 
 
-The [rfsimulator documentation](../../../../targets/ARCH/rfsimulator/README.md ) has also some specific information when using the channel simulation via this tool. 
+The [rfsimulator documentation](../../../../sdr/rfsimulator/README.md ) has also some specific information when using the channel simulation via this tool. 
 
 [channel simulation main page](channel_simulation.md)
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)

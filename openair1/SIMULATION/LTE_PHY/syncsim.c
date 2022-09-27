@@ -41,9 +41,7 @@
 #endif
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
-#include "ARCH/COMMON/defs.h"
+#include "sdr/COMMON/defs.h"
 #include "LAYER2/MAC/vars.h"
 
 #ifdef XFORMS

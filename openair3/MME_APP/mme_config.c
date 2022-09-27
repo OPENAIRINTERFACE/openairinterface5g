@@ -45,7 +45,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "PHY/phy_extern.h"
 #include "PHY/INIT/phy_init.h"
-#include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "sdr/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
 

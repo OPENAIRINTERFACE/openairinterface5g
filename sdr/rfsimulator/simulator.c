@@ -51,7 +51,7 @@
 #include "openair1/PHY/defs_UE.h"
 #define CHANNELMOD_DYNAMICLOAD
 #include <openair1/SIMULATION/TOOLS/sim.h>
-#include <targets/ARCH/rfsimulator/rfsimulator.h>
+#include <sdr/rfsimulator/rfsimulator.h>
 
 #define PORT 4043 //default TCP port for this simulator
 #define CirSize 6144000 // 100ms is enough
