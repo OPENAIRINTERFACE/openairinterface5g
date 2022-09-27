@@ -40,8 +40,6 @@
       env: "@MNC@"
     - key: mnc_length
       env: "@MNC_LENGTH@"
-    - key: sst
-      env: "@NSSAI_SST@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: enable_x2
@@ -88,6 +86,10 @@
       env: "@TAC@"
     - key: sst
       env: "@NSSAI_SST@"
+    - key: sd
+      env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -99,7 +101,7 @@
     - key: GNB_IPV4_ADDRESS_FOR_NGU
       env: "@GNB_NGU_IP_ADDRESS@"
     - key: sdr_addrs
-      env: "@SDR_ADDRESSES@"
+      env: "@SDR_ADDRS@"
     - key: parallel_config
       env: "@THREAD_PARALLEL_CONFIG@"
 
@@ -122,6 +124,10 @@
       env: "@TAC@"
     - key: sst
       env: "@NSSAI_SST@"
+    - key: sd
+      env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -154,6 +160,10 @@
       env: "@TAC@"
     - key: sst
       env: "@NSSAI_SST@"
+    - key: sd
+      env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -186,6 +196,10 @@
       env: "@TAC@"
     - key: sst
       env: "@NSSAI_SST@"
+    - key: sd
+      env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -226,6 +240,10 @@
       env: "@TAC@"
     - key: sst
       env: "@NSSAI_SST@"
+    - key: sd
+      env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -268,6 +286,10 @@
       env: "@TAC@"
     - key: sst
       env: "@NSSAI_SST@"
+    - key: sd
+      env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
