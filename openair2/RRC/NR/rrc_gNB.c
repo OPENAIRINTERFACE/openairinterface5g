@@ -524,7 +524,7 @@ rrc_gNB_process_RRCSetupComplete(
   ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = 1;
   ue_context_pP->ue_context.StatusRrc = NR_RRC_CONNECTED;
 
-  if (AMF_MODE_ENABLED) {
+  if (get_softmodem_params()->sa) {
     rrc_gNB_send_NGAP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcSetupComplete);
   } else {
     rrc_gNB_generate_SecurityModeCommand(ctxt_pP, ue_context_pP);
@@ -868,11 +868,12 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
     DRB_config->pdcp_Config->drb->integrityProtection = NULL;
     DRB_config->pdcp_Config->drb->statusReportRequired = NULL;
-    DRB_config->pdcp_Config->drb->outOfOrderDelivery = NULL;
+    DRB_config->pdcp_Config->drb->outOfOrderDelivery = calloc(1,sizeof(*DRB_config->pdcp_Config->drb->outOfOrderDelivery));
+    *DRB_config->pdcp_Config->drb->outOfOrderDelivery = NR_PDCP_Config__drb__outOfOrderDelivery_true;
     DRB_config->pdcp_Config->moreThanOneRLC = NULL;
 
     DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
-    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
+    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms20;
     DRB_config->pdcp_Config->ext1 = NULL;
 
     if (rrc->security.do_drb_integrity) {
@@ -1616,7 +1617,7 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
   ue_context_pP->ue_context.Srb1.Active = 1;
   //ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;
 
-  if (AMF_MODE_ENABLED) {
+  if (get_softmodem_params()->sa) {
     hashtable_rc_t    h_rc;
     int               j;
     rrc_ue_ngap_ids_t *rrc_ue_ngap_ids_p = NULL;
@@ -1693,13 +1694,13 @@ rrc_gNB_process_RRCConnectionReestablishmentComplete(
       ue_context_pP->ue_context.ul_failure_timer = 0;
       return;
     }
-  } /* AMF_MODE_ENABLED */
+  } 
 
   /* Update RNTI in ue_context */
   ue_context_pP->ue_id_rnti                    = ctxt_pP->rnti; // here ue_id_rnti is just a key, may be something else
   ue_context_pP->ue_context.rnti               = ctxt_pP->rnti;
 
-  if (AMF_MODE_ENABLED) {
+  if (get_softmodem_params()->sa) {
     uint8_t send_security_mode_command = false;
     nr_rrc_pdcp_config_security(
       ctxt_pP,
@@ -2342,7 +2343,7 @@ rrc_gNB_decode_dcch(
                 ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier);
         }
 
-        if (AMF_MODE_ENABLED) {
+        if (get_softmodem_params()->sa) {
           if(ue_context_p->ue_context.pdu_session_release_command_flag == 1) {
             xid = ul_dcch_msg->message.choice.c1->choice.rrcReconfigurationComplete->rrc_TransactionIdentifier;
             ue_context_p->ue_context.pdu_session_release_command_flag = 0;
@@ -2475,7 +2476,7 @@ rrc_gNB_decode_dcch(
             LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
                         "[MSG] RRC UL Information Transfer \n");
 
-            if (AMF_MODE_ENABLED == 1) {
+            if (get_softmodem_params()->sa) {
                 rrc_gNB_send_NGAP_UPLINK_NAS(ctxt_pP,
                                           ue_context_p,
                                           ul_dcch_msg);
@@ -2623,7 +2624,7 @@ rrc_gNB_decode_dcch(
           if(eutra_index == -1)
           break;
       }
-      if (AMF_MODE_ENABLED == 1) {
+      if (get_softmodem_params()->sa) {
           rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(ctxt_pP,
                                     ue_context_p,
                                     ul_dcch_msg);

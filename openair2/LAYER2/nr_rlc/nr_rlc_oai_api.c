@@ -514,7 +514,7 @@ rb_found:
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
 
     const ngran_node_t type = RC.nrrrc[0 /*ctxt_pP->module_id*/]->node_type;
-    AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
+    AssertFatal(!NODE_IS_CU(type),
                 "Can't be CU, bad node type %d\n", type);
 
     // if (NODE_IS_DU(type) && is_srb == 0) {
@@ -1102,7 +1102,7 @@ void nr_rlc_tick(int frame, int subframe)
 }
 
 /* This is a hack, to compile the gNB.
- * TODO: remove it. The solution is to cleanup cmake_targets/CMakeLists.txt
+ * TODO: remove it. The solution is to cleanup CMakeLists.txt
  */
 void rlc_tick(int a, int b)
 {

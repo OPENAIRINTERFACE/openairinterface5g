@@ -413,32 +413,8 @@ bool dlsch_procedures(PHY_VARS_eNB *eNB,
     }
 
     start_meas(&eNB->dlsch_encoding_stats);
-    dlsch_encoding_all(eNB,
-		       proc,
-                       dlsch_harq->pdu,
-                       dlsch_harq->pdsch_start,
-                       dlsch,
-                       frame,
-                       subframe,
-                       &eNB->dlsch_rate_matching_stats,
-                       &eNB->dlsch_turbo_encoding_stats,
-                       &eNB->dlsch_turbo_encoding_waiting_stats,
-                       &eNB->dlsch_turbo_encoding_main_stats,
-                       &eNB->dlsch_turbo_encoding_wakeup_stats0,
-                       &eNB->dlsch_turbo_encoding_wakeup_stats1,
-                       &eNB->dlsch_interleaving_stats);
+    dlsch_encoding(eNB, proc, dlsch_harq->pdu, dlsch_harq->pdsch_start, dlsch, frame, subframe, &eNB->dlsch_rate_matching_stats, &eNB->dlsch_turbo_encoding_stats, &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
-
-    if ( proc->threadPool->activated ) {
-    // Wait all other threads finish to process
-    while (proc->nbEncode) {
-      notifiedFIFO_elt_t *res = pullTpool(proc->respEncode, proc->threadPool);
-      if (res == NULL)
-        break; // Tpool has been stopped
-      delNotifiedFIFO_elt(res);
-      proc->nbEncode--;
-    }
-  }
 
     if(eNB->dlsch_encoding_stats.p_time>500*3000 && opp_enabled == 1) {
       print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);

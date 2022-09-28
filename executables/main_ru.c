@@ -45,8 +45,8 @@
 #include "common/utils/load_module_shlib.h"
 
 
-#include "../../ARCH/COMMON/common_lib.h"
-#include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
+#include "sdr/COMMON/common_lib.h"
+#include "sdr/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 
 #include "PHY/phy_vars.h"
@@ -66,6 +66,7 @@ static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 static int DEFBFW[] = {0x00007fff};
 
+static int DEFRUTPCORES[] = {2,4,6,8};
 THREAD_STRUCT thread_struct;
 
 pthread_cond_t sync_cond;

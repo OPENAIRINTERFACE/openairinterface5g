@@ -64,8 +64,6 @@
   #include "oaisim_amf_test_s1c.h"
 #endif
 
-ngap_gNB_config_t ngap_config;
-
 static int ngap_gNB_generate_ng_setup_request(
   ngap_gNB_instance_t *instance_p, ngap_gNB_amf_data_t *ngap_amf_data_p);
 

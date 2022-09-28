@@ -24,7 +24,7 @@
 #include <unistd.h>
 
 #include <sys/sysinfo.h>
-#include "targets/ARCH/COMMON/common_lib.h"
+#include "sdr/COMMON/common_lib.h"
 #undef MALLOC
 #include "assertions.h"
 #include "PHY/types.h"

@@ -1962,7 +1962,7 @@ void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs){
   uint32_t delta_arfcn = nrarfcn - N_OFFs;
 
   if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1 == 0, "nrarfcn %u is not on the channel raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
+    AssertFatal(1==0, "nrarfcn %u is not on the channel raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
 
 }
 
@@ -1982,10 +1982,10 @@ uint32_t to_nrarfcn(int nr_bandP,
         "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
 	      nr_bandP, bw, (long long unsigned int)dl_CarrierFreq_by_1k,
 	      (long long unsigned int)nr_bandtable[i].dl_min);
-  AssertFatal(dl_CarrierFreq_by_1k <= (nr_bandtable[i].dl_max - bw_kHz),
+  AssertFatal(dl_CarrierFreq_by_1k <= (nr_bandtable[i].dl_max - bw_kHz/2),
         "Band %d, dl_CarrierFreq %llu bw %u: DL carrier frequency %llu kHz > %llu\n",
 	      nr_bandP, (long long unsigned int)dl_CarrierFreq,bw, (long long unsigned int)dl_CarrierFreq_by_1k,
-	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz));
+	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz/2));
  
   int deltaFglobal = 60;
   uint32_t N_REF_Offs = 2016667;
@@ -2005,7 +2005,7 @@ uint32_t to_nrarfcn(int nr_bandP,
   // This is equation before Table 5.4.2.1-1 in 38101-1-f30
   // F_REF=F_REF_Offs + deltaF_Global(N_REF-NREF_REF_Offs)
   nrarfcn =  (((dl_CarrierFreq_by_1k - F_REF_Offs_khz)/deltaFglobal)+N_REF_Offs);
-  get_delta_arfcn(i, nrarfcn, nr_bandtable[i].N_OFFs_DL);
+  //get_delta_arfcn(i, nrarfcn, nr_bandtable[i].N_OFFs_DL);
 
   return nrarfcn;
 }
@@ -3155,26 +3155,28 @@ int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, sl
   else return(slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, int mappingtype_fromDCI, int length) {
+int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, mappingType_t mappingtype, int length) {
 
-  int l0;int dmrs_AdditionalPosition = 0;
+  int dmrs_AdditionalPosition = 0;
   NR_DMRS_DownlinkConfig_t *dmrs_config = NULL;
 
-  LOG_D(MAC, "NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", NrOfSymbols, startSymbol, mappingtype_fromDCI, dmrs_TypeA_Position);
+  LOG_D(MAC, "NrofSymbols:%d, startSymbol:%d, mappingtype:%d, dmrs_TypeA_Position:%d\n", NrOfSymbols, startSymbol, mappingtype, dmrs_TypeA_Position);
 
-  if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
-  else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
-  else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
-
+  int l0 = 0; // type B
+  if (mappingtype == typeA) {
+    if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
+    else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
+    else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
+  }
   // in case of DCI FORMAT 1_0 or dedicated pdsch config not received additionposition = pos2, len1 should be used
   // referred to section 5.1.6.2 in 38.214
   dmrs_AdditionalPosition = 2;
 
   if (pdsch_Config != NULL) {
-    if (mappingtype_fromDCI == typeA) { // Type A
+    if (mappingtype == typeA) { // Type A
       if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
         dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-    } else if (mappingtype_fromDCI == typeB) {
+    } else if (mappingtype == typeB) {
       if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
         dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
     } else {
@@ -3191,17 +3193,17 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
   int32_t l_prime = -1;
 
   // columns 0-3 for TypeA, 4-7 for TypeB
-  column = (mappingtype_fromDCI == typeA) ? dmrs_AdditionalPosition : (dmrs_AdditionalPosition + 4);
+  column = (mappingtype == typeA) ? dmrs_AdditionalPosition : (dmrs_AdditionalPosition + 4);
 
   // Section 7.4.1.1.2 in Spec 38.211
   // For PDSCH Mapping TypeA, ld is duration between first OFDM of the slot and last OFDM symbol of the scheduled PDSCH resources
   // For TypeB, ld is the duration of the scheduled PDSCH resources
-  ld = (mappingtype_fromDCI == typeA) ? (NrOfSymbols + startSymbol) : NrOfSymbols;
+  ld = (mappingtype == typeA) ? (NrOfSymbols + startSymbol) : NrOfSymbols;
 
   AssertFatal(ld > 2 && ld < 15,"Illegal NrOfSymbols according to Table 5.1.2.1-1 Spec 38.214 %d\n",ld);
   AssertFatal((NrOfSymbols + startSymbol) < 15,"Illegal S+L according to Table 5.1.2.1-1 Spec 38.214 S:%d L:%d\n",startSymbol, NrOfSymbols);
 
-  if (mappingtype_fromDCI == typeA) {
+  if (mappingtype == typeA) {
 
     // Section 7.4.1.1.2 in Spec 38.211
     AssertFatal((l0 == 2) || (l0 == 3 && dmrs_AdditionalPosition != 3),"Wrong config, If dmrs_TypeA_Position POS3, ADD POS cannot be POS3 \n");
@@ -3229,7 +3231,7 @@ int16_t fill_dmrs_mask(NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,i
   LOG_D(MAC, "l0:%d, ld:%d,row:%d, column:%d, addpos:%d, maxlen:%d\n", l0, ld, row, column, dmrs_AdditionalPosition, length);
   AssertFatal(l_prime>=0,"ERROR in configuration.Check Time Domain allocation of this Grant. l_prime < 1. row:%d, column:%d\n", row, column);
 
-  l_prime = (mappingtype_fromDCI == typeA) ? (l_prime | l0) : (l_prime << startSymbol);
+  l_prime = (mappingtype == typeA) ? (l_prime | l0) : (l_prime << startSymbol);
   LOG_D(MAC, " PDSCH DMRS MASK in HEX:%x\n", l_prime);
 
   return l_prime;

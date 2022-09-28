@@ -1145,8 +1145,6 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
     NR_SearchSpace_t *ss = ra->ra_ss;
 
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = dl_bwp->tdaList;
-
     long BWPStart = 0;
     long BWPSize = 0;
     NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = NULL;
@@ -1161,10 +1159,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // Calculate number of symbols
     int time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
-    int startSymbolIndex, nrOfSymbols;
-    const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
-    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-    AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
+    NR_tda_info_t tda_info = nr_get_pdsch_tda_info(dl_bwp,
+                                                   time_domain_assignment);
 
     NR_ControlResourceSet_t *coreset = ra->coreset;
 
@@ -1172,7 +1168,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint16_t *vrb_map = cc[CC_id].vrb_map;
     for (int i = 0; (i < rbSize) && (rbStart <= (BWPSize - rbSize)); i++) {
-      if (vrb_map[BWPStart + rbStart + i]&SL_to_bitmap(startSymbolIndex, nrOfSymbols)) {
+      if (vrb_map[BWPStart + rbStart + i]&SL_to_bitmap(tda_info.startSymbolIndex, tda_info.nrOfSymbols)) {
         rbStart += i;
         i = 0;
       }
@@ -1212,9 +1208,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       return;
     }
 
-    LOG_D(NR_MAC,"Msg2 startSymbolIndex.nrOfSymbols %d.%d\n",startSymbolIndex,nrOfSymbols);
-
-    int mappingtype = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
+    LOG_D(NR_MAC,"Msg2 startSymbolIndex.nrOfSymbols %d.%d\n",tda_info.startSymbolIndex,tda_info.nrOfSymbols);
 
     // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
@@ -1244,16 +1238,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     // SCF222: PDU index incremented for each PDSCH PDU sent in TX control message. This is used to associate control
     // information to data and is reset every slot.
     const int pduindex = nr_mac->pdu_index[CC_id]++;
-
-    NR_PDSCH_Config_t *pdsch_Config = dl_bwp->pdsch_Config;
     uint8_t mcsTableIdx = dl_bwp->mcsTableIdx;
 
-    int dmrsConfigType=0;
-    if (pdsch_Config &&
-        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
-        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup &&
-        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type)
-      dmrsConfigType = 1;
+   NR_pdsch_dmrs_t dmrs_parms = get_dl_dmrs_params(scc,
+                                                   dl_bwp,
+                                                   &tda_info,
+                                                   1);
 
     pdsch_pdu_rel15->pduBitmap = 0;
     pdsch_pdu_rel15->rnti = ra->RA_rnti;
@@ -1269,37 +1259,22 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->nrOfLayers = 1;
     pdsch_pdu_rel15->transmissionScheme = 0;
     pdsch_pdu_rel15->refPoint = 0;
-    pdsch_pdu_rel15->dmrsConfigType = dmrsConfigType;
+    pdsch_pdu_rel15->dmrsConfigType = dmrs_parms.dmrsConfigType;
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
-    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = nrOfSymbols <= 2 ? 1 : 2;
+    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = dmrs_parms.numDmrsCdmGrpsNoData;
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
     pdsch_pdu_rel15->rbStart = rbStart;
     pdsch_pdu_rel15->rbSize = rbSize;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0;
-    pdsch_pdu_rel15->StartSymbolIndex = startSymbolIndex;
-    pdsch_pdu_rel15->NrOfSymbols = nrOfSymbols;
-    pdsch_pdu_rel15->dlDmrsSymbPos = fill_dmrs_mask(pdsch_Config,
-                                                    nr_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position,
-                                                    nrOfSymbols,
-                                                    startSymbolIndex,
-                                                    mappingtype,
-                                                    1);
+    pdsch_pdu_rel15->StartSymbolIndex = tda_info.startSymbolIndex;
+    pdsch_pdu_rel15->NrOfSymbols = tda_info.nrOfSymbols;
+    pdsch_pdu_rel15->dlDmrsSymbPos = dmrs_parms.dl_dmrs_symb_pos;
 
     uint8_t tb_scaling = 0;
     int R, Qm;
-    uint8_t N_PRB_DMRS;
     uint32_t TBS=0;
-    if (dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
-      // if no data in dmrs cdm group is 1 only even REs have no data
-      // if no data in dmrs cdm group is 2 both odd and even REs have no data
-      N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData*6;
-    }
-    else {
-      N_PRB_DMRS = pdsch_pdu_rel15->numDmrsCdmGrpsNoData*4;
-    }
-    uint16_t dmrs_length = get_num_dmrs(pdsch_pdu_rel15->dlDmrsSymbPos);
 
     while(TBS<9) {  // min TBS for RAR is 9 bytes
       mcsIndex++;
@@ -1308,8 +1283,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       TBS = nr_compute_tbs(Qm,
                            R,
                            rbSize,
-                           nrOfSymbols,
-                           N_PRB_DMRS*dmrs_length,
+                           tda_info.nrOfSymbols,
+                           dmrs_parms.N_PRB_DMRS*dmrs_parms.N_DMRS_SLOT,
                            0, // overhead
                            tb_scaling,  // tb scaling
 		           1)>>3;  // layers
@@ -1414,7 +1389,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        CCEIndex,
                        aggregation_level);
     for (int rb = 0; rb < rbSize; rb++) {
-      vrb_map[BWPStart + rb + rbStart] |= SL_to_bitmap(startSymbolIndex, nrOfSymbols);
+      vrb_map[BWPStart + rb + rbStart] |= SL_to_bitmap(tda_info.startSymbolIndex, tda_info.nrOfSymbols);
     }
 
     ra->state = WAIT_Msg3;
@@ -1437,8 +1412,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_SearchSpace_t *ss = ra->ra_ss;
 
     NR_ControlResourceSet_t *coreset = ra->coreset;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = dl_bwp->tdaList;
-
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
     rnti_t tc_rnti = ra->rnti;
@@ -1554,48 +1527,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       }
     }
 
-    // Calculate number of symbols
-    int startSymbolIndex, nrOfSymbols;
-    const int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->startSymbolAndLength;
-    SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-    AssertFatal(startSymbolIndex >= 0, "StartSymbolIndex is negative\n");
+    NR_tda_info_t msg4_tda = nr_get_pdsch_tda_info(dl_bwp, time_domain_assignment);
 
-    int mappingtype = pdsch_TimeDomainAllocationList->list.array[time_domain_assignment]->mappingType;
-
-    uint16_t dlDmrsSymbPos = fill_dmrs_mask(NULL,
-                                            scc->dmrs_TypeA_Position,
-                                            nrOfSymbols,
-                                            startSymbolIndex,
-                                            mappingtype,
-                                            1);
-
-    uint16_t N_DMRS_SLOT = get_num_dmrs(dlDmrsSymbPos);
-
-    NR_PDSCH_Config_t *pdsch_Config = dl_bwp->pdsch_Config;
-    int dmrsConfigType=0;
-    if (pdsch_Config &&
-        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA &&
-        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup &&
-        pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type)
-      dmrsConfigType = 1;
-
-    nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 2;
-    if (nrOfSymbols == 2) {
-      nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData = 1;
-    }
-
-    AssertFatal(nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData == 1
-                || nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData == 2,
-                "nr_mac->schedCtrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData %d is not possible",
-                nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData);
-
-    uint8_t N_PRB_DMRS = 0;
-    if (dmrsConfigType==NFAPI_NR_DMRS_TYPE1) {
-      N_PRB_DMRS = nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 6;
-    }
-    else {
-      N_PRB_DMRS = nr_mac->sched_ctrlCommon->pdsch_semi_static.numDmrsCdmGrpsNoData * 4;
-    }
+    NR_pdsch_dmrs_t dmrs_info = get_dl_dmrs_params(scc,
+                                                   dl_bwp,
+                                                   &msg4_tda,
+                                                   1);
 
     uint8_t mcsTableIdx = dl_bwp->mcsTableIdx;
 
@@ -1609,17 +1546,17 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         rbSize++;
       else
         mcsIndex++;
-      LOG_D(NR_MAC,"Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",N_PRB_DMRS,N_DMRS_SLOT);
+      LOG_D(NR_MAC,"Calling nr_compute_tbs with N_PRB_DMRS %d, N_DMRS_SLOT %d\n",dmrs_info.N_PRB_DMRS,dmrs_info.N_DMRS_SLOT);
       harq->tb_size = nr_compute_tbs(nr_get_Qm_dl(mcsIndex, mcsTableIdx),
                                      nr_get_code_rate_dl(mcsIndex, mcsTableIdx),
-                                     rbSize, nrOfSymbols, N_PRB_DMRS * N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
+                                     rbSize, msg4_tda.nrOfSymbols, dmrs_info.N_PRB_DMRS * dmrs_info.N_DMRS_SLOT, 0, tb_scaling,1) >> 3;
     } while (harq->tb_size < ra->mac_pdu_length && mcsIndex<=28);
 
     AssertFatal(harq->tb_size >= ra->mac_pdu_length,"Cannot allocate Msg4\n");
 
     int i = 0;
     while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {
-      if (vrb_map[BWPStart + rbStart + i]&SL_to_bitmap(startSymbolIndex, nrOfSymbols)) {
+      if (vrb_map[BWPStart + rbStart + i]&SL_to_bitmap(msg4_tda.startSymbolIndex, msg4_tda.nrOfSymbols)) {
         rbStart += i+1;
         i = 0;
       } else {
@@ -1687,18 +1624,18 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     pdsch_pdu_rel15->nrOfLayers = 1;
     pdsch_pdu_rel15->transmissionScheme = 0;
     pdsch_pdu_rel15->refPoint = 0;
-    pdsch_pdu_rel15->dmrsConfigType = dmrsConfigType;
+    pdsch_pdu_rel15->dmrsConfigType = dmrs_info.dmrsConfigType;
     pdsch_pdu_rel15->dlDmrsScramblingId = *scc->physCellId;
     pdsch_pdu_rel15->SCID = 0;
-    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = nrOfSymbols <= 2 ? 1 : 2;
+    pdsch_pdu_rel15->numDmrsCdmGrpsNoData = dmrs_info.numDmrsCdmGrpsNoData;
     pdsch_pdu_rel15->dmrsPorts = 1;
     pdsch_pdu_rel15->resourceAlloc = 1;
     pdsch_pdu_rel15->rbStart = rbStart;
     pdsch_pdu_rel15->rbSize = rbSize;
     pdsch_pdu_rel15->VRBtoPRBMapping = 0;
-    pdsch_pdu_rel15->StartSymbolIndex = startSymbolIndex;
-    pdsch_pdu_rel15->NrOfSymbols = nrOfSymbols;
-    pdsch_pdu_rel15->dlDmrsSymbPos = dlDmrsSymbPos;
+    pdsch_pdu_rel15->StartSymbolIndex = msg4_tda.startSymbolIndex;
+    pdsch_pdu_rel15->NrOfSymbols = msg4_tda.nrOfSymbols;
+    pdsch_pdu_rel15->dlDmrsSymbPos = dmrs_info.dl_dmrs_symb_pos;
 
     int x_Overhead = 0;
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
@@ -1811,7 +1748,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
                        CCEIndex,
                        aggregation_level);
     for (int rb = 0; rb < pdsch_pdu_rel15->rbSize; rb++) {
-      vrb_map[BWPStart + rb + pdsch_pdu_rel15->rbStart] |= SL_to_bitmap(startSymbolIndex, nrOfSymbols);
+      vrb_map[BWPStart + rb + pdsch_pdu_rel15->rbStart] |= SL_to_bitmap(msg4_tda.startSymbolIndex, msg4_tda.nrOfSymbols);
     }
 
     LOG_D(NR_MAC,"BWPSize: %i\n", pdcch_pdu_rel15->BWPSize);

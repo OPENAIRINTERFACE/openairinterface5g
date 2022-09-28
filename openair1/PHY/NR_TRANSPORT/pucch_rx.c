@@ -410,7 +410,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uci_stats->pucch0_thres = gNB->pucch0_thres; /* + (10*max_n0);*/
   bool no_conf=false;
   if (nr_sequences>1) {
-    if (/*xrtmag_dBtimes10 < (30+xrtmag_next_dBtimes10) ||*/ SNRtimes10 < uci_stats->pucch0_thres) {
+    if (/*xrtmag_dBtimes10 < (30+xrtmag_next_dBtimes10) ||*/ SNRtimes10 < gNB->pucch0_thres) {
       no_conf=true;
       LOG_D(PHY,"%d.%d PUCCH bad confidence: %d threshold, %d, %d, %d\n",
 	  frame, slot,

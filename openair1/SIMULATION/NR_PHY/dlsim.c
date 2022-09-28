@@ -314,15 +314,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   AssertFatal(CCEIndex>=0, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, 0, UE_info->rnti);
   sched_ctrl->cce_index = CCEIndex;
 
-  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-
-  nr_set_pdsch_semi_static(current_BWP,
-                           scc,
-                           /* tda = */ 0,
-                           g_nrOfLayers,
-                           sched_ctrl,
-                           ps);
-
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
   sched_pdsch->rbStart = g_rbStart;
   sched_pdsch->rbSize = g_rbSize;
@@ -331,17 +322,26 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   /* the following might override the table that is mandated by RRC
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
+  sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
+  AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
+
+  sched_pdsch->tda_info = nr_get_pdsch_tda_info(current_BWP, sched_pdsch->time_domain_allocation);
+
+  sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
+                                               current_BWP,
+                                               &sched_pdsch->tda_info,
+                                               sched_pdsch->nrOfLayers);
 
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
-                                        ps->nrOfSymbols,
-                                        ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
+                                        sched_pdsch->tda_info.nrOfSymbols,
+                                        sched_pdsch->dmrs_parms.N_PRB_DMRS * sched_pdsch->dmrs_parms.N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        ps->nrOfLayers) >> 3;
+                                        sched_pdsch->nrOfLayers) >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */
   sched_pdsch->dl_harq_pid = slot;

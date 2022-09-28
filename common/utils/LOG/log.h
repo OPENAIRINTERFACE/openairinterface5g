@@ -80,7 +80,7 @@ extern "C" {
  *  @brief the macros that describe the maximum length of LOG
  * @{*/
 
-#define MAX_LOG_TOTAL 1500 /*!< \brief the maximum length of a log */
+#define MAX_LOG_TOTAL 16384 /*!< \brief the maximum length of a log */
 /* @}*/
 
 /** @defgroup _log_level Message levels defined by LOG
@@ -219,6 +219,7 @@ typedef enum {
   SPGW,
   S1AP,
   F1AP,
+  E1AP,
   SCTP,
   HW,
   OSA,

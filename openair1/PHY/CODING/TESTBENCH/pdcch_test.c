@@ -26,7 +26,6 @@
 
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "MAC_INTERFACE/vars.h"
 #include "PHY/CODING/defs.h"
 //#include "PHY/CODING/lte_interleaver_inline.h"

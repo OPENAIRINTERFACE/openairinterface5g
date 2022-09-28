@@ -34,6 +34,7 @@
 #include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
+#include "executables/softmodem-common.h"
 #include "gnb_config.h"
 #include "gnb_paramdef.h"
 #include "enb_paramdef.h"
@@ -49,7 +50,7 @@
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
 #include "PHY/INIT/phy_init.h"
-#include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "sdr/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
 
@@ -640,7 +641,7 @@ void RCconfig_nr_flexran()
     /* gNB ID from configuration, as read in by RCconfig_RRC() */
     if (!GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr) {
       // Calculate a default gNB ID
-    if (AMF_MODE_ENABLED) 
+    if (get_softmodem_params()->sa) 
       gnb_id = i + (ngap_generate_gNB_id () & 0xFFFFFF8);
     else
       gnb_id = i;
@@ -826,6 +827,7 @@ void RCconfig_NR_L1(void) {
       RC.gNB[j]->pucch0_thres       = *(L1_ParamList.paramarray[j][L1_PUCCH0_DTX_THRESHOLD].uptr);
       RC.gNB[j]->prach_thres        = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD].uptr);
       RC.gNB[j]->pusch_thres        = *(L1_ParamList.paramarray[j][L1_PUSCH_DTX_THRESHOLD].uptr);
+      RC.gNB[j]->srs_thres          = *(L1_ParamList.paramarray[j][L1_SRS_DTX_THRESHOLD].uptr);
       RC.gNB[j]->max_ldpc_iterations = *(L1_ParamList.paramarray[j][L1_MAX_LDPC_ITERATIONS].uptr);
       RC.gNB[j]->num_ulprbbl        = num_prbbl;
       RC.gNB[j]->ap_N1              = N1;
@@ -1159,24 +1161,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal (i<num_gnbs,"Failed to parse config file no %ith element in %s \n",i, GNB_CONFIG_STRING_ACTIVE_GNBS);
 
-  /*
-  if (AMF_MODE_ENABLED) {
-    if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    } else if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 1;
-    } else if (strcasecmp(*(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr) , GNB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 2;
-    } else {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    }
-  }
-  */
-
   if (num_gnbs>0) {
 
     // Output a list of all gNBs. ////////// Identification parameters
@@ -1184,7 +1168,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
     
     if (GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr == NULL) {
     // Calculate a default gNB ID
-      if (AMF_MODE_ENABLED) { 
+      if (get_softmodem_params()->sa) { 
         uint32_t hash;
         hash = ngap_generate_gNB_id ();
         gnb_id = i + (hash & 0xFFFFFF8);
@@ -1444,26 +1428,8 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
 
   /* get global parameters, defined outside any section in the config file */
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
-
-  /*
-  if (AMF_MODE_ENABLED) {
-    if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    } else if (strcasecmp( *(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr), GNB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 1;
-    } else if (strcasecmp(*(GNBSParams[GNB_ASN1_VERBOSITY_IDX].strptr) , GNB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 2;
-    } else {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    }
-  }
-  */
   
-    AssertFatal (i<GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
+  AssertFatal (i<GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt,
      "Failed to parse config file %s, %uth attribute %s \n",
      RC.config_file_name, i, GNB_CONFIG_STRING_ACTIVE_GNBS);
     
@@ -1475,7 +1441,7 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
       for (k = 0; k < GNBParamList.numelt; k++) {
         if (GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr == NULL) {
           // Calculate a default gNB ID
-          if (AMF_MODE_ENABLED) {
+          if (get_softmodem_params()->sa) {
             uint32_t hash;
           
           hash = ngap_generate_gNB_id ();
@@ -1631,7 +1597,7 @@ int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
             // SCTP SETTING
             NGAP_REGISTER_GNB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
             NGAP_REGISTER_GNB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
-            if (AMF_MODE_ENABLED) {
+            if (get_softmodem_params()->sa) {
               sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
               config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix); 
               NGAP_REGISTER_GNB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
@@ -1755,7 +1721,7 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
       for (k = 0; k < GNBParamList.numelt; k++) {
         if (GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr == NULL) {
           // Calculate a default eNB ID
-          if (AMF_MODE_ENABLED) {
+          if (get_softmodem_params()->sa) {
             uint32_t hash;
             hash = ngap_generate_gNB_id ();
             gnb_id = k + (hash & 0xFFFFFF8);
@@ -1898,7 +1864,7 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
             X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
             X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
 
-            if (AMF_MODE_ENABLED) {
+            if (get_softmodem_params()->sa) {
               sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
               config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
               X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);

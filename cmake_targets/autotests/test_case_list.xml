@@ -7936,7 +7936,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_5MHz_rx19dB_txfull.ini   </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf --rf-config-file $OPENAIR_DIR/sdr/LMSSDR/enb_sodera_highband_5MHz_rx19dB_txfull.ini   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -8012,7 +8012,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf  --rf-config-file    $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_10MHz_rx19dB_txfull.ini   </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf  --rf-config-file    $OPENAIR_DIR/sdr/LMSSDR/enb_sodera_highband_10MHz_rx19dB_txfull.ini   </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -8087,7 +8087,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf     --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_20MHz_rx19dB_txfull.ini </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf     --rf-config-file $OPENAIR_DIR/sdr/LMSSDR/enb_sodera_highband_20MHz_rx19dB_txfull.ini </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -8162,7 +8162,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf    --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_5MHz_rx19dB_txfull.ini </eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf    --rf-config-file $OPENAIR_DIR/sdr/LMSSDR/enb_sodera_highband_5MHz_rx19dB_txfull.ini </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -8236,7 +8236,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf    --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_10MHz_rx19dB_txfull.ini</eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf    --rf-config-file $OPENAIR_DIR/sdr/LMSSDR/enb_sodera_highband_10MHz_rx19dB_txfull.ini</eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
@@ -8310,7 +8310,7 @@ c
     <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/ran_build/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf     --rf-config-file $OPENAIR_DIR/targets/ARCH/LMSSDR/enb_sodera_highband_20MHz_rx19dB_txfull.ini</eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.lmssdr.conf     --rf-config-file $OPENAIR_DIR/sdr/LMSSDR/enb_sodera_highband_20MHz_rx19dB_txfull.ini</eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>

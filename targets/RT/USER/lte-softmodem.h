@@ -20,7 +20,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include "threads_t.h"
-#include "../../ARCH/COMMON/common_lib.h"
+#include "sdr/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
 #include "PHY/types.h"
@@ -29,7 +29,6 @@
 #include "flexran_agent.h"
 #include "s1ap_eNB.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#include "targets/ARCH/COMMON/common_lib.h"
 #include "executables/softmodem-common.h"
 
 

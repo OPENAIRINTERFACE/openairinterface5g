@@ -1,5 +1,4 @@
-/*
- * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ /* Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
@@ -39,6 +38,8 @@
 #include "nfapi_interface.h"
 #include "platform_types.h"
 #include <common/utils/threadPool/thread-pool.h>
+#include <sdr/COMMON/common_lib.h>
+
 
 #define MAX_NUM_DL_PDU 100
 #define MAX_NUM_UL_PDU 100
@@ -135,7 +136,6 @@ typedef struct {
     int CC_id;
     nfapi_config_request_t *cfg;
 } PHY_Config_t;
-#include <targets/ARCH/COMMON/common_lib.h>
 
 typedef struct IF_Module_s{
 //define the function pointer

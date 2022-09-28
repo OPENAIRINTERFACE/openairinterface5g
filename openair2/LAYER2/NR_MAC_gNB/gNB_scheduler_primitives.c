@@ -142,30 +142,38 @@ static inline uint8_t get_max_cces(uint8_t scs) {
   return (nr_max_number_of_cces_per_slot[scs]);
 }
 
-uint8_t set_dl_nrOfLayers(NR_UE_sched_ctrl_t *sched_ctrl) {
+uint8_t get_dl_nrOfLayers(const NR_UE_sched_ctrl_t *sched_ctrl,
+                          const nr_dci_format_t dci_format) {
 
   // TODO check this but it should be enough for now
-  // if there is not csi report RI is 0 from initialization
-  return (sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri + 1);
+  // if there is not csi report activated RI is 0 from initialization
+  if(dci_format == NR_DL_DCI_FORMAT_1_0)
+    return 1;
+  else
+    return (sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri + 1);
 
 }
 
-uint16_t set_pm_index(NR_UE_sched_ctrl_t *sched_ctrl,
+uint16_t get_pm_index(const NR_UE_info_t *UE,
                       int layers,
-                      int N1, int N2,
-                      int xp_pdsch_antenna_ports,
-                      int codebook_mode) {
+                      int xp_pdsch_antenna_ports) {
 
-  int antenna_ports = (N1*N2)<<1;
+  if (layers == 1) return 0;
+
+  const NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  const int report_id = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.csi_report_id;
+  const nr_csi_report_t *csi_report = &UE->csi_report_template[report_id];
+  const int N1 = csi_report->N1;
+  const int N2 = csi_report->N2;
+  const int antenna_ports = (N1*N2)<<1;
+
   if (xp_pdsch_antenna_ports == 1 &&
       antenna_ports>1)
     return 0; //identity matrix (basic 5G configuration handled by PMI report is with XP antennas)
 
-  int x1 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1;
-  int x2 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2;
+  const int x1 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1;
+  const int x2 = sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2;
   LOG_D(NR_MAC,"PMI report: x1 %d x2 %d\n",x1,x2);
-
-  sched_ctrl->set_pmi = false;
 
   if (antenna_ports == 2)
     return x2;
@@ -214,41 +222,68 @@ uint8_t get_mcs_from_cqi(int mcs_table, int cqi_table, int cqi_idx)
   return 9;
 }
 
+NR_pdsch_dmrs_t get_dl_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
+                                   const NR_UE_DL_BWP_t *dl_bwp,
+                                   const NR_tda_info_t *tda_info,
+                                   const int Layers) {
 
-void set_dl_dmrs_ports(NR_pdsch_semi_static_t *ps) {
-
-  //TODO first basic implementation of dmrs port selection
-  //     only vaild for a single codeword
-  //     for now it assumes a selection of Nl consecutive dmrs ports
-  //     and a single front loaded symbol
-  //     dmrs_ports_id is the index of Tables 7.3.1.2.2-1/2/3/4
-  //     number of front loaded symbols need to be consistent with maxLength
-  //     when a more complete implementation is done
-
-  switch (ps->nrOfLayers) {
-    case 1:
-      ps->dmrs_ports_id = 0;
-      ps->numDmrsCdmGrpsNoData = 1;
-      ps->frontloaded_symb = 1;
-      break;
-    case 2:
-      ps->dmrs_ports_id = 2;
-      ps->numDmrsCdmGrpsNoData = 1;
-      ps->frontloaded_symb = 1;
-      break;
-    case 3:
-      ps->dmrs_ports_id = 9;
-      ps->numDmrsCdmGrpsNoData = 2;
-      ps->frontloaded_symb = 1;
-      break;
-    case 4:
-      ps->dmrs_ports_id = 10;
-      ps->numDmrsCdmGrpsNoData = 2;
-      ps->frontloaded_symb = 1;
-      break;
-    default:
-      AssertFatal(1==0,"Number of layers %d\n not supported or not valid\n",ps->nrOfLayers);
+  NR_pdsch_dmrs_t dmrs = {0};
+  int frontloaded_symb = 1; // default value
+  nr_dci_format_t dci_format = dl_bwp ? dl_bwp->dci_format : NR_DL_DCI_FORMAT_1_0;
+  if (dci_format == NR_DL_DCI_FORMAT_1_0) {
+    dmrs.numDmrsCdmGrpsNoData = tda_info->nrOfSymbols == 2 ? 1 : 2;
+    dmrs.dmrs_ports_id = 0;
   }
+  else {
+    //TODO first basic implementation of dmrs port selection
+    //     only vaild for a single codeword
+    //     for now it assumes a selection of Nl consecutive dmrs ports
+    //     and a single front loaded symbol
+    //     dmrs_ports_id is the index of Tables 7.3.1.2.2-1/2/3/4
+    //     number of front loaded symbols need to be consistent with maxLength
+    //     when a more complete implementation is done
+
+    switch (Layers) {
+      case 1:
+        dmrs.dmrs_ports_id = 0;
+        dmrs.numDmrsCdmGrpsNoData = 1;
+        frontloaded_symb = 1;
+        break;
+      case 2:
+        dmrs.dmrs_ports_id = 2;
+        dmrs.numDmrsCdmGrpsNoData = 1;
+        frontloaded_symb = 1;
+        break;
+      case 3:
+        dmrs.dmrs_ports_id = 9;
+        dmrs.numDmrsCdmGrpsNoData = 2;
+        frontloaded_symb = 1;
+        break;
+      case 4:
+        dmrs.dmrs_ports_id = 10;
+        dmrs.numDmrsCdmGrpsNoData = 2;
+        frontloaded_symb = 1;
+        break;
+      default:
+        AssertFatal(1==0,"Number of layers %d\n not supported or not valid\n",Layers);
+    }
+  }
+
+  NR_PDSCH_Config_t *pdsch_Config = dl_bwp ? dl_bwp->pdsch_Config : NULL;
+  if (pdsch_Config) {
+    if (tda_info->mapping_type == typeB)
+      dmrs.dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type != NULL;
+    else
+      dmrs.dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type != NULL;
+  }
+  else
+    dmrs.dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
+
+  dmrs.N_PRB_DMRS = dmrs.numDmrsCdmGrpsNoData * (dmrs.dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
+  dmrs.dl_dmrs_symb_pos = fill_dmrs_mask(pdsch_Config, scc->dmrs_TypeA_Position, tda_info->nrOfSymbols, tda_info->startSymbolIndex, tda_info->mapping_type, frontloaded_symb);
+  dmrs.N_DMRS_SLOT = get_num_dmrs(dmrs.dl_dmrs_symb_pos);
+  LOG_D(NR_MAC,"Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",dmrs.N_PRB_DMRS,dmrs.dl_dmrs_symb_pos,dmrs.N_DMRS_SLOT);
+  return dmrs;
 }
 
 NR_ControlResourceSet_t *get_coreset(gNB_MAC_INST *nrmac,
@@ -514,109 +549,70 @@ bool nr_find_nb_rb(uint16_t Qm,
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
 
-void nr_set_pdsch_semi_static(const NR_UE_DL_BWP_t *dl_bwp,
-                              const NR_ServingCellConfigCommon_t *scc,
-                              int tda,
-                              uint8_t layers,
-                              NR_UE_sched_ctrl_t *sched_ctrl,
-                              NR_pdsch_semi_static_t *ps)
-{
-  bool reset_dmrs = false;
+NR_tda_info_t nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
+                                    const int tda) {
 
-  NR_PDSCH_Config_t *pdsch_Config = dl_bwp->pdsch_Config;
-  LOG_D(NR_MAC,"tda %d, ps->time_domain_allocation %d,layers %d, ps->nrOfLayers %d, pdsch_config %p\n",tda,ps->time_domain_allocation,layers,ps->nrOfLayers,pdsch_Config);
-  reset_dmrs = true;
-  ps->time_domain_allocation = tda;
+  NR_tda_info_t tda_info = {0};
   NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = dl_bwp->tdaList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
-  ps->mapping_type = tdaList->list.array[tda]->mappingType;
-  if (pdsch_Config) {
-    if (ps->mapping_type == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeB)
-      ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup->dmrs_Type != NULL;
-    else
-      ps->dmrsConfigType = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type != NULL;
-  }
-  else
-    ps->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
+  tda_info.mapping_type = tdaList->list.array[tda]->mappingType;
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
-  SLIV2SL(startSymbolAndLength, &ps->startSymbolIndex, &ps->nrOfSymbols);
-
-  if (dl_bwp->dci_format == NR_DL_DCI_FORMAT_1_0) {
-    if (ps->nrOfSymbols == 2)
-      ps->numDmrsCdmGrpsNoData = 1;
-    else
-      ps->numDmrsCdmGrpsNoData = 2;
-    ps->dmrs_ports_id = 0;
-    ps->frontloaded_symb = 1;
-    ps->nrOfLayers = 1;
-  }
-  else {
-    LOG_D(NR_MAC,"checking layers\n");
-    if (ps->nrOfLayers != layers || ps->numDmrsCdmGrpsNoData == 0) {
-      reset_dmrs = true;
-      ps->nrOfLayers = layers;
-      set_dl_dmrs_ports(ps);
-    }
-  }
-
-  ps->N_PRB_DMRS = ps->numDmrsCdmGrpsNoData * (ps->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
-
-  if (reset_dmrs) {
-    ps->dl_dmrs_symb_pos = fill_dmrs_mask(pdsch_Config, scc ? scc->dmrs_TypeA_Position : 0, ps->nrOfSymbols, ps->startSymbolIndex, ps->mapping_type, ps->frontloaded_symb);
-    ps->N_DMRS_SLOT = get_num_dmrs(ps->dl_dmrs_symb_pos);
-  }
-  LOG_D(NR_MAC,"Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",ps->N_PRB_DMRS,ps->dl_dmrs_symb_pos,ps->N_DMRS_SLOT);
+  SLIV2SL(startSymbolAndLength, &tda_info.startSymbolIndex, &tda_info.nrOfSymbols);
+  return tda_info;
 }
 
-void nr_set_pusch_semi_static(const NR_UE_UL_BWP_t *ul_bwp,
-                              const NR_ServingCellConfigCommon_t *scc,
-                              int tda,
-                              uint8_t nrOfLayers,
-                              NR_pusch_semi_static_t *ps) {
+NR_tda_info_t nr_get_pusch_tda_info(const NR_UE_UL_BWP_t *ul_bwp,
+                                    const int tda) {
 
-  ps->time_domain_allocation = tda;
+  NR_tda_info_t tda_info = {0};
+  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = ul_bwp->tdaList;
+  AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
+  tda_info.mapping_type = tdaList->list.array[tda]->mappingType;
+  const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
+  SLIV2SL(startSymbolAndLength, &tda_info.startSymbolIndex, &tda_info.nrOfSymbols);
+  return tda_info;
+}
 
-  const int startSymbolAndLength = ul_bwp->tdaList->list.array[tda]->startSymbolAndLength;
-  SLIV2SL(startSymbolAndLength,
-          &ps->startSymbolIndex,
-          &ps->nrOfSymbols);
+NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
+                                   const NR_UE_UL_BWP_t *ul_bwp,
+                                   const NR_tda_info_t *tda_info,
+                                   const int Layers) {
 
-  ps->nrOfLayers = nrOfLayers;
+  NR_pusch_dmrs_t dmrs = {0};
   // TODO setting of cdm groups with no data to be redone for MIMO
-  if (ul_bwp->transform_precoding || nrOfLayers<3)
-    ps->num_dmrs_cdm_grps_no_data = (ul_bwp->dci_format == NR_UL_DCI_FORMAT_0_1) ? 1 : (ps->nrOfSymbols == 2 ? 1 : 2);
+  if (ul_bwp->transform_precoding || Layers<3)
+    dmrs.num_dmrs_cdm_grps_no_data = ul_bwp->dci_format == NR_UL_DCI_FORMAT_0_1 || tda_info->nrOfSymbols == 2 ? 1 : 2;
   else
-    ps->num_dmrs_cdm_grps_no_data = 2;
+    dmrs.num_dmrs_cdm_grps_no_data = 2;
 
-  /* DMRS calculations */
-  ps->mapping_type = ul_bwp->tdaList->list.array[tda]->mappingType;
-  ps->NR_DMRS_UplinkConfig = ul_bwp->pusch_Config ?
-    (ps->mapping_type == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA ?
-     ul_bwp->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup :
-     ul_bwp->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup) : NULL;
-  ps->dmrs_config_type = ps->NR_DMRS_UplinkConfig ? ((ps->NR_DMRS_UplinkConfig->dmrs_Type == NULL ? 0 : 1)) : 0;
-  const pusch_dmrs_AdditionalPosition_t additional_pos =
-						     ps->NR_DMRS_UplinkConfig ? (ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition == NULL
-										 ? 2
-										 : (*ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition ==
-										    NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3
-										    ? 3
-										    : *ps->NR_DMRS_UplinkConfig->dmrs_AdditionalPosition)):2;
-  const pusch_maxLength_t pusch_maxLength =
-    ps->NR_DMRS_UplinkConfig ? (ps->NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2) : 1;
-  ps->ul_dmrs_symb_pos = get_l_prime(ps->nrOfSymbols,
-                                            ps->mapping_type,
-                                            additional_pos,
-                                            pusch_maxLength,
-                                            ps->startSymbolIndex,
-                                            scc->dmrs_TypeA_Position);
+  NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = ul_bwp->pusch_Config ?
+                                                 (tda_info->mapping_type == typeA ?
+                                                 ul_bwp->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup :
+                                                 ul_bwp->pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup) : NULL;
+
+  dmrs.dmrs_config_type = NR_DMRS_UplinkConfig && NR_DMRS_UplinkConfig->dmrs_Type ? 1 : 0;
+
+  const pusch_dmrs_AdditionalPosition_t additional_pos = (NR_DMRS_UplinkConfig && NR_DMRS_UplinkConfig->dmrs_AdditionalPosition) ?
+                                                         (*NR_DMRS_UplinkConfig->dmrs_AdditionalPosition ==
+                                                         NR_DMRS_UplinkConfig__dmrs_AdditionalPosition_pos3 ?
+                                                         3 : *NR_DMRS_UplinkConfig->dmrs_AdditionalPosition) : 2;
+
+  const pusch_maxLength_t pusch_maxLength = NR_DMRS_UplinkConfig ? (NR_DMRS_UplinkConfig->maxLength == NULL ? 1 : 2) : 1;
+  dmrs.ul_dmrs_symb_pos = get_l_prime(tda_info->nrOfSymbols,
+                                       tda_info->mapping_type,
+                                       additional_pos,
+                                       pusch_maxLength,
+                                       tda_info->startSymbolIndex,
+                                       scc->dmrs_TypeA_Position);
+
   uint8_t num_dmrs_symb = 0;
-  for(int i = ps->startSymbolIndex; i < ps->startSymbolIndex + ps->nrOfSymbols; i++)
-    num_dmrs_symb += (ps->ul_dmrs_symb_pos >> i) & 1;
-  ps->num_dmrs_symb = num_dmrs_symb;
-  ps->N_PRB_DMRS = ps->dmrs_config_type == 0
-      ? ps->num_dmrs_cdm_grps_no_data * 6
-      : ps->num_dmrs_cdm_grps_no_data * 4;
+  for(int i = tda_info->startSymbolIndex; i < tda_info->startSymbolIndex + tda_info->nrOfSymbols; i++)
+    num_dmrs_symb += (dmrs.ul_dmrs_symb_pos >> i) & 1;
+  dmrs.num_dmrs_symb = num_dmrs_symb;
+  dmrs.N_PRB_DMRS = dmrs.num_dmrs_cdm_grps_no_data * (dmrs.dmrs_config_type == 0 ? 6 : 4);
+
+  dmrs.NR_DMRS_UplinkConfig = NR_DMRS_UplinkConfig;
+  return dmrs;
 }
 
 #define BLER_UPDATE_FRAME 10
@@ -2501,8 +2497,8 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE);
 
   /* set illegal time domain allocation to force recomputation of all fields */
-  sched_ctrl->pdsch_semi_static.time_domain_allocation = -1;
-  sched_ctrl->pusch_semi_static.time_domain_allocation = -1;
+  sched_ctrl->sched_pdsch.time_domain_allocation = -1;
+  sched_ctrl->sched_pusch.time_domain_allocation = -1;
 
   /* Set default BWPs */
   sched_ctrl->next_dl_bwp_id = -1;
@@ -2957,28 +2953,6 @@ void nr_mac_update_timers(module_id_t module_id,
           // add all available DL HARQ processes for this UE in SA
           create_dl_harq_list(sched_ctrl, UE->current_DL_BWP.pdsch_servingcellconfig);
         }
-
-        NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-        const uint8_t layers = set_dl_nrOfLayers(sched_ctrl);
-        const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
-
-        nr_set_pdsch_semi_static(&UE->current_DL_BWP,
-                                 scc,
-                                 tda,
-                                 layers,
-                                 sched_ctrl,
-                                 ps);
-
-
-        NR_pusch_semi_static_t *ups = &sched_ctrl->pusch_semi_static;
-        const uint8_t nrOfLayers = 1;
-        const int utda = get_ul_tda(RC.nrmac[module_id], scc, slot);
-
-        nr_set_pusch_semi_static(&UE->current_UL_BWP,
-                                 scc,
-                                 utda,
-                                 nrOfLayers,
-                                 ups);
       }
     }
 

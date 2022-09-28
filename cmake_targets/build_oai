@@ -126,10 +126,6 @@ Options:
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
 -x | --xforms
    Will compile with software oscilloscope features
---HWLAT
-    Makes test program for haw latency tests
---HWLAT_TEST
-  Compiles a hw latency test program
 --verbose-ci
   Compile with verbose instructions in CI Docker env
 --verbose-compile
@@ -345,14 +341,6 @@ function main() {
             EXE_ARGUMENTS="$EXE_ARGUMENTS -d"
             echo_info "Will generate the software oscilloscope features"
             shift;;
-       --HWLAT)
-            HWLAT=1
-            echo_info "Will compile hw latency test program"
-            shift;;
-       --HWLAT_TEST)
-            HWLAT_TEST=1
-            echo_info "Will compile hw latency test program"
-            shift;;
        --verbose-ci)
             VERBOSE_CI=1
             echo_info "Will compile with verbose instructions in CI Docker env"
@@ -502,12 +490,6 @@ function main() {
 	      echo_info "No transport protocol has been selected (TP set to $TP)"	
       fi
   fi
-  
-  if [ "$HWLAT" = "1" ] ; then
-      if [ "$HW" = "None" ] ; then
-          echo_info "No radio head has been selected (HW set to $HW)" 
-      fi
-  fi
 
   echo_info "RF HW set to $HW" 
   # If the user doesn't specify the Linux scheduler to use, we set a value
@@ -632,9 +614,11 @@ function main() {
   cd  $DIR/$BUILD_DIR/build
   if [[ ${#CMAKE_C_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_C_FLAGS=\"${CMAKE_C_FLAGS[*]}\""; fi
   if [[ ${#CMAKE_CXX_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_CXX_FLAGS=\"${CMAKE_CXX_FLAGS[*]}\""; fi
-  CMAKE_CMD="$CMAKE_CMD -DNOAVX512=\"${NOAVX512[*]}\""
+  # for historical reasons we build in a subdirectory cmake_targets/XYZ/build,
+  # e.g., cmake_targets/ran_build/build, hence the ../../..
+  CMAKE_CMD="$CMAKE_CMD -DNOAVX512=\"${NOAVX512[*]}\" ../../.."
   echo_info "running $CMAKE_CMD"
-  eval $CMAKE_CMD ../..
+  eval $CMAKE_CMD
   
   for f in $execlist ; do
       echo_info "Compiling $f..."
@@ -775,67 +759,11 @@ function main() {
              lib${oklib}.so $dbin/lib${oklib}.so
      done
   fi
-
-  #####################
-  # HWLAT compilation #
-  #####################
-  if [ "$HWLAT" = "1" ] ; then
-
-      hwlat_exec=lte-hwlat
-      hwlat_build_dir=lte-hwlat
-     
-      echo_info "Compiling $hwlat_exec ..."
-    
-      [ "$CLEAN" = "1" ] && rm -rf $DIR/lte-hwlat/build 
-      mkdir -p $DIR/$hwlat_build_dir/build
-      cmake_file=$DIR/$hwlat_build_dir/CMakeLists.txt
-      echo "cmake_minimum_required(VERSION 2.8)"                             > $cmake_file
-      echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
-      echo "set ( RF_BOARD \"${HW}\")"                                      >> $cmake_file
-      echo 'set ( PACKAGE_NAME "\"lte-hwlat\"")'                            >> $cmake_file
-      echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )" >> $cmake_file
-      echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"             >> $cmake_file
-      echo "set ( HWLAT \"${HWLAT}\" )"                                     >> $cmake_file
-      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file    
-      cd $DIR/$hwlat_build_dir/build
-      cmake ..
-      compilations \
-          lte-hwlat lte-hwlat \
-          lte-hwlat $dbin/lte-hwlat
-  fi  
- 
-  ##########################
-  # HWLAT_TEST compilation #
-  ##########################
-  if [ "$HWLAT_TEST" = "1" ] ; then
-
-      hwlat_test_exec=lte-hwlat-test
-      hwlat_test_build_dir=lte-hwlat-test
-     
-      echo_info "Compiling $hwlat_test_exec ..."
-    
-      [ "$CLEAN" = "1" ] && rm -rf $DIR/lte-hwlat-test/build 
-      mkdir -p $DIR/$hwlat_test_build_dir/build
-      cmake_file=$DIR/$hwlat_test_build_dir/CMakeLists.txt
-      echo "cmake_minimum_required(VERSION 2.8)"                             > $cmake_file
-      echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"                     >> $cmake_file
-      echo "set ( RF_BOARD \"${HW}\")"                                      >> $cmake_file
-      echo 'set ( PACKAGE_NAME "\"lte-hwlat-test\"")'                       >> $cmake_file
-      echo "set ( DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )" >> $cmake_file
-      echo "set ( CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"             >> $cmake_file
-      echo "set ( HWLAT \"${HWLAT}\" )"                                     >> $cmake_file
-      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)'         >> $cmake_file    
-      cd $DIR/$hwlat_test_build_dir/build
-      cmake ..
-      compilations \
-          lte-hwlat-test lte-hwlat-test \
-          lte-hwlat-test $dbin/lte-hwlat-test
-  fi
   
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1"  -o "$nrUE" = "1" -o "$HWLAT" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1"  -o "$nrUE" = "1" ] ; then
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then

@@ -1599,19 +1599,20 @@ void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
 // Extraction functions
 //==============================================================================================
 
-unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
-                                           int **dl_ch_estimates,
-                                           int **rxdataF_ext,
-                                           int **dl_ch_estimates_ext,
-                                           unsigned char symbol,
-                                           uint8_t pilots,
-                                           uint8_t config_type,
-                                           unsigned short start_rb,
-                                           unsigned short nb_rb_pdsch,
-                                           uint8_t n_dmrs_cdm_groups,
-                                           NR_DL_FRAME_PARMS *frame_parms,
-                                           uint16_t dlDmrsSymbPos,
-                                           int chest_time_type)
+void nr_dlsch_extract_rbs(int **rxdataF,
+                          int **dl_ch_estimates,
+                          int **rxdataF_ext,
+                          int **dl_ch_estimates_ext,
+                          unsigned char symbol,
+                          uint8_t pilots,
+                          uint8_t config_type,
+                          unsigned short start_rb,
+                          unsigned short nb_rb_pdsch,
+                          uint8_t n_dmrs_cdm_groups,
+                          uint8_t Nl,
+                          NR_DL_FRAME_PARMS *frame_parms,
+                          uint16_t dlDmrsSymbPos,
+                          int chest_time_type)
 {
   if (config_type == NFAPI_NR_DMRS_TYPE1) {
     AssertFatal(n_dmrs_cdm_groups == 1 || n_dmrs_cdm_groups == 2,
@@ -1631,178 +1632,91 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
   for (unsigned char aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
 
-    int32_t *dl_ch0     = &dl_ch_estimates[aarx][validDmrsEst * frame_parms->ofdm_symbol_size];
-    int32_t *dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * nb_rb_pdsch * NR_NB_SC_PER_RB];
-    int32_t *rxF_ext    = &rxdataF_ext[aarx][symbol * nb_rb_pdsch * NR_NB_SC_PER_RB];
-    int32_t *rxF        = &rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
+    int32_t *rxF_ext = &rxdataF_ext[aarx][symbol * nb_rb_pdsch * NR_NB_SC_PER_RB];
+    int32_t *rxF     = &rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
 
-    if (pilots == 0) { //data symbol only
-      if (start_re + nb_rb_pdsch * NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) {
-        memcpy((void*)rxF_ext, (void*)&rxF[start_re], nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
-      } else {
-        int neg_length = frame_parms->ofdm_symbol_size - start_re;
-        int pos_length = nb_rb_pdsch * NR_NB_SC_PER_RB - neg_length;
+    for (unsigned char aatx = 0; aatx < Nl; aatx++) {
 
-        memcpy((void*)rxF_ext, (void*)&rxF[start_re], neg_length * sizeof(int32_t));
-        memcpy((void*)&rxF_ext[neg_length], (void*)rxF, pos_length * sizeof(int32_t));
+      int32_t *dl_ch0     = &dl_ch_estimates[(aatx*frame_parms->nb_antennas_rx)+aarx][validDmrsEst * frame_parms->ofdm_symbol_size];
+      int32_t *dl_ch0_ext = &dl_ch_estimates_ext[(aatx*frame_parms->nb_antennas_rx)+aarx][symbol * nb_rb_pdsch * NR_NB_SC_PER_RB];
+
+      if (pilots == 0) { //data symbol only
+        if (aatx == 0) {
+          if (start_re + nb_rb_pdsch * NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) {
+            memcpy(rxF_ext, &rxF[start_re], nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
+          } else {
+            int neg_length = frame_parms->ofdm_symbol_size - start_re;
+            int pos_length = nb_rb_pdsch * NR_NB_SC_PER_RB - neg_length;
+
+            memcpy(rxF_ext, &rxF[start_re], neg_length * sizeof(int32_t));
+            memcpy(&rxF_ext[neg_length], rxF, pos_length * sizeof(int32_t));
+          }
+        }
+        memcpy(dl_ch0_ext, dl_ch0, nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
       }
-      memcpy((void*)dl_ch0_ext, (void*)dl_ch0, nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
-    }
-    else if (config_type == NFAPI_NR_DMRS_TYPE1){
-      if (n_dmrs_cdm_groups == 1) { //data is multiplexed
-        unsigned short k = start_re;
-        for (unsigned short j = 0; j < 6*nb_rb_pdsch; j += 3) {
-          rxF_ext[j]      = rxF[k+1];
-          rxF_ext[j+1]    = rxF[k+3];
-          rxF_ext[j+2]    = rxF[k+5];
-          dl_ch0_ext[j]   = dl_ch0[1];
-          dl_ch0_ext[j+1] = dl_ch0[3];
-          dl_ch0_ext[j+2] = dl_ch0[5];
-          dl_ch0 += 6;
-          k += 6;
-          if (k >= frame_parms->ofdm_symbol_size)
-            k -= frame_parms->ofdm_symbol_size;
+      else if (config_type == NFAPI_NR_DMRS_TYPE1){
+        if (n_dmrs_cdm_groups == 1) { //data is multiplexed
+          if (aatx == 0) {
+            unsigned short k = start_re;
+            for (unsigned short j = 0; j < 6*nb_rb_pdsch; j += 3) {
+              rxF_ext[j]   = rxF[k+1];
+              rxF_ext[j+1] = rxF[k+3];
+              rxF_ext[j+2] = rxF[k+5];
+              k += 6;
+              if (k >= frame_parms->ofdm_symbol_size)
+                k -= frame_parms->ofdm_symbol_size;
+            }
+          }
+          for (unsigned short j = 0; j < 6*nb_rb_pdsch; j += 3) {
+            dl_ch0_ext[j]   = dl_ch0[1];
+            dl_ch0_ext[j+1] = dl_ch0[3];
+            dl_ch0_ext[j+2] = dl_ch0[5];
+            dl_ch0 += 6;
+          }
         }
       }
-    }
-    else {//NFAPI_NR_DMRS_TYPE2
-      if (n_dmrs_cdm_groups == 1) { //data is multiplexed
-        unsigned short k = start_re;
-        for (unsigned short j = 0; j < 8*nb_rb_pdsch; j += 4) {
-          rxF_ext[j]      = rxF[k+2];
-          rxF_ext[j+1]    = rxF[k+3];
-          rxF_ext[j+2]    = rxF[k+4];
-          rxF_ext[j+3]    = rxF[k+5];
-          dl_ch0_ext[j]   = dl_ch0[2];
-          dl_ch0_ext[j+1] = dl_ch0[3];
-          dl_ch0_ext[j+2] = dl_ch0[4];
-          dl_ch0_ext[j+3] = dl_ch0[5];
-          dl_ch0 += 6;
-          k += 6;
-          if (k >= frame_parms->ofdm_symbol_size)
-            k -= frame_parms->ofdm_symbol_size;
+      else {//NFAPI_NR_DMRS_TYPE2
+        if (n_dmrs_cdm_groups == 1) { //data is multiplexed
+          if (aatx == 0) {
+            unsigned short k = start_re;
+            for (unsigned short j = 0; j < 8*nb_rb_pdsch; j += 4) {
+              rxF_ext[j]   = rxF[k+2];
+              rxF_ext[j+1] = rxF[k+3];
+              rxF_ext[j+2] = rxF[k+4];
+              rxF_ext[j+3] = rxF[k+5];
+              k += 6;
+              if (k >= frame_parms->ofdm_symbol_size)
+                k -= frame_parms->ofdm_symbol_size;
+            }
+          }
+          for (unsigned short j = 0; j < 8*nb_rb_pdsch; j += 4) {
+            dl_ch0_ext[j]   = dl_ch0[2];
+            dl_ch0_ext[j+1] = dl_ch0[3];
+            dl_ch0_ext[j+2] = dl_ch0[4];
+            dl_ch0_ext[j+3] = dl_ch0[5];
+            dl_ch0 += 6;
+          }
         }
-      }
-      else if (n_dmrs_cdm_groups == 2) { //data is multiplexed
-        unsigned short k = start_re;
-        for (unsigned short j = 0; j < 4*nb_rb_pdsch; j += 2) {
-          rxF_ext[j]      = rxF[k+4];
-          rxF_ext[j+1]    = rxF[k+5];
-          dl_ch0_ext[j]   = dl_ch0[4];
-          dl_ch0_ext[j+1] = dl_ch0[5];
-          dl_ch0 += 6;
-          k += 6;
-          if (k >= frame_parms->ofdm_symbol_size)
-            k -= frame_parms->ofdm_symbol_size;
+        else if (n_dmrs_cdm_groups == 2) { //data is multiplexed
+          if (aatx == 0) {
+            unsigned short k = start_re;
+            for (unsigned short j = 0; j < 4*nb_rb_pdsch; j += 2) {
+              rxF_ext[j]   = rxF[k+4];
+              rxF_ext[j+1] = rxF[k+5];
+              k += 6;
+              if (k >= frame_parms->ofdm_symbol_size)
+                k -= frame_parms->ofdm_symbol_size;
+            }
+          }
+          for (unsigned short j = 0; j < 4*nb_rb_pdsch; j += 2) {
+            dl_ch0_ext[j]   = dl_ch0[4];
+            dl_ch0_ext[j+1] = dl_ch0[5];
+            dl_ch0 += 6;
+          }
         }
       }
     }
   }
-
-  return nb_rb_pdsch;
-}
-
-void nr_dlsch_extract_rbs(int **rxdataF,
-                          int **dl_ch_estimates,
-                          int **rxdataF_ext,
-                          int **dl_ch_estimates_ext,
-                          unsigned char symbol,
-                          uint8_t pilots,
-                          uint8_t config_type,
-                          unsigned short start_rb,
-                          unsigned short nb_rb_pdsch,
-                          uint8_t n_dmrs_cdm_groups,
-                          uint8_t Nl,
-                          NR_DL_FRAME_PARMS *frame_parms,
-                          uint16_t dlDmrsSymbPos,
-                          int chest_time_type)
-{
-
-  unsigned short k,rb;
-  unsigned char nushift,j,i,aarx,aatx;
-  int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
-  int8_t validDmrsEst = 0; //store last DMRS Symbol index
-
-  if (config_type==NFAPI_NR_DMRS_TYPE1) {
-    AssertFatal(n_dmrs_cdm_groups == 1 || n_dmrs_cdm_groups == 2,
-                "n_dmrs_cdm_groups %d is illegal\n",n_dmrs_cdm_groups);
-    nushift = n_dmrs_cdm_groups -1;//delta in Table 7.4.1.1.2-1
-  } else {
-    AssertFatal(n_dmrs_cdm_groups == 1 || n_dmrs_cdm_groups == 2 || n_dmrs_cdm_groups == 3,
-                "n_dmrs_cdm_groups %d is illegal\n",n_dmrs_cdm_groups);
-    nushift = (n_dmrs_cdm_groups -1)<<1;//delta in Table 7.4.1.1.2-2
-  }
-
-  if (chest_time_type == 0)
-    validDmrsEst = get_valid_dmrs_idx_for_channel_est(dlDmrsSymbPos,symbol);
-  else
-    validDmrsEst = get_next_dmrs_symbol_in_slot(dlDmrsSymbPos,0,14); // get first dmrs symbol index
-
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-
-    k = frame_parms->first_carrier_offset + NR_NB_SC_PER_RB*start_rb;
-    if (k>=frame_parms->ofdm_symbol_size)
-      k = k-frame_parms->ofdm_symbol_size;
-
-    rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
-    rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
-
-    for (aatx=0; aatx<Nl; aatx++) {
-
-      dl_ch0     = &dl_ch_estimates[(aatx*frame_parms->nb_antennas_rx)+aarx][(validDmrsEst*(frame_parms->ofdm_symbol_size))];
-      dl_ch0_ext = &dl_ch_estimates_ext[(aatx*frame_parms->nb_antennas_rx)+aarx][symbol*(nb_rb_pdsch*NR_NB_SC_PER_RB)];
-
-      for (rb = 0; rb < nb_rb_pdsch; rb++)
-      {
-        if (pilots==0) {//data symbol only
-          if (aatx==0) {//Extract Rx signal only
-            memcpy((void*)rxF_ext,(void*)rxF,12*sizeof(*rxF_ext));
-            rxF_ext+=12;
-          }
-          memcpy((void*)dl_ch0_ext,(void*)dl_ch0,12*sizeof(*dl_ch0_ext));//Extract Channel Estimate
-          dl_ch0_ext+=12;
-        }
-        else {//the symbol contains DMRS
-          j=0;
-          if (config_type==NFAPI_NR_DMRS_TYPE1) {
-            if (nushift == 0) {//data is multiplexed
-              for (i = (1-nushift); i<12; i+=2) {
-                if (aatx==0) rxF_ext[j]=rxF[i];
-                dl_ch0_ext[j]=dl_ch0[i];
-                j++;
-              }
-              dl_ch0_ext+=6;
-              if (aatx==0) rxF_ext+=6;
-            }
-          }
-          else {//NFAPI_NR_DMRS_TYPE2
-            for (i = (2+nushift); i<6; i++) {
-              if (aatx==0) rxF_ext[j]=rxF[i];
-              dl_ch0_ext[j]=dl_ch0[i];
-              j++;
-            }
-            for (i = (8+nushift); i<12; i++) {
-              if (aatx==0) rxF_ext[j]=rxF[i];
-              dl_ch0_ext[j]=dl_ch0[i];
-              j++;
-            }
-            dl_ch0_ext+= j;
-            if (aatx==0) rxF_ext+= j;
-          }
-        }
-
-        dl_ch0+=12;
-        if (aatx==0) {
-          rxF+=12;
-          k+=12;
-          if (k>=frame_parms->ofdm_symbol_size) {
-            k=k-(frame_parms->ofdm_symbol_size);
-            rxF       = &rxdataF[aarx][k+(symbol*(frame_parms->ofdm_symbol_size))];
-          }
-        }
-      }//rb
-    }//aatx
-  }//aarx
 }
 
 void nr_dlsch_detection_mrc(int **rxdataF_comp,
@@ -2439,9 +2353,9 @@ static void nr_dlsch_layer_demapping(int16_t **llr_cw,
   switch (Nl) {
     case 1:
       if (codeword_TB1 == -1)
-        memcpy((void*)llr_cw[0], (void*)llr_layers[0], (length)*sizeof(int16_t));
+        memcpy(llr_cw[0], llr_layers[0], (length)*sizeof(int16_t));
       else if (codeword_TB0 == -1)
-        memcpy((void*)llr_cw[1], (void*)llr_layers[0], (length)*sizeof(int16_t));
+        memcpy(llr_cw[1], llr_layers[0], (length)*sizeof(int16_t));
 
     break;
 
