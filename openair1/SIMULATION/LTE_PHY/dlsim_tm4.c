@@ -310,7 +310,7 @@ int main(int argc, char **argv)
 
   opp_enabled=1; // to enable the time meas
 
-#if defined(__arm__)
+#if defined(__arm__) || defined(__aarch64__)
   FILE    *proc_fd = NULL;
   char buf[64];
 

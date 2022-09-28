@@ -30,20 +30,13 @@
 #include <inttypes.h>
 #include "bladerf_lib.h"
 #include "math.h"
+#include "PHY/sse_intrin.h"
 
 /** @addtogroup _BLADERF_PHY_RF_INTERFACE_
  * @{
  */
 
 //! Number of BladeRF devices
-#ifdef __SSE4_1__
-#  include <smmintrin.h>
-#endif
-
-#ifdef __AVX2__
-#  include <immintrin.h>
-#endif
-
 int num_devices=0;
 
 /*These items configure the underlying asynch stream used by the the sync interface.

@@ -304,7 +304,7 @@ void ue_ip_change_rx_flags(struct net_device *dev_pP, int flagsP) {
 
 //---------------------------------------------------------------------------
 
-#if  LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0)
+#if  LINUX_VERSION_CODE >= KERNEL_VERSION(5,6,0) || (defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE == 2055)
 void ue_ip_tx_timeout(struct net_device *dev_pP, unsigned int txqueue)
 #else
 void ue_ip_tx_timeout(struct net_device *dev_pP)
@@ -335,7 +335,7 @@ static const struct net_device_ops ue_ip_netdev_ops = {
   .ndo_set_mac_address    = ue_ip_set_mac_address,
   .ndo_set_config         = ue_ip_set_config,
   .ndo_do_ioctl           = NULL,
-#if defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= 1797 && RHEL_RELEASE_CODE != 2403
+#if defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= 1797 && RHEL_RELEASE_CODE != 2403 && RHEL_RELEASE_CODE != 2055
   .extended.ndo_change_mtu         = ue_ip_change_mtu,
 #else
   .ndo_change_mtu   = ue_ip_change_mtu,

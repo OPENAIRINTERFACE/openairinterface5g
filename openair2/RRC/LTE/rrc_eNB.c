@@ -979,7 +979,7 @@ rrc_eNB_free_UE(
 void put_UE_in_freelist(module_id_t mod_id, rnti_t rnti, bool removeFlag) {
   eNB_MAC_INST                             *eNB_MAC = RC.mac[mod_id];
   pthread_mutex_lock(&lock_ue_freelist);
-  LOG_I(PHY,"add ue %d in fre list, context flag: %d\n", rnti, removeFlag);
+  LOG_I(PHY,"add ue %d in free list, context flag: %d\n", rnti, removeFlag);
   int i;
   for (i=0; i < sizeofArray(eNB_MAC->UE_free_ctrl); i++) 
     if (eNB_MAC->UE_free_ctrl[i].rnti == 0)

@@ -248,11 +248,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
     }
 /*
     if (ulsch_harq->ulsch_pdu.mcs_index == 0 && dumpsig==1) {
-#ifdef __AVX2__
       int off = ((ulsch_harq->ulsch_pdu.rb_size&1) == 1)? 4:0;
-#else
-      int off = 0;
-#endif
 
       LOG_M("rxsigF0.m","rxsF0",&gNB->common_vars.rxdataF[0][(ulsch_harq->slot&3)*gNB->frame_parms.ofdm_symbol_size*gNB->frame_parms.symbols_per_slot],gNB->frame_parms.ofdm_symbol_size*gNB->frame_parms.symbols_per_slot,1,1);
       LOG_M("rxsigF0_ext.m","rxsF0_ext",
@@ -422,11 +418,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   if (0/*pusch_pdu->mcs_index == 9*/) {
       __attribute__((unused))
-#ifdef __AVX2__
       int off = ((pusch_pdu->rb_size&1) == 1)? 4:0;
-#else
-      int off = 0;
-#endif
+
       LOG_M("rxsigF0.m","rxsF0",&gNB->common_vars.rxdataF[0][(slot_rx&3)*gNB->frame_parms.ofdm_symbol_size*gNB->frame_parms.symbols_per_slot],gNB->frame_parms.ofdm_symbol_size*gNB->frame_parms.symbols_per_slot,1,1);
       LOG_M("rxsigF0_ext.m","rxsF0_ext",
              &gNB->pusch_vars[0]->rxdataF_ext[0][pusch_pdu->start_symbol_index*NR_NB_SC_PER_RB * pusch_pdu->rb_size],pusch_pdu->nr_of_symbols*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);

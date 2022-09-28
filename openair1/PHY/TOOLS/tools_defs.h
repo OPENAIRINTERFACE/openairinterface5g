@@ -44,7 +44,7 @@
 #define mulhi_s1_int16(a,b) _mm_slli_epi16(_mm_mulhi_epi16(a,b),2)
 #define adds_int16(a,b) _mm_adds_epi16(a,b)
 #define mullo_int16(a,b) _mm_mullo_epi16(a,b)
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 #define simd_q15_t int16x8_t
 #define simdshort_q15_t int16x4_t
 #define shiftright_int16(a,shift) vshrq_n_s16(a,shift)
@@ -139,11 +139,12 @@ extern "C" {
   //   y.r += (x * alpha.r) >> 14 
   //   y.i += (x * alpha.i) >> 14 
   // See regular C implementation at the end
-  __attribute__((always_inline)) inline void c16multaddVectRealComplex(const int16_t *x,
+  static __attribute__((always_inline)) inline void c16multaddVectRealComplex(const int16_t *x,
                                                                        const c16_t *alpha,
                                                                        c16_t *y,
                                                                        const int N) {
-#ifdef __AVX2__
+#if defined(__x86_64__) || defined(__i386__)
+    // Default implementation for x86
     const int8_t makePairs[32] __attribute__((aligned(32)))={
       0,1,0+16,1+16,
       2,3,2+16,3+16,
@@ -154,24 +155,25 @@ extern "C" {
       12,13,12+16,13+16,
       14,15,14+16,15+16};
     
-    __m256i alpha256= _mm256_set1_epi32(*(int32_t *)alpha);
+    __m256i alpha256= simde_mm256_set1_epi32(*(int32_t *)alpha);
     __m128i *x128=(__m128i *)x;
     __m128i *y128=(__m128i *)y;
     AssertFatal(N%8==0,"Not implemented\n");
     for (int i=0; i<N/8; i++) {
-      const __m256i xduplicate=_mm256_broadcastsi128_si256(*x128);
-      const __m256i x_duplicate_ordered=_mm256_shuffle_epi8(xduplicate,*(__m256i*)makePairs);
-      const __m256i x_mul_alpha_shift15 =_mm256_mulhrs_epi16(alpha256, x_duplicate_ordered);
+      const __m256i xduplicate=simde_mm256_broadcastsi128_si256(*x128);
+      const __m256i x_duplicate_ordered=simde_mm256_shuffle_epi8(xduplicate,*(__m256i*)makePairs);
+      const __m256i x_mul_alpha_shift15 =simde_mm256_mulhrs_epi16(alpha256, x_duplicate_ordered);
       // Existing multiplication normalization is weird, constant table in alpha need to be doubled
-      const __m256i x_mul_alpha_x2= _mm256_adds_epi16(x_mul_alpha_shift15,x_mul_alpha_shift15);
-      *y128= _mm_adds_epi16(_mm256_extracti128_si256(x_mul_alpha_x2,0),*y128);
+      const __m256i x_mul_alpha_x2= simde_mm256_adds_epi16(x_mul_alpha_shift15,x_mul_alpha_shift15);
+      *y128= _mm_adds_epi16(simde_mm256_extracti128_si256(x_mul_alpha_x2,0),*y128);
       y128++;
-      *y128= _mm_adds_epi16(_mm256_extracti128_si256(x_mul_alpha_x2,1),*y128);
+      *y128= _mm_adds_epi16(simde_mm256_extracti128_si256(x_mul_alpha_x2,1),*y128);
       y128++;
       x128++;
     } 
     
-#elif defined(__x86_64__) || defined(__i386__) ||  defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
+    // Default implementation for ARM
     uint32_t i;
     
     // do 8 multiplications at a time
@@ -188,12 +190,6 @@ extern "C" {
 
       yr     = mulhi_s1_int16(alpha_r_128,x_128[i]);
       yi     = mulhi_s1_int16(alpha_i_128,x_128[i]);
-#if defined(__x86_64__) || defined(__i386__)
-      y_128[j]   = _mm_adds_epi16(y_128[j],_mm_unpacklo_epi16(yr,yi));
-      j++;
-      y_128[j]   = _mm_adds_epi16(y_128[j],_mm_unpackhi_epi16(yr,yi));
-      j++;
-#elif defined(__arm__)
       int16x8x2_t yint;
       yint = vzipq_s16(yr,yi);
       y_128[j]   = adds_int16(y_128[j],yint.val[0]);
@@ -201,10 +197,9 @@ extern "C" {
       y_128[j]   = adds_int16(y_128[j],yint.val[1]);
  
       j++;
-#endif
     }
-
 #else
+    // Almost dead code (BMC)
     for (int i=0; i<N; i++) {
       int tmpr=y[i].r+((x[i]*alpha->r)>>14);
       if (tmpr>INT16_MAX)
@@ -219,7 +214,6 @@ extern "C" {
       y[i].r=(int16_t)tmpr;
       y[i].i=(int16_t)tmpi;
     }
-
 #endif
   }
 //cmult_sv.h

@@ -30,7 +30,7 @@
 
 #if defined(__x86_64__) || defined(__i386__)
 __m128i avg128F;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 int32x4_t avg128F;
 #endif
 
@@ -42,7 +42,7 @@ int dl_channel_level(int16_t *dl_ch,
   int16_t rb;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x4_t *dl_ch128;
 #endif
   int avg;
@@ -61,7 +61,7 @@ int dl_channel_level(int16_t *dl_ch,
     dl_ch128+=3;
 
   }
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   avg128F = vdupq_n_s32(0);
   dl_ch128=(int16x4_t *)dl_ch;
 

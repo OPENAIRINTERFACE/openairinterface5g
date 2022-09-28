@@ -113,7 +113,7 @@ int32_t dot_product(int16_t *x,
  
   return(result);
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x4_t *x_128=(int16x4_t*)x;
   int16x4_t *y_128=(int16x4_t*)y;
   int32x4_t tmp_re,tmp_im;
@@ -233,7 +233,7 @@ int64_t dot_product64(int16_t *x,
   _m_empty();
  
   return(result);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x4_t *x_128=(int16x4_t*)x;
   int16x4_t *y_128=(int16x4_t*)y;
   int32x4_t tmp_re,tmp_im;

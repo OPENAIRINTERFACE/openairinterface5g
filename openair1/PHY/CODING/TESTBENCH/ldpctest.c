@@ -36,11 +36,7 @@
 #define MAX_BLOCK_LENGTH 8448
 
 #ifndef malloc16
-#  ifdef __AVX2__
 #    define malloc16(x) memalign(32,x)
-#  else
-#    define malloc16(x) memalign(16,x)
-#  endif
 #endif
 
 #define NR_LDPC_PROFILER_DETAIL

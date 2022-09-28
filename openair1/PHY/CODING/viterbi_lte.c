@@ -136,7 +136,7 @@ void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n)
   
   __m128i min_state,min_state2;
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   uint8x16x2_t TB[2*8192];  // 2 int8x16_t per input bit, 8 bits / byte, 8192 is largest packet size in bits
 
   uint8x16_t even0_30a,even0_30b,even32_62a,even32_62b,odd1_31a,odd1_31b,odd33_63a,odd33_63b,TBeven0_30,TBeven32_62,TBodd1_31,TBodd33_63;
@@ -165,7 +165,7 @@ void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n)
   metrics16_31 = _mm_setzero_si128();
   metrics32_47 = _mm_setzero_si128();
   metrics48_63 = _mm_setzero_si128();
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     metrics0_31.val[0]  = vdupq_n_u8(0); 
     metrics0_31.val[1]  = vdupq_n_u8(0);
     metrics32_63.val[0] = vdupq_n_u8(0);
@@ -259,7 +259,7 @@ void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n)
       metrics16_31 = _mm_subs_epu8(metrics16_31,min_state);
       metrics32_47 = _mm_subs_epu8(metrics32_47,min_state);
       metrics48_63 = _mm_subs_epu8(metrics48_63,min_state);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     m0_ptr = (uint8x16_t *)&m0_table[table_offset];
     m1_ptr = (uint8x16_t *)&m1_table[table_offset];
 
@@ -353,7 +353,7 @@ void phy_viterbi_lte_sse2(int8_t *y,uint8_t *decoded_bytes,uint16_t n)
     }
 
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   for (s=0; s<16; s++)
     if (((uint8_t *)&metrics0_31.val[0])[s] > maxm) {
       maxm = ((uint8_t *)&metrics0_31.val[0])[s];

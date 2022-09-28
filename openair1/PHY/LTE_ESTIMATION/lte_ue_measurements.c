@@ -769,7 +769,7 @@ void dlsch_channel_level_TM34_meas(int *ch00,
   _mm_empty();
   _m_empty();
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
 #endif
 }
@@ -1019,7 +1019,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
   unsigned int limit,subband;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch0_128,*dl_ch1_128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *dl_ch0_128, *dl_ch1_128;
 #endif
   int *dl_ch0,*dl_ch1;
@@ -1218,7 +1218,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
         dl_ch0_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
         dl_ch1_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2+aarx][4];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
         int32x4_t pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1,mmtmpPMI0b,mmtmpPMI1b;
 
         dl_ch0_128    = (int16x8_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
@@ -1233,7 +1233,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 
           pmi128_re = _mm_xor_si128(pmi128_re,pmi128_re);
           pmi128_im = _mm_xor_si128(pmi128_im,pmi128_im);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
           pmi128_re = vdupq_n_s32(0);
           pmi128_im = vdupq_n_s32(0);
@@ -1291,7 +1291,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
             pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
             //print_ints(" pmi128_im 1 ",&pmi128_im);*/
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
             mmtmpPMI0 = vmull_s16(((int16x4_t*)dl_ch0_128)[0], ((int16x4_t*)dl_ch1_128)[0]);
             mmtmpPMI1 = vmull_s16(((int16x4_t*)dl_ch0_128)[1], ((int16x4_t*)dl_ch1_128)[1]);

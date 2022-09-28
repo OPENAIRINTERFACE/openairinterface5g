@@ -283,7 +283,7 @@ void nr_pdcch_channel_level(int32_t rx_size,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128;
   __m128i avg128P;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *dl_ch128;
   int32x4_t *avg128P;
 #endif
@@ -293,7 +293,7 @@ void nr_pdcch_channel_level(int32_t rx_size,
 #if defined(__x86_64__) || defined(__i386__)
     avg128P = _mm_setzero_si128();
     dl_ch128=(__m128i *)&dl_ch_estimates_ext[aarx][symbol*nb_rb*12];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[aarx][symbol*nb_rb*12];
 #endif
 
@@ -302,7 +302,7 @@ void nr_pdcch_channel_level(int32_t rx_size,
       avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
       avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
       avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 #endif
       //      for (int i=0;i<24;i+=2) printf("pdcch channel re %d (%d,%d)\n",(rb*12)+(i>>1),((int16_t*)dl_ch128)[i],((int16_t*)dl_ch128)[i+1]);
       dl_ch128+=3;
@@ -331,7 +331,7 @@ void nr_pdcch_channel_level(int32_t rx_size,
 
 #if defined(__x86_64) || defined(__i386__)
   __m128i mmtmpPD0,mmtmpPD1,mmtmpPD2,mmtmpPD3;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
 #endif
 
@@ -529,12 +529,12 @@ void nr_pdcch_channel_compensation(int32_t rx_size, int32_t rxdataF_ext[][rx_siz
   uint8_t aarx;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
 #endif
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 #endif
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -545,7 +545,7 @@ void nr_pdcch_channel_compensation(int32_t rx_size, int32_t rxdataF_ext[][rx_siz
     //printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12]);
     //printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
     //printf("rxdataf_comp addr %p\n",&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12]);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     // to be filled in
 #endif
 
@@ -616,7 +616,7 @@ void nr_pdcch_channel_compensation(int32_t rx_size, int32_t rxdataF_ext[][rx_siz
       dl_ch128+=3;
       rxdataF128+=3;
       rxdataF_comp128+=3;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
       // to be filled in
 #endif
     }
@@ -635,7 +635,7 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                          uint8_t symbol) {
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxdataF_comp128_0,*rxdataF_comp128_1;
 #endif
   int32_t i;
@@ -644,7 +644,7 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #if defined(__x86_64__) || defined(__i386__)
     rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
 #endif
@@ -653,7 +653,7 @@ void nr_pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
     for (i=0; i<frame_parms->N_RB_DL*3; i++) {
 #if defined(__x86_64__) || defined(__i386__)
       rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
       rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
 #endif
     }

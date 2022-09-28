@@ -951,7 +951,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
   _mm_empty();
   _m_empty();
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
   unsigned short rb;
   unsigned char aatx,aarx,symbol_mod;
@@ -1388,7 +1388,7 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
     }
   }
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
 #endif
 }
@@ -1443,7 +1443,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
   _mm_empty();
   _m_empty();
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
   short rb;
   unsigned char aatx,aarx,nre=12,symbol_mod;
@@ -1553,7 +1553,7 @@ void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
   _mm_empty();
   _m_empty();
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
   short rb;
   unsigned char aatx,aarx,nre=12,symbol_mod;
