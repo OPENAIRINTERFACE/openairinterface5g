@@ -379,13 +379,6 @@ int main(int argc, char **argv)
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
-  uint32_t errors_scrambling[4][100] = {{0}};
-  int      n_errors[4][100]          = {{0}};
-  int      round_trials[4][100]      = {{0}};
-  double   roundStats[100]           = {0};
-  double   blerStats[4][100]         = {{0}};
-  double   berStats[4][100]          = {{0}};
-  double   snrStats[100]             = {0};
   float effRate;
   //float psnr;
   float eff_tp_check = 0.7;
@@ -471,7 +464,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
   
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:x:y:z:M:N:F:GR:d:PI:L:Ea:b:e:m:w:T:U:q:X:Y")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:v:x:y:z:M:N:F:GR:d:PI:L:Ea:b:e:m:w:T:U:q:X:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -572,6 +565,16 @@ int main(int argc, char **argv)
       if ((g_nrOfLayers==0) ||
           (g_nrOfLayers>4)) {
         printf("Unsupported nr Of Layers %d\n",g_nrOfLayers);
+        exit(-1);
+      }
+
+      break;
+
+    case 'v':
+      num_rounds=atoi(optarg);
+
+      if (num_rounds < 1) {
+        printf("Unsupported number of rounds %d\n", num_rounds);
         exit(-1);
       }
 
@@ -723,6 +726,7 @@ int main(int argc, char **argv)
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
+      printf("-v Maximum number of rounds\n");
       printf("-w Write txdata to binary file (one frame)\n");
       printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
       printf("-X gNB thread pool configuration, n => no threads\n");
@@ -731,6 +735,21 @@ int main(int argc, char **argv)
       break;
     }
   }
+
+  uint32_t errors_scrambling[num_rounds][100];
+  int      n_errors[num_rounds][100];
+  int      round_trials[num_rounds][100];
+  double   roundStats[100];
+  double   blerStats[num_rounds][100];
+  double   berStats[num_rounds][100];
+  double   snrStats[100];
+  memset(errors_scrambling, 0, sizeof(uint32_t)*num_rounds*100);
+  memset(n_errors, 0, sizeof(int)*num_rounds*100);
+  memset(round_trials, 0, sizeof(int)*num_rounds*100);
+  memset(blerStats, 0, sizeof(double)*num_rounds*100);
+  memset(berStats, 0, sizeof(double)*num_rounds*100);
+  memset(snrStats, 0, sizeof(double)*100);
+  memset(roundStats, 0, sizeof(double)*100);
 
   logInit();
   set_glog(loglvl);
@@ -1330,41 +1349,30 @@ int main(int argc, char **argv)
 
     roundStats[snrRun]/=((float)n_trials);
 
-    blerStats[0][snrRun] = (double)n_errors[0][snrRun]/round_trials[0][snrRun];
-    blerStats[1][snrRun] = (double)n_errors[1][snrRun]/round_trials[1][snrRun];
-    blerStats[2][snrRun] = (double)n_errors[2][snrRun]/round_trials[2][snrRun];
-    blerStats[3][snrRun] = (double)n_errors[3][snrRun]/round_trials[3][snrRun];
-
-    berStats[0][snrRun] = (double)errors_scrambling[0][snrRun]/available_bits/round_trials[0][snrRun];
-    berStats[1][snrRun] = (double)errors_scrambling[1][snrRun]/available_bits/round_trials[1][snrRun];
-    berStats[2][snrRun] = (double)errors_scrambling[2][snrRun]/available_bits/round_trials[2][snrRun];
-    berStats[3][snrRun] = (double)errors_scrambling[3][snrRun]/available_bits/round_trials[3][snrRun];
+    for (int r = 0; r < num_rounds; r++) {
+      blerStats[r][snrRun] = (double)n_errors[r][snrRun]/round_trials[r][snrRun];
+      berStats[r][snrRun] = (double)errors_scrambling[r][snrRun]/available_bits/round_trials[r][snrRun];
+    }
 
     effRate /= n_trials;
     printf("*****************************************\n");
-    printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n",
-           SNR,
-           n_errors[0][snrRun], round_trials[0][snrRun],
-           n_errors[1][snrRun], round_trials[1][snrRun],
-           n_errors[2][snrRun], round_trials[2][snrRun],
-           n_errors[3][snrRun], round_trials[3][snrRun],
+    printf("SNR %f: n_errors (%d/%d", SNR, n_errors[0][snrRun], round_trials[0][snrRun]);
+    for (int r = 1; r < num_rounds; r++)
+      printf(",%d/%d", n_errors[r][snrRun], round_trials[r][snrRun]);
+    printf(") (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u",
            n_false_positive, n_trials,
-           errors_scrambling[0][snrRun], available_bits*round_trials[0][snrRun],
-           errors_scrambling[1][snrRun], available_bits*round_trials[1][snrRun],
-           errors_scrambling[2][snrRun], available_bits*round_trials[2][snrRun],
-           errors_scrambling[3][snrRun], available_bits*round_trials[3][snrRun]);
-    printf("\n");
+           errors_scrambling[0][snrRun], available_bits*round_trials[0][snrRun]);
+    for (int r = 1; r < num_rounds; r++)
+      printf(",%u/%u", errors_scrambling[r][snrRun], available_bits*round_trials[r][snrRun]);
+    printf(")\n\n");
     dump_pdsch_stats(stdout,gNB);
-    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n",
-           SNR,
-           blerStats[0][snrRun],
-           blerStats[1][snrRun],
-           blerStats[2][snrRun],
-           blerStats[3][snrRun],
-           berStats[0][snrRun],
-           berStats[1][snrRun],
-           berStats[2][snrRun],
-           berStats[3][snrRun],
+    printf("SNR %f: Channel BLER (%e", SNR, blerStats[0][snrRun]);
+    for (int r = 1; r < num_rounds; r++)
+      printf(",%e", blerStats[r][snrRun]);
+    printf("), Channel BER (%e", berStats[0][snrRun]);
+    for (int r = 1; r < num_rounds; r++)
+      printf(",%e", berStats[r][snrRun]);
+    printf(") Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n",
            roundStats[snrRun],
            effRate,
            effRate/TBS*100,
