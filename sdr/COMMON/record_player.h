@@ -21,7 +21,7 @@
  *      contact@openairinterface.org
  */
 
-/** targets/ARCH/COMMON/record-player.h
+/** sdr/COMMON/record-player.h
  *
  * \author: bruno.mongazon-cazavet@nokia-bell-labs.com
  */

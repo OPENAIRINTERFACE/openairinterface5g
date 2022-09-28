@@ -22,7 +22,7 @@ git checkout 375-syrtem-sdr-platform
 or
 git checkout develop-nr (after merge request accepted)
 
-./targets/ARCH/ADRV9371_ZC706/SYRTEM_IQ_uninstall_previous_SW.sh
+./sdr/ADRV9371_ZC706/SYRTEM_IQ_uninstall_previous_SW.sh
 -> Reading package lists... Done
 -> Building dependency tree       
 -> Reading state information... Done

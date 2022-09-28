@@ -32,7 +32,6 @@
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
 
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/defs.h"

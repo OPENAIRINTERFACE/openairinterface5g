@@ -39,16 +39,16 @@
 \param Ns slot number (0..19)
 \param symbol symbol within slot
 */
-int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
-                                UE_nr_rxtx_proc_t *proc,
-                                uint8_t gNB_id,
-                                unsigned char Ns,
-                                unsigned char symbol,
-                                unsigned short scrambling_id,
-                                unsigned short coreset_start_subcarrier,
-                                unsigned short nb_rb_coreset,
-                                int32_t pdcch_est_size,
-                                int32_t pdcch_dl_ch_estimates[][pdcch_est_size]);
+void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
+                                 UE_nr_rxtx_proc_t *proc,
+                                 uint8_t gNB_id,
+                                 unsigned char Ns,
+                                 unsigned char symbol,
+                                 fapi_nr_coreset_t *coreset,
+                                 uint16_t first_carrier_offset,
+                                 uint16_t BWPStart,
+                                 int32_t pdcch_est_size,
+                                 int32_t pdcch_dl_ch_estimates[][pdcch_est_size]);
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,

@@ -27,7 +27,7 @@ The files implement the OAI IF device interface which provides the transmit/rece
 
 It is contained in the eth_udp.c and eth_raw.c files. The two basic routines are
 
-* trx_eth_read_udp_IF4p5() : implements a blocking read for three particular IF4p5 packets, IF4p5_PULFFT (for OAI RCC/DU), IF4p5_PRACH and IF4p5_PDLFFT (for OAI RU). The packets are parsed and mapped to the appropriate physical channels by the OAI physical layer   
+* trx_eth_read_udp_IF4p5() : implements a blocking read for three particular IF4p5 packets, IF4p5_PULFFT (for OAI RCC/DU), IF4p5_PRACH and IF4p5_PDLFFT (for OAI RU). The packets are parsed and mapped to the appropriate physical channels by the OAI physical layer
 * trx_eth_write_udp_IF4p5 : implements a write for the three IF4p5 packets.
 
 * trx_eth_ctlsend_udp : implements the sending component for the control socket

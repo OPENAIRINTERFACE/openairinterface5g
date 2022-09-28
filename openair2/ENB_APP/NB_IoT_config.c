@@ -39,7 +39,7 @@
 #include "SystemInformationBlockType2.h"
 
 #include "PHY/phy_extern.h"
-#include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "sdr/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "RRC_paramsvalues.h"
