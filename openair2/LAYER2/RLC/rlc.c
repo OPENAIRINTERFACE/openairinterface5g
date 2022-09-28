@@ -590,7 +590,7 @@ void rlc_data_ind     (
     T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
 #endif
     const ngran_node_t type = RC.rrc[ctxt_pP->module_id]->node_type;
-    AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
+    AssertFatal(!NODE_IS_CU(type),
                 "Can't be CU, bad node type %d\n", type);
 
     if (NODE_IS_DU(type) && srb_flagP == 1) {

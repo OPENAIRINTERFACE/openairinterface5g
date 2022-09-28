@@ -28,6 +28,7 @@
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
+#include "common/utils/nr/nr_common.h"
 #include "filt16a_32.h"
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
@@ -463,16 +464,16 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   return(0);
 }
 
-int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
-                                UE_nr_rxtx_proc_t *proc,
-                                uint8_t gNB_id,
-                                unsigned char Ns,
-                                unsigned char symbol,
-                                unsigned short scrambling_id,
-                                unsigned short coreset_start_subcarrier,
-                                unsigned short nb_rb_coreset,
-                                int32_t pdcch_est_size,
-                                int32_t pdcch_dl_ch_estimates[][pdcch_est_size])
+void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
+                                 UE_nr_rxtx_proc_t *proc,
+                                 uint8_t gNB_id,
+                                 unsigned char Ns,
+                                 unsigned char symbol,
+                                 fapi_nr_coreset_t *coreset,
+                                 uint16_t first_carrier_offset,
+                                 uint16_t BWPStart,
+                                 int32_t pdcch_est_size,
+                                 int32_t pdcch_dl_ch_estimates[][pdcch_est_size])
 {
 
   unsigned char aarx;
@@ -487,6 +488,17 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
 
+  int nb_rb_coreset=0;
+  int coreset_start_rb=0;
+  get_coreset_rballoc(coreset->frequency_domain_resource,&nb_rb_coreset,&coreset_start_rb);
+  if(nb_rb_coreset==0) return;
+
+#ifdef DEBUG_PDCCH
+  printf(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d, coreset_nb_rb %d\n",
+         first_carrier_offset, BWPStart, coreset_start_rb, nb_rb_coreset);
+#endif
+
+  unsigned short coreset_start_subcarrier = first_carrier_offset+(BWPStart + coreset_start_rb)*12;
 
 #ifdef DEBUG_PDCCH
   printf("PDCCH Channel Estimation : ThreadId %d, gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, symbol %d\n",
@@ -499,28 +511,32 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   int16_t *fr = filt16a_r1;
 #endif
 
+  unsigned short scrambling_id = coreset->pdcch_dmrs_scrambling_id;
   // checking if re-initialization of scrambling IDs is needed (should be done here but scrambling ID for PDCCH is not taken from RRC)
   if (scrambling_id != ue->scramblingID_pdcch){
     ue->scramblingID_pdcch = scrambling_id;
     nr_gold_pdcch(ue,ue->scramblingID_pdcch);
   }
 
-  // generate pilot
-  int pilot[nb_rb_coreset * 3] __attribute__((aligned(16))); 
-  nr_pdcch_dmrs_rx(ue,gNB_id,Ns,ue->nr_gold_pdcch[gNB_id][Ns][symbol], &pilot[0],2000,nb_rb_coreset);
+  int dmrs_ref = 0;
+  if (coreset->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
+    dmrs_ref = BWPStart;
 
+  // generate pilot
+  int pilot[(nb_rb_coreset + dmrs_ref) * 3] __attribute__((aligned(16)));
+  nr_pdcch_dmrs_rx(ue,Ns,ue->nr_gold_pdcch[gNB_id][Ns][symbol], &pilot[0],2000,(nb_rb_coreset+dmrs_ref));
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
     k = coreset_start_subcarrier;
-    pil   = (int16_t *)&pilot[0];
+    pil   = (int16_t *)&pilot[dmrs_ref*3];
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+1)];
     dl_ch = (int16_t *)&pdcch_dl_ch_estimates[aarx][ch_offset];
 
     memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
 
 #ifdef DEBUG_PDCCH
-    printf("pdcch ch est pilot addr %p RB_DL %d\n",&pilot[0], ue->frame_parms.N_RB_DL);
+    printf("pdcch ch est pilot addr %p RB_DL %d\n",&pilot[dmrs_ref*3], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);
     printf("rxF addr %p\n", rxF);
 
@@ -687,8 +703,6 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     //}
 
   }
-
-  return(0);
 }
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,

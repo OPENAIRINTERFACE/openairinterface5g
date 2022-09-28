@@ -707,7 +707,6 @@ uint8_t evaluate_pmi_report(uint8_t *payload,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
-  sched_ctrl->set_pmi = true;
   return tot_bitlen;
 
 }

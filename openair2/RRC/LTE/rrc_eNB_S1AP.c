@@ -1004,9 +1004,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
     }
 
     
-    if ((RC.rrc[ctxt.module_id]->node_type == ngran_eNB_CU) ||
-	(RC.rrc[ctxt.module_id]->node_type == ngran_ng_eNB_CU) ||
-	(RC.rrc[ctxt.module_id]->node_type == ngran_gNB_CU) ){
+    if (NODE_IS_CU(RC.rrc[ctxt.module_id]->node_type)) {
       struct eNB_RRC_INST_s *rrc= RC.rrc[0];
       MessageDef *message_p = itti_alloc_new_message (TASK_RRC_ENB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
       f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_SETUP_REQ (message_p);

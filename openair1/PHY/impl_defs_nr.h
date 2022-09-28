@@ -345,11 +345,6 @@ typedef struct {
 #define MAX_NR_OF_UL_ALLOCATIONS            (16)
 
 typedef enum {
-  typeA = 0,
-  typeB = 1
-} mappingType_t;
-
-typedef enum {
   pdsch_dmrs_pos0 = 0,
   pdsch_dmrs_pos1 = 1,
   pdsch_dmrs_pos2 = 2,
@@ -368,12 +363,7 @@ typedef enum {
   pusch_dmrs_type1 = 0,
   pusch_dmrs_type2 = 1
 } pusch_dmrs_type_t;
-typedef enum {
-  pusch_dmrs_pos0 = 0,
-  pusch_dmrs_pos1 = 1,
-  pusch_dmrs_pos2 = 2,
-  pusch_dmrs_pos3 = 3,
-} pusch_dmrs_AdditionalPosition_t;
+
 typedef enum {
   pusch_len1 = 1,
   pusch_len2 = 2

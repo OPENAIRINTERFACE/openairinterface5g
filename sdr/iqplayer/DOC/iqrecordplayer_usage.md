@@ -134,7 +134,7 @@ options for replay mode are:
 [PHY]I lte-softmodem prach_I0 = 0.0 dB
 [PHY]I ru thread max_I0 18, min_I0 12
 [HW]W ru thread iqplayer device terminating subframes replay  after 5 iteration
-/usr/local/oai/develop/openairinterface5g/targets/ARCH/iqplayer/iqplayer_lib.c:222 trx_iqplayer_read() Exiting OAI softmodem: replay ended, triggering process termination
+/usr/local/oai/develop/openairinterface5g/sdr/iqplayer/iqplayer_lib.c:222 trx_iqplayer_read() Exiting OAI softmodem: replay ended, triggering process termination
 ```
 
 ## iq recorder and iq player implementation overview

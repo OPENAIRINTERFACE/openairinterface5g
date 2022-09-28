@@ -108,7 +108,8 @@
 
 #include "PHY/NR_UE_TRANSPORT/dci_nr.h"
 #include <pthread.h>
-#include "targets/ARCH/COMMON/common_lib.h"
+#include "sdr/COMMON/common_lib.h"
+#include "NR_IF_Module.h"
 
 /// Context data structure for gNB subframe processing
 typedef struct {
@@ -643,8 +644,6 @@ typedef struct NR_UL_TIME_ALIGNMENT {
   uint16_t         ta_command;
   uint8_t          tag_id;
 } NR_UL_TIME_ALIGNMENT_t;
-
-#include "NR_IF_Module.h"
 
 /// Top-level PHY Data Structure for UE
 typedef struct {
