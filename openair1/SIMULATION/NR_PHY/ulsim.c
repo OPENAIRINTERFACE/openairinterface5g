@@ -1057,20 +1057,21 @@ int main(int argc, char **argv)
   }
 
   int ret = 1;
-  uint32_t errors_scrambling[4][100];
-  int n_errors[4][100];
-  int round_trials[4][100];
-  double blerStats[4][100];
-  double berStats[4][100];
-  double snrStats[100];
-  memset(errors_scrambling, 0, sizeof(uint32_t)*4*100);
-  memset(n_errors, 0, sizeof(int)*4*100);
-  memset(round_trials, 0, sizeof(int)*4*100);
-  memset(blerStats, 0, sizeof(double)*4*100);
-  memset(berStats, 0, sizeof(double)*4*100);
-  memset(snrStats, 0, sizeof(double) * 100);
 
-  for (SNR = snr0; SNR <= snr1; SNR += snr_step) {
+  AssertFatal(max_rounds > 0, "Invalind value for max number of rounds %d\n",max_rounds);
+  uint32_t errors_scrambling[max_rounds][100];
+  int n_errors[max_rounds][100];
+  int round_trials[max_rounds][100];
+  double blerStats[max_rounds][100];
+  double berStats[max_rounds][100];
+  double snrStats[100];
+  memset(errors_scrambling, 0, sizeof(uint32_t)*max_rounds*100);
+  memset(n_errors, 0, sizeof(int)*max_rounds*100);
+  memset(round_trials, 0, sizeof(int)*max_rounds*100);
+  memset(blerStats, 0, sizeof(double)*max_rounds*100);
+  memset(berStats, 0, sizeof(double)*max_rounds*100);
+  memset(snrStats, 0, sizeof(double)*100);
+  for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     varArray_t *table_rx=initVarArray(1000,sizeof(double));
     int error_flag = 0;
     n_false_positive = 0;
@@ -1103,7 +1104,7 @@ int main(int argc, char **argv)
       round_trials[round][snrRun]++;
       ulsch_ue->harq_processes[harq_pid]->round = round;
       gNB->ulsch[0]->harq_processes[harq_pid]->round = round;
-      rv_index = nr_rv_round_map[round];
+      rv_index = nr_rv_round_map[round%4];
 
       UE_proc.nr_slot_tx = slot;
       UE_proc.frame_tx = frame;
@@ -1539,28 +1540,28 @@ int main(int argc, char **argv)
     effRate[snrRun] /= (double)n_trials;
     
     printf("*****************************************\n");
-    printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n", SNR, n_errors[0][snrRun], round_trials[0][snrRun],n_errors[1][snrRun], round_trials[1][snrRun],n_errors[2][snrRun], round_trials[2][snrRun],n_errors[3][snrRun], round_trials[3][snrRun], n_false_positive, n_trials, errors_scrambling[0][snrRun],available_bits*n_trials,errors_scrambling[1][snrRun],available_bits*n_trials,errors_scrambling[2][snrRun],available_bits*n_trials,errors_scrambling[3][snrRun],available_bits*n_trials);
+    printf("SNR %f: n_errors (%d/%d", SNR, n_errors[0][snrRun], round_trials[0][snrRun]);
+    for (int r = 1; r < max_rounds; r++)
+      printf(",%d/%d", n_errors[r][snrRun], round_trials[r][snrRun]);
+    printf(") (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u",
+           n_false_positive, n_trials, errors_scrambling[0][snrRun], available_bits*n_trials);
+    for (int r = 1; r < max_rounds; r++)
+      printf(",%u/%u", errors_scrambling[r][snrRun], available_bits*n_trials);
+    printf(")\n");
     printf("\n");
-    blerStats[0][snrRun] = (double)n_errors[0][snrRun]/round_trials[0][snrRun];
-    blerStats[1][snrRun] = (double)n_errors[1][snrRun]/round_trials[1][snrRun];
-    blerStats[2][snrRun] = (double)n_errors[2][snrRun]/round_trials[2][snrRun];
-    blerStats[3][snrRun] = (double)n_errors[3][snrRun]/round_trials[3][snrRun];
 
-    berStats[0][snrRun] = (double)errors_scrambling[0][snrRun]/available_bits/round_trials[0][snrRun];
-    berStats[1][snrRun] = (double)errors_scrambling[1][snrRun]/available_bits/round_trials[1][snrRun];
-    berStats[2][snrRun] = (double)errors_scrambling[2][snrRun]/available_bits/round_trials[2][snrRun];
-    berStats[3][snrRun] = (double)errors_scrambling[3][snrRun]/available_bits/round_trials[3][snrRun];
+    for (int r = 0; r < max_rounds; r++) {
+      blerStats[r][snrRun] = (double)n_errors[r][snrRun]/round_trials[r][snrRun];
+      berStats[r][snrRun] = (double)errors_scrambling[r][snrRun]/available_bits/round_trials[r][snrRun];
+    }
     effTP[snrRun] = effRate[snrRun]/(double)TBS*(double)100;
-    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", 
-	   SNR,
-     blerStats[0][snrRun],
-     blerStats[1][snrRun],
-     blerStats[2][snrRun],
-     blerStats[3][snrRun],
-     berStats[0][snrRun],
-     berStats[1][snrRun],
-     berStats[2][snrRun],
-     berStats[3][snrRun],
+    printf("SNR %f: Channel BLER (%e", SNR, blerStats[0][snrRun]);
+    for (int r = 1; r < max_rounds; r++)
+      printf(",%e", blerStats[r][snrRun]);
+    printf(" Channel BER (%e", berStats[0][snrRun]);
+    for (int r = 1; r < max_rounds; r++)
+      printf(",%e", berStats[r][snrRun]);
+    printf(") Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n",
 	   roundStats[snrRun],effRate[snrRun],effTP[snrRun],TBS);
 
     FILE *fd=fopen("nr_ulsim.log","w");
@@ -1632,14 +1633,13 @@ int main(int argc, char **argv)
   char opStatsFile[50];
   sprintf(opStatsFile, "ulsimStats_z%d.m", n_rx);
   LOG_M(opStatsFile,"SNR",snrStats,snrRun,1,7);
-  LOG_MM(opStatsFile,"BLER_round0",blerStats[0],snrRun,1,7);
-  LOG_MM(opStatsFile,"BLER_round1",blerStats[1],snrRun,1,7);
-  LOG_MM(opStatsFile,"BLER_round2",blerStats[2],snrRun,1,7);
-  LOG_MM(opStatsFile,"BLER_round3",blerStats[3],snrRun,1,7);
-  LOG_MM(opStatsFile,"BER_round0",berStats[0],snrRun,1,7);
-  LOG_MM(opStatsFile,"BER_round1",berStats[1],snrRun,1,7);
-  LOG_MM(opStatsFile,"BER_round2",berStats[2],snrRun,1,7);
-  LOG_MM(opStatsFile,"BER_round3",berStats[3],snrRun,1,7);
+  for (uint8_t r = 0; r < max_rounds; r++) {
+    char bler[15], ber[15];
+    sprintf(bler, "BLER_round%d", r);
+    sprintf(bler, "BER_round%d", r);
+    LOG_MM(opStatsFile,bler,blerStats[r],snrRun,1,7);
+    LOG_MM(opStatsFile,ber,berStats[r],snrRun,1,7);
+  }
   LOG_MM(opStatsFile,"EffRate",effRate,snrRun,1,7);
   LOG_MM(opStatsFile,"EffTP",effTP,snrRun,1,7);
 
