@@ -133,6 +133,18 @@ typedef struct ngap_ambr_s {
 typedef enum ngap_priority_level_s {
   NGAP_PRIORITY_LEVEL_SPARE       = 0,
   NGAP_PRIORITY_LEVEL_HIGHEST     = 1,
+  NGAP_PRIORITY_LEVEL_2           = 2,
+  NGAP_PRIORITY_LEVEL_3           = 3,
+  NGAP_PRIORITY_LEVEL_4           = 4,
+  NGAP_PRIORITY_LEVEL_5           = 5,
+  NGAP_PRIORITY_LEVEL_6           = 6,
+  NGAP_PRIORITY_LEVEL_7           = 7,
+  NGAP_PRIORITY_LEVEL_8           = 8,
+  NGAP_PRIORITY_LEVEL_9           = 9,
+  NGAP_PRIORITY_LEVEL_10          = 10,
+  NGAP_PRIORITY_LEVEL_11          = 11,
+  NGAP_PRIORITY_LEVEL_12          = 12,
+  NGAP_PRIORITY_LEVEL_13          = 13,
   NGAP_PRIORITY_LEVEL_LOWEST      = 14,
   NGAP_PRIORITY_LEVEL_NO_PRIORITY = 15
 } ngap_priority_level_t;
