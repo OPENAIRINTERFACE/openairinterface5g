@@ -1099,8 +1099,8 @@ int nr_acknack_scheduling(int mod_id,
       if (curr_pucch->active &&
           curr_pucch->frame == pucch_frame &&
           curr_pucch->ul_slot == pucch_slot) {
-        LOG_D(NR_MAC, "In %s: pucch_acknak DL %4d.%2d, UL_ACK %4d.%2d Bits already in current PUCCH: DAI_C %d CSI %d\n",
-              __FUNCTION__, frame, slot, pucch_frame, pucch_slot, curr_pucch->dai_c, curr_pucch->csi_bits);
+        LOG_D(NR_MAC, "pucch_acknak DL %4d.%2d, UL_ACK %4d.%2d Bits already in current PUCCH: DAI_C %d CSI %d\n",
+              frame, slot, pucch_frame, pucch_slot, curr_pucch->dai_c, curr_pucch->csi_bits);
         // we can't schedule if short pucch is already full
         if (curr_pucch->csi_bits == 0 &&
             curr_pucch->dai_c == 2)
@@ -1117,8 +1117,8 @@ int nr_acknack_scheduling(int mod_id,
         // no need to check VRB occupation because already done when PUCCH has been activated
         curr_pucch->timing_indicator = f;
         curr_pucch->dai_c++;
-        LOG_D(NR_MAC, "In %s: DL %4d.%2d, UL_ACK %4d.%2d Scheduling ACK/NACK in PUCCH %d with timing indicator %d DAI %d CSI %d\n",
-              __FUNCTION__,frame,slot,curr_pucch->frame,curr_pucch->ul_slot,i,f,curr_pucch->dai_c,curr_pucch->csi_bits);
+        LOG_D(NR_MAC, "DL %4d.%2d, UL_ACK %4d.%2d Scheduling ACK/NACK in PUCCH %d with timing indicator %d DAI %d CSI %d\n",
+              frame,slot,curr_pucch->frame,curr_pucch->ul_slot,i,f,curr_pucch->dai_c,curr_pucch->csi_bits);
         return i; // index of current PUCCH structure
       }
       else if (!curr_pucch->active)
@@ -1137,8 +1137,8 @@ int nr_acknack_scheduling(int mod_id,
                                             bwp_start,
                                             bwp_size);
       if(!ret) {
-        LOG_D(NR_MAC, "In %s: DL %4d.%2d, UL_ACK %4d.%2d PRB resources for this occasion are already occupied, move to the following occasion\n",
-              __FUNCTION__,frame,slot,curr_pucch->frame,curr_pucch->ul_slot);
+        LOG_D(NR_MAC, "DL %4d.%2d, UL_ACK %4d.%2d PRB resources for this occasion are already occupied, move to the following occasion\n",
+              frame,slot,curr_pucch->frame,curr_pucch->ul_slot);
         continue;
       }
       // allocating a new PUCCH structure for this occasion
@@ -1150,30 +1150,27 @@ int nr_acknack_scheduling(int mod_id,
       curr_pucch->resource_indicator = 0; // each UE has dedicated PUCCH resources
       curr_pucch->r_pucch=r_pucch;
 
-      LOG_D(NR_MAC, "In %s: DL %4d.%2d, UL_ACK %4d.%2d Scheduling ACK/NACK in PUCCH %d with timing indicator %d DAI %d\n",
-            __FUNCTION__,frame,slot,curr_pucch->frame,curr_pucch->ul_slot,inactive_pucch,f,curr_pucch->dai_c);
+      LOG_D(NR_MAC, "DL %4d.%2d, UL_ACK %4d.%2d Scheduling ACK/NACK in PUCCH %d with timing indicator %d DAI %d\n",
+            frame,slot,curr_pucch->frame,curr_pucch->ul_slot,inactive_pucch,f,curr_pucch->dai_c);
 
       // blocking resources for current PUCCH in VRB map
       for (int l=0; l<curr_pucch->nr_of_symb; l++) {
         uint16_t symb = SL_to_bitmap(curr_pucch->start_symb+l, 1);
-        int prb;
+        int prb = curr_pucch->prb_start;
         if (l==1 && curr_pucch->second_hop_prb != 0)
           prb = curr_pucch->second_hop_prb;
-        else
-          prb = curr_pucch->prb_start;
         vrb_map_UL[bwp_start+prb] |= symb;
       }
 
       return inactive_pucch; // index of current PUCCH structure
     }
   }
-  LOG_D(NR_MAC, "In %s: DL %4d.%2d, Couldn't find scheduling occasion for this HARQ process\n",
-        __FUNCTION__, frame, slot);
+  LOG_D(NR_MAC, "DL %4d.%2d, Couldn't find scheduling occasion for this HARQ process\n", frame, slot);
   return -1;
 }
 
 
-void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot, int mod_id)
+void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
 {
   if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slot / 64], slot))
     return;
@@ -1232,7 +1229,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot, int mod
       }
       AssertFatal(found || free_pucch>-1, "Coulnd't find an available PUCCH resource to schedule SR\n");
       if (!found) {
-        uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[slot * MAX_BWP_SIZE];
+        uint16_t *vrb_map_UL = &nrmac->common_channels[CC_id].vrb_map_UL[slot * MAX_BWP_SIZE];
         int bwp_start = ul_bwp->BWPStart;
         int bwp_size = ul_bwp->BWPSize;
         NR_sched_pucch_t *sched_sr = &sched_ctrl->sched_pucch[free_pucch];

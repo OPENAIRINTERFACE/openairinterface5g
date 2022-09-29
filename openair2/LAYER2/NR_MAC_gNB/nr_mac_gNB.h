@@ -563,8 +563,8 @@ typedef struct {
   int cce_index;
   uint8_t aggregation_level;
 
-  /// PUCCH scheduling information. Array of two: HARQ+SR in the first field,
-  /// CSI in second.  This order is important for nr_acknack_scheduling()!
+  /// Array of PUCCH scheduling information.
+  /// Its size depends on TDD configuration and max feedback time
   NR_sched_pucch_t *sched_pucch;
   int sched_pucch_size;
 

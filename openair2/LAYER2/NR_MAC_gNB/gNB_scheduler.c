@@ -236,7 +236,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ue_spec(module_idP, frame, slot); 
   stop_meas(&gNB->schedule_dlsch);
 
-  nr_sr_reporting(RC.nrmac[module_idP], frame, slot, module_idP);
+  nr_sr_reporting(RC.nrmac[module_idP], frame, slot);
 
   nr_schedule_pucch(RC.nrmac[module_idP], frame, slot);
 
