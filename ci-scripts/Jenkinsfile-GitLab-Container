@@ -24,8 +24,9 @@
 def nodeExecutor = params.nodeExecutor
 
 // Tags to shorten pipeline duration
-def doMandatoryTests = false
-def doFullTestsuite = false
+def doBuild = true
+def do4Gtest = false
+def do5Gtest = false
 
 //
 def gitCommitAuthorEmailAddr
@@ -56,26 +57,30 @@ pipeline {
             LABEL_CHECK = sh returnStdout: true, script: 'ci-scripts/checkGitLabMergeRequestLabels.sh --mr-id ' + env.gitlabMergeRequestIid
             LABEL_CHECK = LABEL_CHECK.trim()
             if (LABEL_CHECK == 'NONE') {
-              def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Your merge request has none of the mandatory labels:\n\n"
-              message += " - BUILD-ONLY\n"
-              message += " - 4G-LTE\n"
-              message += " - 5G-NR\n"
-              message += " - CI\n\n"
+              def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Your merge request should have one of the mandatory labels:\n\n"
+              message += " - ~documentation (don't perform any stages)\n"
+              message += " - ~BUILD-ONLY (execute only build stages)\n"
+              message += " - ~4G-LTE (perform 4G tests)\n"
+              message += " - ~5G-NR (perform 5G tests)\n"
+              message += " - ~CI (perform both 4G and 5G tests)\n\n"
               message += "Not performing CI due to lack of labels"
               addGitLabMRComment comment: message
               error('Not performing CI due to lack of labels')
             } else if (LABEL_CHECK == 'FULL') {
-              doMandatoryTests = true
-              doFullTestsuite = true
+              do4Gtest = true
+              do5Gtest = true
+            } else if (LABEL_CHECK == "SHORTEN-4G") {
+              do4Gtest = true
             } else if (LABEL_CHECK == 'SHORTEN-5G') {
-              doMandatoryTests = true
+              do5Gtest = true
+            } else if (LABEL_CHECK == 'documentation') {
+              doBuild = false
             } else {
-              def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): We will perform only build stages on your Merge Request"
-              addGitLabMRComment comment: message
+              // is "BUILD-ONLY", will only build
             }
           } else {
-            doMandatoryTests = true
-            doFullTestsuite = true
+            do4Gtest = true
+            do5Gtest = true
           }
         }
       }
@@ -116,6 +121,7 @@ pipeline {
     // Build Stages are Mandatory
     // Later we will add a Ubuntu20 build
     stage ("Image Building Processes") {
+      when { expression {doBuild} }
       parallel {
         stage ("Ubuntu18-Image-Builder") {
           steps {
@@ -177,9 +183,10 @@ pipeline {
       }
     }
     stage ("Image Test Processes") {
+      when { expression {doBuild} }
       parallel {
         stage ("PhySim-Cluster") {
-          when { expression {doMandatoryTests} }
+          when { expression {do4Gtest || do5Gtest} }
           steps {
             script {
               triggerSlaveJob ('RAN-PhySim-Cluster', 'PhySim-Cluster')
@@ -199,7 +206,7 @@ pipeline {
           }
         }
         stage ("RF-Sim-Test-4G") {
-          when { expression {doMandatoryTests} }
+          when { expression {do4Gtest} }
           steps {
             script {
               triggerSlaveJob ('RAN-RF-Sim-Test-4G', 'RF-Sim-Test-4G')
@@ -219,7 +226,7 @@ pipeline {
           }
         }
         stage ("RF-Sim-Test-5G") {
-          when { expression {doMandatoryTests} }
+          when { expression {do5Gtest} }
           steps {
             script {
               triggerSlaveJob ('RAN-RF-Sim-Test-5G', 'RF-Sim-Test-5G')
@@ -239,7 +246,7 @@ pipeline {
           }
         }
         stage ("L2-Sim-Test-4G") {
-          when { expression {doMandatoryTests} }
+          when { expression {do4Gtest} }
           steps {
             script {
               triggerSlaveJob ('RAN-L2-Sim-Test-4G', 'L2-Sim-Test-4G')
@@ -259,7 +266,7 @@ pipeline {
           }
         }
         stage ("L2-Sim-Test-5G") {
-          when { expression {doMandatoryTests} }
+          when { expression {do5Gtest} }
           steps {
             script {
               triggerSlaveJob ('RAN-L2-Sim-Test-5G', 'L2-Sim-Test-5G')
@@ -279,7 +286,7 @@ pipeline {
           }
         }
         stage ("NSA-B200-Module-LTEBOX-Container") {
-          when { expression {doMandatoryTests} }
+          when { expression {do4Gtest || do5Gtest} }
           steps {
             script {
               triggerSlaveJob ('RAN-NSA-B200-Module-LTEBOX-Container', 'NSA-B200-Module-LTEBOX-Container')
@@ -299,7 +306,7 @@ pipeline {
           }
         }
         stage ("NSA-B200-Module-SABOX-Container") {
-          when { expression {doMandatoryTests} }
+          when { expression {do5Gtest} }
           steps {
             script {
               triggerSlaveJob ('RAN-SA-B200-Module-SABOX-Container', 'NSA-B200-Module-SABOX-Container')
@@ -319,7 +326,7 @@ pipeline {
           }
         }
         stage ("gNB-N300-Timing-Phytest-LDPC") {
-          when { expression {doMandatoryTests} }
+          when { expression {do5Gtest} }
           steps {
             script {
               triggerSlaveJob ('RAN-gNB-N300-Timing-Phytest-LDPC', 'gNB-N300-Timing-Phytest-LDPC')
@@ -340,7 +347,7 @@ pipeline {
         }
         //avra is offline, re-enable once it is available
         //stage ("T1-Offload-Test") {
-        //  when { expression {doMandatoryTests} }
+        //  when { expression {do5Gtest} }
         //  steps {
         //    script {
         //      triggerSlaveJob ('RAN-T1-Offload-Test', 'T1-Offload-Test')
@@ -362,7 +369,7 @@ pipeline {
       }
     }
     stage ("DockerHub-Push") {
-      when { expression {"PUSH".equals(env.gitlabActionType)} }
+      when { expression {doBuild && "PUSH".equals(env.gitlabActionType)} }
       steps {
         script {
           triggerSlaveJob ('RAN-DockerHub-Push', 'DockerHub-Push')
@@ -401,7 +408,6 @@ pipeline {
       script {
         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ")"
         if ("MERGE".equals(env.gitlabActionType)) {
-          echo "This is a MERGE event"
           addGitLabMRComment comment: message
         }
         echo "Pipeline is SUCCESSFUL"
@@ -411,7 +417,6 @@ pipeline {
       script {
         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
         if ("MERGE".equals(env.gitlabActionType)) {
-          echo "This is a MERGE event"
           addGitLabMRComment comment: message
         }
         echo "Pipeline FAILED"
