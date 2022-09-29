@@ -33,11 +33,9 @@ def buildStageStatus = true
 // Name of the test stage
 def testStageName = params.pipelineTestStageName
 
-// Name of the phone resource
-def ciSmartPhoneResource = params.smartphonesResource
-
-// Name of the phone resource
-def ciEpcResource = params.epcResource
+def lockResources = []
+if (params.LockResources != null && params.LockResources.trim().length() > 0)
+  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
 
 // Terminate Status
 def termUE = 0
@@ -67,7 +65,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
-        lock(extra: [[resource: ciEpcResource]], resource: ciSmartPhoneResource)
+        lock(extra: lockResources)
     }
     // the following parameter options are commented out so it shows the ones
     // that you SHALL have to run the job.
@@ -79,7 +77,7 @@ pipeline {
         string(name: 'pythonTestXmlFile', defaultValue: 'enb_usrpB210_band7_50PRB.xml', description: 'Location of the Test XML to be run')
         string(name: 'pipelineTestStageName', defaultValue: 'Test COTS-UE - OAI eNB - LTEBOX EPC', description: 'Naming of the Test Stage')
         booleanParam(name: 'pipelineZipsConsoleLog', defaultValue: 'True', description: 'If true, the pipeline script retrieves the job console log, zips it and archives it as artifact')
-        string(name: 'smartphonesResource', defaultValue: 'CI-Bench-1-Phones', description: 'Lockeable Resource to prevent multiple jobs to run simultaneously with the same resource')
+        string(name: 'lockResources', defaultValue: 'CI-Bench-1-Phones', description: 'Lockeable Resource to prevent multiple jobs to run simultaneously with the same resource')
 
         //eNB parameters
         string(name: 'eNB_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of eNB')
@@ -115,8 +113,9 @@ pipeline {
                         testStageName = 'Template Test Stage'
                     }
 
-                    if (params.smartphonesResource == null) {
-                        allParametersPresent = false
+                    if (params.LockResources == null) {
+                      echo "no LockResources given"
+                      allParametersPresent = false
                     }
                     if (params.eNB_IPAddress == null) {
                         allParametersPresent = false

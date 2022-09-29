@@ -33,11 +33,9 @@ def buildStageStatus = true
 // Name of the test stage
 def testStageName = params.pipelineTestStageName
 
-// Name of the phone resource
-def ciSmartPhoneResource = params.smartphonesResource
-
-// Name of the phone resource
-def ciEpcResource = params.epcResource
+def lockResources = []
+if (params.LockResources != null && params.LockResources.trim().length() > 0)
+  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
 
 // Global Parameters. Normally they should be populated when the master job
 // triggers the slave job with parameters
@@ -54,7 +52,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
-        lock(extra: [[resource: ciEpcResource]], resource: ciSmartPhoneResource)
+        lock(extra: lockResources)
     }
     stages {
         stage ("Verify Parameters") {
@@ -73,8 +71,9 @@ pipeline {
                         testStageName = 'Template Test Stage'
                     }
 
-                    if (params.smartphonesResource == null) {
-                        allParametersPresent = false
+                    if (params.LockResources == null) {
+                      echo "no LockResources given"
+                      allParametersPresent = false
                     }
                     // 1st eNB parameters
                     if (params.eNB_IPAddress == null) {

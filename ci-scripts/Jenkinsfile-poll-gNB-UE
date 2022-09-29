@@ -36,8 +36,10 @@ def testXMLFile = params.pythonTestXmlFile
 def mainPythonAllXmlFiles = ""
 def buildStageStatus = true
 
-// Name of the phone resource
-def ciUSRPsResource = params.USRPsResource
+// Name of the resource
+def lockResources = []
+if (params.LockResources != null && params.LockResources.trim().length() > 0)
+  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
 
 // Terminate Status
 def termUE = 0
@@ -73,7 +75,7 @@ pipeline {
         disableConcurrentBuilds()
         gitLabConnection('OAI GitLab')
         ansiColor('xterm')
-	lock (ciUSRPsResource)
+        lock(extra: lockResources)
     }
 
     stages {
@@ -135,8 +137,9 @@ pipeline {
 			testStageName = params.pipelineTestStageName
 	            }
 
-                    if (params.USRPsResource == null) {
-                        allParametersPresent = false
+                    if (params.LockResources == null) {
+                      echo "no LockResources given"
+                      allParametersPresent = false
                     }
 	
                     if (params.eNB_IPAddress == null) {

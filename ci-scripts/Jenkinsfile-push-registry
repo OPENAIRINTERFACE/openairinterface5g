@@ -23,8 +23,10 @@
 // Location of the python executor node shall be in the same subnet as the others servers
 def nodeExecutor = params.nodeExecutor
 
-// Name of the phone resource
-def ciServerResource = params.serverResource
+// Name of the resource
+def lockResources = []
+if (params.LockResources != null && params.LockResources.trim().length() > 0)
+  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
 
 // Docker Hub account to push to
 def DH_Account = "oaisoftwarealliance"
@@ -36,7 +38,7 @@ pipeline {
   options {
     disableConcurrentBuilds()
     ansiColor('xterm')
-    lock (ciServerResource)
+    lock(extra: lockResources)
   }
   stages {
     stage ("Verify Parameters") {
@@ -49,7 +51,8 @@ pipeline {
           if (params.nodeExecutor != null) {
             echo "Docker Push executor node  :   ${nodeExecutor}"
           }
-          if (params.serverResource == null) {
+          if (params.LockResources == null) {
+            echo "no LockResources given"
             allParametersPresent = false
           }
         }
