@@ -851,6 +851,42 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
           case NGAP_PRIORITY_LEVEL_HIGHEST:
             drb_priority[drb_id-1] = 1;
             break;
+          case NGAP_PRIORITY_LEVEL_2:
+            drb_priority[drb_id-1] = 2;
+            break;
+          case NGAP_PRIORITY_LEVEL_3:
+            drb_priority[drb_id-1] = 3;
+            break;
+          case NGAP_PRIORITY_LEVEL_4:
+            drb_priority[drb_id-1] = 4;
+            break;
+          case NGAP_PRIORITY_LEVEL_5:
+            drb_priority[drb_id-1] = 5;
+            break;
+          case NGAP_PRIORITY_LEVEL_6:
+            drb_priority[drb_id-1] = 6;
+            break;
+          case NGAP_PRIORITY_LEVEL_7:
+            drb_priority[drb_id-1] = 7;
+            break;
+          case NGAP_PRIORITY_LEVEL_8:
+            drb_priority[drb_id-1] = 8;
+            break;
+          case NGAP_PRIORITY_LEVEL_9:
+            drb_priority[drb_id-1] = 9;
+            break;
+          case NGAP_PRIORITY_LEVEL_10:
+            drb_priority[drb_id-1] = 10;
+            break;
+          case NGAP_PRIORITY_LEVEL_11:
+            drb_priority[drb_id-1] = 11;
+            break;
+          case NGAP_PRIORITY_LEVEL_12:
+            drb_priority[drb_id-1] = 12;
+            break;
+          case NGAP_PRIORITY_LEVEL_13:
+            drb_priority[drb_id-1] = 13;
+            break;
           case NGAP_PRIORITY_LEVEL_LOWEST:
             drb_priority[drb_id-1] = 14;
             break;
