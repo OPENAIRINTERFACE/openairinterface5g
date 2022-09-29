@@ -442,22 +442,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
-  harq_process->round = nr_rv_to_round(pusch_pdu->pusch_data.rv_index);
 
-  harq_process->new_rx = false; // flag to indicate if this is a new reception for this harq (initialized to false)
   dtx_det = 0;
-  if (harq_process->round == 0) {
-    harq_process->new_rx = true;
-    harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
-  }
-
-  // this happens if there was a DTX in round 0
-  if (harq_process->ndi != pusch_pdu->pusch_data.new_data_indicator) {
-    harq_process->new_rx = true;
-    harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
-
-    LOG_D(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
-  }
 
   A   = (harq_process->TBS)<<3;
 
