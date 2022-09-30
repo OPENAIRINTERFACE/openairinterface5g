@@ -36,6 +36,7 @@
 
 
 //#define DEBUG_CH
+//#define DEBUG_CH_POWER
 
 #include "assertions.h"
 
@@ -450,6 +451,71 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   }
 }
 
+double get_normalization_ch_factor(channel_desc_t *desc)
+{
+  if (!(desc->channel_length > 1 && desc->modelid >= TDL_A && desc->modelid <= TDL_E)) {
+    return 1.0;
+  }
+
+  uint16_t N_average = 1000;
+  double accumulated_ch_power = 0;
+  struct complexd a[desc->nb_taps][desc->nb_tx * desc->nb_rx];
+  struct complexd anew[desc->nb_tx * desc->nb_rx];
+  struct complexd acorr[desc->nb_tx * desc->nb_rx];
+
+  for (int n = 1; n <= N_average; n++) {
+    for (int l = 0; l < (int)desc->nb_taps; l++) {
+      for (int aarx = 0; aarx < desc->nb_rx; aarx++) {
+        for (int aatx = 0; aatx < desc->nb_tx; aatx++) {
+          anew[aarx + (aatx * desc->nb_rx)].r = sqrt(desc->ricean_factor * desc->amps[l] / 2) * gaussdouble(0.0, 1.0);
+          anew[aarx + (aatx * desc->nb_rx)].i = sqrt(desc->ricean_factor * desc->amps[l] / 2) * gaussdouble(0.0, 1.0);
+          if ((l == 0) && (desc->ricean_factor != 1.0)) {
+            anew[aarx + (aatx * desc->nb_rx)].r += sqrt((1.0 - desc->ricean_factor) / 2);
+            anew[aarx + (aatx * desc->nb_rx)].i += sqrt((1.0 - desc->ricean_factor) / 2);
+          }
+        } // for (int aatx = 0; aatx < desc->nb_tx; aatx++)
+      } // for (int aarx = 0; aarx < desc->nb_rx; aarx++)
+
+      // Apply correlation matrix
+      bzero(acorr, desc->nb_tx * desc->nb_rx * sizeof(struct complexd));
+      for (int aatx = 0; aatx < desc->nb_tx; aatx++) {
+        for (int aarx = 0; aarx < desc->nb_rx; aarx++) {
+          cblas_zaxpy(desc->nb_tx * desc->nb_rx,
+                      (void *)&anew[aarx + (aatx * desc->nb_rx)],
+                      (void *)desc->R_sqrt[aarx + (aatx * desc->nb_rx)],
+                      1,
+                      (void *)acorr,
+                      1);
+        } // for (int aarx = 0; aarx < desc->nb_rx; aarx++)
+      } // for (int aatx = 0; aatx < desc->nb_tx; aatx++)
+      cblas_zcopy(desc->nb_tx * desc->nb_rx, (void *)acorr, 1, (void *)a[l], 1);
+    } // for (int l = 0; l < (int)desc->nb_taps; l++)
+
+    for (int aarx = 0; aarx < desc->nb_rx; aarx++) {
+      for (int aatx = 0; aatx < desc->nb_tx; aatx++) {
+        for (int k = 0; k < (int)desc->channel_length; k++) {
+          double ch_r = 0.0;
+          double ch_i = 0.0;
+          double s = 0.0;
+          for (int l = 0; l < desc->nb_taps; l++) {
+            if ((k - (desc->delays[l] * desc->sampling_rate) - desc->channel_offset) == 0) {
+              s = 1.0;
+            } else {
+              s = sin(M_PI * (k - (desc->delays[l] * desc->sampling_rate) - desc->channel_offset)) /
+                  (M_PI * (k - (desc->delays[l] * desc->sampling_rate) - desc->channel_offset));
+            }
+            ch_r += s * a[l][aarx + (aatx * desc->nb_rx)].r;
+            ch_i += s * a[l][aarx + (aatx * desc->nb_rx)].i;
+          } // for (int l = 0; l < desc->nb_taps; l++)
+          accumulated_ch_power += (ch_r * ch_r + ch_i * ch_i);
+        } // for (int k = 0; k < (int)desc->channel_length; k++)
+      } // for (int aatx = 0; aatx < desc->nb_tx; aatx++)
+    } // for (int aarx = 0; aarx < desc->nb_rx; aarx++)
+  }
+
+  return sqrt((N_average * desc->nb_tx * desc->nb_rx) / accumulated_ch_power);
+}
+
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
@@ -491,6 +557,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   chan_desc->first_run                  = 1;
   chan_desc->ip                         = 0.0;
   chan_desc->noise_power_dB             = noise_power_dB;
+  chan_desc->normalization_ch_factor    = 1.0;
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
   int tdl_paths=0;
   double *tdl_amps_dB;
@@ -1540,6 +1607,8 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       return(NULL);
   }
 
+  chan_desc->normalization_ch_factor = get_normalization_ch_factor(chan_desc);
+
   LOG_D(OCM,"[CHANNEL] RF %f\n",chan_desc->ricean_factor);
 
   for (i=0; i<chan_desc->nb_taps; i++)
@@ -1608,6 +1677,11 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname) {
   cdesc->model_name=strdup(modelname);
 }
 
+#ifdef DEBUG_CH_POWER
+double accumulated_ch_power = 0;
+int ch_power_count = 0;
+#endif
+
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   double s;
   int i,k,l,aarx,aatx;
@@ -1637,8 +1711,9 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   for (i=0; i<(int)desc->nb_taps; i++) {
     for (aarx=0; aarx<desc->nb_rx; aarx++) {
       for (aatx=0; aatx<desc->nb_tx; aatx++) {
-        anew[aarx+(aatx*desc->nb_rx)].r = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
-        anew[aarx+(aatx*desc->nb_rx)].i = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
+
+        anew[aarx + (aatx * desc->nb_rx)].r = sqrt(desc->ricean_factor * desc->amps[i] / 2) * gaussdouble(0.0, 1.0) * desc->normalization_ch_factor;
+        anew[aarx + (aatx * desc->nb_rx)].i = sqrt(desc->ricean_factor * desc->amps[i] / 2) * gaussdouble(0.0, 1.0) * desc->normalization_ch_factor;
 
         if ((i==0) && (desc->ricean_factor != 1.0)) {
           if (desc->random_aoa==1) {
@@ -1648,10 +1723,10 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
           // this assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing.
           // Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so
           // that we can safely assume plane wave propagation.
-          phase.r = cos(M_PI*((aarx-aatx)*sin(desc->aoa)));
-          phase.i = sin(M_PI*((aarx-aatx)*sin(desc->aoa)));
-          anew[aarx+(aatx*desc->nb_rx)].r += phase.r * sqrt(1.0-desc->ricean_factor);
-          anew[aarx+(aatx*desc->nb_rx)].i += phase.i * sqrt(1.0-desc->ricean_factor);
+          phase.r = cos(M_PI * ((aarx - aatx) * sin(desc->aoa)));
+          phase.i = sin(M_PI * ((aarx - aatx) * sin(desc->aoa)));
+          anew[aarx + (aatx * desc->nb_rx)].r += phase.r * sqrt(1.0 - desc->ricean_factor) * desc->normalization_ch_factor;
+          anew[aarx + (aatx * desc->nb_rx)].i += phase.i * sqrt(1.0 - desc->ricean_factor) * desc->normalization_ch_factor;
         }
 
 #ifdef DEBUG_CH
@@ -1672,6 +1747,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     */
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
+    bzero(acorr, desc->nb_tx * desc->nb_rx * sizeof(struct complexd));
     if (desc->modelid >= TDL_A && desc->modelid <= TDL_E) {
       for (aatx = 0; aatx < desc->nb_tx; aatx++) {
         for (aarx=0; aarx<desc->nb_rx; aarx++) {
@@ -1684,7 +1760,6 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
         }
       }
     } else {
-      bzero(acorr,desc->nb_tx*desc->nb_rx*sizeof(struct complexd));
       cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void *) desc->R_sqrt[i/3], (void *) anew, 1, (void *) acorr, 1);
     }
 
@@ -1765,13 +1840,25 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
               //        printf("l %d : desc->ch.x %f, s %e, delay %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x,s,desc->delays[l]);
             } //nb_taps
 
+#ifdef DEBUG_CH_POWER
+            accumulated_ch_power += (desc->ch[aarx + (aatx * desc->nb_rx)][k].r * desc->ch[aarx + (aatx * desc->nb_rx)][k].r +
+                                    desc->ch[aarx + (aatx * desc->nb_rx)][k].i * desc->ch[aarx + (aatx * desc->nb_rx)][k].i);
+#endif
+
 #ifdef DEBUG_CH
             printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);
 #endif
           } //channel_length
+#ifdef DEBUG_CH_POWER
+          ch_power_count++;
+#endif
         }
       } //aatx
     } //aarx
+
+#ifdef DEBUG_CH_POWER
+    printf("(%5i) Average channel power = %f\n", ch_power_count, accumulated_ch_power / ch_power_count);
+#endif
 
     stop_meas(&desc->interp_time);
   }

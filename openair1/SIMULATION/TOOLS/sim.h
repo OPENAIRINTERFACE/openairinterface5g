@@ -66,6 +66,8 @@ typedef struct {
   uint8_t nb_taps;
   ///linear amplitudes of taps
   double *amps;
+  ///normalization channel factor
+  double normalization_ch_factor;
   ///Delays of the taps in mus. length(delays)=nb_taps. Has to be between 0 and Td.
   double *delays;
   ///length of impulse response. should be set to 11+2*bw*t_max
