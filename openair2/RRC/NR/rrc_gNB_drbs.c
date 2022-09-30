@@ -21,6 +21,15 @@
 
 #include "rrc_gNB_drbs.h"
 
+NR_SRB_ToAddMod_t *generateSRB2() {
+  NR_SRB_ToAddMod_t *SRB2_config = NULL;
+
+  SRB2_config = CALLOC(1, sizeof(*SRB2_config));
+  SRB2_config->srb_Identity = 2;
+
+  return SRB2_config;
+}
+
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
                                uint8_t drb_id,
                                const pdu_session_param_t *pduSession,

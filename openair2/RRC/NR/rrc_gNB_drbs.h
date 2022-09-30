@@ -35,6 +35,7 @@
 #define GBR_FLOW                (1)
 #define NONGBR_FLOW             (0)
 
+NR_SRB_ToAddMod_t *generateSRB2(void);
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue,
                                uint8_t drb_id,
                                const pdu_session_param_t *pduSession,
