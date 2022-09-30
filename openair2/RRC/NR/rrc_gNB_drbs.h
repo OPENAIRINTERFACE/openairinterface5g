@@ -25,6 +25,7 @@
 #include "nr_rrc_defs.h"
 #include "NR_SDAP-Config.h"
 #include "NR_DRB-ToAddMod.h"
+#include "NR_SRB-ToAddMod.h"
 
 #define MAX_DRBS_PER_UE         (32)  /* Maximum number of Data Radio Bearers per UE */
 #define MAX_PDUS_PER_UE         (8)   /* Maximum number of PDU Sessions per UE */
