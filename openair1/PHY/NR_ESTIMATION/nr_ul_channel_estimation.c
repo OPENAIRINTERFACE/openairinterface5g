@@ -397,11 +397,11 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       for (c16_t *end=ul_ch+12; ul_ch<end; ul_ch++)
         *ul_ch=ch;
 #else
-      c16multaddVectRealComplex(filt8_avlip0, ch, ul_ch, 8);
+      c16multaddVectRealComplex(filt8_avlip0, &ch, ul_ch, 8);
       ul_ch += 8;
-      c16multaddVectRealComplex(filt8_avlip1, ch, ul_ch, 8);
+      c16multaddVectRealComplex(filt8_avlip1, &ch, ul_ch, 8);
       ul_ch += 8;
-      c16multaddVectRealComplex(filt8_avlip2, ch, ul_ch, 8);
+      c16multaddVectRealComplex(filt8_avlip2, &ch, ul_ch, 8);
       ul_ch -= 12;
 #endif
 
@@ -416,13 +416,11 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         ul_ch[3].i += (ch.i * 1365)>>15; // 1/12*16384
 
         ul_ch += 4;
-        multadd_real_vector_complex_scalar(filt8_avlip3, ch, ul_ch, 8);
-
+        c16multaddVectRealComplex(filt8_avlip3, &ch, ul_ch, 8);
         ul_ch += 8;
-        multadd_real_vector_complex_scalar(filt8_avlip4, ch, ul_ch, 8);
-
+        c16multaddVectRealComplex(filt8_avlip4, &ch, ul_ch, 8);
         ul_ch += 8;
-        multadd_real_vector_complex_scalar(filt8_avlip5, ch, ul_ch, 8);
+        c16multaddVectRealComplex(filt8_avlip5, &ch, ul_ch, 8);
         ul_ch -= 8;
 #endif
       }
@@ -437,16 +435,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       ul_ch[3].i += (ch.i * 1365)>>15; // 1/12*16384
 
       ul_ch += 4;
-      c16multaddVectRealComplex(filt8_avlip3,
-                                         ch,
-                                         ul_ch,
-                                         8);
-
+      c16multaddVectRealComplex(filt8_avlip3, &ch, ul_ch, 8);
       ul_ch += 8;
-      c16multaddVectRealComplex(filt8_avlip6,
-                                         ch,
-                                         ul_ch,
-                                         8);
+      c16multaddVectRealComplex(filt8_avlip6, &ch, ul_ch, 8);
 #endif
     } else  { // this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 4 DMRS REs and use a common value for the whole PRB
       LOG_D(PHY,"PUSCH estimation DMRS type 2, no Freq-domain interpolation");
@@ -514,7 +505,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         for (c16_t *end=ul_ch+12; ul_ch<end; ul_ch++)
           *ul_ch=ch;
 #else
-        ul_ch[3]=c16maddShift(ch,(c16_t) {1365,1365},15); // 1365 = 1/12*16384 (full range is +/- 32768)
+        ul_ch[3] = c16maddShift(ch, (c16_t){1365, 1365}, (c16_t){0, 0}, 15); // 1365 = 1/12*16384 (full range is +/- 32768)
         ul_ch += 4;
         c16multaddVectRealComplex(filt8_avlip3, &ch, ul_ch, 8);
         ul_ch += 8;
@@ -547,7 +538,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       for (c16_t *end=ul_ch+12; ul_ch<end; ul_ch++)
           *ul_ch=ch;
 #else
-      ul_ch[3]=c16maddShift(ch, c16_t {1365,1365},15);// 1365 = 1/12*16384 (full range is +/- 32768)
+      ul_ch[3] = c16maddShift(ch, (c16_t){1365, 1365}, (c16_t){0, 0}, 15); // 1365 = 1/12*16384 (full range is +/- 32768)
       ul_ch += 4;
       c16multaddVectRealComplex(filt8_avlip3, &ch, ul_ch, 8);
       ul_ch += 8;
