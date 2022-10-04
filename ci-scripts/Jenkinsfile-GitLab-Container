@@ -305,11 +305,11 @@ pipeline {
             }
           }
         }
-        stage ("NSA-B200-Module-SABOX-Container") {
+        stage ("SA-B200-Module-SABOX-Container") {
           when { expression {do5Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-SA-B200-Module-SABOX-Container', 'NSA-B200-Module-SABOX-Container')
+              triggerSlaveJob ('RAN-SA-B200-Module-SABOX-Container', 'SA-B200-Module-SABOX-Container')
             }
           }
           post {
