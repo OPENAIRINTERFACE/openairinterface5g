@@ -885,7 +885,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
   int StartSymbolIndex = 0;
   int NrOfSymbols = 0;
   int startSymbolAndLength = 0;
-  int temp_slot = 0;
+  int abs_slot = 0;
   ra->Msg3_tda_id = 16; // initialization to a value above limit
 
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = ul_bwp->tdaList;
@@ -907,7 +907,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
       SLIV2SL(pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
       LOG_D(NR_MAC,"Checking Msg3 TDA %d : k2 %d, sliv %d,S %d L %d\n",i,(int)k2,(int)pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength,start_symbol_index,nr_of_symbols);
       // we want to transmit in the uplink symbols of mixed slot or the first uplink slot
-      temp_slot = (current_slot + k2 + DELTA[mu]) % nr_slots_per_frame[mu]; // msg3 slot according to 8.3 in 38.213
+      abs_slot = (current_slot + k2 + DELTA[mu]);
+      int temp_slot = abs_slot % nr_slots_per_frame[mu]; // msg3 slot according to 8.3 in 38.213
       if ((temp_slot % nb_slots_per_period) == msg3_slot &&
           is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[temp_slot / 64], temp_slot)) {
         ra->Msg3_tda_id = i;
@@ -922,16 +923,16 @@ void nr_get_Msg3alloc(module_id_t module_id,
   else {
     ra->Msg3_tda_id = 0;
     k2 = *pusch_TimeDomainAllocationList->list.array[0]->k2;
-    temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-    ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
+    abs_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
+    ra->Msg3_slot = abs_slot % nr_slots_per_frame[mu];
   }
 
   AssertFatal(ra->Msg3_tda_id<16,"Unable to find Msg3 time domain allocation in list\n");
 
-  if (n_slots_frame > temp_slot)
+  if (n_slots_frame > abs_slot)
     ra->Msg3_frame = current_frame;
   else
-    ra->Msg3_frame = (current_frame + (temp_slot / n_slots_frame)) % 1024;
+    ra->Msg3_frame = (current_frame + (abs_slot / n_slots_frame)) % 1024;
 
   // beam association for FR2
   if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
