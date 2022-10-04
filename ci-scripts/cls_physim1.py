@@ -250,22 +250,11 @@ class PhySim:
 			logging.error('\u001B[1m Physical Simulator Fail\u001B[0m')
 
 	def AnalyzeLogFile_phySim(self):
-		lIpAddr = self.eNBIPAddress
-		lUserName = self.eNBUserName
-		lPassWord = self.eNBPassword
-		lSourcePath = self.eNBSourceCodePath
 		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, lUserName, lPassWord)
-		mySSH.command('cd ' + lSourcePath, '\$', 5)
-		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		mySSH.command('mkdir -p physim_test_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('cp log/physim_* ' + 'physim_test_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('tar cvf physim_test_log_' + self.testCase_id + '/physim_log.tar log/*', '\$', 180)
-		mySSH.command('rm -rf log/*', '\$', 5)
-		if not os.path.exists(f'./physim_test_logs_{self.testCase_id}'):
-			os.mkdir(f'./physim_test_logs_{self.testCase_id}')
-		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/physim_test_log_' + self.testCase_id + '/*', './physim_test_logs_' + self.testCase_id)
-		mySSH.command('rm -rf ./physim_test_log_'+ self.testCase_id, '\$', 5)
+		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		dirToCopy = f'{self.eNBSourceCodePath}/cmake_targets/log/'
+		mySSH.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, dirToCopy, f'./physim_test_logs_{self.testCase_id}/')
+		mySSH.command(f'rm -rf {dirToCopy}', '\$', 5)
 		mySSH.close()
 		# physim test log analysis
 		nextt = 0
