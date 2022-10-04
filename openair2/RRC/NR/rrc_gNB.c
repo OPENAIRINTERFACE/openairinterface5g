@@ -40,7 +40,7 @@
 #include "assertions.h"
 #include "common/ran_context.h"
 #include "asn1_conversions.h"
-#include "rrc_gNB_drbs.h"
+#include "rrc_gNB_radio_bearers.h"
 
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"

@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "rrc_gNB_drbs.h"
+#include "rrc_gNB_radio_bearers.h"
 
 NR_SRB_ToAddMod_t *generateSRB2() {
   NR_SRB_ToAddMod_t *SRB2_config = NULL;
