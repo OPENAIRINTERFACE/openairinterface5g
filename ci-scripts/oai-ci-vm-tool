@@ -279,7 +279,7 @@ function check_set_variant {
     	if [ "$1" = "${VARIANTS_SHORT[$i]}" ] || [ "$1" = "${VARIANTS_LONG[$i]}" ]
     	then
             VM_NAME=ci-${VARIANTS_LONG[$i]}
-            LOG_PATTERN=.$ASN1VER.txt
+            LOG_PATTERN=.txt
             ARCHIVES_LOC=${VARIANTS_LONG[$i]//"-"/"_"}  
             VM_MEMORY=2048
             VM_CPU=4
