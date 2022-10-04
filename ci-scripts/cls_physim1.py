@@ -210,7 +210,7 @@ class PhySim:
 			listLogFiles =  subprocess.check_output('egrep --colour=never "Execution Log file|Linux oai-" physim_test.txt', shell=True, universal_newlines=True)
 			for line in listLogFiles.split('\n'):
 				res1 = re.search('Linux (?P<pod>oai-[a-zA-Z0-9\-]+) ', str(line))
-				res2 = re.search('Execution Log file = (?P<name>[a-zA-Z0-9\-\/\.\_]+)', str(line))
+				res2 = re.search('Execution Log file = (?P<name>[a-zA-Z0-9\-\/\.\_\+]+)', str(line))
 				if res1 is not None:
 					podName = res1.group('pod')
 				if res2 is not None:
