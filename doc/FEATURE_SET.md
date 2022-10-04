@@ -256,10 +256,10 @@ The following features are valid for the gNB and the 5G-NR UE.
 *  Static TDD, 
 *  FDD
 *  Normal CP
-*  30 kHz subcarrier spacing
+*  Subcarrier spacings: 15 and 30kHz (FR1), 120kHz (FR2)
 *  Bandwidths: 10, 20, 40, 80, 100MHz (273 Physical Resource Blocks)
 *  Intermediate downlink and uplink frequencies to interface with IF equipment
-*  Single antenna port (single beam)
+*  Procedures for 2-layer DL MIMO
 *  Slot format: 14 OFDM symbols in UL or DL
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 supported)
 *  Highly efficient 3GPP compliant polar encoder and decoder
@@ -269,7 +269,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 
 ## gNB PHY Layer ##
 
-*  30KHz SCS for FR1 and 120 KHz SCS for FR2
+*  15kHz and 30kHz SCS for FR1 and 120kHz SCS for FR2
 *  Generation of NR-PSS/NR-SSS
 *  NR-PBCH supports multiple SSBs and flexible periodicity
 *  Generation of NR-PDCCH (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc)
@@ -289,7 +289,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    - DMRS configuration type 1 and 2
    - Single and multiple DMRS symbols
    - PTRS support
-   - Support for 1 RX antenna
+   - Support for 2 RX antenna
    - Support for 1 layer
 *  NR-PUCCH 
    - Format 0 (2 bits, for ACK/NACK and SR)
@@ -450,14 +450,14 @@ The following features are valid for the gNB and the 5G-NR UE.
 * Measurements based on NR-CSIRS
    - RSRP measurements
    - RI, PMI and CQI computation
-   - Support for 1 and 2 RX antennas
+   - Support for up to 4 RX antennas
    - Support for up to 2 layers
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - PUSCH mapping type A and B
    - DMRS configuration type 1 and 2
    - Single and multiple DMRS symbols
    - PTRS support
-   - Support for 1 TX antenna
+   - Support for 2 TX antenna
    - Support for 1 layer
 *  NR-PUCCH 
    - Format 0 (2 bits for ACK/NACK and SR)
