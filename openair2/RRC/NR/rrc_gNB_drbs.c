@@ -30,6 +30,23 @@ NR_SRB_ToAddMod_t *generateSRB2() {
   return SRB2_config;
 }
 
+NR_SRB_ToAddModList_t **generateSRB2_confList(gNB_RRC_UE_t *ue, 
+                                              NR_SRB_ToAddModList_t *SRB_configList, 
+                                              uint8_t xid) {
+  NR_SRB_ToAddModList_t **SRB_configList2 = NULL;
+
+  SRB_configList2 = &ue->SRB_configList2[xid];
+  if (*SRB_configList2 == NULL) {
+    *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
+    memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
+    NR_SRB_ToAddMod_t *SRB2_config = generateSRB2();
+    ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
+    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+  }
+
+  return SRB_configList2;
+}
+
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
                                uint8_t drb_id,
                                const pdu_session_param_t *pduSession,

@@ -769,7 +769,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   gNB_RRC_UE_t                  *ue_p = &ue_context_pP->ue_context;
   NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
   NR_DRB_ToAddModList_t        **DRB_configList2 = NULL;
-  NR_SRB_ToAddModList_t        **SRB_configList2 = NULL;
   NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_pP->ue_context.SRB_configList;
   struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
                                 *dedicatedNAS_MessageList = NULL;
@@ -786,15 +785,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
-  /* Configure SRB2 */
-  SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
-  if (*SRB_configList2 == NULL) {
-    *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
-    memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
-    NR_SRB_ToAddMod_t *SRB2_config = generateSRB2();
-    ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
-    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
-  }
+  NR_SRB_ToAddModList_t **SRB_configList2 = generateSRB2_confList(ue_p, SRB_configList, xid);
 
   DRB_configList = &ue_context_pP->ue_context.DRB_configList;
   if (*DRB_configList) {
