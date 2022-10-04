@@ -1267,6 +1267,7 @@ void pdcp_config_set_security(
     ciphering_algorithm = security_modeP & 0x0f;
     rb->set_security(rb, integrity_algorithm, (char *)kRRCint_pP,
                      ciphering_algorithm, (char *)kRRCenc_pP);
+    rb->security_mode_completed = false;
   } else {
     LOG_E(PDCP, "%s:%d:%s: TODO\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);

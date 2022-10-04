@@ -54,14 +54,13 @@ void nr_pdcp_security_nea2_cipher(void *security_context,
                                   unsigned char *buffer, int length,
                                   int bearer, int count, int direction)
 {
-  unsigned char t[16];
+  unsigned char t[16] = {0};
 
   t[0] = (count >> 24) & 255;
   t[1] = (count >> 16) & 255;
   t[2] = (count >>  8) & 255;
   t[3] = (count      ) & 255;
   t[4] = ((bearer-1) << 3) | (direction << 2);
-  memset(&t[5], 0, 16-5);
 
   nettle_ctr_crypt(security_context, nettle_aes128.encrypt,
                    nettle_aes128.block_size, t,
