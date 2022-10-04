@@ -1155,12 +1155,10 @@ class RANManagement():
 			#checker
 			if (len(dlsch_ulsch_stats)!=0) and (len(checkers)!=0):
 				if 'd_retx_th' in checkers:
-					checkers['d_retx_th'] = [float(x) for x in checkers['d_retx_th'].split(',')]
 					dlsch_checker_status = list(0 for i in checkers['d_retx_th'])#status 0 / -1
 					d_perc_retx = list(0 for i in checkers['d_retx_th'])#results in %
 
 				if 'u_retx_th' in checkers:
-					checkers['u_retx_th'] = [float(x) for x in checkers['u_retx_th'].split(',')]
 					ulsch_checker_status = list(0 for i in checkers['u_retx_th'])
 					u_perc_retx = list(0 for i in checkers['u_retx_th'])
 
