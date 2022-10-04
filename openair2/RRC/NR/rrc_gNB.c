@@ -767,7 +767,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 {
   gNB_RRC_INST                  *rrc = RC.nrrrc[ctxt_pP->module_id];
   gNB_RRC_UE_t                  *ue_p = &ue_context_pP->ue_context;
-  NR_SRB_ToAddMod_t             *SRB2_config          = NULL;
   NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
   NR_DRB_ToAddModList_t        **DRB_configList2 = NULL;
   NR_SRB_ToAddModList_t        **SRB_configList2 = NULL;
@@ -792,8 +791,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   if (*SRB_configList2 == NULL) {
     *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
     memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
-    SRB2_config = CALLOC(1, sizeof(*SRB2_config));
-    SRB2_config->srb_Identity = 2;
+    NR_SRB_ToAddMod_t *SRB2_config = generateSRB2();
     ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
     ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
   }
