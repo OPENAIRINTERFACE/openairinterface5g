@@ -20,7 +20,7 @@ First, you must have all four openair SW directories, openair1, openair2, openai
         - libpgm-5.1 and libpgm-5.1-dev for distributed simulation with reliable multicast transmport
         - libxml2 and libxml2-dev
         - libforms-bin libforms-dev
-        - nettle-dev nettle-bin openssl libssl-dev
+        - openssl libssl-dev
         - libatlas-base-dev and libatlas-headers (for Ubuntu 11.04, libatlas-dev instead of libatlas-headers)
         - asn1c and the LTE ASN1 files (for more information on how to install this and generate the required files see the README file in openair2/RRC/LITE/MESSAGES) 
 

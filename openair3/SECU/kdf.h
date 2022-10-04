@@ -19,18 +19,16 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_INTEGRITY_NIA2_H_
-#define _NR_PDCP_INTEGRITY_NIA2_H_
+#ifndef KEY_DERIVATION_FUNCTION_OSA_H
+#define KEY_DERIVATION_FUNCTION_OSA_H
 
 #include <stdint.h>
+#include <stdlib.h>
+#include "byte_array.h"
 
-void *nr_pdcp_integrity_nia2_init(uint8_t integrity_key[16]);
+void kdf(const uint8_t key[32], byte_array_t data, size_t len, uint8_t out[len]);
 
-void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
-                            unsigned char *out,
-                            unsigned char *buffer, int length,
-                            int bearer, int count, int direction);
+#endif
 
-void nr_pdcp_integrity_nia2_free_integrity(void *integrity_context);
 
-#endif /* _NR_PDCP_INTEGRITY_NIA2_H_ */
+

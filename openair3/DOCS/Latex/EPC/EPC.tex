@@ -544,7 +544,6 @@ Before compiling the core EPC, some packages should be installed on the platform
  \item flex and bison
  \item openssl-dev
  \item asn1c (see section \ref{sec:asn1c})
- \item libnettle (see section \ref{sec:libnettle})
  \item freediameter (see section \ref{sec:freediameter}) and gnutls 3.1.0
  (see section \ref{sec:gnutls})
 \end{itemize}
@@ -561,28 +560,6 @@ openssl-dev -y
 
 \subsection{ASN1c}
 \label{sec:asn1c}
-
-\subsection{libnettle}
-\label{sec:libnettle}
-
-The nettle library is used by freediameter for certificate encryption and by core
-EPC for key derivation.
-\begin{lstlisting}
-wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
-gunzip nettle-2.5.tar.gz
-tar -xvf nettle-2.5.tar
-cd nettle-2.5/
-./configure --disable-openssl --enable-shared
-make
-make check
-sudo make install
-\end{lstlisting}
-The commands provided above will download the required packages sources, configure
-and install them on the system.
-Note that any packages which is not in the Ubuntu repository is installed by default
-in /usr/local instead of /usr.
-This behaviour can be overriden at configuration time by providing --prefix=/usr to
-the configuration script (configure).
 
 \subsection{gnutls}
 \label{sec:gnutls}

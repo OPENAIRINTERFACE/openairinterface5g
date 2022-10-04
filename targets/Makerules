@@ -14,14 +14,6 @@ DATE_REV := $(shell date '+%F %T')
 
 NUM_CORES:=$(shell cat /proc/cpuinfo | grep processor | wc -l)
 
-# Check for libraries and export cflags/linker variables
-NETTLE_FOUND    := $(shell if pkg-config --exists nettle; then echo "1" ; else echo "0"; fi)
-ifeq ($(NETTLE_FOUND), 1)
-NETTLE_LIBS     := $(shell pkg-config --libs nettle)
-#else 
-#@echo "package nettle not installed"
-endif
-
 OPENSSL_FOUND   := $(shell if pkg-config --exists openssl; then echo "1" ; else echo "0"; fi)
 ifeq ($(OPENSSL_FOUND), 1)
 OPENSSL_LIBS    := $(shell pkg-config --libs openssl)

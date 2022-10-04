@@ -19,18 +19,15 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_INTEGRITY_NIA2_H_
-#define _NR_PDCP_INTEGRITY_NIA2_H_
+#ifndef SHA_256_HMAC_OAI_H
+#define SHA_256_HMAC_OAI_H 
 
 #include <stdint.h>
+#include <stdlib.h>
 
-void *nr_pdcp_integrity_nia2_init(uint8_t integrity_key[16]);
+#include "byte_array.h"
 
-void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
-                            unsigned char *out,
-                            unsigned char *buffer, int length,
-                            int bearer, int count, int direction);
+void sha_256_hmac(const uint8_t key[32], byte_array_t data, size_t len, uint8_t out[len]);
 
-void nr_pdcp_integrity_nia2_free_integrity(void *integrity_context);
+#endif
 
-#endif /* _NR_PDCP_INTEGRITY_NIA2_H_ */

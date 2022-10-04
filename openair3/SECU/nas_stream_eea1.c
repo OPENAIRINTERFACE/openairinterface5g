@@ -24,10 +24,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <nettle/nettle-meta.h>
-#include <nettle/aes.h>
-#include <nettle/ctr.h>
-
 #include "assertions.h"
 #include "conversions.h"
 #include "secu_defs.h"

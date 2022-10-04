@@ -83,27 +83,6 @@ else()
   include_directories(${OPENPGM_INCLUDE_DIRS})
 endif()
 
-pkg_search_module(NETTLE nettle)
-if(NOT ${NETTLE_FOUND})
-  message( FATAL_ERROR "PACKAGE nettle not found: some targets will fail. Run build_oai -I again!")
-else()
-  include_directories(${NETTLE_INCLUDE_DIRS})
-endif()
-
-message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
-
-string(REGEX REPLACE "([0-9]+).*" "\\1" NETTLE_VERSION_MAJOR ${NETTLE_VERSION})
-string(REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" NETTLE_VERSION_MINOR ${NETTLE_VERSION})
-message ("NETTLE_VERSION_MAJOR = ${NETTLE_VERSION_MAJOR}")
-message ("NETTLE_VERSION_MINOR = ${NETTLE_VERSION_MINOR}")
-
-if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL "")
-  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
-endif()
-
-add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
-add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
-
 pkg_search_module(XPM xpm)
 if(NOT ${XPM_FOUND})
   message("PACKAGE xpm not found: some targets will fail")
@@ -885,12 +864,17 @@ set(SECU_OSA_SRC
   ${OPENAIR2_DIR}/UTIL/OSA/osa_snow3g.c
   ${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eea.c
   ${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eia.c
-  )
-add_library(SECU_OSA ${SECU_OSA_SRC})
-target_link_libraries(SECU_OSA ${NETTLE_LIBRARIES})
+    )
+add_library(SECU_OSA ${SECU_OSA_SRC} $<TARGET_OBJECTS:ds> )
+
+target_include_directories(SECU_OSA PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
 
 set(SECU_CN_SRC
+  ${OPENAIR3_DIR}/SECU/secu_defs.c
   ${OPENAIR3_DIR}/SECU/kdf.c
+  ${OPENAIR3_DIR}/SECU/aes_128_ctr.c
+  ${OPENAIR3_DIR}/SECU/aes_128_cbc_cmac.c
+  ${OPENAIR3_DIR}/SECU/sha_256_hmac.c
   ${OPENAIR3_DIR}/SECU/rijndael.c
   ${OPENAIR3_DIR}/SECU/snow3g.c
   ${OPENAIR3_DIR}/SECU/key_nas_deriver.c
@@ -899,9 +883,9 @@ set(SECU_CN_SRC
   ${OPENAIR3_DIR}/SECU/nas_stream_eea2.c
   ${OPENAIR3_DIR}/SECU/nas_stream_eia2.c
   )
-add_library(SECU_CN ${SECU_CN_SRC})
 
-target_link_libraries(SECU_CN ${NETTLE_LIBRARIES})
+add_library(SECU_CN ${SECU_CN_SRC} $<TARGET_OBJECTS:ds>)
+target_include_directories(SECU_CN PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
 
 # Physical Channel Procedures Scheduling
 ################################"
@@ -2053,8 +2037,13 @@ add_library(LIB_NAS_SIMUE
   ${libnas_ue_esm_sap_OBJS}
   ${libnrnas_emm_msg_OBJS}
   ${libnrnas_ies_OBJS}
+  $<TARGET_OBJECTS:ds>
   )
+target_include_directories(LIB_NAS_SIMUE PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
 target_link_libraries(LIB_NAS_SIMUE PRIVATE lte_rrc)
+
+
+
 set(NAS_SIM_LIB LIB_NAS_SIMUE)
 target_link_libraries(LIB_NAS_SIMUE PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
@@ -2074,7 +2063,9 @@ add_library(LIB_NAS_UE
   ${libnas_ue_emm_sap_OBJS}
   ${libnas_ue_esm_OBJS}
   ${libnas_ue_esm_sap_OBJS}
+  $<TARGET_OBJECTS:ds>
   )
+target_include_directories(LIB_NAS_UE PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
 target_link_libraries(LIB_NAS_UE PRIVATE lte_rrc)
 set(NAS_UE_LIB LIB_NAS_UE)
 target_link_libraries(LIB_NAS_UE PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2106,6 +2097,8 @@ add_library(LIB_5GNAS_GNB
   ${NAS_SRC}/NR_UE/ue_process_nas.c
   ${OPENAIR3_DIR}//UICC/usim_interface.c
   )
+
+target_include_directories(LIB_5GNAS_GNB PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
 target_link_libraries(LIB_5GNAS_GNB PRIVATE SECU_CN ${CRYPTO_LIBRARIES})
 target_link_libraries(LIB_5GNAS_GNB PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
@@ -2715,8 +2708,7 @@ endforeach(myExe)
 foreach(myExe s1ap
     secu_knas_encrypt_eia1
     secu_kenb
-    aes128_ctr_encrypt
-    aes128_ctr_decrypt
+    aes128_ctr
     secu_knas_encrypt_eea2
     secu_knas secu_knas_encrypt_eea1
     kdf
@@ -2846,6 +2838,7 @@ include (common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
 include(${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/CMakeLists.txt)
 include (${OPENAIR_DIR}/common/utils/websrv/websrv_CMakeLists.txt)
 
+add_subdirectory(common)
 add_subdirectory(doc)
 add_subdirectory(openair2)
 add_subdirectory(openair3)

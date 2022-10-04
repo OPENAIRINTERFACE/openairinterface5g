@@ -725,7 +725,6 @@ check_install_oai_software() {
 
     $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
 
-    $SUDO apt-get install -y nettle-dev nettle-bin
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
       if rpm -q epel-release > /dev/null; then
@@ -771,7 +770,6 @@ check_install_oai_software() {
       mariadb-devel \
       lksctp-tools \
       lksctp-tools-devel \
-      openssl-devel \
       libtasn1 \
       libtool \
       libusb-devel \
@@ -783,6 +781,7 @@ check_install_oai_software() {
       openssh-clients \
       openssh-server \
       openssl \
+      openssl-devel \
       patch \
       psmisc \
       python \
@@ -793,7 +792,6 @@ check_install_oai_software() {
       wget \
       kernel-headers \
       kernel-devel \
-      nettle-devel \
       gnutls-devel \
       libXpm-devel \
       lapack \
