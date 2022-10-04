@@ -158,12 +158,12 @@ typedef enum {
 #define RU_NR_SCS_FOR_RASTER          32
 #define RU_TX_SUBDEV                  33
 #define RU_RX_SUBDEV                  34
-#define RU_RXFH_CORE_ID               33
-#define RU_TXFH_CORE_ID               34
-#define RU_TP_CORES                   35
-#define RU_NUM_TP_CORES               36
-#define RU_NUM_INTERFACES             37
-#define RU_HALF_SLOT_PARALLELIZATION  38
+#define RU_RXFH_CORE_ID               35
+#define RU_TXFH_CORE_ID               36
+#define RU_TP_CORES                   37
+#define RU_NUM_TP_CORES               38
+#define RU_NUM_INTERFACES             39
+#define RU_HALF_SLOT_PARALLELIZATION  40
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            RU configuration parameters                                                                  */
 /*   optname                                   helpstr   paramflags    XXXptr          defXXXval                   type      numelt        */
