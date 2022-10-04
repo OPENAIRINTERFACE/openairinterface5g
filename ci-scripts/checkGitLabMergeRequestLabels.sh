@@ -73,7 +73,7 @@ done
 
 LABELS=`curl --silent "https://gitlab.eurecom.fr/api/v4/projects/oai%2Fopenairinterface5g/merge_requests/$MERGE_REQUEST_ID" | jq '.labels' || true`
 
-IS_MR_DOCUMENTATION=`echo $LABELS | grep -c Documentation`
+IS_MR_DOCUMENTATION=`echo $LABELS | grep -ic documentation`
 IS_MR_BUILD_ONLY=`echo $LABELS | grep -c BUILD-ONLY`
 IS_MR_CI=`echo $LABELS | grep -c CI`
 IS_MR_4G=`echo $LABELS | grep -c 4G-LTE`
