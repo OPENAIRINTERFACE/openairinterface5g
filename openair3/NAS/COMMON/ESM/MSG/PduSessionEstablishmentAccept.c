@@ -164,6 +164,19 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         break;
 
       case IEI_DNN:
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received DNN IE\n");
+        psea_msg.dnn_ie.dnn_length = *(buffer + offset++);
+        uint8_t i=0;
+        char apn[20];
+
+        while (*(buffer + offset + i) != ASCII_ACK) {
+          apn[i] = *(buffer + offset + i);
+          ++i;
+        }
+
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - APN: %s\n", apn);
+        offset += psea_msg.dnn_ie.dnn_length;
+        psea_iei = *(buffer + offset++);
         break;
 
       default:
