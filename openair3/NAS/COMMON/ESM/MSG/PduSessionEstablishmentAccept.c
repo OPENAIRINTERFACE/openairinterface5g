@@ -76,6 +76,8 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
 
   qos_rule.prcd = *(buffer + offset++);
   qos_rule.qfi  = *(buffer + offset++);
+  psea_msg.sess_ambr.length = *(buffer + offset++);
+  offset += psea_msg.sess_ambr.length; /* Ommit the Seassion-AMBR */
 
   return;
 }
