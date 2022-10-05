@@ -43,4 +43,15 @@
 #define PDU_SESSION_TYPE_IPV6   0b010
 #define PDU_SESSION_TYPE_IPV4V6 0b011
 
+/* Rule operation codes - TS 24.501 Table 9.11.4.13.1 */
+
+#define ROC_RESERVED_0                  0b000 /* Reserved */
+#define ROC_CREATE_NEW_QOS_RULE         0b001 /* Create new QoS rule */
+#define ROC_DELETE_QOS_RULE             0b010 /* Delete existing QoS rule */
+#define ROC_MODIFY_QOS_RULE_ADD_PF      0b011 /* Modify existing QoS rule and add packet filters */
+#define ROC_MODIFY_QOS_RULE_REPLACE_PF  0b100 /* Modify existing QoS rule and replace all packet filters */
+#define ROC_MODIFY_QOS_RULE_DELETE_PF   0b101 /* Modify existing QoS rule and delete packet filters */
+#define ROC_MODIFY_QOS_RULE_WITHOUT_PF  0b110 /* Modify existing QoS rule without modifying packet filters */
+#define ROC_RESERVED_1                  0b111 /* Reserved */
+
 #endif
