@@ -136,7 +136,12 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         break;
 
       case IEI_MAPPED_EPS: /* Ommited */
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received Mapped EPS bearer context IE\n");
+        uint16_t mapped_eps_length = htons(*(uint16_t *)(buffer + offset));
+        offset += mapped_eps_length;
+        psea_iei = *(buffer + offset++);
         break;
+
       case IEI_EAP_MSG: /* Ommited */
         break;
       case IEI_AUTH_QOS_DESC: /* Ommited */
