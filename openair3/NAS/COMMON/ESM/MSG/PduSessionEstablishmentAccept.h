@@ -58,4 +58,45 @@
 
 #define ASCII_ACK 0x06 /* Delimiter in the DNN IEI */
 
+/* Mandatory Presence IE - TS 24.501 Table 8.3.2.1.1 */
+
+typedef struct packet_filter_create_qos_rule_s {
+  uint8_t pf_dir; /* Packet filter direction */
+  uint8_t pf_id;  /* Packet filter identifier */
+  uint8_t length; /* Length of packet filter contents */
+} packet_filter_type1_t; /* TS 24.501 Figure 9.11.4.13.3 */
+
+typedef struct packet_filter_modify_qos_rule_s {
+  uint8_t pf_id;  /* Packet filter identifier */
+} packet_filter_type2_t; /* TS 24.501 Figure 9.11.4.13.4 */
+
+typedef struct packet_filter_s {
+  union pf_type {
+    packet_filter_type1_t type_1;
+    packet_filter_type2_t type_2;
+  } pf_type;
+} packet_filter_t;
+
+typedef struct qos_rule_s {
+  uint8_t  id;      /* QoS rule identifier */
+  uint16_t length;  /* Length of QoS Rule */
+  uint8_t  oc;      /* Rule operation code (3bits) */
+  uint8_t  dqr;     /* DQR bit (1 bit) */
+  uint8_t  nb_pf;   /* Number of packet filters (4 bits) */
+  uint8_t  prcd;    /* QoS rule precedence */
+  uint8_t  qfi;     /* QoS Flow Identifier */
+} qos_rule_t;
+
+typedef struct auth_qos_rules_s {
+  uint16_t length;  /* Length of QoS rules IE */
+} auth_qos_rule_t;  /* QoS Rule as defined in 24.501 Figure 9.11.4.13.2 */
+
+typedef struct session_ambr_s {
+  uint8_t  length;  /* Length of Session-AMBR contents */
+  uint8_t  unit_dl; /* Unit for Session-AMBR for downlink */
+  uint16_t sess_dl; /* Session-AMBR for downlink */
+  uint8_t  unit_ul; /* Unit for Session-AMBR for uplink */
+  uint16_t sess_ul; /* Session-AMBR for uplink */
+} session_ambr_t;   /* TS 24.501 Figure 9.11.4.14.1 */
+
 #endif
