@@ -658,7 +658,7 @@ int nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
     //*llr32 = *rxF;
     llr32->r = rxF->r >> 3;
     llr32->i = rxF->i >> 3;
-    //printf("dlsch_qpsk_llr %d : (%d,%d)\n", i, llr32->r, llr32->i);
+    LOG_D(PHY,"dlsch_qpsk_llr %d : (%d,%d)\n", i, llr32->r, llr32->i);
     rxF++;
     llr32++;
   }

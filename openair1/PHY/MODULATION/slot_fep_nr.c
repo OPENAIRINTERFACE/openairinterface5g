@@ -150,7 +150,8 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                           UE_nr_rxtx_proc_t *proc,
                           unsigned char symbol,
                           unsigned char Ns,
-                          int sample_offset)
+                          int sample_offset,
+                          bool pbch_decoded)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
@@ -160,7 +161,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 
   unsigned int nb_prefix_samples;
   unsigned int nb_prefix_samples0;
-  if (ue->is_synchronized) {
+  if (pbch_decoded) {
     nb_prefix_samples  = frame_parms->nb_prefix_samples;
     nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
   }
