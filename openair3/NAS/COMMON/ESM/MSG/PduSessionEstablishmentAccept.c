@@ -25,5 +25,21 @@
 #include "openair2/RRC/NAS/nas_config.h"
 
 void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_length){
+  uint8_t offset = 0;
+  security_protected_nas_5gs_msg_t       sec_nas_hdr;
+  security_protected_plain_nas_5gs_msg_t sec_nas_msg;
+  pdu_session_establishment_accept_msg_t psea_msg;
+  sec_nas_hdr.epd = *(buffer + (offset++));
+  sec_nas_hdr.sht = *(buffer + (offset++));
+  sec_nas_hdr.mac = htonl(*(uint32_t *)(buffer + offset));
+  offset+=sizeof(sec_nas_hdr.mac);
+  sec_nas_hdr.sqn = *(buffer + (offset++));
+  sec_nas_msg.epd          = *(buffer + (offset++));
+  sec_nas_msg.sht          = *(buffer + (offset++));
+  sec_nas_msg.msg_type     = *(buffer + (offset++));
+  sec_nas_msg.payload_type = *(buffer + (offset++));
+  sec_nas_msg.payload_len  = htons(*(uint16_t *)(buffer + offset));
+  offset+=sizeof(sec_nas_msg.payload_len);
+
   return;
 }
