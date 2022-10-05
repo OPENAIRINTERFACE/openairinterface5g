@@ -130,7 +130,11 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         break;
 
       case IEI_ALWAYSON_PDU: /* Ommited */
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received Always-on PDU Session indication IE\n");
+        offset++;
+        psea_iei = *(buffer + offset++);
         break;
+
       case IEI_MAPPED_EPS: /* Ommited */
         break;
       case IEI_EAP_MSG: /* Ommited */
