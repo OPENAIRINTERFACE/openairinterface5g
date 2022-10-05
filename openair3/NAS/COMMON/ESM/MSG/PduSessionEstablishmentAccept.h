@@ -37,4 +37,10 @@
 #define IEI_EXT_CONF_OPT    0x7b /* Extended protocol configuration options 9.11.4.6  */
 #define IEI_DNN             0x25 /* DNN 9.11.2.1B  */
 
+/* PDU Session type value - TS 24.501 Table 9.11.4.10.1*/
+
+#define PDU_SESSION_TYPE_IPV4   0b001
+#define PDU_SESSION_TYPE_IPV6   0b010
+#define PDU_SESSION_TYPE_IPV4V6 0b011
+
 #endif
