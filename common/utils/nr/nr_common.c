@@ -198,8 +198,8 @@ int cce_to_reg_interleaving(const int R, int k, int n_shift, const int C, int L,
     f = k;
   else {
     int c = k/R;
-     int r = k%R;
-     f = (r*C + c + n_shift)%(N_regs/L);
+    int r = k % R;
+    f = (r * C + c + n_shift) % (N_regs / L);
   }
   return f;
 }

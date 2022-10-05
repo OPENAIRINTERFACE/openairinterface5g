@@ -204,17 +204,6 @@ typedef struct NR_BWP_PARMS {
 } NR_BWP_PARMS;
 
 typedef struct {
-  uint8_t reg_idx;
-  uint16_t start_sc_idx;
-  uint8_t symb_idx;
-} nr_reg_t;
-
-typedef struct {
-  uint8_t cce_idx;
-  nr_reg_t reg_list[NR_NB_REG_PER_CCE];
-} nr_cce_t;
-
-typedef struct {
   /// PRACH format retrieved from prach_ConfigIndex
   uint16_t prach_format;
   /// Preamble index for PRACH (0-63)
