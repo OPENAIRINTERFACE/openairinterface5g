@@ -4,8 +4,6 @@
 #include <sdr/COMMON/common_lib.h>
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
-  /// index of the current UE RX/TX thread
-  int                  thread_id;
   /// Component Carrier index
   uint8_t              CC_id;
   /// timestamp transmitted to HW

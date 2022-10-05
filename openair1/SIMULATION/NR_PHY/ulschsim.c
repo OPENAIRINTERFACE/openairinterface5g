@@ -121,7 +121,7 @@ nrUE_params_t *get_nrUE_params(void) {
 int main(int argc, char **argv)
 {
   char c;
-  int i,sf;
+  int i;
   double SNR, snr0 = -2.0, snr1 = 2.0, SNR_lin;
   double snr_step = 0.1;
   uint8_t snr1set = 0;
@@ -428,12 +428,10 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  for (sf = 0; sf < 2; sf++) {
-    UE->ulsch[sf][0] = new_nr_ue_ulsch(N_RB_UL, 8, frame_parms);
-    if (!UE->ulsch[sf][0]) {
-      printf("Can't get ue ulsch structures.\n");
-      exit(-1);
-    }
+  UE->ulsch[0] = new_nr_ue_ulsch(N_RB_UL, 8, frame_parms);
+  if (!UE->ulsch[0]) {
+    printf("Can't get ue ulsch structures.\n");
+    exit(-1);
   }
 
   unsigned char harq_pid = 0;
@@ -451,7 +449,7 @@ int main(int argc, char **argv)
   NR_UL_gNB_HARQ_t *harq_process_gNB = ulsch_gNB->harq_processes[harq_pid];
   nfapi_nr_pusch_pdu_t *rel15_ul = &harq_process_gNB->ulsch_pdu;
 
-  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0];
+  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0];
 
   if ((Nl==4)||(Nl==3))
     nb_re_dmrs = nb_re_dmrs*2;
@@ -636,8 +634,7 @@ int main(int argc, char **argv)
     printf("\n");
   }
 
-  for (sf = 0; sf < 2; sf++)
-    free_nr_ue_ulsch(&UE->ulsch[sf][0], N_RB_UL, frame_parms);
+  free_nr_ue_ulsch(&UE->ulsch[0], N_RB_UL, frame_parms);
 
   term_nr_ue_signal(UE, 1);
   free(UE);

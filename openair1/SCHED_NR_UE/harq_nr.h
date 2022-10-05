@@ -69,21 +69,19 @@
 /** \brief This function configures uplink HARQ context
     @param PHY_VARS_NR_UE ue context
     @param gNB_id gNodeB identifier
-    @param thread_id RXTX thread index
     @param code_word_idx code word index
     @param number_harq_processes_pusch maximum number of uplink HARQ processes
     @returns none */
 
-void config_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int thread_id, int code_word_idx, uint8_t number_harq_processes_pusch);
+void config_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int code_word_idx, uint8_t number_harq_processes_pusch);
 
 /** \brief This function releases uplink HARQ context
     @param PHY_VARS_NR_UE ue context
     @param gNB_id gNodeB identifier
-    @param thread_id RXTX thread index
     @param code_word_idx code word index
     @returns none */
 
-void release_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int thread_id, int code_word_idx);
+void release_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int code_word_idx);
 
 /** \brief This function stores slot for transmission in HARQ context
     @param ulsch uplink context

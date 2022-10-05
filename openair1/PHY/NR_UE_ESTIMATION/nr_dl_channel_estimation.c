@@ -49,7 +49,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                               NR_DL_FRAME_PARMS *frame_params)
 {
   uint8_t rxAnt = 0, idx = 0;
-  int32_t **rxdataF      = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  int32_t **rxdataF      = ue->common_vars.rxdataF;
   prs_config_t *prs_cfg  = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
   prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
   c16_t ch_tmp_buf[ ue->frame_parms.ofdm_symbol_size] __attribute__((aligned(32)));
@@ -586,7 +586,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   uint8_t nushift;
   uint8_t ssb_index=current_ssb->i_ssb;
   uint8_t n_hf=current_ssb->n_hf;
-  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  int **rxdataF=ue->common_vars.rxdataF;
 
   nushift =  ue->frame_parms.Nid_cell%4;
   ue->frame_parms.nushift = nushift;
@@ -603,8 +603,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   k = nushift;
 
 #ifdef DEBUG_PBCH
-  printf("PBCH DMRS Correlation : ThreadId %d, gNB_id %d , OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",proc->thread_id, gNB_id,ue->frame_parms.ofdm_symbol_size,
-         ue->frame_parms.Ncp,Ns,k, symbol);
+  printf("PBCH DMRS Correlation : gNB_id %d , OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n", gNB_id, ue->frame_parms.ofdm_symbol_size, ue->frame_parms.Ncp, Ns, k, symbol);
 #endif
 
   // generate pilot
@@ -749,7 +748,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   //int slot_pbch;
 
   uint8_t nushift;
-   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+   int **rxdataF=ue->common_vars.rxdataF;
 
   nushift =  ue->frame_parms.Nid_cell%4;
   ue->frame_parms.nushift = nushift;
@@ -768,8 +767,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   k = nushift;
 
 #ifdef DEBUG_PBCH
-  printf("PBCH Channel Estimation : ThreadId %d, gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",proc->thread_id, gNB_id,ch_offset,ue->frame_parms.ofdm_symbol_size,
-         ue->frame_parms.Ncp,Ns,k, symbol);
+  printf("PBCH Channel Estimation : gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n", gNB_id, ch_offset, ue->frame_parms.ofdm_symbol_size, ue->frame_parms.Ncp, Ns, k, symbol);
 #endif
 
   switch (k) {
@@ -1015,7 +1013,7 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   int16_t ch[2],*pil,*rxF,*dl_ch;
   int ch_offset,symbol_offset;
 
-  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  int **rxdataF=ue->common_vars.rxdataF;
 
   ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
@@ -1034,8 +1032,8 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned short coreset_start_subcarrier = first_carrier_offset+(BWPStart + coreset_start_rb)*12;
 
 #ifdef DEBUG_PDCCH
-  printf("PDCCH Channel Estimation : ThreadId %d, gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, symbol %d\n",
-         proc->thread_id, gNB_id,ch_offset,ue->frame_parms.ofdm_symbol_size,ue->frame_parms.Ncp,Ns,symbol);
+  printf("PDCCH Channel Estimation : gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, symbol %d\n",
+         gNB_id,ch_offset,ue->frame_parms.ofdm_symbol_size,ue->frame_parms.Ncp,Ns,symbol);
 #endif
 
 #if CH_INTERP
@@ -1261,8 +1259,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int ch_offset,symbol_offset;
 
   uint8_t nushift;
-  int **dl_ch_estimates = ue->pdsch_vars[proc->thread_id][gNB_id]->dl_ch_estimates;
-  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  int **dl_ch_estimates = ue->pdsch_vars[gNB_id]->dl_ch_estimates;
+  int **rxdataF=ue->common_vars.rxdataF;
 
   ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
@@ -1272,8 +1270,15 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int re_offset = k;
 
 #ifdef DEBUG_PDSCH
-  printf("PDSCH Channel Estimation : ThreadId %d, gNB_id %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",
-         proc->thread_id, gNB_id,ch_offset,symbol_offset,ue->frame_parms.ofdm_symbol_size, ue->frame_parms.Ncp,Ns,k, symbol);
+  printf("PDSCH Channel Estimation : gNB_id %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",
+         gNB_id,
+         ch_offset,
+         symbol_offset,
+         ue->frame_parms.ofdm_symbol_size,
+         ue->frame_parms.Ncp,
+         Ns,
+         k,
+         symbol);
 #endif
 
   // generate pilot for gNB port number 1000+p

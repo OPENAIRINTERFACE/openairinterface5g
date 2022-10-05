@@ -400,17 +400,15 @@ int main(int argc, char **argv)
 	//nr_init_frame_parms_ue(&UE->frame_parms);
 	//init_nr_ue_transport(UE, 0);
         int num_codeword = NR_MAX_NB_LAYERS > 4? 2:1;
-	for (int sf = 0; sf < 2; sf++) {
-		for (i = 0; i < num_codeword; i++) {
-			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL);
-			if (!UE->dlsch[sf][0][i]) {
-				printf("Can't get ue dlsch structures\n");
-				exit(-1);
-			}
+  for (i = 0; i < num_codeword; i++) {
+    UE->dlsch[0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL);
+    if (!UE->dlsch[0][i]) {
+      printf("Can't get ue dlsch structures\n");
+      exit(-1);
+    }
 
-			UE->dlsch[sf][0][i]->rnti = n_rnti;
-		}
-	}
+    UE->dlsch[0][i]->rnti = n_rnti;
+  }
 
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
         processingData_L1tx_t msgDataTx;
@@ -455,7 +453,7 @@ int main(int argc, char **argv)
 	unsigned char test_input_bit[16 * 68 * 384];
 	//estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	unsigned char estimated_output_bit[16 * 68 * 384];
-	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
+	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
 	harq_process->mcs_table = mcs_table;
@@ -617,9 +615,8 @@ int main(int argc, char **argv)
   free(RC.gNB);
 
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
-  for (int sf = 0; sf < 2; sf++)
-    for (int i = 0; i < num_cw; i++)
-      free_nr_ue_dlsch(&UE->dlsch[sf][0][i], N_RB_DL);
+  for (int i = 0; i < num_cw; i++)
+    free_nr_ue_dlsch(&UE->dlsch[0][i], N_RB_DL);
   term_nr_ue_signal(UE, 1);
   free(UE);
 

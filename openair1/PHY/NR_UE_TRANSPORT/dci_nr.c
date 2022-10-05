@@ -699,7 +699,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
     LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 
-    nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
+    nr_pdcch_extract_rbs_single(common_vars->rxdataF,
                                 pdcch_est_size,
                                 pdcch_dl_ch_estimates,
                                 rx_size,
