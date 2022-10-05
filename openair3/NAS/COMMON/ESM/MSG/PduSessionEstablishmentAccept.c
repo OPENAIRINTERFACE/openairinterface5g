@@ -180,6 +180,8 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         break;
 
       default:
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Not known IE\n");
+        offset = msg_length;
         break;
     }
   }
