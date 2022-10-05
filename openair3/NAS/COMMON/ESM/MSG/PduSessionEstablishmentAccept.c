@@ -24,6 +24,8 @@
 #include "nr_nas_msg_sim.h"
 #include "openair2/RRC/NAS/nas_config.h"
 
+extern char *baseNetAddress;
+
 void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_length){
   uint8_t offset = 0;
   security_protected_nas_5gs_msg_t       sec_nas_hdr;
@@ -90,7 +92,30 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         break;
 
       case IEI_PDU_ADDRESS:
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received PDU Address IE\n");
+        psea_msg.pdu_addr_ie.pdu_length  = *(buffer + offset++);
+        psea_msg.pdu_addr_ie.pdu_type    = *(buffer + offset++);
+
+        if (psea_msg.pdu_addr_ie.pdu_type == PDU_SESSION_TYPE_IPV4) {
+          psea_msg.pdu_addr_ie.pdu_addr_oct1 = *(buffer + offset++);
+          psea_msg.pdu_addr_ie.pdu_addr_oct2 = *(buffer + offset++);
+          psea_msg.pdu_addr_ie.pdu_addr_oct3 = *(buffer + offset++);
+          psea_msg.pdu_addr_ie.pdu_addr_oct4 = *(buffer + offset++);
+          nas_getparams();
+          sprintf(baseNetAddress, "%d.%d", psea_msg.pdu_addr_ie.pdu_addr_oct1, psea_msg.pdu_addr_ie.pdu_addr_oct2);
+          nas_config(1,psea_msg.pdu_addr_ie.pdu_addr_oct3, psea_msg.pdu_addr_ie.pdu_addr_oct4, "oaitun_ue");
+          LOG_I(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received UE IP: %d.%d.%d.%d\n",
+                psea_msg.pdu_addr_ie.pdu_addr_oct1,
+                psea_msg.pdu_addr_ie.pdu_addr_oct2,
+                psea_msg.pdu_addr_ie.pdu_addr_oct3,
+                psea_msg.pdu_addr_ie.pdu_addr_oct4);
+        } else {
+          offset += psea_msg.pdu_addr_ie.pdu_length;
+        }
+
+        psea_iei = *(buffer + offset++);
         break;
+
       case IEI_RQ_TIMER_VALUE: /* Ommited */
         break;
       case IEI_SNSSAI: /* Ommited */
