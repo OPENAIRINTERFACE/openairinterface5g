@@ -124,4 +124,37 @@ typedef struct qos_fd_s {
   uint16_t length;
 } qos_fd_t; /* TS 24.501 9.11.4.12 - Ommited, only length is processed*/
 
+typedef struct pdu_session_establishment_accept_msg_s {
+  /* Mandatory presence */
+  uint8_t epd;                /* Extended Protocol Discriminator */
+  uint8_t pdu_id;             /* PDU Session ID */
+  uint8_t pti;                /* Procedure Transaction Identity */
+  uint8_t msg_type;           /* Message Type */
+  uint8_t pdu_type;           /* PDU Session Type */
+  uint8_t ssc_mode;           /* SSC mode */
+  auth_qos_rule_t qos_rules;  /* Authorized QoS rules */
+  session_ambr_t  sess_ambr;  /* Session-AMBR */
+
+  /* Optional presence */
+  dnn_t         dnn_ie;       /* Data Network Name */
+  pdu_address_t pdu_addr_ie;  /* PDU Address */
+  ext_pP_t      ext_pp_ie;    /* Extended Protocol Configuration Options */
+  qos_fd_t      qos_fd_ie;    /* QoS flow descriptions */
+} pdu_session_establishment_accept_msg_t; /* 24.501 Table 8.3.2.1.1 */
+
+typedef struct security_protected_plain_nas_5gs_msg_s {
+  uint8_t  epd;           /* Extended Protocol Discriminator */
+  uint8_t  sht;           /* Security Header Type */
+  uint8_t  msg_type;      /* Message Type */
+  uint8_t  payload_type;  /* Payload Container Type */
+  uint16_t payload_len;   /* Payload Container Length */
+} security_protected_plain_nas_5gs_msg_t;
+
+typedef struct security_protected_nas_5gs_msg_s {
+  uint8_t  epd; /* Extended Protocol Discriminator */
+  uint8_t  sht; /* Security Header Type */
+  uint32_t mac; /* Message Authentication Code */
+  uint8_t  sqn; /* Sequence Number */
+} security_protected_nas_5gs_msg_t; /* 24.501 Figure 9.1.1.2 */
+
 #endif
