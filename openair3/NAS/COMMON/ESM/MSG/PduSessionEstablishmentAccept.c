@@ -23,6 +23,7 @@
 #include "common/utils/LOG/log.h"
 #include "nr_nas_msg_sim.h"
 #include "openair2/RRC/NAS/nas_config.h"
+#include "openair2/SDAP/nr_sdap/nr_sdap.h"
 
 extern char *baseNetAddress;
 
@@ -186,5 +187,6 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
     }
   }
 
+  set_qfi_pduid(qos_rule.qfi, psea_msg.pdu_id);
   return;
 }
