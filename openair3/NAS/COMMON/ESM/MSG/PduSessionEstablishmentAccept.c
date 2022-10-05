@@ -21,3 +21,7 @@
 
 #include "PduSessionEstablishmentAccept.h"
 #include "common/utils/LOG/log.h"
+
+void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_length){
+  return;
+}

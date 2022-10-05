@@ -157,4 +157,6 @@ typedef struct security_protected_nas_5gs_msg_s {
   uint8_t  sqn; /* Sequence Number */
 } security_protected_nas_5gs_msg_t; /* 24.501 Figure 9.1.1.2 */
 
+void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_length);
+
 #endif
