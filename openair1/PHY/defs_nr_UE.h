@@ -347,6 +347,18 @@ typedef struct {
   int32_t **ptrs_re_per_slot;
 } NR_UE_PDSCH;
 
+#define NR_PRS_IDFT_OVERSAMP_FACTOR 1  // IDFT oversampling factor for NR PRS channel estimates in time domain, ALLOWED value 16x, and 1x is default(ie. IDFT size is frame_params->ofdm_symbol_size)
+typedef struct {
+  prs_config_t prs_cfg;
+  int32_t reserved;
+  prs_meas_t **prs_meas;
+} NR_PRS_RESOURCE_t;
+
+typedef struct {
+  uint8_t NumPRSResources;
+  NR_PRS_RESOURCE_t prs_resource[NR_MAX_PRS_RESOURCES_PER_SET];
+} NR_UE_PRS;
+
 #define NR_PDCCH_DEFS_NR_UE
 #define NR_NBR_CORESET_ACT_BWP      3  // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP  10 // The number of SearchSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
@@ -723,7 +735,9 @@ typedef struct {
   NR_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_gNB_MAX];
-
+  NR_UE_PRS       *prs_vars[NR_MAX_PRS_COMB_SIZE];
+  uint8_t          prs_active_gNBs;
+  
   //Paging parameters
   uint32_t              IMSImod1024;
   uint32_t              PF;
@@ -767,6 +781,9 @@ typedef struct {
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;
 
+  // PRS sequence per gNB, per resource
+  uint32_t *****nr_gold_prs;
+  
   uint32_t X_u[64][839];
 
   // flag to activate PRB based averaging of channel estimates

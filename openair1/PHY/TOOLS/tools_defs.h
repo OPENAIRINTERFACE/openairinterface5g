@@ -436,6 +436,7 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
   SZ_DEF(128) \
   SZ_DEF(256) \
   SZ_DEF(512) \
+  SZ_DEF(768) \
   SZ_DEF(1024) \
   SZ_DEF(1536) \
   SZ_DEF(2048) \
@@ -445,10 +446,13 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
   SZ_DEF(8192) \
   SZ_DEF(9216) \
   SZ_DEF(12288) \
+  SZ_DEF(16384) \
   SZ_DEF(18432) \
   SZ_DEF(24576) \
+  SZ_DEF(32768) \
   SZ_DEF(36864) \
   SZ_DEF(49152) \
+  SZ_DEF(65536) \
   SZ_DEF(73728) \
   SZ_DEF(98304)
 
@@ -507,6 +511,8 @@ dft_size_idx_t get_dft(int ofdm_symbol_size)
       return DFT_256;
     case 512:
       return DFT_512;
+    case 768:
+      return DFT_768;
     case 1024:
       return DFT_1024;
     case 1536:
@@ -591,6 +597,8 @@ idft_size_idx_t get_idft(int ofdm_symbol_size)
       return IDFT_256;
     case 512:
       return IDFT_512;
+    case 768:
+      return IDFT_768;
     case 1024:
       return IDFT_1024;
     case 1536:

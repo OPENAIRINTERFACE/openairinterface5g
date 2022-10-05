@@ -68,5 +68,6 @@ void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
                         uint8_t n_scid);
 
 void nr_init_csi_rs(const NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Nid);
+void init_nr_gold_prs(PHY_VARS_NR_UE* ue);
 
 #endif

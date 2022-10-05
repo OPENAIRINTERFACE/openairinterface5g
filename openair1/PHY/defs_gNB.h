@@ -226,6 +226,11 @@ typedef struct {
 } NR_gNB_PRACH;
 
 typedef struct {
+  uint8_t NumPRSResources;
+  prs_config_t prs_cfg[NR_MAX_PRS_RESOURCES_PER_SET];
+} NR_gNB_PRS;
+
+typedef struct {
   /// Nfapi ULSCH PDU
   nfapi_nr_pusch_pdu_t ulsch_pdu;
   /// Frame where current HARQ round was sent
@@ -737,6 +742,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_PBCH        pbch;
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
+  NR_gNB_PRS         prs_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
   NR_gNB_SRS_t       *srs[NUMBER_OF_NR_SRS_MAX];
@@ -789,6 +795,9 @@ typedef struct PHY_VARS_gNB_s {
 
   // Mask of occupied RBs, per symbol and PRB
   uint32_t rb_mask_ul[14][9];
+
+  /// PRS sequence
+  uint32_t ****nr_gold_prs;
 
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_NR_SR_MAX];

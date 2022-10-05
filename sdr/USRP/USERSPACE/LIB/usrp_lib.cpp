@@ -203,8 +203,9 @@ static int sync_to_gps(openair0_device *device) {
 
       //Set to GPS time
       uhd::time_spec_t gps_time = uhd::time_spec_t(time_t(s->usrp->get_mboard_sensor("gps_time", mboard).to_int()));
-      //s->usrp->set_time_next_pps(gps_time+1.0, mboard);
-      s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+      s->usrp->set_time_next_pps(gps_time+1.0, mboard);
+      //s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+      
       //Wait for it to apply
       //The wait is 2 seconds because N-Series has a known issue where
       //the time at the last PPS does not properly update at the PPS edge
@@ -215,10 +216,10 @@ static int sync_to_gps(openair0_device *device) {
       uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps(mboard);
       std::cout << "USRP time: " << (boost::format("%0.9f") % time_last_pps.get_real_secs()) << std::endl;
       std::cout << "GPSDO time: " << (boost::format("%0.9f") % gps_time.get_real_secs()) << std::endl;
-      //if (gps_time.get_real_secs() == time_last_pps.get_real_secs())
-      //    std::cout << std::endl << "SUCCESS: USRP time synchronized to GPS time" << std::endl << std::endl;
-      //else
-      //    std::cerr << std::endl << "ERROR: Failed to synchronize USRP time to GPS time" << std::endl << std::endl;
+      if (gps_time.get_real_secs() == time_last_pps.get_real_secs())
+          std::cout << std::endl << "SUCCESS: USRP time synchronized to GPS time" << std::endl << std::endl;
+      else
+          std::cerr << std::endl << "ERROR: Failed to synchronize USRP time to GPS time" << std::endl << std::endl;
     }
 
     if (num_gps_locked == num_mboards and num_mboards > 1) {
@@ -295,15 +296,18 @@ static int trx_usrp_start(openair0_device *device) {
   //s->first_rx = 1;
   s->rx_timestamp = 0;
 
-  s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
-  // wait for the pps to change
-  uhd::time_spec_t time_last_pps = s->usrp->get_time_last_pps();
-  while (time_last_pps == s->usrp->get_time_last_pps()) {
+    //wait for next pps
+  uhd::time_spec_t last_pps = s->usrp->get_time_last_pps();
+  uhd::time_spec_t current_pps = s->usrp->get_time_last_pps();
+  while(current_pps == last_pps) {
     boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    current_pps = s->usrp->get_time_last_pps();
   }
 
+  LOG_I(HW,"current pps at %f, starting streaming at %f\n",current_pps.get_real_secs(),current_pps.get_real_secs()+1.0);
+
   uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-  cmd.time_spec = uhd::time_spec_t(1.0);
+  cmd.time_spec = uhd::time_spec_t(current_pps+1.0);
   cmd.stream_now = false; // start at constant delay
   s->rx_stream->issue_stream_cmd(cmd);
 
@@ -440,7 +444,14 @@ static int trx_usrp_write(openair0_device *device,
       for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-        buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+        if ((((uintptr_t) buff[i])&0x1F)==0) {
+          buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+        }
+        else 
+        {
+          __m256i tmp=_mm256_loadu_si256(((__m256i *)buff[i])+j);
+          buff_tx[i][j] = _mm256_slli_epi16(tmp,4);
+        }
 #else
         buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
 #endif
@@ -580,7 +591,14 @@ void *trx_usrp_write_thread(void * arg){
       for (int j=0; j<nsamps2; j++) {
         #if defined(__x86_64__) || defined(__i386__)
           #ifdef __AVX2__
-            buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+            if ((((uintptr_t) buff[i])&0x1F)==0) {
+              buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+            }
+            else
+            {
+              __m256i tmp=_mm256_loadu_si256(((__m256i *)buff[i])+j);
+              buff_tx[i][j] = _mm256_slli_epi16(tmp,4);
+            }
           #else
             buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
           #endif
@@ -727,17 +745,18 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 
   // bring RX data into 12 LSBs for softmodem RX
   for (int i=0; i<cc; i++) {
-
+    for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
+      // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
       if ((((uintptr_t) buff[i])&0x1F)==0) {
-        for (int j=0; j<nsamps2; j++) 
-           ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
+        ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
       } else {
-        for (int j=0; j<(nsamps2<<1); j++) 
-          ((__m128i *)buff[i])[j]  = _mm_srai_epi16(((__m128i *)buff_tmp[i])[j],rxshift);
+        __m256i tmp=_mm256_srai_epi16(buff_tmp[i][j],rxshift);
+        _mm256_storeu_si256(((__m256i *)buff[i])+j, tmp);
       }
+    }
 #else    
       for (int j=0; j<nsamps2; j++) 
         ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
@@ -1048,7 +1067,7 @@ extern "C" {
     sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
     LOG_I(HW,"UHD version %s (%d.%d.%d)\n",
           uhd::get_version_string().c_str(),vers,subvers,subsubvers);
-    std::string args;
+    std::string args,tx_subdev,rx_subdev;
 
     if (openair0_cfg[0].sdr_addrs == NULL) {
       args = "type=b200";
@@ -1169,12 +1188,16 @@ extern "C" {
       LOG_I(HW,"USRP fails to sync with GPS. Exiting.\n");
       exit(EXIT_FAILURE);
     }
-  } else if (s->usrp->get_clock_source(0) == "external") {
-    if (check_ref_locked(s,0)) {
-      LOG_I(HW,"USRP locked to external reference!\n");
-    } else {
-      LOG_I(HW,"Failed to lock to external reference. Exiting.\n");
-      exit(EXIT_FAILURE);
+  } else {
+    s->usrp->set_time_next_pps(uhd::time_spec_t(0.0));
+ 
+    if (s->usrp->get_clock_source(0) == "external") {
+      if (check_ref_locked(s,0)) {
+	LOG_I(HW,"USRP locked to external reference!\n");
+      } else {
+	LOG_I(HW,"Failed to lock to external reference. Exiting.\n");
+	exit(EXIT_FAILURE);
+      }
     }
   }
 
@@ -1198,6 +1221,12 @@ extern "C" {
     LOG_I(HW,"%s() sample_rate:%u\n", __FUNCTION__, (int)openair0_cfg[0].sample_rate);
 
     switch ((int)openair0_cfg[0].sample_rate) {
+      case 184320000:
+        // from usrp_time_offset
+        //openair0_cfg[0].samples_per_packet    = 2048;
+        openair0_cfg[0].tx_sample_advance     = 15; //to be checked
+        break;
+
       case 122880000:
         // from usrp_time_offset
         //openair0_cfg[0].samples_per_packet    = 2048;
@@ -1210,8 +1239,8 @@ extern "C" {
         // from usrp_time_offset
         //openair0_cfg[0].samples_per_packet    = 2048;
         openair0_cfg[0].tx_sample_advance     = 15; //to be checked
-        openair0_cfg[0].tx_bw                 = 80e6;
-        openair0_cfg[0].rx_bw                 = 80e6;
+        //openair0_cfg[0].tx_bw                 = 80e6;
+        //openair0_cfg[0].rx_bw                 = 80e6;
         break;
 
       case 61440000:
@@ -1231,6 +1260,13 @@ extern "C" {
 
       case 30720000:
         // from usrp_time_offset
+        //openair0_cfg[0].samples_per_packet    = 2048;
+        openair0_cfg[0].tx_sample_advance     = 15;
+        openair0_cfg[0].tx_bw                 = 20e6;
+        openair0_cfg[0].rx_bw                 = 20e6;
+        break;
+
+      case 23040000:
         //openair0_cfg[0].samples_per_packet    = 2048;
         openair0_cfg[0].tx_sample_advance     = 15;
         openair0_cfg[0].tx_bw                 = 20e6;
@@ -1338,6 +1374,18 @@ extern "C" {
   openair0_cfg[0].iq_txshift = 4;//shift
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
 
+  if(openair0_cfg[0].tx_subdev!=NULL){
+    LOG_I(HW, "openair0_cfg[0].tx_subdev == %s\n", openair0_cfg[0].tx_subdev);
+    tx_subdev = openair0_cfg[0].tx_subdev;
+    s->usrp->set_tx_subdev_spec(tx_subdev);
+  }
+
+  if(openair0_cfg[0].rx_subdev!=NULL){
+    LOG_I(HW, "openair0_cfg[0].rx_subdev == %s\n", openair0_cfg[0].rx_subdev);
+    rx_subdev = openair0_cfg[0].rx_subdev;
+    s->usrp->set_rx_subdev_spec(rx_subdev);
+  }
+
   for(int i=0; i<((int) s->usrp->get_rx_num_channels()); i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i+choffset);
@@ -1383,7 +1431,7 @@ extern "C" {
   LOG_I(HW,"Actual master clock: %fMHz...\n",s->usrp->get_master_clock_rate()/1e6);
   LOG_I(HW,"Actual clock source %s...\n",s->usrp->get_clock_source(0).c_str());
   LOG_I(HW,"Actual time source %s...\n",s->usrp->get_time_source(0).c_str());
-   sleep(1);
+
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
   int samples=openair0_cfg[0].sample_rate;
@@ -1437,6 +1485,7 @@ extern "C" {
     LOG_I(HW,"  Actual TX packet size: %lu\n",s->tx_stream->get_max_num_samps());
   }
 
+  std::cout << boost::format("Using Device: %s") % s->usrp->get_pp_string() << std::endl;
   LOG_I(HW,"Device timestamp: %f...\n", s->usrp->get_time_now().get_real_secs());
   device->trx_write_func = trx_usrp_write;
   device->trx_read_func  = trx_usrp_read;

@@ -105,6 +105,10 @@ ID = GNB_PHY_PRACH_INPUT_SIGNAL
     DESC = gNodeB input data in the time domain for slots with PRACH detection
     GROUP = ALL:PHY:GRAPHIC:HEAVY:GNB
     FORMAT = int,frame : int,slot : int,antenna : buffer,rxdata
+ID = GNB_PHY_DL_OUTPUT_SIGNAL
+    DESC = gNodeB output data in the freq domain for slots
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:GNB
+    FORMAT = int,gNB_ID : int,frame : int,slot : int,antenna : buffer,txdata
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
@@ -1305,7 +1309,11 @@ ID = UE_PHY_INPUT_SIGNAL
 ID = UE_PHY_DL_CHANNEL_ESTIMATE
     DESC = UE channel estimation in the time domain
     GROUP = ALL:PHY:GRAPHIC:HEAVY:UE
-    FORMAT = int,eNB_ID : int,frame : int,subframe : int,antenna : buffer,chest_t
+    FORMAT = int,eNB_ID : int,rsc_id : int,frame : int,subframe : int,antenna : buffer,chest_t
+ID = UE_PHY_DL_CHANNEL_ESTIMATE_FREQ
+    DESC = UE channel estimation in the frequency domain
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:UE
+    FORMAT = int,eNB_ID : int,rsc_id : int,frame : int,subframe : int,antenna : buffer,chestF_t
 ID = UE_PHY_PDCCH_IQ
     DESC = UE PDCCH received IQ data
     GROUP = ALL:PHY:GRAPHIC:HEAVY:UE

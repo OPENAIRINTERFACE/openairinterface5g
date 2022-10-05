@@ -117,6 +117,8 @@ int                 vcdflag = 0;
 
 double          rx_gain_off = 0.0;
 char             *usrp_args = NULL;
+char             *tx_subdev = NULL;
+char             *rx_subdev = NULL;
 char       *rrc_config_path = NULL;
 char            *uecap_file = NULL;
 int               dumpframe = 0;
@@ -359,6 +361,8 @@ void init_openair0(void) {
     openair0_cfg[card].configFilename = get_softmodem_params()->rf_config_file;
 
     if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;
+    if (tx_subdev) openair0_cfg[card].tx_subdev = tx_subdev;
+    if (rx_subdev) openair0_cfg[card].rx_subdev = rx_subdev;
 
   }
 }

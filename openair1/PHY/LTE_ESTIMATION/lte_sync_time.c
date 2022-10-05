@@ -131,14 +131,6 @@ void lte_sync_time_free(void) {
 }
 
 
-static inline int abs32(int x) {
-  return (((int)((short*)&x)[0])*((int)((short*)&x)[0]) + ((int)((short*)&x)[1])*((int)((short*)&x)[1]));
-}
-
-static inline double absF(struct complexd x) {
-  return x.r*x.r+x.i*x.i;
-}
-
 #define complexNull(c) bzero((void*) &(c), sizeof(c))
 
 #define SHIFT 17
@@ -196,16 +188,12 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
     // calculate the absolute value of sync_corr[n]
 
     for (s=0; s<3; s++) {
-      double tmp = absF(sync_out[s]) + absF(sync_out2[s]);
+      double tmp = squaredMod(sync_out[s]) + squaredMod(sync_out2[s]);
 
       if (tmp>peak_val) {
         peak_val = tmp;
         peak_pos = n;
         sync_source = s;
-        /*
-        printf("s %d: n %d sync_out %d, sync_out2  %d (sync_corr %d,%d), (%d,%d) (%d,%d)\n",s,n,abs32(sync_out[s]),abs32(sync_out2[s]),sync_corr_ue0[n],
-               sync_corr_ue0[n+length],((int16_t*)&sync_out[s])[0],((int16_t*)&sync_out[s])[1],((int16_t*)&sync_out2[s])[0],((int16_t*)&sync_out2[s])[1]);
-        */
       }
     }
   }
@@ -337,7 +325,7 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
         result = dot_product((short *)primary_synch_time, (short *) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, SHIFT);
         //((short*)sync_corr)[2*n]   += ((short*) &result)[0];
         //((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
-        sync_corr_eNB[n] += abs32(result);
+        sync_corr_eNB[n] += squaredMod(*(c16_t*)&result);
       }
     }
 
@@ -365,12 +353,6 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
     LOG_I(PHY,"[SYNC TIME] Peak found at pos %u, val = %u, mean_val = %"PRIu64"\n",peak_pos,peak_val,mean_val);
     return(peak_pos);
   }
-}
-
-
-static inline int64_t abs64(int64_t x) {
-  return (((int64_t)((int32_t *)&x)[0])*((int64_t)((int32_t *)&x)[0]) + ((int64_t)
-          ((int32_t *)&x)[1])*((int64_t)((int32_t *)&x)[1]));
 }
 
 
@@ -426,7 +408,7 @@ int ru_sync_time(RU_t *ru,
                                 shift);
       }
 
-      dmrs_corr += abs64(result);
+      dmrs_corr += squaredMod(*(c32_t*)&result);
     }
 
     if (ru->dmrs_corr != NULL)

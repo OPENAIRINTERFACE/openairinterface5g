@@ -713,6 +713,32 @@ file(GLOB F1AP_C_FILES ${F1AP_DIR}/*.c)
 add_library(F1AP ${F1AP_C_FILES} )
 
 
+# LPP
+##############
+set(LPP_DIR ${OPENAIR3_DIR}/LPP)
+set(LPP_ASN_DIR ${LPP_DIR}/MESSAGES)
+set(LPP_ASN_FILES
+  ${LPP_ASN_DIR}/37355-g60.asn
+  )
+
+set(LPP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/LPP)
+
+set(lpp_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "LPP_" "-findirect-choice -fno-include-deps" "${LPP_ASN_GENERATED_C_DIR}")
+
+compile_asn1("${LPP_ASN_FILES}" "${lpp_cmd}" lpp_flag)
+
+file(GLOB LPP_ASN_GENERATED_C_FILES ${LPP_ASN_GENERATED_C_DIR}/*.c)
+add_library(LPP_LIB
+  ${LPP_ASN_GENERATED_C_FILES}
+  )
+add_dependencies (LPP_LIB  lpp_flag)
+  
+include_directories ("${LPP_ASN_GENERATED_C_DIR}")
+include_directories ("${LPP_DIR}")
+  
+#file(GLOB LPP_C_FILES ${LPP_DIR}/*.c)
+#add_library(LPP ${LPP_C_FILES} )
+
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
@@ -1610,6 +1636,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/INIT/nr_init.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
   ${OPENAIR1_DIR}/PHY/MODULATION/nr_modulation.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_prs.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pss.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sss.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pbch.c

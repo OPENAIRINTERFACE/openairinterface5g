@@ -38,6 +38,14 @@
 
 #define NR_PBCH_PDU_BITS 24
 
+
+int nr_generate_prs(uint32_t **nr_gold_prs,
+                    int32_t *txdataF,
+                    int16_t amp,
+                    prs_config_t *prs_cfg,
+                    nfapi_nr_config_request_scf_t *config,
+                    NR_DL_FRAME_PARMS *frame_parms);
+
 /*!
 \fn int nr_generate_pss
 \brief Generation of the NR PSS

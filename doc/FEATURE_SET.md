@@ -298,6 +298,10 @@ The following features are valid for the gNB and the 5G-NR UE.
     - SRS signal reception
     - Channel estimation (with T tracer real time monitoring)
     - Power noise estimation
+*  NR-PRS
+    - Rel16 Positioning reference signal(PRS) generation and modulation
+    - Multiple PRS resources, one per beam is supported in FR2 TDD mode
+    - FR1 and FR2 support with config file
 *  NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 are supported)
@@ -459,6 +463,11 @@ The following features are valid for the gNB and the 5G-NR UE.
 * NR-SRS
     - Generation of sequence at PHY
     - SRS signal transmission
+* NR-PRS
+    - PRS based Channel estimation with T tracer dumps
+    - Time of arrival(ToA) estimation based on channel impulse response(CIR)
+    - Finer ToA estimation by 16x oversampled IDFT for CIR
+    - Support for multiple gNB reception with gNBs synced via GPSDO
 * NR-PRACH
    - Formats 0,1,2,3, A1-A3, B1-B3
 * SS-RSRP

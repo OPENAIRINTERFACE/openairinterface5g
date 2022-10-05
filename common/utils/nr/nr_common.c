@@ -664,10 +664,26 @@ void get_samplerate_and_bw(int mu,
     }
   } else if (mu == 3) {
     switch(n_rb) {
-      case 66:
+      case 132:
+      case 128:
         if (threequarter_fs) {
           *sample_rate=184.32e6;
           *samples_per_frame = 1843200;
+          *tx_bw = 200e6;
+          *rx_bw = 200e6;
+        } else {
+          *sample_rate = 245.76e6;
+          *samples_per_frame = 2457600;
+          *tx_bw = 200e6;
+          *rx_bw = 200e6;
+        }
+        break;
+
+      case 66:
+      case 64:
+        if (threequarter_fs) {
+          *sample_rate=92.16e6;
+          *samples_per_frame = 921600;
           *tx_bw = 100e6;
           *rx_bw = 100e6;
         } else {
@@ -676,7 +692,6 @@ void get_samplerate_and_bw(int mu,
           *tx_bw = 100e6;
           *rx_bw = 100e6;
         }
-
         break;
 
       case 32:
@@ -691,7 +706,6 @@ void get_samplerate_and_bw(int mu,
           *tx_bw = 50e6;
           *rx_bw = 50e6;
         }
-
         break;
 
       default:

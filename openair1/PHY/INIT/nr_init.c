@@ -615,6 +615,9 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   gNB->nr_csi_info->csi_gold_init = cfg->cell_config.phy_cell_id.value;
   nr_init_csi_rs(&gNB->frame_parms, gNB->nr_csi_info->nr_gold_csi_rs, cfg->cell_config.phy_cell_id.value);
 
+  //PRS init
+  nr_init_prs(gNB);
+
   for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
     gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
     gNB->nr_srs_info[id]->srs_generated_signal = (int32_t**)malloc16_clear(MAX_NUM_NR_SRS_AP*sizeof(int32_t*));
@@ -792,6 +795,17 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(common_vars->txdataF[i]);
     free_and_zero(common_vars->beam_id[i]);
   }
+
+  for (int rsc=0; rsc < gNB->prs_vars.NumPRSResources; rsc++) {
+    for (int slot=0; slot<fp->slots_per_frame; slot++) {
+      for (int symb=0; symb<fp->symbols_per_slot; symb++) {
+        free_and_zero(gNB->nr_gold_prs[rsc][slot][symb]);
+      }
+      free_and_zero(gNB->nr_gold_prs[rsc][slot]);
+    }
+    free_and_zero(gNB->nr_gold_prs[rsc]);
+  }
+  free_and_zero(gNB->nr_gold_prs);
 
   /* Do NOT free per-antenna txdataF/rxdataF: the gNB gets a pointer to the
    * RU's txdataF/rxdataF, and the RU will free that */

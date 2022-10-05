@@ -34,6 +34,7 @@
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -595,13 +596,13 @@ static void UE_synch(void *arg) {
 
           UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
         }
-
-        break;
-
-      case si:
-      default:
-        break;
       }
+      break;
+
+    case si:
+    default:
+      break;
+
   }
 }
 
