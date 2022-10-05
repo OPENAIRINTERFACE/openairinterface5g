@@ -359,7 +359,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     thread_id = scheduled_response->thread_id;
     NR_UE_DLSCH_t *dlsch0 = NULL;
     NR_UE_ULSCH_t *ulsch = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0];
-    NR_UE_PUCCH *pucch_vars = PHY_vars_UE_g[module_id][cc_id]->pucch_vars[thread_id][0];
+    NR_UE_PUCCH *pucch_vars = &((nr_phy_data_t *)scheduled_response->phy_data)->pucch_vars;
     NR_UE_CSI_IM *csiim_vars = PHY_vars_UE_g[module_id][cc_id]->csiim_vars[0];
     NR_UE_CSI_RS *csirs_vars = PHY_vars_UE_g[module_id][cc_id]->csirs_vars[0];
     NR_UE_PDCCH_CONFIG *phy_pdcch_config = NULL;

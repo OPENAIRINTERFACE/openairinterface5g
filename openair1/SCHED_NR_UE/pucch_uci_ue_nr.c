@@ -203,11 +203,12 @@ void nr_generate_pucch3_4(int32_t **txdataF,
 
 void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, 
                             uint8_t gNB_id,
-                            UE_nr_rxtx_proc_t *proc) {
+                            UE_nr_rxtx_proc_t *proc,
+                            nr_phy_data_t *phy_data) {
 
   int       nr_slot_tx = proc->nr_slot_tx;
   fapi_nr_ul_config_pucch_pdu *pucch_pdu;
-  NR_UE_PUCCH *pucch_vars = ue->pucch_vars[proc->thread_id][gNB_id];
+  NR_UE_PUCCH *pucch_vars = &phy_data->pucch_vars;
 
   for (int i=0; i<2; i++) {
     if(pucch_vars->active[i]) {

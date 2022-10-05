@@ -2318,7 +2318,7 @@ void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac) {
 }
 
 
-void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id) {
+void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id, void *phy_data) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   int O_SR = 0;
@@ -2410,7 +2410,7 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
                           O_SR, O_ACK, O_CSI);
     LOG_D(NR_MAC, "Configuring pucch, is_common = %d\n", pucch.is_common);
     nr_scheduled_response_t scheduled_response;
-    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id, NULL);
+    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id, phy_data);
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
       mac->if_module->scheduled_response(&scheduled_response);
   }

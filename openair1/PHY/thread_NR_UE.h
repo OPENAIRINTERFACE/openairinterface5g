@@ -11,10 +11,13 @@ typedef struct {
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
   //#ifdef UE_NR_PHY_DEMO
+  int gNB_id;
   /// NR slot index within frame_tx [0 .. slots_per_frame - 1] to act upon for transmission
   int nr_slot_tx;
+  int rx_slot_type;
   /// NR slot index within frame_rx [0 .. slots_per_frame - 1] to act upon for transmission
   int nr_slot_rx;
+  int tx_slot_type;
   //#endif
   /// frame to act upon for transmission
   int frame_tx;
