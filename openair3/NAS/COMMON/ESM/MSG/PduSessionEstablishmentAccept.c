@@ -120,11 +120,15 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received RQ timer value IE\n");
         offset++; /* TS 24.008 10.5.7.3 */
         psea_iei = *(buffer + offset++);
-
         break;
 
       case IEI_SNSSAI: /* Ommited */
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received S-NSSAI IE\n");
+        uint8_t snssai_length = *(buffer + offset);
+        offset += (snssai_length + sizeof(snssai_length));
+        psea_iei = *(buffer + offset++);
         break;
+
       case IEI_ALWAYSON_PDU: /* Ommited */
         break;
       case IEI_MAPPED_EPS: /* Ommited */
