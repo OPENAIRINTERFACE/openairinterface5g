@@ -85,7 +85,10 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
   while(offset < msg_length) {
     switch (psea_iei) {
       case IEI_5GSM_CAUSE: /* Ommited */
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received 5GSM Cause IEI\n");
+        offset++;
         break;
+
       case IEI_PDU_ADDRESS:
         break;
       case IEI_RQ_TIMER_VALUE: /* Ommited */
