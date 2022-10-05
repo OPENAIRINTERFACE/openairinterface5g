@@ -21,6 +21,8 @@
 
 #include "PduSessionEstablishmentAccept.h"
 #include "common/utils/LOG/log.h"
+#include "nr_nas_msg_sim.h"
+#include "openair2/RRC/NAS/nas_config.h"
 
 void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_length){
   return;
