@@ -40,6 +40,15 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
   sec_nas_msg.payload_type = *(buffer + (offset++));
   sec_nas_msg.payload_len  = htons(*(uint16_t *)(buffer + offset));
   offset+=sizeof(sec_nas_msg.payload_len);
+  /* Mandatory Presence IEs */
+  psea_msg.epd      = *(buffer + (offset++));
+  psea_msg.pdu_id   = *(buffer + (offset++));
+  psea_msg.pti      = *(buffer + (offset++));
+  psea_msg.msg_type = *(buffer + (offset++));
+  psea_msg.pdu_type = *(buffer + offset) & 0x0f;
+  psea_msg.ssc_mode = (*(buffer + (offset++)) & 0xf0) >> 4;
+  psea_msg.qos_rules.length = htons(*(uint16_t *)(buffer + offset));
+  offset+=sizeof(psea_msg.qos_rules.length);
 
   return;
 }
