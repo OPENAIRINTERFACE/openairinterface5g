@@ -79,5 +79,36 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
   psea_msg.sess_ambr.length = *(buffer + offset++);
   offset += psea_msg.sess_ambr.length; /* Ommit the Seassion-AMBR */
 
+  /* Optional Presence IEs */
+  uint8_t psea_iei = *(buffer + offset++);
+
+  while(offset < msg_length) {
+    switch (psea_iei) {
+      case IEI_5GSM_CAUSE: /* Ommited */
+        break;
+      case IEI_PDU_ADDRESS:
+        break;
+      case IEI_RQ_TIMER_VALUE: /* Ommited */
+        break;
+      case IEI_SNSSAI: /* Ommited */
+        break;
+      case IEI_ALWAYSON_PDU: /* Ommited */
+        break;
+      case IEI_MAPPED_EPS: /* Ommited */
+        break;
+      case IEI_EAP_MSG: /* Ommited */
+        break;
+      case IEI_AUTH_QOS_DESC: /* Ommited */
+        break;
+      case IEI_EXT_CONF_OPT: /* Ommited */
+        break;
+      case IEI_DNN:
+        break;
+
+      default:
+        break;
+    }
+  }
+
   return;
 }
