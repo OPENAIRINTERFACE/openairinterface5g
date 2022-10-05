@@ -1002,9 +1002,10 @@ void fill_initial_SpCellConfig(int uid,
 
   SpCellConfig->spCellConfigDedicated = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated));
   SpCellConfig->spCellConfigDedicated->uplinkConfig = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig));
+  NR_UplinkConfig_t *uplinkConfig = SpCellConfig->spCellConfigDedicated->uplinkConfig;
 
   NR_BWP_UplinkDedicated_t *initialUplinkBWP = calloc(1,sizeof(*initialUplinkBWP));
-  SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP = initialUplinkBWP;
+  uplinkConfig->initialUplinkBWP = initialUplinkBWP;
   initialUplinkBWP->pucch_Config = calloc(1,sizeof(*initialUplinkBWP->pucch_Config));
   initialUplinkBWP->pucch_Config->present = NR_SetupRelease_PUCCH_Config_PR_setup;
   NR_PUCCH_Config_t *pucch_Config = calloc(1,sizeof(*pucch_Config));
@@ -1090,9 +1091,15 @@ void fill_initial_SpCellConfig(int uid,
   pusch_Config->uci_OnPUSCH=NULL;
   pusch_Config->tp_pi2BPSK=NULL;
 
+  long maxMIMO_Layers = uplinkConfig &&
+                                uplinkConfig->pusch_ServingCellConfig &&
+                                uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1 &&
+                                uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers ?
+                            *uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
+
   // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, 0);
+  config_srs(initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
 
   scheduling_request_config(scc, pucch_Config);
 
@@ -1216,7 +1223,7 @@ void fill_initial_SpCellConfig(int uid,
     n_ul_bwp = servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
   }
   if(n_ul_bwp>0) {
-    SpCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList));
+    uplinkConfig->uplinkBWP_ToAddModList = calloc(1,sizeof(*uplinkConfig->uplinkBWP_ToAddModList));
     for (int bwp_loop = 0; bwp_loop < n_ul_bwp; bwp_loop++) {
       NR_BWP_Uplink_t *ubwp = calloc(1, sizeof(*ubwp));
       config_uplinkBWP(ubwp, bwp_loop, true, uid,
@@ -1224,12 +1231,11 @@ void fill_initial_SpCellConfig(int uid,
                        servingcellconfigdedicated,
                        scc,
                        NULL);
-      ASN_SEQUENCE_ADD(&SpCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list, ubwp);
+      ASN_SEQUENCE_ADD(&uplinkConfig->uplinkBWP_ToAddModList->list, ubwp);
     }
-    SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id));
-    *SpCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id : 1;
+    uplinkConfig->firstActiveUplinkBWP_Id = calloc(1,sizeof(*uplinkConfig->firstActiveUplinkBWP_Id));
+    *uplinkConfig->firstActiveUplinkBWP_Id = servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id : 1;
   }
-
 
   SpCellConfig->spCellConfigDedicated->csi_MeasConfig=calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
   SpCellConfig->spCellConfigDedicated->csi_MeasConfig->present = NR_SetupRelease_CSI_MeasConfig_PR_setup;
@@ -1585,6 +1591,12 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
 
   if(scc) {
     int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+    NR_UplinkConfig_t *uplinkConfig = SpCellConfig && SpCellConfig->spCellConfigDedicated ? SpCellConfig->spCellConfigDedicated->uplinkConfig : NULL;
+    long maxMIMO_Layers = uplinkConfig &&
+                                  uplinkConfig->pusch_ServingCellConfig &&
+                                  uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1 &&
+                                  uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers ?
+                              *uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
     // SRS configuration
     if (configuration->do_SRS &&
         SpCellConfig &&
@@ -1600,6 +1612,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                  curr_bwp,
                  uid,
                  0,
+                 maxMIMO_Layers,
                  configuration->do_SRS);
     }
 
@@ -1625,6 +1638,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                    bwp_size,
                    uid,
                    i+1,
+                   maxMIMO_Layers,
                    configuration->do_SRS);
       }
     }

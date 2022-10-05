@@ -239,12 +239,7 @@ void handle_nr_srs(NR_UL_IND_t *UL_info) {
     handle_nr_srs_measurements(module_id,
                                frame,
                                slot,
-                               srs_ind->rnti,
-                               srs_ind->timing_advance,
-                               srs_ind->num_symbols,
-                               srs_ind->wide_band_snr,
-                               srs_ind->num_reported_symbols,
-                               srs_ind->reported_symbol_list);
+                               &srs_list[i]);
   }
 
   UL_info->srs_ind.number_of_pdus = 0;

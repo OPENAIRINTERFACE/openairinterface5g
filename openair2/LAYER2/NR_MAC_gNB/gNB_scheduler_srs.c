@@ -35,7 +35,12 @@
 
 extern RAN_CONTEXT_t RC;
 
-void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_UE_info_t*  UE, NR_SRS_Resource_t *srs_resource) {
+const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 48, 52, 56, 60, 64, 72, 72, 76, 80, 88,
+                             96, 96, 104, 112, 120, 120, 120, 128, 128, 128, 132, 136, 144, 144, 144, 144, 152, 160,
+                             160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
+                             256, 264, 272, 272, 272 };
+
+void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_UE_info_t*  UE, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource) {
 
   NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
@@ -74,9 +79,22 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_U
   srs_pdu->resource_type = srs_resource->resourceType.present - 1;
   srs_pdu->t_srs = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
   srs_pdu->t_offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
+
+  // TODO: This should be completed
+  srs_pdu->srs_parameters_v4.srs_bandwidth_size = m_SRS[srs_pdu->config_index];
+  srs_pdu->srs_parameters_v4.usage = 1<<srs_resource_set->usage;
+  srs_pdu->srs_parameters_v4.report_type[0] = 1;
+  srs_pdu->srs_parameters_v4.iq_representation = 1;
+  srs_pdu->srs_parameters_v4.prg_size = 1;
+  srs_pdu->srs_parameters_v4.num_total_ue_antennas = 1<<srs_pdu->num_ant_ports;
+  if (srs_resource_set->usage == NR_SRS_ResourceSet__usage_beamManagement) {
+    srs_pdu->beamforming.trp_scheme = 0;
+    srs_pdu->beamforming.num_prgs = m_SRS[srs_pdu->config_index];
+    srs_pdu->beamforming.prg_size = 1;
+  }
 }
 
-void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t slot, NR_SRS_Resource_t *srs_resource) {
+void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t slot, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource) {
 
   nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][slot];
   AssertFatal(future_ul_tti_req->n_pdus <
@@ -88,7 +106,7 @@ void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t s
   memset(srs_pdu, 0, sizeof(nfapi_nr_srs_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
-  nr_configure_srs(srs_pdu, module_id, CC_id, UE, srs_resource);
+  nr_configure_srs(srs_pdu, module_id, CC_id, UE, srs_resource_set, srs_resource);
 }
 
 /*******************************************************************
@@ -158,7 +176,7 @@ void nr_schedule_srs(int module_id, frame_t frame) {
       // Check if UE will transmit the SRS in this frame
       if ( ((frame - offset/n_slots_frame)*n_slots_frame)%period == 0) {
         LOG_D(NR_MAC,"Scheduling SRS reception for %d.%d\n", frame, offset%n_slots_frame);
-        nr_fill_nfapi_srs(module_id, CC_id, UE, offset%n_slots_frame, srs_resource);
+        nr_fill_nfapi_srs(module_id, CC_id, UE, offset%n_slots_frame, srs_resource_set, srs_resource);
         sched_ctrl->sched_srs.frame = frame;
         sched_ctrl->sched_srs.slot = offset%n_slots_frame;
         sched_ctrl->sched_srs.srs_scheduled = true;

@@ -189,6 +189,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
+                  nr_srs_feedback_t *srs_feedback,
                   int time_domain_assignment,
                   uint8_t tpc,
                   NR_UE_UL_BWP_t *ul_bwp);
@@ -441,12 +442,7 @@ void handle_nr_ul_harq(const int CC_idP,
 void handle_nr_srs_measurements(const module_id_t module_id,
                                 const frame_t frame,
                                 const sub_frame_t slot,
-                                const rnti_t rnti,
-                                const uint16_t timing_advance,
-                                const uint8_t num_symbols,
-                                const uint8_t wide_band_snr,
-                                const uint8_t num_reported_symbols,
-                                nfapi_nr_srs_indication_reported_symbol_t* reported_symbol_list);
+                                const nfapi_nr_srs_indication_pdu_t *srs_ind);
 
 int16_t ssb_index_from_prach(module_id_t module_idP,
                              frame_t frameP,

@@ -53,7 +53,7 @@
 #define mulhi_s1_int16(a,b) vshlq_n_s16(vqdmulhq_s16(a,b),1)
 #define adds_int16(a,b) vqaddq_s16(a,b)
 #define mullo_int16(a,b) vmulq_s16(a,b)
-#define _mm_empty() 
+#define _mm_empty()
 #define _m_empty()
 #endif
 
@@ -73,6 +73,11 @@ extern "C" {
     float r;
     float i;
   } cf_t;
+
+  typedef struct complex8 {
+    int8_t r;
+    int8_t i;
+  } c8_t;
 
   typedef struct complex16 {
     int16_t r;
@@ -98,14 +103,14 @@ extern "C" {
       .i = (int16_t)((a.r * b.i + a.i * b.r) >> Shift)
     };
   }
-  
+
   __attribute__((always_inline)) inline c16_t c16divShift(const c16_t a, const c16_t b, const int Shift) {
     return (c16_t) {
       .r = (int16_t)((a.r * b.r + a.i * b.i) >> Shift),
       .i = (int16_t)((a.r * b.i - a.i * b.r) >> Shift)
     };
   }
-  
+
   __attribute__((always_inline)) inline c16_t c16maddShift(const c16_t a, const c16_t b, c16_t c, const int Shift) {
     return (c16_t) {
       .r = (int16_t)(((a.r * b.r - a.i * b.i ) >> Shift) + c.r),
@@ -136,8 +141,8 @@ extern "C" {
 
 
   // On N complex numbers
-  //   y.r += (x * alpha.r) >> 14 
-  //   y.i += (x * alpha.i) >> 14 
+  //   y.r += (x * alpha.r) >> 14
+  //   y.i += (x * alpha.i) >> 14
   // See regular C implementation at the end
   __attribute__((always_inline)) inline void c16multaddVectRealComplex(const int16_t *x,
                                                                        const c16_t *alpha,
@@ -153,7 +158,7 @@ extern "C" {
       10,11,10+16,11+16,
       12,13,12+16,13+16,
       14,15,14+16,15+16};
-    
+
     __m256i alpha256= _mm256_set1_epi32(*(int32_t *)alpha);
     __m128i *x128=(__m128i *)x;
     __m128i *y128=(__m128i *)y;
@@ -169,11 +174,11 @@ extern "C" {
       *y128= _mm_adds_epi16(_mm256_extracti128_si256(x_mul_alpha_x2,1),*y128);
       y128++;
       x128++;
-    } 
-    
+    }
+
 #elif defined(__x86_64__) || defined(__i386__) ||  defined(__arm__)
     uint32_t i;
-    
+
     // do 8 multiplications at a time
     simd_q15_t alpha_r_128,alpha_i_128,yr,yi,*x_128=(simd_q15_t*)x,*y_128=(simd_q15_t*)y;
     int j;
@@ -199,7 +204,7 @@ extern "C" {
       y_128[j]   = adds_int16(y_128[j],yint.val[0]);
       j++;
       y_128[j]   = adds_int16(y_128[j],yint.val[1]);
- 
+
       j++;
 #endif
     }
@@ -260,7 +265,7 @@ __attribute__((always_inline)) inline void multadd_real_four_symbols_vector_comp
   _mm_storeu_si128((simd_q15_t*)y, y_128);
 
 }
-  
+
 /*!\fn void multadd_complex_vector_real_scalar(int16_t *x,int16_t alpha,int16_t *y,uint8_t zero_flag,uint32_t N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
 @param x Vector input (Q1.15) in the format |Re0 Im0|Re1 Im 1| ...

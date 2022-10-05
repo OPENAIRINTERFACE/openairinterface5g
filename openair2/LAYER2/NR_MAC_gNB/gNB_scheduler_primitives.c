@@ -882,6 +882,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   const NR_ServingCellConfigCommon_t *scc,
                   const nfapi_nr_pusch_pdu_t *pusch_pdu,
                   dci_pdu_rel15_t *dci_pdu_rel15,
+                  nr_srs_feedback_t *srs_feedback,
                   int time_domain_assignment,
                   uint8_t tpc,
                   NR_UE_UL_BWP_t *ul_bwp) {
@@ -916,13 +917,14 @@ void config_uldci(const NR_SIB1_t *sib1,
           pusch_Config->txConfig != NULL) {
         AssertFatal(*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook,
                     "Non Codebook configuration non supported\n");
-        dci_pdu_rel15->srs_resource_indicator.val = 0; // taking resource 0 for SRS
+        compute_srs_resource_indicator(ul_bwp->pusch_servingcellconfig, pusch_Config, ul_bwp->srs_Config, srs_feedback, &dci_pdu_rel15->srs_resource_indicator.val);
       }
-      dci_pdu_rel15->precoding_information.val= 0;
-      if (pusch_pdu->nrOfLayers == 2)
-        dci_pdu_rel15->precoding_information.val = 4;
-      else if (pusch_pdu->nrOfLayers == 4)
-        dci_pdu_rel15->precoding_information.val = 11;
+      compute_precoding_information(pusch_Config,
+                                    ul_bwp->srs_Config,
+                                    dci_pdu_rel15->srs_resource_indicator,
+                                    srs_feedback,
+                                    &pusch_pdu->nrOfLayers,
+                                    &dci_pdu_rel15->precoding_information.val);
 
       // antenna_ports.val = 0 for transform precoder is disabled, dmrs-Type=1, maxLength=1, Rank=1/2/3/4
       // Antenna Ports
@@ -1018,7 +1020,7 @@ int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
 // This function configures pucch pdu fapi structure
 void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
                         NR_ServingCellConfigCommon_t *scc,
-                        NR_UE_info_t* UE,
+                        NR_UE_info_t *UE,
                         uint8_t pucch_resource,
                         uint16_t O_csi,
                         uint16_t O_ack,
@@ -2456,6 +2458,12 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                                           false);
 }
 
+void reset_srs_stats(NR_UE_info_t *UE) {
+  if (UE) {
+    UE->mac_stats.srs_stats[0] = '\0';
+  }
+}
+
 //------------------------------------------------------------------------------
 NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup)
 {
@@ -2521,6 +2529,8 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
   create_nr_list(&sched_ctrl->feedback_ul_harq, 16);
   create_nr_list(&sched_ctrl->retrans_ul_harq, 16);
+
+  reset_srs_stats(UE);
 
   pthread_mutex_lock(&UE_info->mutex);
   int i;
@@ -2928,6 +2938,8 @@ void nr_mac_update_timers(module_id_t module_id,
       sched_ctrl->rrc_processing_timer--;
       if (sched_ctrl->rrc_processing_timer == 0) {
         LOG_I(NR_MAC, "(%d.%d) De-activating RRC processing timer for UE %04x\n", frame, slot, UE->rnti);
+
+        reset_srs_stats(UE);
 
         NR_CellGroupConfig_t *cg = NULL;
         uper_decode(NULL,
