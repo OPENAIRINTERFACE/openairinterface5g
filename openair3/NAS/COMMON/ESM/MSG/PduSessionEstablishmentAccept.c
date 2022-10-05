@@ -117,7 +117,12 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         break;
 
       case IEI_RQ_TIMER_VALUE: /* Ommited */
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received RQ timer value IE\n");
+        offset++; /* TS 24.008 10.5.7.3 */
+        psea_iei = *(buffer + offset++);
+
         break;
+
       case IEI_SNSSAI: /* Ommited */
         break;
       case IEI_ALWAYSON_PDU: /* Ommited */
