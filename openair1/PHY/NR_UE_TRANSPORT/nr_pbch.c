@@ -197,7 +197,7 @@ int nr_pbch_channel_level(struct complex16 dl_ch_estimates_ext[][PBCH_MAX_RE_PER
 #if defined(__x86_64__) || defined(__i386__)
   __m128i avg128;
   __m128i *dl_ch128;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int32x4_t avg128;
   int16x8_t *dl_ch128;
 #endif
@@ -208,7 +208,7 @@ int nr_pbch_channel_level(struct complex16 dl_ch_estimates_ext[][PBCH_MAX_RE_PER
 #if defined(__x86_64__) || defined(__i386__)
     avg128 = _mm_setzero_si128();
     dl_ch128=(__m128i *)dl_ch_estimates_ext[aarx];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     avg128 = vdupq_n_s32(0);
     dl_ch128=(int16x8_t *)dl_ch_estimates_ext[aarx];
 #endif
@@ -218,7 +218,7 @@ int nr_pbch_channel_level(struct complex16 dl_ch_estimates_ext[][PBCH_MAX_RE_PER
       avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
       avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
       avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
       abort();
       // to be filled in
 #endif
@@ -271,7 +271,7 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
   int i, nb_rb=6;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxdataF_comp128_0,*rxdataF_comp128_1;
 #endif
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
@@ -280,7 +280,7 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #if defined(__x86_64__) || defined(__i386__)
     rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol_mod*6*12];
     rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[1][symbol_mod*6*12];
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol_mod*6*12];
     rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol_mod*6*12];
 #endif
@@ -289,7 +289,7 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
     for (i=0; i<nb_rb*3; i++) {
 #if defined(__x86_64__) || defined(__i386__)
       rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
       rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
 #endif
     }

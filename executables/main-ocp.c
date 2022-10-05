@@ -75,7 +75,8 @@ int oai_exit = 0;
 double cpuf;
 THREAD_STRUCT thread_struct;
 
-uint16_t sf_ahead=4;
+extern uint16_t sf_ahead; // Bell Labs
+//uint16_t sf_ahead=4;
 //uint16_t slot_ahead=6;
 int otg_enabled;
 uint64_t  downlink_frequency[MAX_NUM_CCs][4];
@@ -725,12 +726,8 @@ void ocp_tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
     }
 
 #if defined(__x86_64) || defined(__i386__)
-#ifdef __AVX2__
     sf_extension = (sf_extension)&0xfffffff8;
-#else
-    sf_extension = (sf_extension)&0xfffffffc;
-#endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     sf_extension = (sf_extension)&0xfffffffc;
 #endif
 
@@ -1141,6 +1138,7 @@ int main ( int argc, char **argv ) {
   int i;
   int CC_id = 0;
   int node_type = ngran_eNB;
+  sf_ahead=4; // Bell Labs
   AssertFatal(load_configmodule(argc,argv,0), "[SOFTMODEM] Error, configuration module init failed\n");
   logInit();
   printf("Reading in command-line options\n");

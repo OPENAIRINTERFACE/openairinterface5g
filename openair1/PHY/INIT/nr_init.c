@@ -664,11 +664,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   int n_buf = Prx*max_ul_mimo_layers;
 
   int nb_re_pusch = N_RB_UL * NR_NB_SC_PER_RB;
-#ifdef __AVX2__
   int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
-#else
-  int nb_re_pusch2 = nb_re_pusch;
-#endif
 
   for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
     pusch_vars[ULSCH_id] = (NR_gNB_PUSCH *)malloc16_clear( sizeof(NR_gNB_PUSCH) );

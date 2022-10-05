@@ -41,7 +41,7 @@
 #include <executables/split_headers.h>
 #include <openair1/PHY/CODING/coding_extern.h>
 #include <threadPool/thread-pool.h>
-#include <emmintrin.h>
+#include "PHY/sse_intrin.h"
 
 #define FS6_BUF_SIZE 1000*1000
 static UDPsock_t sockFS6;

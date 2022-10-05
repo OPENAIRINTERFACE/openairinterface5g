@@ -1159,7 +1159,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
            dec_rval.consumed );
     log_dump(NR_RRC, Sdu, Sdu_len, LOG_DUMP_CHAR,"   Received bytes:\n" );
     // free the memory
-    SEQUENCE_free( &asn_DEF_LTE_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
+    SEQUENCE_free( &asn_DEF_NR_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
     return -1;
   }
@@ -1227,7 +1227,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
   }
 
   if (nr_rrc_get_sub_state(module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR) {
-    //if ( (NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL) || (!AMF_MODE_ENABLED)) {
+    //if ( (NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL) || (!get_softmodem_params()->sa)) {
       nr_rrc_ue_generate_RRCSetupRequest(module_id, 0);
       nr_rrc_set_sub_state( module_id, RRC_SUB_STATE_IDLE_CONNECTING );
     //}
@@ -2791,13 +2791,13 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
 
             LTE_MeasObjectToAddMod_t *nr_meas_obj = NULL;
             asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
-                            &asn_DEF_LTE_MeasObjectToAddMod,
+                            &asn_DEF_NR_MeasObjectToAddMod,
                             (void **)&nr_meas_obj,
                             msg_buffer,
                             msg_len);
             if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
             {
-              SEQUENCE_free(&asn_DEF_LTE_MeasObjectToAddMod, nr_meas_obj, ASFM_FREE_EVERYTHING);
+              SEQUENCE_free(&asn_DEF_NR_MeasObjectToAddMod, nr_meas_obj, ASFM_FREE_EVERYTHING);
               LOG_E(RRC, "Failed to decode measurement object (%zu bits) %d\n", dec_rval.consumed, dec_rval.code);
               break;
             }

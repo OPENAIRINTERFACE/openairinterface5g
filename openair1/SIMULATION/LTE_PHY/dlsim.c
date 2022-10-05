@@ -604,7 +604,7 @@ int main(int argc, char **argv) {
   nfapi_tx_request_t TX_req;
   Sched_Rsp_t sched_resp;
   int pa=dB0;
-#if defined(__arm__)
+#if defined(__arm__) || defined(__aarch64__)
   FILE    *proc_fd = NULL;
   char buf[64];
   memset(buf,0,sizeof(buf));

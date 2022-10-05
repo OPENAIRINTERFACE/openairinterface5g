@@ -1407,13 +1407,8 @@ int main(int argc, char **argv)
 
 
     if (n_trials == 1  && round==0) {
-#ifdef __AVX2__
       __attribute__((unused))
       int off = ((nb_rb&1) == 1)? 4:0;
-#else
-      __attribute__((unused))
-      int off = 0;
-#endif
 
       LOG_M("rxsigF0_ext.m","rxsF0_ext",
             &gNB->pusch_vars[0]->rxdataF_ext[0][start_symbol*NR_NB_SC_PER_RB * pusch_pdu->rb_size],nb_symb_sch*(off+(NR_NB_SC_PER_RB * pusch_pdu->rb_size)),1,1);

@@ -23,13 +23,7 @@
 #include "common_lib.h"
 #include <chrono>
 
-#ifdef __SSE4_1__
-#  include <smmintrin.h>
-#endif
-
-#ifdef __AVX2__
-#  include <immintrin.h>
-#endif
+#include "openair1/PHY/sse_intrin.h"
 
 #define MOVE_DC
 #define SAMPLE_RATE_DOWN 1
@@ -152,13 +146,8 @@ trx_iris_write(openair0_device *device, openair0_timestamp timestamp, void **buf
     iris_state_t *s = (iris_state_t *) device->priv;
     int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
-  #ifdef __AVX2__
     nsamps2 = (nsamps+7)>>3;
     __m256i buff_tx[2][nsamps2];
-  #else
-    nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tx[2][nsamps2];
-  #endif
 #else
   #error unsupported CPU architecture, iris device cannot be built
 #endif
@@ -167,11 +156,7 @@ trx_iris_write(openair0_device *device, openair0_timestamp timestamp, void **buf
     for (int i=0; i<cc; i++) {
       for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
-#ifdef __AVX2__
-        buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
-#else
-        buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
-#endif
+        buff_tx[i][j] = simde_mm256_slli_epi16(((__m256i *)buff[i])[j],4);
 #endif
       }
     }
@@ -253,13 +238,8 @@ static int trx_iris_read(openair0_device *device, openair0_timestamp *ptimestamp
     int m = s->rx_num_channels;
     int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
-#ifdef __AVX2__
     nsamps2 = (nsamps+7)>>3;
     __m256i buff_tmp[2][nsamps2];
-#else
-    nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tmp[2][nsamps2];
-#endif
 #endif
 
     for (r = 0; r < s->device_num; r++) {
@@ -331,11 +311,7 @@ static int trx_iris_read(openair0_device *device, openair0_timestamp *ptimestamp
         for (int i=0; i<cc; i++) {
           for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
-#ifdef   __AVX2__
-            ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
-#else
-            ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
-#endif
+            ((__m256i *)buff[i])[j] = simde_mm256_srai_epi16(buff_tmp[i][j],4);
 #endif
           }
         }

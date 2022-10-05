@@ -173,7 +173,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
   uint16_t i;
 #endif
-  //#ifdef __AVX2__
+  //#ifdef __WASAVX2__
 #if 0
   int Kr_last,skipped_last=0;
   uint8_t (*tc_2cw)(int16_t *y,
@@ -402,7 +402,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     printf("%d : %d\n",i,harq_process->d[r][96+i]);
     printf("\n");
     */
-    //#ifndef __AVX2__
+    //#ifndef __WASAVX2__
 #if 1
 
     if (err_flag == 0) {

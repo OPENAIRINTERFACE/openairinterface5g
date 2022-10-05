@@ -1009,69 +1009,69 @@ void init_pucch2_luts() {
       __m256i *lut_i=&pucch2_lut[b-3][i<<1];
       __m256i *lut_ip1=&pucch2_lut[b-3][1+(i<<1)];
       bit = (out&0x1) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,0);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,0);
       bit = (out&0x2) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,0);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,0);
       bit = (out&0x4) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,1);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,1);
       bit = (out&0x8) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,1);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,1);
       bit = (out&0x10) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,2);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,2);
       bit = (out&0x20) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,2);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,2);
       bit = (out&0x40) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,3);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,3);
       bit = (out&0x80) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,3);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,3);
       bit = (out&0x100) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,4);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,4);
       bit = (out&0x200) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,4);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,4);
       bit = (out&0x400) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,5);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,5);
       bit = (out&0x800) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,5);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,5);
       bit = (out&0x1000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,6);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,6);
       bit = (out&0x2000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,6);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,6);
       bit = (out&0x4000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,7);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,7);
       bit = (out&0x8000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,7);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,7);
       bit = (out&0x10000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,8);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,8);
       bit = (out&0x20000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,8);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,8);
       bit = (out&0x40000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,9);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,9);
       bit = (out&0x80000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,9);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,9);
       bit = (out&0x100000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,10);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,10);
       bit = (out&0x200000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,10);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,10);
       bit = (out&0x400000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,11);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,11);
       bit = (out&0x800000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,11);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,11);
       bit = (out&0x1000000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,12);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,12);
       bit = (out&0x2000000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,12);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,12);
       bit = (out&0x4000000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,13);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,13);
       bit = (out&0x8000000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,13);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,13);
       bit = (out&0x10000000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,14);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,14);
       bit = (out&0x20000000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,14);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,14);
       bit = (out&0x40000000) > 0 ? -1 : 1;
-      *lut_i = _mm256_insert_epi16(*lut_i,bit,15);
+      *lut_i = simde_mm256_insert_epi16(*lut_i,bit,15);
       bit = (out&0x80000000) > 0 ? -1 : 1;
-      *lut_ip1 = _mm256_insert_epi16(*lut_ip1,bit,15);
+      *lut_ip1 = simde_mm256_insert_epi16(*lut_ip1,bit,15);
     }
   }
   for (uint16_t i=0;i<16;i++) {
@@ -1497,10 +1497,10 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
         for (int group=0;group<ngroup;group++) {
           // do complex correlation
           for (int aa=0;aa<Prx;aa++) {
-            prod_re[aa] = /*_mm256_srai_epi16(*/_mm256_adds_epi16(_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp_re[aa][symb][group]),
-                                                                  _mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp_im[aa][symb][group]))/*,5)*/;
-            prod_im[aa] = /*_mm256_srai_epi16(*/_mm256_subs_epi16(_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp2_im[aa][symb][group]),
-                                                                  _mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp2_re[aa][symb][group]))/*,5)*/;
+            prod_re[aa] = /*simde_mm256_srai_epi16(*/simde_mm256_adds_epi16(simde_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp_re[aa][symb][group]),
+                                                                  simde_mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp_im[aa][symb][group]))/*,5)*/;
+            prod_im[aa] = /*simde_mm256_srai_epi16(*/simde_mm256_subs_epi16(simde_mm256_mullo_epi16(pucch2_lut[nb_bit-3][cw<<1],rp2_im[aa][symb][group]),
+                                                                  simde_mm256_mullo_epi16(pucch2_lut[nb_bit-3][(cw<<1)+1],rp2_re[aa][symb][group]))/*,5)*/;
 #ifdef DEBUG_NR_PUCCH_RX
             printf("prod_re[%d] => (%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d)\n",aa,
                    ((int16_t*)&prod_re[aa])[0],((int16_t*)&prod_re[aa])[1],((int16_t*)&prod_re[aa])[2],((int16_t*)&prod_re[aa])[3],
@@ -1514,14 +1514,14 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                    ((int16_t*)&prod_im[aa])[12],((int16_t*)&prod_im[aa])[13],((int16_t*)&prod_im[aa])[14],((int16_t*)&prod_im[aa])[15]);
 
 #endif
-            prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1
-            prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
-            prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
-            prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
-            prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3+4+5+6+7
-            prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
-            prod_re[aa] = _mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15
-            prod_im[aa] = _mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
+            prod_re[aa] = simde_mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1
+            prod_im[aa] = simde_mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
+            prod_re[aa] = simde_mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3
+            prod_im[aa] = simde_mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
+            prod_re[aa] = simde_mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3+4+5+6+7
+            prod_im[aa] = simde_mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
+            prod_re[aa] = simde_mm256_hadds_epi16(prod_re[aa],prod_re[aa]);// 0+1+2+3+4+5+6+7+8+9+10+11+12+13+14+15
+            prod_im[aa] = simde_mm256_hadds_epi16(prod_im[aa],prod_im[aa]);
           }
           int64_t corr_re=0,corr_im=0;
 

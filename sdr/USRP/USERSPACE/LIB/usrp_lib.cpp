@@ -54,17 +54,7 @@
 
 #include <sys/resource.h>
 
-#ifdef __SSE4_1__
-  #include <smmintrin.h>
-#endif
-
-#ifdef __AVX2__
-  #include <immintrin.h>
-#endif
-
-#ifdef __arm__
-  #include <arm_neon.h>
-#endif
+#include "openair1/PHY/sse_intrin.h"
 
 /** @addtogroup _USRP_PHY_RF_INTERFACE_
  * @{
@@ -425,14 +415,9 @@ static int trx_usrp_write(openair0_device *device,
 
   if(usrp_tx_thread == 0){
 #if defined(__x86_64) || defined(__i386__)
-  #ifdef __AVX2__
       nsamps2 = (nsamps+7)>>3;
       __m256i buff_tx[cc<2?2:cc][nsamps2];
-  #else
-    nsamps2 = (nsamps+3)>>2;
-    __m128i buff_tx[cc<2?2:cc][nsamps2];
-  #endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     nsamps2 = (nsamps+3)>>2;
     int16x8_t buff_tx[cc<2?2:cc][nsamps2];
 #else
@@ -443,19 +428,15 @@ static int trx_usrp_write(openair0_device *device,
     for (int i=0; i<cc; i++) {
       for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
-#ifdef __AVX2__
         if ((((uintptr_t) buff[i])&0x1F)==0) {
-          buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+          buff_tx[i][j] = simde_mm256_slli_epi16(((__m256i *)buff[i])[j],4);
         }
         else 
         {
-          __m256i tmp=_mm256_loadu_si256(((__m256i *)buff[i])+j);
-          buff_tx[i][j] = _mm256_slli_epi16(tmp,4);
+          __m256i tmp = simde_mm256_loadu_si256(((__m256i *)buff[i])+j);
+          buff_tx[i][j] = simde_mm256_slli_epi16(tmp,4);
         }
-#else
-        buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
-#endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
         buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
 #endif
       }
@@ -572,14 +553,9 @@ void *trx_usrp_write_thread(void * arg){
     }*/
 
     #if defined(__x86_64) || defined(__i386__)
-      #ifdef __AVX2__
         nsamps2 = (nsamps+7)>>3;
         __m256i buff_tx[cc<2?2:cc][nsamps2];
-      #else
-        nsamps2 = (nsamps+3)>>2;
-        __m128i buff_tx[cc<2?2:cc][nsamps2];
-      #endif
-    #elif defined(__arm__)
+    #elif defined(__arm__) || defined(__aarch64__)
       nsamps2 = (nsamps+3)>>2;
       int16x8_t buff_tx[cc<2?2:cc][nsamps2];
     #else
@@ -590,19 +566,15 @@ void *trx_usrp_write_thread(void * arg){
     for (int i=0; i<cc; i++) {
       for (int j=0; j<nsamps2; j++) {
         #if defined(__x86_64__) || defined(__i386__)
-          #ifdef __AVX2__
             if ((((uintptr_t) buff[i])&0x1F)==0) {
-              buff_tx[i][j] = _mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+              buff_tx[i][j] = simde_mm256_slli_epi16(((__m256i *)buff[i])[j],4);
             }
             else
             {
-              __m256i tmp=_mm256_loadu_si256(((__m256i *)buff[i])+j);
-              buff_tx[i][j] = _mm256_slli_epi16(tmp,4);
+              __m256i tmp = simde_mm256_loadu_si256(((__m256i *)buff[i])+j);
+              buff_tx[i][j] = simde_mm256_slli_epi16(tmp,4);
             }
-          #else
-            buff_tx[i][j] = _mm_slli_epi16(((__m128i *)buff[i])[j],4);
-          #endif
-        #elif defined(__arm__)
+        #elif defined(__arm__) || defined(__aarch64__)
           buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
         #endif
       }
@@ -693,14 +665,9 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   int samples_received=0;
   int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
-#ifdef __AVX2__
   nsamps2 = (nsamps+7)>>3;
   __m256i buff_tmp[cc<2 ? 2 : cc][nsamps2];
-#else
-  nsamps2 = (nsamps+3)>>2;
-  __m128i buff_tmp[cc<2 ? 2 : cc][nsamps2];
-#endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   nsamps2 = (nsamps+3)>>2;
   int16x8_t buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
@@ -747,21 +714,16 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   for (int i=0; i<cc; i++) {
     for (int j=0; j<nsamps2; j++) {
 #if defined(__x86_64__) || defined(__i386__)
-#ifdef __AVX2__
       // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
       if ((((uintptr_t) buff[i])&0x1F)==0) {
-        ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],rxshift);
+        ((__m256i *)buff[i])[j] = simde_mm256_srai_epi16(buff_tmp[i][j],rxshift);
       } else {
-        __m256i tmp=_mm256_srai_epi16(buff_tmp[i][j],rxshift);
-        _mm256_storeu_si256(((__m256i *)buff[i])+j, tmp);
+        __m256i tmp = simde_mm256_srai_epi16(buff_tmp[i][j],rxshift);
+        simde_mm256_storeu_si256(((__m256i *)buff[i])+j, tmp);
       }
     }
-#else    
-      for (int j=0; j<nsamps2; j++) 
-        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],rxshift);
-#endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
       for (int j=0; j<nsamps2; j++) 
         ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
 #endif
@@ -797,7 +759,9 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       memcpy(hdr+1, buff[0], nsamps*4);
       recPlay->currentPtr+=sizeof(iqrec_t)+nsamps*4;
       recPlay->nbSamplesBlocks++;
+#if 0 // BMC: this is too verbose      
       LOG_D(HW,"recorded %d samples, for TS %lu, shift in buffer %ld\n", nsamps, hdr->ts, recPlay->currentPtr-(uint8_t *)recPlay->ms_sample);
+#endif      
     } else
       exit_function(__FILE__, __FUNCTION__, __LINE__,"Recording reaches max iq limit\n");
   }

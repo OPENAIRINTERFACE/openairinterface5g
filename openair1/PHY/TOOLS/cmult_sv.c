@@ -22,7 +22,6 @@
 #include "PHY/sse_intrin.h"
 #include "tools_defs.h"
 
-
 void multadd_complex_vector_real_scalar(int16_t *x,
                                         int16_t alpha,
                                         int16_t *y,
@@ -77,7 +76,7 @@ void multadd_real_vector_complex_scalar(int16_t *x,
     _mm_storeu_si128(y_128++, _mm_adds_epi16(tmp, _mm_unpacklo_epi16(yr, yi)));
     const simd_q15_t tmp2 = _mm_loadu_si128(y_128);
     _mm_storeu_si128(y_128++, _mm_adds_epi16(tmp2, _mm_unpackhi_epi16(yr, yi)));
-#elif defined(__arm__)
+#elif defined(__arm__) || defined (__aarch64__)
     int16x8x2_t yint;
     yint = vzipq_s16(yr,yi);
     *y_128 = adds_int16(*y_128, yint.val[0]);
@@ -88,7 +87,6 @@ void multadd_real_vector_complex_scalar(int16_t *x,
 #endif
   }
 }
-
 
 void rotate_cpx_vector(c16_t *x,
                        c16_t *alpha,
@@ -101,27 +99,26 @@ void rotate_cpx_vector(c16_t *x,
   // N is the number of complex numbers
   // output_shift reduces the result of the multiplication by this number of bits
   //AssertFatal(N%8==0, "To be developped");
-#ifdef __AVX2__
   if ( (intptr_t)x%32 == 0  && !(intptr_t)y%32 == 0 && __builtin_cpu_supports("avx2")) {
     // output is 32 bytes aligned, but not the input
     
     const c16_t for_re={alpha->r, -alpha->i};
-    __m256i const alpha_for_real =  _mm256_set1_epi32(*(uint32_t*)&for_re);
+    __m256i const alpha_for_real =  simde_mm256_set1_epi32(*(uint32_t*)&for_re);
     const c16_t for_im={alpha->i, alpha->r};
-    __m256i const alpha_for_im= _mm256_set1_epi32(*(uint32_t*)&for_im);
+    __m256i const alpha_for_im= simde_mm256_set1_epi32(*(uint32_t*)&for_im);
     __m256i const perm_mask =
-      _mm256_set_epi8(31,30,23,22,29,28,21,20,27,26,19,18,25,24,17,16,
-                      15,14,7,6,13,12,5,4,11,10,3,2,9,8,1,0);
+      simde_mm256_set_epi8(31,30,23,22,29,28,21,20,27,26,19,18,25,24,17,16,
+			   15,14,7,6,13,12,5,4,11,10,3,2,9,8,1,0);
     __m256i* xd= (__m256i*)x;
     const __m256i *end=xd+N/8;
     for( __m256i* yd = (__m256i *)y; xd<end ; yd++, xd++) {
-      const __m256i xre = _mm256_srai_epi32(_mm256_madd_epi16(*xd,alpha_for_real),
-                                            output_shift);
-      const __m256i xim = _mm256_srai_epi32(_mm256_madd_epi16(*xd,alpha_for_im),
-                                            output_shift);
+      const __m256i xre = simde_mm256_srai_epi32(simde_mm256_madd_epi16(*xd,alpha_for_real),
+						 output_shift);
+      const __m256i xim = simde_mm256_srai_epi32(simde_mm256_madd_epi16(*xd,alpha_for_im),
+						 output_shift);
       // a bit faster than unpacklo+unpackhi+packs
-      const __m256i tmp=_mm256_packs_epi32(xre,xim);
-      *yd=_mm256_shuffle_epi8(tmp,perm_mask);
+      const __m256i tmp=simde_mm256_packs_epi32(xre,xim);
+      *yd=simde_mm256_shuffle_epi8(tmp,perm_mask);
     }
     c16_t* alpha16=(c16_t*) alpha, *yLast;
     yLast=((c16_t*)y)+(N/8)*8;
@@ -131,7 +128,6 @@ void rotate_cpx_vector(c16_t *x,
       *yLast=c16mulShift(*xTail,*alpha16,output_shift);
     }
   } else {
-#endif
     // Multiply elementwise two complex vectors of N elements
     // x        - input 1    in the format  |Re0  Im0 |,......,|Re(N-1) Im(N-1)|
     //            We assume x1 with a dynamic of 15 bit maximum
@@ -164,7 +160,7 @@ void rotate_cpx_vector(c16_t *x,
     ((int16_t *)&alpha_128)[5] = -alpha->i;
     ((int16_t *)&alpha_128)[6] = alpha->i;
     ((int16_t *)&alpha_128)[7] = alpha->r;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     int32x4_t shift;
     int32x4_t ab_re0,ab_re1,ab_im0,ab_im1,re32,im32;
     int16_t reflip[8]  __attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
@@ -196,7 +192,7 @@ void rotate_cpx_vector(c16_t *x,
 
       y_128[0] = _mm_packs_epi32(m2,m3);        // pack in 16bit integers with saturation [re im re im re im re im]
       //print_ints("y_128[0]=", &y_128[0]);
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
       ab_re0 = vmull_s16(((int16x4_t*)xd)[0],((int16x4_t*)&bconj)[0]);
       ab_re1 = vmull_s16(((int16x4_t*)xd)[1],((int16x4_t*)&bconj)[1]);
@@ -214,7 +210,6 @@ void rotate_cpx_vector(c16_t *x,
       y_128[0] = vcombine_s16(vmovn_s32(xtmp.val[0]),vmovn_s32(xtmp.val[1]));
 
 #endif
-
       xd+=4;
       y_128+=1;
     }
