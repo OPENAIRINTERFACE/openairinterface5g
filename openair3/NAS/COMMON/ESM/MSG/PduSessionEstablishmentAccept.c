@@ -157,7 +157,12 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         break;
 
       case IEI_EXT_CONF_OPT: /* Ommited */
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received Extended protocol configuration options IE\n");
+        psea_msg.ext_pp_ie.length = htons(*(uint16_t *)(buffer + offset));
+        offset += (psea_msg.ext_pp_ie.length + sizeof(psea_msg.ext_pp_ie.length ));
+        psea_iei = *(buffer + offset++);
         break;
+
       case IEI_DNN:
         break;
 
