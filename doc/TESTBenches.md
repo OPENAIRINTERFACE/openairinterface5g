@@ -18,10 +18,10 @@
 | idefix        | 172.21.16.135   | CI-NSA-MiniBench      | Quectel            | Quectel module                                        |
 | amariue       | 172.21.16.144   | CI-Amarisoft-UE-Usage | nrUE               | Amarisoft UE simulator                                |
 | bellatrix     | 192.168.117.115 | CI-RAN-VM-Deployment  | Executor           | --                                                    |
-| nano          | 192.168.12.62   | CI-Bench-1-Phones     | EPC, adb           | 2x COTS (adb)                                         |
-| hutch         | 192.168.12.19   | CI-Bench-1-Phones     | eNB (B7)           | B200mini (30C5239)                                    |
-| starsky       | 192.168.12.18   | CI-Bench-1-Phones     | eNB (B40)          | b200mini (30A3E3C)                                    |
-| carabe        | 192.168.12.211  | CI-Bench-2-OAI-Phone  | UE (B7UE)          | B200mini (30AE8C9)                                    |
+| nano          | 172.21.18.48    | CI-Bench-1-Phones     | EPC, adb           | 2x COTS (adb)                                         |
+| hutch         | 172.21.18.46    | CI-Bench-1-Phones     | eNB (B7)           | B200mini (30C5239)                                    |
+| starsky       | 172.21.18.45    | CI-Bench-1-Phones     | eNB (B40)          | b200mini (30A3E3C)                                    |
+| carabe        | 172.21.18.47    | CI-Bench-2-OAI-Phone  | UE (B7UE)          | B200mini (30AE8C9)                                    |
 
 Note: The available resources, and their current usage, is indicated here:
 - [Lockable resources of jenkins-oai](https://jenkins-oai.eurecom.fr/lockable-resources/):
@@ -97,7 +97,8 @@ Webhook
   - obelix + B200, nepes + B200, idefix + Quectel, porcepix w/ sabox
   - basic SA test (40 MHz TDD)
 - [RAN-PhySim-Cluster](https://jenkins-oai.eurecom.fr/job/RAN-PhySim-Cluster/)
-  - asterix (`Asterix-OC-oaicicd-session` resource), tests in OpenShift Cluster
+  - poseidon (jumphost, `Asterix-OC-oaicicd-session` resource), tests in
+    OpenShift Cluster
   - unitary simulators (`nr_dlsim`, etc.)
 - [RAN-RF-Sim-Test-4G](https://jenkins-oai.eurecom.fr/job/RAN-RF-Sim-Test-4G/)
   - obelix (eNB, 1x UE, OAI EPC)
@@ -106,8 +107,8 @@ Webhook
   - obelix (gNB, 2x UE, OAI 5GC)
   - uses RFsimulator, TDD 40MHz, FDD 40MHz, F1 split
 - [RAN-RHEL8-Cluster-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-RHEL8-Cluster-Image-Builder/)
-  - asterix (`Asterix-OC-oaicicd-session` resource): RHEL 8 image build using
-    the OpenShift in Eurecom
+  - poseidon (jumphost, `Asterix-OC-oaicicd-session` resource): RHEL 8 image
+    build using the OpenShift Cluster
 - [RAN-Ubuntu18-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu18-Image-Builder/)
   - obelix: Ubuntu 18 image build using docker
 
@@ -144,10 +145,6 @@ runs tests:
 - bellatrix: runs 4G/5G simulators directly (eNB + 1x UE + (opt.) OAI EPC, gNB + 1x UE in "noS1")
 
 triggers pipelines:
-- [eNB-CI-F1-FDD-Band7-B210](https://open5glab.eurecom.fr:8083/jenkins/job/eNB-CI-F1-FDD-Band7-B210/)
-  - hutch + B210, nano w/ ltebox + 2x UE
-  - tests 4G FDD with F1 split, 5MHz, 10MHz, 20MHz. 5MHz stable, rest known to
-    be unstable
 - [eNB-CI-FDD-Band7-B210](https://open5glab.eurecom.fr:8083/jenkins/job/eNB-CI-FDD-Band7-B210/)
   - hutch + B210, nano w/ ltebox + 2x UE
   - tests T tracer, information through FlexRAN, RRC inactivity timers,

@@ -33,8 +33,9 @@ def buildStageStatus = true
 // Name of the test stage
 def testStageName = params.pipelineTestStageName
 
-// Name of the phone resource
-def ciSmartPhoneResource = params.smartphonesResource
+def lockResources = []
+if (params.LockResources != null && params.LockResources.trim().length() > 0)
+  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
 
 // Terminate Status
 def termUE = 0
@@ -64,7 +65,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
-        lock (ciSmartPhoneResource)
+        lock(extra: lockResources)
     }
     stages {
         stage ("Verify Parameters") {
@@ -83,8 +84,9 @@ pipeline {
                         testStageName = 'Template Test Stage'
                     }
 
-                    if (params.smartphonesResource == null) {
-                        allParametersPresent = false
+                    if (params.LockResources == null) {
+                      echo "no LockResources given"
+                      allParametersPresent = false
                     }
                     if (params.UE_IPAddress == null) {
                         allParametersPresent = false
