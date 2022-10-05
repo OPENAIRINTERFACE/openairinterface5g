@@ -99,4 +99,29 @@ typedef struct session_ambr_s {
   uint16_t sess_ul; /* Session-AMBR for uplink */
 } session_ambr_t;   /* TS 24.501 Figure 9.11.4.14.1 */
 
+/* Optional Presence IE - TS 24.501 Table 8.3.2.1.1 */
+
+typedef struct pdu_address_s {
+  uint8_t pdu_iei;        /* PDU Address IEI (0x29) */
+  uint8_t pdu_length;     /* Length of PDU address contents */
+  uint8_t pdu_type;       /* PDU session type value */
+  uint8_t pdu_addr_oct1;  /* PDU address information (1st Octet)*/
+  uint8_t pdu_addr_oct2;  /* PDU address information (2nd Octet)*/
+  uint8_t pdu_addr_oct3;  /* PDU address information (3rd Octet)*/
+  uint8_t pdu_addr_oct4;  /* PDU address information (4th Octet)*/
+} pdu_address_t; /* TS 24.501 9.11.4.10 */
+
+typedef struct dnn_s {
+  uint8_t dnn_iei;    /* DNN IEI (0x25) */
+  uint8_t dnn_length; /* Length of DNN contents */
+} dnn_t; /* TS 24.501 9.11.2.1A */
+
+typedef struct ext_pP_t {
+  uint16_t length;
+} ext_pP_t; /* TS 24.008 10.5.6.3A - Ommited, only length is processed*/
+
+typedef struct qos_fd_s {
+  uint16_t length;
+} qos_fd_t; /* TS 24.501 9.11.4.12 - Ommited, only length is processed*/
+
 #endif
