@@ -54,4 +54,8 @@
 #define ROC_MODIFY_QOS_RULE_WITHOUT_PF  0b110 /* Modify existing QoS rule without modifying packet filters */
 #define ROC_RESERVED_1                  0b111 /* Reserved */
 
+/* DNN - ASCII Codes */
+
+#define ASCII_ACK 0x06 /* Delimiter in the DNN IEI */
+
 #endif
