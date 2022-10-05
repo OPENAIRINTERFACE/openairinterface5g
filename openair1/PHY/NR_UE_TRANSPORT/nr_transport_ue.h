@@ -259,6 +259,9 @@ typedef struct {
   uint16_t dlDmrsScramblingId;
   /// PDU BITMAP 
   uint16_t pduBitmap;
+  /// Last index of LLR buffer that contains information.
+  /// Used for computing LDPC decoder R
+  int llrLen;
 } NR_DL_UE_HARQ_t;
 
 typedef struct {
