@@ -27,7 +27,8 @@
 
 extern char *baseNetAddress;
 
-void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_length){
+void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_length)
+{
   uint8_t offset = 0;
   security_protected_nas_5gs_msg_t       sec_nas_hdr;
   security_protected_plain_nas_5gs_msg_t sec_nas_msg;
@@ -52,8 +53,7 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
   psea_msg.ssc_mode = (*(buffer + (offset++)) & 0xf0) >> 4;
   psea_msg.qos_rules.length = htons(*(uint16_t *)(buffer + offset));
   offset+=sizeof(psea_msg.qos_rules.length);
-  /* Supports the capture of only one QoS Rule,
-     it should be changed for multiple QoS Rules */
+  /* Supports the capture of only one QoS Rule, it should be changed for multiple QoS Rules */
   qos_rule_t qos_rule;
   qos_rule.id     =  *(buffer + (offset++));
   qos_rule.length = htons(*(uint16_t *)(buffer + offset));
@@ -104,7 +104,7 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
           psea_msg.pdu_addr_ie.pdu_addr_oct4 = *(buffer + offset++);
           nas_getparams();
           sprintf(baseNetAddress, "%d.%d", psea_msg.pdu_addr_ie.pdu_addr_oct1, psea_msg.pdu_addr_ie.pdu_addr_oct2);
-          nas_config(1,psea_msg.pdu_addr_ie.pdu_addr_oct3, psea_msg.pdu_addr_ie.pdu_addr_oct4, "oaitun_ue");
+          nas_config(1, psea_msg.pdu_addr_ie.pdu_addr_oct3, psea_msg.pdu_addr_ie.pdu_addr_oct4, "oaitun_ue");
           LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received UE IP: %d.%d.%d.%d\n",
                 psea_msg.pdu_addr_ie.pdu_addr_oct1,
                 psea_msg.pdu_addr_ie.pdu_addr_oct2,
