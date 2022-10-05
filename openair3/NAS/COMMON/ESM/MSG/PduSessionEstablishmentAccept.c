@@ -150,7 +150,12 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
         break;
 
       case IEI_AUTH_QOS_DESC: /* Ommited */
+        LOG_D(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received Authorized QoS flow descriptions IE\n");
+        psea_msg.qos_fd_ie.length = htons(*(uint16_t *)(buffer + offset));
+        offset += (psea_msg.qos_fd_ie.length + sizeof(psea_msg.qos_fd_ie.length));
+        psea_iei = *(buffer + offset++);
         break;
+
       case IEI_EXT_CONF_OPT: /* Ommited */
         break;
       case IEI_DNN:
