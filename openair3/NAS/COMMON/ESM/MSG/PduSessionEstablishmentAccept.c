@@ -49,6 +49,33 @@ void capture_pdu_session_establishment_accept(uint8_t *buffer, uint32_t msg_leng
   psea_msg.ssc_mode = (*(buffer + (offset++)) & 0xf0) >> 4;
   psea_msg.qos_rules.length = htons(*(uint16_t *)(buffer + offset));
   offset+=sizeof(psea_msg.qos_rules.length);
+  /* Supports the capture of only one QoS Rule,
+     it should be changed for multiple QoS Rules */
+  qos_rule_t qos_rule;
+  qos_rule.id     =  *(buffer + (offset++));
+  qos_rule.length = htons(*(uint16_t *)(buffer + offset));
+  offset+=sizeof(qos_rule.length);
+  qos_rule.oc     = (*(buffer + offset) & 0xE0) >> 5;
+  qos_rule.dqr    = (*(buffer + offset) & 0x10) >> 4;
+  qos_rule.nb_pf  =  *(buffer + (offset++)) & 0x0F;
+
+  if(qos_rule.nb_pf) {
+    packet_filter_t pf;
+
+    if(qos_rule.oc == ROC_CREATE_NEW_QOS_RULE ||
+                      ROC_MODIFY_QOS_RULE_ADD_PF ||
+                      ROC_MODIFY_QOS_RULE_REPLACE_PF) {
+      pf.pf_type.type_1.pf_dir = (*(buffer + offset) & 0x30) >> 4;
+      pf.pf_type.type_1.pf_id  =  *(buffer + offset++) & 0x0F;
+      pf.pf_type.type_1.length =  *(buffer + offset++);
+      offset += (qos_rule.nb_pf * pf.pf_type.type_1.length); /* Ommit the Packet filter List */
+    } else if (qos_rule.oc == ROC_MODIFY_QOS_RULE_DELETE_PF) {
+      offset += qos_rule.nb_pf;
+    }
+  }
+
+  qos_rule.prcd = *(buffer + offset++);
+  qos_rule.qfi  = *(buffer + offset++);
 
   return;
 }
