@@ -215,9 +215,9 @@ class PhySim:
 					podName = res1.group('pod')
 				if res2 is not None:
 					logFileInPod = res2.group('name')
-					folderName = re.sub('/opt/oai-physim/cmake_targets/autotests/log/', '', logFileInPod)
+					folderName = logFileInPod.replace('/opt/oai-physim/cmake_targets/autotests/log/', '')
 					folderName = re.sub('/test.*', '', folderName)
-					fileName = re.sub('/opt/oai-physim/cmake_targets/autotests/log/' + folderName + '/', '', logFileInPod)
+					fileName = logFileInPod.replace('/opt/oai-physim/cmake_targets/autotests/log/' + folderName + '/', '')
 					mySSH.command('mkdir -p cmake_targets/log/' + folderName, '\$', 5, silent=True)
 					mySSH.command('oc cp ' + podName + ':' + logFileInPod + ' cmake_targets/log/' + folderName + '/' + fileName, '\$', 20, silent=True)
 		except Exception as e:
