@@ -969,6 +969,8 @@ function start_rf_sim_ue {
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/ran_build/build/\"" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/ran_build/build/" >> $1
+    echo "echo \"sudo ../../nas_sim_tools/build/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o .\"" >> $1
+    echo "sudo ../../nas_sim_tools/build/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o ." >> $1
     if [ $LOC_S1_CONFIGURATION -eq 0 ]
     then
         echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_PRB --ue-rxgain 140 --ue-txgain 120 --nokrnmod 1 --rfsim --log_config.global_log_options level,nocolor,time --noS1\" > ./my-lte-softmodem-run.sh " >> $1
