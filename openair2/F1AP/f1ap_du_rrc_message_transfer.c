@@ -164,13 +164,11 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   // decode RRC Container and act on the message type
   AssertFatal(srb_id<3,"illegal srb_id\n");
   protocol_ctxt_t ctxt;
-  ctxt.rnti      = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id);
+  ctxt.rntiMaybeUEid = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id);
   ctxt.instance = instance;
   ctxt.module_id = instance;
   ctxt.enb_flag  = 1;
-  struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(
-        RC.rrc[ctxt.instance],
-        ctxt.rnti);
+  struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.instance], ctxt.rntiMaybeUEid);
 
   if (srb_id == 0) {
     LTE_DL_CCCH_Message_t *dl_ccch_msg=NULL;
@@ -257,7 +255,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
         if (radioResourceConfigDedicated->mac_MainConfig)
           mac_MainConfig = &radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
         rrc_mac_config_req_eNB_t tmp = {0};
-        tmp.rnti = ctxt.rnti;
+        tmp.rnti = ctxt.rntiMaybeUEid;
         tmp.physicalConfigDedicated = radioResourceConfigDedicated->physicalConfigDedicated;
         tmp.mac_MainConfig = mac_MainConfig;
         tmp.logicalChannelIdentity = 1;
@@ -358,7 +356,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                     MessageDef *message_p = NULL;
                     /* Send DRX configuration to MAC task to configure timers of local UE context */
                     message_p = itti_alloc_new_message(TASK_DU_F1, 0, RRC_MAC_DRX_CONFIG_REQ);
-                    RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = ctxt.rnti;
+                    RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = ctxt.rntiMaybeUEid;
                     RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
                     itti_send_msg_to_task(TASK_MAC_ENB, ctxt.instance, message_p);
                     LOG_D(F1AP, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
@@ -396,9 +394,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                     if (DRB_configList->list.array[i]) {
                       drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
                       LOG_I(F1AP,
-                            "[DU %ld] Logical Channel UL-DCCH, Received RRCConnectionReconfiguration for UE rnti %x, reconfiguring DRB %d/LCID %d\n",
+                            "[DU %ld] Logical Channel UL-DCCH, Received RRCConnectionReconfiguration for UE rnti %lx, reconfiguring DRB %d/LCID %d\n",
                             ctxt.instance,
-                            ctxt.rnti,
+                            ctxt.rntiMaybeUEid,
                             (int)DRB_configList->list.array[i]->drb_Identity,
                             (int)*DRB_configList->list.array[i]->logicalChannelIdentity);
 

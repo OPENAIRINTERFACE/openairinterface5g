@@ -176,7 +176,7 @@ rrc_data_req_nr_ue(
     RRC_DCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
     RRC_DCCH_DATA_REQ (message_p).mode      = modeP;
     RRC_DCCH_DATA_REQ (message_p).module_id = ctxt_pP->module_id;
-    RRC_DCCH_DATA_REQ (message_p).rnti      = ctxt_pP->rnti;
+    RRC_DCCH_DATA_REQ(message_p).rnti = ctxt_pP->rntiMaybeUEid;
     RRC_DCCH_DATA_REQ (message_p).eNB_index = ctxt_pP->eNB_index;
     itti_send_msg_to_task (
       TASK_PDCP_UE,

@@ -73,8 +73,8 @@ void sdap_data_ind(rb_id_t pdcp_entity,
   nr_sdap_entity_t *sdap_entity;
   sdap_entity = nr_sdap_get_entity(ue_id, pdusession_id);
 
-  if(sdap_entity == NULL) {
-    LOG_E(SDAP, "%s:%d:%s: Entity not found for ue rnti: %lu and pdusession id: %d\n", __FILE__, __LINE__, __FUNCTION__, ue_id, pdusession_id);
+  if (sdap_entity == NULL) {
+    LOG_E(SDAP, "%s:%d:%s: Entity not found for ue rnti/ue_id: %lx and pdusession id: %d\n", __FILE__, __LINE__, __FUNCTION__, ue_id, pdusession_id);
     return;
   }
 

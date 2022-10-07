@@ -499,7 +499,7 @@ int main ( int argc, char **argv )
     protocol_ctxt_t ctxt;
     ctxt.module_id = 0 ;
     ctxt.instance = 0;
-    ctxt.rnti = 0;
+    ctxt.rntiMaybeUEid = 0;
     ctxt.enb_flag = 1;
     ctxt.frame = 0;
     ctxt.subframe = 0;

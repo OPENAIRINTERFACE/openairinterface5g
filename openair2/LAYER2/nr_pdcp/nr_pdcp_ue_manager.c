@@ -76,17 +76,17 @@ void nr_pdcp_manager_unlock(nr_pdcp_ue_manager_t *_m)
 }
 
 /* must be called with lock acquired */
-nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *_m, ue_id_t ue_id)
+nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *_m, ue_id_t rntiMaybeUEid)
 {
   /* TODO: optimze */
   nr_pdcp_ue_manager_internal_t *m = _m;
   int i;
 
   for (i = 0; i < m->ue_count; i++)
-    if (m->ue_list[i]->ue_id == ue_id)
+    if (m->ue_list[i]->rntiMaybeUEid == rntiMaybeUEid)
       return m->ue_list[i];
 
-  LOG_D(PDCP, "%s:%d:%s: new UE 0x%"PRIx64"\n", __FILE__, __LINE__, __FUNCTION__, ue_id);
+  LOG_D(PDCP, "%s:%d:%s: new UE ID/RNTI 0x%" PRIx64 "\n", __FILE__, __LINE__, __FUNCTION__, rntiMaybeUEid);
 
   m->ue_count++;
   m->ue_list = realloc(m->ue_list, sizeof(nr_pdcp_ue_t *) * m->ue_count);
@@ -100,13 +100,13 @@ nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *_m, ue_id_t ue_id)
     exit(1);
   }
 
-  m->ue_list[m->ue_count-1]->ue_id = ue_id;
+  m->ue_list[m->ue_count - 1]->rntiMaybeUEid = rntiMaybeUEid;
 
   return m->ue_list[m->ue_count-1];
 }
 
 /* must be called with lock acquired */
-void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *_m, ue_id_t ue_id)
+void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *_m, ue_id_t rntiMaybeUEid)
 {
   nr_pdcp_ue_manager_internal_t *m = _m;
   nr_pdcp_ue_t *ue;
@@ -114,13 +114,11 @@ void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *_m, ue_id_t ue_id)
   int j;
 
   for (i = 0; i < m->ue_count; i++)
-    if (m->ue_list[i]->ue_id == ue_id)
+    if (m->ue_list[i]->rntiMaybeUEid == rntiMaybeUEid)
       break;
 
   if (i == m->ue_count) {
-    LOG_D(PDCP, "%s:%d:%s: warning: ue 0x%"PRIx64" not found\n",
-          __FILE__, __LINE__, __FUNCTION__,
-          ue_id);
+    LOG_D(PDCP, "%s:%d:%s: warning: UE ID/RNTI 0x%" PRIx64 " not found\n", __FILE__, __LINE__, __FUNCTION__, rntiMaybeUEid);
     return;
   }
 
@@ -204,11 +202,11 @@ int nr_pdcp_manager_get_ue_count(nr_pdcp_ue_manager_t *_m)
   return m->ue_count;
 }
 
-int nr_pdcp_get_first_ue_id(nr_pdcp_ue_manager_t *_m, ue_id_t *ret)
+bool nr_pdcp_get_first_ue_id(nr_pdcp_ue_manager_t *_m, ue_id_t *ret)
 {
   nr_pdcp_ue_manager_internal_t *m = _m;
   if (m->ue_count == 0)
-    return 0;
-  *ret = m->ue_list[0]->ue_id;
-  return 1;
+    return false;
+  *ret = m->ue_list[0]->rntiMaybeUEid;
+  return true;
 }

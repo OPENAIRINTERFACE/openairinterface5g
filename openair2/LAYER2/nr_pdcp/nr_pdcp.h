@@ -20,11 +20,12 @@
  */
 
 #include <stdint.h>
+#include "openair2/COMMON/platform_types.h"
 
 #ifndef _NR_PDCP_H_
 #define _NR_PDCP_H_
 
 void nr_pdcp_layer_init_ue(void);
-void nr_DRB_preconfiguration(uint16_t crnti);
+void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
 
 #endif /* _NR_PDCP_H_ */

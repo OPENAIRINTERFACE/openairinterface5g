@@ -1403,33 +1403,20 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 	 break;
 
        case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
-	 LOG_I(NR_RRC,
-	       "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %x\n",
-	       ctxt_pP->module_id,
-	       ctxt_pP->frame,
-	       ctxt_pP->rnti);
+         LOG_I(NR_RRC, "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received NR_RRCSetup RNTI %lx\n", ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rntiMaybeUEid);
 
-	 // Get configuration
-	 // Release T300 timer
-	 NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
+         // Get configuration
+         // Release T300 timer
+         NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
 
-	 nr_rrc_ue_process_masterCellGroup(
-					   ctxt_pP,
-					   gNB_index,
-					   &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
-	 nr_rrc_ue_process_RadioBearerConfig(ctxt_pP,
-					     gNB_index,
-					     &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
-	 nr_rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED_NR);
-	 nr_rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED_NR);
-	 NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rnti;
-	 rrc_ue_generate_RRCSetupComplete(
-					  ctxt_pP,
-					  gNB_index,
-					  dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier,
-					  NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
-	 rval = 0;
-	 break;
+         nr_rrc_ue_process_masterCellGroup(ctxt_pP, gNB_index, &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
+         nr_rrc_ue_process_RadioBearerConfig(ctxt_pP, gNB_index, &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
+         nr_rrc_set_state(ctxt_pP->module_id, RRC_STATE_CONNECTED_NR);
+         nr_rrc_set_sub_state(ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED_NR);
+         NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rntiMaybeUEid;
+         rrc_ue_generate_RRCSetupComplete(ctxt_pP, gNB_index, dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier, NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
+         rval = 0;
+         break;
 
        default:
 	 LOG_E(NR_RRC, "[UE%d] Frame %d : Unknown message\n",
@@ -1970,10 +1957,10 @@ nr_rrc_ue_establish_srb2(
                            NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
 
      // Refresh SRBs
-     nr_pdcp_add_srbs(ctxt_pP->enb_flag, ctxt_pP->rnti,
+     nr_pdcp_add_srbs(ctxt_pP->enb_flag,
+                      ctxt_pP->rntiMaybeUEid,
                       radioBearerConfig->srb_ToAddModList,
-                      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm |
-                      (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
                       kRRCenc,
                       kRRCint);
      // Refresh SRBs
@@ -2068,21 +2055,15 @@ nr_rrc_ue_establish_srb2(
                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPint);
 
        // Refresh DRBs
-     nr_pdcp_add_drbs(ctxt_pP->enb_flag, ctxt_pP->rnti,
+     nr_pdcp_add_drbs(ctxt_pP->enb_flag,
+                      ctxt_pP->rntiMaybeUEid,
                       radioBearerConfig->drb_ToAddModList,
-                      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
-                      | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
                       kUPenc,
                       kUPint,
                       NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
      // Refresh DRBs
-     nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                                NULL,
-                                radioBearerConfig->drb_ToAddModList,
-                                NULL,
-                                NULL,
-                                NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList
-                                );
+     nr_rrc_rlc_config_asn1_req(ctxt_pP, NULL, radioBearerConfig->drb_ToAddModList, NULL, NULL, NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
    } // drb_ToAddModList //
 
    if (radioBearerConfig->drb_ToReleaseList != NULL) {

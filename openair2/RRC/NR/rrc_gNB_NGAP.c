@@ -372,7 +372,7 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
   rrc_ue_ngap_ids_p = malloc(sizeof(rrc_ue_ngap_ids_t));
   rrc_ue_ngap_ids_p->ue_initial_id  = ue_context_pP->ue_context.ue_initial_id;
   rrc_ue_ngap_ids_p->gNB_ue_ngap_id = UE_INITIAL_ID_INVALID;
-  rrc_ue_ngap_ids_p->ue_rnti        = ctxt_pP->rnti;
+  rrc_ue_ngap_ids_p->ue_rnti = ctxt_pP->rntiMaybeUEid;
 
   h_rc = hashtable_insert(RC.nrrrc[ctxt_pP->module_id]->initial_id2_ngap_ids,
                           (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
