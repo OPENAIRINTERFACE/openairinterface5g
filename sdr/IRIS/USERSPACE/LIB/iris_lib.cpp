@@ -88,7 +88,7 @@ static int trx_iris_start(openair0_device *device) {
     for (r = 0; r < s->device_num; r++) {
         int ret = s->iris[r]->activateStream(s->rxStream[r], flags, timeNs, 0);
         int ret2 = s->iris[r]->activateStream(s->txStream[r]);
-        if (ret < 0 | ret2 < 0)
+        if (ret < 0 || ret2 < 0)
             return -1;
     }
     return 0;
@@ -135,12 +135,7 @@ static void trx_iris_end(openair0_device *device) {
 static int
 trx_iris_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
     using namespace std::chrono;
-    static long long int loop = 0;
-    static long time_min = 0, time_max = 0, time_avg = 0;
-    struct timespec tp_start, tp_end;
-    long time_diff;
 
-    int ret = 0, ret_i = 0;
     int flag = 0;
 
     iris_state_t *s = (iris_state_t *) device->priv;
@@ -161,20 +156,17 @@ trx_iris_write(openair0_device *device, openair0_timestamp timestamp, void **buf
       }
     }
 
-    clock_gettime(CLOCK_MONOTONIC_RAW, &tp_start);
-
     // This hack was added by cws to help keep packets flowing
 
     if (flags)
         flag |= SOAPY_SDR_HAS_TIME;
     else {
-        long long tempHack = s->iris[0]->getHardwareTime("");
         return nsamps;
     }
 
     if (flags == 2 || flags == 1) { // start of burst
 
-    } else if (flags == 3 | flags == 4) {
+    } else if (flags == 3 || flags == 4) {
         flag |= SOAPY_SDR_END_BURST;
     }
 
@@ -196,7 +188,7 @@ trx_iris_write(openair0_device *device, openair0_timestamp timestamp, void **buf
         printf("\n");
         //printf("\nHardware time before write: %lld, tx_time_stamp: %lld\n", s->iris[0]->getHardwareTime(""), timeNs);
 #endif
-        ret = s->iris[r]->writeStream(s->txStream[r], (void **) samps, (size_t)(nsamps), flag, timeNs, 1000000);
+        const int ret = s->iris[r]->writeStream(s->txStream[r], (void **) samps, (size_t)(nsamps), flag, timeNs, 1000000);
 
         if (ret < 0)
             printf("Unable to write stream!\n");
@@ -231,7 +223,7 @@ static int trx_iris_read(openair0_device *device, openair0_timestamp *ptimestamp
     bool time_set = false;
     long long timeNs = 0;
     int flags;
-    int samples_received;
+    int samples_received = 0;
     uint32_t *samps[2]; //= (uint32_t **)buff;
 
     int r;
@@ -255,7 +247,7 @@ static int trx_iris_read(openair0_device *device, openair0_timestamp *ptimestamp
         if (ret < 0) {
             if (ret == SOAPY_SDR_TIME_ERROR)
                 printf("[recv] Time Error in tx stream!\n");
-            else if (ret == SOAPY_SDR_OVERFLOW | (flags & SOAPY_SDR_END_ABRUPT))
+            else if (ret == SOAPY_SDR_OVERFLOW || (flags & SOAPY_SDR_END_ABRUPT))
                 printf("[recv] Overflow occured!\n");
             else if (ret == SOAPY_SDR_TIMEOUT)
                 printf("[recv] Timeout occured!\n");
@@ -344,15 +336,16 @@ void *set_freq_thread(void *arg) {
            device->openair0_cfg[0].rx_freq[0]);
     // add check for the number of channels in the cfg
     for (r = 0; r < s->device_num; r++) {
-        for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
+        for (i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
             if (i < s->rx_num_channels)
                 s->iris[r]->setFrequency(SOAPY_SDR_RX, i, "RF", device->openair0_cfg[0].rx_freq[i]);
         }
-        for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
+        for (i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
             if (i < s->tx_num_channels)
                 s->iris[r]->setFrequency(SOAPY_SDR_TX, i, "RF", device->openair0_cfg[0].tx_freq[i]);
         }
     }
+    return NULL;
 }
 
 /*! \brief Set frequencies (TX/RX)
@@ -364,16 +357,15 @@ void *set_freq_thread(void *arg) {
 int trx_iris_set_freq(openair0_device *device, openair0_config_t *openair0_cfg)
 {
   iris_state_t *s = (iris_state_t *)device->priv;
-  pthread_t f_thread;
   int r, i;
   for (r = 0; r < s->device_num; r++) {
     printf("Setting Iris TX Freq %f, RX Freq %f\n", openair0_cfg[0].tx_freq[0], openair0_cfg[0].rx_freq[0]);
-    for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
+    for (i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
       if (i < s->rx_num_channels) {
         s->iris[r]->setFrequency(SOAPY_SDR_RX, i, "RF", openair0_cfg[0].rx_freq[i]);
       }
     }
-    for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
+    for (i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
       if (i < s->tx_num_channels) {
         s->iris[r]->setFrequency(SOAPY_SDR_TX, i, "RF", openair0_cfg[0].tx_freq[i]);
       }
@@ -495,11 +487,9 @@ extern "C" {
 */
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
-    size_t i, r, card;
     int bw_gain_adjust = 0;
     openair0_cfg[0].rx_gain_calib_table = calib_table_iris;
-    iris_state_t *s = (iris_state_t *) malloc(sizeof(iris_state_t));
-    memset(s, 0, sizeof(iris_state_t));
+    iris_state_t *s = (iris_state_t *) calloc(1, sizeof(*s));
 
     std::string devFE("DEV");
     std::string cbrsFE("CBRS");
@@ -576,7 +566,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
         exit(-1);
     }
 
-    for (r = 0; r < s->device_num; r++) {
+    for (int r = 0; r < s->device_num; r++) {
         //this is unnecessary -- it will set the correct master clock based on sample rate
         /*switch ((int) openair0_cfg[0].sample_rate) {
             case 1920000:
@@ -600,7 +590,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
                 break;
         }*/
 
-        for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
+        for (int i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
             if (i < s->rx_num_channels) {
                 s->iris[r]->setSampleRate(SOAPY_SDR_RX, i, openair0_cfg[0].sample_rate / SAMPLE_RATE_DOWN);
 #ifdef MOVE_DC
@@ -633,7 +623,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
                 s->iris[r]->setDCOffsetMode(SOAPY_SDR_RX, i, true); // move somewhere else
             }
         }
-        for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
+        for (int i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
             if (i < s->tx_num_channels) {
                 s->iris[r]->setSampleRate(SOAPY_SDR_TX, i, openair0_cfg[0].sample_rate / SAMPLE_RATE_DOWN);
 #ifdef MOVE_DC
@@ -682,24 +672,24 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
         rx_filt_bw *= 3;
 #endif
         /* Setting TX/RX BW */
-        for (i = 0; i < s->tx_num_channels; i++) {
-            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_TX)) {
+        for (int i = 0; i < s->tx_num_channels; i++) {
+            if (i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_TX)) {
                 s->iris[r]->setBandwidth(SOAPY_SDR_TX, i, tx_filt_bw);
-                printf("Setting tx bandwidth on channel %zu/%lu: BW %f (readback %f)\n", i,
+                printf("Setting tx bandwidth on channel %d/%lu: BW %f (readback %f)\n", i,
                        s->iris[r]->getNumChannels(SOAPY_SDR_TX), tx_filt_bw / 1e6,
                        s->iris[r]->getBandwidth(SOAPY_SDR_TX, i) / 1e6);
             }
         }
-        for (i = 0; i < s->rx_num_channels; i++) {
-            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_RX)) {
+        for (int i = 0; i < s->rx_num_channels; i++) {
+            if (i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_RX)) {
                 s->iris[r]->setBandwidth(SOAPY_SDR_RX, i, rx_filt_bw);
-                printf("Setting rx bandwidth on channel %zu/%lu : BW %f (readback %f)\n", i,
+                printf("Setting rx bandwidth on channel %d/%lu : BW %f (readback %f)\n", i,
                        s->iris[r]->getNumChannels(SOAPY_SDR_RX), rx_filt_bw / 1e6,
                        s->iris[r]->getBandwidth(SOAPY_SDR_RX, i) / 1e6);
             }
         }
 
-        for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
+        for (int i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
             if (i < s->tx_num_channels) {
                 printf("\nUsing SKLK calibration...\n");
                 s->iris[r]->writeSetting(SOAPY_SDR_TX, i, "CALIBRATE", "SKLK");
@@ -708,7 +698,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
         }
 
-        for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
+        for (int i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
             if (i < s->rx_num_channels) {
                 printf("\nUsing SKLK calibration...\n");
                 s->iris[r]->writeSetting(SOAPY_SDR_RX, i, "CALIBRATE", "SKLK");
@@ -718,7 +708,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
         }
 
         if (s->iris[r]->getHardwareInfo()["frontend"].compare(devFE) == 0) {
-            for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
+            for (int i = 0; i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
                 if (openair0_cfg[0].duplex_mode == 0) {
                     printf("\nFDD: Setting receive antenna to %s\n", s->iris[r]->listAntennas(SOAPY_SDR_RX, i)[1].c_str());
                     if (i < s->rx_num_channels)
@@ -741,22 +731,22 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
         rxStreamArgs["WIRE"] = SOAPY_SDR_CS16;
 
         std::vector <size_t> channels;
-        for (i = 0; i < s->rx_num_channels; i++)
-            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_RX))
+        for (int i = 0; i < s->rx_num_channels; i++)
+            if (i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_RX))
                 channels.push_back(i);
         s->rxStream.push_back(s->iris[r]->setupStream(SOAPY_SDR_RX, SOAPY_SDR_CS16, channels));//, rxStreamArgs));
 
         std::vector <size_t> tx_channels = {};
-        for (i = 0; i < s->tx_num_channels; i++)
-            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_TX))
+        for (int i = 0; i < s->tx_num_channels; i++)
+            if (i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_TX))
                 tx_channels.push_back(i);
         s->txStream.push_back(s->iris[r]->setupStream(SOAPY_SDR_TX, SOAPY_SDR_CS16, tx_channels)); //, arg));
         //s->iris[r]->setHardwareTime(0, "");
 
         std::cout << "Front end detected: " << s->iris[r]->getHardwareInfo()["frontend"] << "\n";
-        for (i = 0; i < s->rx_num_channels; i++) {
-            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_RX)) {
-                printf("RX Channel %zu\n", i);
+        for (int i = 0; i < s->rx_num_channels; i++) {
+            if (i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_RX)) {
+                printf("RX Channel %d\n", i);
                 printf("Actual RX sample rate: %fMSps...\n", (s->iris[r]->getSampleRate(SOAPY_SDR_RX, i) / 1e6));
                 printf("Actual RX frequency: %fGHz...\n", (s->iris[r]->getFrequency(SOAPY_SDR_RX, i) / 1e9));
                 printf("Actual RX gain: %f...\n", (s->iris[r]->getGain(SOAPY_SDR_RX, i)));
@@ -772,9 +762,9 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
             }
         }
 
-        for (i = 0; i < s->tx_num_channels; i++) {
-            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_TX)) {
-                printf("TX Channel %zu\n", i);
+        for (int i = 0; i < s->tx_num_channels; i++) {
+            if (i < (int) s->iris[r]->getNumChannels(SOAPY_SDR_TX)) {
+                printf("TX Channel %d\n", i);
                 printf("Actual TX sample rate: %fMSps...\n", (s->iris[r]->getSampleRate(SOAPY_SDR_TX, i) / 1e6));
                 printf("Actual TX frequency: %fGHz...\n", (s->iris[r]->getFrequency(SOAPY_SDR_TX, i) / 1e9));
                 printf("Actual TX gain: %f...\n", (s->iris[r]->getGain(SOAPY_SDR_TX, i)));
@@ -791,10 +781,10 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
         }
     }
     s->iris[0]->writeSetting("SYNC_DELAYS", "");
-    for (r = 0; r < s->device_num; r++)
+    for (int r = 0; r < s->device_num; r++)
         s->iris[r]->setHardwareTime(0, "TRIGGER");
     s->iris[0]->writeSetting("TRIGGER_GEN", "");
-    for (r = 0; r < s->device_num; r++)
+    for (int r = 0; r < s->device_num; r++)
         printf("Device timestamp: %f...\n", (s->iris[r]->getHardwareTime("TRIGGER") / 1e9));
 
     device->priv = s;
